@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Notifications;
+using SIMF.Application.Operations;
 using SIMF.Common.Enums;
 using SIMF.Domain.Configuration;
 using SIMF.Infrastructure.Persistence;
@@ -42,6 +43,7 @@ namespace SIMF.Infrastructure.Operations;
 internal sealed class ProgrammeRatingPromptWorker(
     IServiceScopeFactory scopeFactory,
     TimeProvider timeProvider,
+    IWorkerHeartbeatRegistry heartbeat,
     ILogger<ProgrammeRatingPromptWorker> logger) : BackgroundService
 {
     private static readonly TimeSpan PollInterval = TimeSpan.FromMinutes(1);
@@ -76,6 +78,11 @@ internal sealed class ProgrammeRatingPromptWorker(
             (int)StartupDelay.TotalSeconds, (int)PollInterval.TotalSeconds,
             (int)BackfillWindow.TotalHours);
 
+        heartbeat.Register(
+            nameof(ProgrammeRatingPromptWorker),
+            "Sends end-of-day and end-of-programme rating prompts.",
+            PollInterval);
+
         try
         {
             await Task.Delay(StartupDelay, timeProvider, stoppingToken);
@@ -90,6 +97,7 @@ internal sealed class ProgrammeRatingPromptWorker(
             try
             {
                 await CheckOnceAsync(stoppingToken);
+                heartbeat.RecordSuccess(nameof(ProgrammeRatingPromptWorker));
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -97,6 +105,7 @@ internal sealed class ProgrammeRatingPromptWorker(
             }
             catch (Exception ex)
             {
+                heartbeat.RecordFailure(nameof(ProgrammeRatingPromptWorker), ex.Message);
                 logger.LogError(ex, "ProgrammeRatingPromptWorker tick failed.");
             }
             try

@@ -113,19 +113,24 @@ Real-time updates — the question stream, the comment feed, the moderation queu
   `HallAttendance` enter record for the session (SIMF-FDS-003) — and they
   **close at session end** (decision D5). Until the attendee has arrived, the
   question composer is not offered.
-- A submitted question is recorded as `Pending` and the attendee is told it
-  will be reviewed before it goes on air.
-- A question moves through the states: `Pending` → `OnAir`, `Answered`, or
-  `Hidden`, set by the moderator (section 5.3).
+- A submitted question is recorded as `Pending`, screened by an advisory AI
+  filter, and reviewed by the Scientific Committee before it can be shown.
+- A question moves through the states `Pending` → `Approved` or `Hidden`; an
+  approved question is presented on stage by the per-session moderator (the
+  `IsPushed` flag). There is no `OnAir` or `Answered` status. **The two ask
+  modes (a pre-question before the session and a live question) and this
+  three-stage pipeline are specified in Amendment B, which supersedes the state
+  model in this section.**
 
 ### 5.3 The moderator and the question queue
 
 - A **Moderator** is a mobile-app role assigned to specific sessions (decision
   D3, SIMF-RPM-001). A moderator handles questions only for their assigned
   sessions (`UC-36`).
-- For an assigned session the moderator can: view the incoming questions,
-  **order** them, **hide** an unsuitable one, put a question **on air** to the
-  speaker, and mark a question **answered**.
+- For an assigned session the moderator presents the **approved** questions:
+  **order** them, **hide** one, and **push** a question to the speaker on stage
+  (`IsPushed`). The approve, hide or escalate decision belongs to the Scientific
+  Committee (Amendment B); the moderator does not accept or reject questions.
 - The question stream updates live for the moderator over SignalR.
 
 ### 5.4 Comments and two-stage moderation

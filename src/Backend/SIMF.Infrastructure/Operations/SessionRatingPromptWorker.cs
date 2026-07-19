@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Notifications;
+using SIMF.Application.Operations;
 using SIMF.Common.Enums;
 using SIMF.Infrastructure.Persistence;
 
@@ -26,6 +27,7 @@ namespace SIMF.Infrastructure.Operations;
 internal sealed class SessionRatingPromptWorker(
     IServiceScopeFactory scopeFactory,
     TimeProvider timeProvider,
+    IWorkerHeartbeatRegistry heartbeat,
     ILogger<SessionRatingPromptWorker> logger) : BackgroundService
 {
     private static readonly TimeSpan PollInterval = TimeSpan.FromMinutes(1);
@@ -46,6 +48,11 @@ internal sealed class SessionRatingPromptWorker(
             (int)StartupDelay.TotalSeconds, (int)PollInterval.TotalSeconds,
             (int)BackfillWindow.TotalHours);
 
+        heartbeat.Register(
+            nameof(SessionRatingPromptWorker),
+            "Prompts attendees to rate a session after it ends.",
+            PollInterval);
+
         try
         {
             await Task.Delay(StartupDelay, timeProvider, stoppingToken);
@@ -60,6 +67,7 @@ internal sealed class SessionRatingPromptWorker(
             try
             {
                 await CheckOnceAsync(stoppingToken);
+                heartbeat.RecordSuccess(nameof(SessionRatingPromptWorker));
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -67,6 +75,7 @@ internal sealed class SessionRatingPromptWorker(
             }
             catch (Exception ex)
             {
+                heartbeat.RecordFailure(nameof(SessionRatingPromptWorker), ex.Message);
                 logger.LogError(ex, "SessionRatingPromptWorker tick failed.");
             }
             try

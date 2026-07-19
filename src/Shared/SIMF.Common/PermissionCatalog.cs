@@ -680,6 +680,13 @@ public static class PermissionCatalog
         public const string View = "Logs.View";
     }
 
+    /// <summary>The background-services monitor: live health of the in-process
+    /// hosted workers (reminders, sweeps, the email queue drain).</summary>
+    public static class ServicesMonitor
+    {
+        public const string View = "ServicesMonitor.View";
+    }
+
     /// <summary>Invitations (D-168). <see cref="Manage"/> pre-dates this
     /// catalogue and keeps its exact string.</summary>
     public static class Invitations
@@ -1052,6 +1059,7 @@ public static class PermissionCatalog
         new(OperationLog.View, "OperationLog", "View", "View the operation log", AdminOnly),
         new(OperationLog.Export, "OperationLog", "Export", "Export the operation log", AdminOnly),
         new(Logs.View, "Logs", "View", "View system logs", AdminOnly),
+        new(ServicesMonitor.View, "ServicesMonitor", "View", "View the background-services monitor", AdminOnly),
 
         new(Invitations.View, "Invitations", "View", "View invitations", PublicRelations),
         new(Invitations.Manage, "Invitations", "Manage", "Manage invitations", PublicRelations),

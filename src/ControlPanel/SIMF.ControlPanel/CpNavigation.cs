@@ -39,6 +39,9 @@ public static class CpNavigation
             new("Module.Dashboard", "/", Icon: "layout-dashboard"),
             // FR-506 — read-only session-attendance dashboard over HallAttendance (D-241).
             new("Module.Attendance", "/admin/attendance", RequiredPermission: PermissionCatalog.Attendance.View, Icon: "user-check"),
+            // 2026-07-18 — live per-session hall view: 4-state seat grid + who's
+            // currently inside the hall (over HallAttendance + the seat map).
+            new("Module.SessionLiveHall", "/admin/sessions/live-hall", RequiredPermission: PermissionCatalog.Attendance.View, Icon: "monitor"),
         ]),
         new("Nav.People",
         [
@@ -231,6 +234,8 @@ public static class CpNavigation
             // D-495 — Organization / About profile (edition-generic forum config).
             new("Module.OrganizationProfile", "/admin/organization-profile", RequiredPermission: PermissionCatalog.OrganizationProfile.View, Icon: "building"),
             new("Module.AdminLogs", "/admin/logs", RequiredPermission: PermissionCatalog.Logs.View, Icon: "file-text"),
+            // Background-services monitor: live health of the in-process hosted workers.
+            new("Module.ServicesMonitor", "/admin/ops/services", RequiredPermission: PermissionCatalog.ServicesMonitor.View, Icon: "bar-chart"),
             // D-134 Sprint A — Operation log viewer over the existing
             // OperationLogEntry table (no migration).
             new("Module.OperationLog", "/admin/operation-log", RequiredPermission: PermissionCatalog.OperationLog.View, Icon: "list-tree"),

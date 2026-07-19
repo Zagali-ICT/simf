@@ -1,0 +1,79 @@
+screen share Enable
+src\Mobile\simf_app\android\app\src\main\kotlin\com\example\simf_app\MainActivity.kt
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        // TEMP-DEBUG-CAPTURE (owner-approved 2026-06-27): FLAG_SECURE disabled
+        // ONLY to screenshot the device for visual verification. MUST be
+        // restored before any commit / shipped build — this is an NCA control.
+        // window.setFlags(
+        //     WindowManager.LayoutParams.FLAG_SECURE,
+        //     WindowManager.LayoutParams.FLAG_SECURE,
+        // )
+        super.onCreate(savedInstanceState)
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+dotnet ef migrations add 20260712001 --context SimfAppDbContext   -p src/Backend/SIMF.Infrastructure/SIMF.Infrastructure.csproj   -s src/Backend/SIMF.Api/SIMF.Api.csproj   -o Persistence/Migrations/App
+
+dotnet ef migrations add 20260712001 --context SimfIdentityDbContext   -p src/Backend/SIMF.Infrastructure/SIMF.Infrastructure.csproj   -s src/Backend/SIMF.Api/SIMF.Api.csproj   -o Persistence/Migrations/Identity
+
+
+
+
+
+generate keys:
+$bytes = New-Object byte[] 32
+[System.Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
+[Environment]::SetEnvironmentVariable("SIMF_FileStorage__EncryptionKey",
+    [Convert]::ToBase64String($bytes), "Machine")
+
+
+
+    Restart-WebAppPool -Name SIMF.API   # or: net stop was /y ; net start w3svc  (or just re-run SIMF.Api.exe)
+
+
+$env:SIMF_FileStorage__EncryptionKey = [Environment]::GetEnvironmentVariable("SIMF_FileStorage__EncryptionKey","Machine")
+$env:SIMF_FileStorage__EncryptionKey.Length   # expect 44 now
+.\SIMF.Api.exe
+
+pwd : Qazwsx@1885
+
+
+Email	Role
+admin@simf.local	CP Administrator
+vvip@simf.local	Visitor · VVIP
+vip@simf.local	Visitor · VIP
+visitor@simf.local	Visitor · Normal
+staff@simf.local	Staff
+moderator@simf.local	Moderator
+exhibitor@simf.local	Exhibitor
+media@simf.local	Media
+sponsor@simf.local	Sponsor
+
+
+
+
+
+PS D:\SIMF> Get-ChildItem C:\SIMF\Storage\logs\SIMF.Api\*.log |
+>>   Sort-Object LastWriteTime | Select-Object -Last 3 |
+>>   ForEach-Object { Select-String -Path $_.FullName -Pattern 'Super-admin' }
+
+
+
+
+
+Purpose	Email	Password	Verified
+زائر تجريبي (demo visitor, complete profile → goes to Home/My-Area)	visitor@simf.local	Kq7@Wm2xZ	✅ sign-in 200, no MFA; profile complete (ID image set, 3 interests)
+Before-complete-profile (to test profile-data update)	vip@simf.local	Kq7@Wm2xZ	✅ Approved, but ID image MISSING + 0 interests → app routes to the profile-completion flow
+Super admin (Control Panel)	superadmin@zagali-ict.com	Kq7@Wm2xZ	✅ sign-in 200, but it's a temp password → CP forces a change on first login (returns a passwordChangeToken); 2FA off
+superadmin@zagali-ict.com / Kq7@Wm2xZ 

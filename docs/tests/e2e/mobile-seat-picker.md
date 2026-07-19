@@ -10,9 +10,13 @@
 The seat picker draws the hall grid for an **assigned-seat** session and lets the
 attendee tap an **available** seat (or auto-pick) to hold it. The reservation is
 **confirmed on create** (reservation-only, 2026-07-18 — `Status = Approved`, no
-Control Panel approval step); it stays a provisional hold until the visitor checks
-in at the hall gate. On success the picker pops back so the session page reloads to
-show the reservation.
+Control Panel approval step); it stays a **provisional hold** until the visitor
+**checks in at the hall gate** (staff QR scan), which confirms the seat, and a
+pre-start sweep releases any hold not checked in shortly before the session starts.
+No notification is sent on reserving — the app shows an inline success message. On
+success the picker pops back so the session page reloads to show the reservation.
+The old Control Panel approval queue (list-pending / approve / reject) is **retained
+but dormant** — nothing creates a Pending attendee booking, so it is always empty.
 
 > **Reservation-only (2026-07-18) — interim.** The backend now auto-confirms; the
 > app's current *"Reserved — pending approval"* toast copy (in the scenarios below)
@@ -26,7 +30,7 @@ show the reservation.
 | ID | Scenario | Type | Pri | Status |
 |----|----------|------|-----|--------|
 | E2E-MOBPICK-001 | Grid renders from `rowLabels × seatsPerRow`; the session title + "tap an available seat" hint show; reserved / own / available seats are coloured (محجوز · مقعدك · متاح) | happy | P1 | authored ✓ (widget — grid + hint + auto-pick CTA) |
-| E2E-MOBPICK-002 | Tapping an **available** seat reserves it (`POST …/seats/reserve` row+seat), shows the "Reserved — pending approval" toast, and pops back (session page reloads → reservation card) | happy | P0 | authored ✓ (widget — tap A2 → reserveSeat row=A seat=2) |
+| E2E-MOBPICK-002 | Tapping an **available** seat reserves it (`POST …/seats/reserve` row+seat), shows the inline reserve-success confirmation toast (confirmed on create, not pending approval), and pops back (session page reloads → reservation card) | happy | P0 | authored ✓ (widget — tap A2 → reserveSeat row=A seat=2) |
 | E2E-MOBPICK-003 | The **Auto-pick** button reserves the first free seat (`POST …/seats/reserve-random`) | happy | P1 | authored ✓ (widget — random CTA → reserveRandom) |
 | E2E-MOBPICK-004 | Reserved / own seats are **inert** (not tappable); only available seats hold | happy | P1 | authored ✓ (widget — only `available` wires the gesture) |
 | E2E-MOBPICK-005 | A generic reserve failure (e.g. seat taken, 409 `SEAT_ALREADY_RESERVED`) shows the "Couldn't reserve that seat" toast and keeps the picker usable — `_busy` resets, no pop | error | P1 | authored ✓ (widget — `failReserve` → toast + grid still present) |
@@ -46,9 +50,11 @@ Scenario: Picking a specific seat in an assigned-seat session
   And seat A1 is reserved and A2 is available
   When they tap seat A2
   Then POST /app/sessions/{id}/seats/reserve is called with rowLabel=A, seatNumber=2
-  And a "Reserved — pending approval" toast is shown
+  And the reservation is confirmed on create (Status = Approved, no Control Panel approval)
+  And an inline reserve-success confirmation toast is shown (no "pending approval")
+  And no notification is sent on reserving
   And the picker pops back so the session page reloads to the reservation card
-  And on the Control Panel's approval the visitor gets a BookingConfirmed notification
+  And the seat stays a provisional hold until it is confirmed at the hall-gate check-in
 ```
 
 ### E2E-MOBPICK-005 — Reserve failure keeps the picker usable
@@ -105,4 +111,4 @@ Scenario: The expiry worker releases a hold the CP never decided
 
 ---
 
-_Last reviewed:_ `2026-07-08` by `SIMF Team`.
+_Last reviewed:_ `2026-07-19` by `Apexium` (reservation-only correction — reserve auto-confirms, no "pending approval" toast, no BookingConfirmed on reserve; confirmation is the hall-gate check-in; CP approval queue retained but dormant). Prior review `2026-07-08` by `SIMF Team`.

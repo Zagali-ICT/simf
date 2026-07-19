@@ -119,8 +119,10 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/operations` | ✅ Real (D-166) | Administrator | — | [e2e/cp-admin-operations.md](../tests/e2e/cp-admin-operations.md) |
 | `/admin/operation-log` | ✅ Real | Administrator | [cp/admin-operation-log.md](cp/admin-operation-log.md) | [e2e/cp-admin-operation-log.md](../tests/e2e/cp-admin-operation-log.md) |
 | `/admin/logs` | ✅ Real | Administrator | [cp/admin-logs.md](cp/admin-logs.md) | [e2e/cp-admin-logs.md](../tests/e2e/cp-admin-logs.md) |
+| `/admin/ops/services` | ✅ Real | Administrator | [cp/ops-services.md](cp/ops-services.md) | [e2e/cp-ops-services.md](../tests/e2e/cp-ops-services.md) |
 | `/admin/statistics` | ✅ Real | Administrator | — | [e2e/cp-admin-statistics.md](../tests/e2e/cp-admin-statistics.md) |
 | `/admin/attendance` | ✅ Real (FR-506) | Administrator | — | [e2e/cp-admin-attendance.md](../tests/e2e/cp-admin-attendance.md) |
+| `/admin/sessions/live-hall` | ✅ Real (2026-07-18) | Administrator | — | [e2e/cp-admin-session-live-hall.md](../tests/e2e/cp-admin-session-live-hall.md) |
 | `/m/{module}` | 🚧 Stub | Administrator | — | — |
 
 ### CP auth + account pages (not in main nav)

@@ -25,7 +25,9 @@ Each item is tagged:
 > against the **code at D-350**, not that report. Three contested "missing" claims
 > were verified **shipped**: the permission system (`PermissionCatalog.cs` = **178**
 > codes, enforced), notification triggers (`NotificationKind` 40/41/42 present),
-> booking approval (`SeatReservationService` + `BookingStatus`/review columns), and
+> seat reservation (`SeatReservationService` + `BookingStatus`/review columns —
+> reservations auto-confirm on create, so the Control Panel approval queue is retained
+> but dormant and always empty; the seat is a provisional hold until gate check-in), and
 > speaker files (`SpeakerPresentation` + `ISpeakerPresentationStorage`). Anything I
 > could not confirm firsthand is marked **(unverified)**.
 
@@ -56,7 +58,9 @@ notes still call "remaining".
 
 Also confirmed shipped earlier (the stale report wrongly flags these as missing):
 per-page/per-action **permission system** (D-207/208, 178 codes, enforced API+CP),
-**booking approval** workflow (D-227), **speaker presentation files** (D-228),
+**seat reservation** workflow (D-227 — reservation-only, auto-confirmed on create;
+the Control Panel approval queue is retained but dormant / always empty, with the seat
+confirmed at gate check-in), **speaker presentation files** (D-228),
 **System Configuration** (D-229), **Venue-Map 2D nodes** (D-230), **notification
 triggers** BookingConfirmed/SessionReminder/BookingRejected (D-217/D-227),
 **FAQ** (D-218), **Networking** (D-224).

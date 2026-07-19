@@ -1,4 +1,5 @@
 using SIMF.Application.IdentityAccess.Abstractions;
+using SIMF.Application.Operations;
 
 namespace SIMF.Api.HostedServices;
 
@@ -11,12 +12,17 @@ namespace SIMF.Api.HostedServices;
 /// </summary>
 internal sealed class DormantAccountSweepService(
     IServiceScopeFactory scopeFactory,
+    IWorkerHeartbeatRegistry heartbeat,
     ILogger<DormantAccountSweepService> logger) : BackgroundService
 {
     private static readonly TimeSpan Interval = TimeSpan.FromHours(24);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        heartbeat.Register(
+            nameof(DormantAccountSweepService),
+            "Disables dormant accounts once a day.",
+            Interval);
         using var timer = new PeriodicTimer(Interval);
         while (await timer.WaitForNextTickAsync(stoppingToken))
         {
@@ -25,6 +31,7 @@ internal sealed class DormantAccountSweepService(
                 using var scope = scopeFactory.CreateScope();
                 var service = scope.ServiceProvider.GetRequiredService<IDormantAccountService>();
                 await service.DisableDormantAccountsAsync(stoppingToken);
+                heartbeat.RecordSuccess(nameof(DormantAccountSweepService));
             }
             catch (OperationCanceledException)
             {
@@ -32,6 +39,7 @@ internal sealed class DormantAccountSweepService(
             }
             catch (Exception ex)
             {
+                heartbeat.RecordFailure(nameof(DormantAccountSweepService), ex.Message);
                 logger.LogError(ex, "Dormant-account sweep failed; will retry next interval.");
             }
         }

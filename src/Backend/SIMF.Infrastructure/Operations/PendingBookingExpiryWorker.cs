@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using SIMF.Application.Operations;
 using SIMF.Common.Enums;
 using SIMF.Infrastructure.Persistence;
 
@@ -20,6 +21,7 @@ namespace SIMF.Infrastructure.Operations;
 internal sealed class PendingBookingExpiryWorker(
     IServiceScopeFactory scopeFactory,
     TimeProvider timeProvider,
+    IWorkerHeartbeatRegistry heartbeat,
     ILogger<PendingBookingExpiryWorker> logger) : BackgroundService
 {
     private static readonly TimeSpan PollInterval = TimeSpan.FromMinutes(1);
@@ -32,6 +34,11 @@ internal sealed class PendingBookingExpiryWorker(
         logger.LogInformation(
             "PendingBookingExpiryWorker started (first poll in {Delay}s, then every {Interval}s).",
             (int)StartupDelay.TotalSeconds, (int)PollInterval.TotalSeconds);
+
+        heartbeat.Register(
+            nameof(PendingBookingExpiryWorker),
+            "Releases expired pending seat holds.",
+            PollInterval);
 
         try
         {
@@ -47,6 +54,7 @@ internal sealed class PendingBookingExpiryWorker(
             try
             {
                 await CheckOnceAsync(stoppingToken);
+                heartbeat.RecordSuccess(nameof(PendingBookingExpiryWorker));
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -54,6 +62,7 @@ internal sealed class PendingBookingExpiryWorker(
             }
             catch (Exception ex)
             {
+                heartbeat.RecordFailure(nameof(PendingBookingExpiryWorker), ex.Message);
                 logger.LogError(ex, "PendingBookingExpiryWorker tick failed.");
             }
             try

@@ -76,6 +76,7 @@
   <data name="Module.Dashboard" xml:space="preserve"><value>Dashboard</value></data>
   <data name="Module.Statistics" xml:space="preserve"><value>Statistics</value></data>
   <data name="Module.Attendance" xml:space="preserve"><value>Session attendance</value></data>
+  <data name="Module.SessionLiveHall" xml:space="preserve"><value>Live hall</value></data>
   <data name="Module.RegistrationRequests" xml:space="preserve"><value>Registration requests</value></data>
   <data name="Module.Attendees" xml:space="preserve"><value>Attendees</value></data>
   <data name="Module.Roles" xml:space="preserve"><value>Roles &amp; permissions</value></data>
@@ -2580,6 +2581,28 @@
   <data name="Admin.Attendance.Title" xml:space="preserve"><value>Session attendance</value></data>
   <data name="Admin.Attendance.Loading" xml:space="preserve"><value>Loading attendance…</value></data>
   <data name="Admin.Attendance.None" xml:space="preserve"><value>No attendance has been recorded yet.</value></data>
+  <data name="Module.ServicesMonitor" xml:space="preserve"><value>Background services</value></data>
+  <data name="Admin.ServicesMonitor.Title" xml:space="preserve"><value>Background services</value></data>
+  <data name="Admin.ServicesMonitor.Refresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="Admin.ServicesMonitor.Loading" xml:space="preserve"><value>Loading services…</value></data>
+  <data name="Admin.ServicesMonitor.None" xml:space="preserve"><value>No background services are registered.</value></data>
+  <data name="Admin.ServicesMonitor.LoadFailed" xml:space="preserve"><value>Could not load the background-services status.</value></data>
+  <data name="Admin.ServicesMonitor.Refreshed" xml:space="preserve"><value>Last refreshed at {0}.</value></data>
+  <data name="Admin.ServicesMonitor.Summary" xml:space="preserve"><value>{0} background service(s).</value></data>
+  <data name="Admin.ServicesMonitor.Stat.Up" xml:space="preserve"><value>Up</value></data>
+  <data name="Admin.ServicesMonitor.Stat.Stale" xml:space="preserve"><value>Stale</value></data>
+  <data name="Admin.ServicesMonitor.Stat.Faulted" xml:space="preserve"><value>Faulted</value></data>
+  <data name="Admin.ServicesMonitor.Col.Worker" xml:space="preserve"><value>Service</value></data>
+  <data name="Admin.ServicesMonitor.Col.State" xml:space="preserve"><value>Status</value></data>
+  <data name="Admin.ServicesMonitor.Col.LastRun" xml:space="preserve"><value>Last run</value></data>
+  <data name="Admin.ServicesMonitor.Col.LastSuccess" xml:space="preserve"><value>Last success</value></data>
+  <data name="Admin.ServicesMonitor.Col.Runs" xml:space="preserve"><value>Runs</value></data>
+  <data name="Admin.ServicesMonitor.Col.Failures" xml:space="preserve"><value>Failures</value></data>
+  <data name="Admin.ServicesMonitor.Col.Error" xml:space="preserve"><value>Last error</value></data>
+  <data name="Admin.ServicesMonitor.State.Starting" xml:space="preserve"><value>Starting</value></data>
+  <data name="Admin.ServicesMonitor.State.Healthy" xml:space="preserve"><value>Up</value></data>
+  <data name="Admin.ServicesMonitor.State.Stale" xml:space="preserve"><value>Stale</value></data>
+  <data name="Admin.ServicesMonitor.State.Faulted" xml:space="preserve"><value>Faulted</value></data>
   <data name="Admin.Attendance.LoadFailed" xml:space="preserve"><value>Could not load attendance. Please try again.</value></data>
   <data name="Admin.Attendance.Stat.LiveNow" xml:space="preserve"><value>Live attendees now</value></data>
   <data name="Admin.Attendance.Stat.SessionsWithAttendance" xml:space="preserve"><value>Sessions with attendance</value></data>
@@ -2590,6 +2613,34 @@
   <data name="Admin.Attendance.Col.Start" xml:space="preserve"><value>Start (UTC)</value></data>
   <data name="Admin.Attendance.Col.TotalAttendees" xml:space="preserve"><value>Total attendees</value></data>
   <data name="Admin.Attendance.Col.LiveNow" xml:space="preserve"><value>Live now</value></data>
+  <!-- 2026-07-18 — live per-session hall view (4-state seat map + who's present). -->
+  <data name="Admin.SessionLiveHall.Title" xml:space="preserve"><value>Live hall</value></data>
+  <data name="Admin.SessionLiveHall.Hint" xml:space="preserve"><value>Pick a session to watch its hall live — the seat map (available / unavailable / reserved / confirmed) and everyone currently inside.</value></data>
+  <data name="Admin.SessionLiveHall.Pick" xml:space="preserve"><value>Select a session</value></data>
+  <data name="Admin.SessionLiveHall.None" xml:space="preserve"><value>No sessions available.</value></data>
+  <data name="Admin.SessionLiveHall.Loading" xml:space="preserve"><value>Loading the live hall…</value></data>
+  <data name="Admin.SessionLiveHall.LoadFailed" xml:space="preserve"><value>Could not load the live hall. Please try again.</value></data>
+  <data name="Admin.SessionLiveHall.Refresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="Admin.SessionLiveHall.SeatMap.Heading" xml:space="preserve"><value>Seat map</value></data>
+  <data name="Admin.SessionLiveHall.SeatMap.NoLayout" xml:space="preserve"><value>This hall has no seat layout, so there is no seat map to show.</value></data>
+  <data name="Admin.SessionLiveHall.Seat.Available" xml:space="preserve"><value>Available</value></data>
+  <data name="Admin.SessionLiveHall.Seat.Unavailable" xml:space="preserve"><value>Unavailable</value></data>
+  <data name="Admin.SessionLiveHall.Seat.Reserved" xml:space="preserve"><value>Reserved</value></data>
+  <data name="Admin.SessionLiveHall.Seat.Confirmed" xml:space="preserve"><value>Confirmed (checked in)</value></data>
+  <data name="Admin.SessionLiveHall.SeatTitle" xml:space="preserve"><value>Seat {0} — {1}</value></data>
+  <data name="Admin.SessionLiveHall.Present.Heading" xml:space="preserve"><value>In the hall now</value></data>
+  <data name="Admin.SessionLiveHall.Present.None" xml:space="preserve"><value>No one is inside the hall yet.</value></data>
+  <data name="Admin.SessionLiveHall.Present.Count" xml:space="preserve"><value>{0} present</value></data>
+  <data name="Admin.SessionLiveHall.Col.Name" xml:space="preserve"><value>Name</value></data>
+  <data name="Admin.SessionLiveHall.Col.Organisation" xml:space="preserve"><value>Organisation</value></data>
+  <data name="Admin.SessionLiveHall.Col.Type" xml:space="preserve"><value>Type</value></data>
+  <data name="Admin.SessionLiveHall.Col.JobTitle" xml:space="preserve"><value>Job title</value></data>
+  <data name="Admin.SessionLiveHall.Col.Seat" xml:space="preserve"><value>Seat</value></data>
+  <data name="Admin.SessionLiveHall.Col.Entered" xml:space="preserve"><value>Entered (UTC)</value></data>
+  <data name="Admin.SessionLiveHall.Col.Method" xml:space="preserve"><value>Method</value></data>
+  <data name="Admin.SessionLiveHall.Method.QrScan" xml:space="preserve"><value>QR scan</value></data>
+  <data name="Admin.SessionLiveHall.Method.Geofence" xml:space="preserve"><value>Geofence</value></data>
+  <data name="Admin.SessionLiveHall.OpenSeating" xml:space="preserve"><value>General admission</value></data>
   <!-- D-202 Track-2 — Statistics dashboard (read-only). -->
   <data name="Admin.Statistics.Title" xml:space="preserve"><value>Statistics</value></data>
   <data name="Admin.Statistics.Loading" xml:space="preserve"><value>Loading statistics…</value></data>

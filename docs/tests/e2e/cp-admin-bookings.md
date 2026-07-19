@@ -8,7 +8,7 @@
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
 | **Auth setup** | `superadmin@zagali-ict.com` / `Aa@123456789` + TOTP via the `Get-Totp` helper |
 | **Required permission** | `Bookings.View` (page); `Bookings.Approve` (Approve + bulk Approve); `Bookings.Reject` (Reject) — `PermissionCatalog.Bookings.*` |
-| **Last reviewed** | 2026-07-18 (reservation-only — queue is now dormant) |
+| **Last reviewed** | 2026-07-19 (reservation-only — queue is dormant / always empty; real confirmation is gate check-in) |
 
 > **⚠ DORMANT (2026-07-18 — reservation-only).** Per the owner's "no approval,
 > reservation only" directive, seat reservations are **auto-confirmed on create**
@@ -19,6 +19,15 @@
 > possible re-enablement. The scenarios below therefore describe the **retained**
 > behaviour and only fire when a `Pending` hold exists (the API tests seed one
 > directly — see Implementation notes).
+>
+> **Real confirmation path (what actually happens).** A reserve / random / join
+> creates the seat already `Approved`, but the seat is only a **provisional hold**:
+> it is **confirmed when the attendee checks in at the hall gate** (a staff QR
+> scan), not by anything on this page. A **pre-start sweep releases** any hold that
+> has not checked in shortly before the session starts, and the attendee can cancel
+> before the session starts. **No notification is sent on reserving** — the app
+> shows the confirmation inline. This Control Panel approval queue plays no part in
+> that path; it is retained but dormant.
 
 > **What this page is.** P2.2 / D-227 (SIMF-FDS-005 §5.2): the booking approval
 > queue. It lists **Pending**, still-held visitor seat bookings across all
@@ -503,4 +512,4 @@ Scenario: Releasing an admin-reserved-row block does not notify
 
 ---
 
-_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle; added E2E-BKG-013 Excel export, export-only per `ExportBookingsEndpoint`). Earlier: 2026-06-03 (E2E catalogue rebuild, D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-07-19 by Apexium (reservation-only correction — clarified that seat reservations auto-confirm on create with no Control Panel approval step, and that the real confirmation is the hall-gate check-in; the approval queue is retained but dormant / always empty). Earlier: 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle; added E2E-BKG-013 Excel export, export-only per `ExportBookingsEndpoint`). Earlier: 2026-06-03 (E2E catalogue rebuild, D-256/D-257 grid affordances reconciled).

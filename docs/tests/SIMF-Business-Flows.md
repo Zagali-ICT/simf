@@ -28,7 +28,7 @@
 | [BF-02](#bf-02-vvip--vip--normal-single-registration--approve--vip-roster) | VVIP / VIP / Normal single registration → approve → VIP roster | 12 | `E2E-BF-02-001..012` | ✓ (corrected) |
 | [BF-03](#bf-03-staff--moderator-other-accounts--profile-scoped-gates--scan) | Staff & Moderator (Other) accounts + profile-scoped gates + scan | 13 | `E2E-BF-03-001..013` | ✓ |
 | [BF-04](#bf-04-halls-per-purpose--seat-layout) | Halls per purpose + seat layout | 14 | `E2E-BF-04-001..014` | ✓ (corrected) |
-| [BF-05](#bf-05-session-booking--approve--hall-door-arrival--live-now) | Session booking → approve → hall-door arrival → live-now | 12 | `E2E-BF-05-001..012` | ✓ |
+| [BF-05](#bf-05-session-booking--approve--hall-door-arrival--live-now) | Session booking → approve → hall-door arrival → live-now | 12 | `E2E-BF-05-001..012` | ✓ (corrected) |
 | [BF-06](#bf-06-meeting-requests--cp-review-desks) | Meeting requests → CP review desks | 14 | `E2E-BF-06-001..014` | ✓ (corrected) |
 | [BF-07](#bf-07-qa-pipeline--pre--live-timing-gates-ai-advisory--committee--moderator-desk) | Q&A pipeline — pre + live, timing gates, AI-advisory + committee + moderator desk | 13 | `E2E-BF-07-001..013` | ✓ |
 | [BF-08](#bf-08-session-reminder--rating-triggers-leave-hall--end-of-session--end-of-day--end-of-programme) | Session reminder + rating triggers (leave-hall / end-of-session / end-of-day / end-of-programme) | 12 | `E2E-BF-08-001..012` | ✓ (corrected) |
@@ -986,7 +986,7 @@ Scenario: Joining without a seat is refused on an assigned-seat session
   Then it returns HTTP 409 with ApiResult.Error.Code = "SEAT_SELECTION_REQUIRED"
   And the app shows the seat picker instead
   When the visitor instead calls POST /app/sessions/{S1}/seats/reserve with RowLabel="C" SeatNumber=7
-  Then a seat-specific reservation is created and held Pending for CP approval
+  Then a seat-specific reservation is created and auto-confirmed (Status=Approved, no Control Panel approval step), held provisionally until the attendee checks in at the hall gate
 
   Scenario: An open-seating hall lets visitors bulk-join
     Given a hall OPEN-1 has SeatSelectionMode=OpenSeating (1) and hosts Session S2
@@ -1073,7 +1073,7 @@ Scenario: Halls and Gates are not linked in the schema
 
 - **Purpose is not editable from the Halls Add/Edit form.** `HallsAddEdit.razor` and both `AdminCreateHallRequest` / `AdminUpdateHallRequest` omit `Purpose`, so every hall created or edited through the standard CRUD form is `General (0)`. The only way to dedicate a hall to `Booth` / `Session` / `Meeting` is `PUT /admin/halls/{id}/purpose` (`SetHallPurposeRequest`, `Halls.Edit`, audit `Hall.PurposeChanged`), which is surfaced by the Meeting-Tables page (`MeetingTablesList.razor` → `SetHallPurposeAsync`). Scenario -001 therefore treats "create hall" and "set purpose" as two steps, and -004 verifies the mechanism explicitly. `AdminHallSummary.Purpose` is exposed on the grid row (for display / Excel round-trip) even though the edit form does not write it.
 - **Seat-layout bounds are enforced server-side only** in `SeatReservationService.SetLayoutAsync`: rows 1–26 unique, each 1–8 chars, `SeatsPerRow` 1–80 → `SEAT_LAYOUT_INVALID`; `rows × SeatsPerRow ≤ Hall.Capacity` → `SEAT_CAPACITY_EXCEEDED`. The CP editor mirrors the limits in its hint text but the API is the source of truth. A hall with no `HallSeatLayout` has no per-seat picker and falls back to random-only allocation against `Hall.Capacity`. The persisted-layout audit event is `HallSeatLayout.Updated` (`AuditEvents.HallSeatLayoutUpdated`).
-- **Effective seat mode** for a session is `Session.SeatSelectionModeOverride ?? Hall.SeatSelectionMode`, further short-circuited to `OpenSeating` when the hall has no seat layout (D-706); the app `join` endpoint returns `409 SEAT_SELECTION_REQUIRED` whenever that resolves to `AssignedSeat`. Seat/booking reservations created by the app are held **Pending** and flow through the CP booking-approval queue (`/admin/bookings/*`) — that approval loop is out of scope here and is covered by its own flow.
+- **Effective seat mode** for a session is `Session.SeatSelectionModeOverride ?? Hall.SeatSelectionMode`, further short-circuited to `OpenSeating` when the hall has no seat layout (D-706); the app `join` endpoint returns `409 SEAT_SELECTION_REQUIRED` whenever that resolves to `AssignedSeat`. Seat/booking reservations created by the app are **auto-confirmed** (`Status=Approved`) on reserve with no Control Panel approval step, and held provisionally until the attendee checks in at the hall gate; the CP booking-approval queue (`/admin/bookings/*`) is **retained but dormant** (always empty) and is covered by its own flow.
 - **CP action gating.** The Halls grid `Add` button is rendered by `SimfDataGrid` whenever an `OnAdd` handler is wired; it is not individually wrapped in `AuthorizedAction`, so the authoritative gate for create is the API permission policy (`Halls.Create` → `403`). Scenario -010 therefore asserts the API `403`, not a hidden button.
 - **⚠ Session seeding assumed.** Scenarios -009 reference concrete sessions (S1/S2) in the halls. Per project notes the programme/sessions table can ship empty in some environments (no session seeder); the tester should seed or create S1/S2 (and the OPEN-1 hall) before running the app-side steps, or treat -009 as blocked-on-data rather than a defect.
 - **Geofence coordinates ("ship empty", G-OI-2).** The lat/lon/radius values in -011 are illustrative Riyadh coordinates; production halls ship with the geofence null and the event team seeds real coordinates later. The geofence-driven arrival/attendance chain (FR-305/506/1103) is a deferred item (D-211) and is not asserted here beyond the all-or-none validation.
@@ -1085,19 +1085,19 @@ _Last reviewed:_ 2026-07-11 — authored for the production-readiness cross-page
 
 ## BF-05 — Session booking → approve → hall-door arrival → live-now
 
-This cross-page flow walks one seat from booking to attendance across three surfaces. An **admin** creates a session in a hall on the Control Panel (`/admin/sessions`, `SessionsList.razor`) and assigns a moderator (see BF-07); a **visitor** on the mobile app books through the booking hub (`/sessions/join`, `join_session_hub_screen.dart`) → seat picker (`/sessions/:sessionId/pick-seat`, `seat_picker_screen.dart` + `hall_seat_map.dart`) → their seat (`/sessions/:sessionId/my-seat`, `my_seat_screen.dart` + `session_booking_actions.dart`); an **admin** clears the hold on the booking desk (`/admin/bookings`, `BookingsList.razor`); and a **door operator** records arrival on the hall-arrivals console (`/admin/hall-arrivals`, `HallArrivalsConsole.razor`). The app booking endpoints are `GET /api/v1/app/sessions/{id}/seats` (grid), `POST .../seats/reserve` (pick a specific seat), `POST .../seats/reserve-random`, `POST .../seats/join` (open-seating — returns **409 `SEAT_SELECTION_REQUIRED`** when the session is AssignedSeat), and `DELETE .../seats/mine` (release), all gated by `RequireApprovedAccount` (`SeatReservationEndpoints.cs`). Approval runs through `POST /api/v1/admin/bookings/list` / `/{id}/approve` / `/reject` / `/bulk-approve` (perms `Bookings.View|Approve|Reject`). Arrival is the operator QR door-scan `POST /api/v1/admin/sessions/{sessionId}/arrivals` (`HallArrivalEndpoints.cs`, perm `HallArrivals.Record`) which resolves the attendee from the badge QR **server-side** and opens **one** `HallAttendance` row (`AttendanceMethod.QrScan`, D-244). The two chains are **decoupled** — a `SeatReservation` (D-227: visitor bookings are created `BookingStatus.Pending`; `AdminReservedRow` is created `Approved`) is never consulted when a badge is scanned; live-now dashboards read `HallAttendance` via `SessionAttendanceService`. Key rules exercised: Pending-until-approved bookings, seat/open-seating mode enforcement, one-active-seat-per-user uniqueness, the admin-only door-scan gate, decoupled attendance, and the deferred attendee GPS-geofence path (`POST /api/v1/app/sessions/{id}/arrival` → **403 `NOT_AT_VENUE`** / **`HALL_GEOFENCE_NOT_CONFIGURED`**), which has **no app screen** wired to it.
+This cross-page flow walks one seat from booking to attendance across three surfaces. An **admin** creates a session in a hall on the Control Panel (`/admin/sessions`, `SessionsList.razor`) and assigns a moderator (see BF-07); a **visitor** on the mobile app books through the booking hub (`/sessions/join`, `join_session_hub_screen.dart`) → seat picker (`/sessions/:sessionId/pick-seat`, `seat_picker_screen.dart` + `hall_seat_map.dart`) → their seat (`/sessions/:sessionId/my-seat`, `my_seat_screen.dart` + `session_booking_actions.dart`); the booking desk (`/admin/bookings`, `BookingsList.razor`) is **retained but dormant** — attendee reservations auto-confirm on reserve, so its Pending queue is always empty; and a **door operator** records arrival on the hall-arrivals console (`/admin/hall-arrivals`, `HallArrivalsConsole.razor`) — the gate check-in that confirms the provisionally-held seat. The app booking endpoints are `GET /api/v1/app/sessions/{id}/seats` (grid), `POST .../seats/reserve` (pick a specific seat), `POST .../seats/reserve-random`, `POST .../seats/join` (open-seating — returns **409 `SEAT_SELECTION_REQUIRED`** when the session is AssignedSeat), and `DELETE .../seats/mine` (release), all gated by `RequireApprovedAccount` (`SeatReservationEndpoints.cs`). The approval surface — `POST /api/v1/admin/bookings/list` / `/{id}/approve` / `/reject` / `/bulk-approve` (perms `Bookings.View|Approve|Reject`) — is **retained but dormant**: nothing creates a `Pending` booking, so the queue is always empty and these endpoints have no live input. Arrival is the operator QR door-scan `POST /api/v1/admin/sessions/{sessionId}/arrivals` (`HallArrivalEndpoints.cs`, perm `HallArrivals.Record`) which resolves the attendee from the badge QR **server-side** and opens **one** `HallAttendance` row (`AttendanceMethod.QrScan`, D-244). The two chains are **decoupled** — a `SeatReservation` (D-227: every reservation, visitor `UserBooking` / `RandomAssignment` and admin `AdminReservedRow`, is created `Approved`, auto-confirmed on reserve with no Control Panel approval step) is never consulted when a badge is scanned; live-now dashboards read `HallAttendance` via `SessionAttendanceService`. Key rules exercised: auto-confirmed reservations held provisionally until gate check-in, seat/open-seating mode enforcement, one-active-seat-per-user uniqueness, the admin-only door-scan gate, decoupled attendance, and the deferred attendee GPS-geofence path (`POST /api/v1/app/sessions/{id}/arrival` → **403 `NOT_AT_VENUE`** / **`HALL_GEOFENCE_NOT_CONFIGURED`**), which has **no app screen** wired to it.
 
 ### Coverage matrix
 
 | ID | Scenario | Type | Priority |
 |----|----------|------|----------|
-| E2E-BF-05-001 | Golden journey: create → book seat → approve → door-scan → live-now | happy | P0 |
-| E2E-BF-05-002 | Visitor picks a specific seat → reservation held Pending in the booking queue | happy | P1 |
-| E2E-BF-05-003 | Reserve-random assigns a seat (Kind=RandomAssignment), still Pending | happy | P1 |
+| E2E-BF-05-001 | Golden journey: create → reserve seat (auto-confirmed) → gate check-in door-scan → live-now | happy | P0 |
+| E2E-BF-05-002 | Visitor picks a specific seat → reservation auto-confirmed, held provisionally until gate check-in | happy | P1 |
+| E2E-BF-05-003 | Reserve-random assigns a seat (Kind=RandomAssignment), auto-confirmed (Approved) | happy | P1 |
 | E2E-BF-05-004 | Open-seating join on an AssignedSeat session → 409 SEAT_SELECTION_REQUIRED | error | P1 |
 | E2E-BF-05-005 | Two visitors race the same seat → the second is rejected (seat-taken conflict) | error | P1 |
-| E2E-BF-05-006 | Admin bulk-approves several Pending bookings at once | happy | P1 |
-| E2E-BF-05-007 | Reject a booking — reason required → BookingRejected notification | error | P1 |
+| E2E-BF-05-006 | Bulk-approve endpoint — retained but dormant (the Pending queue is always empty) | happy | P1 |
+| E2E-BF-05-007 | Reject a booking — dormant admin-only path; reason required → BookingRejected notification | error | P1 |
 | E2E-BF-05-008 | Auth gate: operator without HallArrivals.Record cannot door-scan | auth | P0 |
 | E2E-BF-05-009 | Door-scan opens exactly ONE HallAttendance row, decoupled from booking | happy | P0 |
 | E2E-BF-05-010 | Deferred GPS geofence path returns NOT_AT_VENUE / HALL_GEOFENCE_NOT_CONFIGURED | resilience | P2 |
@@ -1116,37 +1116,37 @@ Feature: A booked seat travels from request to recorded attendance
     And a visitor "Faisal Al-Otaibi" is an Approved app account
     And the visitor OTP is read from SIMF_Identity.AccountCodes at run time
 
-  Scenario: Create the session, book a seat, approve it, scan the badge, see it live
+  Scenario: Create the session, reserve a seat (auto-confirmed), scan the badge at the gate, see it live
     Given the admin opens /admin/sessions and creates session "Maritime Cyber Defence"
       in hall "H-2 / القاعة الرئيسية" with mode AssignedSeat and a start time today
     And a moderator is assigned to the session (per BF-07)
     When the visitor opens /sessions/join, selects "Maritime Cyber Defence",
       lands on /sessions/:sessionId/pick-seat, taps free seat "C-14",
       and confirms via POST /api/v1/app/sessions/{id}/seats/reserve {"rowLabel":"C","seatNumber":14}
-    Then the reservation is created with Kind=UserBooking and Status=Pending
-    And /sessions/:sessionId/my-seat shows seat "C-14" with an "Awaiting approval" state
-    When the admin opens /admin/bookings, finds the "C-14" row for "Faisal Al-Otaibi",
-      and clicks Approve (POST /api/v1/admin/bookings/{id}/approve)
-    Then the reservation Status becomes Approved with ReviewedByUserId + ReviewedAt set
-    And a bilingual BookingConfirmed notification is delivered to the visitor
+    Then the reservation is created with Kind=UserBooking and Status=Approved (auto-confirmed, no Control Panel approval step)
+    And no notification is sent on reserving; the app shows the confirmation inline
+    And /sessions/:sessionId/my-seat shows seat "C-14" as reserved, held provisionally until gate check-in
+    And the /admin/bookings queue stays empty (retained but dormant — nothing creates a Pending booking)
     When the door operator opens /admin/hall-arrivals, selects the session,
       and scans the visitor's badge QR (POST /api/v1/admin/sessions/{sessionId}/arrivals)
     Then the server resolves the attendee from the QR id (not the request body)
     And exactly one HallAttendance row opens with AttendanceMethod=QrScan
+    And the gate check-in confirms the provisionally-held seat
     And the live-now dashboard (SessionAttendanceService) counts the attendee as present
 ```
 
-### E2E-BF-05-002 — Pick a specific seat, held Pending
+### E2E-BF-05-002 — Pick a specific seat, auto-confirmed (held provisionally)
 
 ```gherkin
-Scenario: A visitor picks a specific seat and it waits in the approval queue
+Scenario: A visitor picks a specific seat and it is confirmed immediately
   Given the visitor is on /sessions/:sessionId/pick-seat with the hall_seat_map loaded
     from GET /api/v1/app/sessions/{id}/seats
   When they tap free seat "A-3" and confirm
   Then POST /api/v1/app/sessions/{id}/seats/reserve {"rowLabel":"A","seatNumber":3} returns 200
-  And MySeatReservation shows Status=Pending, Kind=UserBooking
-  And /sessions/:sessionId/my-seat renders seat "A-3" with a pending badge and a Release action
-  And the row appears in the admin /admin/bookings queue as a Pending booking
+  And MySeatReservation shows Status=Approved, Kind=UserBooking (auto-confirmed, no approval step)
+  And no notification is sent on reserving; the app shows the confirmation inline
+  And /sessions/:sessionId/my-seat renders seat "A-3" as reserved with a Release action, held provisionally until gate check-in
+  And the admin /admin/bookings queue stays empty (retained but dormant — nothing creates a Pending booking)
 ```
 
 ### E2E-BF-05-003 — Reserve a random seat
@@ -1157,7 +1157,7 @@ Scenario: A visitor lets the system assign a seat
   When they choose "Assign me any seat"
   And POST /api/v1/app/sessions/{id}/seats/reserve-random returns 200
   Then MySeatReservation carries a concrete rowLabel+seatNumber picked by the server
-  And Kind=RandomAssignment and Status=Pending
+  And Kind=RandomAssignment and Status=Approved (auto-confirmed, no approval step)
   And the seat now shows occupied on the grid for other visitors
 ```
 
@@ -1185,24 +1185,25 @@ Scenario: The same seat cannot be held by two active reservations
   And only Faisal's single active reservation remains for that seat
 ```
 
-### E2E-BF-05-006 — Bulk approve
+### E2E-BF-05-006 — Bulk approve (retained but dormant path)
 
 ```gherkin
-Scenario: An admin clears a batch of Pending bookings in one action
-  Given /admin/bookings lists 5 Pending visitor bookings across two sessions
-  When the admin selects 3 of them and clicks "Approve selected"
-    POST /api/v1/admin/bookings/bulk-approve {"reservationIds":[...3 guids...]}
-  Then the endpoint returns ApiResult<int> with the count 3
-  And those 3 reservations move to Status=Approved with ReviewedByUserId + ReviewedAt set
-  And each approved visitor receives a BookingConfirmed notification
-  And the 2 untouched bookings stay Pending
+Scenario: The bulk-approve endpoint is retained but dormant (the queue is normally empty)
+  Given attendee reservations auto-confirm on reserve, so /admin/bookings normally lists no Pending bookings
+  And the bulk-approve endpoint is retained but dormant — reachable only if a Pending row is injected on the admin path
+  When (dormant path only) an admin selects Pending rows and clicks "Approve selected"
+    POST /api/v1/admin/bookings/bulk-approve {"reservationIds":[...guids...]}
+  Then the endpoint returns ApiResult<int> with the approved count
+  And those reservations move to Status=Approved with ReviewedByUserId + ReviewedAt set
+  And in normal operation the queue is always empty, so this path is never exercised in production
 ```
 
-### E2E-BF-05-007 — Reject requires a reason
+### E2E-BF-05-007 — Reject requires a reason (dormant admin-only path)
 
 ```gherkin
 Scenario: Rejecting a booking demands a reason and notifies the visitor
-  Given a Pending booking for "Noura Al-Harbi" on seat "A-3"
+  Given the reject flow is retained but dormant — attendee reservations auto-confirm, so a Pending booking exists only on the admin path
+  And (dormant path only) a Pending booking for "Noura Al-Harbi" on seat "A-3"
   When the admin clicks Reject but leaves the reason blank
   Then the reject form blocks submission (reason is required, ≤512 chars)
   When the admin enters "Row A reserved for the delegation of 12 officers" and confirms
@@ -1281,7 +1282,7 @@ Scenario: Booking desk, seat picker and my-seat all render correctly in Arabic
 - **Attendee GPS-geofence is deferred (grounded).** `POST /api/v1/app/sessions/{id}/arrival` exists in `HallAttendanceEndpoints.cs` (Haversine vs hall geofence, D-240/D-241) but **no app screen invokes it** — the production arrival path is the operator QR door-scan in `HallArrivalEndpoints.cs`. Scenario -010 exercises the API contract only.
 - **⚠ error code correction:** the grounding said the geofence call returns "400 if the hall has no geofence"; the verified code in `ErrorCodes.cs` is **`HALL_GEOFENCE_NOT_CONFIGURED`** (there is no generic 400). Scenario -010 asserts the verbatim code.
 - **Booking ⟂ attendance is by design (D-227 / D-244).** Scanning a badge opens attendance regardless of whether a `SeatReservation` exists or its `BookingStatus` — a walk-in with no booking, or a visitor whose booking was Rejected, is still admitted and counted. Do not assert that attendance requires an approved booking.
-- **Pending vs Approved by kind:** visitor `UserBooking` / `RandomAssignment` reservations are created `Pending`; `AdminReservedRow` blocks are created `Approved`. Only Pending rows appear in the `/admin/bookings` queue.
+- **All reservations auto-confirm (D-227, reservation-only):** every reservation — visitor `UserBooking` / `RandomAssignment` and admin `AdminReservedRow` blocks — is created `Approved` on reserve; there is no Control Panel approval step and no notification is sent on reserving (the app shows the confirmation inline). The seat is held provisionally until the attendee checks in at the hall gate, which confirms it; a pre-start sweep releases any hold not checked in shortly before the session starts. The `/admin/bookings` approval queue (list / approve / reject / bulk-approve, `Bookings.Approve|Reject`) is **retained but dormant** — nothing creates a `Pending` booking, so it is always empty. `Rejected` exists only on that dormant admin path.
 - **Notification kinds** referenced (`BookingConfirmed`, `BookingRejected`) are additive `NotificationKind` values (D-217 / D-230), persisted by name.
 - **Departure → rating** is owned by BF-08; -011 only crosses the boundary and must not restate BF-08's rating scenarios.
 - **No literal secrets:** admin TOTP via `Get-Totp`, visitor OTP read from `SIMF_Identity.AccountCodes` at run time.

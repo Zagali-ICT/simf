@@ -256,9 +256,11 @@ and further types), Moderators, and Staff.
   in-app, email, SMS and WhatsApp — through one notification abstraction.
 - **FR-902** The system shall send registration and approval updates, session
   reminders, VIP invitations and meeting confirmations.
-- **FR-903** The system shall send a booking-confirmed notification and shall
-  send reminders when a session has started and the user has not attended or
-  has not entered (decision D6 / SIMF-CON-001 section 7.7).
+- **FR-903** The system shall confirm a seat reservation immediately in the app,
+  with no notification sent on reserving (the Control Panel approve path that
+  would raise a booking-confirmed notification is retained but dormant), and
+  shall send reminders when a session has started and the user has not attended
+  or has not entered (decision D6 / SIMF-CON-001 section 7.7).
 - **FR-904** The system shall let the channel mix for a notification type be set
   by configuration, not by code.
 
