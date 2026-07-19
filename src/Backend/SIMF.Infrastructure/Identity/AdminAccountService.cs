@@ -437,11 +437,13 @@ internal sealed partial class AdminAccountService(
             NameArabic = (request.ArabicName ?? string.Empty).Trim(),
             Name = (request.EnglishName ?? string.Empty).Trim(),
             JobTitle = NormaliseOptional(request.JobTitle),
+            JobTitleArabic = NormaliseOptional(request.JobTitleArabic),
             // V-1 (D-429) — VVIP/VIP موج extras; null for non-VIP walk-ins (the
             // regular desk form never sends them). The separate VIP photo is
             // uploaded after create via /admin/visitors/{id}/vip-photo.
             MawjId = NormaliseOptional(request.MawjId),
             Honorific = NormaliseOptional(request.Honorific),
+            HonorificArabic = NormaliseOptional(request.HonorificArabic),
             PreferredLanguage = NormaliseOptional(request.PreferredLanguage),
             NationalityId = nationality.Id,
             DateOfBirth = request.DateOfBirth,

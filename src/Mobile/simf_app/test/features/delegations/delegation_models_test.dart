@@ -40,7 +40,8 @@ void main() {
             'memberCount': 12,
             'headName': 'Prince Abdulaziz',
             'headNameArabic': 'سمو الأمير عبدالعزيز',
-            'headTitle': 'نائب وزير الدفاع',
+            'headTitle': 'Deputy Minister of Defense',
+            'headTitleArabic': 'نائب وزير الدفاع',
             'arrivalDate': '2026-01-12',
             'departureDate': '2026-01-15',
           },
@@ -54,7 +55,11 @@ void main() {
       expect(item.countryId, 682);
       expect(item.memberCount, 12);
       expect(item.headName, 'Prince Abdulaziz');
-      expect(item.headTitle, 'نائب وزير الدفاع');
+      expect(item.headTitle, 'Deputy Minister of Defense');
+      expect(item.headTitleArabic, 'نائب وزير الدفاع');
+      // Owner 2026-07-19 — the head-of-delegation title localizes AR/EN.
+      expect(item.localizedHeadTitle(true), 'نائب وزير الدفاع');
+      expect(item.localizedHeadTitle(false), 'Deputy Minister of Defense');
       expect(item.arrivalDate, DateTime(2026, 1, 12));
       expect(item.departureDate, DateTime(2026, 1, 15));
       expect(item.hasHead, isTrue);
