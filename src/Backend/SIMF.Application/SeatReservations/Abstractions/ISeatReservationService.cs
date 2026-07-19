@@ -47,6 +47,11 @@ public interface ISeatReservationService
         AdminReserveRowRequest request,
         CancellationToken cancellationToken = default);
 
+    Task AdminReserveSeatAsync(
+        Guid actorUserId, Guid sessionId,
+        AdminReserveSeatRequest request,
+        CancellationToken cancellationToken = default);
+
     Task AdminReleaseAsync(
         Guid actorUserId, Guid sessionId, Guid reservationId,
         CancellationToken cancellationToken = default);

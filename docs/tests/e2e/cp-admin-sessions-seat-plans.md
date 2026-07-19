@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-07-18 (per-seat VIP reserve) |
 
 > **Page shape (read from `Components/Pages/Admin/SessionSeatPlan.razor`, D-182 + the P1.4/D-215 visual grid).**
 > This is **not** a CRUD grid. It is a **session picker + seat tool**:
@@ -18,9 +18,10 @@
 >    exist in the hall layout)"** + a **"Reserve row"** button (`ReserveRowAsync`).
 > 3. Then **one of three** renders, depending on the selected session's hall:
 >    - **Visual seat grid** (`_layout` present & has rows) — one `<button>` per
->      seat, coloured per `SeatReservationKind`; a reserved seat is clickable to
->      **release** it. A **legend** (Free / User / Admin / Random) + an
->      `{N} active reservation(s)` summary line follow.
+>      seat, coloured per `SeatReservationKind`; a **free** seat is clickable to
+>      **reserve it for a VIP** (a single admin block, 2026-07-18) and a
+>      **reserved** seat is clickable to **release** it. A **legend** (Free /
+>      User / Admin / Random) + an `{N} active reservation(s)` summary line follow.
 >    - **`SimfEmptyState`** "No active reservations on this session." — when the
 >      hall has **no layout** AND there are zero reservations.
 >    - **Fallback table** (Row / Seat / Kind / Actions, with a **"Release"**
@@ -29,8 +30,9 @@
 >    outcome message; it is cleared on session change.
 >
 > **Actions on the page:** (a) select a session, (b) reserve a whole row,
-> (c) release one reservation — either by clicking a seat in the grid, or via
-> the table's "Release" button. There is **no Add / Edit / Details modal** and
+> (c) reserve a single free seat for a VIP (tap a free seat in the grid),
+> (d) release one reservation — either by clicking a reserved seat in the grid,
+> or via the table's "Release" button. There is **no Add / Edit / Details modal** and
 > **no client-side validation** — every rule is enforced server-side and
 > surfaced as an `error` toast via `Error.MessageForCurrentCulture()`.
 >
@@ -46,6 +48,7 @@
 > - `GET  /account/api/admin/halls/{hallId}/seat-layout` → `ApiResult<HallSeatLayoutSnapshot>` (load the grid; a 404/missing layout is **not** an error — page falls back to list/empty).
 > - `POST /account/api/admin/sessions/{sessionId}/seats/list` → `ApiResult<GridPage<SessionSeatCell>>` (`Top = 500`; the active reservations).
 > - `POST /account/api/admin/sessions/{sessionId}/seats/reserve-row` → `ApiResult<bool>` (Reserve row; `SeatPlans.Edit`; rate-limited under the `auth` limiter).
+> - `POST /account/api/admin/sessions/{sessionId}/seats/reserve-seat` → `ApiResult<bool>` (Reserve ONE seat for a VIP; body `{"rowLabel","seatNumber"}`; `SeatPlans.Edit`; `auth` limiter).
 > - `DELETE /account/api/admin/sessions/{sessionId}/seats/{reservationId}` → `ApiResult<bool>` (Release one reservation; `SeatPlans.Edit`; `auth` limiter).
 >
 > **Server error codes (from `SeatReservationService`, surfaced as the `error` toast):**
@@ -79,6 +82,7 @@
 | E2E-SSP-012 | Server 500 on `/seats/list` → bilingual fallback toast, no rows | resilience | P2 | _to author_ |
 | E2E-SSP-013 | RTL / Arabic render mirrors the page + grid + legend | i18n | P1 | _to author_ |
 | E2E-SSP-014 | Legend + seat-tooltip resx keys missing → keys render literally (gap guard) | i18n | P2 | _to author_ |
+| E2E-SSP-015 | VIP seat — tap a free seat → reserved as an admin block; a visitor can't book it; out-of-bounds seat → 400 | happy | P1 | authored ✓ (API `Admin_can_reserve_a_single_seat_for_a_vip` + `Admin_reserve_seat_out_of_bounds_is_400`) |
 
 ## Scenarios
 
@@ -163,8 +167,8 @@ Scenario: Click a reserved seat to release it
   When the administrator clicks the reserved seat button "B3"
   Then a DELETE /seats/{reservationId} for B3's ReservationId fires and returns 200
   And a green toast reads "Reservation released." / "تم إلغاء الحجز."
-  And seat B3 is re-rendered as free (clickable=false, no reserved class)
-  And free seats remain disabled (only reserved seats are clickable)
+  And seat B3 is re-rendered as free (no reserved class)
+  And a free seat is now clickable to reserve it for a VIP (2026-07-18); only the _busy flag disables seats
   And the summary count decrements by 1
 ```
 
@@ -297,6 +301,44 @@ Scenario: Legend and seat-tooltip strings are not localized
   # Fix = add the five keys to both resx files, then update this scenario to assert the real bilingual labels.
 ```
 
+### E2E-SSP-015 — Reserve a single seat for a VIP (2026-07-18)
+
+```gherkin
+Feature: Session seat plan — reserve one seat for a VIP
+  As an Administrator with SeatPlans.Edit
+  I want to hold one specific seat for a VIP
+  So that a named guest's seat is kept while everyone else self-picks
+
+Background:
+  Given an Administrator has signed in and landed on /admin/sessions/seat-plans
+  And an active session "S-001 — Opening Keynote" is selected whose hall layout has rows "A,B,C" (3 seats per row)
+
+Scenario: Tap a free seat to reserve it for a VIP
+  Given seat A2 is free (no reserved colour class) and its title reads "Reserve seat A2 for a VIP"
+  When the administrator clicks the free seat "A2"
+  Then a POST /account/api/admin/sessions/{sessionId}/seats/reserve-seat with body {"rowLabel":"A","seatNumber":2} fires and returns 200
+  And a green toast reads "Seat reserved for a VIP." / "تم حجز المقعد لأحد كبار الشخصيات."
+  And seat A2 now carries the admin-reserved colour class (seatgrid__seat--admin)
+  And the summary count increments by 1
+
+Scenario: A visitor can no longer book that seat, but its neighbour is free
+  Given seat A2 has been reserved for a VIP by the admin
+  When an approved visitor calls POST /api/v1/app/sessions/{sessionId}/seats/reserve with row A seat 2
+  Then the API returns HTTP 409 with ErrorCodes.SeatAlreadyReserved
+  And the same visitor booking seat A1 returns HTTP 200 (the neighbour stays free)
+
+Scenario: Re-reserving the same seat, or an out-of-bounds seat, is refused
+  Given seat A2 is already reserved for a VIP
+  When the administrator reserves seat A2 again
+  Then reserve-seat returns HTTP 409 (SeatAlreadyReserved)
+  When the administrator reserves seat A9 (beyond the 3-seat row width)
+  Then reserve-seat returns HTTP 400 with ErrorCodes.SeatOutOfBounds
+```
+
+**Evidence captured:**
+- API integration tests: `SeatReservationsTests.Admin_can_reserve_a_single_seat_for_a_vip`, `SeatReservationsTests.Admin_reserve_seat_out_of_bounds_is_400`
+- The reserved seat is an `AdminReservedRow` block with a null attendee (`Status=Approved`), released like any admin block via the existing `DELETE /seats/{reservationId}`.
+
 ---
 
 ## Implementation notes
@@ -308,10 +350,12 @@ Scenario: Legend and seat-tooltip strings are not localized
   runner-agnostic and converts 1:1 into a `.feature` file under
   `tests/SIMF.E2E.Tests/` (project to be created) when Playwright lands.
 - **API integration tests at a lower layer:** `tests/SIMF.Api.Tests/SeatReservationsTests.cs`
-  exercises the same backend surface (including the
-  `POST /api/v1/admin/sessions/{id}/seats/reserve-row` admin row-reserve with
-  `RowLabel = "A"`). When an E2E scenario fully covers a path, the matching
-  `Api.Tests` case can eventually be retired — keep both during the transition.
+  exercises the same backend surface — the `POST …/seats/reserve-row` admin
+  row-reserve with `RowLabel = "A"`, and (2026-07-18) the per-seat VIP block
+  `POST …/seats/reserve-seat` (`Admin_can_reserve_a_single_seat_for_a_vip` +
+  `Admin_reserve_seat_out_of_bounds_is_400`). When an E2E scenario fully covers a
+  path, the matching `Api.Tests` case can eventually be retired — keep both during
+  the transition.
 - **Permission gate:** view = `PermissionCatalog.SeatPlans.View`; the write
   endpoints (`reserve-row`, release `DELETE`) require `SeatPlans.Edit` on the
   API. The CP page only checks `SeatPlans.View`, so a viewer-only admin can open

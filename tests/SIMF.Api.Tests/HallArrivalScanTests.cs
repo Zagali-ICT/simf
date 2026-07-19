@@ -104,6 +104,66 @@ public sealed class HallArrivalScanTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    // -- 2026-07-18: staff check-OUT (operator QR departure scan) --------------
+
+    [Fact]
+    public async Task Operator_scan_records_a_departure()
+    {
+        var operatorToken = await CreateAdministratorAndSignInAsync();
+        var sessionId = await SeedSessionAsync(withGeofence: false);
+        var (qrId, userId, _, _) = await CreateApprovedVisitorWithQrAsync(approved: true);
+
+        // Check the attendee in first.
+        var arrival = await ScanAsync(sessionId, qrId, operatorToken);
+        Assert.True(arrival.Status.Arrived);
+
+        // Staff scans the badge at the departures endpoint — checked OUT.
+        var departure = await DepartAsync(sessionId, qrId, operatorToken);
+        Assert.Equal(userId, departure.UserId);
+        Assert.False(departure.Status.Arrived);
+        Assert.NotNull(departure.Status.LeaveUtc);
+
+        // No open row remains — the seat map's confirmed state clears.
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var open = await db.HallAttendances
+            .CountAsync(a => a.SessionId == sessionId && a.UserId == userId && a.LeaveUtc == null);
+        Assert.Equal(0, open);
+    }
+
+    [Fact]
+    public async Task Departure_without_a_prior_arrival_is_an_idempotent_noop()
+    {
+        var operatorToken = await CreateAdministratorAndSignInAsync();
+        var sessionId = await SeedSessionAsync(withGeofence: false);
+        var (qrId, _, _, _) = await CreateApprovedVisitorWithQrAsync(approved: true);
+
+        // No check-in first — the check-out is a 200 no-op (Arrived=false).
+        var departure = await DepartAsync(sessionId, qrId, operatorToken);
+        Assert.False(departure.Status.Arrived);
+    }
+
+    [Fact]
+    public async Task Unknown_qr_departure_is_400()
+    {
+        var operatorToken = await CreateAdministratorAndSignInAsync();
+        var sessionId = await SeedSessionAsync(withGeofence: false);
+
+        var response = await PostDepartAsync(sessionId,
+            Guid.NewGuid().ToString("N")[..12].ToUpperInvariant(), operatorToken);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_non_operator_cannot_record_a_departure()
+    {
+        var sessionId = await SeedSessionAsync(withGeofence: false);
+        var (qrId, _, visitorToken, _) = await CreateApprovedVisitorWithQrAsync(approved: true);
+
+        var response = await PostDepartAsync(sessionId, qrId, visitorToken);
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
     // -- Helpers --------------------------------------------------------------
 
     private async Task<QrArrivalResult> ScanAsync(Guid sessionId, string qrId, string token)
@@ -115,6 +175,17 @@ public sealed class HallArrivalScanTests : IClassFixture<SimfApiFactory>
 
     private Task<HttpResponseMessage> PostScanAsync(Guid sessionId, string qrId, string token) =>
         PostAuthAsync($"/api/v1/admin/sessions/{sessionId}/arrivals",
+            new RecordQrArrivalRequest { QrId = qrId }, token);
+
+    private async Task<QrArrivalResult> DepartAsync(Guid sessionId, string qrId, string token)
+    {
+        var response = await PostDepartAsync(sessionId, qrId, token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        return (await response.Content.ReadFromJsonAsync<ApiResult<QrArrivalResult>>())!.Data!;
+    }
+
+    private Task<HttpResponseMessage> PostDepartAsync(Guid sessionId, string qrId, string token) =>
+        PostAuthAsync($"/api/v1/admin/sessions/{sessionId}/departures",
             new RecordQrArrivalRequest { QrId = qrId }, token);
 
     private async Task<Guid> SeedSessionAsync(bool withGeofence)

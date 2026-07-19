@@ -1,8 +1,11 @@
-// P2.2 — D-227 (SIMF-FDS-005 §5): booking approval workflow over the D-175
-// seat-reservation surface. Reserve creates a Pending, held booking; the CP
-// approves (seat confirmed + booking-confirmed notification) or rejects (seat
-// released + reason recorded + attendee notified). No-overlap (FR-502) and
-// cancel-before-start (FR-504) are enforced.
+// 2026-07-18 (reservation-only): seat reservations are CONFIRMED on create — there
+// is no Control Panel approval step (the owner's "NO ANY APPROVE, ONLY RESERVATION"
+// directive). The approval surface (approve / reject / bulk-approve / queue) is kept
+// DORMANT for possible re-enablement, so it is still covered here — but it can no
+// longer be reached through the reserve endpoint (which now yields an Approved row),
+// so these tests seed a Pending hold DIRECTLY. The booking-lifecycle rules
+// (no-overlap FR-502, cancel-before-start FR-504, live-vs-ended booking) are still
+// exercised through the real reserve endpoint.
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -36,14 +39,16 @@ public sealed class BookingApprovalTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Approve_confirms_the_seat_and_writes_booking_confirmed()
+    public async Task Approve_confirms_a_dormant_pending_hold_and_writes_booking_confirmed()
     {
         var session = await SeedSessionAsync(
             DateTimeOffset.UtcNow.AddHours(1), DateTimeOffset.UtcNow.AddHours(2));
         var visitor = await SignInApprovedVisitorAsync();
         var admin = await CreateAdministratorAndSignInAsync();
 
-        var reservationId = await ReserveAsync(session.Id, "A", 1, visitor);
+        // Reservation-only never creates a Pending hold, so seed one directly to
+        // exercise the retained approval path.
+        var reservationId = await SeedPendingBookingAsync(session.Id, visitor.Id, "A", 1);
 
         // The Pending booking shows in the approval queue.
         var queue = await ListQueueAsync(admin);
@@ -53,7 +58,7 @@ public sealed class BookingApprovalTests : IClassFixture<SimfApiFactory>
             $"/api/v1/admin/bookings/{reservationId}/approve", new { }, admin);
         Assert.Equal(HttpStatusCode.OK, approve.StatusCode);
 
-        // Booking-confirmed notification now exists (it did NOT at reserve time).
+        // Booking-confirmed notification is dispatched on approve.
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var note = await db.Notifications.SingleOrDefaultAsync(
@@ -74,7 +79,7 @@ public sealed class BookingApprovalTests : IClassFixture<SimfApiFactory>
         var visitor = await SignInApprovedVisitorAsync();
         var admin = await CreateAdministratorAndSignInAsync();
 
-        var reservationId = await ReserveAsync(session.Id, "A", 1, visitor);
+        var reservationId = await SeedPendingBookingAsync(session.Id, visitor.Id, "A", 1);
 
         var reject = await PostAuthAsync(
             $"/api/v1/admin/bookings/{reservationId}/reject",
@@ -85,7 +90,7 @@ public sealed class BookingApprovalTests : IClassFixture<SimfApiFactory>
         // The held seat is released — the same seat can be re-booked.
         var rebook = await PostAuthAsync(
             $"/api/v1/app/sessions/{session.Id}/seats/reserve",
-            new ReserveSeatRequest { RowLabel = "A", SeatNumber = 1 }, visitor);
+            new ReserveSeatRequest { RowLabel = "A", SeatNumber = 1 }, visitor.Token);
         Assert.Equal(HttpStatusCode.OK, rebook.StatusCode);
 
         using var scope = _factory.Services.CreateScope();
@@ -105,7 +110,7 @@ public sealed class BookingApprovalTests : IClassFixture<SimfApiFactory>
         var visitor = await SignInApprovedVisitorAsync();
         var admin = await CreateAdministratorAndSignInAsync();
 
-        var reservationId = await ReserveAsync(session.Id, "A", 1, visitor);
+        var reservationId = await SeedPendingBookingAsync(session.Id, visitor.Id, "A", 1);
 
         var reject = await PostAuthAsync(
             $"/api/v1/admin/bookings/{reservationId}/reject",
@@ -125,11 +130,11 @@ public sealed class BookingApprovalTests : IClassFixture<SimfApiFactory>
         var session2 = await SeedSessionAsync(start.AddMinutes(30), end.AddMinutes(30));
         var visitor = await SignInApprovedVisitorAsync();
 
-        await ReserveAsync(session1.Id, "A", 1, visitor);
+        await ReserveAsync(session1.Id, "A", 1, visitor.Token);
 
         var clash = await PostAuthAsync(
             $"/api/v1/app/sessions/{session2.Id}/seats/reserve",
-            new ReserveSeatRequest { RowLabel = "A", SeatNumber = 1 }, visitor);
+            new ReserveSeatRequest { RowLabel = "A", SeatNumber = 1 }, visitor.Token);
         Assert.Equal(HttpStatusCode.Conflict, clash.StatusCode);
         var body = (await clash.Content.ReadFromJsonAsync<ApiResult<object>>())!;
         Assert.Equal(ErrorCodes.BookingOverlap, body.Error!.Code);
@@ -143,10 +148,10 @@ public sealed class BookingApprovalTests : IClassFixture<SimfApiFactory>
         var session = await SeedSessionAsync(
             DateTimeOffset.UtcNow.AddMinutes(-5), DateTimeOffset.UtcNow.AddHours(1));
         var visitor = await SignInApprovedVisitorAsync();
-        await ReserveAsync(session.Id, "A", 1, visitor);
+        await ReserveAsync(session.Id, "A", 1, visitor.Token);
 
         var cancel = await DeleteAuthAsync(
-            $"/api/v1/app/sessions/{session.Id}/seats/mine", visitor);
+            $"/api/v1/app/sessions/{session.Id}/seats/mine", visitor.Token);
         Assert.Equal(HttpStatusCode.Conflict, cancel.StatusCode);
         var body = (await cancel.Content.ReadFromJsonAsync<ApiResult<object>>())!;
         Assert.Equal(ErrorCodes.BookingSessionStarted, body.Error!.Code);
@@ -163,7 +168,7 @@ public sealed class BookingApprovalTests : IClassFixture<SimfApiFactory>
 
         var pick = await PostAuthAsync(
             $"/api/v1/app/sessions/{session.Id}/seats/reserve",
-            new ReserveSeatRequest { RowLabel = "A", SeatNumber = 1 }, visitor);
+            new ReserveSeatRequest { RowLabel = "A", SeatNumber = 1 }, visitor.Token);
         Assert.Equal(HttpStatusCode.OK, pick.StatusCode);
     }
 
@@ -178,14 +183,14 @@ public sealed class BookingApprovalTests : IClassFixture<SimfApiFactory>
 
         var pick = await PostAuthAsync(
             $"/api/v1/app/sessions/{session.Id}/seats/reserve",
-            new ReserveSeatRequest { RowLabel = "A", SeatNumber = 1 }, visitor);
+            new ReserveSeatRequest { RowLabel = "A", SeatNumber = 1 }, visitor.Token);
         Assert.Equal(HttpStatusCode.Conflict, pick.StatusCode);
         var body = (await pick.Content.ReadFromJsonAsync<ApiResult<object>>())!;
         Assert.Equal(ErrorCodes.BookingSessionEnded, body.Error!.Code);
     }
 
     [Fact]
-    public async Task Bulk_approve_approves_the_selected_bookings()
+    public async Task Bulk_approve_approves_the_selected_dormant_pending_holds()
     {
         var session = await SeedSessionAsync(
             DateTimeOffset.UtcNow.AddHours(1), DateTimeOffset.UtcNow.AddHours(2));
@@ -193,8 +198,8 @@ public sealed class BookingApprovalTests : IClassFixture<SimfApiFactory>
         var v2 = await SignInApprovedVisitorAsync();
         var admin = await CreateAdministratorAndSignInAsync();
 
-        var r1 = await ReserveAsync(session.Id, "A", 1, v1);
-        var r2 = await ReserveAsync(session.Id, "A", 2, v2);
+        var r1 = await SeedPendingBookingAsync(session.Id, v1.Id, "A", 1);
+        var r2 = await SeedPendingBookingAsync(session.Id, v2.Id, "A", 2);
 
         var bulk = await PostAuthAsync(
             "/api/v1/admin/bookings/bulk-approve",
@@ -212,7 +217,7 @@ public sealed class BookingApprovalTests : IClassFixture<SimfApiFactory>
     {
         var visitor = await SignInApprovedVisitorAsync();
         var response = await PostAuthAsync(
-            "/api/v1/admin/bookings/list", new GridQuery { Top = 50 }, visitor);
+            "/api/v1/admin/bookings/list", new GridQuery { Top = 50 }, visitor.Token);
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
@@ -226,8 +231,34 @@ public sealed class BookingApprovalTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, pick.StatusCode);
         var mine = (await pick.Content
             .ReadFromJsonAsync<ApiResult<MySeatReservation>>())!.Data!;
-        Assert.Equal(BookingStatus.Pending, mine.Status);
+        // Reservation-only — the reserve endpoint confirms on create.
+        Assert.Equal(BookingStatus.Approved, mine.Status);
         return mine.ReservationId;
+    }
+
+    // Seed a Pending (unconfirmed) hold directly — the reserve endpoint no longer
+    // produces one — so the retained approval path can still be exercised.
+    private async Task<Guid> SeedPendingBookingAsync(
+        Guid sessionId, Guid userId, string row, int seat)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var reservation = new SeatReservation
+        {
+            Id = Guid.NewGuid(),
+            SessionId = sessionId,
+            RowLabel = row,
+            SeatNumber = seat,
+            Kind = SeatReservationKind.UserBooking,
+            ReservedForUserId = userId,
+            CreatedByUserId = userId,
+            CreatedAt = DateTimeOffset.UtcNow,
+            Status = BookingStatus.Pending,
+            ExpiresUtc = DateTimeOffset.UtcNow.AddHours(24),
+        };
+        db.SeatReservations.Add(reservation);
+        await db.SaveChangesAsync();
+        return reservation.Id;
     }
 
     private async Task<GridPage<BookingQueueRow>> ListQueueAsync(string adminToken)
@@ -276,7 +307,7 @@ public sealed class BookingApprovalTests : IClassFixture<SimfApiFactory>
         return session;
     }
 
-    private async Task<string> SignInApprovedVisitorAsync()
+    private async Task<(string Token, Guid Id)> SignInApprovedVisitorAsync()
     {
         var email = $"bk-visitor-{Guid.NewGuid():N}@simf.test";
         await _client.PostAsJsonAsync(
@@ -297,7 +328,14 @@ public sealed class BookingApprovalTests : IClassFixture<SimfApiFactory>
             "/api/v1/app/auth/sign-in",
             new SignInRequest { Email = email, Password = AuthFlow.Password });
         var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+
+        Guid userId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+            userId = (await users.FindByEmailAsync(email))!.Id;
+        }
+        return (body.Data!.Tokens!.AccessToken, userId);
     }
 
     private async Task<string> CreateAdministratorAndSignInAsync()

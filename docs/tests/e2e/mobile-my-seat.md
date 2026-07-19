@@ -170,7 +170,8 @@ Scenario: Share location opens the native share sheet
 Scenario: Tapping a free seat books it and repaints the grid
   Given the viewer holds no seat and seat A/3 is free
   When the app calls POST /api/v1/app/sessions/{id}/seats/reserve with row A seat 3
-  Then the response is 200 and the reservation is returned (held Pending)
+  Then the response is 200 and the reservation is returned (reserved and confirmed,
+    Status=Approved — reservation-only, no CP approval step)
   And re-reading the seat map shows myCell = A/3
 ```
 

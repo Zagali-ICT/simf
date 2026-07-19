@@ -40,3 +40,23 @@ public sealed record SessionAttendanceRow(
     DateTimeOffset EndUtc,
     int TotalAttendees,
     int LiveNow);
+
+/// <summary>
+/// 2026-07-18 — one attendee currently present in a session's hall (an open
+/// <c>HallAttendance</c> row), for the live per-session hall view (CP page 2e).
+/// Every field is resolved from the App-DB profile (D-157: no cross-DB Identity
+/// join). <c>RowLabel</c>/<c>SeatNumber</c> are null for an open-seating attendee
+/// (no assigned seat) or one who has no reservation on record. <c>Method</c> is
+/// how they were recorded present (QR door scan / geofence).
+/// </summary>
+public sealed record SessionPresentAttendee(
+    Guid UserId,
+    string Name,
+    string NameArabic,
+    string? OrganisationName,
+    string? ProfileTypeName,
+    string? JobTitle,
+    string? RowLabel,
+    int? SeatNumber,
+    DateTimeOffset EnterUtc,
+    SIMF.Common.Enums.AttendanceMethod Method);

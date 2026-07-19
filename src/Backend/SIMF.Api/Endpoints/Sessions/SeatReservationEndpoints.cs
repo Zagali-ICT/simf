@@ -222,6 +222,38 @@ public sealed class AdminReserveRowEndpoint(ISeatReservationService service)
     }
 }
 
+public sealed class AdminReserveSeatRoute : AdminReserveSeatRequest
+{
+    public Guid SessionId { get; set; }
+}
+
+public sealed class AdminReserveSeatEndpoint(ISeatReservationService service)
+    : Endpoint<AdminReserveSeatRoute, ApiResult<bool>>
+{
+    public override void Configure()
+    {
+        Post("/admin/sessions/{sessionId:guid}/seats/reserve-seat");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.SeatPlans.Edit),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Admin");
+    }
+    public override async Task HandleAsync(AdminReserveSeatRoute req, CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        await service.AdminReserveSeatAsync(actorId, req.SessionId,
+            new AdminReserveSeatRequest
+            {
+                RowLabel = req.RowLabel, SeatNumber = req.SeatNumber,
+            }, ct);
+        await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
+    }
+}
+
 public sealed class AdminReleaseSeatRoute
 {
     public Guid SessionId { get; set; }

@@ -8,7 +8,17 @@
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
 | **Auth setup** | `superadmin@zagali-ict.com` / `Aa@123456789` + TOTP via the `Get-Totp` helper |
 | **Required permission** | `Bookings.View` (page); `Bookings.Approve` (Approve + bulk Approve); `Bookings.Reject` (Reject) — `PermissionCatalog.Bookings.*` |
-| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
+| **Last reviewed** | 2026-07-18 (reservation-only — queue is now dormant) |
+
+> **⚠ DORMANT (2026-07-18 — reservation-only).** Per the owner's "no approval,
+> reservation only" directive, seat reservations are **auto-confirmed on create**
+> (`SeatReservationService` sets `Status = Approved` on the reserve / random / join
+> paths), so **no visitor booking ever becomes `Pending`** and this queue stays
+> **empty** in normal operation. The page, its BFF proxy, the admin endpoints and the
+> `Bookings.Approve` / `Bookings.Reject` permissions are **kept (not deleted)** for
+> possible re-enablement. The scenarios below therefore describe the **retained**
+> behaviour and only fire when a `Pending` hold exists (the API tests seed one
+> directly — see Implementation notes).
 
 > **What this page is.** P2.2 / D-227 (SIMF-FDS-005 §5.2): the booking approval
 > queue. It lists **Pending**, still-held visitor seat bookings across all
@@ -473,9 +483,9 @@ Scenario: Releasing an admin-reserved-row block does not notify
   page does not expose.
 - **API integration tests** at `tests/SIMF.Api.Tests/BookingApprovalTests.cs`
   cover the same surface at a lower layer (no browser):
-  - `Approve_confirms_the_seat_and_writes_booking_confirmed` (→ E2E-BKG-001)
+  - `Approve_confirms_a_dormant_pending_hold_and_writes_booking_confirmed` (→ E2E-BKG-001)
   - `Reject_with_a_reason_releases_the_seat_and_notifies` (→ E2E-BKG-002)
-  - `Bulk_approve_approves_the_selected_bookings` (→ E2E-BKG-003)
+  - `Bulk_approve_approves_the_selected_dormant_pending_holds` (→ E2E-BKG-003)
   - `Reject_without_a_reason_is_400` → `BOOKING_REJECTION_REASON_REQUIRED` (→ E2E-BKG-007)
   - `Non_admin_cannot_view_the_booking_queue` → HTTP 403 (→ E2E-BKG-006)
   - `Overlapping_booking_in_another_session_is_blocked` → `BOOKING_OVERLAP`

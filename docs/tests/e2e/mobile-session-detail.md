@@ -10,6 +10,13 @@
 > (detail render, guest→no card, reserver→card, no-booking→no card, speaker→profile,
 > add-to-calendar toast, reminder-deferred toast, 404, error→retry) and
 > `…/session_detail_models_test.dart` (`SessionDetail`/`MySeat` decode).
+
+> **Reservation-only (2026-07-18) — interim.** Reserving / joining now **confirms on
+> create** (`Status = Approved`, no CP approval step). The join/reserve scenarios
+> below still describe the app's current *"pending approval"* toast copy; that copy —
+> and the owner's exact two-case reserve-success messages + the 4-state seat map —
+> are rewritten in the **app-side reservation-only slice**. The wire/data behaviour
+> (auto-confirmed, no `BookingConfirmed` on reserve) applies now.
 >
 > **As-built deviations (D-300):** (1) the screen **fetches the detail by id**
 > (`GET …/sessions/{id}`, deep-link / cold-start safe) rather than threading the

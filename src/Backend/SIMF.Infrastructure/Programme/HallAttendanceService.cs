@@ -154,6 +154,47 @@ internal sealed class HallAttendanceService(
             resolved.UserId, resolved.DisplayName, resolved.DisplayNameArabic, ToStatus(row));
     }
 
+    public async Task<QrArrivalResult> RecordQrDepartureAsync(
+        Guid operatorUserId, Guid sessionId, string qrId,
+        CancellationToken cancellationToken = default)
+    {
+        var trimmed = (qrId ?? string.Empty).Trim();
+        var resolved = trimmed.Length == 0
+            ? null
+            : await qrResolver.ResolveAsync(trimmed, cancellationToken);
+        if (resolved is null)
+        {
+            throw new ApiException(ErrorCodes.AttendeeQrUnknown, 400,
+                "That badge QR was not recognised.",
+                "لم يتم التعرّف على رمز الشارة.");
+        }
+
+        // A check-OUT deliberately does NOT re-run the admission checks the
+        // arrival path runs — an attendee already inside the hall must always be
+        // allowed to leave — but the session must exist so a bad id is reported
+        // rather than silently no-op'ing. No live-window bind either: a departure
+        // can be recorded at or just after the session's end.
+        var sessionExists = await appDbContext.Sessions.AsNoTracking()
+            .AnyAsync(s => s.Id == sessionId && s.IsActive, cancellationToken);
+        if (!sessionExists)
+        {
+            throw new ApiException(ErrorCodes.SessionNotFound, 404,
+                "The session was not found.",
+                "لم يتم العثور على الجلسة.");
+        }
+
+        // Close the attendee's open row (idempotent: returns Arrived=false when
+        // they were not checked in / already left). The seat map's confirmed state
+        // clears automatically once the row closes (SeatReservationService reads
+        // open rows only).
+        var status = await RecordDepartureAsync(resolved.UserId, sessionId, cancellationToken);
+        logger.LogInformation(
+            "Hall departure (QR door scan) recorded for {UserId} at session {SessionId} by operator {OperatorId}.",
+            resolved.UserId, sessionId, operatorUserId);
+        return new QrArrivalResult(
+            resolved.UserId, resolved.DisplayName, resolved.DisplayNameArabic, status);
+    }
+
     public async Task RecordGateDoorScanAsync(
         Guid attendeeUserId, Guid hallId, ScanDirection direction,
         bool directionInferred, Guid operatorUserId,

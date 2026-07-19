@@ -67,6 +67,16 @@ public class AdminReserveRowRequest
     public string RowLabel { get; set; } = string.Empty;
 }
 
+/// <summary>2026-07-18 — admin single-seat block (VIP hold). Marks ONE specific
+/// seat <see cref="SeatReservationKind.AdminReservedRow"/> for this session so it
+/// is held (unavailable to visitors) for a VIP; a visitor pick on that seat is
+/// rejected with <c>SEAT_ALREADY_RESERVED</c>. Released like any admin block.</summary>
+public class AdminReserveSeatRequest
+{
+    public string RowLabel { get; set; } = string.Empty;
+    public int SeatNumber { get; set; }
+}
+
 /// <summary>D-175 — admin layout edit. Writes
 /// <c>RowLabels.Count * SeatsPerRow</c> grid; rejected if the product
 /// exceeds <c>Hall.Capacity</c>. Open for inheritance per the
