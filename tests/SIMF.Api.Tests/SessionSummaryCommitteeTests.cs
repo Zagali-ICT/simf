@@ -66,6 +66,83 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
         Assert.Contains("تعاون الغوّاصات", detail.FullTextArabic!);
     }
 
+    // -- Slice D (2026-07-19): AI transparency. The pristine AI-draft snapshot is
+    // captured at generation and must survive every Committee edit; the raw subtitle
+    // the AI drafted from is surfaced (read-only) on the editor read. Both are
+    // CP-internal and never projected onto a public contract.
+
+    [Fact]
+    public async Task Generate_captures_the_pristine_ai_draft_snapshot()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var sessionId = await SeedSessionAsync(
+            liveCaptionsArabic: "الردع البحري وحماية الممرات");
+
+        var detail = await GenerateAsync(sessionId, admin);
+
+        // The snapshot is captured and, on a fresh generate, equals the editable
+        // Arabic draft the AI just produced.
+        Assert.False(string.IsNullOrWhiteSpace(detail.AiDraftFullTextArabic));
+        Assert.Equal(detail.FullTextArabic, detail.AiDraftFullTextArabic);
+        Assert.Contains("الردع البحري", detail.AiDraftFullTextArabic!);
+        Assert.NotNull(detail.AiDraftGeneratedAt);
+    }
+
+    [Fact]
+    public async Task Editing_the_summary_preserves_the_pristine_ai_draft()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var sessionId = await SeedSessionAsync(
+            liveCaptionsArabic: "الردع البحري وحماية الممرات");
+        var generated = await GenerateAsync(sessionId, admin);
+        var pristine = generated.AiDraftFullTextArabic;
+        var generatedAt = generated.AiDraftGeneratedAt;
+
+        // The Committee edits the working Arabic full-text away from the AI draft.
+        var edited = await SaveAsync(sessionId,
+            new SaveSessionSummaryRequest { FullTextArabic = "محضر حرّره الفريق العلمي يدويًا." }, admin);
+
+        // The editable copy took the edit; the pristine AI draft is untouched.
+        Assert.Equal("محضر حرّره الفريق العلمي يدويًا.", edited.FullTextArabic);
+        Assert.Equal(pristine, edited.AiDraftFullTextArabic);
+        Assert.NotEqual(edited.FullTextArabic, edited.AiDraftFullTextArabic);
+        Assert.Equal(generatedAt, edited.AiDraftGeneratedAt);
+    }
+
+    [Fact]
+    public async Task Regenerating_refreshes_the_pristine_ai_draft_snapshot()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var sessionId = await SeedSessionAsync(liveCaptionsArabic: "الموضوع الأول");
+        var first = await GenerateAsync(sessionId, admin);
+        Assert.Contains("الموضوع الأول", first.AiDraftFullTextArabic!);
+
+        // The transcript is corrected, then the draft is re-generated: the snapshot
+        // must track the LATEST AI output, not the stale first draft.
+        await SetSessionCaptionsDirectAsync(sessionId, liveCaptionsArabic: "الموضوع الثاني");
+        var second = await GenerateAsync(sessionId, admin);
+
+        Assert.Contains("الموضوع الثاني", second.AiDraftFullTextArabic!);
+        Assert.DoesNotContain("الموضوع الأول", second.AiDraftFullTextArabic!);
+    }
+
+    [Fact]
+    public async Task The_editor_read_surfaces_the_raw_subtitle_source()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var sessionId = await SeedSessionAsync(
+            liveCaptions: "Maritime deterrence and sea-lane protection.",
+            liveCaptionsArabic: "الردع البحري وحماية الممرات");
+        // A summary must exist for the editor read to return a detail.
+        await SaveAsync(sessionId, new SaveSessionSummaryRequest { FullTextArabic = "محضر." }, admin);
+
+        var detail = await GetDetailAsync(sessionId, admin);
+
+        // The editor now sees the raw subtitle the AI drafts from, both languages.
+        Assert.Equal("Maritime deterrence and sea-lane protection.", detail.Subtitle);
+        Assert.Equal("الردع البحري وحماية الممرات", detail.SubtitleArabic);
+    }
+
     [Fact]
     public async Task Save_creates_a_hand_written_draft_with_no_ai_model()
     {
@@ -524,6 +601,16 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
             .ReadFromJsonAsync<ApiResult<AdminSessionSummaryDetail>>())!.Data!;
     }
 
+    // Slice D — the editor read (OpenEditor's GET) that now also carries the raw
+    // subtitle + the pristine AI-draft snapshot.
+    private async Task<AdminSessionSummaryDetail> GetDetailAsync(Guid sessionId, string token)
+    {
+        var response = await GetAuthAsync($"/api/v1/admin/session-summaries/{sessionId}", token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        return (await response.Content
+            .ReadFromJsonAsync<ApiResult<AdminSessionSummaryDetail>>())!.Data!;
+    }
+
     // Owner 2026-07-19 — the summary desk's common setup: submit a draft for review
     // then approve it (the two steps that unblock Publish). Collapses the pair that
     // otherwise repeats across the publish / approved-read tests.
@@ -574,6 +661,19 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
         var session = await db.Sessions.FindAsync(sessionId);
         session!.StartUtc = startUtc;
         session.EndUtc = startUtc.AddHours(1);
+        await db.SaveChangesAsync();
+    }
+
+    // Slice D — rewrite the session's transcript directly, so a re-generate drafts
+    // from a different source (proving the snapshot refreshes to the latest output).
+    private async Task SetSessionCaptionsDirectAsync(
+        Guid sessionId, string? liveCaptions = null, string? liveCaptionsArabic = null)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var session = await db.Sessions.FindAsync(sessionId);
+        session!.LiveCaptions = liveCaptions;
+        session.LiveCaptionsArabic = liveCaptionsArabic;
         await db.SaveChangesAsync();
     }
 

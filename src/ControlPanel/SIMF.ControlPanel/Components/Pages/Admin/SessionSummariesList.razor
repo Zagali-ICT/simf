@@ -143,6 +143,25 @@
             {
                 <SimfAlert Variant="info">@L["Admin.SessionSummaries.AiBanner"]</SimfAlert>
             }
+            @* Slice D (2026-07-19) — AI-transparency read-only sources: the raw
+               subtitle the AI drafted from and the pristine AI draft captured at
+               generation (immutable across edits). Each renders only when present,
+               so a hand-written summary shows none of them. *@
+            @if (_editSubtitle.Length > 0)
+            {
+                <SimfTextarea Label="@L["Admin.SessionSummaries.Field.Subtitle"]" Rows="4"
+                              Value="@_editSubtitle" Disabled="true" />
+            }
+            @if (_editSubtitleArabic.Length > 0)
+            {
+                <SimfTextarea Label="@L["Admin.SessionSummaries.Field.SubtitleArabic"]" Rows="4"
+                              Value="@_editSubtitleArabic" Disabled="true" />
+            }
+            @if (_editAiDraftArabic.Length > 0)
+            {
+                <SimfTextarea Label="@AiDraftLabel" Rows="5"
+                              Value="@_editAiDraftArabic" Disabled="true" />
+            }
             <SimfTextarea Label="@L["Admin.SessionSummaries.Field.KeyPoints"]" Rows="3" MaxLength="4000"
                           @bind-Value="_edit.KeyPoints" Disabled="_busy" />
             <SimfTextarea Label="@L["Admin.SessionSummaries.Field.KeyPointsArabic"]" Rows="3" MaxLength="4000"

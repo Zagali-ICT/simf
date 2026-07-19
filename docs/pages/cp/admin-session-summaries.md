@@ -9,7 +9,7 @@
 | **Status** | ✅ Real (D-238); Excel export added D-356 |
 | **Backend endpoints** | BFF `/account/api/admin/session-summaries/*` → API: `GET /admin/session-summaries` (list), `GET /admin/session-summaries/{sessionId}` (detail), `POST /admin/session-summaries/{sessionId}/generate` (AI draft), `PUT /admin/session-summaries/{sessionId}` (save), `PUT /admin/session-summaries/{sessionId}/publish`, `PUT /admin/session-summaries/{sessionId}/unpublish`, `POST /admin/session-summaries/export` (D-356, export only) |
 | **Source** | [`SessionSummariesList.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionSummariesList.razor), [`SessionSummaryEndpoints.cs`](../../../src/Backend/SIMF.Api/Endpoints/Admin/SessionSummaryEndpoints.cs), [`SessionSummariesExcelEndpoints.cs`](../../../src/Backend/SIMF.Api/Endpoints/Admin/SessionSummariesExcelEndpoints.cs), [`AdminSessionSummaryService.cs`](../../../src/Backend/SIMF.Infrastructure/Programme/AdminSessionSummaryService.cs), [`SessionSummary.cs`](../../../src/Backend/SIMF.Domain/Programme/SessionSummary.cs), [`SessionSummaries.cs`](../../../src/Shared/SIMF.Contracts/Admin/SessionSummaries.cs) |
-| **Backed by** | `dbo.SessionSummaries` (1:1 with `Session`, migration `D237_AddSessionSummary`, 2026-06-02). |
+| **Backed by** | `dbo.SessionSummaries` (1:1 with `Session`, migration `D237_AddSessionSummary`, 2026-06-02; Slice-D read-only columns `AiDraftFullTextArabic` + `AiDraftGeneratedAt` added by migration `AddSessionSummaryAiDraftSnapshot`, 2026-07-19, both additive/nullable). |
 | **Tests** | [`docs/tests/e2e/cp-admin-session-summaries.md`](../../tests/e2e/cp-admin-session-summaries.md) |
 | **Last reviewed** | 2026-07-19 |
 
@@ -80,7 +80,13 @@ per-row Deactivate.
   no active sessions are listed.
 - **Editor modal** (`SimfModal`, opened by Generate or Edit) titled with the
   session title. When the loaded summary carries an `AiModel`, a `SimfAlert`
-  variant `info` shows the AI banner (`Admin.SessionSummaries.AiBanner`). Eight
+  variant `info` shows the AI banner (`Admin.SessionSummaries.AiBanner`).
+  **AI-transparency read-only sources (Slice D, 2026-07-19)** then render above the
+  editable fields, each only when it carries content: the raw **subtitle** the AI
+  drafted from (`Subtitle` / `SubtitleArabic`, from `Session.LiveCaptions*`) and the
+  **original AI draft** (`AiDraftFullTextArabic`, the pristine output captured at
+  generation, its label carrying the UTC capture time). All three are `Disabled`
+  `SimfTextarea`s: read-only, never sent back on Save. Then eight editable
   `SimfTextarea` fields (see §4.5). Footer: **Save** (`SaveAsync`) + **Cancel**
   (`CloseEditor`, discards without a PUT).
 - **Excel export (D-356):** the grid toolbar carries an **Export** action
@@ -115,6 +121,13 @@ Each value is trimmed server-side; a section over its limit is rejected (see §6
 Key points are newline-delimited bullet lists (one bullet per non-empty line on
 screen 34).
 
+**Read-only source panels (Slice D)** are *not* form fields: they are display-only
+`Disabled` textareas shown above the editable eight when present. `Subtitle` /
+`SubtitleArabic` come from the session's `LiveCaptions*` (≤ 2048 chars each);
+`AiDraftFullTextArabic` is the pristine AI draft (≤ 8000). They carry no input
+`MaxLength` cap because they are never edited, and they are absent from
+`SaveSessionSummaryRequest`.
+
 ## 5. Data flow + endpoints
 
 - **List** — page `OnInitializedAsync` → `LoadAsync()` → `simfAccount.getJson`
@@ -127,16 +140,26 @@ screen 34).
   it client-side.
 - **Detail** — Edit → `getJson` `/{sessionId}` → `GetSessionSummaryAdminEndpoint`
   → `service.GetAsync`. Returns `AdminSessionSummaryDetail` (all eight sections +
-  `AiModel` + publish state + timestamps), or 404 `SESSION_SUMMARY_NOT_FOUND`.
+  `AiModel` + publish state + timestamps + the Slice-D read-only sources
+  `Subtitle` / `SubtitleArabic` from the session's `LiveCaptions*` and
+  `AiDraftFullTextArabic` / `AiDraftGeneratedAt`), or 404
+  `SESSION_SUMMARY_NOT_FOUND`. `GetAsync` widens its session projection to carry the
+  captions; these fields appear **only** on this admin detail, never on any
+  public/app contract.
 - **Generate** — sparkle → `postJson` `/{sessionId}/generate` →
   `GenerateSessionSummaryEndpoint` (actor `sub` from JWT) → `service.GenerateAsync`.
-  Builds prompt inputs from the session title + active speakers + abstract,
-  invokes `IAiService`, writes the truncated output into `FullTextArabic`, stamps
-  `AiModel`, audits `SessionSummary.Generated` (with model + invocation id).
-  Returns the detail and opens the editor pre-filled.
+  Builds prompt inputs from the session title + active speakers + abstract +
+  subtitle, invokes `IAiService`, writes the truncated output into `FullTextArabic`,
+  stamps `AiModel`, and (Slice D) captures the same output into the pristine
+  `AiDraftFullTextArabic` + stamps `AiDraftGeneratedAt`. A re-generate refreshes both
+  to the latest output. Audits `SessionSummary.Generated` (with model + invocation
+  id). Returns the detail and opens the editor pre-filled.
 - **Save** — `putJson` `/{sessionId}` with `SaveSessionSummaryRequest` →
   `SaveSessionSummaryEndpoint` → `service.SaveAsync` (creates the row if absent;
-  `AiModel` stays null for a hand-written draft). Audits `SessionSummary.Saved`.
+  `AiModel` stays null for a hand-written draft). **Save never touches the pristine
+  `AiDraftFullTextArabic` / `AiDraftGeneratedAt`** (Slice D), so the original AI draft
+  survives every Committee edit — that divergence is exactly what the read-only panel
+  surfaces. Audits `SessionSummary.Saved`.
 - **Publish / Unpublish** — `putJson` `/{sessionId}/publish` or `/unpublish` →
   `Publish`/`UnpublishSessionSummaryEndpoint` → `SetPublishedAsync` (stamps /
   clears `PublishedAt` + `PublishedByUserId`). Audits `SessionSummary.Published`
@@ -192,6 +215,15 @@ The BFF `AccountEndpoints` forwards each route with the bearer token via
   sections, but (like any content edit) returns the summary to Draft and takes it
   offline — `ResetReviewState` clears `PublishedAt`, keeping the invariant
   `PublishedAt ⇒ ApprovedAt` (owner 2026-07-19).
+- **Pristine AI draft (Slice D).** `AiDraftFullTextArabic` stores the untouched AI
+  output captured at generation; `SaveAsync` never overwrites it, so the editor can
+  always show the original beside the (possibly edited) working copy. A re-generate
+  refreshes it to the newest output. Rows created **before** this column (and any
+  hand-written summary) have no snapshot, so the panel simply does not render.
+- **Raw subtitle panel (Slice D).** The subtitle shown is the session's
+  `LiveCaptions` / `LiveCaptionsArabic` (each ≤ 2048 chars) — the exact text the AI
+  drafts from, authored on the Sessions editor. Read-only here and capped at 2048 by
+  that column; a fuller transcript store is out of scope.
 - **Publish is orthogonal to the session's broadcast `Status`** — the محضر is the
   Committee's own editorial document, published by its own action.
 - **Export only.** No import path exists on this desk (export endpoint with no
@@ -208,8 +240,9 @@ parity): `Title`, `Loading`, `None`, `LoadFailed`, `Fallback`, `Generated`,
 `Saved`, `Published`, `Unpublished`, `AiBanner`, `Col.Session` / `Col.Status` /
 `Col.Source`, `Status.None` / `Status.Draft` / `Status.Published`, `Source.Ai` /
 `Source.Manual`, `Action.Generate` / `Action.Edit` / `Action.Publish` /
-`Action.Unpublish`, `Editor.Save` / `Editor.Cancel`, and the eight `Field.*`
-labels. Grid chrome reuses the shared `Grid.*` keys (`Export`, `FilterColumn`,
+`Action.Unpublish`, `Editor.Save` / `Editor.Cancel`, the eight editable `Field.*`
+labels, and the Slice-D read-only source labels `Field.Subtitle` /
+`Field.SubtitleArabic` / `Field.AiDraft`. Grid chrome reuses the shared `Grid.*` keys (`Export`, `FilterColumn`,
 `FilterPlaceholder`, `Actions`, paging). Under the Arabic toggle the page and the
 editor modal mirror RTL; the Arabic strings describe the desk as
 "ملخصات الجلسات (المحاضر)" with the AI-draft banner phrased as a review-before-
@@ -235,7 +268,8 @@ action gate, 011 section over max length (400), 012 publish without a summary
 render, 016 per-column filter (client-side), 017 column sort, 018 Excel export
 (export only), 019-022 team review/approval workflow + المحاور read, **023 publish
 requires approval (400)**, **024 edit-after-publish takes it offline (owner
-2026-07-19)**, 025 publish clock-gate (S-6).
+2026-07-19)**, 025 publish clock-gate (S-6), **026 raw subtitle visible read-only in
+the editor**, **027 pristine AI draft survives an edit (Slice D)**.
 
 ## 12. Related docs
 
@@ -253,5 +287,6 @@ requires approval (400)**, **024 edit-after-publish takes it offline (owner
 | 2026-06-02 | D-237 / D-238 | Original — `SessionSummary` entity + migration `D237_AddSessionSummary` + the Scientific-Committee محضر desk (list / generate / edit / publish / unpublish) through the central AI seam (Echo provider). Gated by `SessionSummaries.View` / `.Edit` / `.Publish`. |
 | 2026-06-11 | D-356 | Excel **export added** (toolbar Export → `/account/api/admin/session-summaries/export`, sheet "SessionSummaries", columns `SessionCode \| SessionTitle \| SessionTitleArabic \| SessionStartUtc \| Status \| Source \| PublishedAt \| UpdatedAt`, capped at 5000 rows). New permission `SessionSummaries.Export`. **Export only** — no import path (source wires `OnExport`, not `OnImport`). E2E catalogue extended with E2E-SUM-018. |
 | 2026-07-19 | owner (Q&A/summary/rating batch) | **Approval hard-gate before publish.** `SetPublishedAsync` now requires `ApprovedAt` (Draft/In-review → 400 `SESSION_SUMMARY_INVALID`); editing / re-generating / returning a **published** summary clears `PublishedAt` (invariant `PublishedAt ⇒ ApprovedAt`); the public app read **and** `HasPublishedSummary` now also require `ApprovedAt` (hides legacy published-but-unapproved rows). New resx `Admin.SessionSummaries.Action.PublishNeedsApproval` (en+ar); CP Publish button disabled until approved. E2E-SUM-023/024 added; the S-6 clock-gate case renumbered to E2E-SUM-025. |
+| 2026-07-19 | Slice D — AI transparency | **Pristine AI-draft snapshot + raw subtitle in the editor.** Additive nullable columns `AiDraftFullTextArabic` + `AiDraftGeneratedAt` on `SessionSummaries` (migration `AddSessionSummaryAiDraftSnapshot`); `GenerateAsync` captures the untouched AI output into the snapshot (a re-generate refreshes it) and `SaveAsync` never overwrites it; `GetAsync`/`ToDetail` also surface the session's `LiveCaptions*` as `Subtitle`/`SubtitleArabic`. `AdminSessionSummaryDetail` gains the four read-only fields (append-only; **never** on `PublicSessionSummary`/`PublicSessionDetail`). CP editor renders three read-only `Disabled` `SimfTextarea` panels above the editable fields; new resx `Field.Subtitle` / `Field.SubtitleArabic` / `Field.AiDraft` (en+ar). E2E-SUM-026/027 added. |
 
-_Last reviewed:_ 2026-07-19 by Claude (owner approval hard-gate — Publish requires ApprovedAt; edit-after-publish unpublishes; the public read + HasPublishedSummary require ApprovedAt). Earlier: 2026-06-11 by Claude (D-356 — reference doc authored, grounded in live source; Excel export-only).
+_Last reviewed:_ 2026-07-19 by Claude (Slice D — pristine AI-draft snapshot + raw subtitle surfaced read-only in the CP editor; CP-internal only, no public-contract change). Earlier the same day: owner approval hard-gate (Publish requires ApprovedAt; edit-after-publish unpublishes; the public read + HasPublishedSummary require ApprovedAt). Earlier: 2026-06-11 by Claude (D-356 — reference doc authored, grounded in live source; Excel export-only).

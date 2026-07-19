@@ -89,7 +89,7 @@ internal sealed class AdminSessionSummaryService(
         var session = await appDbContext.Sessions
             .AsNoTracking()
             .Where(s => s.Id == sessionId && s.IsActive)
-            .Select(s => new { s.Id, s.Code, s.Title, s.TitleArabic })
+            .Select(s => new { s.Id, s.Code, s.Title, s.TitleArabic, s.LiveCaptions, s.LiveCaptionsArabic })
             .SingleOrDefaultAsync(cancellationToken);
         if (session is null)
         {
@@ -100,7 +100,7 @@ internal sealed class AdminSessionSummaryService(
             .AsNoTracking()
             .SingleOrDefaultAsync(
                 s => s.SessionId == sessionId && s.IsActive, cancellationToken);
-        return summary is null ? null : ToDetail(session.Code, session.Title, session.TitleArabic, summary);
+        return summary is null ? null : ToDetail(session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
     }
 
     public async Task<AdminSessionSummaryDetail> GenerateAsync(
@@ -153,6 +153,11 @@ internal sealed class AdminSessionSummaryService(
                 Id = Guid.NewGuid(),
                 SessionId = sessionId,
                 FullTextArabic = draft,
+                // Slice D — capture the pristine AI draft next to the editable
+                // copy. SaveAsync never touches these two, so the original AI
+                // output survives every Committee edit for the transparency panel.
+                AiDraftFullTextArabic = draft,
+                AiDraftGeneratedAt = now,
                 AiModel = result.Model,
                 IsActive = true,
                 CreatedAt = now,
@@ -167,6 +172,11 @@ internal sealed class AdminSessionSummaryService(
             // Committee's English text and curated sections. The content change
             // returns it to Draft and takes it offline (ResetReviewState below).
             summary.FullTextArabic = draft;
+            // Slice D — a re-generate refreshes the pristine snapshot too, so it
+            // always mirrors the LATEST AI output (the baseline the reviewer diffs
+            // their edits against). SaveAsync still never touches it.
+            summary.AiDraftFullTextArabic = draft;
+            summary.AiDraftGeneratedAt = now;
             summary.AiModel = result.Model;
             summary.IsActive = true;
             summary.UpdatedAt = now;
@@ -185,7 +195,7 @@ internal sealed class AdminSessionSummaryService(
             "Session summary {SummaryId} AI-drafted for session {SessionId} by {UserId} (model {Model}).",
             summary.Id, sessionId, actorUserId, result.Model);
 
-        return ToDetail(session.Code, session.Title, session.TitleArabic, summary);
+        return ToDetail(session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
     }
 
     public async Task<AdminSessionSummaryDetail> SaveAsync(
@@ -239,7 +249,7 @@ internal sealed class AdminSessionSummaryService(
             AuditEvents.SessionSummarySaved, actorUserId, sessionId,
             $"summaryId={summary.Id}", cancellationToken);
 
-        return ToDetail(session.Code, session.Title, session.TitleArabic, summary);
+        return ToDetail(session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
     }
 
     public Task<AdminSessionSummaryDetail> PublishAsync(
@@ -291,7 +301,7 @@ internal sealed class AdminSessionSummaryService(
             publish ? AuditEvents.SessionSummaryPublished : AuditEvents.SessionSummaryUnpublished,
             actorUserId, sessionId, $"summaryId={summary.Id}", cancellationToken);
 
-        return ToDetail(session.Code, session.Title, session.TitleArabic, summary);
+        return ToDetail(session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
     }
 
     public async Task<AdminSessionSummaryDetail> SubmitForReviewAsync(
@@ -319,7 +329,7 @@ internal sealed class AdminSessionSummaryService(
             AuditEvents.SessionSummarySubmittedForReview, actorUserId, sessionId,
             $"summaryId={summary.Id}", cancellationToken);
 
-        return ToDetail(session.Code, session.Title, session.TitleArabic, summary);
+        return ToDetail(session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
     }
 
     public async Task<AdminSessionSummaryDetail> ApproveAsync(
@@ -347,7 +357,7 @@ internal sealed class AdminSessionSummaryService(
             AuditEvents.SessionSummaryApproved, actorUserId, sessionId,
             $"summaryId={summary.Id}", cancellationToken);
 
-        return ToDetail(session.Code, session.Title, session.TitleArabic, summary);
+        return ToDetail(session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
     }
 
     public async Task<AdminSessionSummaryDetail> ReturnToDraftAsync(
@@ -366,7 +376,7 @@ internal sealed class AdminSessionSummaryService(
             AuditEvents.SessionSummaryReturnedToDraft, actorUserId, sessionId,
             $"summaryId={summary.Id}", cancellationToken);
 
-        return ToDetail(session.Code, session.Title, session.TitleArabic, summary);
+        return ToDetail(session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
     }
 
     private async Task<SessionSummary> LoadSummaryAsync(
@@ -433,7 +443,8 @@ internal sealed class AdminSessionSummaryService(
         value.Length > max ? value[..max] : value;
 
     private static AdminSessionSummaryDetail ToDetail(
-        string code, string title, string titleArabic, SessionSummary s) =>
+        string code, string title, string titleArabic,
+        string? subtitle, string? subtitleArabic, SessionSummary s) =>
         new(
             s.SessionId,
             code,
@@ -454,5 +465,12 @@ internal sealed class AdminSessionSummaryService(
             s.UpdatedAt,
             IsInReview: s.ReviewSubmittedAt is not null && s.ApprovedAt is null,
             IsApproved: s.ApprovedAt is not null,
-            s.ApprovedAt);
+            s.ApprovedAt,
+            // Slice D — the read-only AI-transparency sources: the raw subtitle
+            // the AI drafted from (Session.LiveCaptions*) and the pristine AI
+            // draft snapshot captured at generation.
+            Subtitle: subtitle,
+            SubtitleArabic: subtitleArabic,
+            s.AiDraftFullTextArabic,
+            s.AiDraftGeneratedAt);
 }
