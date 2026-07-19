@@ -72,6 +72,7 @@ internal sealed class RecommendationService(
         var candidates = await appDbContext.UserProfiles
             .AsNoTracking()
             .Where(p => approvedIds.Contains(p.UserId))
+            .Where(p => p.ShowInMeetLikeYou)
             .Select(p => new
             {
                 p.Id,

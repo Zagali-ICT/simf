@@ -124,6 +124,11 @@ public class UserProfile : BaseAuditEntity
 
 
 
+    /// <summary>D-736 — whether this profile appears in "Meet People Like You"
+    /// recommendations. Defaults to true; the user can opt out during sign-up
+    /// or later via profile settings.</summary>
+    public bool ShowInMeetLikeYou { get; set; }
+
     /// <summary>Saudi-format mobile number (+966xxxxxxxxx) — optional.</summary>
     public string? SaudiMobile { get; set; }
 
