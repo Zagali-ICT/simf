@@ -1525,6 +1525,12 @@ class AppL10n {
   String get rateThanks => _t('شكراً لتقييمك', 'Thanks for your rating');
   String get rateFailed =>
       _t('تعذّر إرسال التقييم. حاول مرة أخرى.', 'Could not submit. Try again.');
+  // Owner 2026-07-19 — shown when the visitor has not attended what they are trying
+  // to rate (server: 403 RATING_NOT_ATTENDED / form isEligible=false).
+  String get rateAttendRequired => _t(
+        'يمكنك تقييم ما حضرته فقط.',
+        'You can only rate something you attended.',
+      );
   String get rateRequiredQuestions => _t(
         'يرجى الإجابة على جميع الأسئلة المطلوبة',
         'Please answer all required questions',

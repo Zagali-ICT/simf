@@ -64,7 +64,12 @@ public sealed record RatingFormView(
     // wire, D-219) so the shipped app decodes unchanged.
     string? TargetName = null,
     string? TargetNameArabic = null,
-    DateTimeOffset? TargetStartUtc = null);
+    DateTimeOffset? TargetStartUtc = null,
+    // Owner 2026-07-19 — false when the caller has not attended what this type rates,
+    // so the app disables submit and shows an "attend to rate" note. The hard gate is
+    // still on POST /feedback/submit (403 RATING_NOT_ATTENDED). Appended (append-only
+    // wire, D-219); defaults true so the shipped app decodes unchanged.
+    bool IsEligible = true);
 
 /// <summary>One per-question score in a submission.</summary>
 public sealed record RatingAnswerInput(Guid QuestionId, int Stars);

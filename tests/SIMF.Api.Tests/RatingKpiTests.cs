@@ -102,7 +102,9 @@ public sealed class RatingKpiTests : IClassFixture<SimfApiFactory>
     private async Task SubmitSessionAsync(
         Guid sessionId, int overall, Dictionary<string, int> scores)
     {
-        var visitor = await SignInApprovedVisitorAsync();
+        var (visitor, userId) = await SignInVisitorWithIdAsync();
+        // Owner 2026-07-19 — a per-session rating requires attendance at that session.
+        await RatingAttendance.SeedSessionAttendanceAsync(_factory, userId, sessionId);
         var form = await GetFormAsync("Session", sessionId, visitor);
 
         var answers = form.UngroupedQuestions
@@ -166,6 +168,17 @@ public sealed class RatingKpiTests : IClassFixture<SimfApiFactory>
 
     private async Task<string> SignInApprovedVisitorAsync()
     {
+        var (token, userId) = await SignInVisitorWithIdAsync();
+        // Owner 2026-07-19 — ratings now require attendance; mark the visitor as having
+        // attended the event so the global-scope (App) rating flows still run.
+        await RatingAttendance.SeedEventAttendanceAsync(_factory, userId);
+        return token;
+    }
+
+    /// <summary>Signs in a fresh approved visitor WITHOUT seeding attendance — for the
+    /// per-session KPI submits that seed their own targeted attendance.</summary>
+    private async Task<(string Token, Guid UserId)> SignInVisitorWithIdAsync()
+    {
         var email = $"kpi-visitor-{Guid.NewGuid():N}@simf.test";
         await _client.PostAsJsonAsync(
             "/api/v1/app/auth/sign-up",
@@ -189,7 +202,9 @@ public sealed class RatingKpiTests : IClassFixture<SimfApiFactory>
             "/api/v1/app/auth/sign-in",
             new SignInRequest { Email = email, Password = AuthFlow.Password });
         var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        var token = body.Data!.Tokens!.AccessToken;
+        var userId = await RatingAttendance.UserIdAsync(_factory, email);
+        return (token, userId);
     }
 
     private async Task<string> CreateAdministratorAndSignInAsync()

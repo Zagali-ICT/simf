@@ -108,6 +108,15 @@ class _RateScreenState extends ConsumerState<RateScreen> {
   Future<void> _submit(AppL10n l10n, RatingFormView form) async {
     final messenger = ScaffoldMessenger.of(context);
 
+    // Owner 2026-07-19 — you may only rate what you attended. The server
+    // hard-gates submit with 403; stop the round-trip and explain why.
+    if (!form.isEligible) {
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(l10n.rateAttendRequired)));
+      return;
+    }
+
     if (form.hasOverallStars && _overall < 1) {
       messenger
         ..hideCurrentSnackBar()
@@ -186,7 +195,8 @@ class _RateScreenState extends ConsumerState<RateScreen> {
     // D-713 (item 8) — the "watched at" context header on a per-session rating.
     final watchedSession = form.localizedTargetName(isArabic);
     if (watchedSession != null) {
-      children.add(_WatchedHeader(
+      children.add(_NavyNoteChip(
+        icon: Icons.event_available_outlined,
         text: l10n.rateWatchedAt(
           watchedSession,
           _watchedWhen(isArabic, form.targetStartUtc),
@@ -304,10 +314,18 @@ class _RateScreenState extends ConsumerState<RateScreen> {
     }
 
     children.add(const SizedBox(height: SimfTokens.space5));
+    // Owner 2026-07-19 — when the visitor did not attend what this rates, keep
+    // the form visible but leave submit disabled (the server also 403s).
+    if (!form.isEligible) {
+      children.add(
+        _NavyNoteChip(icon: Icons.info_outline, text: l10n.rateAttendRequired),
+      );
+      children.add(const SizedBox(height: SimfTokens.space3));
+    }
     children.add(RateGoldButton(
       label: l10n.rateSubmit,
       loading: _submitting,
-      onTap: () => unawaited(_submit(l10n, form)),
+      onTap: form.isEligible ? () => unawaited(_submit(l10n, form)) : null,
     ),);
 
     return ListView(
@@ -343,11 +361,13 @@ class _RateScreenState extends ConsumerState<RateScreen> {
   }
 }
 
-/// D-713 (item 8) — the per-session "watched at" context line above the rating
-/// form: a calendar glyph + "شاهدت «{session}» · {date}" on a navy chip.
-class _WatchedHeader extends StatelessWidget {
-  const _WatchedHeader({required this.text});
+/// A navy chip with a leading accent glyph + a beige message, shown above the
+/// rating form. Two call sites: the D-713 "watched at" line (event icon) and
+/// the owner-2026-07-19 "attend to rate" note (info icon) when not eligible.
+class _NavyNoteChip extends StatelessWidget {
+  const _NavyNoteChip({required this.icon, required this.text});
 
+  final IconData icon;
   final String text;
 
   @override
@@ -365,11 +385,7 @@ class _WatchedHeader extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          const Icon(
-            Icons.event_available_outlined,
-            size: 16,
-            color: SimfTokens.accent,
-          ),
+          Icon(icon, size: 16, color: SimfTokens.accent),
           const SizedBox(width: SimfTokens.space2),
           Expanded(
             child: Text(
