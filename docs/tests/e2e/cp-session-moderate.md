@@ -20,10 +20,14 @@
 > the page surfaces as a red error toast (the grid never loads). The auth-gate
 > scenario below therefore asserts the **403 → toast** path, not a route redirect.
 >
-> **What the desk shows.** Per D-212 the desk lists the **Committee-approved set
-> only** (`QuestionStatus.Approved`), ordered by `Order` then `CreatedAt`. Pending
-> questions still await the Committee queue; rejected ones are `Hidden`. Recovery
-> of a hidden question is via the Committee queue, not this desk.
+> **What the desk shows.** Per D-212 the desk lists the **`QuestionStatus.Approved`
+> set**, ordered by `Order` then `CreatedAt`. Owner 2026-07-19 (two-path Q&A): the
+> Approved set is now two kinds of question — **PRE** questions the Scientific
+> Committee approved, **and LIVE** questions that auto-approved straight onto the
+> desk (a live question skips the AI filter + committee entirely). Both are moderated
+> here identically (Hide / Show / Push). Pending PRE questions still await the
+> Committee queue; rejected ones are `Hidden`. Recovery of a hidden question is via
+> the Committee queue (PRE) or Show here.
 
 ## Coverage matrix
 
@@ -41,6 +45,7 @@
 | E2E-MOD-010 | Not-found — Hide/Push a question id absent on the session → 404 toast | error | P1 | _to author_ |
 | E2E-MOD-011 | Server 500 on `/moderate` load → bilingual fallback toast, no rows | resilience | P2 | _to author_ |
 | E2E-MOD-012 | RTL / Arabic render — page, table and action buttons mirror | i18n | P1 | _to author_ |
+| E2E-MOD-013 | Two-path — a LIVE question appears on the desk directly, with no Committee step | happy | P0 | authored ✓ (API `SessionQuestionsTests.Live_question_skips_AI_and_lands_directly_on_the_moderator_desk`) |
 
 ## Scenarios
 
@@ -234,6 +239,22 @@ Scenario: Arabic toggle mirrors the desk
   And the table columns and action buttons mirror right-to-left
 ```
 
+### E2E-MOD-013 — Two-path: a live question lands on the desk directly
+
+```gherkin
+Scenario: A live audience question reaches the moderator desk without the Committee
+  Given a session that is already live
+  And an approved attendee submits a question while it is live
+  Then the question is stored Approved (Live phase, no AI verdict) — no Committee step
+  When the moderator opens /sessions/{SessionId}/moderate
+  Then the live question is already a "Queued" row on the desk
+  And the moderator can Hide (reject) or Push to speaker (accept) it as usual
+```
+
+**Evidence:** API `SessionQuestionsTests.Live_question_skips_AI_and_lands_directly_on_the_moderator_desk`
+(the row is Approved + on the desk immediately). PRE questions still require the
+Committee (`cp-admin-question-queue.md`) before they appear here.
+
 ---
 
 ## Implementation notes
@@ -252,7 +273,9 @@ Scenario: Arabic toggle mirrors the desk
     E2E-MOD-008), and `Granted_moderator_can_read_queue_without_admin_role` (the
     per-session grant, E2E-MOD-007).
   - `SessionQuestionCommitteeTests.cs` — the Committee → Approved → desk pipeline
-    (the desk shows the Committee-approved set only, D-212/D-234).
+    for PRE questions (D-212/D-234). Owner 2026-07-19 (two-path): a LIVE question
+    lands Approved on the desk directly, verified by
+    `SessionQuestionsTests.Live_question_skips_AI_and_lands_directly_on_the_moderator_desk`.
   These exercise the same endpoints the desk drives
   (`GET/PUT /sessions/{id}/questions/moderate|hide|push`); the E2E layer adds the
   browser round-trip (button → BFF `/account/api/...` → API → reload → state pill).
@@ -271,4 +294,7 @@ Scenario: Arabic toggle mirrors the desk
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-07-19 by Claude — **Two-path Q&A (owner): the desk's Approved
+set now includes LIVE questions that auto-approve straight onto the desk (skipping AI
++ Committee), alongside Committee-approved PRE questions; E2E-MOD-013.** _Prior:_
+2026-06-02 by Claude (E2E catalogue rebuild).

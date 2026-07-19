@@ -51,29 +51,74 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Submit_lands_pending_with_computed_phase()
+    public async Task Live_question_skips_AI_and_lands_directly_on_the_moderator_desk()
     {
+        // Owner 2026-07-19 (two-path Q&A) — a question asked once the session is
+        // LIVE bypasses the AI filter and the Scientific Committee and goes
+        // STRAIGHT to the per-session moderator desk (lands Approved).
         var admin = await CreateAdministratorAndSignInAsync();
         var (session, _) = await SeedLiveSessionAsync();
         var visitor = await SignInApprovedVisitorAsync();
 
         var response = await PostAuthAsync(
             $"/api/v1/app/sessions/{session.Id}/questions",
-            new SubmitSessionQuestionRequest { QuestionText = "Pipeline?", IsAtVenue = true },
+            new SubmitSessionQuestionRequest { QuestionText = "Live pipeline?", IsAtVenue = true },
             visitor.AccessToken);
         var id = (await response.Content
             .ReadFromJsonAsync<ApiResult<SessionQuestionSubmitted>>())!.Data!.Id;
 
-        using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var row = await db.SessionQuestions.AsNoTracking().SingleAsync(q => q.Id == id);
-        // P3.3 — D-212: every new question awaits the Committee (Pending); a live
-        // session (StartUtc 15 min ago) yields the Live phase.
-        Assert.Equal(QuestionStatus.Pending, row.Status);
-        Assert.Equal(QuestionPhase.Live, row.Phase);
-        // P4.2 — D-236: the advisory AI filter (stub) tagged a verdict — and it
-        // did NOT change the status (still Pending).
-        Assert.Equal("stub-clean", row.AiFilterVerdict);
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var row = await db.SessionQuestions.AsNoTracking().SingleAsync(q => q.Id == id);
+            Assert.Equal(QuestionStatus.Approved, row.Status);
+            Assert.Equal(QuestionPhase.Live, row.Phase);
+            // NO AI ran for a live question — the verdict is null (not "stub-clean").
+            Assert.Null(row.AiFilterVerdict);
+        }
+
+        // …and it is on the moderator desk immediately, with no committee step.
+        var desk = await GetAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/questions/moderate", admin);
+        var rows = (await desk.Content
+            .ReadFromJsonAsync<ApiResult<IReadOnlyList<SessionQuestionModeratorRow>>>())!.Data!;
+        Assert.Single(rows);
+        Assert.Equal(id, rows[0].Id);
+    }
+
+    [Fact]
+    public async Task Pre_question_is_AI_screened_and_waits_for_the_committee()
+    {
+        // Owner 2026-07-19 (two-path Q&A) — a question asked BEFORE the session
+        // goes live still runs the advisory AI filter and lands Pending for the
+        // Scientific Committee; it is NOT on the moderator desk yet.
+        var admin = await CreateAdministratorAndSignInAsync();
+        var session = await SeedFutureSessionAsync();
+        var visitor = await SignInApprovedVisitorAsync();
+
+        var response = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/questions",
+            new SubmitSessionQuestionRequest { QuestionText = "Ask ahead?", IsAtVenue = false },
+            visitor.AccessToken);
+        var id = (await response.Content
+            .ReadFromJsonAsync<ApiResult<SessionQuestionSubmitted>>())!.Data!.Id;
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var row = await db.SessionQuestions.AsNoTracking().SingleAsync(q => q.Id == id);
+            Assert.Equal(QuestionStatus.Pending, row.Status);
+            Assert.Equal(QuestionPhase.Pre, row.Phase);
+            // P4.2 — D-236: the advisory AI filter (stub) tagged a verdict without
+            // blocking the submit.
+            Assert.Equal("stub-clean", row.AiFilterVerdict);
+        }
+
+        // A Pending pre-question is NOT on the moderator desk until the committee approves.
+        var desk = await GetAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/questions/moderate", admin);
+        Assert.Empty((await desk.Content
+            .ReadFromJsonAsync<ApiResult<IReadOnlyList<SessionQuestionModeratorRow>>>())!.Data!);
     }
 
     [Fact]
@@ -152,11 +197,13 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
     public async Task Moderator_queue_lists_committee_approved_questions_with_submitter_projection()
     {
         var admin = await CreateAdministratorAndSignInAsync();
-        var (session, _) = await SeedLiveSessionAsync();
+        // A PRE question (future session) so the committee → desk flow applies; a
+        // LIVE question would land on the desk directly (see the two-path tests).
+        var session = await SeedFutureSessionAsync();
         var visitor = await SignInApprovedVisitorAsync();
         var submit = await PostAuthAsync(
             $"/api/v1/app/sessions/{session.Id}/questions",
-            new SubmitSessionQuestionRequest { QuestionText = "Q1", IsAtVenue = true },
+            new SubmitSessionQuestionRequest { QuestionText = "Q1", IsAtVenue = false },
             visitor.AccessToken);
         var qid = (await submit.Content
             .ReadFromJsonAsync<ApiResult<SessionQuestionSubmitted>>())!.Data!.Id;

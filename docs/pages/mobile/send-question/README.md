@@ -33,6 +33,14 @@ Auth-gated (route 26 is authenticated); the submit endpoint is
 - Empty text → inline error; 400 `SESSION_NOT_LIVE_FOR_QUESTIONS` / 404 →
   "questions only open around the session" toast; other failure → generic toast;
   success → clear + confirmation toast.
+- **Two-path routing (server-side, owner 2026-07-19).** The screen is identical for
+  both paths — the server decides by phase in `SessionQuestionService.SubmitAsync`.
+  A **LIVE** question (asked once the session has started) skips the AI filter + the
+  Scientific Committee and lands Approved straight on the per-session moderator desk.
+  A **PRE** question (asked before start) runs the advisory AI filter and lands
+  Pending for the committee → then the desk. The "reviewed before air" note holds
+  for both (a human moderator still reviews before a question reaches the stage). See
+  E2E `mobile-send-question.md` MOB026-014.
 
 ## 4. Button / action audit (Level F, 2026-07-03)
 | Control | Handler | Backend |

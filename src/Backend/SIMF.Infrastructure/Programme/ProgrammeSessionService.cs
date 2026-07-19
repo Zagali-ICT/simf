@@ -545,9 +545,16 @@ internal sealed class ProgrammeSessionService(
             return Array.Empty<PublicRecordedQuestion>();
         }
 
+        // Owner 2026-07-19 (two-path Q&A): the recorded archive is the questions
+        // that were actually ASKED on stage — i.e. pushed to the speaker by the
+        // moderator (IsPushed) — not every Approved row. Since a live question now
+        // lands Approved directly (skipping the committee), an Approved filter here
+        // would leak live questions the moderator never surfaced; a hide clears the
+        // push flag, and a push requires Approved, so IsPushed is exactly the set of
+        // moderator-surfaced, not-since-hidden questions for both paths.
         var rows = await dbContext.SessionQuestions
             .AsNoTracking()
-            .Where(q => q.SessionId == id && q.Status == QuestionStatus.Approved)
+            .Where(q => q.SessionId == id && q.IsPushed)
             .OrderBy(q => q.Order).ThenBy(q => q.CreatedAt)
             .Select(q => new
             {
