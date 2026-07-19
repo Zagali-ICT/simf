@@ -67,6 +67,10 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         builder.HasIndex(profile => profile.PassportNumberHash)
             .IsUnique()
             .HasFilter("[PassportNumberHash] IS NOT NULL");
+        // D-736 — "Show in Meet People Like You" visibility toggle.
+        builder.Property(profile => profile.ShowInMeetLikeYou)
+            .HasDefaultValue(true);
+
         builder.Property(profile => profile.SaudiMobile).HasMaxLength(20);
         builder.Property(profile => profile.InternationalMobile).HasMaxLength(24);
         // C6 — D-371: stored normalized (3 letters + 1–4 digits, no separators).

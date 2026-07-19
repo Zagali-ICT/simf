@@ -217,7 +217,8 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
       }
       final name = s.localizedName(isArabic).toLowerCase();
       final rank = (s.rank ?? '').toLowerCase();
-      return name.contains(q) || rank.contains(q);
+      final rankArabic = (s.rankArabic ?? '').toLowerCase();
+      return name.contains(q) || rank.contains(q) || rankArabic.contains(q);
     }).toList();
     if (_alphaSorted) {
       list.sort(

@@ -23,6 +23,7 @@ internal sealed class SpeakerConfiguration : IEntityTypeConfiguration<Speaker>
         builder.Property(speaker => speaker.Name).HasMaxLength(128).IsRequired();
         builder.Property(speaker => speaker.NameArabic).HasMaxLength(128).IsRequired();
         builder.Property(speaker => speaker.Rank).HasMaxLength(64);
+        builder.Property(speaker => speaker.RankArabic).HasMaxLength(64);
 
         builder.Property(speaker => speaker.Bio).HasMaxLength(2048);
         builder.Property(speaker => speaker.BioArabic).HasMaxLength(2048);

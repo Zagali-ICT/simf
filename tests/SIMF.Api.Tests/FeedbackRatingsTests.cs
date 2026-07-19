@@ -220,6 +220,95 @@ public sealed class FeedbackRatingsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    // -- Owner 2026-07-19 — attendance gate (rate only what you attended) -------
+
+    [Fact]
+    public async Task A_visitor_who_did_not_attend_cannot_submit_an_app_rating()
+    {
+        var (visitor, _) = await SignInVisitorWithIdAsync(); // no attendance seeded
+        var form = await GetFormAsync("App", null, visitor);
+
+        var response = await PostAuthAsync(
+            "/api/v1/app/feedback/submit",
+            new SubmitRatingRequest { RatingTypeId = form.RatingTypeId, OverallStars = 5 },
+            visitor);
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.RatingNotAttended, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task The_form_reports_ineligible_before_attendance_and_eligible_after()
+    {
+        var (visitor, userId) = await SignInVisitorWithIdAsync();
+
+        var before = await GetFormAsync("App", null, visitor);
+        Assert.False(before.IsEligible); // form still loads, but flagged
+
+        await RatingAttendance.SeedEventAttendanceAsync(_factory, userId);
+
+        var after = await GetFormAsync("App", null, visitor);
+        Assert.True(after.IsEligible);
+        var ok = await PostAuthAsync(
+            "/api/v1/app/feedback/submit",
+            new SubmitRatingRequest { RatingTypeId = after.RatingTypeId, OverallStars = 5 },
+            visitor);
+        Assert.Equal(HttpStatusCode.OK, ok.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_per_session_rating_requires_attendance_at_that_session()
+    {
+        var (visitor, userId) = await SignInVisitorWithIdAsync();
+        var sessionId = await SeedSessionAsync();
+
+        // Not checked in to this session → 403.
+        var blocked = await PostAuthAsync(
+            "/api/v1/app/feedback/submit",
+            new SubmitRatingRequest { Code = "Session", TargetId = sessionId, OverallStars = 4 },
+            visitor);
+        Assert.Equal(HttpStatusCode.Forbidden, blocked.StatusCode);
+
+        // Attendance at a DIFFERENT session does not unlock this one → still 403.
+        var otherSessionId = await SeedSessionAsync();
+        await RatingAttendance.SeedSessionAttendanceAsync(_factory, userId, otherSessionId);
+        var stillBlocked = await PostAuthAsync(
+            "/api/v1/app/feedback/submit",
+            new SubmitRatingRequest { Code = "Session", TargetId = sessionId, OverallStars = 4 },
+            visitor);
+        Assert.Equal(HttpStatusCode.Forbidden, stillBlocked.StatusCode);
+
+        // Attendance at THIS session unlocks it.
+        await RatingAttendance.SeedSessionAttendanceAsync(_factory, userId, sessionId);
+        var ok = await PostAuthAsync(
+            "/api/v1/app/feedback/submit",
+            new SubmitRatingRequest { Code = "Session", TargetId = sessionId, OverallStars = 4 },
+            visitor);
+        Assert.Equal(HttpStatusCode.OK, ok.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_venue_gate_checkin_alone_unlocks_a_global_rating()
+    {
+        // Owner 2026-07-19 (blended signal) — a venue-gate Check-In scan, with NO
+        // in-hall attendance, is enough for a Global (App) rating; this exercises
+        // AttendedEventAsync's GateScan branch + the UserProfile→scan id-hop.
+        var (visitor, userId) = await SignInVisitorWithIdAsync(); // no HallAttendance
+        var form = await GetFormAsync("App", null, visitor);
+        Assert.False(form.IsEligible);
+
+        await RatingAttendance.SeedGateCheckInAsync(
+            _factory, userId, DateTimeOffset.UtcNow.AddHours(-1));
+
+        var after = await GetFormAsync("App", null, visitor);
+        Assert.True(after.IsEligible);
+        var ok = await PostAuthAsync(
+            "/api/v1/app/feedback/submit",
+            new SubmitRatingRequest { RatingTypeId = after.RatingTypeId, OverallStars = 5 },
+            visitor);
+        Assert.Equal(HttpStatusCode.OK, ok.StatusCode);
+    }
+
     // -- Helpers --------------------------------------------------------------
 
     private async Task<Guid> SeedSessionAsync()
@@ -264,6 +353,18 @@ public sealed class FeedbackRatingsTests : IClassFixture<SimfApiFactory>
 
     private async Task<string> SignInApprovedVisitorAsync()
     {
+        var (token, userId) = await SignInVisitorWithIdAsync();
+        // Owner 2026-07-19 — ratings now require attendance; mark the visitor as having
+        // attended the event so the existing (global-scope) rating flows still run.
+        await RatingAttendance.SeedEventAttendanceAsync(_factory, userId);
+        return token;
+    }
+
+    /// <summary>Signs in a fresh approved visitor WITHOUT seeding attendance — for the
+    /// attendance-gate tests (not-attended → 403) and per-target tests that seed their
+    /// own targeted attendance.</summary>
+    private async Task<(string Token, Guid UserId)> SignInVisitorWithIdAsync()
+    {
         var email = $"rate-visitor-{Guid.NewGuid():N}@simf.test";
         await _client.PostAsJsonAsync(
             "/api/v1/app/auth/sign-up",
@@ -287,7 +388,9 @@ public sealed class FeedbackRatingsTests : IClassFixture<SimfApiFactory>
             "/api/v1/app/auth/sign-in",
             new SignInRequest { Email = email, Password = AuthFlow.Password });
         var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        var token = body.Data!.Tokens!.AccessToken;
+        var userId = await RatingAttendance.UserIdAsync(_factory, email);
+        return (token, userId);
     }
 
     private async Task<string> CreateAdministratorAndSignInAsync()

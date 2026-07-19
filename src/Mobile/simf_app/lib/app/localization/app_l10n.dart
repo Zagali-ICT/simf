@@ -1525,6 +1525,12 @@ class AppL10n {
   String get rateThanks => _t('شكراً لتقييمك', 'Thanks for your rating');
   String get rateFailed =>
       _t('تعذّر إرسال التقييم. حاول مرة أخرى.', 'Could not submit. Try again.');
+  // Owner 2026-07-19 — shown when the visitor has not attended what they are trying
+  // to rate (server: 403 RATING_NOT_ATTENDED / form isEligible=false).
+  String get rateAttendRequired => _t(
+        'يمكنك تقييم ما حضرته فقط.',
+        'You can only rate something you attended.',
+      );
   String get rateRequiredQuestions => _t(
         'يرجى الإجابة على جميع الأسئلة المطلوبة',
         'Please answer all required questions',
@@ -1580,6 +1586,12 @@ class AppL10n {
       _t('الذكاء الاصطناعي', 'Artificial intelligence');
   String get meetPeopleFilterSupply => _t('سلاسل الإمداد', 'Supply chains');
   String get meetPeopleFilterSeabed => _t('أمن قاع البحار', 'Seabed security');
+
+  // D-736 — "Show me in Meet People Like You" visibility toggle (sign-up / settings).
+  String get showInMeetLikeYou => _t(
+        'هل يظهر علي قابل أشخاص مثلك',
+        'Show me in Meet People Like You',
+      );
 
   // Accessibility (Page 038; Figma 1116:16630 — client-local settings, no API).
   String get accessibilityTitle => _t('إمكانية الوصول', 'Accessibility');

@@ -20,6 +20,7 @@ public class Speaker : BaseAuditEntity
     public string Name { get; set; } = string.Empty;
     public string NameArabic { get; set; } = string.Empty;
     public string? Rank { get; set; }
+    public string? RankArabic { get; set; }
 
     /// <summary>D-153 — ISO 3166-1 numeric country id, logical FK to
     /// <c>SIMF.Domain.Common.Country.Id</c>. Optional (some speakers

@@ -71,7 +71,7 @@ internal sealed class AdminSpeakerService(
                 speaker.Code,
                 speaker.Name,
                 speaker.NameArabic,
-                speaker.Rank,
+                speaker.Rank, speaker.RankArabic,
                 speaker.CountryId,
                 speaker.DisplayOrder,
                 speaker.IsActive,
@@ -111,7 +111,7 @@ internal sealed class AdminSpeakerService(
                     code = country.Code;
                 }
                 return new AdminSpeakerSummary(
-                    row.Id, row.Code, row.Name, row.NameArabic, row.Rank,
+                    row.Id, row.Code, row.Name, row.NameArabic, row.Rank, row.RankArabic,
                     row.CountryId, en, ar, code,
                     row.DisplayOrder, row.IsActive, photoOwners.Contains(row.Id),
                     row.CreatedAt);
@@ -171,6 +171,7 @@ internal sealed class AdminSpeakerService(
             Name = name,
             NameArabic = nameArabic,
             Rank = NullIfBlank(request.Rank),
+            RankArabic = NullIfBlank(request.RankArabic),
             CountryId = request.CountryId,
             UserProfileId = request.UserProfileId,
             Bio = NullIfBlank(request.Bio),
@@ -256,6 +257,7 @@ internal sealed class AdminSpeakerService(
         speaker.Name = name;
         speaker.NameArabic = nameArabic;
         speaker.Rank = NullIfBlank(request.Rank);
+        speaker.RankArabic = NullIfBlank(request.RankArabic);
         speaker.CountryId = request.CountryId;
         speaker.UserProfileId = request.UserProfileId;
         speaker.Bio = NullIfBlank(request.Bio);
@@ -418,7 +420,7 @@ internal sealed class AdminSpeakerService(
     private static AdminSpeakerDetail ToDetail(
         Speaker speaker, string? countryNameEn, string? countryNameAr) =>
         new(speaker.Id, speaker.Code, speaker.Name, speaker.NameArabic,
-            speaker.Rank,
+            speaker.Rank, speaker.RankArabic,
             speaker.CountryId, countryNameEn, countryNameAr,
             speaker.UserProfileId,
             speaker.Bio, speaker.BioArabic,

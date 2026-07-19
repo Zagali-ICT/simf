@@ -174,7 +174,12 @@ public sealed class RatingConfigTests : IClassFixture<SimfApiFactory>
         AuthFlow.DisableTwoFactor(_factory, email);
         var sign = await _client.PostAsJsonAsync("/api/v1/app/auth/sign-in",
             new SignInRequest { Email = email, Password = AuthFlow.Password });
-        return (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!.Data!.Tokens!.AccessToken;
+        var token = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!.Data!.Tokens!.AccessToken;
+        // Owner 2026-07-19 — ratings now require attendance; mark the visitor as having
+        // attended the event so the rating-submit test still runs.
+        await RatingAttendance.SeedEventAttendanceAsync(
+            _factory, await RatingAttendance.UserIdAsync(_factory, email));
+        return token;
     }
 
     private async Task<string> CreateAdministratorAndSignInAsync()

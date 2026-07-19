@@ -41,6 +41,7 @@ internal sealed class PublicSpeakerService(SimfAppDbContext dbContext)
                 speaker.Name,
                 speaker.NameArabic,
                 speaker.Rank,
+                speaker.RankArabic,
                 speaker.CountryId,
                 // A5 — the country name comes through the nav in the same query
                 // (was a separate dictionary-stitch round-trip).
@@ -68,7 +69,7 @@ internal sealed class PublicSpeakerService(SimfAppDbContext dbContext)
 
         var items = rows
             .Select(row => new PublicSpeakerSummary(
-                row.Id, row.Name, row.NameArabic, row.Rank,
+                row.Id, row.Name, row.NameArabic, row.Rank, row.RankArabic,
                 row.CountryId, row.CountryNameEn, row.CountryNameAr,
                 row.PhotoRelativePath, row.DisplayOrder,
                 withPhotoAsset.Contains(row.Id)))
@@ -89,6 +90,7 @@ internal sealed class PublicSpeakerService(SimfAppDbContext dbContext)
                 row.Name,
                 row.NameArabic,
                 row.Rank,
+                row.RankArabic,
                 row.CountryId,
                 // A5 — country name via the nav (was a separate single-row query).
                 CountryNameEn = row.Country != null ? row.Country.Name : null,
@@ -146,6 +148,7 @@ internal sealed class PublicSpeakerService(SimfAppDbContext dbContext)
             speaker.Name,
             speaker.NameArabic,
             speaker.Rank,
+            speaker.RankArabic,
             speaker.CountryId,
             speaker.CountryNameEn,
             speaker.CountryNameAr,

@@ -164,7 +164,8 @@ internal sealed class AdminSessionSummaryService(
         else
         {
             // Re-generate replaces the Arabic AI draft but preserves the
-            // Committee's English text, curated sections, and publish state.
+            // Committee's English text and curated sections. The content change
+            // returns it to Draft and takes it offline (ResetReviewState below).
             summary.FullTextArabic = draft;
             summary.AiModel = result.Model;
             summary.IsActive = true;
@@ -268,6 +269,18 @@ internal sealed class AdminSessionSummaryService(
                 "لم تبدأ الجلسة بعد — لا يمكن نشر ملخّصها قبل أن تبدأ.");
         }
 
+        // Owner 2026-07-19 — the scientific team must REVIEW + APPROVE the محضر before
+        // it can reach the app. Publish is a hard gate on ApprovedAt so an unreviewed
+        // (Draft / InReview) summary can never be surfaced publicly. Unpublish is
+        // unaffected — retracting is always allowed.
+        if (publish && summary.ApprovedAt is null)
+        {
+            throw new ApiException(
+                ErrorCodes.SessionSummaryInvalid, 400,
+                "This summary must be reviewed and approved by the scientific team before it can be published.",
+                "يجب أن يراجع الفريق العلمي هذا الملخّص ويوافق عليه قبل نشره.");
+        }
+
         summary.PublishedAt = publish ? now : null;
         summary.PublishedByUserId = publish ? actorUserId : null;
         summary.UpdatedAt = now;
@@ -366,14 +379,20 @@ internal sealed class AdminSessionSummaryService(
             "No summary exists for this session yet.",
             "لا يوجد ملخّص لهذه الجلسة بعد.");
 
-    /// <summary>Clears the review + approval stamps (back to Draft). Called on
-    /// every content edit and by the explicit return-to-draft (D-472).</summary>
+    /// <summary>Clears the review + approval stamps (back to Draft) AND takes the
+    /// summary offline. Called on every content edit and by the explicit
+    /// return-to-draft (D-472). Owner 2026-07-19 — because Publish is hard-gated on
+    /// approval, invalidating the approval must also clear <c>PublishedAt</c>: an
+    /// edited (now-unapproved) summary can never stay visible to the app, so it must
+    /// be re-approved and re-published. Keeps the invariant PublishedAt ⇒ ApprovedAt.</summary>
     private static void ResetReviewState(SessionSummary summary)
     {
         summary.ReviewSubmittedAt = null;
         summary.ReviewSubmittedByUserId = null;
         summary.ApprovedAt = null;
         summary.ApprovedByUserId = null;
+        summary.PublishedAt = null;
+        summary.PublishedByUserId = null;
     }
 
     private async Task<Session> LoadSessionForDraftAsync(

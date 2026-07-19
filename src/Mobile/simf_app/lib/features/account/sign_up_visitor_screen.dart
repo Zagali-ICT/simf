@@ -153,6 +153,9 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   bool _saving = false;
   String? _saveError;
 
+  /// D-736 — "Show in Meet People Like You" toggle. Defaults to true.
+  bool _showInMeetLikeYou = true;
+
   @override
   void initState() {
     super.initState();
@@ -259,6 +262,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
 
     // Carried forward to the interests screen (Page 007‑01) for pre-selection.
     _existingInterestIds = profile.interestIds;
+    _showInMeetLikeYou = profile.showInMeetLikeYou;
   }
 
   // ---- نوع التسجيل (Visitor / Other) ---------------------------------------
@@ -599,6 +603,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       plateNumber: _emptyToNull(_plate.text),
       organisationId: _organisationId,
       gender: _gender,
+      showInMeetLikeYou: _showInMeetLikeYou,
     );
   }
 
@@ -851,7 +856,29 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                   _buildIdImageField(l10n),
                   const SizedBox(height: 16),
                   _buildFacePhotoField(l10n),
-                  const SizedBox(height: 16),
+                  // D-736 — "Show in Meet People Like You" visibility toggle,
+                  // shown only for the "Other" tab (non-Visitor registrants).
+                  if (!_isVisitorType) ...<Widget>[
+                    const SizedBox(height: 16),
+                    const Divider(height: 1, color: SimfTokens.beigeBorder),
+                    const SizedBox(height: 12),
+                    CheckboxListTile(
+                      value: _showInMeetLikeYou,
+                      onChanged: (v) => setState(() => _showInMeetLikeYou = v ?? true),
+                      title: Text(
+                        l10n.showInMeetLikeYou,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: SimfTokens.headlineInk,
+                        ),
+                      ),
+                      contentPadding: EdgeInsets.zero,
+                      visualDensity: VisualDensity.compact,
+                      controlAffinity: ListTileControlAffinity.leading,
+                      activeColor: SimfTokens.accent,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                   if (_saveError != null) ...<Widget>[
                     Text(
                       _saveError!,

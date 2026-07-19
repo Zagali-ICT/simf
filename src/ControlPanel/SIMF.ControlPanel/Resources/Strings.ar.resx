@@ -106,6 +106,7 @@
   <data name="Admin.SpeakerAvailability.Failed" xml:space="preserve"><value>فشلت العملية.</value></data>
   <data name="Admin.SpeakerAvailability.BadDates" xml:space="preserve"><value>أدخل بداية ونهاية صحيحتين.</value></data>
   <data name="Admin.SpeakerAvailability.BadSlot" xml:space="preserve"><value>أدخل مدة فترة موجبة.</value></data>
+  <data name="Admin.SpeakerAvailability.BadDateRange" xml:space="preserve"><value>يجب أن تكون التواريخ ضمن 23–25 نوفمبر 2026.</value></data>
   <data name="Admin.HallAvailability.Title" xml:space="preserve"><value>توفّر القاعات (وقت الاجتماعات)</value></data>
   <data name="Admin.HallAvailability.Hall" xml:space="preserve"><value>القاعة</value></data>
   <data name="Admin.HallAvailability.PickHall" xml:space="preserve"><value>اختر قاعة…</value></data>
@@ -564,6 +565,7 @@
   <data name="Admin.Speakers.Column.Name" xml:space="preserve"><value>الاسم</value></data>
   <data name="Admin.Speakers.Column.NameArabic" xml:space="preserve"><value>الاسم (بالعربية)</value></data>
   <data name="Admin.Speakers.Column.Rank" xml:space="preserve"><value>الرتبة</value></data>
+  <data name="Admin.Speakers.Column.RankArabic" xml:space="preserve"><value>الرتبة (بالعربية)</value></data>
   <data name="Admin.Speakers.Column.Country" xml:space="preserve"><value>البلد</value></data>
   <data name="Admin.Speakers.Column.DisplayOrder" xml:space="preserve"><value>الترتيب</value></data>
   <data name="Admin.Speakers.Column.Active" xml:space="preserve"><value>الحالة</value></data>
@@ -584,6 +586,7 @@
   <data name="Admin.Speakers.Field.NameArabic" xml:space="preserve"><value>الاسم (بالعربية)</value></data>
   <data name="Admin.Speakers.Field.NameArabicInvalid" xml:space="preserve"><value>الاسم بالعربية مطلوب (1–128 حرفاً).</value></data>
   <data name="Admin.Speakers.Field.Rank" xml:space="preserve"><value>الرتبة / اللقب</value></data>
+  <data name="Admin.Speakers.Field.RankArabic" xml:space="preserve"><value>الرتبة / اللقب (بالعربية)</value></data>
   <data name="Admin.Speakers.Field.Country" xml:space="preserve"><value>البلد</value></data>
   <data name="Admin.Speakers.Field.CountryPlaceholder" xml:space="preserve"><value>— بدون بلد —</value></data>
   <data name="Admin.Speakers.Field.CountryInvalid" xml:space="preserve"><value>يجب اختيار بلد صالح من القائمة.</value></data>
@@ -1833,6 +1836,7 @@
   <data name="Admin.SessionSummaries.Action.Generate" xml:space="preserve"><value>توليد بالذكاء الاصطناعي</value></data>
   <data name="Admin.SessionSummaries.Action.Edit" xml:space="preserve"><value>تعديل</value></data>
   <data name="Admin.SessionSummaries.Action.Publish" xml:space="preserve"><value>نشر</value></data>
+  <data name="Admin.SessionSummaries.Action.PublishNeedsApproval" xml:space="preserve"><value>يجب اعتماد الملخّص قبل نشره</value></data>
   <data name="Admin.SessionSummaries.Action.Unpublish" xml:space="preserve"><value>إلغاء النشر</value></data>
   <data name="Admin.SessionSummaries.AiBanner" xml:space="preserve"><value>تم توليد هذه المسودة بالذكاء الاصطناعي — راجعها وعدّلها قبل النشر.</value></data>
   <data name="Admin.SessionSummaries.Field.KeyPoints" xml:space="preserve"><value>أبرز النقاط (الإنجليزية) — نقطة في كل سطر</value></data>

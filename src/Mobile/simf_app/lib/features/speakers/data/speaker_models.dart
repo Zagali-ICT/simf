@@ -14,6 +14,7 @@ class SpeakerSummary {
     required this.nameArabic,
     required this.displayOrder,
     this.rank,
+    this.rankArabic,
     this.countryId,
     this.countryNameEn,
     this.countryNameAr,
@@ -25,12 +26,15 @@ class SpeakerSummary {
   final String nameArabic;
   final int displayOrder;
   final String? rank;
+  final String? rankArabic;
   final int? countryId;
   final String? countryNameEn;
   final String? countryNameAr;
   final String? photoRelativePath;
 
   String localizedName(bool isArabic) => _pick(nameArabic, name, isArabic);
+  String? localizedRank(bool isArabic) =>
+      _pickOpt(rankArabic, rank, isArabic);
   String? localizedCountry(bool isArabic) =>
       _pickOpt(countryNameAr, countryNameEn, isArabic);
 
@@ -40,6 +44,7 @@ class SpeakerSummary {
         nameArabic: json['nameArabic'] as String? ?? '',
         displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
         rank: json['rank'] as String?,
+        rankArabic: json['rankArabic'] as String?,
         countryId: (json['countryId'] as num?)?.toInt(),
         countryNameEn: json['countryNameEn'] as String?,
         countryNameAr: json['countryNameAr'] as String?,
@@ -104,6 +109,7 @@ class SpeakerDetail {
     required this.displayOrder,
     required this.sessions,
     this.rank,
+    this.rankArabic,
     this.countryId,
     this.countryNameEn,
     this.countryNameAr,
@@ -126,6 +132,7 @@ class SpeakerDetail {
   final String name;
   final String nameArabic;
   final String? rank;
+  final String? rankArabic;
   final int? countryId;
   final String? countryNameEn;
   final String? countryNameAr;
@@ -151,6 +158,8 @@ class SpeakerDetail {
   final List<SpeakerSession> sessions;
 
   String localizedName(bool isArabic) => _pick(nameArabic, name, isArabic);
+  String? localizedRank(bool isArabic) =>
+      _pickOpt(rankArabic, rank, isArabic);
   String? localizedCountry(bool isArabic) =>
       _pickOpt(countryNameAr, countryNameEn, isArabic);
 
@@ -173,6 +182,7 @@ class SpeakerDetail {
         name: json['name'] as String? ?? '',
         nameArabic: json['nameArabic'] as String? ?? '',
         rank: json['rank'] as String?,
+        rankArabic: json['rankArabic'] as String?,
         countryId: (json['countryId'] as num?)?.toInt(),
         countryNameEn: json['countryNameEn'] as String?,
         countryNameAr: json['countryNameAr'] as String?,
