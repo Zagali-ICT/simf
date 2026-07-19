@@ -26,7 +26,9 @@ public sealed record AdminSessionSummaryRow(
 /// <summary>P4.1 — D-238: the full summary detail for the editor. Bilingual
 /// content sections + the session header (read-only context) + provenance and
 /// publish state. <see cref="AiModel"/> is non-null when the draft was AI-
-/// generated.</summary>
+/// generated. Slice D adds the two read-only AI-transparency sources
+/// (<see cref="Subtitle"/> and <see cref="AiDraftFullTextArabic"/>) the editor
+/// shows beside the editable fields — CP-internal, never on a public contract.</summary>
 public sealed record AdminSessionSummaryDetail(
     Guid SessionId,
     string SessionCode,
@@ -48,7 +50,17 @@ public sealed record AdminSessionSummaryDetail(
     // D-472 (#9) — team review/approval state (derived from the timestamps).
     bool IsInReview,
     bool IsApproved,
-    DateTimeOffset? ApprovedAt);
+    DateTimeOffset? ApprovedAt,
+    // Slice D (2026-07-19) — AI-transparency read-only sources shown in the
+    // editor: Subtitle / SubtitleArabic = the raw session captions the AI
+    // drafted from (Session.LiveCaptions*); AiDraftFullTextArabic = the pristine
+    // AI output captured at generation (immutable across edits) with
+    // AiDraftGeneratedAt when it was captured. All read-only — the Committee's
+    // edit round-trips only through SaveSessionSummaryRequest, which omits them.
+    string? Subtitle,
+    string? SubtitleArabic,
+    string? AiDraftFullTextArabic,
+    DateTimeOffset? AiDraftGeneratedAt);
 
 /// <summary>P4.1 — D-238: the Committee's edit (upsert) of a summary's content.
 /// Saving a session that has no summary yet creates a hand-written draft

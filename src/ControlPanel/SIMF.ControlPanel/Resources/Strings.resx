@@ -1855,6 +1855,9 @@
   <data name="Admin.SessionSummaries.Field.SpeakersArabic" xml:space="preserve"><value>Speakers (Arabic)</value></data>
   <data name="Admin.SessionSummaries.Field.FullText" xml:space="preserve"><value>Full text (English)</value></data>
   <data name="Admin.SessionSummaries.Field.FullTextArabic" xml:space="preserve"><value>Full text (Arabic)</value></data>
+  <data name="Admin.SessionSummaries.Field.Subtitle" xml:space="preserve"><value>AI source subtitle (English)</value></data>
+  <data name="Admin.SessionSummaries.Field.SubtitleArabic" xml:space="preserve"><value>AI source subtitle (Arabic)</value></data>
+  <data name="Admin.SessionSummaries.Field.AiDraft" xml:space="preserve"><value>Original AI draft (read-only)</value></data>
   <data name="Admin.SessionSummaries.Editor.Save" xml:space="preserve"><value>Save</value></data>
   <data name="Admin.SessionSummaries.Editor.Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Admin.SessionSummaries.Generated" xml:space="preserve"><value>AI draft generated.</value></data>

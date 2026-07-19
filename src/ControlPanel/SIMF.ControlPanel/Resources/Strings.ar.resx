@@ -1848,6 +1848,9 @@
   <data name="Admin.SessionSummaries.Field.SpeakersArabic" xml:space="preserve"><value>المتحدثون (العربية)</value></data>
   <data name="Admin.SessionSummaries.Field.FullText" xml:space="preserve"><value>النص الكامل (الإنجليزية)</value></data>
   <data name="Admin.SessionSummaries.Field.FullTextArabic" xml:space="preserve"><value>النص الكامل (العربية)</value></data>
+  <data name="Admin.SessionSummaries.Field.Subtitle" xml:space="preserve"><value>النص المصدر للذكاء الاصطناعي (الإنجليزية)</value></data>
+  <data name="Admin.SessionSummaries.Field.SubtitleArabic" xml:space="preserve"><value>النص المصدر للذكاء الاصطناعي (العربية)</value></data>
+  <data name="Admin.SessionSummaries.Field.AiDraft" xml:space="preserve"><value>مسودة الذكاء الاصطناعي الأصلية (للقراءة فقط)</value></data>
   <data name="Admin.SessionSummaries.Editor.Save" xml:space="preserve"><value>حفظ</value></data>
   <data name="Admin.SessionSummaries.Editor.Cancel" xml:space="preserve"><value>إلغاء</value></data>
   <data name="Admin.SessionSummaries.Generated" xml:space="preserve"><value>تم توليد مسودة بالذكاء الاصطناعي.</value></data>
