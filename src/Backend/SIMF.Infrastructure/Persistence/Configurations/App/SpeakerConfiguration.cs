@@ -22,8 +22,11 @@ internal sealed class SpeakerConfiguration : IEntityTypeConfiguration<Speaker>
         builder.Property(speaker => speaker.Code).HasMaxLength(16).IsRequired();
         builder.Property(speaker => speaker.Name).HasMaxLength(128).IsRequired();
         builder.Property(speaker => speaker.NameArabic).HasMaxLength(128).IsRequired();
-        builder.Property(speaker => speaker.Rank).HasMaxLength(64);
-        builder.Property(speaker => speaker.RankArabic).HasMaxLength(64);
+        // Owner 2026-07-19 — widened 64 → 256: the Arabic rank/title runs longer
+        // than the English (live data reaches ~120 chars); English widened too for
+        // symmetry. Matches the CP form MaxLength (the EF/UI length lock).
+        builder.Property(speaker => speaker.Rank).HasMaxLength(256);
+        builder.Property(speaker => speaker.RankArabic).HasMaxLength(256);
 
         builder.Property(speaker => speaker.Bio).HasMaxLength(2048);
         builder.Property(speaker => speaker.BioArabic).HasMaxLength(2048);
