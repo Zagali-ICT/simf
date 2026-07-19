@@ -287,6 +287,11 @@ internal sealed class UserProfileService(
         profile.OrganisationId = request.OrganisationId;
         profile.RegionId = request.RegionId;
         profile.Gender = request.Gender;
+        // D-736 — "Show in Meet People Like You" toggle; null = no change.
+        if (request.ShowInMeetLikeYou.HasValue)
+        {
+            profile.ShowInMeetLikeYou = request.ShowInMeetLikeYou.Value;
+        }
         if (!isNew)
         {
             profile.UpdatedAt = now;
@@ -927,6 +932,7 @@ internal sealed class UserProfileService(
             HasAvatar = hasAvatar,
             QrId = qrId,
             IsVip = isVip,
+            ShowInMeetLikeYou = profile.ShowInMeetLikeYou,
         };
 
     // D-729 (owner item 15) — the account's VIP status for the app, from the
