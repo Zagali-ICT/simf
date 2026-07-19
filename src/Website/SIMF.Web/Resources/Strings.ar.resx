@@ -205,6 +205,7 @@
   <data name="Landing.Nav.Archive.E1" xml:space="preserve"><value>النسخة الأولى 2019</value></data>
   <data name="Landing.Nav.Archive.E2" xml:space="preserve"><value>النسخة الثانية 2022</value></data>
   <data name="Landing.Nav.Archive.E3" xml:space="preserve"><value>النسخة الثالثة 2024</value></data>
+  <data name="Landing.Nav.Archive.All" xml:space="preserve"><value>استعرض كل النسخ</value></data>
   <data name="Landing.Search.Placeholder" xml:space="preserve"><value>بحث</value></data>
   <data name="Landing.Search.Submit" xml:space="preserve"><value>بحث</value></data>
   <data name="Landing.Search.Voice" xml:space="preserve"><value>البحث الصوتي</value></data>
@@ -458,4 +459,22 @@
   <data name="Discover.Meta" xml:space="preserve"><value>اكتشف المملكة العربية السعودية حول الملتقى البحري السعودي الدولي — من الإرث العريق إلى مدن المستقبل، وجهات تستحق الاستكشاف قرب مقر الملتقى بالرياض.</value></data>
   <data name="Discover.Hero.Title" xml:space="preserve"><value>أهلاً بكم في المملكة العربية السعودية</value></data>
   <data name="Discover.Hero.Subtitle" xml:space="preserve"><value>بين جلسات الملتقى وبعدها، استكشف وجهات المملكة التي تمزج بين الإرث العريق ومدن المستقبل.</value></data>
+
+  <!-- archive page (/archive) — Figma 5840-27997 -->
+  <data name="Archive.PageTitle" xml:space="preserve"><value>أرشيف الملتقى — الملتقى البحري السعودي الدولي</value></data>
+  <data name="Archive.Meta" xml:space="preserve"><value>أرشيف الملتقى البحري السعودي الدولي — النسخ السابقة وأبرز الأرقام وعناوين الجلسات والمتحدثون من الأعوام الماضية.</value></data>
+  <data name="Archive.Hero.Title" xml:space="preserve"><value>أرشيف الملتقى</value></data>
+  <data name="Archive.Hero.Subtitle" xml:space="preserve"><value>نظرة على مسيرة الملتقى البحري السعودي الدولي — نسخه السابقة ومحطاته واللحظات التي شكّلت أجندة الأمن البحري العالمية.</value></data>
+  <data name="Archive.Stats.Speakers" xml:space="preserve"><value>المتحدثون</value></data>
+  <data name="Archive.Stats.Attendees" xml:space="preserve"><value>الحضور</value></data>
+  <data name="Archive.Stats.Sessions" xml:space="preserve"><value>الجلسات</value></data>
+  <data name="Archive.Stats.Aria" xml:space="preserve"><value>أبرز الأرقام</value></data>
+  <data name="Archive.Gallery.Title" xml:space="preserve"><value>الصور والفيديو</value></data>
+  <data name="Archive.Gallery.Sub" xml:space="preserve"><value>أبرز اللقطات من نسخ الملتقى السابقة.</value></data>
+  <data name="Archive.Sessions.Title" xml:space="preserve"><value>عناوين الجلسات</value></data>
+  <data name="Archive.Sessions.Desc" xml:space="preserve"><value>جلسات الملتقى البحري السعودي الدولي 2024.</value></data>
+  <data name="Archive.Speakers.Title" xml:space="preserve"><value>المتحدثون السابقون</value></data>
+  <data name="Archive.Speakers.Lead" xml:space="preserve"><value>نخبة من القادة وصنّاع القرار والخبراء من المملكة والعالم شاركوا في نسخ الملتقى السابقة.</value></data>
+  <data name="Archive.Editions.Title" xml:space="preserve"><value>استعرض الإصدارات السابقة</value></data>
+  <data name="Archive.Editions.Desc" xml:space="preserve"><value>نسخ الملتقى عبر السنوات.</value></data>
 </root>

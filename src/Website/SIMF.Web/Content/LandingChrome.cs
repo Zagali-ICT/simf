@@ -58,6 +58,7 @@ public static class LandingChrome
         ]),
         new("Landing.Nav.Archive", "Landing.Nav.Archive",
         [
+            new("Landing.Nav.Archive.All", "/archive"),
             new("Landing.Nav.Archive.E1", "#"),
             new("Landing.Nav.Archive.E2", "#"),
             new("Landing.Nav.Archive.E3", "#"),

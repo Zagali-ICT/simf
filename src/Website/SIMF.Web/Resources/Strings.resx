@@ -205,6 +205,7 @@
   <data name="Landing.Nav.Archive.E1" xml:space="preserve"><value>First edition 2019</value></data>
   <data name="Landing.Nav.Archive.E2" xml:space="preserve"><value>Second edition 2022</value></data>
   <data name="Landing.Nav.Archive.E3" xml:space="preserve"><value>Third edition 2024</value></data>
+  <data name="Landing.Nav.Archive.All" xml:space="preserve"><value>Browse all editions</value></data>
   <data name="Landing.Search.Placeholder" xml:space="preserve"><value>Search</value></data>
   <data name="Landing.Search.Submit" xml:space="preserve"><value>Search</value></data>
   <data name="Landing.Search.Voice" xml:space="preserve"><value>Voice search</value></data>
@@ -458,4 +459,22 @@
   <data name="Discover.Meta" xml:space="preserve"><value>Discover Saudi Arabia around the Saudi International Maritime Forum — from ancient heritage to future cities, the destinations to explore near the Riyadh venue.</value></data>
   <data name="Discover.Hero.Title" xml:space="preserve"><value>Welcome to the Kingdom of Saudi Arabia</value></data>
   <data name="Discover.Hero.Subtitle" xml:space="preserve"><value>Between the forum's sessions and beyond, explore the destinations across the Kingdom that blend an ancient heritage with the cities of the future.</value></data>
+
+  <!-- archive page (/archive) — Figma 5840-27997 -->
+  <data name="Archive.PageTitle" xml:space="preserve"><value>Forum archive — Saudi International Maritime Forum</value></data>
+  <data name="Archive.Meta" xml:space="preserve"><value>The Saudi International Maritime Forum archive — past editions, headline numbers, session titles and featured speakers from previous years.</value></data>
+  <data name="Archive.Hero.Title" xml:space="preserve"><value>Forum archive</value></data>
+  <data name="Archive.Hero.Subtitle" xml:space="preserve"><value>A look back at the Saudi International Maritime Forum — its past editions, milestones and the moments that shaped the global maritime-security agenda.</value></data>
+  <data name="Archive.Stats.Speakers" xml:space="preserve"><value>Speakers</value></data>
+  <data name="Archive.Stats.Attendees" xml:space="preserve"><value>Attendees</value></data>
+  <data name="Archive.Stats.Sessions" xml:space="preserve"><value>Sessions</value></data>
+  <data name="Archive.Stats.Aria" xml:space="preserve"><value>Headline numbers</value></data>
+  <data name="Archive.Gallery.Title" xml:space="preserve"><value>Photos &amp; video</value></data>
+  <data name="Archive.Gallery.Sub" xml:space="preserve"><value>Highlights from previous editions of the forum.</value></data>
+  <data name="Archive.Sessions.Title" xml:space="preserve"><value>Session titles</value></data>
+  <data name="Archive.Sessions.Desc" xml:space="preserve"><value>Sessions from the Saudi International Maritime Forum 2024.</value></data>
+  <data name="Archive.Speakers.Title" xml:space="preserve"><value>Past speakers</value></data>
+  <data name="Archive.Speakers.Lead" xml:space="preserve"><value>A distinguished group of Saudi and international leaders, decision-makers and experts who took part in previous editions of the forum.</value></data>
+  <data name="Archive.Editions.Title" xml:space="preserve"><value>Browse the past editions</value></data>
+  <data name="Archive.Editions.Desc" xml:space="preserve"><value>The forum's editions over the years.</value></data>
 </root>

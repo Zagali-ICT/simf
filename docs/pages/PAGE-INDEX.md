@@ -167,6 +167,7 @@ No public nav per D-064 — every page is reached via direct URL or auth redirec
 | `/partners` | ✅ Real (`ln-` SSR; Figma 5866-40017; reuses landing partners + sponsors bands, single-sourced — Partners cluster #1) | Public | [web/partners.md](web/partners.md) | [e2e/web-partners.md](../tests/e2e/web-partners.md) |
 | `/discover` | ✅ Real (`ln-` SSR; Figma 5867-29747; reuses landing destinations band, single-sourced — Visitor cluster) | Public | [web/discover.md](web/discover.md) | [e2e/web-discover.md](../tests/e2e/web-discover.md) |
 | `/visit` | ✅ Real (`ln-` SSR; Figma 5867-24636; supersedes the old MudBlazor visit-entry page — Visitor cluster) | Public | [web/visit.md](web/visit.md) | [e2e/web-visit.md](../tests/e2e/web-visit.md) |
+| `/archive` | ✅ Real (`ln-` SSR; Figma 5840-27997; **live** archive data + static fallback — Media cluster) | Public | [web/archive.md](web/archive.md) | [e2e/web-archive.md](../tests/e2e/web-archive.md) |
 | `/login` | 🔒 Auth-only | Anyone | [web/login.md](web/login.md) | [e2e/web-login.md](../tests/e2e/web-login.md) |
 | `/login/verify` | 🔒 Auth-only | Mid-sign-in | [web/otp-verify.md](web/otp-verify.md) | [e2e/web-otp-verify.md](../tests/e2e/web-otp-verify.md) |
 | `/forgot-password` | 🔒 Auth-only | Anyone | [web/forgot-password.md](web/forgot-password.md) | [e2e/web-forgot-password.md](../tests/e2e/web-forgot-password.md) |

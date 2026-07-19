@@ -564,6 +564,27 @@
 .ln-visa-cta__title { font-size: 18px; font-weight: 700; line-height: 24px; color: var(--ink); text-align: start; }
 .ln-visa-cta__sub { font-size: 13px; line-height: 18px; color: var(--gray-darker); text-align: start; }
 
+/* ===== ARCHIVE: photo highlights gallery (/archive — Figma 5840-27997) ===
+   A static highlights grid (the live archive-media feed + a video provider are a
+   follow-up — see web/archive.md §7). */
+.ln-gallery { background: var(--white); padding: 64px clamp(16px, 5.5vw, 80px); }
+.ln-gallery__inner { max-width: var(--content-w); margin-inline: auto; display: flex; flex-direction: column; gap: 32px; }
+.ln-gallery__head { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
+.ln-gallery__title { font-size: 32px; font-weight: 800; line-height: 1.25; color: var(--navy); text-align: start; }
+.ln-gallery__sub { font-size: 16px; line-height: 24px; color: var(--ink); text-align: start; }
+.ln-gallery__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; width: 100%; }
+.ln-gallery__item { aspect-ratio: 16 / 10; border-radius: var(--radius-md); overflow: hidden; }
+.ln-gallery__item img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s ease; }
+.ln-gallery__item:hover img { transform: scale(1.04); }
+@media (max-width: 900px) { .ln-gallery__grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .ln-gallery__grid { grid-template-columns: 1fr; } }
+
+/* The Archive "past editions" band renders a variable-length LIVE list, so it
+   wraps at every width (the shared ln-miles__row is dimensioned for exactly four
+   fixed-width cards and only wraps below 1000px). Page-scoped modifier — the
+   landing's own four-card band is untouched. */
+.ln-miles--wrap .ln-miles__row { flex-wrap: wrap; row-gap: 24px; }
+
 /* ============================== FOOTER ========================== */
 .ln-footer { background: var(--navy); color: var(--gold-light); padding-inline: clamp(16px, 5.5vw, 80px); }
 .ln-footer__inner { max-width: var(--content-w); margin-inline: auto; padding-block: 40px 24px; }
