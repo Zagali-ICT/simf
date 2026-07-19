@@ -41,6 +41,7 @@ class UpsertUserProfileRequest {
     this.internationalMobile,
     this.plateNumber,
     this.organisationId,
+    this.showInMeetLikeYou,
   });
 
   final String? profileTypeId;
@@ -62,6 +63,10 @@ class UpsertUserProfileRequest {
   final String? organisationId;
   final AppGender gender;
 
+  /// D-736 — "Show in Meet People Like You" visibility toggle. Null means
+  /// "no change" (preserves server's current value). Defaults to true.
+  final bool? showInMeetLikeYou;
+
   Map<String, dynamic> toJson() => <String, dynamic>{
         'profileTypeId': profileTypeId,
         'interestIds': interestIds,
@@ -80,6 +85,7 @@ class UpsertUserProfileRequest {
         'plateNumber': plateNumber,
         'organisationId': organisationId,
         'gender': gender.value,
+        'showInMeetLikeYou': showInMeetLikeYou,
       };
 
   /// Returns a copy with [interestIds] replaced — used to attach the interests
@@ -104,6 +110,7 @@ class UpsertUserProfileRequest {
       internationalMobile: internationalMobile,
       plateNumber: plateNumber,
       organisationId: organisationId,
+      showInMeetLikeYou: showInMeetLikeYou,
     );
   }
 }
@@ -166,6 +173,7 @@ class UserProfileResponse {
     this.organisationId,
     this.qrId,
     this.isVip = false,
+    this.showInMeetLikeYou = true,
   });
 
   final String? profileTypeId;
@@ -212,6 +220,10 @@ class UserProfileResponse {
   /// (defaults false when an older server omits it).
   final bool isVip;
 
+  /// D-736 — whether this profile appears in "Meet People Like You"
+  /// recommendations. Defaults to true.
+  final bool showInMeetLikeYou;
+
   /// SUPERSEDED for routing (D-374): the post-sign-in gate now reads the
   /// server-computed `profileComplete` on the session user — do NOT reuse
   /// this getter for routing; the server rule is the single authority.
@@ -252,6 +264,7 @@ class UserProfileResponse {
       hasAvatar: json['hasAvatar'] as bool? ?? false,
       qrId: json['qrId'] as String?,
       isVip: json['isVip'] as bool? ?? false,
+      showInMeetLikeYou: json['showInMeetLikeYou'] as bool? ?? true,
     );
   }
 }

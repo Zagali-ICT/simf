@@ -1581,6 +1581,12 @@ class AppL10n {
   String get meetPeopleFilterSupply => _t('سلاسل الإمداد', 'Supply chains');
   String get meetPeopleFilterSeabed => _t('أمن قاع البحار', 'Seabed security');
 
+  // D-736 — "Show me in Meet People Like You" visibility toggle (sign-up / settings).
+  String get showInMeetLikeYou => _t(
+        'هل يظهر علي قابل أشخاص مثلك',
+        'Show me in Meet People Like You',
+      );
+
   // Accessibility (Page 038; Figma 1116:16630 — client-local settings, no API).
   String get accessibilityTitle => _t('إمكانية الوصول', 'Accessibility');
   String get accessibilityIntro => _t(
