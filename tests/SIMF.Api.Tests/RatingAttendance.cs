@@ -1,0 +1,181 @@
+// Shared test helper for the owner-2026-07-19 rating attendance gate: a rating may
+// only be submitted for something the user attended. These seed the HallAttendance
+// (in-hall check-in) rows the gate reads, so a signed-in test visitor can rate.
+// Session + Hall parents are created on the fly because HallAttendance needs both.
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using SIMF.Common.Enums;
+using SIMF.Domain.AccessControl;
+using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
+using SIMF.Domain.Programme;
+using SIMF.Infrastructure.Persistence;
+
+namespace SIMF.Api.Tests;
+
+internal static class RatingAttendance
+{
+    // Event-local offset (UTC+3) — the codebase convention the PerDay gate uses.
+    private static readonly TimeSpan EventOffset = TimeSpan.FromHours(3);
+
+    /// <summary>The <c>SimfUser.Id</c> for a test email (Identity DB).</summary>
+    internal static async Task<Guid> UserIdAsync(SimfApiFactory factory, string email)
+    {
+        using var scope = factory.Services.CreateScope();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+        var user = await users.FindByEmailAsync(email);
+        return user!.Id;
+    }
+
+    /// <summary>Marks the user as having attended the event (a HallAttendance on a
+    /// throwaway past session), satisfying the Global-scope rating gate.</summary>
+    internal static Task SeedEventAttendanceAsync(SimfApiFactory factory, Guid userId) =>
+        SeedOnNewSessionAsync(factory, userId, DateTimeOffset.UtcNow.AddHours(-1));
+
+    /// <summary>Marks the user as having attended a session on the event-local day of
+    /// <paramref name="dayId"/>, satisfying the PerDay gate for that programme day.</summary>
+    internal static async Task SeedDayAttendanceAsync(
+        SimfApiFactory factory, Guid userId, Guid dayId)
+    {
+        DateOnly date;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            date = await db.ProgrammeDays.Where(d => d.Id == dayId).Select(d => d.Date).SingleAsync();
+        }
+        // Noon on the day, in event-local time, is unambiguously inside its UTC window.
+        var startUtc = new DateTimeOffset(date.ToDateTime(new TimeOnly(12, 0)), EventOffset);
+        await SeedOnNewSessionAsync(factory, userId, startUtc);
+    }
+
+    /// <summary>Marks the user as having attended an existing <paramref name="sessionId"/>,
+    /// satisfying the PerSession gate.</summary>
+    internal static async Task SeedSessionAttendanceAsync(
+        SimfApiFactory factory, Guid userId, Guid sessionId)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var hallId = await db.Sessions.Where(s => s.Id == sessionId)
+            .Select(s => s.HallId).SingleAsync();
+        db.HallAttendances.Add(NewAttendance(userId, sessionId, hallId));
+        await db.SaveChangesAsync();
+    }
+
+    /// <summary>Marks the user as having a venue-gate **Check-In** scan (Allowed) at
+    /// <paramref name="scannedAtUtc"/> with NO in-hall HallAttendance — exercises the
+    /// blended gate's GateScan branch (Day / App / Event / Exhibition). Ensures a
+    /// UserProfile exists (test visitors approved via SetAccountState have none) since
+    /// the scan is keyed on <c>UserProfile.Id</c>, then adds a Gate + GateScan.</summary>
+    internal static async Task SeedGateCheckInAsync(
+        SimfApiFactory factory, Guid userId, DateTimeOffset scannedAtUtc)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var now = DateTimeOffset.UtcNow;
+
+        var profileId = await db.UserProfiles
+            .Where(p => p.UserId == userId).Select(p => (Guid?)p.Id)
+            .SingleOrDefaultAsync();
+        if (profileId is null)
+        {
+            var profileType = new UserProfileType
+            {
+                Id = Guid.NewGuid(),
+                Name = "Visitor " + Guid.NewGuid().ToString("N")[..4],
+                NameArabic = "زائر",
+                PageColor = "#0EA5E9",
+                IsForVisitor = true,
+                MobileAppRole = MobileAppRole.None,
+                IsActive = true,
+                CreatedAt = now,
+            };
+            db.ProfileTypes.Add(profileType);
+            var profile = new UserProfile
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                ProfileTypeId = profileType.Id,
+                Name = "Attendee", NameArabic = "حاضر",
+                NationalityId = 682,
+                CreatedAt = now,
+            };
+            db.UserProfiles.Add(profile);
+            profileId = profile.Id;
+        }
+
+        var gate = new Gate
+        {
+            Id = Guid.NewGuid(),
+            Code = "G-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+            Name = "Main Gate", NameArabic = "البوابة الرئيسية",
+            IsActive = true, CreatedAt = now,
+        };
+        db.Gates.Add(gate);
+        db.GateScans.Add(new GateScan
+        {
+            GateId = gate.Id,
+            UserProfileId = profileId,
+            QrIdAtScan = "QR" + Guid.NewGuid().ToString("N")[..8].ToUpperInvariant(),
+            Direction = ScanDirection.CheckIn,
+            Outcome = ScanOutcome.Allowed,
+            ScannedByUserId = Guid.NewGuid(),
+            ScannedAtUtc = scannedAtUtc,
+        });
+        await db.SaveChangesAsync();
+    }
+
+    /// <summary>A venue-gate Check-In scan on the event-local day of
+    /// <paramref name="dayId"/> (noon, UTC+3) with no in-hall attendance.</summary>
+    internal static async Task SeedGateCheckInOnDayAsync(
+        SimfApiFactory factory, Guid userId, Guid dayId)
+    {
+        DateOnly date;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            date = await db.ProgrammeDays.Where(d => d.Id == dayId).Select(d => d.Date).SingleAsync();
+        }
+        var scannedAtUtc = new DateTimeOffset(date.ToDateTime(new TimeOnly(12, 0)), EventOffset);
+        await SeedGateCheckInAsync(factory, userId, scannedAtUtc);
+    }
+
+    private static async Task SeedOnNewSessionAsync(
+        SimfApiFactory factory, Guid userId, DateTimeOffset sessionStartUtc)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var hall = new Hall
+        {
+            Id = Guid.NewGuid(),
+            Code = "AH-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+            Name = "Attendance Hall", NameArabic = "قاعة الحضور",
+            Capacity = 10, IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+        };
+        db.Halls.Add(hall);
+        var session = new Session
+        {
+            Id = Guid.NewGuid(),
+            Code = "AS-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+            Title = "Attendance Session", TitleArabic = "جلسة الحضور",
+            HallId = hall.Id,
+            StartUtc = sessionStartUtc,
+            EndUtc = sessionStartUtc.AddHours(1),
+            IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+        };
+        db.Sessions.Add(session);
+        db.HallAttendances.Add(NewAttendance(userId, session.Id, hall.Id));
+        await db.SaveChangesAsync();
+    }
+
+    private static HallAttendance NewAttendance(Guid userId, Guid sessionId, Guid hallId) => new()
+    {
+        Id = Guid.NewGuid(),
+        SessionId = sessionId,
+        HallId = hallId,
+        UserId = userId,
+        Method = AttendanceMethod.QrScan,
+        EnterUtc = DateTimeOffset.UtcNow,
+        CreatedAt = DateTimeOffset.UtcNow,
+    };
+}

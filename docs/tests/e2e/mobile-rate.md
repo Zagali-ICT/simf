@@ -12,7 +12,7 @@
 | **Page** | [`Page_040`](../../App/Page_040/README.md) |
 | **Route** | `GET /api/v1/app/feedback/form` + `POST /api/v1/app/feedback/submit` · app screen #40 `/rate?code=&ratingTypeId=&targetId=` (auth-gated) |
 | **Auth setup** | An **approved Visitor** token (the page is login-only; route 40 is in the auth gate). |
-| **Last reviewed** | 2026-06-25 (D-496 dynamic ratings) |
+| **Last reviewed** | 2026-07-19 (owner attendance gate — rate only what you attended) |
 
 ## Wire contract (D-496)
 
@@ -20,10 +20,19 @@
   `{ ratingTypeId, code, name, scope, hasOverallStars, allowComment, commentLabel,
   targetId, groups[{ name, questions[{ id, text, isRequired }] }], ungroupedQuestions[],
   existing{ overallStars, comment, answers[{ questionId, stars }] },
-  targetName?, targetNameArabic?, targetStartUtc? }`.
+  targetName?, targetNameArabic?, targetStartUtc?, isEligible }`.
   **D-713 (appended):** `targetName` / `targetNameArabic` / `targetStartUtc` carry the
   rated **session's** title + start time (null for a Global type), for the app's
   "watched at {session} · {date}" header. Append-only (D-219) — the shipped app ignores them.
+  **Owner 2026-07-19 (appended):** `isEligible` is `false` when the caller has not
+  attended what this type rates; the app keeps the form visible but disables submit and
+  shows an "attend to rate" note. Append-only, defaults `true`.
+- **Attendance gate (owner 2026-07-19).** A rating may only be **submitted** for
+  something the user attended — `POST /app/feedback/submit` returns **403
+  `RATING_NOT_ATTENDED`** otherwise. The proof is blended per scope: **Session** =
+  an in-hall `HallAttendance` for that session; **Day** = an in-hall check-in on a
+  session that event-local day OR a venue-gate Check-In scan that day; **App / Event /
+  Exhibition** (global) = any in-hall check-in OR any venue-gate Check-In scan.
 - `POST /app/feedback/submit` body `{ ratingTypeId|code, targetId?, overallStars?,
   comment?, answers[{ questionId, stars }] }` → `RatingSubmissionView` (upsert; one
   per user per (type, target)).
@@ -58,6 +67,10 @@
 | E2E-MOB040-015 | Leaving a session's hall (departure) fires a SessionRatingRequest once; re-enter+leave does not double; the clock-end worker then skips that attendee (D-713 GAP-A) | happy | P0 | authored ✓ (API `HallAttendanceTests.Departure_fires_a_session_rating_prompt_once` + `SessionRatingPromptWorkerTests.Scan_does_not_resend_when_the_attendee_was_already_prompted_on_departure`) |
 | E2E-MOB040-016 | The per-session rate form shows a "Watched {session} · {date}" header; the App (global) form shows none (D-713) | happy | P1 | authored ✓ (screen `a per-session rating shows the watched-at header` / `the global App rating shows no watched-at header` + API `Per_session_form_carries_the_watched_at_context`) |
 | E2E-MOB040-017 | Departure with no open attendance row fires no rating prompt | resilience | P2 | authored ✓ (API `HallAttendanceTests.Departure_with_no_open_row_fires_no_rating_prompt`) |
+| E2E-MOB040-018 | **Attendance gate (owner 2026-07-19)** — a visitor who did not attend cannot submit: `POST /feedback/submit` → 403 `RATING_NOT_ATTENDED`; after a check-in is recorded the same submit → 200 | auth | P0 | authored ✓ (API `FeedbackRatingsTests.A_visitor_who_did_not_attend_cannot_submit_an_app_rating` + `The_form_reports_ineligible_before_attendance_and_eligible_after`) |
+| E2E-MOB040-019 | **Per-session gate** — rating a session requires an in-hall check-in for **that** session (attendance at another session does not unlock it) → 403 then 200 once checked in | auth | P0 | authored ✓ (API `FeedbackRatingsTests.A_per_session_rating_requires_attendance_at_that_session`) |
+| E2E-MOB040-020 | **Form eligibility flag** — the form still loads for a non-attendee but carries `isEligible=false`; the app disables submit + shows an "attend to rate" note; `true` after attendance | happy | P1 | authored ✓ (API `The_form_reports_ineligible_before_attendance_and_eligible_after` + widget `an ineligible form shows the attend note + disables submit`) |
+| E2E-MOB040-021 | **Blended day/overall signal** — a Day / App / Event / Exhibition rating is unlocked by a venue-gate Check-In scan (not only an in-hall check-in), matching the rating-prompt audience | auth | P1 | authored ✓ (API `FeedbackRatingsTests.A_venue_gate_checkin_alone_unlocks_a_global_rating` + `DynamicRatingFormTests.Day_rating_is_unlocked_by_a_venue_gate_checkin_that_day`) |
 
 ## Scenarios
 
@@ -77,6 +90,18 @@ Scenario: An overall rating with the dynamic descriptor is submitted
   When they submit
   Then POST /app/feedback/submit carries overallStars=4 and answers=[]
   And a "Thanks for your rating" toast is shown
+
+Scenario: Only an attendee can submit a rating (owner 2026-07-19)
+  Given an approved visitor who has NOT checked in to any session or venue gate
+  When they open /rate (code=App)
+  Then GET /app/feedback/form returns 200 with isEligible=false
+  And the app shows the form with submit disabled and an "attend to rate" note
+  When they force a submit anyway
+  Then POST /app/feedback/submit returns 403 RATING_NOT_ATTENDED
+  Given the visitor is then recorded as checked in (in-hall or a venue-gate scan)
+  When they reload /rate
+  Then GET /app/feedback/form returns isEligible=true
+  And a submit now returns 200
 
 Scenario: A per-question score rides in answers[]
   Given the form has an ungrouped question "Organization" (id q-org)
@@ -138,7 +163,7 @@ Scenario: The per-session rate form shows the watched-at header (D-713)
   But the global App form (code=App, no target) shows no such header
 ```
 
-**Evidence:** `rate_screen_test.dart` (4 widget tests, all green) + `FeedbackRatingsTests`
+**Evidence:** `rate_screen_test.dart` (8 widget tests, all green) + `FeedbackRatingsTests`
 (form/submit/upsert/validation/per-session) + `RatingConfigTests` (required-question) +
 `SessionRatingPromptWorkerTests` (the end-of-session prompt that drives the deep-link) +
 `notifications_screen_test.dart` (the deep-link tap-routing regression, D-507). On-device
@@ -149,4 +174,4 @@ config lives on `/admin/rating-config` (see `cp-admin-rating-config.md`).
 
 ---
 
-_Last reviewed:_ `2026-07-09` by Claude (D-713 — rate-on-hall-departure GAP-A + the watched-at header).
+_Last reviewed:_ `2026-07-19` by Claude (owner attendance gate — rate only what you attended; blended HallAttendance + venue-gate GateScan; form `isEligible` flag). Earlier: `2026-07-09` by Claude (D-713 — rate-on-hall-departure GAP-A + the watched-at header).

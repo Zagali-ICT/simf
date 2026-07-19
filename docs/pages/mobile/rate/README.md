@@ -12,6 +12,17 @@ overall star row, the server-defined grouped + flat questions (each a 1–5 star
 bar), and the optional comment box — prefilled from any existing submission.
 `GET /app/feedback/form` → `POST /app/feedback/submit`.
 
+## Attendance gate (owner 2026-07-19)
+
+A rating may only be submitted for something the user **attended**. The server hard-gates
+`POST /app/feedback/submit` with **403 `RATING_NOT_ATTENDED`**, and `GET /app/feedback/form`
+returns an **`isEligible`** flag (append-only, defaults `true`) so the screen keeps the form
+visible but disables submit and shows an "attend to rate" note rather than letting the user
+fill it and be rejected. Attendance proof is **blended** per scope: **Session** = an in-hall
+`HallAttendance` for that session; **Day** = an in-hall check-in that event-local day **or** a
+venue-gate Check-In scan that day; **App / Event / Exhibition** (global) = any in-hall check-in
+**or** any venue-gate Check-In scan (so the same audience the rating prompts target can rate).
+
 ## Structure (post-decomposition)
 
 | File | Holds |
