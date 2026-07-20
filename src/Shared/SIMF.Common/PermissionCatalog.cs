@@ -713,6 +713,15 @@ public static class PermissionCatalog
     private static readonly IReadOnlyList<string> GateOperator = [AppRoles.GateOperator];
     private static readonly IReadOnlyList<string> PublicRelations = [AppRoles.PublicRelations];
 
+    // D-752 — the Security + Scientific team CP permission sets.
+    private static readonly IReadOnlyList<string> SecurityTeam = [AppRoles.SecurityTeam];
+    private static readonly IReadOnlyList<string> ScientificCommittee = [AppRoles.ScientificCommittee];
+
+    // The two gate codes the GateOperator already holds are also granted to the
+    // Security team, so their baseline list carries both roles.
+    private static readonly IReadOnlyList<string> GateOperatorOrSecurity =
+        [AppRoles.GateOperator, AppRoles.SecurityTeam];
+
     /// <summary>Every permission in the catalogue, in display order. The
     /// seeder inserts one row per entry (idempotent by <see cref="PermissionDef.Code"/>).</summary>
     public static readonly IReadOnlyList<PermissionDef> All = BuildAll();
@@ -820,22 +829,24 @@ public static class PermissionCatalog
         new(SessionCategories.Export, "SessionCategories", "Export", "Export session categories", AdminOnly),
         new(SessionCategories.Import, "SessionCategories", "Import", "Import session categories", AdminOnly),
 
-        new(Sessions.View, "Sessions", "View", "View sessions", AdminOnly),
-        new(Sessions.Create, "Sessions", "Create", "Create sessions", AdminOnly),
-        new(Sessions.Edit, "Sessions", "Edit", "Edit sessions", AdminOnly),
-        new(Sessions.Delete, "Sessions", "Delete", "Delete sessions", AdminOnly),
+        // D-752 — the Scientific team runs the session programme.
+        new(Sessions.View, "Sessions", "View", "View sessions", ScientificCommittee),
+        new(Sessions.Create, "Sessions", "Create", "Create sessions", ScientificCommittee),
+        new(Sessions.Edit, "Sessions", "Edit", "Edit sessions", ScientificCommittee),
+        new(Sessions.Delete, "Sessions", "Delete", "Delete sessions", ScientificCommittee),
         // P3.2 — D-231: session broadcast lifecycle (mark held/recorded, publish).
-        new(Sessions.Publish, "Sessions", "Publish", "Publish sessions & manage their lifecycle", AdminOnly),
-        new(Sessions.Export, "Sessions", "Export", "Export sessions", AdminOnly),
-        new(Sessions.Import, "Sessions", "Import", "Import sessions", AdminOnly),
+        new(Sessions.Publish, "Sessions", "Publish", "Publish sessions & manage their lifecycle", ScientificCommittee),
+        new(Sessions.Export, "Sessions", "Export", "Export sessions", ScientificCommittee),
+        new(Sessions.Import, "Sessions", "Import", "Import sessions", ScientificCommittee),
 
         // D-452 — programme days (date + bilingual title + logo).
-        new(ProgrammeDays.View, "ProgrammeDays", "View", "View programme days", AdminOnly),
-        new(ProgrammeDays.Create, "ProgrammeDays", "Create", "Create programme days", AdminOnly),
-        new(ProgrammeDays.Edit, "ProgrammeDays", "Edit", "Edit programme days", AdminOnly),
-        new(ProgrammeDays.Delete, "ProgrammeDays", "Delete", "Delete programme days", AdminOnly),
-        new(ProgrammeDays.Export, "ProgrammeDays", "Export", "Export programme days", AdminOnly),
-        new(ProgrammeDays.Import, "ProgrammeDays", "Import", "Import programme days", AdminOnly),
+        // D-752 — the Scientific team maintains the programme-day banners.
+        new(ProgrammeDays.View, "ProgrammeDays", "View", "View programme days", ScientificCommittee),
+        new(ProgrammeDays.Create, "ProgrammeDays", "Create", "Create programme days", ScientificCommittee),
+        new(ProgrammeDays.Edit, "ProgrammeDays", "Edit", "Edit programme days", ScientificCommittee),
+        new(ProgrammeDays.Delete, "ProgrammeDays", "Delete", "Delete programme days", ScientificCommittee),
+        new(ProgrammeDays.Export, "ProgrammeDays", "Export", "Export programme days", ScientificCommittee),
+        new(ProgrammeDays.Import, "ProgrammeDays", "Import", "Import programme days", ScientificCommittee),
 
         new(ProgrammeTimeline.View, "ProgrammeTimeline", "View", "View the programme timeline", AdminOnly),
 
@@ -882,36 +893,41 @@ public static class PermissionCatalog
         new(BadgeUpdateRequests.View, "BadgeUpdateRequests", "View", "View badge update requests", AdminOnly),
         new(BadgeUpdateRequests.Manage, "BadgeUpdateRequests", "Manage", "Manage badge update requests", AdminOnly),
 
-        new(Speakers.View, "Speakers", "View", "View speakers", AdminOnly),
-        new(Speakers.Create, "Speakers", "Create", "Create speakers", AdminOnly),
-        new(Speakers.Edit, "Speakers", "Edit", "Edit speakers", AdminOnly),
-        new(Speakers.Delete, "Speakers", "Delete", "Delete speakers", AdminOnly),
-        new(Speakers.Export, "Speakers", "Export", "Export speakers", AdminOnly),
-        new(Speakers.Import, "Speakers", "Import", "Import speakers", AdminOnly),
+        // D-752 — the Scientific team curates the speaker roster.
+        new(Speakers.View, "Speakers", "View", "View speakers", ScientificCommittee),
+        new(Speakers.Create, "Speakers", "Create", "Create speakers", ScientificCommittee),
+        new(Speakers.Edit, "Speakers", "Edit", "Edit speakers", ScientificCommittee),
+        new(Speakers.Delete, "Speakers", "Delete", "Delete speakers", ScientificCommittee),
+        new(Speakers.Export, "Speakers", "Export", "Export speakers", ScientificCommittee),
+        new(Speakers.Import, "Speakers", "Import", "Import speakers", ScientificCommittee),
 
         new(SessionModerators.View, "SessionModerators", "View", "View session moderators", AdminOnly),
         new(SessionModerators.Assign, "SessionModerators", "Assign", "Assign session moderators", AdminOnly),
         new(SessionModerators.Revoke, "SessionModerators", "Revoke", "Revoke session moderators", AdminOnly),
         new(SessionModerators.Export, "SessionModerators", "Export", "Export session moderators", AdminOnly),
 
-        new(SessionModeration.Moderate, "SessionModeration", "Moderate", "Moderate a live session", AdminOnly),
+        // D-752 — the Scientific team runs the live-session moderation desk.
+        new(SessionModeration.Moderate, "SessionModeration", "Moderate", "Moderate a live session", ScientificCommittee),
 
         // P3.3 — D-212: Scientific-Committee central Q&A queue.
-        new(Questions.View, "Questions", "View", "View the question queue", AdminOnly),
-        new(Questions.Moderate, "Questions", "Moderate", "Approve / hide questions", AdminOnly),
-        new(Questions.Escalate, "Questions", "Escalate", "Escalate questions to a role", AdminOnly),
-        new(Questions.Export, "Questions", "Export", "Export the question queue", AdminOnly),
+        // D-752 — the Scientific team now holds this queue as a seeded baseline.
+        new(Questions.View, "Questions", "View", "View the question queue", ScientificCommittee),
+        new(Questions.Moderate, "Questions", "Moderate", "Approve / hide questions", ScientificCommittee),
+        new(Questions.Escalate, "Questions", "Escalate", "Escalate questions to a role", ScientificCommittee),
+        new(Questions.Export, "Questions", "Export", "Export the question queue", ScientificCommittee),
 
         // P4.1 — D-238: AI session-summary / محضر committee desk.
-        new(SessionSummaries.View, "SessionSummaries", "View", "View session summaries", AdminOnly),
-        new(SessionSummaries.Edit, "SessionSummaries", "Edit", "Generate / edit session summaries", AdminOnly),
-        new(SessionSummaries.Publish, "SessionSummaries", "Publish", "Publish / un-publish session summaries", AdminOnly),
-        new(SessionSummaries.Approve, "SessionSummaries", "Approve", "Approve session summaries (ready for the host/moderator)", AdminOnly),
-        new(SessionSummaries.Export, "SessionSummaries", "Export", "Export session summaries", AdminOnly),
+        // D-752 — the Scientific team owns the محضر / summary desk.
+        new(SessionSummaries.View, "SessionSummaries", "View", "View session summaries", ScientificCommittee),
+        new(SessionSummaries.Edit, "SessionSummaries", "Edit", "Generate / edit session summaries", ScientificCommittee),
+        new(SessionSummaries.Publish, "SessionSummaries", "Publish", "Publish / un-publish session summaries", ScientificCommittee),
+        new(SessionSummaries.Approve, "SessionSummaries", "Approve", "Approve session summaries (ready for the host/moderator)", ScientificCommittee),
+        new(SessionSummaries.Export, "SessionSummaries", "Export", "Export session summaries", ScientificCommittee),
 
         // P5.1d — D-244: hall-door arrival console (operator QR scan).
-        new(HallArrivals.View, "HallArrivals", "View", "View the hall-arrival console", AdminOnly),
-        new(HallArrivals.Record, "HallArrivals", "Record", "Record a hall arrival by badge scan", AdminOnly),
+        // D-752 — part of the Security team's access-control surface.
+        new(HallArrivals.View, "HallArrivals", "View", "View the hall-arrival console", SecurityTeam),
+        new(HallArrivals.Record, "HallArrivals", "Record", "Record a hall arrival by badge scan", SecurityTeam),
 
         // Exhibition
         new(Exhibitors.View, "Exhibitors", "View", "View exhibitors", AdminOnly),
@@ -944,8 +960,9 @@ public static class PermissionCatalog
         new(VenueMap.Import, "VenueMap", "Import", "Import venue-map nodes", AdminOnly),
 
         // Engagement
-        new(Ratings.View, "Ratings", "View", "View ratings and feedback", AdminOnly),
-        new(Ratings.Export, "Ratings", "Export", "Export ratings and feedback", AdminOnly),
+        // D-752 — the Scientific team reviews session ratings + feedback.
+        new(Ratings.View, "Ratings", "View", "View ratings and feedback", ScientificCommittee),
+        new(Ratings.Export, "Ratings", "Export", "Export ratings and feedback", ScientificCommittee),
         new(RatingConfig.View, "RatingConfig", "View", "View rating configuration", AdminOnly),
         new(RatingConfig.Create, "RatingConfig", "Create", "Create rating types/questions", AdminOnly),
         new(RatingConfig.Edit, "RatingConfig", "Edit", "Edit rating types/questions", AdminOnly),
@@ -1034,13 +1051,16 @@ public static class PermissionCatalog
 
         // System & operations
         new(Statistics.View, "Statistics", "View", "View the statistics dashboard", AdminOnly),
-        new(Attendance.View, "Attendance", "View", "View the session-attendance dashboard", AdminOnly),
+        // D-752 — the Security team monitors session attendance.
+        new(Attendance.View, "Attendance", "View", "View the session-attendance dashboard", SecurityTeam),
 
-        new(Gates.Manage, "Gates", "Manage", "Manage gates", AdminOnly),
-        new(Gates.Operate, "Gates", "Operate", "Operate a gate", GateOperator),
-        new(Gates.ViewOwnReports, "Gates", "ViewOwnReports", "View own gate reports", GateOperator),
-        new(Gates.Export, "Gates", "Export", "Export gates", AdminOnly),
-        new(Gates.Import, "Gates", "Import", "Import gates", AdminOnly),
+        // D-752 — the Security team owns the gate access-control surface (and
+        // shares Operate / ViewOwnReports with the existing GateOperator).
+        new(Gates.Manage, "Gates", "Manage", "Manage gates", SecurityTeam),
+        new(Gates.Operate, "Gates", "Operate", "Operate a gate", GateOperatorOrSecurity),
+        new(Gates.ViewOwnReports, "Gates", "ViewOwnReports", "View own gate reports", GateOperatorOrSecurity),
+        new(Gates.Export, "Gates", "Export", "Export gates", SecurityTeam),
+        new(Gates.Import, "Gates", "Import", "Import gates", SecurityTeam),
 
         new(Operations.View, "Operations", "View", "View operations toggles", AdminOnly),
         new(Operations.Edit, "Operations", "Edit", "Change operations toggles", AdminOnly),

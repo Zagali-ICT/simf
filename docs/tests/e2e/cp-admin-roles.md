@@ -47,6 +47,8 @@
 | E2E-ROL-022 | Excel export — toolbar Export downloads an .xlsx of the filtered grid (whole vs selected) (D-356) | happy | P1 | _to author_ |
 | E2E-ROL-023 | Excel import — upload a workbook → rows created + result modal with per-row outcome (D-356) | happy | P1 | _to author_ |
 | E2E-ROL-024 | Excel import rejection — non-.xlsx / wrong-sheet upload → bilingual 400, nothing created (D-356) | error | P1 | _to author_ |
+| E2E-ROL-025 | Security team baseline role is present (Built-in pill, 8 permissions) and is not renamable / deletable (D-752) | happy | P1 | _to author_ |
+| E2E-ROL-026 | Scientific team baseline role is present (Built-in pill, 31 permissions) and is not renamable / deletable (D-752) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -484,6 +486,48 @@ Scenario: A bad upload is rejected without creating anything
   And no role is created
 ```
 
+### E2E-ROL-025 - Security team baseline role (D-752)
+
+```gherkin
+Scenario: The Security team role ships as a built-in role with the access-control grants
+  Given the Identity database has been seeded (IdentitySeeder loops AppRoles.CpRoles)
+  And the administrator is on /admin/roles
+  Then a row exists with Name="SecurityTeam", Type pill "Built-in"
+  And its Permissions column reads 8
+  When the administrator clicks the "Details" icon on the "SecurityTeam" row
+  Then the "Role details" modal shows Type="Built-in" and Permissions="8"
+  When the administrator clicks the "Edit" icon on the "SecurityTeam" row
+  Then the info SimfAlert reads "This is a built-in role and cannot be renamed." and no Role name field renders
+  When the administrator opens the Delete form and confirms
+  Then DELETE /account/api/admin/roles/{id} returns HTTP 409 with Code="RoleIsBaseline"
+  And the "SecurityTeam" row remains in the grid
+```
+
+**Evidence captured:**
+- Network: DELETE returns 409 RoleIsBaseline; no PUT fires on the Edit attempt
+- The 8 seeded codes are Gates.Manage, Gates.Operate, Gates.ViewOwnReports, Gates.Export, Gates.Import, HallArrivals.View, HallArrivals.Record, Attendance.View (frozen by PermissionCatalogBaselineTests)
+
+### E2E-ROL-026 - Scientific team baseline role (D-752)
+
+```gherkin
+Scenario: The Scientific team role ships as a built-in role with the programme grants
+  Given the Identity database has been seeded (IdentitySeeder loops AppRoles.CpRoles)
+  And the administrator is on /admin/roles
+  Then a row exists with Name="ScientificCommittee", Type pill "Built-in"
+  And its Permissions column reads 31
+  When the administrator clicks the "Details" icon on the "ScientificCommittee" row
+  Then the "Role details" modal shows Type="Built-in" and Permissions="31"
+  When the administrator clicks the "Edit" icon on the "ScientificCommittee" row
+  Then the info SimfAlert reads "This is a built-in role and cannot be renamed." and no Role name field renders
+  When the administrator opens the Delete form and confirms
+  Then DELETE /account/api/admin/roles/{id} returns HTTP 409 with Code="RoleIsBaseline"
+  And the "ScientificCommittee" row remains in the grid
+```
+
+**Evidence captured:**
+- Network: DELETE returns 409 RoleIsBaseline; no PUT fires on the Edit attempt
+- The 31 seeded codes span Sessions.*, ProgrammeDays.*, Speakers.*, Questions.*, SessionModeration.Moderate, SessionSummaries.*, Ratings.* (frozen by PermissionCatalogBaselineTests)
+
 ---
 
 ## Implementation notes
@@ -516,3 +560,5 @@ Scenario: A bad upload is rejected without creating anything
 ---
 
 _Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle; added E2E-ROL-019..024 and corrected the now-stale one-click delete steps to the D-353 CrudShell + SimfConfirm gate).
+
+_Updated:_ 2026-07-20 by Claude (D-752: added E2E-ROL-025..026 for the SecurityTeam and ScientificCommittee built-in CP roles and their baseline grants).

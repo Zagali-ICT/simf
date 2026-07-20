@@ -40,6 +40,8 @@
 | E2E-RPM-011 | Unknown permission code — hand-crafted PUT with a junk code → 400 `ValidationFailed` | error | P1 | _to author_ |
 | E2E-RPM-012 | Server 500 on save → bilingual fallback toast | resilience | P2 | _to author_ |
 | E2E-RPM-013 | RTL / Arabic render — page mirrors, headings + checkboxes + buttons in Arabic | i18n | P1 | _to author_ |
+| E2E-RPM-014 | Security team baseline: editor shows exactly the 8 access-control codes ticked (read-only); a holder sees only gates / attendance nav (D-752) | guard | P1 | _to author_ |
+| E2E-RPM-015 | Scientific team baseline: editor shows exactly the 31 programme codes ticked (read-only); a holder sees only sessions / questions / summaries / ratings nav (D-752) | guard | P1 | _to author_ |
 
 ## Scenarios
 
@@ -231,6 +233,60 @@ Scenario: Arabic toggle mirrors the editor
   And the action buttons read "حفظ الصلاحيات" and "العودة إلى الأدوار" in reverse (RTL) order
 ```
 
+### E2E-RPM-014 - Security team baseline grants + nav filtering (D-752)
+
+```gherkin
+Scenario: The Security team role carries exactly the access-control codes and drives its nav
+  Given the seeded baseline role "SecurityTeam" exists (IsBaseline = true)
+  When the administrator opens /admin/roles/{SecurityTeamId}/permissions
+  Then an info SimfAlert reads "This is a built-in role; its permissions are managed by the system and cannot be edited here."
+  And every checkbox is disabled and NO "Save permissions" button is shown (baseline, per E2E-RPM-006)
+  And exactly these codes are ticked:
+      Gates.Manage, Gates.Operate, Gates.ViewOwnReports, Gates.Export, Gates.Import,
+      HallArrivals.View, HallArrivals.Record, Attendance.View
+  And every other checkbox is unticked
+
+Scenario: A SecurityTeam-only admin sees only the access-control nav
+  Given a UserType.Admin whose only role is "SecurityTeam" (JWT perm claims = the 8 codes above, not the "*" wildcard)
+  When they sign in and land on the CP shell
+  Then the side menu shows the Gates, Hall arrivals and Attendance items
+  And it does NOT show the Sessions, Questions, Session summaries or Ratings items
+  When they navigate directly to /admin/sessions
+  Then the RequirePermission attribute denies the page and they land on /not-permitted
+```
+
+### E2E-RPM-015 - Scientific team baseline grants + nav filtering (D-752)
+
+```gherkin
+Scenario: The Scientific team role carries exactly the programme codes and drives its nav
+  Given the seeded baseline role "ScientificCommittee" exists (IsBaseline = true)
+  When the administrator opens /admin/roles/{ScientificCommitteeId}/permissions
+  Then an info SimfAlert reads "This is a built-in role; its permissions are managed by the system and cannot be edited here."
+  And every checkbox is disabled and NO "Save permissions" button is shown (baseline, per E2E-RPM-006)
+  And exactly these codes are ticked:
+      Sessions.View, Sessions.Create, Sessions.Edit, Sessions.Delete, Sessions.Publish, Sessions.Export, Sessions.Import,
+      ProgrammeDays.View, ProgrammeDays.Create, ProgrammeDays.Edit, ProgrammeDays.Delete, ProgrammeDays.Export, ProgrammeDays.Import,
+      Speakers.View, Speakers.Create, Speakers.Edit, Speakers.Delete, Speakers.Export, Speakers.Import,
+      SessionModeration.Moderate,
+      Questions.View, Questions.Moderate, Questions.Escalate, Questions.Export,
+      SessionSummaries.View, SessionSummaries.Edit, SessionSummaries.Publish, SessionSummaries.Approve, SessionSummaries.Export,
+      Ratings.View, Ratings.Export
+  And every other checkbox is unticked
+
+Scenario: A ScientificCommittee-only admin sees only the programme nav
+  Given a UserType.Admin whose only role is "ScientificCommittee" (JWT perm claims = the 31 codes above, not the "*" wildcard)
+  When they sign in and land on the CP shell
+  Then the side menu shows the Sessions, Programme days, Speakers, Questions, Session summaries and Ratings items
+  And it does NOT show the Gates or Hall arrivals items
+  When they navigate directly to /admin/gates
+  Then the RequirePermission attribute denies the page and they land on /not-permitted
+```
+
+**Evidence captured (E2E-RPM-014 / -015):**
+- The two ticked sets match `PermissionCatalogBaselineTests` exactly (build-time freeze of intent)
+- `IdentitySeederTests.SeedAsync_seeds_the_security_and_scientific_team_roles_with_their_baseline_grants` asserts the same sets at the DB layer after a real seed
+- Nav filtering is the standard `CpNavigation` `RequiredPermission` filter (`CpNavigationPermissionTests`); Administrator keeps the "*" wildcard and still sees everything
+
 ---
 
 ## Implementation notes
@@ -263,3 +319,5 @@ Scenario: Arabic toggle mirrors the editor
 ---
 
 _Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+
+_Updated:_ 2026-07-20 by Claude (D-752: added E2E-RPM-014..015 for the SecurityTeam and ScientificCommittee baseline grant sets and their nav filtering).
