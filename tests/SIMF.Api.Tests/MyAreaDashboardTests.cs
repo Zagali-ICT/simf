@@ -163,6 +163,7 @@ public sealed class MyAreaDashboardTests : IClassFixture<SimfApiFactory>
         // encoded in a camera-readable QR.
         Assert.Contains("FN:سعد العتيبي", vcf);
         Assert.Contains("TITLE:Captain", vcf);
+        Assert.Contains("TITLE;LANGUAGE=ar:قائد", vcf); // bilingual title (2026-07-20)
         Assert.Contains("ORG:Royal Saudi Naval Forces", vcf);
         // The mobile numbers become TEL lines ("phones").
         Assert.Contains("TEL;TYPE=CELL:+966500112233", vcf);
@@ -370,6 +371,7 @@ public sealed class MyAreaDashboardTests : IClassFixture<SimfApiFactory>
             NameArabic = "سعد العتيبي",
             Name = "Saad Alotaibi",
             JobTitle = "Captain",
+            JobTitleArabic = "قائد",
             QrId = qrId,
             NationalityId = 682,
             PlaceOfBirth = "Riyadh",

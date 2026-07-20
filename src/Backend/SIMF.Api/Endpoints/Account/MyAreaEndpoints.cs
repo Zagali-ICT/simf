@@ -195,6 +195,16 @@ public sealed class MyAreaContactCardEndpoint(IMyAreaService service)
         if (!string.IsNullOrWhiteSpace(card.JobTitle))
         {
             sb.Append("TITLE:").Append(EscapeText(card.JobTitle!)).Append("\r\n");
+            // Bilingual title (2026-07-20): Arabic title as a language-tagged
+            // second TITLE (RFC 6350 LANGUAGE param); English stays first.
+            if (!string.IsNullOrWhiteSpace(card.JobTitleArabic))
+            {
+                sb.Append("TITLE;LANGUAGE=ar:").Append(EscapeText(card.JobTitleArabic!)).Append("\r\n");
+            }
+        }
+        else if (!string.IsNullOrWhiteSpace(card.JobTitleArabic))
+        {
+            sb.Append("TITLE:").Append(EscapeText(card.JobTitleArabic!)).Append("\r\n");
         }
         if (!string.IsNullOrWhiteSpace(card.Organisation))
         {

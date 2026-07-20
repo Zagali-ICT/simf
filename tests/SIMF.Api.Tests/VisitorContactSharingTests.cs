@@ -158,7 +158,7 @@ public sealed class VisitorContactSharingTests : IClassFixture<SimfApiFactory>
     {
         var (subjectToken, subjectId) = await CreateApprovedVisitorAsync();
         await SeedProfileAsync(subjectId, "VCard Subject", "بطاقة",
-            jobTitle: "Director", saudiMobile: "+966511111111");
+            jobTitle: "Director", jobTitleArabic: "مدير", saudiMobile: "+966511111111");
         var code = await GetShareTokenAsync(subjectToken);
         var (ownerToken, _) = await CreateApprovedVisitorAsync();
         var save = await PostAuthAsync("/api/v1/app/contacts/save",
@@ -171,7 +171,29 @@ public sealed class VisitorContactSharingTests : IClassFixture<SimfApiFactory>
         Assert.Contains("BEGIN:VCARD", body);
         Assert.Contains("VCard Subject", body);
         Assert.Contains("TITLE:Director", body);
+        Assert.Contains("TITLE;LANGUAGE=ar:مدير", body); // bilingual title (2026-07-20)
         Assert.Contains("TEL", body);
+    }
+
+    [Fact]
+    public async Task Vcard_export_with_arabic_only_title_emits_a_sole_untagged_title()
+    {
+        var (subjectToken, subjectId) = await CreateApprovedVisitorAsync();
+        // Arabic title only (no English) → the vCard uses it as the sole TITLE so
+        // every parser shows it (2026-07-20 bilingual-title fallback branch).
+        await SeedProfileAsync(subjectId, "AR Title", "لقب",
+            jobTitleArabic: "مدير عام", saudiMobile: "+966512222222");
+        var code = await GetShareTokenAsync(subjectToken);
+        var (ownerToken, _) = await CreateApprovedVisitorAsync();
+        var save = await PostAuthAsync("/api/v1/app/contacts/save",
+            new SaveContactRequest { Token = code }, ownerToken);
+        var id = (await save.Content.ReadFromJsonAsync<ApiResult<SavedContactRow>>())!.Data!.Id;
+
+        var vcard = await GetAuthAsync($"/api/v1/app/contacts/{id}/vcard", ownerToken);
+        Assert.Equal(HttpStatusCode.OK, vcard.StatusCode);
+        var body = await vcard.Content.ReadAsStringAsync();
+        Assert.Contains("TITLE:مدير عام", body);
+        Assert.DoesNotContain("TITLE;LANGUAGE=ar", body);
     }
 
     [Fact]
