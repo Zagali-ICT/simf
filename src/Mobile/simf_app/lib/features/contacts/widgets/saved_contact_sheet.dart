@@ -97,7 +97,7 @@ class _SavedContactSheetState extends ConsumerState<SavedContactSheet> {
             ContactCard(
               name: row.localizedName(isArabic),
               available: row.subjectAvailable,
-              jobTitle: row.jobTitle,
+              jobTitle: row.localizedJobTitle(isArabic),
               organisation: row.organisation,
               note: row.note,
             ),

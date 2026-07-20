@@ -388,6 +388,7 @@ internal sealed class AdminInvitationService(
                 profile.Name,
                 profile.NameArabic,
                 profile.JobTitle,
+                profile.JobTitleArabic,
                 ProfileTypeName = profile.ProfileType!.Name,
                 ProfileTypeNameArabic = profile.ProfileType!.NameArabic,
             })
@@ -410,6 +411,7 @@ internal sealed class AdminInvitationService(
             row.Name,
             row.NameArabic,
             row.JobTitle,
+            row.JobTitleArabic,
             row.ProfileTypeName,
             row.ProfileTypeNameArabic,
             emailsByUser.TryGetValue(row.UserId, out var email) ? email : null))

@@ -79,13 +79,14 @@ internal sealed class MyAreaService(
                 p.Name,
                 p.NameArabic,
                 p.JobTitle,
+                p.JobTitleArabic,
                 p.Organisation != null ? (p.Organisation.Name ?? p.Organisation.NameArabic) : null,
                 p.QrId,
                 p.SaudiMobile,
                 p.InternationalMobile))
             .FirstOrDefaultAsync(cancellationToken);
 
-        return card ?? new MyAreaContactCard(string.Empty, string.Empty, null, null, null);
+        return card ?? new MyAreaContactCard(string.Empty, string.Empty, null, null, null, null);
     }
 
     public async Task<MyAreaSessions> GetMySessionsAsync(

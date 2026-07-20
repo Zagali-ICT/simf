@@ -222,7 +222,7 @@ class _ContactPreviewSheetState extends ConsumerState<_ContactPreviewSheet> {
             ContactCard(
               name: card.localizedName(isArabic),
               available: card.available,
-              jobTitle: card.jobTitle,
+              jobTitle: card.localizedJobTitle(isArabic),
               organisation: card.localizedOrganisation(isArabic),
               country: card.localizedCountry(isArabic),
               email: card.email,

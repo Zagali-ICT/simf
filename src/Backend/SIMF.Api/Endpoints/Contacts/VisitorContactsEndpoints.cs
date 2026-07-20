@@ -192,6 +192,19 @@ public sealed class SavedContactVCardEndpoint(IVisitorShareService service)
         if (!string.IsNullOrWhiteSpace(card.JobTitle))
         {
             sb.Append("TITLE:").Append(Escape(card.JobTitle!)).Append("\r\n");
+            // Bilingual title (2026-07-20): the Arabic title as a language-tagged
+            // second TITLE (RFC 6350 LANGUAGE param); parsers that keep only the
+            // first still get the English one.
+            if (!string.IsNullOrWhiteSpace(card.JobTitleArabic))
+            {
+                sb.Append("TITLE;LANGUAGE=ar:").Append(Escape(card.JobTitleArabic!)).Append("\r\n");
+            }
+        }
+        else if (!string.IsNullOrWhiteSpace(card.JobTitleArabic))
+        {
+            // Arabic-only title → emit it as the sole (untagged) TITLE so every
+            // parser shows it.
+            sb.Append("TITLE:").Append(Escape(card.JobTitleArabic!)).Append("\r\n");
         }
         if (!string.IsNullOrWhiteSpace(card.Organisation))
         {

@@ -25,8 +25,9 @@ class SavedContactTile extends StatelessWidget {
     final name = row.subjectAvailable
         ? row.localizedName(isArabic)
         : l10n.contactUnavailable;
+    final jobTitle = row.localizedJobTitle(isArabic);
     final subtitleParts = <String>[
-      if (row.jobTitle != null && row.jobTitle!.trim().isNotEmpty) row.jobTitle!,
+      if (jobTitle != null) jobTitle,
       if (row.organisation != null && row.organisation!.trim().isNotEmpty)
         row.organisation!,
     ];

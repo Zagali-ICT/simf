@@ -23,6 +23,9 @@ public sealed class UserProfileResponse
     public string EnglishName { get; set; } = string.Empty;
     /// <summary>D-163 (PDF §2.6) — optional job title.</summary>
     public string? JobTitle { get; set; }
+    /// <summary>2026-07-20: Arabic twin of JobTitle so a visitor can set a
+    /// bilingual title the app localizes (contacts / exhibitor cards / vCard).</summary>
+    public string? JobTitleArabic { get; set; }
     public string NationalityCode { get; set; } = string.Empty;
     public DateOnly? DateOfBirth { get; set; }
     public string PlaceOfBirth { get; set; } = string.Empty;
@@ -124,6 +127,9 @@ public sealed class UpsertUserProfileRequest
     public string EnglishName { get; set; } = string.Empty;
     /// <summary>D-163 (PDF §2.6) — optional job title.</summary>
     public string? JobTitle { get; set; }
+    /// <summary>2026-07-20: Arabic twin of JobTitle so a visitor can set a
+    /// bilingual title the app localizes (contacts / exhibitor cards / vCard).</summary>
+    public string? JobTitleArabic { get; set; }
     public string NationalityCode { get; set; } = string.Empty;
     public DateOnly? DateOfBirth { get; set; }
     public string PlaceOfBirth { get; set; } = string.Empty;
