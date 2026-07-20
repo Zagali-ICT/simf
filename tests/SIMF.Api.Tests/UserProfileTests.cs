@@ -546,6 +546,26 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         Assert.Equal("ابح١٢٣٤", saved.PlateNumberAr);
     }
 
+    [Fact]
+    public async Task POST_persists_the_job_title_in_both_languages()
+    {
+        // 2026-07-20 — a visitor can set a bilingual job title; both round-trip so
+        // the contact / exhibitor cards + vCard can localize it.
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.JobTitle = "Engineer";
+        request.JobTitleArabic = "مهندس";
+
+        var save = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, save.StatusCode);
+
+        var get = await GetAuthAsync(Path, token);
+        var fetched = (await get.Content
+            .ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!.Data!;
+        Assert.Equal("Engineer", fetched.JobTitle);
+        Assert.Equal("مهندس", fetched.JobTitleArabic);
+    }
+
     // D-373 — the registration reference: SIMF-<year>-<8-digit sequence>,
     // issued once at profile creation, stable across re-saves, unique and
     // monotonic across users.
