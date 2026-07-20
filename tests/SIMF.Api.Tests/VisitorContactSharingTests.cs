@@ -65,7 +65,7 @@ public sealed class VisitorContactSharingTests : IClassFixture<SimfApiFactory>
         var (countryId, countryEn, _) = await FirstActiveCountryAsync();
         var orgId = await SeedOrganisationAsync("Acme Naval", "أكمي البحرية");
         await SeedProfileAsync(subjectId, "Captain Subject", "الكابتن",
-            jobTitle: "Captain", saudiMobile: "+966500000000",
+            jobTitle: "Captain", jobTitleArabic: "قائد", saudiMobile: "+966500000000",
             organisationId: orgId, nationalityId: countryId);
         var code = await GetShareTokenAsync(subjectToken);
 
@@ -77,6 +77,7 @@ public sealed class VisitorContactSharingTests : IClassFixture<SimfApiFactory>
         Assert.True(card.Available);
         Assert.Equal("Captain Subject", card.Name);
         Assert.Equal("Captain", card.JobTitle);
+        Assert.Equal("قائد", card.JobTitleArabic); // bilingual title flows through (2026-07-20)
         Assert.Equal("Acme Naval", card.Organisation);
         Assert.Equal("+966500000000", card.SaudiMobile);
         Assert.Equal(countryId, card.CountryId);
@@ -204,7 +205,8 @@ public sealed class VisitorContactSharingTests : IClassFixture<SimfApiFactory>
     private async Task SeedProfileAsync(
         Guid userId, string name, string nameArabic,
         string? jobTitle = null, string? saudiMobile = null,
-        Guid? organisationId = null, int? nationalityId = null)
+        Guid? organisationId = null, int? nationalityId = null,
+        string? jobTitleArabic = null)
     {
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -217,6 +219,7 @@ public sealed class VisitorContactSharingTests : IClassFixture<SimfApiFactory>
             Name = name,
             NameArabic = nameArabic,
             JobTitle = jobTitle,
+            JobTitleArabic = jobTitleArabic,
             SaudiMobile = saudiMobile,
             OrganisationId = organisationId,
             NationalityId = countryId,

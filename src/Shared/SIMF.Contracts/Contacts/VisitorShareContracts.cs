@@ -34,6 +34,9 @@ public sealed record VisitorCard(
     string Name,
     string NameArabic,
     string? JobTitle,
+    // 2026-07-20 — Arabic twin of JobTitle (UserProfile.JobTitleArabic), paired
+    // like Organisation/OrganisationArabic so the app localizes the title.
+    string? JobTitleArabic,
     string? Organisation,
     string? OrganisationArabic,
     string? Email,
@@ -52,6 +55,8 @@ public sealed record SavedContactRow(
     string Name,
     string NameArabic,
     string? JobTitle,
+    // 2026-07-20 — Arabic twin of JobTitle so the saved-contact tile localizes.
+    string? JobTitleArabic,
     string? Organisation,
     string? Note,
     DateTimeOffset SavedAt,

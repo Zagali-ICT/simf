@@ -31,6 +31,7 @@ class VisitorCard {
     required this.nameArabic,
     required this.available,
     this.jobTitle,
+    this.jobTitleArabic,
     this.organisation,
     this.organisationArabic,
     this.email,
@@ -46,6 +47,7 @@ class VisitorCard {
   final String nameArabic;
   final bool available;
   final String? jobTitle;
+  final String? jobTitleArabic;
   final String? organisation;
   final String? organisationArabic;
   final String? email;
@@ -57,6 +59,10 @@ class VisitorCard {
 
   /// Name for the active locale (Arabic primary, English fallback).
   String localizedName(bool isArabic) => _pick(nameArabic, name, isArabic);
+
+  /// Job title for the active locale, or null when none is set.
+  String? localizedJobTitle(bool isArabic) =>
+      _nullIfBlank(_pick(jobTitleArabic, jobTitle, isArabic));
 
   /// Organisation for the active locale, or null when none is set.
   String? localizedOrganisation(bool isArabic) =>
@@ -74,6 +80,7 @@ class VisitorCard {
       nameArabic: json['nameArabic'] as String? ?? '',
       available: json['available'] as bool? ?? false,
       jobTitle: json['jobTitle'] as String?,
+      jobTitleArabic: json['jobTitleArabic'] as String?,
       organisation: json['organisation'] as String?,
       organisationArabic: json['organisationArabic'] as String?,
       email: json['email'] as String?,
@@ -98,6 +105,7 @@ class SavedContactRow {
     required this.nameArabic,
     required this.subjectAvailable,
     this.jobTitle,
+    this.jobTitleArabic,
     this.organisation,
     this.note,
     this.savedAt,
@@ -109,11 +117,16 @@ class SavedContactRow {
   final String nameArabic;
   final bool subjectAvailable;
   final String? jobTitle;
+  final String? jobTitleArabic;
   final String? organisation;
   final String? note;
   final DateTime? savedAt;
 
   String localizedName(bool isArabic) => _pick(nameArabic, name, isArabic);
+
+  /// Job title for the active locale, or null when none is set.
+  String? localizedJobTitle(bool isArabic) =>
+      _nullIfBlank(_pick(jobTitleArabic, jobTitle, isArabic));
 
   static SavedContactRow fromData(Object? data) {
     final json = (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
@@ -124,6 +137,7 @@ class SavedContactRow {
       nameArabic: json['nameArabic'] as String? ?? '',
       subjectAvailable: json['subjectAvailable'] as bool? ?? false,
       jobTitle: json['jobTitle'] as String?,
+      jobTitleArabic: json['jobTitleArabic'] as String?,
       organisation: json['organisation'] as String?,
       note: json['note'] as String?,
       savedAt: DateTime.tryParse(json['savedAt'] as String? ?? '')?.toUtc(),
