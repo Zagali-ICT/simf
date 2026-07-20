@@ -9,8 +9,9 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 /// asserted against a hand-written expected table. Crucially the expectations
 /// come from an independent oracle — each path is assigned an access tier by
 /// hand from the route spec (SIMF-MAA-001 section 8 auth gate + D-519 role gate
-/// + D-576 session login-gate + D-666 pending=guest + D-694 identity
-/// verification), NOT read back from the router's own private
+/// + D-750 agenda public [reverses the D-576 session login-gate] + D-666
+/// pending=guest + D-694 identity verification), NOT read back from the router's
+/// own private
 /// `_authenticatedRoutes` / `_routeRoles` sets. So a change to those sets that
 /// diverges from the spec makes a row fail here instead of silently agreeing
 /// with itself. This is the test that would have caught the D-666 face-capture
@@ -47,6 +48,8 @@ void main() {
     '/exhibitors/:boothId', // 220
     '/sponsors/:sponsorId', // 221
     '/archive', // 24
+    '/sessions', // 16 — public again (D-750, reverses the D-576 login-gate)
+    '/sessions/:sessionId', // 17 — public again (D-750, reverses D-576)
     '/live', // 25 — NOT redirect-gated (D-577 in-screen prompt)
     '/news', // 29
     '/media', // 30
@@ -75,8 +78,6 @@ void main() {
     '/registration/success', // 10
     '/registration/status', // 11
     '/my-area', // 14
-    '/sessions', // 16 (D-576 login-gate)
-    '/sessions/:sessionId', // 17 (D-576 login-gate)
     '/badge', // 32
     '/notifications', // 33
     '/my-area/verify-identity', // 103 (D-694 — was attendee-gated; the fix)

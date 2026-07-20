@@ -81,9 +81,11 @@ class SimfBottomNav extends StatelessWidget {
                   tab: SimfTab.sessions,
                   current: current,
                   iconAsset: 'assets/icons/nav_calendar.svg',
-                  // The nav component (Figma 206:1732) labels the active
-                  // sessions tab "الجلسات", not the old "الأجندة".
-                  label: l10n.sessionsTitle,
+                  // D-750 (owner 2026-07-20) — the program tab now reads
+                  // "الأجندة" (agendaTitle), reversing the earlier 206:1732
+                  // "الجلسات" label. sessionsTitle still titles the Sessions
+                  // screen and other surfaces, so only this nav tab changes.
+                  label: l10n.agendaTitle,
                   onTap: _shellOrGo(context, SimfTab.sessions, RouteNames.sessions),
                 ),
                 _CentreAction(
