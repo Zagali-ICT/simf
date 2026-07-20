@@ -2472,6 +2472,14 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Delete, $"speaker-availability-windows/{windowId}", content: null,
             accessToken, cancellationToken);
 
+    // D-753 — the forum-day window (MIN/MAX over active ProgrammeDay.Date). The CP
+    // meeting-scheduling pages read it to bound their date pickers to the event days.
+    public Task<ApiCallResult<ForumWindowResponse>> GetForumWindowAsync(
+        string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<ForumWindowResponse>(
+            HttpMethod.Get, "programme/forum-window", content: null,
+            accessToken, cancellationToken);
+
     // -- D-715 (item 7, FDS-013 §15 GAP-1) — hall availability windows ---------
 
     public Task<ApiCallResult<IReadOnlyList<AdminHallAvailabilityWindow>>>

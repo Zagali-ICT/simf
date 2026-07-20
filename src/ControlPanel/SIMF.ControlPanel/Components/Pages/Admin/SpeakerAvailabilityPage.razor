@@ -35,12 +35,14 @@
         {
             <h3 class="simf-section-title">@L["Admin.SpeakerAvailability.AddWindow"]</h3>
             <div class="simf-form__fields">
+                @* D-753 — bound the pickers to the forum days (MIN/MAX programme day),
+                   read from the backend instead of a hardcoded event window. *@
                 <SimfTextField Label="@L["Admin.SpeakerAvailability.Start"]" Type="datetime-local"
                                @bind-Value="_start" Disabled="_busy"
-                               Min="2026-11-23T00:00" Max="2026-11-25T23:59" />
+                               Min="@_forumMin" Max="@_forumMax" />
                 <SimfTextField Label="@L["Admin.SpeakerAvailability.End"]" Type="datetime-local"
                                @bind-Value="_end" Disabled="_busy"
-                               Min="2026-11-23T00:00" Max="2026-11-25T23:59" />
+                               Min="@_forumMin" Max="@_forumMax" />
                 <SimfTextField Label="@L["Admin.SpeakerAvailability.SlotMinutes"]" Type="number"
                                @bind-Value="_slotMinutes" Disabled="_busy" />
             </div>

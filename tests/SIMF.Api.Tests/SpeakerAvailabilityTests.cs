@@ -19,8 +19,11 @@ namespace SIMF.Api.Tests;
 
 public sealed class SpeakerAvailabilityTests : IClassFixture<SimfApiFactory>
 {
-    // Far-future windows so the slots are in the future regardless of the test clock.
-    private static readonly DateTimeOffset WindowStart = new(2030, 1, 1, 10, 0, 0, TimeSpan.Zero);
+    // D-753 — availability windows are now bounded to the forum days (MIN/MAX over the
+    // active ProgrammeDay rows). The fixture seeds programme days 2026-11-20..22, so the
+    // window sits on day one — inside that window and (relative to the test clock) in the
+    // future so the derived slots are still offered.
+    private static readonly DateTimeOffset WindowStart = new(2026, 11, 20, 10, 0, 0, TimeSpan.Zero);
 
     private readonly SimfApiFactory _factory;
     private readonly HttpClient _client;
@@ -177,6 +180,27 @@ public sealed class SpeakerAvailabilityTests : IClassFixture<SimfApiFactory>
 
         Assert.Empty(await GetWindowsAsync(speakerId, admin));
         Assert.Empty(await GetSlotsAsync(speakerId, admin));
+    }
+
+    [Fact]
+    public async Task Create_window_outside_the_forum_window_is_400()
+    {
+        // D-753 — a window AFTER the last forum day (2026-11-22) is rejected. The date
+        // is in the future so it passes every other check; only the forum-day bound
+        // trips, returning the standard 400.
+        var admin = await CreateAdministratorAndSignInAsync();
+        var speakerId = await SeedSpeakerAsync();
+        var outside = new DateTimeOffset(2026, 12, 15, 10, 0, 0, TimeSpan.Zero);
+
+        var resp = await PostAuthAsync(
+            $"/api/v1/admin/speakers/{speakerId}/availability-windows",
+            new CreateSpeakerAvailabilityWindowRequest
+            {
+                StartUtc = outside, EndUtc = outside.AddMinutes(60), SlotMinutes = 30,
+            }, admin);
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+        var body = (await resp.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.ValidationFailed, body.Error!.Code);
     }
 
     // -- helpers --------------------------------------------------------------

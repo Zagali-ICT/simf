@@ -537,6 +537,10 @@ public static class DependencyInjection
         // D-452: programme days (date + title + logo).
         services.AddScoped<SIMF.Application.Programme.Abstractions.IAdminProgrammeDayService,
             SIMF.Infrastructure.Programme.AdminProgrammeDayService>();
+        // D-753 — forum-day window (MIN/MAX over active ProgrammeDay.Date); bounds
+        // business-meeting + speaker-availability scheduling to the event days.
+        services.AddScoped<SIMF.Application.Programme.Abstractions.IForumWindowService,
+            SIMF.Infrastructure.Programme.ForumWindowService>();
         // D-202 — Track-2: Statistics dashboard (read-only aggregate) +
         // Exhibitor provisioning.
         services.AddScoped<SIMF.Application.Statistics.Abstractions.IStatisticsService,

@@ -150,12 +150,15 @@
                 </label>
                 <label class="simf-field">
                     <span class="simf-field__label">@L["Admin.BusinessMeetings.Field.Start"]</span>
+                    @* D-753 — bound the picker to the forum days (MIN/MAX programme day). *@
                     <input class="simf-field__input" type="datetime-local"
+                           min="@_forumMin" max="@_forumMax"
                            value="@_startText" @onchange="OnStartChanged" disabled="@_busy" />
                 </label>
                 <label class="simf-field">
                     <span class="simf-field__label">@L["Admin.BusinessMeetings.Field.End"]</span>
                     <input class="simf-field__input" type="datetime-local"
+                           min="@_forumMin" max="@_forumMax"
                            value="@_endText" @onchange="OnEndChanged" disabled="@_busy" />
                 </label>
 

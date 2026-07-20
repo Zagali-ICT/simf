@@ -3071,6 +3071,18 @@ internal static class AccountEndpoints
             return Forward(await api.DeactivateProgrammeDayAsync(id, token));
         });
 
+        // D-753 — forum-day window (MIN/MAX over active ProgrammeDay.Date). The CP
+        // business-meetings + speaker-availability pages read it to bound their
+        // datetime-local pickers to the event days. Gated at the backend by the
+        // existing BusinessMeetings.View permission (no new permission code).
+        group.MapGet("/admin/programme/forum-window",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetForumWindowAsync(token));
+        });
+
         // P2.4 (D-229) — System Configuration settings passthroughs.
         group.MapPost("/admin/system-settings/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
