@@ -173,6 +173,13 @@ public sealed class AdminWalkInRegistrationRequestValidator
                 "Job title must be at most 100 characters.",
                 "يجب ألا يتجاوز المسمى الوظيفي 100 حرف.");
 
+        // 2026-07-19 (owner) — Arabic job title twin, same 100-char cap.
+        RuleFor(request => request.JobTitleArabic)
+            .MaximumLength(100).When(r => !string.IsNullOrEmpty(r.JobTitleArabic))
+            .Bilingual(
+                "Arabic job title must be at most 100 characters.",
+                "يجب ألا يتجاوز المسمى الوظيفي بالعربية 100 حرف.");
+
         RuleFor(request => request.InterestIds.Count)
             .LessThanOrEqualTo(10).Bilingual(
                 "You can pick up to 10 interests.",
@@ -207,6 +214,13 @@ public sealed class AdminWalkInRegistrationRequestValidator
             .Bilingual(
                 "Honorific must be at most 64 characters.",
                 "يجب ألا يتجاوز اللقب 64 حرفًا.");
+
+        // 2026-07-19 (owner) — Arabic honorific twin, same 64-char cap.
+        RuleFor(request => request.HonorificArabic)
+            .MaximumLength(64).When(r => !string.IsNullOrEmpty(r.HonorificArabic))
+            .Bilingual(
+                "Arabic honorific must be at most 64 characters.",
+                "يجب ألا يتجاوز اللقب بالعربية 64 حرفًا.");
 
         RuleFor(request => request.PreferredLanguage)
             .MaximumLength(16).When(r => !string.IsNullOrEmpty(r.PreferredLanguage))

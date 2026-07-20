@@ -159,9 +159,6 @@
   <data name="Account.Notifications.Loading" xml:space="preserve"><value>Loading notifications…</value></data>
   <data name="Account.Notifications.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
 
-  <data name="Nav.Programme" xml:space="preserve"><value>Programme</value></data>
-  <data name="Nav.Visit" xml:space="preserve"><value>Visit</value></data>
-
   <!-- ============ Public landing (Bootstrap rebuild) ============ -->
   <data name="Landing.PageTitle" xml:space="preserve"><value>Saudi International Maritime Forum 2026</value></data>
   <data name="Landing.MetaDescription" xml:space="preserve"><value>The Saudi International Maritime Forum 2026 — a global platform on the future of seabed security and maritime supply chains. Riyadh, 23–25 November 2026.</value></data>
@@ -190,6 +187,7 @@
   <data name="Landing.Nav.About.Venue" xml:space="preserve"><value>Venue</value></data>
   <data name="Landing.Nav.Programs" xml:space="preserve"><value>Programmes</value></data>
   <data name="Landing.Nav.Programs.Title" xml:space="preserve"><value>Programmes</value></data>
+  <data name="Landing.Nav.Programs.Agenda" xml:space="preserve"><value>Full agenda</value></data>
   <data name="Landing.Nav.Programs.Opening" xml:space="preserve"><value>Opening ceremony</value></data>
   <data name="Landing.Nav.Programs.Sessions" xml:space="preserve"><value>Plenary sessions</value></data>
   <data name="Landing.Nav.Programs.Exhibition" xml:space="preserve"><value>Exhibition</value></data>
@@ -205,6 +203,7 @@
   <data name="Landing.Nav.Archive.E1" xml:space="preserve"><value>First edition 2019</value></data>
   <data name="Landing.Nav.Archive.E2" xml:space="preserve"><value>Second edition 2022</value></data>
   <data name="Landing.Nav.Archive.E3" xml:space="preserve"><value>Third edition 2024</value></data>
+  <data name="Landing.Nav.Archive.All" xml:space="preserve"><value>Browse all editions</value></data>
   <data name="Landing.Search.Placeholder" xml:space="preserve"><value>Search</value></data>
   <data name="Landing.Search.Submit" xml:space="preserve"><value>Search</value></data>
   <data name="Landing.Search.Voice" xml:space="preserve"><value>Voice search</value></data>
@@ -285,19 +284,21 @@
   <data name="Programme.Empty.Text" xml:space="preserve"><value>The agenda has not been published yet. Please check back soon.</value></data>
   <data name="Programme.Speakers.Title" xml:space="preserve"><value>Speakers</value></data>
 
-  <data name="Visit.PageTitle" xml:space="preserve"><value>Visit &amp; entry · Saudi International Maritime Forum</value></data>
-  <data name="Visit.Banner.Title" xml:space="preserve"><value>Visit &amp; entry</value></data>
-  <data name="Visit.Banner.Subtitle" xml:space="preserve"><value>Everything you need to know before you arrive at the forum.</value></data>
-  <data name="Visit.GettingHere.Title" xml:space="preserve"><value>Getting here</value></data>
-  <data name="Visit.GettingHere.Body" xml:space="preserve"><value>The forum is held at the official event venue. The full address and a venue map will be published here closer to the event. Please follow on-site signage and the directions of stewards on arrival.</value></data>
-  <data name="Visit.GettingHere.Transport" xml:space="preserve"><value>Parking and transport details, including the nearest access routes, will be announced ahead of the opening day.</value></data>
-  <data name="Visit.Entry.Title" xml:space="preserve"><value>Entry &amp; badges</value></data>
-  <data name="Visit.Entry.Badge" xml:space="preserve"><value>Entry is by QR badge. After your account is approved, open the SIMF mobile app to display your personal QR badge, which staff scan at the entrance to check you in.</value></data>
-  <data name="Visit.Entry.SignUp" xml:space="preserve"><value>Do not have an account yet? Sign up in the SIMF app before you travel so your badge is ready in time for entry.</value></data>
-  <data name="Visit.Hours.Title" xml:space="preserve"><value>Opening hours</value></data>
-  <data name="Visit.Hours.Body" xml:space="preserve"><value>The forum opens daily during the event dates. Exact opening and closing times for each day will be confirmed here before the event begins.</value></data>
-  <data name="Visit.Accessibility.Title" xml:space="preserve"><value>Accessibility</value></data>
-  <data name="Visit.Accessibility.Body" xml:space="preserve"><value>The venue is designed to be accessible to visitors with reduced mobility. If you have specific access requirements, please contact your event coordinator in advance so we can assist you on the day.</value></data>
+  <!-- visits page (/visit) — Figma 5867-24636 (supersedes the old MudBlazor visit-entry page) -->
+  <data name="Visit.PageTitle" xml:space="preserve"><value>Visiting &amp; travel — Saudi International Maritime Forum</value></data>
+  <data name="Visit.Meta" xml:space="preserve"><value>Plan your visit to the Saudi International Maritime Forum — reasons to visit the Kingdom, and how to travel and get a Saudi visa.</value></data>
+  <data name="Visit.Hero.Title" xml:space="preserve"><value>Visiting &amp; travel</value></data>
+  <data name="Visit.Hero.Subtitle" xml:space="preserve"><value>Everything you need to plan your visit to the forum — reasons to come, and how to travel to the Kingdom and enter it.</value></data>
+  <data name="Visit.Why.Title" xml:space="preserve"><value>Why visit</value></data>
+  <data name="Visit.Why.Desc" xml:space="preserve"><value>From ancient heritage to future cities, discover the destinations that make a visit to the Kingdom unforgettable.</value></data>
+  <data name="Visit.Visa.Title" xml:space="preserve"><value>Travel &amp; visa</value></data>
+  <data name="Visit.Visa.Sub" xml:space="preserve"><value>Entering Saudi Arabia is easier than ever — here is how to plan your travel and visa for the forum.</value></data>
+  <data name="Visit.Visa.Heading" xml:space="preserve"><value>Tourist visa</value></data>
+  <data name="Visit.Visa.Body1" xml:space="preserve"><value>Getting an entry visa to Saudi Arabia is now easier! eVisas and visas on arrival are available for 66 nationalities, in addition to holders of a valid, previously used US, UK or Schengen visa. Residents of the GCC countries who work in qualifying professions can also apply for an eVisa through their portal.</value></data>
+  <data name="Visit.Visa.Body2" xml:space="preserve"><value>The Saudi authorities have also announced that citizens of any country holding a US, UK or Schengen visa are eligible to apply for a tourist visa. These tourist visas allow Muslims from eligible countries to perform Umrah at any time outside the Hajj season. Muslims of any of the nationalities above may visit Makkah and Madinah on an eVisa. Non-Muslims cannot enter Makkah at any time during their visit to Saudi Arabia.</value></data>
+  <data name="Visit.Visa.Cta" xml:space="preserve"><value>Details</value></data>
+  <data name="Visit.Visa.CtaTitle" xml:space="preserve"><value>View the list of countries</value></data>
+  <data name="Visit.Visa.CtaSub" xml:space="preserve"><value>Countries eligible for the eVisa</value></data>
   <data name="Meeting.Confirm.Title" xml:space="preserve"><value>Confirm meeting</value></data>
   <data name="Meeting.Confirm.Loading" xml:space="preserve"><value>Loading…</value></data>
   <data name="Meeting.Confirm.Invalid" xml:space="preserve"><value>This link is no longer valid.</value></data>
@@ -354,4 +355,124 @@
   <data name="SessionDetail.Downloads.Title" xml:space="preserve"><value>Downloads</value></data>
   <data name="SessionDetail.Outcomes.Title" xml:space="preserve"><value>Key outcomes</value></data>
   <data name="SessionDetail.Outcomes.Subtitle" xml:space="preserve"><value>What you'll take away</value></data>
+
+  <!-- interior page-hero (shared: About cluster, …) -->
+  <data name="PageHero.Home" xml:space="preserve"><value>Home</value></data>
+
+  <!-- about us page (/about) -->
+  <data name="About.PageTitle" xml:space="preserve"><value>About the Forum — Saudi International Maritime Forum</value></data>
+  <data name="About.Meta" xml:space="preserve"><value>About the Saudi International Maritime Forum — the leading platform for maritime dialogue, its values, participation figures and forum pillars.</value></data>
+  <data name="About.Breadcrumb" xml:space="preserve"><value>About</value></data>
+  <data name="About.Hero.Title" xml:space="preserve"><value>About the Saudi International Maritime Forum</value></data>
+  <data name="About.Hero.Subtitle" xml:space="preserve"><value>The 4th Saudi International Maritime Forum — the leading platform for dialogue and cooperation in maritime affairs.</value></data>
+  <data name="About.Values.Title" xml:space="preserve"><value>Our values</value></data>
+  <data name="About.Pillars.Title" xml:space="preserve"><value>Forum pillars</value></data>
+  <data name="About.Pillars.Sub" xml:space="preserve"><value>What the forum offers</value></data>
+
+  <!-- objectives page (/about/objectives) -->
+  <data name="Objectives.PageTitle" xml:space="preserve"><value>Objectives — Saudi International Maritime Forum</value></data>
+  <data name="Objectives.Meta" xml:space="preserve"><value>The strategic objectives of the Saudi International Maritime Forum — maritime security, supply-chain resilience, energy security, infrastructure protection, digital transformation and international cooperation.</value></data>
+  <data name="Objectives.Breadcrumb" xml:space="preserve"><value>Objectives</value></data>
+  <data name="Objectives.Hero.Title" xml:space="preserve"><value>Objectives</value></data>
+  <data name="Objectives.Hero.Subtitle" xml:space="preserve"><value>The strategic objectives the forum works to achieve through its sessions and events.</value></data>
+  <data name="Objectives.Section.Title" xml:space="preserve"><value>Six main objectives</value></data>
+  <data name="Objectives.Section.Sub" xml:space="preserve"><value>The Saudi International Maritime Forum aims to anchor the Kingdom's position as a pivotal player in global maritime security, and to build practical frameworks for cooperation between states, organisations and the private sector.</value></data>
+
+  <!-- key themes page (/about/themes) -->
+  <data name="Themes.PageTitle" xml:space="preserve"><value>Key themes — Saudi International Maritime Forum</value></data>
+  <data name="Themes.Meta" xml:space="preserve"><value>The key themes and strategic topics of the Saudi International Maritime Forum — from security and protection to technology and sustainability.</value></data>
+  <data name="Themes.Breadcrumb" xml:space="preserve"><value>Key themes</value></data>
+  <data name="Themes.Hero.Title" xml:space="preserve"><value>Key themes</value></data>
+  <data name="Themes.Hero.Subtitle" xml:space="preserve"><value>The main topics and issues discussed across the forum's sessions and workshops.</value></data>
+  <data name="Themes.Section.Title" xml:space="preserve"><value>Key themes</value></data>
+  <data name="Themes.Section.Sub" xml:space="preserve"><value>The forum addresses an integrated set of strategic topics shaping the future of the maritime sector worldwide — from security and protection to technology and sustainability.</value></data>
+  <data name="Themes.OnThisPage" xml:space="preserve"><value>On this page</value></data>
+
+  <!-- the organizer page (/about/organizer) -->
+  <data name="Organizer.PageTitle" xml:space="preserve"><value>The organizer — Saudi International Maritime Forum</value></data>
+  <data name="Organizer.Meta" xml:space="preserve"><value>The organising bodies of the Saudi International Maritime Forum — held under the patronage of the Ministry of Defense and organised by the Royal Saudi Naval Forces.</value></data>
+  <data name="Organizer.Breadcrumb" xml:space="preserve"><value>The organizer</value></data>
+  <data name="Organizer.Hero.Title" xml:space="preserve"><value>The organizer</value></data>
+  <data name="Organizer.Hero.Subtitle" xml:space="preserve"><value>An international platform that brings together naval leaders and experts to discuss the future of maritime security and the protection of shipping lanes.</value></data>
+  <data name="Organizer.Section.Title" xml:space="preserve"><value>The organising body</value></data>
+  <data name="Organizer.Section.Sub" xml:space="preserve"><value>The forum is held under the patronage of the Ministry of Defense and organised by the Royal Saudi Naval Forces, in cooperation with relevant government bodies.</value></data>
+
+  <!-- the venue page (/about/venue) -->
+  <data name="Venue.PageTitle" xml:space="preserve"><value>The venue — Saudi International Maritime Forum</value></data>
+  <data name="Venue.Meta" xml:space="preserve"><value>The venue of the Saudi International Maritime Forum — Sofitel Riyadh Hotel &amp; Convention Centre, Riyadh, Saudi Arabia.</value></data>
+  <data name="Venue.Breadcrumb" xml:space="preserve"><value>The venue</value></data>
+  <data name="Venue.Hero.Title" xml:space="preserve"><value>The venue</value></data>
+  <data name="Venue.Hero.Subtitle" xml:space="preserve"><value>The forum is held in the heart of Riyadh, at an integrated convention venue befitting an international event.</value></data>
+  <data name="Venue.Section.Title" xml:space="preserve"><value>Forum venue</value></data>
+  <data name="Venue.Section.Sub" xml:space="preserve"><value>Location, date and time of the Saudi International Maritime Forum 2026.</value></data>
+  <data name="Venue.Address" xml:space="preserve"><value>Riyadh, Kingdom of Saudi Arabia</value></data>
+  <data name="Venue.Meta.Date" xml:space="preserve"><value>Date</value></data>
+  <data name="Venue.Meta.Time" xml:space="preserve"><value>Opening time</value></data>
+  <data name="Venue.Directions" xml:space="preserve"><value>Get directions</value></data>
+
+  <!-- opening ceremony page (/programme/opening) -->
+  <data name="Opening.PageTitle" xml:space="preserve"><value>Opening ceremony — Saudi International Maritime Forum</value></data>
+  <data name="Opening.Meta" xml:space="preserve"><value>The opening ceremony and programme of the Saudi International Maritime Forum — an overview of the forum's activities and the target participant segments.</value></data>
+  <data name="Opening.Hero.Title" xml:space="preserve"><value>Opening ceremony</value></data>
+  <data name="Opening.Overview.Title" xml:space="preserve"><value>Overview</value></data>
+  <data name="Opening.Overview.Sub" xml:space="preserve"><value>An overview of the forum's events and activities.</value></data>
+  <data name="Opening.Participants.Title" xml:space="preserve"><value>Target participants</value></data>
+  <data name="Opening.Participants.Sub" xml:space="preserve"><value>The segments the forum invites to take part — across government, industry and the events sector.</value></data>
+
+  <!-- plenary sessions page (/programme/sessions) -->
+  <data name="Plenary.PageTitle" xml:space="preserve"><value>Plenary sessions — Saudi International Maritime Forum</value></data>
+  <data name="Plenary.Meta" xml:space="preserve"><value>The plenary sessions of the Saudi International Maritime Forum — three days of high-level sessions on the future of maritime security.</value></data>
+  <data name="Plenary.Hero.Title" xml:space="preserve"><value>Plenary sessions</value></data>
+  <data name="Plenary.Section.Title" xml:space="preserve"><value>Plenary sessions</value></data>
+  <data name="Plenary.Section.Sub" xml:space="preserve"><value>Three days of plenary sessions on the future of maritime security — energy supply chains, logistics infrastructure and the seabed digital domain.</value></data>
+  <data name="Plenary.Card.Button" xml:space="preserve"><value>Explore the sessions</value></data>
+
+  <!-- exhibition page (/programme/exhibition) -->
+  <data name="Exhibition.PageTitle" xml:space="preserve"><value>The exhibition — Saudi International Maritime Forum</value></data>
+  <data name="Exhibition.Meta" xml:space="preserve"><value>The exhibition accompanying the Saudi International Maritime Forum — the floor plan and stand layout.</value></data>
+  <data name="Exhibition.Hero.Title" xml:space="preserve"><value>The exhibition</value></data>
+  <data name="Exhibition.Section.Title" xml:space="preserve"><value>Exhibition floor plan</value></data>
+  <data name="Exhibition.Section.Sub" xml:space="preserve"><value>The layout of the exhibition stands accompanying the forum.</value></data>
+  <data name="Exhibition.Map.Alt" xml:space="preserve"><value>Exhibition floor plan showing the numbered stands and zones.</value></data>
+
+  <!-- government business meetings page (/programme/gov-meetings) -->
+  <data name="GovMeetings.PageTitle" xml:space="preserve"><value>Government business meetings — Saudi International Maritime Forum</value></data>
+  <data name="GovMeetings.Meta" xml:space="preserve"><value>Government business meetings at the Saudi International Maritime Forum — structured bilateral meetings between the private sector and government entities.</value></data>
+  <data name="GovMeetings.Hero.Title" xml:space="preserve"><value>Government business meetings</value></data>
+  <data name="GovMeetings.Hero.Subtitle" xml:space="preserve"><value>Structured bilateral meetings between the private sector and government entities, held alongside the forum.</value></data>
+  <data name="GovMeetings.Section.Title" xml:space="preserve"><value>Government business meetings</value></data>
+  <data name="GovMeetings.Section.Sub" xml:space="preserve"><value>A programme of business meetings between government entities and participating companies.</value></data>
+  <data name="GovMeetings.Card.Title" xml:space="preserve"><value>Direct business-to-government connections</value></data>
+  <data name="GovMeetings.Card.Body" xml:space="preserve"><value>The government business meetings give companies a chance to connect directly with government entities and explore cooperation opportunities within a structured agenda alongside the forum.</value></data>
+  <data name="GovMeetings.Cta" xml:space="preserve"><value>Register your interest</value></data>
+
+  <!-- partners &amp; sponsors page (/partners) -->
+  <data name="Partners.PageTitle" xml:space="preserve"><value>Partners &amp; sponsors — Saudi International Maritime Forum</value></data>
+  <data name="Partners.Meta" xml:space="preserve"><value>The partners and sponsors of the Saudi International Maritime Forum — government bodies and national and international institutions, and the sponsors supporting the forum and its programmes.</value></data>
+  <data name="Partners.Hero.Title" xml:space="preserve"><value>Sponsors &amp; partners 2026</value></data>
+  <data name="Partners.Hero.Subtitle" xml:space="preserve"><value>We are proud to collaborate with a distinguished group of sponsors and partners who share our vision of innovation and excellence in the future of maritime security and the protection of shipping lanes.</value></data>
+
+  <!-- discover Saudi Arabia page (/discover) -->
+  <data name="Discover.PageTitle" xml:space="preserve"><value>Discover Saudi Arabia — Saudi International Maritime Forum</value></data>
+  <data name="Discover.Meta" xml:space="preserve"><value>Discover Saudi Arabia around the Saudi International Maritime Forum — from ancient heritage to future cities, the destinations to explore near the Riyadh venue.</value></data>
+  <data name="Discover.Hero.Title" xml:space="preserve"><value>Welcome to the Kingdom of Saudi Arabia</value></data>
+  <data name="Discover.Hero.Subtitle" xml:space="preserve"><value>Between the forum's sessions and beyond, explore the destinations across the Kingdom that blend an ancient heritage with the cities of the future.</value></data>
+
+  <!-- archive page (/archive) — Figma 5840-27997 -->
+  <data name="Archive.PageTitle" xml:space="preserve"><value>Forum archive — Saudi International Maritime Forum</value></data>
+  <data name="Archive.Meta" xml:space="preserve"><value>The Saudi International Maritime Forum archive — past editions, headline numbers, session titles and featured speakers from previous years.</value></data>
+  <data name="Archive.Hero.Title" xml:space="preserve"><value>Forum archive</value></data>
+  <data name="Archive.Hero.Subtitle" xml:space="preserve"><value>A look back at the Saudi International Maritime Forum — its past editions, milestones and the moments that shaped the global maritime-security agenda.</value></data>
+  <data name="Archive.Stats.Speakers" xml:space="preserve"><value>Speakers</value></data>
+  <data name="Archive.Stats.Attendees" xml:space="preserve"><value>Attendees</value></data>
+  <data name="Archive.Stats.Sessions" xml:space="preserve"><value>Sessions</value></data>
+  <data name="Archive.Stats.Aria" xml:space="preserve"><value>Headline numbers</value></data>
+  <data name="Archive.Gallery.Title" xml:space="preserve"><value>Photos &amp; video</value></data>
+  <data name="Archive.Gallery.Sub" xml:space="preserve"><value>Highlights from previous editions of the forum.</value></data>
+  <data name="Archive.Sessions.Title" xml:space="preserve"><value>Session titles</value></data>
+  <data name="Archive.Sessions.Desc" xml:space="preserve"><value>Sessions from the Saudi International Maritime Forum 2024.</value></data>
+  <data name="Archive.Speakers.Title" xml:space="preserve"><value>Past speakers</value></data>
+  <data name="Archive.Speakers.Lead" xml:space="preserve"><value>A distinguished group of Saudi and international leaders, decision-makers and experts who took part in previous editions of the forum.</value></data>
+  <data name="Archive.Editions.Title" xml:space="preserve"><value>Browse the past editions</value></data>
+  <data name="Archive.Editions.Desc" xml:space="preserve"><value>The forum's editions over the years.</value></data>
 </root>

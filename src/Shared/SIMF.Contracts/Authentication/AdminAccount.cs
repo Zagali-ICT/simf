@@ -457,6 +457,11 @@ public sealed class AdminWalkInRegistrationRequest
     /// <summary>D-163 (PDF §2.6) — optional job title.</summary>
     public string? JobTitle { get; set; }
 
+    /// <summary>2026-07-19 (owner) — Arabic job title (twin of <see cref="JobTitle"/>),
+    /// so a VIP/delegate title is stored bilingually (used by the delegation head
+    /// title). Optional; ≤100 chars.</summary>
+    public string? JobTitleArabic { get; set; }
+
     /// <summary>V-1 (D-429) — the موج (Mawj) system identifier (المعرف في نظام موج).
     /// Optional everywhere; the dedicated VIP registration page captures it for
     /// VVIP/VIP visitors so the welcome-message export can key on it. ≤64 chars.</summary>
@@ -465,6 +470,10 @@ public sealed class AdminWalkInRegistrationRequest
     /// <summary>V-1 (D-429) — honorific / title (اللقب), e.g. "Minister". Optional;
     /// captured on the VIP page for the موج welcome message. ≤64 chars.</summary>
     public string? Honorific { get; set; }
+
+    /// <summary>2026-07-19 (owner) — Arabic honorific (twin of <see cref="Honorific"/>),
+    /// the fallback for a bilingual head-of-delegation title. Optional; ≤64 chars.</summary>
+    public string? HonorificArabic { get; set; }
 
     /// <summary>V-1 (D-429) — preferred language for the موج welcome message
     /// (اللغة المفضلة), an IETF tag like "ar"/"en". Optional. ≤16 chars.</summary>

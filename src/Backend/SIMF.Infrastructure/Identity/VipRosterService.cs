@@ -29,7 +29,7 @@ internal sealed class VipRosterService(
     private static readonly string[] Headers =
     {
         "Mawj ID", "Honorific", "Tier", "English name", "Arabic name",
-        "Display name", "Job title", "Preferred language", "Email", "Mobile",
+        "Display name", "Job title", "Job title (Arabic)", "Preferred language", "Email", "Mobile",
         "Reference", "State", "Has photo", "Registered (UTC)",
     };
 
@@ -48,6 +48,7 @@ internal sealed class VipRosterService(
                 p.NameArabic,
                 p.Honorific,
                 p.JobTitle,
+                p.JobTitleArabic,
                 p.MawjId,
                 p.PreferredLanguage,
                 TierName = p.ProfileType!.Name,
@@ -86,6 +87,7 @@ internal sealed class VipRosterService(
                     p.NameArabic,
                     p.Honorific,
                     p.JobTitle,
+                    p.JobTitleArabic,
                     p.MawjId,
                     p.PreferredLanguage,
                     p.TierName,
@@ -215,6 +217,7 @@ internal sealed class VipRosterService(
         ClosedXmlUserExcelService.SanitiseForExcel(r.ArabicName),
         ClosedXmlUserExcelService.SanitiseForExcel(r.DisplayName),
         ClosedXmlUserExcelService.SanitiseForExcel(r.JobTitle),
+        ClosedXmlUserExcelService.SanitiseForExcel(r.JobTitleArabic),
         ClosedXmlUserExcelService.SanitiseForExcel(r.PreferredLanguage),
         ClosedXmlUserExcelService.SanitiseForExcel(r.Email),
         ClosedXmlUserExcelService.SanitiseForExcel(r.Mobile),

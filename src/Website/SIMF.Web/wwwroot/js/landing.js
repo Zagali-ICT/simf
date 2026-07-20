@@ -7,6 +7,7 @@
  *   3. Search drop-panel toggle.
  *   4. Sponsors carousel: prev/next arrows scroll the (static) sponsor strip.
  *   5. Hero video paused while off-screen (saves decode CPU/battery).
+ *   6. Theme explorer: vertical tabs switch the visible theme panel.
  */
 (function () {
   'use strict';
@@ -86,7 +87,29 @@
     io.observe(video);
   }
 
-  function run() { initReveal(); initSearch(); initSponsors(); initHeroVideo(); }
+  /* ---- 6. theme explorer: vertical tabs switch the visible panel -------- */
+  function initThemeTabs() {
+    var ex = document.querySelector('.ln-themex');
+    if (!ex) { return; }
+    var tabs = ex.querySelectorAll('.ln-themex__tab');
+    var panels = ex.querySelectorAll('.ln-themex__panel');
+    if (!tabs.length || tabs.length !== panels.length) { return; }
+    function activate(i) {
+      tabs.forEach(function (t, j) {
+        var on = j === i;
+        t.classList.toggle('is-active', on);
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      panels.forEach(function (p, j) { p.classList.toggle('is-active', j === i); });
+    }
+    tabs.forEach(function (t, i) { t.addEventListener('click', function () { activate(i); }); });
+    activate(0);
+    // Commit to the single-panel view only now the tabs are wired — so if this
+    // never runs (JS disabled / failed to load) every panel stays reachable.
+    ex.classList.add('is-enhanced');
+  }
+
+  function run() { initReveal(); initSearch(); initSponsors(); initHeroVideo(); initThemeTabs(); }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', run);
   } else {

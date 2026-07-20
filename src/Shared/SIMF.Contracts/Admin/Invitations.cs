@@ -69,6 +69,7 @@ public sealed record AdminVipSummary(
     string EnglishName,
     string ArabicName,
     string? JobTitle,
+    string? JobTitleArabic,
     string ProfileTypeName,
     string ProfileTypeNameArabic,
     string? Email);

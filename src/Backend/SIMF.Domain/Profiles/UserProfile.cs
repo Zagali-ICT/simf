@@ -93,6 +93,11 @@ public class UserProfile : BaseAuditEntity
     /// Operations"). Free text, up to 128 chars; null when not supplied.</summary>
     public string? JobTitle { get; set; }
 
+    /// <summary>2026-07-19 (owner) — Arabic twin of <see cref="JobTitle"/>, so a
+    /// bilingual surface (e.g. the delegation head-of-delegation title) can render
+    /// it in the active locale. Optional; null when not supplied.</summary>
+    public string? JobTitleArabic { get; set; }
+
     /// <summary>
     /// B3 — D-221 (الجهة): the visitor's organisation / employer, picked from
     /// the curated <see cref="Organisation"/> lookup (the team bulk-loads it
@@ -156,6 +161,10 @@ public class UserProfile : BaseAuditEntity
 
     /// <summary>V-1 — the honorific / title (اللقب), e.g. "Minister".</summary>
     public string? Honorific { get; set; }
+
+    /// <summary>2026-07-19 (owner) — Arabic twin of <see cref="Honorific"/>, the
+    /// fallback for a bilingual head-of-delegation title when JobTitle is unset.</summary>
+    public string? HonorificArabic { get; set; }
 
     /// <summary>V-1 — preferred language as an IETF tag ("ar"/"en") for the
     /// VIP welcome message.</summary>

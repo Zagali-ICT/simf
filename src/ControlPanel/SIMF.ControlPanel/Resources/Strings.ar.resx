@@ -913,6 +913,7 @@
   <data name="Admin.WalkIn.Field.EnglishName.Hint" xml:space="preserve"><value>كما هو مطبوع في جواز السفر / الهوية.</value></data>
   <!-- D-163 -->
   <data name="Admin.WalkIn.Field.JobTitle" xml:space="preserve"><value>المسمى الوظيفي (اختياري)</value></data>
+  <data name="Admin.WalkIn.Field.JobTitleArabic" xml:space="preserve"><value>المسمى الوظيفي بالعربية (اختياري)</value></data>
   <data name="Admin.WalkIn.Field.JobTitle.Hint" xml:space="preserve"><value>مثل "ربان" أو "مدير العمليات". حتى 128 حرفًا.</value></data>
   <data name="Admin.WalkIn.Field.ArabicName" xml:space="preserve"><value>الاسم الكامل (عربي)</value></data>
   <data name="Admin.WalkIn.Field.ArabicName.Hint" xml:space="preserve"><value>الاسم الكامل بالعربية.</value></data>
@@ -1847,6 +1848,9 @@
   <data name="Admin.SessionSummaries.Field.SpeakersArabic" xml:space="preserve"><value>المتحدثون (العربية)</value></data>
   <data name="Admin.SessionSummaries.Field.FullText" xml:space="preserve"><value>النص الكامل (الإنجليزية)</value></data>
   <data name="Admin.SessionSummaries.Field.FullTextArabic" xml:space="preserve"><value>النص الكامل (العربية)</value></data>
+  <data name="Admin.SessionSummaries.Field.Subtitle" xml:space="preserve"><value>النص المصدر للذكاء الاصطناعي (الإنجليزية)</value></data>
+  <data name="Admin.SessionSummaries.Field.SubtitleArabic" xml:space="preserve"><value>النص المصدر للذكاء الاصطناعي (العربية)</value></data>
+  <data name="Admin.SessionSummaries.Field.AiDraft" xml:space="preserve"><value>مسودة الذكاء الاصطناعي الأصلية (للقراءة فقط)</value></data>
   <data name="Admin.SessionSummaries.Editor.Save" xml:space="preserve"><value>حفظ</value></data>
   <data name="Admin.SessionSummaries.Editor.Cancel" xml:space="preserve"><value>إلغاء</value></data>
   <data name="Admin.SessionSummaries.Generated" xml:space="preserve"><value>تم توليد مسودة بالذكاء الاصطناعي.</value></data>
@@ -3193,6 +3197,7 @@
   <data name="Admin.WalkIn.Field.MawjId" xml:space="preserve"><value>المعرف في نظام موج (اختياري)</value></data>
   <data name="Admin.WalkIn.Field.MawjId.Hint" xml:space="preserve"><value>معرّف الضيف في منصة موج. حتى 64 حرفًا.</value></data>
   <data name="Admin.WalkIn.Field.Honorific" xml:space="preserve"><value>اللقب (اختياري)</value></data>
+  <data name="Admin.WalkIn.Field.HonorificArabic" xml:space="preserve"><value>اللقب بالعربية (اختياري)</value></data>
   <data name="Admin.WalkIn.Field.Honorific.Hint" xml:space="preserve"><value>مثل "معالي الوزير" أو "سعادة". حتى 64 حرفًا.</value></data>
   <data name="Admin.WalkIn.Field.PreferredLanguage" xml:space="preserve"><value>اللغة المفضلة (اختياري)</value></data>
   <data name="Admin.WalkIn.Field.PreferredLanguage.Hint" xml:space="preserve"><value>لغة رسالة الترحيب.</value></data>

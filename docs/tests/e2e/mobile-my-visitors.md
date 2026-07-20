@@ -94,6 +94,23 @@ Scenario: RTL
     and the empty/forbidden messages render right-to-left, no tofu
 ```
 
+### E2E-MOBMYVIS-007 — Bilingual job title (2026-07-20)
+
+```gherkin
+Scenario: A captured visitor's job title localizes per language
+  Given a captured visitor whose profile has an Arabic job title (JobTitleArabic)
+  And the app language is Arabic
+  Then their ContactCard shows the Arabic job title
+  When the app language is English
+  Then the same card shows the English JobTitle
+  # VisitorCard.jobTitleArabic + localizedJobTitle(isArabic): Arabic primary in
+  # ar, English fallback, nothing shown when neither is set. Backend flow covered
+  # by VisitorContactSharingTests; getter by contact_models_test.localizedJobTitle.
+```
+
 ---
 
-_Last reviewed:_ `2026-07-04` by `SIMF Team`.
+_Last reviewed:_ 2026-07-20 by Claude — bilingual job title: the captured-visitor
+`ContactCard` now localizes the title via `VisitorCard.jobTitleArabic` /
+`localizedJobTitle` (Arabic primary in ar, English fallback); E2E-MOBMYVIS-007.
+Earlier: `2026-07-04` by `SIMF Team`.

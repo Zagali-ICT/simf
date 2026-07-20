@@ -83,7 +83,7 @@ class MeetingCard extends StatelessWidget {
   // Row 1 — the kind headline over the rank line, with the flag badge at the end.
   Widget _headlineRow() {
     final flag = countryFlagEmoji(item.countryId);
-    final rank = item.subtitle?.trim() ?? '';
+    final rank = item.localizedRank(isArabic)?.trim() ?? '';
     return Container(
       padding: const EdgeInsets.only(bottom: SimfTokens.space2),
       decoration: const BoxDecoration(

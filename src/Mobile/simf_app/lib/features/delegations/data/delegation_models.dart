@@ -16,6 +16,7 @@ class DelegationItem {
     this.headName,
     this.headNameArabic,
     this.headTitle,
+    this.headTitleArabic,
     this.arrivalDate,
     this.departureDate,
   });
@@ -28,6 +29,7 @@ class DelegationItem {
   final String? headName;
   final String? headNameArabic;
   final String? headTitle;
+  final String? headTitleArabic;
   final DateTime? arrivalDate;
   final DateTime? departureDate;
 
@@ -40,6 +42,10 @@ class DelegationItem {
 
   String? localizedHead(bool isArabic) =>
       _pickOptional(headNameArabic, headName, isArabic);
+
+  /// The head-of-delegation's title/rank in the active locale (owner 2026-07-19).
+  String? localizedHeadTitle(bool isArabic) =>
+      _pickOptional(headTitleArabic, headTitle, isArabic);
 
   bool get hasHead =>
       (headName != null && headName!.trim().isNotEmpty) ||
@@ -85,6 +91,7 @@ class DelegationItem {
         headName: json['headName'] as String?,
         headNameArabic: json['headNameArabic'] as String?,
         headTitle: json['headTitle'] as String?,
+        headTitleArabic: json['headTitleArabic'] as String?,
         arrivalDate: _parseDate(json['arrivalDate']),
         departureDate: _parseDate(json['departureDate']),
       );

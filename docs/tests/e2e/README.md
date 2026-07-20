@@ -97,8 +97,8 @@ not reused. Each page owns a unique 3–4 letter namespace.
 
 | Page | File | Scenarios |
 |------|------|-----------|
-| `/admin/question-queue` | [`cp-admin-question-queue.md`](cp-admin-question-queue.md) | E2E-QQU-001..015 |
-| `/sessions/{id}/moderate` | [`cp-session-moderate.md`](cp-session-moderate.md) | E2E-MOD-001..012 |
+| `/admin/question-queue` | [`cp-admin-question-queue.md`](cp-admin-question-queue.md) | E2E-QQU-001..016 |
+| `/sessions/{id}/moderate` | [`cp-session-moderate.md`](cp-session-moderate.md) | E2E-MOD-001..013 |
 | `/admin/ratings` | [`cp-admin-ratings.md`](cp-admin-ratings.md) | E2E-RAT-001..012 |
 | `/admin/rating-config` | [`cp-admin-rating-config.md`](cp-admin-rating-config.md) | E2E-RCFG-001..015 |
 | `/admin/session-summaries` | [`cp-admin-session-summaries.md`](cp-admin-session-summaries.md) | E2E-SUM-001..022 |
@@ -172,10 +172,22 @@ not reused. Each page owns a unique 3–4 letter namespace.
 |------|------|-----------|
 | `/` (marketing landing) | [`web-landing.md`](web-landing.md) | E2E-WLD-001..008 |
 | `/account` | [`web-home.md`](web-home.md) | E2E-WHM-001..010 |
-| `/programme` | [`web-programme.md`](web-programme.md) | E2E-WPG-001..010 |
+| `/programme` | [`web-programme.md`](web-programme.md) | E2E-WPG-001..012 |
 | `/speakers` | [`web-speakers.md`](web-speakers.md) | E2E-WSPK-001..011 |
 | `/sessions/{id}` | [`web-session-detail.md`](web-session-detail.md) | E2E-WSDT-001..013 |
-| `/visit` | [`web-visit.md`](web-visit.md) | E2E-WVS-001..011 |
+| `/about` | [`web-about.md`](web-about.md) | E2E-WABT-001..011 |
+| `/about/objectives` | [`web-objectives.md`](web-objectives.md) | E2E-WOBJ-001..007 |
+| `/about/themes` | [`web-themes.md`](web-themes.md) | E2E-WTHM-001..009 |
+| `/about/organizer` | [`web-organizer.md`](web-organizer.md) | E2E-WORG-001..007 |
+| `/about/venue` | [`web-venue.md`](web-venue.md) | E2E-WVEN-001..007 |
+| `/programme/opening` | [`web-opening.md`](web-opening.md) | E2E-WOPN-001..007 |
+| `/programme/sessions` | [`web-plenary.md`](web-plenary.md) | E2E-WPLN-001..007 |
+| `/programme/exhibition` | [`web-exhibition.md`](web-exhibition.md) | E2E-WEXH-001..006 |
+| `/programme/gov-meetings` | [`web-gov-meetings.md`](web-gov-meetings.md) | E2E-WGBM-001..006 |
+| `/partners` | [`web-partners.md`](web-partners.md) | E2E-WPT-001..008 |
+| `/discover` | [`web-discover.md`](web-discover.md) | E2E-WDS-001..007 |
+| `/visit` | [`web-visit.md`](web-visit.md) | E2E-WVS-001..008 |
+| `/archive` | [`web-archive.md`](web-archive.md) | E2E-WAR-001..009 |
 | `/login` | [`web-login.md`](web-login.md) | E2E-WLG-001..017 |
 | `/login/verify` | [`web-otp-verify.md`](web-otp-verify.md) | E2E-WOT-001..010 |
 | `/forgot-password` | [`web-forgot-password.md`](web-forgot-password.md) | E2E-WFP-001..014 |
@@ -241,7 +253,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #41 `more` (no API) | [`mobile-more.md`](mobile-more.md) | E2E-MOB041-001..009 |
 | #34 `aiSummary` (`GET /app/programme/sessions/{id}/summary`) | [`mobile-ai-summary.md`](mobile-ai-summary.md) | E2E-MOB034-001..006 |
 | #111 `sessionSummaryList` (cached programme + favourites/booked overlay) — Wave 2 pixel pass, Figma `1388:8392` | [`mobile-session-summaries.md`](mobile-session-summaries.md) | E2E-MOB111-001..008 |
-| #26 `sendQuestion` (`POST /app/sessions/{id}/questions`) | [`mobile-send-question.md`](mobile-send-question.md) | E2E-MOB026-001..006 |
+| #26 `sendQuestion` (`POST /app/sessions/{id}/questions`) | [`mobile-send-question.md`](mobile-send-question.md) | E2E-MOB026-001..014 |
 | #32 `badge` (`GET /app/account/dashboard`) | [`mobile-badge.md`](mobile-badge.md) | E2E-MOB032-001..004 |
 | #25 `liveBroadcast` (`GET /app/programme/sessions/{id}`) | [`mobile-live.md`](mobile-live.md) | E2E-MOB025-001..007 |
 | #36 `chatbot` (interim shell — no API) | [`mobile-chatbot.md`](mobile-chatbot.md) | E2E-MOB036-001..006 |

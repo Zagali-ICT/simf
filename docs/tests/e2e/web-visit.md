@@ -1,263 +1,174 @@
-# E2E test catalogue — Visit & entry (`/visit`)
+# E2E test catalogue — Website "Visiting & travel" (`/visit`)
 
 | | |
 |--|--|
 | **Page** | [`web/visit.md`](../../pages/web/visit.md) |
 | **Route** | `/visit` |
-| **Surface** | Website |
-| **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
-| **Auth setup** | **None required.** `/visit` is a public, anonymous, read-only page (no `@attribute [Authorize]`, no `@rendermode`, no API client). It renders for a fresh browser with no auth cookie. (The `Get-Totp` helper / `superadmin@zagali-ict.com` setup is irrelevant here and is only carried in the table for catalogue consistency.) |
-| **Last reviewed** | 2026-06-02 |
+| **Surface** | Website (public marketing site — `ln-` Bootstrap SSR) |
+| **Test runner** | Chrome DevTools MCP (Playwright later — keep steps tool-agnostic) |
+| **Auth setup** | **None — anonymous and static.** No API call, no bearer token, no seeding. |
+| **Figma** | KSA Maritime Forum — Visits (Desktop AR), node `5867-24636` |
+| **Last reviewed** | 2026-07-19 |
 
-> **What this page is.** `/visit` (`Visit.razor`) is the Website's public
-> **Visit & entry** information page — static SSR, **informational only**. By
-> deliberate design there is **no public gate-data endpoint** (gate / check-in
-> data is operator-only), so the page renders clean bilingual static copy via
-> `IStringLocalizer<Strings>` `L["Visit.*"]` and calls **no API client** — it
-> never fabricates gate data. It composes a `SimfBanner` (which renders the
-> page `<h1>`) plus **four** `simf-card simf-page-card` sections, each an
-> `<h2>` + supporting paragraph(s):
+> **What this page is.** `/visit` (`Visit.razor`) is the Website's public, anonymous
+> **Visiting & travel** page (Figma `5867-24636`). It **supersedes** the old MudBlazor
+> visit-entry page (SimfBanner + four logistics cards) at the same route. Static SSR on
+> the shared `LandingShell` chrome, no CRUD. Three sections:
+> 1. **Interior hero** (`ln-pghero`, via `LandingPageHero`) — photo + gradient, the
+>    single `<h1>`, a subtitle and the venue + date pills. **No breadcrumb.**
+> 2. **Why visit** (`ln-discover ln-discover--dark` → `ln-dcard` × 6) — a title +
+>    description on a navy background, then six destination cards reused from
+>    `Landing.DiscoverCards` (the same six as `/discover`).
+> 3. **Travel & visa** (`ln-visa` → reused `ln-about` 2-col) — a band title + sub,
+>    then a photo + the tourist-visa heading, two paragraphs of Saudi eVisa copy and an
+>    eligible-countries callout with a **placeholder** CTA (see `web/visit.md` §7).
 >
-> 1. **Getting here** — two paragraphs (`Visit.GettingHere.Body`, `Visit.GettingHere.Transport`)
-> 2. **Entry & badges** — two paragraphs (`Visit.Entry.Badge`, `Visit.Entry.SignUp`)
-> 3. **Opening hours** — one paragraph (`Visit.Hours.Body`)
-> 4. **Accessibility** — one paragraph (`Visit.Accessibility.Body`)
->
-> **Auth model (Website, not CP).** This is a public Website page reachable by
-> anyone, signed in or not. There is **no** `RequirePermission` /
-> `/not-permitted` gate (that is the Control-Panel pattern) and **no**
-> unauthenticated → `/login` redirect (that is the signed-in Website pattern).
-> The "auth" scenario here is the opposite assertion: an anonymous visitor
-> **can** open `/visit` and read it without ever signing in.
->
-> **No CRUD, no forms, no buttons.** The page has zero interactive controls —
-> no grid, modal, filter, toggle, form field, or submit. The only navigation
-> affordance reaching this route is the `MainLayout` public-nav anchor
-> `<a href="/visit">@L["Nav.Visit"]</a>`. Do **not** author grid / modal /
-> validation / duplicate scenarios that the page does not have.
+> **Auth model (Website, anonymous).** No `RequirePermission`, no `/not-permitted`,
+> no `/login` redirect.
 
 ## Coverage matrix
 
 | ID | Scenario | Type | Priority | Status |
 |----|----------|------|----------|--------|
-| E2E-WVS-001 | Golden path — anonymous browser opens `/visit`, banner + all four cards render, no API/console error | happy | P0 | _to author_ |
-| E2E-WVS-002 | Banner — page `<h1>` title + subtitle render from `Visit.Banner.*` | happy | P1 | _to author_ |
-| E2E-WVS-003 | "Getting here" card — `<h2>` + both supporting paragraphs render | happy | P1 | _to author_ |
-| E2E-WVS-004 | "Entry & badges" card — `<h2>` + QR-badge + sign-up paragraphs render | happy | P1 | _to author_ |
-| E2E-WVS-005 | "Opening hours" card — `<h2>` + body paragraph render | happy | P2 | _to author_ |
-| E2E-WVS-006 | "Accessibility" card — `<h2>` + body paragraph render | happy | P2 | _to author_ |
-| E2E-WVS-007 | Public nav — `MainLayout` "Visit" link routes here from any public page | happy | P1 | _to author_ |
-| E2E-WVS-008 | Anonymous access — no auth cookie, no `/login` redirect, no `/not-permitted`, no auth API call | auth | P0 | _to author_ |
-| E2E-WVS-009 | No fabricated gate data — page issues **zero** `/account/api/*` or `/api/v1/*` requests | resilience | P1 | _to author_ |
-| E2E-WVS-010 | Accessibility wiring — `aria-labelledby` links each card to its `<h2>` id; single `<main>` landmark | a11y | P1 | _to author_ |
-| E2E-WVS-011 | RTL / Arabic render — `/culture?culture=ar` mirrors the page, all copy in Arabic | i18n | P1 | _to author_ |
+| E2E-WVS-001 | Golden path — hero + why-visit band + travel-&-visa section render + shared chrome, one `<h1>` | happy | P0 | _to author_ |
+| E2E-WVS-002 | Hero has NO breadcrumb (single-page cluster); the venue + date pills render | happy | P1 | _to author_ |
+| E2E-WVS-003 | Why visit — navy `ln-discover--dark` band with six `ln-dcard` destination cards | happy | P1 | _to author_ |
+| E2E-WVS-004 | Travel & visa — 2-col (photo + heading + two paragraphs) + the eligible-countries callout | happy | P1 | _to author_ |
+| E2E-WVS-005 | The visa CTA is a placeholder `<button>` (no navigation) described by the countries-list label | happy | P2 | _to author_ |
+| E2E-WVS-006 | Static/anonymous — no `/api/...` request, no Authorization header, no `/login` or `/not-permitted` redirect | auth | P0 | _to author_ |
+| E2E-WVS-007 | RTL / Arabic ⇄ LTR / English — hero + both bands mirror; Arabic content in AR, English in EN | i18n | P1 | _to author_ |
+| E2E-WVS-008 | Responsive — the destination grid collapses 3→2→1 and the visa 2-col stacks; no horizontal overflow at 1440/1280/1024/768/390 both languages | responsive | P1 | _to author_ |
 
 ## Scenarios
 
 ### E2E-WVS-001 — Golden path
 
 ```gherkin
-Feature: Visit & entry public information page
-  As a prospective attendee (no account, or signed in — it does not matter)
-  I want to read how to get to the forum, how entry works, hours, and accessibility
-  So that I am prepared before I travel to the event
+Feature: Website Visiting-&-travel page explains why to visit and how to get a visa
+  As any visitor (anonymous or signed in)
+  I want to know why to visit the Kingdom and how to travel and enter it
+  So that I can plan my trip to the forum
 
 Background:
-  Given the Website is reachable on http://localhost:5115
-  And the browser has no SIMF auth cookie (a fresh / anonymous session)
+  Given the Website is reachable
+  And the browser is a fresh anonymous session (no auth cookie, no bearer token)
 
-Scenario: An anonymous visitor opens /visit and reads the whole page
-  When the visitor navigates to /visit
-  Then the response is HTTP 200 (no redirect to /login and no /not-permitted)
-  And the document title is "Visit & entry · Saudi International Maritime Forum"
-  And the SimfBanner renders the page <h1> "Visit & entry"
-  And the banner subtitle reads "Everything you need to know before you arrive at the forum."
-  And exactly four simf-page-card sections render in order:
-    | order | h2 title        |
-    | 1     | Getting here    |
-    | 2     | Entry & badges  |
-    | 3     | Opening hours   |
-    | 4     | Accessibility   |
-  And no /account/api/... or /api/v1/... network request fires (the page calls no API client)
-  And the browser console logs 0 errors
+Scenario: The page renders the hero + both bands
+  When the browser opens /visit
+  Then NO request to /api/... is made (the page is static)
+  And the shared header + footer render (LandingShell chrome)
+  And an interior hero (section.ln-pghero) renders with exactly one <h1>
+  And a navy why-visit band (section.ln-discover.ln-discover--dark) renders six .ln-dcard cards
+  And a travel-&-visa band (section.ln-visa) renders a reused .ln-about__inner 2-column layout
+  And the page title is "Visiting & travel — Saudi International Maritime Forum"
 ```
 
 **Evidence captured:**
-- Screenshot: `docs/screenshots/web-visit-golden.png` (banner + all four cards in one viewport / full-page capture)
-- Console errors: 0 expected
-- Network: **0** application API calls — only the static SSR document + CSS/JS assets; assert no request path contains `/account/api/` or `/api/v1/`
-- Audit row: **none** — `/visit` is read-only and does not write to `OperationLog` / `RowAudit`
+- Screenshot: `docs/screenshots/web-visit-ar-1440.png` (AR) + `web-visit-en-1440.png` (EN)
+- Console errors: 0 expected (a benign shared-chrome font-preload warning is allowed)
+- Network: no `/api/v1/...` request; the hero + card + visa photos return 200
+- Audit row: none
 
-### E2E-WVS-002 — Banner
-
-```gherkin
-Scenario: The SimfBanner renders the page title and subtitle
-  Given the visitor is on /visit
-  Then there is exactly one <h1> on the page (the SimfBanner title) reading "Visit & entry"
-  And a banner subtitle paragraph reads "Everything you need to know before you arrive at the forum."
-  And the four card titles are <h2> elements (the banner owns the only <h1>)
-```
-
-### E2E-WVS-003 — "Getting here" card
+### E2E-WVS-002 — Hero without breadcrumb
 
 ```gherkin
-Scenario: Getting here card shows its heading and both supporting paragraphs
-  Given the visitor is on /visit
-  Then a section with aria-labelledby="visit-getting-here-title" is present
-  And its <h2 id="visit-getting-here-title"> reads "Getting here"
-  And it contains a paragraph reading "The forum is held at the official event venue. The full address and a venue map will be published here closer to the event. Please follow on-site signage and the directions of stewards on arrival."
-  And it contains a second paragraph reading "Parking and transport details, including the nearest access routes, will be announced ahead of the opening day."
+Scenario: The single-page-cluster hero omits the breadcrumb
+  When the browser opens /visit
+  Then NO .ln-pghero__crumbs breadcrumb element is present
+  And the hero renders its <h1> title, subtitle and two .ln-pghero__pill pills
 ```
 
-### E2E-WVS-004 — "Entry & badges" card
+### E2E-WVS-003 — Why-visit navy band
 
 ```gherkin
-Scenario: Entry & badges card explains the QR-badge flow and sign-up nudge
-  Given the visitor is on /visit
-  Then a section with aria-labelledby="visit-entry-title" is present
-  And its <h2 id="visit-entry-title"> reads "Entry & badges"
-  And it contains a paragraph reading "Entry is by QR badge. After your account is approved, open the SIMF mobile app to display your personal QR badge, which staff scan at the entrance to check you in."
-  And it contains a second paragraph reading "Do not have an account yet? Sign up in the SIMF app before you travel so your badge is ready in time for entry."
+Scenario: The why-visit band is the dark destinations grid
+  When the browser opens /visit
+  Then section.ln-discover.ln-discover--dark renders on a navy (#001640) background
+  And its title (Visit.Why.Title, an <h2>) + description render in light text
+  And exactly six .ln-dcard cards render (photo + <h3> name + distance + region)
+  And under English the first card reads "AlUla", "1,100 km", "Madinah Region"
 ```
 
-### E2E-WVS-005 — "Opening hours" card
+### E2E-WVS-004 — Travel & visa section
 
 ```gherkin
-Scenario: Opening hours card shows its heading and body
-  Given the visitor is on /visit
-  Then a section with aria-labelledby="visit-hours-title" is present
-  And its <h2 id="visit-hours-title"> reads "Opening hours"
-  And it contains a paragraph reading "The forum opens daily during the event dates. Exact opening and closing times for each day will be confirmed here before the event begins."
+Scenario: The travel-&-visa section shows the eVisa summary
+  When the browser opens /visit
+  Then section.ln-visa renders its band title (Visit.Visa.Title, an <h2>) + subtitle
+  And a reused .ln-about__inner renders a .ln-about__media photo and a .ln-about__content column
+  And the content shows the tourist-visa heading (Visit.Visa.Heading, an <h3>) and two paragraphs
+  And an .ln-visa-cta callout renders with a button and a countries-list title + subtitle
 ```
 
-### E2E-WVS-006 — "Accessibility" card
+### E2E-WVS-005 — Placeholder CTA
 
 ```gherkin
-Scenario: Accessibility card shows its heading and body
-  Given the visitor is on /visit
-  Then a section with aria-labelledby="visit-accessibility-title" is present
-  And its <h2 id="visit-accessibility-title"> reads "Accessibility"
-  And it contains a paragraph reading "The venue is designed to be accessible to visitors with reduced mobility. If you have specific access requirements, please contact your event coordinator in advance so we can assist you on the day."
+Scenario: The eligible-countries CTA is a documented placeholder
+  When the browser opens /visit
+  Then the .ln-visa-cta button is a <button type="button"> (not an <a> link)
+  And it does NOT navigate or open a new tab when activated (no target yet — web/visit.md §7)
+  And it carries aria-describedby="visa-countries-label" so it announces its context
 ```
 
-### E2E-WVS-007 — Public nav link
+### E2E-WVS-006 — Static / anonymous
 
 ```gherkin
-Scenario: The MainLayout public-nav "Visit" link routes to /visit
-  Given the visitor is on any public Website page that uses MainLayout (e.g. /programme)
-  Then the layout <nav> shows two secondary-button anchors: "Programme" and "Visit"
-  When the visitor clicks the "Visit" link (href="/visit")
-  Then the browser lands on /visit
-  And the "Visit & entry" banner <h1> renders
+Scenario: The page loads anonymously and fires no API request
+  Given a fresh browser with no auth cookie and no bearer token
+  When the user opens /visit directly
+  Then the page renders WITHOUT redirecting to /login or /not-permitted
+  And NO request to /api/... is made and no Authorization header is sent
+
+Scenario: A signed-in session changes nothing
+  Given an Approved Visitor is signed in on the Website
+  When they open /visit
+  Then the rendered page is identical to the anonymous view
 ```
 
-### E2E-WVS-008 — Anonymous access (no auth gate)
+### E2E-WVS-007 — RTL / LTR
 
 ```gherkin
-Scenario: An unauthenticated visitor can read /visit without signing in
-  Given there is no signed-in session (fresh browser, no auth cookie)
-  When the visitor opens /visit directly
-  Then the page renders with HTTP 200
-  And the visitor is NOT redirected to /login
-  And the visitor is NOT redirected to /not-permitted
-  And no /api/v1/auth/... request fires (the page performs no authentication)
-  And the full Visit & entry content is visible
+Scenario: The page mirrors between Arabic and English
+  When the browser opens /visit under the Arabic UI culture (<html dir="rtl" lang="ar">)
+  Then the page mirrors right-to-left, the hero photo sits on the LEFT, content renders Arabic
+  And the why-visit title reads "لماذا الزيارة" and the visa title reads "السفر والتأشيرة"
+
+  When the browser opens /visit under the English UI culture (<html dir="ltr" lang="en">)
+  Then the hero photo flips to the RIGHT and the content renders English
+  And the why-visit title reads "Why visit" and the visa title reads "Travel & visa"
 ```
 
-> **Note (public Website page).** Unlike a Control-Panel page, `/visit` has
-> **no** `RequirePermission` and never routes to `/not-permitted`; unlike a
-> signed-in Website page (e.g. `/account`), it has **no** unauthenticated →
-> `/login` redirect. It is intentionally readable by anyone. There is no
-> negative auth case to author — the assertion is that access succeeds.
-
-### E2E-WVS-009 — No fabricated gate data
+### E2E-WVS-008 — Responsive
 
 ```gherkin
-Scenario: The page never requests operator-only gate / check-in data
-  Given the visitor is on /visit
-  When the page has fully rendered (SSR document + assets settled)
-  Then the network panel shows zero requests whose path contains "/account/api/"
-  And zero requests whose path contains "/api/v1/"
-  And no gate, check-in, or attendance data is shown — only the static bilingual copy
+Scenario: The bands reflow with no horizontal overflow
+  When the browser opens /visit and the viewport width is set to each of 1440, 1280, 1024, 768, 390
+  Then the .ln-discover__grid shows 3 columns ≥1000px, 2 columns ≤1000px and 1 column ≤640px
+  And the visa .ln-about__inner stacks to one column ≤980px and the .ln-visa-cta callout wraps
+  And at every width in {1440, 1280, 1024, 768, 390} document.scrollWidth == document.clientWidth (no overflow)
+  And this holds in BOTH the EN (LTR) and AR (RTL) cultures
 ```
-
-> Gate / check-in data is operator-only by design (D-comment in `Visit.razor`).
-> This page deliberately ships static placeholder copy rather than calling a
-> public gate endpoint that does not exist, so the correct production-readiness
-> assertion is the **absence** of any data API call.
-
-### E2E-WVS-010 — Accessibility wiring
-
-```gherkin
-Scenario: Each card is labelled by its heading and the landmark is singular
-  Given the visitor is on /visit
-  Then each of the four <section class="simf-card simf-page-card"> elements carries an aria-labelledby
-  And each aria-labelledby points to the id of that section's <h2>:
-    | section            | aria-labelledby            |
-    | Getting here       | visit-getting-here-title   |
-    | Entry & badges     | visit-entry-title          |
-    | Opening hours      | visit-hours-title          |
-    | Accessibility      | visit-accessibility-title  |
-  And the page content sits inside the single MainLayout <main id="main-content"> landmark
-  And there is exactly one <h1> (the banner) and the four card titles are <h2>
-```
-
-### E2E-WVS-011 — RTL / Arabic render
-
-```gherkin
-Scenario: The Arabic culture mirrors the page and shows Arabic copy
-  Given the visitor is on /visit in English
-  When the visitor switches culture via GET /culture?culture=ar&redirectUri=%2Fvisit
-  Then the document renders with <html lang="ar" dir="rtl">
-  And the document title reads "الزيارة والدخول · الملتقى البحري السعودي الدولي"
-  And the banner <h1> reads "الزيارة والدخول"
-  And the banner subtitle reads "كل ما تحتاج معرفته قبل وصولك إلى الملتقى."
-  And the four card titles read, in order: "الوصول إلى الموقع", "الدخول والبطاقات", "ساعات العمل", "إمكانية الوصول"
-  And the layout is mirrored right-to-left (cards and nav buttons reverse)
-  And no Latin body copy leaks into the Arabic layout
-```
-
-**Evidence captured:**
-- Screenshot: `docs/screenshots/web-visit-rtl.png` (Arabic, `dir="rtl"`)
-- Console errors: 0 expected
-- Network: still **0** application API calls under Arabic culture (the `/culture` redirect is the only extra request, and it is an infra endpoint, not `/api/v1/...`)
 
 ---
 
 ## Implementation notes
 
-- **Static SSR, informational only.** `Visit.razor` has no `@rendermode`, no
-  `@attribute [Authorize]`, no API client and no interactive controls. It
-  renders four bilingual `simf-page-card` sections via `L["Visit.*"]` over a
-  `SimfBanner`. The catalogue is authored against that real composition — there
-  are no CRUD, validation, conflict/duplicate, or server-500-from-the-page
-  cases to write, because the page issues no request that could fail. The
-  resilience angle for a page like this is the **absence** of API calls
-  (E2E-WVS-009), not a 500 fallback.
-- **Public, not gated.** Reachable anonymously; no `/not-permitted` (CP
-  pattern) and no `/login` redirect (signed-in Website pattern). E2E-WVS-008
-  asserts the positive: anonymous access succeeds.
-- **Strings are the contract.** All copy is verified against
-  `src/Website/SIMF.Web/Resources/Strings.resx` and `Strings.ar.resx`
-  (`Visit.PageTitle`, `Visit.Banner.Title/Subtitle`,
-  `Visit.GettingHere.Title/Body/Transport`, `Visit.Entry.Title/Badge/SignUp`,
-  `Visit.Hours.Title/Body`, `Visit.Accessibility.Title/Body`). If a string
-  changes, update the matching scenario assertion in the same changeset.
-- **Culture switch.** Arabic is selected via the shared
-  `GET /culture?culture=ar&redirectUri=...` endpoint (same mechanism the auth
-  pages use through `SimfLanguageSwitch`); `App.razor` then emits
-  `<html lang dir>` from `CultureInfo.CurrentUICulture`. `/visit` itself has no
-  language-switch control on the page — the switch is exercised via the
-  endpoint / a page that hosts the switch.
-- **Lower-layer coverage.** No API integration test under
-  `tests/SIMF.Api.Tests/` backs this page, because it has no backing API by
-  design. Coverage is purely the rendered SSR markup; the appropriate
-  lower-layer test (if added later) would be a `bUnit` render test asserting
-  the banner + four cards + `aria-labelledby` wiring, not an `Api.Tests` case.
-- **Convert to Playwright** when the runner is adopted: copy each Gherkin
-  scenario into a `.feature` under `tests/SIMF.E2E.Tests/` (project TBD) with a
-  step-definition class. The steps are already runner-agnostic.
+- **Read-only, anonymous, static, no CRUD.** The only "interaction" is the placeholder
+  visa CTA (which does nothing yet) and the non-navigating destination cards. The matrix
+  above is exhaustive.
+- **Supersede.** This catalogue replaced the old MudBlazor visit-entry scenarios
+  (SimfBanner + four logistics cards). If the retired attendee-logistics info returns as
+  a later section, add scenarios then.
+- **Reuse contract.** The why-visit band is single-sourced off `Landing.DiscoverCards`;
+  assertions on card counts / labels double as drift guards.
+- **Placeholder CTA + image.** The visa CTA has no target and the visa photo is a reused
+  placeholder until real assets/URLs are provided (`web/visit.md` §7).
+- **Lower-layer coverage:** component (bUnit, no browser)
+  `tests/SIMF.Web.Tests/VisitPageTests.cs` pins the hero, the navy band and the visa
+  section incl. the placeholder CTA.
+- **Convert to Playwright** when adopted: copy each Gherkin scenario into a `.feature`
+  under `tests/SIMF.E2E.Tests/`.
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-07-19 by Claude (Visiting & travel page — `ln-` Bootstrap SSR, Figma 5867-24636; supersedes the old MudBlazor visit-entry page).

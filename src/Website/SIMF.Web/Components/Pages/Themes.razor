@@ -1,0 +1,64 @@
+@* SIMF public "Key themes" page — Figma node 5865-35289. Third About-cluster
+   page. Built on the shared LandingShell + LandingPageHero (3-level breadcrumb
+   Home / About / Key themes) + the ln-fsection chrome, with an interactive
+   ln-themex theme explorer. The five themes reuse the landing's Themes data so
+   they stay single-sourced. Progressive-enhancement: without JS every theme
+   panel shows stacked; with JS the vertical tabs drive one visible panel.
+   Bilingual AR-RTL / EN-LTR. Static content (no API). Serves "/about/themes". *@
+@page "/about/themes"
+@layout LandingLayout
+@inject IStringLocalizer<Strings> L
+
+@{
+    var rtl = CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft;
+    // pair each theme (title + desc, reused from the landing) with its tab label;
+    // Min keeps the two index-aligned lists safe if either changes length.
+    var count = Math.Min(Landing.Themes.Count, TabLabels.Count);
+}
+
+<LandingShell Title="@L["Themes.PageTitle"]" Description="@L["Themes.Meta"]">
+
+    @* ============================== HERO ============================== *@
+    <LandingPageHero Title="@L["Themes.Hero.Title"]"
+                     Subtitle="@L["Themes.Hero.Subtitle"]"
+                     Crumb="@L["Themes.Breadcrumb"]"
+                     ParentLabel="@L["About.Breadcrumb"]"
+                     ParentHref="/about"
+                     ImageSrc="assets/figma/about/about-hero.jpg" />
+
+    @* ======================= THEME EXPLORER ========================= *@
+    <section class="ln-fsection" aria-label="@L["Themes.Section.Title"]">
+        <div class="ln-fsection__inner ln-reveal">
+            <header class="ln-fsection__head">
+                <h2 class="ln-fsection__title">@L["Themes.Section.Title"]</h2>
+                <p class="ln-fsection__sub">@L["Themes.Section.Sub"]</p>
+            </header>
+            <div class="ln-themex">
+                <div class="ln-themex__nav">
+                    <p class="ln-themex__onpage">@L["Themes.OnThisPage"]</p>
+                    <div class="ln-themex__tabs" role="tablist" aria-label="@L["Themes.Section.Title"]">
+                        @for (var i = 0; i < count; i++)
+                        {
+                            <button type="button" class="ln-themex__tab@(i == 0 ? " is-active" : "")"
+                                    id="ln-theme-tab-@i" role="tab" aria-selected="@(i == 0 ? "true" : "false")"
+                                    aria-controls="ln-theme-panel-@i">@TabLabels[i].For(rtl)</button>
+                        }
+                    </div>
+                </div>
+                <div class="ln-themex__panels">
+                    @for (var i = 0; i < count; i++)
+                    {
+                        var t = Landing.Themes[i];
+                        <div class="ln-themex__panel@(i == 0 ? " is-active" : "")" id="ln-theme-panel-@i"
+                             role="tabpanel" aria-labelledby="ln-theme-tab-@i">
+                            <h3 class="ln-themex__panel-title">@t.Title.For(rtl)</h3>
+                            <p class="ln-themex__panel-desc">@t.Desc.For(rtl)</p>
+                        </div>
+                    }
+                </div>
+                <div class="ln-themex__media"><img src="assets/figma/themes/theme-explorer.jpg" alt="" loading="lazy" /></div>
+            </div>
+        </div>
+    </section>
+
+</LandingShell>

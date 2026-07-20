@@ -1,0 +1,60 @@
+@* Reusable interior page-hero for the public "ln-" marketing sub-pages
+   (the About cluster, …). A photo anchored to the inline-END side under a blue
+   brand gradient, with a breadcrumb, page title, optional subtitle and two
+   event info-pills (venue + date). The photo + gradient technique mirrors the
+   landing's ln-hero2; this variant adds the breadcrumb + pills and carries the
+   page's single <h1> (Routes.razor focuses it). Presentational — the consuming
+   page passes the localized crumb / title / subtitle + the photo path; the
+   constant "Home" crumb and the venue/date pills come from shared resx keys. *@
+@inject IStringLocalizer<Strings> L
+
+<section class="ln-pghero" aria-label="@Title">
+    <div class="ln-pghero__bg" aria-hidden="true">
+        <img src="@ImageSrc" alt="" />
+    </div>
+    <div class="ln-pghero__block ln-reveal">
+        @if (!string.IsNullOrWhiteSpace(Crumb))
+        {
+            <nav class="ln-pghero__crumbs" aria-label="breadcrumb">
+                <a href="/">@L["PageHero.Home"]</a>
+                <span aria-hidden="true">/</span>
+                @if (ParentHref is not null)
+                {
+                    <a href="@ParentHref">@ParentLabel</a>
+                    <span aria-hidden="true">/</span>
+                }
+                <span class="ln-pghero__crumb-current">@Crumb</span>
+            </nav>
+        }
+        <h1 class="ln-pghero__title">@Title</h1>
+        @if (!string.IsNullOrWhiteSpace(Subtitle))
+        {
+            <p class="ln-pghero__subtitle">@Subtitle</p>
+        }
+        <div class="ln-pghero__pills">
+            <span class="ln-pghero__pill"><span>@L["Landing.Hero.Venue"]</span><img src="assets/figma/secondnav/icon-location.svg" alt="" /></span>
+            <span class="ln-pghero__pill"><span>@L["Landing.Subnav.Date"]</span><img src="assets/figma/secondnav/icon-calendar.svg" alt="" /></span>
+        </div>
+    </div>
+</section>
+
+@code {
+    // The page title — rendered as the page's single <h1>. Required.
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+
+    // Optional supporting line under the title.
+    [Parameter] public string? Subtitle { get; set; }
+
+    // Current-page label shown last in the breadcrumb. Optional: when null/blank
+    // no breadcrumb renders at all (the Programme-cluster heroes omit it).
+    [Parameter] public string? Crumb { get; set; }
+
+    // Optional intermediate breadcrumb level between "Home" and the current page
+    // (e.g. About-cluster sub-pages render "Home / About / <page>"). Both must be
+    // set together; when ParentHref is null the breadcrumb stays two-level.
+    [Parameter] public string? ParentLabel { get; set; }
+    [Parameter] public string? ParentHref { get; set; }
+
+    // Path to the hero background photo (anchored to the inline-end side). Required.
+    [Parameter, EditorRequired] public string ImageSrc { get; set; } = "";
+}

@@ -29,6 +29,11 @@ public partial class SessionSummariesList
     private Guid _editSessionId;
     private string _editTitle = string.Empty;
     private string? _editAiModel;
+    // Slice D — read-only AI-transparency sources shown in the editor modal.
+    private string _editSubtitle = string.Empty;
+    private string _editSubtitleArabic = string.Empty;
+    private string _editAiDraftArabic = string.Empty;
+    private DateTimeOffset? _editAiDraftGeneratedAt;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
@@ -152,6 +157,10 @@ public partial class SessionSummariesList
         _editSessionId = detail.SessionId;
         _editTitle = detail.SessionTitle;
         _editAiModel = detail.AiModel;
+        _editSubtitle = detail.Subtitle ?? string.Empty;
+        _editSubtitleArabic = detail.SubtitleArabic ?? string.Empty;
+        _editAiDraftArabic = detail.AiDraftFullTextArabic ?? string.Empty;
+        _editAiDraftGeneratedAt = detail.AiDraftGeneratedAt;
         _edit = new SaveSessionSummaryRequest
         {
             KeyPoints = detail.KeyPoints,
@@ -225,6 +234,13 @@ public partial class SessionSummariesList
         !row.HasSummary ? "—"
         : row.GeneratedByAi ? L["Admin.SessionSummaries.Source.Ai"]
         : L["Admin.SessionSummaries.Source.Manual"];
+
+    // Slice D — the pristine AI-draft panel label, with the UTC capture time
+    // (the CP's yyyy-MM-dd HH:mm 'UTC' convention) when one is recorded.
+    private string AiDraftLabel =>
+        _editAiDraftGeneratedAt is { } at
+            ? $"{L["Admin.SessionSummaries.Field.AiDraft"]} · {at.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'", CultureInfo.InvariantCulture)}"
+            : L["Admin.SessionSummaries.Field.AiDraft"];
 
     // D-472 (#9) — the team review/approval workflow actions. Each forwards a PUT
     // to the matching admin endpoint, toasts, and reloads the desk.

@@ -174,7 +174,7 @@ internal sealed class VisitorShareService(
                 var card = cards[r.SubjectUserId];
                 return new SavedContactRow(
                     r.Id, r.SubjectUserId, card.Name, card.NameArabic,
-                    card.JobTitle, card.Organisation, r.Note, r.CreatedAt,
+                    card.JobTitle, card.JobTitleArabic, card.Organisation, r.Note, r.CreatedAt,
                     card.Available);
             })
             .ToList();
@@ -242,6 +242,7 @@ internal sealed class VisitorShareService(
                 p.Name,
                 p.NameArabic,
                 p.JobTitle,
+                p.JobTitleArabic,
                 p.OrganisationId,
                 p.NationalityId,
                 p.SaudiMobile,
@@ -281,7 +282,7 @@ internal sealed class VisitorShareService(
             {
                 result[userId] = new VisitorCard(
                     userId, string.Empty, string.Empty, null, null, null,
-                    null, null, null, null, null, null, Available: false);
+                    null, null, null, null, null, null, null, Available: false);
                 continue;
             }
 
@@ -304,6 +305,7 @@ internal sealed class VisitorShareService(
 
             result[userId] = new VisitorCard(
                 userId, profile.Name, profile.NameArabic, profile.JobTitle,
+                profile.JobTitleArabic,
                 orgEn, orgAr, email, profile.SaudiMobile, profile.InternationalMobile,
                 countryId, countryEn, countryAr, Available: true);
         }
@@ -313,7 +315,7 @@ internal sealed class VisitorShareService(
 
     private static SavedContactRow ToRow(SavedContact saved, VisitorCard card) =>
         new(saved.Id, saved.SubjectUserId, card.Name, card.NameArabic,
-            card.JobTitle, card.Organisation, saved.Note, saved.CreatedAt,
+            card.JobTitle, card.JobTitleArabic, card.Organisation, saved.Note, saved.CreatedAt,
             card.Available);
 
     // -- Token minting (Crockford base32; uniqueness-checked) -----------------

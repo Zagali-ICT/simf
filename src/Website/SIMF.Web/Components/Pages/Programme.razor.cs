@@ -3,13 +3,17 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using SIMF.ApiClient;
 using SIMF.Contracts.Programme;
+using SIMF.Web.Content;
+using static SIMF.Web.Content.LocalizedText;
 
 namespace SIMF.Web.Components.Pages;
 
-// Website — public programme / agenda page (D-199, Mockup page 16 "Agenda").
+// Website - public programme / agenda page (D-199, Mockup page 16 "Agenda").
 // Static-SSR public read over the anonymous backend; groups the published
-// sessions by the local calendar date of StartUtc into day sections and shows
-// an optional best-effort speakers strip. Markup lives in Programme.razor.
+// sessions by their event-local (+03:00 Riyadh) calendar date into day sections
+// and shows an optional best-effort speakers strip. Bilingual selection and the
+// time formatting come from the shared LocalizedText / EventTime helpers so this
+// page and Session Detail stay consistent. Markup lives in Programme.razor.
 public partial class Programme
 {
     [Inject] private IStringLocalizer<Strings> L { get; set; } = default!;
@@ -40,13 +44,13 @@ public partial class Programme
         }
     }
 
-    // Group sessions by the local calendar date of StartUtc, ordered by day
+    // Group sessions by their event-local (+03:00) calendar date, ordered by day
     // and then by start time within each day.
     private void BuildDays(IReadOnlyList<PublicSessionListItem> items)
     {
         var groups = items
             .OrderBy(s => s.StartUtc)
-            .GroupBy(s => s.StartUtc.ToLocalTime().Date)
+            .GroupBy(s => EventTime.Local(s.StartUtc).Date)
             .OrderBy(g => g.Key);
 
         foreach (var group in groups)
@@ -57,42 +61,23 @@ public partial class Programme
         }
     }
 
-    // Local time window, e.g. "09:00 – 10:30", in the current culture.
-    private static string TimeWindow(PublicSessionListItem session)
-    {
-        var start = session.StartUtc.ToLocalTime();
-        var end = session.EndUtc.ToLocalTime();
-        var pattern = "HH:mm";
-        return $"{start.ToString(pattern, CultureInfo.CurrentUICulture)} – " +
-               $"{end.ToString(pattern, CultureInfo.CurrentUICulture)}";
-    }
-
-    private static bool PreferArabic =>
-        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
+    // "HH:mm – HH:mm" event-local window for a session row.
+    private static string TimeWindow(PublicSessionListItem session) =>
+        EventTime.Window(session.StartUtc, session.EndUtc);
 
     private static string Title(PublicSessionListItem session) =>
-        Pick(session.TitleArabic, session.Title);
+        Pick(session.Title, session.TitleArabic);
 
     private static string Hall(PublicSessionListItem session) =>
-        Pick(session.HallNameArabic, session.HallName);
+        Pick(session.HallName, session.HallNameArabic);
 
-    private static string ThemeName(PublicSessionListItem session) =>
-        Pick(session.PrimaryThemeNameArabic, session.PrimaryThemeName);
+    // Optional: null when the session carries no theme name (in either language),
+    // so the razor omits the pill rather than painting an empty chip.
+    private static string? ThemeName(PublicSessionListItem session) =>
+        PickOrNull(session.PrimaryThemeName, session.PrimaryThemeNameArabic);
 
     private static string SpeakerName(PublicSpeakerSummary speaker) =>
-        Pick(speaker.NameArabic, speaker.Name);
-
-    // Arabic-preferred-then-English fallback: in an Arabic UI use the Arabic
-    // value when present, otherwise fall back to the base (English) value;
-    // a null base renders as empty.
-    private static string Pick(string? arabic, string? @base)
-    {
-        if (PreferArabic && !string.IsNullOrWhiteSpace(arabic))
-        {
-            return arabic;
-        }
-        return @base ?? string.Empty;
-    }
+        Pick(speaker.Name, speaker.NameArabic);
 
     private sealed record DaySection(string Heading, IReadOnlyList<PublicSessionListItem> Sessions);
 }

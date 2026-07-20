@@ -112,6 +112,7 @@ internal sealed class ProgrammeSessionService(
                         link.Speaker!.Name,
                         link.Speaker!.NameArabic,
                         link.Speaker!.Rank,
+                        link.Speaker!.RankArabic,
                         link.DisplayOrder,
                         link.Role,
                         // §7: country (flag) + photo shown with the speaker.
@@ -160,7 +161,8 @@ internal sealed class ProgrammeSessionService(
                             speaker.CountryId,
                             countryEn,
                             countryAr,
-                            speaker.PhotoRelativePath);
+                            speaker.PhotoRelativePath,
+                            TitleArabic: speaker.RankArabic);
                     })
                     .ToList();
                 return new PublicSessionListItem(
@@ -332,6 +334,7 @@ internal sealed class ProgrammeSessionService(
                         link.Speaker!.Name,
                         link.Speaker!.NameArabic,
                         link.Speaker!.Rank,
+                        link.Speaker!.RankArabic,
                         link.DisplayOrder,
                         link.Role,
                         link.Speaker!.CountryId,
@@ -417,7 +420,8 @@ internal sealed class ProgrammeSessionService(
                     countryEn,
                     countryAr,
                     speaker.PhotoRelativePath,
-                    speakersWithPhoto.Contains(speaker.Id));
+                    speakersWithPhoto.Contains(speaker.Id),
+                    TitleArabic: speaker.RankArabic);
             })
             .ToList();
 
@@ -545,9 +549,16 @@ internal sealed class ProgrammeSessionService(
             return Array.Empty<PublicRecordedQuestion>();
         }
 
+        // Owner 2026-07-19 (two-path Q&A): the recorded archive is the questions
+        // that were actually ASKED on stage — i.e. pushed to the speaker by the
+        // moderator (IsPushed) — not every Approved row. Since a live question now
+        // lands Approved directly (skipping the committee), an Approved filter here
+        // would leak live questions the moderator never surfaced; a hide clears the
+        // push flag, and a push requires Approved, so IsPushed is exactly the set of
+        // moderator-surfaced, not-since-hidden questions for both paths.
         var rows = await dbContext.SessionQuestions
             .AsNoTracking()
-            .Where(q => q.SessionId == id && q.Status == QuestionStatus.Approved)
+            .Where(q => q.SessionId == id && q.IsPushed)
             .OrderBy(q => q.Order).ThenBy(q => q.CreatedAt)
             .Select(q => new
             {

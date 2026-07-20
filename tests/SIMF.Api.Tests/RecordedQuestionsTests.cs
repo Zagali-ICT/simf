@@ -1,7 +1,10 @@
 // P3.4 — D-235 (Completion Programme §5.4): the recorded Q&A archive — a
-// published session's Committee-approved questions, attributed to the asker.
-// Covers the published-only gate, the Approved-only filter, attribution, and
-// the anonymous rejection.
+// published session's questions that were actually ASKED on stage (pushed to the
+// speaker by the moderator), attributed to the asker. Owner 2026-07-19 (two-path
+// Q&A): the archive is the IsPushed set, not every Approved row — a live question
+// now auto-approves onto the desk, so an Approved filter would leak questions the
+// moderator never surfaced. Covers the published-only gate, the pushed-only
+// filter, attribution, and the anonymous rejection.
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -35,14 +38,16 @@ public sealed class RecordedQuestionsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Published_session_lists_approved_questions_attributed_to_the_asker()
+    public async Task Published_session_lists_pushed_questions_attributed_to_the_asker()
     {
         var admin = await CreateAdministratorAndSignInAsync();
         var session = await SeedLiveSessionAsync();
         var (visitor, displayName) = await SeedApprovedVisitorAsync();
         var qid = await SubmitQuestionAsync(session.Id, visitor);
 
-        await PutAuthAsync($"/api/v1/admin/questions/{qid}/approve", new { }, admin);
+        // A live question is already Approved (on the desk); the moderator pushes
+        // it on stage — only pushed questions make the recorded archive.
+        await PutAuthAsync($"/api/v1/app/sessions/{session.Id}/questions/{qid}/push", new { }, admin);
         await PublishAsync(session.Id, admin);
 
         var rows = await ReadRecordedAsync(session.Id, admin);
@@ -66,25 +71,29 @@ public sealed class RecordedQuestionsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Only_approved_questions_appear_pending_and_hidden_are_excluded()
+    public async Task Only_pushed_questions_appear_hidden_and_unpushed_are_excluded()
     {
+        // Owner 2026-07-19 (two-path Q&A) — the recorded archive is the questions
+        // actually asked on stage (pushed). A live question auto-approves onto the
+        // desk, so an Approved-but-never-pushed question must NOT appear; a hidden
+        // one is excluded too.
         var admin = await CreateAdministratorAndSignInAsync();
         var session = await SeedLiveSessionAsync();
         var (visitor, _) = await SeedApprovedVisitorAsync();
 
-        var approved = await SubmitQuestionAsync(session.Id, visitor);
+        var pushed = await SubmitQuestionAsync(session.Id, visitor);
         var hidden = await SubmitQuestionAsync(session.Id, visitor);
-        var pending = await SubmitQuestionAsync(session.Id, visitor);
+        var approvedNotPushed = await SubmitQuestionAsync(session.Id, visitor);
 
-        await PutAuthAsync($"/api/v1/admin/questions/{approved}/approve", new { }, admin);
+        // Push one on stage, hide one, leave one Approved-but-unpushed.
+        await PutAuthAsync($"/api/v1/app/sessions/{session.Id}/questions/{pushed}/push", new { }, admin);
         await PutAuthAsync($"/api/v1/admin/questions/{hidden}/hide", new { }, admin);
-        // `pending` is left untouched.
         await PublishAsync(session.Id, admin);
 
         var rows = await ReadRecordedAsync(session.Id, admin);
-        Assert.Contains(rows, r => r.Id == approved);
+        Assert.Contains(rows, r => r.Id == pushed);
         Assert.DoesNotContain(rows, r => r.Id == hidden);
-        Assert.DoesNotContain(rows, r => r.Id == pending);
+        Assert.DoesNotContain(rows, r => r.Id == approvedNotPushed);
     }
 
     [Fact]

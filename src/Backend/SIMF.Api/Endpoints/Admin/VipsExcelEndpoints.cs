@@ -43,6 +43,7 @@ public sealed class ExportVipsEndpoint(IAdminInvitationService service, IGridExc
         new("EnglishName", row => row.EnglishName),
         new("ArabicName", row => row.ArabicName),
         new("JobTitle", row => row.JobTitle ?? string.Empty),
+        new("JobTitleArabic", row => row.JobTitleArabic ?? string.Empty),
         new("ProfileType", row => row.ProfileTypeName),
         new("ProfileTypeArabic", row => row.ProfileTypeNameArabic),
         new("Email", row => row.Email ?? string.Empty),

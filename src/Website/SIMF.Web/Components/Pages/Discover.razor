@@ -1,0 +1,54 @@
+@* SIMF public "Discover Saudi Arabia" page — Figma node 5867-29747. Built on the
+   shared LandingShell chrome + the reusable LandingPageHero (no breadcrumb — the
+   Visitor cluster is a single page, like the Programme-cluster heroes). The
+   destinations band REUSES the landing's shared ln-discover / ln-dcard markup, CSS
+   and single-sourced content (Landing.DiscoverCards + the reused
+   Landing.Discover.* resx) so the dedicated page and the landing band never drift.
+   Bilingual AR-RTL / EN-LTR (the request culture drives <html dir/lang>).
+
+   The Figma frame's hero + cards are placeholders (a generic "المعرض" hero + six
+   identical "800 Km / جدة" cards); this page shows a real hero + the landing's real
+   six destinations. The self-referential "Explore Saudi Arabia" CTA is omitted (see
+   web/discover.md §7). Static content (no API). Serves "/discover". *@
+@page "/discover"
+@layout LandingLayout
+@inject IStringLocalizer<Strings> L
+
+@{
+    var rtl = CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft;
+}
+
+<LandingShell Title="@L["Discover.PageTitle"]" Description="@L["Discover.Meta"]">
+
+    @* ============================== HERO ============================== *@
+    <LandingPageHero Title="@L["Discover.Hero.Title"]"
+                     Subtitle="@L["Discover.Hero.Subtitle"]"
+                     ImageSrc="assets/figma/about/about-hero.jpg" />
+
+    @* ===== Destinations ("أكتشف السعودية") — reuses the landing's ln-discover band.
+         The landing's "Explore Saudi Arabia" CTA is intentionally omitted here: this
+         dedicated page IS the discover destination, so a self-referential CTA would
+         lead nowhere (see web/discover.md §7). *@
+    <section class="ln-discover" aria-label="@L["Landing.Discover.Title"]">
+        <div class="ln-discover__inner ln-reveal">
+            <div class="ln-discover__head">
+                <h2 class="ln-discover__title">@L["Landing.Discover.Title"]</h2>
+                <p class="ln-discover__desc">@L["Landing.Discover.Desc"]</p>
+            </div>
+            <div class="ln-discover__grid">
+                @foreach (var d in Landing.DiscoverCards)
+                {
+                    <article class="ln-dcard">
+                        <div class="ln-dcard__img"><img src="@d.Image" alt="@d.Title.For(rtl)" loading="lazy" /></div>
+                        <div class="ln-dcard__panel">
+                            <h3 class="ln-dcard__title">@d.Title.For(rtl)</h3>
+                            <span class="ln-dcard__meta"><svg viewBox="0 0 20.732 20.732" fill="none" aria-hidden="true"><path d="M1.7865 9.10371C1.19115 8.87219 0.893481 8.75643 0.806575 8.58963C0.731238 8.44503 0.731136 8.27278 0.806304 8.12809C0.893013 7.96119 1.19055 7.84507 1.78562 7.61285L18.6734 1.02251C19.2106 0.812878 19.4791 0.708063 19.6508 0.765398C19.7998 0.815191 19.9168 0.932159 19.9666 1.08121C20.0239 1.25284 19.9191 1.52143 19.7095 2.05861L13.1191 18.9464C12.8869 19.5414 12.7708 19.839 12.6039 19.9257C12.4592 20.0008 12.2869 20.0007 12.1423 19.9254C11.9755 19.8385 11.8598 19.5408 11.6283 18.9455L9.00015 12.1875C8.95315 12.0666 8.92965 12.0062 8.89336 11.9553C8.86119 11.9102 8.82175 11.8708 8.77666 11.8386C8.72578 11.8023 8.66535 11.7788 8.5445 11.7318L1.7865 9.10371Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg><span>@d.Distance</span></span>
+                            <span class="ln-dcard__meta"><svg viewBox="0 0 17.5 21.5" fill="none" aria-hidden="true"><circle cx="8.75" cy="8.75" r="3" stroke="currentColor" stroke-width="1.5" /><path d="M8.75 20.75C12.75 16.75 16.75 13.1683 16.75 8.75C16.75 4.33172 13.1683 0.75 8.75 0.75C4.33172 0.75 0.75 4.33172 0.75 8.75C0.75 13.1683 4.75 16.75 8.75 20.75Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg><span>@d.Location.For(rtl)</span></span>
+                        </div>
+                    </article>
+                }
+            </div>
+        </div>
+    </section>
+
+</LandingShell>

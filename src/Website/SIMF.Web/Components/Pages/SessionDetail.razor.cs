@@ -21,10 +21,6 @@ public partial class SessionDetail
     private PublicSessionDetail? Session { get; set; }
     private IReadOnlyList<PublicSessionListItem> Related { get; set; } = [];
 
-    // The forum runs on Riyadh time (+03:00); the public projection buckets days
-    // the same way, so the hero/at-a-glance render the session in event-local time.
-    private static readonly TimeSpan EventOffset = TimeSpan.FromHours(3);
-
     protected override async Task OnInitializedAsync()
     {
         Session = await Api.GetSessionAsync(Id);
@@ -50,21 +46,19 @@ public partial class SessionDetail
     private string? Category(PublicSessionDetail s) => PickOrNull(s.CategoryName, s.CategoryNameArabic);
 
     private static string TimeRange(PublicSessionDetail s) =>
-        $"{s.StartUtc.ToOffset(EventOffset):HH:mm} – {s.EndUtc.ToOffset(EventOffset):HH:mm}";
+        EventTime.Window(s.StartUtc, s.EndUtc);
 
     private static string DateLabel(PublicSessionDetail s) =>
-        s.StartUtc.ToOffset(EventOffset)
-            .ToString("dddd d MMMM yyyy", CultureInfo.CurrentUICulture);
+        EventTime.Local(s.StartUtc).ToString("dddd d MMMM yyyy", CultureInfo.CurrentUICulture);
 
     private static string WeekdayLabel(PublicSessionDetail s) =>
-        s.StartUtc.ToOffset(EventOffset)
-            .ToString("dddd", CultureInfo.CurrentUICulture);
+        EventTime.Local(s.StartUtc).ToString("dddd", CultureInfo.CurrentUICulture);
 
     // Related-strip card helpers (agenda list items).
     private static string RelatedTitle(PublicSessionListItem s) => Pick(s.Title, s.TitleArabic);
     private static string RelatedHall(PublicSessionListItem s) => Pick(s.HallName, s.HallNameArabic);
     private static string RelatedTime(PublicSessionListItem s) =>
-        $"{s.StartUtc.ToOffset(EventOffset):HH:mm} – {s.EndUtc.ToOffset(EventOffset):HH:mm}";
+        EventTime.Window(s.StartUtc, s.EndUtc);
 
     // Speaker-card helpers (reuse the ln-spkcard family from the Speakers page).
     private static string SpeakerName(PublicSessionSpeaker s) => Pick(s.Name, s.NameArabic);

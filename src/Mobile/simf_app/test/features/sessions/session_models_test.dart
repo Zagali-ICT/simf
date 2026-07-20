@@ -71,6 +71,7 @@ void main() {
             'name': 'Dr Reef',
             'nameArabic': 'د. ريف',
             'title': 'Chief Scientist',
+            'titleArabic': 'كبير العلماء',
             'displayOrder': 0,
             'role': 1, // Host
             'countryId': 682,
@@ -97,6 +98,9 @@ void main() {
       expect(speaker.countryId, 682);
       expect(speaker.localizedCountry(true), 'السعودية');
       expect(speaker.photoRelativePath, '/media/sp1.jpg');
+      // Owner 2026-07-19 — the speaker rank/title localizes AR/EN.
+      expect(speaker.localizedTitle(true), 'كبير العلماء');
+      expect(speaker.localizedTitle(false), 'Chief Scientist');
     });
 
     test('a missing speakers array decodes to an empty list (never null)', () {

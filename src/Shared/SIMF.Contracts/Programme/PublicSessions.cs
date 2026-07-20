@@ -195,7 +195,11 @@ public sealed record PublicSessionSpeaker(
     // same-origin /content/assets/SpeakerPhoto/{id}/image proxy (post-D-357 the
     // photo usually lives there, not in PhotoRelativePath). Appended (append-only,
     // D-219) — the app keeps using PhotoRelativePath / its own avatar route.
-    bool HasPhotoAsset = false);
+    bool HasPhotoAsset = false,
+    // 2026-07-19 (owner) — the Arabic rank/title, mapped from Speaker.RankArabic
+    // (the twin of Title = Speaker.Rank). Appended (append-only, D-219) so the app
+    // shows the rank in the active locale; older builds ignore it and keep Title.
+    string? TitleArabic = null);
 
 /// <summary>D-199 — cheap seat-availability summary for the session
 /// detail. <see cref="Capacity"/> is the effective capacity
@@ -210,11 +214,12 @@ public sealed record PublicSessionSeatSummary(
     int Available);
 
 /// <summary>P3.4 — D-235 (Completion Programme §5.4): one question in a
-/// published session's recorded Q&amp;A archive — the Committee-approved
-/// questions, attributed to the asker. <see cref="IsPushed"/> marks the ones
-/// that were pushed to the speaker live (answered on stage). Served by
-/// <c>GET /api/v1/app/programme/sessions/{id}/recorded-questions</c> for an
-/// approved (signed-in) account.</summary>
+/// published session's recorded Q&amp;A archive — the questions that were actually
+/// asked on stage (pushed to the speaker by the moderator), attributed to the
+/// asker. Owner 2026-07-19 (two-path Q&amp;A): the archive filters on
+/// <see cref="IsPushed"/>, so this flag is always <c>true</c> for an archive row.
+/// Served by <c>GET /api/v1/app/programme/sessions/{id}/recorded-questions</c> for
+/// an approved (signed-in) account.</summary>
 public sealed record PublicRecordedQuestion(
     Guid Id,
     string QuestionText,

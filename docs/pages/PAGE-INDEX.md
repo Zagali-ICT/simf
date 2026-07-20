@@ -154,10 +154,22 @@ No public nav per D-064 — every page is reached via direct URL or auth redirec
 | `/` + `/landing` (marketing landing — Bootstrap SSR rebuild) | ✅ Live at `/` (bilingual AR/EN; cutover 2026-07-14) | Public | [web/landing-rebuild.md](web/landing-rebuild.md) | [e2e/web-landing-rebuild.md](../tests/e2e/web-landing-rebuild.md) |
 | ~~`/` (old static landing)~~ | 🗑️ Retired 2026-07-14 (`index.html` deleted) | Public | [web/landing.md](web/landing.md) | [e2e/web-landing.md](../tests/e2e/web-landing.md) |
 | `/account` | ✅ Real | Any signed-in | [web/home.md](web/home.md) | [e2e/web-home.md](../tests/e2e/web-home.md) |
-| `/programme` | ✅ Real (D-199) | Public | [web/programme.md](web/programme.md) | [e2e/web-programme.md](../tests/e2e/web-programme.md) |
+| `/programme` | ✅ Real (`ln-` SSR re-skin; live day-grouped agenda + speakers strip; supersedes the legacy Simf* page, D-199) | Public | [web/programme.md](web/programme.md) | [e2e/web-programme.md](../tests/e2e/web-programme.md) |
 | `/speakers` | ✅ Real (`ln-` SSR rebuild; Figma 5840-26779; live data) | Public | [web/speakers.md](web/speakers.md) | [e2e/web-speakers.md](../tests/e2e/web-speakers.md) |
 | `/sessions/{id}` | ✅ Real (`ln-` SSR; Figma 5991-85840; live data + public downloads) | Public | [web/session-detail.md](web/session-detail.md) | [e2e/web-session-detail.md](../tests/e2e/web-session-detail.md) |
-| `/visit` | ✅ Real | Public | — | [e2e/web-visit.md](../tests/e2e/web-visit.md) |
+| `/about` | ✅ Real (`ln-` SSR; Figma 5865-33963; static marketing — About cluster #1) | Public | [web/about.md](web/about.md) | [e2e/web-about.md](../tests/e2e/web-about.md) |
+| `/about/objectives` | ✅ Real (`ln-` SSR; Figma 5865-34626; static marketing — About cluster #2) | Public | [web/objectives.md](web/objectives.md) | [e2e/web-objectives.md](../tests/e2e/web-objectives.md) |
+| `/about/themes` | ✅ Real (`ln-` SSR; Figma 5865-35289; static + JS theme explorer — About cluster #3) | Public | [web/themes.md](web/themes.md) | [e2e/web-themes.md](../tests/e2e/web-themes.md) |
+| `/about/organizer` | ✅ Real shell (`ln-` SSR; Figma 5865-38003; MOD+RSNF content — About cluster #4) | Public | [web/organizer.md](web/organizer.md) | [e2e/web-organizer.md](../tests/e2e/web-organizer.md) |
+| `/about/venue` | ✅ Real minimal (`ln-` SSR; Figma 5866-40935 stub; real venue facts — About cluster #5) | Public | [web/venue.md](web/venue.md) | [e2e/web-venue.md](../tests/e2e/web-venue.md) |
+| `/programme/opening` | ✅ Real (`ln-` SSR; Figma 5867-22242; static — Programme cluster #1) | Public | [web/opening.md](web/opening.md) | [e2e/web-opening.md](../tests/e2e/web-opening.md) |
+| `/programme/sessions` | ✅ Real (`ln-` SSR; Figma 5867-22842; reuses landing sessions — Programme cluster #2; static teaser whose cards link to the live `/programme` agenda) | Public | [web/plenary.md](web/plenary.md) | [e2e/web-plenary.md](../tests/e2e/web-plenary.md) |
+| `/programme/exhibition` | ✅ Real (`ln-` SSR; Figma 5867-23560; floor-plan map image — Programme cluster #3) | Public | [web/exhibition.md](web/exhibition.md) | [e2e/web-exhibition.md](../tests/e2e/web-exhibition.md) |
+| `/programme/gov-meetings` | ✅ Real minimal (`ln-` SSR; Figma 5867-23988 stub; real content — Programme cluster #4) | Public | [web/gov-meetings.md](web/gov-meetings.md) | [e2e/web-gov-meetings.md](../tests/e2e/web-gov-meetings.md) |
+| `/partners` | ✅ Real (`ln-` SSR; Figma 5866-40017; reuses landing partners + sponsors bands, single-sourced — Partners cluster #1) | Public | [web/partners.md](web/partners.md) | [e2e/web-partners.md](../tests/e2e/web-partners.md) |
+| `/discover` | ✅ Real (`ln-` SSR; Figma 5867-29747; reuses landing destinations band, single-sourced — Visitor cluster) | Public | [web/discover.md](web/discover.md) | [e2e/web-discover.md](../tests/e2e/web-discover.md) |
+| `/visit` | ✅ Real (`ln-` SSR; Figma 5867-24636; supersedes the old MudBlazor visit-entry page — Visitor cluster) | Public | [web/visit.md](web/visit.md) | [e2e/web-visit.md](../tests/e2e/web-visit.md) |
+| `/archive` | ✅ Real (`ln-` SSR; Figma 5840-27997; **live** archive data + static fallback — Media cluster) | Public | [web/archive.md](web/archive.md) | [e2e/web-archive.md](../tests/e2e/web-archive.md) |
 | `/login` | 🔒 Auth-only | Anyone | [web/login.md](web/login.md) | [e2e/web-login.md](../tests/e2e/web-login.md) |
 | `/login/verify` | 🔒 Auth-only | Mid-sign-in | [web/otp-verify.md](web/otp-verify.md) | [e2e/web-otp-verify.md](../tests/e2e/web-otp-verify.md) |
 | `/forgot-password` | 🔒 Auth-only | Anyone | [web/forgot-password.md](web/forgot-password.md) | [e2e/web-forgot-password.md](../tests/e2e/web-forgot-password.md) |

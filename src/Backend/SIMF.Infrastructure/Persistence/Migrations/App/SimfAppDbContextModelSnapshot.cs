@@ -3709,6 +3709,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
+                    b.Property<string>("HonorificArabic")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
                     b.Property<string>("IdImageRelativePath")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -3735,6 +3739,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("bit");
 
                     b.Property<string>("JobTitle")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("JobTitleArabic")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
@@ -4405,6 +4413,13 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("AiDraftFullTextArabic")
+                        .HasMaxLength(8000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("AiDraftGeneratedAt")
+                        .HasColumnType("datetimeoffset");
+
                     b.Property<string>("AiModel")
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
@@ -4595,12 +4610,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("nvarchar(1024)");
 
                     b.Property<string>("Rank")
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.Property<string>("RankArabic")
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.Property<string>("TrainingExperience")
                         .HasMaxLength(1024)

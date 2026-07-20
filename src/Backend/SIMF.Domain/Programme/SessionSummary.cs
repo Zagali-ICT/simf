@@ -67,6 +67,23 @@ public sealed class SessionSummary
     /// editing never clears it (the draft origin is provenance, not state).</summary>
     public string? AiModel { get; set; }
 
+    // -- Slice D (2026-07-19) — AI transparency --------------------------------
+
+    /// <summary>The pristine AI draft: the untouched output the generate action
+    /// produced, captured once at generation and NEVER overwritten by a Committee
+    /// edit. Lets the CP editor show the original AI text beside the (possibly
+    /// edited) working copy so a reviewer sees exactly what the model wrote. Only
+    /// the Arabic full-text is AI-drafted (the seeded prompt writes Arabic
+    /// minutes), so this mirrors <see cref="FullTextArabic"/>. Null when no AI
+    /// draft has been generated (a hand-written summary, or a row predating this
+    /// column). CP-internal — never projected onto any public/app contract.</summary>
+    public string? AiDraftFullTextArabic { get; set; }
+
+    /// <summary>When the pristine <see cref="AiDraftFullTextArabic"/> snapshot was
+    /// last captured; each generate / re-generate refreshes both. Null when no AI
+    /// draft has been generated.</summary>
+    public DateTimeOffset? AiDraftGeneratedAt { get; set; }
+
     /// <summary>Stamped when the Committee publishes the summary; cleared when
     /// it is un-published. Null while it is a draft. The app read requires a
     /// non-null value.</summary>

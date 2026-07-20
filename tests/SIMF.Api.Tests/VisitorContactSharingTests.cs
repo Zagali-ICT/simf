@@ -65,7 +65,7 @@ public sealed class VisitorContactSharingTests : IClassFixture<SimfApiFactory>
         var (countryId, countryEn, _) = await FirstActiveCountryAsync();
         var orgId = await SeedOrganisationAsync("Acme Naval", "أكمي البحرية");
         await SeedProfileAsync(subjectId, "Captain Subject", "الكابتن",
-            jobTitle: "Captain", saudiMobile: "+966500000000",
+            jobTitle: "Captain", jobTitleArabic: "قائد", saudiMobile: "+966500000000",
             organisationId: orgId, nationalityId: countryId);
         var code = await GetShareTokenAsync(subjectToken);
 
@@ -77,6 +77,7 @@ public sealed class VisitorContactSharingTests : IClassFixture<SimfApiFactory>
         Assert.True(card.Available);
         Assert.Equal("Captain Subject", card.Name);
         Assert.Equal("Captain", card.JobTitle);
+        Assert.Equal("قائد", card.JobTitleArabic); // bilingual title flows through (2026-07-20)
         Assert.Equal("Acme Naval", card.Organisation);
         Assert.Equal("+966500000000", card.SaudiMobile);
         Assert.Equal(countryId, card.CountryId);
@@ -157,7 +158,7 @@ public sealed class VisitorContactSharingTests : IClassFixture<SimfApiFactory>
     {
         var (subjectToken, subjectId) = await CreateApprovedVisitorAsync();
         await SeedProfileAsync(subjectId, "VCard Subject", "بطاقة",
-            jobTitle: "Director", saudiMobile: "+966511111111");
+            jobTitle: "Director", jobTitleArabic: "مدير", saudiMobile: "+966511111111");
         var code = await GetShareTokenAsync(subjectToken);
         var (ownerToken, _) = await CreateApprovedVisitorAsync();
         var save = await PostAuthAsync("/api/v1/app/contacts/save",
@@ -170,7 +171,29 @@ public sealed class VisitorContactSharingTests : IClassFixture<SimfApiFactory>
         Assert.Contains("BEGIN:VCARD", body);
         Assert.Contains("VCard Subject", body);
         Assert.Contains("TITLE:Director", body);
+        Assert.Contains("TITLE;LANGUAGE=ar:مدير", body); // bilingual title (2026-07-20)
         Assert.Contains("TEL", body);
+    }
+
+    [Fact]
+    public async Task Vcard_export_with_arabic_only_title_emits_a_sole_untagged_title()
+    {
+        var (subjectToken, subjectId) = await CreateApprovedVisitorAsync();
+        // Arabic title only (no English) → the vCard uses it as the sole TITLE so
+        // every parser shows it (2026-07-20 bilingual-title fallback branch).
+        await SeedProfileAsync(subjectId, "AR Title", "لقب",
+            jobTitleArabic: "مدير عام", saudiMobile: "+966512222222");
+        var code = await GetShareTokenAsync(subjectToken);
+        var (ownerToken, _) = await CreateApprovedVisitorAsync();
+        var save = await PostAuthAsync("/api/v1/app/contacts/save",
+            new SaveContactRequest { Token = code }, ownerToken);
+        var id = (await save.Content.ReadFromJsonAsync<ApiResult<SavedContactRow>>())!.Data!.Id;
+
+        var vcard = await GetAuthAsync($"/api/v1/app/contacts/{id}/vcard", ownerToken);
+        Assert.Equal(HttpStatusCode.OK, vcard.StatusCode);
+        var body = await vcard.Content.ReadAsStringAsync();
+        Assert.Contains("TITLE:مدير عام", body);
+        Assert.DoesNotContain("TITLE;LANGUAGE=ar", body);
     }
 
     [Fact]
@@ -204,7 +227,8 @@ public sealed class VisitorContactSharingTests : IClassFixture<SimfApiFactory>
     private async Task SeedProfileAsync(
         Guid userId, string name, string nameArabic,
         string? jobTitle = null, string? saudiMobile = null,
-        Guid? organisationId = null, int? nationalityId = null)
+        Guid? organisationId = null, int? nationalityId = null,
+        string? jobTitleArabic = null)
     {
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -217,6 +241,7 @@ public sealed class VisitorContactSharingTests : IClassFixture<SimfApiFactory>
             Name = name,
             NameArabic = nameArabic,
             JobTitle = jobTitle,
+            JobTitleArabic = jobTitleArabic,
             SaudiMobile = saudiMobile,
             OrganisationId = organisationId,
             NationalityId = countryId,

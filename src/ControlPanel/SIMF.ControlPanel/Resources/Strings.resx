@@ -920,6 +920,7 @@
   <data name="Admin.WalkIn.Field.EnglishName.Hint" xml:space="preserve"><value>Exactly as printed on the passport / ID.</value></data>
   <!-- D-163 (PDF §2.6) — optional job title for the badge. -->
   <data name="Admin.WalkIn.Field.JobTitle" xml:space="preserve"><value>Job title (optional)</value></data>
+  <data name="Admin.WalkIn.Field.JobTitleArabic" xml:space="preserve"><value>Job title in Arabic (optional)</value></data>
   <data name="Admin.WalkIn.Field.JobTitle.Hint" xml:space="preserve"><value>For example, "Captain" or "Director of Operations". Up to 128 characters.</value></data>
   <data name="Admin.WalkIn.Field.ArabicName" xml:space="preserve"><value>Full name (Arabic)</value></data>
   <data name="Admin.WalkIn.Field.ArabicName.Hint" xml:space="preserve"><value>الاسم الكامل بالعربية.</value></data>
@@ -1854,6 +1855,9 @@
   <data name="Admin.SessionSummaries.Field.SpeakersArabic" xml:space="preserve"><value>Speakers (Arabic)</value></data>
   <data name="Admin.SessionSummaries.Field.FullText" xml:space="preserve"><value>Full text (English)</value></data>
   <data name="Admin.SessionSummaries.Field.FullTextArabic" xml:space="preserve"><value>Full text (Arabic)</value></data>
+  <data name="Admin.SessionSummaries.Field.Subtitle" xml:space="preserve"><value>AI source subtitle (English)</value></data>
+  <data name="Admin.SessionSummaries.Field.SubtitleArabic" xml:space="preserve"><value>AI source subtitle (Arabic)</value></data>
+  <data name="Admin.SessionSummaries.Field.AiDraft" xml:space="preserve"><value>Original AI draft (read-only)</value></data>
   <data name="Admin.SessionSummaries.Editor.Save" xml:space="preserve"><value>Save</value></data>
   <data name="Admin.SessionSummaries.Editor.Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Admin.SessionSummaries.Generated" xml:space="preserve"><value>AI draft generated.</value></data>
@@ -3200,6 +3204,7 @@
   <data name="Admin.WalkIn.Field.MawjId" xml:space="preserve"><value>Mawj system ID (optional)</value></data>
   <data name="Admin.WalkIn.Field.MawjId.Hint" xml:space="preserve"><value>The guest's identifier in the Mawj platform. Up to 64 characters.</value></data>
   <data name="Admin.WalkIn.Field.Honorific" xml:space="preserve"><value>Honorific / title (optional)</value></data>
+  <data name="Admin.WalkIn.Field.HonorificArabic" xml:space="preserve"><value>Honorific / title in Arabic (optional)</value></data>
   <data name="Admin.WalkIn.Field.Honorific.Hint" xml:space="preserve"><value>For example, "Minister" or "His Excellency". Up to 64 characters.</value></data>
   <data name="Admin.WalkIn.Field.PreferredLanguage" xml:space="preserve"><value>Preferred language (optional)</value></data>
   <data name="Admin.WalkIn.Field.PreferredLanguage.Hint" xml:space="preserve"><value>The language for the welcome message.</value></data>

@@ -111,10 +111,13 @@ public sealed class GetProgrammeSessionEndpoint(IProgrammeSessionService service
 }
 
 /// <summary>P3.4 — D-235 (Completion Programme §5.4): the recorded Q&amp;A archive
-/// for a published session — the Committee-approved questions attributed to the
-/// asker. Requires an approved (signed-in) account: attendee display names are
-/// not exposed to anonymous callers. Returns an empty list when the session is
-/// not active+published.</summary>
+/// for a published session — the questions that were actually asked on stage
+/// (pushed to the speaker), attributed to the asker. Owner 2026-07-19 (two-path
+/// Q&amp;A): filters on IsPushed, not Status==Approved (a live question now
+/// auto-approves onto the desk, so Approved alone would leak un-asked questions).
+/// Requires an approved (signed-in) account: attendee display names are not
+/// exposed to anonymous callers. Returns an empty list when the session is not
+/// active+published.</summary>
 public sealed class ListRecordedQuestionsRequest { public Guid Id { get; set; } }
 
 public sealed class ListRecordedQuestionsEndpoint(IProgrammeSessionService service)

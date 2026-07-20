@@ -97,6 +97,12 @@ internal sealed class SessionSummaryConfiguration
         builder.Property(s => s.FullTextArabic).HasMaxLength(8000).IsRequired();
         builder.Property(s => s.AiModel).HasMaxLength(64);
 
+        // Slice D (2026-07-19) — the pristine AI-draft snapshot mirrors the
+        // Arabic full-text it is captured from (same 8000 SSOT). Nullable: only
+        // AI-generated summaries carry it. AiDraftGeneratedAt is a datetimeoffset
+        // (no length config needed).
+        builder.Property(s => s.AiDraftFullTextArabic).HasMaxLength(8000);
+
         // 1:1 — exactly one summary per session, cascade with the session.
         builder.HasIndex(s => s.SessionId).IsUnique();
         builder.HasOne(s => s.Session)

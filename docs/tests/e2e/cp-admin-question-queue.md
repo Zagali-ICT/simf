@@ -12,7 +12,12 @@
 > **What this page is.** P3.3 / D-234 — the Scientific-Committee central Q&A
 > queue (stage 2). It lists `Pending` questions across **all** sessions and lets
 > the committee **Approve** (→ flows to the per-session moderator desk, stage 3),
-> **Hide** (drops off the pipeline), or **Escalate** to a role. It is a
+> **Hide** (drops off the pipeline), or **Escalate** to a role. **Owner 2026-07-19
+> (two-path Q&A):** this queue now receives **PRE questions only** — a question
+> asked while the session is LIVE auto-approves straight to the moderator desk
+> (skipping the AI filter + this committee stage), so it never lands `Pending`
+> here. (Legacy `Pending` rows created before the change may still carry the Live
+> phase; the Phase column renders both.) It is a
 > **read-only triage grid** — there is no Add / Edit / Details / inline-edit on
 > this page; the three actions are quiet per-row **icon** buttons in the grid's
 > `RowActions` slot (Approve = check-circle, Hide = eye-off, Escalate = share).
@@ -73,7 +78,8 @@ Scenario: Approve one pending question
   Given the page issued GET /account/api/admin/questions/queue and it returned 200
   And the grid shows columns: Session, Question, Submitter, Phase, AI verdict
   And a row exists with Question text "When will the naval drone demo run?"
-    and Submitter "Visitor One" and Phase "Live"
+    and Submitter "Visitor One" and Phase "Pre"
+    (a live question would have auto-approved to the desk, not landed here)
   When the administrator clicks the row's Approve (check-circle) icon action — tooltip "Approve"
   Then a PUT /account/api/admin/questions/{id}/approve fires with an empty body
   And it returns ApiResult.Success = true
@@ -370,11 +376,17 @@ Scenario: Export the Pending question queue to an XLSX workbook
   grid sets `Multiselect="true"` (select-all + checkboxes) but wires no
   `OnApproveSelected`/`OnDeleteSelected`/`CustomToolbar`, so the checkboxes are
   cosmetic; do not author a bulk scenario.
-- **Two-stage pipeline.** Approve here only changes `Status` Pending → Approved;
-  the approved question then surfaces on the **per-session moderator desk**
-  (`SessionModerationDesk.razor`, stage 3) where push/reorder/hide happen. Escalate
-  sets `AssignedToRole` without changing `Status`, so an escalated row stays in
-  this queue.
+- **Two-stage pipeline (PRE questions).** Approve here only changes `Status`
+  Pending → Approved; the approved question then surfaces on the **per-session
+  moderator desk** (`SessionModerationDesk.razor`, stage 3) where push/reorder/hide
+  happen. Escalate sets `AssignedToRole` without changing `Status`, so an escalated
+  row stays in this queue.
+- **Two-path Q&A (owner 2026-07-19).** This committee stage applies to **PRE**
+  questions only. A **LIVE** question (asked after the session starts) skips the AI
+  filter + this queue and auto-approves straight onto the moderator desk — verified
+  by `SessionQuestionsTests.Live_question_skips_AI_and_lands_directly_on_the_moderator_desk`.
+  The committee `Api.Tests` seed a future (pre) session so submissions land Pending
+  here (`SessionQuestionCommitteeTests.SeedPreSessionAsync`).
 - **BFF passthroughs** live in `src/ControlPanel/SIMF.ControlPanel/Endpoints/AccountEndpoints.cs`
   (`/account/api/admin/questions/queue|{id}/approve|{id}/hide|{id}/escalate`) →
   `SimfAdminClient` → API `/api/v1/admin/questions/*`. The approve/hide/escalate
@@ -391,4 +403,7 @@ Scenario: Export the Pending question queue to an XLSX workbook
 
 ---
 
-_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle); export-only (no import, no presentation toggle, no delete-confirm on this read-only triage grid). Prior: 2026-06-03 (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-07-19 by Claude — **Two-path Q&A (owner): this queue now
+receives PRE questions only; LIVE questions auto-approve straight to the moderator
+desk, skipping the AI filter + this committee stage (golden example row is now
+Phase "Pre").** Prior: 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle); export-only (no import, no presentation toggle, no delete-confirm on this read-only triage grid). Prior: 2026-06-03 (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

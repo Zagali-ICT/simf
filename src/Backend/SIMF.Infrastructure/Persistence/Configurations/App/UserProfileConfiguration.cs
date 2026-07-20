@@ -33,6 +33,8 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         builder.Property(profile => profile.Name).HasMaxLength(50).IsRequired();
         // D-163 — PDF §2.6 optional job title (max 100, owner 2026-07-06).
         builder.Property(profile => profile.JobTitle).HasMaxLength(100);
+        // 2026-07-19 (owner) — Arabic twin, same length as JobTitle.
+        builder.Property(profile => profile.JobTitleArabic).HasMaxLength(100);
         // D-151 / D-167: NationalityId is validated at the service layer
         // (UserProfileService.ResolveIdAsync rejects unknown ids). We do
         // NOT add a real DB FK here even though Country now lives in the
@@ -86,6 +88,8 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         // only set for VVIP/VIP. Lengths match the FluentValidation + UI.
         builder.Property(profile => profile.MawjId).HasMaxLength(64);
         builder.Property(profile => profile.Honorific).HasMaxLength(64);
+        // 2026-07-19 (owner) — Arabic twin, same length as Honorific.
+        builder.Property(profile => profile.HonorificArabic).HasMaxLength(64);
         builder.Property(profile => profile.PreferredLanguage).HasMaxLength(16);
         builder.Property(profile => profile.VipPhotoRelativePath).HasMaxLength(260);
 
