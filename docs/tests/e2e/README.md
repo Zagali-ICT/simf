@@ -172,10 +172,22 @@ not reused. Each page owns a unique 3–4 letter namespace.
 |------|------|-----------|
 | `/` (marketing landing) | [`web-landing.md`](web-landing.md) | E2E-WLD-001..008 |
 | `/account` | [`web-home.md`](web-home.md) | E2E-WHM-001..010 |
-| `/programme` | [`web-programme.md`](web-programme.md) | E2E-WPG-001..010 |
+| `/programme` | [`web-programme.md`](web-programme.md) | E2E-WPG-001..012 |
 | `/speakers` | [`web-speakers.md`](web-speakers.md) | E2E-WSPK-001..011 |
 | `/sessions/{id}` | [`web-session-detail.md`](web-session-detail.md) | E2E-WSDT-001..013 |
-| `/visit` | [`web-visit.md`](web-visit.md) | E2E-WVS-001..011 |
+| `/about` | [`web-about.md`](web-about.md) | E2E-WABT-001..011 |
+| `/about/objectives` | [`web-objectives.md`](web-objectives.md) | E2E-WOBJ-001..007 |
+| `/about/themes` | [`web-themes.md`](web-themes.md) | E2E-WTHM-001..009 |
+| `/about/organizer` | [`web-organizer.md`](web-organizer.md) | E2E-WORG-001..007 |
+| `/about/venue` | [`web-venue.md`](web-venue.md) | E2E-WVEN-001..007 |
+| `/programme/opening` | [`web-opening.md`](web-opening.md) | E2E-WOPN-001..007 |
+| `/programme/sessions` | [`web-plenary.md`](web-plenary.md) | E2E-WPLN-001..007 |
+| `/programme/exhibition` | [`web-exhibition.md`](web-exhibition.md) | E2E-WEXH-001..006 |
+| `/programme/gov-meetings` | [`web-gov-meetings.md`](web-gov-meetings.md) | E2E-WGBM-001..006 |
+| `/partners` | [`web-partners.md`](web-partners.md) | E2E-WPT-001..008 |
+| `/discover` | [`web-discover.md`](web-discover.md) | E2E-WDS-001..007 |
+| `/visit` | [`web-visit.md`](web-visit.md) | E2E-WVS-001..008 |
+| `/archive` | [`web-archive.md`](web-archive.md) | E2E-WAR-001..009 |
 | `/login` | [`web-login.md`](web-login.md) | E2E-WLG-001..017 |
 | `/login/verify` | [`web-otp-verify.md`](web-otp-verify.md) | E2E-WOT-001..010 |
 | `/forgot-password` | [`web-forgot-password.md`](web-forgot-password.md) | E2E-WFP-001..014 |

@@ -1,0 +1,59 @@
+@* SIMF public "Plenary sessions" page — Figma node 5867-22842. Second
+   Programme-cluster page (supersedes the old MudBlazor /programme as the ln-
+   styled sessions surface). Built on the shared LandingShell + LandingPageHero
+   (no breadcrumb) and reuses the landing's ln-sessions / ln-scard family with the
+   shared Landing.Sessions data, so the three plenary sessions are single-sourced.
+   Bilingual AR-RTL / EN-LTR. Static content (no API). Serves "/programme/sessions".
+
+   NOTE: the Figma frame appends an un-customised "الجهة المنظمة" organiser
+   placeholder block (the same clone seen on Organizer/Venue); it is omitted here
+   as it is not part of the plenary-sessions content. The old live agenda remains
+   at /programme; retiring/redirecting it is deferred — see web/plenary.md §7. *@
+@page "/programme/sessions"
+@layout LandingLayout
+@inject IStringLocalizer<Strings> L
+
+@{
+    var rtl = CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft;
+}
+
+<LandingShell Title="@L["Plenary.PageTitle"]" Description="@L["Plenary.Meta"]">
+
+    @* ============================== HERO ============================== *@
+    <LandingPageHero Title="@L["Plenary.Hero.Title"]"
+                     Subtitle="@L["About.Hero.Subtitle"]"
+                     ImageSrc="assets/figma/about/about-hero.jpg" />
+
+    @* ============ PLENARY SESSIONS (reuse ln-sessions / ln-scard) ============ *@
+    <section class="ln-sessions" aria-label="@L["Plenary.Section.Title"]">
+        <div class="ln-sessions__inner ln-reveal">
+            <div class="ln-sessions__head">
+                <h2 class="ln-sessions__title">@L["Plenary.Section.Title"]</h2>
+                <p class="ln-sessions__desc">@L["Plenary.Section.Sub"]</p>
+            </div>
+            <div class="ln-sessions__row">
+                @foreach (var s in Landing.Sessions)
+                {
+                    <article class="ln-scard">
+                        <div class="ln-scard__img" style="background-image:url('@s.Image')"></div>
+                        <div class="ln-scard__body">
+                            <div class="ln-scard__badgerow">
+                                <span class="ln-scard__num"><span>@s.Num</span></span>
+                                <span class="ln-scard__tag">@s.Tag.For(rtl)</span>
+                            </div>
+                            <div class="ln-scard__content">
+                                <h3 class="ln-scard__title">@s.Title.For(rtl)</h3>
+                                <p class="ln-scard__text">@s.Text.For(rtl)</p>
+                            </div>
+                            <div class="ln-scard__actions">
+                                @* per-card aria-label so the three identical CTAs are distinguishable to screen readers *@
+                                <a class="ln-scard__btn" href="/programme" aria-label="@($"{L["Plenary.Card.Button"].Value} — {s.Tag.For(rtl)}")">@L["Plenary.Card.Button"]</a>
+                            </div>
+                        </div>
+                    </article>
+                }
+            </div>
+        </div>
+    </section>
+
+</LandingShell>

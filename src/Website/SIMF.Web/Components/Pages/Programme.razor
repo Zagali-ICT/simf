@@ -1,69 +1,102 @@
-@* Website — public programme / agenda page (D-199, Mockup page 16 "Agenda").
-   A static-SSR public read over the ANONYMOUS backend: on load it fetches the
-   published sessions and groups them by the local calendar date of StartUtc
-   into day sections. Each row shows the bilingual title, hall, the local time
-   window and — when the primary theme carries a name — a neutral theme pill.
-   An optional speakers strip is shown when GET /speakers returns rows.
-   Bilingual throughout via L[...] with the Arabic-preferred-then-English
-   fallback for the *Arabic fields. *@
+@* SIMF public "Programme" agenda — the forum's live, day-grouped schedule.
+   Re-skinned from the legacy Simf* page onto the shared ln- marketing chrome
+   (LandingShell + LandingPageHero, no breadcrumb — the Programme cluster omits
+   it) while keeping the live data flow in Programme.razor.cs unchanged: an
+   anonymous read of the published sessions grouped by local calendar date, plus
+   a best-effort speakers strip. There is no dedicated Figma frame for a website
+   agenda; this is an ln--idiom rebuild reusing the kit (see
+   docs/pages/web/programme.md §7). Bilingual AR-RTL / EN-LTR via the
+   Arabic-preferred Pick helper in the code-behind. Serves "/programme". *@
 @page "/programme"
+@layout LandingLayout
 @using SIMF.Contracts.Programme
 
-<PageTitle>@L["Programme.PageTitle"]</PageTitle>
+<LandingShell Title="@L["Programme.PageTitle"]" Description="@L["Programme.Banner.Subtitle"]">
 
-<div class="simf-account-page">
-    <SimfBanner Title="@L["Programme.Banner.Title"]" Subtitle="@L["Programme.Banner.Subtitle"]" />
+    @* ============================== HERO ============================== *@
+    <LandingPageHero Title="@L["Programme.Banner.Title"]"
+                     Subtitle="@L["Programme.Banner.Subtitle"]"
+                     ImageSrc="assets/figma/about/about-hero.jpg" />
 
     @if (_error)
     {
-        <SimfAlert Variant="error">@L["Programme.Error"]</SimfAlert>
+        @* The sessions read failed / the service was unreachable. *@
+        <section class="ln-fsection" aria-label="@L["Programme.Banner.Title"]">
+            <div class="ln-fsection__inner ln-reveal">
+                <p class="ln-agenda__msg" role="alert">@L["Programme.Error"]</p>
+            </div>
+        </section>
     }
     else if (_days.Count == 0)
     {
-        <SimfEmptyState Title="@L["Programme.Empty.Title"]"
-                        Description="@L["Programme.Empty.Text"]" />
+        @* No published sessions yet. *@
+        <section class="ln-fsection" aria-label="@L["Programme.Empty.Title"]">
+            <div class="ln-fsection__inner ln-reveal">
+                <header class="ln-fsection__head">
+                    <h2 class="ln-fsection__title">@L["Programme.Empty.Title"]</h2>
+                    <p class="ln-fsection__sub">@L["Programme.Empty.Text"]</p>
+                </header>
+            </div>
+        </section>
     }
     else
     {
-        @foreach (var day in _days)
-        {
-            <section class="simf-card simf-page-card" aria-label="@day.Heading">
-                <h2 class="simf-card__title">@day.Heading</h2>
-                <ul class="simf-role-list">
-                    @foreach (var session in day.Sessions)
-                    {
-                        <li>
-                            <p class="simf-card__supporting">@TimeWindow(session) — @Title(session)</p>
-                            <p class="simf-card__supporting">@Hall(session)</p>
-                            @if (!string.IsNullOrWhiteSpace(session.PrimaryThemeName)
-                                 || !string.IsNullOrWhiteSpace(session.PrimaryThemeNameArabic))
+        @* Live agenda: one day group (h2) per local calendar date. *@
+        <section class="ln-fsection" aria-label="@L["Programme.Banner.Title"]">
+            <div class="ln-fsection__inner ln-reveal">
+                @foreach (var day in _days)
+                {
+                    <div class="ln-agenda__day">
+                        <h2 class="ln-agenda__dayhead">@day.Heading</h2>
+                        <ul class="ln-agenda__list" role="list">
+                            @foreach (var session in day.Sessions)
                             {
-                                <SimfPill Variant="neutral">@ThemeName(session)</SimfPill>
+                                <li class="ln-agenda__row">
+                                    <span class="ln-agenda__time">@TimeWindow(session)</span>
+                                    <div class="ln-agenda__main">
+                                        <h3 class="ln-agenda__title">@Title(session)</h3>
+                                        <span class="ln-agenda__hall">@Hall(session)</span>
+                                    </div>
+                                    @* Gate on the resolved (culture-picked) name so the guard and the
+                                       rendered text agree — otherwise a theme named only in the other
+                                       language would paint an empty chip. *@
+                                    @{ var theme = ThemeName(session); }
+                                    @if (!string.IsNullOrWhiteSpace(theme))
+                                    {
+                                        <span class="ln-agenda__pill">@theme</span>
+                                    }
+                                </li>
                             }
-                        </li>
-                    }
-                </ul>
-            </section>
-        }
+                        </ul>
+                    </div>
+                }
+            </div>
+        </section>
     }
 
     @if (_speakers.Count > 0)
     {
-        <section class="simf-card simf-page-card" aria-label="@L["Programme.Speakers.Title"]">
-            <h2 class="simf-card__title">@L["Programme.Speakers.Title"]</h2>
-            <ul class="simf-role-list">
-                @foreach (var speaker in _speakers)
-                {
-                    <li>
-                        <span class="simf-card__supporting">@SpeakerName(speaker)</span>
-                        @{ var role = PickOrNull(speaker.Rank, speaker.RankArabic); }
-                        @if (!string.IsNullOrWhiteSpace(role))
-                        {
-                            <SimfPill Variant="neutral">@role</SimfPill>
-                        }
-                    </li>
-                }
-            </ul>
+        @* Best-effort speakers strip (a failed speakers read just omits it). *@
+        <section class="ln-fsection ln-fsection--dark" aria-label="@L["Programme.Speakers.Title"]">
+            <div class="ln-fsection__inner ln-reveal">
+                <header class="ln-fsection__head">
+                    <h2 class="ln-fsection__title">@L["Programme.Speakers.Title"]</h2>
+                </header>
+                <ul class="ln-agenda__speakers" role="list">
+                    @foreach (var speaker in _speakers)
+                    {
+                        <li class="ln-agenda__spk">
+                            <span class="ln-agenda__spkname">@SpeakerName(speaker)</span>
+                            @if (!string.IsNullOrWhiteSpace(speaker.Rank))
+                            {
+                                @* Rank is stored English-only; tag it so an Arabic screen reader pronounces it correctly. *@
+                                <span class="ln-agenda__spkrank" lang="en">@speaker.Rank</span>
+                            }
+                        </li>
+                    }
+                </ul>
+            </div>
         </section>
     }
-</div>
+
+</LandingShell>
