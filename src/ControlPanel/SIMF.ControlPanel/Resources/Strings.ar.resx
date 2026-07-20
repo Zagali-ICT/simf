@@ -3228,5 +3228,12 @@
   <data name="Admin.Delegates.Bulk.Failed" xml:space="preserve"><value>تعذّر توليد الشارات.</value></data>
   <data name="Admin.Delegates.Bulk.NoTypes" xml:space="preserve"><value>لا توجد أنواع ملفات نشطة لتوليد شارات لها.</value></data>
   <data name="Admin.Delegates.Bulk.PickCount" xml:space="preserve"><value>أدخل عدداً لنوع ملف واحد على الأقل.</value></data>
+  <data name="Admin.Delegates.Bulk.ResultEmailed" xml:space="preserve"><value>تم توليد {0} شارة وإرسالها إلى {1}.</value></data>
+  <data name="Admin.Delegates.Bulk.Confirm.Title" xml:space="preserve"><value>تأكيد التوليد بالجملة</value></data>
+  <data name="Admin.Delegates.Bulk.Confirm.Summary" xml:space="preserve"><value>{0} → {1} شارة</value></data>
+  <data name="Admin.Delegates.Bulk.Confirm.Email" xml:space="preserve"><value>بريد المنظّم (اختياري)</value></data>
+  <data name="Admin.Delegates.Bulk.Confirm.EmailHelper" xml:space="preserve"><value>اتركه فارغاً لتخطّي الإرسال. تُضغط رموز QR وتُرسل إلى هذا العنوان.</value></data>
+  <data name="Admin.Delegates.Bulk.Confirm.EmailTo" xml:space="preserve"><value>سيتم إرسال ملف رموز QR المضغوط إلى {0}.</value></data>
+  <data name="Admin.Delegates.Bulk.Confirm.Cancel" xml:space="preserve"><value>إلغاء</value></data>
   <data name="Module.AdminVisitorsVipExport" xml:space="preserve"><value>تصدير ترحيب كبار الشخصيات</value></data>
 </root>

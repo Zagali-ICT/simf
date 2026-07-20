@@ -38,6 +38,17 @@ public static class EmailTemplateCatalog
     private static readonly IReadOnlyList<EmailTemplateToken> CodeTokens =
         [CodeToken, ExpiryToken];
 
+    // D-751 — tokens for the bulk-badge cover note. No one-time code: the badges
+    // themselves ride the message as a ZIP attachment.
+    private static readonly EmailTemplateToken CountToken =
+        new("Count", "Badge count", "عدد الشارات", "8");
+
+    private static readonly EmailTemplateToken GeneratedAtToken =
+        new("GeneratedAt", "Generated at (UTC)", "تاريخ التوليد (UTC)", "2026-07-20 09:30");
+
+    private static readonly IReadOnlyList<EmailTemplateToken> BulkBadgeTokens =
+        [CountToken, GeneratedAtToken];
+
     private static readonly IReadOnlyList<EmailTemplateDefinition> Definitions =
     [
         new(EmailTemplateType.SignInOtp,
@@ -96,6 +107,15 @@ public static class EmailTemplateCatalog
             "<p>ينتهي الرمز خلال {ExpiryMinutes} دقائق. " +
             "إذا لم تطلب تفعيل تسجيل الدخول ببصمة الوجه فتجاهل هذه الرسالة.</p>",
             CodeTokens),
+
+        new(EmailTemplateType.BulkBadgeDelivery,
+            "Your SIMF badge batch ({Count} badges)",
+            "<p>A batch of {Count} SIMF badge(s) was generated for you on {GeneratedAt} UTC.</p>" +
+            "<p>The QR badge images are attached to this email as a single ZIP file, " +
+            "one PNG per badge.</p>",
+            "<p>تم توليد دفعة من {Count} شارة في نظام سيمف بتاريخ {GeneratedAt} بتوقيت UTC.</p>" +
+            "<p>صور رموز QR للشارات مرفقة بهذه الرسالة في ملف مضغوط واحد، صورة PNG لكل شارة.</p>",
+            BulkBadgeTokens),
     ];
 
     private static readonly IReadOnlyDictionary<EmailTemplateType, EmailTemplateDefinition> Map =

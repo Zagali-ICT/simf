@@ -25,4 +25,8 @@ public enum EmailTemplateType
 
     /// <summary>Biometric-enrolment step-up confirmation code.</summary>
     BiometricStepUp = 5,
+
+    /// <summary>D-751 — cover note for a bulk-generated badge batch emailed to the
+    /// organiser, carrying the QR badge PNGs as a single ZIP attachment.</summary>
+    BulkBadgeDelivery = 6,
 }

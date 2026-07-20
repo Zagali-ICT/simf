@@ -38,6 +38,9 @@
 | E2E-DLG-007 | Auth gate — admin lacking `Visitors.RegisterOnsite` → `/not-permitted`; bulk panel hidden without `Visitors.BulkGenerate` | auth | P0 | _to author_ (gates verified by CpNavigationPermission + PermissionEnforcement) |
 | E2E-DLG-008 | Country admin — toggle "Invited to send a delegation" on a country → it becomes a valid delegate nationality | happy | P1 | _to author_ |
 | E2E-DLG-009 | RTL / Arabic render — page + both sections mirror | i18n | P1 | _to author_ |
+| E2E-DLG-010 | Bulk-generate with an organiser email → one ZIP of all badge PNGs emailed to that address; response `EmailQueued=true` | happy | P1 | authored ✓ (DelegatesAndBulkBadgesTests) |
+| E2E-DLG-011 | Bulk-generate with an INVALID organiser email → `400 VALIDATION_FAILED`, zero accounts, no email | error | P1 | authored ✓ (DelegatesAndBulkBadgesTests) |
+| E2E-DLG-012 | Bulk-generate with NO organiser email → badges only, `EmailQueued=false`, nothing enqueued (back-compat) | edge | P2 | authored ✓ (DelegatesAndBulkBadgesTests) |
 
 ## Scenarios
 
@@ -78,11 +81,45 @@ Scenario: Generate with no count is rejected
   And an empty request reaching the API returns 400
 ```
 
+### E2E-DLG-010 / 011 / 012 - Bulk-generate with an organiser email (D-751)
+
+```gherkin
+Feature: The generated QR badges can be emailed to one organiser as a ZIP
+
+Scenario: Bulk-generate and email the QR badges to an organiser
+  Given the administrator is on /admin/delegates with Visitors.BulkGenerate
+  When they enter "2" against "VIP" and "3" against "Delegate" and click "Generate badges"
+  Then a confirm dialog opens showing "VIP × 2 + Delegate × 3 → 5 badge(s)"
+  When they enter the organiser email "events@simf.example" and confirm
+  Then POST /account/api/admin/visitors/bulk-generate returns 200 with Created = 5 and EmailQueued = true
+  And exactly one email is enqueued to events@simf.example
+  And that email carries a single ZIP attachment named "badges-<yyyyMMdd-HHmm>.zip"
+  And the ZIP contains 5 PNG entries, one QR image per badge
+  And a toast reads "5 badge(s) generated and emailed to events@simf.example."
+
+Scenario: An invalid organiser email is rejected before anything is created
+  When they pick a count, enter the organiser email "not-an-email", and confirm
+  Then the API returns 400 with code VALIDATION_FAILED
+  And zero badge accounts are created and no email is enqueued
+
+Scenario: No organiser email leaves the badges DB-only (back-compat)
+  When they pick a count, leave the organiser email blank, and confirm
+  Then the API returns 200 with EmailQueued = false
+  And the badges are created but no email is enqueued
+```
+
 ## Implementation notes
 
 - API coverage: `tests/SIMF.Api.Tests/DelegatesAndBulkBadgesTests.cs` — invited/non-invited
   delegate register-onsite, the non-delegate-unconstrained case, bulk-generate (QR + flag),
-  and the empty-bulk 400.
+  the empty-bulk 400, and (D-751) the organiser-email ZIP path: with email (one ZIP of all
+  badge PNGs enqueued, `EmailQueued=true`), invalid email (`400 VALIDATION_FAILED`, zero
+  accounts), and no email (back-compat, nothing enqueued). The email is captured with the
+  synchronous `FakeEmailQueue` via `BulkBadgeEmailApiFactory`.
+- D-751 (#10): the CP page adds a confirm modal (`SimfModal`) with an optional "Organiser
+  email" field + a count summary; the service zips the QR PNGs (QRCoder `PngByteQRCode`, ECC
+  Q) and enqueues them via the `BulkBadgeDelivery` email template. No new permission / nav /
+  schema; the email is validated before any account is written.
 - Permission gates (HARD RULE): page `[RequirePermission(Visitors.RegisterOnsite)]`; bulk
   endpoint policy `Visitors.BulkGenerate`; bulk panel wrapped in `<AuthorizedAction>`. The
   nav item `Module.AdminDelegates` carries `Visitors.RegisterOnsite`. Backed by
@@ -92,4 +129,5 @@ Scenario: Generate with no count is rejected
 
 ---
 
-_Last reviewed:_ 2026-06-20 by SIMF Team — D-473 (#10) new delegates desk + bulk-generate.
+_Last reviewed:_ 2026-07-20 by SIMF Team - D-751 (#10) bulk-generate organiser-email ZIP
+delivery (E2E-DLG-010..012); D-473 (#10) delegates desk + bulk-generate.

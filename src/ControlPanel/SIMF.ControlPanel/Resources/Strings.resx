@@ -3235,5 +3235,12 @@
   <data name="Admin.Delegates.Bulk.Failed" xml:space="preserve"><value>Could not generate the badges.</value></data>
   <data name="Admin.Delegates.Bulk.NoTypes" xml:space="preserve"><value>No active profile types to generate badges for.</value></data>
   <data name="Admin.Delegates.Bulk.PickCount" xml:space="preserve"><value>Enter a count for at least one profile type.</value></data>
+  <data name="Admin.Delegates.Bulk.ResultEmailed" xml:space="preserve"><value>{0} badge(s) generated and emailed to {1}.</value></data>
+  <data name="Admin.Delegates.Bulk.Confirm.Title" xml:space="preserve"><value>Confirm bulk generation</value></data>
+  <data name="Admin.Delegates.Bulk.Confirm.Summary" xml:space="preserve"><value>{0} → {1} badge(s)</value></data>
+  <data name="Admin.Delegates.Bulk.Confirm.Email" xml:space="preserve"><value>Organiser email (optional)</value></data>
+  <data name="Admin.Delegates.Bulk.Confirm.EmailHelper" xml:space="preserve"><value>Leave blank to skip emailing. The QR badges are zipped and sent to this address.</value></data>
+  <data name="Admin.Delegates.Bulk.Confirm.EmailTo" xml:space="preserve"><value>The ZIP of QR badges will be emailed to {0}.</value></data>
+  <data name="Admin.Delegates.Bulk.Confirm.Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Module.AdminVisitorsVipExport" xml:space="preserve"><value>VIP welcome export</value></data>
 </root>

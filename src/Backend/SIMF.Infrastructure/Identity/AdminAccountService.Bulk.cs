@@ -1,7 +1,11 @@
 // Tests: SIMF.Api.Tests/DelegatesAndBulkBadgesTests.cs
+using System.Globalization;
+using System.IO.Compression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using QRCoder;
 using SIMF.Application.Auditing;
+using SIMF.Application.Email;
 using SIMF.Application.Excel;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
@@ -862,6 +866,26 @@ internal sealed partial class AdminAccountService
                 $"يمكن توليد {MaxPerRequest} شارة كحدّ أقصى في الطلب الواحد.");
         }
 
+        // D-751 (#10) — validate the optional organiser recipient in the SAME
+        // pre-write pass as the empty / cap / profile-type checks below, so an
+        // invalid address is a clean 400 with zero accounts created (a 4xx must
+        // have no side effects — SIMF-API-001). Empty / whitespace = no email.
+        const int MaxRecipientEmailLength = 256;
+        string? recipient = null;
+        if (!string.IsNullOrWhiteSpace(request.RecipientEmail))
+        {
+            recipient = request.RecipientEmail.Trim();
+            if (recipient.Length > MaxRecipientEmailLength
+                || !System.Net.Mail.MailAddress.TryCreate(recipient, out var parsed)
+                || !parsed.Host.Contains('.'))
+            {
+                throw new ApiException(
+                    ErrorCodes.ValidationFailed, 400,
+                    "The organiser email address is not valid.",
+                    "عنوان البريد الإلكتروني للمنظّم غير صالح.");
+            }
+        }
+
         var now = timeProvider.GetUtcNow();
         var created = 0;
 
@@ -896,6 +920,13 @@ internal sealed partial class AdminAccountService
 
             plan.Add((batch, profileType));
         }
+
+        // D-751 — collected only when an organiser recipient is supplied; drives the
+        // ZIP-of-PNGs built after the badges commit. (profile-type name, 1-based seq,
+        // minted QR id) per badge.
+        var badgeArtifacts = recipient is null
+            ? null
+            : new List<(string ProfileTypeName, int Seq, string QrId)>(batches.Sum(b => b.Count));
 
         foreach (var (batch, profileType) in plan)
         {
@@ -945,9 +976,10 @@ internal sealed partial class AdminAccountService
                     CreatedAt = now,
                 };
                 // Mint + save per badge so the QR-uniqueness check sees prior rows.
-                await qrIdMinter.MintIfMissingAsync(profile, cancellationToken);
+                var qrId = await qrIdMinter.MintIfMissingAsync(profile, cancellationToken);
                 appDbContext.UserProfiles.Add(profile);
                 await appDbContext.SaveChangesAsync(cancellationToken);
+                badgeArtifacts?.Add((profileType.Name, created + 1, qrId));
                 created++;
             }
         }
@@ -963,6 +995,66 @@ internal sealed partial class AdminAccountService
             "Admin {ActorId} bulk-generated {Created} badges (isDelegate={IsDelegate}).",
             actorUserId, created, request.IsDelegate);
 
-        return new AdminBulkGenerateBadgesResponse(created);
+        // D-751 — when an organiser recipient was supplied, render each badge's QR to
+        // a PNG, pack them into one ZIP, and email the ZIP as a single attachment. The
+        // badges are already committed; a mail-side failure must NOT roll them back, so
+        // dispatch through the swallow-and-audit helper (D-083).
+        var emailQueued = false;
+        if (recipient is not null && badgeArtifacts is { Count: > 0 })
+        {
+            var zipBytes = BuildBadgeZip(badgeArtifacts);
+            // Invariant formatting throughout — an Arabic (ar-SA) request culture would
+            // otherwise render the filename / tokens with a Hijri year + Arabic-Indic
+            // digits, which the same value is then substituted into both bodies.
+            var fileName = $"badges-{now.ToString("yyyyMMdd-HHmm", CultureInfo.InvariantCulture)}.zip";
+            var attachment = new EmailAttachment(fileName, "application/zip", zipBytes);
+            var tokens = new Dictionary<string, string>
+            {
+                ["Count"] = created.ToString(CultureInfo.InvariantCulture),
+                ["GeneratedAt"] = now.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture),
+            };
+            var cover = await emailTemplates.RenderAsync(
+                EmailTemplateType.BulkBadgeDelivery, recipient, tokens, cancellationToken);
+            await emailQueue.TryEnqueueAsync(
+                cover with { Attachments = new[] { attachment } },
+                "BulkBadgeDelivery", recipient, actorUserId, auditLog, logger, cancellationToken);
+            emailQueued = true;
+            logger.LogInformation(
+                "Admin {ActorId} emailed {Count} bulk badges to {Recipient} as a ZIP.",
+                actorUserId, created, recipient);
+        }
+
+        return new AdminBulkGenerateBadgesResponse(created, emailQueued);
+    }
+
+    // D-751 — QRCoder PngByteQRCode (same ECC level Q as PrintBag) + a ZIP entry per
+    // badge. No System.Drawing dependency; PngByteQRCode emits raw PNG bytes.
+    private static byte[] BuildBadgeZip(
+        IReadOnlyList<(string ProfileTypeName, int Seq, string QrId)> badges)
+    {
+        using var buffer = new MemoryStream();
+        using (var archive = new ZipArchive(buffer, ZipArchiveMode.Create, leaveOpen: true))
+        using (var qrGenerator = new QRCodeGenerator())
+        {
+            foreach (var badge in badges)
+            {
+                using var qrData = qrGenerator.CreateQrCode(
+                    badge.QrId, QRCodeGenerator.ECCLevel.Q);
+                var png = new PngByteQRCode(qrData).GetGraphic(pixelsPerModule: 10);
+                var entryName = $"{SafeSegment(badge.ProfileTypeName)}-{badge.Seq}-{badge.QrId}.png";
+                var entry = archive.CreateEntry(entryName, CompressionLevel.Optimal);
+                using var entryStream = entry.Open();
+                entryStream.Write(png, 0, png.Length);
+            }
+        }
+        return buffer.ToArray();
+    }
+
+    // Keeps a profile-type name safe + readable inside a ZIP entry / file name.
+    private static string SafeSegment(string value)
+    {
+        var mapped = new string(value.Select(c => char.IsLetterOrDigit(c) ? c : '-').ToArray())
+            .Trim('-');
+        return string.IsNullOrEmpty(mapped) ? "badge" : mapped;
     }
 }
