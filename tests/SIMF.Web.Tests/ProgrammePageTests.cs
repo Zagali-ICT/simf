@@ -4,6 +4,12 @@
 // coverage before; this pins the three render branches: a populated agenda +
 // speakers strip, the empty state, and the API-failure error alert.
 //
+// The page was re-skinned from the legacy Simf* chrome onto the shared ln-
+// marketing kit (LandingShell + LandingPageHero + the ln-agenda band); the data
+// flow in the code-behind is unchanged. The structural asserts below guard the
+// ln- DOM (ln-pghero hero, ln-agenda rows, ln-fsection chrome) alongside the
+// three render branches.
+//
 // SimfPublicClient is sealed over HttpClient, so the two anonymous reads
 // (programme/sessions, speakers) are driven by a routing stub handler returning
 // canned ApiResult envelopes serialised with the same web defaults the client reads.
@@ -65,6 +71,10 @@ public sealed class ProgrammePageTests : WebComponentTestBase
             Assert.Contains("Opening Plenary", cut.Markup);
             Assert.Contains("Jane Roe", cut.Markup);
             Assert.Contains("Chief Scientist", cut.Markup);
+            // ln- re-skin: the interior hero, the agenda rows and the speakers strip.
+            Assert.Contains("ln-pghero", cut.Markup);
+            Assert.Contains("ln-agenda__row", cut.Markup);
+            Assert.Contains("ln-agenda__spk", cut.Markup);
         });
     }
 
@@ -81,6 +91,8 @@ public sealed class ProgrammePageTests : WebComponentTestBase
             // The pass-through localizer emits each resx key verbatim.
             Assert.Contains("Programme.Empty.Title", cut.Markup);
             Assert.DoesNotContain("Programme.Error", cut.Markup);
+            // Empty state renders on the ln- section chrome, not the legacy SimfEmptyState.
+            Assert.Contains("ln-fsection", cut.Markup);
         });
     }
 
@@ -98,7 +110,12 @@ public sealed class ProgrammePageTests : WebComponentTestBase
 
         var cut = RenderComponent<Programme>();
 
-        cut.WaitForAssertion(() => Assert.Contains("Programme.Error", cut.Markup));
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains("Programme.Error", cut.Markup);
+            // Error renders in the ln- message block, not the legacy SimfAlert.
+            Assert.Contains("ln-agenda__msg", cut.Markup);
+        });
     }
 
     private static PublicSessionListItem Session(string title, string titleArabic) =>

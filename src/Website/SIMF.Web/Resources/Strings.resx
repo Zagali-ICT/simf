@@ -190,6 +190,7 @@
   <data name="Landing.Nav.About.Venue" xml:space="preserve"><value>Venue</value></data>
   <data name="Landing.Nav.Programs" xml:space="preserve"><value>Programmes</value></data>
   <data name="Landing.Nav.Programs.Title" xml:space="preserve"><value>Programmes</value></data>
+  <data name="Landing.Nav.Programs.Agenda" xml:space="preserve"><value>Full agenda</value></data>
   <data name="Landing.Nav.Programs.Opening" xml:space="preserve"><value>Opening ceremony</value></data>
   <data name="Landing.Nav.Programs.Sessions" xml:space="preserve"><value>Plenary sessions</value></data>
   <data name="Landing.Nav.Programs.Exhibition" xml:space="preserve"><value>Exhibition</value></data>

@@ -42,6 +42,7 @@ public static class LandingChrome
         ]),
         new("Landing.Nav.Programs", "Landing.Nav.Programs.Title",
         [
+            new("Landing.Nav.Programs.Agenda", "/programme"),
             new("Landing.Nav.Programs.Opening", "/programme/opening"),
             new("Landing.Nav.Programs.Sessions", "/programme/sessions"),
             new("Landing.Nav.Programs.Exhibition", "/programme/exhibition"),
