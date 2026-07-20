@@ -1765,6 +1765,11 @@ class AppL10n {
   String get aiSummarySpeakersHeading => _t('المتحدثون', 'Speakers');
   // Figma 1072:13518 — the redesigned session-summary screen.
   String get aiSummarySessionLabel => _t('الجلسة', 'Session');
+  // Item #35 (2026-07-20) — labels for the two video players on the summary
+  // surface: the session's FULL live recording and the team's short summary cut.
+  String get aiSummaryRecordingLabel => _t('التسجيل الكامل', 'Full recording');
+  String get aiSummaryVideoLabel =>
+      _t('ملخص الجلسة (فيديو)', 'Session summary (video)');
   String get aiSummaryGenerateButton =>
       _t('توليد ملخص للجلسة', 'Generate session summary');
   String get aiSummaryNoSessions =>

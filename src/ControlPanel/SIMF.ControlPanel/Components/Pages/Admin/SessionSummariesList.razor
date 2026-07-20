@@ -178,6 +178,14 @@
                           @bind-Value="_edit.FullText" Disabled="_busy" />
             <SimfTextarea Label="@L["Admin.SessionSummaries.Field.FullTextArabic"]" Rows="5" MaxLength="8000"
                           @bind-Value="_edit.FullTextArabic" Disabled="_busy" />
+            @* Item #35 (2026-07-20) — the OPTIONAL team summary-video URL: the app's
+               second player on screen 34, beside the full live recording. A YouTube
+               or direct HLS/MP4 link; the server validates it with the same
+               LiveStreamUrlPolicy as the session's live feed. *@
+            <SimfTextField Label="@L["Admin.SessionSummaries.Field.SummaryVideoUrl"]"
+                           Helper="@L["Admin.SessionSummaries.Field.SummaryVideoUrlHint"]"
+                           MaxLength="1024"
+                           @bind-Value="_edit.SummaryVideoUrl" Disabled="_busy" />
         </ChildContent>
         <Footer>
             <SimfButton Type="button" Loading="_busy" OnClick="SaveAsync">

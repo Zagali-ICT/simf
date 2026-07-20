@@ -157,6 +157,18 @@ void main() {
       );
     });
 
+    // Item #35 — the summary screen can carry two video players (the full
+    // recording + the team summary cut). With a summary that has neither URL,
+    // both labeled players stay hidden and the layout is unchanged.
+    testWidgets('hides both video players when the summary has no video urls',
+        (tester) async {
+      final repo = _FakeSummaryRepo(summary: _summary());
+      await _pump(tester, repo: repo, sessions: _sessions, sessionId: 's1');
+
+      expect(find.text('Full recording'), findsNothing);
+      expect(find.text('Session summary (video)'), findsNothing);
+    });
+
     testWidgets('tapping a tab switches the active content', (tester) async {
       final repo = _FakeSummaryRepo(summary: _summary());
       await _pump(tester, repo: repo, sessions: _sessions, sessionId: 's1');
