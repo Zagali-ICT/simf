@@ -36,11 +36,12 @@
 > `Programme.Speakers.Title` heading + `li.ln-agenda__spk` chips, each an
 > `ln-agenda__spkname` and - when present - an `ln-agenda__spkrank` (`lang="en"`).
 >
-> **Bilingual fallback.** `Title` / `Hall` / `ThemeName` / `SpeakerName` use the
-> Arabic-preferred-then-English `Pick(...)` helper: in an Arabic UI use the
-> `*Arabic` value when present, else the base value; a null base renders empty.
-> The theme pill is gated on the **resolved** name, so it never paints an empty
-> chip. The day heading uses `dddd, d MMMM yyyy` in `CurrentUICulture`.
+> **Bilingual fallback.** `Title` / `Hall` / `SpeakerName` use the shared
+> `LocalizedText.Pick(en, ar)` (RTL prefers Arabic, LTR prefers English; each
+> falls back to the other language when the preferred one is blank); the theme
+> name uses `PickOrNull`, so no theme in either language renders no pill. The day
+> heading uses `dddd, d MMMM yyyy` and the time window `HH:mm - HH:mm`, both in
+> event-local (+03:00 Riyadh) time.
 >
 > **Single `<h1>`.** The page's only `<h1>` is the `LandingPageHero` title
 > (`Programme.Banner.Title`); day headings are `<h2>`, session titles `<h3>`.
@@ -122,13 +123,13 @@ Scenario: Sessions group by local calendar date and sort by start time within ea
   Then exactly two .ln-agenda__day groups render, in ascending day order: day D then day D+1
   And the day-D group lists "Opening Keynote" (09:00 – 10:30) before "Afternoon Panel" (14:00 – 15:00)
   And the day-D+1 group lists "Day-2 Workshop" (09:00 – 11:00)
-  And the grouping key is the LOCAL calendar date of StartUtc (StartUtc.ToLocalTime().Date), not the UTC date
+  And the grouping key is the event-local (+03:00) date of StartUtc (EventTime.Local(StartUtc).Date), not the server-local or UTC date
 ```
 
-> **Note.** `BuildDays` orders by `StartUtc`, groups by `StartUtc.ToLocalTime().Date`,
-> then orders the groups by date. When asserting the heading text, compute it from
-> the test machine's local timezone, not from UTC. (Server-local grouping is the
-> pre-existing behaviour; see `web/programme.md` §7.4 for the event-offset note.)
+> **Note.** `BuildDays` orders by `StartUtc`, groups by `EventTime.Local(StartUtc).Date`
+> (event-local +03:00 Riyadh), then orders the groups by date. The heading is the
+> event-local date, independent of the server timezone (shared with Session Detail),
+> so a session near midnight buckets to its Riyadh day.
 
 ### E2E-WPG-003 — Conditional theme pill
 
@@ -142,10 +143,12 @@ Scenario: The neutral theme pill renders only when a resolved theme name is pres
   And the "Networking Break" row renders NO .ln-agenda__pill at all
   And both rows still render their .ln-agenda__time and .ln-agenda__hall
 
-Scenario: A theme named only in the other language does not paint an empty chip
+Scenario: A theme named in only one language falls back to that language (no empty chip)
   Given an active session "Tech Demo" is tagged with a theme whose Arabic name is set but English name is blank
+  And an active session "Networking Break" has NO theme name in either language
   When the browser opens /programme under the English UI culture
-  Then the "Tech Demo" row renders NO .ln-agenda__pill (the pill is gated on the resolved, culture-picked name)
+  Then the "Tech Demo" row renders a .ln-agenda__pill showing the Arabic theme name (PickOrNull falls back to the non-blank language)
+  And the "Networking Break" row renders NO .ln-agenda__pill
   When the browser opens /programme under the Arabic UI culture
   Then the "Tech Demo" row renders a .ln-agenda__pill with the Arabic theme name
 ```

@@ -159,9 +159,6 @@
   <data name="Account.Notifications.Loading" xml:space="preserve"><value>Loading notifications…</value></data>
   <data name="Account.Notifications.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
 
-  <data name="Nav.Programme" xml:space="preserve"><value>Programme</value></data>
-  <data name="Nav.Visit" xml:space="preserve"><value>Visit</value></data>
-
   <!-- ============ Public landing (Bootstrap rebuild) ============ -->
   <data name="Landing.PageTitle" xml:space="preserve"><value>Saudi International Maritime Forum 2026</value></data>
   <data name="Landing.MetaDescription" xml:space="preserve"><value>The Saudi International Maritime Forum 2026 — a global platform on the future of seabed security and maritime supply chains. Riyadh, 23–25 November 2026.</value></data>

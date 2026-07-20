@@ -159,9 +159,6 @@
   <data name="Account.Notifications.Loading" xml:space="preserve"><value>جارٍ تحميل الإشعارات…</value></data>
   <data name="Account.Notifications.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
 
-  <data name="Nav.Programme" xml:space="preserve"><value>البرنامج</value></data>
-  <data name="Nav.Visit" xml:space="preserve"><value>الزيارة</value></data>
-
   <!-- ============ Public landing (Bootstrap rebuild) ============ -->
   <data name="Landing.PageTitle" xml:space="preserve"><value>الملتقى البحري السعودي الدولي الرابع | SIMF 2026</value></data>
   <data name="Landing.MetaDescription" xml:space="preserve"><value>الملتقى البحري السعودي الدولي 2026 — منصة عالمية حول مستقبل أمن قاع البحار وسلاسل الإمداد البحرية. الرياض، 23–25 نوفمبر 2026.</value></data>

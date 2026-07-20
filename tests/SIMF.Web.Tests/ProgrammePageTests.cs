@@ -75,6 +75,10 @@ public sealed class ProgrammePageTests : WebComponentTestBase
             Assert.Contains("ln-pghero", cut.Markup);
             Assert.Contains("ln-agenda__row", cut.Markup);
             Assert.Contains("ln-agenda__spk", cut.Markup);
+            // Event-local (+03:00) window via the shared EventTime helper: the
+            // fixture's 09:00–10:30 UTC renders as 12:00 – 13:30 Riyadh. Pins the
+            // offset shift + the "HH:mm – HH:mm" format the refactor centralized.
+            Assert.Contains("12:00 – 13:30", cut.Markup);
         });
     }
 

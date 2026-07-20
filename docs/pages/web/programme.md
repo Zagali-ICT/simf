@@ -34,9 +34,10 @@ plenary teaser) and the Session-Detail "back" link point at.
     `PublicSessions`. A `null` result (failed envelope / unreachable) sets
     `_error` and the page renders the `ln-agenda__msg` error block, then returns
     before the speakers read.
-  - otherwise `BuildDays(...)` groups `Items` by the **local calendar date** of
-    `StartUtc` (`StartUtc.ToLocalTime().Date`), ordered by day then start time.
-    Zero days renders the empty state.
+  - otherwise `BuildDays(...)` groups `Items` by the **event-local (+03:00) date**
+    of `StartUtc` (`EventTime.Local(StartUtc).Date`), ordered by day then start
+    time, so days bucket in Riyadh time regardless of the server timezone (shared
+    with Session Detail). Zero days renders the empty state.
   - `GetSpeakersAsync()` -> `GET /api/v1/app/speakers` is **best-effort**: a
     `null` result leaves the strip empty and never flips the page into error.
   - Both are anonymous reads (no bearer) - the same wire contract the Flutter app
@@ -60,11 +61,13 @@ plenary teaser) and the Session-Detail "back" link point at.
 ## 4. Bilingual model (AR RTL / EN LTR)
 
 - **Chrome / section copy** -> `Programme.*` resx; follows the `/culture` switch.
-- **Session + speaker content** -> the code-behind `Pick(arabic, base)` helper:
-  in an Arabic UI it uses the `*Arabic` value when present, else the base
-  (English) value; the day heading + time window render in
-  `CurrentUICulture`. The theme pill is gated on the **resolved** (culture-picked)
-  name, so a theme named only in the other language does not paint an empty chip.
+- **Session + speaker content** -> the shared `SIMF.Web.Content.LocalizedText.Pick(en, ar)`
+  helper: RTL prefers the Arabic value (falls back to English when blank), LTR
+  prefers English (falls back to Arabic when blank). The theme name uses
+  `PickOrNull`, so a session with no theme in either language renders no pill,
+  and a theme named in only one language falls back to that language. Day
+  headings + time windows render in event-local (+03:00) time via the shared
+  `EventTime` helper.
 - **Speaker rank** is stored English-only; it is tagged `lang="en"` so an Arabic
   screen reader pronounces it correctly.
 - **Direction** - the reused bands are direction-agnostic (`text-align: start`,
@@ -104,23 +107,18 @@ speakers chips wrap at every width. Section padding uses `clamp(16px, 5.5vw,
    future token-mapped theme palette could wire it.
 2. **No dedicated Figma frame.** There is no website agenda frame; the band is an
    `ln-`-idiom rebuild reusing the kit. If a design lands later, re-measure.
-3. **Legacy `MainLayout` link (pre-existing, out of scope).**
-   `MainLayout.razor:23` (the legacy `simf-button` chrome used by the Account /
-   Auth pages) links to `/programme`. The link resolves, but it is a legacy-chrome
-   page pointing at an `ln-` page; it will be tidied when the legacy `MainLayout`
-   public chrome is retired.
-4. **Shared-helper reuse debt in the code-behind (pre-existing, out of scope).**
-   `Programme.razor.cs` (untouched by this re-skin) carries its own `Pick` /
-   `PreferArabic` and its own `TimeWindow` / day-format helpers rather than the
-   shared `SIMF.Web.Content.LocalizedText.Pick` and a shared formatter. It also
-   uses `StartUtc.ToLocalTime()` (server-local) for grouping, whereas
-   `SessionDetail` uses a fixed `+03:00` Riyadh event offset; on a non-Riyadh
-   server the two pages could bucket days differently. This predates the re-skin
-   and is bound to the separate Saudi-local-time workstream, so it is not changed
-   here.
+_(The earlier follow-ups - the code-behind's private `Pick`/time-format
+duplication and the server-local grouping, plus the legacy `MainLayout` public
+link - were resolved in the 2026-07-20 follow-up; see the changelog.)_
 
 ## 8. Changelog
 
+- 2026-07-20 (follow-up) - `Programme.razor.cs` now uses the shared
+  `SIMF.Web.Content.LocalizedText.Pick`/`PickOrNull` and a new shared
+  `SIMF.Web.Content.EventTime` helper (event-local +03:00 day grouping +
+  `HH:mm – HH:mm` window), single-sourced with Session Detail (which was
+  refactored onto the same helper). Removed the vestigial legacy `MainLayout`
+  public-nav links (`/programme`, `/visit`) + their now-dead `Nav.*` resx keys.
 - 2026-07-20 - re-skinned from the legacy `Simf*` / `MainLayout` chrome onto the
   shared `ln-` marketing kit (`LandingShell` + `LandingPageHero` + a new
   `ln-agenda` band); added a "Full agenda" nav item; strengthened the bUnit tests
