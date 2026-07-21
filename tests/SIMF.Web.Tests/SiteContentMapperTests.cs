@@ -34,7 +34,7 @@ public sealed class SiteContentMapperTests
         {
             new PublicSpeakerSummary(
                 Guid.NewGuid(), "Jane Roe", "جين رو", "Admiral",
-                null, "United States", "الولايات المتحدة", null, 0),
+                null, null, "United States", "الولايات المتحدة", null, 0),
         });
 
         var result = SiteContentEndpoints.Compose(null, speakers, null, null, null, null, null, null);
@@ -55,13 +55,13 @@ public sealed class SiteContentMapperTests
         {
             // Has an uploaded/linked asset → same-origin asset proxy URL wins,
             // even though a legacy path is also present.
-            new PublicSpeakerSummary(withAsset, "A", "أ", null, null, null, null,
+            new PublicSpeakerSummary(withAsset, "A", "أ", null, null, null, null, null,
                 "/legacy/a.jpg", 0, HasPhotoAsset: true),
             // No asset, legacy portrait path only → the legacy path.
-            new PublicSpeakerSummary(Guid.NewGuid(), "B", "ب", null, null, null, null,
+            new PublicSpeakerSummary(Guid.NewGuid(), "B", "ب", null, null, null, null, null,
                 "/legacy/b.jpg", 1, HasPhotoAsset: false),
             // Neither → no photo key (the card renders its silhouette).
-            new PublicSpeakerSummary(Guid.NewGuid(), "C", "ج", null, null, null, null,
+            new PublicSpeakerSummary(Guid.NewGuid(), "C", "ج", null, null, null, null, null,
                 null, 2, HasPhotoAsset: false),
         });
 

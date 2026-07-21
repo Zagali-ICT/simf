@@ -71,7 +71,7 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/programme-days` | ✅ Real (D-452) | Administrator  | [cp/admin-programme-days.md](cp/admin-programme-days.md) | [e2e/cp-admin-programme-days.md](../tests/e2e/cp-admin-programme-days.md) |
 | `/admin/session-moderators` | ✅ Real | Administrator  | [cp/admin-session-moderators.md](cp/admin-session-moderators.md) | [e2e/cp-admin-session-moderators.md](../tests/e2e/cp-admin-session-moderators.md) |
 | `/admin/programme/timeline` | ✅ Real | Administrator | — | [e2e/cp-admin-programme-timeline.md](../tests/e2e/cp-admin-programme-timeline.md) |
-| `/admin/bookings` | ✅ Real (D-227) | Administrator  | [cp/admin-bookings.md](cp/admin-bookings.md) | [e2e/cp-admin-bookings.md](../tests/e2e/cp-admin-bookings.md) |
+| `/admin/bookings` | ✅ Real (#6/#17) | Administrator  | [cp/admin-bookings.md](cp/admin-bookings.md) | [e2e/cp-admin-bookings.md](../tests/e2e/cp-admin-bookings.md) |
 | `/admin/speaker-meeting-requests` | ✅ Real (D-269) | Administrator  | [cp/admin-speaker-meeting-requests.md](cp/admin-speaker-meeting-requests.md) | [e2e/cp-admin-speaker-meeting-requests.md](../tests/e2e/cp-admin-speaker-meeting-requests.md) |
 | `/admin/speaker-availability` | ✅ Real (D-474/D-476 #11: team-defined availability windows → VIP free slots) | Administrator | _(see e2e)_ | [e2e/cp-admin-speaker-availability.md](../tests/e2e/cp-admin-speaker-availability.md) |
 | `/admin/hall-availability` | ✅ Real (D-715 item 7 §15 GAP-1: team-defined hall meeting-time windows → free slots) | Administrator | _(see e2e)_ | [e2e/cp-admin-hall-availability.md](../tests/e2e/cp-admin-hall-availability.md) |
@@ -154,7 +154,7 @@ No public nav per D-064 — every page is reached via direct URL or auth redirec
 | `/` + `/landing` (marketing landing — Bootstrap SSR rebuild) | ✅ Live at `/` (bilingual AR/EN; cutover 2026-07-14) | Public | [web/landing-rebuild.md](web/landing-rebuild.md) | [e2e/web-landing-rebuild.md](../tests/e2e/web-landing-rebuild.md) |
 | ~~`/` (old static landing)~~ | 🗑️ Retired 2026-07-14 (`index.html` deleted) | Public | [web/landing.md](web/landing.md) | [e2e/web-landing.md](../tests/e2e/web-landing.md) |
 | `/account` | ✅ Real | Any signed-in | [web/home.md](web/home.md) | [e2e/web-home.md](../tests/e2e/web-home.md) |
-| `/programme` | ✅ Real (`ln-` SSR re-skin; live day-grouped agenda + speakers strip; supersedes the legacy Simf* page, D-199) | Public | [web/programme.md](web/programme.md) | [e2e/web-programme.md](../tests/e2e/web-programme.md) |
+| `/programme` | ✅ Real (`ln-` SSR; app-style day strip + type filter + timeline cards, live data; adapted from app Figma 883-2308; supersedes the legacy Simf* page, D-199) | Public | [web/programme.md](web/programme.md) | [e2e/web-programme.md](../tests/e2e/web-programme.md) |
 | `/speakers` | ✅ Real (`ln-` SSR rebuild; Figma 5840-26779; live data) | Public | [web/speakers.md](web/speakers.md) | [e2e/web-speakers.md](../tests/e2e/web-speakers.md) |
 | `/sessions/{id}` | ✅ Real (`ln-` SSR; Figma 5991-85840; live data + public downloads) | Public | [web/session-detail.md](web/session-detail.md) | [e2e/web-session-detail.md](../tests/e2e/web-session-detail.md) |
 | `/about` | ✅ Real (`ln-` SSR; Figma 5865-33963; static marketing — About cluster #1) | Public | [web/about.md](web/about.md) | [e2e/web-about.md](../tests/e2e/web-about.md) |

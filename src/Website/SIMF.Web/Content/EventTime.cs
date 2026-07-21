@@ -16,8 +16,11 @@ public static class EventTime
     // The instant expressed in event-local time - used for day grouping + labels.
     public static DateTimeOffset Local(DateTimeOffset instant) => instant.ToOffset(Offset);
 
+    // "HH:mm" clock time in event-local time, in the current culture.
+    public static string Time(DateTimeOffset instant) =>
+        Local(instant).ToString("HH:mm", CultureInfo.CurrentUICulture);
+
     // "HH:mm – HH:mm" time window in event-local time, in the current culture.
     public static string Window(DateTimeOffset start, DateTimeOffset end) =>
-        $"{Local(start).ToString("HH:mm", CultureInfo.CurrentUICulture)} – " +
-        $"{Local(end).ToString("HH:mm", CultureInfo.CurrentUICulture)}";
+        $"{Time(start)} – {Time(end)}";
 }

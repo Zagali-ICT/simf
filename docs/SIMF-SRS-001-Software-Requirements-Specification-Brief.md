@@ -77,7 +77,9 @@ and further types), Moderators, and Staff.
 - The technology stack is fixed (SIMF-SAD-001 section 2.2): .NET 10, FastEndpoints, Blazor with
   MudBlazor, Flutter, SQL Server 2022.
 - The system is single-tenant and on-premises.
-- The forum dates — 23–25 November 2026 — are immovable.
+- The forum dates are configuration data, set in the Control Panel and read at
+  runtime, so the same system serves any edition; the 2026 edition runs 23 to 25
+  November 2026.
 - The system must satisfy the NCA security standards (NFR section).
 - Arabic is the primary language; Arabic and English are both fully supported.
 

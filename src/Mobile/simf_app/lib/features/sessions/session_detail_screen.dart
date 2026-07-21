@@ -10,6 +10,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../../app/widgets/simf_confirm_dialog.dart';
+import '../../app/widgets/simf_info_dialog.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import 'data/rate_prompt_tracker.dart';
 import 'data/seat_map_models.dart';
@@ -222,11 +223,12 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     }
     setState(() => _busy = true);
     final messenger = ScaffoldMessenger.of(context);
+    var registered = false;
     try {
       await ref
           .read(seatMapRepositoryProvider)
           .joinOpenSeating(widget.sessionId);
-      messenger.showSnackBar(SnackBar(content: Text(l10n.joinPendingToast)));
+      registered = true;
     } on ApiFailure catch (failure) {
       // Surface the backend's localized reason (already booked / seat selection
       // required / …) instead of a generic "join failed" — the generic toast is
@@ -241,6 +243,12 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
       if (mounted) {
         setState(() => _busy = false);
       }
+    }
+    // D-750 — case-1 (open-seating) success: a one-button info alert (replaces
+    // the old joinPendingToast snackbar) making clear that registering is not a
+    // seat reservation and entry is confirmed at check-in.
+    if (registered && mounted) {
+      await SimfInfoDialog.show(context, title: l10n.joinOpenSuccessBody);
     }
     await _load();
   }

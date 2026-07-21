@@ -289,12 +289,13 @@ public static class PermissionCatalog
         public const string Edit = "SeatPlans.Edit";
     }
 
-    /// <summary>P2.2 (D-227) — the booking approval queue (FDS-005 §5.2).</summary>
+    /// <summary>#6/#17 (owner 2026-07-20) — the read-only booking monitor. There is
+    /// no approval step (bookings auto-confirm) and no-shows are released by a
+    /// background worker, so Approve/Reject were retired — only View + Export
+    /// remain.</summary>
     public static class Bookings
     {
         public const string View = "Bookings.View";
-        public const string Approve = "Bookings.Approve";
-        public const string Reject = "Bookings.Reject";
         public const string Export = "Bookings.Export";
     }
 
@@ -852,10 +853,8 @@ public static class PermissionCatalog
         new(SeatPlans.View, "SeatPlans", "View", "View session seat plans", AdminOnly),
         new(SeatPlans.Edit, "SeatPlans", "Edit", "Edit session seat plans", AdminOnly),
 
-        // P2.2 — D-227: booking approval queue.
-        new(Bookings.View, "Bookings", "View", "View the booking approval queue", AdminOnly),
-        new(Bookings.Approve, "Bookings", "Approve", "Approve bookings", AdminOnly),
-        new(Bookings.Reject, "Bookings", "Reject", "Reject bookings", AdminOnly),
+        // #6/#17 — read-only booking monitor (approve/reject retired: no approval step).
+        new(Bookings.View, "Bookings", "View", "View the booking monitor", AdminOnly),
         new(Bookings.Export, "Bookings", "Export", "Export bookings to Excel", AdminOnly),
 
         // SIMF-FDS-013 — D-248: flexible hall config + B2B/B2C business meetings.

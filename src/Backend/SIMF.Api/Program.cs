@@ -60,7 +60,7 @@ builder.Host.UseSerilog((context, configuration) =>
         "SIMF.Infrastructure.Operations.RegistrationGateAutoCloseWorker",
         "SIMF.Infrastructure.Operations.SessionReminderWorker",
         "SIMF.Infrastructure.Operations.MeetingAwaitingSpeakerExpiryWorker",
-        "SIMF.Infrastructure.Operations.PendingBookingExpiryWorker",
+        "SIMF.Infrastructure.Operations.ReservationNoShowReleaseWorker",
         "SIMF.Infrastructure.Operations.SessionRatingPromptWorker",
         "SIMF.Infrastructure.Operations.ProgrammeRatingPromptWorker",
         "SIMF.Infrastructure.Operations.HallAttendanceCloseoutWorker",
