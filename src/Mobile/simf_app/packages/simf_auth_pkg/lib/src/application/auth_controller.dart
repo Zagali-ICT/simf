@@ -393,7 +393,12 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
     _rememberSession = true;
     await _persistSession(session);
     _setSignedIn(session);
-    await reloadCurrentUser();
+    try {
+      await reloadCurrentUser();
+    } catch (_) {
+      // Best-effort — the user is signed in; a hydrate failure must not
+      // skip the post-sign-in navigation.
+    }
   }
 
   /// Turns Face-ID sign-in off on this device: best-effort revokes the key on
