@@ -109,6 +109,16 @@ internal sealed partial class AdminAccountService
             target.UserName = trimmedEmail;
             target.DisplayName = trimmedName;
             target.UpdatedAt = now;
+            // #24 — an admin correcting a login email (the new-account typo case)
+            // is not the account holder, so the corrected address is unverified
+            // until the owner proves it. Mark it unconfirmed: sign-in gates on
+            // AccountState (not EmailConfirmed), so this is not a lockout, and the
+            // next sign-in's email-OTP 2FA goes to the new address — re-verifying
+            // deliverability instead of trusting the typed-in correction.
+            if (emailChanged)
+            {
+                target.EmailConfirmed = false;
+            }
             var updateResult = await accounts.UpdateAsync(target);
             if (!updateResult.Succeeded)
             {

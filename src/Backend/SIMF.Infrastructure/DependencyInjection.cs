@@ -258,6 +258,9 @@ public static class DependencyInjection
         services.AddScoped<ISignInService, SignInService>();
         services.AddScoped<ISessionService, SessionService>();
         services.AddScoped<IPasswordService, PasswordService>();
+        // #24 — self-service change of a signed-in user's login email (OTP to the
+        // new address + security-stamp roll + session revoke).
+        services.AddScoped<IEmailChangeService, EmailChangeService>();
         // Part B — badge-QR sign-in / activation.
         services.AddScoped<IBadgeAuthService, BadgeAuthService>();
         services.AddScoped<ITotpEnrollmentService, TotpEnrollmentService>();

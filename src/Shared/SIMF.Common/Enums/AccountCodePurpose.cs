@@ -33,4 +33,11 @@ public enum AccountCodePurpose
     /// appending new enum values); display falls back to the enum name (these
     /// codes are never enumerated in a UI).</summary>
     BiometricEnrolStepUp = 4,
+
+    /// <summary>#24 — a one-time code emailed to the NEW address a signed-in user
+    /// (or a self-service change) is moving their login email to, so the change
+    /// only completes once the user proves they control the new inbox. Additive
+    /// value (D-110 freeze permits appending new enum values); display falls back
+    /// to the enum name (these codes are never enumerated in a UI).</summary>
+    EmailChangeVerification = 5,
 }

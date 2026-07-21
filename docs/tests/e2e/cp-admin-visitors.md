@@ -98,6 +98,11 @@ Scenario: Register a Saudi walk-in, view, edit and delete them
   Then PUT /account/api/admin/visitors/{id} returns 200
   And the modal closes and a green toast reads "The account was updated." (Admin.Edit.Saved)
   And the grid reloads with the new display name
+  # Build #24: if the Edit also CHANGES the Email, the account is signed out (the
+  # security stamp is rolled) AND the new address is marked unverified
+  # (EmailConfirmed=false), so it is re-verified at the user's next sign-in via the
+  # email-OTP 2FA. Sign-in gates on AccountState, not EmailConfirmed, so this is
+  # NOT a lockout - it just re-proves the corrected address is deliverable.
 
   When the administrator clicks the "Delete" action on that row
   Then the "Delete visitors" modal opens reading "This will disable 1 visitor account(s)..."
@@ -606,4 +611,4 @@ Scenario: the visitor Edit form can replace the profile photo and ID image
 
 ---
 
-_Last reviewed:_ 2026-07-21 by Claude (VIP edit — the shared EditAccountForm gained a Photo & ID section; E2E-VIS-029). Prior: 2026-07-11 by Claude (W4 on-site remediation — H-1 duplicate-identity guard; E2E-VIS-027). Earlier: 2026-07-09 by SIMF Team (D-728 — E2E-VIS-026 change-account-type); 2026-06-20 (D-469 — E2E-VIS-025 Saudi birth-location region dropdown); 2026-06-10 (D-356 Phase 5 — Excel + toggle; E2E-VIS-023/024).
+_Last reviewed:_ 2026-07-22 by SIMF Team (Build #24 - noted on E2E-VIS-001 that an Edit which changes the email now marks it unverified (EmailConfirmed=false) for re-verification at next sign-in; not a lockout). Prior: 2026-07-21 by Claude (VIP edit - the shared EditAccountForm gained a Photo & ID section; E2E-VIS-029). Earlier: 2026-07-11 by Claude (W4 on-site remediation - H-1 duplicate-identity guard; E2E-VIS-027). Earlier: 2026-07-09 by SIMF Team (D-728 - E2E-VIS-026 change-account-type); 2026-06-20 (D-469 - E2E-VIS-025 Saudi birth-location region dropdown); 2026-06-10 (D-356 Phase 5 - Excel + toggle; E2E-VIS-023/024).

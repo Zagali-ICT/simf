@@ -94,6 +94,13 @@ GoRouter _router() {
           body: Center(child: Text('MY-SESSIONS-MARKER')),
         ),
       ),
+      GoRoute(
+        name: RouteNames.changeEmail,
+        path: '/change-email',
+        builder: (context, state) => const Scaffold(
+          body: Center(child: Text('CHANGE-EMAIL-MARKER')),
+        ),
+      ),
       // The shared shell's bottom-nav destinations + the my-area target.
       for (final (name, path) in <(String, String)>[
         (RouteNames.home, '/'),
@@ -173,6 +180,8 @@ void main() {
       // Reset password (signed-in only, D-658) — a deliberate profile action
       // beyond frame 1129:17224.
       expect(find.text('Reset password'), findsOneWidget);
+      // #24 — Change email (signed-in only), next to Reset password.
+      expect(find.text('Change email'), findsOneWidget);
       // قانوني rows.
       expect(find.text('Terms & conditions'), findsOneWidget);
       expect(find.text('Contact us'), findsOneWidget);
@@ -199,6 +208,8 @@ void main() {
       expect(find.text('FAQ'), findsOneWidget);
       // Reset password is an account action — hidden from the guest view.
       expect(find.text('Reset password'), findsNothing);
+      // #24 — Change email is an account action — hidden from the guest view.
+      expect(find.text('Change email'), findsNothing);
     });
 
     testWidgets('signed-in shows the منطقتي profile card + sign-out',
@@ -222,6 +233,14 @@ void main() {
       await tester.tap(find.text('Reset password'));
       await tester.pumpAndSettle();
       expect(find.text('FORGOT-MARKER'), findsOneWidget);
+    });
+
+    testWidgets('signed-in tapping Change email opens the change-email screen',
+        (tester) async {
+      await _pump(tester, router: _router(), signedIn: true);
+      await tester.tap(find.text('Change email'));
+      await tester.pumpAndSettle();
+      expect(find.text('CHANGE-EMAIL-MARKER'), findsOneWidget);
     });
 
     testWidgets('signed-in attendee sees + taps عروض الجلسات → My sessions '

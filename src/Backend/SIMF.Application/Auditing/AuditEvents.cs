@@ -72,6 +72,12 @@ public static class AuditEvents
     public const string PasswordResetAccountNotFound = "PasswordReset.AccountNotFound";
     public const string PasswordChanged = "PasswordChange.Succeeded";
     public const string PasswordChangeFailed = "PasswordChange.Failed";
+    // #24 — self-service change-email: a code was emailed to the new address; the
+    // change completed (login email moved, security stamp rolled, sessions
+    // revoked); or a confirm attempt failed (wrong / expired code).
+    public const string EmailChangeOtpRequested = "EmailChange.OtpRequested";
+    public const string EmailChanged = "EmailChange.Succeeded";
+    public const string EmailChangeFailed = "EmailChange.Failed";
     public const string SuperAdminSeeded = "Admin.SuperAdminSeeded";
     // A1-19 (NCA) — the daily sweep disabled an account for inactivity beyond the
     // configured threshold. A system action (no actor).

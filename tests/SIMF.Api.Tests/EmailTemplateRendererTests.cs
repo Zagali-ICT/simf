@@ -105,9 +105,35 @@ public sealed class EmailTemplateRendererTests
     }
 
     [Fact]
-    public void Catalog_all_lists_the_six_transactional_templates()
+    public void Catalog_all_lists_the_nine_transactional_templates()
     {
-        Assert.Equal(6, EmailTemplateCatalog.All.Count);
+        // #24 added EmailChangeVerification (8th) + EmailChangedNotice (9th). NB:
+        // this assertion was stale at 6 on the base branch after D-751 added
+        // BulkBadgeDelivery (7th) without updating it; 9 is the true current count.
+        Assert.Equal(9, EmailTemplateCatalog.All.Count);
+    }
+
+    [Fact]
+    public void Catalog_default_email_change_verification_has_the_code_tokens()
+    {
+        var def = EmailTemplateCatalog.Default(EmailTemplateType.EmailChangeVerification);
+
+        Assert.Equal("SIMF email change verification", def.Subject);
+        Assert.Contains("{Code}", def.BodyEn, StringComparison.Ordinal);
+        Assert.Contains("{ExpiryMinutes}", def.BodyEn, StringComparison.Ordinal);
+        Assert.Equal(2, def.Tokens.Count);
+    }
+
+    [Fact]
+    public void Catalog_default_email_changed_notice_carries_the_new_email_token()
+    {
+        var def = EmailTemplateCatalog.Default(EmailTemplateType.EmailChangedNotice);
+
+        Assert.Equal("SIMF login email changed", def.Subject);
+        Assert.Contains("{NewEmail}", def.BodyEn, StringComparison.Ordinal);
+        Assert.DoesNotContain("{Code}", def.BodyEn, StringComparison.Ordinal);
+        var token = Assert.Single(def.Tokens);
+        Assert.Equal("NewEmail", token.Name);
     }
 
     [Fact]

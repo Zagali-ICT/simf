@@ -46,6 +46,9 @@ public static class ErrorCodes
     public const string AuthResetCodeInvalid = "AUTH_RESET_CODE_INVALID";
     public const string AuthResetCodeExpired = "AUTH_RESET_CODE_EXPIRED";
     public const string AuthPasswordChangeRequired = "AUTH_PASSWORD_CHANGE_REQUIRED";
+    // #24 — self-service change-email: the new address is the account's current
+    // one, so there is nothing to change (no code is sent).
+    public const string AuthEmailUnchanged = "AUTH_EMAIL_UNCHANGED";
     // Part B — badge-QR activation: the resolved account already has a password,
     // so it must use the normal sign-in rather than the set-password flow.
     public const string BadgeAlreadyActivated = "BADGE_ALREADY_ACTIVATED";

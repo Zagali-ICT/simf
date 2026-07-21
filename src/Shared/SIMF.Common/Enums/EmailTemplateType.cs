@@ -29,4 +29,14 @@ public enum EmailTemplateType
     /// <summary>D-751 — cover note for a bulk-generated badge batch emailed to the
     /// organiser, carrying the QR badge PNGs as a single ZIP attachment.</summary>
     BulkBadgeDelivery = 6,
+
+    /// <summary>#24 — verification code sent to the NEW address when a signed-in
+    /// user changes their login email, proving they control the new inbox before
+    /// the change completes. Appended (persisted by name — see the type doc).</summary>
+    EmailChangeVerification = 7,
+
+    /// <summary>#24 — security alert sent to the OLD address once a login email
+    /// change completes, so the previous owner is warned out-of-band if the change
+    /// was not theirs. Appended (persisted by name — see the type doc).</summary>
+    EmailChangedNotice = 8,
 }
