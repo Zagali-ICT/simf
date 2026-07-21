@@ -31,11 +31,9 @@ class SponsorLogo extends StatelessWidget {
           textAlign: TextAlign.center,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: hero ? SimfTokens.navy : Colors.white,
-            fontWeight: FontWeight.w600,
-            fontSize: SimfTokens.textMd,
-          ),
+          style: hero
+              ? SimfTokens.labelNavySemibold
+              : SimfTokens.labelWhiteSemibold,
         ),
       ),
     );
