@@ -1541,9 +1541,10 @@
   <data name="Admin.ProgrammeDays.Field.DisplayOrder" xml:space="preserve"><value>ترتيب العرض</value></data>
   <data name="Admin.ProgrammeDays.Field.IsActive" xml:space="preserve"><value>نشط</value></data>
   <data name="Admin.ProgrammeDays.Field.Logo" xml:space="preserve"><value>شعار اليوم</value></data>
-  <data name="Admin.Bookings.Title" xml:space="preserve"><value>اعتماد الحجوزات</value></data>
+  <data name="Admin.Bookings.Title" xml:space="preserve"><value>مراقبة الحجوزات</value></data>
   <data name="Admin.Bookings.Loading" xml:space="preserve"><value>جارٍ تحميل الحجوزات…</value></data>
-  <data name="Admin.Bookings.None" xml:space="preserve"><value>لا توجد حجوزات بانتظار الاعتماد.</value></data>
+  <data name="Admin.Bookings.None" xml:space="preserve"><value>لا توجد حجوزات نشطة.</value></data>
+  <data name="Admin.Bookings.MonitorHint" xml:space="preserve"><value>يتم تأكيد الحجوزات فوراً دون خطوة اعتماد. ويُلغى المقعد المحجوز تلقائياً إذا لم يسجّل الزائر دخوله قبل 3 دقائق من بدء الجلسة.</value></data>
   <data name="Admin.Bookings.Col.Session" xml:space="preserve"><value>الجلسة</value></data>
   <data name="Admin.Bookings.Col.Start" xml:space="preserve"><value>تبدأ (UTC)</value></data>
   <data name="Admin.Bookings.Col.Seat" xml:space="preserve"><value>المقعد</value></data>

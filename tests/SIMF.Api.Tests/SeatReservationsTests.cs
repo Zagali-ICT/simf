@@ -545,56 +545,7 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(success, active);
     }
 
-    // -- M-1: approval-time capacity re-check + open-seating join backstop -----
-
-    [Fact]
-    public async Task Approving_a_booking_beyond_capacity_is_blocked()
-    {
-        // M-1 — two Pending open-seating holds slipped past the join pre-check
-        // (simulated by a direct insert). Cap is 1, so only the first may be approved;
-        // approving the second is a 409 and the booking stays Pending.
-        var session = await SeedOpenSeatingSessionAsync(capacity: 1);
-        var firstId = await SeedPendingOpenSeatingReservationAsync(session.Id);
-        var secondId = await SeedPendingOpenSeatingReservationAsync(session.Id);
-        var admin = Guid.NewGuid();
-
-        using var scope = _factory.Services.CreateScope();
-        var svc = scope.ServiceProvider.GetRequiredService<ISeatReservationService>();
-        await svc.ApproveBookingAsync(admin, firstId);
-
-        var ex = await Assert.ThrowsAsync<ApiException>(
-            () => svc.ApproveBookingAsync(admin, secondId));
-        Assert.Equal(ErrorCodes.SeatSessionFull, ex.Code);
-
-        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var approved = await db.SeatReservations
-            .CountAsync(r => r.SessionId == session.Id && r.Status == BookingStatus.Approved);
-        Assert.Equal(1, approved);
-    }
-
-    [Fact]
-    public async Task Bulk_approve_stops_at_capacity()
-    {
-        // M-1 — the sequential bulk-approve re-checks after each commit, so it fills
-        // the cap-1 session with exactly one booking and leaves the other Pending.
-        var session = await SeedOpenSeatingSessionAsync(capacity: 1);
-        var id1 = await SeedPendingOpenSeatingReservationAsync(session.Id);
-        var id2 = await SeedPendingOpenSeatingReservationAsync(session.Id);
-        var admin = Guid.NewGuid();
-
-        using var scope = _factory.Services.CreateScope();
-        var svc = scope.ServiceProvider.GetRequiredService<ISeatReservationService>();
-        var approvedCount = await svc.BulkApproveBookingsAsync(admin, new[] { id1, id2 });
-        Assert.Equal(1, approvedCount);
-
-        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var approved = await db.SeatReservations
-            .CountAsync(r => r.SessionId == session.Id && r.Status == BookingStatus.Approved);
-        var pending = await db.SeatReservations
-            .CountAsync(r => r.SessionId == session.Id && r.Status == BookingStatus.Pending);
-        Assert.Equal(1, approved);
-        Assert.Equal(1, pending);
-    }
+    // -- M-1: open-seating join capacity backstop ------------------------------
 
     [Fact]
     public async Task Open_seating_join_capacity_is_enforced_under_concurrency()
@@ -724,13 +675,14 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
         }
     }
 
-    // -- M-6: a Pending hold is stamped with an expiry -------------------------
+    // -- #6/#17: a visitor hold is stamped with the no-show release deadline ----
 
     [Fact]
-    public async Task Reserving_stamps_an_expiry_on_the_hold()
+    public async Task Reserving_stamps_the_no_show_deadline_on_the_hold()
     {
-        // M-6 — a visitor seat pick is stamped with ExpiresUtc = CreatedAt + the
-        // hold window; an admin-reserved row seat never expires (ExpiresUtc null).
+        // #6/#17 — a visitor seat pick is stamped with ExpiresUtc = the session's
+        // StartUtc − 3min (the no-show release deadline); an admin-reserved row seat
+        // never expires (ExpiresUtc null).
         var (session, _) = await SeedSessionWithLayoutAsync(new[] { "A" }, seatsPerRow: 5);
         var visitor = await SignInApprovedVisitorAsync();
         var pick = await PostAuthAsync(
@@ -750,10 +702,10 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var mine = await db.SeatReservations.SingleAsync(r => r.Id == reservationId);
         Assert.NotNull(mine.ExpiresUtc);
-        var window = mine.ExpiresUtc!.Value - mine.CreatedAt;
+        var expected = session.StartUtc - SeatReservationService.NoShowReleaseGrace;
         Assert.True(
-            (window - SeatReservationService.PendingHoldWindow).Duration() < TimeSpan.FromSeconds(1),
-            $"expiry window {window} not ~ {SeatReservationService.PendingHoldWindow}");
+            (mine.ExpiresUtc!.Value - expected).Duration() < TimeSpan.FromSeconds(1),
+            $"no-show deadline {mine.ExpiresUtc} not ~ {expected}");
 
         var adminSeat = await db.SeatReservations
             .Where(r => r.SessionId == session.Id
@@ -846,28 +798,6 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
     }
 
     // -- Helpers --------------------------------------------------------------
-
-    private async Task<Guid> SeedPendingOpenSeatingReservationAsync(Guid sessionId)
-    {
-        using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var reservation = new SeatReservation
-        {
-            Id = Guid.NewGuid(),
-            SessionId = sessionId,
-            RowLabel = null,
-            SeatNumber = null,
-            Kind = SeatReservationKind.OpenSeating,
-            ReservedForUserId = Guid.NewGuid(),
-            CreatedByUserId = Guid.NewGuid(),
-            CreatedAt = DateTimeOffset.UtcNow,
-            Status = BookingStatus.Pending,
-            ExpiresUtc = DateTimeOffset.UtcNow.AddHours(24),
-        };
-        db.SeatReservations.Add(reservation);
-        await db.SaveChangesAsync();
-        return reservation.Id;
-    }
 
     private async Task<(Session Session, Hall Hall)> SeedSessionWithLayoutAsync(
         string[] rowLabels, int seatsPerRow,
