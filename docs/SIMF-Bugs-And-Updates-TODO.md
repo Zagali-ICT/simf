@@ -15,13 +15,14 @@
 
 | Metric | Count |
 |--------|-------|
-| Total items | 34 |
-| Open (☐) | 34 |
+| Total items | 41 |
+| Open (☐) | 36 |
 | In progress (◐) | 0 |
-| Done (✅) | 0 |
+| Done (✅) | 5 |
 | Deferred (⏸) | 0 |
 
-_Note: #16 is a single tracked item covering the whole per-feature Flutter clean-code sweep (≈39 features)._
+_Note: #16 is a single tracked item covering the whole per-feature Flutter clean-code sweep (≈39 features). Items #35-#40 are detailed in the plan (`~/.claude/plans/...`); #40 detailed here in Topic 9._
+_Done (5), shipped to PR: #10 `feat/bulk-badge-email`, #32 `feat/cp-team-roles`, #20+#17 `feat/app-sessions-batch`, #35 `feat/session-summary-video` (#28 in progress)._
 
 ---
 
@@ -72,6 +73,7 @@ _Note: #16 is a single tracked item covering the whole per-feature Flutter clean
 - [ ] **#8** — Store all times as **Saudi wall-clock, no UTC** (needs scope + data-migration decision).
 - [ ] **#6** — Remove seat/attendance **approval** workflow (D-227) — no approval (implemented via #17).
 - [ ] **#24** — Change-email flow (fixes CP new-account typos + app self-service) + re-verify + uniqueness. _(Identity is frozen)_
+- [ ] **#40** — **Dynamic forum dates** — the fixed "23-25 November 2026" is hardcoded in Website/app/CP/seed strings; drive them all from a single dynamic source (OrganizationProfile event dates or ProgrammeDay). _(overlaps #28)_
 
 **P2 — decisions**
 - [ ] **#2** — Session↔Day linked by date, not FK — confirm intended.
@@ -518,6 +520,26 @@ confirm**, not a broken model.
 - **Requirement:** deliver the **Control Panel user manual** by **Sunday 19-07-2026** ("بحد أقصى يوم الأحد الموافق 19-07-2026").
 - **⚠ Date already past** (today is 2026-07-20) — confirm the real deadline (likely a typo for a later date). Docs deliverable, not code.
 - **Status:** ☐ Open
+
+---
+
+## Topic 9 — Dynamic forum dates
+
+**Reported:** 2026-07-20 (owner)
+
+### [#40] Forum dates must be dynamic (not the fixed "23-25 November 2026")
+- **Type:** ✨ Update · **Priority:** P1 · **Area:** cross-cutting (Backend seed + Website + App + CP)
+- **Requirement (owner):** "The forum dates are fixed: 23 to 25 November 2026. This is not correct, must be changed dynamic."
+- **Finding (verified — hardcoded "23-25 November 2026" display strings):**
+  - `src/Backend/SIMF.Infrastructure/Identity/IdentitySeeder.cs:740-741` — seeded org-profile event-date label (EN + AR).
+  - `src/Website/SIMF.Web/Resources/Strings.resx` (+ `.ar.resx`) — `Landing.Subnav.Date`, `Speakers.Band.Date`, `Landing.MetaDescription`.
+  - `src/ControlPanel/SIMF.ControlPanel/Resources/Strings.resx` (+ `.ar.resx`) — `Admin.SpeakerAvailability.BadDateRange` (overlaps **#28** — the dynamic bound message replaces this static string).
+  - `src/Mobile/simf_app/lib/app/localization/app_l10n.dart:689` — home edition label.
+  - NOT this: `Website/.../Landing.razor.cs:51/56/61` are PAST editions (2019/2022/2024) — legitimately fixed history.
+- **Dynamic source (exists):** `OrganizationProfile.EventStartDate/EventEndDate` (App-DB config, CP-editable, `OrganizationProfileMapper`) — currently a stale placeholder. Alternative: `ProgrammeDay` MIN/MAX (what #28 uses).
+- **Open decision:** source = (a) OrganizationProfile config (recommended for display) vs (b) ProgrammeDay-derived. Confirm.
+- **Fix plan (pending decision):** set the real event dates in the config; add a shared bilingual date-range formatter; replace every hardcoded resx/l10n/seed string with a render of the dynamic source; expose to app/website via the OrganizationProfile API. Build in Phase 2 after #28 lands (shared CP message).
+- **Status:** ☐ Open — needs source decision (a/b)
 
 ---
 ```

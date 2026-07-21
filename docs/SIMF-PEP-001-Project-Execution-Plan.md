@@ -41,7 +41,7 @@ backlog of stories and tasks is SIMF-BLG-001.
 
 | Constraint | Value |
 |------------|-------|
-| Forum dates | 23–25 November 2026 — immovable |
+| Forum dates | 23 to 25 November 2026 for the 2026 edition; the dates are configuration data, set in the Control Panel |
 | Operational target | The system live and stable about two months before the forum |
 | Reference timeline | The 18-week plan in `Overall Time & Plan.pdf` |
 | Cadence | Scrum, two-week sprints (SIMF-PGP-001) |
