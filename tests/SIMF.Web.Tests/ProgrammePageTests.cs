@@ -61,7 +61,7 @@ public sealed class ProgrammePageTests : WebComponentTestBase
         _handler.Speakers = ApiResult<PublicSpeakers>.Ok(new PublicSpeakers(new[]
         {
             new PublicSpeakerSummary(Guid.NewGuid(), "Jane Roe", "جين رو",
-                "Chief Scientist", null, null, null, null, 0),
+                "Chief Scientist", null, null, null, null, null, 0),
         }));
 
         var cut = RenderComponent<Programme>();
