@@ -359,7 +359,7 @@ void main() {
       );
 
       expect(find.text('برنامج الملتقى'), findsOneWidget); // screen header
-      expect(find.text('الجلسات'), findsWidgets); // active bottom-nav label
+      expect(find.text('الأجندة'), findsWidgets); // active bottom-nav label (D-750)
       expect(find.text('اليوم الأول'), findsOneWidget); // day title
       expect(find.text('المواعيد'), findsOneWidget);
       expect(find.text('الكل'), findsOneWidget); // All tab
