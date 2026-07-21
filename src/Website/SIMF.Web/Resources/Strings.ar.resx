@@ -161,7 +161,7 @@
 
   <!-- ============ Public landing (Bootstrap rebuild) ============ -->
   <data name="Landing.PageTitle" xml:space="preserve"><value>الملتقى البحري السعودي الدولي الرابع | SIMF 2026</value></data>
-  <data name="Landing.MetaDescription" xml:space="preserve"><value>الملتقى البحري السعودي الدولي 2026 — منصة عالمية حول مستقبل أمن قاع البحار وسلاسل الإمداد البحرية. الرياض، 23–25 نوفمبر 2026.</value></data>
+  <data name="Landing.MetaDescription" xml:space="preserve"><value>الملتقى البحري السعودي الدولي 2026 — منصة عالمية حول مستقبل أمن قاع البحار وسلاسل الإمداد البحرية. الرياض، {0}.</value></data>
   <data name="Landing.Loading" xml:space="preserve"><value>جارٍ التحميل</value></data>
   <data name="Landing.Hero.Title" xml:space="preserve"><value>المُلتقى البحري السعودي الدولي</value></data>
   <data name="Landing.Hero.Subtitle" xml:space="preserve"><value>مستقبل أمن قاع البحار وسلاسل الإمداد في بيئة عالمية متغيرة</value></data>

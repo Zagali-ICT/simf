@@ -161,7 +161,7 @@
 
   <!-- ============ Public landing (Bootstrap rebuild) ============ -->
   <data name="Landing.PageTitle" xml:space="preserve"><value>Saudi International Maritime Forum 2026</value></data>
-  <data name="Landing.MetaDescription" xml:space="preserve"><value>The Saudi International Maritime Forum 2026 — a global platform on the future of seabed security and maritime supply chains. Riyadh, 23–25 November 2026.</value></data>
+  <data name="Landing.MetaDescription" xml:space="preserve"><value>The Saudi International Maritime Forum 2026 — a global platform on the future of seabed security and maritime supply chains. Riyadh, {0}.</value></data>
   <data name="Landing.Loading" xml:space="preserve"><value>Loading</value></data>
   <data name="Landing.Hero.Title" xml:space="preserve"><value>Saudi International Maritime Forum</value></data>
   <data name="Landing.Hero.Subtitle" xml:space="preserve"><value>The future of seabed security and supply chains in a changing global environment</value></data>

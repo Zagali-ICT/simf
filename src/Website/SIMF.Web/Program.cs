@@ -3,6 +3,7 @@ using Serilog;
 using SIMF.ApiClient;
 using SIMF.Web;
 using SIMF.Web.Components;
+using SIMF.Web.Content;
 using SIMF.Web.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -118,6 +119,11 @@ builder.Services.AddHttpClient<SimfAccountClient>(client => client.BaseAddress =
 // not require an X-App-Key header in this build.
 builder.Services.AddHttpClient<SimfPublicClient>(client => client.BaseAddress = apiBaseUri)
     .ConfigurePrimaryHttpMessageHandler(apiPrimaryHandler);
+
+// D-755 — resolves the forum event dates from the public OrganizationProfile
+// (cached) and formats the shared bilingual range for the marketing pages, so the
+// date is driven by CP config instead of a hardcoded resx literal.
+builder.Services.AddScoped<ForumDates>();
 
 var app = builder.Build();
 

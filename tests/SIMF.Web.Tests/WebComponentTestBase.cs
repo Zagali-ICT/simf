@@ -13,6 +13,7 @@ using Bunit.TestDoubles;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using SIMF.Web;
+using SIMF.Web.Content;
 
 namespace SIMF.Web.Tests;
 
@@ -28,6 +29,12 @@ public abstract class WebComponentTestBase : TestContext
         // D-194 — localizer mock returns each key as-is so tests assert
         // against resx keys, not EN strings (resilient to copy edits).
         Services.AddSingleton<IStringLocalizer<Strings>>(new PassThroughStringLocalizer());
+
+        // D-755 — the public marketing pages resolve the forum date via ForumDates
+        // (backed by SimfPublicClient + IMemoryCache). Registered here so any page
+        // that injects it can render; a test supplies the SimfPublicClient it needs.
+        Services.AddMemoryCache();
+        Services.AddScoped<ForumDates>();
 
         // Authenticated by default (the account pages carry [Authorize]);
         // each test layers the specific claims it needs on top.
