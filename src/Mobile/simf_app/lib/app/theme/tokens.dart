@@ -115,6 +115,10 @@ class SimfTokens {
   static const Color hcDarkInk = Color(0xFFFFFFFF);
   static const Color hcDarkField = Color(0xFF1A1A1A);
 
+  // Framework colour alias — the design token for a fully-transparent fill so
+  // widgets never reference `Colors.transparent` directly (#16 sweep).
+  static const Color transparent = Color(0x00000000);
+
   // Spacing scale.
   static const double space1 = 4;
   static const double space2 = 8;
@@ -132,6 +136,7 @@ class SimfTokens {
   static const double radiusLg = 16; // W2 cards / nav bar top corners
   static const double radius14 = 14; // exhibitor/sponsor link rows (Figma 1439:11904/11917)
   static const double radiusXl = 20;
+  static const double radius10 = 10; // delegations head-of-delegation box (Figma 1426:10838)
 
   /// Ready-made [BorderRadius] for the default 4px corner (fields, cards,
   /// pills). Use this instead of re-wrapping [radiusSmall] in every widget.
@@ -142,6 +147,16 @@ class SimfTokens {
   // 0.5px emphasised hairline).
   static const double hairline = 0.2;
   static const double hairlineBold = 0.5;
+
+  // Component metrics (#16 sweep). Fixed component box heights + ratios lifted
+  // out of the widgets so no screen carries a raw layout number. Each value is
+  // the exact Figma measurement it replaces (behaviour-preserving).
+  static const double controlHeight = 48; // pill / banner / row height (booth code-pill+hall-box, gallery coverage-tab, archive edition-pill/notice/session-title)
+  static const double contactRowHeight = 44; // booth contact-box row (Figma 922:2810)
+  static const double sponsorRowHeight = 72; // sponsor hero/premium row + grid tile (Figma 922:2824)
+  static const double galleryScrimHeight = 40; // archive gallery-tile bottom scrim (Figma 926:3299)
+  static const double mediaTileAspectRatio = 164 / 104; // gallery media tile (Figma 949:4043)
+  static const double scrimOpacityStrong = 0.8; // archive gallery-tile scrim gradient bottom stop
 
   // Type scale (Material text styles override these for actual rendering;
   // tokens here are for places that need a raw size).

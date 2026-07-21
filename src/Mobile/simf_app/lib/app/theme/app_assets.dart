@@ -15,4 +15,7 @@ class AppAssets {
 
   // ── Shared navigation ───────────────────────────────────────────────────
   static const String icBack = 'assets/icons/ic_back.svg';
+
+  // ── Booths / venue ──────────────────────────────────────────────────────
+  static const String navLocation = 'assets/icons/nav_location.svg';
 }
