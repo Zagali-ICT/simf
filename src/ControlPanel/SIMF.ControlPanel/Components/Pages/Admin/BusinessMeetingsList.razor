@@ -66,12 +66,12 @@
                 <SimfDataGridColumn TItem="BusinessMeetingRow" Key="start"
                                     Header="@L["Admin.BusinessMeetings.Col.Start"]"
                                     Sortable="true">
-                    <CellTemplate>@context.StartUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</CellTemplate>
+                    <CellTemplate>@context.StartUtc.FormatSaudi("yyyy-MM-dd HH:mm")</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="BusinessMeetingRow" Key="end"
                                     Header="@L["Admin.BusinessMeetings.Col.End"]"
                                     Sortable="true">
-                    <CellTemplate>@context.EndUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</CellTemplate>
+                    <CellTemplate>@context.EndUtc.FormatSaudi("yyyy-MM-dd HH:mm")</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="BusinessMeetingRow" Key="parties"
                                     Header="@L["Admin.BusinessMeetings.Col.Parties"]">
@@ -269,8 +269,8 @@
                 <dt>@L["Admin.BusinessMeetings.Col.Hall"]</dt><dd>@_detail.HallName</dd>
                 <dt>@L["Admin.BusinessMeetings.Col.Table"]</dt><dd>@_detail.TableCode</dd>
                 <dt>@L["Admin.BusinessMeetings.Col.Type"]</dt><dd>@_detail.MeetingType</dd>
-                <dt>@L["Admin.BusinessMeetings.Col.Start"]</dt><dd>@_detail.StartUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</dd>
-                <dt>@L["Admin.BusinessMeetings.Col.End"]</dt><dd>@_detail.EndUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</dd>
+                <dt>@L["Admin.BusinessMeetings.Col.Start"]</dt><dd>@_detail.StartUtc.FormatSaudi("yyyy-MM-dd HH:mm")</dd>
+                <dt>@L["Admin.BusinessMeetings.Col.End"]</dt><dd>@_detail.EndUtc.FormatSaudi("yyyy-MM-dd HH:mm")</dd>
                 <dt>@L["Admin.BusinessMeetings.Col.Parties"]</dt>
                 <dd>
                     <ul class="simf-list">

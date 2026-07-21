@@ -60,16 +60,16 @@ public partial class ProgrammeTimeline
         finally { _loading = false; }
     }
 
-    // Group by the local calendar day of the start time, days ascending,
+    // Group by the Saudi calendar day of the start time, days ascending,
     // sessions within a day ascending by start time. StartUtc is a
-    // DateTimeOffset in UTC; .LocalDateTime projects it onto the operator's
+    // DateTimeOffset in UTC; .ToSaudi() projects it onto the Saudi (AST)
     // wall clock so the run-of-show reads in local event time.
     private void BuildDays(IReadOnlyList<AdminSessionSummary> items)
     {
         _total = items.Count;
         _days = items
             .OrderBy(s => s.StartUtc)
-            .GroupBy(s => s.StartUtc.LocalDateTime.Date)
+            .GroupBy(s => s.StartUtc.ToSaudi().Date)
             .OrderBy(g => g.Key)
             .Select(g => new DayGroup(
                 g.Key.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
@@ -87,7 +87,7 @@ public partial class ProgrammeTimeline
         _selectedDayKey = e.Value?.ToString() ?? string.Empty;
 
     private static string TimeWindow(AdminSessionSummary s) =>
-        $"{s.StartUtc.LocalDateTime:HH:mm} – {s.EndUtc.LocalDateTime:HH:mm}";
+        $"{s.StartUtc.ToSaudi():HH:mm} – {s.EndUtc.ToSaudi():HH:mm}";
 
     private static string SessionTitle(AdminSessionSummary s) =>
         IsArabic ? s.TitleArabic : s.Title;

@@ -37,14 +37,14 @@ public partial class BannersAddEdit
             _model.BodyAr = Initial.BodyArabic;
             _model.ImageUrl = Initial.ImageUrl ?? string.Empty;
             _model.LinkUrl = Initial.LinkUrl ?? string.Empty;
-            _model.StartUtc = Initial.StartUtc.UtcDateTime.ToString("yyyy-MM-ddTHH:mm");
-            _model.EndUtc = Initial.EndUtc.UtcDateTime.ToString("yyyy-MM-ddTHH:mm");
+            _model.StartUtc = Initial.StartUtc.ToSaudi().ToString("yyyy-MM-ddTHH:mm");
+            _model.EndUtc = Initial.EndUtc.ToSaudi().ToString("yyyy-MM-ddTHH:mm");
             _model.IsActive = Initial.IsActive;
             _displayOrderInput = Initial.DisplayOrder.ToString();
         }
         else
         {
-            var now = DateTime.UtcNow;
+            var now = DateTimeOffset.UtcNow.ToSaudi();
             _model.StartUtc = now.ToString("yyyy-MM-ddTHH:mm");
             _model.EndUtc = now.AddDays(1).ToString("yyyy-MM-ddTHH:mm");
         }
@@ -71,8 +71,8 @@ public partial class BannersAddEdit
             order = 0;
         }
 
-        var startUtc = new DateTimeOffset(DateTime.SpecifyKind(startParsed, DateTimeKind.Utc));
-        var endUtc = new DateTimeOffset(DateTime.SpecifyKind(endParsed, DateTimeKind.Utc));
+        var startUtc = SaudiTime.FromSaudiWallClock(startParsed);
+        var endUtc = SaudiTime.FromSaudiWallClock(endParsed);
 
         _busy = true;
         try

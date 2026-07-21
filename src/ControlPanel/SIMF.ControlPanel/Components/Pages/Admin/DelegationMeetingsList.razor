@@ -80,7 +80,7 @@
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminDelegationMeetingRequestRow" Key="createdAt"
                                     Header="@L["Admin.DelegationMeetings.Col.CreatedAt"]" Sortable="true">
-                    <CellTemplate>@context.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</CellTemplate>
+                    <CellTemplate>@context.CreatedAt.FormatSaudi("yyyy-MM-dd HH:mm")</CellTemplate>
                 </SimfDataGridColumn>
             </Columns>
             <RowActions>

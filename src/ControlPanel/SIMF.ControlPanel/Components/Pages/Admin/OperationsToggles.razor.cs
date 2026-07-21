@@ -46,7 +46,7 @@ public partial class OperationsToggles
             {
                 _gate = gateEnv.Data;
                 _gateIsOpen = _gate.IsOpen;
-                _gateAutoCloseInput = _gate.AutoCloseUtc?.UtcDateTime
+                _gateAutoCloseInput = _gate.AutoCloseUtc?.ToSaudi()
                     .ToString("yyyy-MM-ddTHH:mm") ?? string.Empty;
             }
 
@@ -79,8 +79,7 @@ public partial class OperationsToggles
                     _toast = new Toast("error", L["Admin.Operations.RegistrationGate.AutoCloseInvalid"]);
                     return;
                 }
-                autoClose = new DateTimeOffset(
-                    DateTime.SpecifyKind(parsed, DateTimeKind.Utc));
+                autoClose = SaudiTime.FromSaudiWallClock(parsed);
             }
             var env = await JS.InvokeAsync<ApiResult<RegistrationGateState>>(
                 "simfAccount.putJson", "/account/api/admin/registration-gate",

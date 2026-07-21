@@ -64,7 +64,7 @@
                 <SimfDataGridColumn TItem="AdminSessionModeratorRow" Key="assignedAt"
                                     Header="@L["Admin.SessionModerators.Col.AssignedAt"]"
                                     Sortable="true">
-                    <CellTemplate>@context.AssignedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</CellTemplate>
+                    <CellTemplate>@context.AssignedAt.FormatSaudi("yyyy-MM-dd HH:mm")</CellTemplate>
                 </SimfDataGridColumn>
             </Columns>
             <RowActions>

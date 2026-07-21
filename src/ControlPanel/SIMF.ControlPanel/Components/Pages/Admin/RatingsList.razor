@@ -109,7 +109,7 @@
                                     Header="@L["Admin.Ratings.Col.CreatedAt"]"
                                     Sortable="true">
                     <CellTemplate>
-                        @context.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss 'UTC'")
+                        @context.CreatedAt.FormatSaudi("yyyy-MM-dd HH:mm:ss")
                     </CellTemplate>
                 </SimfDataGridColumn>
             </Columns>

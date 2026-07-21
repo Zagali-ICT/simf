@@ -1,4 +1,3 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
@@ -238,11 +237,11 @@ public partial class SessionSummariesList
         : row.GeneratedByAi ? L["Admin.SessionSummaries.Source.Ai"]
         : L["Admin.SessionSummaries.Source.Manual"];
 
-    // Slice D — the pristine AI-draft panel label, with the UTC capture time
-    // (the CP's yyyy-MM-dd HH:mm 'UTC' convention) when one is recorded.
+    // Slice D — the pristine AI-draft panel label, with the capture time rendered
+    // on the Saudi wall clock (the CP's yyyy-MM-dd HH:mm convention) when one is recorded.
     private string AiDraftLabel =>
         _editAiDraftGeneratedAt is { } at
-            ? $"{L["Admin.SessionSummaries.Field.AiDraft"]} · {at.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'", CultureInfo.InvariantCulture)}"
+            ? $"{L["Admin.SessionSummaries.Field.AiDraft"]} · {at.FormatSaudi("yyyy-MM-dd HH:mm")}"
             : L["Admin.SessionSummaries.Field.AiDraft"];
 
     // D-472 (#9) — the team review/approval workflow actions. Each forwards a PUT

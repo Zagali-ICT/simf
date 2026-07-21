@@ -1,4 +1,3 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
@@ -170,7 +169,7 @@ public partial class SessionLiveHall
             : L["Admin.SessionLiveHall.OpenSeating"];
 
     private static string EnteredUtc(DateTimeOffset enterUtc) =>
-        enterUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+        enterUtc.FormatSaudi("yyyy-MM-dd HH:mm");
 
     private string MethodLabel(AttendanceMethod method) => method switch
     {

@@ -229,7 +229,7 @@
                                 <td>@h.Provider</td>
                                 <td>@h.Model</td>
                                 <td>@(h.IsActive ? "✓" : "—")</td>
-                                <td>@h.CapturedFromUpdatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</td>
+                                <td>@h.CapturedFromUpdatedAt.FormatSaudi("yyyy-MM-dd HH:mm")</td>
                                 <td><code>@ShortHash(h.ContentHash)</code></td>
                             </tr>
                         }

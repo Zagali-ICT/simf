@@ -55,7 +55,7 @@
                 <SimfDataGridColumn TItem="ActiveBookingRow" Key="start"
                                     Header="@L["Admin.Bookings.Col.Start"]"
                                     Sortable="true">
-                    <CellTemplate>@context.SessionStartUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm")</CellTemplate>
+                    <CellTemplate>@context.SessionStartUtc.FormatSaudi("yyyy-MM-dd HH:mm")</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="ActiveBookingRow" Key="seat"
                                     Header="@L["Admin.Bookings.Col.Seat"]"
@@ -73,7 +73,7 @@
                 <SimfDataGridColumn TItem="ActiveBookingRow" Key="bookedAt"
                                     Header="@L["Admin.Bookings.Col.BookedAt"]"
                                     Sortable="true">
-                    <CellTemplate>@context.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm")</CellTemplate>
+                    <CellTemplate>@context.CreatedAt.FormatSaudi("yyyy-MM-dd HH:mm")</CellTemplate>
                 </SimfDataGridColumn>
             </Columns>
             <EmptyTemplate>

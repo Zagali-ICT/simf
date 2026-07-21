@@ -175,7 +175,7 @@ public partial class SpeakerAvailabilityPage
         if (DateTime.TryParse(value, CultureInfo.InvariantCulture,
                 DateTimeStyles.None, out var dt))
         {
-            result = new DateTimeOffset(DateTime.SpecifyKind(dt, DateTimeKind.Utc));
+            result = SaudiTime.FromSaudiWallClock(dt);
             return true;
         }
         result = default;
