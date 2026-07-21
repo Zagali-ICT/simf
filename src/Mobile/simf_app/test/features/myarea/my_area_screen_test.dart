@@ -184,7 +184,9 @@ void main() {
       expect(find.text('Raed Al-Salem'), findsOneWidget);
       expect(find.text('#ABC123'), findsOneWidget);
       expect(find.textContaining('VIP'), findsOneWidget);
-      expect(find.text('Share my profile'), findsOneWidget);
+      // #21 — Share my profile (مشاركة ملفي) was dropped as a duplicate;
+      // only Share contact (مشاركة جهة اتصال) remains.
+      expect(find.text('Share my profile'), findsNothing);
       expect(find.text('Share contact'), findsOneWidget);
       // D-653 — الإحصائيات restored display-only (not tappable): the مقابلات
       // count (3, dashboard) + the جلسات محفوظة count (2, favourited set).
@@ -206,7 +208,10 @@ void main() {
       expect(find.text('Sign out'), findsNothing);
     });
 
-    testWidgets('the share-my-profile tile opens the contact-QR screen',
+    // #21 — the "Share contact" tile used to fire a native .vcf share
+    // sheet; the owner re-pointed it to the same in-app QR screen the
+    // share-my-profile tile opens, so it now routes to shareMyContact.
+    testWidgets('the share-contact tile opens the contact-QR screen (#21)',
         (tester) async {
       await _pump(
         tester,
@@ -214,7 +219,7 @@ void main() {
         repo: _FakeMyAreaRepository(dashboard: _dashboard()),
       );
 
-      await tester.tap(find.text('Share my profile'));
+      await tester.tap(find.text('Share contact'));
       await tester.pumpAndSettle();
       expect(find.text('SHARE-MY-CONTACT'), findsOneWidget);
     });
@@ -287,17 +292,18 @@ void main() {
       expect(session, lessThan(meeting));
     });
 
-    testWidgets('share pills: مشاركة جهة اتصال (right) · مشاركة ملفي (left) '
-        '(758:1305)', (tester) async {
+    testWidgets('only مشاركة جهة اتصال remains, مشاركة ملفي dropped (#21)',
+        (tester) async {
       await _pump(
         tester,
         controller: _AuthController(RegistrationStatus.approved),
         repo: _FakeMyAreaRepository(dashboard: _dashboard()),
         locale: const Locale('ar'),
       );
-      final contact = tester.getCenter(find.text('مشاركة جهة اتصال')).dx;
-      final profile = tester.getCenter(find.text('مشاركة ملفي')).dx;
-      expect(contact, greaterThan(profile));
+      // #21 — the duplicate مشاركة ملفي pill was removed; only the single
+      // مشاركة جهة اتصال pill remains as the share tile.
+      expect(find.text('مشاركة جهة اتصال'), findsOneWidget);
+      expect(find.text('مشاركة ملفي'), findsNothing);
     });
 
     testWidgets('pending account shows the limited card, no dashboard call',

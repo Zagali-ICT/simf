@@ -11,7 +11,6 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../../app/widgets/simf_page_shell.dart';
-import '../../core/sharing/content_sharer.dart';
 import '../account/data/profile_repository.dart'
     show avatarBustProvider, referenceNumberProvider;
 import 'data/myarea_models.dart';
@@ -28,13 +27,13 @@ import 'widgets/my_area_rows.dart';
 /// Behaviour contract unchanged from the mockup build: an **Approved** user
 /// loads `GET /app/account/dashboard`; a signed-in pending/rejected user gets
 /// the limited cached-identity view without calling it (Approved-only, would
-/// 403 — Page_014 L-5); the contact share fetches the raw `.vcf` export for
-/// the native share sheet.
+/// 403 — Page_014 L-5).
 ///
 /// Frame mapping (213:963): identity card (avatar 64 + name + tier·enrolled
 /// line + gold #qrId + the bordered مشاركة contact button), the two share
-/// actions (**مشاركة ملفي** → the share-my-contact QR screen / **مشاركة جهة
-/// اتصال** → .vcf share), the **الإحصائيات** section (two stat tiles —
+/// actions (**مشاركة ملفي** and **مشاركة جهة اتصال**) which both open the
+/// in-app share-my-contact QR screen (#21 — مشاركة جهة اتصال was a native
+/// `.vcf` share sheet), the **الإحصائيات** section (two stat tiles —
 /// جلسات محفوظة = booked sessions; the second keeps the real مقابلات مؤكدة
 /// count since الأرشيف has no API counter, D-396), جدولي اليوم rows, then the
 /// المزيد rows (بطاقتي الذكية، اعدادات الحساب). The language toggle, the
@@ -50,7 +49,6 @@ class MyAreaScreen extends ConsumerStatefulWidget {
 class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
   bool _loading = true;
   bool _error = false;
-  bool _sharingContact = false;
   MyAreaDashboard? _dashboard;
 
   @override
@@ -96,27 +94,6 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
         _dashboard = null;
         _loading = false;
       });
-    }
-  }
-
-  Future<void> _shareContact() async {
-    if (_sharingContact) return;
-    setState(() => _sharingContact = true);
-    try {
-      final vcf = await ref.read(myAreaRepositoryProvider).getContactCardVcf();
-      await shareTextContent(
-        content: vcf,
-        filename: 'simf.vcf',
-        mimeType: 'text/vcard',
-        sharePositionOrigin: shareOriginFromContext(context),
-      );
-    } on Object catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppL10n.of(context).shareFailed)),
-      );
-    } finally {
-      if (mounted) setState(() => _sharingContact = false);
     }
   }
 
@@ -224,7 +201,6 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
       child: MyAreaDashboardBody(
         dashboard: dashboard,
         referenceNumber: referenceNumber,
-        onShareContact: () => unawaited(_shareContact()),
         onChangeAvatar: () => unawaited(_changeAvatar()),
       ),
     );
