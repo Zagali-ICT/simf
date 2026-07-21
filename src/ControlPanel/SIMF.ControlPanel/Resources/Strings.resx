@@ -962,6 +962,9 @@
   <data name="Admin.SiteSettings.Section.Registration.Hint" xml:space="preserve"><value>Shown to a visitor when registration completes.</value></data>
   <data name="Admin.SiteSettings.Field.RegMessageAr" xml:space="preserve"><value>Welcome message (Arabic)</value></data>
   <data name="Admin.SiteSettings.Field.RegMessageEn" xml:space="preserve"><value>Welcome message (English)</value></data>
+  <data name="Admin.SiteSettings.Section.PartnerDirectory" xml:space="preserve"><value>Meet People Like You</value></data>
+  <data name="Admin.SiteSettings.Section.PartnerDirectory.Hint" xml:space="preserve"><value>Controls the partner directory in the mobile app (sponsors, speakers, exhibition companies, and opted-in members).</value></data>
+  <data name="Admin.SiteSettings.Field.PartnerDirectoryEnabled" xml:space="preserve"><value>Show the "Meet People Like You" directory in the app</value></data>
   <data name="Admin.SiteSettings.Save" xml:space="preserve"><value>Save</value></data>
   <data name="Admin.SiteSettings.Saving" xml:space="preserve"><value>Saving…</value></data>
   <data name="Admin.SiteSettings.Saved" xml:space="preserve"><value>Site settings saved.</value></data>

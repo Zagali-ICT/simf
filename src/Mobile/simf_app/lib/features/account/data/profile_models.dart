@@ -189,6 +189,7 @@ class UserProfileResponse {
     this.qrId,
     this.isVip = false,
     this.showInMeetLikeYou = true,
+    this.isForVisitor = true,
     this.regionId,
     this.jobTitleArabic,
   });
@@ -241,6 +242,12 @@ class UserProfileResponse {
   /// recommendations. Defaults to true.
   final bool showInMeetLikeYou;
 
+  /// Build #13 — true when the assigned profile type is an audience tier
+  /// (VVIP / VIP / Gold / Normal); false for the "Other" (partner / staff) tiers.
+  /// Drives whether the "show me in Meet People Like You" opt-in is offered (only
+  /// to "Other"-type users). Append-only wire field; defaults true.
+  final bool isForVisitor;
+
   /// D-547 — the attendee's Region id. Read back so an interests-only edit can
   /// re-send it (the full-profile upsert sets RegionId unconditionally).
   final String? regionId;
@@ -289,6 +296,7 @@ class UserProfileResponse {
       qrId: json['qrId'] as String?,
       isVip: json['isVip'] as bool? ?? false,
       showInMeetLikeYou: json['showInMeetLikeYou'] as bool? ?? true,
+      isForVisitor: json['isForVisitor'] as bool? ?? true,
       regionId: json['regionId'] as String?,
       jobTitleArabic: json['jobTitleArabic'] as String?,
     );
@@ -307,7 +315,11 @@ class UserProfileResponse {
   /// the server's admin-wins precedence keeps the existing type untouched (it
   /// only writes a user pick when the stored ProfileTypeId is null). So an
   /// interests edit never changes — nor is blocked by — the account's tier.
-  UpsertUserProfileRequest toUpsertRequest() => UpsertUserProfileRequest(
+  /// [showInMeetLikeYou] overrides the loaded opt-in value — Build #13 lets an
+  /// "Other"-type user toggle it on the My-interests edit screen; null keeps the
+  /// current value.
+  UpsertUserProfileRequest toUpsertRequest({bool? showInMeetLikeYou}) =>
+      UpsertUserProfileRequest(
         interestIds: interestIds,
         arabicName: arabicName,
         englishName: englishName,
@@ -325,7 +337,7 @@ class UserProfileResponse {
         internationalMobile: internationalMobile,
         plateNumber: plateNumber,
         organisationId: organisationId,
-        showInMeetLikeYou: showInMeetLikeYou,
+        showInMeetLikeYou: showInMeetLikeYou ?? this.showInMeetLikeYou,
         regionId: regionId,
         jobTitleArabic: jobTitleArabic,
       );

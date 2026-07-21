@@ -1592,29 +1592,13 @@ class AppL10n {
   String get dayToday => _t('اليوم', 'Today');
   String get dayYesterday => _t('أمس', 'Yesterday');
 
-  // Meet people (Page 035 · قابل أشخاص مثلك) — KSA frame 1072:13409.
+  // Meet people (Page 035 · قابل أشخاص مثلك) — Build #13 partner directory
+  // (Sponsors + Speakers + Booth companies + opted-in members).
   String get meetPeopleTitle => _t('قابل أشخاص مثلك', 'Meet people');
-  String get meetPeopleEmpty => _t('لا توجد تطابقات بعد', 'No matches yet');
+  String get meetPeopleEmpty =>
+      _t('لا يوجد أشخاص لعرضهم بعد', 'No one to show yet');
   String get meetPeopleError =>
-      _t('تعذّر تحميل التطابقات الخاصة بك.', 'Could not load your matches.');
-  String meetPeopleSharedInterests(int count) =>
-      _t('$count اهتمامات مشتركة', '$count shared interests');
-  // The smart-suggestions header card (frame 1082:15269).
-  String get meetPeopleSmartTitle => _t(
-        'مقترحات ذكية بناءً على اهتماماتك',
-        'Smart suggestions based on your interests',
-      );
-  String get meetPeopleSmartSubtitle => _t(
-        'تم تحديد هذه المقترحات وفقاً للجلسات التي حضرتها والمحاور التي اخترتها.',
-        'These suggestions are chosen from the sessions you attended and the '
-            'themes you picked.',
-      );
-  String get meetPeopleMatchLabel => _t('تطابق', 'match');
-  // The three topic chips in the header (frame 1082:15268).
-  String get meetPeopleFilterAi =>
-      _t('الذكاء الاصطناعي', 'Artificial intelligence');
-  String get meetPeopleFilterSupply => _t('سلاسل الإمداد', 'Supply chains');
-  String get meetPeopleFilterSeabed => _t('أمن قاع البحار', 'Seabed security');
+      _t('تعذّر تحميل الدليل.', 'Could not load the directory.');
 
   // D-736 — "Show me in Meet People Like You" visibility toggle (sign-up / settings).
   String get showInMeetLikeYou => _t(

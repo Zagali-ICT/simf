@@ -12,15 +12,24 @@
 > the Organization Profile catalogue, not here. The API `PUT /admin/site-settings`
 > still *accepts* social fields (the `SiteSettingsAdminTests` round-trip), but the
 > page no longer sends them (unset → null → left unchanged).
+>
+> **Build #13 (2026-07-22):** a "Meet People Like You" section was added - one
+> `SimfCheckbox` bound to `PartnerDirectoryEnabled` (default true). It rides the
+> same `GET`/`PUT /admin/site-settings` path (no new permission - `Configuration.*`)
+> and the same public `GET /app/site-settings` payload
+> (`SiteSettingsResponse.partnerDirectoryEnabled`). When off, the app partner
+> directory `GET /app/networking/partner-directory` returns empty and the app hides
+> the Home "Meet People" tile. The app-side behaviour is catalogued in
+> [`mobile-meet-people.md`](mobile-meet-people.md).
 
 | | |
 |--|--|
 | **Page** | CP `/admin/site-settings` (`SiteSettingsPage.razor`) |
 | **Route** | `/admin/site-settings` (nav item `Module.SiteSettings`) |
-| **APIs** | `GET /api/v1/admin/site-settings` (prefill, `Configuration.View`); `PUT /api/v1/admin/site-settings` — `AdminUpdateSiteSettingsRequest`, page sends only the registration message (`Configuration.Edit`). Public read: `GET /api/v1/app/site-settings`. |
+| **APIs** | `GET /api/v1/admin/site-settings` (prefill, `Configuration.View`); `PUT /api/v1/admin/site-settings` - `AdminUpdateSiteSettingsRequest`, page sends the registration message + the Build #13 `PartnerDirectoryEnabled` toggle (`Configuration.Edit`). Public read: `GET /api/v1/app/site-settings`; the toggle also gates `GET /api/v1/app/networking/partner-directory`. |
 | **Surface** | Control Panel (Blazor) — Administrator |
 | **Auth setup** | A signed-in admin with `Configuration.Edit`. Use `Get-Totp` for 2FA — never a literal secret. |
-| **Last reviewed** | 2026-07-07 |
+| **Last reviewed** | 2026-07-22 (Build #13 - partner-directory toggle) |
 
 ## Coverage matrix
 
@@ -32,6 +41,9 @@
 | E2E-CPSET-004 | Auth gate — a non-admin (or an admin without `Configuration.View`/`Edit`) is forbidden / the nav item is hidden | auth | P0 | authored ✓ (`SiteSettingsAdminTests` admin-gate + `CpNavigationPermissionTests`) |
 | E2E-CPSET-005 | A save wire failure (5xx / network) → error toast, the form keeps the entered values | resilience | P1 | spec |
 | E2E-CPSET-006 | RTL render (Arabic) — labels + button mirror correctly | i18n | P1 | spec |
+| E2E-CPSET-007 | Build #13 - the page loads with the "Meet People Like You" checkbox prefilled from the current `PartnerDirectoryEnabled` state | happy | P0 | authored ✓ (`SiteSettingsAdminTests` GET) |
+| E2E-CPSET-008 | Build #13 - un-tick the toggle → Save → success toast; `GET /app/site-settings` returns `partnerDirectoryEnabled=false` and `GET /app/networking/partner-directory` returns an empty list | happy | P0 | authored ✓ (`SiteSettingsAdminTests` PUT→GET + `PartnerDirectoryServiceTests` off→empty) |
+| E2E-CPSET-009 | Build #13 - re-tick the toggle → Save → `partnerDirectoryEnabled=true`; the partner directory is populated again | happy | P1 | authored ✓ (`PartnerDirectoryServiceTests` on→entries) |
 
 ## Scenarios
 
@@ -78,6 +90,39 @@ Scenario: Only admins with the Configuration permission reach the page
   And the CP nav hides the Site Settings item for accounts without Configuration.View
 ```
 
+### E2E-CPSET-007 - Meet-People toggle prefilled from current state (Build #13)
+
+```gherkin
+Scenario: The partner-directory checkbox reflects the stored flag
+  Given the OrganizationProfile has PartnerDirectoryEnabled = true
+  When an admin with Configuration.Edit opens /admin/site-settings
+  Then the "Show the 'Meet People Like You' directory in the app" checkbox is ticked
+  # GET /admin/site-settings returns SiteSettingsResponse.partnerDirectoryEnabled = true
+```
+
+### E2E-CPSET-008 - Turn the directory off (Build #13)
+
+```gherkin
+Scenario: An admin disables the Meet People Like You directory
+  Given an admin with Configuration.Edit opens /admin/site-settings
+  And the "Meet People Like You" checkbox is ticked
+  When they un-tick it and tap Save
+  Then PUT /admin/site-settings persists PartnerDirectoryEnabled = false and shows the success toast "تم حفظ إعدادات الموقع."
+  And GET /api/v1/app/site-settings returns partnerDirectoryEnabled = false
+  And GET /api/v1/app/networking/partner-directory returns an empty entries list
+  And the app hides the Home "Meet People" tile (driven off the same public flag)
+```
+
+### E2E-CPSET-009 - Turn the directory back on (Build #13)
+
+```gherkin
+Scenario: An admin re-enables the directory
+  Given PartnerDirectoryEnabled is currently false
+  When an admin re-ticks the "Meet People Like You" checkbox on /admin/site-settings and taps Save
+  Then GET /api/v1/app/site-settings returns partnerDirectoryEnabled = true
+  And GET /api/v1/app/networking/partner-directory returns the deduped union of sponsors, speakers, booth companies and opted-in members again
+```
+
 ---
 
-_Last reviewed:_ `2026-07-07` by `SIMF Team` — D-650 (social links removed; page is now message-only). Original: D-464.
+_Last reviewed:_ `2026-07-22` by `SIMF Team` - Build #13 (Meet People Like You partner-directory toggle; E2E-CPSET-007..009). Prior: D-650 (social links removed; message-only). Original: D-464.

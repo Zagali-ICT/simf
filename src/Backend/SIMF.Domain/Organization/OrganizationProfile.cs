@@ -135,6 +135,15 @@ public sealed class OrganizationProfile : BaseAuditEntity
     /// <c>registration.successMessage.ar</c>).</summary>
     public string? RegistrationSuccessMessageArabic { get; set; }
 
+    // --- Feature switches ---
+
+    /// <summary>Build #13 — whether the app's "Meet People Like You" partner
+    /// directory (<c>GET /app/networking/partner-directory</c>) is enabled.
+    /// Admin-toggled on the CP Site-Settings page. Defaults to true (fail-open):
+    /// when false the directory endpoint returns empty and the app hides the
+    /// feature entry point.</summary>
+    public bool PartnerDirectoryEnabled { get; set; } = true;
+
     // --- Variable lists (child tables) ---
 
     /// <summary>The ordered "about" items (title + text), e.g. mission / vision.</summary>

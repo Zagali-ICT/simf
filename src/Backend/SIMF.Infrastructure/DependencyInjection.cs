@@ -536,6 +536,9 @@ public static class DependencyInjection
         // B6 — D-224: visitor-to-visitor networking connections (app-facing).
         services.AddScoped<SIMF.Application.Networking.Abstractions.INetworkingService,
             SIMF.Infrastructure.Networking.NetworkingService>();
+        // Build #13 — "Meet People Like You" partner directory (app-facing).
+        services.AddScoped<SIMF.Application.Networking.Abstractions.IPartnerDirectoryService,
+            SIMF.Infrastructure.Networking.PartnerDirectoryService>();
         // SIMF-FDS-014 — D-284 (Track 2): visitor-to-visitor contact sharing.
         services.AddScoped<SIMF.Application.Contacts.Abstractions.IVisitorShareService,
             SIMF.Infrastructure.Contacts.VisitorShareService>();

@@ -50,6 +50,9 @@ internal sealed class SiteSettingsService(SimfAppDbContext db) : ISiteSettingsSe
                 LinkedIn: SocialUrl(p?.LinkedInUrl),
                 YouTube: SocialUrl(p?.YouTubeUrl),
                 TikTok: SocialUrl(p?.TikTokUrl),
-                Snapchat: SocialUrl(p?.SnapchatUrl)));
+                Snapchat: SocialUrl(p?.SnapchatUrl)),
+            // Build #13 — the "Meet People Like You" partner-directory switch;
+            // fail-open (true) when the singleton row is somehow absent.
+            PartnerDirectoryEnabled: p?.PartnerDirectoryEnabled ?? true);
     }
 }

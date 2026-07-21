@@ -8,6 +8,7 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/account/data/profile_models.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_app/features/account/sign_up_interests_screen.dart';
+import 'package:simf_app/core/widgets/simf_checkbox_tile.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// A fake profile repository for the interests screen (Page 007‑01) — returns
@@ -465,6 +466,46 @@ void main() {
       expect(find.text('اهتماماتي'), findsOneWidget); // interestsTitle (ar)
       final dir = Directionality.of(tester.element(find.text('اهتماماتي')));
       expect(dir, TextDirection.rtl);
+    });
+
+    // Build #13 — the "show me in Meet People Like You" opt-in is offered only
+    // to "Other"-type members (ProfileType.IsForVisitor == false).
+    testWidgets('a visitor-type profile does NOT see the Meet-People opt-in',
+        (tester) async {
+      // The default fake is a VIP (audience → isForVisitor true).
+      await _pumpEdit(tester, _FakeProfileRepository());
+      expect(find.byType(SimfCheckboxTile), findsNothing);
+    });
+
+    testWidgets('an "Other"-type profile sees the opt-in and can turn it off',
+        (tester) async {
+      final repo = _FakeProfileRepository()
+        ..myProfile = const UserProfileResponse(
+          interestIds: <String>['i2'],
+          profileTypeId: 'other-type-id',
+          arabicName: 'شركة الشحن',
+          englishName: 'Shipping Co',
+          nationalityCode: 'SA',
+          placeOfBirth: 'Riyadh',
+          isSaudi: true,
+          gender: AppGender.male,
+          hasIdImage: true,
+          hasAvatar: true,
+          isForVisitor: false,
+          showInMeetLikeYou: true,
+        );
+      await _pumpEdit(tester, repo);
+
+      expect(find.byType(SimfCheckboxTile), findsOneWidget);
+
+      // Turn the opt-in OFF, then save — the new value must reach the upsert.
+      await tester.tap(find.byType(SimfCheckboxTile));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      await tester.pumpAndSettle();
+
+      expect(repo.upserted, isNotNull);
+      expect(repo.upserted!.showInMeetLikeYou, isFalse);
     });
   });
 }

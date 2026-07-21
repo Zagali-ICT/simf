@@ -9,20 +9,20 @@ import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/app_theme.dart';
-import 'package:simf_app/features/meet/data/meet_models.dart';
+import 'package:simf_app/features/meet/data/partner_directory_models.dart';
 import 'package:simf_app/features/meet/meet_people_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import 'golden_fonts.dart';
 
-/// Golden render of the Meet-people screen against Figma frame **1072:13409**
+/// Golden render of the Meet-people screen — Build #13 partner directory
 /// (قابل أشخاص مثلك). Regenerate:
 ///   flutter test --update-goldens test/golden/meet_people_golden_test.dart
 ///
-/// Frame parity expected: the smart-suggestions header card (title + subtitle +
-/// three topic chips) over per-match cards — the gold initials avatar at the
-/// inline-start, the name / profile-type / match-reason column, and the gold
-/// "% تطابق" block at the inline-end. RTL.
+/// Parity expected: one [SimfIdentityCell] row per entry — the logo/initials
+/// tile at the inline-start, the name (with an optional country flag) over the
+/// bilingual subtitle, and a gold caret at the inline-end for the tappable kinds
+/// (speaker / sponsor / booth); the opted-in person row has no caret. RTL.
 
 const _testConfig = SimfDataConfig(
   baseUrl: 'http://test.local/api/v1',
@@ -30,40 +30,43 @@ const _testConfig = SimfDataConfig(
   deviceType: SimfDeviceType.android,
 );
 
-const _matches = <Recommendation>[
-  Recommendation(
-    userProfileId: 'u1',
-    englishName: 'Sarah Hill',
-    arabicName: 'سارة الهاشمي',
-    jobTitle: 'Naval Architect',
-    profileTypeName: 'Captain',
-    profileTypeNameArabic: 'قبطان',
-    sharedInterests: <MatchedInterest>[
-      MatchedInterest(id: 'i1', name: 'Shipbuilding', nameArabic: 'بناء السفن'),
-    ],
-    sharedInterestCount: 3,
-    score: 0.82,
+const _entries = <PartnerDirectoryEntry>[
+  PartnerDirectoryEntry(
+    kind: 'speaker',
+    id: 's1',
+    name: 'Sarah Hill',
+    nameArabic: 'سارة الهاشمي',
+    subtitle: 'Rear Admiral',
+    subtitleArabic: 'لواء بحري',
   ),
-  Recommendation(
-    userProfileId: 'u2',
-    englishName: 'Omar Nasser',
-    arabicName: 'عمر ناصر',
-    jobTitle: 'Port Engineer',
-    profileTypeName: 'Exhibitor',
-    profileTypeNameArabic: 'عارض',
-    sharedInterests: <MatchedInterest>[
-      MatchedInterest(id: 'i2', name: 'Logistics', nameArabic: 'الخدمات اللوجستية'),
-    ],
-    sharedInterestCount: 2,
-    score: 0.67,
+  PartnerDirectoryEntry(
+    kind: 'sponsor',
+    id: 'p1',
+    name: 'Acme Marine',
+    nameArabic: 'أكمي مارين',
+    subtitle: 'Strategic partner',
+    subtitleArabic: 'الشريك الاستراتيجي',
+  ),
+  PartnerDirectoryEntry(
+    kind: 'booth',
+    id: 'b1',
+    name: 'Blue Shipping Co',
+    nameArabic: 'شركة الشحن الأزرق',
+    subtitleArabic: 'الخدمات اللوجستية',
+  ),
+  PartnerDirectoryEntry(
+    kind: 'person',
+    id: 'u1',
+    name: 'Omar Nasser',
+    nameArabic: 'عمر ناصر',
+    subtitleArabic: 'مهندس موانئ',
   ),
 ];
 
 void main() {
   setUpAll(loadGoldenFonts);
 
-  testWidgets('Meet people @375x900 — Figma 1072:13409 (Arabic)',
-      (tester) async {
+  testWidgets('Meet people directory @375x900 (Arabic)', (tester) async {
     tester.view.physicalSize = const Size(375, 900);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -95,7 +98,7 @@ void main() {
       ProviderScope(
         overrides: <Override>[
           simfDataConfigProvider.overrideWithValue(_testConfig),
-          meetRecommendationsProvider.overrideWith((ref) async => _matches),
+          partnerDirectoryProvider.overrideWith((ref) async => _entries),
         ],
         child: MaterialApp.router(
           debugShowCheckedModeBanner: false,
@@ -116,7 +119,7 @@ void main() {
 
     await expectLater(
       find.byType(MeetPeopleScreen),
-      matchesGoldenFile('goldens/meet_people_1072-13409.png'),
+      matchesGoldenFile('goldens/meet_people_directory.png'),
     );
   });
 }

@@ -5,6 +5,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../core/organization_profile/organization_profile.dart';
+import '../../core/site_settings/site_settings.dart';
 import '../account/data/profile_repository.dart';
 import '../banners/data/banner_models.dart';
 import '../banners/data/banners_repository.dart';
@@ -99,6 +100,12 @@ class HomeScreen extends ConsumerWidget {
           orElse: () => const <PublicBannerItem>[],
         );
     final orgProfile = ref.watch(orgProfileProvider);
+    // Build #13 — the "Meet People Like You" tile is hidden when the CP switch is
+    // off. Best-effort (default true / fail-open) while site-settings loads.
+    final partnerDirectoryEnabled = ref.watch(siteSettingsProvider).maybeWhen(
+          data: (s) => s.partnerDirectoryEnabled,
+          orElse: () => true,
+        );
     return VisitorHome(
       l10n: l10n,
       name: _greetingName(
@@ -111,6 +118,7 @@ class HomeScreen extends ConsumerWidget {
       baseUrl: baseUrl,
       isExhibitor: role == AppRole.exhibitor,
       isVip: isVip,
+      partnerDirectoryEnabled: partnerDirectoryEnabled,
     );
   }
 }

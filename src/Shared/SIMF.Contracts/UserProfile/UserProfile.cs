@@ -97,6 +97,14 @@ public sealed class UserProfileResponse
     /// recommendations. Defaults to true; the user can opt out via the sign-up
     /// form or profile settings.</summary>
     public bool ShowInMeetLikeYou { get; set; }
+
+    /// <summary>Build #13 — true when the assigned <c>ProfileType.IsForVisitor</c>
+    /// is true (audience tiers: VVIP / VIP / Gold / Normal); false for the
+    /// "Other" (partner / staff) tiers. The app uses it to show the
+    /// "show me in Meet People Like You" opt-in only to "Other"-type users.
+    /// Append-only field; defaults to true so an older payload treats the
+    /// account as audience (opt-in hidden).</summary>
+    public bool IsForVisitor { get; set; } = true;
 }
 
 /// <summary>The body posted to <c>POST /api/v1/app/account/user-profile</c>

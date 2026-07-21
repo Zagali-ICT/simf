@@ -16,13 +16,13 @@
 | Metric | Count |
 |--------|-------|
 | Total items | 43 |
-| Open (☐) | 38 |
+| Open (☐) | 37 |
 | In progress (◐) | 0 |
-| Done (✅) | 5 |
+| Done (✅) | 6 |
 | Deferred (⏸) | 0 |
 
 _Note: #16 is a single tracked item covering the whole per-feature Flutter clean-code sweep (≈39 features). Items #35-#40 are detailed in the plan (`~/.claude/plans/...`); #40 detailed here in Topic 9; #42-#43 (home greeting + hero) detailed in Topic 10._
-_Done (5), shipped to PR: #10 `feat/bulk-badge-email`, #32 `feat/cp-team-roles`, #20+#17 `feat/app-sessions-batch`, #35 `feat/session-summary-video` (#28 in progress)._
+_Done (6), shipped to PR: #10 `feat/bulk-badge-email`, #32 `feat/cp-team-roles`, #20+#17 `feat/app-sessions-batch`, #35 `feat/session-summary-video`, #13 `feat/meet-people-partner-directory` (#28 in progress)._
 
 ---
 
@@ -39,7 +39,7 @@ _Done (5), shipped to PR: #10 `feat/bulk-badge-email`, #32 `feat/cp-team-roles`,
 - [ ] **#17** — Session join + seat mechanism: two cases (register-to-attend / join+pick-seat), **no approval**, auto-cancel 3 min before start, session **check-in + check-out**.
 - [ ] **#18** — "الانضمام إلى الجلسة" (Join session) button does nothing.
 - [ ] **#21** — "مشاركة جهة اتصال" (Share contact) button does nothing.
-- [ ] **#13** — "Meet people like you": show **only Sponsors + Speakers** (hide Normal/VIP), Other-type opt-in checkbox, viewer→gallery / speaker→details, show exact data. _(CP-managed)_
+- [x] **#13** — "Meet people like you": show **only Sponsors + Speakers** (hide Normal/VIP), Other-type opt-in checkbox, viewer→gallery / speaker→details, show exact data. _(CP-managed)_ **Done** on `feat/meet-people-partner-directory` (as-built directory = Sponsors + Speakers + Booth companies + opted-in Other-type members; Normal/VIP excluded; speaker→profile, sponsor→detail, booth→exhibitor; person row non-tappable; CP toggle `PartnerDirectoryEnabled`).
 
 **P2 — updates / UX**
 - [ ] **#11** — Session surfaces scope + phase-gated buttons (Home = future + type=Session only; Summary = past; My Sessions; Agenda = all).
@@ -296,7 +296,7 @@ confirm**, not a broken model.
 
 | # | Type | Priority | Area | Title | Status |
 |---|------|----------|------|-------|--------|
-| 13 | ✨ Update | P1 | App / CP | "Meet People Like You" — filter (Sponsors + Speakers only), Other-type opt-in, result nav | ☐ Open |
+| 13 | ✨ Update | P1 | App / CP | "Meet People Like You" — filter (Sponsors + Speakers only), Other-type opt-in, result nav | ✅ Done |
 | 14 | ✨ Update | P2 | App | User can edit interests from their profile (not only at sign-up) | ☐ Open |
 | 15 | ❓ Design | P3 | Domain | Speakers / Companies / Booths / others get a profile for extra data | ☐ Open |
 
@@ -311,7 +311,8 @@ confirm**, not a broken model.
   5. **Result navigation:** tapping a matched **viewer** → open **gallery**; tapping a **speaker** → navigate to **speaker details**.
 - **Open questions:** (a) "viewer → gallery" — which gallery (the person's media, or the general gallery)? (b) exact CP control — a toggle list of which kinds/categories are discoverable? (c) which speaker fields to show under the `Speaker.AllowsDataSharing` consent gate?
 - **Related:** prior "meet-people HELD" note; migration D-736.
-- **Status:** ☐ Open
+- **As-built (Build #13):** the `meet` screen (`/meet`) was reworked from the AI "% match" recommender into a curated + opt-in **partner directory**. New endpoint `GET /api/v1/app/networking/partner-directory` (`RequireApprovedAccount`, no permission code) returns the deduped union of curated **Speakers** (tap → speaker profile), **Sponsors** (tap → sponsor detail), **Booth companies** (tap → exhibitor detail) and opted-in **"Other"-type** accounts (kind=person, non-tappable). Normal/VIP visitors never appear; a person who is also a curated speaker appears once, as the speaker. CP control = `OrganizationProfile.PartnerDirectoryEnabled` (additive migration `AddPartnerDirectoryEnabled`, default true) surfaced on the CP Site-Settings page (`/admin/site-settings`, `Configuration.Edit` - no new permission) and on the public `GET /app/site-settings` payload; off → empty directory + hidden Home tile. The Other-type opt-in is a checkbox on the My-interests edit screen (shown only when `!isForVisitor`) toggling `UserProfile.ShowInMeetLikeYou`. Docs updated: `docs/pages/cp/site-settings.md` (new), `docs/pages/mobile/meet-people/README.md`, `docs/tests/e2e/{cp-site-settings,mobile-meet-people}.md`, `PAGE-INDEX.md`.
+- **Status:** ✅ Done - shipped on `feat/meet-people-partner-directory`. Owner open questions (a/b/c above) resolved in the as-built: (a) tapping resolves per kind, and a person shows their own data with no separate gallery screen; (b) CP control is a single on/off toggle on Site-Settings (not a per-kind list); (c) speakers surface the same public summary the `/app/speakers` list uses.
 
 ### [#14] Edit interests from profile
 - **Type:** ✨ Update · **Priority:** P2 · **Area:** App
