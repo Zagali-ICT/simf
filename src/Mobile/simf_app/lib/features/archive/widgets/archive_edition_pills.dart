@@ -55,7 +55,7 @@ class _EditionPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: active ? SimfTokens.accent : Colors.transparent,
+      color: active ? SimfTokens.accent : SimfTokens.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(SimfTokens.radius),
         side: active
@@ -69,18 +69,16 @@ class _EditionPill extends StatelessWidget {
         onTap: active ? null : onTap,
         borderRadius: BorderRadius.circular(SimfTokens.radius),
         child: Container(
-          height: 48,
+          height: SimfTokens.controlHeight,
           alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space2),
           child: Text(
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: active ? Colors.white : SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textSm,
-              fontWeight: FontWeight.w600,
-            ),
+            style: active
+                ? SimfTokens.labelWhiteSemiboldSm
+                : SimfTokens.labelBeigeSemiboldSm,
           ),
         ),
       ),

@@ -13,7 +13,7 @@ class ArchiveSessionTitleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 48,
+      height: SimfTokens.controlHeight,
       width: double.infinity,
       alignment: Alignment.centerRight,
       padding: const EdgeInsets.all(SimfTokens.space2),
@@ -30,11 +30,7 @@ class ArchiveSessionTitleCard extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         textAlign: TextAlign.start,
-        style: const TextStyle(
-          color: SimfTokens.beigeBorder,
-          fontWeight: FontWeight.w600,
-          fontSize: SimfTokens.textMd,
-        ),
+        style: SimfTokens.labelBeigeSemibold,
       ),
     );
   }

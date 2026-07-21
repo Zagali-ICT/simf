@@ -3,17 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
-import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import 'data/archive_models.dart';
-import 'widgets/archive_bullet.dart';
-import 'widgets/archive_edition_pills.dart';
-import 'widgets/archive_gallery_row.dart';
-import 'widgets/archive_notice_banner.dart';
-import 'widgets/archive_past_speakers_row.dart';
-import 'widgets/archive_place_time_row.dart';
-import 'widgets/archive_session_title_card.dart';
-import 'widgets/archive_stat_row.dart';
+import 'widgets/archive_body.dart';
 
 /// `GET /app/archive` → the past editions (public, D-273).
 final archiveEditionsProvider =
@@ -124,7 +116,7 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
           );
           return SimfPullToRefresh(
             onRefresh: _refresh,
-            child: _ArchiveBody(
+            child: ArchiveBody(
               l10n: l10n,
               editions: items,
               selected: selected,
@@ -133,120 +125,6 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
           );
         },
       ),
-    );
-  }
-}
-
-/// The scrolling content: notice banner → edition selector → selected-edition
-/// detail (title / summary / place·time / stats).
-class _ArchiveBody extends ConsumerWidget {
-  const _ArchiveBody({
-    required this.l10n,
-    required this.editions,
-    required this.selected,
-    required this.onSelect,
-  });
-
-  final AppL10n l10n;
-  final List<ArchiveEdition> editions;
-  final ArchiveEdition selected;
-  final ValueChanged<String> onSelect;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isArabic = l10n.isArabic;
-    final detail = ref.watch(archiveEditionDetailProvider(selected.id));
-    final ArchiveEditionDetail? d = detail.asData?.value;
-
-    final summary =
-        d?.localizedSummary(isArabic) ?? selected.localizedSummary(isArabic);
-    final location = d?.localizedLocation(isArabic);
-    final dateLabel = d?.localizedDateLabel(isArabic);
-
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(
-        SimfTokens.space4,
-        SimfTokens.space2,
-        SimfTokens.space4,
-        SimfTokens.space6,
-      ),
-      children: <Widget>[
-        // Notice banner — beige hairline, centred beige text (node 925:3222).
-        ArchiveNoticeBanner(text: l10n.archiveNotice),
-        const SizedBox(height: SimfTokens.space5),
-
-        // "اختار ملتقى" + the edition-selector pill row (node 927:3352).
-        SimfSectionHeader(title: l10n.archivePickEdition),
-        const SizedBox(height: SimfTokens.space4),
-        ArchiveEditionPills(
-          editions: editions,
-          selectedId: selected.id,
-          onSelect: onSelect,
-        ),
-        const SizedBox(height: SimfTokens.space6),
-
-        // عنوان الملتقى — bulleted gold title (node 926:3277).
-        SimfSectionHeader(title: l10n.archiveTitleLabel),
-        const SizedBox(height: SimfTokens.space2),
-        ArchiveBullet(
-          text: selected.localizedTitle(isArabic),
-          color: SimfTokens.accent,
-          bold: true,
-        ),
-
-        // نبذة — summary (node 926:3276).
-        if (summary != null) ...<Widget>[
-          const SizedBox(height: SimfTokens.space6),
-          SimfSectionHeader(title: l10n.archiveSummaryLabel),
-          const SizedBox(height: SimfTokens.space2),
-          ArchiveBullet(text: summary, color: SimfTokens.beigeBorder),
-        ],
-
-        // المكان / الزمن — two-column row (node 926:3284). Each shows only when
-        // the lazily-loaded detail provides it.
-        if (location != null || dateLabel != null) ...<Widget>[
-          const SizedBox(height: SimfTokens.space6),
-          ArchivePlaceTimeRow(
-            l10n: l10n,
-            location: location,
-            dateLabel: dateLabel,
-          ),
-        ],
-
-        // Stat tiles — المتحدثون / الحضور / الفعاليات (node 926:3285).
-        const SizedBox(height: SimfTokens.space6),
-        ArchiveStatRow(l10n: l10n, edition: selected),
-
-        // D-432 — the rich lists, each shown only when the lazily-loaded detail
-        // provides it (node 24-01): الصور والفيديو · عناوين الجلسات ·
-        // المتحدثون السابقون.
-        if (d != null && d.gallery.isNotEmpty) ...<Widget>[
-          const SizedBox(height: SimfTokens.space6),
-          SimfSectionHeader(title: l10n.archiveGalleryLabel),
-          const SizedBox(height: SimfTokens.space3),
-          ArchiveGalleryRow(items: d.gallery, isArabic: isArabic),
-        ],
-        if (d != null && d.sessionTitles.isNotEmpty) ...<Widget>[
-          const SizedBox(height: SimfTokens.space6),
-          SimfSectionHeader(title: l10n.archiveSessionsLabel),
-          const SizedBox(height: SimfTokens.space4),
-          for (var i = 0; i < d.sessionTitles.length; i++) ...<Widget>[
-            if (i > 0) const SizedBox(height: SimfTokens.space2),
-            ArchiveSessionTitleCard(text: d.sessionTitles[i].localized(isArabic)),
-          ],
-        ],
-        if (d != null && d.pastSpeakers.isNotEmpty) ...<Widget>[
-          const SizedBox(height: SimfTokens.space6),
-          SimfSectionHeader(title: l10n.archivePastSpeakersLabel),
-          const SizedBox(height: SimfTokens.space3),
-          ArchivePastSpeakersRow(
-            speakers: d.pastSpeakers,
-            isArabic: isArabic,
-            l10n: l10n,
-          ),
-        ],
-      ],
     );
   }
 }

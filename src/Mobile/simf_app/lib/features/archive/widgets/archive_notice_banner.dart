@@ -12,7 +12,7 @@ class ArchiveNoticeBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 48,
+      height: SimfTokens.controlHeight,
       alignment: Alignment.center,
       padding: const EdgeInsets.all(SimfTokens.space2),
       decoration: BoxDecoration(
@@ -26,11 +26,7 @@ class ArchiveNoticeBanner extends StatelessWidget {
       child: Text(
         text,
         textAlign: TextAlign.center,
-        style: const TextStyle(
-          color: SimfTokens.beigeBorder,
-          fontSize: SimfTokens.textMd,
-          fontWeight: FontWeight.w500,
-        ),
+        style: SimfTokens.labelBeigeMedium,
       ),
     );
   }

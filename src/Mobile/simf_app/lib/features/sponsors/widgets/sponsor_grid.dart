@@ -33,7 +33,7 @@ class SponsorGrid extends StatelessWidget {
         crossAxisCount: 3,
         mainAxisSpacing: SimfTokens.space4,
         crossAxisSpacing: SimfTokens.space2,
-        mainAxisExtent: 72,
+        mainAxisExtent: SimfTokens.sponsorRowHeight,
       ),
       itemCount: sponsors.length,
       itemBuilder: (context, i) => _SponsorGridTile(
@@ -102,11 +102,7 @@ class _SponsorGridTile extends StatelessWidget {
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: SimfTokens.textSm,
-                ),
+                style: SimfTokens.labelWhiteSemiboldSm,
               ),
             ],
           ),

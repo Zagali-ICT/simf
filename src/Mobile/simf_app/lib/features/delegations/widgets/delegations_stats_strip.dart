@@ -61,11 +61,11 @@ class DelegationsStatsStrip extends StatelessWidget {
     final count =
         flagItems.length < _spots.length ? flagItems.length : _spots.length;
     return Container(
-      height: 100,
+      height: SimfTokens.statsStripHeight,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: SimfTokens.navy,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(SimfTokens.radius14),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -187,21 +187,8 @@ class _Stat extends StatelessWidget {
       crossAxisAlignment:
           alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
       children: <Widget>[
-        Text(
-          '$value',
-          style: const TextStyle(
-            fontSize: SimfTokens.textXl,
-            fontWeight: FontWeight.w700,
-            color: SimfTokens.accent,
-          ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: SimfTokens.textSm,
-            color: SimfTokens.beigeBorder,
-          ),
-        ),
+        Text('$value', style: SimfTokens.labelGoldBoldXl),
+        Text(label, style: SimfTokens.labelBeigeSm),
       ],
     );
   }

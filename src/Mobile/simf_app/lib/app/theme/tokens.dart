@@ -115,6 +115,10 @@ class SimfTokens {
   static const Color hcDarkInk = Color(0xFFFFFFFF);
   static const Color hcDarkField = Color(0xFF1A1A1A);
 
+  // Framework colour alias — the design token for a fully-transparent fill so
+  // widgets never reference `Colors.transparent` directly (#16 sweep).
+  static const Color transparent = Color(0x00000000);
+
   // Spacing scale.
   static const double space1 = 4;
   static const double space2 = 8;
@@ -132,6 +136,7 @@ class SimfTokens {
   static const double radiusLg = 16; // W2 cards / nav bar top corners
   static const double radius14 = 14; // exhibitor/sponsor link rows (Figma 1439:11904/11917)
   static const double radiusXl = 20;
+  static const double radius10 = 10; // delegations head-of-delegation box (Figma 1426:10838)
 
   /// Ready-made [BorderRadius] for the default 4px corner (fields, cards,
   /// pills). Use this instead of re-wrapping [radiusSmall] in every widget.
@@ -142,6 +147,22 @@ class SimfTokens {
   // 0.5px emphasised hairline).
   static const double hairline = 0.2;
   static const double hairlineBold = 0.5;
+
+  // Component metrics (#16 sweep). Fixed component box heights + ratios lifted
+  // out of the widgets so no screen carries a raw layout number. Each value is
+  // the exact Figma measurement it replaces (behaviour-preserving).
+  static const double controlHeight = 48; // pill / banner / row height (booth code-pill+hall-box, gallery coverage-tab, archive edition-pill/notice/session-title)
+  static const double contactRowHeight = 44; // booth contact-box row (Figma 922:2810)
+  static const double codePillWidth = 109; // booth code pill A-12 (Figma 922:2796) — fixed content width
+  static const double sponsorRowHeight = 72; // sponsor hero/premium row + grid tile (Figma 922:2824)
+  static const double galleryScrimHeight = 40; // archive gallery-tile bottom scrim (Figma 926:3299)
+  static const double mediaTileAspectRatio = 164 / 104; // gallery media tile (Figma 949:4043)
+  static const double scrimOpacityStrong = 0.8; // archive gallery-tile scrim gradient bottom stop
+  static const double bulletTopNudge = 7; // archive bullet disc top-align nudge (Figma 925:3258)
+  static const double headBoxPad = 9; // delegations head-of-delegation box padding (Figma 1426:10838)
+  static const double gap2 = 2; // off-grid 2px micro-gap (below the space-4 scale)
+  static const double gap6 = 6; // off-grid 6px micro-gap (below the space-4 scale)
+  static const double statsStripHeight = 100; // delegations decorative stats-strip map (Figma 1426:10781)
 
   // Type scale (Material text styles override these for actual rendering;
   // tokens here are for places that need a raw size).
@@ -175,5 +196,168 @@ class SimfTokens {
     color: Colors.white,
     fontSize: textMd,
     fontWeight: FontWeight.w500,
+  );
+
+  // #16 sweep — shared named text styles (tone / weight / size) for the browse
+  // features. Each bundles only colour/size/weight/height; the font family
+  // stays on the theme.
+  static const TextStyle labelGoldMedium = TextStyle(
+    color: accent,
+    fontSize: textMd,
+    fontWeight: FontWeight.w500,
+  );
+  static const TextStyle labelGoldSemibold = TextStyle(
+    color: accent,
+    fontSize: textMd,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle labelGoldSemiboldSm = TextStyle(
+    color: accent,
+    fontSize: textSm,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle labelBeigeSemibold = TextStyle(
+    color: beigeBorder,
+    fontSize: textMd,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle labelBeigeBold = TextStyle(
+    color: beigeBorder,
+    fontSize: textMd,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle bodyBeigeSm = TextStyle(
+    color: beigeBorder,
+    fontSize: textSm,
+    fontWeight: FontWeight.w400,
+    height: 1.3,
+  );
+  static const TextStyle bodyBeigeXs = TextStyle(
+    color: beigeBorder,
+    fontSize: textXs,
+  );
+  static const TextStyle labelWhiteSemibold = TextStyle(
+    color: surface,
+    fontSize: textMd,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle labelWhiteSemiboldSm = TextStyle(
+    color: surface,
+    fontSize: textSm,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle bodyWhiteXs = TextStyle(
+    color: surface,
+    fontSize: textXs,
+  );
+  static const TextStyle labelNavyBoldSm = TextStyle(
+    color: navy,
+    fontSize: textSm,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle labelNavySemibold = TextStyle(
+    color: navy,
+    fontSize: textMd,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle labelWhiteBold = TextStyle(
+    color: surface,
+    fontSize: textMd,
+    fontWeight: FontWeight.w700,
+    height: 1.3,
+  );
+  static const TextStyle bodySm = TextStyle(
+    fontSize: textSm,
+    height: 1.4,
+  );
+  static const TextStyle labelWhiteSemiboldXs = TextStyle(
+    color: surface,
+    fontSize: textXs,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle labelNavySemiboldSm = TextStyle(
+    color: navy,
+    fontSize: textSm,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle labelBeigeSemiboldSm = TextStyle(
+    color: beigeBorder,
+    fontSize: textSm,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle labelGoldBoldLg = TextStyle(
+    color: accent,
+    fontSize: textLg,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle labelGoldBoldTitle = TextStyle(
+    color: accent,
+    fontSize: textTitle,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle labelGoldSemiboldTitle = TextStyle(
+    color: accent,
+    fontSize: textTitle,
+    fontWeight: FontWeight.w600,
+    height: 1,
+  );
+  static const TextStyle labelWhiteSemiboldSmTall = TextStyle(
+    color: surface,
+    fontSize: textSm,
+    fontWeight: FontWeight.w600,
+    height: 1.2,
+  );
+  static const TextStyle labelBeigeSm = TextStyle(
+    color: beigeBorder,
+    fontSize: textSm,
+  );
+  // Colourless bullet bases — the [ArchiveBullet] text colour is a runtime param,
+  // so these carry only size/weight/height and take `.copyWith(color:)`.
+  static const TextStyle bulletTitle = TextStyle(
+    fontSize: textLg,
+    fontWeight: FontWeight.w600,
+    height: 1.4,
+  );
+  static const TextStyle bulletBody = TextStyle(
+    fontSize: textMd,
+    fontWeight: FontWeight.w500,
+    height: 1.4,
+  );
+  // Delegations (Figma 1426:10838/10781) — some sizes are off the type scale
+  // (15/11/10/9); preserved exactly here, the single source of truth.
+  static const TextStyle labelWhiteBold15 = TextStyle(
+    color: surface,
+    fontSize: 15,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle labelWhiteBoldSm = TextStyle(
+    color: surface,
+    fontSize: textSm,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle labelBeigeMediumSm = TextStyle(
+    color: beigeBorder,
+    fontSize: textSm,
+    fontWeight: FontWeight.w500,
+  );
+  static const TextStyle labelBeigeMedium10 = TextStyle(
+    color: beigeBorder,
+    fontSize: 10,
+    fontWeight: FontWeight.w500,
+  );
+  static const TextStyle labelBeigeSemibold11 = TextStyle(
+    color: beigeBorder,
+    fontSize: 11,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle labelGoldBold9 = TextStyle(
+    color: accent,
+    fontSize: 9,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle labelGoldBoldXl = TextStyle(
+    color: accent,
+    fontSize: textXl,
+    fontWeight: FontWeight.w700,
   );
 }

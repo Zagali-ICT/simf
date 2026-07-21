@@ -162,11 +162,7 @@ class _ActiveFilterChip extends StatelessWidget {
                   country,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: SimfTokens.textSm,
-                    fontWeight: FontWeight.w600,
-                    color: SimfTokens.accent,
-                  ),
+                  style: SimfTokens.labelGoldSemiboldSm,
                 ),
               ),
               const SizedBox(width: SimfTokens.space1),

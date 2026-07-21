@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
-import '../../../core/utils/http_url.dart';
 import '../data/archive_models.dart';
+import 'archive_past_speaker_card.dart';
 
 /// The past-speakers row (frame node 927:3347): up to four 72-wide tiles spread
 /// across the width — each a 72×72 rounded-rect photo over a centred name. With
@@ -35,81 +35,13 @@ class ArchivePastSpeakersRow extends StatelessWidget {
       runSpacing: SimfTokens.space3,
       children: <Widget>[
         for (final s in shown)
-          _PastSpeakerCard(
+          ArchivePastSpeakerCard(
             name: s.localized(isArabic),
             photoUrl: s.photoRelativePath,
           ),
         if (overflow > 0)
           _PastSpeakerOverflow(count: overflow, label: l10n.archiveOthersLabel),
       ],
-    );
-  }
-}
-
-/// One past-speaker tile (frame node 927:3346): a 72×72 rounded-rect (r8) photo
-/// — the real avatar when [photoUrl] is an absolute http(s) url, else the gold
-/// initials — over a centred white 12px SemiBold name.
-class _PastSpeakerCard extends StatelessWidget {
-  const _PastSpeakerCard({required this.name, this.photoUrl});
-
-  final String name;
-  final String? photoUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    final initials = _speakerInitials(name);
-    final fallback = Center(
-      child: Text(
-        initials,
-        style: const TextStyle(
-          color: SimfTokens.accent,
-          fontWeight: FontWeight.w700,
-          fontSize: SimfTokens.textLg,
-        ),
-      ),
-    );
-    final showPhoto = isHttpUrl(photoUrl);
-    return SizedBox(
-      width: 72,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Container(
-            width: 72,
-            height: 72,
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              color: SimfTokens.navyDeep,
-              borderRadius: BorderRadius.circular(SimfTokens.radius),
-            ),
-            child: showPhoto
-                ? Image.network(
-                    photoUrl!,
-                    width: 72,
-                    height: 72,
-                    fit: BoxFit.cover,
-                    gaplessPlayback: true,
-                    loadingBuilder: (context, child, progress) =>
-                        progress == null ? child : fallback,
-                    errorBuilder: (context, error, stackTrace) => fallback,
-                  )
-                : fallback,
-          ),
-          const SizedBox(height: SimfTokens.space2),
-          Text(
-            name,
-            maxLines: 2,
-            textAlign: TextAlign.center,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: SimfTokens.textSm,
-              fontWeight: FontWeight.w600,
-              height: 1.2,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -144,11 +76,7 @@ class _PastSpeakerOverflow extends StatelessWidget {
             child: Text(
               '+$count',
               textDirection: TextDirection.ltr,
-              style: const TextStyle(
-                color: SimfTokens.accent,
-                fontSize: SimfTokens.textTitle,
-                fontWeight: FontWeight.w700,
-              ),
+              style: SimfTokens.labelGoldBoldTitle,
             ),
           ),
           const SizedBox(height: SimfTokens.space2),
@@ -157,29 +85,10 @@ class _PastSpeakerOverflow extends StatelessWidget {
             maxLines: 1,
             textAlign: TextAlign.center,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: SimfTokens.textSm,
-              fontWeight: FontWeight.w600,
-            ),
+            style: SimfTokens.labelWhiteSemiboldSm,
           ),
         ],
       ),
     );
   }
-}
-
-/// The first letters of up to two words of a speaker name, for the avatar
-/// fallback.
-String _speakerInitials(String name) {
-  final trimmed = name.trim();
-  if (trimmed.isEmpty) {
-    return '—';
-  }
-  return trimmed
-      .split(RegExp(r'\s+'))
-      .where((w) => w.isNotEmpty)
-      .take(2)
-      .map((w) => w.characters.first)
-      .join();
 }

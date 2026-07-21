@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_page_shell.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
@@ -38,14 +39,15 @@ class SponsorCard extends StatelessWidget {
     // Frame 922:2824 — the sponsor name is white on BOTH the gold hero card
     // (925:2979 `text-white`) and the navy premium card; only the secondary
     // line changes colour with the card.
-    const Color nameColor = Colors.white;
     final Color subColor = hero ? SimfTokens.navyDeep : SimfTokens.beigeBorder;
     return SimfCard(
       onTap: onTap,
       color: hero ? SimfTokens.accent : SimfTokens.navyDeep,
       borderColor: SimfTokens.beigeBorder,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 72),
+        constraints: const BoxConstraints(
+          minHeight: SimfTokens.sponsorRowHeight,
+        ),
         child: Padding(
           padding: const EdgeInsets.all(SimfTokens.space2),
           child: Row(
@@ -82,12 +84,7 @@ class SponsorCard extends StatelessWidget {
                       textAlign: TextAlign.start,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: nameColor,
-                        fontWeight: FontWeight.w700,
-                        fontSize: SimfTokens.textMd,
-                        height: 1.3,
-                      ),
+                      style: SimfTokens.labelWhiteBold,
                     ),
                     if (secondary != null &&
                         secondary!.trim().isNotEmpty) ...<Widget>[
@@ -101,11 +98,7 @@ class SponsorCard extends StatelessWidget {
                         child: Text(
                           secondary!,
                           textAlign: TextAlign.start,
-                          style: TextStyle(
-                            color: subColor,
-                            fontSize: SimfTokens.textSm,
-                            height: 1.4,
-                          ),
+                          style: SimfTokens.bodySm.copyWith(color: subColor),
                         ),
                       ),
                     ],
@@ -116,7 +109,7 @@ class SponsorCard extends StatelessWidget {
               SimfSvgIcon(
                 // Frame 925:2990 — the iconamoon thin chevron (navy on the gold
                 // hero card, gold on a premium card), NOT a filled triangle.
-                'assets/icons/ic_back.svg',
+                AppAssets.icBack,
                 size: 20,
                 color: hero ? SimfTokens.navy : SimfTokens.accent,
               ),

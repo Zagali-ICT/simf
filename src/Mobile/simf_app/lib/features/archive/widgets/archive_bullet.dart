@@ -24,7 +24,7 @@ class ArchiveBullet extends StatelessWidget {
       children: <Widget>[
         Padding(
           padding: const EdgeInsetsDirectional.only(
-            top: 7,
+            top: SimfTokens.bulletTopNudge,
             end: SimfTokens.space2,
           ),
           child: Container(
@@ -36,12 +36,8 @@ class ArchiveBullet extends StatelessWidget {
         Expanded(
           child: Text(
             text,
-            style: TextStyle(
-              color: color,
-              fontSize: bold ? SimfTokens.textLg : SimfTokens.textMd,
-              fontWeight: bold ? FontWeight.w600 : FontWeight.w500,
-              height: 1.4,
-            ),
+            style: (bold ? SimfTokens.bulletTitle : SimfTokens.bulletBody)
+                .copyWith(color: color),
           ),
         ),
       ],
