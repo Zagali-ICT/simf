@@ -159,6 +159,10 @@ class SimfTokens {
   static const double mediaTileAspectRatio = 164 / 104; // gallery media tile (Figma 949:4043)
   static const double scrimOpacityStrong = 0.8; // archive gallery-tile scrim gradient bottom stop
   static const double bulletTopNudge = 7; // archive bullet disc top-align nudge (Figma 925:3258)
+  static const double headBoxPad = 9; // delegations head-of-delegation box padding (Figma 1426:10838)
+  static const double gap2 = 2; // off-grid 2px micro-gap (below the space-4 scale)
+  static const double gap6 = 6; // off-grid 6px micro-gap (below the space-4 scale)
+  static const double statsStripHeight = 100; // delegations decorative stats-strip map (Figma 1426:10781)
 
   // Type scale (Material text styles override these for actual rendering;
   // tokens here are for places that need a raw size).
@@ -318,5 +322,42 @@ class SimfTokens {
     fontSize: textMd,
     fontWeight: FontWeight.w500,
     height: 1.4,
+  );
+  // Delegations (Figma 1426:10838/10781) — some sizes are off the type scale
+  // (15/11/10/9); preserved exactly here, the single source of truth.
+  static const TextStyle labelWhiteBold15 = TextStyle(
+    color: surface,
+    fontSize: 15,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle labelWhiteBoldSm = TextStyle(
+    color: surface,
+    fontSize: textSm,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle labelBeigeMediumSm = TextStyle(
+    color: beigeBorder,
+    fontSize: textSm,
+    fontWeight: FontWeight.w500,
+  );
+  static const TextStyle labelBeigeMedium10 = TextStyle(
+    color: beigeBorder,
+    fontSize: 10,
+    fontWeight: FontWeight.w500,
+  );
+  static const TextStyle labelBeigeSemibold11 = TextStyle(
+    color: beigeBorder,
+    fontSize: 11,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle labelGoldBold9 = TextStyle(
+    color: accent,
+    fontSize: 9,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle labelGoldBoldXl = TextStyle(
+    color: accent,
+    fontSize: textXl,
+    fontWeight: FontWeight.w700,
   );
 }

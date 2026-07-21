@@ -62,11 +62,7 @@ class DelegationCard extends StatelessWidget {
                 title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
+                style: SimfTokens.labelWhiteBold15,
               ),
               if (showSubtitle) ...<Widget>[
                 const SizedBox(height: SimfTokens.space2), // 8 (Figma 1426:10840)
@@ -74,11 +70,7 @@ class DelegationCard extends StatelessWidget {
                   subtitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: SimfTokens.textSm,
-                    fontWeight: FontWeight.w500,
-                    color: SimfTokens.beigeBorder,
-                  ),
+                  style: SimfTokens.labelBeigeMediumSm,
                 ),
               ],
             ],
@@ -93,9 +85,9 @@ class DelegationCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: SimfTokens.goldFill6,
         border: Border.all(color: SimfTokens.goldBorder15),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(SimfTokens.radius10),
       ),
-      padding: const EdgeInsets.all(9),
+      padding: const EdgeInsets.all(SimfTokens.headBoxPad),
       child: Row(
         children: <Widget>[
           Expanded(
@@ -112,24 +104,16 @@ class DelegationCard extends StatelessWidget {
                         item.localizedHead(isArabic) ?? '',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: SimfTokens.accent,
-                        ),
+                        style: SimfTokens.labelGoldSemiboldSm,
                       ),
                       if (item.localizedHeadTitle(isArabic)?.trim().isNotEmpty ??
                           false) ...<Widget>[
-                        const SizedBox(height: 2),
+                        const SizedBox(height: SimfTokens.gap2),
                         Text(
                           item.localizedHeadTitle(isArabic)!.trim(),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                            color: SimfTokens.beigeBorder,
-                          ),
+                          style: SimfTokens.labelBeigeMedium10,
                         ),
                       ],
                     ],
@@ -204,11 +188,7 @@ class _HeadAvatar extends StatelessWidget {
       ),
       child: Text(
         initial,
-        style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-          color: Colors.white,
-        ),
+        style: SimfTokens.labelWhiteBoldSm,
       ),
     );
   }
@@ -232,11 +212,7 @@ class _HeadChip extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          fontSize: 9,
-          fontWeight: FontWeight.w700,
-          color: SimfTokens.accent,
-        ),
+        style: SimfTokens.labelGoldBold9,
       ),
     );
   }
@@ -265,17 +241,13 @@ class _MemberChip extends StatelessWidget {
             size: 12,
             color: SimfTokens.beigeBorder,
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: SimfTokens.gap6),
           Flexible(
             child: Text(
               text,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: SimfTokens.beigeBorder,
-              ),
+              style: SimfTokens.labelBeigeSemibold11,
             ),
           ),
         ],
@@ -303,11 +275,7 @@ class _DateGroup extends StatelessWidget {
             text,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w500,
-              color: SimfTokens.beigeBorder,
-            ),
+            style: SimfTokens.labelBeigeMedium10,
           ),
         ),
       ],
