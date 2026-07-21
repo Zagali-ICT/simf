@@ -28,7 +28,7 @@
 | **Surface** | Mobile (Flutter) + App API |
 | **Figma** | `1078:14952` |
 | **Auth setup** | **None** — the summary read is `AllowAnonymous` (a guest sees the summary). |
-| **Last reviewed** | 2026-07-20 (Item #35 — two video players; E2E-MOB034-007..010) |
+| **Last reviewed** | 2026-07-22 (Item #27 — watch keep-alive on the shared player; E2E-MOB034-011) |
 
 ## Coverage matrix
 
@@ -44,6 +44,7 @@
 | E2E-MOB034-008 | **Item #35 — only the full recording:** `recordingUrl` set, `summaryVideoUrl` null → only the "التسجيل الكامل" player shows; the summary-video label is absent | happy | P1 | authored ✓ (on-device) |
 | E2E-MOB034-009 | **Item #35 — only the summary video:** `summaryVideoUrl` set, `recordingUrl` null → only the "ملخص الجلسة (فيديو)" player shows; the recording label is absent | happy | P1 | authored ✓ (on-device) |
 | E2E-MOB034-010 | **Item #35 — neither video:** both null → NO video players; both labels absent and the layout matches the pre-item-35 render (golden unchanged) | edge | P0 | authored ✓ (screen `hides both video players when the summary has no video urls`) |
+| E2E-MOB034-011 | **Item #27 — watch keep-alive:** a signed-in viewer watching a LONG recording / summary video here (no touch) is kept active by the shared player's 60s keep-alive, so the SessionGuard silently refreshes and NO idle "stay signed in / sign out" timeout overlay appears; still bounded by the 24h cap; leaving cancels it | happy | P1 | authored ✓ (unit `live_video_player_test.dart` — mount marks + 60s tick re-marks + dispose cancels; multi-minute watch is device) |
 
 ## Scenarios
 
@@ -97,12 +98,36 @@ Scenario: Item #35 - no videos leaves the layout unchanged
   Given the published summary carries neither recordingUrl nor summaryVideoUrl
   Then no video player and neither video label are shown
   And the tabs sit directly under the session info card as before
+
+Scenario: Item #27 - watching a long recording does not time the session out
+  Given a signed-in viewer opens a summary whose recordingUrl is a long video
+  And they watch it for several minutes without touching the screen
+  Then the shared LiveVideoPlayer pings a 60-second keep-alive on the session clock
+  And the SessionGuard treats them as active and silently refreshes the token
+  And no idle "stay signed in / sign out" timeout overlay appears
+  But the server's 24-hour absolute session cap (D-443) still applies
+  When the viewer leaves the summary screen
+  Then the keep-alive timer is cancelled (dispose)
 ```
+
+> **Item #27 (2026-07-22) — keep-alive moved into the shared player.** The
+> summary recording / summary-video players use the live feature's
+> `LiveVideoPlayer` **directly** (via `SummaryVideoCard`), bypassing
+> `LivePlayerSurface`. The watch keep-alive that suppresses the idle
+> `SessionGuard` timeout now lives INSIDE `LiveVideoPlayer` itself (was on
+> `LivePlayerSurface`), so a long video on THIS surface is kept alive too. See
+> the live catalogue E2E-MOB025-024 for the guard behaviour.
 
 **Evidence:** screen tests (5, incl. the no-video-players case) + model tests
 (bilingual fallback, line splitting, and the two video-url decodes). The
 video-present renders (007-009) are driven on-device against the live player.
+The Item #27 keep-alive (011) is unit-tested on the shared player
+(`live_video_player_test.dart` — mount marks, 60s tick re-marks, dispose
+cancels); the true multi-minute watch is a device check.
 
 ---
 
-_Last reviewed:_ `2026-07-20` by `SIMF Team`.
+_Last reviewed:_ `2026-07-22` by `SIMF Team` — **Item #27: the watch keep-alive
+moved INTO the shared `LiveVideoPlayer`, so a long recording / summary video on
+this surface no longer trips the idle session-timeout overlay (E2E-MOB034-011).**
+_Prior:_ `2026-07-20` — Item #35 (two video players; E2E-MOB034-007..010).

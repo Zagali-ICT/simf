@@ -65,7 +65,7 @@
 | E2E-MOB025-021 | Login-gate (D-577): a signed-out guest sees the in-screen "need login" prompt + Sign-in button (never the player), and no session is fetched | auth | P0 | authored ✓ (screen `a signed-out guest sees the need-login gate, not the stream (owner, D-577)`) |
 | E2E-MOB025-022 | **Rate-on-live-close (item 8 / D-712, FDS-007 §C.4 GAP-B):** an approved attendee leaving the live screen for a session that carried a live feed opens `/rate?code=Session&targetId={id}` **once**; re-entering + leaving does not re-prompt (shared dedup with the D-690 after-view prompt). A non-live session and a signed-out guest are never prompted | happy | P0 | authored ✓ (screen `D-712 — leaving a watched live session opens the rate screen once` + `… non-live session … does not prompt` + `… guest is never prompted`) |
 | E2E-MOB025-023 | **Fullscreen (owner item 14 / D-721):** the YouTube player shows a fullscreen button; entering fullscreen rotates to landscape, exiting restores portrait — a deliberate, owner-approved exception to the app-wide portrait lock. YouTube only; the HLS/MP4 fallback keeps its play-only control | happy | P1 | authored ✓ (unit `live_video_player_test.dart` orientation helper; real fullscreen playback is manual/device) |
-| E2E-MOB025-024 | **Watch keep-alive (owner item 13 / D-726):** a signed-in viewer watching the stream (no touch) is kept active by a 60s keep-alive so the SessionGuard silently refreshes instead of showing the idle countdown; still bounded by the 24h cap; leaving cancels it | happy | P1 | authored ✓ (guard behaviour in `session_guard_test.dart`; multi-minute watch is device) |
+| E2E-MOB025-024 | **Watch keep-alive (owner item 13 / D-726; moved into the shared player by item 27):** a signed-in viewer watching the stream (no touch) is kept active by a 60s keep-alive so the SessionGuard silently refreshes instead of showing the idle countdown; still bounded by the 24h cap; leaving cancels it | happy | P1 | authored ✓ (guard behaviour in `session_guard_test.dart`; keep-alive on the shared player in `live_video_player_test.dart`; multi-minute watch is device) |
 
 ## Scenarios
 
@@ -377,15 +377,24 @@ Scenario: Leaving the live screen stops the keep-alive
     resumes the normal SessionGuard idle-timeout behaviour
 ```
 
-> The keep-alive lives on the live screen (`live_broadcast_screen.dart`,
-> signed-in only) and pings the shared `SessionActivity` clock; the
-> app-wide `SessionGuard` (D-726) reads it. It suppresses only the idle
-> countdown — it can never extend a session past the server 24h cap.
+> The keep-alive pings the shared `SessionActivity` clock; the app-wide
+> `SessionGuard` (D-726) reads it. It suppresses only the idle countdown — it can
+> never extend a session past the server 24h cap.
+>
+> **Item #27 (2026-07-22) — heartbeat moved into the shared player.** The
+> keep-alive now lives INSIDE the shared `LiveVideoPlayer`
+> (`widgets/live_video_player.dart`), NOT on `LivePlayerSurface` / the live
+> screen. This covers every surface that shows the player — the live screen here
+> AND the AI-summary recording / summary-video cards, which use `LiveVideoPlayer`
+> directly (bypassing `LivePlayerSurface`), so a long recording there no longer
+> trips the idle timeout either (see `mobile-ai-summary.md` E2E-MOB034-011). On
+> init the player marks the session active and a 60s `Timer.periodic` re-marks;
+> `dispose` cancels it.
 
 **Evidence:** `session_guard_test.dart` (the guard's active→silent-refresh vs
-idle→countdown behaviour). The keep-alive is verified by the live suite staying
-green (21/21) + the full app suite (831/831); the true multi-minute watch
-behaviour is a device check.
+idle→countdown behaviour) + `live_video_player_test.dart` (the shared player's
+mount-marks / 60s-tick-re-marks / dispose-cancels keep-alive). The true
+multi-minute watch behaviour is a device check.
 
 ---
 
