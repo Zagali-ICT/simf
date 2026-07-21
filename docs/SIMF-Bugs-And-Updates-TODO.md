@@ -16,8 +16,8 @@
 | Metric | Count |
 |--------|-------|
 | Total items | 41 |
-| Open (☐) | 30 |
-| In progress (◐) | 0 |
+| Open (☐) | 29 |
+| In progress (◐) | 1 |
 | Done (✅) | 11 |
 | Deferred (⏸) | 0 |
 
@@ -43,7 +43,7 @@ _Done (9), verified merged to main (2026-07-21): #6 `feat/booking-noshow-release
 
 **P2 — updates / UX**
 - [ ] **#11** — Session surfaces scope + phase-gated buttons (Home = future + type=Session only; Summary = past; My Sessions; Agenda = all).
-- [ ] **#14** — Edit interests from profile (not only at sign-up).
+- [ ] **#14** — Edit interests from profile (not only at sign-up). _(◐ built on `feat/app-edit-interests` 2026-07-21: shared interests page in edit mode + regionId/jobTitleArabic round-trip fix; adversarial review found + fixed a profileTypeId-echo blocker (400 for VIP/staff edits); 22 unit/widget + 36 matrix/myarea green, goldens re-locked, docs authored; pending device test + commit/merge)_
 - [ ] **#16** — Clean-code sweep across ~39 features (numbers→tokens, `app_style`, `SimfTokens.surface`, hoist assets, extract private widgets).
 - [x] **#19** — Login-as-**Guest** label (not "Visitor") + fix wrong Arabic translation. _(2026-07-21: owner-confirmed fixed; app_l10n.dart:490 `الدخول كضيف` / "Enter as guest" on main)_
 - [x] **#20** — Agenda viewable **without login** + rename program-icon label to "الأجندة". _(merged: feat/app-sessions-batch)_
