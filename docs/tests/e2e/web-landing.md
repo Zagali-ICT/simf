@@ -212,6 +212,27 @@ Scenario: A section that throws on edge data does not strand other skeletons
 - **Convert to Playwright** when the runner is adopted: each Gherkin scenario
   maps to a `.feature` step; the steps are already runner-agnostic.
 
+## Dynamic forum date (D-755)
+
+```gherkin
+Scenario: E2E-WLD-008 — the forum date reflects OrganizationProfile config, not a literal
+  Given the OrganizationProfile has EventStartDate 2026-11-23 and EventEndDate 2026-11-25
+  When a visitor opens the landing page in English
+  Then the sub-nav date and the speakers band read "23-25 November 2026"
+  And in Arabic they read "23-25 نوفمبر 2026"
+  When an admin edits the OrganizationProfile event dates to 2027-03-01..2027-03-03
+  And the 5-minute ForumDates cache expires
+  Then every public date label re-renders from the new config (no code change)
+
+Scenario: E2E-WLD-009 — the marketing hero never blanks when the profile API is unreachable
+  Given the OrganizationProfile API returns an error or has no event dates
+  When a visitor opens the landing page
+  Then the date label falls back to the resx string and the page still renders
+  And the miss is not cached, so the next request retries
+```
+
+Evidence: `EventDateRangeTests` (formatter, 8/8); `ForumDatesTests` (cache + fallback, pending the pre-existing `SIMF.Web.Tests` compile fix). Config source: `OrganizationProfile.EventStartDate/EventEndDate`; formatter `SIMF.Common.EventDateRange`.
+
 ---
 
-_Last reviewed:_ 2026-06-07 by Claude (D-336 — About/stats/Pillars-header/Goals CMS-driven; was D-294 landing dynamic content).
+_Last reviewed:_ 2026-07-21 by Claude (D-755 — dynamic forum dates from OrganizationProfile config; was D-336 CMS-driven landing).

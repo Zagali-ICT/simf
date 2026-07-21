@@ -15,12 +15,19 @@ public partial class Speakers
 {
     [Inject] private SimfPublicClient Api { get; set; } = default!;
 
+    [Inject] private ForumDates Dates { get; set; } = default!;
+
     private IReadOnlyList<PublicSpeakerSummary> SpeakerList { get; set; } = [];
+
+    // D-755 — the CP-editable forum date range for the page-title band; null falls
+    // back to the Speakers.Band.Date resx label.
+    private string? BandDate { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         var result = await Api.GetSpeakersAsync();
         SpeakerList = result?.Items ?? [];
+        BandDate = await Dates.GetRangeDisplayAsync(Rtl);
     }
 
     // Arabic-preferred in RTL, English-preferred in LTR; fall back to the other.

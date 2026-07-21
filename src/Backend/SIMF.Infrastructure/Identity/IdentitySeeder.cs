@@ -43,6 +43,19 @@ public sealed class IdentitySeeder(
     // ISO-3166 numeric code, seeded via CountryConfiguration.HasData).
     private const int SaudiArabiaCountryId = 682;
 
+    // D-755 — the real edition dates and the single source of truth for the seeded
+    // OrganizationProfile forum dates. The row is CP-editable after seeding; the
+    // seeder only writes these when the row still carries the stale placeholder
+    // (2026-01-01..04-30) the D-495 migration InsertData baked in, so a CP edit is
+    // never overwritten on restart. The hero MetaDate label is derived from the
+    // same dates via the shared EventDateRange formatter (no hardcoded literal).
+    private static readonly DateOnly EventStartDate = new(2026, 11, 23);
+    private static readonly DateOnly EventEndDate = new(2026, 11, 25);
+    private static readonly DateTimeOffset StalePlaceholderStart =
+        new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset StalePlaceholderEnd =
+        new(2026, 4, 30, 0, 0, 0, TimeSpan.Zero);
+
     private const string AdministratorRole = AppRoles.Administrator;
 
     // ASP.NET Core Identity's internal token coordinates for the TOTP
@@ -254,6 +267,12 @@ public sealed class IdentitySeeder(
         // السيبراني" screen reads. Idempotent: only writes the row when
         // missing, matches the existing EnsureProfileTypeAsync pattern.
         await EnsureCybersecurityPolicyContentAsync(admin.Id, cancellationToken);
+
+        // D-755 — set the CP-editable forum dates to the real edition
+        // (2026-11-23..25), correcting the stale placeholder the D-495 migration
+        // seeded, so every surface that reads OrganizationProfile renders the real
+        // range. Idempotent + admin-edit-safe (only rewrites the known placeholder).
+        await EnsureOrganizationProfileEventDatesAsync(cancellationToken);
 
         // Seed the public marketing landing's hero CMS text blocks so the
         // Website's /content/site proxy can serve them and the CP CMS editor
@@ -750,6 +769,41 @@ public sealed class IdentitySeeder(
             seed.Length - existingKeys.Count, seed.Length);
     }
 
+    /// <summary>D-755 — correct the singleton OrganizationProfile's forum dates to
+    /// the real edition (<see cref="EventStartDate"/>..<see cref="EventEndDate"/>).
+    /// The D-495 migration seeds the row with a stale placeholder (2026-01-01..04-30);
+    /// this rewrites it in place so the app + Website read the real range. Idempotent
+    /// and admin-edit-safe: it writes only when the row is null-dated or still carries
+    /// the exact placeholder, so a CP edit survives every restart.</summary>
+    private async Task EnsureOrganizationProfileEventDatesAsync(CancellationToken cancellationToken)
+    {
+        var profile = await appDbContext.OrganizationProfile
+            .SingleOrDefaultAsync(p => p.Id == OrganizationProfile.SingletonId, cancellationToken);
+        if (profile is null)
+        {
+            return;
+        }
+
+        var isUncorrected =
+            (profile.EventStartDate is null && profile.EventEndDate is null)
+            || (profile.EventStartDate == StalePlaceholderStart
+                && profile.EventEndDate == StalePlaceholderEnd);
+        if (!isUncorrected)
+        {
+            return;
+        }
+
+        profile.EventStartDate = ToUtcMidnight(EventStartDate);
+        profile.EventEndDate = ToUtcMidnight(EventEndDate);
+        await appDbContext.SaveChangesAsync(cancellationToken);
+        logger.LogInformation(
+            "D-755: OrganizationProfile forum dates set to the real edition ({Start}..{End}).",
+            EventStartDate, EventEndDate);
+    }
+
+    private static DateTimeOffset ToUtcMidnight(DateOnly date) =>
+        new(date.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
+
     /// <summary>Seed the public marketing landing's hero CMS text blocks
     /// (read by the Website's <c>/content/site</c> proxy and editable from the
     /// CP CMS editor). Keys are lowercase to match the CMS service's key
@@ -776,9 +830,11 @@ public sealed class IdentitySeeder(
             (LandingHeroContentKeys.Tagline,
              "A global Saudi platform bringing leaders, decision-makers and experts together to shape the future of maritime security and protect vital corridors amid accelerating geopolitical and technological change.",
              "منصّة سعوديّة عالميّة تجمع القادة وصنّاع القرار والخبراء لاستشراف مستقبل الأمن البحري وحماية الممرّات الحيوية في ظل التحولّات الجيوسياسيّة والتقنيّة المتسارعة."),
+            // D-755 — derived from the seeded event dates (not a literal), so the
+            // hero label tracks OrganizationProfile.EventStartDate/EventEndDate.
             (LandingHeroContentKeys.MetaDate,
-             "23 — 25 November 2026",
-             "23 — 25 نوفمبر 2026"),
+             EventDateRange.Format(EventStartDate, EventEndDate, arabic: false),
+             EventDateRange.Format(EventStartDate, EventEndDate, arabic: true)),
             (LandingHeroContentKeys.MetaVenue,
              "Sofitel Riyadh Hotel & Convention Centre",
              "فندق ومركز مؤتمرات سوفيتيل الرياض"),
