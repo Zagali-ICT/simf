@@ -80,10 +80,18 @@ class BiometricAuth {
     try {
       final ok = await _localAuth.authenticate(
         localizedReason: reason,
-        options: const AuthenticationOptions(stickyAuth: true),
+        options: const AuthenticationOptions(
+          biometricOnly: true,
+          stickyAuth: true,
+        ),
       );
+
+      debugPrint('authenticate = $ok');
       return ok ? LocalAuthOutcome.success : LocalAuthOutcome.cancelled;
     } on PlatformException catch (e) {
+      debugPrint('Code: ${e.code}');
+      debugPrint('Message: ${e.message}');
+      debugPrint('Details: ${e.details}');
       switch (e.code) {
         case auth_error.passcodeNotSet:
         case auth_error.notEnrolled:

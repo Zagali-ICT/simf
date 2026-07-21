@@ -223,6 +223,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       _busy = true;
       _error = null;
     });
+    Object? unexpectedError;
     try {
       await notifier.signInWithDeviceKey();
     } on AuthFailure catch (failure) {
@@ -231,6 +232,12 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           _error = failure.source.localizedMessage(l10n);
         });
       }
+    } catch (e) {
+      // Non-AuthFailure (e.g. FormatException from reloadCurrentUser before
+      // the defence in signInWithDeviceKey was added): capture so the session
+      // routing still happens below. Shown in a SnackBar after routing so
+      // the user sees the error but is not stranded on the sign-in screen.
+      unexpectedError = e;
     } finally {
       if (mounted) {
         setState(() => _busy = false);
@@ -241,6 +248,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     // non-AuthFailure thrown there must not skip the navigation home — the
     // biometric path mirrors the password path (D-441).
     if (mounted && ref.read(authControllerProvider) is AuthStateSignedIn) {
+      if (unexpectedError != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$unexpectedError')),
+        );
+      }
       routeAfterAuth(context, ref);
     }
   }
