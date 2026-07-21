@@ -109,7 +109,7 @@
         @* D-452 — optional session type (Workshop / Session / Event) that drives
            the app's Sessions type tabs; empty selection = unset. *@
         <SimfSelect TValue="string"
-                    Label="@L["Admin.Sessions.Field.Type"]"
+                    Label="@RequiredLabel("Admin.Sessions.Field.Type")"
                     Placeholder="@L["Admin.Sessions.Field.TypeNone"]"
                     Items="_typeOptions"
                     ValueFor="@(id => id)"
@@ -154,7 +154,7 @@
         @if (_speakerOptions.Length > 0)
         {
             <SimfSelect TValue="string"
-                        Label="@L["Admin.Sessions.Field.AddSpeaker"]"
+                        Label="@RequiredLabel("Admin.Sessions.Field.AddSpeaker")"
                         Placeholder="@L["Admin.Sessions.Field.AddSpeakerPlaceholder"]"
                         Items="_speakerOptions"
                         ValueFor="@(id => id)"

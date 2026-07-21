@@ -148,6 +148,23 @@ internal sealed class AdminSessionService(
         await EnsureThemesExistAsync(request.ThemeIds, cancellationToken);
         await EnsureCategoryIsValidAsync(request.CategoryId, cancellationToken);
 
+        // #3 — a new session must declare its type (Workshop / Session / Event).
+        if (request.Type is null)
+        {
+            throw new ApiException(
+                ErrorCodes.SessionTypeRequired, 400,
+                "A session type is required (Workshop, Session or Event).",
+                "نوع الجلسة مطلوب (ورشة عمل أو جلسة أو حدث).");
+        }
+        // #4 — a new non-Event session must have at least one speaker.
+        if (!SatisfiesSpeakerRule(request.Type, request.Speakers.Count))
+        {
+            throw new ApiException(
+                ErrorCodes.SessionSpeakerRequired, 400,
+                "A non-event session must have at least one speaker.",
+                "يجب أن يكون للجلسة (غير الحدث) متحدّث واحد على الأقل.");
+        }
+
         // S-2 — reject a new session that overlaps another in the same hall.
         await EnsureNoHallTimeOverlapAsync(
             hall.Id, request.StartUtc, request.EndUtc, Guid.Empty, cancellationToken);
@@ -278,6 +295,28 @@ internal sealed class AdminSessionService(
         await EnsureSpeakersExistAsync(request.Speakers, cancellationToken);
         await EnsureThemesExistAsync(request.ThemeIds, cancellationToken);
         await EnsureCategoryIsValidAsync(request.CategoryId, cancellationToken);
+
+        // #3 (grandfathered) — a set type cannot be cleared back to null; a legacy
+        // untyped row (session.Type == null) may stay untyped so an unrelated edit
+        // is not blocked. session.Type still holds the stored value here.
+        if (request.Type is null && session.Type is not null)
+        {
+            throw new ApiException(
+                ErrorCodes.SessionTypeRequired, 400,
+                "A session type is required (Workshop, Session or Event).",
+                "نوع الجلسة مطلوب (ورشة عمل أو جلسة أو حدث).");
+        }
+        // #4 (grandfathered, no-regression) — a session that already satisfied the
+        // speaker rule must keep satisfying it; a legacy non-Event row with no
+        // speakers may stay as-is. session.Speakers still holds the stored roster.
+        if (SatisfiesSpeakerRule(session.Type, session.Speakers.Count)
+            && !SatisfiesSpeakerRule(request.Type, request.Speakers.Count))
+        {
+            throw new ApiException(
+                ErrorCodes.SessionSpeakerRequired, 400,
+                "A non-event session must have at least one speaker.",
+                "يجب أن يكون للجلسة (غير الحدث) متحدّث واحد على الأقل.");
+        }
 
         // S-1 (owner default) — capture whether the hall or the time window is
         // changing BEFORE the fields are overwritten; either invalidates held seats.
@@ -836,6 +875,12 @@ internal sealed class AdminSessionService(
         }
         return hall;
     }
+
+    // #4 — a non-Event session must carry at least one speaker; an Event may have
+    // none (an opening ceremony etc.). Kept as a pure predicate so create (strict)
+    // and update (no-regression grandfather) both read from the one rule.
+    private static bool SatisfiesSpeakerRule(SessionType? type, int speakerCount) =>
+        type == SessionType.Event || speakerCount >= 1;
 
     private async Task EnsureSpeakersExistAsync(
         IList<AdminSessionSpeakerEntry> entries,

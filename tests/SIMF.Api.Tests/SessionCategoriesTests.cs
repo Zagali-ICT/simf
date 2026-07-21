@@ -134,6 +134,7 @@ public sealed class SessionCategoriesTests : IClassFixture<SimfApiFactory>
                 Title = "Categorised session", TitleArabic = "جلسة مصنّفة",
                 HallId = hallId,
                 CategoryId = categoryId,
+                Type = SessionType.Event,
                 StartUtc = DateTimeOffset.UtcNow.AddHours(1),
                 EndUtc = DateTimeOffset.UtcNow.AddHours(2),
             },

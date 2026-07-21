@@ -1709,6 +1709,8 @@
   <data name="Admin.Sessions.Field.Hall" xml:space="preserve"><value>Hall</value></data>
   <data name="Admin.Sessions.Field.HallPlaceholder" xml:space="preserve"><value>— Select a hall —</value></data>
   <data name="Admin.Sessions.Field.HallRequired" xml:space="preserve"><value>Hall is required.</value></data>
+  <data name="Admin.Sessions.Field.TypeRequired" xml:space="preserve"><value>A session type is required (Workshop, Session or Event).</value></data>
+  <data name="Admin.Sessions.Field.SpeakerRequired" xml:space="preserve"><value>A non-event session must have at least one speaker.</value></data>
   <data name="Admin.Sessions.Field.StartUtc" xml:space="preserve"><value>Start (UTC)</value></data>
   <data name="Admin.Sessions.Field.EndUtc" xml:space="preserve"><value>End (UTC)</value></data>
   <data name="Admin.Sessions.Field.TimeInvalid" xml:space="preserve"><value>Both start and end times must be valid UTC datetimes.</value></data>

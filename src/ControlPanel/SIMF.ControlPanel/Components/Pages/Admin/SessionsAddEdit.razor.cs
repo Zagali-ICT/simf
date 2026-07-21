@@ -381,6 +381,10 @@ public partial class SessionsAddEdit
         RefreshThemeOptions();
     }
 
+    // #3 / #4 — a lightweight "required" marker for the Type + Speakers fields.
+    // Appended at render time so the underlying resx label stays reusable elsewhere.
+    private string RequiredLabel(string key) => $"{L[key]} *";
+
     private async Task HandleSubmitAsync()
     {
         if (_busy) return;
@@ -435,6 +439,25 @@ public partial class SessionsAddEdit
         }
         // B9b — D-226: optional category (empty selection = no category).
         Guid? categoryId = Guid.TryParse(_categoryIdInput, out var cid) ? cid : null;
+
+        // #3 / #4 — mirror the API's two rules with the same no-regression
+        // grandfather (Initial holds the stored row on edit): a new session must
+        // declare a type and, unless it is an Event, carry at least one speaker.
+        // On edit a legacy violating row stays saveable, but a compliant row cannot
+        // be regressed (clear a set type / drop the last speaker of a non-Event).
+        static bool SpeakerRuleMet(SessionType? t, int count) =>
+            t == SessionType.Event || count >= 1;
+        var type = ParseType(_typeInput);
+        if ((!IsEdit || Initial?.Type is not null) && type is null)
+        {
+            _error = L["Admin.Sessions.Field.TypeRequired"]; return;
+        }
+        var speakerRuleApplied = !IsEdit
+            || SpeakerRuleMet(Initial?.Type, Initial?.Speakers.Count ?? 0);
+        if (speakerRuleApplied && !SpeakerRuleMet(type, _selectedSpeakers.Count))
+        {
+            _error = L["Admin.Sessions.Field.SpeakerRequired"]; return;
+        }
 
         _busy = true;
         try

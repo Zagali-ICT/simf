@@ -24,10 +24,12 @@ namespace SIMF.Api.Endpoints.Admin;
 /// <see cref="ListAsync"/> (the base reads <see cref="Columns"/> straight after),
 /// so the column selectors resolve a name without an extra round-trip per row.
 /// </para>
-/// <para><b>Omitted columns:</b> the session's speaker / host roster and its
-/// theme set are many-to-many collections that cannot be expressed safely as a
-/// single text cell, so the export leaves them out (and import never sets them);
-/// an admin manages them afterwards via Edit.</para>
+/// <para><b>Omitted columns:</b> the export leaves out the session's speaker / host
+/// roster and its theme set — the grid summary it iterates does not carry them, and
+/// emitting them would need a per-row detail load. The <b>import</b> deliberately
+/// differs: it accepts an optional Speakers column (comma-separated speaker codes,
+/// #4) so a bulk-created non-Event session can satisfy the min-1-speaker rule; the
+/// theme set is still managed via Edit either way.</para>
 /// </summary>
 public sealed class ExportSessionsEndpoint(
     IAdminSessionService service,
@@ -122,15 +124,18 @@ public sealed class ExportSessionsEndpoint(
 /// it unset; a non-blank value that does not resolve to an active category is a
 /// per-row error. Both lookups are case-insensitive and active-only.
 /// </para>
-/// <para><b>Omitted columns:</b> the session's speaker / host roster and its theme
-/// set are many-to-many collections that cannot be expressed safely as plain text
-/// in a bulk import, so import always leaves them empty; an admin sets them
-/// afterwards via Edit.</para>
+/// <para><b>Speakers and themes:</b> the optional <b>Speakers</b> column holds a
+/// comma-separated list of active speaker <c>Code</c>s (position sets the display
+/// order; role defaults to Speaker — Host cannot be expressed in one cell). A blank
+/// cell leaves the roster empty, and the create then enforces the #4 min-1-speaker
+/// rule for non-Event sessions. The theme set stays omitted (an admin sets it
+/// afterwards via Edit). The export still writes neither column.</para>
 /// </summary>
 public sealed class ImportSessionsEndpoint(
     IAdminSessionService service,
     IAdminHallService hallService,
     IAdminSessionCategoryService categoryService,
+    IAdminSpeakerService speakerService,
     IGridExcelImporter importer)
     : AdminGridImportEndpoint(importer)
 {
@@ -208,6 +213,10 @@ public sealed class ImportSessionsEndpoint(
             StartUtc = start,
             EndUtc = end,
             CapacityOverride = capacityOverride,
+            // #4 — optional Speakers column (comma-separated speaker codes) so a
+            // bulk-imported non-Event session can satisfy the min-1-speaker rule.
+            Speakers = await ResolveSpeakersAsync(
+                row.Cells.GetValueOrDefault("Speakers", string.Empty), ct),
             // D-506 — round-trip the eight fields the import previously dropped
             // (the service trims and length-guards the strings; absent columns
             // simply stay null). The two enums accept the display name or the raw
@@ -300,6 +309,47 @@ public sealed class ImportSessionsEndpoint(
                 $"لم يتم العثور على قاعة مفعّلة بالرمز '{trimmed}'.");
         }
         return match.Id;
+    }
+
+    // Resolves the optional Speakers column into an ordered roster. The cell holds
+    // active speaker CODES separated by commas (the same natural key the Hall column
+    // uses); position sets the display order and every entry takes the default
+    // Speaker role. A blank cell → no speakers (the create then enforces the #4
+    // min-1 rule for non-Event sessions). An unknown/inactive or duplicated code is
+    // a per-row error. Codes are resolved one at a time (a roster is only a handful
+    // of speakers), mirroring ResolveHallAsync's active-only, case-insensitive match.
+    private async Task<IList<AdminSessionSpeakerEntry>> ResolveSpeakersAsync(
+        string value, CancellationToken ct)
+    {
+        var codes = value.Split(
+            ',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var roster = new List<AdminSessionSpeakerEntry>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        for (var index = 0; index < codes.Length; index++)
+        {
+            var code = codes[index];
+            if (!seen.Add(code))
+            {
+                throw new DataValidationException(
+                    $"The speaker code '{code}' is listed more than once.",
+                    $"رمز المتحدّث '{code}' مكرّر في نفس الجلسة.");
+            }
+
+            var speakers = (await speakerService
+                .ListAllAsync(new GridQuery { Top = 500, Search = code }, ct)).Items;
+            var match = speakers.FirstOrDefault(s => s.IsActive
+                && string.Equals(s.Code, code, StringComparison.OrdinalIgnoreCase));
+            if (match is null)
+            {
+                throw new DataValidationException(
+                    $"No active speaker with code '{code}' was found.",
+                    $"لم يتم العثور على متحدّث مفعّل بالرمز '{code}'.");
+            }
+
+            roster.Add(new AdminSessionSpeakerEntry(
+                match.Id, match.Name, match.NameArabic, index));
+        }
+        return roster;
     }
 
     // Resolves an optional Category by its English name (the value the export

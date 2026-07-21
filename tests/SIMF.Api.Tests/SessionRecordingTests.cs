@@ -304,6 +304,8 @@ public sealed class SessionRecordingTests : IClassFixture<SimfApiFactory>
                 Title = "Recording session",
                 TitleArabic = "جلسة التسجيل",
                 HallId = hall.Id,
+                // #3 — an Event stays valid under the required-type rule with no speaker.
+                Type = SessionType.Event,
                 // S-7 — a past start so the Held lifecycle guard passes (the
                 // recording-publish flow marks the session Held before Recorded).
                 StartUtc = DateTimeOffset.UtcNow.AddHours(-1),
