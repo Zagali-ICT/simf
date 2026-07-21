@@ -10,6 +10,7 @@ using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.BusinessMeetings;
 using SIMF.Contracts.Exhibitors;
+using SIMF.Contracts.Programme;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
@@ -31,6 +32,12 @@ public partial class BusinessMeetingsList
     private List<AdminHallSummary> _meetingHalls = new();
     private List<AdminExhibitorSummary> _companies = new();
     private List<AdminAttendeeSummary> _visitors = new();
+
+    // D-753 — forum-day bounds for the datetime-local pickers (yyyy-MM-ddTHH:mm),
+    // null when no programme days are seeded (no client bound; the server still
+    // enforces the rule once days exist).
+    private string? _forumMin;
+    private string? _forumMax;
 
     // Schedule modal state.
     private bool _scheduleOpen;
@@ -91,6 +98,26 @@ public partial class BusinessMeetingsList
         if (visitorsEnv is { Success: true, Data: not null })
         {
             _visitors = visitorsEnv.Data.Items.OrderBy(v => v.DisplayName).ToList();
+        }
+
+        await LoadForumWindowAsync();
+    }
+
+    // D-753 — read the forum-day window (MIN/MAX programme day) and translate it into
+    // datetime-local min/max attributes spanning the whole day. A failed / empty read
+    // leaves both null (no client bound); the backend enforces the rule on save.
+    private async Task LoadForumWindowAsync()
+    {
+        var env = await JS.InvokeAsync<ApiResult<ForumWindowResponse>>(
+            "simfAccount.getJson", "/account/api/admin/programme/forum-window");
+        if (env is { Success: true, Data: not null })
+        {
+            _forumMin = env.Data.MinDate is { } min
+                ? min.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + "T00:00"
+                : null;
+            _forumMax = env.Data.MaxDate is { } max
+                ? max.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + "T23:59"
+                : null;
         }
     }
 

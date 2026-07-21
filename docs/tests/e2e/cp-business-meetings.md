@@ -36,6 +36,8 @@
 | E2E-BMT-014 | Per-column filter narrows the grid | happy | P1 | _to author_ |
 | E2E-BMT-015 | Column sort toggles | happy | P2 | _to author_ |
 | E2E-BMT-016 | Excel export — toolbar Export downloads an .xlsx of the meetings grid (whole filtered set vs selected rows) (D-356) | happy | P1 | _to author_ |
+| E2E-BMT-020 | Forum-day bound - scheduling outside the event days is rejected; a day inside is accepted (D-753) | error | P0 | authored |
+| E2E-BMT-021 | Forum-day bound - the Start/End datetime pickers carry the forum min/max (D-753) | happy | P1 | authored |
 
 ## Scenarios
 
@@ -298,6 +300,44 @@ Scenario: The same not-in-past bound guards the allocation path
   Then POST /account/api/admin/halls/{id}/hall-allocations returns 400 HALL_ALLOCATION_INVALID
 ```
 
+### E2E-BMT-020 - Schedule outside the forum days is blocked (D-753)
+
+```gherkin
+Scenario: A meeting outside the event days is rejected; a day inside is accepted
+  Given the programme has authored days 2026-11-20..22 (the forum window)
+  And an Administrator scheduling a meeting on a Meeting-purpose table with two companies
+  When StartUtc/EndUtc fall on 2026-12-15 (a future day AFTER the last forum day)
+  Then POST /account/api/admin/business-meetings returns 400 HALL_ALLOCATION_INVALID
+    (bilingual toast: "Meetings can only be scheduled within the forum days
+    (2026-11-20 to 2026-11-22)." /
+    "لا يمكن جدولة الاجتماعات إلا خلال أيام الملتقى (2026-11-20 إلى 2026-11-22).")
+  When instead StartUtc/EndUtc fall on 2026-11-21 (inside the window)
+  Then the meeting is Confirmed (200)
+  # The window is MIN/MAX over the ACTIVE ProgrammeDay.Date rows, NOT the stale
+  # OrganizationProfile placeholder. The slot is converted to the event-local (+03:00)
+  # date before the check. When no programme days exist the bound is skipped entirely
+  # (scheduling is never blocked just because content is not seeded).
+```
+
+**Evidence:** `BusinessMeetingsTests.Schedule_a_meeting_outside_the_forum_window_is_400`,
+`Schedule_a_meeting_inside_the_forum_window_succeeds`, and
+`ForumWindowNoProgrammeDaysTests.Schedule_ignores_the_forum_bound_when_no_programme_days_exist`.
+
+### E2E-BMT-021 - Start/End pickers advertise the forum-day min/max (D-753)
+
+```gherkin
+Scenario: The Start / End datetime-local pickers carry the forum-day min/max
+  Given the programme has authored days 2026-11-20..22
+  When the admin opens the "Schedule meeting" modal
+  Then GET /account/api/admin/programme/forum-window returns MinDate 2026-11-20 and MaxDate 2026-11-22
+  And the Start and End <input type="datetime-local"> carry
+    min="2026-11-20T00:00" and max="2026-11-22T23:59"
+  So the native picker will not offer a day outside the event
+  # The forum-window read is gated by the EXISTING BusinessMeetings.View permission
+  # (no new permission code). When no programme days are seeded the read returns nulls
+  # and the inputs carry no min/max; the server still enforces the bound on submit.
+```
+
 > **Concurrency note (M-5).** The table / hall / participant overlap checks
 > (E2E-BMT-004 table conflict, E2E-BMT-005 participant conflict, and the
 > whole-hall-session block) now run together with the insert inside ONE
@@ -309,4 +349,4 @@ Scenario: The same not-in-past bound guards the allocation path
 
 ---
 
-_Last reviewed:_ 2026-07-11 by Claude (on-site W2b — M-5 not-in-past ValidateSlot lower bound + Serializable-transaction double-book closure; added E2E-BMT-018/019). Prior: 2026-07-10 by SIMF Team (D-730, item 15B — added the G2B business-meeting type + E2E-BMT-017); 2026-06-10 (D-356 Phase 5 — Excel export added; export-only, no import/toggle); 2026-06-03 (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-07-20 by Claude (D-753 - forum-day scheduling bound via ProgrammeDay MIN/MAX + Start/End picker min/max fed by GET /admin/programme/forum-window; added E2E-BMT-020/021). Prior: 2026-07-11 by Claude (on-site W2b — M-5 not-in-past ValidateSlot lower bound + Serializable-transaction double-book closure; added E2E-BMT-018/019). Prior: 2026-07-10 by SIMF Team (D-730, item 15B — added the G2B business-meeting type + E2E-BMT-017); 2026-06-10 (D-356 Phase 5 — Excel export added; export-only, no import/toggle); 2026-06-03 (D-256/D-257 grid affordances reconciled).

@@ -33,6 +33,15 @@ public partial class SpeakerAvailabilityPage
     private bool _busy;
     private Toast? _toast;
 
+    // D-753 — forum-day bounds read from the backend, replacing the former hardcoded
+    // 2026-11-23..25 window. The string forms feed the datetime-local Min/Max; the
+    // DateOnly forms back the client-side range check. All null when no programme days
+    // are seeded (no client bound; the server still enforces once days exist).
+    private string? _forumMin;
+    private string? _forumMax;
+    private DateOnly? _forumMinDate;
+    private DateOnly? _forumMaxDate;
+
     protected override async Task OnInitializedAsync()
     {
         var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminSpeakerSummary>>>(
@@ -41,6 +50,28 @@ public partial class SpeakerAvailabilityPage
         if (envelope is { Success: true, Data: not null })
         {
             _speakers = envelope.Data.Items.OrderBy(s => s.Name).ToList();
+        }
+
+        await LoadForumWindowAsync();
+    }
+
+    // D-753 — read the forum-day window (MIN/MAX programme day) and translate it into
+    // datetime-local Min/Max attributes spanning the whole day. A failed / empty read
+    // leaves the bounds null (no client bound); the backend enforces the rule on save.
+    private async Task LoadForumWindowAsync()
+    {
+        var env = await JS.InvokeAsync<ApiResult<ForumWindowResponse>>(
+            "simfAccount.getJson", "/account/api/admin/programme/forum-window");
+        if (env is { Success: true, Data: not null })
+        {
+            _forumMinDate = env.Data.MinDate;
+            _forumMaxDate = env.Data.MaxDate;
+            _forumMin = _forumMinDate is { } min
+                ? min.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + "T00:00"
+                : null;
+            _forumMax = _forumMaxDate is { } max
+                ? max.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + "T23:59"
+                : null;
         }
     }
 
@@ -69,12 +100,19 @@ public partial class SpeakerAvailabilityPage
             _toast = new Toast("error", L["Admin.SpeakerAvailability.BadDates"]);
             return;
         }
-        var minDate = new DateTimeOffset(2026, 11, 23, 0, 0, 0, TimeSpan.Zero);
-        var maxDate = new DateTimeOffset(2026, 11, 25, 23, 59, 0, TimeSpan.Zero);
-        if (start < minDate || start > maxDate || end > maxDate)
+        // D-753 — client-side forum-day check (a backstop to the datetime-local
+        // Min/Max and the authoritative server rule). Skipped when no programme days
+        // are seeded. Dates compare the entered wall-clock day, matching the whole-day
+        // Min/Max attributes.
+        if (_forumMinDate is { } minDate && _forumMaxDate is { } maxDate)
         {
-            _toast = new Toast("error", L["Admin.SpeakerAvailability.BadDateRange"]);
-            return;
+            var startDate = DateOnly.FromDateTime(start.UtcDateTime);
+            var endDate = DateOnly.FromDateTime(end.UtcDateTime);
+            if (startDate < minDate || endDate > maxDate)
+            {
+                _toast = new Toast("error", L["Admin.SpeakerAvailability.BadDateRange"]);
+                return;
+            }
         }
         if (!int.TryParse(_slotMinutes, out var slot) || slot <= 0)
         {
