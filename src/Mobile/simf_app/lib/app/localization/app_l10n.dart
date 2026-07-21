@@ -771,6 +771,10 @@ class AppL10n {
   String get discoverSaudiBadge => _t('السعودية', 'Saudi');
   String get greetingMorning => _t('صباح الخير', 'Good morning');
   String get greetingEvening => _t('مساء الخير', 'Good evening');
+
+  /// The home greeting word (owner 2026-07-21) — a friendly, time-independent
+  /// "مرحبًا" shown above the user's first name, replacing the time-of-day word.
+  String get greetingWelcome => _t('مرحبًا', 'Welcome');
   String get homeLiveTitle => _t(
         'الجلسة الافتتاحية تُبث الآن',
         'The opening session is live now',

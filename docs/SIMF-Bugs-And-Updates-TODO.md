@@ -15,14 +15,14 @@
 
 | Metric | Count |
 |--------|-------|
-| Total items | 41 |
-| Open (☐) | 29 |
-| In progress (◐) | 1 |
-| Done (✅) | 11 |
+| Total items | 43 |
+| Open (☐) | 38 |
+| In progress (◐) | 0 |
+| Done (✅) | 5 |
 | Deferred (⏸) | 0 |
 
-_Note: #16 is a single tracked item covering the whole per-feature Flutter clean-code sweep (≈39 features). Items #35-#40 are detailed in the plan (`~/.claude/plans/...`); #40 detailed here in Topic 9._
-_Done (9), verified merged to main (2026-07-21): #6 `feat/booking-noshow-release`, #10 `feat/bulk-badge-email`, #17+#20 `feat/app-sessions-batch`, #28 `feat/meeting-forum-bounds`, #32 `feat/cp-team-roles`, #34 `d1774363`, #35 `feat/session-summary-video`; #24 change-email (CP side) verified done. #8 CP display-only wave is in PR `feat/local-time-saudi-rebased` (full no-UTC storage scope still open)._
+_Note: #16 is a single tracked item covering the whole per-feature Flutter clean-code sweep (≈39 features). Items #35-#40 are detailed in the plan (`~/.claude/plans/...`); #40 detailed here in Topic 9; #42-#43 (home greeting + hero) detailed in Topic 10._
+_Done (5), shipped to PR: #10 `feat/bulk-badge-email`, #32 `feat/cp-team-roles`, #20+#17 `feat/app-sessions-batch`, #35 `feat/session-summary-video` (#28 in progress)._
 
 ---
 
@@ -34,29 +34,33 @@ _Done (9), verified merged to main (2026-07-21): #6 `feat/booking-noshow-release
 ## A. APP (Flutter mobile)
 
 **P1 — bugs / blocking**
-- [x] **#9** — Biometric / Face ID login not working; logic incorrect. _(= #25)_ _(2026-07-21: owner-confirmed fixed; biometric_auth.dart + biometric_step_up + liveness on main)_
+- [ ] **#9** — Biometric / Face ID login not working; logic incorrect. _(= #25)_
 - [ ] **#12** — Face-capture left/right swapped on **Android** (iOS fine): fix Android turn direction + correct prompt image. _(= #26)_
-- [x] **#17** — Session join + seat mechanism: two cases (register-to-attend / join+pick-seat), **no approval**, auto-cancel 3 min before start, session **check-in + check-out**. _(merged: feat/app-sessions-batch)_
+- [ ] **#17** — Session join + seat mechanism: two cases (register-to-attend / join+pick-seat), **no approval**, auto-cancel 3 min before start, session **check-in + check-out**.
 - [ ] **#18** — "الانضمام إلى الجلسة" (Join session) button does nothing.
 - [ ] **#21** — "مشاركة جهة اتصال" (Share contact) button does nothing.
 - [ ] **#13** — "Meet people like you": show **only Sponsors + Speakers** (hide Normal/VIP), Other-type opt-in checkbox, viewer→gallery / speaker→details, show exact data. _(CP-managed)_
 
 **P2 — updates / UX**
 - [ ] **#11** — Session surfaces scope + phase-gated buttons (Home = future + type=Session only; Summary = past; My Sessions; Agenda = all).
-- [ ] **#14** — Edit interests from profile (not only at sign-up). _(◐ built on `feat/app-edit-interests` 2026-07-21: shared interests page in edit mode + regionId/jobTitleArabic round-trip fix; adversarial review found + fixed a profileTypeId-echo blocker (400 for VIP/staff edits); 22 unit/widget + 36 matrix/myarea green, goldens re-locked, docs authored; pending device test + commit/merge)_
+- [ ] **#14** — Edit interests from profile (not only at sign-up).
 - [ ] **#16** — Clean-code sweep across ~39 features (numbers→tokens, `app_style`, `SimfTokens.surface`, hoist assets, extract private widgets).
-- [x] **#19** — Login-as-**Guest** label (not "Visitor") + fix wrong Arabic translation. _(2026-07-21: owner-confirmed fixed; app_l10n.dart:490 `الدخول كضيف` / "Enter as guest" on main)_
-- [x] **#20** — Agenda viewable **without login** + rename program-icon label to "الأجندة". _(merged: feat/app-sessions-batch)_
+- [ ] **#19** — Login-as-**Guest** label (not "Visitor") + fix wrong Arabic translation.
+- [ ] **#20** — Agenda viewable **without login** + rename program-icon label to "الأجندة".
 - [ ] **#22** — Sign-up (`sign_up_visitor_screen`) category section UI update.
 - [ ] **#23** — Session-summary logic update (keep Home Sessions + Summary buttons as-is; reconcile with #11).
 - [ ] **#27** — Video > 30 min: the session-extension alert must NOT appear.
-- [x] **#34** — Speaker job title shows English regardless of app language (read `RankArabic`). _(code merged: d1774363; Arabic rank data = owner re-entry)_
+- [ ] **#34** — Speaker job title shows English regardless of app language (read `RankArabic`).
+
+**P3 — home cosmetics**
+- [x] **#42** — Home greeting: **first name only** (first token) + `مرحبًا` (replacing time-of-day `صباح الخير` + full name). **Built** `39685d58` on `feat/app-home-greeting`; PR pending.
+- [ ] **#43** — Home **hero = live forum-edition banner** (title / theme / dates / location) + **rotating image**, replacing the static `اكتشف السعودية` card. _(overlaps #40 dynamic dates)_
 
 ## B. CONTROL PANEL (CP)
 
 **P1**
-- [x] **#10** — Bulk profile/badge generation page (pick type + count, anonymous placeholders, issue QRs, email all to one address). _(merged: feat/bulk-badge-email)_
-- [x] **#28** — Meeting/speaker date filter = **forum dates only** + all CP times in **Saudi time** (see #8). _(forum-date filter merged: feat/meeting-forum-bounds; CP Saudi-time display in PR #8)_
+- [ ] **#10** — Bulk profile/badge generation page (pick type + count, anonymous placeholders, issue QRs, email all to one address).
+- [ ] **#28** — Meeting/speaker date filter = **forum dates only** + all CP times in **Saudi time** (see #8).
 - [ ] **#29** — Workshop management in CP (title / time / allowed count / check-in-out); app shows **title + time only**.
 - [ ] **#30** — B2B / B2G bilateral-meeting management in CP + activate VIP↔speaker "send request" button.
 - [ ] **#31** — Feed the forum program data (content).
@@ -65,14 +69,14 @@ _Done (9), verified merged to main (2026-07-21): #6 `feat/booking-noshow-release
 - [ ] **#33** — Deliver CP user manual (⚠ confirm due date — 19-07-2026 is already past).
 
 **P2**
-- [x] **#32** — CP permissions = **Admin / Security / PR / Scientific** (verify + gap-fill). _(merged: feat/cp-team-roles)_
+- [ ] **#32** — CP permissions = **Admin / Security / PR / Scientific** (verify + gap-fill).
 
 ## C. BACKEND / CROSS-CUTTING
 
 **P1**
-- [ ] **#8** — Store all times as **Saudi wall-clock, no UTC** (needs scope + data-migration decision). _(CP display-only wave in PR feat/local-time-saudi-rebased; full no-UTC storage scope still open)_
-- [x] **#6** — Remove seat/attendance **approval** workflow (D-227) — no approval (implemented via #17). _(merged: feat/booking-noshow-release)_
-- [x] **#24** — Change-email flow (fixes CP new-account typos + app self-service) + re-verify + uniqueness. _(Identity is frozen)_ _(2026-07-21: CP admin typo-fix + uniqueness 409 + D-214 session-invalidation SHIPPED & verified; OTP re-verify + app self-service ruled out of scope per trusted-admin design + owner Q7)_
+- [ ] **#8** — Store all times as **Saudi wall-clock, no UTC** (needs scope + data-migration decision).
+- [ ] **#6** — Remove seat/attendance **approval** workflow (D-227) — no approval (implemented via #17).
+- [ ] **#24** — Change-email flow (fixes CP new-account typos + app self-service) + re-verify + uniqueness. _(Identity is frozen)_
 - [ ] **#40** — **Dynamic forum dates** — the fixed "23-25 November 2026" is hardcoded in Website/app/CP/seed strings; drive them all from a single dynamic source (OrganizationProfile event dates or ProgrammeDay). _(overlaps #28)_
 
 **P2 — decisions**
@@ -540,6 +544,60 @@ confirm**, not a broken model.
 - **Open decision:** source = (a) OrganizationProfile config (recommended for display) vs (b) ProgrammeDay-derived. Confirm.
 - **Fix plan (pending decision):** set the real event dates in the config; add a shared bilingual date-range formatter; replace every hardcoded resx/l10n/seed string with a render of the dynamic source; expose to app/website via the OrganizationProfile API. Build in Phase 2 after #28 lands (shared CP message).
 - **Status:** ☐ Open — needs source decision (a/b)
+
+---
+
+## Topic 10 — Home screen (greeting + hero edition banner)
+
+**Reported:** 2026-07-21 (owner batch + screenshot)
+
+| # | Type | Priority | Area | Title | Status |
+|---|------|----------|------|-------|--------|
+| 42 | ✨ Update | P3 | App / Home | Greeting shows **first name only** + friendlier wording (`مرحبًا` + first name) | ☐ Open |
+| 43 | ✨ Update | P2 | App / Home (+ Backend/CP) | Home **hero = live forum-edition banner** (title/theme/dates/location) + rotating image | ☐ Open |
+
+### [#42] Home greeting — first name only + friendlier wording
+- **Type:** ✨ Update · **Priority:** P3 · **Area:** App / Home
+- **Report (owner + screenshot):** the home greeting reads `صباح الخير` (time-of-day) over the person's **full** name `هيفاء عبدالله ابراهيم العتيبي 👋`. Owner wants **the first name only** (`عرض الاسم الاول فقط`) and a friendlier greeting. **Owner chose `مرحبًا` + first name** (over `أهلاً`).
+- **Current state (verified):**
+  - `features/home/widgets/greeting_header.dart` — `nameLine` renders the **full** name + 👋; the greeting line calls `homeGreeting(l10n, now)` = time-of-day.
+  - `features/home/home_greeting.dart` — `homeGreeting()` returns `greetingMorning` (`صباح الخير`) / `greetingEvening` (`مساء الخير`) by hour.
+  - `features/home/widgets/visitor_home.dart` passes a now-dead `now` param down for the golden's fixed clock.
+  - `app/localization/app_l10n.dart` — `greetingMorning` / `greetingEvening`.
+- **Fix plan (done):** added `greetingWelcome` l10n (`مرحبًا` / `Welcome`); `greeting_header.dart` greeting → `l10n.greetingWelcome`, `nameLine` → **first token** (`name.trim().split(' ').first`); dropped the dead `now` seam + `homeGreeting` import (kept `homeGreeting()` as a tested utility); re-locked the signed-in golden (guest byte-identical) + updated 4 home tests + home README/E2E.
+- **Owner decision (2026-07-21):** **accept first-token** rule. Known limitation accepted: a space-separated compound Arabic name (`عبد الله`) shows only `عبد`; joined names (`عبدالله`) render correctly.
+- **Status:** ✅ Built (`39685d58`, `feat/app-home-greeting`) — `flutter analyze` 0 errors; `router_role_matrix` 8/8; `home_screen_test` +32 (only the **pre-existing** avatar-tap harness test stays red — fails on base too, unrelated); golden re-locked + visually confirmed `مرحبًا` + first name. PR pending owner confirm. On-device render pending.
+
+### [#43] Home hero = live forum-edition banner + rotating image
+- **Type:** ✨ Update · **Priority:** P2 · **Area:** App / Home (+ Backend / CP)
+- **Report (owner + screenshot):** the hero currently shows a generic `اكتشف السعودية / تعال واكتشف جديدك المفضل` card. It should instead show the **forum edition**:
+  - Title: `الملتقى البحري السعودي الدولي الرابع`
+  - Theme / subtitle: `مستقبل أمن قاع البحار وسلاسل الإمداد في بيئة عالمية متغيرة`
+  - `📅 23–25 نوفمبر 2026`
+  - `📍 الرياض – المملكة العربية السعودية`
+  - And **the image rotates** (`والصورة تتغير`).
+- **Owner claim:** "all those data already come from the backend." → **verified TRUE at the API level, with one real app-side gap (dates dropped) + no rotating-image source.**
+- **Finding (verified 2026-07-21):**
+  - **Current hero is 100% hardcoded.** `DiscoverHeroBanner` ([home_banners.dart:99-163](../../src/Mobile/simf_app/lib/features/home/widgets/home_banners.dart)) is a single static `StatelessWidget`: title/subtitle are l10n literals (`discoverSection` `اكتشف السعودية` / `discoverBannerSubtitle` `تعال واكتشف جديدك المفضل`), image is bundled `assets/images/discover_hero.jpg`, tap opens News. Rendered only on signed-in home (`visitor_home.dart:61`). Nothing backend-driven.
+  - **The API already serves the edition data.** `GET /api/v1/app/organization-profile` (`OrganizationProfileResponse`, D-495, anonymous + cached) returns `Title/TitleArabic`, `Name/NameArabic`, **`EventStartDate`/`EventEndDate` = real 2026-11-23..25** (corrected by D-755 seeder; a shared bilingual `EventDateRange` formatter already renders `23-25 نوفمبر 2026`), `LocationText/LocationTextArabic`, `Status`+`CurrentYear`, `LogoUrl`, `LiveStreamUrl`, social, aboutItems, details. The app already fetches + caches this app-wide via `orgProfileProvider` (warmed at splash).
+  - **App-side gap #1 — dates dropped.** The Flutter `OrgProfile.fromJson` ([core/organization_profile/organization_profile.dart](../../src/Mobile/simf_app/lib/core/organization_profile/organization_profile.dart)) decodes title/location/status/year/slogan but **does NOT decode `eventStartDate`/`eventEndDate`** → the app can't render the real date range yet. Additive decode-only fix (D-219-safe) + a Dart `EventDateRange` (mirror the C# one; `core/utils/gregorian_month_names.dart` already exists).
+  - **App-side gap #2 — hero ignores the profile.** Only `follow_us_section.dart` reads `orgProfileProvider` (social only). The hero must `ref.watch(orgProfileProvider)` and render title + theme + date-range + location.
+  - **Theme field.** `مستقبل أمن قاع البحار وسلاسل الإمداد...` is currently seeded only as **Website** landing content-blocks + app l10n literals — NOT on the org-profile row the app reads. Natural home = `OrganizationProfile.Title/TitleArabic` (CP-editable) → needs the theme text entered in the CP (data step), then the hero renders it.
+  - **Rotating image — no backend source.** A real auto-advancing carousel already exists (`HighlightsCarousel`: PageView + 4s Timer + dots) but it is fed by **news** images (`/app/news`). No dedicated hero-image collection exists.
+- **Overlap with #40:** same date source (D-755 `EventStartDate/EventEndDate`). #40's app-side piece (render the dynamic date in the app) is **subsumed by this hero** — this is where the app finally surfaces the dynamic range.
+- **Decisions (owner, 2026-07-21):**
+  - **D-A — rotating-image source = (b) NEW backend hero gallery + CP upload.** A dedicated CP-managed hero-image collection (not reuse-news, not bundled). This makes #43 a full-stack vertical with a schema change on the App DB.
+  - **D-B — theme field = `Title/TitleArabic`** (CP-editable; default). The theme `مستقبل أمن قاع البحار...` is typed into the org-profile Title.
+  - **D-C — edition name incl. ordinal = baked into `Name/NameArabic`** (CP-editable; default). The CP enters the full `الملتقى البحري السعودي الدولي الرابع`.
+  - _Note:_ with the profile CP-managed, D-B/D-C are pure data entry — the hero renders whatever `Name`/`Title`/dates/location hold, so they do not block the code build.
+- **Fix plan (full-stack; pending §11 approval):**
+  1. **Backend (additive migration — App DB):** new hero-image entity (e.g. `EditionHeroImage`: ordered, active flag, StoredFile-backed image per D-568 + optional caption) on `SimfAppDbContext`; additive migration (freeze surface — covered by the D-219 broad lift for the event push; confirm freeze in the §11 plan). App-facing read endpoint (fold into the org-profile response or a sibling `GET /app/organization-profile/hero-images`, cached like D-495). Admin CRUD endpoints.
+  2. **CP:** manage page (or a section on `OrganizationProfilePage`) to upload / reorder / activate hero images → **new `PermissionCatalog` code + seed + gate on API and page** (project HARD RULE), admin-only; **E2E catalogue file + PAGE-INDEX + per-page doc** (project HARD RULE).
+  3. **App (additive, D-219-safe):** decode `eventStartDate`/`eventEndDate` in `OrgProfile` + decode the hero-image list; add a Dart bilingual `EventDateRange` (mirror the C# one; `gregorian_month_names.dart` exists); rebuild `DiscoverHeroBanner` as a **rotating** banner (mirror `HighlightsCarousel`: PageView + timer + dots) consuming `orgProfileProvider`, overlaying `Name` (title) + `Title` (theme) + `EventDateRange(EventStartDate,EventEndDate)` + `LocationText`; static `discover_hero.jpg` as the not-loaded/empty fallback; re-lock home goldens + widget tests + on-device render.
+  4. **Data/CP:** owner enters the theme into `Title/TitleArabic`, the full name incl. `الرابع` into `Name/NameArabic`, and uploads the hero images (dates/location already correct via D-755).
+  5. **Docs/DoD:** new D-number in DECISIONS_LOG; E2E for the CP hero-gallery page + the app hero; unit + integration tests; PAGE-INDEX + per-page docs — same changeset.
+- **Scope note:** this grew from an app-only tweak to a **full-stack feature** (new table + migration + app + admin API + CP page + permission + E2E). Serialize the migration; §11 pre-approval + freeze confirmation required before any code.
+- **Status:** ☐ Open — decisions locked (D-A backend gallery / D-B Title / D-C Name); awaiting §11 plan approval + the tablet test freeing the tree. **No code yet.**
 
 ---
 ```
