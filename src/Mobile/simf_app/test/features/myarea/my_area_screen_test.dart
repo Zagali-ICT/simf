@@ -219,6 +219,22 @@ void main() {
       expect(find.text('SHARE-MY-CONTACT'), findsOneWidget);
     });
 
+    // #21 — the "Share contact" tile used to fire a native .vcf share
+    // sheet; the owner re-pointed it to the same in-app QR screen the
+    // share-my-profile tile opens, so it now routes to shareMyContact.
+    testWidgets('the share-contact tile opens the contact-QR screen (#21)',
+        (tester) async {
+      await _pump(
+        tester,
+        controller: _AuthController(RegistrationStatus.approved),
+        repo: _FakeMyAreaRepository(dashboard: _dashboard()),
+      );
+
+      await tester.tap(find.text('Share contact'));
+      await tester.pumpAndSettle();
+      expect(find.text('SHARE-MY-CONTACT'), findsOneWidget);
+    });
+
     testWidgets('the dashboard avatar shows the tap-to-change camera affordance',
         (tester) async {
       await _pump(

@@ -17,20 +17,20 @@ import 'my_area_rows.dart';
 /// اليوم schedule groups, and the المزيد rows. The stat tiles are
 /// **display-only** — D-653 restored them to match the frame after D-609's
 /// removal; they show the counts but no longer drill into list screens. Owns
-/// the favourites-count watch; the two async account actions come from the
-/// screen (they hold the identity-verification flow + dashboard reload).
+/// the favourites-count watch; the avatar-change action comes from the screen
+/// (it holds the identity-verification flow + dashboard reload). Both share
+/// affordances (the identity-card button + the مشاركة جهة اتصال pill) open the
+/// in-app "شارك جهة اتصالي" QR screen (#21).
 class MyAreaDashboardBody extends ConsumerWidget {
   const MyAreaDashboardBody({
     required this.dashboard,
     required this.referenceNumber,
-    required this.onShareContact,
     required this.onChangeAvatar,
     super.key,
   });
 
   final MyAreaDashboard dashboard;
   final String? referenceNumber;
-  final VoidCallback onShareContact;
   final VoidCallback onChangeAvatar;
 
   @override
@@ -63,7 +63,7 @@ class MyAreaDashboardBody extends ConsumerWidget {
           line: subtitle,
           reference: reference,
           shareLabel: l10n.shareLabel,
-          onShare: onShareContact,
+          onShare: () => context.pushNamed(RouteNames.shareMyContact),
           onAvatarTap: onChangeAvatar,
           avatarTooltip: l10n.avatarChangeTooltip,
         ),
@@ -77,7 +77,7 @@ class MyAreaDashboardBody extends ConsumerWidget {
               child: MyAreaShareTile(
                 label: l10n.shareContact,
                 iconAsset: 'assets/icons/share_contact.svg',
-                onTap: onShareContact,
+                onTap: () => context.pushNamed(RouteNames.shareMyContact),
               ),
             ),
             const SizedBox(width: SimfTokens.space2),

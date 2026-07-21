@@ -8,11 +8,14 @@
 > enrolled line + gold #qrId + bordered مشاركة button), the 2×3 tile grid —
 > wired **العربية • English** language toggle, **disabled المظهر theme tile**
 > (no light theme yet, owner decision), **مشاركة ملفي** → the share-my-contact
-> QR screen, **مشاركة جهة اتصال** (.vcf), the two API stat tiles — then
+> QR screen, **مشاركة جهة اتصال** → the same share-my-contact QR screen
+> (**#21** — re-pointed from the old native `.vcf` share sheet), the two API
+> stat tiles — then
 > جدولي اليوم rows and المزيد rows (smart badge, settings + the
 > function-preserving calendar-export and sign-out rows). Widget tests in
 > `src/Mobile/simf_app/test/features/myarea/my_area_screen_test.dart` (approved
-> card+tiles+stats+schedule, disabled theme tile, share-my-profile nav, empty
+> card+tiles+stats+schedule, disabled theme tile, share-my-profile nav,
+> share-contact nav (#21), empty
 > schedule, pending→limited card with no dashboard call, 403→limited,
 > error→retry→refetch, session-row→detail, RTL); the dashboard parser is
 > covered in `src/Mobile/simf_app/test/features/myarea/myarea_models_test.dart`.
@@ -32,7 +35,7 @@
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
 | **Auth setup** | An **Approved** visitor token (sign-up → verify-email → `SetAccountState(Approved)` → sign-in); App-DB rows seeded directly. **No literal secrets.** |
-| **Last reviewed** | 2026-06-19 (D-447 — exact-parity to live frame 758:1283) |
+| **Last reviewed** | 2026-07-22 (#21 — share-contact re-pointed to the QR screen; prev D-447 exact-parity to live frame 758:1283) |
 
 ## Coverage matrix
 
@@ -48,6 +51,7 @@
 | E2E-MOB014-008 | RTL render of card + counters + Arabic tier/hall labels | i18n | P1 | authored ✓ (screen — Arabic RTL + pending/403 limited card + session-row nav) |
 | E2E-MOB014-009 | KSA layout: language tile toggles AR/EN; theme tile visible but disabled | happy | P1 | authored ✓ (screen — disabled palette + no tap) |
 | E2E-MOB014-010 | مشاركة ملفي opens the share-my-contact QR screen | happy | P2 | authored ✓ (screen) |
+| E2E-MOB014-016 | **مشاركة جهة اتصال opens the share-my-contact QR screen (#21):** the share-contact pill (and the identity-card مشاركة button) now navigate to `RouteNames.shareMyContact`, replacing the old native `.vcf` OS share sheet | happy | P2 | authored ✓ (screen — tapping "Share contact" routes to the QR screen) |
 | E2E-MOB014-011 | ~~Photos-only profile edit (D-437): "Update ID photo" row~~ — **🗑️ REMOVED (D-654, owner):** the "تحديث صورة الهوية" row is gone from My Area; the face photo (avatar) is still changed via the tap-the-avatar flow (`_changeAvatar`) | happy | — | removed ✓ (screen asserts the row is absent) |
 | E2E-MOB014-012 | **Face-ID toggle (D-445):** the المزيد section shows an enable/disable **"Face ID sign-in"** switch that **self-hides when the device has no usable biometric**; turning it on enrols a device key (+ success toast); turning it **off first asks to confirm the permanent delete** ("…permanently deleted from this device") and only revokes after the user taps **Delete** (Cancel keeps the key). Mirrored in the side menu. | happy | P1 | authored ✓ (widget — `FaceIdToggleTile` hidden-when-unavailable / on→enrol+flip / off→confirm→revoke+flip / cancel→keep) |
 | E2E-MOB014-013 | **جدولي اليوم grouping (758:1283, D-447):** the schedule splits into a "جلسات" group then a "مقابلات" group, each under its gold sub-header; both empty → the no-items placeholder | i18n/visual | P1 | authored ✓ (screen — groups + RTL `dy` order: sessions above meetings) |
@@ -76,6 +80,27 @@ Scenario: The two share pills follow the frame order under RTL
   Then "مشاركة جهة اتصال" is at the inline-start (physical right)
   And "مشاركة ملفي" is at the end (physical left)
 ```
+
+### E2E-MOB014-016 — مشاركة جهة اتصال opens the share-my-contact QR screen (#21)
+
+```gherkin
+Scenario: The share-contact pill opens the in-app contact-QR screen
+  Given an approved visitor on /my-area
+  When they tap the "Share contact" / "مشاركة جهة اتصال" pill
+  Then the app navigates to the share-my-contact QR screen (RouteNames.shareMyContact)
+  And no native OS .vcf share sheet is invoked
+```
+
+**Note (#21):** the share-contact pill and the identity-card مشاركة button used
+to fetch `…/contact-card.vcf` and open the native OS share sheet; the owner
+re-pointed both to the in-app "شارك جهة اتصالي" QR screen — the same target as
+the مشاركة ملفي pill. **Open IA question for the owner** (not decided here):
+مشاركة جهة اتصال and مشاركة ملفي now open the *same* screen, so one pill should
+be dropped or relabelled.
+
+**Evidence:** `my_area_screen_test.dart` — `the share-contact tile opens the
+contact-QR screen (#21)` (tapping "Share contact" routes to the stubbed
+`SHARE-MY-CONTACT` screen).
 
 ### E2E-MOB014-012 — Face-ID toggle (D-445)
 
