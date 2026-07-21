@@ -3,9 +3,24 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../utils/event_date_range.dart';
+
 /// Coerce a decoded JSON value into a `Map<String, dynamic>` (empty when absent).
 Map<String, dynamic> _asStringMap(dynamic value) =>
     (value as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
+
+/// Parse the calendar date out of an ISO-8601 date(-time) string (null when
+/// absent / malformed). Only the `YYYY-MM-DD` head is used, so the offset never
+/// shifts the day — the backend stores the event date as a UTC-midnight
+/// `DateTimeOffset`, and the intended date is the written calendar date
+/// regardless of the reader's timezone.
+DateTime? _asDate(dynamic value) {
+  final raw = value as String?;
+  if (raw == null || raw.length < 10) {
+    return null;
+  }
+  return DateTime.tryParse(raw.substring(0, 10));
+}
 
 /// D-495 — the public Organization / About profile (`GET /app/organization-profile`):
 /// the edition-generic forum config (name / title / slogan / bio, year + dates +
@@ -37,6 +52,8 @@ class OrgProfile {
     this.liveStreamUrl,
     this.logoUrl,
     this.version,
+    this.eventStartDate,
+    this.eventEndDate,
   });
 
   final String name;
@@ -61,12 +78,28 @@ class OrgProfile {
   final String? logoUrl;
   final String? version;
 
+  /// The forum edition's start / end dates (#43 surfaces them on the home hero
+  /// via [eventDateRange]). Nullable — the config may not have set them yet.
+  final DateTime? eventStartDate;
+  final DateTime? eventEndDate;
+
   String nameFor(bool isArabic) => isArabic ? nameArabic : name;
   String titleFor(bool isArabic) => isArabic ? titleArabic : title;
   String? sloganFor(bool isArabic) => isArabic ? sloganArabic : slogan;
   String? bioFor(bool isArabic) => isArabic ? bioArabic : bio;
   String? locationFor(bool isArabic) =>
       isArabic ? locationTextArabic : locationText;
+
+  /// The bilingual formatted event date range (e.g. "23-25 نوفمبر 2026"), or
+  /// null when the edition's start / end dates are not both set.
+  String? eventDateRange(bool isArabic) {
+    final start = eventStartDate;
+    final end = eventEndDate;
+    if (start == null || end == null) {
+      return null;
+    }
+    return formatEventDateRange(start, end, isArabic: isArabic);
+  }
 
   static OrgProfile fromJson(Map<String, dynamic> json) => OrgProfile(
         name: json['name'] as String? ?? '',
@@ -87,6 +120,8 @@ class OrgProfile {
         liveStreamUrl: json['liveStreamUrl'] as String?,
         logoUrl: json['logoUrl'] as String?,
         version: json['version'] as String?,
+        eventStartDate: _asDate(json['eventStartDate']),
+        eventEndDate: _asDate(json['eventEndDate']),
         social: OrgSocial.fromJson(_asStringMap(json['social'])),
         aboutItems: ((json['aboutItems'] as List?) ?? const <dynamic>[])
             .map((m) => OrgAboutItem.fromJson(_asStringMap(m)))
