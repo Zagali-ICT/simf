@@ -6,11 +6,11 @@
 | Surface | Mobile (Flutter) |
 | Screen | `lib/features/home/home_screen.dart` (`HomeScreen`, 111 lines — role router only) |
 | Helpers | `lib/features/home/home_greeting.dart` (`homeGreeting` / `homePostTime`, re-exported from the screen) |
-| Widgets | `lib/features/home/widgets/` — `guest_home` · `operational_homes` (staff/moderator) · `visitor_home` · `greeting_header` · `home_banners` (live + discover hero) · `highlights_carousel` · `follow_us_section` · `discover_saudi_row` · `home_icons` |
+| Widgets | `lib/features/home/widgets/` — `guest_home` · `operational_homes` (staff/moderator) · `visitor_home` · `greeting_header` · `home_banners` (live banner) · `home_hero_banner` (rotating edition hero, #43) · `highlights_carousel` · `carousel_dots` (shared) · `follow_us_section` · `discover_saudi_row` · `home_icons` |
 | Figma nodes | signed-in **758:1134** · guest **758:2910** · highlights carousel 758:1239 (documented multi-slide deviation) |
 | Shell | `SimfPageShell` (`SimfTab.home`); signed-in uses the `GreetingHeader`, guest/staff/moderator use the standard header |
-| API | `GET /app/notifications/unread-count` (bell badge, signed-in) · `GET /app/news` (highlights, reused) · `GET /app/me/dashboard` (best-effort greeting name); all best-effort — Home never blocks on them |
-| Providers | `homeProfileProvider` · `unreadNotificationCountProvider` · `newsListProvider` · `orgProfileProvider` |
+| API | `GET /app/notifications/unread-count` (bell badge, signed-in) · `GET /app/news` (highlights, reused) · `GET /app/banners` (hero images, #43) · `GET /app/organization-profile` (hero edition overlay) · `GET /app/me/dashboard` (best-effort greeting name); all best-effort — Home never blocks on them |
+| Providers | `homeProfileProvider` · `unreadNotificationCountProvider` · `newsListProvider` · `bannersProvider` (#43) · `orgProfileProvider` |
 | Tests | `test/features/home/home_screen_test.dart` (29); goldens `test/golden/home_golden_test.dart` (`goldens/home_signed_in_758-1134.png` + `home_guest_758-2910.png`); E2E [`mobile-home.md`](../../../tests/e2e/mobile-home.md) |
 | Legacy detail | `docs/App/Page_013/` — retained as the historical spec |
 | Status | ✅ Real — built → 758:1134/2910 parity → **clean-code frozen (D-602)** |
@@ -31,8 +31,11 @@ account sees the guest layout with an awaiting-approval note.
   note).
 - **Visitor** (758:1134): `GreetingHeader` (avatar → My Area, the static
   "مرحبًا" welcome + the user's **first name** only (owner 2026-07-21),
-  bell-with-unread-badge + language/theme/menu cluster), discover hero →
-  News, LIVE banner → live, the عن الملتقى bar + 4-up about tiles + اسأل المحاور
+  bell-with-unread-badge + language/theme/menu cluster), the **rotating edition
+  hero** (#43 — forum name / theme / dates / location overlaid on the CP-managed
+  `/app/banners` images; auto-advances with dots; falls back to the static
+  discover photo + "اكتشف السعودية" copy when nothing is configured) → News, LIVE
+  banner → live, the عن الملتقى bar + 4-up about tiles + اسأل المحاور
   tile, the news tiles, the الميزات الذكية smart tiles, the الرعاة + الأخبار
   bars, the **highlights carousel** (auto-advancing image+title slides — a
   documented multi-slide deviation from the single-card frame; hidden until a

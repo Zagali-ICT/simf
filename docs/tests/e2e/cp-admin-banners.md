@@ -42,6 +42,15 @@
 > `number`, and (Edit only) an **Active** checkbox. Submit button label is
 > **Save**; the create vs. edit branch is chosen by `_isEdit`.
 >
+> **#43 (shipped) — uploaded hero image.** In **Edit** mode the form also shows a
+> **`SimfImageUpload`** (`Category="Banner"`, `OwnerId=` the banner id) that
+> uploads a real image to `POST /admin/assets/Banner/{id}/image` (gated by
+> `Banners.Edit`), served publicly at `GET /app/assets/Banner/{id}/image` while
+> the banner is active AND within its window. The Flutter app rotates these
+> banner images as the **home hero**, overlaying the forum edition (name / theme
+> / dates / location). The free-text Image URL stays as an optional fallback.
+> See E2E-BNR-024.
+>
 > **BFF routes** (`AccountEndpoints.cs`, all under `/account/api`):
 > `POST /admin/banners/list` (grid), `GET /admin/banners/{id}` (edit read-back),
 > `POST /admin/banners` (create), `PUT /admin/banners/{id}` (update),
@@ -75,6 +84,7 @@
 | E2E-BNR-021 | Excel import: toolbar Import → POST /import multipart → "N created…" modal + per-row error (D-356) | happy | P1 | _to author_ |
 | E2E-BNR-022 | Excel import rejection: non-.xlsx / wrong-sheet upload → 400 + bilingual toast, nothing created (D-356) | error | P1 | _to author_ |
 | E2E-BNR-023 | Excel round-trip: export carries Body/BodyArabic/ImageUrl/LinkUrl, and an import workbook with those columns persists all four (D-506) | happy | P1 | _to author_ |
+| E2E-BNR-024 | #43 — upload a hero image (Edit only) → POST /admin/assets/Banner/{id}/image (Banners.Edit); public serve at /app/assets/Banner/{id}/image within the window; the app home hero rotates it | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -545,6 +555,31 @@ Scenario: The export carries Body/BodyArabic/ImageUrl/LinkUrl and an import re-r
   `Export_includes_the_body_image_and_link_columns` (export header presence) and
   `Import_round_trips_the_body_image_and_link` (import → GET detail carries all four)
 
+### E2E-BNR-024 — Upload a hero image (#43)
+
+```gherkin
+Scenario: Upload an image to a banner and see it serve on the app home hero
+  Given an active banner "SIMF 2026 Keynote" exists within its display window
+  When the administrator clicks the row's Edit (pencil) icon action
+  Then the Edit form shows a SimfImageUpload control (Category="Banner")
+  When they choose a PNG / JPEG / WebP image and confirm the upload
+  Then a POST /account/api/admin/assets/Banner/{bannerId}/image (multipart) fires,
+       gated by Banners.Edit, and returns 200
+  And the admin preview GET /account/api/admin/assets/Banner/{bannerId}/image shows it
+  And the public GET /app/assets/Banner/{bannerId}/image returns 200 (the banner is
+      active AND within [StartUtc, EndUtc])
+  When the banner's window has ended (or it is deactivated)
+  Then the public GET /app/assets/Banner/{bannerId}/image returns 404
+      (matching GET /app/banners visibility — the app then falls back)
+  And a non-image / >10MB upload is rejected 400 by the magic-byte gate
+```
+
+**Evidence:** the app-side render is covered by
+`test/features/home/widgets/home_hero_banner_test.dart` (rotation + the edition
+overlay); the serve-window predicate is asserted at the API layer by
+`CmsTests.Banner_create_then_public_list_returns_active_only_within_window`
+(same `IsActive && StartUtc <= now && EndUtc >= now` predicate the image serve reuses).
+
 ---
 
 ## Implementation notes
@@ -579,3 +614,5 @@ Scenario: The export carries Body/BodyArabic/ImageUrl/LinkUrl and an import re-r
 _Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle): added E2E-BNR-017..022 (presentation toggle, full-page round-trip, CrudShell+SimfConfirm delete gate, Excel export/import/rejection) and corrected the stale page-summary + BNR-001/010 one-click-delete claims to the shipped CrudShell + SimfConfirm flow.
 
 _Updated:_ 2026-06-26 by Claude (D-506 — Excel field-drop fix): the export now appends Body/BodyArabic/ImageUrl/LinkUrl (import already read them) so all four round-trip; added E2E-BNR-023 + the matrix row and corrected the stale six-column export header list in E2E-BNR-020.
+
+_Updated:_ 2026-07-21 by Claude (#43 — banner hero image upload): the Edit form gains a `SimfImageUpload` (`Category=Banner`) served at `/app/assets/Banner/{id}/image` and rotated as the Flutter home hero; added E2E-BNR-024 + the matrix row.
