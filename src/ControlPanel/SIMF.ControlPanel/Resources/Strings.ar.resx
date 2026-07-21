@@ -55,6 +55,14 @@
   <data name="Admin.Edit.ProfileType.None" xml:space="preserve"><value>— بدون —</value></data>
   <data name="Admin.Edit.ProfileType.Choose" xml:space="preserve"><value>اختر نوع الملف الشخصي…</value></data>
   <data name="Admin.Edit.EmailChangeNote" xml:space="preserve"><value>تغيير البريد الإلكتروني يُنهي جميع جلسات الحساب.</value></data>
+  <data name="Admin.Edit.Photo.Section" xml:space="preserve"><value>الصورة والهوية</value></data>
+  <data name="Admin.Edit.Photo.Current" xml:space="preserve"><value>الصورة الحالية</value></data>
+  <data name="Admin.Edit.Photo.Avatar" xml:space="preserve"><value>الصورة الشخصية</value></data>
+  <data name="Admin.Edit.Photo.Avatar.Hint" xml:space="preserve"><value>PNG أو JPEG أو WebP، بحد أقصى 2 ميغابايت. اتركه فارغًا للإبقاء على الصورة الحالية.</value></data>
+  <data name="Admin.Edit.Photo.IdDocument" xml:space="preserve"><value>صورة الهوية</value></data>
+  <data name="Admin.Edit.Photo.IdDocument.Hint" xml:space="preserve"><value>يلزم وجود صورة واضحة للوجه. PNG أو JPEG أو WebP، بحد أقصى 5 ميغابايت.</value></data>
+  <data name="Admin.Edit.Photo.VipPhoto" xml:space="preserve"><value>صورة ترحيب كبار الشخصيات</value></data>
+  <data name="Admin.Edit.Photo.VipPhoto.Hint" xml:space="preserve"><value>الصورة عالية الدقة التي تُشارك مع فريق الترحيب. PNG أو JPEG أو WebP، بحد أقصى 2 ميغابايت.</value></data>
   <data name="Admin.Edit.Cancel" xml:space="preserve"><value>إلغاء</value></data>
   <data name="Admin.Edit.Save" xml:space="preserve"><value>حفظ التغييرات</value></data>
   <data name="Admin.Edit.Saving" xml:space="preserve"><value>جارٍ الحفظ…</value></data>
@@ -1783,6 +1791,9 @@
   <data name="Admin.Vips.Col.JobTitle" xml:space="preserve"><value>المسمّى الوظيفي</value></data>
   <data name="Admin.Vips.Col.ProfileType" xml:space="preserve"><value>نوع الملف</value></data>
   <data name="Admin.Vips.Col.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
+  <data name="Admin.Vips.Action.AddVip" xml:space="preserve"><value>إضافة شخصية بارزة</value></data>
+  <data name="Admin.Vips.Edit.Title" xml:space="preserve"><value>تعديل بيانات الشخصية البارزة</value></data>
+  <data name="Admin.Vips.Edit.Saved" xml:space="preserve"><value>تم تحديث بيانات الشخصية البارزة.</value></data>
   <data name="Admin.Vips.Notify.Title" xml:space="preserve"><value>إشعار كبار الضيوف</value></data>
   <data name="Admin.Vips.Notify.TitleField" xml:space="preserve"><value>العنوان (الإنجليزية)</value></data>
   <data name="Admin.Vips.Notify.TitleArabicField" xml:space="preserve"><value>العنوان (العربية)</value></data>
