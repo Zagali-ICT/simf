@@ -1,4 +1,6 @@
 // Tests: D-473 (#10) — delegates (وفد) + bulk-generate placeholder badges.
+//        D-751 (#10) — bulk-badge organiser email delivery (ZIP of QR PNGs).
+using System.IO.Compression;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -21,12 +23,12 @@ namespace SIMF.Api.Tests;
 /// D-473 (#10) — a delegate is a normal visitor with <c>IsDelegate</c> set and an
 /// invited country; plus the bulk-generate of placeholder badges by profile type.
 /// </summary>
-public sealed class DelegatesAndBulkBadgesTests : IClassFixture<SimfApiFactory>
+public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailApiFactory>
 {
-    private readonly SimfApiFactory _factory;
+    private readonly BulkBadgeEmailApiFactory _factory;
     private readonly HttpClient _client;
 
-    public DelegatesAndBulkBadgesTests(SimfApiFactory factory)
+    public DelegatesAndBulkBadgesTests(BulkBadgeEmailApiFactory factory)
     {
         _factory = factory;
         _factory.EnsureDatabaseCreated();
@@ -175,6 +177,124 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<SimfApiFactory>
             .Where(p => p.ProfileTypeId == validProfileTypeId)
             .ToListAsync();
         Assert.Empty(badges);
+    }
+
+    [Fact]
+    public async Task Bulk_generate_with_a_recipient_email_enqueues_one_zip_of_all_badge_pngs()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        // Two fresh types so the ZIP must carry the SUM of both counts (2 + 3 = 5).
+        var typeA = await FreshVisitorProfileTypeAsync();
+        var typeB = await FreshVisitorProfileTypeAsync();
+        var recipient = $"organiser-{Guid.NewGuid():N}@simf.test";
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/visitors/bulk-generate",
+            new AdminBulkGenerateBadgesRequest
+            {
+                IsDelegate = false,
+                RecipientEmail = recipient,
+                Batches = new List<BulkBadgeBatch>
+                {
+                    new() { ProfileTypeId = typeA, Count = 2 },
+                    new() { ProfileTypeId = typeB, Count = 3 },
+                },
+            },
+            admin);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AdminBulkGenerateBadgesResponse>>())!;
+        Assert.Equal(5, body.Data!.Created);
+        Assert.True(body.Data!.EmailQueued);
+
+        // Exactly one message to this (unique) recipient, carrying one ZIP whose
+        // entries are one PNG per generated badge (sum of the batch counts).
+        var messages = _factory.Emails.Messages.Where(m => m.To == recipient).ToList();
+        var message = Assert.Single(messages);
+        var attachment = Assert.Single(message.Attachments!);
+        Assert.Equal("application/zip", attachment.ContentType);
+        Assert.StartsWith("badges-", attachment.FileName);
+        Assert.EndsWith(".zip", attachment.FileName);
+
+        using var zip = new ZipArchive(new MemoryStream(attachment.Content), ZipArchiveMode.Read);
+        Assert.Equal(5, zip.Entries.Count);
+        Assert.All(zip.Entries, entry => Assert.EndsWith(".png", entry.Name));
+        foreach (var entry in zip.Entries)
+        {
+            using var stream = entry.Open();
+            using var buffer = new MemoryStream();
+            stream.CopyTo(buffer);
+            var bytes = buffer.ToArray();
+            // Each entry is a real, non-empty PNG (magic bytes 89 50 4E 47).
+            Assert.True(bytes.Length > 8);
+            Assert.Equal(new byte[] { 0x89, 0x50, 0x4E, 0x47 }, bytes.Take(4).ToArray());
+        }
+    }
+
+    [Fact]
+    public async Task Bulk_generate_with_an_invalid_recipient_email_is_400_and_writes_zero_accounts()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var typeId = await FreshVisitorProfileTypeAsync();
+        var attachmentEmailsBefore =
+            _factory.Emails.Messages.Count(m => m.Attachments is { Count: > 0 });
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/visitors/bulk-generate",
+            new AdminBulkGenerateBadgesRequest
+            {
+                IsDelegate = false,
+                RecipientEmail = "not-an-email",
+                Batches = new List<BulkBadgeBatch>
+                {
+                    new() { ProfileTypeId = typeId, Count = 3 },
+                },
+            },
+            admin);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AdminBulkGenerateBadgesResponse>>())!;
+        Assert.Equal(ErrorCodes.ValidationFailed, body.Error!.Code);
+
+        // A 4xx must have no side effects — zero badges written, no email enqueued.
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var badges = await appDb.UserProfiles.Where(p => p.ProfileTypeId == typeId).ToListAsync();
+        Assert.Empty(badges);
+        Assert.Equal(attachmentEmailsBefore,
+            _factory.Emails.Messages.Count(m => m.Attachments is { Count: > 0 }));
+    }
+
+    [Fact]
+    public async Task Bulk_generate_without_a_recipient_email_enqueues_nothing()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var typeId = await FreshVisitorProfileTypeAsync();
+        var attachmentEmailsBefore =
+            _factory.Emails.Messages.Count(m => m.Attachments is { Count: > 0 });
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/visitors/bulk-generate",
+            new AdminBulkGenerateBadgesRequest
+            {
+                IsDelegate = false,
+                Batches = new List<BulkBadgeBatch>
+                {
+                    new() { ProfileTypeId = typeId, Count = 2 },
+                },
+            },
+            admin);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AdminBulkGenerateBadgesResponse>>())!;
+        Assert.Equal(2, body.Data!.Created);
+        Assert.False(body.Data!.EmailQueued);
+        // Back-compat: no attachment-bearing email was enqueued by this path.
+        Assert.Equal(attachmentEmailsBefore,
+            _factory.Emails.Messages.Count(m => m.Attachments is { Count: > 0 }));
     }
 
     // -- helpers --------------------------------------------------------------

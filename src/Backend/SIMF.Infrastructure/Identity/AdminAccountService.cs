@@ -41,6 +41,9 @@ internal sealed partial class AdminAccountService(
     IRecoveryCodeService recoveryCodes,
     IAccountCodeRepository accountCodeRepository,
     IEmailQueue emailQueue,
+    // D-751 (#10) — renders the BulkBadgeDelivery cover note (DB override or the
+    // code-owned default) for the emailed bulk-badge ZIP. Never throws.
+    IEmailTemplateResolver emailTemplates,
     IAuditLog auditLog,
     IUserExcelService excel,
     // qrIdMinter is used by the approve flow (AdminAccountService.Approval.cs)

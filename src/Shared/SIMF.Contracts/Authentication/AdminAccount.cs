@@ -562,6 +562,13 @@ public sealed class AdminBulkGenerateBadgesRequest
 
     /// <summary>The (profile type, count) batches to generate.</summary>
     public IList<BulkBadgeBatch> Batches { get; set; } = new List<BulkBadgeBatch>();
+
+    /// <summary>D-751 (#10) — optional organiser recipient. When provided, the
+    /// generated QR badge PNGs are zipped and emailed to this one address after
+    /// generation. Null / empty leaves the badges DB-only (no email). Validated
+    /// (trim, length, basic format) BEFORE any account is written, so a bad
+    /// address is a clean 400 with nothing persisted.</summary>
+    public string? RecipientEmail { get; set; }
 }
 
 /// <summary>D-473 (#10) — one bulk batch: how many badges of one profile type.</summary>
@@ -571,8 +578,11 @@ public sealed class BulkBadgeBatch
     public int Count { get; set; }
 }
 
-/// <summary>D-473 (#10) — the count of badges generated.</summary>
-public sealed record AdminBulkGenerateBadgesResponse(int Created);
+/// <summary>D-473 (#10) — the count of badges generated. D-751: <see
+/// cref="EmailQueued"/> is true when an organiser recipient was supplied and the
+/// ZIP of QR badge PNGs was enqueued for delivery (default false keeps existing
+/// positional callers compiling).</summary>
+public sealed record AdminBulkGenerateBadgesResponse(int Created, bool EmailQueued = false);
 
 /// <summary>
 /// D-127 / D-126 — body returned by the broadened admin profile-read endpoints

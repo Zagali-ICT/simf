@@ -18,7 +18,22 @@ public sealed class SmtpEmailSender(IOptions<EmailOptions> options) : IEmailSend
         mime.From.Add(new MailboxAddress(settings.FromName, settings.FromAddress));
         mime.To.Add(MailboxAddress.Parse(message.To));
         mime.Subject = message.Subject;
-        mime.Body = new BodyBuilder { HtmlBody = message.HtmlBody }.ToMessageBody();
+
+        // D-751 — attachments (e.g. the bulk-badge QR ZIP) ride the same
+        // BodyBuilder; without any, this is identical to the previous single-part
+        // HTML body.
+        var builder = new BodyBuilder { HtmlBody = message.HtmlBody };
+        if (message.Attachments is { Count: > 0 })
+        {
+            foreach (var attachment in message.Attachments)
+            {
+                builder.Attachments.Add(
+                    attachment.FileName,
+                    attachment.Content,
+                    ContentType.Parse(attachment.ContentType));
+            }
+        }
+        mime.Body = builder.ToMessageBody();
 
         using var client = new SmtpClient();
         await client.ConnectAsync(
