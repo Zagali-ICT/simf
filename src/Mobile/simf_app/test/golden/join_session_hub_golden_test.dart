@@ -10,6 +10,8 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/app_theme.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/data/sessions_repository.dart'
+    show programmeSessionsProvider;
 import 'package:simf_app/features/sessions/join_session_hub_screen.dart';
 
 import 'golden_fonts.dart';
@@ -75,7 +77,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: <Override>[
-          joinHubSessionsProvider.overrideWith((ref) async => _sessions),
+          programmeSessionsProvider.overrideWith((ref) async => _sessions),
         ],
         child: MaterialApp.router(
           debugShowCheckedModeBanner: false,
