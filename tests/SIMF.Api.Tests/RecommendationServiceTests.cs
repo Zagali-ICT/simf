@@ -268,6 +268,11 @@ public sealed class RecommendationServiceTests : IClassFixture<SimfApiFactory>
                 IsSaudi = true,
                 NationalId = "1234567890",
                 NationalityId = 0,
+                // D-736 — a candidate only appears in Meet-People-Like-You when opted
+                // in; the recommender filters on this flag. Set it explicitly so the
+                // seeded candidates are discoverable regardless of the store/CLR
+                // default (these tests predate the D-736 opt-in filter).
+                ShowInMeetLikeYou = true,
                 CreatedAt = DateTimeOffset.UtcNow,
             };
             if (interestIds.Count > 0)
