@@ -159,12 +159,9 @@
   <data name="Account.Notifications.Loading" xml:space="preserve"><value>جارٍ تحميل الإشعارات…</value></data>
   <data name="Account.Notifications.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
 
-  <data name="Nav.Programme" xml:space="preserve"><value>البرنامج</value></data>
-  <data name="Nav.Visit" xml:space="preserve"><value>الزيارة</value></data>
-
   <!-- ============ Public landing (Bootstrap rebuild) ============ -->
   <data name="Landing.PageTitle" xml:space="preserve"><value>الملتقى البحري السعودي الدولي الرابع | SIMF 2026</value></data>
-  <data name="Landing.MetaDescription" xml:space="preserve"><value>الملتقى البحري السعودي الدولي 2026 — منصة عالمية حول مستقبل أمن قاع البحار وسلاسل الإمداد البحرية. الرياض، 23–25 نوفمبر 2026.</value></data>
+  <data name="Landing.MetaDescription" xml:space="preserve"><value>الملتقى البحري السعودي الدولي 2026 — منصة عالمية حول مستقبل أمن قاع البحار وسلاسل الإمداد البحرية. الرياض، {0}.</value></data>
   <data name="Landing.Loading" xml:space="preserve"><value>جارٍ التحميل</value></data>
   <data name="Landing.Hero.Title" xml:space="preserve"><value>المُلتقى البحري السعودي الدولي</value></data>
   <data name="Landing.Hero.Subtitle" xml:space="preserve"><value>مستقبل أمن قاع البحار وسلاسل الإمداد في بيئة عالمية متغيرة</value></data>
@@ -190,6 +187,7 @@
   <data name="Landing.Nav.About.Venue" xml:space="preserve"><value>المكان</value></data>
   <data name="Landing.Nav.Programs" xml:space="preserve"><value>البرامج</value></data>
   <data name="Landing.Nav.Programs.Title" xml:space="preserve"><value>البرامج</value></data>
+  <data name="Landing.Nav.Programs.Agenda" xml:space="preserve"><value>الأجندة الكاملة</value></data>
   <data name="Landing.Nav.Programs.Opening" xml:space="preserve"><value>حفل الافتتاح</value></data>
   <data name="Landing.Nav.Programs.Sessions" xml:space="preserve"><value>الجلسات العامة</value></data>
   <data name="Landing.Nav.Programs.Exhibition" xml:space="preserve"><value>المعرض</value></data>
@@ -205,6 +203,7 @@
   <data name="Landing.Nav.Archive.E1" xml:space="preserve"><value>النسخة الأولى 2019</value></data>
   <data name="Landing.Nav.Archive.E2" xml:space="preserve"><value>النسخة الثانية 2022</value></data>
   <data name="Landing.Nav.Archive.E3" xml:space="preserve"><value>النسخة الثالثة 2024</value></data>
+  <data name="Landing.Nav.Archive.All" xml:space="preserve"><value>استعرض كل النسخ</value></data>
   <data name="Landing.Search.Placeholder" xml:space="preserve"><value>بحث</value></data>
   <data name="Landing.Search.Submit" xml:space="preserve"><value>بحث</value></data>
   <data name="Landing.Search.Voice" xml:space="preserve"><value>البحث الصوتي</value></data>
@@ -284,20 +283,30 @@
   <data name="Programme.Empty.Title" xml:space="preserve"><value>لا توجد جلسات بعد</value></data>
   <data name="Programme.Empty.Text" xml:space="preserve"><value>لم يتم نشر الأجندة بعد. يُرجى التحقق لاحقًا.</value></data>
   <data name="Programme.Speakers.Title" xml:space="preserve"><value>المتحدثون</value></data>
+  <data name="Programme.Agenda.Title" xml:space="preserve"><value>المواعيد</value></data>
+  <data name="Programme.DayStrip.Aria" xml:space="preserve"><value>اختر يومًا</value></data>
+  <data name="Programme.Filter.Aria" xml:space="preserve"><value>تصفية حسب نوع الجلسة</value></data>
+  <data name="Programme.Filter.All" xml:space="preserve"><value>الكل</value></data>
+  <data name="Programme.Filter.Empty" xml:space="preserve"><value>لا توجد جلسات مطابقة.</value></data>
+  <data name="Programme.Type.Workshop" xml:space="preserve"><value>ورش العمل</value></data>
+  <data name="Programme.Type.Session" xml:space="preserve"><value>جلسات</value></data>
+  <data name="Programme.Type.Event" xml:space="preserve"><value>الأحداث</value></data>
 
-  <data name="Visit.PageTitle" xml:space="preserve"><value>الزيارة والدخول · الملتقى البحري السعودي الدولي</value></data>
-  <data name="Visit.Banner.Title" xml:space="preserve"><value>الزيارة والدخول</value></data>
-  <data name="Visit.Banner.Subtitle" xml:space="preserve"><value>كل ما تحتاج معرفته قبل وصولك إلى الملتقى.</value></data>
-  <data name="Visit.GettingHere.Title" xml:space="preserve"><value>الوصول إلى الموقع</value></data>
-  <data name="Visit.GettingHere.Body" xml:space="preserve"><value>يُقام الملتقى في مقر الفعالية الرسمي. سيُنشر العنوان الكامل وخريطة الموقع هنا مع اقتراب موعد الفعالية. يُرجى اتباع اللافتات الإرشادية في الموقع وتوجيهات المنظمين عند الوصول.</value></data>
-  <data name="Visit.GettingHere.Transport" xml:space="preserve"><value>سيُعلن عن تفاصيل مواقف السيارات ووسائل النقل، بما في ذلك أقرب طرق الوصول، قبل يوم الافتتاح.</value></data>
-  <data name="Visit.Entry.Title" xml:space="preserve"><value>الدخول والبطاقات</value></data>
-  <data name="Visit.Entry.Badge" xml:space="preserve"><value>يتم الدخول عن طريق بطاقة رمز الاستجابة السريعة (QR). بعد اعتماد حسابك، افتح تطبيق سيمف للجوال لعرض بطاقتك الشخصية، ويقوم الموظفون بمسحها عند المدخل لتسجيل دخولك.</value></data>
-  <data name="Visit.Entry.SignUp" xml:space="preserve"><value>ليس لديك حساب بعد؟ سجّل في تطبيق سيمف قبل سفرك ليكون بطاقتك جاهزة في الوقت المناسب للدخول.</value></data>
-  <data name="Visit.Hours.Title" xml:space="preserve"><value>ساعات العمل</value></data>
-  <data name="Visit.Hours.Body" xml:space="preserve"><value>يفتح الملتقى أبوابه يوميًا خلال أيام الفعالية. سيتم تأكيد مواعيد الفتح والإغلاق الدقيقة لكل يوم هنا قبل بدء الفعالية.</value></data>
-  <data name="Visit.Accessibility.Title" xml:space="preserve"><value>إمكانية الوصول</value></data>
-  <data name="Visit.Accessibility.Body" xml:space="preserve"><value>تم تصميم الموقع ليكون متاحًا للزوار من ذوي الحركة المحدودة. إذا كانت لديك احتياجات وصول محددة، يُرجى التواصل مع منسق الفعالية مسبقًا حتى نتمكن من مساعدتك في يوم الزيارة.</value></data>
+  <!-- visits page (/visit) — Figma 5867-24636 (supersedes the old MudBlazor visit-entry page) -->
+  <data name="Visit.PageTitle" xml:space="preserve"><value>الزيارة والسفر — الملتقى البحري السعودي الدولي</value></data>
+  <data name="Visit.Meta" xml:space="preserve"><value>خطّط لزيارتك للملتقى البحري السعودي الدولي — أسباب زيارة المملكة، وكيفية السفر والحصول على التأشيرة السعودية.</value></data>
+  <data name="Visit.Hero.Title" xml:space="preserve"><value>الزيارة والسفر</value></data>
+  <data name="Visit.Hero.Subtitle" xml:space="preserve"><value>كل ما تحتاجه لتخطيط زيارتك للملتقى — أسباب الحضور، وكيفية السفر إلى المملكة والدخول إليها.</value></data>
+  <data name="Visit.Why.Title" xml:space="preserve"><value>لماذا الزيارة</value></data>
+  <data name="Visit.Why.Desc" xml:space="preserve"><value>من الإرث العريق إلى مدن المستقبل، اكتشف الوجهات التي تجعل زيارة المملكة لا تُنسى.</value></data>
+  <data name="Visit.Visa.Title" xml:space="preserve"><value>السفر والتأشيرة</value></data>
+  <data name="Visit.Visa.Sub" xml:space="preserve"><value>أصبح دخول المملكة العربية السعودية أسهل من أي وقت مضى — إليك كيفية تخطيط سفرك وتأشيرتك لحضور الملتقى.</value></data>
+  <data name="Visit.Visa.Heading" xml:space="preserve"><value>التأشيرة السياحية</value></data>
+  <data name="Visit.Visa.Body1" xml:space="preserve"><value>أصبح الحصول على تأشيرة دخول إلى المملكة العربية السعودية أسهل! تتوفر التأشيرات الإلكترونية والتأشيرات السياحية عند الوصول لـ 66 جنسية، بالإضافة لمن لديهم تأشيرات صالحة ومستعملة للولايات المتحدة أو المملكة المتحدة أو تأشيرة شنغن. كما يمكن للمقيمين في دول مجلس التعاون الخليجي الذين يعملون في مهن مؤهلة التقدم للحصول على تأشيرات إلكترونية من خلال بوابتهم الإلكترونية.</value></data>
+  <data name="Visit.Visa.Body2" xml:space="preserve"><value>كما أعلنت السلطات السعودية أن مواطني أي بلد يحمل تأشيرة الولايات المتحدة أو المملكة المتحدة أو تأشيرة شنغن سيكونون مؤهلين للتقدم للحصول على التأشيرات السياحية. تسمح هذه التأشيرات السياحية للمسلمين من الدول المؤهلة بأداء العمرة في أي وقت خارج موسم الحج. يمكن للمسلمين من أي من الجنسيات المذكورة أعلاه زيارة مكة والمدينة بتأشيرة إلكترونية. لا يمكن لغير المسلمين دخول مكة المكرمة في أي وقت أثناء زيارتهم للمملكة العربية السعودية.</value></data>
+  <data name="Visit.Visa.Cta" xml:space="preserve"><value>التفاصيل</value></data>
+  <data name="Visit.Visa.CtaTitle" xml:space="preserve"><value>عرض قائمة البلدان</value></data>
+  <data name="Visit.Visa.CtaSub" xml:space="preserve"><value>الدول المؤهلة للحصول على التأشيرة الإلكترونية</value></data>
   <data name="Meeting.Confirm.Title" xml:space="preserve"><value>تأكيد الاجتماع</value></data>
   <data name="Meeting.Confirm.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
   <data name="Meeting.Confirm.Invalid" xml:space="preserve"><value>لم يعد هذا الرابط صالحاً.</value></data>
@@ -354,4 +363,124 @@
   <data name="SessionDetail.Downloads.Title" xml:space="preserve"><value>روابط التحميل</value></data>
   <data name="SessionDetail.Outcomes.Title" xml:space="preserve"><value>أبرز المخرجات</value></data>
   <data name="SessionDetail.Outcomes.Subtitle" xml:space="preserve"><value>ما الذي ستخرج به</value></data>
+
+  <!-- interior page-hero (shared: About cluster, …) -->
+  <data name="PageHero.Home" xml:space="preserve"><value>الرئيسية</value></data>
+
+  <!-- about us page (/about) -->
+  <data name="About.PageTitle" xml:space="preserve"><value>عن الملتقى — الملتقى البحري السعودي الدولي</value></data>
+  <data name="About.Meta" xml:space="preserve"><value>عن الملتقى البحري السعودي الدولي — المنصة الرائدة للحوار البحري، وقيمه ومؤشرات مشاركته وركائزه.</value></data>
+  <data name="About.Breadcrumb" xml:space="preserve"><value>عن الملتقى</value></data>
+  <data name="About.Hero.Title" xml:space="preserve"><value>عن المُلتقى البحري السعودي الدولي</value></data>
+  <data name="About.Hero.Subtitle" xml:space="preserve"><value>الملتقى البحري السعودي الدولي الرابع — المنصة الرائدة للحوار والتعاون في مجال الشؤون البحرية.</value></data>
+  <data name="About.Values.Title" xml:space="preserve"><value>القيم</value></data>
+  <data name="About.Pillars.Title" xml:space="preserve"><value>ركائز الملتقى</value></data>
+  <data name="About.Pillars.Sub" xml:space="preserve"><value>ماذا يقدّم الملتقى</value></data>
+
+  <!-- objectives page (/about/objectives) -->
+  <data name="Objectives.PageTitle" xml:space="preserve"><value>الأهداف — الملتقى البحري السعودي الدولي</value></data>
+  <data name="Objectives.Meta" xml:space="preserve"><value>الأهداف الاستراتيجية للملتقى البحري السعودي الدولي — الأمن البحري ومرونة سلاسل الإمداد وأمن الطاقة وحماية البنية التحتية والتحول الرقمي والتعاون الدولي.</value></data>
+  <data name="Objectives.Breadcrumb" xml:space="preserve"><value>الأهداف</value></data>
+  <data name="Objectives.Hero.Title" xml:space="preserve"><value>الأهداف</value></data>
+  <data name="Objectives.Hero.Subtitle" xml:space="preserve"><value>الأهداف الاستراتيجية التي يسعى الملتقى لتحقيقها عبر جلساته وفعالياته.</value></data>
+  <data name="Objectives.Section.Title" xml:space="preserve"><value>ستة أهداف رئيسية</value></data>
+  <data name="Objectives.Section.Sub" xml:space="preserve"><value>يهدف الملتقى البحري السعودي الدولي إلى ترسيخ مكانة المملكة كلاعب محوري في الأمن البحري العالمي، وبناء أطر تعاون عملية بين الدول والمنظمات والقطاع الخاص.</value></data>
+
+  <!-- key themes page (/about/themes) -->
+  <data name="Themes.PageTitle" xml:space="preserve"><value>المحاور — الملتقى البحري السعودي الدولي</value></data>
+  <data name="Themes.Meta" xml:space="preserve"><value>المحاور الرئيسية والمواضيع الاستراتيجية للملتقى البحري السعودي الدولي — من الأمن والحماية إلى التقنية والاستدامة.</value></data>
+  <data name="Themes.Breadcrumb" xml:space="preserve"><value>المحاور</value></data>
+  <data name="Themes.Hero.Title" xml:space="preserve"><value>المحاور</value></data>
+  <data name="Themes.Hero.Subtitle" xml:space="preserve"><value>أبرز الملفات والقضايا التي تناقشها جلسات الملتقى وورش عمله.</value></data>
+  <data name="Themes.Section.Title" xml:space="preserve"><value>المحاور الرئيسية</value></data>
+  <data name="Themes.Section.Sub" xml:space="preserve"><value>يتناول الملتقى منظومة متكاملة من المواضيع الاستراتيجية التي تشكّل مستقبل القطاع البحري عالمياً، من الأمن والحماية إلى التقنية والاستدامة.</value></data>
+  <data name="Themes.OnThisPage" xml:space="preserve"><value>في هذه الصفحة</value></data>
+
+  <!-- the organizer page (/about/organizer) -->
+  <data name="Organizer.PageTitle" xml:space="preserve"><value>المنظم — الملتقى البحري السعودي الدولي</value></data>
+  <data name="Organizer.Meta" xml:space="preserve"><value>الجهات المنظمة للملتقى البحري السعودي الدولي — يُقام تحت رعاية وزارة الدفاع وتنظّمه القوات البحرية الملكية السعودية.</value></data>
+  <data name="Organizer.Breadcrumb" xml:space="preserve"><value>المنظم</value></data>
+  <data name="Organizer.Hero.Title" xml:space="preserve"><value>المنظم</value></data>
+  <data name="Organizer.Hero.Subtitle" xml:space="preserve"><value>منصة دولية جمعت قادة القوات البحرية والخبراء لمناقشة مستقبل الأمن البحري وحماية الممرات الملاحية.</value></data>
+  <data name="Organizer.Section.Title" xml:space="preserve"><value>الجهة المنظمة</value></data>
+  <data name="Organizer.Section.Sub" xml:space="preserve"><value>يُقام الملتقى تحت رعاية وزارة الدفاع وتنظّمه القوات البحرية الملكية السعودية، بالتعاون مع الجهات الحكومية ذات الصلة.</value></data>
+
+  <!-- the venue page (/about/venue) -->
+  <data name="Venue.PageTitle" xml:space="preserve"><value>المكان — الملتقى البحري السعودي الدولي</value></data>
+  <data name="Venue.Meta" xml:space="preserve"><value>مكان انعقاد الملتقى البحري السعودي الدولي — فندق ومركز مؤتمرات سوفيتيل الرياض، الرياض، المملكة العربية السعودية.</value></data>
+  <data name="Venue.Breadcrumb" xml:space="preserve"><value>المكان</value></data>
+  <data name="Venue.Hero.Title" xml:space="preserve"><value>المكان</value></data>
+  <data name="Venue.Hero.Subtitle" xml:space="preserve"><value>يُقام الملتقى في قلب الرياض، بمرافق مؤتمرات متكاملة تليق بحدث دولي.</value></data>
+  <data name="Venue.Section.Title" xml:space="preserve"><value>مكان الملتقى</value></data>
+  <data name="Venue.Section.Sub" xml:space="preserve"><value>الموقع وتاريخ ووقت انعقاد الملتقى البحري السعودي الدولي 2026.</value></data>
+  <data name="Venue.Address" xml:space="preserve"><value>الرياض، المملكة العربية السعودية</value></data>
+  <data name="Venue.Meta.Date" xml:space="preserve"><value>التاريخ</value></data>
+  <data name="Venue.Meta.Time" xml:space="preserve"><value>وقت الافتتاح</value></data>
+  <data name="Venue.Directions" xml:space="preserve"><value>الاتجاهات على الخريطة</value></data>
+
+  <!-- opening ceremony page (/programme/opening) -->
+  <data name="Opening.PageTitle" xml:space="preserve"><value>حفل الافتتاح — الملتقى البحري السعودي الدولي</value></data>
+  <data name="Opening.Meta" xml:space="preserve"><value>حفل الافتتاح وبرنامج الملتقى البحري السعودي الدولي — نظرة عامة على فعاليات الملتقى والجهات المستهدفة للمشاركة.</value></data>
+  <data name="Opening.Hero.Title" xml:space="preserve"><value>حفل الافتتاح</value></data>
+  <data name="Opening.Overview.Title" xml:space="preserve"><value>نظرة عامة</value></data>
+  <data name="Opening.Overview.Sub" xml:space="preserve"><value>نظرة عامة على فعاليات وأنشطة الملتقى.</value></data>
+  <data name="Opening.Participants.Title" xml:space="preserve"><value>الجهات المستهدفة للمشاركة</value></data>
+  <data name="Opening.Participants.Sub" xml:space="preserve"><value>الجهات التي يستهدف الملتقى مشاركتها عبر القطاع الحكومي والصناعي وقطاع الفعاليات.</value></data>
+
+  <!-- plenary sessions page (/programme/sessions) -->
+  <data name="Plenary.PageTitle" xml:space="preserve"><value>الجلسات الرئيسية — الملتقى البحري السعودي الدولي</value></data>
+  <data name="Plenary.Meta" xml:space="preserve"><value>الجلسات الرئيسية للملتقى البحري السعودي الدولي — ثلاثة أيام من الجلسات رفيعة المستوى حول مستقبل الأمن البحري.</value></data>
+  <data name="Plenary.Hero.Title" xml:space="preserve"><value>الجلسات الرئيسية</value></data>
+  <data name="Plenary.Section.Title" xml:space="preserve"><value>الجلسات الرئيسية</value></data>
+  <data name="Plenary.Section.Sub" xml:space="preserve"><value>ثلاثة أيام من الجلسات الرئيسية حول مستقبل الأمن البحري — سلاسل إمداد الطاقة والبنية اللوجستية والمجال الرقمي لقاع البحار.</value></data>
+  <data name="Plenary.Card.Button" xml:space="preserve"><value>استكشف الجلسات</value></data>
+
+  <!-- exhibition page (/programme/exhibition) -->
+  <data name="Exhibition.PageTitle" xml:space="preserve"><value>المعرض — الملتقى البحري السعودي الدولي</value></data>
+  <data name="Exhibition.Meta" xml:space="preserve"><value>المعرض المصاحب للملتقى البحري السعودي الدولي — مخطط توزيع الأجنحة.</value></data>
+  <data name="Exhibition.Hero.Title" xml:space="preserve"><value>المعرض</value></data>
+  <data name="Exhibition.Section.Title" xml:space="preserve"><value>مخطط خريطة المعرض</value></data>
+  <data name="Exhibition.Section.Sub" xml:space="preserve"><value>مخطط توزيع أجنحة المعرض المصاحب للملتقى.</value></data>
+  <data name="Exhibition.Map.Alt" xml:space="preserve"><value>مخطط خريطة المعرض يوضّح الأجنحة المرقّمة والمناطق.</value></data>
+
+  <!-- government business meetings page (/programme/gov-meetings) -->
+  <data name="GovMeetings.PageTitle" xml:space="preserve"><value>اجتماعات الأعمال الحكومية — الملتقى البحري السعودي الدولي</value></data>
+  <data name="GovMeetings.Meta" xml:space="preserve"><value>اجتماعات الأعمال الحكومية في الملتقى البحري السعودي الدولي — لقاءات ثنائية منظّمة بين القطاع الخاص والجهات الحكومية.</value></data>
+  <data name="GovMeetings.Hero.Title" xml:space="preserve"><value>اجتماعات الأعمال الحكومية</value></data>
+  <data name="GovMeetings.Hero.Subtitle" xml:space="preserve"><value>لقاءات ثنائية منظّمة بين القطاع الخاص والجهات الحكومية تُعقد على هامش الملتقى.</value></data>
+  <data name="GovMeetings.Section.Title" xml:space="preserve"><value>اجتماعات الأعمال الحكومية</value></data>
+  <data name="GovMeetings.Section.Sub" xml:space="preserve"><value>برنامج لقاءات الأعمال بين الجهات الحكومية والشركات المشاركة.</value></data>
+  <data name="GovMeetings.Card.Title" xml:space="preserve"><value>تواصل مباشر بين الأعمال والجهات الحكومية</value></data>
+  <data name="GovMeetings.Card.Body" xml:space="preserve"><value>تتيح اجتماعات الأعمال الحكومية للشركات التواصل المباشر مع الجهات الحكومية واستكشاف فرص التعاون ضمن أجندة منظّمة على هامش الملتقى.</value></data>
+  <data name="GovMeetings.Cta" xml:space="preserve"><value>سجّل اهتمامك</value></data>
+
+  <!-- partners &amp; sponsors page (/partners) -->
+  <data name="Partners.PageTitle" xml:space="preserve"><value>الرعاة والشركاء — الملتقى البحري السعودي الدولي</value></data>
+  <data name="Partners.Meta" xml:space="preserve"><value>شركاء ورعاة الملتقى البحري السعودي الدولي — جهات حكومية ومؤسسات وطنية ودولية، والرعاة الداعمون للملتقى وبرامجه.</value></data>
+  <data name="Partners.Hero.Title" xml:space="preserve"><value>الرعاة والشركاء لعام 2026</value></data>
+  <data name="Partners.Hero.Subtitle" xml:space="preserve"><value>يسرنا التعاون مع مجموعة من الرعاة والشركاء المتميزين، الذين يشاركوننا رؤية الابتكار والتميز في مستقبل الأمن البحري وحماية الممرات الملاحية.</value></data>
+
+  <!-- discover Saudi Arabia page (/discover) -->
+  <data name="Discover.PageTitle" xml:space="preserve"><value>أكتشف السعودية — الملتقى البحري السعودي الدولي</value></data>
+  <data name="Discover.Meta" xml:space="preserve"><value>اكتشف المملكة العربية السعودية حول الملتقى البحري السعودي الدولي — من الإرث العريق إلى مدن المستقبل، وجهات تستحق الاستكشاف قرب مقر الملتقى بالرياض.</value></data>
+  <data name="Discover.Hero.Title" xml:space="preserve"><value>أهلاً بكم في المملكة العربية السعودية</value></data>
+  <data name="Discover.Hero.Subtitle" xml:space="preserve"><value>بين جلسات الملتقى وبعدها، استكشف وجهات المملكة التي تمزج بين الإرث العريق ومدن المستقبل.</value></data>
+
+  <!-- archive page (/archive) — Figma 5840-27997 -->
+  <data name="Archive.PageTitle" xml:space="preserve"><value>أرشيف الملتقى — الملتقى البحري السعودي الدولي</value></data>
+  <data name="Archive.Meta" xml:space="preserve"><value>أرشيف الملتقى البحري السعودي الدولي — النسخ السابقة وأبرز الأرقام وعناوين الجلسات والمتحدثون من الأعوام الماضية.</value></data>
+  <data name="Archive.Hero.Title" xml:space="preserve"><value>أرشيف الملتقى</value></data>
+  <data name="Archive.Hero.Subtitle" xml:space="preserve"><value>نظرة على مسيرة الملتقى البحري السعودي الدولي — نسخه السابقة ومحطاته واللحظات التي شكّلت أجندة الأمن البحري العالمية.</value></data>
+  <data name="Archive.Stats.Speakers" xml:space="preserve"><value>المتحدثون</value></data>
+  <data name="Archive.Stats.Attendees" xml:space="preserve"><value>الحضور</value></data>
+  <data name="Archive.Stats.Sessions" xml:space="preserve"><value>الجلسات</value></data>
+  <data name="Archive.Stats.Aria" xml:space="preserve"><value>أبرز الأرقام</value></data>
+  <data name="Archive.Gallery.Title" xml:space="preserve"><value>الصور والفيديو</value></data>
+  <data name="Archive.Gallery.Sub" xml:space="preserve"><value>أبرز اللقطات من نسخ الملتقى السابقة.</value></data>
+  <data name="Archive.Sessions.Title" xml:space="preserve"><value>عناوين الجلسات</value></data>
+  <data name="Archive.Sessions.Desc" xml:space="preserve"><value>جلسات الملتقى البحري السعودي الدولي 2024.</value></data>
+  <data name="Archive.Speakers.Title" xml:space="preserve"><value>المتحدثون السابقون</value></data>
+  <data name="Archive.Speakers.Lead" xml:space="preserve"><value>نخبة من القادة وصنّاع القرار والخبراء من المملكة والعالم شاركوا في نسخ الملتقى السابقة.</value></data>
+  <data name="Archive.Editions.Title" xml:space="preserve"><value>استعرض الإصدارات السابقة</value></data>
+  <data name="Archive.Editions.Desc" xml:space="preserve"><value>نسخ الملتقى عبر السنوات.</value></data>
 </root>

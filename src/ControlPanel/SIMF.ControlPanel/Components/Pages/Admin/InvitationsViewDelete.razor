@@ -32,11 +32,11 @@
         <dt>@L["Admin.Invitations.Col.SentBy"]</dt>
         <dd>@Initial.SentByDisplayName</dd>
         <dt>@L["Admin.Invitations.Col.CreatedAt"]</dt>
-        <dd>@Initial.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</dd>
+        <dd>@Initial.CreatedAt.FormatSaudi("yyyy-MM-dd HH:mm")</dd>
         <dt>@L["Admin.Invitations.Col.RespondedAt"]</dt>
-        <dd>@(Initial.RespondedAt.HasValue ? Initial.RespondedAt.Value.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'") : "—")</dd>
+        <dd>@(Initial.RespondedAt.FormatSaudi("yyyy-MM-dd HH:mm", "—"))</dd>
         <dt>@L["Admin.Invitations.Col.UpdatedAt"]</dt>
-        <dd>@(Initial.UpdatedAt.HasValue ? Initial.UpdatedAt.Value.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'") : "—")</dd>
+        <dd>@(Initial.UpdatedAt.FormatSaudi("yyyy-MM-dd HH:mm", "—"))</dd>
         <dt>@L["Grid.Active"]</dt>
         <dd>@(Initial.IsActive ? L["Grid.Active"] : L["Grid.Inactive"])</dd>
     </dl>

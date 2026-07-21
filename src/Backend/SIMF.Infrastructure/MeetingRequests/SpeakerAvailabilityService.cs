@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Application.MeetingRequests.Abstractions;
+using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Programme;
@@ -18,12 +19,18 @@ namespace SIMF.Infrastructure.MeetingRequests;
 /// overlap pattern).</summary>
 internal sealed class SpeakerAvailabilityService(
     SimfAppDbContext appDbContext,
+    IForumWindowService forumWindow,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<SpeakerAvailabilityService> logger) : ISpeakerAvailabilityService
 {
     private const int MinSlotMinutes = 5;
     private const int MaxSlotMinutes = 480;
+
+    /// <summary>The event's local-day boundary (KSA, UTC+3) — the same convention
+    /// the programme uses to bucket a session to a Riyadh calendar day. A window's
+    /// start/end are converted to this zone before the forum-day bound is checked.</summary>
+    private static readonly TimeSpan EventOffset = TimeSpan.FromHours(3);
 
     public async Task<AdminSpeakerAvailabilityWindow> CreateWindowAsync(
         Guid actorUserId, Guid speakerId,
@@ -49,6 +56,27 @@ internal sealed class SpeakerAvailabilityService(
             throw new ApiException(ErrorCodes.ValidationFailed, 400,
                 "The window must end after it starts and fit at least one slot.",
                 "يجب أن تنتهي الفترة بعد بدايتها وأن تتّسع لفترة واحدة على الأقل.");
+        }
+
+        // D-753 — forum-day bound: an availability window may only be defined on the
+        // authored event days (MIN/MAX over active ProgrammeDay.Date — NOT the stale
+        // OrganizationProfile placeholder). The window's start and end are converted
+        // to the event-local (+03:00) calendar date and both must fall inside
+        // [MinDate, MaxDate]. When no programme days are seeded the window is null and
+        // no bound is applied.
+        var forum = await forumWindow.GetForumDaysAsync(cancellationToken);
+        if (forum is { } bounds)
+        {
+            var startDate = DateOnly.FromDateTime(request.StartUtc.ToOffset(EventOffset).DateTime);
+            var endDate = DateOnly.FromDateTime(request.EndUtc.ToOffset(EventOffset).DateTime);
+            if (startDate < bounds.MinDate || endDate > bounds.MaxDate)
+            {
+                throw new ApiException(ErrorCodes.ValidationFailed, 400,
+                    $"Availability windows can only be set within the forum days "
+                        + $"({bounds.MinDate:yyyy-MM-dd} to {bounds.MaxDate:yyyy-MM-dd}).",
+                    $"لا يمكن تحديد فترات التوفّر إلا خلال أيام الملتقى "
+                        + $"({bounds.MinDate:yyyy-MM-dd} إلى {bounds.MaxDate:yyyy-MM-dd}).");
+            }
         }
 
         var now = timeProvider.GetUtcNow();

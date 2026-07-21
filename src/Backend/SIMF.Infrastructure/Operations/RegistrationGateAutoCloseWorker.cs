@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
+using SIMF.Application.Operations;
 using SIMF.Common.Enums;
 using SIMF.Domain.Operations;
 using SIMF.Infrastructure.Persistence;
@@ -23,6 +24,7 @@ namespace SIMF.Infrastructure.Operations;
 internal sealed class RegistrationGateAutoCloseWorker(
     IServiceScopeFactory scopeFactory,
     TimeProvider timeProvider,
+    IWorkerHeartbeatRegistry heartbeat,
     ILogger<RegistrationGateAutoCloseWorker> logger) : BackgroundService
 {
     private static readonly TimeSpan PollInterval = TimeSpan.FromMinutes(1);
@@ -36,6 +38,11 @@ internal sealed class RegistrationGateAutoCloseWorker(
         logger.LogInformation(
             "RegistrationGateAutoCloseWorker started (first poll in {Delay}s, then every {Interval}s).",
             (int)StartupDelay.TotalSeconds, (int)PollInterval.TotalSeconds);
+
+        heartbeat.Register(
+            nameof(RegistrationGateAutoCloseWorker),
+            "Closes registration when its scheduled auto-close time passes.",
+            PollInterval);
 
         try
         {
@@ -51,6 +58,7 @@ internal sealed class RegistrationGateAutoCloseWorker(
             try
             {
                 await CheckOnceAsync(stoppingToken);
+                heartbeat.RecordSuccess(nameof(RegistrationGateAutoCloseWorker));
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -58,6 +66,7 @@ internal sealed class RegistrationGateAutoCloseWorker(
             }
             catch (Exception ex)
             {
+                heartbeat.RecordFailure(nameof(RegistrationGateAutoCloseWorker), ex.Message);
                 logger.LogError(ex, "RegistrationGateAutoCloseWorker tick failed.");
             }
             try

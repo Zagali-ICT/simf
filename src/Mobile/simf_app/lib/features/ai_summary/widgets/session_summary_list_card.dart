@@ -52,7 +52,7 @@ class SessionSummaryCard extends StatelessWidget {
     return SimfCard(
       onTap: () => context.pushNamed(
         RouteNames.aiSummary,
-        queryParameters: <String, String>{'sessionId': item.id},
+        queryParameters: <String, String>{RouteParams.sessionId: item.id},
       ),
       child: Padding(
         padding: const EdgeInsets.all(SimfTokens.space2), // p-8 (Figma 1388:8430)

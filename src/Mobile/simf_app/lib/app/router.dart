@@ -106,6 +106,10 @@ const List<_Route> _routes = <_Route>[
   // Page 007‑01 (interests) — mockup 5‑01; split out of #7 (D-332). Sentinel
   // number 701 so it never collides with a mockup screen number; auth-gated.
   _Route(number: 701, name: RouteNames.signUpInterests, path: '/sign-up/interests', labelAr: 'اهتماماتي', labelEn: 'My interests'),
+  // #14 — the standalone "My interests" EDIT surface (opened from My-Area); the
+  // same interests page in edit mode. Sentinel 702 (never collides with a
+  // mockup screen number); auth-gated.
+  _Route(number: 702, name: RouteNames.myInterests, path: '/my-area/interests', labelAr: 'اهتماماتي', labelEn: 'My interests'),
   // Screen 08 (exhibitor self-sign-up) removed — exhibitors are CP-only (D-199 / §9).
   _Route(number: 9, name: RouteNames.terms, path: '/terms', labelAr: 'الشروط والأحكام', labelEn: 'Terms & conditions'),
   _Route(number: 10, name: RouteNames.registrationSuccess, path: '/registration/success', labelAr: 'تم التسجيل بنجاح', labelEn: 'Registration success'),
@@ -228,17 +232,18 @@ const List<_Route> _auxRoutes = <_Route>[
 const Set<int> _authenticatedRoutes = <int>{
   7, // Sign up — visitor profile data (AUTH-only, Page_007 L-1)
   701, // Sign up — interests + the single save (AUTH-only, Page_007-01, D-332)
+  702, // My interests — edit from My-Area (AUTH-only, #14)
   10, // Registration success (signed-in, pending; Page_010)
   11, // Registration status (signed-in, not-yet-approved gate; Page_011 L-1)
   14, // My area / profile — every signed-in role
-  // D-576 (owner 2026-06-30) — the agenda + session detail are login-gated:
-  // a guest who taps Sessions or opens a session is sent to sign-in (the
-  // "need login" behaviour), superseding the D-199 public design and the
-  // "sessions are public" tabs note below. Every signed-in role passes.
-  // Live (25) is deliberately NOT here — it shows an in-screen "need login"
-  // prompt on the live screen itself (D-577), not a redirect.
-  16, // Sessions / Agenda — a bottom-nav tab; a guest bounces to sign-in
-  17, // Session detail
+  // D-750 (owner 2026-07-20) — REVERSES D-576: the agenda (Sessions, 16) and
+  // session detail (17) are PUBLIC again, so a guest can browse the programme
+  // and open a session without signing in (restoring the D-199 public design).
+  // They are intentionally NOT in this set. The join / ask sections stay hidden
+  // for a guest (session_detail_body only builds them when the seat map is
+  // non-null, which needs an approved account), and My seat (18) stays
+  // attendee-gated. Live (25) likewise stays public with an in-screen "need
+  // login" prompt on the live screen itself (D-577), not a redirect.
   32, // Badge / QR — every signed-in role's own entry pass (a bottom-nav tab, so
   // it must not bounce for Staff/Moderator; the server returns their own badge)
   33, // Notifications — every signed-in role
@@ -330,6 +335,11 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
       draft: extra is SignUpProfileDraft ? extra : null,
     );
   }
+  if (r.name == RouteNames.myInterests) {
+    // #14 — the same interests page in EDIT mode: self-loads the profile,
+    // pre-selects the saved interests, saves in place and pops back.
+    return const SignUpInterestsScreen(editMode: true);
+  }
   if (r.name == RouteNames.terms) {
     // `?consent=1` shows the in-flow accept gate; standalone reads omit it.
     return TermsScreen(
@@ -358,7 +368,7 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.boothMap) {
     return VenueMapScreen(
-      targetBoothId: state.pathParameters['boothId'],
+      targetBoothId: state.pathParameters[RouteParams.boothId],
     );
   }
   if (r.name == RouteNames.sessions) {
@@ -366,17 +376,17 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.sessionDetail) {
     return SessionDetailScreen(
-      sessionId: state.pathParameters['sessionId'] ?? '',
+      sessionId: state.pathParameters[RouteParams.sessionId] ?? '',
     );
   }
   if (r.name == RouteNames.mySeat) {
     return MySeatScreen(
-      sessionId: state.pathParameters['sessionId'] ?? '',
+      sessionId: state.pathParameters[RouteParams.sessionId] ?? '',
     );
   }
   if (r.name == RouteNames.seatPicker) {
     return SeatPickerScreen(
-      sessionId: state.pathParameters['sessionId'] ?? '',
+      sessionId: state.pathParameters[RouteParams.sessionId] ?? '',
     );
   }
   if (r.name == RouteNames.joinSessionHub) {
@@ -393,7 +403,7 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.speakerProfile) {
     return SpeakerProfileScreen(
-      speakerId: state.pathParameters['speakerId'] ?? '',
+      speakerId: state.pathParameters[RouteParams.speakerId] ?? '',
     );
   }
   if (r.name == RouteNames.delegations) {
@@ -404,7 +414,7 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.exhibitorDetail) {
     return ExhibitorDetailScreen(
-      boothId: state.pathParameters['boothId'] ?? '',
+      boothId: state.pathParameters[RouteParams.boothId] ?? '',
     );
   }
   if (r.name == RouteNames.sponsors) {
@@ -412,7 +422,7 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.sponsorDetail) {
     return SponsorDetailScreen(
-      sponsorId: state.pathParameters['sponsorId'] ?? '',
+      sponsorId: state.pathParameters[RouteParams.sponsorId] ?? '',
     );
   }
   if (r.name == RouteNames.mediaPartners) {
@@ -458,17 +468,17 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.aiSummary) {
     return AiSummaryScreen(
-      sessionId: state.uri.queryParameters['sessionId'],
+      sessionId: state.uri.queryParameters[RouteParams.sessionId],
     );
   }
   if (r.name == RouteNames.sendQuestion) {
     return SendQuestionScreen(
-      sessionId: state.uri.queryParameters['sessionId'],
+      sessionId: state.uri.queryParameters[RouteParams.sessionId],
     );
   }
   if (r.name == RouteNames.liveBroadcast) {
     return LiveBroadcastScreen(
-      sessionId: state.uri.queryParameters['sessionId'],
+      sessionId: state.uri.queryParameters[RouteParams.sessionId],
     );
   }
   if (r.name == RouteNames.badge) {
@@ -491,7 +501,7 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.sessionModerate) {
     return SessionModerateScreen(
-      sessionId: state.pathParameters['sessionId'] ?? '',
+      sessionId: state.pathParameters[RouteParams.sessionId] ?? '',
     );
   }
   if (r.name == RouteNames.gateScanner) {

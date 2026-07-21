@@ -147,9 +147,10 @@
                                 </div>
                                 <div class="ln-spkcard__body">
                                     <p class="ln-spkcard__name">@SpeakerName(sp)</p>
-                                    @if (!string.IsNullOrWhiteSpace(sp.Title))
+                                    @{ var role = PickOrNull(sp.Title, sp.TitleArabic); }
+                                    @if (!string.IsNullOrWhiteSpace(role))
                                     {
-                                        <span class="ln-spkcard__role">@sp.Title</span>
+                                        <span class="ln-spkcard__role">@role</span>
                                     }
                                     @if (!string.IsNullOrWhiteSpace(loc))
                                     {

@@ -500,7 +500,8 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
       }
       final name = s.localizedName(isArabic).toLowerCase();
       final rank = (s.rank ?? '').toLowerCase();
-      return name.contains(q) || rank.contains(q);
+      final rankArabic = (s.rankArabic ?? '').toLowerCase();
+      return name.contains(q) || rank.contains(q) || rankArabic.contains(q);
     }).toList();
   }
 
@@ -645,7 +646,7 @@ class _SpeakerOptionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final flag = countryFlagEmoji(speaker.countryId);
-    final rank = speaker.rank?.trim() ?? '';
+    final rank = speaker.localizedRank(isArabic)?.trim() ?? '';
     return Material(
       color: SimfTokens.surface,
       borderRadius: SimfTokens.borderRadiusSmall,

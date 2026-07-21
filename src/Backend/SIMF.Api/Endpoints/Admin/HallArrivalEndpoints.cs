@@ -36,3 +36,33 @@ public sealed class RecordQrArrivalEndpoint(IHallAttendanceService service)
         await Send.OkAsync(ApiResult<QrArrivalResult>.Ok(result), ct);
     }
 }
+
+/// <summary>2026-07-18: an operator at a hall door scans an attendee's badge QR to
+/// record their DEPARTURE (check-out), symmetric to <see cref="RecordQrArrivalEndpoint"/>.
+/// Gated by <c>HallArrivals.Record</c> + RequireApprovedAccount; the attendee is
+/// resolved server-side from the QR id. Reuses the arrival request/result shapes
+/// (a QR id in, the resolved attendee + resulting attendance state out).</summary>
+public sealed class RecordQrDepartureEndpoint(IHallAttendanceService service)
+    : Endpoint<RecordQrArrivalRequest, ApiResult<QrArrivalResult>>
+{
+    public override void Configure()
+    {
+        Post("/admin/sessions/{sessionId:guid}/departures");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.HallArrivals.Record),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Admin");
+    }
+
+    public override async Task HandleAsync(RecordQrArrivalRequest req, CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var operatorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        var sessionId = Route<Guid>("sessionId");
+        var result = await service.RecordQrDepartureAsync(operatorId, sessionId, req.QrId, ct);
+        await Send.OkAsync(ApiResult<QrArrivalResult>.Ok(result), ct);
+    }
+}

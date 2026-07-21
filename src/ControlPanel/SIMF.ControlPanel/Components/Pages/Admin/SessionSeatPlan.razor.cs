@@ -50,7 +50,7 @@ public partial class SessionSeatPlan
     {
         var coords = $"{rowLabel}{seatNumber}";
         return cell is null
-            ? coords
+            ? string.Format(L["Admin.SessionSeatPlans.Seat.FreeTitle"], coords)
             : string.Format(L["Admin.SessionSeatPlans.Seat.ReservedTitle"], coords, cell.Kind);
     }
 
@@ -164,6 +164,34 @@ public partial class SessionSeatPlan
             {
                 _toast = new Toast("success", L["Admin.SessionSeatPlans.ReserveRow.Done"]);
                 _reserveRowLabel = string.Empty;
+                await LoadReservationsAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.SessionSeatPlans.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    // 2026-07-18 — reserve a single free seat for a VIP (an admin block on that
+    // one seat). Tapping a free seat in the grid calls this.
+    private async Task ReserveSeatAsync(string rowLabel, int seatNumber)
+    {
+        if (_selectedSessionId is null || _busy) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.postJson",
+                $"/account/api/admin/sessions/{_selectedSessionId}/seats/reserve-seat",
+                new AdminReserveSeatRequest { RowLabel = rowLabel, SeatNumber = seatNumber });
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.SessionSeatPlans.ReserveSeat.Done"]);
                 await LoadReservationsAsync();
             }
             else

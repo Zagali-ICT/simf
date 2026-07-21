@@ -7,23 +7,27 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-07-18 (staff check-out added) |
 
 > **What this page does.** The hall-door arrival console (P5.1d — D-244,
 > FDS-003 §5.4). An operator picks one **active** session from a dropdown, then
-> scans or types an attendee's **badge QR** (`MaxLength="64"`) and clicks
-> **Record arrival**. The server resolves the QR to an attendee, opens (or
-> merges into) the one open `HallAttendance` row with `Method = QrScan`, and
-> returns the resolved attendee so the console can confirm **who** was recorded.
-> There is no grid, no edit, no delete — the page is a single record action plus
-> the loaded session list. Raw coordinates are never involved; this is the door-
-> scan means of arrival (the geofence means is the attendee's own device).
+> scans or types an attendee's **badge QR** (`MaxLength="64"`) and clicks either
+> **Record arrival** (check-in) or **Record departure** (check-out, 2026-07-18).
+> The server resolves the QR to an attendee; **arrival** opens (or merges into)
+> the one open `HallAttendance` row with `Method = QrScan`, **departure** closes
+> that open row (idempotent — a no-op when the attendee is not checked in). Both
+> return the resolved attendee so the console can confirm **who** was recorded.
+> The open row is exactly what the seat map renders as the "confirmed / تم التأكيد"
+> state, so a check-out clears it. There is no grid, no edit, no delete. Raw
+> coordinates are never involved; this is the door-scan means (the geofence means,
+> and the attendee's own self check-out, are the attendee's own device).
 >
 > **Permission gate.** Page `@attribute [RequirePermission(PermissionCatalog.HallArrivals.View)]`
-> (`HallArrivals.View`); the QR field + Record button are wrapped in
+> (`HallArrivals.View`); the QR field + both buttons are wrapped in
 > `<AuthorizedAction Permission="PermissionCatalog.HallArrivals.Record">`
-> (`HallArrivals.Record`). Both default to `AdminOnly`. The API endpoint
-> `POST /api/v1/admin/sessions/{sessionId}/arrivals` is gated by
+> (`HallArrivals.Record`). Both default to `AdminOnly`. The API endpoints
+> `POST /api/v1/admin/sessions/{sessionId}/arrivals` **and**
+> `POST /api/v1/admin/sessions/{sessionId}/departures` are both gated by
 > `HallArrivals.Record` + `RequireApprovedAccount`.
 
 ## Coverage matrix
@@ -44,6 +48,10 @@
 | E2E-HAR-012 | QR field length cap — input limited to 64 chars (`MaxLength="64"`) | error | P2 | _to author_ |
 | E2E-HAR-013 | Server 500 on `/sessions/list` → bilingual fallback toast, no session dropdown | resilience | P2 | _to author_ |
 | E2E-HAR-014 | RTL render — Arabic toggle mirrors page, labels, select + button | i18n | P1 | _to author_ |
+| E2E-HAR-018 | Staff check-OUT — select session → scan badge → **Record departure** closes the open row; seat-map confirmed state clears | happy | P0 | authored ✓ (API `Operator_scan_records_a_departure`) |
+| E2E-HAR-019 | Check-out with no prior arrival → 200 idempotent no-op (`Arrived=false`), no error | edge | P1 | authored ✓ (API `Departure_without_a_prior_arrival_is_an_idempotent_noop`) |
+| E2E-HAR-020 | Unknown badge QR on departure → 400 `ATTENDEE_QR_UNKNOWN` → bilingual error toast | error | P1 | authored ✓ (API `Unknown_qr_departure_is_400`) |
+| E2E-HAR-021 | Auth gate (Record) — a non-operator cannot record a departure → API 403 | auth | P0 | authored ✓ (API `A_non_operator_cannot_record_a_departure`) |
 
 ## Scenarios
 
@@ -242,6 +250,57 @@ Scenario: Arabic toggle mirrors the console
   And on a successful scan the success toast renders the Arabic prefix "تم تسجيل الوصول: <DisplayNameArabic>"
 ```
 
+### E2E-HAR-018 — Staff check-OUT (Record departure)
+
+```gherkin
+Feature: Hall-door QR departure recording (2026-07-18)
+  As an operator at a hall door
+  I want to scan an attendee's badge QR to check them OUT of the session
+  So that the hall occupancy and their "confirmed" seat state clear when they leave
+
+Scenario: Select a session, scan a checked-in attendee, record the departure
+  Given a session is selected and the attendee "Faisal Al-Harbi" is currently checked IN (open HallAttendance row)
+  When the operator types that attendee's badge code and clicks "Record departure"
+  Then the BFF forwards POST /account/api/admin/sessions/{sessionId}/departures
+  And the API returns HTTP 200 with ApiResult.Data.Status.Arrived = false and a non-null Status.LeaveUtc
+  And a green toast reads "Departure recorded: Faisal Al-Harbi" / "تم تسجيل الخروج: <DisplayNameArabic>"
+  And the "Attendee badge QR" field clears, ready for the next scan
+  And the attendee's open HallAttendance row for that session is now closed (LeaveUtc set)
+  And re-reading the seat map, that attendee's seat is no longer "confirmed / تم التأكيد"
+```
+
+### E2E-HAR-019 — Check-out with no prior arrival (idempotent no-op)
+
+```gherkin
+Scenario: Recording a departure for an attendee who is not checked in is a harmless no-op
+  Given a session is selected and the attendee has NO open attendance row for it
+  When the operator scans that attendee's badge and clicks "Record departure"
+  Then the API returns HTTP 200 with Status.Arrived = false
+  And a green toast still reads "Departure recorded: <DisplayName>" (nothing to close, no error)
+  And no HallAttendance row is created or changed
+```
+
+### E2E-HAR-020 — Unknown badge QR on departure
+
+```gherkin
+Scenario: An unrecognised badge QR on check-out returns 400
+  Given a session is selected
+  When the operator types an unknown badge code and clicks "Record departure"
+  Then the API returns HTTP 400 with ApiResult.Error.Code = "ATTENDEE_QR_UNKNOWN"
+  And a red toast reads "That badge QR was not recognised." / "لم يتم التعرّف على رمز الشارة."
+  And the QR field keeps its value (no clear on failure)
+```
+
+### E2E-HAR-021 — Auth gate (Record) on departure
+
+```gherkin
+Scenario: A caller without HallArrivals.Record cannot record a departure
+  Given an approved visitor token (no HallArrivals.Record permission)
+  When a departure is posted directly to POST /api/v1/admin/sessions/{id}/departures
+  Then the API returns HTTP 403 Forbidden
+  # In the CP the whole QR field + both buttons are hidden for a View-only admin.
+```
+
 ---
 
 ## Implementation notes
@@ -253,8 +312,16 @@ Scenario: Arabic toggle mirrors the console
   - `Unknown_qr_is_400` → E2E-HAR-010 (`ATTENDEE_QR_UNKNOWN`).
   - `Non_approved_attendee_is_403` → E2E-HAR-011 (`ATTENDEE_NOT_APPROVED`).
   - `A_non_operator_account_is_forbidden` → E2E-HAR-009 (Record gate, 403).
+  - `Operator_scan_records_a_departure` → E2E-HAR-018 (staff check-OUT closes the open row).
+  - `Departure_without_a_prior_arrival_is_an_idempotent_noop` → E2E-HAR-019.
+  - `Unknown_qr_departure_is_400` → E2E-HAR-020.
+  - `A_non_operator_cannot_record_a_departure` → E2E-HAR-021 (Record gate on departures, 403).
   Keep both layers during the transition; the E2E catalogue is the browser-level
   proof that the CP console drives those same outcomes.
+- **End-of-day auto check-out.** Any attendee still checked in when their session
+  ends is auto-closed by `HallAttendanceCloseoutWorker.CloseEndedSessionsAsync`
+  (`LeaveUtc = Session.EndUtc`); covered by
+  `tests/SIMF.Api.Tests/Operations/HallAttendanceCloseoutWorkerTests.cs`.
 - **No grid / no CRUD.** Unlike the lookup-table pages (e.g. `/admin/interests`),
   this is a single record action over a loaded session list. There is no
   Add/Edit/Details/Deactivate surface to cover — the matrix instead enumerates
@@ -316,4 +383,4 @@ Scenario: an approved holder with a deactivated profile-type is denied
 
 ---
 
-_Last reviewed:_ 2026-07-11 by Claude (W4 on-site remediation — X-2/X-3/X-4 hall-arrival guards). Prior: 2026-06-02 (E2E catalogue rebuild).
+_Last reviewed:_ 2026-07-18 by Claude (staff check-OUT — Record departure + departures endpoint). Prior: 2026-07-11 (W4 on-site remediation — X-2/X-3/X-4 hall-arrival guards); 2026-06-02 (E2E catalogue rebuild).

@@ -2,6 +2,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SIMF.Application.Email;
+using SIMF.Application.Operations;
 using SIMF.Common.Options;
 
 namespace SIMF.Infrastructure.Email;
@@ -23,17 +24,21 @@ public sealed class EmailBackgroundService(
     EmailQueue queue,
     IEmailSender sender,
     IOptions<EmailOptions> options,
+    IWorkerHeartbeatRegistry heartbeat,
     ILogger<EmailBackgroundService> logger) : BackgroundService
 {
     private static readonly char[] RecipientDelimiters = [',', ';', ' ', '\t', '\r', '\n'];
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        heartbeat.Register(
+            nameof(EmailBackgroundService), "Sends queued outbound emails.", TimeSpan.Zero);
         await foreach (var message in queue.Reader.ReadAllAsync(stoppingToken))
         {
             try
             {
                 await sender.SendAsync(message, stoppingToken);
+                heartbeat.RecordSuccess(nameof(EmailBackgroundService));
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -47,6 +52,7 @@ public sealed class EmailBackgroundService(
                 // from the log, without cross-referencing the config (#2 — a
                 // "code not received" report is almost always this transport
                 // step, since the code itself is already persisted + enqueued).
+                heartbeat.RecordFailure(nameof(EmailBackgroundService), ex.Message);
                 var smtp = options.Value;
                 logger.LogError(ex,
                     "Failed to send email {Subject} to {Recipient} via SMTP {SmtpHost}:{SmtpPort} from {FromAddress}",

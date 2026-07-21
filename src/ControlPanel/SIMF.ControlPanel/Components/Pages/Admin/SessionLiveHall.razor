@@ -1,0 +1,137 @@
+@* 2026-07-18 — live per-session hall view (CP page 2e). The admin picks a
+   session and sees, live, its 4-state seat map (available / unavailable /
+   reserved / confirmed) plus everyone currently inside the hall with their
+   profile + seat. Read-only over HallAttendance (D-241) + the seat map; the
+   Refresh button re-pulls both. Gated by Attendance.View. *@
+@page "/admin/sessions/live-hall"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Attendance.View)]
+@using SIMF.Contracts.Attendance
+
+<PageTitle>@L["Admin.SessionLiveHall.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.SessionLiveHall.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+        <p class="simf-hint">@L["Admin.SessionLiveHall.Hint"]</p>
+
+        @if (_loading)
+        {
+            <p>@L["Admin.SessionLiveHall.Loading"]</p>
+        }
+        else if (_sessions.Count == 0)
+        {
+            <SimfEmptyState Title="@L["Admin.SessionLiveHall.None"]" />
+        }
+        else
+        {
+            <SimfSelect TValue="AdminSessionSummary"
+                        Label="@L["Admin.SessionLiveHall.Pick"]"
+                        Placeholder="@L["Admin.SessionLiveHall.Pick"]"
+                        Items="_sessions"
+                        ValueFor="@(s => s.Id.ToString())"
+                        LabelFor="@(s => $"{s.Code} — {s.Title}")"
+                        Value="_selected"
+                        ValueChanged="OnSessionChangedAsync"
+                        Disabled="_busy" />
+
+            @if (_selected is not null)
+            {
+                <div class="simf-form__actions">
+                    <SimfButton Type="button" OnClick="RefreshAsync" Loading="_busy">
+                        @L["Admin.SessionLiveHall.Refresh"]
+                    </SimfButton>
+                </div>
+
+                @* --- Seat map: the 4-state grid --------------------------- *@
+                <h2 class="simf-section-title">@L["Admin.SessionLiveHall.SeatMap.Heading"]</h2>
+                @if (_map is not null && _map.RowLabels.Count > 0)
+                {
+                    <div class="seatmap">
+                        @foreach (var rowLabel in _map.RowLabels)
+                        {
+                            <div class="seatmap__row">
+                                <span class="seatmap__row-label">@rowLabel</span>
+                                @for (var seat = 1; seat <= _map.SeatsPerRow; seat++)
+                                {
+                                    var cell = FindCell(rowLabel, seat);
+                                    var seatNumber = seat;
+                                    <span class="seatmap__seat @SeatStateClass(cell)"
+                                          title="@SeatTitle(rowLabel, seatNumber, cell)">
+                                        @seatNumber
+                                    </span>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    <div class="seatmap__legend">
+                        <span class="seatmap__legend-item">
+                            <span class="seatmap__swatch seatmap__swatch--available"></span>@L["Admin.SessionLiveHall.Seat.Available"]
+                        </span>
+                        <span class="seatmap__legend-item">
+                            <span class="seatmap__swatch seatmap__swatch--unavailable"></span>@L["Admin.SessionLiveHall.Seat.Unavailable"]
+                        </span>
+                        <span class="seatmap__legend-item">
+                            <span class="seatmap__swatch seatmap__swatch--reserved"></span>@L["Admin.SessionLiveHall.Seat.Reserved"]
+                        </span>
+                        <span class="seatmap__legend-item">
+                            <span class="seatmap__swatch seatmap__swatch--confirmed"></span>@L["Admin.SessionLiveHall.Seat.Confirmed"]
+                        </span>
+                    </div>
+                }
+                else
+                {
+                    <SimfEmptyState Title="@L["Admin.SessionLiveHall.SeatMap.NoLayout"]" />
+                }
+
+                @* --- Present list: everyone in the hall now --------------- *@
+                <h2 class="simf-section-title">@L["Admin.SessionLiveHall.Present.Heading"]</h2>
+                @if (_present.Count == 0)
+                {
+                    <SimfEmptyState Title="@L["Admin.SessionLiveHall.Present.None"]" />
+                }
+                else
+                {
+                    <div class="simf-table-wrapper">
+                        <table class="simf-table">
+                            <thead>
+                                <tr>
+                                    <th>@L["Admin.SessionLiveHall.Col.Name"]</th>
+                                    <th>@L["Admin.SessionLiveHall.Col.Organisation"]</th>
+                                    <th>@L["Admin.SessionLiveHall.Col.Type"]</th>
+                                    <th>@L["Admin.SessionLiveHall.Col.JobTitle"]</th>
+                                    <th>@L["Admin.SessionLiveHall.Col.Seat"]</th>
+                                    <th>@L["Admin.SessionLiveHall.Col.Entered"]</th>
+                                    <th>@L["Admin.SessionLiveHall.Col.Method"]</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var attendee in _present)
+                                {
+                                    <tr>
+                                        <td>@PresentName(attendee)</td>
+                                        <td>@attendee.OrganisationName</td>
+                                        <td>@attendee.ProfileTypeName</td>
+                                        <td>@attendee.JobTitle</td>
+                                        <td>@SeatLabel(attendee)</td>
+                                        <td>@EnteredUtc(attendee.EnterUtc)</td>
+                                        <td>@MethodLabel(attendee.Method)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="simf-table__summary">
+                        @(string.Format(L["Admin.SessionLiveHall.Present.Count"], _present.Count))
+                    </p>
+                }
+            }
+        }
+    </div>
+</div>

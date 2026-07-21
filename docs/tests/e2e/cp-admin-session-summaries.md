@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
+| **Last reviewed** | 2026-07-20 (Item #35 — Summary video URL field; E2E-SUM-028) |
 
 > **What this page does (grounded in `SessionSummariesList.razor`).** This is the
 > Scientific-Committee AI session-summary / محضر desk (P4.1 / D-238, Mockup screen
@@ -19,11 +19,17 @@
 >   sections for the Committee. Opens the editor pre-filled. Gated by
 >   `SessionSummaries.Edit`.
 > - **Edit** (only shown when `HasSummary`) — GETs `…/{sessionId}`, opens the editor
->   with 8 bilingual textareas, **Save** PUTs `…/{sessionId}`. Gated by
+>   with 8 bilingual textareas plus a **"Summary video URL"** single-line field
+>   (Item #35 — the OPTIONAL team summary-video URL shown on the app's screen 34
+>   beside the full recording), **Save** PUTs `…/{sessionId}`. Gated by
 >   `SessionSummaries.Edit`.
 > - **Publish / Unpublish** (only shown when `HasSummary`) — PUTs `…/{sessionId}/publish`
 >   or `…/{sessionId}/unpublish`; this is the gate the public app read honours.
->   Gated by `SessionSummaries.Publish`.
+>   Gated by `SessionSummaries.Publish`. **Owner 2026-07-19 — Publish is a hard gate on
+>   `ApprovedAt`:** a Draft / In-review summary cannot be published (API returns 400
+>   `SESSION_SUMMARY_INVALID`), and the Publish button is **disabled** with the tooltip
+>   "Approve the summary before it can be published" until the team has approved it.
+>   Unpublish is always allowed.
 > - **Submit for review → Approve → Return to draft (D-472, req #9)** — the team
 >   review/approval workflow on top of publish: **Submit for review** PUTs
 >   `…/{sessionId}/submit-review` (`.Edit`, Draft → In review); **Approve** PUTs
@@ -52,11 +58,11 @@
 
 | ID | Scenario | Type | Priority | Status |
 |----|----------|------|----------|--------|
-| E2E-SUM-001 | Golden round-trip — AI draft → edit + Save → Publish → Unpublish | happy | P0 | _to author_ |
+| E2E-SUM-001 | Golden round-trip — AI draft → edit + Save → Submit for review → Approve → Publish → Unpublish | happy | P0 | _to author_ |
 | E2E-SUM-002 | List renders one row per active session with Status + Source labels | happy | P1 | _to author_ |
 | E2E-SUM-003 | AI draft (Generate) on a session with no summary → Arabic full-text filled, editor opens | happy | P0 | _to author_ |
 | E2E-SUM-004 | Edit existing summary — open editor pre-filled, change a section, Save | happy | P1 | _to author_ |
-| E2E-SUM-005 | Publish a draft → Status becomes "Published" | happy | P1 | _to author_ |
+| E2E-SUM-005 | Publish an **approved** summary → Status becomes "Published" | happy | P1 | _to author_ |
 | E2E-SUM-006 | Unpublish a published summary → Status returns to "Draft" | happy | P1 | _to author_ |
 | E2E-SUM-007 | Editor Cancel discards edits without saving | happy | P2 | _to author_ |
 | E2E-SUM-008 | Empty state — no active sessions renders `SimfEmptyState` | happy | P1 | _to author_ |
@@ -74,7 +80,12 @@
 | E2E-SUM-020 | **Approve (D-472)** — an In-review summary → "Approve" (`.Approve`) → Status "Approved" (ready for المحاور), `ApprovedAt` stamped; approving without submitting → 400 | happy | P0 | authored ✓ (SessionSummaryCommitteeTests) |
 | E2E-SUM-021 | **Return to draft (D-472)** — an In-review / Approved summary → "Return to draft" (`.Approve`) clears the review + approval; any content edit also returns it to Draft | happy | P1 | authored ✓ (SessionSummaryCommitteeTests) |
 | E2E-SUM-022 | **Ready for المحاور read (D-472)** — `GET /app/programme/sessions/{id}/summary/approved`: the session **moderator OR host** → 200 (when approved); neither → 403; authorized but not yet approved → 404 | validation | P0 | authored ✓ (SessionSummaryCommitteeTests) |
-| E2E-SUM-023 | **Publish gate (S-6, owner)** — Publish is blocked while the session has NOT started (a future session) → 400 `SESSION_SUMMARY_INVALID` (bilingual); once the session has started (in-progress or finished), Publish succeeds. Gated on the CLOCK (`now >= StartUtc`), not the manual Held flag. Unpublish is always allowed (even after the session is rescheduled into the future) | error | P1 | authored ✓ (`SessionSummaryCommitteeTests.PublishAsync_BeforeSessionStarts_ReturnsBadRequest` + `.PublishAsync_AfterSessionStarts_Succeeds` + `.UnpublishAsync_WhileScheduled_StillAllowed`) |
+| E2E-SUM-023 | **Publish requires approval (owner 2026-07-19)** — publishing a Draft / In-review (unapproved) summary → 400 `SESSION_SUMMARY_INVALID`, public read stays 404; the Publish button is disabled with the "Approve the summary before it can be published" tooltip until `ApprovedAt` is set | error | P0 | authored ✓ (SessionSummaryCommitteeTests) |
+| E2E-SUM-024 | **Edit after publish takes it offline (owner 2026-07-19)** — a published summary that is edited (Save / re-Generate / Return-to-draft) clears approval AND unpublishes (`PublishedAt` cleared); the public read returns to 404 so the app never serves edited, unapproved text; it must be re-approved + re-published | error | P0 | authored ✓ Save path (`SessionSummaryCommitteeTests.Editing_a_published_summary_takes_it_offline_until_reapproved`); re-Generate / Return-to-draft share the same `ResetReviewState` code path (not separately asserted) |
+| E2E-SUM-025 | **Publish gate (S-6, owner)** — Publish is blocked while the session has NOT started (a future session) → 400 `SESSION_SUMMARY_INVALID` (bilingual); once the session has started (in-progress or finished), Publish succeeds. Gated on the CLOCK (`now >= StartUtc`), not the manual Held flag. Unpublish is always allowed (even after the session is rescheduled into the future) | error | P1 | authored ✓ (`SessionSummaryCommitteeTests.PublishAsync_BeforeSessionStarts_ReturnsBadRequest` + `.PublishAsync_AfterSessionStarts_Succeeds` + `.UnpublishAsync_WhileScheduled_StillAllowed`) |
+| E2E-SUM-026 | **Raw subtitle in the editor (Slice D)** — opening a summary whose session has `LiveCaptions*` shows the read-only "AI source subtitle" panels (EN + AR) above the editable fields; the detail read carries `Subtitle` / `SubtitleArabic` from the session captions; a session with no captions shows no panel; the fields are never on the public contract | happy | P1 | authored ✓ (`SessionSummaryCommitteeTests.The_editor_read_surfaces_the_raw_subtitle_source`) |
+| E2E-SUM-027 | **Pristine AI draft survives an edit (Slice D)** — Generate captures `AiDraftFullTextArabic` + `AiDraftGeneratedAt`; a Save that edits the Arabic full-text leaves the snapshot untouched (the read-only "Original AI draft" panel keeps showing the original); a re-generate refreshes the snapshot to the latest output | happy | P0 | authored ✓ (`SessionSummaryCommitteeTests.Generate_captures_the_pristine_ai_draft_snapshot` + `.Editing_the_summary_preserves_the_pristine_ai_draft` + `.Regenerating_refreshes_the_pristine_ai_draft_snapshot`) |
+| E2E-SUM-028 | **Summary video URL (Item #35)** — the editor's "Summary video URL" field saves a valid YouTube / direct HLS-MP4 link and round-trips it on re-open; an invalid link (not YouTube, not `.m3u8`/`.mp4`) is rejected 400 `SESSION_SUMMARY_INVALID`; a blank clears it to null; the field flows to the app's `PublicSessionSummary.summaryVideoUrl` as screen 34's second player | happy | P1 | authored ✓ (`SessionSummaryCommitteeTests.Save_round_trips_the_summary_video_url` + `.An_invalid_summary_video_url_is_rejected_400` + `.A_null_summary_video_url_is_allowed`) |
 
 ## Scenarios
 
@@ -113,6 +124,16 @@ Scenario: AI-draft → edit → publish → unpublish one session summary
   Then PUT /account/api/admin/session-summaries/{sessionId} returns 200
   And the modal closes
   And a green toast reads "Summary saved." / "تم حفظ الملخص."
+  And the Publish (power) action is disabled with the tooltip "Approve the summary before it can be published"
+
+  # Owner 2026-07-19 — the scientific team must review + approve before publish is allowed.
+  When the administrator clicks "Submit for review"
+  Then PUT /account/api/admin/session-summaries/{sessionId}/submit-review returns 200
+  And the row Status changes to "In review"
+  When the administrator clicks "Approve"
+  Then PUT /account/api/admin/session-summaries/{sessionId}/approve returns 200
+  And the row Status changes to "Approved"
+  And the Publish (power) action is now enabled
 
   When the administrator clicks the row's Publish (power) action
   Then PUT /account/api/admin/session-summaries/{sessionId}/publish returns 200
@@ -182,11 +203,11 @@ Scenario: Edit opens the editor pre-filled and Save persists the change
   And re-opening Edit shows the changed value persisted
 ```
 
-### E2E-SUM-005 — Publish a draft
+### E2E-SUM-005 — Publish an approved summary
 
 ```gherkin
-Scenario: Publishing flips Status to Published
-  Given session "S-101" has a draft summary (Status="Draft")
+Scenario: Publishing an approved summary flips Status to Published
+  Given session "S-101" has an approved summary (Status="Approved")
   When the administrator clicks the row's Publish (power) action
   Then PUT /account/api/admin/session-summaries/{sessionId}/publish returns 200
   And a green toast reads "Summary published." / "تم نشر الملخص."
@@ -398,6 +419,102 @@ Scenario: Export the active-session set to an XLSX workbook
 - Console errors: 0 expected
 - Workbook check: the "SessionSummaries" sheet header row matches the eight columns above; one data row per active session
 
+### E2E-SUM-026 — Raw subtitle visible read-only in the editor (Slice D)
+
+```gherkin
+Scenario: The editor surfaces the raw subtitle the AI drafted from
+  Given session "S-101" has LiveCaptions="Maritime deterrence and sea-lane protection."
+    and LiveCaptionsArabic="الردع البحري وحماية الممرات" (authored on the Sessions editor)
+  And session "S-101" already has a summary (HasSummary = true)
+  When the administrator clicks the row's Edit (pencil) action
+  Then GET /account/api/admin/session-summaries/{sessionId} returns 200
+  And the AdminSessionSummaryDetail carries Subtitle="Maritime deterrence and sea-lane protection."
+    and SubtitleArabic="الردع البحري وحماية الممرات"
+  And the editor modal shows a read-only (Disabled) "AI source subtitle (English)" textarea with that text
+  And a read-only "AI source subtitle (Arabic)" textarea with the Arabic text
+  And both panels render ABOVE the eight editable sections
+  And neither field is editable nor sent back on Save
+  # CP-internal transparency only: these fields are NOT added to PublicSessionSummary /
+  # PublicSessionDetail, so the app never gains a new field here.
+
+Scenario: A session with no captions shows no subtitle panel
+  Given session "S-909" has LiveCaptions = null and LiveCaptionsArabic = null
+  And it has a hand-written summary
+  When the administrator opens the editor
+  Then the detail's Subtitle and SubtitleArabic are null
+  And no "AI source subtitle" panel renders (each renders only when it has content)
+```
+
+**Evidence captured:**
+- Screenshot: `docs/screenshots/cp-admin-session-summaries-subtitle-panel.png`
+- The detail JSON carries `Subtitle` / `SubtitleArabic`; the app's `PublicSessionSummary` still has no such field.
+
+### E2E-SUM-027 — Pristine AI draft survives an edit (Slice D)
+
+```gherkin
+Scenario: Generate captures the pristine draft and Save never overwrites it
+  Given session "S-202" has LiveCaptionsArabic="الردع البحري وحماية الممرات"
+  When the administrator clicks the row's AI-draft (sparkle) action
+  Then POST /account/api/admin/session-summaries/{sessionId}/generate returns 200
+  And the detail's AiDraftFullTextArabic equals the freshly generated FullTextArabic
+  And AiDraftGeneratedAt is stamped
+  And the editor shows a read-only "Original AI draft" panel whose label carries the UTC capture time
+
+  When the administrator edits "Full text (Arabic)" to "محضر حرّره الفريق العلمي يدويًا." and clicks Save
+  Then PUT /account/api/admin/session-summaries/{sessionId} returns 200
+  And the editable FullTextArabic now reads "محضر حرّره الفريق العلمي يدويًا."
+  And AiDraftFullTextArabic is UNCHANGED (still the original AI output)
+  And AiDraftGeneratedAt is unchanged
+  And re-opening the editor still shows the original AI text in the read-only "Original AI draft" panel,
+    now diverged from the edited working copy
+
+Scenario: A re-generate refreshes the pristine snapshot to the latest output
+  Given session "S-202" was AI-drafted from LiveCaptionsArabic="الموضوع الأول"
+  And the transcript is later corrected to "الموضوع الثاني" on the Sessions editor
+  When the administrator clicks AI-draft (sparkle) again
+  Then the detail's AiDraftFullTextArabic now reflects "الموضوع الثاني"
+  And it no longer contains "الموضوع الأول"
+  # A re-generate returns the summary to Draft (ResetReviewState), as any content change does.
+```
+
+**Evidence captured:**
+- Screenshot: `docs/screenshots/cp-admin-session-summaries-pristine-draft.png` (original AI draft panel beside the edited working copy)
+- API integration: `SessionSummaryCommitteeTests` `Generate_captures_the_pristine_ai_draft_snapshot`, `Editing_the_summary_preserves_the_pristine_ai_draft`, `Regenerating_refreshes_the_pristine_ai_draft_snapshot` (all green).
+
+### E2E-SUM-028 — Summary video URL (Item #35)
+
+```gherkin
+Scenario: A valid summary video URL saves and round-trips
+  Given the editor is open for session "S-101"
+  When the administrator pastes "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    into the "Summary video URL" field and clicks "Save"
+  Then PUT /account/api/admin/session-summaries/{sessionId} returns 200
+  And re-opening Edit shows the same URL in the "Summary video URL" field
+  And the app's public read carries it as PublicSessionSummary.summaryVideoUrl
+    (screen 34 renders it as the "Session summary (video)" player)
+
+Scenario: An invalid summary video URL is rejected
+  Given the editor is open for session "S-101"
+  When the administrator enters "https://vimeo.com/123456789"
+    (not YouTube and not a direct .m3u8/.mp4 stream) and clicks "Save"
+  Then PUT /account/api/admin/session-summaries/{sessionId} returns HTTP 400
+  And ApiResult.Error.Code = "SESSION_SUMMARY_INVALID"
+  And the editor stays open with the bilingual message
+    "The summary video URL must be a valid YouTube or direct HLS/MP4 link."
+    / "يجب أن يكون رابط فيديو الملخّص رابط يوتيوب صالحًا أو رابط بث HLS/MP4 مباشر."
+  # Reuses the shared LiveStreamUrlPolicy — the same rule the session's live feed uses.
+
+Scenario: Clearing the summary video URL removes the second player
+  Given session "S-101" has a summary with a summary video URL
+  When the administrator blanks the "Summary video URL" field and clicks "Save"
+  Then the stored SummaryVideoUrl is null
+  And the app's public read reports summaryVideoUrl = null (no second player on screen 34)
+```
+
+**Evidence captured:**
+- Screenshot: `docs/screenshots/cp-admin-session-summaries-video-url.png` (the "Summary video URL" field in the editor)
+- API integration: `SessionSummaryCommitteeTests` `Save_round_trips_the_summary_video_url`, `An_invalid_summary_video_url_is_rejected_400`, `A_null_summary_video_url_is_allowed`; public projection in `SessionSummaryTests` `Published_summary_surfaces_the_recording_and_summary_video_urls` (all green).
+
 ---
 
 ## Implementation notes
@@ -439,4 +556,4 @@ Scenario: Export the active-session set to an XLSX workbook
 
 ---
 
-_Last reviewed:_ 2026-07-11 by Claude (S-6 owner — publish gated on the session having STARTED (clock: now >= StartUtc), not the manual Held flag; E2E-SUM-023). Earlier: 2026-06-20 by SIMF Team (D-472 #9 — added the team review/approval workflow Submit→Approve→Return + the moderator/host "ready for المحاور" approved read; E2E-SUM-019..022, authored at the API layer). Earlier: 2026-06-10 (D-356 Phase 5 — Excel + toggle; E2E-SUM-018); 2026-06-03 (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-07-20 by Claude (Item #35 — the editor gains a "Summary video URL" field (the app's second player on screen 34, beside the full recording); the URL is LiveStreamUrlPolicy-validated and round-trips through Save; E2E-SUM-028). Earlier: 2026-07-19 by Claude (Slice D — the raw subtitle + a pristine AI-draft snapshot are surfaced read-only in the CP editor; Generate captures the snapshot and Save never overwrites it; E2E-SUM-026/027, authored at the API layer; CP-internal, no public-contract change). Earlier the same day: owner approval hard-gate — Publish requires `ApprovedAt`, and editing a published summary clears `PublishedAt` so the app never sees unreviewed minutes; the public read + `HasPublishedSummary` also require `ApprovedAt`; E2E-SUM-023/024. Earlier: 2026-07-11 by Claude (S-6 owner — publish gated on the session having STARTED (clock: now >= StartUtc), not the manual Held flag; E2E-SUM-025). Earlier: 2026-06-20 by SIMF Team (D-472 #9 — added the team review/approval workflow Submit→Approve→Return + the moderator/host "ready for المحاور" approved read; E2E-SUM-019..022, authored at the API layer). Earlier: 2026-06-10 (D-356 Phase 5 — Excel + toggle; E2E-SUM-018); 2026-06-03 (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

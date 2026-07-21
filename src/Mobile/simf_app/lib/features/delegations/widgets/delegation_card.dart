@@ -118,11 +118,11 @@ class DelegationCard extends StatelessWidget {
                           color: SimfTokens.accent,
                         ),
                       ),
-                      if (item.headTitle != null &&
-                          item.headTitle!.trim().isNotEmpty) ...<Widget>[
+                      if (item.localizedHeadTitle(isArabic)?.trim().isNotEmpty ??
+                          false) ...<Widget>[
                         const SizedBox(height: 2),
                         Text(
-                          item.headTitle!.trim(),
+                          item.localizedHeadTitle(isArabic)!.trim(),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(

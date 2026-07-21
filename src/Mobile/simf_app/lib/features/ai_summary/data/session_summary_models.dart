@@ -21,6 +21,8 @@ class SessionSummary {
     required this.fullTextArabic,
     required this.generatedByAi,
     this.publishedAt,
+    this.recordingUrl,
+    this.summaryVideoUrl,
   });
 
   final String keyPoints;
@@ -33,6 +35,15 @@ class SessionSummary {
   final String fullTextArabic;
   final bool generatedByAi;
   final String? publishedAt;
+
+  /// Item #35 — the session's FULL live recording feed (from the API's
+  /// `recordingUrl`, sourced server-side from `Session.LiveStreamUrl`). Null =
+  /// no recording feed → the summary screen hides the "full recording" player.
+  final String? recordingUrl;
+
+  /// Item #35 — the team's OPTIONAL short summary video (from the API's
+  /// `summaryVideoUrl`). Null = no summary video → the screen hides that player.
+  final String? summaryVideoUrl;
 
   String _picked(String ar, String en, bool isArabic) {
     final a = ar.trim();
@@ -85,6 +96,8 @@ class SessionSummary {
         fullTextArabic: json['fullTextArabic'] as String? ?? '',
         generatedByAi: json['generatedByAi'] as bool? ?? false,
         publishedAt: json['publishedAt'] as String?,
+        recordingUrl: json['recordingUrl'] as String?,
+        summaryVideoUrl: json['summaryVideoUrl'] as String?,
       );
 
   /// Decodes the `decodeData` payload (a JSON object) into a [SessionSummary].

@@ -1,7 +1,8 @@
-@* P2.2 (D-227) — booking approval queue (SIMF-FDS-005 §5.2). Lists Pending,
-   still-held visitor seat bookings; a reviewer approves (seat confirmed +
-   booking-confirmed notification) or rejects with a reason (seat released +
-   attendee notified). Bulk-approve supported. Migrated to SimfDataGrid (D-255). *@
+@* #6/#17 (owner 2026-07-20) — read-only booking MONITOR (was the P2.2/D-227
+   approval queue). Bookings auto-confirm — there is no approval step — and no-show
+   seats are released automatically 3 minutes before start by
+   ReservationNoShowReleaseWorker, so this page only lists the active (confirmed,
+   still-held) visitor reservations and exports them. SimfDataGrid (D-255). *@
 @page "/admin/bookings"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Bookings.View)]
@@ -19,7 +20,9 @@
             <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
         }
 
-        <SimfDataGrid TItem="BookingQueueRow"
+        <SimfAlert Variant="info">@L["Admin.Bookings.MonitorHint"]</SimfAlert>
+
+        <SimfDataGrid TItem="ActiveBookingRow"
                       Query="_query"
                       Page="_page"
                       Loading="_loading"
@@ -28,8 +31,6 @@
                       RowKey="@(r => r.ReservationId.ToString())"
                       RowLabel="@(r => r.AttendeeName)"
                       Caption="@L["Admin.Bookings.Title"]"
-                      OnApproveSelected="ApproveSelectedAsync"
-                      ApproveSelectedLabel="@L["Admin.Bookings.Approve"]"
                       OnExport="OnExportAsync"
                       ExportLabel="@L["Grid.Export"]"
                       FilterColumnLabel="@L["Grid.FilterColumn"]"
@@ -46,17 +47,17 @@
                       SelectRowLabel="@L["Grid.SelectRow"]"
                       SummaryFormatter="@FormatSummary">
             <Columns>
-                <SimfDataGridColumn TItem="BookingQueueRow" Key="session"
+                <SimfDataGridColumn TItem="ActiveBookingRow" Key="session"
                                     Header="@L["Admin.Bookings.Col.Session"]"
                                     Sortable="true" Filterable="true">
                     <CellTemplate>@context.SessionTitle</CellTemplate>
                 </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="BookingQueueRow" Key="start"
+                <SimfDataGridColumn TItem="ActiveBookingRow" Key="start"
                                     Header="@L["Admin.Bookings.Col.Start"]"
                                     Sortable="true">
-                    <CellTemplate>@context.SessionStartUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm")</CellTemplate>
+                    <CellTemplate>@context.SessionStartUtc.FormatSaudi("yyyy-MM-dd HH:mm")</CellTemplate>
                 </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="BookingQueueRow" Key="seat"
+                <SimfDataGridColumn TItem="ActiveBookingRow" Key="seat"
                                     Header="@L["Admin.Bookings.Col.Seat"]"
                                     Sortable="true" Filterable="true">
                     @* D-485 — an open-seating join has no row/seat; show it as
@@ -65,57 +66,19 @@
                         ? L["Admin.Bookings.GeneralAdmission"]
                         : $"{context.RowLabel}{context.SeatNumber}")</CellTemplate>
                 </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="BookingQueueRow" Key="attendee"
+                <SimfDataGridColumn TItem="ActiveBookingRow" Key="attendee"
                                     Header="@L["Admin.Bookings.Col.Attendee"]">
                     <CellTemplate>@context.AttendeeName</CellTemplate>
                 </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="BookingQueueRow" Key="bookedAt"
+                <SimfDataGridColumn TItem="ActiveBookingRow" Key="bookedAt"
                                     Header="@L["Admin.Bookings.Col.BookedAt"]"
                                     Sortable="true">
-                    <CellTemplate>@context.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm")</CellTemplate>
+                    <CellTemplate>@context.CreatedAt.FormatSaudi("yyyy-MM-dd HH:mm")</CellTemplate>
                 </SimfDataGridColumn>
             </Columns>
-            <RowActions>
-                @* Page-specific quiet actions: approve / reject one booking. *@
-                <AuthorizedAction Permission="@PermissionCatalog.Bookings.Approve">
-                    <SimfToolbarButton Icon="check-circle" Title="@L["Admin.Bookings.Approve"]"
-                                       OnClick="@(() => ApproveAsync(context.ReservationId))" />
-                </AuthorizedAction>
-                <AuthorizedAction Permission="@PermissionCatalog.Bookings.Reject">
-                    <SimfToolbarButton Icon="close" Title="@L["Admin.Bookings.Reject"]"
-                                       OnClick="@(() => OpenReject(context))" />
-                </AuthorizedAction>
-            </RowActions>
             <EmptyTemplate>
                 <SimfEmptyState Title="@L["Admin.Bookings.None"]" />
             </EmptyTemplate>
         </SimfDataGrid>
     </div>
 </div>
-
-@if (_rejectOpen)
-{
-    <SimfModal Open="true"
-               Title="@L["Admin.Bookings.Reject.Title"]"
-               OnClose="@(() => _rejectOpen = false)">
-        <ChildContent>
-            <div class="simf-form__fields">
-                <label class="simf-field">
-                    <span class="simf-field__label">@L["Admin.Bookings.Reject.Reason"]</span>
-                    <textarea class="simf-field__input" rows="3" maxlength="512"
-                              value="@_rejectReason"
-                              @onchange="OnRejectReasonChanged"
-                              disabled="@_busy"></textarea>
-                </label>
-            </div>
-        </ChildContent>
-        <Footer>
-            <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _rejectOpen = false)">
-                @L["Admin.Bookings.Cancel"]
-            </SimfButton>
-            <SimfButton Type="button" OnClick="ConfirmRejectAsync" Loading="_busy">
-                @L["Admin.Bookings.Reject.Confirm"]
-            </SimfButton>
-        </Footer>
-    </SimfModal>
-}

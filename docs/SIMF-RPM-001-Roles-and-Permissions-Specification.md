@@ -4,7 +4,7 @@
 |-------|-------|
 | Document ID | SIMF-RPM-001 |
 | Title | Roles and Permissions Specification |
-| Version | 1.2 |
+| Version | 1.3 |
 | Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
@@ -20,6 +20,7 @@
 | 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. User types, account states, the permission catalogue, and the proposed permission matrix. |
 | 1.1 | 2026-05-20 | Engineering & Architecture Team | Matrix review applied: added the Networking (meetings) permissions; rewrote §9 with view/manage actions and a single manager per module. Findings 4–6 opened as decisions D10–D12. |
 | 1.2 | 2026-05-20 | Engineering & Architecture Team | Role model reworked on client instruction: all roles dynamic and Administrator-managed; permissions restructured as a page-and-action model with friendly naming; the Administrator holds all permissions for the initial delivery; the per-team configuration moved to Appendix A as a suggested starting point. Decisions D10–D12 applied. |
+| 1.3 | 2026-07-19 | Apexium | Corrected to match the built code: the Bookings page's Approve/Reject actions are relabelled retained but dormant. Attendee seat reservations are confirmed immediately (no Control Panel approval), a reserved seat is confirmed at hall-gate check-in, and the approval queue is always empty. Catalogue note (§8.4) and Appendix A (PR role) updated. |
 
 ---
 
@@ -232,6 +233,16 @@ with its actions, and becomes available to grant.
 decision D11: the dynamic content blocks and the categories sit on one page,
 the system and platform settings on the other.
 
+The `Bookings` page keeps its Approve and Reject actions, but those two actions
+are **retained but dormant**. Attendee seat reservations are confirmed
+immediately — there is no Control Panel approval step for a booking — so nothing
+ever creates a pending booking and the Bookings approval queue is always empty. A
+reserved seat is a provisional hold until the attendee checks in at the hall gate
+(a Staff QR scan), which confirms it; a sweep shortly before the session releases
+any hold not checked in. Approve and Reject remain in the catalogue only for the
+dormant administrator path (an Administrator reserving or blocking a seat or row
+for a VIP), so they can be granted if that path is ever used.
+
 ## 9. Permission assignment
 
 For the initial delivery, the **Administrator role holds every permission** —
@@ -328,7 +339,7 @@ each page.
 **PR**
 - Attendees (View, Edit)
 - Exhibitors (View, Approve, Reject) — one-stage approval, decision D10
-- Bookings (View, Approve, Reject) — decision D11
+- Bookings (View, Approve, Reject) — decision D11; the Approve/Reject actions are retained but dormant, as bookings auto-confirm and are confirmed at gate check-in (section 8.4)
 - Booths (View, Create, Edit, Delete)
 - Sponsors (View, Create, Edit, Delete)
 - One-to-one Meetings (View, Approve, Reject)

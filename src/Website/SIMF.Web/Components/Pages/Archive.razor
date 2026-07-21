@@ -1,0 +1,127 @@
+@* SIMF public "Forum archive" page — Figma node 5840-27997. Built on the shared
+   LandingShell chrome + the reusable LandingPageHero (no breadcrumb). LIVE archive
+   data: the headline counters + the past-edition cards come from
+   SimfPublicClient.GetArchiveAsync (server-side SSR); when the archive is hidden /
+   empty / unreachable the page falls back to the landing's static Milestones (see
+   Archive.razor.cs). The photo gallery, session titles and past speakers reuse
+   shared content + the ln-gallery / ln-sessions / ln-speakers components — the
+   public API exposes no per-edition detail yet (web/archive.md §7).
+   Bilingual AR-RTL / EN-LTR. Serves "/archive". *@
+@page "/archive"
+@layout LandingLayout
+@inject IStringLocalizer<Strings> L
+
+@{
+    var rtl = CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft;
+}
+
+<LandingShell Title="@L["Archive.PageTitle"]" Description="@L["Archive.Meta"]">
+
+    @* ============================== HERO ============================== *@
+    <LandingPageHero Title="@L["Archive.Hero.Title"]"
+                     Subtitle="@L["Archive.Hero.Subtitle"]"
+                     ImageSrc="assets/figma/about/about-hero.jpg" />
+
+    @* ===== Headline counters (navy) — live from the latest archive edition,
+         reusing the landing's ln-stats band. *@
+    <section class="ln-stats" aria-label="@L["Archive.Stats.Aria"]">
+        <div class="ln-stats__band">
+            <div class="ln-stats__row ln-reveal">
+                <div class="ln-stat"><span class="ln-stat__num">@Stats.Speakers</span><span class="ln-stat__label">@L["Archive.Stats.Speakers"]</span></div>
+                <div class="ln-stat"><span class="ln-stat__num">@Stats.Attendees</span><span class="ln-stat__label">@L["Archive.Stats.Attendees"]</span></div>
+                <div class="ln-stat"><span class="ln-stat__num">@Stats.Sessions</span><span class="ln-stat__label">@L["Archive.Stats.Sessions"]</span></div>
+            </div>
+        </div>
+    </section>
+
+    @* ===== Photos & video ("الصور والفيديو") — static highlights grid. The live
+         media feed + a video player are a follow-up (web/archive.md §7). *@
+    <section class="ln-gallery" aria-label="@L["Archive.Gallery.Title"]">
+        <div class="ln-gallery__inner ln-reveal">
+            <header class="ln-gallery__head">
+                <h2 class="ln-gallery__title">@L["Archive.Gallery.Title"]</h2>
+                <p class="ln-gallery__sub">@L["Archive.Gallery.Sub"]</p>
+            </header>
+            <div class="ln-gallery__grid">
+                @foreach (var photo in GalleryPhotos)
+                {
+                    <div class="ln-gallery__item"><img src="@photo" alt="" loading="lazy" /></div>
+                }
+            </div>
+        </div>
+    </section>
+
+    @* ===== Session titles ("عناوين الجلسات") — reuses the landing's ln-sessions
+         cards + the shared Landing.Sessions content. *@
+    <section class="ln-sessions" aria-label="@L["Archive.Sessions.Title"]">
+        <div class="ln-sessions__inner ln-reveal">
+            <div class="ln-sessions__head">
+                <h2 class="ln-sessions__title">@L["Archive.Sessions.Title"]</h2>
+                <p class="ln-sessions__desc">@L["Archive.Sessions.Desc"]</p>
+            </div>
+            <div class="ln-sessions__row">
+                @foreach (var s in Landing.Sessions)
+                {
+                    <article class="ln-scard">
+                        <div class="ln-scard__img" style="background-image:url('@s.Image')"></div>
+                        <div class="ln-scard__body">
+                            <div class="ln-scard__badgerow">
+                                <span class="ln-scard__num"><span>@s.Num</span></span>
+                                <span class="ln-scard__tag">@s.Tag.For(rtl)</span>
+                            </div>
+                            <div class="ln-scard__content">
+                                <h3 class="ln-scard__title">@s.Title.For(rtl)</h3>
+                                <p class="ln-scard__text">@s.Text.For(rtl)</p>
+                            </div>
+                            <div class="ln-scard__actions"><a class="ln-scard__btn" href="/programme/sessions">@L["Landing.Sessions.ReadMore"]</a></div>
+                        </div>
+                    </article>
+                }
+            </div>
+        </div>
+    </section>
+
+    @* ===== Past speakers ("المتحدثون السابقون") — reuses the landing's ln-speakers
+         collage + a link to the full speakers page. *@
+    <section class="ln-speakers" aria-label="@L["Archive.Speakers.Title"]">
+        <div class="ln-speakers__inner ln-reveal">
+            <div class="ln-speakers__head">
+                <h2 class="ln-speakers__title">@L["Archive.Speakers.Title"]</h2>
+                <p class="ln-speakers__lead">@L["Archive.Speakers.Lead"]</p>
+                <a href="/speakers" class="ln-btn ln-btn--gold">@L["Landing.Speakers.ViewAll"]</a>
+            </div>
+            <div class="ln-speakers__collage">
+                <img src="assets/figma/speakers/speakers-collage.png" alt="@L["Landing.Speakers.CollageAlt"]" loading="lazy" />
+            </div>
+        </div>
+    </section>
+
+    @* ===== Past editions ("استعرض الإصدارات السابقة") — LIVE edition cards from
+         GetArchiveAsync (static Milestones fallback), reusing the landing's
+         ln-miles / ln-mcard band. *@
+    <section class="ln-miles ln-miles--wrap" aria-label="@L["Archive.Editions.Title"]">
+        <div class="ln-miles__head ln-reveal">
+            <h2 class="ln-miles__title">@L["Archive.Editions.Title"]</h2>
+            <p class="ln-miles__desc">@L["Archive.Editions.Desc"]</p>
+        </div>
+        <div class="ln-miles__row ln-reveal">
+            @foreach (var m in Editions)
+            {
+                <article class="ln-mcard">
+                    <div class="ln-mcard__img" style="background-image:url('@m.Image')"></div>
+                    <div class="ln-mcard__body">
+                        <div class="ln-mcard__top">
+                            <div class="ln-mcard__headcol">
+                                <span class="ln-mcard__date">@m.Date.For(rtl)</span>
+                                <h3 class="ln-mcard__name">@m.Name.For(rtl)</h3>
+                            </div>
+                            <span class="ln-mcard__arrow"><svg viewBox="0 0 22 22" fill="none" aria-hidden="true"><path d="M21 21L1 1M14.3333 1H1V14.3333" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+                        </div>
+                        <p class="ln-mcard__text">@m.Text.For(rtl)</p>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+
+</LandingShell>

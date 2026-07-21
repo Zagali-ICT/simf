@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using SIMF.Application.Operations;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Operations;
@@ -19,6 +20,7 @@ namespace SIMF.Infrastructure.Operations;
 internal sealed class HallAttendanceCloseoutWorker(
     IServiceScopeFactory scopeFactory,
     TimeProvider timeProvider,
+    IWorkerHeartbeatRegistry heartbeat,
     ILogger<HallAttendanceCloseoutWorker> logger) : BackgroundService
 {
     private static readonly TimeSpan PollInterval = TimeSpan.FromMinutes(1);
@@ -26,6 +28,11 @@ internal sealed class HallAttendanceCloseoutWorker(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        heartbeat.Register(
+            nameof(HallAttendanceCloseoutWorker),
+            "Closes hall-attendance rows whose session has ended.",
+            PollInterval);
+
         try
         {
             await Task.Delay(StartupDelay, timeProvider, stoppingToken);
@@ -40,6 +47,7 @@ internal sealed class HallAttendanceCloseoutWorker(
             try
             {
                 await CloseOnceAsync(stoppingToken);
+                heartbeat.RecordSuccess(nameof(HallAttendanceCloseoutWorker));
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -47,6 +55,7 @@ internal sealed class HallAttendanceCloseoutWorker(
             }
             catch (Exception ex)
             {
+                heartbeat.RecordFailure(nameof(HallAttendanceCloseoutWorker), ex.Message);
                 logger.LogError(ex, "HallAttendanceCloseoutWorker tick failed.");
             }
             try

@@ -78,7 +78,7 @@
                     <SimfDataGridColumn TItem="AdminInvitationSummary" Key="createdat"
                                         Header="@L["Admin.Invitations.Col.CreatedAt"]"
                                         Sortable="true">
-                        <CellTemplate>@context.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</CellTemplate>
+                        <CellTemplate>@context.CreatedAt.FormatSaudi("yyyy-MM-dd HH:mm")</CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminInvitationSummary" Key="sentBy"
                                         Header="@L["Admin.Invitations.Col.SentBy"]">

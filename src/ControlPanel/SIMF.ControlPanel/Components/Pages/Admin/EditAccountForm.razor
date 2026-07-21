@@ -44,6 +44,52 @@ else
 
         <p class="simf-form__hint">@L["Admin.Edit.EmailChangeNote"]</p>
 
+        @* VIP edit — change the account's photo, ID image, and (VIP page only)
+           the VVIP/VIP welcome photo. Each is optional: pick a file to replace
+           the current image; leave empty to keep it. Uploads run on Save via the
+           same account-id-keyed admin endpoints the walk-in desk uses. *@
+        <fieldset class="simf-form__section" disabled="@(_busy ? "disabled" : null)">
+            <legend>@L["Admin.Edit.Photo.Section"]</legend>
+
+            <div class="simf-field">
+                <label class="simf-field__label" for="@AvatarInputId">@L["Admin.Edit.Photo.Avatar"]</label>
+                @if (_hasAvatar)
+                {
+                    <AdminProfilePhotoBlock Heading="@L["Admin.Edit.Photo.Current"]" Src="@AvatarPreviewUrl" />
+                }
+                <input id="@AvatarInputId" type="file" class="simf-field__input"
+                       accept="image/png,image/jpeg,image/webp"
+                       @onchange="OnAvatarPickedAsync" />
+                <div class="simf-field__helper">@L["Admin.Edit.Photo.Avatar.Hint"]</div>
+            </div>
+
+            <div class="simf-field">
+                <label class="simf-field__label" for="@IdDocumentInputId">@L["Admin.Edit.Photo.IdDocument"]</label>
+                @if (_hasIdImage)
+                {
+                    <div class="simf-walkin__id-image">
+                        <h4>@L["Admin.Edit.Photo.Current"]</h4>
+                        <img src="@IdImagePreviewUrl" alt="@L["Admin.Edit.Photo.IdDocument"]" />
+                    </div>
+                }
+                <input id="@IdDocumentInputId" type="file" class="simf-field__input"
+                       accept="image/png,image/jpeg,image/webp"
+                       @onchange="OnIdDocumentPickedAsync" />
+                <div class="simf-field__helper">@L["Admin.Edit.Photo.IdDocument.Hint"]</div>
+            </div>
+
+            @if (VipPhotoEnabled)
+            {
+                <div class="simf-field">
+                    <label class="simf-field__label" for="@VipPhotoInputId">@L["Admin.Edit.Photo.VipPhoto"]</label>
+                    <input id="@VipPhotoInputId" type="file" class="simf-field__input"
+                           accept="image/png,image/jpeg,image/webp"
+                           @onchange="OnVipPhotoPickedAsync" />
+                    <div class="simf-field__helper">@L["Admin.Edit.Photo.VipPhoto.Hint"]</div>
+                </div>
+            }
+        </fieldset>
+
         <div class="simf-form__actions">
             <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="OnCancel">
                 @L["Admin.Edit.Cancel"]

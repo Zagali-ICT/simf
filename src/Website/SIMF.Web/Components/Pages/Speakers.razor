@@ -12,7 +12,7 @@
         <div class="ln-pagehero__inner">
             <div class="ln-pagehero__info ln-reveal">
                 <h1 class="ln-pagehero__title">@L["Speakers.Band.Theme"]</h1>
-                <span class="ln-pagehero__meta"><span class="ln-ico ln-ico--calendar" aria-hidden="true"></span>@L["Speakers.Band.Date"]</span>
+                <span class="ln-pagehero__meta"><span class="ln-ico ln-ico--calendar" aria-hidden="true"></span>@(BandDate ?? L["Speakers.Band.Date"].Value)</span>
                 <span class="ln-pagehero__meta"><span class="ln-ico ln-ico--clock" aria-hidden="true"></span>@L["Speakers.Band.Time"]</span>
                 <span class="ln-pagehero__meta"><span class="ln-ico ln-ico--pin" aria-hidden="true"></span>@L["Speakers.Band.Venue"]</span>
             </div>
@@ -47,9 +47,10 @@
                             </div>
                             <div class="ln-spkcard__body">
                                 <p class="ln-spkcard__name">@DisplayName(sp)</p>
-                                @if (!string.IsNullOrWhiteSpace(sp.Rank))
+                                @{ var role = PickOrNull(sp.Rank, sp.RankArabic); }
+                                @if (!string.IsNullOrWhiteSpace(role))
                                 {
-                                    <span class="ln-spkcard__role">@sp.Rank</span>
+                                    <span class="ln-spkcard__role">@role</span>
                                 }
                                 @if (!string.IsNullOrWhiteSpace(loc))
                                 {

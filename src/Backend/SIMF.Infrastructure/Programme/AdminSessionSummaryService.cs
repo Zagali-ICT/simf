@@ -33,6 +33,8 @@ internal sealed class AdminSessionSummaryService(
     private const int SectionMax = 4000;
     private const int SpeakersMax = 1000;
     private const int FullTextMax = 8000;
+    // Item #35 — the summary-video URL column limit (matches Session.LiveStreamUrl).
+    private const int SummaryVideoUrlMax = 1024;
 
     /// <summary>The seeded prompt key the AI draft routes through (D-238).</summary>
     private const string SummaryPromptKey = "session-summary";
@@ -89,7 +91,7 @@ internal sealed class AdminSessionSummaryService(
         var session = await appDbContext.Sessions
             .AsNoTracking()
             .Where(s => s.Id == sessionId && s.IsActive)
-            .Select(s => new { s.Id, s.Code, s.Title, s.TitleArabic })
+            .Select(s => new { s.Id, s.Code, s.Title, s.TitleArabic, s.LiveCaptions, s.LiveCaptionsArabic })
             .SingleOrDefaultAsync(cancellationToken);
         if (session is null)
         {
@@ -100,7 +102,7 @@ internal sealed class AdminSessionSummaryService(
             .AsNoTracking()
             .SingleOrDefaultAsync(
                 s => s.SessionId == sessionId && s.IsActive, cancellationToken);
-        return summary is null ? null : ToDetail(session.Code, session.Title, session.TitleArabic, summary);
+        return summary is null ? null : ToDetail(session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
     }
 
     public async Task<AdminSessionSummaryDetail> GenerateAsync(
@@ -153,6 +155,11 @@ internal sealed class AdminSessionSummaryService(
                 Id = Guid.NewGuid(),
                 SessionId = sessionId,
                 FullTextArabic = draft,
+                // Slice D — capture the pristine AI draft next to the editable
+                // copy. SaveAsync never touches these two, so the original AI
+                // output survives every Committee edit for the transparency panel.
+                AiDraftFullTextArabic = draft,
+                AiDraftGeneratedAt = now,
                 AiModel = result.Model,
                 IsActive = true,
                 CreatedAt = now,
@@ -164,8 +171,14 @@ internal sealed class AdminSessionSummaryService(
         else
         {
             // Re-generate replaces the Arabic AI draft but preserves the
-            // Committee's English text, curated sections, and publish state.
+            // Committee's English text and curated sections. The content change
+            // returns it to Draft and takes it offline (ResetReviewState below).
             summary.FullTextArabic = draft;
+            // Slice D — a re-generate refreshes the pristine snapshot too, so it
+            // always mirrors the LATEST AI output (the baseline the reviewer diffs
+            // their edits against). SaveAsync still never touches it.
+            summary.AiDraftFullTextArabic = draft;
+            summary.AiDraftGeneratedAt = now;
             summary.AiModel = result.Model;
             summary.IsActive = true;
             summary.UpdatedAt = now;
@@ -184,7 +197,7 @@ internal sealed class AdminSessionSummaryService(
             "Session summary {SummaryId} AI-drafted for session {SessionId} by {UserId} (model {Model}).",
             summary.Id, sessionId, actorUserId, result.Model);
 
-        return ToDetail(session.Code, session.Title, session.TitleArabic, summary);
+        return ToDetail(session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
     }
 
     public async Task<AdminSessionSummaryDetail> SaveAsync(
@@ -201,6 +214,9 @@ internal sealed class AdminSessionSummaryService(
         var speakersAr = Clean(request.SpeakersArabic, SpeakersMax, "speakers (Arabic)");
         var fullText = Clean(request.FullText, FullTextMax, "full text");
         var fullTextAr = Clean(request.FullTextArabic, FullTextMax, "full text (Arabic)");
+        // Item #35 — validated + normalized up-front, so an invalid URL is a 400
+        // before any DB mutation (blank clears it to null).
+        var summaryVideoUrl = CleanSummaryVideoUrl(request.SummaryVideoUrl);
 
         var summary = await appDbContext.SessionSummaries
             .SingleOrDefaultAsync(s => s.SessionId == sessionId && s.IsActive, cancellationToken);
@@ -227,6 +243,7 @@ internal sealed class AdminSessionSummaryService(
         summary.SpeakersArabic = speakersAr;
         summary.FullText = fullText;
         summary.FullTextArabic = fullTextAr;
+        summary.SummaryVideoUrl = summaryVideoUrl;
         summary.IsActive = true;
         summary.UpdatedAt = now;
         summary.UpdatedByUserId = actorUserId;
@@ -238,7 +255,7 @@ internal sealed class AdminSessionSummaryService(
             AuditEvents.SessionSummarySaved, actorUserId, sessionId,
             $"summaryId={summary.Id}", cancellationToken);
 
-        return ToDetail(session.Code, session.Title, session.TitleArabic, summary);
+        return ToDetail(session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
     }
 
     public Task<AdminSessionSummaryDetail> PublishAsync(
@@ -268,6 +285,18 @@ internal sealed class AdminSessionSummaryService(
                 "لم تبدأ الجلسة بعد — لا يمكن نشر ملخّصها قبل أن تبدأ.");
         }
 
+        // Owner 2026-07-19 — the scientific team must REVIEW + APPROVE the محضر before
+        // it can reach the app. Publish is a hard gate on ApprovedAt so an unreviewed
+        // (Draft / InReview) summary can never be surfaced publicly. Unpublish is
+        // unaffected — retracting is always allowed.
+        if (publish && summary.ApprovedAt is null)
+        {
+            throw new ApiException(
+                ErrorCodes.SessionSummaryInvalid, 400,
+                "This summary must be reviewed and approved by the scientific team before it can be published.",
+                "يجب أن يراجع الفريق العلمي هذا الملخّص ويوافق عليه قبل نشره.");
+        }
+
         summary.PublishedAt = publish ? now : null;
         summary.PublishedByUserId = publish ? actorUserId : null;
         summary.UpdatedAt = now;
@@ -278,7 +307,7 @@ internal sealed class AdminSessionSummaryService(
             publish ? AuditEvents.SessionSummaryPublished : AuditEvents.SessionSummaryUnpublished,
             actorUserId, sessionId, $"summaryId={summary.Id}", cancellationToken);
 
-        return ToDetail(session.Code, session.Title, session.TitleArabic, summary);
+        return ToDetail(session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
     }
 
     public async Task<AdminSessionSummaryDetail> SubmitForReviewAsync(
@@ -306,7 +335,7 @@ internal sealed class AdminSessionSummaryService(
             AuditEvents.SessionSummarySubmittedForReview, actorUserId, sessionId,
             $"summaryId={summary.Id}", cancellationToken);
 
-        return ToDetail(session.Code, session.Title, session.TitleArabic, summary);
+        return ToDetail(session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
     }
 
     public async Task<AdminSessionSummaryDetail> ApproveAsync(
@@ -334,7 +363,7 @@ internal sealed class AdminSessionSummaryService(
             AuditEvents.SessionSummaryApproved, actorUserId, sessionId,
             $"summaryId={summary.Id}", cancellationToken);
 
-        return ToDetail(session.Code, session.Title, session.TitleArabic, summary);
+        return ToDetail(session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
     }
 
     public async Task<AdminSessionSummaryDetail> ReturnToDraftAsync(
@@ -353,7 +382,7 @@ internal sealed class AdminSessionSummaryService(
             AuditEvents.SessionSummaryReturnedToDraft, actorUserId, sessionId,
             $"summaryId={summary.Id}", cancellationToken);
 
-        return ToDetail(session.Code, session.Title, session.TitleArabic, summary);
+        return ToDetail(session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
     }
 
     private async Task<SessionSummary> LoadSummaryAsync(
@@ -366,14 +395,20 @@ internal sealed class AdminSessionSummaryService(
             "No summary exists for this session yet.",
             "لا يوجد ملخّص لهذه الجلسة بعد.");
 
-    /// <summary>Clears the review + approval stamps (back to Draft). Called on
-    /// every content edit and by the explicit return-to-draft (D-472).</summary>
+    /// <summary>Clears the review + approval stamps (back to Draft) AND takes the
+    /// summary offline. Called on every content edit and by the explicit
+    /// return-to-draft (D-472). Owner 2026-07-19 — because Publish is hard-gated on
+    /// approval, invalidating the approval must also clear <c>PublishedAt</c>: an
+    /// edited (now-unapproved) summary can never stay visible to the app, so it must
+    /// be re-approved and re-published. Keeps the invariant PublishedAt ⇒ ApprovedAt.</summary>
     private static void ResetReviewState(SessionSummary summary)
     {
         summary.ReviewSubmittedAt = null;
         summary.ReviewSubmittedByUserId = null;
         summary.ApprovedAt = null;
         summary.ApprovedByUserId = null;
+        summary.PublishedAt = null;
+        summary.PublishedByUserId = null;
     }
 
     private async Task<Session> LoadSessionForDraftAsync(
@@ -413,8 +448,31 @@ internal sealed class AdminSessionSummaryService(
     private static string Truncate(string value, int max) =>
         value.Length > max ? value[..max] : value;
 
+    /// <summary>Item #35 — validate + normalize the optional summary-video URL:
+    /// blank → null (cleared); otherwise it MUST pass the shared
+    /// <see cref="LiveStreamUrlPolicy"/> (the same YouTube / direct HLS-MP4 rule
+    /// as the session's live feed) and stay within the column limit, else a 400.
+    /// Reuses the one URL rule so the CP form + this write validate identically.</summary>
+    private static string? CleanSummaryVideoUrl(string? value)
+    {
+        var trimmed = (value ?? string.Empty).Trim();
+        if (trimmed.Length == 0)
+        {
+            return null;
+        }
+        if (trimmed.Length > SummaryVideoUrlMax || !LiveStreamUrlPolicy.IsAllowed(trimmed))
+        {
+            throw new ApiException(
+                ErrorCodes.SessionSummaryInvalid, 400,
+                "The summary video URL must be a valid YouTube or direct HLS/MP4 link.",
+                "يجب أن يكون رابط فيديو الملخّص رابط يوتيوب صالحًا أو رابط بث HLS/MP4 مباشر.");
+        }
+        return trimmed;
+    }
+
     private static AdminSessionSummaryDetail ToDetail(
-        string code, string title, string titleArabic, SessionSummary s) =>
+        string code, string title, string titleArabic,
+        string? subtitle, string? subtitleArabic, SessionSummary s) =>
         new(
             s.SessionId,
             code,
@@ -435,5 +493,14 @@ internal sealed class AdminSessionSummaryService(
             s.UpdatedAt,
             IsInReview: s.ReviewSubmittedAt is not null && s.ApprovedAt is null,
             IsApproved: s.ApprovedAt is not null,
-            s.ApprovedAt);
+            s.ApprovedAt,
+            // Slice D — the read-only AI-transparency sources: the raw subtitle
+            // the AI drafted from (Session.LiveCaptions*) and the pristine AI
+            // draft snapshot captured at generation.
+            Subtitle: subtitle,
+            SubtitleArabic: subtitleArabic,
+            s.AiDraftFullTextArabic,
+            s.AiDraftGeneratedAt,
+            // Item #35 — the team summary-video URL round-trips to the editor.
+            s.SummaryVideoUrl);
 }

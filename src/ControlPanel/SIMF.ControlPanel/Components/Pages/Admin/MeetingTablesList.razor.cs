@@ -424,7 +424,7 @@ public partial class MeetingTablesList
         if (DateTime.TryParse(text, CultureInfo.InvariantCulture,
             DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var dt))
         {
-            value = new DateTimeOffset(DateTime.SpecifyKind(dt, DateTimeKind.Utc));
+            value = SaudiTime.FromSaudiWallClock(dt);
             return true;
         }
         return false;

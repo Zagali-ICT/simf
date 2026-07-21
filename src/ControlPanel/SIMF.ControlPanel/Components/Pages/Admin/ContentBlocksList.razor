@@ -76,7 +76,7 @@
                     <SimfDataGridColumn TItem="AdminContentBlockSummary" Key="lastUpdatedAt"
                                         Header="@L["Admin.ContentBlocks.Col.LastUpdatedAt"]"
                                         Sortable="true">
-                        <CellTemplate>@context.LastUpdatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</CellTemplate>
+                        <CellTemplate>@context.LastUpdatedAt.FormatSaudi("yyyy-MM-dd HH:mm")</CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminContentBlockSummary" Key="isActive"
                                         Header="@L["Admin.ContentBlocks.Col.Active"]">

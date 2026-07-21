@@ -215,6 +215,9 @@ public static class ErrorCodes
     public const string RatingQuestionNotFound = "RATING_QUESTION_NOT_FOUND";
     public const string RatingTargetRequired = "RATING_TARGET_REQUIRED";
     public const string RatingTargetNotFound = "RATING_TARGET_NOT_FOUND";
+    // Owner 2026-07-19 — a rating may only be submitted for something the user
+    // attended (in-hall check-in, or a venue-gate check-in for day/overall scopes).
+    public const string RatingNotAttended = "RATING_NOT_ATTENDED";
 
     // Media (D-199 — media gallery, Mockup page 30. Promoted from the
     // module-local MediaErrorCodes; string values are the wire contract).

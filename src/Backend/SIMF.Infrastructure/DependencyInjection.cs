@@ -171,6 +171,17 @@ public static class DependencyInjection
             configuration.GetSection(DemoSeedOptions.SectionName));
         services.Configure<JwtOptions>(
             configuration.GetSection(JwtOptions.SectionName));
+        // Ops override — the misremembered Session:TimeoutHours (env
+        // SIMF_Session__TimeoutHours) lengthens the short-lived access token
+        // beyond the NCA-default 5 minutes at runtime. Absent → the NCA default
+        // stands; set → clamped to the 24h absolute session cap (D-443) so it
+        // can never exceed it. Kept OUT of the committed set-env-api template so
+        // the shipped deploy posture stays NCA-compliant; an operator opts in.
+        services.PostConfigure<JwtOptions>(options =>
+            options.AccessTokenMinutes = JwtOptions.ResolveAccessTokenMinutes(
+                options.AccessTokenMinutes,
+                configuration.GetValue<int>("Session:TimeoutHours", 0),
+                options.SessionLifetimeHours));
         // A7-13 (NCA) — credential-lifecycle settings (password max age).
         services.Configure<IdentityLifecycleOptions>(
             configuration.GetSection(IdentityLifecycleOptions.SectionName));
@@ -327,15 +338,20 @@ public static class DependencyInjection
         // singletons + the auto-close background worker (PDF §2.3, §2.4).
         services.AddScoped<SIMF.Application.Operations.Abstractions.IOperationsToggleService,
             SIMF.Infrastructure.Operations.OperationsToggleService>();
+        // In-process heartbeat registry the hosted workers report to, so the CP
+        // services monitor and /health can tell which workers are up. Singleton,
+        // shared by the API host and every worker (no schema, no cross-process).
+        services.AddSingleton<SIMF.Application.Operations.IWorkerHeartbeatRegistry,
+            SIMF.Infrastructure.Operations.WorkerHeartbeatRegistry>();
         services.AddHostedService<SIMF.Infrastructure.Operations.RegistrationGateAutoCloseWorker>();
         // P1.7 (D-217) — automated "session starting soon" reminder worker.
         services.AddHostedService<SIMF.Infrastructure.Operations.SessionReminderWorker>();
         // R-1 — revert a stuck AwaitingSpeaker speaker meeting request to Pending once
         // its 72h double-opt-in tokens expire (no re-send ever came); frees the held slot.
         services.AddHostedService<SIMF.Infrastructure.Operations.MeetingAwaitingSpeakerExpiryWorker>();
-        // M-6 — releases Pending seat holds whose hold window has passed, freeing
-        // capacity for other visitors.
-        services.AddHostedService<SIMF.Infrastructure.Operations.PendingBookingExpiryWorker>();
+        // #6/#17 — releases seats reserved by no-shows (no check-in) 3 minutes
+        // before the session starts, freeing capacity for others.
+        services.AddHostedService<SIMF.Infrastructure.Operations.ReservationNoShowReleaseWorker>();
         // End-of-session "please rate this session" prompt worker.
         services.AddHostedService<SIMF.Infrastructure.Operations.SessionRatingPromptWorker>();
         // D-679 — end-of-day + end-of-programme rating prompt worker.
@@ -532,6 +548,10 @@ public static class DependencyInjection
         // D-452: programme days (date + title + logo).
         services.AddScoped<SIMF.Application.Programme.Abstractions.IAdminProgrammeDayService,
             SIMF.Infrastructure.Programme.AdminProgrammeDayService>();
+        // D-753 — forum-day window (MIN/MAX over active ProgrammeDay.Date); bounds
+        // business-meeting + speaker-availability scheduling to the event days.
+        services.AddScoped<SIMF.Application.Programme.Abstractions.IForumWindowService,
+            SIMF.Infrastructure.Programme.ForumWindowService>();
         // D-202 — Track-2: Statistics dashboard (read-only aggregate) +
         // Exhibitor provisioning.
         services.AddScoped<SIMF.Application.Statistics.Abstractions.IStatisticsService,

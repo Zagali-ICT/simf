@@ -1,68 +1,150 @@
-@* Website — public programme / agenda page (D-199, Mockup page 16 "Agenda").
-   A static-SSR public read over the ANONYMOUS backend: on load it fetches the
-   published sessions and groups them by the local calendar date of StartUtc
-   into day sections. Each row shows the bilingual title, hall, the local time
-   window and — when the primary theme carries a name — a neutral theme pill.
-   An optional speakers strip is shown when GET /speakers returns rows.
-   Bilingual throughout via L[...] with the Arabic-preferred-then-English
-   fallback for the *Arabic fields. *@
+@* SIMF public "Programme" agenda - the forum's live, day-grouped schedule.
+   Re-skinned onto the shared ln- marketing chrome (LandingShell + LandingPageHero,
+   no breadcrumb) and redesigned to echo the app "Programme schedule" (Figma
+   883:2308) adapted to desktop + RTL: a day strip switches days, optional type
+   tabs filter by kind, and each session is a timeline card (time column + gold
+   category chip + title + hall + description). The live data flow in
+   Programme.razor.cs is unchanged (anonymous read, event-local +03:00 grouping,
+   best-effort speakers strip). Day/type filtering is progressive enhancement
+   (landing.js initAgenda); with no JS every day stays visible and reachable.
+   Bilingual AR-RTL / EN-LTR via the shared Pick helper. Serves "/programme". *@
 @page "/programme"
+@layout LandingLayout
 @using SIMF.Contracts.Programme
 
-<PageTitle>@L["Programme.PageTitle"]</PageTitle>
+<LandingShell Title="@L["Programme.PageTitle"]" Description="@L["Programme.Banner.Subtitle"]">
 
-<div class="simf-account-page">
-    <SimfBanner Title="@L["Programme.Banner.Title"]" Subtitle="@L["Programme.Banner.Subtitle"]" />
+    @* ============================== HERO ============================== *@
+    <LandingPageHero Title="@L["Programme.Banner.Title"]"
+                     Subtitle="@L["Programme.Banner.Subtitle"]"
+                     ImageSrc="assets/figma/about/about-hero.jpg" />
 
     @if (_error)
     {
-        <SimfAlert Variant="error">@L["Programme.Error"]</SimfAlert>
+        @* The sessions read failed / the service was unreachable. *@
+        <section class="ln-fsection" aria-label="@L["Programme.Banner.Title"]">
+            <div class="ln-fsection__inner ln-reveal">
+                <p class="ln-agenda__msg" role="alert">@L["Programme.Error"]</p>
+            </div>
+        </section>
     }
     else if (_days.Count == 0)
     {
-        <SimfEmptyState Title="@L["Programme.Empty.Title"]"
-                        Description="@L["Programme.Empty.Text"]" />
+        @* No published sessions yet. *@
+        <section class="ln-fsection" aria-label="@L["Programme.Empty.Title"]">
+            <div class="ln-fsection__inner ln-reveal">
+                <header class="ln-fsection__head">
+                    <h2 class="ln-fsection__title">@L["Programme.Empty.Title"]</h2>
+                    <p class="ln-fsection__sub">@L["Programme.Empty.Text"]</p>
+                </header>
+            </div>
+        </section>
     }
     else
     {
-        @foreach (var day in _days)
-        {
-            <section class="simf-card simf-page-card" aria-label="@day.Heading">
-                <h2 class="simf-card__title">@day.Heading</h2>
-                <ul class="simf-role-list">
-                    @foreach (var session in day.Sessions)
+        @* Live agenda: navy band with a day strip, optional type filter and a
+           per-day timeline of session cards. *@
+        <section class="ln-fsection ln-fsection--dark ln-agenda" aria-label="@L["Programme.Agenda.Title"]">
+            <div class="ln-fsection__inner ln-reveal">
+
+                @* -------- Day strip (switches the visible day) -------- *@
+                @* A group of toggle buttons (aria-pressed), not a WAI tablist - so the
+                   no-JS state (all days shown, none pressed) stays coherent and there is
+                   no arrow-key obligation. Same model as the type filter below. *@
+                <div class="ln-agenda__daystrip" role="group" aria-label="@L["Programme.DayStrip.Aria"]">
+                    @foreach (var day in _days)
                     {
-                        <li>
-                            <p class="simf-card__supporting">@TimeWindow(session) — @Title(session)</p>
-                            <p class="simf-card__supporting">@Hall(session)</p>
-                            @if (!string.IsNullOrWhiteSpace(session.PrimaryThemeName)
-                                 || !string.IsNullOrWhiteSpace(session.PrimaryThemeNameArabic))
-                            {
-                                <SimfPill Variant="neutral">@ThemeName(session)</SimfPill>
-                            }
-                        </li>
+                        <button type="button" class="ln-agenda__daypill" aria-pressed="false" data-agenda-day="@day.Id">
+                            <span class="ln-agenda__dayweek">@day.Weekday</span>
+                            <span class="ln-agenda__daynum">@day.DayNum</span>
+                        </button>
                     }
-                </ul>
-            </section>
-        }
+                </div>
+
+                @* -------- Type filter (data-driven; only when types exist) -------- *@
+                @if (_types.Count > 0)
+                {
+                    <div class="ln-agenda__tabs" role="group" aria-label="@L["Programme.Filter.Aria"]">
+                        <button type="button" class="ln-agenda__tab" data-agenda-type="" aria-pressed="true">
+                            @L["Programme.Filter.All"]
+                        </button>
+                        @foreach (var type in _types)
+                        {
+                            <button type="button" class="ln-agenda__tab" data-agenda-type="@type" aria-pressed="false">
+                                @TypeLabel(type)
+                            </button>
+                        }
+                    </div>
+                }
+
+                <h2 class="ln-agenda__label">@L["Programme.Agenda.Title"]</h2>
+
+                @* -------- Per-day timeline of session cards -------- *@
+                @foreach (var day in _days)
+                {
+                    <section class="ln-agenda__day" data-agenda-daypanel="@day.Id">
+                        <h3 class="ln-agenda__dayhead">@day.Heading</h3>
+                        <ul class="ln-agenda__list" role="list">
+                            @foreach (var session in day.Sessions)
+                            {
+                                <li class="ln-agenda__card" data-agenda-cardtype="@TypeSlug(session)">
+                                    <div class="ln-agenda__when" aria-hidden="true">
+                                        <span class="ln-agenda__t1">@Start(session)</span>
+                                        <span class="ln-agenda__line"></span>
+                                        <span class="ln-agenda__t2">@End(session)</span>
+                                    </div>
+                                    <div class="ln-agenda__content">
+                                        @{ var chip = Chip(session); }
+                                        @if (!string.IsNullOrWhiteSpace(chip))
+                                        {
+                                            <span class="ln-agenda__cat">
+                                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.6" /><path d="M3 9h18M8 2.5v4M16 2.5v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
+                                                <span>@chip</span>
+                                            </span>
+                                        }
+                                        <h4 class="ln-agenda__title">@Title(session)</h4>
+                                        <span class="ln-agenda__hall">@Hall(session)</span>
+                                        <span class="ln-agenda__time-sr">@Start(session) – @End(session)</span>
+                                        @{ var desc = Description(session); }
+                                        @if (!string.IsNullOrWhiteSpace(desc))
+                                        {
+                                            <p class="ln-agenda__desc">@desc</p>
+                                        }
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                        @* Shown (via JS) only when the type filter leaves this day empty. *@
+                        <p class="ln-agenda__none">@L["Programme.Filter.Empty"]</p>
+                    </section>
+                }
+            </div>
+        </section>
     }
 
     @if (_speakers.Count > 0)
     {
-        <section class="simf-card simf-page-card" aria-label="@L["Programme.Speakers.Title"]">
-            <h2 class="simf-card__title">@L["Programme.Speakers.Title"]</h2>
-            <ul class="simf-role-list">
-                @foreach (var speaker in _speakers)
-                {
-                    <li>
-                        <span class="simf-card__supporting">@SpeakerName(speaker)</span>
-                        @if (!string.IsNullOrWhiteSpace(speaker.Rank))
-                        {
-                            <SimfPill Variant="neutral">@speaker.Rank</SimfPill>
-                        }
-                    </li>
-                }
-            </ul>
+        @* Best-effort speakers strip (a failed speakers read just omits it). *@
+        <section class="ln-fsection ln-fsection--dark" aria-label="@L["Programme.Speakers.Title"]">
+            <div class="ln-fsection__inner ln-reveal">
+                <header class="ln-fsection__head">
+                    <h2 class="ln-fsection__title">@L["Programme.Speakers.Title"]</h2>
+                </header>
+                <ul class="ln-agenda__speakers" role="list">
+                    @foreach (var speaker in _speakers)
+                    {
+                        <li class="ln-agenda__spk">
+                            <span class="ln-agenda__spkname">@SpeakerName(speaker)</span>
+                            @if (!string.IsNullOrWhiteSpace(speaker.Rank))
+                            {
+                                @* Rank is stored English-only; tag it so an Arabic screen reader pronounces it correctly. *@
+                                <span class="ln-agenda__spkrank" lang="en">@speaker.Rank</span>
+                            }
+                        </li>
+                    }
+                </ul>
+            </div>
         </section>
     }
-</div>
+
+</LandingShell>

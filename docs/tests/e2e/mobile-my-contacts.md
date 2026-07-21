@@ -43,6 +43,7 @@
 | E2E-MMC-012 | **D-737:** scan the app's OWN share QR (vCard + `X-SIMF-TOKEN`) → resolves + saves | happy | P0 | authored ✓ (`share_qr_payload_test` round-trip) |
 | E2E-MMC-013 | Scan a foreign / old contact vCard (no token) → offered to save to the phone's contacts (D-744) | edge | P1 | authored ✓ (`scan_contact_screen_test` save-to-phone) |
 | E2E-MMC-014 | Camera-permission-denied on the scanner → error card + manual entry still works | resilience | P1 | source-verified (`simf_scanner_body` error card; manual path in `simf_scanner_body_test`) |
+| E2E-MMC-015 | **Bilingual job title (2026-07-20):** a resolved / saved contact whose subject has an Arabic job title shows it under the Arabic toggle (English fallback when absent, null when neither is set); `VisitorCard.jobTitleArabic` / `SavedContactRow.jobTitleArabic` localize like name + organisation | i18n | P1 | authored ✓ (`VisitorContactSharingTests` bilingual assert + `contact_models_test.localizedJobTitle`) |
 
 ## Scenarios
 
@@ -234,6 +235,10 @@ covers the always-mounted manual field with the camera off.
 
 ---
 
+_Last reviewed:_ 2026-07-20 by Claude — bilingual job title: `VisitorCard` /
+`SavedContactRow` gained `jobTitleArabic`; the app contact + exhibitor cards
+localize the title (Arabic primary in ar, English fallback), mirroring the
+delegation head-title fix; E2E-MMC-015. Earlier:
 _Last reviewed:_ 2026-07-11 by SIMF Team — D-744: a token-less foreign vCard
 (MMC-013) is now offered straight to the phone's own contacts via the OS "add
 contact" flow (reuses the shared `shareTextContent` vCard export) instead of

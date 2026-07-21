@@ -23,6 +23,9 @@ public sealed class UserProfileResponse
     public string EnglishName { get; set; } = string.Empty;
     /// <summary>D-163 (PDF §2.6) — optional job title.</summary>
     public string? JobTitle { get; set; }
+    /// <summary>2026-07-20: Arabic twin of JobTitle so a visitor can set a
+    /// bilingual title the app localizes (contacts / exhibitor cards / vCard).</summary>
+    public string? JobTitleArabic { get; set; }
     public string NationalityCode { get; set; } = string.Empty;
     public DateOnly? DateOfBirth { get; set; }
     public string PlaceOfBirth { get; set; } = string.Empty;
@@ -89,6 +92,11 @@ public sealed class UserProfileResponse
     /// show the "request a speaker meeting" affordance to VIP guests only;
     /// the endpoint enforces the same rule server-side. Append-only field.</summary>
     public bool IsVip { get; set; }
+
+    /// <summary>D-736 — whether this profile appears in "Meet People Like You"
+    /// recommendations. Defaults to true; the user can opt out via the sign-up
+    /// form or profile settings.</summary>
+    public bool ShowInMeetLikeYou { get; set; }
 }
 
 /// <summary>The body posted to <c>POST /api/v1/app/account/user-profile</c>
@@ -119,6 +127,9 @@ public sealed class UpsertUserProfileRequest
     public string EnglishName { get; set; } = string.Empty;
     /// <summary>D-163 (PDF §2.6) — optional job title.</summary>
     public string? JobTitle { get; set; }
+    /// <summary>2026-07-20: Arabic twin of JobTitle so a visitor can set a
+    /// bilingual title the app localizes (contacts / exhibitor cards / vCard).</summary>
+    public string? JobTitleArabic { get; set; }
     public string NationalityCode { get; set; } = string.Empty;
     public DateOnly? DateOfBirth { get; set; }
     public string PlaceOfBirth { get; set; } = string.Empty;
@@ -148,6 +159,11 @@ public sealed class UpsertUserProfileRequest
     /// <summary>B3 — D-221 (الجنس): the user's gender. Optional —
     /// <see cref="Gender.Unspecified"/> when not picked.</summary>
     public Gender Gender { get; set; }
+
+    /// <summary>D-736 — whether this profile appears in "Meet People Like You"
+    /// recommendations. Null means "no change" (preserves current value on the
+    /// server). The default server-side is <c>true</c>.</summary>
+    public bool? ShowInMeetLikeYou { get; set; }
 }
 
 /// <summary>One country entry surfaced to the client picker.</summary>

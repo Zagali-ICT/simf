@@ -84,7 +84,7 @@ public partial class SpeakerMeetingRequestsList
 
     // D-716 — a free hall slot as "2026-07-10 09:00–09:30 UTC".
     private static string FormatSlot(HallAvailableSlot slot) =>
-        $"{slot.StartUtc.UtcDateTime:yyyy-MM-dd HH:mm}–{slot.EndUtc.UtcDateTime:HH:mm} UTC";
+        $"{slot.StartUtc.ToSaudi():yyyy-MM-dd HH:mm}–{slot.EndUtc.ToSaudi():HH:mm}";
 
     private string FormatPage(int current, int total) =>
         string.Format(L["Grid.Page"], current, total);

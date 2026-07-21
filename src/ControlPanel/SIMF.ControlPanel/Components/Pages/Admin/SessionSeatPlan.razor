@@ -61,8 +61,9 @@
             </div>
 
             @* P1.4 (D-215) — visual seat grid: render the hall layout when it
-               is available, overlaying each reservation by (row, seat). A
-               reserved seat is clickable to release it. *@
+               is available, overlaying each reservation by (row, seat). A free
+               seat is clickable to reserve it for a VIP (2026-07-18); a reserved
+               seat is clickable to release it. *@
             @if (_layout is not null && _layout.RowLabels.Count > 0)
             {
                 <div class="seatgrid">
@@ -76,9 +77,9 @@
                                 var seatNumber = seat;
                                 <button type="button"
                                         class="seatgrid__seat @SeatStateClass(cell)"
-                                        disabled="@(_busy || cell is null)"
+                                        disabled="@_busy"
                                         title="@SeatTitle(rowLabel, seatNumber, cell)"
-                                        @onclick="@(() => cell is not null ? ReleaseAsync(cell) : Task.CompletedTask)">
+                                        @onclick="@(() => cell is not null ? ReleaseAsync(cell) : ReserveSeatAsync(rowLabel, seatNumber))">
                                     @seatNumber
                                 </button>
                             }

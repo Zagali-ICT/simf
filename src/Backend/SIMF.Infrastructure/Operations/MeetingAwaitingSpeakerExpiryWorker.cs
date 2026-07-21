@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
+using SIMF.Application.Operations;
 using SIMF.Common.Enums;
 using SIMF.Infrastructure.Persistence;
 
@@ -22,6 +23,7 @@ namespace SIMF.Infrastructure.Operations;
 internal sealed class MeetingAwaitingSpeakerExpiryWorker(
     IServiceScopeFactory scopeFactory,
     TimeProvider timeProvider,
+    IWorkerHeartbeatRegistry heartbeat,
     ILogger<MeetingAwaitingSpeakerExpiryWorker> logger) : BackgroundService
 {
     private static readonly TimeSpan PollInterval = TimeSpan.FromHours(1);
@@ -32,6 +34,11 @@ internal sealed class MeetingAwaitingSpeakerExpiryWorker(
         logger.LogInformation(
             "MeetingAwaitingSpeakerExpiryWorker started (first poll in {Delay}s, then every {Interval}s).",
             (int)StartupDelay.TotalSeconds, (int)PollInterval.TotalSeconds);
+
+        heartbeat.Register(
+            nameof(MeetingAwaitingSpeakerExpiryWorker),
+            "Reverts stale speaker meeting requests once their invite links expire.",
+            PollInterval);
 
         try
         {
@@ -47,6 +54,7 @@ internal sealed class MeetingAwaitingSpeakerExpiryWorker(
             try
             {
                 await CheckOnceAsync(stoppingToken);
+                heartbeat.RecordSuccess(nameof(MeetingAwaitingSpeakerExpiryWorker));
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -54,6 +62,7 @@ internal sealed class MeetingAwaitingSpeakerExpiryWorker(
             }
             catch (Exception ex)
             {
+                heartbeat.RecordFailure(nameof(MeetingAwaitingSpeakerExpiryWorker), ex.Message);
                 logger.LogError(ex, "MeetingAwaitingSpeakerExpiryWorker tick failed.");
             }
             try

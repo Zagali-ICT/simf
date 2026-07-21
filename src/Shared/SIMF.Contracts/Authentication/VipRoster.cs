@@ -16,6 +16,8 @@ public sealed record VipRosterRow(
     string ArabicName,
     string? Honorific,
     string? JobTitle,
+    // 2026-07-20 — Arabic twin of JobTitle for the bilingual موج welcome roster.
+    string? JobTitleArabic,
     string? MawjId,
     string? PreferredLanguage,
     string TierName,

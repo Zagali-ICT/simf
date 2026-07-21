@@ -123,6 +123,7 @@ class RatingFormView {
     this.targetName,
     this.targetNameArabic,
     this.targetStartUtc,
+    this.isEligible = true,
   });
 
   final String ratingTypeId;
@@ -143,6 +144,12 @@ class RatingFormView {
   final String? targetName;
   final String? targetNameArabic;
   final DateTime? targetStartUtc;
+
+  /// Owner 2026-07-19 — false when the caller has not attended what this type
+  /// rates. The screen keeps the form visible but disables submit and shows an
+  /// "attend to rate" note; the hard gate is server-side on submit. Append-only
+  /// (D-219); defaults true so an older server (no field) reads as eligible.
+  final bool isEligible;
 
   /// The rated session's title in the active locale, or null when there is no
   /// per-session target (a Global "App" rating).
@@ -186,6 +193,7 @@ class RatingFormView {
       targetName: json['targetName'] as String?,
       targetNameArabic: json['targetNameArabic'] as String?,
       targetStartUtc: DateTime.tryParse(json['targetStartUtc'] as String? ?? ''),
+      isEligible: json['isEligible'] as bool? ?? true,
     );
   }
 }

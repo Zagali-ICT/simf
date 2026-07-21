@@ -122,6 +122,7 @@ class SessionSpeaker {
     required this.displayOrder,
     required this.role,
     this.title,
+    this.titleArabic,
     this.countryId,
     this.countryNameEn,
     this.countryNameAr,
@@ -132,6 +133,7 @@ class SessionSpeaker {
   final String name;
   final String nameArabic;
   final String? title;
+  final String? titleArabic;
   final int displayOrder;
   final SessionSpeakerRole role;
   final int? countryId;
@@ -142,6 +144,11 @@ class SessionSpeaker {
   String localizedName(bool isArabic) =>
       _pickRequired(nameArabic, name, isArabic);
 
+  // 2026-07-19 (owner) — the speaker's rank/title in the active locale
+  // (Arabic ↔ English), matching how the name localizes. Null when unset.
+  String? localizedTitle(bool isArabic) =>
+      _pickOptional(titleArabic, title, isArabic);
+
   String? localizedCountry(bool isArabic) =>
       _pickOptional(countryNameAr, countryNameEn, isArabic);
 
@@ -150,6 +157,7 @@ class SessionSpeaker {
         name: json['name'] as String? ?? '',
         nameArabic: json['nameArabic'] as String? ?? '',
         title: json['title'] as String?,
+        titleArabic: json['titleArabic'] as String?,
         displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
         role: SessionSpeakerRole.fromJson(json['role']),
         countryId: (json['countryId'] as num?)?.toInt(),

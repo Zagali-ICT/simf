@@ -17,4 +17,9 @@ public enum AssetCategory
     /// <summary>D-495 — the Organization Profile logo (owner =
     /// <c>OrganizationProfile.SingletonId</c>).</summary>
     OrganizationLogo = 7,
+
+    /// <summary>#43 — an uploaded image for a home <c>Banner</c> row (owner =
+    /// <c>Banner.Id</c>). Backs the rotating home hero; served publicly only
+    /// while the banner is active and within its display window.</summary>
+    Banner = 8,
 }

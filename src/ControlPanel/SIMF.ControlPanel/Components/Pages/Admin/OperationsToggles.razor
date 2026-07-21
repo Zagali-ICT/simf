@@ -38,7 +38,7 @@
                                Disabled="_busy" />
                 <dl class="simf-dl">
                     <dt>@L["Admin.Operations.RegistrationGate.LastChangedAt"]</dt>
-                    <dd>@_gate.LastChangedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</dd>
+                    <dd>@_gate.LastChangedAt.FormatSaudi("yyyy-MM-dd HH:mm")</dd>
                 </dl>
             </div>
             <div class="simf-form__actions">
@@ -67,7 +67,7 @@
                 </SimfCheckbox>
                 <dl class="simf-dl">
                     <dt>@L["Admin.Operations.Archive.LastChangedAt"]</dt>
-                    <dd>@_archive.LastChangedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</dd>
+                    <dd>@_archive.LastChangedAt.FormatSaudi("yyyy-MM-dd HH:mm")</dd>
                 </dl>
             </div>
             <div class="simf-form__actions">

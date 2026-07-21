@@ -77,6 +77,11 @@
                                Value="@(_model.Honorific ?? string.Empty)"
                                ValueChanged="@(v => _model.Honorific = string.IsNullOrWhiteSpace(v) ? null : v)"
                                ValueExpression="@(() => _model.Honorific)" />
+                <SimfTextField Label="@L["Admin.WalkIn.Field.HonorificArabic"]"
+                               MaxLength="64"
+                               Value="@(_model.HonorificArabic ?? string.Empty)"
+                               ValueChanged="@(v => _model.HonorificArabic = string.IsNullOrWhiteSpace(v) ? null : v)"
+                               ValueExpression="@(() => _model.HonorificArabic)" />
             </div>
             <div class="simf-walkin__grid">
                 <div class="simf-field">
@@ -151,6 +156,11 @@
                            Value="@(_model.JobTitle ?? string.Empty)"
                            ValueChanged="@(v => _model.JobTitle = string.IsNullOrWhiteSpace(v) ? null : v)"
                            ValueExpression="@(() => _model.JobTitle)" />
+            <SimfTextField Label="@L["Admin.WalkIn.Field.JobTitleArabic"]"
+                           MaxLength="100"
+                           Value="@(_model.JobTitleArabic ?? string.Empty)"
+                           ValueChanged="@(v => _model.JobTitleArabic = string.IsNullOrWhiteSpace(v) ? null : v)"
+                           ValueExpression="@(() => _model.JobTitleArabic)" />
             @* D-469 — birth location: a Saudi walk-in picks one of the 13 official
                regions; a non-Saudi gets the free-text field "as in passport". *@
             @if (_model.IsSaudi)

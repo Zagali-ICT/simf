@@ -45,7 +45,7 @@
 | E2E-MOB013-009 | FAQ row opens the FAQ screen (Wave 1 `GET /app/faq`) | happy | P2 | authored ✓ (screen) |
 | E2E-MOB013-010 | Social + Visit-Saudi links launch externally; unset URL = inert button | happy | P2 | authored ✓ (screen — 5 brand buttons render; D-369 contract) |
 | E2E-MOB013-011 | Greeting shows the App-profile name, never the email (frame 758:1134, D-408) | happy | P1 | authored ✓ (screen — profile name wins; email fallback suppressed) |
-| E2E-MOB013-012 | Discovery hero banner renders and opens News (node 758:1203, D-408) | happy | P2 | authored ✓ (screen — banner tap → News) |
+| E2E-MOB013-012 | **#43 — rotating edition hero:** forum name/theme/dates/location (GET /app/organization-profile) over the rotating GET /app/banners images (dots); empty config → the static discover fallback; taps open News | happy | P1 | authored ✓ (widget — home_hero_banner_test; screen — tap → News) |
 | E2E-MOB013-013 | Home tiles render the exact iconify SVG glyphs (frame 758:1134, D-446) | i18n/visual | P2 | authored ✓ (screen — `KsaNavTile.iconAsset`) |
 | E2E-MOB013-014 | أحدث منشوراتنا card: source row + lead paragraph + post image (758:1240, D-446) | happy | P1 | authored ✓ (screen — image via D-357 NewsImage; counts deferred Phase 2) |
 | E2E-MOB013-015 | Section bars open their routes (عن الملتقى→About, الرعاة→Sponsors, الأخبار والتغطية→News) | happy | P1 | authored ✓ (screen — `KsaLinkRow` ×3) |
@@ -135,8 +135,8 @@ Scenario: A guest sees the KSA guest home without bootstrapping
 Scenario: A signed-in visitor gets the greeting home (frame 758:1134)
   Given a signed-in user whose cached appRole is "Visitor"
   When Home renders
-  Then the greeting header shows the avatar, "صباح الخير/مساء الخير", the
-       user's name, the bell (with the unread badge), the language + inert
+  Then the greeting header shows the avatar, the static "مرحبًا" welcome, the
+       user's first name, the bell (with the unread badge), the language + inert
        dark-mode controls and the menu
   And the discover hero banner and the red LIVE banner render
   And three bordered section bars render — عن الملتقى, الرعاة, الأخبار والتغطية
@@ -225,11 +225,11 @@ Feature: Signed-in greeting (frame 758:1134)
   I want to be greeted by my name
   So that the home feels personal — and my email is never shown as a name
 
-Scenario: Profile name wins over the auth display name
+Scenario: Profile name wins over the auth display name (first name only)
   Given a signed-in visitor whose App profile name is "مهند زقالي محمد"
   And GET /app/account/dashboard returns that identity
   When the signed-in Home loads
-  Then the greeting reads "<time-of-day> مهند زقالي محمد 👋"
+  Then the greeting reads "مرحبًا مهند 👋" (the static welcome + first name only, owner 2026-07-21)
   And the auth session display name is NOT shown
 
 Scenario: The email is never rendered as the name
@@ -240,20 +240,32 @@ Scenario: The email is never rendered as the name
   And no "@"-bearing text appears in the header
 ```
 
-### E2E-MOB013-012 — Discovery hero banner opens News (node 758:1203, D-408)
+### E2E-MOB013-012 — Rotating edition hero (opens News) (#43; was 758:1203)
 
 ```gherkin
-Feature: Discovery hero banner
+Feature: Home edition hero (#43)
   As a signed-in visitor
-  I want the "اكتشف / Discover" banner under the header
-  So that I can jump into the latest content
+  I want the hero under the header to show the current forum edition
+  So that the home leads with the event, and the image stays fresh
 
-Scenario: The banner renders and opens News
-  Given the signed-in Home is shown
-  Then a hero banner shows the event image under a dark scrim
-  And the gold "اكتشف / Discover" title and the white
-      "تعال واكتشف جديدك المفضل / Come discover your favourites" sub-line
-  When the user taps the banner
+Scenario: The hero shows the edition over rotating banner images
+  Given the edition config is loaded (GET /app/organization-profile) with a name,
+        theme, event dates and a location
+  And GET /app/banners returns two or more active, in-window banners with images
+  When the signed-in Home is shown
+  Then the hero overlays, under a dark scrim: the forum name (gold), the theme,
+       the date range (e.g. "23-25 نوفمبر 2026") and the location
+  And the background image auto-advances through the banner images every ~4s with
+      position dots (each image at /app/assets/Banner/{id}/image)
+  When the user taps the hero
+  Then the News list opens
+
+Scenario: No banners / no edition → the static discover fallback
+  Given GET /app/banners returns [] (or the edition config is not loaded)
+  When the signed-in Home is shown
+  Then the hero shows the bundled discover photo with the gold "اكتشف السعودية"
+       title and the white "تعال واكتشف جديدك المفضل" sub-line (no dots)
+  When the user taps the hero
   Then the News list opens
 ```
 

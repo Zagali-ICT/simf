@@ -17,10 +17,17 @@ class _FakeFeedbackRepo implements FeedbackRepository {
     this.failSubmit = false,
     this.session = false,
     this.requiredQuestion = false,
+    this.eligible = true,
   });
 
   final bool withQuestion;
   final bool failSubmit;
+
+  /// Owner 2026-07-19 — false renders the "attend to rate" note + disables submit
+  /// (mirrors the server form's isEligible=false).
+  final bool eligible;
+
+  bool submitCalled = false;
 
   /// Returns a per-session form (code=Session, with a target) instead of the
   /// default App form.
@@ -69,6 +76,7 @@ class _FakeFeedbackRepo implements FeedbackRepository {
             ]
           : const <RatingFormQuestion>[],
       existing: null,
+      isEligible: eligible,
     );
   }
 
@@ -80,6 +88,7 @@ class _FakeFeedbackRepo implements FeedbackRepository {
     String? comment,
     required Map<String, int> answers,
   }) async {
+    submitCalled = true;
     lastOverall = overallStars;
     lastAnswers = answers;
     lastComment = comment;
@@ -169,6 +178,27 @@ void main() {
       expect(repo.lastOverall, 4);
       expect(repo.lastAnswers, isEmpty);
       expect(find.text('Thanks for your rating'), findsOneWidget);
+    });
+
+    testWidgets('an ineligible form shows the attend note + disables submit '
+        '(owner 2026-07-19)', (tester) async {
+      final repo = _FakeFeedbackRepo(eligible: false);
+      await _pump(tester, repo);
+
+      // The "you can only rate what you attended" note is shown.
+      expect(
+        find.text('You can only rate something you attended.'),
+        findsOneWidget,
+      );
+
+      // Submit is disabled — even after picking stars, tapping it neither
+      // submits nor shows the thanks toast (onTap is null when ineligible).
+      await tester.tap(_outlineStar.at(3));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Submit rating'));
+      await tester.pumpAndSettle();
+      expect(repo.submitCalled, isFalse);
+      expect(find.text('Thanks for your rating'), findsNothing);
     });
 
     testWidgets('a per-question score is sent alongside the overall stars',

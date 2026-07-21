@@ -1,0 +1,64 @@
+@* SIMF public "Opening ceremony" page — Figma node 5867-22242. First page of the
+   Programme cluster. Built on the shared LandingShell + LandingPageHero (the
+   Programme-cluster heroes have NO breadcrumb) + reused ln- families. Bilingual
+   AR-RTL / EN-LTR. Static content (no API); the highlights + target participants
+   live in Opening.razor.cs. Serves "/programme/opening". *@
+@page "/programme/opening"
+@layout LandingLayout
+@inject IStringLocalizer<Strings> L
+
+@{
+    var rtl = CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft;
+}
+
+<LandingShell Title="@L["Opening.PageTitle"]" Description="@L["Opening.Meta"]">
+
+    @* ============================== HERO ============================== *@
+    @* Subtitle reuses the shared forum tagline (About.Hero.Subtitle) — the Figma
+       Opening hero shows the same line; the backdrop is the shared cluster photo. *@
+    <LandingPageHero Title="@L["Opening.Hero.Title"]"
+                     Subtitle="@L["About.Hero.Subtitle"]"
+                     ImageSrc="assets/figma/about/about-hero.jpg" />
+
+    @* ==================== OVERVIEW (dark; 8 highlight cards) ==================== *@
+    <section class="ln-fsection ln-fsection--dark" aria-label="@L["Opening.Overview.Title"]">
+        <div class="ln-fsection__inner ln-reveal">
+            <header class="ln-fsection__head">
+                <h2 class="ln-fsection__title">@L["Opening.Overview.Title"]</h2>
+                <p class="ln-fsection__sub">@L["Opening.Overview.Sub"]</p>
+            </header>
+            <div class="ln-overview__grid">
+                @foreach (var h in Highlights)
+                {
+                    <article class="ln-vcard ln-vcard--dark">
+                        <span class="ln-vcard__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5" /><path d="M8 12.4l2.6 2.6 5.4-5.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                        </span>
+                        <p class="ln-vcard__label">@h.For(rtl)</p>
+                    </article>
+                }
+            </div>
+        </div>
+    </section>
+
+    @* ============ TARGET PARTICIPANTS (light; numbered list) ============ *@
+    <section class="ln-fsection" aria-label="@L["Opening.Participants.Title"]">
+        <div class="ln-fsection__inner ln-reveal">
+            <header class="ln-fsection__head">
+                <h2 class="ln-fsection__title">@L["Opening.Participants.Title"]</h2>
+                <p class="ln-fsection__sub">@L["Opening.Participants.Sub"]</p>
+            </header>
+            @* role="list" keeps Safari/VoiceOver announcing it as a list despite list-style:none *@
+            <ol class="ln-numlist" role="list">
+                @for (var i = 0; i < Participants.Count; i++)
+                {
+                    <li class="ln-numitem">
+                        <span class="ln-numitem__text">@Participants[i].For(rtl)</span>
+                        <span class="ln-numitem__num" aria-hidden="true">@(i + 1)</span>
+                    </li>
+                }
+            </ol>
+        </div>
+    </section>
+
+</LandingShell>

@@ -256,7 +256,7 @@ timeout and `EnableRetryOnFailure` for transient SQL errors. The database is
 
 ### A.4 Readiness health check — amends §9
 `/health` is a real **readiness** check — it confirms the database is reachable
-and the migrations are applied — so the reverse proxy / load balancer pulls an
+and the migrations are applied — so the reverse proxy pulls an
 unhealthy instance automatically. It is not a static 200.
 
 ---

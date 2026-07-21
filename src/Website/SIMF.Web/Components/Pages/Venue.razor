@@ -1,0 +1,48 @@
+@* SIMF public "The venue" page — Figma node 5866-40935. Fifth About-cluster
+   page. Built on the shared LandingShell + LandingPageHero (3-level breadcrumb
+   Home / About / The venue) + the ln-fsection chrome, with a single venue-info
+   card. Bilingual AR-RTL / EN-LTR. Static content (no API). Serves "/about/venue".
+
+   NOTE: the Figma frame 5866-40935 is a pure stub — an un-customised clone of the
+   Organizer placeholder (same "الجهة المنظمة" title + MOD cards, no venue design).
+   This page instead shows the REAL, known venue (reusing the event-fact resx); the
+   full venue design (interactive map + photo gallery) awaits a real Figma frame —
+   see web/venue.md §7. *@
+@page "/about/venue"
+@layout LandingLayout
+@inject IStringLocalizer<Strings> L
+
+<LandingShell Title="@L["Venue.PageTitle"]" Description="@L["Venue.Meta"]">
+
+    @* ============================== HERO ============================== *@
+    <LandingPageHero Title="@L["Venue.Hero.Title"]"
+                     Subtitle="@L["Venue.Hero.Subtitle"]"
+                     Crumb="@L["Venue.Breadcrumb"]"
+                     ParentLabel="@L["About.Breadcrumb"]"
+                     ParentHref="/about"
+                     ImageSrc="assets/figma/about/about-hero.jpg" />
+
+    @* ========================= VENUE INFO CARD ========================= *@
+    <section class="ln-fsection" aria-label="@L["Venue.Section.Title"]">
+        <div class="ln-fsection__inner ln-reveal">
+            <header class="ln-fsection__head">
+                <h2 class="ln-fsection__title">@L["Venue.Section.Title"]</h2>
+                <p class="ln-fsection__sub">@L["Venue.Section.Sub"]</p>
+            </header>
+            <div class="ln-venue">
+                <span class="ln-venue__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none"><path d="M12 21c4-4 8-7.58 8-12a8 8 0 10-16 0c0 4.42 4 8 8 12z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /><circle cx="12" cy="9" r="2.6" stroke="currentColor" stroke-width="1.6" /></svg>
+                </span>
+                <h3 class="ln-venue__name">@L["Landing.Hero.Venue"]</h3>
+                <p class="ln-venue__addr">@L["Venue.Address"]</p>
+                <dl class="ln-venue__meta">
+                    <div><dt>@L["Venue.Meta.Date"]</dt><dd>@L["Landing.Subnav.Date"]</dd></div>
+                    <div><dt>@L["Venue.Meta.Time"]</dt><dd>@L["Landing.Subnav.Time"]</dd></div>
+                </dl>
+                <a class="ln-btn ln-btn--primary" href="https://www.google.com/maps/search/?api=1&query=Sofitel%20Riyadh%20Hotel%20Convention%20Centre"
+                   target="_blank" rel="noopener noreferrer">@L["Venue.Directions"]</a>
+            </div>
+        </div>
+    </section>
+
+</LandingShell>

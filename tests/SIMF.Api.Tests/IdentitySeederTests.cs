@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SIMF.Application.Auditing;
 using SIMF.Domain.IdentityAccess;
@@ -7,6 +8,7 @@ using SIMF.Infrastructure.Identity;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
+using SIMF.Common;
 using SIMF.Common.Enums;
 
 namespace SIMF.Api.Tests;
@@ -281,5 +283,50 @@ public sealed class IdentitySeederTests : IClassFixture<SimfApiFactory>
         Assert.Equal(
             demoProfileCount,
             database.UserProfiles.Count(p => p.NationalId!.StartsWith("100000000")));
+    }
+
+    [Fact]
+    public async Task SeedAsync_seeds_the_security_and_scientific_team_roles_with_their_baseline_grants()
+    {
+        // D-752 — the two new CP team roles (SecurityTeam / ScientificCommittee)
+        // must auto-seed as baseline roles (EnsureRoleAsync loops AppRoles.CpRoles)
+        // AND receive exactly the baseline permission codes the catalogue assigns
+        // them. This proves the whole grant path end-to-end at the DB layer, not
+        // just the in-memory catalogue (PermissionCatalogBaselineTests covers that).
+        using var scope = _factory.Services.CreateScope();
+        var seeder = scope.ServiceProvider.GetRequiredService<IdentitySeeder>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<SimfRole>>();
+        var identityDb = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+
+        await seeder.SeedAsync();
+
+        var security = await roleManager.FindByNameAsync(AppRoles.SecurityTeam);
+        var scientific = await roleManager.FindByNameAsync(AppRoles.ScientificCommittee);
+        Assert.NotNull(security);
+        Assert.True(security!.IsBaseline, "SecurityTeam is a built-in CP role");
+        Assert.NotNull(scientific);
+        Assert.True(scientific!.IsBaseline, "ScientificCommittee is a built-in CP role");
+
+        async Task<HashSet<string>> GrantedCodesAsync(Guid roleId) =>
+            (await (from rolePermission in identityDb.RolePermissions
+                    join permission in identityDb.Permissions
+                        on rolePermission.PermissionId equals permission.Id
+                    where rolePermission.RoleId == roleId
+                    select permission.Code).ToListAsync())
+                .ToHashSet(StringComparer.Ordinal);
+
+        HashSet<string> BaselineFor(string role) =>
+            PermissionCatalog.All
+                .Where(def => def.BaselineRoles.Contains(role))
+                .Select(def => def.Code)
+                .ToHashSet(StringComparer.Ordinal);
+
+        Assert.Equal(BaselineFor(AppRoles.SecurityTeam), await GrantedCodesAsync(security.Id));
+        Assert.Equal(BaselineFor(AppRoles.ScientificCommittee), await GrantedCodesAsync(scientific.Id));
+
+        // A sane spot-check that the catalogue baselines are not empty (guards a
+        // future refactor that accidentally clears the team grant lists).
+        Assert.Contains(PermissionCatalog.Gates.Manage, await GrantedCodesAsync(security.Id));
+        Assert.Contains(PermissionCatalog.Sessions.View, await GrantedCodesAsync(scientific.Id));
     }
 }

@@ -147,13 +147,25 @@ void main() {
       );
     });
 
-    testWidgets('tapping an available seat reserves it', (tester) async {
+    testWidgets('tapping an available seat reserves it, shows the D-750 alert, '
+        'then pops on OK', (tester) async {
       final repo = await _pump(tester);
       // A2 is available (only A1 is reserved). The seat carries a semantics label.
       await tester.tap(find.bySemanticsLabel('A2'));
       await tester.pumpAndSettle();
       expect(repo.reservedRow, 'A');
       expect(repo.reservedSeat, 2);
+      // D-750 — a one-button alert (not the old seatReservedToast snackbar)
+      // explaining the 3-minute pre-start check-in hold rule; the picker has NOT
+      // popped yet (it waits for the acknowledgement).
+      expect(find.textContaining('Seat reserved successfully'), findsOneWidget);
+      expect(find.text('Reserved — pending approval'), findsNothing);
+      expect(find.bySemanticsLabel('A2'), findsOneWidget);
+      // OK dismisses the alert and pops back to the launching screen.
+      await tester.tap(find.widgetWithText(FilledButton, 'OK'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Seat reserved successfully'), findsNothing);
+      expect(find.text('OPEN'), findsOneWidget);
     });
 
     testWidgets('the auto-pick CTA reserves a random seat', (tester) async {

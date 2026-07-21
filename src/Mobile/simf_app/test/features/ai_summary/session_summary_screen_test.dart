@@ -9,6 +9,8 @@ import 'package:simf_app/features/ai_summary/data/session_summary_models.dart';
 import 'package:simf_app/features/ai_summary/data/session_summary_repository.dart';
 import 'package:simf_app/features/ai_summary/session_summary_screen.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/data/sessions_repository.dart'
+    show programmeSessionsProvider;
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 SessionSummary _summary() => SessionSummary.fromJson(const <String, dynamic>{
@@ -110,7 +112,7 @@ Future<void> _pump(
       overrides: <Override>[
         simfDataConfigProvider.overrideWithValue(_testConfig),
         sessionSummaryRepositoryProvider.overrideWithValue(repo),
-        aiSummarySessionsProvider.overrideWith((ref) async => sessions),
+        programmeSessionsProvider.overrideWith((ref) async => sessions),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -155,6 +157,18 @@ void main() {
         find.text('The session covered reef restoration progress.'),
         findsOneWidget,
       );
+    });
+
+    // Item #35 — the summary screen can carry two video players (the full
+    // recording + the team summary cut). With a summary that has neither URL,
+    // both labeled players stay hidden and the layout is unchanged.
+    testWidgets('hides both video players when the summary has no video urls',
+        (tester) async {
+      final repo = _FakeSummaryRepo(summary: _summary());
+      await _pump(tester, repo: repo, sessions: _sessions, sessionId: 's1');
+
+      expect(find.text('Full recording'), findsNothing);
+      expect(find.text('Session summary (video)'), findsNothing);
     });
 
     testWidgets('tapping a tab switches the active content', (tester) async {

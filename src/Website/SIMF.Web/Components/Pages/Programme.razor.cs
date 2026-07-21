@@ -2,14 +2,21 @@ using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using SIMF.ApiClient;
+using SIMF.Common.Enums;
 using SIMF.Contracts.Programme;
+using SIMF.Web.Content;
+using static SIMF.Web.Content.LocalizedText;
 
 namespace SIMF.Web.Components.Pages;
 
-// Website — public programme / agenda page (D-199, Mockup page 16 "Agenda").
+// Website - public programme / agenda page (D-199, Mockup page 16 "Agenda").
 // Static-SSR public read over the anonymous backend; groups the published
-// sessions by the local calendar date of StartUtc into day sections and shows
-// an optional best-effort speakers strip. Markup lives in Programme.razor.
+// sessions by their event-local (+03:00 Riyadh) calendar date into day sections
+// (a day strip switches between them) and renders each session as a timeline
+// card (time column + category chip + title + hall + description). The design
+// echoes the app "Programme schedule" (Figma 883:2308) adapted to the ln- kit.
+// Bilingual selection + time formatting come from the shared LocalizedText /
+// EventTime helpers. Markup lives in Programme.razor.
 public partial class Programme
 {
     [Inject] private IStringLocalizer<Strings> L { get; set; } = default!;
@@ -17,6 +24,7 @@ public partial class Programme
 
     private bool _error;
     private readonly List<DaySection> _days = new();
+    private IReadOnlyList<SessionType> _types = Array.Empty<SessionType>();
     private IReadOnlyList<PublicSpeakerSummary> _speakers = Array.Empty<PublicSpeakerSummary>();
 
     protected override async Task OnInitializedAsync()
@@ -40,59 +48,71 @@ public partial class Programme
         }
     }
 
-    // Group sessions by the local calendar date of StartUtc, ordered by day
-    // and then by start time within each day.
+    // Group sessions by their event-local (+03:00) calendar date, ordered by day
+    // and then by start time within each day. Each day gets a stable index id the
+    // day strip / JS filter target, plus the localized weekday + date number the
+    // pill shows. The distinct session types drive the (optional) filter tabs.
     private void BuildDays(IReadOnlyList<PublicSessionListItem> items)
     {
         var groups = items
             .OrderBy(s => s.StartUtc)
-            .GroupBy(s => s.StartUtc.ToLocalTime().Date)
-            .OrderBy(g => g.Key);
+            .GroupBy(s => EventTime.Local(s.StartUtc).Date)
+            .OrderBy(g => g.Key)
+            .ToList();
 
-        foreach (var group in groups)
+        for (var i = 0; i < groups.Count; i++)
         {
+            var day = groups[i].Key;
             _days.Add(new DaySection(
-                group.Key.ToString("dddd, d MMMM yyyy", CultureInfo.CurrentUICulture),
-                group.ToList()));
+                i.ToString(CultureInfo.InvariantCulture),
+                day.ToString("dddd, d MMMM yyyy", CultureInfo.CurrentUICulture),
+                day.ToString("ddd", CultureInfo.CurrentUICulture),
+                day.Day.ToString(CultureInfo.CurrentUICulture),
+                groups[i].ToList()));
         }
+
+        _types = items
+            .Where(s => s.Type is not null)
+            .Select(s => s.Type!.Value)
+            .Distinct()
+            .OrderBy(t => t)
+            .ToList();
     }
 
-    // Local time window, e.g. "09:00 – 10:30", in the current culture.
-    private static string TimeWindow(PublicSessionListItem session)
-    {
-        var start = session.StartUtc.ToLocalTime();
-        var end = session.EndUtc.ToLocalTime();
-        var pattern = "HH:mm";
-        return $"{start.ToString(pattern, CultureInfo.CurrentUICulture)} – " +
-               $"{end.ToString(pattern, CultureInfo.CurrentUICulture)}";
-    }
-
-    private static bool PreferArabic =>
-        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
+    private static string Start(PublicSessionListItem session) => EventTime.Time(session.StartUtc);
+    private static string End(PublicSessionListItem session) => EventTime.Time(session.EndUtc);
 
     private static string Title(PublicSessionListItem session) =>
-        Pick(session.TitleArabic, session.Title);
+        Pick(session.Title, session.TitleArabic);
 
     private static string Hall(PublicSessionListItem session) =>
-        Pick(session.HallNameArabic, session.HallName);
+        Pick(session.HallName, session.HallNameArabic);
 
-    private static string ThemeName(PublicSessionListItem session) =>
-        Pick(session.PrimaryThemeNameArabic, session.PrimaryThemeName);
+    // The gold topic chip: the session's category, or its primary theme when no
+    // category is set; null when neither exists (the chip is then omitted).
+    private static string? Chip(PublicSessionListItem session) =>
+        PickOrNull(session.CategoryName, session.CategoryNameArabic)
+        ?? PickOrNull(session.PrimaryThemeName, session.PrimaryThemeNameArabic);
+
+    // The session abstract shown under the title; null when the API has none.
+    private static string? Description(PublicSessionListItem session) =>
+        PickOrNull(session.Description, session.DescriptionArabic);
 
     private static string SpeakerName(PublicSpeakerSummary speaker) =>
-        Pick(speaker.NameArabic, speaker.Name);
+        Pick(speaker.Name, speaker.NameArabic);
 
-    // Arabic-preferred-then-English fallback: in an Arabic UI use the Arabic
-    // value when present, otherwise fall back to the base (English) value;
-    // a null base renders as empty.
-    private static string Pick(string? arabic, string? @base)
-    {
-        if (PreferArabic && !string.IsNullOrWhiteSpace(arabic))
-        {
-            return arabic;
-        }
-        return @base ?? string.Empty;
-    }
+    // The type-filter slug the card carries and the tab toggles on (invariant
+    // enum name, e.g. "Workshop"); empty for an untyped session.
+    private static string TypeSlug(PublicSessionListItem session) =>
+        session.Type?.ToString() ?? string.Empty;
 
-    private sealed record DaySection(string Heading, IReadOnlyList<PublicSessionListItem> Sessions);
+    // The localized label for a session-type filter tab.
+    private string TypeLabel(SessionType type) => L[$"Programme.Type.{type}"];
+
+    private sealed record DaySection(
+        string Id,
+        string Heading,
+        string Weekday,
+        string DayNum,
+        IReadOnlyList<PublicSessionListItem> Sessions);
 }

@@ -4,7 +4,7 @@
 |-------|-------|
 | Document ID | SIMF-SRS-001 |
 | Title | Software Requirements Specification |
-| Version | 1.0 |
+| Version | 1.1 |
 | Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
@@ -18,6 +18,7 @@
 | Version | Date | Author | Summary of change |
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. Functional and non-functional requirements, drawn from the concept baseline and the closed decision gates. |
+| 1.1 | 2026-07-19 | Apexium | Restated FR-503 to match the built behaviour: attendee seat reservations are confirmed immediately with no Control Panel approval step, held provisionally until gate check-in confirms them; the approval queue is retained but dormant (meaning change). |
 
 ---
 
@@ -76,7 +77,9 @@ Moderators and Staff.
 - The technology stack is fixed (SIMF-SAD-001 section 2.2): .NET 10,
   FastEndpoints, Blazor with MudBlazor, Flutter, SQL Server 2022.
 - The system is single-tenant and on-premises.
-- The forum dates — 23–25 November 2026 — are immovable.
+- The forum dates are configuration data, set in the Control Panel and read at
+  runtime, so the same system serves any edition; the 2026 edition runs 23 to 25
+  November 2026.
 - The system must satisfy the NCA security standards (NFR section).
 - Arabic is the primary language; Arabic and English are both fully supported.
 
@@ -186,8 +189,14 @@ Moderators and Staff.
 - **FR-501** The system shall let an attendee book a specific seat in a session.
 - **FR-502** The system shall allow an attendee to hold any number of bookings
   provided the session times do not overlap.
-- **FR-503** The system shall require every booking to be approved in the
-  Control Panel before it is confirmed (decision D4).
+- **FR-503** The system shall confirm an attendee's seat reservation immediately
+  on booking, with no Control Panel approval step. The reservation is held
+  provisionally until the attendee checks in at the hall gate, which confirms
+  the seat; any hold not checked in is released by a sweep shortly before the
+  session starts, and the attendee may cancel it before then. The Control Panel
+  approval queue (list-pending, approve, reject, bulk-approve) is retained but
+  dormant — nothing creates a pending booking, so the queue is always empty
+  (decision D4).
 - **FR-504** The system shall let an attendee cancel a booking any time before
   the session starts.
 - **FR-505** The system shall show an attendee their assigned seat and a seat
@@ -255,9 +264,11 @@ Moderators and Staff.
   in-app, email, SMS and WhatsApp — through one notification abstraction.
 - **FR-902** The system shall send registration and approval updates, session
   reminders, VIP invitations and meeting confirmations.
-- **FR-903** The system shall send a booking-confirmed notification and shall
-  send reminders when a session has started and the user has not attended or
-  has not entered (decision D6 / SIMF-CON-001 section 7.7).
+- **FR-903** The system shall confirm a seat reservation immediately in the app,
+  with no notification sent on reserving (the Control Panel approve path that
+  would raise a booking-confirmed notification is retained but dormant), and
+  shall send reminders when a session has started and the user has not attended
+  or has not entered (decision D6 / SIMF-CON-001 section 7.7).
 - **FR-904** The system shall let the channel mix for a notification type be set
   by configuration, not by code.
 

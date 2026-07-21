@@ -128,6 +128,8 @@ public sealed record MyAreaContactCard(
     string FullNameEn,
     string FullNameAr,
     string? JobTitle,
+    // 2026-07-20 — Arabic twin of JobTitle for the bilingual vCard TITLE.
+    string? JobTitleArabic,
     string? Organisation,
     string? QrId,
     string? SaudiMobile = null,

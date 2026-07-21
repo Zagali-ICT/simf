@@ -3,7 +3,8 @@ import 'dart:io' show Platform;
 import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show DeviceOrientation;
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
@@ -48,6 +49,15 @@ class _IdentityVerificationScreenState
   bool _processing = false;
   bool _cameraReady = false;
   bool _cameraFailed = false;
+
+  // TEMP diagnostic (remove before merge, D-XXX): show the live headEulerAngleY
+  // + its normalised value so the iOS yaw-sign can be confirmed on-device in one
+  // DEBUG build. Double-gated: it only renders when BOTH this flag is on AND
+  // kDebugMode — so a release/production build never shows this security
+  // control's internal telemetry. The readout rides its own ValueNotifier so
+  // updating it does NOT rebuild the camera preview.
+  static const bool _kShowYawDebug = true;
+  final ValueNotifier<double?> _debugYaw = ValueNotifier<double?>(null);
 
   /// The challenge order is shuffled per session (D-422) so the sequence is not
   /// predictable — a fixed smile→right→left order is easier to defeat with a
@@ -133,10 +143,23 @@ class _IdentityVerificationScreenState
         return;
       }
       final face = faces.first;
+      if (_kShowYawDebug && kDebugMode) {
+        // Update the readout's own notifier (a >=1° throttle); no setState, so
+        // the camera preview is not rebuilt each frame.
+        final yaw = face.headEulerAngleY;
+        if (yaw != null &&
+            (_debugYaw.value == null || (yaw - _debugYaw.value!).abs() >= 1)) {
+          _debugYaw.value = yaw;
+        }
+      }
       if (!livenessStepSatisfied(
         _step,
         smilingProbability: face.smilingProbability,
         headEulerAngleY: face.headEulerAngleY,
+        // iOS reports the yaw with the opposite sign for the same physical turn
+        // (front-camera mirror + per-platform input-image rotation); normalise
+        // so a positive yaw is always a physical RIGHT turn.
+        invertYaw: livenessInvertYaw(defaultTargetPlatform),
       )) {
         return;
       }
@@ -223,33 +246,34 @@ class _IdentityVerificationScreenState
   /// The command for the current liveness step (ابتسم / أدر رأسك لليمين / لليسار),
   /// shown big under the live preview so the user knows exactly what to do
   /// (D-683; over the Figma 758:4180 layout).
+  ///
+  /// The prompt always names the physical direction of the step — the
+  /// per-platform yaw-sign difference is normalised in `livenessStepSatisfied`
+  /// (`invertYaw`), NOT compensated here, so "turn right" reliably means a
+  /// physical right turn on both iOS and Android (supersedes the D-684 / PR-103
+  /// prompt swap).
   String _stepPrompt(AppL10n l10n) {
-    switch (_step) {
-      case LivenessStep.smile:
+    switch (livenessPromptDirection(_step)) {
+      case LivenessPromptDirection.none:
         return l10n.livenessSmilePrompt;
-      // D-684 — the front camera is mirrored, so the ML "turn right" step
-      // (headEulerAngleY +ve) is satisfied by a physical turn to the user's LEFT
-      // (and vice-versa). Present each step as the direction the user must
-      // actually move (owner on-device: the left/right message was reversed).
-      case LivenessStep.turnRight:
-        return l10n.livenessTurnLeftPrompt;
-      case LivenessStep.turnLeft:
+      case LivenessPromptDirection.right:
         return l10n.livenessTurnRightPrompt;
+      case LivenessPromptDirection.left:
+        return l10n.livenessTurnLeftPrompt;
     }
   }
 
   /// The directional cue for the current step: the 😊 emoji for the front step,
-  /// a gold arrow for the right / left turns (Figma 758:4180 / 4248 / 4316).
+  /// a gold arrow for the right / left turns (Figma 758:4180 / 4248 / 4316). The
+  /// arrow always matches the step's physical direction (see [_stepPrompt]).
   Widget _stepLeading() {
-    switch (_step) {
-      case LivenessStep.smile:
+    switch (livenessPromptDirection(_step)) {
+      case LivenessPromptDirection.none:
         return const Text('😊', style: TextStyle(fontSize: 30));
-      // D-684 — arrows follow the (mirror-corrected) prompt: the turnRight step
-      // asks the user to turn LEFT, so it shows a left arrow, and vice-versa.
-      case LivenessStep.turnRight:
-        return const Icon(Icons.west, color: SimfTokens.accent, size: 32);
-      case LivenessStep.turnLeft:
+      case LivenessPromptDirection.right:
         return const Icon(Icons.east, color: SimfTokens.accent, size: 32);
+      case LivenessPromptDirection.left:
+        return const Icon(Icons.west, color: SimfTokens.accent, size: 32);
     }
   }
 
@@ -311,6 +335,7 @@ class _IdentityVerificationScreenState
 
   @override
   void dispose() {
+    _debugYaw.dispose();
     unawaited(_stop());
     super.dispose();
   }
@@ -329,9 +354,12 @@ class _IdentityVerificationScreenState
         title: Text(l10n.identityVerificationTitle),
       ),
       body: SafeArea(
-        child: _cameraFailed
-            ? IdentityFallbackView(l10n: l10n, onRetry: _retry)
-            : LiveCaptureView(
+        child: Stack(
+          children: <Widget>[
+            if (_cameraFailed)
+              IdentityFallbackView(l10n: l10n, onRetry: _retry)
+            else
+              LiveCaptureView(
                 ready: _cameraReady,
                 preview: _cameraReady && _camera != null
                     ? CameraPreview(_camera!)
@@ -342,6 +370,41 @@ class _IdentityVerificationScreenState
                 stepIndex: _stepIndex,
                 stepCount: _sequence.length,
               ),
+            if (_kShowYawDebug && kDebugMode && !_cameraFailed)
+              _yawDebugOverlay(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // TEMP diagnostic (remove before merge, D-XXX); only ever built in a DEBUG
+  // build (kDebugMode-gated at the call site). Shows the raw ML Kit yaw, its
+  // normalised value (what the gate uses — positive should mean a physical RIGHT
+  // turn), the current step and the platform. Turn RIGHT on the device: "norm"
+  // should go positive toward +20. Only the readout text rebuilds (ValueNotifier),
+  // not the camera preview.
+  Widget _yawDebugOverlay() {
+    final invert = livenessInvertYaw(defaultTargetPlatform);
+    return Positioned(
+      top: 8,
+      left: 8,
+      child: ValueListenableBuilder<double?>(
+        valueListenable: _debugYaw,
+        builder: (context, raw, _) {
+          final norm = raw == null ? null : (invert ? -raw : raw);
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            color: Colors.black54,
+            child: Text(
+              'yaw ${raw?.toStringAsFixed(1) ?? "—"}  '
+              'norm ${norm?.toStringAsFixed(1) ?? "—"}  '
+              'step ${_step.name}  '
+              '${invert ? "iOS" : "Android"}',
+              style: const TextStyle(color: Colors.greenAccent, fontSize: 13),
+            ),
+          );
+        },
       ),
     );
   }

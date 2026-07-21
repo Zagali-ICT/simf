@@ -23,4 +23,12 @@ public interface ISessionAttendanceService
     /// start time (default), code or title.</summary>
     Task<GridPage<SessionAttendanceRow>> ListSessionAttendanceAsync(
         GridQuery query, CancellationToken cancellationToken = default);
+
+    /// <summary>2026-07-18 — the attendees currently present in a session's hall
+    /// (open attendance rows), each with their App-DB profile data (name, org,
+    /// profile type, job title) and seat, for the live per-session hall view.
+    /// Ordered by arrival time. All reads are App-DB only (D-157 — the profile is
+    /// resolved from <c>UserProfile</c>, never from the Identity database).</summary>
+    Task<IReadOnlyList<SessionPresentAttendee>> GetPresentAttendeesAsync(
+        Guid sessionId, CancellationToken cancellationToken = default);
 }

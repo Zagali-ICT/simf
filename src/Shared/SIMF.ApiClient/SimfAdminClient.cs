@@ -26,6 +26,7 @@ using SIMF.Contracts.Regions;
 using SIMF.Contracts.Sessions;
 using SIMF.Contracts.Statistics;
 using SIMF.Contracts.Configuration;
+using SIMF.Contracts.Ops;
 using SIMF.Contracts.Support;
 
 using SIMF.Common.Enums;
@@ -51,6 +52,15 @@ public sealed class SimfAdminClient(HttpClient http)
         SendAsync<bool>(
             HttpMethod.Post, "admins/reset-two-factor",
             JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>The live status of every in-process background worker, for the CP
+    /// services monitor. Reads the API's heartbeat-registry snapshot.</summary>
+    public Task<ApiCallResult<WorkerStatusListResponse>> GetWorkerStatusesAsync(
+        string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<WorkerStatusListResponse>(
+            HttpMethod.Get, "ops/workers", content: null,
             accessToken, cancellationToken);
 
     // -- P7c — three-family create + list ------------------------------------
@@ -1831,6 +1841,15 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
+    // 2026-07-18: operator hall-door QR departure / check-out (/admin/sessions/{id}/departures).
+    public Task<ApiCallResult<SIMF.Contracts.Sessions.QrArrivalResult>>
+        RecordQrDepartureAsync(Guid sessionId, SIMF.Contracts.Sessions.RecordQrArrivalRequest request,
+            string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<SIMF.Contracts.Sessions.QrArrivalResult>(
+            HttpMethod.Post, $"sessions/{sessionId}/departures",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
     public Task<ApiCallResult<IReadOnlyList<SIMF.Contracts.Sessions.SessionQuestionModeratorRow>>>
         ListModeratorQueueAsync(Guid sessionId, string accessToken,
             CancellationToken cancellationToken = default) =>
@@ -2315,12 +2334,37 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
+    public Task<ApiCallResult<bool>> AdminReserveSessionSeatAsync(
+        Guid sessionId, AdminReserveSeatRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Post, $"sessions/{sessionId}/seats/reserve-seat",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
     public Task<ApiCallResult<bool>> AdminReleaseSessionSeatAsync(
         Guid sessionId, Guid reservationId, string accessToken,
         CancellationToken cancellationToken = default) =>
         SendAsync<bool>(
             HttpMethod.Delete, $"sessions/{sessionId}/seats/{reservationId}",
             content: null, accessToken, cancellationToken);
+
+    // 2026-07-18 (live per-session hall view, CP page 2e) — the session's 4-state
+    // seat map (no "my seat" cell) and everyone currently present in the hall.
+    // Both API-side gated Attendance.View.
+    public Task<ApiCallResult<SessionSeatMap>> GetAdminSessionSeatMapAsync(
+        Guid sessionId, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<SessionSeatMap>(
+            HttpMethod.Get, $"sessions/{sessionId}/seat-map", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<IReadOnlyList<SessionPresentAttendee>>> GetSessionPresentAttendeesAsync(
+        Guid sessionId, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<IReadOnlyList<SessionPresentAttendee>>(
+            HttpMethod.Get, $"sessions/{sessionId}/present", content: null,
+            accessToken, cancellationToken);
 
     // -- D-269 — speaker meeting requests (SIMF.Contracts.Programme) ---------
 
@@ -2426,6 +2470,14 @@ public sealed class SimfAdminClient(HttpClient http)
             CancellationToken cancellationToken = default) =>
         SendAsync<bool>(
             HttpMethod.Delete, $"speaker-availability-windows/{windowId}", content: null,
+            accessToken, cancellationToken);
+
+    // D-753 — the forum-day window (MIN/MAX over active ProgrammeDay.Date). The CP
+    // meeting-scheduling pages read it to bound their date pickers to the event days.
+    public Task<ApiCallResult<ForumWindowResponse>> GetForumWindowAsync(
+        string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<ForumWindowResponse>(
+            HttpMethod.Get, "programme/forum-window", content: null,
             accessToken, cancellationToken);
 
     // -- D-715 (item 7, FDS-013 §15 GAP-1) — hall availability windows ---------
@@ -2974,37 +3026,16 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Delete, $"programme-days/{id}", content: null,
             accessToken, cancellationToken);
 
-    // -- P2.2 (D-227) — Booking approval queue (SIMF.Contracts.Sessions) -----
+    // -- #6/#17 — Booking monitor (read-only; SIMF.Contracts.Sessions) --------
+    // Bookings auto-confirm (no approval step) and no-shows are released by a
+    // background worker, so the CP only reads the active-reservations list.
 
-    public Task<ApiCallResult<GridPage<BookingQueueRow>>> ListPendingBookingsAsync(
+    public Task<ApiCallResult<GridPage<ActiveBookingRow>>> ListActiveBookingsAsync(
         GridQuery query, string accessToken,
         CancellationToken cancellationToken = default) =>
-        SendAsync<GridPage<BookingQueueRow>>(
+        SendAsync<GridPage<ActiveBookingRow>>(
             HttpMethod.Post, "bookings/list",
             JsonContent.Create(query, options: JsonOptions),
-            accessToken, cancellationToken);
-
-    public Task<ApiCallResult<bool>> ApproveBookingAsync(
-        Guid id, string accessToken,
-        CancellationToken cancellationToken = default) =>
-        SendAsync<bool>(
-            HttpMethod.Post, $"bookings/{id}/approve", content: null,
-            accessToken, cancellationToken);
-
-    public Task<ApiCallResult<bool>> RejectBookingAsync(
-        Guid id, RejectBookingRequest request, string accessToken,
-        CancellationToken cancellationToken = default) =>
-        SendAsync<bool>(
-            HttpMethod.Post, $"bookings/{id}/reject",
-            JsonContent.Create(request, options: JsonOptions),
-            accessToken, cancellationToken);
-
-    public Task<ApiCallResult<int>> BulkApproveBookingsAsync(
-        IReadOnlyList<Guid> reservationIds, string accessToken,
-        CancellationToken cancellationToken = default) =>
-        SendAsync<int>(
-            HttpMethod.Post, "bookings/bulk-approve",
-            JsonContent.Create(new { ReservationIds = reservationIds }, options: JsonOptions),
             accessToken, cancellationToken);
 
     // -- P2.3 (D-228) — Speaker presentation files (SIMF.Contracts.Admin) ----

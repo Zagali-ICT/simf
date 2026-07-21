@@ -8,15 +8,15 @@ import '../../app/widgets/simf_page_shell.dart';
 import '../myarea/data/my_sessions_repository.dart';
 import '../sessions/data/session_favourites.dart';
 import '../sessions/data/session_models.dart';
+import '../sessions/data/sessions_repository.dart' show programmeSessionsProvider;
 import '../sessions/widgets/session_filter_tabs.dart';
-import 'session_summary_screen.dart' show aiSummarySessionsProvider;
 import 'widgets/session_summary_list_card.dart';
 
 /// **Session summaries** — App "ملخص الجلسات" (Figma 1388:8392, Guest+). Every
 /// programme session in a searchable, day-grouped list with three tabs —
 /// الجميع (all), جلساتي (the caller's booked sessions), المفضلة (favourited) —
 /// and the المفضلة heart on each card. Tapping a card opens that session's
-/// AI-summary details (#34). Reuses the cached programme (`aiSummarySessionsProvider`);
+/// AI-summary details (#34). Reuses the cached programme (`programmeSessionsProvider`);
 /// the booked set + favourites come from the approved-account reads (empty for a
 /// guest).
 class SessionSummaryListScreen extends ConsumerStatefulWidget {
@@ -36,14 +36,14 @@ class _SessionSummaryListScreenState
 
   /// Pull-to-refresh — re-fetch the programme (invalidate + await next).
   Future<void> _refresh() async {
-    ref.invalidate(aiSummarySessionsProvider);
-    await ref.read(aiSummarySessionsProvider.future);
+    ref.invalidate(programmeSessionsProvider);
+    await ref.read(programmeSessionsProvider.future);
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    final sessions = ref.watch(aiSummarySessionsProvider);
+    final sessions = ref.watch(programmeSessionsProvider);
 
     final tabLabels = <String>[
       l10n.sessionsTabAll,
@@ -79,10 +79,12 @@ class _SessionSummaryListScreenState
               loading: () => const SimfLoadingState(),
               error: (_, __) => SimfRefreshableMessage(
                 onRefresh: _refresh,
-                child: SimfErrorState(
-                  message: l10n.aiSummaryError,
-                  retryLabel: l10n.retryLabel,
-                  onRetry: () => ref.invalidate(aiSummarySessionsProvider),
+                child: SimfPullableHost(
+                  child: SimfErrorState(
+                    message: l10n.aiSummaryError,
+                    retryLabel: l10n.retryLabel,
+                    onRetry: () => ref.invalidate(programmeSessionsProvider),
+                  ),
                 ),
               ),
               data: (items) => _buildList(context, l10n, items),

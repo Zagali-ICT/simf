@@ -4,7 +4,7 @@
 |-------|-------|
 | Document ID | SIMF-CPD-001 |
 | Title | Control Panel Design Specification |
-| Version | 1.0 |
+| Version | 1.1 |
 | Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
@@ -18,6 +18,7 @@
 | Version | Date | Author | Summary of change |
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. Information architecture, layout shell, theming, localisation and component standards. |
+| 1.1 | 2026-07-19 | Apexium | Corrected the Bookings module and the approval-queue pattern to match the built behaviour: attendee seat reservations are confirmed immediately (no Control Panel approval), held provisionally until gate check-in; the Bookings approval queue is retained but dormant. |
 
 ---
 
@@ -111,7 +112,7 @@ representative summary; `CpNavigation.cs` is the authoritative map.)
 | Sessions | Create and manage **sessions** — a Session is the scheduled run-of-show talk (a specific time window in a specific Hall, with one or more Speakers, optionally tagged with one or more Themes). The PDF requirement (§2.9) renames the legacy "Agenda" label on the public-facing surfaces to "Sessions"; the CP label was already "Sessions". (D-163) |
 | Halls & seating | Create halls, set seating capacity, manage the seat grid |
 | Speakers | Speaker profiles — bio, photo, country flag, linked sessions |
-| Bookings | Session seat bookings; every booking is approved here before it is confirmed (decision D4) |
+| Bookings | Session seat reservations. Attendee reservations are confirmed immediately — there is no Control Panel approval step; a seat is held provisionally until the attendee checks in at the hall gate (staff QR scan), which confirms it. This approval queue is retained but dormant: nothing creates a pending booking, so it is always empty (decision D4) |
 | Exhibitors | The PR team reviews and approves exhibitors; the booth is assigned in the same step (decision D3) |
 | Booths | The booth directory and booth detail |
 | Sponsors | Sponsors by tier — Strategic, Premium, Gold |
@@ -336,10 +337,17 @@ layout. The form validates before it submits and shows field-level messages.
 
 ### 13.4 Approval queue
 
-The pattern for Registration requests, Exhibitor approvals and Bookings. It is
+The pattern for Registration requests and Exhibitor approvals. It is
 a list page with two additions: a row carries an approve and a reject action,
 and the toolbar carries a **select-all and bulk approve** control, as decision
 D1 requires for registration. A rejection asks for a reason.
+
+The Bookings page uses the same pattern but is **retained but dormant**:
+attendee seat reservations are confirmed immediately, so nothing creates a
+pending booking and the queue is always empty. A reservation is instead
+confirmed when the attendee checks in at the hall gate (staff QR scan); a
+pre-start sweep releases any hold not checked in shortly before the session
+starts.
 
 ### 13.5 Moderation queue
 

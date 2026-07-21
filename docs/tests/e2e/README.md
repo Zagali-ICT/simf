@@ -50,9 +50,9 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/others/pending` | [`cp-admin-others-pending.md`](cp-admin-others-pending.md) | E2E-OPN-001..016 |
 | `/admin/visitors` | [`cp-admin-visitors.md`](cp-admin-visitors.md) | E2E-VIS-001..025 |
 | `/admin/visitors/pending` | [`cp-admin-visitors-pending.md`](cp-admin-visitors-pending.md) | E2E-VPN-001..025 |
-| `/admin/visitors/vip` | [`cp-vip-registration.md`](cp-vip-registration.md) | E2E-VIPR-001..007 |
+| `/admin/visitors/vip` | [`cp-vip-registration.md`](cp-vip-registration.md) | E2E-VIPR-001..011 |
 | `/admin/visitors/vip/export` | [`cp-vip-export.md`](cp-vip-export.md) | E2E-VIPX-001..008 |
-| `/admin/delegates` | [`cp-admin-delegates.md`](cp-admin-delegates.md) | E2E-DLG-001..009 |
+| `/admin/delegates` | [`cp-admin-delegates.md`](cp-admin-delegates.md) | E2E-DLG-001..012 |
 | `/admin/attendees` | [`cp-admin-attendees.md`](cp-admin-attendees.md) | E2E-ATT-001..016 |
 | `/admin/print-bag` | [`cp-admin-print-bag.md`](cp-admin-print-bag.md) | E2E-PRT-001..011 |
 | `/admin/interests` | [`cp-admin-interests.md`](cp-admin-interests.md) | E2E-INT-001..013 |
@@ -65,8 +65,8 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/vips` | [`cp-admin-vips.md`](cp-admin-vips.md) | E2E-VIP-001..013 |
 | `/admin/invitations` | [`cp-admin-invitations.md`](cp-admin-invitations.md) | E2E-INV-001..018 |
 | `/admin/reset-2fa` | [`cp-admin-reset-2fa.md`](cp-admin-reset-2fa.md) | E2E-R2F-001..012 |
-| `/admin/roles` | [`cp-admin-roles.md`](cp-admin-roles.md) | E2E-ROL-001..024 |
-| `/admin/roles/{id}/permissions` | [`cp-admin-roles-permissions.md`](cp-admin-roles-permissions.md) | E2E-RPM-001..013 |
+| `/admin/roles` | [`cp-admin-roles.md`](cp-admin-roles.md) | E2E-ROL-001..026 |
+| `/admin/roles/{id}/permissions` | [`cp-admin-roles-permissions.md`](cp-admin-roles-permissions.md) | E2E-RPM-001..015 |
 
 ### Control Panel — Programme & sessions
 
@@ -83,25 +83,25 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/programme-days` | [`cp-admin-programme-days.md`](cp-admin-programme-days.md) | E2E-PGD-001..018 |
 | `/admin/session-moderators` | [`cp-admin-session-moderators.md`](cp-admin-session-moderators.md) | E2E-SMD-001..018 |
 | `/admin/programme/timeline` | [`cp-admin-programme-timeline.md`](cp-admin-programme-timeline.md) | E2E-PTL-001..011 |
-| `/admin/bookings` | [`cp-admin-bookings.md`](cp-admin-bookings.md) | E2E-BKG-001..013 |
+| `/admin/bookings` | [`cp-admin-bookings.md`](cp-admin-bookings.md) | E2E-BKG-001..012 |
 | `/admin/speaker-meeting-requests` | [`cp-admin-speaker-meeting-requests.md`](cp-admin-speaker-meeting-requests.md) | E2E-SMR-001..021 |
-| `/admin/speaker-availability` | [`cp-admin-speaker-availability.md`](cp-admin-speaker-availability.md) | E2E-SAV-001..006 |
+| `/admin/speaker-availability` | [`cp-admin-speaker-availability.md`](cp-admin-speaker-availability.md) | E2E-SAV-001..007 |
 | `/admin/hall-availability` | [`cp-admin-hall-availability.md`](cp-admin-hall-availability.md) | E2E-HAV-001..007 |
 | `/admin/delegation-meetings` | [`cp-admin-delegation-meetings.md`](cp-admin-delegation-meetings.md) | E2E-DLM-001..009 |
 | `/admin/document-requests` | [`cp-document-requests.md`](cp-document-requests.md) | E2E-CPDR-001..008 |
 | `/admin/badge-requests` | [`cp-badge-requests.md`](cp-badge-requests.md) | E2E-CPBR-001..008 |
 | `/admin/meeting-tables` | [`cp-meeting-tables.md`](cp-meeting-tables.md) | E2E-MHT-001..013 |
-| `/admin/business-meetings` | [`cp-business-meetings.md`](cp-business-meetings.md) | E2E-BMT-001..019 |
+| `/admin/business-meetings` | [`cp-business-meetings.md`](cp-business-meetings.md) | E2E-BMT-001..021 |
 
 ### Control Panel — Engagement, Q&A & attendance
 
 | Page | File | Scenarios |
 |------|------|-----------|
-| `/admin/question-queue` | [`cp-admin-question-queue.md`](cp-admin-question-queue.md) | E2E-QQU-001..015 |
-| `/sessions/{id}/moderate` | [`cp-session-moderate.md`](cp-session-moderate.md) | E2E-MOD-001..012 |
+| `/admin/question-queue` | [`cp-admin-question-queue.md`](cp-admin-question-queue.md) | E2E-QQU-001..016 |
+| `/sessions/{id}/moderate` | [`cp-session-moderate.md`](cp-session-moderate.md) | E2E-MOD-001..013 |
 | `/admin/ratings` | [`cp-admin-ratings.md`](cp-admin-ratings.md) | E2E-RAT-001..012 |
 | `/admin/rating-config` | [`cp-admin-rating-config.md`](cp-admin-rating-config.md) | E2E-RCFG-001..015 |
-| `/admin/session-summaries` | [`cp-admin-session-summaries.md`](cp-admin-session-summaries.md) | E2E-SUM-001..022 |
+| `/admin/session-summaries` | [`cp-admin-session-summaries.md`](cp-admin-session-summaries.md) | E2E-SUM-001..028 |
 | `/admin/hall-arrivals` | [`cp-admin-hall-arrivals.md`](cp-admin-hall-arrivals.md) | E2E-HAR-001..014 |
 
 ### Control Panel — Exhibition
@@ -152,8 +152,11 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/operations` | [`cp-admin-operations.md`](cp-admin-operations.md) | E2E-OPS-001..011 |
 | `/admin/operation-log` | [`cp-admin-operation-log.md`](cp-admin-operation-log.md) | E2E-OPL-001..018 |
 | `/admin/logs` | [`cp-admin-logs.md`](cp-admin-logs.md) | E2E-LOG-001..013 |
+| `/admin/ops/services` | [`cp-ops-services.md`](cp-ops-services.md) | E2E-SVCM-001..008 |
 | `/admin/statistics` | [`cp-admin-statistics.md`](cp-admin-statistics.md) | E2E-STA-001..012 |
 | `/admin/attendance` | [`cp-admin-attendance.md`](cp-admin-attendance.md) | E2E-ATT-001..014 |
+| `/admin/sessions/live-hall` | [`cp-admin-session-live-hall.md`](cp-admin-session-live-hall.md) | E2E-SLH-001..013 |
+| _system-wide_ — Saudi local-time display (CP + app) | [`cp-timezone-display.md`](cp-timezone-display.md) | E2E-TZ-001..006 |
 
 ### Control Panel — Account & auth (not in main nav)
 
@@ -170,10 +173,22 @@ not reused. Each page owns a unique 3–4 letter namespace.
 |------|------|-----------|
 | `/` (marketing landing) | [`web-landing.md`](web-landing.md) | E2E-WLD-001..008 |
 | `/account` | [`web-home.md`](web-home.md) | E2E-WHM-001..010 |
-| `/programme` | [`web-programme.md`](web-programme.md) | E2E-WPG-001..010 |
+| `/programme` | [`web-programme.md`](web-programme.md) | E2E-WPG-001..014 |
 | `/speakers` | [`web-speakers.md`](web-speakers.md) | E2E-WSPK-001..011 |
 | `/sessions/{id}` | [`web-session-detail.md`](web-session-detail.md) | E2E-WSDT-001..013 |
-| `/visit` | [`web-visit.md`](web-visit.md) | E2E-WVS-001..011 |
+| `/about` | [`web-about.md`](web-about.md) | E2E-WABT-001..011 |
+| `/about/objectives` | [`web-objectives.md`](web-objectives.md) | E2E-WOBJ-001..007 |
+| `/about/themes` | [`web-themes.md`](web-themes.md) | E2E-WTHM-001..009 |
+| `/about/organizer` | [`web-organizer.md`](web-organizer.md) | E2E-WORG-001..007 |
+| `/about/venue` | [`web-venue.md`](web-venue.md) | E2E-WVEN-001..007 |
+| `/programme/opening` | [`web-opening.md`](web-opening.md) | E2E-WOPN-001..007 |
+| `/programme/sessions` | [`web-plenary.md`](web-plenary.md) | E2E-WPLN-001..007 |
+| `/programme/exhibition` | [`web-exhibition.md`](web-exhibition.md) | E2E-WEXH-001..006 |
+| `/programme/gov-meetings` | [`web-gov-meetings.md`](web-gov-meetings.md) | E2E-WGBM-001..006 |
+| `/partners` | [`web-partners.md`](web-partners.md) | E2E-WPT-001..008 |
+| `/discover` | [`web-discover.md`](web-discover.md) | E2E-WDS-001..007 |
+| `/visit` | [`web-visit.md`](web-visit.md) | E2E-WVS-001..008 |
+| `/archive` | [`web-archive.md`](web-archive.md) | E2E-WAR-001..009 |
 | `/login` | [`web-login.md`](web-login.md) | E2E-WLG-001..017 |
 | `/login/verify` | [`web-otp-verify.md`](web-otp-verify.md) | E2E-WOT-001..010 |
 | `/forgot-password` | [`web-forgot-password.md`](web-forgot-password.md) | E2E-WFP-001..014 |
@@ -200,6 +215,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #6 `emailOtp` (`verify-email` + `resend-code`) | [`mobile-email-otp.md`](mobile-email-otp.md) | E2E-MOB006-001..008 |
 | #7 `signUpVisitor` — **profile data** (Visitor/Other + ProfileType + 3 lookups; Next→interests) | [`mobile-sign-up-visitor.md`](mobile-sign-up-visitor.md) | E2E-MOB007-001..022 |
 | #7‑01 `signUpInterests` — **interests (1–10) + the single `POST /app/account/user-profile` save** | [`mobile-sign-up-interests.md`](mobile-sign-up-interests.md) | E2E-MOB7A-001..008 |
+| #702 `myInterests` — **edit interests after sign-up** (same screen, edit mode) | [`mobile-my-interests.md`](mobile-my-interests.md) | E2E-MYINT-001..007 |
 | #9 `terms` (`GET /app/content/terms`) | [`mobile-terms.md`](mobile-terms.md) | E2E-MOB009-001..008 |
 | #10 `registrationSuccess` (no API — static confirmation) | [`mobile-registration-success.md`](mobile-registration-success.md) | E2E-MOB010-001..007 |
 | #11 `registrationStatus` (`GET /app/users/me`) | [`mobile-registration-status.md`](mobile-registration-status.md) | E2E-MOB011-001..007 |
@@ -237,9 +253,9 @@ API endpoints land (D-249). The per-screen design docs live under
 | #35 `meetPeople` (`GET /app/account/recommendations/meet-like-you`) | [`mobile-meet-people.md`](mobile-meet-people.md) | E2E-MOB035-001..005 |
 | #38 `accessibility` (no API) | [`mobile-accessibility.md`](mobile-accessibility.md) | E2E-MOB038-001..004 |
 | #41 `more` (no API) | [`mobile-more.md`](mobile-more.md) | E2E-MOB041-001..009 |
-| #34 `aiSummary` (`GET /app/programme/sessions/{id}/summary`) | [`mobile-ai-summary.md`](mobile-ai-summary.md) | E2E-MOB034-001..006 |
+| #34 `aiSummary` (`GET /app/programme/sessions/{id}/summary`) | [`mobile-ai-summary.md`](mobile-ai-summary.md) | E2E-MOB034-001..010 |
 | #111 `sessionSummaryList` (cached programme + favourites/booked overlay) — Wave 2 pixel pass, Figma `1388:8392` | [`mobile-session-summaries.md`](mobile-session-summaries.md) | E2E-MOB111-001..008 |
-| #26 `sendQuestion` (`POST /app/sessions/{id}/questions`) | [`mobile-send-question.md`](mobile-send-question.md) | E2E-MOB026-001..006 |
+| #26 `sendQuestion` (`POST /app/sessions/{id}/questions`) | [`mobile-send-question.md`](mobile-send-question.md) | E2E-MOB026-001..014 |
 | #32 `badge` (`GET /app/account/dashboard`) | [`mobile-badge.md`](mobile-badge.md) | E2E-MOB032-001..004 |
 | #25 `liveBroadcast` (`GET /app/programme/sessions/{id}`) | [`mobile-live.md`](mobile-live.md) | E2E-MOB025-001..007 |
 | #36 `chatbot` (interim shell — no API) | [`mobile-chatbot.md`](mobile-chatbot.md) | E2E-MOB036-001..006 |

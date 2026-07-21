@@ -82,6 +82,8 @@ public sealed class VipRosterTests : IClassFixture<SimfApiFactory>
         var mawjId = $"MAWJX{Guid.NewGuid():N}"[..14];
         var vip = BuildRequest(vipTypeId, $"vip-{Guid.NewGuid():N}@simf.test", organisationId);
         vip.MawjId = mawjId;
+        vip.JobTitle = "Advisor";
+        vip.JobTitleArabic = "مستشار";
         await PostAuthAsync("/api/v1/admin/visitors/register-onsite", vip, adminToken);
 
         var response = await GetAuthAsync(
@@ -90,6 +92,9 @@ public sealed class VipRosterTests : IClassFixture<SimfApiFactory>
         var csv = await response.Content.ReadAsStringAsync();
         Assert.Contains("Mawj ID", csv);
         Assert.Contains(mawjId, csv);
+        // 2026-07-20 — the bilingual job-title column is present and populated.
+        Assert.Contains("Job title (Arabic)", csv);
+        Assert.Contains("مستشار", csv);
     }
 
     [Fact]

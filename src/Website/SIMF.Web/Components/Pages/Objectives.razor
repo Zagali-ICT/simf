@@ -1,0 +1,44 @@
+@* SIMF public "Objectives" page — Figma node 5865-34626. Second page of the
+   About cluster. Built on the shared LandingShell + the reusable LandingPageHero
+   (3-level breadcrumb Home / About / Objectives) + the shared ln-fsection /
+   ln-fcard feature-card kit. Bilingual AR-RTL / EN-LTR. Static marketing content
+   (no API): the six objectives live in Objectives.razor.cs. Serves "/about/objectives". *@
+@page "/about/objectives"
+@layout LandingLayout
+@inject IStringLocalizer<Strings> L
+
+@{
+    var rtl = CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft;
+}
+
+<LandingShell Title="@L["Objectives.PageTitle"]" Description="@L["Objectives.Meta"]">
+
+    @* ============================== HERO ============================== *@
+    <LandingPageHero Title="@L["Objectives.Hero.Title"]"
+                     Subtitle="@L["Objectives.Hero.Subtitle"]"
+                     Crumb="@L["Objectives.Breadcrumb"]"
+                     ParentLabel="@L["About.Breadcrumb"]"
+                     ParentHref="/about"
+                     ImageSrc="assets/figma/about/about-hero.jpg" />
+
+    @* ==================== SIX OBJECTIVES (feature cards) ==================== *@
+    <section class="ln-fsection" aria-label="@L["Objectives.Section.Title"]">
+        <div class="ln-fsection__inner ln-reveal">
+            <header class="ln-fsection__head">
+                <h2 class="ln-fsection__title">@L["Objectives.Section.Title"]</h2>
+                <p class="ln-fsection__sub">@L["Objectives.Section.Sub"]</p>
+            </header>
+            <div class="ln-fsection__grid">
+                @foreach (var o in ObjectivesList)
+                {
+                    <article class="ln-fcard ln-fcard--raised">
+                        <span class="ln-fcard__icon" aria-hidden="true"><img src="@o.Icon" alt="" /></span>
+                        <h3 class="ln-fcard__title">@o.Title.For(rtl)</h3>
+                        <p class="ln-fcard__desc">@o.Desc.For(rtl)</p>
+                    </article>
+                }
+            </div>
+        </div>
+    </section>
+
+</LandingShell>

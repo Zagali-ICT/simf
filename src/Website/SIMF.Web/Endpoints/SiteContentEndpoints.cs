@@ -246,8 +246,9 @@ internal static class SiteContentEndpoints
         {
             var item = new Dictionary<string, object?>();
             PutBilingual(item, "name", sp.NameArabic, sp.Name);
-            // Rank is a single (non-bilingual) line; emit it for both locales.
-            PutBilingual(item, "role", sp.Rank, sp.Rank);
+            // Rank now has an Arabic twin (owner 2026-07-19); emit each locale
+            // so the static-page hydration picks the right language.
+            PutBilingual(item, "role", sp.RankArabic, sp.Rank);
             PutBilingual(item, "org", sp.CountryNameAr, sp.CountryNameEn);
             // Portrait URL — prefer an uploaded/linked SpeakerPhoto asset from the
             // unified media-asset pipeline (D-357), served same-origin through the

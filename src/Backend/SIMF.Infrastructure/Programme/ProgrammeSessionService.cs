@@ -84,12 +84,16 @@ internal sealed class ProgrammeSessionService(
                 // A8 — D-237: does this session have a PUBLISHED محضر? There is no
                 // Session→SessionSummary navigation, so this is a correlated EXISTS
                 // over SessionSummaries (the pattern AdminSessionSummaryService uses).
-                // Gate matches the summary read: an active summary with a PublishedAt
-                // stamp (Session.IsActive is already ensured by the outer Where).
+                // Gate matches the summary read: an active summary that is BOTH
+                // published AND team-approved (owner 2026-07-19 — the app never sees an
+                // unreviewed summary, so PublishedAt alone is not enough; this also
+                // hides any legacy row published before the approval gate existed).
+                // Session.IsActive is already ensured by the outer Where.
                 HasPublishedSummary = dbContext.SessionSummaries.Any(summary =>
                     summary.SessionId == session.Id
                     && summary.IsActive
-                    && summary.PublishedAt != null),
+                    && summary.PublishedAt != null
+                    && summary.ApprovedAt != null),
                 Themes = session.Themes
                     .Where(link => link.Theme!.IsActive)
                     .Select(link => new
@@ -108,6 +112,7 @@ internal sealed class ProgrammeSessionService(
                         link.Speaker!.Name,
                         link.Speaker!.NameArabic,
                         link.Speaker!.Rank,
+                        link.Speaker!.RankArabic,
                         link.DisplayOrder,
                         link.Role,
                         // §7: country (flag) + photo shown with the speaker.
@@ -156,7 +161,8 @@ internal sealed class ProgrammeSessionService(
                             speaker.CountryId,
                             countryEn,
                             countryAr,
-                            speaker.PhotoRelativePath);
+                            speaker.PhotoRelativePath,
+                            TitleArabic: speaker.RankArabic);
                     })
                     .ToList();
                 return new PublicSessionListItem(
@@ -328,6 +334,7 @@ internal sealed class ProgrammeSessionService(
                         link.Speaker!.Name,
                         link.Speaker!.NameArabic,
                         link.Speaker!.Rank,
+                        link.Speaker!.RankArabic,
                         link.DisplayOrder,
                         link.Role,
                         link.Speaker!.CountryId,
@@ -413,7 +420,8 @@ internal sealed class ProgrammeSessionService(
                     countryEn,
                     countryAr,
                     speaker.PhotoRelativePath,
-                    speakersWithPhoto.Contains(speaker.Id));
+                    speakersWithPhoto.Contains(speaker.Id),
+                    TitleArabic: speaker.RankArabic);
             })
             .ToList();
 
@@ -541,9 +549,16 @@ internal sealed class ProgrammeSessionService(
             return Array.Empty<PublicRecordedQuestion>();
         }
 
+        // Owner 2026-07-19 (two-path Q&A): the recorded archive is the questions
+        // that were actually ASKED on stage — i.e. pushed to the speaker by the
+        // moderator (IsPushed) — not every Approved row. Since a live question now
+        // lands Approved directly (skipping the committee), an Approved filter here
+        // would leak live questions the moderator never surfaced; a hide clears the
+        // push flag, and a push requires Approved, so IsPushed is exactly the set of
+        // moderator-surfaced, not-since-hidden questions for both paths.
         var rows = await dbContext.SessionQuestions
             .AsNoTracking()
-            .Where(q => q.SessionId == id && q.Status == QuestionStatus.Approved)
+            .Where(q => q.SessionId == id && q.IsPushed)
             .OrderBy(q => q.Order).ThenBy(q => q.CreatedAt)
             .Select(q => new
             {
@@ -598,6 +613,10 @@ internal sealed class ProgrammeSessionService(
             .Where(summary => summary.SessionId == id
                 && summary.IsActive
                 && summary.PublishedAt != null
+                // Owner 2026-07-19 — the app only sees a summary the scientific team
+                // APPROVED; this also hides any legacy row published before the approval
+                // gate existed (PublishedAt set, ApprovedAt null).
+                && summary.ApprovedAt != null
                 && summary.Session!.IsActive
                 && summary.Session!.StartUtc <= now)
             .Select(summary => new PublicSessionSummary(
@@ -611,7 +630,14 @@ internal sealed class ProgrammeSessionService(
                 summary.FullText,
                 summary.FullTextArabic,
                 summary.AiModel != null,
-                summary.PublishedAt!.Value))
+                summary.PublishedAt!.Value,
+                // Item #35 — the two videos on the summary surface (screen 34):
+                // the session's FULL live recording (Session.LiveStreamUrl — the
+                // YouTube/HLS feed that doubles as the recording; no schema change)
+                // and the team's OPTIONAL short summary cut. Each is null when
+                // unset, and the app hides that player.
+                summary.Session!.LiveStreamUrl,
+                summary.SummaryVideoUrl))
             .SingleOrDefaultAsync(cancellationToken);
     }
 

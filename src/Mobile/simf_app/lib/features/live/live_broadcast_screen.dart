@@ -208,7 +208,7 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
   void _askQuestion() {
     context.pushNamed(
       RouteNames.sendQuestion,
-      queryParameters: <String, String>{'sessionId': widget.sessionId!.trim()},
+      queryParameters: <String, String>{RouteParams.sessionId: widget.sessionId!.trim()},
     );
   }
 

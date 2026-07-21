@@ -4,7 +4,7 @@
 |-------|-------|
 | Document ID | SIMF-RDR-001 |
 | Title | Requirements Decision Register |
-| Version | 1.4 |
+| Version | 1.5 |
 | Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
@@ -22,6 +22,7 @@
 | 1.2 | 2026-05-20 | Engineering & Architecture Team | Opened decisions D10–D12 from the SIMF-RPM-001 permission-matrix review. |
 | 1.3 | 2026-05-20 | Engineering & Architecture Team | Decisions D10–D12 recorded from the client review. |
 | 1.4 | 2026-05-20 | Engineering & Architecture Team | D1 amended on client instruction: all roles are dynamic and Administrator-managed, superseding the earlier "fixed baseline roles" answer. |
+| 1.5 | 2026-07-19 | Apexium | D4 and D11 amended to match the as-built system: attendee seat reservations are confirmed immediately with no Control Panel approval and held provisionally until gate check-in confirms them; the Control Panel booking-approval queue is retained but dormant (always empty). |
 
 ---
 
@@ -249,8 +250,14 @@ around the hall**: the geofence detects that a user has entered even when they
 did not scan at the door, and the system records an **enter time and a leave
 time** per session from it. Booking rules — a user may book **any number of
 sessions as long as their times do not overlap**; a booking may be **cancelled
-any time before the session starts**; and **every booking must be approved in
-the Control Panel** before it is confirmed.
+any time before the session starts**. *(Amended 2026-07-19: as built, an
+attendee seat reservation is **confirmed immediately, with no Control Panel
+approval step**. The reservation is a provisional hold until the attendee
+**checks in at the hall gate** (a staff QR scan), which confirms the seat; a
+pre-start sweep releases any hold not checked in shortly before the session
+starts. The earlier "every booking must be approved in the Control Panel" gate
+is **retained but dormant** — nothing creates a pending booking, so the Control
+Panel approval queue is always empty.)*
 
 **Decided by:** Project Owner  **Date:** 2026-05-20
 
@@ -479,7 +486,7 @@ assignment is reasonable but not confirmed.
 
 1. **Booking approval.** Session-seat bookings must be approved in the Control
    Panel (decision D4). Who approves them — the PR team (current proposal), the
-   Scientific team, or a registration-desk / operations role?
+   Scientific team, or a registration-desk / operations role? _(Superseded: the as-built system confirms seat reservations immediately with no Control Panel approval; the approval queue is retained but dormant. See the change history.)_
 2. **Live-session management.** Who starts and stops a live broadcast during the
    event — the Scientific team (current proposal) or the Technical team?
 3. **Comment moderation.** Who acts on the Control Panel comment moderation
@@ -494,6 +501,13 @@ assignment is reasonable but not confirmed.
 
 **Decision.**
 1. Booking approval — the **PR team** approves session-seat bookings.
+   *(Amended 2026-07-19: as built, attendee seat reservations are **confirmed
+   immediately with no Control Panel approval**, and are held provisionally until
+   the attendee checks in at the hall gate. The PR booking-approval permission and
+   the Control Panel booking-approval queue are **retained but dormant** — the
+   queue is always empty because nothing creates a pending booking. Admin
+   reserve/block of a specific seat or a whole row for a VIP is confirmed
+   immediately.)*
 2. Live-session management — the **Scientific team** starts and stops the live
    broadcast.
 3. Comment moderation — the **Scientific team** is the single owner of the

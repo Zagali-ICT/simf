@@ -1,0 +1,92 @@
+/* 2026-07-18 (CP page 2e) — read-only 4-state seat map for the live-hall view.
+   Renders the hall layout (rows x seats-per-row) with each seat coloured by its
+   live state: available / unavailable (admin block) / reserved (held) /
+   confirmed (checked in at the gate). Colours come from theme.tokens.css seat
+   tokens only (no hardcoded values), per the CSS rules. Unlike the seat-plan
+   editor these seats are not interactive — this is a monitor view. */
+
+.seatmap {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: var(--space-3) 0;
+    overflow-x: auto;
+}
+
+.seatmap__row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.seatmap__row-label {
+    flex: 0 0 2.5rem;
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-muted);
+    text-align: center;
+}
+
+.seatmap__seat {
+    width: 2rem;
+    height: 2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    border: 1px solid var(--color-seat-free-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-seat-free);
+    color: var(--color-text);
+}
+
+.seatmap__seat--available {
+    background: var(--color-seat-free);
+    border-color: var(--color-seat-free-border);
+    color: var(--color-text);
+}
+
+.seatmap__seat--unavailable {
+    background: var(--color-seat-admin);
+    border-color: var(--color-seat-admin);
+    color: var(--color-seat-contrast);
+}
+
+.seatmap__seat--reserved {
+    background: var(--color-seat-user);
+    border-color: var(--color-seat-user);
+    color: var(--color-seat-contrast);
+}
+
+.seatmap__seat--confirmed {
+    background: var(--color-seat-confirmed);
+    border-color: var(--color-seat-confirmed);
+    color: var(--color-seat-contrast);
+}
+
+.seatmap__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    margin-top: var(--space-3);
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+
+.seatmap__legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.seatmap__swatch {
+    width: 1rem;
+    height: 1rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-seat-free-border);
+    display: inline-block;
+}
+
+.seatmap__swatch--available { background: var(--color-seat-free); }
+.seatmap__swatch--unavailable { background: var(--color-seat-admin); border-color: var(--color-seat-admin); }
+.seatmap__swatch--reserved { background: var(--color-seat-user); border-color: var(--color-seat-user); }
+.seatmap__swatch--confirmed { background: var(--color-seat-confirmed); border-color: var(--color-seat-confirmed); }

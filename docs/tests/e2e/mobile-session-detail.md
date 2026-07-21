@@ -10,6 +10,20 @@
 > (detail render, guest→no card, reserver→card, no-booking→no card, speaker→profile,
 > add-to-calendar toast, reminder-deferred toast, 404, error→retry) and
 > `…/session_detail_models_test.dart` (`SessionDetail`/`MySeat` decode).
+
+> **Reservation-only (2026-07-19).** Reserving / joining **confirms on
+> create** (`Status = Approved`, no CP approval step) — there is no attendee-booking
+> approval step in the flow. The reservation is a **provisional hold**: it is
+> confirmed at the hall gate when staff scan the attendee's badge on check-in
+> (`CheckedIn`), and a pre-start sweep releases any hold not checked in shortly before
+> the session starts. No notification is sent on reserving; the app shows an inline
+> success message. The old Control-Panel approval-queue surface (list-pending /
+> approve / reject / bulk-approve, the CP Bookings page, the Approve/Reject
+> permissions) is **retained but dormant** — nothing creates a Pending booking, so the
+> queue is always empty. The join/reserve scenarios below have been reworded to this
+> behaviour; the owner's exact two-case reserve-success messages + the 4-state seat map
+> are finalised in the **app-side reservation-only slice**. The wire/data behaviour
+> (auto-confirmed, no `BookingConfirmed` on reserve) applies now.
 >
 > **As-built deviations (D-300):** (1) the screen **fetches the detail by id**
 > (`GET …/sessions/{id}`, deep-link / cold-start safe) rather than threading the
@@ -36,12 +50,14 @@
 > remain valid. The flag renders from `PublicSessionSpeaker.CountryId` via the new
 > `core/country_flag.dart` ISO-3166 numeric→emoji helper.
 >
-> **Login-gate (D-576, 2026-07-01):** the Session-detail *screen* (#17) is now
-> login-gated — a signed-out guest navigating to `/sessions/{id}` is redirected
-> to sign-in before the screen renders. The detail *endpoint* stays anonymous
-> (the gate is app-UX only, not an API change). The "guest" paths below (001,
-> 005) are therefore API-/widget-level guarantees — the live app redirects a
-> guest first. The screen gate is covered by E2E-MOB017-025.
+> **Public again (D-750, 2026-07-20, REVERSES D-576):** the Session-detail
+> *screen* (#17) is **public** — a signed-out guest can open `/sessions/{id}` and
+> read the session without signing in (restoring the D-199 public design). The
+> join / ask sections stay hidden for a guest (the seat map is approved-only, so
+> `seatMap == null` → no Join CTA, no reservation card, and the ask card is
+> disabled), so the "guest" paths below (001, 005, 024) are the live behaviour,
+> not just API-/widget-level guarantees. The now-public access is covered by the
+> updated E2E-MOB017-025.
 >
 > **Session-state gating (owner 2026-07-14, supersedes the 2026-06-30 "always
 > both active"):** the two header actions now gate on the session's phase
@@ -62,8 +78,8 @@
 | **Route** | `GET /api/v1/app/programme/sessions/{id}` (detail, anon) · `GET /api/v1/app/sessions/{id}/seats` (my-seat, approved) · app screen #17 `/sessions/:sessionId` |
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
-| **Auth setup** | **Signed-in for the screen (D-576)** — the Session-detail screen is login-gated: a signed-out guest navigating to `/sessions/{id}` is redirected to sign-in. The detail **endpoint** stays anonymous (the app gates the screen, not the API); the my-seat card needs an **approved Visitor** token (seeded + a held reservation); an **Admin** token only to seed the session + seat layout. **No literal secrets** (admin TOTP via the `Get-Totp` helper). |
-| **Last reviewed** | 2026-07-09 (D-714 — pre-session ask label, item 12 GAP-2) |
+| **Auth setup** | **Public screen (D-750, reverses D-576)** — the Session-detail screen is open to a signed-out guest; the join/ask sections stay hidden until an **approved Visitor** token is used (the my-seat / reservation card + the Join CTA need a held reservation on an approved account). An **Admin** token only to seed the session + seat layout. **No literal secrets** (admin TOTP via the `Get-Totp` helper). |
+| **Last reviewed** | 2026-07-20 (D-750 — screen public again; case-1 register label + registered alert) |
 
 ## Coverage matrix
 
@@ -84,18 +100,18 @@
 | E2E-MOB017-013 | وصف الجلسة / Description card renders the localized description; hidden when null | happy | P1 | authored ✓ (Figma 889:2719 re-skin) |
 | E2E-MOB017-014 | المتحدثون speaker card → 40×40 photo + country flag beside the name | happy | P0 | authored ✓ (Figma 889:2722 re-skin; photo+flag) |
 | E2E-MOB017-015 | المتحدثون host card → المضيف/Host sub-line (`SessionSpeakerRole.host`) | happy | P0 | authored ✓ (Figma 889:2737 re-skin; real role) |
-| E2E-MOB017-016 | **Reservation card (D-485)** — a held booking shows الصف · مقعد (or "general admission" for an open-seating join) + a "pending approval" hint + a Cancel action; a seat booking's chevron/marker opens the seat map (18), an open-seating join has no map link | happy | P1 | authored ✓ (widget — reservation card: seat/general-admission + pending + cancel) |
+| E2E-MOB017-016 | **Reservation card (D-485)** — a held (provisional) booking shows الصف · مقعد (or "general admission" for an open-seating join) + a "show your badge at the gate" check-in hint + a Cancel action; a seat booking's chevron/marker opens the seat map (18), an open-seating join has no map link | happy | P1 | authored ✓ (widget — reservation card: seat/general-admission + check-in hint + cancel) |
 | E2E-MOB017-017 | CTA row — تذكير (outlined) + أضف إلى تقويمي (gold) order and toasts | happy | P1 | authored ✓ (Figma 897:2872 re-skin) |
 | E2E-MOB017-018 | رابط الجلسة — **state-gated (owner 2026-07-14)**: both header buttons keep their slots, but رابط الجلسة is ACTIVE only while the session is LIVE **and** carries a `liveStreamUrl` (streaming) — greyed/inert otherwise; when active it opens Live (25) | happy | P1 | authored ✓ (`…session link opens the live screen while the session is live + streaming`; body-gate tests future+feed→inactive) |
 | E2E-MOB017-019 | ملخص الجلسة — **state-gated (owner 2026-07-14)**: ACTIVE only once the session has ENDED (a future/live session has no محضر → greyed/inert); when active it opens AI summary (34) | happy | P1 | authored ✓ (`…summary button opens the AI session summary once the session has ended`; body-gate tests future→inactive / ended→active) |
 | E2E-MOB017-020 | اسأل المحاور card — **gated on joining (#3)**: enabled (opens Send question #26) only once the user has **joined** the session (holds a booking, NOT physical check-in); not joined → the card is disabled with a "Join the session to ask a question" hint and the tap is inert | happy/auth | P1 | authored ✓ (Figma 1056:12876; `#3 — a joined user can ask…` + `#3 — pre-ask is gated on joining…`) |
 | E2E-MOB017-026 | **Pre-session ask label (D-714 GAP-2)** — while the session is **upcoming** (`now < startUtc`) the ask card reads the distinct pre-session label "اطرح سؤالاً قبل الجلسة" / "Ask a question before it starts" (mode B, `Phase=Pre`); once **live/started** it reverts to "اسأل المحاور" / "Ask the host" (mode A). The backend derives the phase + enforces the [start−5min, end] window either way | happy/i18n | P1 | authored ✓ (screen `a live (already started) session shows the "Ask the host" label` + the ask-label tests; golden `session_detail_889-2450` shows the pre-session label) |
 | E2E-MOB017-021 | Speaker country flag — `CountryId` 682 → 🇸🇦 emoji beside the name | happy | P2 | authored ✓ (`…renders its flag emoji`; `core/country_flag.dart`) |
-| E2E-MOB017-022 | **Join CTA (D-485)** — an approved user with no reservation sees a "Join this session" section, branched by the session's effective mode: assigned-seat → "Select my seat" opens the seat picker; open-seating → "Join this session" confirms then joins (Pending) with a "Request sent — pending approval" toast | happy | P1 | authored ✓ (widget — assigned→picker / open→confirm→join+toast) |
+| E2E-MOB017-022 | **Join CTA (D-485; label + alert D-750)** — an approved user with no reservation sees a Join section, branched by the session's effective mode: assigned-seat → "الانضمام إلى الجلسة" / "Join the session" opens the seat picker; open-seating → the CTA reads "سجل لحضور الجلسة" / "Register to attend the session" and confirms then joins (Approved — confirmed immediately, no CP approval), showing a one-button success **alert** (`joinOpenSuccessBody`: "registering is not a seat reservation … confirmed at check-in") instead of a snackbar | happy | P1 | authored ✓ (widget — assigned→picker / open→register-label+confirm→join+success-alert; `D-750 — signed-in, open-seating …`) |
 | E2E-MOB017-023 | **Cancel booking (D-485)** — the reservation card's Cancel confirms, then releases the held seat (`DELETE …/seats/mine`) and the section returns to the Join CTA | happy | P2 | authored ✓ (widget — `releaseMine`) |
 | E2E-MOB017-024 | **Join is approved-only (D-485)** — a guest / pending account sees no join section (the seat endpoint 401/403s → null) | auth | P1 | authored ✓ (`…a guest sees no join section`) |
-| E2E-MOB017-025 | **No-layout session joins (D-706)** — an assigned-seat session with **no seat layout** (a hall left on the default with no rows laid out) reports its effective mode as **OpenSeating**, so the Join CTA is a one-tap join (not an empty seat picker) and `…/seats/join` is accepted (Pending). Fixes "join session not working" | happy | P0 | authored ✓ (API `Join_succeeds_on_an_assigned_seat_session_that_has_no_layout`) |
-| E2E-MOB017-025 | **App login-gate (D-576):** a signed-out guest navigating to `/sessions/{id}` is redirected to sign-in before the screen renders (the app gates the screen; the detail endpoint stays anonymous) | auth | P0 | authored ✓ (router-gate `D-576 — a signed-out guest hitting /sessions or a session detail → sign-in`) |
+| E2E-MOB017-025 | **No-layout session joins (D-706)** — an assigned-seat session with **no seat layout** (a hall left on the default with no rows laid out) reports its effective mode as **OpenSeating**, so the Join CTA is a one-tap join (not an empty seat picker) and `…/seats/join` is accepted (Approved — confirmed immediately). Fixes "join session not working" | happy | P0 | authored ✓ (API `Join_succeeds_on_an_assigned_seat_session_that_has_no_layout`) |
+| E2E-MOB017-025 | **Public screen (D-750, reverses D-576):** a signed-out guest navigating to `/sessions/{id}` opens the detail (no redirect); the join/ask sections stay hidden for a guest (`seatMap == null`) | auth | P0 | authored ✓ (router-gate `D-750 — a signed-out guest hitting /sessions or a session detail is NOT redirected`; `routePathRequiresAuth('/sessions/:sessionId')` is FALSE) |
 | E2E-MOB017-027 | **Join gate (owner 2026-07-14):** the Join CTA is only offered while the session has NOT ended — an ended session drops the join section ("open now to join" is a live/upcoming state) | happy | P1 | authored ✓ (body-gate `phase != SessionPhase.ended`; screen join tests unaffected on upcoming fixtures) |
 
 ## Scenarios
@@ -388,15 +404,24 @@ Scenario: A speaker's ISO 3166-1 numeric country code renders as a flag emoji
 Scenario: An approved attendee with no reservation joins, branched by mode
   Given an approved visitor on a session detail page holding no reservation
   When the session's effective seat-selection mode is AssignedSeat
-  Then a "Join this session" section shows a "Select my seat" button
-  And tapping it opens the seat picker
+  Then the Join CTA reads "الانضمام إلى الجلسة" / "Join the session"
+  And tapping it opens the seat picker (case-2, assigned seat)
   When the mode is OpenSeating (general admission)
-  Then the button reads "Join this session"
+  Then the Join CTA reads "سجل لحضور الجلسة" / "Register to attend the session" (case-1, D-750)
   And tapping it shows a "Join this session?" confirm dialog
-  And confirming sends the join (created Pending) with a
-    "Request sent — pending approval" toast
-  And on the Control Panel's approval the attendee receives a BookingConfirmed
-    in-app notification (existing inbox), or BookingRejected on rejection
+  And confirming sends the join (created Approved — confirmed immediately, no
+    Control Panel approval step)
+  And on success a one-button info alert is shown (not a snackbar) carrying
+    joinOpenSuccessBody — "تم تسجيلك لحضور هذه الجلسة بنجاح. هذا التسجيل لا يعني
+    حجز مقعد أو ضمان الدخول للجلسة …" / "You have successfully registered to attend
+    this session. This registration does not reserve a seat or guarantee entry;
+    your entry will be confirmed at session check-in." — dismissed by its OK button
+  And the reservation is a provisional hold, confirmed at the hall gate when staff
+    scan the badge on check-in (CheckedIn); a pre-start sweep releases any hold not
+    checked in shortly before the session starts
+  # No BookingConfirmed is sent on reserving. The old Control-Panel approval queue
+  # (approve / reject → BookingConfirmed / BookingRejected) is retained but dormant —
+  # nothing creates a Pending booking, so the queue is always empty.
   # A guest / pending account sees no join section (the seat endpoint 401/403s).
 ```
 
@@ -410,27 +435,28 @@ Scenario: Cancelling a held reservation from the session page
   And the section returns to the Join CTA
 ```
 
-### E2E-MOB017-025 — App login-gate (D-576)
+### E2E-MOB017-025 — Public screen (D-750, reverses D-576)
 
 ```gherkin
-Feature: Session-detail screen — login gate (D-576)
+Feature: Session-detail screen — public access (D-750)
   As a signed-out guest
-  I want to be sent to sign-in when I open a session
-  So that the programme screens sit behind login (owner, D-576)
+  I want to open a session and read it without signing in
+  So that the programme is browsable before login (owner, D-750; reverses D-576)
 
-Scenario: A guest opening a session detail is redirected to sign-in
+Scenario: A guest opening a session detail sees the detail (no redirect)
   Given the app is signed out (a guest)
   When the app navigates to /sessions/{id} (row tap, deep link or cold start)
-  Then the router redirects to the sign-in screen
-  And the Session-detail screen is not rendered
-  # The detail read (GET /app/programme/sessions/{id}) stays AllowAnonymous —
-  # the gate is app-UX only (a router redirect), not an API change. Scenarios
-  # 001 / 005 above are therefore API-/widget-level guarantees; in the live app
-  # a guest never reaches the screen.
+  Then the Session-detail screen renders (there is no redirect to sign-in)
+  And the title / time / hall / description / speakers all show
+  And no Join CTA, no reservation card and a disabled ask card are shown
+    (the seat map is approved-only, so seatMap == null for a guest)
+  # The detail read (GET /app/programme/sessions/{id}) stays AllowAnonymous.
+  # My seat (18) stays attendee-gated, so a guest still cannot open the seat map.
 ```
 
-**Evidence:** router-gate test `D-576 — a signed-out guest hitting /sessions or a
-session detail → sign-in`; `routePathRequiresAuth('/sessions/:sessionId')` is TRUE.
+**Evidence:** router-gate test `D-750 — a signed-out guest hitting /sessions or a
+session detail is NOT redirected`; `routePathRequiresAuth('/sessions/:sessionId')`
+is FALSE. Guest-no-join is `a guest sees no join section`.
 
 ### E2E-MOB017-027 — Join gate on an ended session (owner 2026-07-14)
 
@@ -448,7 +474,20 @@ the existing join screen tests use upcoming fixtures (join still offered).
 
 ---
 
-_Last reviewed:_ `2026-07-14` by `SIMF Team` — **owner state-gating: the two
+_Last reviewed:_ `2026-07-20` by `Apexium` — **D-750: the Session-detail screen is
+public again (reverses the D-576 login-gate) — a guest opens the detail without
+signing in (join/ask hidden while `seatMap == null`); the open-seating (case-1) Join
+CTA now reads "سجل لحضور الجلسة" / "Register to attend the session" and shows a
+one-button success alert (`joinOpenSuccessBody`) instead of a snackbar.
+E2E-MOB017-022 / -025 reworded.**
+_Prior:_ `2026-07-19` by `Apexium` — **reservation-only correction: a seat
+reservation / open-seating join now confirms on create (`Status = Approved`, no
+Control Panel approval step); the reservation is a provisional hold confirmed at the
+hall gate on check-in (`CheckedIn`), with a pre-start sweep releasing any hold not
+checked in. No `BookingConfirmed` on reserve; the app shows an inline success message.
+The old CP approval queue is retained but dormant (always empty). Scenarios 016 / 022 /
+025 reworded off the "pending approval" copy.**
+_Prior:_ `2026-07-14` by `SIMF Team` — **owner state-gating: the two
 header actions (ملخص الجلسة / رابط الجلسة) and the Join CTA now gate on the
 session phase (upcoming/live/ended); a future session's summary button is
 inactive; the live link is active only while live+streaming; an ended session

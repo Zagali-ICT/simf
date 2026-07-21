@@ -10,6 +10,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../../app/widgets/simf_confirm_dialog.dart';
+import '../../app/widgets/simf_info_dialog.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import 'data/rate_prompt_tracker.dart';
 import 'data/seat_map_models.dart';
@@ -205,7 +206,7 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     if (!map.mode.isOpenSeating) {
       final picked = await context.pushNamed<bool>(
         RouteNames.seatPicker,
-        pathParameters: <String, String>{'sessionId': widget.sessionId},
+        pathParameters: <String, String>{RouteParams.sessionId: widget.sessionId},
       );
       if (picked == true && mounted) {
         await _load();
@@ -222,11 +223,12 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     }
     setState(() => _busy = true);
     final messenger = ScaffoldMessenger.of(context);
+    var registered = false;
     try {
       await ref
           .read(seatMapRepositoryProvider)
           .joinOpenSeating(widget.sessionId);
-      messenger.showSnackBar(SnackBar(content: Text(l10n.joinPendingToast)));
+      registered = true;
     } on ApiFailure catch (failure) {
       // Surface the backend's localized reason (already booked / seat selection
       // required / …) instead of a generic "join failed" — the generic toast is
@@ -241,6 +243,12 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
       if (mounted) {
         setState(() => _busy = false);
       }
+    }
+    // D-750 — case-1 (open-seating) success: a one-button info alert (replaces
+    // the old joinPendingToast snackbar) making clear that registering is not a
+    // seat reservation and entry is confirmed at check-in.
+    if (registered && mounted) {
+      await SimfInfoDialog.show(context, title: l10n.joinOpenSuccessBody);
     }
     await _load();
   }
@@ -315,14 +323,14 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
   /// only offered when the detail carries a live feed (`hasLiveStream`).
   void _openLive() => context.pushNamed(
         RouteNames.liveBroadcast,
-        queryParameters: <String, String>{'sessionId': widget.sessionId},
+        queryParameters: <String, String>{RouteParams.sessionId: widget.sessionId},
       );
 
   /// ملخص الجلسة (Figma 889:2715) — opens the AI session summary (34). The
   /// summary screen 404s gracefully until the Committee publishes it.
   void _openSummary() => context.pushNamed(
         RouteNames.aiSummary,
-        queryParameters: <String, String>{'sessionId': widget.sessionId},
+        queryParameters: <String, String>{RouteParams.sessionId: widget.sessionId},
       );
 
   /// اسأل المحاور (Figma 1056:12876) — opens send-question (26). #3 — only
@@ -330,7 +338,7 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
   /// (this never fires) until then, so there is no guest/not-joined path here.
   void _askHost() => context.pushNamed(
         RouteNames.sendQuestion,
-        queryParameters: <String, String>{'sessionId': widget.sessionId},
+        queryParameters: <String, String>{RouteParams.sessionId: widget.sessionId},
       );
 
   @override
@@ -357,7 +365,7 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
             ? () => context.pushNamed(
                   RouteNames.sessionModerate,
                   pathParameters: <String, String>{
-                    'sessionId': widget.sessionId,
+                    RouteParams.sessionId: widget.sessionId,
                   },
                 )
             : null,
@@ -422,11 +430,11 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
         onCancelReservation: () => unawaited(_cancelReservation(l10n)),
         onViewSeat: () => context.pushNamed(
           RouteNames.mySeat,
-          pathParameters: <String, String>{'sessionId': widget.sessionId},
+          pathParameters: <String, String>{RouteParams.sessionId: widget.sessionId},
         ),
         onSpeaker: (speaker) => context.pushNamed(
           RouteNames.speakerProfile,
-          pathParameters: <String, String>{'speakerId': speaker.id},
+          pathParameters: <String, String>{RouteParams.speakerId: speaker.id},
         ),
       ),
     );

@@ -519,9 +519,11 @@ public partial class WalkInRegistrationForm : IDisposable
                     ArabicName = _model.ArabicName.Trim(),
                     EnglishName = _model.EnglishName.Trim(),
                     JobTitle = string.IsNullOrWhiteSpace(_model.JobTitle) ? null : _model.JobTitle.Trim(),
+                    JobTitleArabic = string.IsNullOrWhiteSpace(_model.JobTitleArabic) ? null : _model.JobTitleArabic.Trim(),
                     // V-1 (D-429) — VIP موج extras (null unless the VIP page set them).
                     MawjId = string.IsNullOrWhiteSpace(_model.MawjId) ? null : _model.MawjId.Trim(),
                     Honorific = string.IsNullOrWhiteSpace(_model.Honorific) ? null : _model.Honorific.Trim(),
+                    HonorificArabic = string.IsNullOrWhiteSpace(_model.HonorificArabic) ? null : _model.HonorificArabic.Trim(),
                     PreferredLanguage = string.IsNullOrWhiteSpace(_model.PreferredLanguage) ? null : _model.PreferredLanguage.Trim(),
                     ProfileTypeId = _model.ProfileTypeId,
                     NationalityCode = _model.NationalityCode.Trim().ToUpperInvariant(),
@@ -619,6 +621,7 @@ public partial class WalkInRegistrationForm : IDisposable
         // V-1 (D-429) — clear the VIP موج extras between desk registrations.
         _model.MawjId = null;
         _model.Honorific = null;
+        _model.HonorificArabic = null;
         _model.PreferredLanguage = null;
         _model.DateOfBirth = null;
         _model.PlaceOfBirth = string.Empty;
@@ -675,9 +678,11 @@ public partial class WalkInRegistrationForm : IDisposable
         public string ArabicName { get; set; } = string.Empty;
         public string EnglishName { get; set; } = string.Empty;
         public string? JobTitle { get; set; }
+        public string? JobTitleArabic { get; set; }
         // V-1 (D-429) — VIP موج extras.
         public string? MawjId { get; set; }
         public string? Honorific { get; set; }
+        public string? HonorificArabic { get; set; }
         public string? PreferredLanguage { get; set; }
         public Guid ProfileTypeId { get; set; }
         public string NationalityCode { get; set; } = "SA";

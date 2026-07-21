@@ -45,6 +45,11 @@
   --secondary: #498fbd;
   --secondary-dark: #376b8e;
   --secondary-light: #edf4f8;
+  /* interior page-hero gradient (Figma colors/blue: dark → bright) */
+  --blue-dark: #005da2;
+  --blue-bright: #007cd8;
+  /* deep-navy hairline for translucent "glass" cards on navy (matches ln-tstat) */
+  --navy-line: #1b3859;
   --gold: #e8c060;
   --gold-active: #ba9a4d;
   --gold-dark: #ae9048;
@@ -459,6 +464,84 @@
 .ln-speakers__collage img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
 @media (max-width: 720px) { .ln-speakers__title { font-size: 24px; } }
 
+/* =========================== PROGRAMME AGENDA ==================== */
+/* Live day-grouped schedule (/programme), on a dark ln-fsection--dark band.
+   Redesigned to echo the app "Programme schedule" (Figma 883:2308) in the ln-
+   kit: a white day strip switches the visible day, optional type tabs filter by
+   kind, and each session is a timeline card (event-local time column + gold
+   category chip + title + hall + description). Day/type switching is JS
+   progressive enhancement, gated on .is-enhanced so every day + card stays
+   visible with no JS. All colours are ln- tokens; the translucent-white overlays
+   follow the existing dark-band precedent (e.g. ln-scard__btn / ln-tcard). */
+
+/* -- day strip (white bar; shrinks to its pills, scrolls if many days) -- */
+.ln-agenda__daystrip { align-self: flex-start; max-width: 100%; display: flex; gap: 8px; padding: 8px;
+  background: var(--white); border-radius: var(--radius-md); overflow-x: auto; scrollbar-width: none; }
+.ln-agenda__daystrip::-webkit-scrollbar { display: none; }
+.ln-agenda__daypill { flex: 0 0 auto; min-width: 64px; display: flex; flex-direction: column; align-items: center;
+  gap: 2px; padding: 8px 12px; border: 0; border-radius: var(--radius-sm); background: transparent;
+  font-family: inherit; cursor: pointer; transition: background-color .2s ease; }
+.ln-agenda__dayweek { font-size: 12px; line-height: 16px; font-weight: 600; color: var(--gray-darker); text-transform: uppercase; }
+.ln-agenda__daynum { font-size: 20px; line-height: 24px; font-weight: 800; color: var(--ink); }
+.ln-agenda__daypill:hover { background: var(--bg-gray); }
+.ln-agenda__daypill.is-active { background: var(--navy); }
+.ln-agenda__daypill.is-active .ln-agenda__dayweek { color: var(--primary-light); }
+.ln-agenda__daypill.is-active .ln-agenda__daynum { color: var(--gold); }
+
+/* -- type filter tabs -- */
+.ln-agenda__tabs { align-self: flex-start; display: flex; flex-wrap: wrap; gap: 12px; }
+.ln-agenda__tab { padding: 8px 20px; border: 1px solid rgba(255, 255, 255, .25); border-radius: var(--radius-sm);
+  background: transparent; color: var(--white); font-family: inherit; font-size: 16px; line-height: 24px;
+  white-space: nowrap; cursor: pointer; transition: background-color .2s ease, color .2s ease, border-color .2s ease; }
+.ln-agenda__tab:hover { border-color: var(--gold); }
+.ln-agenda__tab.is-active { background: var(--gold); border-color: var(--gold); color: var(--gold-darker); font-weight: 700; }
+
+.ln-agenda__label { font-size: 24px; font-weight: 800; line-height: 1.2; color: var(--white); text-align: start; }
+
+/* -- day panel + timeline cards -- */
+.ln-agenda__day { display: flex; flex-direction: column; gap: 16px; }
+.ln-agenda__dayhead { font-size: 18px; font-weight: 700; line-height: 24px; color: var(--primary-light); text-align: start; }
+.ln-agenda__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
+.ln-agenda__card { display: flex; gap: 20px; padding: 20px 24px; background: rgba(255, 255, 255, .04);
+  border: 1px solid rgba(255, 255, 255, .08); border-radius: var(--radius-md); }
+.ln-agenda__when { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  min-width: 56px; font-variant-numeric: tabular-nums; }
+.ln-agenda__t1 { font-size: 16px; font-weight: 800; line-height: 20px; color: var(--white); }
+.ln-agenda__line { flex: 1 1 auto; width: 2px; min-height: 16px; border-radius: var(--radius-full); background: var(--gold); opacity: .5; }
+.ln-agenda__t2 { font-size: 14px; font-weight: 600; line-height: 20px; color: var(--primary-light); }
+.ln-agenda__content { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; text-align: start; }
+.ln-agenda__cat { display: inline-flex; align-items: center; gap: 8px; color: var(--gold); font-size: 14px; font-weight: 700; line-height: 20px; }
+.ln-agenda__cat svg { flex: 0 0 auto; width: 16px; height: 16px; }
+.ln-agenda__title { font-size: 18px; font-weight: 800; line-height: 24px; color: var(--white); }
+.ln-agenda__hall { font-size: 14px; line-height: 20px; color: var(--primary-light); }
+.ln-agenda__desc { font-size: 16px; line-height: 24px; color: var(--primary-light); }
+
+.ln-agenda__msg { font-size: 18px; line-height: 28px; color: var(--ink); text-align: center; }
+.ln-agenda__time-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* JS-enhanced: show only the active day; the type filter hides non-matching
+   cards. Gated on .is-enhanced so no-JS keeps every day + card reachable. */
+.ln-agenda.is-enhanced .ln-agenda__day:not(.is-active) { display: none; }
+.ln-agenda .ln-agenda__card.is-hidden { display: none; }
+/* The type filter can empty a day: swap its list for a short note (JS-only). */
+.ln-agenda__none { display: none; font-size: 16px; line-height: 24px; color: var(--primary-light); text-align: start; }
+.ln-agenda__day.is-empty .ln-agenda__none { display: block; }
+.ln-agenda__day.is-empty .ln-agenda__list { display: none; }
+
+/* speakers strip — sits on a dark ln-fsection--dark band */
+.ln-agenda__speakers { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 16px; }
+.ln-agenda__spk { display: inline-flex; align-items: center; gap: 12px; padding: 12px 16px;
+  background: var(--primary); border-radius: var(--radius-md); }
+.ln-agenda__spkname { font-size: 16px; font-weight: 600; line-height: 24px; color: var(--white); }
+.ln-agenda__spkrank { padding: 2px 10px; border-radius: var(--radius-full); background: rgba(255, 255, 255, .16);
+  font-size: 13px; line-height: 20px; color: var(--primary-light); white-space: nowrap; }
+
+@media (max-width: 640px) {
+  .ln-agenda__card { flex-direction: column; gap: 12px; }
+  .ln-agenda__when { flex-direction: row; align-items: center; min-width: 0; }
+  .ln-agenda__line { width: 16px; min-height: 0; height: 2px; flex: 0 0 16px; }
+}
+
 /* ========================== PARTNERS BAND ======================= */
 .ln-pband { background: var(--bg-gray); padding-block: 40px; display: flex; flex-direction: column; gap: 32px; }
 .ln-pband__head { max-width: var(--content-w); margin-inline: auto; width: 100%; padding-inline: clamp(16px, 5.5vw, 80px); display: flex; flex-direction: column; align-items: flex-start; gap: 24px; }
@@ -536,6 +619,49 @@
 .ln-dcard__meta svg { width: 24px; height: 24px; flex: 0 0 24px; }
 @media (max-width: 1000px) { .ln-discover__grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 640px) { .ln-discover__grid { grid-template-columns: 1fr; } }
+
+/* The Visits "why visit" band reuses the ln-discover grid on a navy background
+   (the same --dark modifier pattern as ln-fsection--dark). */
+.ln-discover--dark { background: var(--navy); }
+.ln-discover--dark .ln-discover__title { color: var(--white); }
+.ln-discover--dark .ln-discover__desc { color: var(--primary-light); }
+
+/* ===== VISITS: travel & visa section (/visit — Figma 5867-24636) =========
+   A titled band whose body reuses the shared ln-about 2-column media+content
+   layout; only the band header + the eligible-countries callout are new. */
+.ln-visa { background: var(--white); padding: 64px clamp(16px, 5.5vw, 80px); }
+.ln-visa__inner { max-width: var(--content-w); margin-inline: auto; display: flex; flex-direction: column; gap: 40px; }
+.ln-visa__head { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
+.ln-visa__title { font-size: 32px; font-weight: 800; line-height: 1.25; color: var(--navy); text-align: start; }
+.ln-visa__sub { font-size: 16px; line-height: 24px; color: var(--ink); text-align: start; max-width: 900px; }
+.ln-visa__heading { font-size: 24px; font-weight: 800; line-height: 1.3; color: var(--navy); text-align: start; }
+.ln-visa__p { font-size: 16px; line-height: 26px; color: var(--ink); text-align: start; }
+.ln-visa-cta { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; width: 100%; padding: 16px;
+  border: 1px solid var(--border-neutral); border-radius: var(--radius-md); background: var(--bg-gray); }
+.ln-visa-cta__text { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.ln-visa-cta__title { font-size: 18px; font-weight: 700; line-height: 24px; color: var(--ink); text-align: start; }
+.ln-visa-cta__sub { font-size: 13px; line-height: 18px; color: var(--gray-darker); text-align: start; }
+
+/* ===== ARCHIVE: photo highlights gallery (/archive — Figma 5840-27997) ===
+   A static highlights grid (the live archive-media feed + a video provider are a
+   follow-up — see web/archive.md §7). */
+.ln-gallery { background: var(--white); padding: 64px clamp(16px, 5.5vw, 80px); }
+.ln-gallery__inner { max-width: var(--content-w); margin-inline: auto; display: flex; flex-direction: column; gap: 32px; }
+.ln-gallery__head { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
+.ln-gallery__title { font-size: 32px; font-weight: 800; line-height: 1.25; color: var(--navy); text-align: start; }
+.ln-gallery__sub { font-size: 16px; line-height: 24px; color: var(--ink); text-align: start; }
+.ln-gallery__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; width: 100%; }
+.ln-gallery__item { aspect-ratio: 16 / 10; border-radius: var(--radius-md); overflow: hidden; }
+.ln-gallery__item img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s ease; }
+.ln-gallery__item:hover img { transform: scale(1.04); }
+@media (max-width: 900px) { .ln-gallery__grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .ln-gallery__grid { grid-template-columns: 1fr; } }
+
+/* The Archive "past editions" band renders a variable-length LIVE list, so it
+   wraps at every width (the shared ln-miles__row is dimensioned for exactly four
+   fixed-width cards and only wraps below 1000px). Page-scoped modifier — the
+   landing's own four-card band is untouched. */
+.ln-miles--wrap .ln-miles__row { flex-wrap: wrap; row-gap: 24px; }
 
 /* ============================== FOOTER ========================== */
 .ln-footer { background: var(--navy); color: var(--gold-light); padding-inline: clamp(16px, 5.5vw, 80px); }
@@ -957,3 +1083,199 @@
   .landing .ln-sessoverview__inner, .landing .ln-sessthemes__inner,
   .landing .ln-sessrelated__inner, .landing .ln-sessreach__inner { padding: 48px 20px; }
 }
+
+/* ==================== INTERIOR PAGE HERO (ln-pghero) =============== */
+/* Reusable hero for the marketing sub-pages (About cluster, …): a photo on the
+   inline-END side under a blue brand gradient, with breadcrumb + title +
+   subtitle + two event info-pills. Mirrors the ln-hero2 photo/gradient art. */
+.ln-pghero { position: relative; min-height: 460px; overflow: hidden; background: var(--navy);
+  display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
+  padding: 40px clamp(16px, 5.5vw, 80px); }
+.ln-pghero__bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.ln-pghero__bg img { position: absolute; inset-inline-end: 0; top: 0; width: 51.16%; height: 100%; object-fit: cover; }
+.ln-pghero__bg::after { content: ""; position: absolute; inset: 0; background-image:
+  linear-gradient(90deg, rgba(0, 0, 0, .24) 0%, rgba(0, 0, 0, .24) 100%),
+  linear-gradient(269.98deg, var(--blue-dark) 0%, var(--blue-bright) 49.16%,
+    color-mix(in srgb, var(--blue-bright) 98%, transparent) 51.69%,
+    color-mix(in srgb, var(--blue-bright) 0%, transparent) 99.94%); }
+/* the gradient is genuinely mirrored art, so it keeps an explicit LTR flip */
+[dir="ltr"] .ln-pghero__bg::after { transform: scaleX(-1); }
+.ln-pghero__block { position: relative; z-index: 1; width: 457px; max-width: 100%; display: flex;
+  flex-direction: column; align-items: flex-start; gap: 32px; text-align: start; color: var(--white);
+  text-shadow: 0 2px 10px rgba(76, 78, 100, .22); }
+.ln-pghero__crumbs { display: flex; align-items: center; gap: 8px; font-size: 14px; line-height: 20px; }
+.ln-pghero__crumbs a { color: var(--white); }
+.ln-pghero__crumbs a:hover { text-decoration: underline; }
+.ln-pghero__crumb-current { opacity: .9; }
+.ln-pghero__title { font-size: 40px; font-weight: 800; line-height: 1.15; }
+.ln-pghero__subtitle { font-size: 18px; font-weight: 400; line-height: 32px; }
+.ln-pghero__pills { display: flex; flex-wrap: wrap; gap: 12px; width: 100%; }
+.ln-pghero__pill { flex: 1 1 0; min-width: 0; display: flex; align-items: center; justify-content: flex-end;
+  gap: 8px; padding: 10px 16px; border-radius: var(--radius-sm); font-size: 13px; color: var(--white);
+  background: color-mix(in srgb, var(--gold) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gold) 10%, transparent); }
+.ln-pghero__pill span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ln-pghero__pill img { flex: 0 0 auto; width: 16px; height: 16px; }
+@media (max-width: 720px) {
+  .ln-pghero { min-height: 380px; }
+  .ln-pghero__block { width: 100%; }
+  .ln-pghero__title { font-size: 30px; }
+}
+
+/* ============================ VALUES (ln-values) ================== */
+.ln-values { background: var(--bg-gray); padding: 64px clamp(16px, 5.5vw, 80px); }
+.ln-values__inner { max-width: var(--content-w); margin-inline: auto; display: flex; flex-direction: column; gap: 32px; }
+.ln-values__title { font-size: 32px; font-weight: 800; line-height: 1.15; color: var(--ink); text-align: start; }
+.ln-values__grid { display: flex; gap: 24px; }
+.ln-vcard { flex: 1 1 0; min-width: 0; background: var(--white); border: 1px solid var(--primary-light);
+  padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 24px; }
+.ln-vcard__icon { flex: 0 0 auto; width: 48px; height: 48px; border-radius: var(--radius-full);
+  background: var(--gold-tint); color: var(--gold-dark); display: grid; place-items: center; }
+.ln-vcard__icon svg { width: 24px; height: 24px; display: block; }
+.ln-vcard__label { font-size: 18px; font-weight: 800; line-height: 24px; color: var(--navy); text-align: center; }
+
+/* ==================== FORUM PILLARS / FEATURE CARDS =============== */
+/* ln-fcard: reusable white feature card (gold-tint square icon chip + navy
+   title + gray description) for the About cluster's pillars-style rows. */
+.ln-pillars { background: var(--bg-gray); padding: 40px clamp(16px, 5.5vw, 80px) 64px; }
+.ln-pillars__inner { max-width: var(--content-w); margin-inline: auto; display: flex; flex-direction: column; gap: 32px; }
+.ln-pillars__head { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; text-align: start; }
+.ln-pillars__title { font-size: 32px; font-weight: 800; line-height: 1.15; color: var(--ink); text-align: start; }
+.ln-pillars__sub { font-size: 16px; line-height: 24px; color: var(--ink); text-align: start; }
+.ln-pillars__grid { display: flex; gap: 24px; align-items: stretch; }
+.ln-fcard { flex: 1 1 0; min-width: 0; background: var(--white); border: 1px solid var(--primary-light);
+  border-radius: var(--radius-sm); padding: 24px; display: flex; flex-direction: column; align-items: flex-start;
+  gap: 16px; text-align: start; }
+.ln-fcard__icon { flex: 0 0 auto; width: 54px; height: 54px; border-radius: var(--radius-sm);
+  background: var(--gold-tint); display: grid; place-items: center; overflow: hidden; }
+.ln-fcard__icon img { width: 24px; height: 24px; }
+.ln-fcard__title { font-size: 20px; font-weight: 700; line-height: 32px; color: var(--navy); text-align: start; }
+.ln-fcard__desc { font-size: 14px; line-height: 20px; color: var(--gray-darker); text-align: start; }
+/* values + pillars share the same reflow: multi-col → 2-up → 1-up */
+@media (max-width: 900px) {
+  .ln-values__grid, .ln-pillars__grid { flex-wrap: wrap; }
+  .ln-vcard, .ln-fcard { flex: 1 1 42%; }
+}
+@media (max-width: 520px) { .ln-vcard, .ln-fcard { flex-basis: 100%; } }
+
+/* ============= FEATURE SECTION (ln-fsection: header + card grid) ========= */
+/* A light section with a right-aligned header + a responsive grid of ln-fcard
+   feature cards (3-up → 2 → 1). Reused across the About cluster; unlike the
+   flat 3-card ln-pillars row it lays any card count into rows of three. */
+.ln-fsection { background: var(--bg-gray); padding: 64px clamp(16px, 5.5vw, 80px); }
+.ln-fsection__inner { max-width: var(--content-w); margin-inline: auto; display: flex; flex-direction: column; gap: 32px; }
+.ln-fsection__head { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; text-align: start; }
+.ln-fsection__title { font-size: 32px; font-weight: 800; line-height: 1.15; color: var(--ink); text-align: start; }
+.ln-fsection__sub { font-size: 16px; line-height: 24px; color: var(--ink); text-align: start; max-width: 720px; }
+.ln-fsection__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+/* raised variant: the objectives feature cards carry a soft drop-shadow */
+.ln-fcard--raised { box-shadow: var(--shadow-card); }
+@media (max-width: 900px) { .ln-fsection__grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .ln-fsection__grid { grid-template-columns: 1fr; } }
+
+/* =============== THEME EXPLORER (ln-themex: tabbed themes) ============== */
+/* A tabbed explorer: a vertical tab list (right) selects a theme, whose
+   title + description show in the panel, beside a shared image (left).
+   Progressive-enhancement: WITHOUT JS the tabs hide and every panel shows
+   stacked (content is never hidden); WITH JS (`.ln-js`) the tabs drive which
+   single panel is visible. Tab switching lives in landing.js (initThemeTabs). */
+.ln-themex { display: flex; gap: 32px; align-items: stretch; }
+.ln-themex__media { flex: 1 1 0; min-width: 0; min-height: 360px; border-radius: var(--radius-sm); overflow: hidden; }
+.ln-themex__media img { width: 100%; height: 100%; object-fit: cover; }
+.ln-themex__panels { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; }
+.ln-themex__panel { display: flex; flex-direction: column; gap: 24px; text-align: start; }
+/* Keyed on `.is-enhanced`, which initThemeTabs adds ONLY once it has wired the
+   tabs — so if the JS never runs (disabled, or failed to load) every panel stays
+   visible and reachable, not just when the `.ln-js` head flag is set. */
+.ln-themex.is-enhanced .ln-themex__panel:not(.is-active) { display: none; }
+.ln-themex__panel + .ln-themex__panel { margin-top: 32px; }   /* spacing only matters in the un-enhanced stacked view */
+.ln-themex.is-enhanced .ln-themex__panel + .ln-themex__panel { margin-top: 0; }
+.ln-themex__panel-title { font-size: 20px; font-weight: 700; line-height: 32px; color: var(--ink); }
+.ln-themex__panel-desc { font-size: 16px; line-height: 24px; color: var(--ink); }
+.ln-themex__nav { flex: 0 0 auto; display: flex; flex-direction: column; gap: 16px; }
+.ln-themex__onpage { font-size: 14px; line-height: 16px; color: var(--gray-darker); text-align: start; }
+.ln-themex__tabs { display: none; flex-direction: column; gap: 24px; }
+.ln-themex.is-enhanced .ln-themex__tabs { display: flex; }
+.ln-themex__tab { position: relative; width: 200px; max-width: 100%; padding-block: 6px; padding-inline: 16px 8px;
+  background: none; border: 0; cursor: pointer; font-family: inherit; font-size: 14px; line-height: 20px;
+  text-align: start; color: var(--gray-darker); transition: color .2s ease; }
+.ln-themex__tab.is-active { color: var(--ink); font-weight: 700; }
+.ln-themex__tab.is-active::before { content: ""; position: absolute; inset-inline-start: 0; top: 0; bottom: 0;
+  width: 3px; border-radius: var(--radius-full); background: var(--gold); }
+@media (max-width: 860px) {
+  .ln-themex { flex-direction: column; }
+  .ln-themex__media { flex-basis: auto; min-height: 240px; }
+  .ln-themex__tabs { flex-direction: row; flex-wrap: wrap; }
+  .ln-themex__tab { width: auto; }
+  .ln-themex__tab.is-active::before { inset-inline-start: 0; top: auto; bottom: 0; width: 100%; height: 3px; }
+}
+
+/* ==================== ORGANISER CARDS (ln-orgcard) ===================== */
+/* Two centred cards (logo + name + description) for the forum's organising
+   bodies. The forum mark ships white (for the dark nav), so on the white card
+   the RSNF stand-in paints it navy via a CSS mask (same idiom as ln-ico). */
+.ln-orgs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 32px; }
+.ln-orgcard { background: var(--white); border: 1px solid var(--primary-light); border-radius: var(--radius-md);
+  padding: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 32px; text-align: center; }
+.ln-orgcard__logo { height: 86px; display: grid; place-items: center; }
+.ln-orgcard__logo img { max-height: 76px; width: auto; }
+/* a white-shipped mark painted navy so it shows on the white card; the SVG comes
+   from the page via the --logo custom property (set inline per organiser). */
+.ln-orgcard__logo--masked { width: 240px; max-width: 100%; height: 76px; background-color: var(--navy);
+  -webkit-mask: var(--logo) center / contain no-repeat;
+          mask: var(--logo) center / contain no-repeat; }
+.ln-orgcard__body { display: flex; flex-direction: column; gap: 24px; }
+.ln-orgcard__name { font-size: 18px; font-weight: 800; line-height: 28px; color: var(--ink-display); }
+.ln-orgcard__desc { font-size: 16px; line-height: 24px; color: var(--ink-display); }
+@media (max-width: 720px) { .ln-orgs { grid-template-columns: 1fr; } .ln-orgcard { padding: 40px; } }
+
+/* ======================= VENUE INFO CARD (ln-venue) ==================== */
+.ln-venue { max-width: 720px; margin-inline: auto; background: var(--white); border: 1px solid var(--primary-light);
+  border-radius: var(--radius-md); padding: 48px; display: flex; flex-direction: column; align-items: center;
+  gap: 16px; text-align: center; }
+.ln-venue__icon { width: 56px; height: 56px; border-radius: var(--radius-full); background: var(--gold-tint);
+  color: var(--navy); display: grid; place-items: center; margin-bottom: 8px; }
+.ln-venue__icon svg { width: 28px; height: 28px; display: block; }
+.ln-venue__name { font-size: 24px; font-weight: 800; line-height: 32px; color: var(--navy); }
+.ln-venue__addr { font-size: 16px; line-height: 24px; color: var(--gray-darker); }
+.ln-venue__meta { display: flex; gap: 32px; flex-wrap: wrap; justify-content: center; margin: 8px 0 16px; }
+.ln-venue__meta div { display: flex; flex-direction: column; gap: 4px; }
+.ln-venue__meta dt { font-size: 13px; line-height: 16px; color: var(--gray-darker); }
+.ln-venue__meta dd { font-size: 16px; font-weight: 700; line-height: 24px; color: var(--ink); }
+@media (max-width: 560px) { .ln-venue { padding: 32px; } }
+
+/* ======= OVERVIEW (dark ln-fsection variant + dark value cards) ======= */
+/* The dark overview section reuses the ln-fsection chrome via a --dark modifier
+   (navy bg + white heading); only the 4-up grid is section-specific. */
+.ln-fsection--dark { background: var(--navy); }
+.ln-fsection--dark .ln-fsection__title { color: var(--white); }
+.ln-fsection--dark .ln-fsection__sub { color: var(--primary-light); }
+.ln-overview__grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+/* dark variant of the value card: translucent-blue on navy, blue icon, gold label
+   (the surface + hairline match the landing's ln-tstat glass treatment). */
+.ln-vcard--dark { background: color-mix(in srgb, var(--primary) 12%, transparent);
+  border-color: color-mix(in srgb, var(--navy-line) 50%, transparent); }
+.ln-vcard--dark .ln-vcard__icon { background: color-mix(in srgb, var(--blue-bright) 16%, transparent); color: var(--white); }
+.ln-vcard--dark .ln-vcard__label { color: var(--gold-active); }
+@media (max-width: 900px) { .ln-overview__grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 520px) { .ln-overview__grid { grid-template-columns: 1fr; } }
+
+/* ================== NUMBERED LIST (ln-numlist / ln-numitem) ============ */
+.ln-numlist { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+.ln-numitem { display: flex; align-items: center; gap: 16px; padding: 16px; background: var(--white);
+  border: 1px solid var(--primary-light); border-radius: var(--radius-sm); }
+.ln-numitem__text { flex: 1 1 auto; min-width: 0; font-size: 16px; line-height: 24px; color: var(--ink); text-align: start; }
+.ln-numitem__num { flex: 0 0 auto; width: 48px; height: 48px; border-radius: var(--radius-full);
+  background: var(--gold-tint); color: var(--gold-dark); display: grid; place-items: center;
+  font-size: 18px; font-weight: 800; direction: ltr; }
+@media (max-width: 720px) { .ln-numlist { grid-template-columns: 1fr; } }
+
+/* ==================== EXHIBITION FLOOR-PLAN MAP (ln-exhibit) =========== */
+/* A dense booth floor-plan rendered as the exported diagram image inside a
+   bordered card; the card scrolls horizontally so the plan stays legible on
+   narrow viewports (the image keeps a min width rather than shrinking to blur). */
+.ln-exhibit { background: var(--white); border: 1px solid var(--primary-light);
+  border-radius: var(--radius-md); padding: 24px; }
+.ln-exhibit__scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.ln-exhibit__map { display: block; height: auto; width: 1232px; max-width: 100%; margin-inline: auto; }
+@media (max-width: 720px) { .ln-exhibit__map { max-width: none; width: 900px; } }

@@ -67,6 +67,34 @@ public sealed class SessionSummary
     /// editing never clears it (the draft origin is provenance, not state).</summary>
     public string? AiModel { get; set; }
 
+    /// <summary>Item #35 (owner 2026-07-20) — the OPTIONAL team-produced SHORT
+    /// summary video for this session: the second player on the app's summary
+    /// surface (screen 34), shown beside the session's FULL live recording
+    /// (<see cref="Session.LiveStreamUrl"/>). A YouTube watch/live URL (the POC
+    /// provider) or a direct HLS/MP4 stream, validated by the SAME shared
+    /// <c>LiveStreamUrlPolicy</c> rule as <see cref="Session.LiveStreamUrl"/>.
+    /// Null = the app hides the summary-video player (no second feed). Distinct
+    /// from the full recording: this is the Committee's condensed cut, entered by
+    /// an admin in the CP summary editor.</summary>
+    public string? SummaryVideoUrl { get; set; }
+
+    // -- Slice D (2026-07-19) — AI transparency --------------------------------
+
+    /// <summary>The pristine AI draft: the untouched output the generate action
+    /// produced, captured once at generation and NEVER overwritten by a Committee
+    /// edit. Lets the CP editor show the original AI text beside the (possibly
+    /// edited) working copy so a reviewer sees exactly what the model wrote. Only
+    /// the Arabic full-text is AI-drafted (the seeded prompt writes Arabic
+    /// minutes), so this mirrors <see cref="FullTextArabic"/>. Null when no AI
+    /// draft has been generated (a hand-written summary, or a row predating this
+    /// column). CP-internal — never projected onto any public/app contract.</summary>
+    public string? AiDraftFullTextArabic { get; set; }
+
+    /// <summary>When the pristine <see cref="AiDraftFullTextArabic"/> snapshot was
+    /// last captured; each generate / re-generate refreshes both. Null when no AI
+    /// draft has been generated.</summary>
+    public DateTimeOffset? AiDraftGeneratedAt { get; set; }
+
     /// <summary>Stamped when the Committee publishes the summary; cleared when
     /// it is un-published. Null while it is a draft. The app read requires a
     /// non-null value.</summary>

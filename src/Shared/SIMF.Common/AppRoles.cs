@@ -7,14 +7,21 @@ namespace SIMF.Common;
 /// never carry an RBAC role — their kind comes from the
 /// <c>UserType</c> column and their subtype from <c>ProfileType</c>.
 ///
-/// <para>Today the active CP roles are <see cref="Administrator"/>,
-/// <see cref="GateOperator"/>, and <see cref="PublicRelations"/>. Future
+/// <para>The active CP roles are <see cref="Administrator"/>,
+/// <see cref="GateOperator"/>, <see cref="PublicRelations"/>,
+/// <see cref="SecurityTeam"/> and <see cref="ScientificCommittee"/>. Future
 /// fine-grained Admin-side roles (e.g. <c>AuditViewer</c>,
 /// <c>RegistrationApprover</c>) plug in here.</para>
 ///
-/// <para>The P4-era "reviewer roles" (Staff / Scientific / Security)
-/// were removed by P7 — they are now <c>ProfileType</c> rows with
-/// <c>UserType = Other</c>, not RBAC roles.</para>
+/// <para>The P4-era "reviewer roles" (Staff / Scientific / Security) were
+/// removed by P7 as *reviewer kinds* — those are now <c>ProfileType</c> rows
+/// (the app-side reviewer subtype), not RBAC roles. The D-752
+/// <see cref="SecurityTeam"/> and <see cref="ScientificCommittee"/> roles
+/// added here are a different concept: they are CP-side RBAC **permission
+/// sets** (the "Security team" and "Scientific team" Control-Panel access
+/// bundles) carrying seeded baseline permission grants, exactly like
+/// <see cref="GateOperator"/> and <see cref="PublicRelations"/> — not
+/// app-side profile subtypes.</para>
 /// </summary>
 public static class AppRoles
 {
@@ -34,9 +41,28 @@ public static class AppRoles
     /// can be split later if the team grows past one shared page set.</summary>
     public const string PublicRelations = "PublicRelations";
 
+    /// <summary>D-752 — the Security team CP permission set. Holders manage the
+    /// access-control surface: the gates (<c>Gates.*</c>), the hall-door arrival
+    /// console (<c>HallArrivals.*</c>) and the session-attendance dashboard
+    /// (<c>Attendance.View</c>). Its baseline grants sit alongside
+    /// <see cref="GateOperator"/> on the shared gate codes. A CP-side RBAC
+    /// permission set, NOT the removed P4 "Security" reviewer ProfileType.</summary>
+    public const string SecurityTeam = "SecurityTeam";
+
+    /// <summary>D-752 — the Scientific team CP permission set. Holders run the
+    /// scientific-programme surface: sessions (<c>Sessions.*</c>), the Q&amp;A /
+    /// moderation queue (<c>Questions.*</c>, <c>SessionModeration.Moderate</c>),
+    /// the AI محضر / session-summary desk (<c>SessionSummaries.*</c>), ratings
+    /// (<c>Ratings.*</c>), speakers (<c>Speakers.*</c>) and the programme-days
+    /// manager (<c>ProgrammeDays.*</c>). This makes the "Scientific Committee"
+    /// bundle a first-class seeded role instead of one the owner hand-assembles
+    /// in the grant editor. A CP-side RBAC permission set, NOT the removed P4
+    /// "Scientific" reviewer ProfileType.</summary>
+    public const string ScientificCommittee = "ScientificCommittee";
+
     /// <summary>Every CP-side RBAC role.</summary>
     public static readonly IReadOnlyList<string> CpRoles =
-        [Administrator, GateOperator, PublicRelations];
+        [Administrator, GateOperator, PublicRelations, SecurityTeam, ScientificCommittee];
 }
 
 /// <summary>D-148 — Gate Module permission names. Per the

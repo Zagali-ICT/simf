@@ -1,0 +1,103 @@
+@* SIMF public "About US" page — Figma node 5865-33963. Built on the shared
+   LandingShell chrome + the reusable LandingPageHero. Bilingual AR-RTL / EN-LTR
+   (the request culture drives <html dir/lang>). Marketing prose (no API): the
+   About-intro block and the participation-stats band reuse the landing's own
+   content so those event facts stay single-sourced; the values + pillars are
+   this page's own content (see About.razor.cs). Serves the About overview
+   at "/about". *@
+@page "/about"
+@layout LandingLayout
+@inject IStringLocalizer<Strings> L
+
+@{
+    var rtl = CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft;
+}
+
+<LandingShell Title="@L["About.PageTitle"]" Description="@L["About.Meta"]">
+
+    @* ============================== HERO ============================== *@
+    <LandingPageHero Title="@L["About.Hero.Title"]"
+                     Subtitle="@L["About.Hero.Subtitle"]"
+                     Crumb="@L["About.Breadcrumb"]"
+                     ImageSrc="assets/figma/about/about-hero.jpg" />
+
+    @* ===== About the forum (photo + intro) — reuses the landing's ln-about ===== *@
+    <section class="ln-about" id="about">
+        <div class="ln-about__inner ln-reveal">
+            <div class="ln-about__content">
+                <div class="ln-about__text">
+                    <p class="ln-about__eyebrow">@L["Landing.About.Eyebrow"]</p>
+                    <h2 class="ln-about__title">@L["Landing.About.Title"]</h2>
+                    <p class="ln-about__lead">@L["Landing.About.Lead"]</p>
+                </div>
+                @* The dedicated partners & sponsors page (/partners — Wave 4). *@
+                <a class="ln-btn ln-btn--primary" href="/partners">@L["Landing.About.Button"]</a>
+            </div>
+            <div class="ln-about__media">
+                <img src="assets/figma/about/about-card-1.jpg" alt="@L["Landing.About.ImageAlt"]" loading="lazy" />
+            </div>
+        </div>
+    </section>
+
+    @* ========================= VALUES ("القيم") ======================= *@
+    <section class="ln-values" aria-label="@L["About.Values.Title"]">
+        <div class="ln-values__inner ln-reveal">
+            <h2 class="ln-values__title">@L["About.Values.Title"]</h2>
+            <div class="ln-values__grid">
+                @foreach (var v in Values)
+                {
+                    <article class="ln-vcard">
+                        <span class="ln-vcard__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5" /><path d="M8 12.4l2.6 2.6 5.4-5.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                        </span>
+                        <p class="ln-vcard__label">@v.For(rtl)</p>
+                    </article>
+                }
+            </div>
+        </div>
+    </section>
+
+    @* ===== Participation stats — reuses ln-stats + the shared counters ===== *@
+    <section class="ln-stats">
+        <div class="ln-stats__header ln-reveal">
+            <p class="ln-stats__eyebrow">@L["Landing.Stats.Eyebrow"]</p>
+            <h2 class="ln-stats__title">@L["Landing.Stats.Title"]</h2>
+            <p class="ln-stats__lead">@L["Landing.Stats.Lead"]</p>
+        </div>
+        <div class="ln-stats__band">
+            <div class="ln-stats__row ln-reveal">
+                @foreach (var s in Landing.Stats.Take(2))
+                {
+                    <div class="ln-stat"><span class="ln-stat__num">@s.Num</span><span class="ln-stat__label">@s.Label.For(rtl)</span></div>
+                }
+            </div>
+            <div class="ln-stats__row ln-reveal">
+                @foreach (var s in Landing.Stats.Skip(2))
+                {
+                    <div class="ln-stat"><span class="ln-stat__num">@s.Num</span><span class="ln-stat__label">@s.Label.For(rtl)</span></div>
+                }
+            </div>
+        </div>
+    </section>
+
+    @* ==================== FORUM PILLARS ("ركائز الملتقى") ==================== *@
+    <section class="ln-pillars" aria-label="@L["About.Pillars.Title"]">
+        <div class="ln-pillars__inner ln-reveal">
+            <header class="ln-pillars__head">
+                <h2 class="ln-pillars__title">@L["About.Pillars.Title"]</h2>
+                <p class="ln-pillars__sub">@L["About.Pillars.Sub"]</p>
+            </header>
+            <div class="ln-pillars__grid">
+                @foreach (var p in Pillars)
+                {
+                    <article class="ln-fcard">
+                        <span class="ln-fcard__icon" aria-hidden="true"><img src="@p.Icon" alt="" /></span>
+                        <h3 class="ln-fcard__title">@p.Title.For(rtl)</h3>
+                        <p class="ln-fcard__desc">@p.Desc.For(rtl)</p>
+                    </article>
+                }
+            </div>
+        </div>
+    </section>
+
+</LandingShell>

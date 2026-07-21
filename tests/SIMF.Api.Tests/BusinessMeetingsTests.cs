@@ -22,6 +22,15 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";
 
+    // D-753 — meeting scheduling is now bounded to the forum days (MIN/MAX over the
+    // active ProgrammeDay rows). The test fixture seeds programme days 2026-11-20..22
+    // (SIMF_App_Programme.sql), so every scheduled slot below is anchored to day one
+    // (09:00 Riyadh) and offset by HOURS to stay inside that window while remaining in
+    // the future relative to the test clock. The two "in the past" tests keep a
+    // relative-to-now start so they still trip the not-in-past lower bound.
+    private static readonly DateTimeOffset EventStart =
+        new(2026, 11, 20, 9, 0, 0, TimeSpan.FromHours(3));
+
     private readonly SimfApiFactory _factory;
     private readonly HttpClient _client;
 
@@ -47,7 +56,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         var tableId = await CreateTableAsync(hallId, token, capacity: 4);
         var (a, b) = (await SeedCompanyAsync(), await SeedCompanyAsync());
 
-        var start = DateTimeOffset.UtcNow.AddDays(1);
+        var start = EventStart.AddHours(1);
         var schedule = await PostAuthAsync(
             "/api/v1/admin/business-meetings",
             new ScheduleMeetingRequest
@@ -83,7 +92,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         var hallId = await SeedHallAsync(HallPurpose.Meeting);
         var tableId = await CreateTableAsync(hallId, token, capacity: 4);
         var (a, b) = (await SeedCompanyAsync(), await SeedCompanyAsync());
-        var start = DateTimeOffset.UtcNow.AddDays(1);
+        var start = EventStart.AddHours(1);
 
         var schedule = await PostAuthAsync(
             "/api/v1/admin/business-meetings",
@@ -116,7 +125,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         var hallId = await SeedHallAsync(HallPurpose.Meeting);
         var tableId = await CreateTableAsync(hallId, token);
         var company = await SeedCompanyAsync();
-        var start = DateTimeOffset.UtcNow.AddDays(1);
+        var start = EventStart.AddHours(1);
 
         var response = await PostAuthAsync(
             "/api/v1/admin/business-meetings",
@@ -143,7 +152,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         var token = await CreateAdministratorAndSignInAsync();
         var hallId = await SeedHallAsync(HallPurpose.Meeting);
         var tableId = await CreateTableAsync(hallId, token);
-        var start = DateTimeOffset.UtcNow.AddDays(1);
+        var start = EventStart.AddHours(1);
 
         var response = await PostAuthAsync(
             "/api/v1/admin/business-meetings",
@@ -185,7 +194,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
     {
         var token = await CreateAdministratorAndSignInAsync();
         var hallId = await SeedHallAsync(HallPurpose.Meeting);
-        var start = DateTimeOffset.UtcNow.AddDays(1);
+        var start = EventStart.AddHours(1);
 
         var response = await PostAuthAsync(
             $"/api/v1/admin/halls/{hallId}/hall-allocations",
@@ -206,7 +215,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         var token = await CreateAdministratorAndSignInAsync();
         var hallId = await SeedHallAsync(HallPurpose.Meeting);
         var tableId = await CreateTableAsync(hallId, token);
-        var start = DateTimeOffset.UtcNow.AddDays(5);
+        var start = EventStart.AddHours(5);
 
         var scheduled = (await (await ScheduleAsync(tableId, token, start, start.AddHours(1),
                 await SeedCompanyAsync(), await SeedCompanyAsync())).Content
@@ -225,7 +234,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         var token = await CreateAdministratorAndSignInAsync();
         var hallId = await SeedHallAsync(HallPurpose.Meeting);
         var tableId = await CreateTableAsync(hallId, token);
-        var start = DateTimeOffset.UtcNow.AddDays(2);
+        var start = EventStart.AddHours(2);
 
         var first = await ScheduleAsync(tableId, token, start, start.AddHours(1),
             await SeedCompanyAsync(), await SeedCompanyAsync());
@@ -246,7 +255,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         var table1 = await CreateTableAsync(hallId, token);
         var table2 = await CreateTableAsync(hallId, token);
         var shared = await SeedCompanyAsync();
-        var start = DateTimeOffset.UtcNow.AddDays(3);
+        var start = EventStart.AddHours(3);
 
         var first = await ScheduleAsync(table1, token, start, start.AddHours(1),
             shared, await SeedCompanyAsync());
@@ -265,7 +274,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         var token = await CreateAdministratorAndSignInAsync();
         var hallId = await SeedHallAsync(HallPurpose.Meeting);
         var tableId = await CreateTableAsync(hallId, token, capacity: 2);
-        var start = DateTimeOffset.UtcNow.AddDays(4);
+        var start = EventStart.AddHours(4);
 
         var response = await PostAuthAsync(
             "/api/v1/admin/business-meetings",
@@ -295,7 +304,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         var tableId = await CreateTableAsync(hallId, token);
         var company = await SeedCompanyAsync();
         var visitor = await SeedVisitorAsync();
-        var start = DateTimeOffset.UtcNow.AddDays(5);
+        var start = EventStart.AddHours(5);
 
         var schedule = await PostAuthAsync(
             "/api/v1/admin/business-meetings",
@@ -378,7 +387,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
     {
         var token = await CreateAdministratorAndSignInAsync();
         var hallId = await SeedHallAsync(HallPurpose.Meeting);
-        var start = DateTimeOffset.UtcNow.AddDays(6);
+        var start = EventStart.AddHours(6);
 
         var first = await PostAuthAsync(
             $"/api/v1/admin/halls/{hallId}/hall-allocations",
@@ -409,7 +418,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
     public async Task Non_admin_caller_is_forbidden_on_schedule()
     {
         var tokens = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
-        var start = DateTimeOffset.UtcNow.AddDays(7);
+        var start = EventStart.AddHours(7);
         var response = await PostAuthAsync(
             "/api/v1/admin/business-meetings",
             new ScheduleMeetingRequest
@@ -435,7 +444,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         var token = await CreateAdministratorAndSignInAsync();
         var hallId = await SeedHallAsync(HallPurpose.Meeting);
         var tableId = await CreateTableAsync(hallId, token, capacity: 4);
-        var start = DateTimeOffset.UtcNow.AddDays(10);
+        var start = EventStart.AddHours(10);
         await ScheduleConfirmedAsync(tableId, token, start, start.AddHours(1));
 
         var del = await DeleteAuthAsync($"/api/v1/admin/meeting-tables/{tableId}", token);
@@ -466,7 +475,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         var token = await CreateAdministratorAndSignInAsync();
         var hallId = await SeedHallAsync(HallPurpose.Meeting);
         var tableId = await CreateTableAsync(hallId, token);
-        var start = DateTimeOffset.UtcNow.AddDays(11);
+        var start = EventStart.AddHours(11);
         var id = await ScheduleConfirmedAsync(tableId, token, start, start.AddHours(1));
 
         var first = await PostAuthAsync($"/api/v1/admin/business-meetings/{id}/cancel",
@@ -498,7 +507,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         var token = await CreateAdministratorAndSignInAsync();
         var hallId = await SeedHallAsync(HallPurpose.Meeting);
         var tableId = await CreateTableAsync(hallId, token);
-        var start = DateTimeOffset.UtcNow.AddDays(12);
+        var start = EventStart.AddHours(12);
 
         var resp = await PostAuthAsync("/api/v1/admin/business-meetings",
             new ScheduleMeetingRequest
@@ -524,7 +533,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         var token = await CreateAdministratorAndSignInAsync();
         var hallId = await SeedHallAsync(HallPurpose.Meeting);
         var tableId = await CreateTableAsync(hallId, token);
-        var start = DateTimeOffset.UtcNow.AddDays(13);
+        var start = EventStart.AddHours(13);
 
         var resp = await PostAuthAsync("/api/v1/admin/business-meetings",
             new ScheduleMeetingRequest
@@ -552,7 +561,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         var hallId = await SeedHallAsync(HallPurpose.Meeting);
         var tableId = await CreateTableAsync(hallId, token);
         var adminUserId = await SeedUserAsync(UserType.Admin, AccountState.Approved);
-        var start = DateTimeOffset.UtcNow.AddDays(14);
+        var start = EventStart.AddHours(14);
 
         var resp = await PostAuthAsync("/api/v1/admin/business-meetings",
             new ScheduleMeetingRequest
@@ -579,7 +588,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         var hallId = await SeedHallAsync(HallPurpose.Meeting);
         var tableId = await CreateTableAsync(hallId, token, capacity: 4);
         var company = await SeedCompanyAsync();
-        var start = DateTimeOffset.UtcNow.AddDays(15);
+        var start = EventStart.AddHours(15);
 
         var resp = await PostAuthAsync("/api/v1/admin/business-meetings",
             new ScheduleMeetingRequest
@@ -605,7 +614,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         var token = await CreateAdministratorAndSignInAsync();
         var hallId = await SeedHallAsync(HallPurpose.Meeting);
         var tableId = await CreateTableAsync(hallId, token);
-        var start = DateTimeOffset.UtcNow.AddDays(16);
+        var start = EventStart.AddHours(16);
 
         var resp = await PostAuthAsync("/api/v1/admin/business-meetings",
             new ScheduleMeetingRequest
@@ -627,7 +636,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
     public async Task Schedule_on_unknown_table_is_404()
     {
         var token = await CreateAdministratorAndSignInAsync();
-        var start = DateTimeOffset.UtcNow.AddDays(17);
+        var start = EventStart.AddHours(17);
         var resp = await PostAuthAsync("/api/v1/admin/business-meetings",
             new ScheduleMeetingRequest
             {
@@ -662,7 +671,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         var token = await CreateAdministratorAndSignInAsync();
         var hallId = await SeedHallAsync(HallPurpose.Meeting);
         var tableId = await CreateTableAsync(hallId, token);
-        var start = DateTimeOffset.UtcNow.AddDays(18);
+        var start = EventStart.AddHours(18);
 
         var alloc = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/hall-allocations",
             new CreateHallAllocationRequest
@@ -832,7 +841,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
     {
         var token = await CreateAdministratorAndSignInAsync();
         var hallId = await SeedHallAsync(HallPurpose.Meeting);
-        var start = DateTimeOffset.UtcNow.AddDays(19);
+        var start = EventStart.AddHours(19);
 
         var badSlot = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/hall-allocations",
             new CreateHallAllocationRequest
@@ -855,7 +864,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
     {
         var token = await CreateAdministratorAndSignInAsync();
         var hallId = await SeedHallAsync(HallPurpose.Meeting);
-        var start = DateTimeOffset.UtcNow.AddDays(20);
+        var start = EventStart.AddHours(20);
         var create = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/hall-allocations",
             new CreateHallAllocationRequest
             { Purpose = HallPurpose.Meeting, Mode = HallAllocationMode.Whole, StartUtc = start, EndUtc = start.AddHours(2) }, token);
@@ -883,7 +892,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         var token = await CreateAdministratorAndSignInAsync();
         var hallId = await SeedHallAsync(HallPurpose.Meeting);
         var tableId = await CreateTableAsync(hallId, token, capacity: 4);
-        var start = DateTimeOffset.UtcNow.AddDays(-1);
+        var start = DateTimeOffset.UtcNow.AddHours(-24);
 
         var response = await PostAuthAsync(
             "/api/v1/admin/business-meetings",
@@ -911,7 +920,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         var hallId = await SeedHallAsync(HallPurpose.Meeting);
         // A valid end AFTER a past start, so ValidateSlot passes the end<=start
         // branch and reaches the new not-in-past lower bound.
-        var start = DateTimeOffset.UtcNow.AddDays(-1);
+        var start = DateTimeOffset.UtcNow.AddHours(-24);
 
         var response = await PostAuthAsync(
             $"/api/v1/admin/halls/{hallId}/hall-allocations",
@@ -924,6 +933,41 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
             }, token);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.HallAllocationInvalid, body.Error!.Code);
+    }
+
+    // -- D-753: forum-day window bound (MIN/MAX over active ProgrammeDay.Date) -----
+
+    [Fact]
+    public async Task Schedule_a_meeting_inside_the_forum_window_succeeds()
+    {
+        // The fixture seeds programme days 2026-11-20..22; a slot on day two is inside
+        // the window (and in the future) so scheduling is accepted.
+        var token = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync(HallPurpose.Meeting);
+        var tableId = await CreateTableAsync(hallId, token, capacity: 4);
+        var start = new DateTimeOffset(2026, 11, 21, 10, 0, 0, TimeSpan.FromHours(3));
+
+        var resp = await ScheduleAsync(tableId, token, start, start.AddHours(1),
+            await SeedCompanyAsync(), await SeedCompanyAsync());
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task Schedule_a_meeting_outside_the_forum_window_is_400()
+    {
+        // A future slot (so the not-in-past bound passes) but AFTER the last forum day
+        // (2026-11-22) is rejected by the D-753 forum-day bound. The forum check runs
+        // before the participant checks, so a valid two-company meeting still 400s.
+        var token = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync(HallPurpose.Meeting);
+        var tableId = await CreateTableAsync(hallId, token, capacity: 4);
+        var start = new DateTimeOffset(2026, 12, 15, 10, 0, 0, TimeSpan.FromHours(3));
+
+        var resp = await ScheduleAsync(tableId, token, start, start.AddHours(1),
+            await SeedCompanyAsync(), await SeedCompanyAsync());
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+        var body = (await resp.Content.ReadFromJsonAsync<ApiResult<object>>())!;
         Assert.Equal(ErrorCodes.HallAllocationInvalid, body.Error!.Code);
     }
 

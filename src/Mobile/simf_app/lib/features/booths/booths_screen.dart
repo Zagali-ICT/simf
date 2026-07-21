@@ -81,7 +81,7 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
   void _openBooth(BoothSummary booth) {
     context.pushNamed(
       RouteNames.exhibitorDetail,
-      pathParameters: <String, String>{'boothId': booth.id},
+      pathParameters: <String, String>{RouteParams.boothId: booth.id},
     );
   }
 
@@ -90,7 +90,7 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
   void _openBoothMap(BoothSummary booth) {
     context.pushNamed(
       RouteNames.boothMap,
-      pathParameters: <String, String>{'boothId': booth.id},
+      pathParameters: <String, String>{RouteParams.boothId: booth.id},
     );
   }
 

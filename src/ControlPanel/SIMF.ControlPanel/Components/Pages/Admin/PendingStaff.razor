@@ -58,7 +58,7 @@
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminPendingUserSummary" Key="created"
                                     Header="@L["Admin.Pending.Column.Created"]">
-                    <CellTemplate>@context.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</CellTemplate>
+                    <CellTemplate>@context.CreatedAt.FormatSaudi("yyyy-MM-dd HH:mm")</CellTemplate>
                 </SimfDataGridColumn>
             </Columns>
             <RowActions Context="user">

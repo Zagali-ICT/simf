@@ -165,6 +165,7 @@ internal sealed class ExhibitorVisitorService(
                 p.Name,
                 p.NameArabic,
                 p.JobTitle,
+                p.JobTitleArabic,
                 p.OrganisationId,
                 p.NationalityId,
                 p.SaudiMobile,
@@ -203,7 +204,7 @@ internal sealed class ExhibitorVisitorService(
             {
                 result[userId] = new VisitorCard(
                     userId, string.Empty, string.Empty, null, null, null,
-                    null, null, null, null, null, null, Available: false);
+                    null, null, null, null, null, null, null, Available: false);
                 continue;
             }
 
@@ -226,6 +227,7 @@ internal sealed class ExhibitorVisitorService(
 
             result[userId] = new VisitorCard(
                 userId, profile.Name, profile.NameArabic, profile.JobTitle,
+                profile.JobTitleArabic,
                 orgEn, orgAr, email, profile.SaudiMobile, profile.InternationalMobile,
                 countryId, countryEn, countryAr, Available: true);
         }

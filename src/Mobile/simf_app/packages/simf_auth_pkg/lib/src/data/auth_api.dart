@@ -170,6 +170,7 @@ class AuthApi {
   Future<DeviceKeyChallengeDto> issueDeviceKeyChallenge(String deviceKeyId) {
     return _client.post<DeviceKeyChallengeDto>(
       '/app/auth/device-keys/$deviceKeyId/challenge',
+      body: const <String, dynamic>{},
       decodeData: (data) {
         if (data is! Map<String, dynamic>) {
           throw const FormatException(

@@ -4,7 +4,7 @@
 |-------|-------|
 | Document ID | SIMF-UCS-001 |
 | Title | Use Case Specifications |
-| Version | 1.0 |
+| Version | 1.1 |
 | Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
@@ -18,6 +18,7 @@
 | Version | Date | Author | Summary of change |
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. Use case catalogue and the detailed specifications for the core use cases. |
+| 1.1 | 2026-07-19 | Apexium | Corrected UC-09 and UC-22 to the built reservation-only, auto-confirm seat booking: an attendee's seat reservation is confirmed immediately with no Control Panel approval step, held provisionally until gate check-in confirms it or the pre-start sweep releases it. The Control Panel approval queue (UC-22) is retained but dormant. Carries the FR-503 meaning change. |
 
 ---
 
@@ -84,7 +85,7 @@ is a secondary actor where it acts on a timer or an event.
 |----|----------|---------------|--------------|
 | UC-20 | Review and decide a registration | Security team | FR-211–FR-214 |
 | UC-21 | Approve an exhibitor and assign a booth | PR team | FR-602 |
-| UC-22 | Approve a booking | PR team | FR-503 |
+| UC-22 | Approve a booking (retained but dormant — the queue is always empty) | PR team | FR-503 |
 | UC-23 | Manage sessions | Scientific team | FR-401–FR-403 |
 | UC-24 | Manage halls and seating | Scientific / Logistics | FR-404, FR-405 |
 | UC-25 | Manage speakers | Scientific team | FR-406, FR-407 |
@@ -206,18 +207,24 @@ follow the same template at the per-feature stage.
   3. The user selects a seat.
   4. The system checks the session time does not overlap a session the user has
      already booked.
-  5. The system creates the booking in the Pending state and tells the user it
-     awaits Control Panel approval.
-  6. The PR team approves the booking (UC-22); the system confirms it and
-     notifies the user.
+  5. The system creates the reservation in the Approved state immediately —
+     there is no Control Panel approval step — and shows the confirmation inline;
+     no message is sent. The seat is held provisionally.
+  6. The attendee checks in at the hall gate (a staff QR scan, UC-35), which
+     confirms the held seat; a sweep shortly before the session starts releases
+     any hold not checked in.
 - **Alternate / exception flows:**
   - A4. The chosen session overlaps an existing booking — the system blocks the
     booking and explains.
   - A3b. The seat was taken in the meantime — the system asks the user to
     choose another.
-  - A6. The PR team rejects the booking — the system informs the user.
-- **Postcondition:** a booking exists, Pending then Approved, or it was not
-  created.
+  - A6. The attendee does not check in at the gate before the session starts —
+    the pre-start sweep releases the held seat. (The old Control Panel
+    approve/reject path, UC-22, is retained but dormant: nothing places a
+    reservation in the Pending state, so no booking ever reaches it.)
+- **Postcondition:** a reservation exists in the Approved state — held
+  provisionally, then confirmed on gate check-in or released by the pre-start
+  sweep — or it was not created.
 
 ### UC-14 — Ask a question in a session
 

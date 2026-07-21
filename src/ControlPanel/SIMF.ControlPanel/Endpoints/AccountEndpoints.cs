@@ -1128,6 +1128,16 @@ internal static class AccountEndpoints
             return Forward(await api.GetOperationLogAsync(id, token));
         });
 
+        // Services monitor proxy - live background-worker health from the API's
+        // in-process heartbeat registry (read-only, no query).
+        group.MapGet("/admin/ops/workers",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetWorkerStatusesAsync(token));
+        });
+
         // P1.6 — binary XLSX download. Cannot reuse Forward() because the
         // response body is the workbook bytes, not the JSON envelope.
         group.MapPost("/admin/operation-log/export",
@@ -1935,6 +1945,16 @@ internal static class AccountEndpoints
             return Forward(await api.RecordQrArrivalAsync(sessionId, body, token));
         });
 
+        // 2026-07-18: operator hall-door QR departure (check-out) passthrough.
+        group.MapPost("/admin/sessions/{sessionId:guid}/departures",
+            async (Guid sessionId, SIMF.Contracts.Sessions.RecordQrArrivalRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.RecordQrDepartureAsync(sessionId, body, token));
+        });
+
         // D-148 — Gate Module BFF passthroughs (admin + operator).
         group.MapPost("/admin/gates/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
@@ -2335,6 +2355,16 @@ internal static class AccountEndpoints
                 sessionId, body, token));
         });
 
+        group.MapPost("/admin/sessions/{sessionId:guid}/seats/reserve-seat",
+            async (Guid sessionId, AdminReserveSeatRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.AdminReserveSessionSeatAsync(
+                sessionId, body, token));
+        });
+
         group.MapDelete("/admin/sessions/{sessionId:guid}/seats/{reservationId:guid}",
             async (Guid sessionId, Guid reservationId,
                    HttpContext http, SimfAdminClient api) =>
@@ -2343,6 +2373,25 @@ internal static class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.AdminReleaseSessionSeatAsync(
                 sessionId, reservationId, token));
+        });
+
+        // 2026-07-18 (live per-session hall view, CP page 2e) — the 4-state seat
+        // map + everyone currently present in the hall, both API-side gated
+        // Attendance.View.
+        group.MapGet("/admin/sessions/{sessionId:guid}/seat-map",
+            async (Guid sessionId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetAdminSessionSeatMapAsync(sessionId, token));
+        });
+
+        group.MapGet("/admin/sessions/{sessionId:guid}/present",
+            async (Guid sessionId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetSessionPresentAttendeesAsync(sessionId, token));
         });
 
         // D-269 — speaker meeting requests BFF passthroughs.
@@ -3022,6 +3071,18 @@ internal static class AccountEndpoints
             return Forward(await api.DeactivateProgrammeDayAsync(id, token));
         });
 
+        // D-753 — forum-day window (MIN/MAX over active ProgrammeDay.Date). The CP
+        // business-meetings + speaker-availability pages read it to bound their
+        // datetime-local pickers to the event days. Gated at the backend by the
+        // existing BusinessMeetings.View permission (no new permission code).
+        group.MapGet("/admin/programme/forum-window",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetForumWindowAsync(token));
+        });
+
         // P2.4 (D-229) — System Configuration settings passthroughs.
         group.MapPost("/admin/system-settings/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
@@ -3112,35 +3173,15 @@ internal static class AccountEndpoints
             return Forward(await api.DeleteVenueMapNodeAsync(id, token));
         });
 
-        // P2.2 (D-227) — booking approval queue passthroughs.
+        // #6/#17 — booking monitor passthrough (read-only; bookings auto-confirm
+        // and no-shows are released by a background worker, so there is no
+        // approve/reject/bulk-approve action).
         group.MapPost("/admin/bookings/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
-            return Forward(await api.ListPendingBookingsAsync(body, token));
-        });
-        group.MapPost("/admin/bookings/{id:guid}/approve",
-            async (Guid id, HttpContext http, SimfAdminClient api) =>
-        {
-            var token = await http.GetTokenAsync("access_token");
-            if (token is null) return Results.Unauthorized();
-            return Forward(await api.ApproveBookingAsync(id, token));
-        });
-        group.MapPost("/admin/bookings/{id:guid}/reject",
-            async (Guid id, RejectBookingRequest body, HttpContext http, SimfAdminClient api) =>
-        {
-            var token = await http.GetTokenAsync("access_token");
-            if (token is null) return Results.Unauthorized();
-            return Forward(await api.RejectBookingAsync(id, body, token));
-        });
-        group.MapPost("/admin/bookings/bulk-approve",
-            async (AdminBulkApprovalRequest body, HttpContext http, SimfAdminClient api) =>
-        {
-            var token = await http.GetTokenAsync("access_token");
-            if (token is null) return Results.Unauthorized();
-            return Forward(await api.BulkApproveBookingsAsync(
-                body.Ids?.ToList() ?? new List<Guid>(), token));
+            return Forward(await api.ListActiveBookingsAsync(body, token));
         });
 
         // Multipart gov-Excel import (same SameSite=Lax CSRF stance as media upload).

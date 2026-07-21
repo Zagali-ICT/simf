@@ -66,6 +66,83 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
         Assert.Contains("تعاون الغوّاصات", detail.FullTextArabic!);
     }
 
+    // -- Slice D (2026-07-19): AI transparency. The pristine AI-draft snapshot is
+    // captured at generation and must survive every Committee edit; the raw subtitle
+    // the AI drafted from is surfaced (read-only) on the editor read. Both are
+    // CP-internal and never projected onto a public contract.
+
+    [Fact]
+    public async Task Generate_captures_the_pristine_ai_draft_snapshot()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var sessionId = await SeedSessionAsync(
+            liveCaptionsArabic: "الردع البحري وحماية الممرات");
+
+        var detail = await GenerateAsync(sessionId, admin);
+
+        // The snapshot is captured and, on a fresh generate, equals the editable
+        // Arabic draft the AI just produced.
+        Assert.False(string.IsNullOrWhiteSpace(detail.AiDraftFullTextArabic));
+        Assert.Equal(detail.FullTextArabic, detail.AiDraftFullTextArabic);
+        Assert.Contains("الردع البحري", detail.AiDraftFullTextArabic!);
+        Assert.NotNull(detail.AiDraftGeneratedAt);
+    }
+
+    [Fact]
+    public async Task Editing_the_summary_preserves_the_pristine_ai_draft()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var sessionId = await SeedSessionAsync(
+            liveCaptionsArabic: "الردع البحري وحماية الممرات");
+        var generated = await GenerateAsync(sessionId, admin);
+        var pristine = generated.AiDraftFullTextArabic;
+        var generatedAt = generated.AiDraftGeneratedAt;
+
+        // The Committee edits the working Arabic full-text away from the AI draft.
+        var edited = await SaveAsync(sessionId,
+            new SaveSessionSummaryRequest { FullTextArabic = "محضر حرّره الفريق العلمي يدويًا." }, admin);
+
+        // The editable copy took the edit; the pristine AI draft is untouched.
+        Assert.Equal("محضر حرّره الفريق العلمي يدويًا.", edited.FullTextArabic);
+        Assert.Equal(pristine, edited.AiDraftFullTextArabic);
+        Assert.NotEqual(edited.FullTextArabic, edited.AiDraftFullTextArabic);
+        Assert.Equal(generatedAt, edited.AiDraftGeneratedAt);
+    }
+
+    [Fact]
+    public async Task Regenerating_refreshes_the_pristine_ai_draft_snapshot()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var sessionId = await SeedSessionAsync(liveCaptionsArabic: "الموضوع الأول");
+        var first = await GenerateAsync(sessionId, admin);
+        Assert.Contains("الموضوع الأول", first.AiDraftFullTextArabic!);
+
+        // The transcript is corrected, then the draft is re-generated: the snapshot
+        // must track the LATEST AI output, not the stale first draft.
+        await SetSessionCaptionsDirectAsync(sessionId, liveCaptionsArabic: "الموضوع الثاني");
+        var second = await GenerateAsync(sessionId, admin);
+
+        Assert.Contains("الموضوع الثاني", second.AiDraftFullTextArabic!);
+        Assert.DoesNotContain("الموضوع الأول", second.AiDraftFullTextArabic!);
+    }
+
+    [Fact]
+    public async Task The_editor_read_surfaces_the_raw_subtitle_source()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var sessionId = await SeedSessionAsync(
+            liveCaptions: "Maritime deterrence and sea-lane protection.",
+            liveCaptionsArabic: "الردع البحري وحماية الممرات");
+        // A summary must exist for the editor read to return a detail.
+        await SaveAsync(sessionId, new SaveSessionSummaryRequest { FullTextArabic = "محضر." }, admin);
+
+        var detail = await GetDetailAsync(sessionId, admin);
+
+        // The editor now sees the raw subtitle the AI drafts from, both languages.
+        Assert.Equal("Maritime deterrence and sea-lane protection.", detail.Subtitle);
+        Assert.Equal("الردع البحري وحماية الممرات", detail.SubtitleArabic);
+    }
+
     [Fact]
     public async Task Save_creates_a_hand_written_draft_with_no_ai_model()
     {
@@ -101,6 +178,9 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.NotFound,
             (await _client.GetAsync(PublicUrl(sessionId))).StatusCode);
 
+        // The scientific team must review + approve before publish is allowed.
+        await SubmitForReviewAndApproveAsync(sessionId, admin);
+
         await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/publish", new { }, admin);
 
         var published = await _client.GetAsync(PublicUrl(sessionId));
@@ -121,6 +201,7 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
         // S-6 — publish requires a started session (the default seed's past start).
         var sessionId = await SeedSessionAsync();
         await GenerateAsync(sessionId, admin);
+        await SubmitForReviewAndApproveAsync(sessionId, admin);
         await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/publish", new { }, admin);
 
         var response = await GetAuthAsync("/api/v1/admin/session-summaries", admin);
@@ -143,6 +224,71 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
             $"/api/v1/admin/session-summaries/{sessionId}",
             new SaveSessionSummaryRequest { FullText = new string('x', 8001) }, admin);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    // -- Item #35 (2026-07-20): the optional team summary-video URL ------------
+
+    [Fact]
+    public async Task Save_round_trips_the_summary_video_url()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var sessionId = await SeedSessionAsync();
+
+        // A valid YouTube watch link (an extractable 11-char id) is persisted...
+        var saved = await SaveAsync(sessionId, new SaveSessionSummaryRequest
+        {
+            FullTextArabic = "محضر.",
+            SummaryVideoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        }, admin);
+        Assert.Equal("https://www.youtube.com/watch?v=dQw4w9WgXcQ", saved.SummaryVideoUrl);
+
+        // ...and survives a fresh editor read.
+        var reread = await GetDetailAsync(sessionId, admin);
+        Assert.Equal("https://www.youtube.com/watch?v=dQw4w9WgXcQ", reread.SummaryVideoUrl);
+    }
+
+    [Fact]
+    public async Task An_invalid_summary_video_url_is_rejected_400()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var sessionId = await SeedSessionAsync();
+
+        // Not a YouTube link and not a direct .m3u8/.mp4 stream → rejected by the
+        // shared LiveStreamUrlPolicy (same rule as the session's live feed).
+        var response = await PutAuthAsync(
+            $"/api/v1/admin/session-summaries/{sessionId}",
+            new SaveSessionSummaryRequest
+            {
+                FullTextArabic = "محضر.",
+                SummaryVideoUrl = "https://vimeo.com/123456789",
+            }, admin);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SessionSummaryInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task A_null_summary_video_url_is_allowed()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var sessionId = await SeedSessionAsync();
+
+        // Omitting the URL (the common case) is fine — the summary saves with no
+        // second video, and the detail reports it as null.
+        var saved = await SaveAsync(sessionId, new SaveSessionSummaryRequest
+        {
+            FullTextArabic = "محضر.",
+            SummaryVideoUrl = null,
+        }, admin);
+        Assert.Null(saved.SummaryVideoUrl);
+
+        // A blank string is normalized to null too (cleared, not an empty value).
+        var cleared = await SaveAsync(sessionId, new SaveSessionSummaryRequest
+        {
+            FullTextArabic = "محضر.",
+            SummaryVideoUrl = "   ",
+        }, admin);
+        Assert.Null(cleared.SummaryVideoUrl);
     }
 
     [Fact]
@@ -179,6 +325,7 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
         // A started session (past start).
         var sessionId = await SeedSessionAsync(startUtc: DateTimeOffset.UtcNow.AddHours(-1));
         await SaveAsync(sessionId, new SaveSessionSummaryRequest { FullTextArabic = "محضر." }, admin);
+        await SubmitForReviewAndApproveAsync(sessionId, admin);
 
         var response = await PutAuthAsync(
             $"/api/v1/admin/session-summaries/{sessionId}/publish", new { }, admin);
@@ -186,6 +333,58 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
         var detail = (await response.Content
             .ReadFromJsonAsync<ApiResult<AdminSessionSummaryDetail>>())!.Data!;
         Assert.True(detail.IsPublished);
+    }
+
+    // Owner 2026-07-19 — a محضر can only be PUBLISHED after the scientific team has
+    // reviewed and APPROVED it; publishing a merely-drafted (unapproved) summary is
+    // rejected so the app never shows unreviewed minutes.
+    [Fact]
+    public async Task PublishAsync_WithoutApproval_ReturnsBadRequest()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        // A started session (the S-6 clock gate passes); the summary is saved but
+        // never submitted for review or approved.
+        var sessionId = await SeedSessionAsync(startUtc: DateTimeOffset.UtcNow.AddHours(-1));
+        await SaveAsync(sessionId, new SaveSessionSummaryRequest { FullTextArabic = "محضر." }, admin);
+
+        var response = await PutAuthAsync(
+            $"/api/v1/admin/session-summaries/{sessionId}/publish", new { }, admin);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SessionSummaryInvalid, body.Error!.Code);
+
+        // Nothing leaked — the public read stays 404.
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await _client.GetAsync(PublicUrl(sessionId))).StatusCode);
+    }
+
+    // Owner 2026-07-19 — editing a PUBLISHED summary invalidates its approval, so it
+    // must also come offline; the app can never keep serving edited, unapproved text.
+    [Fact]
+    public async Task Editing_a_published_summary_takes_it_offline_until_reapproved()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var sessionId = await SeedSessionAsync(startUtc: DateTimeOffset.UtcNow.AddHours(-1));
+        await SaveAsync(sessionId, new SaveSessionSummaryRequest { FullTextArabic = "محضر." }, admin);
+        await SubmitForReviewAndApproveAsync(sessionId, admin);
+        await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/publish", new { }, admin);
+
+        // The app sees the approved, published summary.
+        Assert.Equal(HttpStatusCode.OK,
+            (await _client.GetAsync(PublicUrl(sessionId))).StatusCode);
+
+        // Editing it clears the approval — and therefore unpublishes it.
+        await SaveAsync(sessionId,
+            new SaveSessionSummaryRequest { FullTextArabic = "محضر مُحدَّث." }, admin);
+
+        var rows = (await (await GetAuthAsync("/api/v1/admin/session-summaries", admin)).Content
+            .ReadFromJsonAsync<ApiResult<IReadOnlyList<AdminSessionSummaryRow>>>())!.Data!;
+        var row = Assert.Single(rows, r => r.SessionId == sessionId);
+        Assert.False(row.IsPublished);
+        Assert.False(row.IsApproved);
+        // The app no longer serves the edited, unapproved text.
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await _client.GetAsync(PublicUrl(sessionId))).StatusCode);
     }
 
     [Fact]
@@ -196,6 +395,7 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
         var admin = await CreateAdministratorAndSignInAsync();
         var sessionId = await SeedSessionAsync(startUtc: DateTimeOffset.UtcNow.AddHours(-1));
         await SaveAsync(sessionId, new SaveSessionSummaryRequest { FullTextArabic = "محضر." }, admin);
+        await SubmitForReviewAndApproveAsync(sessionId, admin);
         await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/publish", new { }, admin);
 
         // Reschedule the session into the future (it "hasn't started" again).
@@ -283,8 +483,7 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
         var admin = await CreateAdministratorAndSignInAsync();
         var sessionId = await SeedSessionAsync();
         await SaveAsync(sessionId, new SaveSessionSummaryRequest { FullTextArabic = "محضر." }, admin);
-        await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/submit-review", new { }, admin);
-        await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/approve", new { }, admin);
+        await SubmitForReviewAndApproveAsync(sessionId, admin);
 
         var returned = await PutAuthAsync(
             $"/api/v1/admin/session-summaries/{sessionId}/return-to-draft", new { }, admin);
@@ -308,8 +507,7 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.NotFound,
             (await GetAuthAsync(HostUrl(sessionId), modToken)).StatusCode);
 
-        await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/submit-review", new { }, admin);
-        await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/approve", new { }, admin);
+        await SubmitForReviewAndApproveAsync(sessionId, admin);
 
         var read = await GetAuthAsync(HostUrl(sessionId), modToken);
         Assert.Equal(HttpStatusCode.OK, read.StatusCode);
@@ -326,8 +524,7 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
         var (hostToken, hostUserId) = await CreateApprovedVisitorAsync();
         await SeedSessionHostAsync(sessionId, hostUserId);
         await SaveAsync(sessionId, new SaveSessionSummaryRequest { FullTextArabic = "محضر." }, admin);
-        await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/submit-review", new { }, admin);
-        await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/approve", new { }, admin);
+        await SubmitForReviewAndApproveAsync(sessionId, admin);
 
         var read = await GetAuthAsync(HostUrl(sessionId), hostToken);
         Assert.Equal(HttpStatusCode.OK, read.StatusCode);
@@ -342,8 +539,7 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
         // The host's speaker row is soft-deleted → no longer a host.
         await SeedSessionHostAsync(sessionId, hostUserId, speakerActive: false);
         await SaveAsync(sessionId, new SaveSessionSummaryRequest { FullTextArabic = "محضر." }, admin);
-        await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/submit-review", new { }, admin);
-        await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/approve", new { }, admin);
+        await SubmitForReviewAndApproveAsync(sessionId, admin);
 
         var read = await GetAuthAsync(HostUrl(sessionId), hostToken);
         Assert.Equal(HttpStatusCode.Forbidden, read.StatusCode);
@@ -356,8 +552,7 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
         var sessionId = await SeedSessionAsync();
         var (token, _) = await CreateApprovedVisitorAsync();
         await SaveAsync(sessionId, new SaveSessionSummaryRequest { FullTextArabic = "محضر." }, admin);
-        await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/submit-review", new { }, admin);
-        await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/approve", new { }, admin);
+        await SubmitForReviewAndApproveAsync(sessionId, admin);
 
         var read = await GetAuthAsync(HostUrl(sessionId), token);
         Assert.Equal(HttpStatusCode.Forbidden, read.StatusCode);
@@ -471,6 +666,25 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
             .ReadFromJsonAsync<ApiResult<AdminSessionSummaryDetail>>())!.Data!;
     }
 
+    // Slice D — the editor read (OpenEditor's GET) that now also carries the raw
+    // subtitle + the pristine AI-draft snapshot.
+    private async Task<AdminSessionSummaryDetail> GetDetailAsync(Guid sessionId, string token)
+    {
+        var response = await GetAuthAsync($"/api/v1/admin/session-summaries/{sessionId}", token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        return (await response.Content
+            .ReadFromJsonAsync<ApiResult<AdminSessionSummaryDetail>>())!.Data!;
+    }
+
+    // Owner 2026-07-19 — the summary desk's common setup: submit a draft for review
+    // then approve it (the two steps that unblock Publish). Collapses the pair that
+    // otherwise repeats across the publish / approved-read tests.
+    private async Task SubmitForReviewAndApproveAsync(Guid sessionId, string token)
+    {
+        await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/submit-review", new { }, token);
+        await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/approve", new { }, token);
+    }
+
     private async Task<Guid> SeedSessionAsync(
         string? liveCaptions = null, string? liveCaptionsArabic = null,
         DateTimeOffset? startUtc = null)
@@ -512,6 +726,19 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
         var session = await db.Sessions.FindAsync(sessionId);
         session!.StartUtc = startUtc;
         session.EndUtc = startUtc.AddHours(1);
+        await db.SaveChangesAsync();
+    }
+
+    // Slice D — rewrite the session's transcript directly, so a re-generate drafts
+    // from a different source (proving the snapshot refreshes to the latest output).
+    private async Task SetSessionCaptionsDirectAsync(
+        Guid sessionId, string? liveCaptions = null, string? liveCaptionsArabic = null)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var session = await db.Sessions.FindAsync(sessionId);
+        session!.LiveCaptions = liveCaptions;
+        session.LiveCaptionsArabic = liveCaptionsArabic;
         await db.SaveChangesAsync();
     }
 

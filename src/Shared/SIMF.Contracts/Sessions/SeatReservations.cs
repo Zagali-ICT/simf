@@ -67,6 +67,16 @@ public class AdminReserveRowRequest
     public string RowLabel { get; set; } = string.Empty;
 }
 
+/// <summary>2026-07-18 — admin single-seat block (VIP hold). Marks ONE specific
+/// seat <see cref="SeatReservationKind.AdminReservedRow"/> for this session so it
+/// is held (unavailable to visitors) for a VIP; a visitor pick on that seat is
+/// rejected with <c>SEAT_ALREADY_RESERVED</c>. Released like any admin block.</summary>
+public class AdminReserveSeatRequest
+{
+    public string RowLabel { get; set; } = string.Empty;
+    public int SeatNumber { get; set; }
+}
+
 /// <summary>D-175 — admin layout edit. Writes
 /// <c>RowLabels.Count * SeatsPerRow</c> grid; rejected if the product
 /// exceeds <c>Hall.Capacity</c>. Open for inheritance per the
@@ -100,11 +110,13 @@ public sealed record MySeatReservation(
     DateTimeOffset CreatedAt,
     BookingStatus Status = BookingStatus.Pending);
 
-/// <summary>P2.2 — D-227 (FDS-005 §5.2): one row in the Control Panel booking
-/// approval queue. Carries the session + seat + attendee so the reviewer can
-/// decide without a drill-down. <see cref="AttendeeName"/> is resolved from
-/// the Identity DB in a separate round-trip (no cross-DB JOIN, D-157).</summary>
-public sealed record BookingQueueRow(
+/// <summary>#6/#17 (owner 2026-07-20) — one row in the Control Panel booking
+/// MONITOR: an ACTIVE (confirmed, still-held) visitor reservation. There is no
+/// approval step (bookings auto-confirm), so this is a read-only monitor, not an
+/// approval queue. Carries the session + seat + attendee. <see cref="AttendeeName"/>
+/// is resolved from the Identity DB in a separate round-trip (no cross-DB JOIN,
+/// D-157).</summary>
+public sealed record ActiveBookingRow(
     Guid ReservationId,
     Guid SessionId,
     string SessionTitle,
@@ -117,11 +129,3 @@ public sealed record BookingQueueRow(
     Guid? AttendeeUserId,
     string AttendeeName,
     DateTimeOffset CreatedAt);
-
-/// <summary>P2.2 — D-227: admin reject request. The reason is required
-/// (FDS-005 §8) and recorded on the booking + sent to the attendee. Open for
-/// inheritance so the route-binding endpoint can carry the booking id.</summary>
-public class RejectBookingRequest
-{
-    public string Reason { get; set; } = string.Empty;
-}

@@ -39,6 +39,9 @@ public static class CpNavigation
             new("Module.Dashboard", "/", Icon: "layout-dashboard"),
             // FR-506 — read-only session-attendance dashboard over HallAttendance (D-241).
             new("Module.Attendance", "/admin/attendance", RequiredPermission: PermissionCatalog.Attendance.View, Icon: "user-check"),
+            // 2026-07-18 — live per-session hall view: 4-state seat grid + who's
+            // currently inside the hall (over HallAttendance + the seat map).
+            new("Module.SessionLiveHall", "/admin/sessions/live-hall", RequiredPermission: PermissionCatalog.Attendance.View, Icon: "monitor"),
         ]),
         new("Nav.People",
         [
@@ -105,7 +108,7 @@ public static class CpNavigation
             new("Module.Speakers", "/admin/speakers", RequiredPermission: PermissionCatalog.Speakers.View, Icon: "mic"),
             // P2.3 (D-228) — speaker presentation files (FR-407). Reuses Speakers.*.
             new("Module.SpeakerPresentations", "/admin/speaker-presentations", RequiredPermission: PermissionCatalog.Speakers.View, Icon: "presentation"),
-            // P2.2 (D-227) — booking approval queue (FDS-005 §5.2).
+            // #6/#17 — read-only booking monitor (was the D-227 approval queue).
             new("Module.Bookings", "/admin/bookings", RequiredPermission: PermissionCatalog.Bookings.View, Icon: "ticket"),
             // SIMF-FDS-013 (D-248) — flexible hall config: purpose + meeting tables
             // + hall allocations (whole / random-by-count / row-column).
@@ -231,6 +234,8 @@ public static class CpNavigation
             // D-495 — Organization / About profile (edition-generic forum config).
             new("Module.OrganizationProfile", "/admin/organization-profile", RequiredPermission: PermissionCatalog.OrganizationProfile.View, Icon: "building"),
             new("Module.AdminLogs", "/admin/logs", RequiredPermission: PermissionCatalog.Logs.View, Icon: "file-text"),
+            // Background-services monitor: live health of the in-process hosted workers.
+            new("Module.ServicesMonitor", "/admin/ops/services", RequiredPermission: PermissionCatalog.ServicesMonitor.View, Icon: "bar-chart"),
             // D-134 Sprint A — Operation log viewer over the existing
             // OperationLogEntry table (no migration).
             new("Module.OperationLog", "/admin/operation-log", RequiredPermission: PermissionCatalog.OperationLog.View, Icon: "list-tree"),

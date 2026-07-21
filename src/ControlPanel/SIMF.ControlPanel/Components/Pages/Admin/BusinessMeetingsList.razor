@@ -66,12 +66,12 @@
                 <SimfDataGridColumn TItem="BusinessMeetingRow" Key="start"
                                     Header="@L["Admin.BusinessMeetings.Col.Start"]"
                                     Sortable="true">
-                    <CellTemplate>@context.StartUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</CellTemplate>
+                    <CellTemplate>@context.StartUtc.FormatSaudi("yyyy-MM-dd HH:mm")</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="BusinessMeetingRow" Key="end"
                                     Header="@L["Admin.BusinessMeetings.Col.End"]"
                                     Sortable="true">
-                    <CellTemplate>@context.EndUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</CellTemplate>
+                    <CellTemplate>@context.EndUtc.FormatSaudi("yyyy-MM-dd HH:mm")</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="BusinessMeetingRow" Key="parties"
                                     Header="@L["Admin.BusinessMeetings.Col.Parties"]">
@@ -150,12 +150,15 @@
                 </label>
                 <label class="simf-field">
                     <span class="simf-field__label">@L["Admin.BusinessMeetings.Field.Start"]</span>
+                    @* D-753 — bound the picker to the forum days (MIN/MAX programme day). *@
                     <input class="simf-field__input" type="datetime-local"
+                           min="@_forumMin" max="@_forumMax"
                            value="@_startText" @onchange="OnStartChanged" disabled="@_busy" />
                 </label>
                 <label class="simf-field">
                     <span class="simf-field__label">@L["Admin.BusinessMeetings.Field.End"]</span>
                     <input class="simf-field__input" type="datetime-local"
+                           min="@_forumMin" max="@_forumMax"
                            value="@_endText" @onchange="OnEndChanged" disabled="@_busy" />
                 </label>
 
@@ -266,8 +269,8 @@
                 <dt>@L["Admin.BusinessMeetings.Col.Hall"]</dt><dd>@_detail.HallName</dd>
                 <dt>@L["Admin.BusinessMeetings.Col.Table"]</dt><dd>@_detail.TableCode</dd>
                 <dt>@L["Admin.BusinessMeetings.Col.Type"]</dt><dd>@_detail.MeetingType</dd>
-                <dt>@L["Admin.BusinessMeetings.Col.Start"]</dt><dd>@_detail.StartUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</dd>
-                <dt>@L["Admin.BusinessMeetings.Col.End"]</dt><dd>@_detail.EndUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</dd>
+                <dt>@L["Admin.BusinessMeetings.Col.Start"]</dt><dd>@_detail.StartUtc.FormatSaudi("yyyy-MM-dd HH:mm")</dd>
+                <dt>@L["Admin.BusinessMeetings.Col.End"]</dt><dd>@_detail.EndUtc.FormatSaudi("yyyy-MM-dd HH:mm")</dd>
                 <dt>@L["Admin.BusinessMeetings.Col.Parties"]</dt>
                 <dd>
                     <ul class="simf-list">

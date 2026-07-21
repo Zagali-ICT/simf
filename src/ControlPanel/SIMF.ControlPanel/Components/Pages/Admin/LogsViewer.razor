@@ -46,7 +46,7 @@
                     {
                         <option value="@entry.FileName">
                             @entry.FileName — @FormatSize(entry.SizeBytes)
-                            (@entry.LastModifiedUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm"))
+                            (@entry.LastModifiedUtc.FormatSaudi("yyyy-MM-dd HH:mm"))
                         </option>
                     }
                 </select>

@@ -67,11 +67,8 @@ class SimfApiClient {
       PrettyDioLogger(
         enabled: config.enableRequestLogging,
         requestBody: true,
-        requestHeader: true,
         responseBody: true,
-        responseHeader: true,
         error: true,
-        compact: false,
       ),
     );
 

@@ -8,17 +8,31 @@
 | **Reached from** | The session page's **Select my seat** Join CTA (assigned-seat sessions only) |
 
 The seat picker draws the hall grid for an **assigned-seat** session and lets the
-attendee tap an **available** seat (or auto-pick) to hold it. The booking is
-created **Pending** — the Control Panel approves it, and the approved/rejected
-notification arrives in the inbox. On success the picker pops back so the session
-page reloads to show the held reservation.
+attendee tap an **available** seat (or auto-pick) to hold it. The reservation is
+**confirmed on create** (reservation-only, 2026-07-18 — `Status = Approved`, no
+Control Panel approval step); it stays a **provisional hold** until the visitor
+**checks in at the hall gate** (staff QR scan), which confirms the seat, and a
+pre-start sweep releases any hold not checked in shortly before the session starts.
+No notification is sent on reserving. On success the app shows a **one-button info
+alert** (D-750, `seatReservedAlertBody`) explaining that the hold is released if the
+visitor does not check in by 3 minutes before the session starts, to free the seat
+for others; on **OK** the picker pops back so the session page reloads to show the
+reservation. The old Control Panel approval queue (list-pending / approve / reject)
+is **retained but dormant** — nothing creates a Pending attendee booking, so it is
+always empty.
+
+> **Reserve-success alert (D-750, 2026-07-20).** The owner's exact reserve-success
+> copy landed as a **one-button alert** (`seatReservedAlertBody`) shown on a
+> successful hold, replacing the old *"Reserved — pending approval"* snackbar; the
+> picker pops back only after the alert's **OK** is tapped. The wire/data assertions
+> (`Status=Approved`, no `BookingConfirmed` on reserve) are unchanged.
 
 ## Coverage matrix
 
 | ID | Scenario | Type | Pri | Status |
 |----|----------|------|-----|--------|
 | E2E-MOBPICK-001 | Grid renders from `rowLabels × seatsPerRow`; the session title + "tap an available seat" hint show; reserved / own / available seats are coloured (محجوز · مقعدك · متاح) | happy | P1 | authored ✓ (widget — grid + hint + auto-pick CTA) |
-| E2E-MOBPICK-002 | Tapping an **available** seat reserves it (`POST …/seats/reserve` row+seat), shows the "Reserved — pending approval" toast, and pops back (session page reloads → reservation card) | happy | P0 | authored ✓ (widget — tap A2 → reserveSeat row=A seat=2) |
+| E2E-MOBPICK-002 | Tapping an **available** seat reserves it (`POST …/seats/reserve` row+seat, confirmed on create — not pending approval), then shows a one-button success **alert** (D-750 `seatReservedAlertBody`: the 3-min pre-start check-in hold rule); on **OK** the picker pops back (session page reloads → reservation card) | happy | P0 | authored ✓ (widget — tap A2 → reserveSeat row=A seat=2 → alert → OK → pop) |
 | E2E-MOBPICK-003 | The **Auto-pick** button reserves the first free seat (`POST …/seats/reserve-random`) | happy | P1 | authored ✓ (widget — random CTA → reserveRandom) |
 | E2E-MOBPICK-004 | Reserved / own seats are **inert** (not tappable); only available seats hold | happy | P1 | authored ✓ (widget — only `available` wires the gesture) |
 | E2E-MOBPICK-005 | A generic reserve failure (e.g. seat taken, 409 `SEAT_ALREADY_RESERVED`) shows the "Couldn't reserve that seat" toast and keeps the picker usable — `_busy` resets, no pop | error | P1 | authored ✓ (widget — `failReserve` → toast + grid still present) |
@@ -38,9 +52,15 @@ Scenario: Picking a specific seat in an assigned-seat session
   And seat A1 is reserved and A2 is available
   When they tap seat A2
   Then POST /app/sessions/{id}/seats/reserve is called with rowLabel=A, seatNumber=2
-  And a "Reserved — pending approval" toast is shown
-  And the picker pops back so the session page reloads to the reservation card
-  And on the Control Panel's approval the visitor gets a BookingConfirmed notification
+  And the reservation is confirmed on create (Status = Approved, no Control Panel approval)
+  And a one-button success alert is shown (D-750, not a snackbar) carrying
+    seatReservedAlertBody — "تم حجز المقعد بنجاح سيتم الغاء الحجز في حالة عدم تسجيل
+    الدخول للجلسة قبل 3 دقائق قبل بدء الجلسة …" / "Seat reserved successfully. The
+    reservation will be cancelled if you do not check in by 3 minutes before the
+    session starts, to free the seat for others." (no "pending approval")
+  And no notification is sent on reserving
+  And on OK the picker pops back so the session page reloads to the reservation card
+  And the seat stays a provisional hold until it is confirmed at the hall-gate check-in
 ```
 
 ### E2E-MOBPICK-005 — Reserve failure keeps the picker usable
@@ -97,4 +117,4 @@ Scenario: The expiry worker releases a hold the CP never decided
 
 ---
 
-_Last reviewed:_ `2026-07-08` by `SIMF Team`.
+_Last reviewed:_ `2026-07-20` by `Apexium` (D-750 — a successful hold now shows the owner's one-button reserve-success alert `seatReservedAlertBody` (the 3-min pre-start check-in hold rule) instead of the "Reserved — pending approval" snackbar; the picker pops back only after OK. E2E-MOBPICK-002 reworded). Prior review `2026-07-19` by `Apexium` (reservation-only correction — reserve auto-confirms, no "pending approval" toast, no BookingConfirmed on reserve; confirmation is the hall-gate check-in; CP approval queue retained but dormant). Prior `2026-07-08` by `SIMF Team`.

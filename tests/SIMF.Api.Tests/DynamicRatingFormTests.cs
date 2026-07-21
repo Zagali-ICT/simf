@@ -75,8 +75,10 @@ public sealed class DynamicRatingFormTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Day_submit_for_a_real_programme_day_succeeds()
     {
-        var visitor = await SignInApprovedVisitorAsync();
+        var (visitor, userId) = await SignInVisitorWithIdAsync();
         var dayId = await SeedProgrammeDayAsync();
+        // Owner 2026-07-19 — a Day rating requires having attended that day.
+        await RatingAttendance.SeedDayAttendanceAsync(_factory, userId, dayId);
 
         var formResponse = await GetAuthAsync(
             $"/api/v1/app/feedback/form?code=Day&targetId={dayId}", visitor);
@@ -93,6 +95,23 @@ public sealed class DynamicRatingFormTests : IClassFixture<SimfApiFactory>
         var view = (await submit.Content.ReadFromJsonAsync<ApiResult<RatingSubmissionView>>())!.Data!;
         Assert.Equal(4, view.OverallStars);
         Assert.Equal(dayId, view.TargetId);
+    }
+
+    [Fact]
+    public async Task Day_rating_is_unlocked_by_a_venue_gate_checkin_that_day()
+    {
+        // Owner 2026-07-19 (blended signal) — a venue-gate Check-In scan on the day,
+        // with NO in-hall attendance, unlocks the Day rating; exercises
+        // AttendedDayAsync's GateScan branch + the event-local (UTC+3) day window.
+        var (visitor, userId) = await SignInVisitorWithIdAsync(); // no HallAttendance
+        var dayId = await SeedProgrammeDayAsync();
+        await RatingAttendance.SeedGateCheckInOnDayAsync(_factory, userId, dayId);
+
+        var submit = await PostAuthAsync(
+            "/api/v1/app/feedback/submit",
+            new SubmitRatingRequest { Code = "Day", TargetId = dayId, OverallStars = 4 },
+            visitor);
+        Assert.Equal(HttpStatusCode.OK, submit.StatusCode);
     }
 
     // -- Helpers --------------------------------------------------------------
@@ -120,6 +139,17 @@ public sealed class DynamicRatingFormTests : IClassFixture<SimfApiFactory>
 
     private async Task<string> SignInApprovedVisitorAsync()
     {
+        var (token, userId) = await SignInVisitorWithIdAsync();
+        // Owner 2026-07-19 — ratings now require attendance; mark the visitor as having
+        // attended the event so the global-scope rating flows still run.
+        await RatingAttendance.SeedEventAttendanceAsync(_factory, userId);
+        return token;
+    }
+
+    /// <summary>Signs in a fresh approved visitor WITHOUT seeding attendance — for the
+    /// per-day test that seeds its own targeted attendance.</summary>
+    private async Task<(string Token, Guid UserId)> SignInVisitorWithIdAsync()
+    {
         var email = $"rate-dyn-{Guid.NewGuid():N}@simf.test";
         await _client.PostAsJsonAsync(
             "/api/v1/app/auth/sign-up",
@@ -142,7 +172,9 @@ public sealed class DynamicRatingFormTests : IClassFixture<SimfApiFactory>
             "/api/v1/app/auth/sign-in",
             new SignInRequest { Email = email, Password = AuthFlow.Password });
         var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        var token = body.Data!.Tokens!.AccessToken;
+        var userId = await RatingAttendance.UserIdAsync(_factory, email);
+        return (token, userId);
     }
 
     private Task<HttpResponseMessage> GetAuthAsync(string url, string token)

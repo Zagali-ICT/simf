@@ -16,25 +16,20 @@ import 'data/sessions_repository.dart';
 /// session page, per the owner's "both" choice): it lists the programme
 /// sessions; tapping one opens its detail page, where the **Select my seat /
 /// Join** CTA lives. Reuses `GET /app/programme/sessions` — no new API.
-final joinHubSessionsProvider =
-    FutureProvider.autoDispose<List<SessionListItem>>(
-  (ref) => ref.watch(sessionsRepositoryProvider).getSessions(),
-);
-
 class JoinSessionHubScreen extends ConsumerWidget {
   const JoinSessionHubScreen({super.key});
 
   /// Pull-to-refresh — re-fetch the programme list (every data page supports
   /// the gesture, D-520/D-532; this screen was missing it — added D-601).
   Future<void> _refresh(WidgetRef ref) async {
-    ref.invalidate(joinHubSessionsProvider);
-    await ref.read(joinHubSessionsProvider.future);
+    ref.invalidate(programmeSessionsProvider);
+    await ref.read(programmeSessionsProvider.future);
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppL10n.of(context);
-    final sessions = ref.watch(joinHubSessionsProvider);
+    final sessions = ref.watch(programmeSessionsProvider);
     return SimfPageShell(
       title: l10n.joinHubTitle,
       onBack: () => backOrHome(context),
@@ -43,10 +38,12 @@ class JoinSessionHubScreen extends ConsumerWidget {
         loading: () => const SimfLoadingState(),
         error: (_, __) => SimfRefreshableMessage(
           onRefresh: () => _refresh(ref),
-          child: SimfErrorState(
-            message: l10n.sessionsError,
-            retryLabel: l10n.retryLabel,
-            onRetry: () => ref.invalidate(joinHubSessionsProvider),
+          child: SimfPullableHost(
+            child: SimfErrorState(
+              message: l10n.sessionsError,
+              retryLabel: l10n.retryLabel,
+              onRetry: () => ref.invalidate(programmeSessionsProvider),
+            ),
           ),
         ),
         data: (items) => items.isEmpty
@@ -105,7 +102,7 @@ class _HubList extends StatelessWidget {
           subtitle: _subtitle(context, item, isArabic),
           onTap: () => context.pushNamed(
             RouteNames.sessionDetail,
-            pathParameters: <String, String>{'sessionId': item.id},
+            pathParameters: <String, String>{RouteParams.sessionId: item.id},
           ),
         );
       },

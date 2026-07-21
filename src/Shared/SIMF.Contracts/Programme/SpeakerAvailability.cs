@@ -25,3 +25,12 @@ public sealed class CreateSpeakerAvailabilityWindowRequest
 public sealed record SpeakerAvailableSlot(
     DateTimeOffset StartUtc,
     DateTimeOffset EndUtc);
+
+/// <summary>D-753 — the forum's day boundary (MIN/MAX over the active
+/// <c>ProgrammeDay.Date</c> rows) used by the CP to bound meeting-scheduling date
+/// pickers to the event days. Both fields are <c>null</c> when no programme days
+/// are seeded yet, in which case the CP applies no client-side date bound (the
+/// server still enforces the rule once days exist).</summary>
+public sealed record ForumWindowResponse(
+    DateOnly? MinDate,
+    DateOnly? MaxDate);

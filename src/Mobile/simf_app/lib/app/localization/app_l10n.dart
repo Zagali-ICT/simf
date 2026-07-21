@@ -227,6 +227,9 @@ class AppL10n {
   String interestsCounter(int count) =>
       _t('$count / 10 مُختارة', '$count / 10 selected');
   String get interestsEmpty => _t('لا توجد اهتمامات', 'No interests available');
+  // #14 — edit-mode success toast (My interests screen opened from My-Area).
+  String get interestsUpdatedToast =>
+      _t('تم تحديث اهتماماتك', 'Your interests were updated');
   String get attachIdImageLabel => _t('إرفاق صورة الهوية', 'Attach ID image');
   // KSA-Project profile frame copy (Figma 168:2972, D-368).
   String get createProfileTitle => _t('إنشاء ملف شخصى', 'Create profile');
@@ -768,6 +771,10 @@ class AppL10n {
   String get discoverSaudiBadge => _t('السعودية', 'Saudi');
   String get greetingMorning => _t('صباح الخير', 'Good morning');
   String get greetingEvening => _t('مساء الخير', 'Good evening');
+
+  /// The home greeting word (owner 2026-07-21) — a friendly, time-independent
+  /// "مرحبًا" shown above the user's first name, replacing the time-of-day word.
+  String get greetingWelcome => _t('مرحبًا', 'Welcome');
   String get homeLiveTitle => _t(
         'الجلسة الافتتاحية تُبث الآن',
         'The opening session is live now',
@@ -1000,6 +1007,9 @@ class AppL10n {
   // Sessions — daily schedule (Page 016). The two pills + the day strip + the
   // search box all filter the cached programme client-side (Page_016 L-1).
   String get sessionsTitle => _t('الجلسات', 'Sessions');
+  // D-750 — the bottom-nav program/agenda tab label (owner 2026-07-20). Distinct
+  // from [sessionsTitle], which titles the Sessions screen and other surfaces.
+  String get agendaTitle => _t('الأجندة', 'Agenda');
   String get sessionsViewUpcoming => _t('الأجندة القادمة', 'Upcoming agenda');
   String get sessionsViewForum => _t('أجندة الفعالية', 'Event agenda');
   String get sessionsAllDays => _t('كل الأيام', 'All days');
@@ -1061,6 +1071,11 @@ class AppL10n {
   // 2026-06-30): one label for both seating modes — open-seating joins in place,
   // assigned-seat opens the seat picker.
   String get joinSessionCta => _t('الانضمام إلى الجلسة', 'Join the session');
+  // D-750 (owner 2026-07-20) — case-1 (open-seating) join CTA: the button reads
+  // "register to attend" instead of the generic join label, because an
+  // open-seating join is a registration, not a seat reservation.
+  String get joinOpenRegisterCta =>
+      _t('سجل لحضور الجلسة', 'Register to attend the session');
   String get joinSeatHint =>
       _t('اختر مقعدك ثم انتظر موافقة الإدارة', 'Pick your seat, then await approval');
   String get joinOpenHint =>
@@ -1073,6 +1088,13 @@ class AppL10n {
   String get joinConfirmAction => _t('انضمام', 'Join');
   String get joinPendingToast =>
       _t('تم إرسال طلبك — بانتظار موافقة الإدارة', 'Request sent — pending approval');
+  // D-750 — case-1 (open-seating) post-join success alert body (replaces the
+  // joinPendingToast snackbar): registering is not a seat reservation and does
+  // not guarantee entry; entry is confirmed at session check-in.
+  String get joinOpenSuccessBody => _t(
+        'تم تسجيلك لحضور هذه الجلسة بنجاح. هذا التسجيل لا يعني حجز مقعد أو ضمان الدخول للجلسة، سيتم تأكيد دخولك عند تسجيل الدخول للجلسة',
+        'You have successfully registered to attend this session. This registration does not reserve a seat or guarantee entry; your entry will be confirmed at session check-in.',
+      );
   String get joinFailed => _t('تعذّر إرسال الطلب', "Couldn't send your request");
   String get joinSessionFull => _t('لا توجد أماكن متبقية', 'No places remain');
   String get generalAdmissionLabel => _t('دخول عام', 'General admission');
@@ -1098,6 +1120,13 @@ class AppL10n {
   String get seatPickerRandomCta => _t('اختيار تلقائي', 'Auto-pick a seat');
   String get seatReservedToast =>
       _t('تم الحجز — بانتظار الموافقة', 'Reserved — pending approval');
+  // D-750 — case-2 (assigned-seat) post-reserve success alert body (replaces the
+  // seatReservedToast snackbar): the hold is released if the visitor does not
+  // check in by 3 minutes before the session starts, to free the seat.
+  String get seatReservedAlertBody => _t(
+        'تم حجز المقعد بنجاح سيتم الغاء الحجز في حالة عدم تسجيل الدخول للجلسة قبل 3 دقائق قبل بدء الجلسة لاتاحة المقعد لأشخاص اخرين',
+        'Seat reserved successfully. The reservation will be cancelled if you do not check in by 3 minutes before the session starts, to free the seat for others.',
+      );
   String get seatReserveFailed => _t('تعذّر حجز المقعد', "Couldn't reserve that seat");
   // Join-a-session hub.
   String get joinHubTitle => _t('احجز مقعداً', 'Book a seat');
@@ -1525,6 +1554,12 @@ class AppL10n {
   String get rateThanks => _t('شكراً لتقييمك', 'Thanks for your rating');
   String get rateFailed =>
       _t('تعذّر إرسال التقييم. حاول مرة أخرى.', 'Could not submit. Try again.');
+  // Owner 2026-07-19 — shown when the visitor has not attended what they are trying
+  // to rate (server: 403 RATING_NOT_ATTENDED / form isEligible=false).
+  String get rateAttendRequired => _t(
+        'يمكنك تقييم ما حضرته فقط.',
+        'You can only rate something you attended.',
+      );
   String get rateRequiredQuestions => _t(
         'يرجى الإجابة على جميع الأسئلة المطلوبة',
         'Please answer all required questions',
@@ -1580,6 +1615,12 @@ class AppL10n {
       _t('الذكاء الاصطناعي', 'Artificial intelligence');
   String get meetPeopleFilterSupply => _t('سلاسل الإمداد', 'Supply chains');
   String get meetPeopleFilterSeabed => _t('أمن قاع البحار', 'Seabed security');
+
+  // D-736 — "Show me in Meet People Like You" visibility toggle (sign-up / settings).
+  String get showInMeetLikeYou => _t(
+        'هل يظهر علي قابل أشخاص مثلك',
+        'Show me in Meet People Like You',
+      );
 
   // Accessibility (Page 038; Figma 1116:16630 — client-local settings, no API).
   String get accessibilityTitle => _t('إمكانية الوصول', 'Accessibility');
@@ -1753,6 +1794,11 @@ class AppL10n {
   String get aiSummarySpeakersHeading => _t('المتحدثون', 'Speakers');
   // Figma 1072:13518 — the redesigned session-summary screen.
   String get aiSummarySessionLabel => _t('الجلسة', 'Session');
+  // Item #35 (2026-07-20) — labels for the two video players on the summary
+  // surface: the session's FULL live recording and the team's short summary cut.
+  String get aiSummaryRecordingLabel => _t('التسجيل الكامل', 'Full recording');
+  String get aiSummaryVideoLabel =>
+      _t('ملخص الجلسة (فيديو)', 'Session summary (video)');
   String get aiSummaryGenerateButton =>
       _t('توليد ملخص للجلسة', 'Generate session summary');
   String get aiSummaryNoSessions =>

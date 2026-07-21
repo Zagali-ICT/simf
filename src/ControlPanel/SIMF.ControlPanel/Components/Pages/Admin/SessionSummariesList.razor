@@ -118,8 +118,12 @@
                         }
                         else
                         {
-                            <SimfToolbarButton Icon="power" Title="@L["Admin.SessionSummaries.Action.Publish"]"
-                                               Disabled="_busy" OnClick="@(() => SetPublishedAsync(context.SessionId, true))" />
+                            @* Owner 2026-07-19 — Publish is only allowed once the team has
+                               approved the summary; keep the button visible but disabled with
+                               an explanatory tooltip so the reviewer knows what unblocks it. *@
+                            <SimfToolbarButton Icon="power"
+                                               Title="@(context.IsApproved ? L["Admin.SessionSummaries.Action.Publish"] : L["Admin.SessionSummaries.Action.PublishNeedsApproval"])"
+                                               Disabled="_busy || !context.IsApproved" OnClick="@(() => SetPublishedAsync(context.SessionId, true))" />
                         }
                     </AuthorizedAction>
                 }
@@ -139,6 +143,25 @@
             {
                 <SimfAlert Variant="info">@L["Admin.SessionSummaries.AiBanner"]</SimfAlert>
             }
+            @* Slice D (2026-07-19) — AI-transparency read-only sources: the raw
+               subtitle the AI drafted from and the pristine AI draft captured at
+               generation (immutable across edits). Each renders only when present,
+               so a hand-written summary shows none of them. *@
+            @if (_editSubtitle.Length > 0)
+            {
+                <SimfTextarea Label="@L["Admin.SessionSummaries.Field.Subtitle"]" Rows="4"
+                              Value="@_editSubtitle" Disabled="true" />
+            }
+            @if (_editSubtitleArabic.Length > 0)
+            {
+                <SimfTextarea Label="@L["Admin.SessionSummaries.Field.SubtitleArabic"]" Rows="4"
+                              Value="@_editSubtitleArabic" Disabled="true" />
+            }
+            @if (_editAiDraftArabic.Length > 0)
+            {
+                <SimfTextarea Label="@AiDraftLabel" Rows="5"
+                              Value="@_editAiDraftArabic" Disabled="true" />
+            }
             <SimfTextarea Label="@L["Admin.SessionSummaries.Field.KeyPoints"]" Rows="3" MaxLength="4000"
                           @bind-Value="_edit.KeyPoints" Disabled="_busy" />
             <SimfTextarea Label="@L["Admin.SessionSummaries.Field.KeyPointsArabic"]" Rows="3" MaxLength="4000"
@@ -155,6 +178,14 @@
                           @bind-Value="_edit.FullText" Disabled="_busy" />
             <SimfTextarea Label="@L["Admin.SessionSummaries.Field.FullTextArabic"]" Rows="5" MaxLength="8000"
                           @bind-Value="_edit.FullTextArabic" Disabled="_busy" />
+            @* Item #35 (2026-07-20) — the OPTIONAL team summary-video URL: the app's
+               second player on screen 34, beside the full live recording. A YouTube
+               or direct HLS/MP4 link; the server validates it with the same
+               LiveStreamUrlPolicy as the session's live feed. *@
+            <SimfTextField Label="@L["Admin.SessionSummaries.Field.SummaryVideoUrl"]"
+                           Helper="@L["Admin.SessionSummaries.Field.SummaryVideoUrlHint"]"
+                           MaxLength="1024"
+                           @bind-Value="_edit.SummaryVideoUrl" Disabled="_busy" />
         </ChildContent>
         <Footer>
             <SimfButton Type="button" Loading="_busy" OnClick="SaveAsync">

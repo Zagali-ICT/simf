@@ -60,6 +60,110 @@ void main() {
         isFalse,
       );
     });
+
+    test('invertYaw normalises the iOS sign (physical right = negative raw)',
+        () {
+      // On iOS the front-camera mirror + per-platform input-image rotation
+      // report the OPPOSITE sign, so a physical RIGHT turn arrives as a
+      // negative raw yaw. invertYaw normalises it so positive means right.
+      expect(
+        livenessStepSatisfied(
+          LivenessStep.turnRight,
+          headEulerAngleY: -30,
+          invertYaw: true,
+        ),
+        isTrue,
+      );
+      expect(
+        livenessStepSatisfied(
+          LivenessStep.turnRight,
+          headEulerAngleY: 30,
+          invertYaw: true,
+        ),
+        isFalse,
+      );
+      expect(
+        livenessStepSatisfied(
+          LivenessStep.turnLeft,
+          headEulerAngleY: 30,
+          invertYaw: true,
+        ),
+        isTrue,
+      );
+      expect(
+        livenessStepSatisfied(
+          LivenessStep.turnLeft,
+          headEulerAngleY: -30,
+          invertYaw: true,
+        ),
+        isFalse,
+      );
+    });
+
+    test('turn gate is inclusive at exactly the ±threshold boundary', () {
+      // Guards `>=`/`<=` (vs a `>`/`<` mutation) and the kTurnYawDegrees
+      // constant.
+      expect(
+        livenessStepSatisfied(
+          LivenessStep.turnRight,
+          headEulerAngleY: kTurnYawDegrees,
+        ),
+        isTrue,
+      );
+      expect(
+        livenessStepSatisfied(
+          LivenessStep.turnRight,
+          headEulerAngleY: kTurnYawDegrees - 1,
+        ),
+        isFalse,
+      );
+      expect(
+        livenessStepSatisfied(
+          LivenessStep.turnLeft,
+          headEulerAngleY: -kTurnYawDegrees,
+        ),
+        isTrue,
+      );
+      expect(
+        livenessStepSatisfied(
+          LivenessStep.turnLeft,
+          headEulerAngleY: -(kTurnYawDegrees - 1),
+        ),
+        isFalse,
+      );
+      // Boundary also holds after inversion (iOS): raw -20 → normalised +20.
+      expect(
+        livenessStepSatisfied(
+          LivenessStep.turnRight,
+          headEulerAngleY: -kTurnYawDegrees,
+          invertYaw: true,
+        ),
+        isTrue,
+      );
+    });
+  });
+
+  group('liveness platform + direction helpers', () {
+    test('livenessInvertYaw is true only on iOS', () {
+      expect(livenessInvertYaw(TargetPlatform.iOS), isTrue);
+      expect(livenessInvertYaw(TargetPlatform.android), isFalse);
+    });
+
+    test('livenessPromptDirection matches the step name (no platform branch)',
+        () {
+      expect(
+        livenessPromptDirection(LivenessStep.smile),
+        LivenessPromptDirection.none,
+      );
+      expect(
+        livenessPromptDirection(LivenessStep.turnRight),
+        LivenessPromptDirection.right,
+      );
+      expect(
+        livenessPromptDirection(LivenessStep.turnLeft),
+        LivenessPromptDirection.left,
+      );
+    });
   });
 
   testWidgets('the screen builds with the header and a loading preview '

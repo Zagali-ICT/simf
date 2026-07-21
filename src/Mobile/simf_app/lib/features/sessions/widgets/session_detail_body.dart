@@ -143,7 +143,16 @@ class SessionDetailBody extends StatelessWidget {
           // Owner 2026-07-14 — an ENDED session can't be joined ("open now to
           // join" is a live/upcoming state), so the join CTA drops once it ends.
           const SizedBox(height: SimfTokens.space5),
-          SessionJoinButton(busy: busy, l10n: l10n, onJoin: onJoin),
+          SessionJoinButton(
+            busy: busy,
+            l10n: l10n,
+            onJoin: onJoin,
+            // D-750 — case-1 (open-seating) reads "register to attend"; case-2
+            // (assigned-seat) keeps the default join label.
+            label: seatMap!.mode.isOpenSeating
+                ? l10n.joinOpenRegisterCta
+                : null,
+          ),
         ],
         const SizedBox(height: SimfTokens.space6),
         SessionCtaRow(

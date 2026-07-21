@@ -128,7 +128,7 @@ production". Run them in order; later journeys reuse earlier fixtures.
 
 ### TC-J-06 — Visitor seat reserve / release  `[P0] [App+CP] [mobile-session-detail / -my-seat / cp-admin-sessions-seat-plans]`
 **Steps:** approved visitor → agenda (#16) → session detail (#17) → **my-seat** (#18): reserve an available seat, view it as "mine", **release** it; try to reserve a **taken** seat.
-**Expect:** reserve marks the seat **محجوز/yours**; release frees it; taken seat is blocked with the bilingual conflict message; CP seat-plan reflects the reservation. (Booking approval workflow Draft→… verified in `TC-CP-PRG`.)
+**Expect:** reserve marks the seat **محجوز/yours** and is **confirmed immediately** (no Control Panel approval step); the seat is held **provisionally** until the attendee **checks in at the hall gate** (`TC-J-05`), which confirms it, or is released by the pre-start sweep if not checked in; release frees it before start; taken seat is blocked with the bilingual conflict message; CP seat-plan reflects the reservation. (The CP Bookings approval queue in `TC-CP-PRG` is **retained but dormant** — nothing creates a Pending booking, so it is always empty.)
 
 ### TC-J-07 — Visitor engagement  `[P1] [App] [mobile-send-question / -audience-comments / -rate / -ai-summary / -live]`
 **Steps:** in a session: **send a question** (#26); **post a comment** + **like** another (#28); **rate** the session per-element (#40); read the **AI summary** (#34); open the **live broadcast** (#25, YouTube provider).
@@ -175,7 +175,7 @@ against the named catalogue file (don't trust memory for the literal string).
 | TC-V-16 | Avatar liveness (3-step, randomized order) | app identityVerification #103 | order shuffles; failed step blocks save | P1 |
 | TC-V-17 | Soft-delete semantics | every list page | Deactivate → `IsActive=false`, drops from default list, not hard-deleted | P1 |
 | TC-V-18 | Duplicate-name conflict | lookups, gates, halls | duplicate → 409 conflict code | P1 |
-| TC-V-19 | Illegal state transition | bookings, session-summaries, gate direction | invalid transition → domain error, no write | P1 |
+| TC-V-19 | Illegal state transition | bookings (dormant admin path), session-summaries, gate direction | invalid transition → domain error, no write | P1 |
 | TC-V-20 | Delegate bulk-generate by type/count (D-473) | `/admin/delegates` | count ≤ 0 / huge → guard; low-traffic window | P2 |
 | TC-V-21 | VIP/VVIP fields (Mawj) + photo (D-429) | `/admin/visitors/vip` | required VIP fields enforced; creates **pending** | P1 |
 | TC-V-22 | Invitation rules | `/admin/invitations` | expiry / single-use enforced | P1 |
@@ -286,7 +286,7 @@ run the destructive end-state on real rows (create your own row first; see plan 
 | `/admin/programme-days` | CRUD | PGD-001..018 |
 | `/admin/session-moderators` | assign moderator | SMD-001..018 |
 | `/admin/programme/timeline` | view/build timeline | PTL-001..011 |
-| `/admin/bookings` | approval workflow Draft→… | BKG-001..013 |
+| `/admin/bookings` | approval queue (**retained but dormant** — always empty; nothing creates a Pending booking) | BKG-001..013 |
 | `/admin/speaker-meeting-requests` | review/approve | SMR-001..015 |
 | `/admin/meeting-tables` · `/business-meetings` | CRUD + scheduling | MHT-001..013, BMT-001..016 |
 

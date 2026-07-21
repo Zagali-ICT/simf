@@ -6,8 +6,9 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
+import '../../app/widgets/simf_info_dialog.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import 'data/seat_map_models.dart';
 import 'data/seat_map_repository.dart';
 import 'widgets/hall_seat_map.dart';
@@ -70,7 +71,13 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
       return;
     }
     if (reserved) {
-      messenger.showSnackBar(SnackBar(content: Text(l10n.seatReservedToast)));
+      // D-750 — a one-button info alert (replaces the old seatReservedToast
+      // snackbar) explaining the 3-minute pre-start check-in hold rule; on
+      // dismiss, pop back to the session page (true → it reloads).
+      await SimfInfoDialog.show(context, title: l10n.seatReservedAlertBody);
+      if (!mounted) {
+        return;
+      }
       navigator.pop(true);
     } else {
       // A full session (the capacity cap the CP enforces) gets its own message so

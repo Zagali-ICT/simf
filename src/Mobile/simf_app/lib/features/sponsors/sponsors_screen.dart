@@ -133,7 +133,7 @@ class SponsorsScreen extends ConsumerWidget {
                       onTap: () => context.pushNamed(
                         RouteNames.sponsorDetail,
                         pathParameters: <String, String>{
-                          'sponsorId': sponsor.id,
+                          RouteParams.sponsorId: sponsor.id,
                         },
                       ),
                     ),

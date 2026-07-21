@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Application.BusinessMeetings.Abstractions;
 using SIMF.Application.Notifications;
+using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.BusinessMeetings;
@@ -24,10 +25,17 @@ internal sealed class BusinessMeetingService(
     SimfIdentityDbContext identityDbContext,
     IAuditLog auditLog,
     INotificationDispatcher notifications,
+    IForumWindowService forumWindow,
     TimeProvider timeProvider,
     ILogger<BusinessMeetingService> logger) : IBusinessMeetingService
 {
     private const int MaxParticipants = 50;
+
+    /// <summary>The event's local-day boundary (KSA, UTC+3) — the same convention
+    /// the programme uses to bucket a session to a Riyadh calendar day. A meeting's
+    /// start/end are converted to this zone before the forum-day bound is checked so
+    /// a late-evening UTC slot files under the correct event day.</summary>
+    private static readonly TimeSpan EventOffset = TimeSpan.FromHours(3);
 
     /// <summary>Hard ceiling on the number of active meeting tables a single hall
     /// may hold — bounds a generate call regardless of the hall's configured
@@ -306,7 +314,7 @@ internal sealed class BusinessMeetingService(
             .SingleOrDefaultAsync(h => h.Id == hallId && h.IsActive, cancellationToken)
             ?? throw NotFound(ErrorCodes.HallNotFound, "Hall not found.", "لم يتم العثور على القاعة.");
 
-        ValidateSlot(request.StartUtc, request.EndUtc);
+        await ValidateSlotAsync(request.StartUtc, request.EndUtc, cancellationToken);
         if (request.Mode == HallAllocationMode.RandomByCount && request.UnitCount is not > 0)
         {
             throw Invalid(ErrorCodes.HallAllocationInvalid,
@@ -484,7 +492,7 @@ internal sealed class BusinessMeetingService(
         Guid actorUserId, ScheduleMeetingRequest request,
         CancellationToken cancellationToken = default)
     {
-        ValidateSlot(request.StartUtc, request.EndUtc);
+        await ValidateSlotAsync(request.StartUtc, request.EndUtc, cancellationToken);
 
         var table = await appDbContext.MeetingTables.AsNoTracking()
             .SingleOrDefaultAsync(t => t.Id == request.MeetingTableId && t.IsActive, cancellationToken)
@@ -862,7 +870,8 @@ internal sealed class BusinessMeetingService(
     private static (int Skip, int Top) Page(GridQuery query) =>
         query.ClampPage(50, 500);
 
-    private void ValidateSlot(DateTimeOffset start, DateTimeOffset end)
+    private async Task ValidateSlotAsync(
+        DateTimeOffset start, DateTimeOffset end, CancellationToken cancellationToken)
     {
         if (end <= start)
         {
@@ -872,17 +881,34 @@ internal sealed class BusinessMeetingService(
         }
 
         // M-5 — lower time bound: a meeting / allocation cannot start in the past.
-        // A hard 'within event window' bound is intentionally NOT enforced here: the
-        // event window lives on the admin-editable OrganizationProfile
-        // (EventStartDate/EventEndDate) and currently holds a stale placeholder range
-        // (2026-01-01..2026-04-30), so gating on it would reject every legitimate
-        // future slot. 'Not in the past' is the correct data-independent lower bound;
-        // window enforcement is a follow-up once that data is made real.
         if (start < timeProvider.GetUtcNow())
         {
             throw Invalid(ErrorCodes.HallAllocationInvalid,
                 "The start time cannot be in the past.",
                 "لا يمكن أن يكون وقت البداية في الماضي.");
+        }
+
+        // D-753 — forum-day bound: a meeting / allocation may only be scheduled on
+        // the authored event days. The window is MIN/MAX over the active
+        // ProgrammeDay.Date rows (NOT the stale OrganizationProfile placeholder). The
+        // slot's start and end are converted to the event-local (+03:00) calendar
+        // date — the same convention the programme uses to bucket a session to a day
+        // — and both must fall inside [MinDate, MaxDate]. When no programme days are
+        // seeded yet the window is null and no bound is applied (scheduling is never
+        // hard-blocked just because content is not seeded).
+        var forum = await forumWindow.GetForumDaysAsync(cancellationToken);
+        if (forum is { } window)
+        {
+            var startDate = DateOnly.FromDateTime(start.ToOffset(EventOffset).DateTime);
+            var endDate = DateOnly.FromDateTime(end.ToOffset(EventOffset).DateTime);
+            if (startDate < window.MinDate || endDate > window.MaxDate)
+            {
+                throw Invalid(ErrorCodes.HallAllocationInvalid,
+                    $"Meetings can only be scheduled within the forum days "
+                        + $"({window.MinDate:yyyy-MM-dd} to {window.MaxDate:yyyy-MM-dd}).",
+                    $"لا يمكن جدولة الاجتماعات إلا خلال أيام الملتقى "
+                        + $"({window.MinDate:yyyy-MM-dd} إلى {window.MaxDate:yyyy-MM-dd}).");
+            }
         }
     }
 

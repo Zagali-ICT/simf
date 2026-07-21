@@ -2,8 +2,10 @@
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
 using SIMF.Application.Attendance.Abstractions;
+using SIMF.Application.SeatReservations.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Attendance;
+using SIMF.Contracts.Sessions;
 
 namespace SIMF.Api.Endpoints.Attendance;
 
@@ -46,4 +48,47 @@ public sealed class ListSessionAttendanceEndpoint(ISessionAttendanceService serv
     public override async Task HandleAsync(GridQuery req, CancellationToken ct) =>
         await Send.OkAsync(ApiResult<GridPage<SessionAttendanceRow>>.Ok(
             await service.ListSessionAttendanceAsync(req, ct)), ct);
+}
+
+public sealed class GetSessionPresentAttendeesRoute { public Guid SessionId { get; set; } }
+
+/// <summary>2026-07-18 (live per-session hall view, CP page 2e) — everyone
+/// currently present in the session's hall (open attendance rows) with their
+/// App-DB profile data + seat. Same <c>Attendance.View</c> gate as the dashboard.</summary>
+public sealed class GetSessionPresentAttendeesEndpoint(ISessionAttendanceService service)
+    : Endpoint<GetSessionPresentAttendeesRoute, ApiResult<IReadOnlyList<SessionPresentAttendee>>>
+{
+    public override void Configure()
+    {
+        Get("/admin/sessions/{sessionId:guid}/present");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Attendance.View),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Tags("Admin");
+    }
+
+    public override async Task HandleAsync(GetSessionPresentAttendeesRoute req, CancellationToken ct) =>
+        await Send.OkAsync(ApiResult<IReadOnlyList<SessionPresentAttendee>>.Ok(
+            await service.GetPresentAttendeesAsync(req.SessionId, ct)), ct);
+}
+
+public sealed class GetAdminSessionSeatMapRoute { public Guid SessionId { get; set; } }
+
+/// <summary>2026-07-18 (live per-session hall view, CP page 2e) — the session's
+/// 4-state seat map (available / unavailable / reserved / confirmed) for the CP,
+/// reusing the app seat-map read with a null actor (no "my seat" cell). Gated by
+/// <c>Attendance.View</c>.</summary>
+public sealed class GetAdminSessionSeatMapEndpoint(ISeatReservationService service)
+    : Endpoint<GetAdminSessionSeatMapRoute, ApiResult<SessionSeatMap>>
+{
+    public override void Configure()
+    {
+        Get("/admin/sessions/{sessionId:guid}/seat-map");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Attendance.View),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Tags("Admin");
+    }
+
+    public override async Task HandleAsync(GetAdminSessionSeatMapRoute req, CancellationToken ct) =>
+        await Send.OkAsync(ApiResult<SessionSeatMap>.Ok(
+            await service.GetSessionSeatMapAsync(req.SessionId, null, ct)), ct);
 }

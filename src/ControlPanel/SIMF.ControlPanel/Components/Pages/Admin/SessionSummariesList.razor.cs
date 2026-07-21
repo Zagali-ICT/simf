@@ -1,4 +1,3 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
@@ -29,6 +28,11 @@ public partial class SessionSummariesList
     private Guid _editSessionId;
     private string _editTitle = string.Empty;
     private string? _editAiModel;
+    // Slice D — read-only AI-transparency sources shown in the editor modal.
+    private string _editSubtitle = string.Empty;
+    private string _editSubtitleArabic = string.Empty;
+    private string _editAiDraftArabic = string.Empty;
+    private DateTimeOffset? _editAiDraftGeneratedAt;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
@@ -152,6 +156,10 @@ public partial class SessionSummariesList
         _editSessionId = detail.SessionId;
         _editTitle = detail.SessionTitle;
         _editAiModel = detail.AiModel;
+        _editSubtitle = detail.Subtitle ?? string.Empty;
+        _editSubtitleArabic = detail.SubtitleArabic ?? string.Empty;
+        _editAiDraftArabic = detail.AiDraftFullTextArabic ?? string.Empty;
+        _editAiDraftGeneratedAt = detail.AiDraftGeneratedAt;
         _edit = new SaveSessionSummaryRequest
         {
             KeyPoints = detail.KeyPoints,
@@ -162,6 +170,9 @@ public partial class SessionSummariesList
             SpeakersArabic = detail.SpeakersArabic,
             FullText = detail.FullText,
             FullTextArabic = detail.FullTextArabic,
+            // Item #35 — the optional team summary-video URL round-trips through
+            // the same upsert as the content sections.
+            SummaryVideoUrl = detail.SummaryVideoUrl,
         };
     }
 
@@ -225,6 +236,13 @@ public partial class SessionSummariesList
         !row.HasSummary ? "—"
         : row.GeneratedByAi ? L["Admin.SessionSummaries.Source.Ai"]
         : L["Admin.SessionSummaries.Source.Manual"];
+
+    // Slice D — the pristine AI-draft panel label, with the capture time rendered
+    // on the Saudi wall clock (the CP's yyyy-MM-dd HH:mm convention) when one is recorded.
+    private string AiDraftLabel =>
+        _editAiDraftGeneratedAt is { } at
+            ? $"{L["Admin.SessionSummaries.Field.AiDraft"]} · {at.FormatSaudi("yyyy-MM-dd HH:mm")}"
+            : L["Admin.SessionSummaries.Field.AiDraft"];
 
     // D-472 (#9) — the team review/approval workflow actions. Each forwards a PUT
     // to the matching admin endpoint, toasts, and reloads the desk.

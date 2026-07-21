@@ -1,3 +1,5 @@
+using System.Globalization;
+using Microsoft.AspNetCore.Components;
 using SIMF.Web.Content;
 
 namespace SIMF.Web.Components.Pages;
@@ -12,6 +14,17 @@ namespace SIMF.Web.Components.Pages;
 // public "ln-" page (LandingHeader / LandingFooter / LandingShell).
 public partial class Landing
 {
+    // D-755 — the CP-editable forum date range (from OrganizationProfile), resolved
+    // server-side during static SSR. Null when the profile is unavailable; the view
+    // then falls back to the Landing.Subnav.Date resx label.
+    [Inject] private ForumDates Dates { get; set; } = default!;
+
+    private string? ForumDate { get; set; }
+
+    protected override async Task OnInitializedAsync() =>
+        ForumDate = await Dates.GetRangeDisplayAsync(
+            CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft);
+
     public sealed record ThreatStat(Bilingual Value, Bilingual Caption);
 
     // Rotating "threat landscape" marquee under the intro lead.

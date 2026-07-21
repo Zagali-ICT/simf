@@ -141,7 +141,7 @@ class MyAreaDashboardBody extends ConsumerWidget {
                         ? () => context.pushNamed(
                               RouteNames.sessionDetail,
                               pathParameters: <String, String>{
-                                'sessionId': item.sessionId!,
+                                RouteParams.sessionId: item.sessionId!,
                               },
                             )
                         : null,
@@ -160,6 +160,13 @@ class MyAreaDashboardBody extends ConsumerWidget {
         MyAreaMoreRow(
           label: l10n.requestsLink,
           onTap: () => context.pushNamed(RouteNames.requests),
+        ),
+        const SizedBox(height: SimfTokens.space4),
+        // #14 — edit the account's interests after sign-up (same interests page
+        // as sign-up, in edit mode).
+        MyAreaMoreRow(
+          label: l10n.interestsTitle,
+          onTap: () => context.pushNamed(RouteNames.myInterests),
         ),
         const SizedBox(height: SimfTokens.space4),
         // D-485 — the standalone Join-a-session hub (the seat-booking flow; the

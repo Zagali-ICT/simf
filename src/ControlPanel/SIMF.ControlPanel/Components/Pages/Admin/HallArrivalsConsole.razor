@@ -41,9 +41,14 @@
                                Helper="@L["Admin.HallArrivals.Field.QrHint"]"
                                MaxLength="64"
                                @bind-Value="_qrId" Disabled="_busy" />
-                <SimfButton Type="button" Loading="_busy" OnClick="RecordAsync">
-                    @L["Admin.HallArrivals.Action.Record"]
-                </SimfButton>
+                <div class="simf-form__actions">
+                    <SimfButton Type="button" Loading="_busy" OnClick="RecordAsync">
+                        @L["Admin.HallArrivals.Action.Record"]
+                    </SimfButton>
+                    <SimfButton Type="button" Loading="_busy" OnClick="DepartAsync">
+                        @L["Admin.HallArrivals.Action.CheckOut"]
+                    </SimfButton>
+                </div>
             </AuthorizedAction>
         }
     </div>

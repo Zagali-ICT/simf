@@ -1,306 +1,275 @@
-# E2E test catalogue — Website programme / agenda (`/programme`)
+# E2E test catalogue — Website "Programme" agenda (`/programme`)
 
 | | |
 |--|--|
-| **Page** | [`web/programme.md`](../../pages/web/programme.md) _(reference doc not yet authored — this catalogue is grounded directly in `Programme.razor`)_ |
+| **Page** | [`web/programme.md`](../../pages/web/programme.md) |
 | **Route** | `/programme` |
-| **Surface** | Website |
-| **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
-| **Auth setup** | **None — the page is anonymous.** `Programme.razor` calls `SimfPublicClient`, which carries **no bearer token**; both `GET /api/v1/programme/sessions` and `GET /api/v1/speakers` are `AllowAnonymous()`. A signed-in session is neither required nor read. (Seeding the agenda for the golden path uses the Control Panel admin — `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper — to create halls / themes / speakers / sessions over the admin API, then the public page is driven anonymously.) |
-| **Last reviewed** | 2026-06-02 |
+| **Surface** | Website (public marketing site - `ln-` Bootstrap SSR) |
+| **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later - keep steps tool-agnostic) |
+| **Auth setup** | **None - anonymous.** `Programme.razor` calls `SimfPublicClient` (no bearer token); `GET /api/v1/app/programme/sessions` + `GET /api/v1/app/speakers` are `AllowAnonymous()`. (Seed the agenda for the golden path via the Control Panel admin - `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper - creating halls / categories / speakers / typed sessions over the admin API, then drive the public page anonymously.) |
+| **Design** | Adapted from the app "Programme schedule" (Figma `883-2308`); **no dedicated website frame** (`web/programme.md` §7). |
+| **Last reviewed** | 2026-07-20 |
 
-> **What this page is.** `/programme` (`Programme.razor`) is the Website's
-> public, anonymous **agenda** (D-199, Mockup page 16 "Agenda"). It is a
-> read-only SSR page with no CRUD, no modal, no form, no toggle and no
-> button. On load `OnInitializedAsync`:
-> 1. `await Api.GetProgrammeSessionsAsync()` → `GET /api/v1/programme/sessions`.
->    A `null` result (failed envelope / unreachable service) sets `_error = true`
->    and the page renders a single `SimfAlert` error.
-> 2. otherwise `BuildDays(...)` groups `Items` by the **local calendar date** of
->    `StartUtc` (`StartUtc.ToLocalTime().Date`), ordered by day then by start time
->    within each day. Zero days renders `SimfEmptyState`.
-> 3. `await Api.GetSpeakersAsync()` → `GET /api/v1/speakers` is **best-effort**:
->    a `null` result leaves the speakers strip empty and does **not** flip the
->    page into the error state.
+> **What this page is.** `/programme` (`Programme.razor`) is the Website's public,
+> anonymous **agenda**, presented app-style: a **day strip** switches the visible
+> day, an optional **type filter** narrows by session kind, and each session is a
+> **timeline card**. On load `OnInitializedAsync`:
+> 1. `await Api.GetProgrammeSessionsAsync()`. A `null` result (failed envelope /
+>    unreachable) sets `_error` and renders a single `ln-agenda__msg` (`role="alert"`).
+> 2. otherwise `BuildDays(...)` groups `Items` by the **event-local (+03:00 Riyadh)
+>    date** of `StartUtc` (`EventTime.Local(StartUtc).Date`), ordered by day then
+>    start time; `_types` = the distinct non-null `SessionType`s. Zero days renders
+>    the empty state.
+> 3. `await Api.GetSpeakersAsync()` is **best-effort**: a `null` result just leaves
+>    the speakers strip empty (never flips to error).
 >
-> **Per row** (within a day `<section class="simf-card">`): a `simf-card__supporting`
-> line `"{HH:mm} – {HH:mm} — {Title}"` (local time window via `TimeWindow`, current
-> culture), a second supporting line for the hall (`Hall`), and — only when the
-> session carries a primary theme name (EN **or** AR) — a neutral `SimfPill` with
-> the theme name.
+> **Structure.** A dark `ln-fsection--dark ln-agenda` band contains: a
+> `ln-agenda__daystrip` (`role="group"`) of `ln-agenda__daypill` buttons
+> (`aria-pressed`, `data-agenda-day=id`, weekday + date number); a
+> `ln-agenda__tabs` type filter (rendered only when `_types` is non-empty) of
+> `ln-agenda__tab` buttons (`aria-pressed`, `data-agenda-type`; "All" =
+> `data-agenda-type=""`); an `ln-agenda__label` `<h2>` ("Schedule"); and per-day
+> `<section class="ln-agenda__day" data-agenda-daypanel=id>` with an `<h3>` date
+> heading + a `<ul>` of `li.ln-agenda__card` (`data-agenda-cardtype=<SessionType|"">`).
+> Each card = an **aria-hidden** time column (`ln-agenda__when`: `t1` / gold
+> `line` / `t2`) + content (optional gold `ln-agenda__cat` chip, `<h4>`
+> `ln-agenda__title`, `ln-agenda__hall`, a visually-hidden `ln-agenda__time-sr`
+> window for AT, optional `ln-agenda__desc`). A `ln-agenda__none` note replaces a
+> day the filter empties.
 >
-> **Bilingual fallback.** `Title` / `Hall` / `ThemeName` / `SpeakerName` use the
-> Arabic-preferred-then-English `Pick(...)` helper: in an Arabic UI use the `*Arabic`
-> value when present, else the base value; a null base renders empty. The day
-> heading uses `dddd, d MMMM yyyy` in `CurrentUICulture`.
+> **Progressive enhancement.** `landing.js` `initAgenda` toggles
+> `is-active`/`is-hidden`/`is-empty` + `aria-pressed`, then adds `is-enhanced` to
+> the band. The single-day view + the filter are gated on `.is-enhanced`, so with
+> **no JS every day + card stays visible** (nothing is hidden, no filtering).
 >
-> **Auth model (Website, anonymous).** This is **not** a Control-Panel page: there
-> is **no** `RequirePermission`, no `/not-permitted` gate, and **no** unauthenticated
-> → `/login` redirect. The page is reachable by anyone, signed in or not. The
-> "auth" row below therefore asserts the *anonymous-by-design* contract (the page
-> loads with no Authorization header and never 401s), not a redirect.
+> **Single `<h1>`** = the `LandingPageHero` title; day headings are `<h3>`, session
+> titles `<h4>`.
+>
+> **Auth model (Website, anonymous).** No `RequirePermission`, no `/login` or
+> `/not-permitted` redirect. The "auth" row asserts the anonymous-by-design contract.
 
 ## Coverage matrix
 
 | ID | Scenario | Type | Priority | Status |
 |----|----------|------|----------|--------|
-| E2E-WPG-001 | Golden path — published agenda renders day sections, each session row (time window — title, hall, theme pill) + the speakers strip | happy | P0 | _to author_ |
-| E2E-WPG-002 | Day grouping & ordering — sessions group by local calendar date and sort by start time within each day | happy | P1 | _to author_ |
-| E2E-WPG-003 | Theme pill is conditional — a session with no primary theme name renders no `SimfPill`; one with a theme name renders the neutral pill | happy | P1 | _to author_ |
-| E2E-WPG-004 | Speakers strip is best-effort — `GET /speakers` returns 0 rows ⇒ no speakers section; speakers fetch fails ⇒ agenda still renders (no error state) | resilience | P1 | _to author_ |
-| E2E-WPG-005 | Empty state — `GET /programme/sessions` returns 0 items ⇒ `SimfEmptyState` ("No sessions yet") and no error alert | happy | P1 | _to author_ |
-| E2E-WPG-006 | Auth: anonymous-by-design — page loads with no Authorization header, no `/login` redirect, no `/not-permitted` | auth | P0 | _to author_ |
-| E2E-WPG-007 | Error state — `GET /programme/sessions` fails (null envelope / unreachable) ⇒ `SimfAlert` error, no day sections | resilience | P1 | _to author_ |
-| E2E-WPG-008 | Server 500 on `/programme/sessions` ⇒ client maps to null ⇒ error alert, no unhandled exception | resilience | P2 | _to author_ |
-| E2E-WPG-009 | Speakers-only resilience — sessions 200 but `/speakers` returns 500 ⇒ agenda renders, speakers strip absent, no error alert | resilience | P2 | _to author_ |
-| E2E-WPG-010 | RTL / Arabic render — day headings, titles, halls, theme pills and speaker names render Arabic; page mirrors right-to-left | i18n | P1 | _to author_ |
+| E2E-WPG-001 | Golden path - hero + day strip + type filter + timeline cards + speakers; one `<h1>` | happy | P0 | _to author_ |
+| E2E-WPG-002 | Day grouping & ordering - group by event-local (+03:00) date, sort by start | happy | P1 | _to author_ |
+| E2E-WPG-003 | Day strip switches the visible day (JS) - only the active day shows; `aria-pressed` moves | happy | P0 | _to author_ |
+| E2E-WPG-004 | Type filter (data-driven) - tabs render only when types exist; a tab hides non-matching cards; an emptied day shows the note | happy | P0 | _to author_ |
+| E2E-WPG-005 | Card content is data-driven - chip (category else theme) + description render when present; both omit when null; Pick fallback | happy | P1 | _to author_ |
+| E2E-WPG-006 | Speakers strip is best-effort - 0 rows or a failed `/speakers` omits the strip; agenda still renders | resilience | P1 | _to author_ |
+| E2E-WPG-007 | Empty state - 0 sessions => the `ln-fsection` empty state, no error | happy | P1 | _to author_ |
+| E2E-WPG-008 | Error state - a failed sessions envelope => `ln-agenda__msg`, no day sections | resilience | P1 | _to author_ |
+| E2E-WPG-009 | Server 500 on `/programme/sessions` => null => error block, no unhandled exception | resilience | P2 | _to author_ |
+| E2E-WPG-010 | Auth: anonymous-by-design - no Authorization header, no `/login` / `/not-permitted` | auth | P0 | _to author_ |
+| E2E-WPG-011 | No-JS fallback - every day + card visible, no filtering, content reachable | resilience | P0 | _to author_ |
+| E2E-WPG-012 | RTL / Arabic - day strip + tabs + time column mirror; Arabic content | i18n | P1 | _to author_ |
+| E2E-WPG-013 | Responsive - day strip scrolls, tabs wrap, cards stack; no overflow at 1440/1280/1024/768/390 both languages | responsive | P1 | _to author_ |
+| E2E-WPG-014 | Reachability - the Programs mega-menu "Full agenda" item opens `/programme` | nav | P1 | _to author_ |
 
 ## Scenarios
 
 ### E2E-WPG-001 — Golden path
 
 ```gherkin
-Feature: Website programme agenda renders the published forum schedule
+Feature: Website programme agenda shows an app-style schedule
   As any visitor (anonymous or signed in)
-  I want to see the full forum agenda grouped by day
-  So that I can plan which sessions and halls to attend
+  I want a day strip, a type filter and timeline cards
+  So that I can browse the forum schedule by day and kind
 
 Background:
-  Given the API is reachable on http://localhost:5175
-  And the Website is reachable on http://localhost:5115
-  And — to seed the agenda — an Administrator has signed into the Control Panel
-      (superadmin@zagali-ict.com + TOTP via the Get-Totp helper)
-  And via the admin API a Hall "Main Hall" / "القاعة الرئيسية" (capacity 120) exists
-  And a Theme "Keynote" / "الكلمة الرئيسية" (a colour) exists
+  Given the API is reachable on http://localhost:5175 and the Website on http://localhost:5115
+  And via the admin API a Hall "Main Hall" / "القاعة الرئيسية" exists
+  And a Category "Opening & Welcome" / "الافتتاح والترحيب" exists
   And a Speaker "Dr. Sarah Al-Otaibi" / "د. سارة العتيبي" (rank "Chief Scientist") exists and is active
-  And an active published Session "Opening Keynote" / "الكلمة الافتتاحية" is scheduled
-      in "Main Hall", tagged with the "Keynote" theme, from 09:00 to 10:30 local on day D
-  And the browser is a fresh anonymous session (no auth cookie, no bearer token)
+  And a published Session "Opening Session" / "الجلسة الافتتاحية" in "Main Hall", category "Opening & Welcome",
+      type Event, 09:00-10:00 Riyadh on day D, with an Arabic + English description
+  And the browser is a fresh anonymous session
 
-Scenario: The published agenda renders one day section with the seeded session and the speakers strip
+Scenario: The agenda renders the day strip, timeline card and speakers
   When the browser opens /programme
-  Then a GET /api/v1/programme/sessions request fires with NO Authorization header and returns 200
-  And the ApiResult envelope is Success = true with Data.Items containing the "Opening Keynote" session
-  And a GET /api/v1/speakers request fires (anonymous) and returns 200
-  And the SimfBanner title reads "Programme" and the subtitle reads "The full forum agenda — sessions, halls and times."
-  And a day <section class="simf-card"> renders with an h2 heading formatted "dddd, d MMMM yyyy" for day D (e.g. "Wednesday, 3 June 2026")
-  And inside that section a list item shows the supporting line "09:00 – 10:30 — Opening Keynote"
-  And a second supporting line shows the hall "Main Hall"
-  And a neutral SimfPill shows the theme name "Keynote"
-  And a "Speakers" section renders with a list item "Dr. Sarah Al-Otaibi" and a neutral pill "Chief Scientist"
-  And neither the SimfEmptyState nor the SimfAlert error is present
+  Then the shared header + footer render (LandingShell chrome)
+  And an interior hero (section.ln-pghero) renders exactly one <h1> "Programme"
+  And GET /api/v1/app/programme/sessions fires with NO Authorization header and returns 200
+  And GET /api/v1/app/speakers fires (anonymous) and returns 200
+  And a section.ln-fsection--dark.ln-agenda renders
+  And a ln-agenda__daystrip renders a ln-agenda__daypill for day D (weekday + date number), aria-pressed="true" once JS runs
+  And a ln-agenda__tab type filter renders "All" + "Events" (types present)
+  And a ln-agenda__label <h2> reads "Schedule"
+  And a ln-agenda__day for day D renders an <h3> date heading and a li.ln-agenda__card
+  And the card shows a gold ln-agenda__cat "Opening & Welcome", an <h4> "Opening Session", the hall "Main Hall",
+      a ln-agenda__when time column 09:00 / 10:00, and the description
+  And a ln-agenda__time-sr window "09:00 – 10:00" is present for assistive tech
+  And a navy speakers band (section.ln-fsection--dark) renders a li.ln-agenda__spk "Dr. Sarah Al-Otaibi" + rank "Chief Scientist"
   And the page title is "Programme · Saudi International Maritime Forum"
 ```
 
 **Evidence captured:**
-- Screenshot before: `docs/screenshots/web-programme-agenda-before.png` (full agenda with the day section + speakers strip)
-- Screenshot after: `docs/screenshots/web-programme-agenda-after.png` (session row + theme pill in focus)
-- Console errors: 0 expected
-- Network: `GET /api/v1/programme/sessions` and `GET /api/v1/speakers` each return 200 (ApiResult envelope, `Success = true`); no other `/api/v1/...` call fires from this page; neither call carries an Authorization header
-- Audit row: none — `/programme` is a read-only anonymous page and writes no `OperationLog` / `RowAudit` row
+- Screenshot: `docs/screenshots/web-programme-en.png` (EN) + `web-programme-ar.png` (AR) + `web-programme-mobile.png`
+- Console errors: 0 (the site-wide `favicon.ico` 404 + a benign shared-chrome font-preload warning are allowed)
+- Network: `GET /api/v1/app/programme/sessions` + `/speakers` each 200, no Authorization header; hero + footer assets 200
+- Audit row: none (read-only anonymous page)
 
-### E2E-WPG-002 — Day grouping & ordering
+### E2E-WPG-002 — Day grouping & ordering (event-local +03:00)
 
 ```gherkin
-Scenario: Sessions group by local calendar date and sort by start time within each day
-  Given three active sessions exist:
-    | code | title            | start (local)        | end (local)          |
-    | S1   | Afternoon Panel  | day D 14:00          | day D 15:00          |
-    | S2   | Opening Keynote  | day D 09:00          | day D 10:30          |
-    | S3   | Day-2 Workshop   | day D+1 09:00        | day D+1 11:00        |
+Scenario: Sessions group by the event-local (+03:00) date and sort by start
+  Given sessions: S1 "Afternoon" day D 14:00; S2 "Opening" day D 09:00; S3 "Day-2" day D+1 09:00 (Riyadh)
   When the browser opens /programme
-  Then exactly two day <section> cards render, in ascending day order: day D then day D+1
-  And the day-D section lists "Opening Keynote" (09:00 – 10:30) before "Afternoon Panel" (14:00 – 15:00)
-  And the day-D+1 section lists "Day-2 Workshop" (09:00 – 11:00)
-  And the grouping key is the LOCAL calendar date of StartUtc (StartUtc.ToLocalTime().Date), not the UTC date
+  Then two ln-agenda__day panels render (data-agenda-daypanel "0" then "1"), ascending
+  And day 0 lists "Opening" (09:00 – 10:00) before "Afternoon" (14:00 – ...)
+  And the grouping key is EventTime.Local(StartUtc).Date (+03:00), not the server-local or UTC date
 ```
 
-> **Note.** `BuildDays` orders by `StartUtc`, then groups by
-> `StartUtc.ToLocalTime().Date`, then orders the groups by date — so a session
-> whose UTC instant falls on a different local day appears under the **local**
-> day. When asserting the heading text, compute it from the test machine's local
-> timezone, not from UTC.
-
-### E2E-WPG-003 — Conditional theme pill
+### E2E-WPG-003 — Day strip switches the day (JS)
 
 ```gherkin
-Scenario: The neutral theme pill renders only when a primary theme name is present
-  Given an active session "Networking Break" / "استراحة تواصل" exists in a hall with NO theme tagged
-      (PrimaryThemeName and PrimaryThemeNameArabic both null/blank)
-  And an active session "Opening Keynote" exists tagged with the "Keynote" theme
+Scenario: Clicking a day pill shows that day only
+  Given the agenda has 3 days and JS is enabled
   When the browser opens /programme
-  Then the "Opening Keynote" row renders a neutral SimfPill reading "Keynote"
-  And the "Networking Break" row renders NO SimfPill at all
-  And both rows still render their time-window line and their hall line
+  Then only the first day's ln-agenda__day is visible (is-enhanced hides the others); its pill has aria-pressed="true"
+  When the user clicks the 2nd ln-agenda__daypill (data-agenda-day="1")
+  Then only day 1's panel is visible; its pill has aria-pressed="true" and the others "false"
 ```
 
-### E2E-WPG-004 — Speakers strip is best-effort
+### E2E-WPG-004 — Type filter (data-driven + empty-day note)
 
 ```gherkin
-Scenario: No speakers ⇒ the speakers section is omitted, the agenda still renders
-  Given at least one active session exists
-  And GET /api/v1/speakers returns 200 with Data.Items = [] (no active speakers)
+Scenario: The type filter hides non-matching cards and notes an emptied day
+  Given day 0 has an Event and a Session, and at least one Workshop exists on another day
   When the browser opens /programme
-  Then the day sections render normally
-  And NO "Speakers" section is present (the strip renders only when _speakers.Count > 0)
-  And no error alert appears
-
-Scenario: A speakers fetch failure does not break the agenda
-  Given at least one active session exists (GET /programme/sessions returns 200)
-  And GET /api/v1/speakers returns a failed/unreachable result (the client maps it to null)
-  When the browser opens /programme
-  Then the day sections still render
-  And the speakers strip is empty (omitted)
-  And _error stays false — the page does NOT show the SimfAlert error
+  Then a ln-agenda__tabs renders "All" (aria-pressed="true") + "Workshops" + "Sessions" + "Events"
+  When the user clicks the "Workshops" tab (data-agenda-type="Workshop")
+  Then every visible li.ln-agenda__card has data-agenda-cardtype="Workshop" (others get .is-hidden)
+  And a day with no Workshop shows the ln-agenda__none note "No sessions match this filter." (its list hidden)
+  When the sessions carry NO type at all
+  Then the ln-agenda__tabs row is NOT rendered (data-driven)
 ```
 
-> The page comment is explicit: "a failure to load [speakers] must not turn the
-> whole agenda into an error state, so a null result just leaves the strip empty."
-
-### E2E-WPG-005 — Empty state
+### E2E-WPG-005 — Card content is data-driven
 
 ```gherkin
-Scenario: Zero published sessions renders SimfEmptyState
-  Given the database has no active published Session rows
-  And GET /api/v1/programme/sessions returns 200 with Data.Items = []
+Scenario: The chip + description render only when present, with the shared fallback
+  Given session A has category "Maritime Security" (EN+AR) and a description; session B has neither
   When the browser opens /programme
-  Then BuildDays produces zero day sections (_days.Count == 0)
-  And the page renders the SimfEmptyState component
-  And the empty state title reads "No sessions yet" / "لا توجد جلسات بعد"
-  And the empty state description reads "The agenda has not been published yet. Please check back soon." / "لم يتم نشر الأجندة بعد. يُرجى التحقق لاحقًا."
-  And no SimfAlert error appears
-  And the SimfBanner still renders the "Programme" title + subtitle
+  Then A's card shows a gold ln-agenda__cat chip and a ln-agenda__desc
+  And B's card shows neither (Chip = PickOrNull(category) ?? PickOrNull(theme) = null; Description = null)
+  And under the English culture, a category set only in Arabic still shows (Pick falls back to the non-blank language)
 ```
 
-### E2E-WPG-006 — Auth gate (anonymous by design)
+### E2E-WPG-006 — Speakers strip is best-effort
 
 ```gherkin
-Scenario: The page is reachable anonymously and never redirects to a login or not-permitted page
-  Given a fresh browser with no auth cookie and no bearer token
-  When the user opens /programme directly
-  Then the page renders (agenda or empty state) WITHOUT redirecting to /login
-  And the page does NOT redirect to /not-permitted (that is a Control-Panel concept, not present here)
-  And the GET /api/v1/programme/sessions request carries NO Authorization header
-  And the API does not return 401/403 for the public reads
-
-Scenario: A signed-in session changes nothing on this page
-  Given an Approved Visitor is signed in on the Website
-  When they open /programme
-  Then the same anonymous public reads fire (no bearer token is attached by SimfPublicClient)
-  And the rendered agenda is identical to the anonymous view
-```
-
-> **Note (Website, not CP).** Unlike a Control-Panel page, `/programme` has **no**
-> `RequirePermission` attribute and never routes to `/not-permitted`. `SimfPublicClient`
-> deliberately attaches no bearer token; both backing endpoints are `AllowAnonymous()`.
-> The "auth gate" for this page is the *absence* of any gate — assert that the
-> anonymous read succeeds and that no redirect occurs.
-
-### E2E-WPG-007 — Error state (sessions fetch returns null)
-
-```gherkin
-Scenario: A failed sessions envelope shows the SimfAlert error
-  Given GET /api/v1/programme/sessions returns a body whose ApiResult envelope has Success = false
-      (so SimfPublicClient.GetProgrammeSessionsAsync returns null)
+Scenario: No speakers -> the strip is omitted, the agenda still renders
+  Given at least one session exists and GET /speakers returns 200 with Items = [] (or fails -> null)
   When the browser opens /programme
-  Then OnInitializedAsync sets _error = true and returns early
-  And the page renders a single SimfAlert with Variant="error"
-  And the alert reads "The programme could not be loaded. Please try again." / "تعذّر تحميل البرنامج. حاول مرة أخرى."
-  And NO day sections, NO empty state, and NO speakers strip render
-  And no GET /api/v1/speakers request fires (the method returned before reaching the speakers call)
+  Then the agenda renders and NO section.ln-fsection--dark speakers band is present; no error appears
 ```
 
-### E2E-WPG-008 — Server 500 on /programme/sessions
+### E2E-WPG-007 — Empty state
 
 ```gherkin
-Scenario: API 500 on the sessions list degrades to the error alert with no unhandled exception
-  Given GET /api/v1/programme/sessions returns HTTP 500 (e.g. the DB is down)
+Scenario: Zero sessions renders the ln- empty state
+  Given GET /programme/sessions returns 200 with Items = []
   When the browser opens /programme
-  Then SimfPublicClient reads the body and, on a failed/non-JSON envelope, returns null (it never throws for HttpRequestException / JsonException / timeout)
-  And the page sets _error = true
-  And the SimfAlert error renders ("The programme could not be loaded. Please try again.")
-  And no unhandled exception reaches the browser console
-  And the speakers call is not reached
+  Then a section.ln-fsection renders <h2> "No sessions yet" + the sub text; no ln-agenda__msg error; the hero still renders
 ```
 
-### E2E-WPG-009 — Speakers-only resilience (sessions OK, speakers 500)
+### E2E-WPG-008 — Error state
 
 ```gherkin
-Scenario: A 500 on /speakers leaves the agenda intact
-  Given GET /api/v1/programme/sessions returns 200 with at least one session
-  And GET /api/v1/speakers returns HTTP 500
+Scenario: A failed sessions envelope shows the ln- error block
+  Given GET /programme/sessions returns Success=false (client -> null)
   When the browser opens /programme
-  Then GetSpeakersAsync returns null (no throw)
-  And the speakers strip is omitted
-  And the day sections render normally
-  And _error stays false — NO SimfAlert error renders
-  And no unhandled exception reaches the browser console
+  Then a single p.ln-agenda__msg (role="alert") renders "The programme could not be loaded. Please try again."
+  And NO day strip / cards / speakers render; no /speakers request fires
 ```
 
-### E2E-WPG-010 — RTL / Arabic render
+### E2E-WPG-009 — Server 500
 
 ```gherkin
-Scenario: The agenda mirrors and renders Arabic content under an Arabic UI culture
-  Given the seeded session has TitleArabic="الكلمة الافتتاحية", HallNameArabic="القاعة الرئيسية", PrimaryThemeNameArabic="الكلمة الرئيسية"
-  And the seeded speaker has NameArabic="د. سارة العتيبي"
-  When the browser opens /programme under the Arabic UI culture (<html dir="rtl" lang="ar">)
-  Then the page mirrors right-to-left
-  And the SimfBanner title reads "البرنامج" and the subtitle reads "الأجندة الكاملة للملتقى — الجلسات والقاعات والأوقات."
-  And the day heading renders in the Arabic culture's "dddd, d MMMM yyyy" form
-  And the session line shows the Arabic title "الكلمة الافتتاحية" (Pick prefers the *Arabic value)
-  And the hall line shows "القاعة الرئيسية"
-  And the theme pill shows "الكلمة الرئيسية"
-  And the "Speakers" heading reads "المتحدثون" and the speaker name shows "د. سارة العتيبي"
-  And no Latin text leaks where an Arabic value is present (the English base is used only when the *Arabic field is blank)
+Scenario: API 500 degrades to the error block with no unhandled exception
+  Given GET /programme/sessions returns HTTP 500
+  When the browser opens /programme
+  Then SimfPublicClient returns null (never throws); the ln-agenda__msg error renders; no console exception; the speakers call is not reached
+```
 
-Scenario: Arabic fallback when an *Arabic field is blank
-  Given a session has Title="Tech Demo" but TitleArabic is blank
-  When the page renders under the Arabic culture
-  Then the session line falls back to the English "Tech Demo" (Pick returns the base when arabic is blank)
+### E2E-WPG-010 — Auth (anonymous by design)
+
+```gherkin
+Scenario: Reachable anonymously; never redirects to login / not-permitted
+  Given a fresh browser with no auth cookie / bearer token
+  When the user opens /programme
+  Then the page renders WITHOUT redirecting to /login or /not-permitted
+  And the sessions request carries NO Authorization header; the API does not 401/403
+  And a signed-in session changes nothing (SimfPublicClient attaches no bearer)
+```
+
+### E2E-WPG-011 — No-JS fallback
+
+```gherkin
+Scenario: With JS disabled every day + card is visible and reachable
+  Given the browser has JavaScript disabled (initAgenda never runs)
+  When the user opens /programme
+  Then the ln-agenda band has NO .is-enhanced class
+  And EVERY ln-agenda__day panel is visible (no day is display:none) with its <h3> date heading
+  And NO ln-agenda__card is hidden and NO ln-agenda__none note shows
+  And the day pills + type tabs render but are inert (no filtering) - all content is reachable by scrolling
+```
+
+### E2E-WPG-012 — RTL / Arabic
+
+```gherkin
+Scenario: The agenda mirrors and renders Arabic under the Arabic culture
+  When the browser opens /programme under <html dir="rtl" lang="ar">
+  Then the <h1> reads "البرنامج"; the ln-agenda__label reads "المواعيد"
+  And the ln-agenda__daystrip + ln-agenda__tabs sit inline-start (right); the day pills read e.g. "الجمعة 20"
+  And the tabs read "الكل / ورش العمل / جلسات / الأحداث"
+  And each card's ln-agenda__when time column sits on the RIGHT; the chip/title/hall/description render Arabic
+  And the ln-agenda__spkrank keeps its English value but is tagged lang="en"
+  And no Latin text leaks where an Arabic value exists (Pick prefers the *Arabic value)
+```
+
+### E2E-WPG-013 — Responsive
+
+```gherkin
+Scenario: The agenda reflows with no horizontal overflow
+  When the viewport width is set to each of 1440, 1280, 1024, 768, 390
+  Then at every width document.scrollWidth == document.clientWidth (no horizontal overflow)
+  And the ln-agenda__daystrip scrolls horizontally if the days overflow; the ln-agenda__tabs wrap
+  And at <= 640px each ln-agenda__card stacks (flex-direction: column) and its ln-agenda__when goes horizontal
+  And this holds in BOTH the EN (LTR) and AR (RTL) cultures
+```
+
+### E2E-WPG-014 — Reachability via the nav
+
+```gherkin
+Scenario: The "Full agenda" nav item opens the page
+  Given the browser is on any Website page with the shared nav header
+  When the user opens the "Programmes" mega-menu and clicks "Full agenda" / "الأجندة الكاملة"
+  Then the browser navigates to /programme
 ```
 
 ---
 
 ## Implementation notes
 
-- **Read-only, anonymous, no CRUD.** `/programme` has no button, modal, form,
-  filter, toggle or grid action — the matrix above is exhaustive for the page's
-  *actual* behaviour (load → group → render, plus the best-effort speakers strip
-  and the three terminal states: agenda / empty / error). Do not invent Add/Edit/
-  Delete or permission scenarios that the page does not have.
-- **Anonymous by design.** `SimfPublicClient` carries no bearer token and both
-  backing endpoints are `AllowAnonymous()` (`ListProgrammeSessionsEndpoint` and
-  `ListPublicSpeakersEndpoint`). The "auth" scenario (E2E-WPG-006) asserts the
-  anonymous contract, not a `/login` or `/not-permitted` redirect (that is the
-  Control-Panel pattern, absent here).
-- **Day-filter parameter not used by this page.** The API supports
-  `GET /api/v1/programme/sessions?day=yyyy-MM-dd` (the Day 1/2/3 segmented control
-  for the Flutter agenda), but `Programme.razor` calls the unfiltered
-  `GetProgrammeSessionsAsync()` and groups client-side. The malformed-`day` →
-  400 path (`ErrorCodes.SessionInvalid`) is therefore **out of scope for this
-  Website page** and is exercised at the API layer instead (see below).
-- **Lower-layer coverage (API integration tests, no browser):**
-  - `tests/SIMF.Api.Tests/ProgrammeSessionsTests.cs` covers the backing
-    `GET /api/v1/programme/sessions` (+ `{id}`): `Public_list_is_anonymous_and_returns_active_session_with_hall_and_theme`,
-    `Public_list_is_ordered_by_start_time`, `Day_filter_restricts_to_that_utc_calendar_day`,
-    `Malformed_day_filter_is_rejected_with_400`, `Detail_returns_speakers_themes_and_seat_summary`,
-    `Capacity_override_drives_the_seat_summary_capacity`,
-    `Soft_deleted_session_drops_off_list_and_detail_404s`, `Unknown_session_id_returns_404`.
-  - `tests/SIMF.Api.Tests/PublicSpeakersTests.cs` covers the backing
-    `GET /api/v1/speakers` (+ `{id}`): `Public_list_is_anonymous_and_succeeds`,
-    `Created_active_speaker_appears_in_public_list_and_detail`,
-    `Public_list_is_ordered_by_display_order`, `Public_detail_unknown_id_returns_404`,
-    `Deactivated_speaker_is_absent_from_list_and_detail_404s`,
-    `Detail_returns_the_speakers_active_sessions`,
-    `Social_urls_are_hidden_unless_speaker_consents_to_data_sharing`.
-  These prove the wire contract (anonymous, ordering, soft-delete drop-off, 400/404)
-  at a lower layer; the E2E scenarios above prove the *rendered* agenda — day
-  grouping by local time, the conditional theme pill, the best-effort speakers
-  strip, and the three terminal UI states.
-- **Convert to Playwright** when the runner is adopted: copy each Gherkin scenario
-  into a `.feature` under `tests/SIMF.E2E.Tests/` (project TBD) with a
-  step-definition class. The steps are already runner-agnostic.
+- **Read-only, anonymous.** The only interactions are the day strip + type filter
+  (client-side JS) and navigations; no CRUD, no server round-trip on filter.
+- **Filter contract.** The tab's `data-agenda-type` and the card's
+  `data-agenda-cardtype` both come from `SessionType.ToString()`
+  (`Workshop`/`Session`/`Event`); the JS filter is string-equality, so the two
+  must not drift (pinned by the bUnit multi-day/typed test).
+- **Progressive enhancement.** The single-day view + filter are gated on
+  `.is-enhanced` (JS-added), so WPG-011 (no-JS) is the safety contract: all
+  content reachable without JS.
+- **Lower-layer coverage:** component (bUnit) `tests/SIMF.Web.Tests/ProgrammePageTests.cs`
+  pins the render branches + the day-id / filter / chip contract via a stub
+  `SimfPublicClient`; API integration `ProgrammeSessionsTests` + `PublicSpeakersTests`
+  prove the wire contract. The JS toggle path (WPG-003/004/011) is browser-only.
+- **Convert to Playwright** when adopted: copy each Gherkin scenario into a
+  `.feature` under `tests/SIMF.E2E.Tests/`.
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-07-20 by Claude (Programme agenda - app-style day strip + type filter + timeline cards, `ln-` SSR, live data).

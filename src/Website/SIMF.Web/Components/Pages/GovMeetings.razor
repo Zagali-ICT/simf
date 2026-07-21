@@ -1,0 +1,40 @@
+@* SIMF public "Government business meetings" page — Figma node 5867-23988.
+   Fourth (final) Programme-cluster page. Built on the shared LandingShell +
+   LandingPageHero (no breadcrumb) + the reused ln-fsection / ln-venue families.
+   Bilingual AR-RTL / EN-LTR. Static content (no API). Serves "/programme/gov-meetings".
+
+   NOTE: the Figma frame is a pure stub — an un-customised clone of the Organizer
+   placeholder (same "الجهة المنظمة" title + MOD cards, no gov-meetings design).
+   Rather than replicate the placeholder, this shows a real minimal description +
+   a "register your interest" CTA; a full design awaits a real Figma frame —
+   see web/gov-meetings.md §7. *@
+@page "/programme/gov-meetings"
+@layout LandingLayout
+@inject IStringLocalizer<Strings> L
+
+<LandingShell Title="@L["GovMeetings.PageTitle"]" Description="@L["GovMeetings.Meta"]">
+
+    @* ============================== HERO ============================== *@
+    <LandingPageHero Title="@L["GovMeetings.Hero.Title"]"
+                     Subtitle="@L["GovMeetings.Hero.Subtitle"]"
+                     ImageSrc="assets/figma/about/about-hero.jpg" />
+
+    @* ==================== INTRO + REGISTER-INTEREST CTA ==================== *@
+    <section class="ln-fsection" aria-label="@L["GovMeetings.Section.Title"]">
+        <div class="ln-fsection__inner ln-reveal">
+            <header class="ln-fsection__head">
+                <h2 class="ln-fsection__title">@L["GovMeetings.Section.Title"]</h2>
+                <p class="ln-fsection__sub">@L["GovMeetings.Section.Sub"]</p>
+            </header>
+            <div class="ln-venue">
+                <span class="ln-venue__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="7" width="18" height="13" rx="2" stroke="currentColor" stroke-width="1.6" /><path d="M8 7V5.5A1.5 1.5 0 019.5 4h5A1.5 1.5 0 0116 5.5V7M3 12h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                </span>
+                <h3 class="ln-venue__name">@L["GovMeetings.Card.Title"]</h3>
+                <p class="ln-venue__addr">@L["GovMeetings.Card.Body"]</p>
+                <a class="ln-btn ln-btn--primary" href="mailto:info@simforum.mod.gov.sa?subject=Government%20business%20meetings">@L["GovMeetings.Cta"]</a>
+            </div>
+        </div>
+    </section>
+
+</LandingShell>

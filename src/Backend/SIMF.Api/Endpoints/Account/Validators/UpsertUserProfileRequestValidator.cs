@@ -196,6 +196,13 @@ public sealed class UpsertUserProfileRequestValidator
                 "Job title must be at most 100 characters.",
                 "يجب ألا يتجاوز المسمى الوظيفي 100 حرف.");
 
+        // 2026-07-20 — the Arabic twin, same 100-char SSOT as JobTitle.
+        RuleFor(request => request.JobTitleArabic)
+            .MaximumLength(100).When(r => !string.IsNullOrEmpty(r.JobTitleArabic))
+            .Bilingual(
+                "Job title (Arabic) must be at most 100 characters.",
+                "يجب ألا يتجاوز المسمى الوظيفي (بالعربية) 100 حرف.");
+
         // D-197 — date of birth is required, and the registrant must be at
         // least 18 years old (owner rule). The age check is leap-safe via
         // DateOnly.AddYears; eligible iff dob is on or before (today − 18y).

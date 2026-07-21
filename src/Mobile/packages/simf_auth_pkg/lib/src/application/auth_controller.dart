@@ -337,7 +337,17 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
     );
     await _persistSession(session);
     _setSignedIn(session);
-    await reloadCurrentUser();
+    // D-441: the session is already established at this point. A failure in
+    // the best-effort profile hydration must not skip the post-sign-in
+    // navigation — the caller will detect AuthStateSignedIn and route.
+    // Any exception from reloadCurrentUser is caught so it never propagates
+    // past the caller's routing check.
+    try {
+      await reloadCurrentUser();
+    } catch (_) {
+      // Best-effort — the user is signed in; the hydrate failure is logged
+      // by the repository layer and surfaced on the next onboarded call.
+    }
   }
 
   /// Turns Face-ID sign-in off on this device: best-effort revokes the key on

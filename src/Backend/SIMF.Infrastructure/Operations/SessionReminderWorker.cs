@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Notifications;
+using SIMF.Application.Operations;
 using SIMF.Common.Enums;
 using SIMF.Infrastructure.Persistence;
 
@@ -30,6 +31,7 @@ namespace SIMF.Infrastructure.Operations;
 internal sealed class SessionReminderWorker(
     IServiceScopeFactory scopeFactory,
     TimeProvider timeProvider,
+    IWorkerHeartbeatRegistry heartbeat,
     ILogger<SessionReminderWorker> logger) : BackgroundService
 {
     private static readonly TimeSpan PollInterval = TimeSpan.FromMinutes(1);
@@ -48,6 +50,11 @@ internal sealed class SessionReminderWorker(
             (int)StartupDelay.TotalSeconds, (int)PollInterval.TotalSeconds,
             (int)ReminderLeadTime.TotalMinutes);
 
+        heartbeat.Register(
+            nameof(SessionReminderWorker),
+            "Sends 'session starting soon' reminders to booked attendees.",
+            PollInterval);
+
         try
         {
             await Task.Delay(StartupDelay, timeProvider, stoppingToken);
@@ -62,6 +69,7 @@ internal sealed class SessionReminderWorker(
             try
             {
                 await CheckOnceAsync(stoppingToken);
+                heartbeat.RecordSuccess(nameof(SessionReminderWorker));
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -69,6 +77,7 @@ internal sealed class SessionReminderWorker(
             }
             catch (Exception ex)
             {
+                heartbeat.RecordFailure(nameof(SessionReminderWorker), ex.Message);
                 logger.LogError(ex, "SessionReminderWorker tick failed.");
             }
             try

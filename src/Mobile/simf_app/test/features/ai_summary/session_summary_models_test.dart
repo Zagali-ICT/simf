@@ -33,6 +33,24 @@ void main() {
       expect(summary.publishedAt, isNull);
       expect(summary.publishedAtUtc, isNull);
       expect(summary.keyPointsLines(false), isEmpty);
+      // Item #35 — the two video URLs default to null (no players shown).
+      expect(summary.recordingUrl, isNull);
+      expect(summary.summaryVideoUrl, isNull);
+    });
+
+    // Item #35 — the summary surface carries two videos: the full live
+    // recording and the team's short summary video, each from its own JSON key.
+    test('decodes the recording + summary video urls when present', () {
+      final summary = SessionSummary.fromJson(const <String, dynamic>{
+        'recordingUrl': 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        'summaryVideoUrl': 'https://youtu.be/abcdefghijk',
+      });
+
+      expect(
+        summary.recordingUrl,
+        'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      );
+      expect(summary.summaryVideoUrl, 'https://youtu.be/abcdefghijk');
     });
   });
 
