@@ -16,9 +16,9 @@
 | Metric | Count |
 |--------|-------|
 | Total items | 41 |
-| Open (☐) | 32 |
+| Open (☐) | 30 |
 | In progress (◐) | 0 |
-| Done (✅) | 9 |
+| Done (✅) | 11 |
 | Deferred (⏸) | 0 |
 
 _Note: #16 is a single tracked item covering the whole per-feature Flutter clean-code sweep (≈39 features). Items #35-#40 are detailed in the plan (`~/.claude/plans/...`); #40 detailed here in Topic 9._
@@ -34,7 +34,7 @@ _Done (9), verified merged to main (2026-07-21): #6 `feat/booking-noshow-release
 ## A. APP (Flutter mobile)
 
 **P1 — bugs / blocking**
-- [ ] **#9** — Biometric / Face ID login not working; logic incorrect. _(= #25)_
+- [x] **#9** — Biometric / Face ID login not working; logic incorrect. _(= #25)_ _(2026-07-21: owner-confirmed fixed; biometric_auth.dart + biometric_step_up + liveness on main)_
 - [ ] **#12** — Face-capture left/right swapped on **Android** (iOS fine): fix Android turn direction + correct prompt image. _(= #26)_
 - [x] **#17** — Session join + seat mechanism: two cases (register-to-attend / join+pick-seat), **no approval**, auto-cancel 3 min before start, session **check-in + check-out**. _(merged: feat/app-sessions-batch)_
 - [ ] **#18** — "الانضمام إلى الجلسة" (Join session) button does nothing.
@@ -45,7 +45,7 @@ _Done (9), verified merged to main (2026-07-21): #6 `feat/booking-noshow-release
 - [ ] **#11** — Session surfaces scope + phase-gated buttons (Home = future + type=Session only; Summary = past; My Sessions; Agenda = all).
 - [ ] **#14** — Edit interests from profile (not only at sign-up).
 - [ ] **#16** — Clean-code sweep across ~39 features (numbers→tokens, `app_style`, `SimfTokens.surface`, hoist assets, extract private widgets).
-- [ ] **#19** — Login-as-**Guest** label (not "Visitor") + fix wrong Arabic translation.
+- [x] **#19** — Login-as-**Guest** label (not "Visitor") + fix wrong Arabic translation. _(2026-07-21: owner-confirmed fixed; app_l10n.dart:490 `الدخول كضيف` / "Enter as guest" on main)_
 - [x] **#20** — Agenda viewable **without login** + rename program-icon label to "الأجندة". _(merged: feat/app-sessions-batch)_
 - [ ] **#22** — Sign-up (`sign_up_visitor_screen`) category section UI update.
 - [ ] **#23** — Session-summary logic update (keep Home Sessions + Summary buttons as-is; reconcile with #11).
