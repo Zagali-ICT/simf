@@ -158,6 +158,7 @@ class SimfTokens {
   static const double galleryScrimHeight = 40; // archive gallery-tile bottom scrim (Figma 926:3299)
   static const double mediaTileAspectRatio = 164 / 104; // gallery media tile (Figma 949:4043)
   static const double scrimOpacityStrong = 0.8; // archive gallery-tile scrim gradient bottom stop
+  static const double bulletTopNudge = 7; // archive bullet disc top-align nudge (Figma 925:3258)
 
   // Type scale (Material text styles override these for actual rendering;
   // tokens here are for places that need a raw size).
@@ -279,5 +280,43 @@ class SimfTokens {
     color: beigeBorder,
     fontSize: textSm,
     fontWeight: FontWeight.w600,
+  );
+  static const TextStyle labelGoldBoldLg = TextStyle(
+    color: accent,
+    fontSize: textLg,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle labelGoldBoldTitle = TextStyle(
+    color: accent,
+    fontSize: textTitle,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle labelGoldSemiboldTitle = TextStyle(
+    color: accent,
+    fontSize: textTitle,
+    fontWeight: FontWeight.w600,
+    height: 1,
+  );
+  static const TextStyle labelWhiteSemiboldSmTall = TextStyle(
+    color: surface,
+    fontSize: textSm,
+    fontWeight: FontWeight.w600,
+    height: 1.2,
+  );
+  static const TextStyle labelBeigeSm = TextStyle(
+    color: beigeBorder,
+    fontSize: textSm,
+  );
+  // Colourless bullet bases — the [ArchiveBullet] text colour is a runtime param,
+  // so these carry only size/weight/height and take `.copyWith(color:)`.
+  static const TextStyle bulletTitle = TextStyle(
+    fontSize: textLg,
+    fontWeight: FontWeight.w600,
+    height: 1.4,
+  );
+  static const TextStyle bulletBody = TextStyle(
+    fontSize: textMd,
+    fontWeight: FontWeight.w500,
+    height: 1.4,
   );
 }

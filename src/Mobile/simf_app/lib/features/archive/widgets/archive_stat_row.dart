@@ -61,12 +61,7 @@ class _StatTile extends StatelessWidget {
           Text(
             '$value',
             textDirection: TextDirection.ltr,
-            style: const TextStyle(
-              color: SimfTokens.accent,
-              fontSize: SimfTokens.textTitle,
-              fontWeight: FontWeight.w600,
-              height: 1,
-            ),
+            style: SimfTokens.labelGoldSemiboldTitle,
           ),
           const SizedBox(height: SimfTokens.space2),
           Text(
@@ -74,10 +69,7 @@ class _StatTile extends StatelessWidget {
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textSm,
-            ),
+            style: SimfTokens.labelBeigeSm,
           ),
         ],
       ),
