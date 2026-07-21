@@ -580,6 +580,30 @@ projection backs the visitors list). The thumbnail render itself is the shared
 `SimfIdentityCell` proven on the Speakers/Sponsors lists; confirm visually in the
 Chrome DevTools MCP smoke.
 
+### E2E-VIS-029 — Edit visitor: change the profile photo + ID image (VIP edit)
+
+```gherkin
+Scenario: the visitor Edit form can replace the profile photo and ID image
+  Given an Administrator holding Visitors.Edit is on /admin/visitors
+  When they open the Edit form for a visitor (SimfModal, EditAccountForm, Scope=visitors)
+  Then below the email / display-name / tier fields a "Photo & ID" section shows:
+    """
+    Profile photo | ID document
+    """
+  And each shows the current image (when one is on file) plus a file input to replace it
+  And the "VIP welcome photo" input is NOT shown here (ShowVipPhoto is only set on the VIP page)
+  When they pick a new PNG (< 2 MB) for "Profile photo" and click "Save"
+  Then PUT /account/api/admin/visitors/{id} fires first (email + name + tier)
+  And then POST /account/api/admin/visitors/{id}/avatar (multipart "file") returns 200
+  And the form closes and the grid's name-cell thumbnail reflects the new photo
+  # Leaving both inputs empty saves only the core fields and uploads nothing.
+  # An ID image with no human face returns 400 VISITOR_ID_IMAGE_NO_FACE and the form stays open.
+```
+
+**Covered (lower layer):** `tests/SIMF.Api.Tests/AdminAvatarEndpoints`-backed cases in
+`WalkInRegistrationTests.cs` (`Admin_uploads_visitor_avatar_sets_path`) and
+`AdminIdDocumentAuditTests.cs` cover the upload endpoints the Edit form reuses.
+
 ---
 
-_Last reviewed:_ 2026-07-11 by Claude (W4 on-site remediation — H-1 duplicate-identity guard; E2E-VIS-027). Prior: 2026-07-09 by SIMF Team (D-728 — added E2E-VIS-026 for the change-account-type action on the visitor Details view). Earlier: 2026-06-20 (D-469 — E2E-VIS-025 Saudi birth-location region dropdown); 2026-06-10 (D-356 Phase 5 — Excel + toggle; E2E-VIS-023/024 for the D-353 Page↔Popup presentation toggle).
+_Last reviewed:_ 2026-07-21 by Claude (VIP edit — the shared EditAccountForm gained a Photo & ID section; E2E-VIS-029). Prior: 2026-07-11 by Claude (W4 on-site remediation — H-1 duplicate-identity guard; E2E-VIS-027). Earlier: 2026-07-09 by SIMF Team (D-728 — E2E-VIS-026 change-account-type); 2026-06-20 (D-469 — E2E-VIS-025 Saudi birth-location region dropdown); 2026-06-10 (D-356 Phase 5 — Excel + toggle; E2E-VIS-023/024).

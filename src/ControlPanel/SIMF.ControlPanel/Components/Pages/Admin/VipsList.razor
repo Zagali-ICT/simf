@@ -27,6 +27,10 @@
                       RowLabel="@(r => RecipientLabel(r))"
                       OnSelectionChanged="OnSelectionChanged"
                       OnExport="OnExportAsync"
+                      OnAdd="@(_canRegister ? EventCallback.Factory.Create(this, OnAddVip) : default)"
+                      OnEditOne="@(_canEdit ? EventCallback.Factory.Create<AdminVipSummary>(this, OnEditVip) : default)"
+                      AddLabel="@L["Admin.Vips.Action.AddVip"]"
+                      EditLabel="@L["Admin.Users.Action.Edit"]"
                       ExportLabel="@L["Grid.Export"]"
                       Caption="@L["Admin.Vips.Title"]"
                       FilterColumnLabel="@L["Grid.FilterColumn"]"
@@ -71,6 +75,21 @@
         </SimfDataGrid>
     </div>
 </div>
+
+@* VIP edit — change this VIP's name / email / tier / photo / ID / welcome photo
+   via the shared account edit form, keyed by the account id. *@
+@if (_editOpen)
+{
+    <SimfModal Open="true" Title="@L["Admin.Vips.Edit.Title"]"
+               OnClose="@(() => _editOpen = false)">
+        <ChildContent>
+            <EditAccountForm AccountId="_editUserId" Scope="visitors" IsVisitorScope="true"
+                             ShowVipPhoto="true"
+                             OnSaved="OnEditSavedAsync"
+                             OnCancel="@(() => _editOpen = false)" />
+        </ChildContent>
+    </SimfModal>
+}
 
 @if (_notifyOpen)
 {

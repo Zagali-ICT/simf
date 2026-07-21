@@ -1,0 +1,163 @@
+// VIP edit (2026-07-21) — bUnit tests for the VIP update capability:
+//   • EditAccountForm gained a "Photo & ID" section (avatar + ID document, plus
+//     the VVIP/VIP welcome photo only when ShowVipPhoto is set).
+//   • VipsList gained a permission-gated "New VIP" (nav) + per-row Edit, wired
+//     conditionally so a Vips.View-only admin sees neither affordance.
+using Bunit;
+using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.DependencyInjection;
+using SIMF.Common;
+using SIMF.Contracts.Admin;
+using SIMF.Contracts.Authentication;
+using SIMF.ControlPanel.Components.Pages.Admin;
+using Xunit;
+
+namespace SIMF.ControlPanel.Tests;
+
+public sealed class VipEditTests : CpComponentTestBase
+{
+    private static AdminProfileTypeSummary VisitorTier(string name) =>
+        new(Guid.NewGuid(), name, name, "#244A77", "Visitor", "None",
+            IsActive: true, IsVisitor: true, IsAppRegisterable: true);
+
+    private static AdminUserProfileView Profile(
+        Guid id, bool hasAvatar, bool hasIdImage, Guid? tierId) =>
+        new(id, "vip@simf.test", "HRH Faisal", "Visitor", "Approved",
+            tierId, "VIP", "كبار", "#244A77", "QR-1", "فيصل", "Faisal",
+            JobTitle: null, NationalityCode: "SA", DateOfBirth: null,
+            PlaceOfBirth: null, IsSaudi: true, NationalId: null,
+            IqamaNumber: null, PassportNumber: null, SaudiMobile: null,
+            InternationalMobile: null, HasIdImage: hasIdImage, HasAvatar: hasAvatar,
+            InterestIds: Array.Empty<Guid>(), RejectionReason: null,
+            RejectionReasonArabic: null, CreatedAt: DateTimeOffset.UtcNow,
+            UpdatedAt: null);
+
+    private static AdminVipSummary VipRow(Guid userId) =>
+        new(UserProfileId: Guid.NewGuid(), UserId: userId, EnglishName: "HRH Faisal",
+            ArabicName: "فيصل", JobTitle: null, JobTitleArabic: null,
+            ProfileTypeName: "VIP", ProfileTypeNameArabic: "كبار", Email: "vip@simf.test");
+
+    private void StubEditAccountFormLoads(Guid accountId, bool hasAvatar, bool hasIdImage)
+    {
+        var tier = VisitorTier("VIP");
+        JSInterop.Setup<ApiResult<IReadOnlyList<AdminProfileTypeSummary>>>(
+                "simfAccount.getJson",
+                inv => inv.Arguments.Count > 0
+                    && inv.Arguments[0] is string url && url.Contains("profile-types"))
+            .SetResult(ApiResult<IReadOnlyList<AdminProfileTypeSummary>>.Ok(
+                new List<AdminProfileTypeSummary> { tier }));
+        JSInterop.Setup<ApiResult<AdminUserProfileView>>(
+                "simfAccount.getJson",
+                inv => inv.Arguments.Count > 0
+                    && inv.Arguments[0] is string url && url.EndsWith("/profile"))
+            .SetResult(ApiResult<AdminUserProfileView>.Ok(
+                Profile(accountId, hasAvatar, hasIdImage, tier.Id)));
+    }
+
+    [Fact]
+    public void EditAccountForm_renders_photo_and_id_section_without_vip_photo()
+    {
+        var accountId = Guid.NewGuid();
+        StubEditAccountFormLoads(accountId, hasAvatar: true, hasIdImage: true);
+
+        var cut = RenderComponent<EditAccountForm>(p => p
+            .Add(c => c.AccountId, accountId)
+            .Add(c => c.Scope, "visitors")
+            .Add(c => c.IsVisitorScope, true)
+            .Add(c => c.ShowVipPhoto, false));
+
+        Assert.Contains("Admin.Edit.Photo.Section", cut.Markup);
+        Assert.Contains("Admin.Edit.Photo.Avatar", cut.Markup);
+        Assert.Contains("Admin.Edit.Photo.IdDocument", cut.Markup);
+        // The current-image previews render because the profile has both on file.
+        Assert.Contains("/avatar?v=", cut.Markup);
+        Assert.Contains("/id-document?v=", cut.Markup);
+        // The VIP welcome photo is scoped out unless ShowVipPhoto is set.
+        Assert.DoesNotContain("Admin.Edit.Photo.VipPhoto", cut.Markup);
+        Assert.Contains("edit-account-avatar", cut.Markup);
+    }
+
+    [Fact]
+    public void EditAccountForm_shows_vip_photo_when_enabled()
+    {
+        var accountId = Guid.NewGuid();
+        StubEditAccountFormLoads(accountId, hasAvatar: false, hasIdImage: false);
+
+        var cut = RenderComponent<EditAccountForm>(p => p
+            .Add(c => c.AccountId, accountId)
+            .Add(c => c.Scope, "visitors")
+            .Add(c => c.IsVisitorScope, true)
+            .Add(c => c.ShowVipPhoto, true));
+
+        Assert.Contains("Admin.Edit.Photo.VipPhoto", cut.Markup);
+        Assert.Contains("edit-account-vip-photo", cut.Markup);
+        // No image on file → no preview URLs rendered (never a broken <img>).
+        Assert.DoesNotContain("/avatar?v=", cut.Markup);
+        Assert.DoesNotContain("/id-document?v=", cut.Markup);
+    }
+
+    [Fact]
+    public void VipsList_hides_new_vip_and_edit_without_the_visitor_permissions()
+    {
+        // The base grants only the Administrator role, not the named Visitors
+        // policies — so _canRegister / _canEdit resolve false.
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        JSInterop.Setup<ApiResult<GridPage<AdminVipSummary>>>("simfAccount.postJson", _ => true)
+            .SetResult(ApiResult<GridPage<AdminVipSummary>>.Ok(new GridPage<AdminVipSummary>
+            {
+                Items = new[] { VipRow(Guid.NewGuid()) },
+                Total = 1,
+            }));
+
+        var cut = RenderComponent<VipsList>();
+
+        Assert.DoesNotContain("Admin.Vips.Action.AddVip", cut.Markup);
+        Assert.DoesNotContain("Admin.Users.Action.Edit", cut.Markup);
+    }
+
+    [Fact]
+    public void VipsList_shows_new_vip_and_edit_with_the_visitor_permissions()
+    {
+        Authorization.SetPolicies(
+            PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.RegisterOnsite),
+            PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.Edit));
+
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        JSInterop.Setup<ApiResult<GridPage<AdminVipSummary>>>("simfAccount.postJson", _ => true)
+            .SetResult(ApiResult<GridPage<AdminVipSummary>>.Ok(new GridPage<AdminVipSummary>
+            {
+                Items = new[] { VipRow(Guid.NewGuid()) },
+                Total = 1,
+            }));
+
+        var cut = RenderComponent<VipsList>();
+
+        Assert.Contains("Admin.Vips.Action.AddVip", cut.Markup);
+        Assert.Contains("Admin.Users.Action.Edit", cut.Markup);
+    }
+
+    [Fact]
+    public void VipsList_new_vip_navigates_to_the_registration_page()
+    {
+        Authorization.SetPolicies(
+            PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.RegisterOnsite));
+
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        JSInterop.Setup<ApiResult<GridPage<AdminVipSummary>>>("simfAccount.postJson", _ => true)
+            .SetResult(ApiResult<GridPage<AdminVipSummary>>.Ok(new GridPage<AdminVipSummary>
+            {
+                Items = Array.Empty<AdminVipSummary>(),
+                Total = 0,
+            }));
+
+        var nav = Services.GetRequiredService<NavigationManager>();
+        var cut = RenderComponent<VipsList>();
+
+        // Click the "New VIP" toolbar button (the only button carrying that label).
+        var addButton = cut.FindAll("button")
+            .First(b => b.TextContent.Contains("Admin.Vips.Action.AddVip"));
+        addButton.Click();
+
+        Assert.EndsWith("/admin/visitors/vip", nav.Uri);
+    }
+}

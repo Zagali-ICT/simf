@@ -55,6 +55,14 @@
   <data name="Admin.Edit.ProfileType.None" xml:space="preserve"><value>— none —</value></data>
   <data name="Admin.Edit.ProfileType.Choose" xml:space="preserve"><value>Choose a profile type…</value></data>
   <data name="Admin.Edit.EmailChangeNote" xml:space="preserve"><value>Changing the email signs the account out of all sessions.</value></data>
+  <data name="Admin.Edit.Photo.Section" xml:space="preserve"><value>Photo &amp; ID</value></data>
+  <data name="Admin.Edit.Photo.Current" xml:space="preserve"><value>Current image</value></data>
+  <data name="Admin.Edit.Photo.Avatar" xml:space="preserve"><value>Profile photo</value></data>
+  <data name="Admin.Edit.Photo.Avatar.Hint" xml:space="preserve"><value>PNG, JPEG or WebP, up to 2 MB. Leave empty to keep the current photo.</value></data>
+  <data name="Admin.Edit.Photo.IdDocument" xml:space="preserve"><value>ID document</value></data>
+  <data name="Admin.Edit.Photo.IdDocument.Hint" xml:space="preserve"><value>A clear photo of the face is required. PNG, JPEG or WebP, up to 5 MB.</value></data>
+  <data name="Admin.Edit.Photo.VipPhoto" xml:space="preserve"><value>VIP welcome photo</value></data>
+  <data name="Admin.Edit.Photo.VipPhoto.Hint" xml:space="preserve"><value>The high-resolution portrait shared with the welcome team. PNG, JPEG or WebP, up to 2 MB.</value></data>
   <data name="Admin.Edit.Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Admin.Edit.Save" xml:space="preserve"><value>Save changes</value></data>
   <data name="Admin.Edit.Saving" xml:space="preserve"><value>Saving…</value></data>
@@ -1790,6 +1798,9 @@
   <data name="Admin.Vips.Col.JobTitle" xml:space="preserve"><value>Job title</value></data>
   <data name="Admin.Vips.Col.ProfileType" xml:space="preserve"><value>Profile type</value></data>
   <data name="Admin.Vips.Col.Email" xml:space="preserve"><value>Email</value></data>
+  <data name="Admin.Vips.Action.AddVip" xml:space="preserve"><value>New VIP</value></data>
+  <data name="Admin.Vips.Edit.Title" xml:space="preserve"><value>Edit VIP</value></data>
+  <data name="Admin.Vips.Edit.Saved" xml:space="preserve"><value>VIP updated.</value></data>
   <data name="Admin.Vips.Notify.Title" xml:space="preserve"><value>Notify VIPs</value></data>
   <data name="Admin.Vips.Notify.TitleField" xml:space="preserve"><value>Title (English)</value></data>
   <data name="Admin.Vips.Notify.TitleArabicField" xml:space="preserve"><value>Title (Arabic)</value></data>

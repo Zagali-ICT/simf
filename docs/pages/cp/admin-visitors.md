@@ -67,6 +67,17 @@ however, hosts the **D-127 walk-in registration wizard** instead of the slim
   6. **Interests** — chip multi-select (≤10, Visitor only).
 - Submit → `WalkInSuccessModal` shows the printed badge with SVG QR + Done / Print / Register-another.
 
+**Edit form — Photo & ID (2026-07-21, VIP edit).** The shared
+`EditAccountForm` now renders a **Photo & ID** section below the
+email / display-name / tier fields: a profile-photo input (with the current
+avatar previewed when on file) and an ID-document input (with the current ID
+image previewed). On Save, the core fields PUT first, then each picked image
+uploads to its account-id-keyed endpoint (`/admin/visitors/{id}/avatar`,
+`/id-document`, both `Visitors.Edit`-gated). The VVIP/VIP welcome-photo input
+is scoped out here (`ShowVipPhoto=false`) — it appears only when the same form
+is opened from the VIP desk (`/admin/vips`). See
+[`cp/admin-vips.md`](admin-vips.md).
+
 **D-353 presentation toggle / D-356 Excel.** The toolbar now carries the
 `CrudPresentationToggle` (Page ↔ Popup): the Add walk-in wizard, the Edit
 account form, and the read-only Details form are hosted by the centralized

@@ -7,16 +7,22 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
+| **Last reviewed** | 2026-07-21 (VIP edit — New VIP + row Edit added) |
 
-> **What this page is.** The VIP desk is a **read-only `SimfDataGrid`** (D-256
-> conversion) — it is NOT a CRUD grid. The rows are the subset of `UserProfiles`
-> whose `ProfileType.Name` is in `{VVIP, VIP, Gold}` (the `VipProfileTypes.All`
-> discriminator). The only mutating action on the page is the **bulk-notify**
-> flow: tick recipients → the `CustomToolbar` "Notify selected (N)" send-icon
-> button → fill the bilingual title/body modal → "Send". There is no Add / Edit /
-> Details / Deactivate and **no per-row action icons** (no `RowActions` slot is
-> wired). The grid renders `Multiselect` checkboxes (row + Select-all) and the
+> **What this page is.** The VIP desk is a `SimfDataGrid` over the subset of
+> `UserProfiles` whose `ProfileType.Name` is in `{VVIP, VIP, Gold}` (the
+> `VipProfileTypes.All` discriminator). Its mutating flows are: **bulk-notify**
+> (tick recipients → the `CustomToolbar` "Notify selected (N)" send-icon button →
+> fill the bilingual title/body modal → "Send"); **New VIP** (the toolbar Add
+> button navigates to `/admin/visitors/vip`, the dedicated VVIP/VIP registration
+> page); and **row Edit** (the per-row edit icon opens a modal hosting the shared
+> `EditAccountForm`, keyed by the account id `AdminVipSummary.UserId`, scope
+> `visitors`, with `ShowVipPhoto=true` — change name / email / tier / profile
+> photo / ID image / VIP welcome photo). The **New VIP** and **Edit** affordances
+> are UX-gated: New VIP shows only for admins holding `Visitors.RegisterOnsite`
+> and Edit only for `Visitors.Edit` (the API enforces the same policies); an admin
+> with only `Vips.View` sees neither. There is no Details / row-delete slot. The
+> grid renders `Multiselect` checkboxes (row + Select-all) and the
 > standard `SimfDataGrid` pager (First / Prev / numbered / Next / Last + page-size
 > selector + "Showing …" summary) at `Top = 20`. **None of the four columns set
 > `Filterable="true"` or `Sortable="true"`, so the grid shows neither a per-column
@@ -44,6 +50,12 @@
 | E2E-VIP-011 | Server 500 on `/list` → bilingual fallback toast, no rows | resilience | P2 | _to author_ |
 | E2E-VIP-012 | RTL render: Arabic toggle mirrors page + notify modal | i18n | P1 | _to author_ |
 | E2E-VIP-013 | Excel export (D-356): toolbar Export downloads an .xlsx of the selected rows / whole filtered grid | happy | P1 | _to author_ |
+| E2E-VIP-014 | New VIP: toolbar Add navigates to `/admin/visitors/vip` (VVIP/VIP registration) | happy | P0 | _to author_ |
+| E2E-VIP-015 | Row Edit: change a VIP's name / email / tier → PUT + success toast + grid reloads | happy | P0 | _to author_ |
+| E2E-VIP-016 | Row Edit: replace the profile photo + VIP welcome photo → uploaded on Save | happy | P1 | _to author_ |
+| E2E-VIP-017 | Row Edit validation: ID image with no human face → 400 face-gate, modal stays open, core fields already saved | error | P1 | _to author_ |
+| E2E-VIP-018 | Auth gate: an admin with `Vips.View` but not `Visitors.Edit`/`RegisterOnsite` sees no Add/Edit affordances | auth | P0 | _to author_ |
+| E2E-VIP-019 | RTL render: Arabic toggle mirrors the Edit modal (labels + upload fields) | i18n | P1 | _to author_ |
 
 ## Scenarios
 
@@ -275,14 +287,109 @@ Scenario: Export the VIP list to an XLSX workbook (selected rows or the whole fi
 - File: saved workbook opened, "VIPs" sheet header row matches the six columns above
 - Console errors: 0 expected
 
+### E2E-VIP-014 — New VIP navigates to the registration page
+
+```gherkin
+Scenario: The toolbar Add button opens the VVIP/VIP registration page
+  Given an Administrator holding Visitors.RegisterOnsite has signed in
+  And they have landed on /admin/vips
+  Then the grid toolbar shows an "New VIP" (plus-icon) button
+  When they click "New VIP"
+  Then the browser navigates to /admin/visitors/vip
+  And the VVIP/VIP registration form renders (picker restricted to VVIP/VIP + Mawj welcome fields + VIP photo)
+```
+
+### E2E-VIP-015 — Row Edit changes name / email / tier
+
+```gherkin
+Scenario: Edit a VIP's core account fields
+  Given an Administrator holding Visitors.Edit is on /admin/vips
+  And a VIP row "Adm. Turki Al Maliki" (Profile type "VIP") is listed
+  When they click the row Edit (pencil) icon on that row
+  Then an "Edit VIP" modal opens hosting the shared account edit form
+  And it is pre-filled with the VIP's email, display name, and current tier
+  When they change the Display name to "Adm. Turki Al Maliki (Chief of Staff)"
+  And they change the Profile type to "VVIP"
+  And they click "Save"
+  Then the BFF forwards PUT /account/api/admin/visitors/{UserId} with the new display name + ProfileTypeId
+  And the API returns HTTP 200
+  And the modal closes
+  And a green toast reads "VIP updated." / "تم تحديث بيانات الشخصية البارزة."
+  And the grid reloads and the row now shows Profile type "VVIP"
+```
+
+### E2E-VIP-016 — Row Edit replaces the photos
+
+```gherkin
+Scenario: Change a VIP's profile photo and welcome photo
+  Given the "Edit VIP" modal is open for a VIP (scope visitors, ShowVipPhoto=true)
+  And the "Photo & ID" section shows Profile photo, ID document, and VIP welcome photo inputs
+  When they pick a new PNG (< 2 MB) for "Profile photo"
+  And they pick a new JPEG (< 2 MB) for "VIP welcome photo"
+  And they click "Save"
+  Then PUT /account/api/admin/visitors/{UserId} fires first (core fields)
+  And then POST /account/api/admin/visitors/{UserId}/avatar (multipart "file") returns 200
+  And then POST /account/api/admin/visitors/{UserId}/vip-photo (multipart "file") returns 200
+  And the modal closes with the "VIP updated." toast
+  # Unpicked image inputs are not uploaded — the current images are kept.
+```
+
+### E2E-VIP-017 — Row Edit ID face-gate validation
+
+```gherkin
+Scenario: An ID image with no human face is rejected, core fields already saved
+  Given the "Edit VIP" modal is open for a VIP
+  When they change the Display name to a new value
+  And they pick a landscape photo (no face) for "ID document"
+  And they click "Save"
+  Then PUT /account/api/admin/visitors/{UserId} returns 200 (the display name is saved)
+  And POST /account/api/admin/visitors/{UserId}/id-document returns HTTP 400 with Error.Code = "VISITOR_ID_IMAGE_NO_FACE"
+  And the modal STAYS OPEN showing the bilingual message
+    "No human face was detected in the photo — retake a clear photo of the face." /
+    "لم يتم التعرف على وجه بشري في الصورة — أعد التقاط صورة واضحة للوجه."
+  When they clear the ID picker and click "Save" again
+  Then no id-document upload fires and the modal closes with the success toast
+```
+
+### E2E-VIP-018 — Add/Edit affordances are permission-gated
+
+```gherkin
+Scenario: A Vips.View-only admin sees no New VIP or Edit controls
+  Given a signed-in admin granted Vips.View but NOT Visitors.Edit and NOT Visitors.RegisterOnsite
+  When they open /admin/vips
+  Then the VIP list loads normally (POST /account/api/admin/vips/list returns 200)
+  And the toolbar does NOT show the "New VIP" button
+  And the rows do NOT show a per-row Edit (pencil) icon
+  And the bulk-notify flow is unaffected (still available if they hold Vips.Notify)
+  # SimfDataGrid renders Add/Edit only when the callback HasDelegate; the page wires
+  # them only when Authz.AuthorizeAsync succeeds for the respective policy.
+```
+
+### E2E-VIP-019 — RTL render of the Edit modal
+
+```gherkin
+Scenario: Arabic toggle mirrors the Edit VIP modal
+  Given the administrator is on /admin/vips in العربية and opens a row's Edit modal
+  Then the modal title reads "تعديل بيانات الشخصية البارزة"
+  And the field labels read "البريد الإلكتروني", "الاسم الظاهر", "نوع الملف"
+  And the "الصورة والهوية" section shows "الصورة الشخصية", "صورة الهوية", "صورة ترحيب كبار الشخصيات"
+  And the modal renders under <html dir="rtl" lang="ar"> with no horizontal overflow
+```
+
 ---
 
 ## Implementation notes
 
-- **Read-only list + one mutating flow.** Unlike the Interests/Interests-style CRUD
-  grids, `/admin/vips` has no row-level mutations. The VIP membership is derived from
+- **Derived list + notify + New VIP + row Edit.** The VIP membership is derived from
   `ProfileType.Name ∈ {VVIP, VIP, Gold}` (server-side `VipProfileTypes.All`), so there
-  is nothing to create or delete here — the only mutation is the bulk broadcast.
+  is no create/delete of the *membership* here — a visitor becomes a VIP by having a
+  VIP tier (set on registration via `/admin/visitors/vip`, or by the row Edit's tier
+  dropdown). The mutating flows are the bulk broadcast, **New VIP** (navigate to the
+  registration page), and **row Edit** (the shared `EditAccountForm` reused with
+  `Scope="visitors"`, `IsVisitorScope=true`, `ShowVipPhoto=true`). Edit reuses the
+  existing account-id-keyed admin endpoints — `PUT /admin/visitors/{id}` (email + name
+  + tier), `POST /admin/visitors/{id}/avatar`, `/id-document`, `/vip-photo` — all gated
+  by `Visitors.Edit`; no new permission or endpoint was added.
 - **Two permissions back the page.** `Vips.View` (page + `/admin/vips/list`) and
   `Vips.Notify` (`/admin/vips/notify`); both are `PublicRelations`/`AdminOnly` baseline.
   The CP page carries `[RequirePermission(PermissionCatalog.Vips.View)]`; the API
@@ -301,4 +408,5 @@ Scenario: Export the VIP list to an XLSX workbook (selected rows or the whole fi
 
 ---
 
-_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle; added E2E-VIP-013 export; D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-07-21 by Claude (VIP edit — added New VIP nav + row Edit via the shared EditAccountForm with photo/ID/VIP-photo upload; E2E-VIP-014..019).
+_Prior:_ 2026-06-10 (D-356 Phase 5 — Excel + toggle; added E2E-VIP-013 export; D-256/D-257 grid affordances reconciled).
