@@ -16,13 +16,13 @@
 | Metric | Count |
 |--------|-------|
 | Total items | 41 |
-| Open (☐) | 36 |
-| In progress (◐) | 0 |
-| Done (✅) | 5 |
+| Open (☐) | 29 |
+| In progress (◐) | 1 |
+| Done (✅) | 11 |
 | Deferred (⏸) | 0 |
 
 _Note: #16 is a single tracked item covering the whole per-feature Flutter clean-code sweep (≈39 features). Items #35-#40 are detailed in the plan (`~/.claude/plans/...`); #40 detailed here in Topic 9._
-_Done (5), shipped to PR: #10 `feat/bulk-badge-email`, #32 `feat/cp-team-roles`, #20+#17 `feat/app-sessions-batch`, #35 `feat/session-summary-video` (#28 in progress)._
+_Done (9), verified merged to main (2026-07-21): #6 `feat/booking-noshow-release`, #10 `feat/bulk-badge-email`, #17+#20 `feat/app-sessions-batch`, #28 `feat/meeting-forum-bounds`, #32 `feat/cp-team-roles`, #34 `d1774363`, #35 `feat/session-summary-video`; #24 change-email (CP side) verified done. #8 CP display-only wave is in PR `feat/local-time-saudi-rebased` (full no-UTC storage scope still open)._
 
 ---
 
@@ -34,29 +34,29 @@ _Done (5), shipped to PR: #10 `feat/bulk-badge-email`, #32 `feat/cp-team-roles`,
 ## A. APP (Flutter mobile)
 
 **P1 — bugs / blocking**
-- [ ] **#9** — Biometric / Face ID login not working; logic incorrect. _(= #25)_
+- [x] **#9** — Biometric / Face ID login not working; logic incorrect. _(= #25)_ _(2026-07-21: owner-confirmed fixed; biometric_auth.dart + biometric_step_up + liveness on main)_
 - [ ] **#12** — Face-capture left/right swapped on **Android** (iOS fine): fix Android turn direction + correct prompt image. _(= #26)_
-- [ ] **#17** — Session join + seat mechanism: two cases (register-to-attend / join+pick-seat), **no approval**, auto-cancel 3 min before start, session **check-in + check-out**.
+- [x] **#17** — Session join + seat mechanism: two cases (register-to-attend / join+pick-seat), **no approval**, auto-cancel 3 min before start, session **check-in + check-out**. _(merged: feat/app-sessions-batch)_
 - [ ] **#18** — "الانضمام إلى الجلسة" (Join session) button does nothing.
 - [ ] **#21** — "مشاركة جهة اتصال" (Share contact) button does nothing.
 - [ ] **#13** — "Meet people like you": show **only Sponsors + Speakers** (hide Normal/VIP), Other-type opt-in checkbox, viewer→gallery / speaker→details, show exact data. _(CP-managed)_
 
 **P2 — updates / UX**
 - [ ] **#11** — Session surfaces scope + phase-gated buttons (Home = future + type=Session only; Summary = past; My Sessions; Agenda = all).
-- [ ] **#14** — Edit interests from profile (not only at sign-up).
+- [ ] **#14** — Edit interests from profile (not only at sign-up). _(◐ built on `feat/app-edit-interests` 2026-07-21: shared interests page in edit mode + regionId/jobTitleArabic round-trip fix; adversarial review found + fixed a profileTypeId-echo blocker (400 for VIP/staff edits); 22 unit/widget + 36 matrix/myarea green, goldens re-locked, docs authored; pending device test + commit/merge)_
 - [ ] **#16** — Clean-code sweep across ~39 features (numbers→tokens, `app_style`, `SimfTokens.surface`, hoist assets, extract private widgets).
-- [ ] **#19** — Login-as-**Guest** label (not "Visitor") + fix wrong Arabic translation.
-- [ ] **#20** — Agenda viewable **without login** + rename program-icon label to "الأجندة".
+- [x] **#19** — Login-as-**Guest** label (not "Visitor") + fix wrong Arabic translation. _(2026-07-21: owner-confirmed fixed; app_l10n.dart:490 `الدخول كضيف` / "Enter as guest" on main)_
+- [x] **#20** — Agenda viewable **without login** + rename program-icon label to "الأجندة". _(merged: feat/app-sessions-batch)_
 - [ ] **#22** — Sign-up (`sign_up_visitor_screen`) category section UI update.
 - [ ] **#23** — Session-summary logic update (keep Home Sessions + Summary buttons as-is; reconcile with #11).
 - [ ] **#27** — Video > 30 min: the session-extension alert must NOT appear.
-- [ ] **#34** — Speaker job title shows English regardless of app language (read `RankArabic`).
+- [x] **#34** — Speaker job title shows English regardless of app language (read `RankArabic`). _(code merged: d1774363; Arabic rank data = owner re-entry)_
 
 ## B. CONTROL PANEL (CP)
 
 **P1**
-- [ ] **#10** — Bulk profile/badge generation page (pick type + count, anonymous placeholders, issue QRs, email all to one address).
-- [ ] **#28** — Meeting/speaker date filter = **forum dates only** + all CP times in **Saudi time** (see #8).
+- [x] **#10** — Bulk profile/badge generation page (pick type + count, anonymous placeholders, issue QRs, email all to one address). _(merged: feat/bulk-badge-email)_
+- [x] **#28** — Meeting/speaker date filter = **forum dates only** + all CP times in **Saudi time** (see #8). _(forum-date filter merged: feat/meeting-forum-bounds; CP Saudi-time display in PR #8)_
 - [ ] **#29** — Workshop management in CP (title / time / allowed count / check-in-out); app shows **title + time only**.
 - [ ] **#30** — B2B / B2G bilateral-meeting management in CP + activate VIP↔speaker "send request" button.
 - [ ] **#31** — Feed the forum program data (content).
@@ -65,14 +65,14 @@ _Done (5), shipped to PR: #10 `feat/bulk-badge-email`, #32 `feat/cp-team-roles`,
 - [ ] **#33** — Deliver CP user manual (⚠ confirm due date — 19-07-2026 is already past).
 
 **P2**
-- [ ] **#32** — CP permissions = **Admin / Security / PR / Scientific** (verify + gap-fill).
+- [x] **#32** — CP permissions = **Admin / Security / PR / Scientific** (verify + gap-fill). _(merged: feat/cp-team-roles)_
 
 ## C. BACKEND / CROSS-CUTTING
 
 **P1**
-- [ ] **#8** — Store all times as **Saudi wall-clock, no UTC** (needs scope + data-migration decision).
-- [ ] **#6** — Remove seat/attendance **approval** workflow (D-227) — no approval (implemented via #17).
-- [ ] **#24** — Change-email flow (fixes CP new-account typos + app self-service) + re-verify + uniqueness. _(Identity is frozen)_
+- [ ] **#8** — Store all times as **Saudi wall-clock, no UTC** (needs scope + data-migration decision). _(CP display-only wave in PR feat/local-time-saudi-rebased; full no-UTC storage scope still open)_
+- [x] **#6** — Remove seat/attendance **approval** workflow (D-227) — no approval (implemented via #17). _(merged: feat/booking-noshow-release)_
+- [x] **#24** — Change-email flow (fixes CP new-account typos + app self-service) + re-verify + uniqueness. _(Identity is frozen)_ _(2026-07-21: CP admin typo-fix + uniqueness 409 + D-214 session-invalidation SHIPPED & verified; OTP re-verify + app self-service ruled out of scope per trusted-admin design + owner Q7)_
 - [ ] **#40** — **Dynamic forum dates** — the fixed "23-25 November 2026" is hardcoded in Website/app/CP/seed strings; drive them all from a single dynamic source (OrganizationProfile event dates or ProgrammeDay). _(overlaps #28)_
 
 **P2 — decisions**
