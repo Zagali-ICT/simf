@@ -39,6 +39,8 @@ Future<void> _pumpBody(
   WidgetTester tester, {
   required SessionDetail detail,
   required SessionSeatMap? seatMap,
+  bool seatMapError = false,
+  VoidCallback? onRetrySeatMap,
   VoidCallback? onSessionLink,
   VoidCallback? onSessionSummary,
 }) async {
@@ -69,6 +71,8 @@ Future<void> _pumpBody(
             onSessionSummary: onSessionSummary ?? () {},
             onAskHost: () {},
             onJoin: () {},
+            seatMapError: seatMapError,
+            onRetrySeatMap: onRetrySeatMap ?? () {},
             onCancelReservation: () {},
             onViewSeat: () {},
             onSpeaker: (_) {},
@@ -159,6 +163,59 @@ void main() {
       final card = find.byType(AskHostCard);
       expect(card, findsOneWidget);
       expect(tester.widget<AskHostCard>(card).enabled, isFalse);
+    });
+  });
+
+  // #18 — an approved attendee whose seat map fails to load must get a retry,
+  // not a silently-absent Join button.
+  group('SessionDetailBody #18 seat-map load failure', () {
+    testWidgets('a FAILED seat map (approved attendee) shows the error + retry '
+        'instead of a Join button', (tester) async {
+      var retried = false;
+      await _pumpBody(
+        tester,
+        detail: _detail(
+          startUtc: now.add(const Duration(hours: 1)),
+          endUtc: now.add(const Duration(hours: 2)),
+        ),
+        seatMap: null,
+        seatMapError: true,
+        onRetrySeatMap: () => retried = true,
+      );
+
+      // No Join CTA (the seat map is null) …
+      expect(
+        find.widgetWithText(FilledButton, 'Join the session'),
+        findsNothing,
+      );
+      // … the seat-map error + retry shows in its place.
+      expect(
+        find.text('Could not load the seat map.'),
+        findsOneWidget,
+      );
+      final retry = find.widgetWithText(FilledButton, 'Retry');
+      expect(retry, findsOneWidget);
+      await tester.tap(retry);
+      await tester.pump();
+      expect(retried, isTrue);
+    });
+
+    testWidgets('an ENDED session with a failed seat map shows NO retry (it can '
+        'no longer be joined)', (tester) async {
+      await _pumpBody(
+        tester,
+        detail: _detail(
+          startUtc: now.subtract(const Duration(hours: 3)),
+          endUtc: now.subtract(const Duration(hours: 2)),
+        ),
+        seatMap: null,
+        seatMapError: true,
+      );
+
+      expect(
+        find.text('Could not load the seat map.'),
+        findsNothing,
+      );
     });
   });
 

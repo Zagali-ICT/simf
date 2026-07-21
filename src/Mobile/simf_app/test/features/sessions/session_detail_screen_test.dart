@@ -135,6 +135,30 @@ class _GuestController extends AuthController {
   AuthState build() => const AuthStateSignedOut();
 }
 
+// A signed-in but NOT-yet-approved account: its appRole is visitor but its
+// effectiveAppRole collapses to guest, so the seat endpoint 403s legitimately
+// (it is not an approved account) — #18 must NOT treat that as a load error.
+CurrentUser _pendingVisitor() => CurrentUser(
+      id: 'u2',
+      email: 'pending@example.sa',
+      displayName: 'Pending',
+      appRole: AppRole.visitor,
+      preferredLanguage: PreferredLanguage.fromJson('en'),
+      registrationStatus: RegistrationStatus.pending,
+    );
+
+class _PendingController extends AuthController {
+  @override
+  AuthState build() => AuthStateSignedIn(
+        Session(
+          accessToken: 'A',
+          refreshToken: 'R',
+          accessTokenExpiresAt: DateTime.now().add(const Duration(minutes: 30)),
+          user: _pendingVisitor(),
+        ),
+      );
+}
+
 class _FakeDetailRepo implements SessionDetailRepository {
   _FakeDetailRepo({this.detail, this.detailStatus});
 
@@ -791,6 +815,52 @@ void main() {
       expect(find.text('My seat'), findsNothing);
       expect(find.textContaining('Seat 12'), findsNothing);
       expect(find.text('Join the session'), findsNothing);
+    });
+
+    testWidgets('#18 — an approved account whose seat map FAILS to load sees the '
+        'error + retry (not a silently-missing Join button); retry re-fetches',
+        (tester) async {
+      // No seatMap → _FakeSeatRepo(map: null) throws a 403, so _safeSeatMap
+      // returns null for this APPROVED visitor → the seat-map error state
+      // (the map failed; it did not legitimately hide the join for a guest).
+      final repo = _FakeDetailRepo(detail: _detail());
+      await _pump(tester, repo: repo, controller: _SignedInController());
+
+      // No Join CTA …
+      expect(
+        find.widgetWithText(FilledButton, 'Join the session'),
+        findsNothing,
+      );
+      // … the seat-map error + retry shows in its place.
+      expect(
+        find.text('Could not load the seat map.'),
+        findsOneWidget,
+      );
+      final retry = find.widgetWithText(FilledButton, 'Retry');
+      expect(retry, findsOneWidget);
+
+      // Tapping retry re-runs _load (re-fetches the detail).
+      final before = repo.detailCalls;
+      await tester.tap(retry);
+      await tester.pumpAndSettle();
+      expect(repo.detailCalls, greaterThan(before));
+    });
+
+    testWidgets('#18 — a signed-in PENDING account (effectiveAppRole = guest) '
+        'whose seat map 403s sees NO retry (the null map is legitimate, not an '
+        'error)', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeDetailRepo(detail: _detail()),
+        controller: _PendingController(),
+      );
+      // A pending account presents as guest → its 403 legitimately hides the
+      // join section; it is NOT the seat-map error state, so no retry appears.
+      expect(find.text('Could not load the seat map.'), findsNothing);
+      expect(
+        find.widgetWithText(FilledButton, 'Join the session'),
+        findsNothing,
+      );
     });
 
     testWidgets('signed-in, assigned-seat, no reservation → the Select-my-seat '

@@ -59,6 +59,11 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
   bool _busy = false;
   SessionDetail? _detail;
   SessionSeatMap? _seatMap;
+  // #18 — true when an approved signed-in account's seat-map fetch FAILED (so
+  // _seatMap is null because it failed, not because a guest/pending can't join).
+  // Drives the join area's error+retry so the Join affordance is never silently
+  // absent.
+  bool _seatMapError = false;
 
   /// The router captured in [didChangeDependencies] — [dispose] runs after this
   /// element has left the tree, so the after-view prompt pushes through the
@@ -97,6 +102,7 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
       _loading = true;
       _error = false;
       _notFound = false;
+      _seatMapError = false;
     });
     try {
       final repo = ref.read(sessionDetailRepositoryProvider);
@@ -116,6 +122,12 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
       // role-gate excludes it from the /rate screen itself.
       final isApprovedAttendee = auth is AuthStateSignedIn &&
           _isAttendeeRole(auth.session.user.effectiveAppRole);
+      // #18 — the Join affordance is shown to ANY approved signed-in account (the
+      // seat map is fetched for all of them, not only visitor/exhibitor), so any
+      // of them whose map FAILED deserves the retry. A pending account presents
+      // as guest via effectiveAppRole, so it is (correctly) excluded.
+      final isApprovedSignedIn = auth is AuthStateSignedIn &&
+          auth.session.user.effectiveAppRole != AppRole.guest;
       // Capture the tracker only when this view could prompt on leave (approved
       // attendee + the session has already ended) — so the provider (and prefs)
       // is never touched for guests or upcoming sessions, and dispose can reuse
@@ -127,6 +139,10 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
       setState(() {
         _detail = detail;
         _seatMap = seatMap;
+        // #18 — a null map for an approved signed-in account means the fetch
+        // FAILED (a success always returns a map), so flag it: the body shows a
+        // retry instead of silently dropping the Join button.
+        _seatMapError = isApprovedSignedIn && seatMap == null;
         _loading = false;
       });
     } on ApiFailure catch (failure) {
@@ -427,6 +443,8 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
         onSessionSummary: _openSummary,
         onAskHost: _askHost,
         onJoin: () => unawaited(_join(l10n)),
+        seatMapError: _seatMapError,
+        onRetrySeatMap: () => unawaited(_load()),
         onCancelReservation: () => unawaited(_cancelReservation(l10n)),
         onViewSeat: () => context.pushNamed(
           RouteNames.mySeat,

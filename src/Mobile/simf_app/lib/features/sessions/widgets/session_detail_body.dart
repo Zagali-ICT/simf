@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
+import '../../../app/widgets/simf_page_shell.dart';
 import '../data/seat_map_models.dart';
 import '../data/session_lifecycle.dart';
 import '../data/session_models.dart';
@@ -27,6 +28,8 @@ class SessionDetailBody extends StatelessWidget {
     required this.onSessionSummary,
     required this.onAskHost,
     required this.onJoin,
+    required this.seatMapError,
+    required this.onRetrySeatMap,
     required this.onCancelReservation,
     required this.onViewSeat,
     required this.onSpeaker,
@@ -46,6 +49,10 @@ class SessionDetailBody extends StatelessWidget {
   final VoidCallback onSessionSummary;
   final VoidCallback onAskHost;
   final VoidCallback onJoin;
+  // #18 — an approved attendee whose seat-map fetch failed; when true the join
+  // area shows an error+retry (via [onRetrySeatMap]) instead of nothing.
+  final bool seatMapError;
+  final VoidCallback onRetrySeatMap;
   final VoidCallback onCancelReservation;
   final VoidCallback onViewSeat;
   final void Function(SessionSpeaker speaker) onSpeaker;
@@ -152,6 +159,15 @@ class SessionDetailBody extends StatelessWidget {
             label: seatMap!.mode.isOpenSeating
                 ? l10n.joinOpenRegisterCta
                 : null,
+          ),
+        ] else if (seatMapError && phase != SessionPhase.ended) ...<Widget>[
+          // #18 — an approved attendee whose seat map failed to load gets a
+          // retry affordance here instead of a silently-absent Join button.
+          const SizedBox(height: SimfTokens.space5),
+          SimfErrorState(
+            message: l10n.seatMapError,
+            retryLabel: l10n.retryLabel,
+            onRetry: onRetrySeatMap,
           ),
         ],
         const SizedBox(height: SimfTokens.space6),

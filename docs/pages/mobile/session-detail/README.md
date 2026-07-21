@@ -48,6 +48,11 @@ SessionModerator grant).
   seat picker #109). Booked → مقعدي `SessionReservationCard` (seat or general
   admission; approved swaps the pending hint for the show-your-badge hint,
   D-572; seat-specific bookings open my-seat #18).
+- Seat-map load failure (#18, owner 2026-07-21): an **approved** attendee whose
+  seat-map fetch fails (`_seatMapError`) gets a `seatMapError` message + **Retry**
+  where the Join CTA would be — never a silently-absent button; Retry re-runs
+  `_load()`. A guest/pending null map still legitimately hides the join (that is
+  not an error, so no retry is shown). Not offered on an ended session.
 - CTA row (897:2872): أضف إلى تقويمي (gold, device calendar via
   `sessionCalendarProvider`, E4) + تذكير (outlined; **deferred toast — D-300**,
   the notifications-platform pass owns real reminders).
