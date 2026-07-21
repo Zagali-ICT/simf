@@ -13,7 +13,7 @@ import 'my_area_identity_card.dart';
 import 'my_area_rows.dart';
 
 /// The Approved-user My-Area dashboard body (frame 213:963 / 758:1283): the
-/// identity card, the two share pills, the الإحصائيات stat tiles, the جدولي
+/// identity card, the share pill, the الإحصائيات stat tiles, the جدولي
 /// اليوم schedule groups, and the المزيد rows. The stat tiles are
 /// **display-only** — D-653 restored them to match the frame after D-609's
 /// removal; they show the counts but no longer drill into list screens. Owns
@@ -68,27 +68,13 @@ class MyAreaDashboardBody extends ConsumerWidget {
           avatarTooltip: l10n.avatarChangeTooltip,
         ),
         const SizedBox(height: SimfTokens.space4),
-        // Frame 758:1283 — two horizontal share-action pills (h48, exact
-        // iconify glyphs). مشاركة جهة اتصال at the inline-start (right),
-        // مشاركة ملفي at the end (left).
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: MyAreaShareTile(
-                label: l10n.shareContact,
-                iconAsset: 'assets/icons/share_contact.svg',
-                onTap: () => context.pushNamed(RouteNames.shareMyContact),
-              ),
-            ),
-            const SizedBox(width: SimfTokens.space2),
-            Expanded(
-              child: MyAreaShareTile(
-                label: l10n.shareMyProfile,
-                iconAsset: 'assets/icons/share_profile.svg',
-                onTap: () => context.pushNamed(RouteNames.shareMyContact),
-              ),
-            ),
-          ],
+        // The مشاركة جهة اتصال pill (frame 758:1283, h48) opens the in-app
+        // "شارك جهة اتصالي" QR screen (#21). The old مشاركة ملفي pill was a
+        // duplicate of this exact navigation and was dropped (owner).
+        MyAreaShareTile(
+          label: l10n.shareContact,
+          iconAsset: 'assets/icons/share_contact.svg',
+          onTap: () => context.pushNamed(RouteNames.shareMyContact),
         ),
         const SizedBox(height: SimfTokens.space6),
         // الإحصائيات (frame 758:1283) — display-only (D-653, owner). مقابلات =

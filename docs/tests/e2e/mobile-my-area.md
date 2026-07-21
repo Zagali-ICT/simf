@@ -7,23 +7,25 @@
 > frame 512:1780 "منطقتي"** (D-378 batch): identity card (avatar + tier ·
 > enrolled line + gold #qrId + bordered مشاركة button), the 2×3 tile grid —
 > wired **العربية • English** language toggle, **disabled المظهر theme tile**
-> (no light theme yet, owner decision), **مشاركة ملفي** → the share-my-contact
-> QR screen, **مشاركة جهة اتصال** → the same share-my-contact QR screen
-> (**#21** — re-pointed from the old native `.vcf` share sheet), the two API
+> (no light theme yet, owner decision), a single **مشاركة جهة اتصال** share
+> pill → the share-my-contact QR screen (**#21** — re-pointed from the old
+> native `.vcf` share sheet; the duplicate **مشاركة ملفي** pill was dropped),
+> the two API
 > stat tiles — then
 > جدولي اليوم rows and المزيد rows (smart badge, settings + the
 > function-preserving calendar-export and sign-out rows). Widget tests in
 > `src/Mobile/simf_app/test/features/myarea/my_area_screen_test.dart` (approved
-> card+tiles+stats+schedule, disabled theme tile, share-my-profile nav,
-> share-contact nav (#21), empty
+> card+tiles+stats+schedule, disabled theme tile, share-contact nav (#21,
+> single share pill; مشاركة ملفي dropped), empty
 > schedule, pending→limited card with no dashboard call, 403→limited,
 > error→retry→refetch, session-row→detail, RTL); the dashboard parser is
 > covered in `src/Mobile/simf_app/test/features/myarea/myarea_models_test.dart`.
 > The old mockup screen + test are parked in `_legacy_mockup/`.
 > **Exact-parity to the LIVE frame 758:1283 (D-447):** جدولي اليوم now splits
 > into a **جلسات** group and a **مقابلات** group, each under its gold
-> sub-header; the two share pills were re-ordered to مشاركة جهة اتصال (right) ·
-> مشاركة ملفي (left); the stat label is **مقابلات** (was "مقابلات مؤكدة"). The
+> sub-header; the share row is now a single مشاركة جهة اتصال pill (**#21** — the
+> duplicate مشاركة ملفي pill was dropped); the stat label is **مقابلات** (was
+> "مقابلات مؤكدة"). The
 > owner extra (the Face-ID toggle) and the shell header chrome are kept (beyond
 > the frame, per the owner invariants). **D-654:** the "تحديث صورة الهوية"
 > (Update ID photo) row was removed from the المزيد list (owner).
@@ -50,12 +52,12 @@
 | E2E-MOB014-007 | Not-yet-approved account → 403 (RequireApprovedAccount) | auth | P0 | authored ✓ (`Dashboard_for_a_not_yet_approved_account_is_forbidden`) |
 | E2E-MOB014-008 | RTL render of card + counters + Arabic tier/hall labels | i18n | P1 | authored ✓ (screen — Arabic RTL + pending/403 limited card + session-row nav) |
 | E2E-MOB014-009 | KSA layout: language tile toggles AR/EN; theme tile visible but disabled | happy | P1 | authored ✓ (screen — disabled palette + no tap) |
-| E2E-MOB014-010 | مشاركة ملفي opens the share-my-contact QR screen | happy | P2 | authored ✓ (screen) |
-| E2E-MOB014-016 | **مشاركة جهة اتصال opens the share-my-contact QR screen (#21):** the share-contact pill (and the identity-card مشاركة button) now navigate to `RouteNames.shareMyContact`, replacing the old native `.vcf` OS share sheet | happy | P2 | authored ✓ (screen — tapping "Share contact" routes to the QR screen) |
+| E2E-MOB014-010 | ~~مشاركة ملفي opens the share-my-contact QR screen~~ — **🗑️ REMOVED (#21, owner):** the مشاركة ملفي pill was a duplicate of مشاركة جهة اتصال (same QR-screen nav) and was dropped; see E2E-MOB014-016 | happy | — | removed ✓ (screen asserts مشاركة ملفي is absent) |
+| E2E-MOB014-016 | **مشاركة جهة اتصال opens the share-my-contact QR screen (#21):** the single share-contact pill (and the identity-card مشاركة button) navigate to `RouteNames.shareMyContact`; the old native `.vcf` OS share sheet and the duplicate مشاركة ملفي pill are both gone | happy | P2 | authored ✓ (screen — tapping "Share contact" routes to the QR screen; مشاركة ملفي absent) |
 | E2E-MOB014-011 | ~~Photos-only profile edit (D-437): "Update ID photo" row~~ — **🗑️ REMOVED (D-654, owner):** the "تحديث صورة الهوية" row is gone from My Area; the face photo (avatar) is still changed via the tap-the-avatar flow (`_changeAvatar`) | happy | — | removed ✓ (screen asserts the row is absent) |
 | E2E-MOB014-012 | **Face-ID toggle (D-445):** the المزيد section shows an enable/disable **"Face ID sign-in"** switch that **self-hides when the device has no usable biometric**; turning it on enrols a device key (+ success toast); turning it **off first asks to confirm the permanent delete** ("…permanently deleted from this device") and only revokes after the user taps **Delete** (Cancel keeps the key). Mirrored in the side menu. | happy | P1 | authored ✓ (widget — `FaceIdToggleTile` hidden-when-unavailable / on→enrol+flip / off→confirm→revoke+flip / cancel→keep) |
 | E2E-MOB014-013 | **جدولي اليوم grouping (758:1283, D-447):** the schedule splits into a "جلسات" group then a "مقابلات" group, each under its gold sub-header; both empty → the no-items placeholder | i18n/visual | P1 | authored ✓ (screen — groups + RTL `dy` order: sessions above meetings) |
-| E2E-MOB014-014 | **Share pills order (758:1305, D-447):** مشاركة جهة اتصال at the inline-start (right), مشاركة ملفي at the end (left) | i18n | P2 | authored ✓ (screen — RTL `getCenter().dx`) |
+| E2E-MOB014-014 | **Single share pill (#21 — was the 758:1305 two-pill order):** only the مشاركة جهة اتصال pill is rendered; the duplicate مشاركة ملفي pill was dropped (owner) | i18n | P2 | authored ✓ (screen — مشاركة جهة اتصال present, مشاركة ملفي absent) |
 | E2E-MOB014-015 | **Saved stat tiles → Coming soon (owner 2026-06-21):** the الإحصائيات tiles **مقابلات** and **جلسات محفوظة** still show their live counts but are now tappable; each opens the **ComingSoon** placeholder (saved meetings / saved sessions are not built yet) | happy | P2 | authored ✓ (widget — `KsaStatTile` fires `onTap`) |
 
 ## Scenarios
@@ -72,13 +74,13 @@ Scenario: Today's schedule groups sessions and meetings
   And when both groups are empty the "No items today" placeholder is shown instead
 ```
 
-### E2E-MOB014-014 — Share pills order (758:1305, D-447)
+### E2E-MOB014-014 — Single share pill (#21 — was the 758:1305 two-pill order)
 
 ```gherkin
-Scenario: The two share pills follow the frame order under RTL
+Scenario: Only the مشاركة جهة اتصال pill is rendered
   Given an approved visitor on /my-area in Arabic
-  Then "مشاركة جهة اتصال" is at the inline-start (physical right)
-  And "مشاركة ملفي" is at the end (physical left)
+  Then the "مشاركة جهة اتصال" share pill is shown
+  And the "مشاركة ملفي" pill is no longer present (dropped as a duplicate, #21)
 ```
 
 ### E2E-MOB014-016 — مشاركة جهة اتصال opens the share-my-contact QR screen (#21)
@@ -93,14 +95,14 @@ Scenario: The share-contact pill opens the in-app contact-QR screen
 
 **Note (#21):** the share-contact pill and the identity-card مشاركة button used
 to fetch `…/contact-card.vcf` and open the native OS share sheet; the owner
-re-pointed both to the in-app "شارك جهة اتصالي" QR screen — the same target as
-the مشاركة ملفي pill. **Open IA question for the owner** (not decided here):
-مشاركة جهة اتصال and مشاركة ملفي now open the *same* screen, so one pill should
-be dropped or relabelled.
+re-pointed both to the in-app "شارك جهة اتصالي" QR screen. Because the sibling
+مشاركة ملفي pill opened the *same* screen, it was a duplicate and the owner
+dropped it — the share row is now a single مشاركة جهة اتصال pill.
 
 **Evidence:** `my_area_screen_test.dart` — `the share-contact tile opens the
 contact-QR screen (#21)` (tapping "Share contact" routes to the stubbed
-`SHARE-MY-CONTACT` screen).
+`SHARE-MY-CONTACT` screen) and `only مشاركة جهة اتصال remains, مشاركة ملفي
+dropped (#21)`.
 
 ### E2E-MOB014-012 — Face-ID toggle (D-445)
 
