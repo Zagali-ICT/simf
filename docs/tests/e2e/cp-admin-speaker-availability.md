@@ -75,12 +75,25 @@ Scenario: The Start / End pickers advertise the forum-day min/max
   # by the existing SpeakerMeetingRequests.Manage-adjacent BusinessMeetings.View
   # permission (no new permission code); when no programme days exist the bound is skipped
   # and the pickers carry no min/max (the server still enforces on submit).
+
+Scenario: The client-side out-of-range toast names the live forum window (Item #40)
+  Given the forum window read from the backend is 2026-11-23..25
+  When they enter a Start / End on 2026-12-01 (after the last forum day) and click Add
+  Then no POST is sent and an error toast renders the dynamic window, not a hardcoded literal
+    (EN "Dates must be within 23-25 November 2026." /
+     AR RTL "يجب أن تكون التواريخ ضمن 23-25 نوفمبر 2026.")
+  # The toast text is Admin.SpeakerAvailability.BadDateRange = "Dates must be within {0}." /
+  # "يجب أن تكون التواريخ ضمن {0}." with {0} built from _forumMinDate/_forumMaxDate via
+  # SIMF.Common.EventDateRange; Arabic vs English follows CultureInfo.CurrentUICulture text
+  # direction. A cross-month / cross-year window spells out both endpoints
+  # (e.g. "30 November - 2 December 2026").
 ```
 
 **Evidence:** `SpeakerAvailabilityTests.Create_window_outside_the_forum_window_is_400`
 (and the in-window `Create_window_then_it_lists_and_yields_slots`, now anchored to
-2026-11-20).
+2026-11-20) for the server rule; `SpeakerAvailabilityBadDateRangeTests` (CP bUnit)
+for the dynamic client-side toast rendering the formatted range in EN + AR.
 
 ---
 
-_Last reviewed:_ 2026-07-20 by Claude: D-753 (forum-day bound on window creation via ProgrammeDay MIN/MAX; Start/End pickers fed by GET /admin/programme/forum-window, replacing the hardcoded 2026-11-23..25 window; added E2E-SAV-007). Prior: 2026-06-20 by SIMF Team — D-476 (#11) new speaker-availability admin page (Group G phase 1c).
+_Last reviewed:_ 2026-07-22 by Claude: Item #40 (the client-side out-of-range toast now renders the live forum window via SIMF.Common.EventDateRange instead of the hardcoded "23-25 November 2026"; Admin.SpeakerAvailability.BadDateRange is now a "{0}" format string; added the dynamic-toast scenario + SpeakerAvailabilityBadDateRangeTests evidence). Prior: 2026-07-20 by Claude — D-753 (forum-day bound on window creation via ProgrammeDay MIN/MAX; Start/End pickers fed by GET /admin/programme/forum-window, replacing the hardcoded 2026-11-23..25 window; added E2E-SAV-007). Prior: 2026-06-20 by SIMF Team — D-476 (#11) new speaker-availability admin page (Group G phase 1c).

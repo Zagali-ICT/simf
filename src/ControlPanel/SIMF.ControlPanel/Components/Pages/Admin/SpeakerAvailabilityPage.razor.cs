@@ -110,7 +110,13 @@ public partial class SpeakerAvailabilityPage
             var endDate = DateOnly.FromDateTime(end.UtcDateTime);
             if (startDate < minDate || endDate > maxDate)
             {
-                _toast = new Toast("error", L["Admin.SpeakerAvailability.BadDateRange"]);
+                // D-753 — render the actual forum window (config-driven) in the
+                // toast instead of a hardcoded literal. Arabic vs English is
+                // chosen from the current UI culture's text direction.
+                var range = EventDateRange.Format(
+                    minDate, maxDate,
+                    CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft);
+                _toast = new Toast("error", L["Admin.SpeakerAvailability.BadDateRange", range]);
                 return;
             }
         }
