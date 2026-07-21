@@ -373,6 +373,12 @@ internal sealed class AssetService(
                         .ToListAsync(cancellationToken))
                         result[(AssetCategory.NewsImage, r.Id)] = r.Title;
                     break;
+                case AssetCategory.Banner:
+                    foreach (var r in await dbContext.Banners.AsNoTracking()
+                        .Where(x => ids.Contains(x.Id)).Select(x => new { x.Id, x.Title })
+                        .ToListAsync(cancellationToken))
+                        result[(AssetCategory.Banner, r.Id)] = r.Title;
+                    break;
             }
         }
         return result;

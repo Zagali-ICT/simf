@@ -53,6 +53,24 @@ class _HomeHeroBannerState extends State<HomeHeroBanner> {
     _startAutoAdvance();
   }
 
+  @override
+  void didUpdateWidget(HomeHeroBanner oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // The banner list is delivered asynchronously — the first frame is empty and
+    // the list arrives on a later rebuild (the State is reused, so initState's
+    // timer set-up already ran against an empty list). Re-evaluate the
+    // auto-advance whenever the count changes: clamp the index into the new
+    // range and (re)start or stop the timer as the count crosses the > 1 line.
+    if (widget.banners.length != oldWidget.banners.length) {
+      _timer?.cancel();
+      _timer = null;
+      if (_index >= widget.banners.length) {
+        _index = 0;
+      }
+      _startAutoAdvance();
+    }
+  }
+
   // Auto-advance to the next banner every [_interval], wrapping at the end. Only
   // runs when there is more than one banner (mirrors HighlightsCarousel).
   void _startAutoAdvance() {
