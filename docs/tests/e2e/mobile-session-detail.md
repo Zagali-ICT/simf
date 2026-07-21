@@ -113,6 +113,7 @@
 | E2E-MOB017-025 | **No-layout session joins (D-706)** — an assigned-seat session with **no seat layout** (a hall left on the default with no rows laid out) reports its effective mode as **OpenSeating**, so the Join CTA is a one-tap join (not an empty seat picker) and `…/seats/join` is accepted (Approved — confirmed immediately). Fixes "join session not working" | happy | P0 | authored ✓ (API `Join_succeeds_on_an_assigned_seat_session_that_has_no_layout`) |
 | E2E-MOB017-025 | **Public screen (D-750, reverses D-576):** a signed-out guest navigating to `/sessions/{id}` opens the detail (no redirect); the join/ask sections stay hidden for a guest (`seatMap == null`) | auth | P0 | authored ✓ (router-gate `D-750 — a signed-out guest hitting /sessions or a session detail is NOT redirected`; `routePathRequiresAuth('/sessions/:sessionId')` is FALSE) |
 | E2E-MOB017-027 | **Join gate (owner 2026-07-14):** the Join CTA is only offered while the session has NOT ended — an ended session drops the join section ("open now to join" is a live/upcoming state) | happy | P1 | authored ✓ (body-gate `phase != SessionPhase.ended`; screen join tests unaffected on upcoming fixtures) |
+| E2E-MOB017-028 | **Seat-map load failure retry (#18, owner 2026-07-21):** an **approved** attendee whose seat-map fetch FAILS (transport / 5xx) gets a "seat map failed to load" error + a **Retry** where the Join CTA would be — instead of a silently-absent Join button — and Retry re-runs the load. Distinct from E2E-MOB017-024: an approved account reaches the seat endpoint, so a null map means the fetch failed (not the guest/pending 403 that legitimately hides the join). Not offered on an ENDED session. | error | P1 | authored ✓ (screen `#18 — an approved account whose seat map FAILS…`; body `#18 seat-map load failure` ×2) |
 
 ## Scenarios
 
@@ -472,9 +473,35 @@ Scenario: An ended session offers no Join CTA
 **Evidence:** body-gate `else if (seatMap != null && phase != SessionPhase.ended)`;
 the existing join screen tests use upcoming fixtures (join still offered).
 
+### E2E-MOB017-028 — Seat-map load failure shows a retry (not a missing Join button)
+
+```gherkin
+Scenario: An approved attendee whose seat map fails to load can retry
+  Given an approved visitor opens an UPCOMING session detail
+  And the seat-map read (GET /app/sessions/{id}/seats) FAILS (transport / 5xx)
+  Then the Join CTA is NOT shown
+  And a "Could not load the seat map." message with a "Retry" button is shown in its place
+  When the visitor taps Retry
+  Then the screen re-runs its load (re-fetches the detail + seat map)
+
+Scenario: An ENDED session with a failed seat map shows no retry
+  Given the same approved visitor on an ENDED session whose seat map fails to load
+  Then no seat-map error/retry is shown (the session can no longer be joined)
+```
+
+**Evidence:** screen `#18 — an approved account whose seat map FAILS to load sees the
+error + retry`; body `#18 seat-map load failure` (error+retry on upcoming, nothing on
+ended). An approved account reaches the seat endpoint, so a null map = a real failure —
+distinct from the guest/pending 403 in E2E-MOB017-024.
+
 ---
 
-_Last reviewed:_ `2026-07-20` by `Apexium` — **D-750: the Session-detail screen is
+_Last reviewed:_ `2026-07-21` by `Apexium` — **#18 (owner 2026-07-21): an APPROVED
+attendee whose seat-map fetch fails now shows a "seat map failed to load" error +
+Retry where the Join CTA would be, instead of a silently-absent Join button
+(`_seatMapError` on the screen drives a body error branch, reusing `l10n.seatMapError`).
+New E2E-MOB017-028.**
+_Prior:_ `2026-07-20` by `Apexium` — **D-750: the Session-detail screen is
 public again (reverses the D-576 login-gate) — a guest opens the detail without
 signing in (join/ask hidden while `seatMap == null`); the open-seating (case-1) Join
 CTA now reads "سجل لحضور الجلسة" / "Register to attend the session" and shows a
