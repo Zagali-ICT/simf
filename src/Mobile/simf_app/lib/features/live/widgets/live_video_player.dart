@@ -2,11 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:video_player/video_player.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
+import '../../../core/session/session_activity.dart';
 import '../youtube_url.dart';
 
 /// The device orientations to lock while the live player is (not) fullscreen
@@ -32,24 +34,40 @@ List<DeviceOrientation> liveFullScreenOrientations(bool isFullScreen) {
 /// owner-approved exception to the app-wide portrait lock in `main.dart`, for
 /// the video surface only (YouTube is the POC provider; the HLS/MP4 fallback
 /// keeps its play-only controls).
-class LiveVideoPlayer extends StatefulWidget {
+class LiveVideoPlayer extends ConsumerStatefulWidget {
   const LiveVideoPlayer({required this.url, super.key});
 
   final String url;
 
   @override
-  State<LiveVideoPlayer> createState() => _LiveVideoPlayerState();
+  ConsumerState<LiveVideoPlayer> createState() => _LiveVideoPlayerState();
 }
 
-class _LiveVideoPlayerState extends State<LiveVideoPlayer> {
+class _LiveVideoPlayerState extends ConsumerState<LiveVideoPlayer> {
   YoutubePlayerController? _youtube;
   VideoPlayerController? _video;
   bool _videoReady = false;
   bool _error = false;
 
+  /// D-726 (#13/#27) — the watch keep-alive lives on the shared player so
+  /// EVERY surface that shows it is covered: the live screen AND the summary
+  /// recording / summary-video cards, which use this player directly
+  /// (bypassing `LivePlayerSurface`). While mounted it pings the session
+  /// activity clock every minute so watching a long video (which produces no
+  /// touch input) does not trip the SessionGuard idle sign-out. It cannot
+  /// outlive playback — leaving the screen unmounts the player and `dispose`
+  /// cancels the timer — and it can never exceed the server 24h cap (a refresh
+  /// past it fails, D-443).
+  Timer? _keepAlive;
+
   @override
   void initState() {
     super.initState();
+    ref.read(sessionActivityProvider).markActive();
+    _keepAlive = Timer.periodic(
+      const Duration(minutes: 1),
+      (_) => ref.read(sessionActivityProvider).markActive(),
+    );
     _bind();
   }
 
@@ -128,6 +146,7 @@ class _LiveVideoPlayerState extends State<LiveVideoPlayer> {
 
   @override
   void dispose() {
+    _keepAlive?.cancel();
     _youtube?.close();
     _video?.dispose();
     // Re-assert the portrait lock in case we're torn down mid-fullscreen.

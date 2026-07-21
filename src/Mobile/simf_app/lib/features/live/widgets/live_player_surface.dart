@@ -1,10 +1,7 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme/tokens.dart';
-import '../../../core/session/session_activity.dart';
 import '../../accessibility/data/accessibility_controller.dart';
 import 'live_badges.dart';
 import 'live_video_player.dart';
@@ -37,31 +34,10 @@ class LivePlayerSurface extends ConsumerStatefulWidget {
 }
 
 class _LivePlayerSurfaceState extends ConsumerState<LivePlayerSurface> {
-  /// D-726 (#13) — the watch keep-alive lives here because this surface is built
-  /// ONLY when a live feed is actually on screen (`mainUrl != null`). While it is
-  /// mounted, ping the session activity clock every minute so watching the stream
-  /// (which produces no touch input) does not trip the SessionGuard's idle
-  /// sign-out. It cannot outlive playback — a non-feed state (not-started / error
-  /// / empty) or leaving the screen unmounts this widget, and `dispose` cancels
-  /// the timer — and it can never exceed the server 24h cap (a refresh past it
-  /// fails, D-443).
-  Timer? _keepAlive;
-
-  @override
-  void initState() {
-    super.initState();
-    ref.read(sessionActivityProvider).markActive();
-    _keepAlive = Timer.periodic(
-      const Duration(minutes: 1),
-      (_) => ref.read(sessionActivityProvider).markActive(),
-    );
-  }
-
-  @override
-  void dispose() {
-    _keepAlive?.cancel();
-    super.dispose();
-  }
+  // D-726 (#27) — the watch keep-alive moved INTO the wrapped
+  // [LiveVideoPlayer] so it also covers the summary recording / summary-video
+  // surfaces that use that player directly (bypassing this surface); this
+  // surface no longer owns a timer.
 
   @override
   Widget build(BuildContext context) {
