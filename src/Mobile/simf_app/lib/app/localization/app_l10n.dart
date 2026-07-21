@@ -227,6 +227,9 @@ class AppL10n {
   String interestsCounter(int count) =>
       _t('$count / 10 مُختارة', '$count / 10 selected');
   String get interestsEmpty => _t('لا توجد اهتمامات', 'No interests available');
+  // #14 — edit-mode success toast (My interests screen opened from My-Area).
+  String get interestsUpdatedToast =>
+      _t('تم تحديث اهتماماتك', 'Your interests were updated');
   String get attachIdImageLabel => _t('إرفاق صورة الهوية', 'Attach ID image');
   // KSA-Project profile frame copy (Figma 168:2972, D-368).
   String get createProfileTitle => _t('إنشاء ملف شخصى', 'Create profile');

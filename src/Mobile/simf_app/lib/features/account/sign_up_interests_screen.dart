@@ -36,11 +36,19 @@ import 'widgets/interest_chip.dart';
 /// header to the shared [AccountSubHeader] (D-658); the body capped by
 /// [MaxWidthBody]. Behaviour + render unchanged — the 505:1083 golden locks it.
 class SignUpInterestsScreen extends ConsumerStatefulWidget {
-  const SignUpInterestsScreen({super.key, this.draft});
+  const SignUpInterestsScreen({super.key, this.draft, this.editMode = false});
 
   /// The in-memory draft from Page 007 (`state.extra`). Null only on a direct
-  /// deep-link open with no preceding data screen.
+  /// deep-link open with no preceding data screen. Ignored in [editMode].
   final SignUpProfileDraft? draft;
+
+  /// #14 — when true this screen is the standalone "My interests" EDIT surface
+  /// (opened from My-Area, route [RouteNames.myInterests]): it self-loads the
+  /// current profile, pre-selects the saved interests, and on save re-POSTs the
+  /// FULL profile with the new interests (via
+  /// [UserProfileResponse.toUpsertRequest]) then pops. When false it is the
+  /// sign-up interests step (create) — behaviour + 505:1083 render unchanged.
+  final bool editMode;
 
   @override
   ConsumerState<SignUpInterestsScreen> createState() =>
@@ -51,6 +59,10 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
   List<InterestItem> _interests = const <InterestItem>[];
   final Set<String> _selected = <String>{};
 
+  /// #14 edit mode — the loaded profile, re-sent in full on save so an
+  /// interests-only change nulls no other field.
+  UserProfileResponse? _editProfile;
+
   bool _loading = true;
   String? _loadError;
   bool _submitting = false;
@@ -59,6 +71,12 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.editMode) {
+      // #14 edit mode — self-load the profile + lookup; the current interests
+      // are pre-selected inside _loadForEdit once both have loaded.
+      unawaited(_loadForEdit());
+      return;
+    }
     // Pre-select any interests already on the carried draft (re-entry / edit).
     final existing = widget.draft?.request.interestIds ?? const <String>[];
     _selected.addAll(existing);
@@ -66,6 +84,42 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
       unawaited(_load());
     } else {
       _loading = false;
+    }
+  }
+
+  /// #14 edit mode — load the current profile (for a lossless re-save) and the
+  /// interests lookup, then pre-select the profile's saved interests.
+  Future<void> _loadForEdit() async {
+    final repo = ref.read(profileRepositoryProvider);
+    setState(() {
+      _loading = true;
+      _loadError = null;
+    });
+    try {
+      final profile = await repo.getMyProfile();
+      final interests = await repo.getInterests();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _editProfile = profile;
+        _interests = interests;
+        _selected
+          ..clear()
+          ..addAll(
+            profile.interestIds.where((id) => interests.any((i) => i.id == id)),
+          );
+        _loading = false;
+      });
+    } on ApiFailure catch (failure) {
+      if (!mounted) {
+        return;
+      }
+      final l10n = AppL10n.of(context);
+      setState(() {
+        _loadError = failure.localizedMessage(l10n);
+        _loading = false;
+      });
     }
   }
 
@@ -116,6 +170,10 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
   }
 
   Future<void> _save() async {
+    if (widget.editMode) {
+      await _saveEdit();
+      return;
+    }
     final l10n = AppL10n.of(context);
     final draft = widget.draft;
     if (draft == null) {
@@ -148,6 +206,45 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
         RouteNames.registrationSuccess,
         extra: saved.referenceNumber,
       );
+    } on ApiFailure catch (failure) {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _submitError = failure.localizedMessage(l10n));
+    } finally {
+      if (mounted) {
+        setState(() => _submitting = false);
+      }
+    }
+  }
+
+  /// #14 edit-mode save — re-POST the FULL loaded profile with the new
+  /// interests (nulling nothing) via `toUpsertRequest`, then pop back to
+  /// My-Area. Uses the same 1-10 rule as the create step.
+  Future<void> _saveEdit() async {
+    final l10n = AppL10n.of(context);
+    final profile = _editProfile;
+    if (profile == null || _selected.isEmpty || _selected.length > 10) {
+      return;
+    }
+    setState(() {
+      _submitError = null;
+      _submitting = true;
+    });
+    final repo = ref.read(profileRepositoryProvider);
+    try {
+      await repo.upsertMyProfile(
+        profile.toUpsertRequest().copyWith(interestIds: _selected.toList()),
+      );
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(l10n.interestsUpdatedToast)));
+      if (context.canPop()) {
+        context.pop();
+      }
     } on ApiFailure catch (failure) {
       if (!mounted) {
         return;
@@ -194,9 +291,9 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
   }
 
   Widget _buildBody(AppL10n l10n) {
-    if (widget.draft == null) {
-      // Direct open with no preceding data screen — recover by sending the user
-      // to the profile-data step.
+    if (!widget.editMode && widget.draft == null) {
+      // Create mode, direct open with no preceding data screen — recover by
+      // sending the user to the profile-data step. (Edit mode self-loads.)
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(SimfTokens.space6),
@@ -295,7 +392,7 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
             child: SizedBox(
               width: double.infinity,
               child: AuthSubmitButton(
-                label: l10n.continueLabel,
+                label: widget.editMode ? l10n.saveLabel : l10n.continueLabel,
                 busy: _submitting,
                 onPressed: (_submitting || _selected.isEmpty)
                     ? null
@@ -322,7 +419,8 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
             ),
             const SizedBox(height: SimfTokens.space4),
             FilledButton(
-              onPressed: () => unawaited(_load()),
+              onPressed: () =>
+                  unawaited(widget.editMode ? _loadForEdit() : _load()),
               child: Text(l10n.retryLabel),
             ),
           ],

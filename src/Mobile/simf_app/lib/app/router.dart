@@ -106,6 +106,10 @@ const List<_Route> _routes = <_Route>[
   // Page 007‑01 (interests) — mockup 5‑01; split out of #7 (D-332). Sentinel
   // number 701 so it never collides with a mockup screen number; auth-gated.
   _Route(number: 701, name: RouteNames.signUpInterests, path: '/sign-up/interests', labelAr: 'اهتماماتي', labelEn: 'My interests'),
+  // #14 — the standalone "My interests" EDIT surface (opened from My-Area); the
+  // same interests page in edit mode. Sentinel 702 (never collides with a
+  // mockup screen number); auth-gated.
+  _Route(number: 702, name: RouteNames.myInterests, path: '/my-area/interests', labelAr: 'اهتماماتي', labelEn: 'My interests'),
   // Screen 08 (exhibitor self-sign-up) removed — exhibitors are CP-only (D-199 / §9).
   _Route(number: 9, name: RouteNames.terms, path: '/terms', labelAr: 'الشروط والأحكام', labelEn: 'Terms & conditions'),
   _Route(number: 10, name: RouteNames.registrationSuccess, path: '/registration/success', labelAr: 'تم التسجيل بنجاح', labelEn: 'Registration success'),
@@ -228,6 +232,7 @@ const List<_Route> _auxRoutes = <_Route>[
 const Set<int> _authenticatedRoutes = <int>{
   7, // Sign up — visitor profile data (AUTH-only, Page_007 L-1)
   701, // Sign up — interests + the single save (AUTH-only, Page_007-01, D-332)
+  702, // My interests — edit from My-Area (AUTH-only, #14)
   10, // Registration success (signed-in, pending; Page_010)
   11, // Registration status (signed-in, not-yet-approved gate; Page_011 L-1)
   14, // My area / profile — every signed-in role
@@ -329,6 +334,11 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
     return SignUpInterestsScreen(
       draft: extra is SignUpProfileDraft ? extra : null,
     );
+  }
+  if (r.name == RouteNames.myInterests) {
+    // #14 — the same interests page in EDIT mode: self-loads the profile,
+    // pre-selects the saved interests, saves in place and pops back.
+    return const SignUpInterestsScreen(editMode: true);
   }
   if (r.name == RouteNames.terms) {
     // `?consent=1` shows the in-flow accept gate; standalone reads omit it.

@@ -42,6 +42,8 @@ class UpsertUserProfileRequest {
     this.plateNumber,
     this.organisationId,
     this.showInMeetLikeYou,
+    this.regionId,
+    this.jobTitleArabic,
   });
 
   final String? profileTypeId;
@@ -67,6 +69,15 @@ class UpsertUserProfileRequest {
   /// "no change" (preserves server's current value). Defaults to true.
   final bool? showInMeetLikeYou;
 
+  /// D-547 — the attendee's Region (KSA region lookup). Carried on an edit
+  /// so the full-profile upsert (the only write path) does not null it — the
+  /// service sets RegionId unconditionally from the request.
+  final String? regionId;
+
+  /// The Arabic job title. Carried on an edit for the same reason as
+  /// [regionId] (the service sets JobTitleArabic unconditionally).
+  final String? jobTitleArabic;
+
   Map<String, dynamic> toJson() => <String, dynamic>{
         'profileTypeId': profileTypeId,
         'interestIds': interestIds,
@@ -86,6 +97,8 @@ class UpsertUserProfileRequest {
         'organisationId': organisationId,
         'gender': gender.value,
         'showInMeetLikeYou': showInMeetLikeYou,
+        'regionId': regionId,
+        'jobTitleArabic': jobTitleArabic,
       };
 
   /// Returns a copy with [interestIds] replaced — used to attach the interests
@@ -111,6 +124,8 @@ class UpsertUserProfileRequest {
       plateNumber: plateNumber,
       organisationId: organisationId,
       showInMeetLikeYou: showInMeetLikeYou,
+      regionId: regionId,
+      jobTitleArabic: jobTitleArabic,
     );
   }
 }
@@ -174,6 +189,8 @@ class UserProfileResponse {
     this.qrId,
     this.isVip = false,
     this.showInMeetLikeYou = true,
+    this.regionId,
+    this.jobTitleArabic,
   });
 
   final String? profileTypeId;
@@ -224,6 +241,13 @@ class UserProfileResponse {
   /// recommendations. Defaults to true.
   final bool showInMeetLikeYou;
 
+  /// D-547 — the attendee's Region id. Read back so an interests-only edit can
+  /// re-send it (the full-profile upsert sets RegionId unconditionally).
+  final String? regionId;
+
+  /// The Arabic job title, read back for the same reason as [regionId].
+  final String? jobTitleArabic;
+
   /// SUPERSEDED for routing (D-374): the post-sign-in gate now reads the
   /// server-computed `profileComplete` on the session user — do NOT reuse
   /// this getter for routing; the server rule is the single authority.
@@ -265,8 +289,46 @@ class UserProfileResponse {
       qrId: json['qrId'] as String?,
       isVip: json['isVip'] as bool? ?? false,
       showInMeetLikeYou: json['showInMeetLikeYou'] as bool? ?? true,
+      regionId: json['regionId'] as String?,
+      jobTitleArabic: json['jobTitleArabic'] as String?,
     );
   }
+
+  /// Builds an edit re-save request mirroring every field of the loaded profile
+  /// so an interests-only edit (via `copyWith`) re-POSTs the whole profile
+  /// without nulling a server-set field. The full upsert is the only write
+  /// path and the service sets RegionId + JobTitleArabic unconditionally, so
+  /// both must be carried back here (#14).
+  ///
+  /// EXCEPTION — `profileTypeId` is sent **null** on purpose: on a re-save the
+  /// server re-runs the sign-up self-pick validation for any non-null
+  /// ProfileTypeId and rejects (400) every non-"Normal" tier (VVIP/VIP/partner/
+  /// staff), which are admin-assigned. Sending null skips that validation, and
+  /// the server's admin-wins precedence keeps the existing type untouched (it
+  /// only writes a user pick when the stored ProfileTypeId is null). So an
+  /// interests edit never changes — nor is blocked by — the account's tier.
+  UpsertUserProfileRequest toUpsertRequest() => UpsertUserProfileRequest(
+        interestIds: interestIds,
+        arabicName: arabicName,
+        englishName: englishName,
+        nationalityCode: nationalityCode,
+        placeOfBirth: placeOfBirth,
+        isSaudi: isSaudi,
+        gender: gender,
+        profileTypeId: null,
+        jobTitle: jobTitle,
+        dateOfBirth: dateOfBirth,
+        nationalId: nationalId,
+        iqamaNumber: iqamaNumber,
+        passportNumber: passportNumber,
+        saudiMobile: saudiMobile,
+        internationalMobile: internationalMobile,
+        plateNumber: plateNumber,
+        organisationId: organisationId,
+        showInMeetLikeYou: showInMeetLikeYou,
+        regionId: regionId,
+        jobTitleArabic: jobTitleArabic,
+      );
 }
 
 /// Country picker row — `GET /app/account/user-profile/countries` (E3).
