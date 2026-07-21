@@ -6,6 +6,8 @@ import '../../../app/route_names.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_bottom_nav.dart';
 import '../../../app/widgets/simf_page_shell.dart';
+import '../../../core/organization_profile/organization_profile.dart';
+import '../../banners/data/banner_models.dart';
 import '../../news/data/news_models.dart';
 import '../../news/news_article_screen.dart';
 import 'discover_saudi_row.dart';
@@ -13,6 +15,7 @@ import 'follow_us_section.dart';
 import 'greeting_header.dart';
 import 'highlights_carousel.dart';
 import 'home_banners.dart';
+import 'home_hero_banner.dart';
 import 'home_icons.dart';
 
 /// Signed-in layout (frame 758:1134 — greeting home, exact parity): the
@@ -26,6 +29,8 @@ class VisitorHome extends StatelessWidget {
     required this.name,
     required this.baseUrl,
     this.highlights = const <NewsListItem>[],
+    this.banners = const <PublicBannerItem>[],
+    this.profile,
     this.isExhibitor = false,
     this.isVip = false,
     super.key,
@@ -35,6 +40,14 @@ class VisitorHome extends StatelessWidget {
   final String name;
   final String baseUrl;
   final List<NewsListItem> highlights;
+
+  /// The active home banners (the rotating hero image source, #43). Empty → the
+  /// hero falls back to the static discover photo.
+  final List<PublicBannerItem> banners;
+
+  /// The forum edition config for the hero overlay (name / theme / dates /
+  /// location). Null while loading → the hero shows the discover copy.
+  final OrgProfile? profile;
 
   /// Exhibitor (العارض) — the attendee home plus the lead-capture tools section
   /// (scan a visitor's QR + my visitors). D-519.
@@ -52,9 +65,13 @@ class VisitorHome extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(SimfTokens.space4),
         children: <Widget>[
-          // The discovery hero banner (frame node 758:1203) — opens News.
-          DiscoverHeroBanner(
+          // The rotating edition hero (#43): forum name / theme / dates /
+          // location overlaid on the CP-managed banner images; opens News.
+          HomeHeroBanner(
             l10n: l10n,
+            profile: profile,
+            banners: banners,
+            baseUrl: baseUrl,
             onTap: () => context.pushNamed(RouteNames.news),
           ),
           const SizedBox(height: SimfTokens.space6),
