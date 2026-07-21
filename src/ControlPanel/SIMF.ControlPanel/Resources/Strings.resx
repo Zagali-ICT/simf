@@ -3225,6 +3225,8 @@
   <data name="Admin.WalkIn.Field.PreferredLanguage.En" xml:space="preserve"><value>English</value></data>
   <data name="Admin.WalkIn.Field.VipPhoto" xml:space="preserve"><value>VIP welcome photo (optional)</value></data>
   <data name="Admin.WalkIn.Field.VipPhoto.Hint" xml:space="preserve"><value>A clear, high-resolution photo for the welcome message. PNG, JPEG or WebP, up to 2 MB.</value></data>
+  <data name="Admin.VipRegistration.ListTitle" xml:space="preserve"><value>VIP Registration</value></data>
+  <data name="Admin.VipRegistration.Added" xml:space="preserve"><value>VIP registered.</value></data>
   <data name="Admin.VipRegistration.Title" xml:space="preserve"><value>Register a VVIP / VIP</value></data>
   <data name="Admin.VipRegistration.Supporting" xml:space="preserve"><value>Register a VVIP or VIP guest with the welcome-message data for the Mawj system. The account is created pending approval and is approved from the pending-visitors queue.</value></data>
   <data name="Admin.VipExport.Title" xml:space="preserve"><value>VIP welcome export (Mawj)</value></data>

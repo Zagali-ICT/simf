@@ -1,8 +1,9 @@
 // VIP edit (2026-07-21) — bUnit tests for the VIP update capability:
 //   • EditAccountForm gained a "Photo & ID" section (avatar + ID document, plus
 //     the VVIP/VIP welcome photo only when ShowVipPhoto is set).
-//   • VipsList gained a permission-gated "New VIP" (nav) + per-row Edit, wired
-//     conditionally so a Vips.View-only admin sees neither affordance.
+//   • VipRegistration (/admin/visitors/vip) is the VIP/VVIP list page with a
+//     permission-gated "New VIP" (registration wizard) + per-row Edit, wired
+//     conditionally so a Visitors.RegisterOnsite/Edit-less admin sees neither.
 using Bunit;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
@@ -54,6 +55,17 @@ public sealed class VipEditTests : CpComponentTestBase
                 Profile(accountId, hasAvatar, hasIdImage, tier.Id)));
     }
 
+    private void StubVipList()
+    {
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        JSInterop.Setup<ApiResult<GridPage<AdminVipSummary>>>("simfAccount.postJson", _ => true)
+            .SetResult(ApiResult<GridPage<AdminVipSummary>>.Ok(new GridPage<AdminVipSummary>
+            {
+                Items = new[] { VipRow(Guid.NewGuid()) },
+                Total = 1,
+            }));
+    }
+
     [Fact]
     public void EditAccountForm_renders_photo_and_id_section_without_vip_photo()
     {
@@ -69,10 +81,8 @@ public sealed class VipEditTests : CpComponentTestBase
         Assert.Contains("Admin.Edit.Photo.Section", cut.Markup);
         Assert.Contains("Admin.Edit.Photo.Avatar", cut.Markup);
         Assert.Contains("Admin.Edit.Photo.IdDocument", cut.Markup);
-        // The current-image previews render because the profile has both on file.
         Assert.Contains("/avatar?v=", cut.Markup);
         Assert.Contains("/id-document?v=", cut.Markup);
-        // The VIP welcome photo is scoped out unless ShowVipPhoto is set.
         Assert.DoesNotContain("Admin.Edit.Photo.VipPhoto", cut.Markup);
         Assert.Contains("edit-account-avatar", cut.Markup);
     }
@@ -91,73 +101,34 @@ public sealed class VipEditTests : CpComponentTestBase
 
         Assert.Contains("Admin.Edit.Photo.VipPhoto", cut.Markup);
         Assert.Contains("edit-account-vip-photo", cut.Markup);
-        // No image on file → no preview URLs rendered (never a broken <img>).
         Assert.DoesNotContain("/avatar?v=", cut.Markup);
         Assert.DoesNotContain("/id-document?v=", cut.Markup);
     }
 
     [Fact]
-    public void VipsList_hides_new_vip_and_edit_without_the_visitor_permissions()
+    public void VipRegistration_hides_new_vip_and_edit_without_the_visitor_permissions()
     {
         // The base grants only the Administrator role, not the named Visitors
         // policies — so _canRegister / _canEdit resolve false.
-        JSInterop.Mode = JSRuntimeMode.Loose;
-        JSInterop.Setup<ApiResult<GridPage<AdminVipSummary>>>("simfAccount.postJson", _ => true)
-            .SetResult(ApiResult<GridPage<AdminVipSummary>>.Ok(new GridPage<AdminVipSummary>
-            {
-                Items = new[] { VipRow(Guid.NewGuid()) },
-                Total = 1,
-            }));
+        StubVipList();
 
-        var cut = RenderComponent<VipsList>();
+        var cut = RenderComponent<VipRegistration>();
 
         Assert.DoesNotContain("Admin.Vips.Action.AddVip", cut.Markup);
         Assert.DoesNotContain("Admin.Users.Action.Edit", cut.Markup);
     }
 
     [Fact]
-    public void VipsList_shows_new_vip_and_edit_with_the_visitor_permissions()
+    public void VipRegistration_shows_new_vip_and_edit_with_the_visitor_permissions()
     {
         Authorization.SetPolicies(
             PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.RegisterOnsite),
             PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.Edit));
+        StubVipList();
 
-        JSInterop.Mode = JSRuntimeMode.Loose;
-        JSInterop.Setup<ApiResult<GridPage<AdminVipSummary>>>("simfAccount.postJson", _ => true)
-            .SetResult(ApiResult<GridPage<AdminVipSummary>>.Ok(new GridPage<AdminVipSummary>
-            {
-                Items = new[] { VipRow(Guid.NewGuid()) },
-                Total = 1,
-            }));
-
-        var cut = RenderComponent<VipsList>();
+        var cut = RenderComponent<VipRegistration>();
 
         Assert.Contains("Admin.Vips.Action.AddVip", cut.Markup);
         Assert.Contains("Admin.Users.Action.Edit", cut.Markup);
-    }
-
-    [Fact]
-    public void VipsList_new_vip_navigates_to_the_registration_page()
-    {
-        Authorization.SetPolicies(
-            PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.RegisterOnsite));
-
-        JSInterop.Mode = JSRuntimeMode.Loose;
-        JSInterop.Setup<ApiResult<GridPage<AdminVipSummary>>>("simfAccount.postJson", _ => true)
-            .SetResult(ApiResult<GridPage<AdminVipSummary>>.Ok(new GridPage<AdminVipSummary>
-            {
-                Items = Array.Empty<AdminVipSummary>(),
-                Total = 0,
-            }));
-
-        var nav = Services.GetRequiredService<NavigationManager>();
-        var cut = RenderComponent<VipsList>();
-
-        // Click the "New VIP" toolbar button (the only button carrying that label).
-        var addButton = cut.FindAll("button")
-            .First(b => b.TextContent.Contains("Admin.Vips.Action.AddVip"));
-        addButton.Click();
-
-        Assert.EndsWith("/admin/visitors/vip", nav.Uri);
     }
 }

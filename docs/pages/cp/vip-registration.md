@@ -6,18 +6,32 @@
 | **Layout** | `CpShellLayout` |
 | **Surface** | Control Panel |
 | **Audience** | Administrator |
-| **Auth** | `[RequirePermission(Visitors.RegisterOnsite)]` + Approved |
-| **Pattern** | D-429 (V-2). Hosts the shared `WalkInRegistrationForm` in a new `VipMode` (reuses the full walk-in pipeline; adds the موج fields + a separate VIP photo and restricts the tier picker to VVIP/VIP). |
+| **Auth** | `[RequirePermission(Visitors.RegisterOnsite)]` + Approved. **New VIP** gated by `Visitors.RegisterOnsite`, per-row **Edit** by `Visitors.Edit` (API enforces the same). |
+| **Pattern** | VIP/VVIP **list page** (2026-07-21 — a copy of the visitor page) over the `/admin/vips/list` subset, with a toolbar **New VIP** that opens the D-429 registration wizard (`WalkInRegistrationForm` in `VipMode`) and a per-row **Edit** hosting the shared `EditAccountForm` (`ShowVipPhoto=true`). |
 | **Status** | ✅ Real |
-| **Backend** | `POST /account/api/admin/visitors/register-onsite` (the 3 موج fields appended to `AdminWalkInRegistrationRequest`), `POST /account/api/admin/visitors/{id}/vip-photo` (separate VIP photo), plus the existing profile-types / countries / organisations / interests lookups |
-| **Source** | [`VipRegistration.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/VipRegistration.razor) → [`CreateVisitorForm.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/CreateVisitorForm.razor) → [`WalkInRegistrationForm.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/WalkInRegistrationForm.razor) |
-| **E2E** | [`cp-vip-registration.md`](../../tests/e2e/cp-vip-registration.md) (E2E-VIPR-001..007) |
-| **Last reviewed** | 2026-06-15 |
+| **Backend** | List: `POST /account/api/admin/vips/list`. New VIP: `POST /account/api/admin/visitors/register-onsite` (the 3 موج fields on `AdminWalkInRegistrationRequest`) + `POST /account/api/admin/visitors/{id}/vip-photo`. Edit (reused, no new endpoint): `PUT /account/api/admin/visitors/{id}` + `POST .../{id}/avatar` \| `/id-document` \| `/vip-photo` (all `Visitors.Edit`-gated). Plus the profile-types / countries / organisations / interests lookups. |
+| **Source** | [`VipRegistration.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/VipRegistration.razor) → grid + [`CreateVisitorForm.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/CreateVisitorForm.razor) (New VIP) + [`EditAccountForm.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/EditAccountForm.razor) (Edit) |
+| **E2E** | [`cp-vip-registration.md`](../../tests/e2e/cp-vip-registration.md) (E2E-VIPR-001..011) |
+| **Last reviewed** | 2026-07-21 |
 
 ## 1. Purpose
 
+The **VIP Registration desk** — a copy of the visitor list page scoped to the
+VIP guests (VVIP / VIP), added 2026-07-21. The grid lists the VIP accounts
+(name / job title / profile type / email from `/admin/vips/list`). Two actions:
+
+- **New VIP** (toolbar, gated `Visitors.RegisterOnsite`) opens the VVIP/VIP
+  registration wizard described below (the D-429 flow) as a full-width section;
+  on success it toasts "VIP registered." and reloads the grid.
+- **Edit** (per row, gated `Visitors.Edit`) opens the shared `EditAccountForm`
+  with `ShowVipPhoto=true` — change name / email / **tier** (promote VIP↔VVIP) /
+  profile photo / ID image / VIP welcome photo. Reuses the account-id-keyed admin
+  endpoints; no new endpoint or permission.
+
+### New VIP — the D-429 registration wizard
+
 Register a **VVIP** or **VIP** guest for the موج (Mawj) welcome-message
-integration. The page is the regular on-site walk-in registration form running
+integration. The wizard is the regular on-site walk-in registration form running
 in **VIP mode**:
 
 - The profile-type picker is **restricted to VVIP / VIP** (the seeded

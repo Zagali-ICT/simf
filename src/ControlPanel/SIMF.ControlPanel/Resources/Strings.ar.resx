@@ -3218,6 +3218,8 @@
   <data name="Admin.WalkIn.Field.PreferredLanguage.En" xml:space="preserve"><value>الإنجليزية</value></data>
   <data name="Admin.WalkIn.Field.VipPhoto" xml:space="preserve"><value>صورة الترحيب لكبار الشخصيات (اختياري)</value></data>
   <data name="Admin.WalkIn.Field.VipPhoto.Hint" xml:space="preserve"><value>صورة واضحة وعالية الدقة لرسالة الترحيب. PNG أو JPEG أو WebP، حتى 2 ميغابايت.</value></data>
+  <data name="Admin.VipRegistration.ListTitle" xml:space="preserve"><value>تسجيل كبار الشخصيات</value></data>
+  <data name="Admin.VipRegistration.Added" xml:space="preserve"><value>تم تسجيل الشخصية البارزة.</value></data>
   <data name="Admin.VipRegistration.Title" xml:space="preserve"><value>تسجيل شخصية مهمة / بالغة الأهمية</value></data>
   <data name="Admin.VipRegistration.Supporting" xml:space="preserve"><value>سجّل ضيفًا من كبار الشخصيات مع بيانات رسالة الترحيب لنظام موج. يُنشأ الحساب بانتظار الموافقة ويُعتمد من قائمة الزوار المعلّقين.</value></data>
   <data name="Admin.VipExport.Title" xml:space="preserve"><value>تصدير ترحيب كبار الشخصيات (موج)</value></data>

@@ -1,21 +1,96 @@
-@* V-1 (D-429) — Control Panel: register a VVIP / VIP visitor. Hosts the shared
-   CreateVisitorForm in VIP mode (picker restricted to VVIP / VIP, the موج (Mawj)
-   welcome fields — Mawj ID, honorific, preferred language — and a separate VIP
-   welcome photo). The account is created PendingApproval like any walk-in and is
-   approved from the existing pending-visitors queue. Gated by the same
-   on-site-registration permission as the regular walk-in desk. *@
+@* VIP Registration desk (/admin/visitors/vip) — a copy of the visitor list,
+   scoped to VVIP + VIP accounts. The grid lists the VIP guests; "New VIP" opens
+   the VVIP/VIP registration wizard (CreateVisitorForm in VIP mode) as a full
+   section; the per-row Edit opens the shared account form (name / email / tier /
+   photo / ID / VIP welcome photo). Add is gated by Visitors.RegisterOnsite and
+   Edit by Visitors.Edit (the API enforces the same policies). *@
 @page "/admin/visitors/vip"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Visitors.RegisterOnsite)]
 
-<PageTitle>@L["Admin.VipRegistration.Title"] · SIMF</PageTitle>
+<PageTitle>@L["Admin.VipRegistration.ListTitle"] · SIMF</PageTitle>
 
-<SimfPageHeader Title="@L["Admin.VipRegistration.Title"]" />
+@if (_toast is not null)
+{
+    <div class="simf-toast">
+        <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+    </div>
+}
 
-<section class="simf-card simf-page-card simf-page-card--wide">
-    <p>@L["Admin.VipRegistration.Supporting"]</p>
+@if (_addOpen)
+{
+    @* New VIP — the VVIP/VIP registration wizard (picker restricted to VVIP/VIP,
+       Mawj welcome fields + VIP welcome photo). *@
+    <SimfPageHeader Title="@L["Admin.VipRegistration.Title"]" />
+    <section class="simf-card simf-page-card simf-page-card--wide">
+        <p>@L["Admin.VipRegistration.Supporting"]</p>
+        <CreateVisitorForm VipMode="true"
+                           OnSuccess="OnAddedAsync"
+                           OnCancel="@(() => _addOpen = false)" />
+    </section>
+}
+else
+{
+    <SimfBanner Title="@L["Admin.VipRegistration.ListTitle"]" />
 
-    <CreateVisitorForm VipMode="true"
-                       OnSuccess="OnCreatedAsync"
-                       OnCancel="OnBackToListAsync" />
-</section>
+    <div class="simf-page-wide">
+        <div class="simf-surface">
+            <SimfDataGrid TItem="AdminVipSummary"
+                          Query="_query"
+                          Page="_page"
+                          Loading="_loading"
+                          OnQueryChanged="OnQueryChangedAsync"
+                          RowKey="@(r => r.UserId.ToString())"
+                          RowLabel="@(r => RecipientLabel(r))"
+                          OnAdd="@(_canRegister ? EventCallback.Factory.Create(this, OnAddVip) : default)"
+                          OnEditOne="@(_canEdit ? EventCallback.Factory.Create<AdminVipSummary>(this, OnEditVip) : default)"
+                          AddLabel="@L["Admin.Vips.Action.AddVip"]"
+                          EditLabel="@L["Admin.Users.Action.Edit"]"
+                          Caption="@L["Admin.VipRegistration.ListTitle"]"
+                          FilterColumnLabel="@L["Grid.FilterColumn"]"
+                          FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                          ActionsHeader="@L["Grid.Actions"]"
+                          PrevLabel="@L["Grid.Prev"]"
+                          NextLabel="@L["Grid.Next"]"
+                          FirstLabel="@L["Grid.First"]"
+                          LastLabel="@L["Grid.Last"]"
+                          PageSizeLabel="@L["Grid.PageSize"]"
+                          PageFormatter="@FormatPage"
+                          LoadingLabel="@L["Admin.Vips.Loading"]"
+                          SummaryFormatter="@FormatSummary">
+                <Columns>
+                    <SimfDataGridColumn TItem="AdminVipSummary" Key="name" Header="@L["Admin.Vips.Col.Name"]">
+                        <CellTemplate>@RecipientLabel(context)</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminVipSummary" Key="jobTitle" Header="@L["Admin.Vips.Col.JobTitle"]">
+                        <CellTemplate>@(context.JobTitle ?? "—")</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminVipSummary" Key="profileType" Header="@L["Admin.Vips.Col.ProfileType"]">
+                        <CellTemplate>@TypeLabel(context)</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminVipSummary" Key="email" Header="@L["Admin.Vips.Col.Email"]">
+                        <CellTemplate>@(context.Email ?? "—")</CellTemplate>
+                    </SimfDataGridColumn>
+                </Columns>
+                <EmptyTemplate>
+                    <SimfEmptyState Title="@L["Admin.Vips.None"]" />
+                </EmptyTemplate>
+            </SimfDataGrid>
+        </div>
+    </div>
+}
+
+@* Edit VIP — change this VIP's name / email / tier / photo / ID / welcome photo
+   via the shared account edit form, keyed by the account id. *@
+@if (_editOpen)
+{
+    <SimfModal Open="true" Title="@L["Admin.Vips.Edit.Title"]"
+               OnClose="@(() => _editOpen = false)">
+        <ChildContent>
+            <EditAccountForm AccountId="_editUserId" Scope="visitors" IsVisitorScope="true"
+                             ShowVipPhoto="true"
+                             OnSaved="OnEditSavedAsync"
+                             OnCancel="@(() => _editOpen = false)" />
+        </ChildContent>
+    </SimfModal>
+}
