@@ -61,7 +61,15 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     {
         options.LoginPath = "/login";
         options.AccessDeniedPath = "/not-permitted";
-        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+        // Auth-cookie idle lifetime, in hours. Ops-configurable via
+        // SIMF_Session__LifetimeHours; default 8h (the NCA-safe baseline the
+        // committed deploy template ships). A larger value cannot extend the
+        // real session beyond the API's absolute cap Jwt:SessionLifetimeHours
+        // (NCA D-443 = 24h): the refresh token still expires there and forces
+        // re-login, so this knob is for shorter idle windows / test overrides.
+        var sessionLifetimeHours =
+            builder.Configuration.GetValue<int>("Session:LifetimeHours", 8);
+        options.ExpireTimeSpan = TimeSpan.FromHours(sessionLifetimeHours);
         options.SlidingExpiration = true;
         options.Cookie.Name = "simf.cp.auth";
         options.Cookie.HttpOnly = true;

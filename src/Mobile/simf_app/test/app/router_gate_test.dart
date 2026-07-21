@@ -26,8 +26,10 @@ void main() {
       expect(routePathRequiresAuth('/sessions/:sessionId/my-seat'), isTrue);
     });
 
-    test('D-576 — the session detail is login-gated (was Guest-open)', () {
-      expect(routePathRequiresAuth('/sessions/:sessionId'), isTrue);
+    test('D-750 — the agenda + session detail are public again (reverses D-576)',
+        () {
+      expect(routePathRequiresAuth('/sessions'), isFalse);
+      expect(routePathRequiresAuth('/sessions/:sessionId'), isFalse);
     });
 
     test('the explicitly gated screens require auth', () {
@@ -42,9 +44,8 @@ void main() {
       expect(routePathRequiresAuth('/notifications'), isTrue);
       expect(routePathRequiresAuth('/meet'), isTrue);
       expect(routePathRequiresAuth('/live/question'), isTrue);
-      // D-576 — the agenda + session detail are login-gated (redirect).
-      expect(routePathRequiresAuth('/sessions'), isTrue);
-      expect(routePathRequiresAuth('/sessions/:sessionId'), isTrue);
+      // D-750 — the agenda + session detail are public again (reverses D-576);
+      // their now-ungated status is asserted in the dedicated D-750 test above.
       // D-577 — /live is NOT redirect-gated; it shows an in-screen need-login
       // prompt instead, so a guest still lands on the live screen.
       expect(routePathRequiresAuth('/live'), isFalse);
@@ -54,6 +55,9 @@ void main() {
       expect(routePathRequiresAuth('/'), isFalse);
       expect(routePathRequiresAuth('/map'), isFalse);
       expect(routePathRequiresAuth('/speakers/:speakerId'), isFalse);
+      // D-750 — the agenda + session detail joined the public set (reverses D-576).
+      expect(routePathRequiresAuth('/sessions'), isFalse);
+      expect(routePathRequiresAuth('/sessions/:sessionId'), isFalse);
     });
 
     test('an unknown or null pattern is never gated', () {
@@ -151,7 +155,6 @@ void main() {
     });
 
     test('a public route is always allowed', () {
-      // The venue map stays public (D-576 gated /sessions, so use /map here).
       expect(
         redirectDecision(
           isInitial: false,
@@ -163,8 +166,8 @@ void main() {
       );
     });
 
-    test('D-576 — a signed-out guest hitting /sessions or a session detail → '
-        'sign-in', () {
+    test('D-750 — a signed-out guest hitting /sessions or a session detail is '
+        'NOT redirected (public again, reverses D-576)', () {
       for (final p in <String>['/sessions', '/sessions/:sessionId']) {
         expect(
           redirectDecision(
@@ -173,7 +176,7 @@ void main() {
             goingTo: p,
             fullPath: p,
           ),
-          equals('/sign-in'),
+          isNull,
           reason: p,
         );
       }
@@ -259,7 +262,7 @@ void main() {
         (tester) async {
       final auth = _AuthFlag();
       final router = await pumpShell(tester, auth);
-      // The venue map is the remaining public tab (D-576 gated /sessions).
+      // The venue map is a public tab (as is /sessions since D-750).
       router.go('/map');
       await tester.pumpAndSettle();
       expect(find.text('MAP'), findsOneWidget);
@@ -272,16 +275,16 @@ void main() {
       expect(find.text('SIGN-IN'), findsNothing);
     });
 
-    testWidgets('D-576 — the /sessions tab bounces a signed-out guest',
-        (tester) async {
+    testWidgets('D-750 — the /sessions tab does NOT bounce a signed-out guest '
+        '(public again, reverses D-576)', (tester) async {
       final auth = _AuthFlag();
       final router = await pumpShell(tester, auth);
       auth.signOut();
       await tester.pumpAndSettle();
       router.go('/sessions');
       await tester.pumpAndSettle();
-      expect(find.text('SIGN-IN'), findsOneWidget);
-      expect(find.text('SESSIONS'), findsNothing);
+      expect(find.text('SESSIONS'), findsOneWidget);
+      expect(find.text('SIGN-IN'), findsNothing);
     });
   });
 
@@ -430,9 +433,11 @@ void main() {
     });
 
     test('keeps the universal-auth routes it reaches as itself', () {
-      // Badge, my-area, notifications, sessions and the registration-status
-      // gate are auth-gated (any signed-in user), not role-gated, so a pending
-      // account stays on them — the registration-status gate is its way back.
+      // Badge, my-area, notifications and the registration-status gate are
+      // auth-gated (any signed-in user), not role-gated, so a pending account
+      // stays on them — the registration-status gate is its way back. (The
+      // agenda / session detail are public since D-750, so a pending account is
+      // likewise not bounced off them; they moved to the public group.)
       for (final p in <String>[
         '/badge',
         '/my-area',
@@ -441,7 +446,6 @@ void main() {
         // regression that shipped when 103 was attendee-gated.
         '/my-area/verify-identity',
         '/notifications',
-        '/sessions',
         '/registration/status',
       ]) {
         expect(hitGuest(p), isNull, reason: p);

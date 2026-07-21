@@ -812,8 +812,9 @@ void main() {
       expect(find.text('PICKER'), findsOneWidget);
     });
 
-    testWidgets('signed-in, open-seating, no reservation → Join confirms then '
-        'joins (pending toast)', (tester) async {
+    testWidgets('D-750 — signed-in, open-seating, no reservation → the CTA reads '
+        '"register to attend", Join confirms then shows the success alert',
+        (tester) async {
       final seatRepoHolder = _FakeSeatRepo(
         map: _seatMap(mode: SeatSelectionMode.openSeating),
       );
@@ -846,8 +847,15 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final cta = find.widgetWithText(FilledButton, 'Join the session');
+      // D-750 — the open-seating CTA reads "register to attend", not the
+      // generic join label (the label the assigned-seat mode keeps).
+      final cta =
+          find.widgetWithText(FilledButton, 'Register to attend the session');
       expect(cta, findsOneWidget);
+      expect(
+        find.widgetWithText(FilledButton, 'Join the session'),
+        findsNothing,
+      );
       await tester.tap(cta);
       await tester.pumpAndSettle();
       // The confirm dialog, then Join.
@@ -855,7 +863,20 @@ void main() {
       await tester.tap(find.widgetWithText(FilledButton, 'Join'));
       await tester.pumpAndSettle();
       expect(seatRepoHolder.joinCalls, 1);
-      expect(find.text('Request sent — pending approval'), findsOneWidget);
+      // D-750 — a one-button success alert (not the old pending-toast snackbar)
+      // explaining that registering is not a seat reservation.
+      expect(
+        find.textContaining('You have successfully registered to attend'),
+        findsOneWidget,
+      );
+      expect(find.text('Request sent — pending approval'), findsNothing);
+      // The single OK button dismisses it.
+      await tester.tap(find.widgetWithText(FilledButton, 'OK'));
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining('You have successfully registered to attend'),
+        findsNothing,
+      );
     });
 
     testWidgets('tapping a speaker navigates to the speaker profile',

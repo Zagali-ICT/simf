@@ -1000,6 +1000,9 @@ class AppL10n {
   // Sessions — daily schedule (Page 016). The two pills + the day strip + the
   // search box all filter the cached programme client-side (Page_016 L-1).
   String get sessionsTitle => _t('الجلسات', 'Sessions');
+  // D-750 — the bottom-nav program/agenda tab label (owner 2026-07-20). Distinct
+  // from [sessionsTitle], which titles the Sessions screen and other surfaces.
+  String get agendaTitle => _t('الأجندة', 'Agenda');
   String get sessionsViewUpcoming => _t('الأجندة القادمة', 'Upcoming agenda');
   String get sessionsViewForum => _t('أجندة الفعالية', 'Event agenda');
   String get sessionsAllDays => _t('كل الأيام', 'All days');
@@ -1061,6 +1064,11 @@ class AppL10n {
   // 2026-06-30): one label for both seating modes — open-seating joins in place,
   // assigned-seat opens the seat picker.
   String get joinSessionCta => _t('الانضمام إلى الجلسة', 'Join the session');
+  // D-750 (owner 2026-07-20) — case-1 (open-seating) join CTA: the button reads
+  // "register to attend" instead of the generic join label, because an
+  // open-seating join is a registration, not a seat reservation.
+  String get joinOpenRegisterCta =>
+      _t('سجل لحضور الجلسة', 'Register to attend the session');
   String get joinSeatHint =>
       _t('اختر مقعدك ثم انتظر موافقة الإدارة', 'Pick your seat, then await approval');
   String get joinOpenHint =>
@@ -1073,6 +1081,13 @@ class AppL10n {
   String get joinConfirmAction => _t('انضمام', 'Join');
   String get joinPendingToast =>
       _t('تم إرسال طلبك — بانتظار موافقة الإدارة', 'Request sent — pending approval');
+  // D-750 — case-1 (open-seating) post-join success alert body (replaces the
+  // joinPendingToast snackbar): registering is not a seat reservation and does
+  // not guarantee entry; entry is confirmed at session check-in.
+  String get joinOpenSuccessBody => _t(
+        'تم تسجيلك لحضور هذه الجلسة بنجاح. هذا التسجيل لا يعني حجز مقعد أو ضمان الدخول للجلسة، سيتم تأكيد دخولك عند تسجيل الدخول للجلسة',
+        'You have successfully registered to attend this session. This registration does not reserve a seat or guarantee entry; your entry will be confirmed at session check-in.',
+      );
   String get joinFailed => _t('تعذّر إرسال الطلب', "Couldn't send your request");
   String get joinSessionFull => _t('لا توجد أماكن متبقية', 'No places remain');
   String get generalAdmissionLabel => _t('دخول عام', 'General admission');
@@ -1098,6 +1113,13 @@ class AppL10n {
   String get seatPickerRandomCta => _t('اختيار تلقائي', 'Auto-pick a seat');
   String get seatReservedToast =>
       _t('تم الحجز — بانتظار الموافقة', 'Reserved — pending approval');
+  // D-750 — case-2 (assigned-seat) post-reserve success alert body (replaces the
+  // seatReservedToast snackbar): the hold is released if the visitor does not
+  // check in by 3 minutes before the session starts, to free the seat.
+  String get seatReservedAlertBody => _t(
+        'تم حجز المقعد بنجاح سيتم الغاء الحجز في حالة عدم تسجيل الدخول للجلسة قبل 3 دقائق قبل بدء الجلسة لاتاحة المقعد لأشخاص اخرين',
+        'Seat reserved successfully. The reservation will be cancelled if you do not check in by 3 minutes before the session starts, to free the seat for others.',
+      );
   String get seatReserveFailed => _t('تعذّر حجز المقعد', "Couldn't reserve that seat");
   // Join-a-session hub.
   String get joinHubTitle => _t('احجز مقعداً', 'Book a seat');
