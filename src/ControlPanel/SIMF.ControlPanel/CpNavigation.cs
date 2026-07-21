@@ -108,7 +108,7 @@ public static class CpNavigation
             new("Module.Speakers", "/admin/speakers", RequiredPermission: PermissionCatalog.Speakers.View, Icon: "mic"),
             // P2.3 (D-228) — speaker presentation files (FR-407). Reuses Speakers.*.
             new("Module.SpeakerPresentations", "/admin/speaker-presentations", RequiredPermission: PermissionCatalog.Speakers.View, Icon: "presentation"),
-            // P2.2 (D-227) — booking approval queue (FDS-005 §5.2).
+            // #6/#17 — read-only booking monitor (was the D-227 approval queue).
             new("Module.Bookings", "/admin/bookings", RequiredPermission: PermissionCatalog.Bookings.View, Icon: "ticket"),
             // SIMF-FDS-013 (D-248) — flexible hall config: purpose + meeting tables
             // + hall allocations (whole / random-by-count / row-column).

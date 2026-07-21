@@ -283,6 +283,14 @@
   <data name="Programme.Empty.Title" xml:space="preserve"><value>لا توجد جلسات بعد</value></data>
   <data name="Programme.Empty.Text" xml:space="preserve"><value>لم يتم نشر الأجندة بعد. يُرجى التحقق لاحقًا.</value></data>
   <data name="Programme.Speakers.Title" xml:space="preserve"><value>المتحدثون</value></data>
+  <data name="Programme.Agenda.Title" xml:space="preserve"><value>المواعيد</value></data>
+  <data name="Programme.DayStrip.Aria" xml:space="preserve"><value>اختر يومًا</value></data>
+  <data name="Programme.Filter.Aria" xml:space="preserve"><value>تصفية حسب نوع الجلسة</value></data>
+  <data name="Programme.Filter.All" xml:space="preserve"><value>الكل</value></data>
+  <data name="Programme.Filter.Empty" xml:space="preserve"><value>لا توجد جلسات مطابقة.</value></data>
+  <data name="Programme.Type.Workshop" xml:space="preserve"><value>ورش العمل</value></data>
+  <data name="Programme.Type.Session" xml:space="preserve"><value>جلسات</value></data>
+  <data name="Programme.Type.Event" xml:space="preserve"><value>الأحداث</value></data>
 
   <!-- visits page (/visit) — Figma 5867-24636 (supersedes the old MudBlazor visit-entry page) -->
   <data name="Visit.PageTitle" xml:space="preserve"><value>الزيارة والسفر — الملتقى البحري السعودي الدولي</value></data>

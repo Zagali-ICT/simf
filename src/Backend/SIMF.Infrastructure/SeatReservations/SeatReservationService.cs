@@ -27,11 +27,13 @@ internal sealed class SeatReservationService(
     TimeProvider timeProvider,
     ILogger<SeatReservationService> logger) : ISeatReservationService
 {
-    /// <summary>M-6 — how long a Pending, unapproved visitor booking holds its
-    /// seat before the expiry worker releases it. Defined here (not on the worker)
-    /// so the stamp written at creation and the scan that reads it share one
-    /// source.</summary>
-    internal static readonly TimeSpan PendingHoldWindow = TimeSpan.FromHours(24);
+    /// <summary>#6/#17 (owner 2026-07-20) — how long before a session starts an
+    /// un-checked-in seat reservation is auto-released so the seat can go to
+    /// someone else ("cancelled if you don't check in 3 minutes before start").
+    /// A reservation's <c>ExpiresUtc</c> is stamped at <c>StartUtc - NoShowReleaseGrace</c>;
+    /// the no-show release scan reads it. Defined here (not on the worker) so the
+    /// stamp written at creation and the scan that reads it share one source.</summary>
+    internal static readonly TimeSpan NoShowReleaseGrace = TimeSpan.FromMinutes(3);
 
     public async Task<SessionSeatMap> GetSessionSeatMapAsync(
         Guid sessionId, Guid? actorUserId,
@@ -169,8 +171,9 @@ internal sealed class SeatReservationService(
             // provisional hold until the visitor checks in at the hall gate; the
             // pre-start sweep releases any hold that never checks in.
             Status = BookingStatus.Approved,
-            // M-6 — retained as the hold's outstanding-until marker.
-            ExpiresUtc = timeProvider.GetUtcNow() + PendingHoldWindow,
+            // #6/#17 — the no-show release deadline: 3 minutes before the session
+            // starts. If the holder has not checked in by then the seat is freed.
+            ExpiresUtc = ctx.StartUtc - NoShowReleaseGrace,
         };
         await PersistWithUniquenessGuardAsync(reservation, cancellationToken);
         // M-2 — hard capacity backstop against a concurrent booking that raced the
@@ -307,8 +310,8 @@ internal sealed class SeatReservationService(
                 // 2026-07-18 (reservation-only) — confirmed on create, no approval
                 // step; the hold stays provisional until hall check-in.
                 Status = BookingStatus.Approved,
-                // M-6 — retained as the hold's outstanding-until marker.
-                ExpiresUtc = now + PendingHoldWindow,
+                // #6/#17 — the no-show release deadline: 3 minutes before start.
+                ExpiresUtc = session.StartUtc - NoShowReleaseGrace,
             }),
             cancellationToken);
 
@@ -613,7 +616,7 @@ internal sealed class SeatReservationService(
         // M-4 — a release must also close the booking's lifecycle. Leaving Status
         // untouched left an Approved row with ReleasedAt set (a stale
         // "confirmed-but-gone" state the CP/app could still read as active). Mark it
-        // Cancelled and stamp the reviewer, mirroring RejectBookingAsync.
+        // Cancelled and stamp the reviewer (the admin performing the release).
         var now = timeProvider.GetUtcNow();
         reservation.ReleasedAt = now;
         reservation.Status = BookingStatus.Cancelled;
@@ -658,21 +661,23 @@ internal sealed class SeatReservationService(
             skip, top);
     }
 
-    // -- Booking approval queue (P2.2 / D-227 — FDS-005 §5.2) --
+    // -- Booking monitor + no-show release (#6/#17 — owner 2026-07-20) --
 
-    public async Task<GridPage<BookingQueueRow>> ListPendingBookingsAsync(
+    public async Task<GridPage<ActiveBookingRow>> ListActiveBookingsAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
         var (skip, top) = query.ClampPage(50, 500);
 
-        // Pending, still-held visitor bookings. Admin row-blocks are created
-        // Approved with a null ReservedForUserId, so they never appear here.
-        // The session is joined up-front (before paging) so the session and
-        // seat columns are server-filterable/sortable (D-255). The attendee
-        // name is resolved cross-DB from Identity afterwards, so that column
-        // stays non-filterable/non-sortable (D-157).
+        // #6 — the read-only Control Panel monitor of ACTIVE (confirmed, still-held)
+        // visitor reservations across all sessions. There is no approval step —
+        // bookings auto-confirm — so this is a monitor, not a queue. Admin
+        // row-blocks are created Approved with a null ReservedForUserId, so they
+        // never appear here. The session is joined up-front (before paging) so the
+        // session and seat columns are server-filterable/sortable (D-255). The
+        // attendee name is resolved cross-DB from Identity afterwards, so that
+        // column stays non-filterable/non-sortable (D-157).
         var joined = appDbContext.SeatReservations.AsNoTracking()
-            .Where(r => r.Status == BookingStatus.Pending
+            .Where(r => r.Status == BookingStatus.Approved
                 && r.ReleasedAt == null
                 && r.ReservedForUserId != null)
             .Join(appDbContext.Sessions.AsNoTracking(),
@@ -739,202 +744,95 @@ internal sealed class SeatReservationService(
             {
                 attendeeName = dn ?? string.Empty;
             }
-            return new BookingQueueRow(
+            return new ActiveBookingRow(
                 r.Id, r.SessionId, r.Title, r.TitleArabic, r.StartUtc,
                 r.RowLabel, r.SeatNumber, r.Kind, r.ReservedForUserId,
                 attendeeName, r.CreatedAt);
         }).ToList();
 
-        return GridPage<BookingQueueRow>.Of(items, total,
+        return GridPage<ActiveBookingRow>.Of(items, total,
             skip, top);
     }
 
-    public async Task ApproveBookingAsync(
-        Guid actorUserId, Guid reservationId,
-        CancellationToken cancellationToken = default)
+    /// <summary>#6/#17 (owner 2026-07-20, FR-503/903) — the no-show release: free
+    /// every ACTIVE (Approved, still-held) visitor seat reservation whose no-show
+    /// deadline (<c>ExpiresUtc</c> = the session's <c>StartUtc − 3min</c>) has passed
+    /// <b>and whose holder never checked in</b> (no <c>HallAttendance</c> for that
+    /// session — arrival by gate scan or geofence). A walk-in who booked at or after
+    /// the deadline (<c>CreatedAt &gt;= ExpiresUtc</c>) is exempt — they are present,
+    /// not a no-show. Each freed holder is notified (<see cref="NotificationKind.BookingReleased"/>).
+    /// Admin blocks (null holder) are never touched. Returns the number released.
+    /// Called once per minute by <c>ReservationNoShowReleaseWorker</c>; extracted so
+    /// the release rule is unit-tested at the service (not by driving the loop).</summary>
+    public async Task<int> ReleaseNoShowsAsync(
+        DateTimeOffset now, CancellationToken cancellationToken = default)
     {
-        var booking = await LoadPendingBookingAsync(reservationId, cancellationToken);
-
-        // M-1 — a seat is only HELD while Pending; confirming it must not push the
-        // session's CONFIRMED count past capacity. Re-check here because a race
-        // (open seating especially) can let more Pending holds accumulate than
-        // there are places. Overflow blocks the approval (the booking stays Pending
-        // so the admin can reject it explicitly). This is the CP approval backstop
-        // that previously did not exist.
-        await EnsureApprovalWithinCapacityAsync(booking, cancellationToken);
-
-        booking.Status = BookingStatus.Approved;
-        booking.ReviewedByUserId = actorUserId;
-        booking.ReviewedAt = timeProvider.GetUtcNow();
-        await appDbContext.SaveChangesAsync(cancellationToken);
-
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.BookingApproved,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"reservationId={booking.Id}; sessionId={booking.SessionId}; "
-                + $"row={booking.RowLabel}; seat={booking.SeatNumber}",
-        }, cancellationToken);
-
-        var session = await LoadSessionTitleAsync(booking.SessionId, cancellationToken);
-        await TryNotifyBookingConfirmedAsync(booking, session, cancellationToken);
-    }
-
-    public async Task RejectBookingAsync(
-        Guid actorUserId, Guid reservationId, RejectBookingRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        var reason = (request.Reason ?? string.Empty).Trim();
-        if (reason.Length is < 1 or > 512)
-        {
-            throw new ApiException(
-                ErrorCodes.BookingRejectionReasonRequired, 400,
-                "A reason is required to reject a booking (1–512 characters).",
-                "يلزم إدخال سبب لرفض الحجز (من 1 إلى 512 حرفاً).");
-        }
-
-        var booking = await LoadPendingBookingAsync(reservationId, cancellationToken);
-
-        var now = timeProvider.GetUtcNow();
-        booking.Status = BookingStatus.Rejected;
-        booking.RejectionReason = reason;
-        booking.ReviewedByUserId = actorUserId;
-        booking.ReviewedAt = now;
-        booking.ReleasedAt = now; // release the held seat
-        await appDbContext.SaveChangesAsync(cancellationToken);
-
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.BookingRejected,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"reservationId={booking.Id}; sessionId={booking.SessionId}; "
-                + $"row={booking.RowLabel}; seat={booking.SeatNumber}",
-        }, cancellationToken);
-
-        var session = await LoadSessionTitleAsync(booking.SessionId, cancellationToken);
-        await TryNotifyBookingRejectedAsync(booking, session, reason, cancellationToken);
-    }
-
-    public async Task<int> BulkApproveBookingsAsync(
-        Guid actorUserId, IReadOnlyList<Guid> reservationIds,
-        CancellationToken cancellationToken = default)
-    {
-        if (reservationIds is null || reservationIds.Count == 0)
+        var due = await appDbContext.SeatReservations
+            .Where(r => r.Status == BookingStatus.Approved
+                && r.ReleasedAt == null
+                && r.ReservedForUserId != null
+                && r.ExpiresUtc != null
+                && r.ExpiresUtc <= now
+                && r.CreatedAt < r.ExpiresUtc)
+            .ToListAsync(cancellationToken);
+        if (due.Count == 0)
         {
             return 0;
         }
 
-        var distinctIds = reservationIds.Distinct().ToList();
-        var approved = 0;
-        foreach (var id in distinctIds)
-        {
-            var booking = await appDbContext.SeatReservations
-                .SingleOrDefaultAsync(r => r.Id == id, cancellationToken);
-            if (booking is null
-                || booking.Status != BookingStatus.Pending
-                || booking.ReleasedAt is not null)
-            {
-                continue; // skip missing / already-decided
-            }
-            // M-1 — skip (do not approve) any booking that would overflow the
-            // session's confirmed capacity. The sequential loop re-checks after each
-            // committed approval, so it naturally stops filling a session once full,
-            // matching the single-approve gate.
-            if (await WouldApprovalOverflowAsync(booking, cancellationToken))
-            {
-                continue;
-            }
-            booking.Status = BookingStatus.Approved;
-            booking.ReviewedByUserId = actorUserId;
-            booking.ReviewedAt = timeProvider.GetUtcNow();
-            await appDbContext.SaveChangesAsync(cancellationToken);
+        // One round-trip: every (session, holder) that has ANY check-in row for the
+        // sessions in play. The owner rule is "عدم تسجيل الدخول للجلسة" (never checked
+        // in), so a holder with any HallAttendance is kept; everyone else is released.
+        var sessionIds = due.Select(r => r.SessionId).Distinct().ToList();
+        var checkedIn = (await appDbContext.HallAttendances.AsNoTracking()
+            .Where(a => sessionIds.Contains(a.SessionId))
+            .Select(a => new { a.SessionId, a.UserId })
+            .ToListAsync(cancellationToken))
+            .Select(a => (a.SessionId, a.UserId))
+            .ToHashSet();
 
+        var released = due
+            .Where(r => !checkedIn.Contains((r.SessionId, r.ReservedForUserId!.Value)))
+            .ToList();
+        if (released.Count == 0)
+        {
+            return 0;
+        }
+        foreach (var r in released)
+        {
+            r.ReleasedAt = now;
+            r.Status = BookingStatus.Cancelled;
+        }
+        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        // Audit + notify each freed no-show. Titles resolved once per session.
+        var titles = await appDbContext.Sessions.AsNoTracking()
+            .Where(s => sessionIds.Contains(s.Id))
+            .Select(s => new { s.Id, s.Title, s.TitleArabic })
+            .ToDictionaryAsync(
+                s => s.Id, s => (s.Title, s.TitleArabic), cancellationToken);
+        foreach (var r in released)
+        {
             await auditLog.WriteAsync(new AuditEntry
             {
-                EventType = AuditEvents.BookingApproved,
+                EventType = AuditEvents.SeatReservationReleased,
                 Outcome = AuditOutcome.Success,
-                ActorUserId = actorUserId,
-                Detail = $"reservationId={booking.Id}; sessionId={booking.SessionId}; "
-                    + $"row={booking.RowLabel}; seat={booking.SeatNumber}; bulk=true",
+                ActorUserId = null, // system-initiated (the pre-start sweep)
+                Detail = $"reservationId={r.Id}; sessionId={r.SessionId}; "
+                    + $"row={r.RowLabel}; seat={r.SeatNumber}; reason=no-show",
             }, cancellationToken);
-
-            var session = await LoadSessionTitleAsync(booking.SessionId, cancellationToken);
-            await TryNotifyBookingConfirmedAsync(booking, session, cancellationToken);
-            approved++;
+            if (titles.TryGetValue(r.SessionId, out var t))
+            {
+                await TryNotifyBookingReleasedAsync(r, t, cancellationToken, noShow: true);
+            }
         }
-        return approved;
+
+        logger.LogInformation(
+            "No-show release freed {Count} un-checked-in seat hold(s).", released.Count);
+        return released.Count;
     }
 
     // -- internals --
-
-    private async Task<SeatReservation> LoadPendingBookingAsync(
-        Guid reservationId, CancellationToken cancellationToken)
-    {
-        var booking = await appDbContext.SeatReservations
-            .SingleOrDefaultAsync(r => r.Id == reservationId, cancellationToken)
-            ?? throw new ApiException(
-                ErrorCodes.BookingNotFound, 404,
-                "The booking was not found.",
-                "لم يتم العثور على الحجز.");
-        if (booking.Status != BookingStatus.Pending || booking.ReleasedAt is not null)
-        {
-            throw new ApiException(
-                ErrorCodes.BookingNotPending, 409,
-                "This booking has already been decided.",
-                "تم البت في هذا الحجز بالفعل.");
-        }
-        return booking;
-    }
-
-    /// <summary>M-1 — true if confirming <paramref name="booking"/> would push the
-    /// session's CONFIRMED (Approved, still-held) count past its effective
-    /// capacity. Counts Approved holds only (Pending holds are provisional); the
-    /// booking itself is excluded. Effective capacity = the seat-layout total
-    /// capped by CapacityOverride/Hall.Capacity, or just the declared cap for an
-    /// open-seating session with no layout.</summary>
-    private async Task<bool> WouldApprovalOverflowAsync(
-        SeatReservation booking, CancellationToken cancellationToken)
-    {
-        var session = await appDbContext.Sessions.AsNoTracking()
-            .Where(s => s.Id == booking.SessionId)
-            .Select(s => new { s.HallId, s.CapacityOverride })
-            .SingleAsync(cancellationToken);
-        var hallCapacity = await appDbContext.Halls.AsNoTracking()
-            .Where(h => h.Id == session.HallId)
-            .Select(h => h.Capacity)
-            .SingleAsync(cancellationToken);
-        var layout = await appDbContext.HallSeatLayouts.AsNoTracking()
-            .Where(l => l.HallId == session.HallId)
-            .Select(l => new { l.RowLabels, l.SeatsPerRow })
-            .SingleOrDefaultAsync(cancellationToken);
-
-        var declaredCap = session.CapacityOverride ?? hallCapacity;
-        var effective = layout is not null && layout.SeatsPerRow > 0
-            ? Math.Min(ParseRowLabels(layout.RowLabels).Count * layout.SeatsPerRow, declaredCap)
-            : declaredCap;
-
-        var approvedActive = await appDbContext.SeatReservations
-            .Where(r => r.SessionId == booking.SessionId
-                && r.ReleasedAt == null
-                && r.Status == BookingStatus.Approved
-                && r.Id != booking.Id)
-            .CountAsync(cancellationToken);
-        return approvedActive >= effective;
-    }
-
-    private async Task EnsureApprovalWithinCapacityAsync(
-        SeatReservation booking, CancellationToken cancellationToken)
-    {
-        if (await WouldApprovalOverflowAsync(booking, cancellationToken))
-        {
-            throw new ApiException(
-                ErrorCodes.SeatSessionFull, 409,
-                "Approving this booking would exceed the session capacity.",
-                "الموافقة على هذا الحجز تتجاوز سعة الجلسة.");
-        }
-    }
 
     private Task<(string Title, string TitleArabic)> LoadSessionTitleAsync(
         Guid sessionId, CancellationToken cancellationToken) =>
@@ -1265,8 +1163,8 @@ internal sealed class SeatReservationService(
                     CreatedAt = now,
                     // 2026-07-18 (reservation-only) — confirmed on create, no approval.
                     Status = BookingStatus.Approved,
-                    // M-6 — retained as the hold's outstanding-until marker.
-                    ExpiresUtc = now + PendingHoldWindow,
+                    // #6/#17 — the no-show release deadline: 3 minutes before start.
+                    ExpiresUtc = ctx.StartUtc - NoShowReleaseGrace,
                 };
             }
         }
@@ -1306,96 +1204,34 @@ internal sealed class SeatReservationService(
         }
     }
 
-    // P2.2 — D-227: fire the booking-confirmed in-app notification on APPROVE
-    // (FDS-005 §5.2). The dispatcher writes to a different DbContext (Identity),
-    // so the booking is already committed; a notification failure must never
-    // fail or roll back the approval, hence the swallow-and-log.
-    private async Task TryNotifyBookingConfirmedAsync(
-        SeatReservation booking, (string Title, string TitleArabic) session,
-        CancellationToken cancellationToken)
-    {
-        if (booking.ReservedForUserId is not { } userId)
-        {
-            return;
-        }
-        try
-        {
-            await notifications.DispatchAsync(new NotificationRequest
-            {
-                UserId = userId,
-                Kind = NotificationKind.BookingConfirmed,
-                Title = "Seat reservation confirmed",
-                TitleArabic = "تم تأكيد حجز المقعد",
-                Body = booking.RowLabel is { } row
-                    ? $"Your seat {row}{booking.SeatNumber} for \"{session.Title}\" is confirmed."
-                    : $"Your place in \"{session.Title}\" is confirmed.",
-                BodyArabic = booking.RowLabel is { } rowAr
-                    ? $"تم تأكيد مقعدك {rowAr}{booking.SeatNumber} لجلسة \"{session.TitleArabic}\"."
-                    : $"تم تأكيد حضورك لجلسة \"{session.TitleArabic}\".",
-                Severity = NotificationSeverity.Success,
-                RelatedEntityType = "Session",
-                RelatedEntityId = booking.SessionId,
-                SendEmail = false,
-            }, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex,
-                "Booking-confirmed notification failed for reservation {ReservationId}",
-                booking.Id);
-        }
-    }
-
-    // P2.2 — D-227: tell the attendee their booking was rejected, with the
-    // reason (FDS-005 §5.2). Same swallow-and-log discipline.
-    private async Task TryNotifyBookingRejectedAsync(
-        SeatReservation booking, (string Title, string TitleArabic) session,
-        string reason, CancellationToken cancellationToken)
-    {
-        if (booking.ReservedForUserId is not { } userId)
-        {
-            return;
-        }
-        try
-        {
-            await notifications.DispatchAsync(new NotificationRequest
-            {
-                UserId = userId,
-                Kind = NotificationKind.BookingRejected,
-                Title = "Seat booking rejected",
-                TitleArabic = "تم رفض حجز المقعد",
-                Body = booking.RowLabel is { } row
-                    ? $"Your seat {row}{booking.SeatNumber} for \"{session.Title}\" was not approved. Reason: {reason}"
-                    : $"Your booking for \"{session.Title}\" was not approved. Reason: {reason}",
-                BodyArabic = booking.RowLabel is { } rowAr
-                    ? $"لم تتم الموافقة على مقعدك {rowAr}{booking.SeatNumber} لجلسة \"{session.TitleArabic}\". السبب: {reason}"
-                    : $"لم تتم الموافقة على حجزك لجلسة \"{session.TitleArabic}\". السبب: {reason}",
-                Severity = NotificationSeverity.Warning,
-                RelatedEntityType = "Session",
-                RelatedEntityId = booking.SessionId,
-                SendEmail = false,
-            }, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex,
-                "Booking-rejected notification failed for reservation {ReservationId}",
-                booking.Id);
-        }
-    }
-
-    // M-4 — notify the attendee that an administrator released their seat
-    // reservation (held or confirmed). Same swallow-and-log discipline as the
-    // confirm/reject notifications: a notification failure never rolls back the
-    // release (the dispatcher writes to the Identity DB, already committed here).
+    // M-4 / #6 — notify the attendee that their seat reservation was released:
+    // either by an administrator (default) or by the pre-start no-show sweep
+    // (noShow=true, so the message explains they were not checked in). Same
+    // swallow-and-log discipline as the other booking notifications: a
+    // notification failure never rolls back the release (the dispatcher writes to
+    // the Identity DB, already committed here).
     private async Task TryNotifyBookingReleasedAsync(
         SeatReservation booking, (string Title, string TitleArabic) session,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken, bool noShow = false)
     {
         if (booking.ReservedForUserId is not { } userId)
         {
             return;
         }
+        var seat = booking.RowLabel is { } row ? $"{row}{booking.SeatNumber}" : null;
+        var (body, bodyArabic) = noShow
+            ? (seat is not null
+                    ? $"Your seat {seat} for \"{session.Title}\" was released because you did not check in before the session started."
+                    : $"Your place in \"{session.Title}\" was released because you did not check in before the session started.",
+               seat is not null
+                    ? $"تم إلغاء مقعدك {seat} لجلسة \"{session.TitleArabic}\" لعدم تسجيل دخولك قبل بدء الجلسة."
+                    : $"تم إلغاء حضورك لجلسة \"{session.TitleArabic}\" لعدم تسجيل دخولك قبل بدء الجلسة.")
+            : (seat is not null
+                    ? $"Your seat {seat} for \"{session.Title}\" was released by the organiser."
+                    : $"Your place in \"{session.Title}\" was released by the organiser.",
+               seat is not null
+                    ? $"تم إلغاء مقعدك {seat} لجلسة \"{session.TitleArabic}\" من قبل المنظّم."
+                    : $"تم إلغاء حضورك لجلسة \"{session.TitleArabic}\" من قبل المنظّم.");
         try
         {
             await notifications.DispatchAsync(new NotificationRequest
@@ -1404,12 +1240,8 @@ internal sealed class SeatReservationService(
                 Kind = NotificationKind.BookingReleased,
                 Title = "Seat reservation released",
                 TitleArabic = "تم إلغاء حجز المقعد",
-                Body = booking.RowLabel is { } row
-                    ? $"Your seat {row}{booking.SeatNumber} for \"{session.Title}\" was released by the organiser."
-                    : $"Your place in \"{session.Title}\" was released by the organiser.",
-                BodyArabic = booking.RowLabel is { } rowAr
-                    ? $"تم إلغاء مقعدك {rowAr}{booking.SeatNumber} لجلسة \"{session.TitleArabic}\" من قبل المنظّم."
-                    : $"تم إلغاء حضورك لجلسة \"{session.TitleArabic}\" من قبل المنظّم.",
+                Body = body,
+                BodyArabic = bodyArabic,
                 Severity = NotificationSeverity.Warning,
                 RelatedEntityType = "Session",
                 RelatedEntityId = booking.SessionId,

@@ -83,7 +83,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/programme-days` | [`cp-admin-programme-days.md`](cp-admin-programme-days.md) | E2E-PGD-001..018 |
 | `/admin/session-moderators` | [`cp-admin-session-moderators.md`](cp-admin-session-moderators.md) | E2E-SMD-001..018 |
 | `/admin/programme/timeline` | [`cp-admin-programme-timeline.md`](cp-admin-programme-timeline.md) | E2E-PTL-001..011 |
-| `/admin/bookings` | [`cp-admin-bookings.md`](cp-admin-bookings.md) | E2E-BKG-001..013 |
+| `/admin/bookings` | [`cp-admin-bookings.md`](cp-admin-bookings.md) | E2E-BKG-001..012 |
 | `/admin/speaker-meeting-requests` | [`cp-admin-speaker-meeting-requests.md`](cp-admin-speaker-meeting-requests.md) | E2E-SMR-001..021 |
 | `/admin/speaker-availability` | [`cp-admin-speaker-availability.md`](cp-admin-speaker-availability.md) | E2E-SAV-001..006 |
 | `/admin/hall-availability` | [`cp-admin-hall-availability.md`](cp-admin-hall-availability.md) | E2E-HAV-001..007 |
@@ -172,7 +172,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 |------|------|-----------|
 | `/` (marketing landing) | [`web-landing.md`](web-landing.md) | E2E-WLD-001..008 |
 | `/account` | [`web-home.md`](web-home.md) | E2E-WHM-001..010 |
-| `/programme` | [`web-programme.md`](web-programme.md) | E2E-WPG-001..012 |
+| `/programme` | [`web-programme.md`](web-programme.md) | E2E-WPG-001..014 |
 | `/speakers` | [`web-speakers.md`](web-speakers.md) | E2E-WSPK-001..011 |
 | `/sessions/{id}` | [`web-session-detail.md`](web-session-detail.md) | E2E-WSDT-001..013 |
 | `/about` | [`web-about.md`](web-about.md) | E2E-WABT-001..011 |

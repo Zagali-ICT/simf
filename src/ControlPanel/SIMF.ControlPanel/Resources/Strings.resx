@@ -1548,9 +1548,10 @@
   <data name="Admin.ProgrammeDays.Field.DisplayOrder" xml:space="preserve"><value>Display order</value></data>
   <data name="Admin.ProgrammeDays.Field.IsActive" xml:space="preserve"><value>Active</value></data>
   <data name="Admin.ProgrammeDays.Field.Logo" xml:space="preserve"><value>Day logo</value></data>
-  <data name="Admin.Bookings.Title" xml:space="preserve"><value>Booking approvals</value></data>
+  <data name="Admin.Bookings.Title" xml:space="preserve"><value>Booking monitor</value></data>
   <data name="Admin.Bookings.Loading" xml:space="preserve"><value>Loading bookings…</value></data>
-  <data name="Admin.Bookings.None" xml:space="preserve"><value>No bookings are awaiting approval.</value></data>
+  <data name="Admin.Bookings.None" xml:space="preserve"><value>No active bookings.</value></data>
+  <data name="Admin.Bookings.MonitorHint" xml:space="preserve"><value>Bookings confirm instantly — there is no approval step. A reserved seat is released automatically if the visitor has not checked in 3 minutes before the session starts.</value></data>
   <data name="Admin.Bookings.Col.Session" xml:space="preserve"><value>Session</value></data>
   <data name="Admin.Bookings.Col.Start" xml:space="preserve"><value>Starts (UTC)</value></data>
   <data name="Admin.Bookings.Col.Seat" xml:space="preserve"><value>Seat</value></data>

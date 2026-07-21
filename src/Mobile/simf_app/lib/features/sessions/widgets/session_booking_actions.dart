@@ -13,12 +13,18 @@ class SessionJoinButton extends StatelessWidget {
     required this.busy,
     required this.l10n,
     required this.onJoin,
+    this.label,
     super.key,
   });
 
   final bool busy;
   final AppL10n l10n;
   final VoidCallback onJoin;
+
+  /// D-750 — an override label for case-1 (open-seating): the session-detail
+  /// body passes [AppL10n.joinOpenRegisterCta] so the CTA reads "register to
+  /// attend". Null keeps the default [AppL10n.joinSessionCta] (assigned-seat).
+  final String? label;
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +39,7 @@ class SessionJoinButton extends StatelessWidget {
         ),
       ),
       child: Text(
-        l10n.joinSessionCta,
+        label ?? l10n.joinSessionCta,
         style: const TextStyle(
           fontWeight: FontWeight.w700,
           fontSize: SimfTokens.textLg,

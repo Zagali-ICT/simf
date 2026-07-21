@@ -231,14 +231,14 @@ const Set<int> _authenticatedRoutes = <int>{
   10, // Registration success (signed-in, pending; Page_010)
   11, // Registration status (signed-in, not-yet-approved gate; Page_011 L-1)
   14, // My area / profile — every signed-in role
-  // D-576 (owner 2026-06-30) — the agenda + session detail are login-gated:
-  // a guest who taps Sessions or opens a session is sent to sign-in (the
-  // "need login" behaviour), superseding the D-199 public design and the
-  // "sessions are public" tabs note below. Every signed-in role passes.
-  // Live (25) is deliberately NOT here — it shows an in-screen "need login"
-  // prompt on the live screen itself (D-577), not a redirect.
-  16, // Sessions / Agenda — a bottom-nav tab; a guest bounces to sign-in
-  17, // Session detail
+  // D-750 (owner 2026-07-20) — REVERSES D-576: the agenda (Sessions, 16) and
+  // session detail (17) are PUBLIC again, so a guest can browse the programme
+  // and open a session without signing in (restoring the D-199 public design).
+  // They are intentionally NOT in this set. The join / ask sections stay hidden
+  // for a guest (session_detail_body only builds them when the seat map is
+  // non-null, which needs an approved account), and My seat (18) stays
+  // attendee-gated. Live (25) likewise stays public with an in-screen "need
+  // login" prompt on the live screen itself (D-577), not a redirect.
   32, // Badge / QR — every signed-in role's own entry pass (a bottom-nav tab, so
   // it must not bounce for Staff/Moderator; the server returns their own badge)
   33, // Notifications — every signed-in role

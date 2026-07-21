@@ -338,9 +338,9 @@ public static class DependencyInjection
         // R-1 — revert a stuck AwaitingSpeaker speaker meeting request to Pending once
         // its 72h double-opt-in tokens expire (no re-send ever came); frees the held slot.
         services.AddHostedService<SIMF.Infrastructure.Operations.MeetingAwaitingSpeakerExpiryWorker>();
-        // M-6 — releases Pending seat holds whose hold window has passed, freeing
-        // capacity for other visitors.
-        services.AddHostedService<SIMF.Infrastructure.Operations.PendingBookingExpiryWorker>();
+        // #6/#17 — releases seats reserved by no-shows (no check-in) 3 minutes
+        // before the session starts, freeing capacity for others.
+        services.AddHostedService<SIMF.Infrastructure.Operations.ReservationNoShowReleaseWorker>();
         // End-of-session "please rate this session" prompt worker.
         services.AddHostedService<SIMF.Infrastructure.Operations.SessionRatingPromptWorker>();
         // D-679 — end-of-day + end-of-programme rating prompt worker.

@@ -20,7 +20,7 @@ This document does **not** contain architecture or code.
 |------|--------|
 | System owner | Ministry of Defense (وزارة الدفاع) / Royal Saudi Naval Forces — RSNF |
 | Event | Saudi International Maritime Forum 2026 (Riyadh) |
-| Event dates | **23–25 November 2026** (confirmed 2026-05-20) |
+| Event dates | 23 to 25 November 2026 for the 2026 edition (configuration data, set in the Control Panel) |
 | Implementation vendor | STARTIME |
 | Surfaces | Public Website, Mobile App (Flutter), Control Panel (Admin) |
 | Primary languages | Arabic (primary, RTL) + English (LTR) |

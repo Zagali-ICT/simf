@@ -60,28 +60,19 @@ public interface ISeatReservationService
         Guid sessionId, GridQuery query,
         CancellationToken cancellationToken = default);
 
-    // -- Booking approval queue (P2.2 / D-227 — FDS-005 §5.2) --
+    // -- Booking monitor + no-show release (#6/#17 — owner 2026-07-20) --
 
-    /// <summary>The Control Panel approval queue: Pending, still-held visitor
-    /// bookings across all sessions, newest first.</summary>
-    Task<GridPage<BookingQueueRow>> ListPendingBookingsAsync(
+    /// <summary>The read-only Control Panel monitor: ACTIVE (confirmed, still-held)
+    /// visitor reservations across all sessions, newest first. There is no approval
+    /// step — bookings auto-confirm — so this is a monitor, not a queue.</summary>
+    Task<GridPage<ActiveBookingRow>> ListActiveBookingsAsync(
         GridQuery query, CancellationToken cancellationToken = default);
 
-    /// <summary>Approve a Pending booking — the held seat is confirmed and a
-    /// booking-confirmed event is raised.</summary>
-    Task ApproveBookingAsync(
-        Guid actorUserId, Guid reservationId,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>Reject a Pending booking with a reason — the held seat is
-    /// released and the attendee is notified.</summary>
-    Task RejectBookingAsync(
-        Guid actorUserId, Guid reservationId, RejectBookingRequest request,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>Bulk-approve several Pending bookings; returns the number
-    /// actually approved (already-decided / missing ids are skipped).</summary>
-    Task<int> BulkApproveBookingsAsync(
-        Guid actorUserId, IReadOnlyList<Guid> reservationIds,
-        CancellationToken cancellationToken = default);
+    /// <summary>#6/#17 — the pre-start no-show sweep: release every active
+    /// (Approved, still-held) visitor reservation whose no-show deadline
+    /// (<c>StartUtc − 3min</c>) has passed and whose holder never checked in, freeing
+    /// the seat for others. Returns the number released. Called once per minute by
+    /// <c>ReservationNoShowReleaseWorker</c>.</summary>
+    Task<int> ReleaseNoShowsAsync(
+        DateTimeOffset now, CancellationToken cancellationToken = default);
 }
