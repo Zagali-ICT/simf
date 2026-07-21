@@ -53,7 +53,7 @@ _Done (5), shipped to PR: #10 `feat/bulk-badge-email`, #32 `feat/cp-team-roles`,
 - [ ] **#34** — Speaker job title shows English regardless of app language (read `RankArabic`).
 
 **P3 — home cosmetics**
-- [ ] **#42** — Home greeting: **first name only** + friendlier greeting (`مرحبًا` + first name, replacing time-of-day `صباح الخير` + full name).
+- [x] **#42** — Home greeting: **first name only** (first token) + `مرحبًا` (replacing time-of-day `صباح الخير` + full name). **Built** `39685d58` on `feat/app-home-greeting`; PR pending.
 - [ ] **#43** — Home **hero = live forum-edition banner** (title / theme / dates / location) + **rotating image**, replacing the static `اكتشف السعودية` card. _(overlaps #40 dynamic dates)_
 
 ## B. CONTROL PANEL (CP)
@@ -564,8 +564,9 @@ confirm**, not a broken model.
   - `features/home/home_greeting.dart` — `homeGreeting()` returns `greetingMorning` (`صباح الخير`) / `greetingEvening` (`مساء الخير`) by hour.
   - `features/home/widgets/visitor_home.dart` passes a now-dead `now` param down for the golden's fixed clock.
   - `app/localization/app_l10n.dart` — `greetingMorning` / `greetingEvening`.
-- **Fix plan (pending §11 approval):** add `greetingWelcome` l10n (`مرحبًا` / `Welcome`); in `greeting_header.dart` swap the greeting to `l10n.greetingWelcome` and set `nameLine` to the **first token** of the name (`name.trim().split(' ').first`); drop the dead `now` param + `homeGreeting` import (keep `homeGreeting()` as a tested utility); re-lock the home goldens (guest + signed-in) + run home widget tests + on-device render. **Separate branch off `origin/main`.**
-- **Status:** ☐ Open — plan ready; build after the running blast-radius test frees the working tree
+- **Fix plan (done):** added `greetingWelcome` l10n (`مرحبًا` / `Welcome`); `greeting_header.dart` greeting → `l10n.greetingWelcome`, `nameLine` → **first token** (`name.trim().split(' ').first`); dropped the dead `now` seam + `homeGreeting` import (kept `homeGreeting()` as a tested utility); re-locked the signed-in golden (guest byte-identical) + updated 4 home tests + home README/E2E.
+- **Owner decision (2026-07-21):** **accept first-token** rule. Known limitation accepted: a space-separated compound Arabic name (`عبد الله`) shows only `عبد`; joined names (`عبدالله`) render correctly.
+- **Status:** ✅ Built (`39685d58`, `feat/app-home-greeting`) — `flutter analyze` 0 errors; `router_role_matrix` 8/8; `home_screen_test` +32 (only the **pre-existing** avatar-tap harness test stays red — fails on base too, unrelated); golden re-locked + visually confirmed `مرحبًا` + first name. PR pending owner confirm. On-device render pending.
 
 ### [#43] Home hero = live forum-edition banner + rotating image
 - **Type:** ✨ Update · **Priority:** P2 · **Area:** App / Home (+ Backend / CP)
