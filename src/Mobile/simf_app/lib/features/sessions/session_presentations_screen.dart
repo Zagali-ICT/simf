@@ -236,14 +236,14 @@ class _PresentationCard extends StatelessWidget {
   /// Card tap → تفاصيل الجلسة (session detail, 17).
   void _openDetail(BuildContext context) => context.pushNamed(
         RouteNames.sessionDetail,
-        pathParameters: <String, String>{'sessionId': item.sessionId},
+        pathParameters: <String, String>{RouteParams.sessionId: item.sessionId},
       );
 
   /// تحميل → ملخص الجلسة (session summary, 34). 404s gracefully until the
   /// Committee publishes the summary.
   void _openSummary(BuildContext context) => context.pushNamed(
         RouteNames.aiSummary,
-        queryParameters: <String, String>{'sessionId': item.sessionId},
+        queryParameters: <String, String>{RouteParams.sessionId: item.sessionId},
       );
 
   @override

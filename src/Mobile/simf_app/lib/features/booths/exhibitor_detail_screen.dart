@@ -94,7 +94,7 @@ class ExhibitorDetailScreen extends ConsumerWidget {
           ? null
           : () => context.pushNamed(
                 RouteNames.boothMap,
-                pathParameters: <String, String>{'boothId': booth.id},
+                pathParameters: <String, String>{RouteParams.boothId: booth.id},
               ),
       about: booth.localizedDescription(isArabic),
       website: booth.website,

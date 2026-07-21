@@ -47,7 +47,7 @@ class SpeakerSessionRow extends StatelessWidget {
     return SimfCard(
       onTap: () => context.pushNamed(
         RouteNames.sessionDetail,
-        pathParameters: <String, String>{'sessionId': session.id},
+        pathParameters: <String, String>{RouteParams.sessionId: session.id},
       ),
       child: Padding(
         padding: const EdgeInsets.all(SimfTokens.space3),

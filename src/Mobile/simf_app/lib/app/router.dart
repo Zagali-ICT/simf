@@ -368,7 +368,7 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.boothMap) {
     return VenueMapScreen(
-      targetBoothId: state.pathParameters['boothId'],
+      targetBoothId: state.pathParameters[RouteParams.boothId],
     );
   }
   if (r.name == RouteNames.sessions) {
@@ -376,17 +376,17 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.sessionDetail) {
     return SessionDetailScreen(
-      sessionId: state.pathParameters['sessionId'] ?? '',
+      sessionId: state.pathParameters[RouteParams.sessionId] ?? '',
     );
   }
   if (r.name == RouteNames.mySeat) {
     return MySeatScreen(
-      sessionId: state.pathParameters['sessionId'] ?? '',
+      sessionId: state.pathParameters[RouteParams.sessionId] ?? '',
     );
   }
   if (r.name == RouteNames.seatPicker) {
     return SeatPickerScreen(
-      sessionId: state.pathParameters['sessionId'] ?? '',
+      sessionId: state.pathParameters[RouteParams.sessionId] ?? '',
     );
   }
   if (r.name == RouteNames.joinSessionHub) {
@@ -403,7 +403,7 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.speakerProfile) {
     return SpeakerProfileScreen(
-      speakerId: state.pathParameters['speakerId'] ?? '',
+      speakerId: state.pathParameters[RouteParams.speakerId] ?? '',
     );
   }
   if (r.name == RouteNames.delegations) {
@@ -414,7 +414,7 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.exhibitorDetail) {
     return ExhibitorDetailScreen(
-      boothId: state.pathParameters['boothId'] ?? '',
+      boothId: state.pathParameters[RouteParams.boothId] ?? '',
     );
   }
   if (r.name == RouteNames.sponsors) {
@@ -422,7 +422,7 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.sponsorDetail) {
     return SponsorDetailScreen(
-      sponsorId: state.pathParameters['sponsorId'] ?? '',
+      sponsorId: state.pathParameters[RouteParams.sponsorId] ?? '',
     );
   }
   if (r.name == RouteNames.mediaPartners) {
@@ -468,17 +468,17 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.aiSummary) {
     return AiSummaryScreen(
-      sessionId: state.uri.queryParameters['sessionId'],
+      sessionId: state.uri.queryParameters[RouteParams.sessionId],
     );
   }
   if (r.name == RouteNames.sendQuestion) {
     return SendQuestionScreen(
-      sessionId: state.uri.queryParameters['sessionId'],
+      sessionId: state.uri.queryParameters[RouteParams.sessionId],
     );
   }
   if (r.name == RouteNames.liveBroadcast) {
     return LiveBroadcastScreen(
-      sessionId: state.uri.queryParameters['sessionId'],
+      sessionId: state.uri.queryParameters[RouteParams.sessionId],
     );
   }
   if (r.name == RouteNames.badge) {
@@ -501,7 +501,7 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.sessionModerate) {
     return SessionModerateScreen(
-      sessionId: state.pathParameters['sessionId'] ?? '',
+      sessionId: state.pathParameters[RouteParams.sessionId] ?? '',
     );
   }
   if (r.name == RouteNames.gateScanner) {

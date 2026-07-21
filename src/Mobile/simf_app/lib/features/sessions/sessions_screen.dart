@@ -95,7 +95,7 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
   void _openSession(SessionListItem session) {
     context.pushNamed(
       RouteNames.sessionDetail,
-      pathParameters: <String, String>{'sessionId': session.id},
+      pathParameters: <String, String>{RouteParams.sessionId: session.id},
     );
   }
 
