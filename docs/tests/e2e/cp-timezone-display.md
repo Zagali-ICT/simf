@@ -13,7 +13,7 @@
 | **Test runner** | Chrome DevTools MCP + PowerShell driver (CP); device/emulator (app) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via `Get-Totp` helper |
 | **Helper under test** | [`SaudiTime.cs`](../../../src/Shared/SIMF.Common/SaudiTime.cs) · unit tests [`SaudiTimeTests.cs`](../../../tests/SIMF.Application.Tests/SaudiTimeTests.cs) |
-| **Last reviewed** | 2026-07-18 |
+| **Last reviewed** | 2026-07-21 (residue sweep: ops/services, sessions/live-hall, session-summaries AI-draft label) |
 
 ## Coverage matrix
 
@@ -70,6 +70,14 @@ Scenario: The stale "UTC" literal is gone from converted pages
   When the administrator views any converted list (e.g. /admin/business-meetings)
   Then no visible timestamp is suffixed with the literal "UTC"
   And the displayed time equals the stored UTC + 3 hours
+
+Scenario: The 2026-07-21 residue sweep converts the pages added after the first wave
+  Given the residue sweep routed the newer CP render sites through SaudiTime
+  When the administrator views /admin/ops/services (worker heartbeats + "refreshed at")
+  And the /admin/sessions/live-hall arrival times
+  And the AI-draft capture label on /admin/session-summaries
+  Then every timestamp reads on the Saudi wall clock (UTC + 3 hours)
+  And none is rendered via server .ToLocalTime() or suffixed "UTC"
 ```
 
 ### E2E-TZ-004 — datetime-local edit round-trips (Saudi in → UTC stored → Saudi out)
@@ -113,4 +121,4 @@ near-midnight day boundary, the nullable handling, and the save→render round-t
 
 ---
 
-_Last reviewed:_ 2026-07-18 by SIMF Team.
+_Last reviewed:_ 2026-07-21 by SIMF Team.
