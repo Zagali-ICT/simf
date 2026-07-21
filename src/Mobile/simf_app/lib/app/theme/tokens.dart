@@ -153,6 +153,7 @@ class SimfTokens {
   // the exact Figma measurement it replaces (behaviour-preserving).
   static const double controlHeight = 48; // pill / banner / row height (booth code-pill+hall-box, gallery coverage-tab, archive edition-pill/notice/session-title)
   static const double contactRowHeight = 44; // booth contact-box row (Figma 922:2810)
+  static const double codePillWidth = 109; // booth code pill A-12 (Figma 922:2796) — fixed content width
   static const double sponsorRowHeight = 72; // sponsor hero/premium row + grid tile (Figma 922:2824)
   static const double galleryScrimHeight = 40; // archive gallery-tile bottom scrim (Figma 926:3299)
   static const double mediaTileAspectRatio = 164 / 104; // gallery media tile (Figma 949:4043)
@@ -190,5 +191,63 @@ class SimfTokens {
     color: Colors.white,
     fontSize: textMd,
     fontWeight: FontWeight.w500,
+  );
+
+  // #16 sweep — shared named text styles (tone / weight / size) for the browse
+  // features. Each bundles only colour/size/weight/height; the font family
+  // stays on the theme.
+  static const TextStyle labelGoldMedium = TextStyle(
+    color: accent,
+    fontSize: textMd,
+    fontWeight: FontWeight.w500,
+  );
+  static const TextStyle labelGoldSemibold = TextStyle(
+    color: accent,
+    fontSize: textMd,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle labelGoldSemiboldSm = TextStyle(
+    color: accent,
+    fontSize: textSm,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle labelBeigeSemibold = TextStyle(
+    color: beigeBorder,
+    fontSize: textMd,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle labelBeigeBold = TextStyle(
+    color: beigeBorder,
+    fontSize: textMd,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle bodyBeigeSm = TextStyle(
+    color: beigeBorder,
+    fontSize: textSm,
+    fontWeight: FontWeight.w400,
+    height: 1.3,
+  );
+  static const TextStyle bodyBeigeXs = TextStyle(
+    color: beigeBorder,
+    fontSize: textXs,
+  );
+  static const TextStyle labelWhiteSemibold = TextStyle(
+    color: surface,
+    fontSize: textMd,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle labelWhiteSemiboldSm = TextStyle(
+    color: surface,
+    fontSize: textSm,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle bodyWhiteXs = TextStyle(
+    color: surface,
+    fontSize: textXs,
+  );
+  static const TextStyle labelNavyBoldSm = TextStyle(
+    color: navy,
+    fontSize: textSm,
+    fontWeight: FontWeight.w700,
   );
 }

@@ -24,20 +24,10 @@ class BoothOfficerRow extends StatelessWidget {
                 name,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: SimfTokens.accent,
-                  fontWeight: FontWeight.w600,
-                  fontSize: SimfTokens.textSm,
-                ),
+                style: SimfTokens.labelGoldSemiboldSm,
               ),
               const SizedBox(height: SimfTokens.space1),
-              Text(
-                l10n.boothsOfficerRole,
-                style: const TextStyle(
-                  color: SimfTokens.beigeBorder,
-                  fontSize: SimfTokens.textXs,
-                ),
-              ),
+              Text(l10n.boothsOfficerRole, style: SimfTokens.bodyBeigeXs),
             ],
           ),
         ),
@@ -53,11 +43,7 @@ class BoothOfficerRow extends StatelessWidget {
           child: Text(
             _initials(name),
             textDirection: TextDirection.ltr,
-            style: const TextStyle(
-              color: SimfTokens.navy,
-              fontWeight: FontWeight.w700,
-              fontSize: SimfTokens.textSm,
-            ),
+            style: SimfTokens.labelNavyBoldSm,
           ),
         ),
       ],

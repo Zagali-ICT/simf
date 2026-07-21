@@ -55,25 +55,10 @@ class BoothCompanyHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(
-                  name,
-                  style: const TextStyle(
-                    color: SimfTokens.accent,
-                    fontWeight: FontWeight.w500,
-                    fontSize: SimfTokens.textMd,
-                  ),
-                ),
+                Text(name, style: SimfTokens.labelGoldMedium),
                 if (fullName != null) ...<Widget>[
                   const SizedBox(height: SimfTokens.space2),
-                  Text(
-                    fullName,
-                    style: const TextStyle(
-                      color: SimfTokens.beigeBorder,
-                      fontWeight: FontWeight.w400,
-                      fontSize: SimfTokens.textSm,
-                      height: 1.3,
-                    ),
-                  ),
+                  Text(fullName, style: SimfTokens.bodyBeigeSm),
                 ],
               ],
             ),
@@ -141,11 +126,7 @@ class _LogoTile extends StatelessWidget {
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       textAlign: TextAlign.center,
-      style: const TextStyle(
-        color: Colors.white,
-        fontWeight: FontWeight.w600,
-        fontSize: SimfTokens.textMd,
-      ),
+      style: SimfTokens.labelWhiteSemibold,
     );
     final id = contactId?.trim() ?? '';
     return Container(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/localization/app_l10n.dart';
+import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
 
@@ -41,18 +42,14 @@ class BoothGuideButton extends StatelessWidget {
                   l10n.boothsGuideMe(code),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: SimfTokens.textSm,
-                  ),
+                  style: SimfTokens.labelWhiteSemiboldSm,
                 ),
               ),
               const SizedBox(width: SimfTokens.space2),
               const SimfSvgIcon(
-                'assets/icons/nav_location.svg',
+                AppAssets.navLocation,
                 size: 18,
-                color: Colors.white,
+                color: SimfTokens.surface,
               ),
             ],
           ),
