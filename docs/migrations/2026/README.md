@@ -64,17 +64,23 @@ not the default local instance:
 
 ```powershell
 $Db = "SIMF_Data"
-sqlcmd -d $Db -i docs\migrations\2026\SIMF_App_Programme.sql
-sqlcmd -d $Db -i docs\migrations\2026\SIMF_App_News.sql
-sqlcmd -d $Db -i docs\migrations\2026\SIMF_App_Sponsors.sql
-sqlcmd -d $Db -i docs\migrations\2026\SIMF_App_MediaPartners.sql
-sqlcmd -d $Db -i docs\migrations\2026\SIMF_App_Archive.sql
-sqlcmd -d $Db -i docs\migrations\2026\SIMF_App_Organization.sql
-sqlcmd -d $Db -i docs\migrations\2026\SIMF_App_Speakers.sql
-sqlcmd -d $Db -i docs\migrations\2026\SIMF_App_SpeakerPhotos.sql
-sqlcmd -d $Db -i docs\migrations\2026\SIMF_App_SeedGaps.sql
+sqlcmd -d $Db -f 65001 -i docs\migrations\2026\SIMF_App_Programme.sql
+sqlcmd -d $Db -f 65001 -i docs\migrations\2026\SIMF_App_News.sql
+sqlcmd -d $Db -f 65001 -i docs\migrations\2026\SIMF_App_Sponsors.sql
+sqlcmd -d $Db -f 65001 -i docs\migrations\2026\SIMF_App_MediaPartners.sql
+sqlcmd -d $Db -f 65001 -i docs\migrations\2026\SIMF_App_Archive.sql
+sqlcmd -d $Db -f 65001 -i docs\migrations\2026\SIMF_App_Organization.sql
+sqlcmd -d $Db -f 65001 -i docs\migrations\2026\SIMF_App_Speakers.sql
+sqlcmd -d $Db -f 65001 -i docs\migrations\2026\SIMF_App_SpeakerPhotos.sql
+sqlcmd -d $Db -f 65001 -i docs\migrations\2026\SIMF_App_SeedGaps.sql
 # then copy docs\migrations\2026\speaker-photos\speakerphoto  →  C:\SIMF\Storage\files\speakerphoto
 ```
+
+> **UTF-8 Arabic (`-f 65001`).** The seed files are UTF-8 with **no BOM**. The
+> `sqlcmd` CLI otherwise reads input in the ANSI code page and mangles the Arabic
+> (it can also overflow `nvarchar` limits and fail the run), so every command
+> above passes **`-f 65001`**. SSMS SQLCMD Mode (Option A) reads UTF-8 natively
+> and needs no flag.
 
 > **Dev / Test auto-run (D-747).** In **Development** and **Testing** these files
 > are applied automatically by `SqlContentSeeder` (dev boot runs all of them;

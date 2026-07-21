@@ -92,7 +92,7 @@ END
    1b) DETAILS  — the ordered name/value facts (Organiser / Edition / Dates)
    shown beside the About text on the D-495 org page. Real, sourced from the
    same 2026 deck (Fourth Forum, Royal Saudi Naval Forces) and the Programme
-   seed (20-22 Nov 2026). Each row is inserted only when a row with that Name
+   seed (23-25 Nov 2026). Each row is inserted only when a row with that Name
    does not already exist, so a later admin edit is never clobbered.
    The D-747 port of the org content seeded the About items but omitted these
    Details — this closes that gap.
@@ -101,7 +101,7 @@ DECLARE @details TABLE (Ord int, Nm nvarchar(256), NmAr nvarchar(256), Val nvarc
 INSERT INTO @details (Ord, Nm, NmAr, Val) VALUES
 (0, N'Organiser', N'الجهة المنظمة', N'Royal Saudi Naval Forces'),
 (1, N'Edition',   N'النسخة',        N'Fourth (2026)'),
-(2, N'Dates',     N'التواريخ',      N'20–22 November 2026');
+(2, N'Dates',     N'التواريخ',      N'23-25 November 2026');
 
 INSERT INTO dbo.OrganizationDetails
     (Id, OrganizationProfileId, Name, NameArabic, Value, DisplayOrder, IsActive, CreatedAt, CreatedBy)
@@ -110,6 +110,15 @@ SELECT NEWID(), @org, d.Nm, d.NmAr, d.Val, d.Ord, 1, @now, @sys
  WHERE NOT EXISTS (
      SELECT 1 FROM dbo.OrganizationDetails od
       WHERE od.OrganizationProfileId = @org AND od.Name = d.Nm);
+
+/* Correct an ALREADY-seeded Dates row (old 20-22 value) to the real programme
+   dates (23-25 Nov 2026). Guarded to the EXACT old seed value, so a later admin
+   edit is never clobbered; a fresh DB gets 23-25 from the INSERT above instead. */
+UPDATE dbo.OrganizationDetails
+   SET Value = N'23-25 November 2026'
+ WHERE OrganizationProfileId = @org
+   AND Name  = N'Dates'
+   AND Value = N'20–22 November 2026';
 
 /* ---------------------------------------------------------------------
    2) SOCIAL LINKS  — set each field only when currently empty, so an admin
