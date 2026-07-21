@@ -265,4 +265,19 @@ class SimfTokens {
     fontSize: textSm,
     height: 1.4,
   );
+  static const TextStyle labelWhiteSemiboldXs = TextStyle(
+    color: surface,
+    fontSize: textXs,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle labelNavySemiboldSm = TextStyle(
+    color: navy,
+    fontSize: textSm,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle labelBeigeSemiboldSm = TextStyle(
+    color: beigeBorder,
+    fontSize: textSm,
+    fontWeight: FontWeight.w600,
+  );
 }

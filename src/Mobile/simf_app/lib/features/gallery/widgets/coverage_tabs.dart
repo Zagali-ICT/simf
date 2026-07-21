@@ -71,7 +71,7 @@ class _CoverageTab extends StatelessWidget {
       color: active ? SimfTokens.accent : SimfTokens.navyDeep,
       borderColor: active ? SimfTokens.accent : SimfTokens.beigeBorder,
       child: SizedBox(
-        height: 48,
+        height: SimfTokens.controlHeight,
         child: Center(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space1),
@@ -80,13 +80,11 @@ class _CoverageTab extends StatelessWidget {
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                // Figma 947:3764 — the active gold pill carries dark navy text;
-                // inactive pills carry beige text on navy.
-                color: active ? SimfTokens.navy : SimfTokens.beigeBorder,
-                fontSize: SimfTokens.textSm,
-                fontWeight: FontWeight.w600,
-              ),
+              // Figma 947:3764 — the active gold pill carries dark navy text;
+              // inactive pills carry beige text on navy.
+              style: active
+                  ? SimfTokens.labelNavySemiboldSm
+                  : SimfTokens.labelBeigeSemiboldSm,
             ),
           ),
         ),
