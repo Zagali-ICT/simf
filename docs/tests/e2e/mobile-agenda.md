@@ -40,13 +40,15 @@
 > is deferred (needs owner sign-off — it is referenced from PAGE-INDEX + the
 > e2e README).
 >
-> **Login-gate (D-576, 2026-07-01):** the Sessions/Agenda *screen* (#16) is now
-> login-gated — a signed-out guest navigating to `/sessions` is redirected to
-> sign-in before the screen renders. The public reads
-> (`GET /app/programme/sessions[/{id}]`) stay `AllowAnonymous` (the gate is
-> app-UX only, not an API change — thin clients still read the programme
-> anonymously), so the API scenarios below remain valid. The screen gate is
-> covered by E2E-MOB016-015.
+> **Public again (D-750, 2026-07-20, REVERSES D-576):** the Sessions/Agenda
+> *screen* (#16) is **public** — a signed-out guest can open `/sessions` and browse
+> the programme without signing in (restoring the D-199 public design). The public
+> reads (`GET /app/programme/sessions[/{id}]`) stay `AllowAnonymous`, so the API
+> scenarios below remain valid. The now-public access is covered by the updated
+> E2E-MOB016-015. Separately, the **bottom-nav program tab label** changed from
+> "الجلسات" (`sessionsTitle`) to "الأجندة" (`agendaTitle`) — the screen title
+> "برنامج الملتقى" and the `sessionsTitle` string on other surfaces are unchanged
+> (E2E-MOB016-018).
 
 | | |
 |--|--|
@@ -54,8 +56,8 @@
 | **Route** | `GET /api/v1/app/programme/sessions` (+`?day=`) · `GET /api/v1/app/programme/sessions/{id}` · app screen #16 `/sessions` |
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
-| **Auth setup** | **Signed-in for the screen (D-576)** — the Sessions/Agenda screen is login-gated: a signed-out guest navigating to `/sessions` is redirected to sign-in. The public reads stay `AllowAnonymous` (the app gates the screen, not the API — thin clients still read anonymously); use a signed-in Visitor session to reach the screen. Admin token only to seed sessions/speakers/themes. **No literal secrets.** |
-| **Last reviewed** | 2026-07-08 (D-705 — from→to time-rail connector always drawn) |
+| **Auth setup** | **Public screen (D-750, reverses D-576)** — the Sessions/Agenda screen is open to a signed-out guest (no redirect). The public reads stay `AllowAnonymous`. Admin token only to seed sessions/speakers/themes. **No literal secrets.** |
+| **Last reviewed** | 2026-07-20 (D-750 — screen public again; program tab label الجلسات → الأجندة) |
 
 ## Coverage matrix
 
@@ -75,7 +77,8 @@
 | E2E-MOB016-012 | `status` / speaker `role` decode tolerantly (int **or** name; unknown → default) | contract | P0 | authored ✓ (model — `SessionStatus.fromJson` / `SessionSpeakerRole.fromJson`) |
 | E2E-MOB016-013 | List item binds the real wire names incl. the D-271 speaker country+photo | contract | P0 | authored ✓ (model — `SessionListItem.fromJson`) |
 | E2E-MOB016-014 | **Full-width calendar (#4):** the day strip is a WHITE band over the FULL event date range (first→last programme day, empty in-between days filled), **pinned LTR** (dates ascend left→right as the frame renders), full-width (cells distributed, scroll fallback when long); a day **with** sessions = navy text ("active"), the **selected** day = navy pill/white text, an empty day = muted grey and **not** selectable; weekend labels red | happy/visual | P1 | authored ✓ (screen — `ProgrammeDayStrip`/`_calendarRange`; existing selected-cell-navy + switch-day tests) |
-| E2E-MOB016-015 | **App login-gate (D-576):** a signed-out guest navigating to the `/sessions` screen is redirected to sign-in (the app gates the screen; the reads stay anonymous for thin clients) | auth | P0 | authored ✓ (router-gate `D-576 — a signed-out guest hitting /sessions or a session detail → sign-in`) |
+| E2E-MOB016-015 | **Public screen (D-750, reverses D-576):** a signed-out guest navigating to the `/sessions` screen sees the agenda (no redirect); My seat (18) stays attendee-gated | auth | P0 | authored ✓ (router-gate `D-750 — a signed-out guest hitting /sessions or a session detail is NOT redirected`; `routePathRequiresAuth('/sessions')` is FALSE) |
+| E2E-MOB016-018 | **Program tab label (D-750):** the bottom-nav program/agenda tab reads "الأجندة" / "Agenda" (`agendaTitle`) — the screen header "برنامج الملتقى" and the `sessionsTitle` "الجلسات" on other surfaces (home tile, etc.) are unchanged | i18n/visual | P1 | authored ✓ (`sessions_screen_test` RTL: active bottom-nav label = "الأجندة"; `simf_page_shell_test`: the "Agenda" tab navigates to /sessions; goldens re-locked) |
 | E2E-MOB016-016 | **Time-rail from→to connector (D-705):** every المواعيد row shows the vertical beige line between its start and end time — including a **collapsed/short row** (title only, no banner/description) where it previously collapsed to zero (Figma 1310:3243/3244) | visual | P1 | authored ✓ (golden `sessions_883-2308.png` — the connector renders on the featured AND the collapsed row) |
 | E2E-MOB016-017 | **State chips (owner 2026-07-14):** each timeline row shows a state chip derived from its phase + flags — `مباشر الآن` (live, red), `الملخص متاح` (a published summary, gold outline), `مسجّل` (recorded, gold); an upcoming session shows no chip | visual | P1 | authored ✓ (`session_state_chip_test.dart` unit + golden `session_state_chips.png`; shared `SessionStateChipRow`) |
 
@@ -251,29 +254,54 @@ Scenario: The list item binds the real wire names incl. the D-271 speaker cluste
 
 **Evidence:** model test `SessionListItem.fromJson binds the real wire field names…`.
 
-### E2E-MOB016-015 — App login-gate (D-576)
+### E2E-MOB016-015 — Public screen (D-750, reverses D-576)
 
 ```gherkin
-Feature: Sessions screen — login gate (D-576)
+Feature: Sessions screen — public access (D-750)
   As a signed-out guest
-  I want to be sent to sign-in when I open the agenda
-  So that the programme screens sit behind login (owner, D-576)
+  I want to open the agenda and browse the programme without signing in
+  So that the programme is browsable before login (owner, D-750; reverses D-576)
 
-Scenario: A guest opening /sessions is redirected to sign-in
+Scenario: A guest opening /sessions sees the agenda (no redirect)
   Given the app is signed out (a guest)
   When the app navigates to the /sessions screen (tab, deep link or cold start)
-  Then the router redirects to the sign-in screen
-  And the Sessions screen is not rendered
-  # The public reads (GET /app/programme/sessions[/{id}]) stay AllowAnonymous —
-  # the gate is app-UX only (a router redirect), not an API change. Thin clients
-  # still read the programme anonymously.
+  Then the Sessions screen renders the programme (there is no redirect to sign-in)
+  And tapping a row opens the session detail (also public, E2E-MOB017-025)
+  # The public reads (GET /app/programme/sessions[/{id}]) stay AllowAnonymous.
+  # My seat (18) stays attendee-gated, so a guest still cannot open the seat map.
 ```
 
-**Evidence:** router-gate test `D-576 — a signed-out guest hitting /sessions or a
-session detail → sign-in`; `routePathRequiresAuth('/sessions')` is TRUE.
+**Evidence:** router-gate test `D-750 — a signed-out guest hitting /sessions or a
+session detail is NOT redirected`; `routePathRequiresAuth('/sessions')` is FALSE.
+
+### E2E-MOB016-018 — Program tab label (D-750)
+
+```gherkin
+Feature: Bottom-nav program tab label (D-750)
+  As a user on any tab
+  I want the program/agenda tab labelled "الأجندة"
+  So that the tab reads "Agenda", not "Sessions" (owner, D-750)
+
+Scenario: The active program tab reads الأجندة, not الجلسات
+  Given the app is on the Sessions/Agenda tab (Arabic)
+  Then the active bottom-nav program tab label reads "الأجندة" (agendaTitle)
+  And the screen header still reads "برنامج الملتقى"
+  And the "الجلسات" (sessionsTitle) string is unchanged on other surfaces
+    (e.g. the home programme tile)
+  When the program tab is tapped from another tab
+  Then it navigates to /sessions (the route/path is unchanged)
+```
+
+**Evidence:** `sessions_screen_test.dart` RTL — the active bottom-nav label is
+"الأجندة"; `simf_page_shell_test.dart` — the "Agenda" tab navigates to /sessions;
+the 6 sessions-tab goldens re-locked to the new label.
 
 ---
 
-_Last reviewed:_ `2026-07-14` by `SIMF Team` — **owner state chips: each timeline
-row shows a `مباشر الآن` / `الملخص متاح` / `مسجّل` chip from its `SessionPhase` +
-flags (E2E-MOB016-017).** _Prior:_ `2026-07-01`.
+_Last reviewed:_ `2026-07-20` by `Apexium` — **D-750: the Sessions/Agenda screen is
+public again (reverses the D-576 login-gate) — a guest browses the programme without
+signing in; the bottom-nav program tab label changed "الجلسات" → "الأجندة"
+(`agendaTitle`), leaving `sessionsTitle` + the screen header unchanged.
+E2E-MOB016-015 reworded, E2E-MOB016-018 added.** _Prior:_ `2026-07-14` by `SIMF Team`
+— **owner state chips: each timeline row shows a `مباشر الآن` / `الملخص متاح` /
+`مسجّل` chip from its `SessionPhase` + flags (E2E-MOB016-017).** _Prior:_ `2026-07-01`.

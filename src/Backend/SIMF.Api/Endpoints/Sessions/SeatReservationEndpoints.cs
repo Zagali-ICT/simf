@@ -320,12 +320,15 @@ public sealed class ListSessionSeatReservationsEndpoint(ISeatReservationService 
                 }, ct)), ct);
 }
 
-// -- Booking approval queue (P2.2 / D-227 — FDS-005 §5.2) --
+// -- Booking monitor (#6/#17 — owner 2026-07-20) --
 
-/// <summary>P2.2 — the Control Panel booking approval queue: Pending, held
-/// visitor bookings across all sessions.</summary>
-public sealed class ListPendingBookingsEndpoint(ISeatReservationService service)
-    : Endpoint<GridQuery, ApiResult<GridPage<BookingQueueRow>>>
+/// <summary>#6 — the read-only Control Panel booking monitor: ACTIVE (confirmed,
+/// still-held) visitor reservations across all sessions. There is no approval
+/// step (bookings auto-confirm), so this replaced the old approval queue. The
+/// pre-start no-show release runs in the background (ReservationNoShowReleaseWorker),
+/// not from an admin action.</summary>
+public sealed class ListActiveBookingsEndpoint(ISeatReservationService service)
+    : Endpoint<GridQuery, ApiResult<GridPage<ActiveBookingRow>>>
 {
     public override void Configure()
     {
@@ -335,88 +338,6 @@ public sealed class ListPendingBookingsEndpoint(ISeatReservationService service)
         Tags("Admin");
     }
     public override async Task HandleAsync(GridQuery req, CancellationToken ct) =>
-        await Send.OkAsync(ApiResult<GridPage<BookingQueueRow>>.Ok(
-            await service.ListPendingBookingsAsync(req, ct)), ct);
-}
-
-public sealed class ApproveBookingRoute { public Guid Id { get; set; } }
-
-public sealed class ApproveBookingEndpoint(ISeatReservationService service)
-    : Endpoint<ApproveBookingRoute, ApiResult<bool>>
-{
-    public override void Configure()
-    {
-        Post("/admin/bookings/{id:guid}/approve");
-        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Bookings.Approve),
-                 nameof(AuthorizationPolicies.RequireApprovedAccount));
-        Options(rb => rb.RequireRateLimiting("auth"));
-        Tags("Admin");
-    }
-    public override async Task HandleAsync(ApproveBookingRoute req, CancellationToken ct)
-    {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
-        await service.ApproveBookingAsync(actorId, req.Id, ct);
-        await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
-    }
-}
-
-public sealed class RejectBookingRoute : RejectBookingRequest
-{
-    public Guid Id { get; set; }
-}
-
-public sealed class RejectBookingEndpoint(ISeatReservationService service)
-    : Endpoint<RejectBookingRoute, ApiResult<bool>>
-{
-    public override void Configure()
-    {
-        Post("/admin/bookings/{id:guid}/reject");
-        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Bookings.Reject),
-                 nameof(AuthorizationPolicies.RequireApprovedAccount));
-        Options(rb => rb.RequireRateLimiting("auth"));
-        Tags("Admin");
-    }
-    public override async Task HandleAsync(RejectBookingRoute req, CancellationToken ct)
-    {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
-        await service.RejectBookingAsync(actorId, req.Id,
-            new RejectBookingRequest { Reason = req.Reason }, ct);
-        await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
-    }
-}
-
-public sealed class BulkApproveBookingsRequest
-{
-    public IReadOnlyList<Guid> ReservationIds { get; set; } = Array.Empty<Guid>();
-}
-
-public sealed class BulkApproveBookingsEndpoint(ISeatReservationService service)
-    : Endpoint<BulkApproveBookingsRequest, ApiResult<int>>
-{
-    public override void Configure()
-    {
-        Post("/admin/bookings/bulk-approve");
-        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Bookings.Approve),
-                 nameof(AuthorizationPolicies.RequireApprovedAccount));
-        Options(rb => rb.RequireRateLimiting("auth"));
-        Tags("Admin");
-    }
-    public override async Task HandleAsync(BulkApproveBookingsRequest req, CancellationToken ct)
-    {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
-        var approved = await service.BulkApproveBookingsAsync(actorId, req.ReservationIds, ct);
-        await Send.OkAsync(ApiResult<int>.Ok(approved), ct);
-    }
+        await Send.OkAsync(ApiResult<GridPage<ActiveBookingRow>>.Ok(
+            await service.ListActiveBookingsAsync(req, ct)), ct);
 }

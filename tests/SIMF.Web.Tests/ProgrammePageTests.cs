@@ -4,11 +4,12 @@
 // coverage before; this pins the three render branches: a populated agenda +
 // speakers strip, the empty state, and the API-failure error alert.
 //
-// The page was re-skinned from the legacy Simf* chrome onto the shared ln-
-// marketing kit (LandingShell + LandingPageHero + the ln-agenda band); the data
-// flow in the code-behind is unchanged. The structural asserts below guard the
-// ln- DOM (ln-pghero hero, ln-agenda rows, ln-fsection chrome) alongside the
-// three render branches.
+// The page is on the shared ln- marketing kit (LandingShell + LandingPageHero)
+// and redesigned as a day-strip + type-filter + timeline-card agenda (echoing
+// app Figma 883:2308); the data flow in the code-behind is unchanged. The asserts
+// below guard the ln- DOM (ln-pghero hero, the day strip, timeline cards,
+// ln-fsection chrome) + the day/type filter contract, alongside the three render
+// branches.
 //
 // SimfPublicClient is sealed over HttpClient, so the two anonymous reads
 // (programme/sessions, speakers) are driven by a routing stub handler returning
@@ -21,6 +22,7 @@ using Bunit;
 using Microsoft.Extensions.DependencyInjection;
 using SIMF.ApiClient;
 using SIMF.Common;
+using SIMF.Common.Enums;
 using SIMF.Contracts.Programme;
 using SIMF.Web.Components.Pages;
 
@@ -61,7 +63,7 @@ public sealed class ProgrammePageTests : WebComponentTestBase
         _handler.Speakers = ApiResult<PublicSpeakers>.Ok(new PublicSpeakers(new[]
         {
             new PublicSpeakerSummary(Guid.NewGuid(), "Jane Roe", "جين رو",
-                "Chief Scientist", null, null, null, null, 0),
+                "Chief Scientist", null, null, null, null, null, 0),
         }));
 
         var cut = RenderComponent<Programme>();
@@ -71,13 +73,14 @@ public sealed class ProgrammePageTests : WebComponentTestBase
             Assert.Contains("Opening Plenary", cut.Markup);
             Assert.Contains("Jane Roe", cut.Markup);
             Assert.Contains("Chief Scientist", cut.Markup);
-            // ln- re-skin: the interior hero, the agenda rows and the speakers strip.
+            // ln- agenda: the interior hero, the day strip, a timeline card and the speakers strip.
             Assert.Contains("ln-pghero", cut.Markup);
-            Assert.Contains("ln-agenda__row", cut.Markup);
+            Assert.Contains("ln-agenda__daystrip", cut.Markup);
+            Assert.Contains("ln-agenda__card", cut.Markup);
             Assert.Contains("ln-agenda__spk", cut.Markup);
-            // Event-local (+03:00) window via the shared EventTime helper: the
-            // fixture's 09:00–10:30 UTC renders as 12:00 – 13:30 Riyadh. Pins the
-            // offset shift + the "HH:mm – HH:mm" format the refactor centralized.
+            // Event-local (+03:00) time via the shared EventTime helper: the
+            // fixture's 09:00–10:30 UTC renders as 12:00 – 13:30 Riyadh (the
+            // sr-only window). Pins the offset shift + the "HH:mm" formatting.
             Assert.Contains("12:00 – 13:30", cut.Markup);
         });
     }
@@ -122,12 +125,52 @@ public sealed class ProgrammePageTests : WebComponentTestBase
         });
     }
 
+    [Fact]
+    public void Renders_the_day_strip_type_filter_and_typed_timeline_cards()
+    {
+        // Two days, two session types, a category -> exercises the day strip, the
+        // (data-driven) type filter and the timeline card's chip.
+        _handler.Sessions = ApiResult<PublicSessions>.Ok(new PublicSessions(new[]
+        {
+            TypedSession("Kickoff Workshop", "الورشة", new DateTimeOffset(2026, 11, 20, 9, 0, 0, TimeSpan.Zero),
+                SessionType.Workshop, "Maritime Security"),
+            TypedSession("Plenary Panel", "الجلسة", new DateTimeOffset(2026, 11, 21, 9, 0, 0, TimeSpan.Zero),
+                SessionType.Session, "Energy Supply Chains"),
+        }));
+
+        var cut = RenderComponent<Programme>();
+
+        cut.WaitForAssertion(() =>
+        {
+            // Two event days -> two day-strip pills + two panels with matching ids.
+            Assert.Contains("data-agenda-day=\"0\"", cut.Markup);
+            Assert.Contains("data-agenda-day=\"1\"", cut.Markup);
+            Assert.Contains("data-agenda-daypanel=\"0\"", cut.Markup);
+            Assert.Contains("data-agenda-daypanel=\"1\"", cut.Markup);
+            // Types present -> the filter renders; the tab slug and the card slug
+            // agree (the exact contract the JS string-match filter depends on).
+            Assert.Contains("data-agenda-type=\"Workshop\"", cut.Markup);
+            Assert.Contains("data-agenda-cardtype=\"Workshop\"", cut.Markup);
+            Assert.Contains("data-agenda-cardtype=\"Session\"", cut.Markup);
+            // The gold category chip renders its resolved text.
+            Assert.Contains("Maritime Security", cut.Markup);
+        });
+    }
+
     private static PublicSessionListItem Session(string title, string titleArabic) =>
         new(Guid.NewGuid(), "S-01", title, titleArabic,
             Guid.NewGuid(), "Main Hall", "القاعة الرئيسية",
             new DateTimeOffset(2026, 11, 23, 9, 0, 0, TimeSpan.Zero),
             new DateTimeOffset(2026, 11, 23, 10, 30, 0, TimeSpan.Zero),
             PrimaryThemeName: null, PrimaryThemeNameArabic: null, PrimaryThemeColor: null);
+
+    private static PublicSessionListItem TypedSession(
+        string title, string titleArabic, DateTimeOffset start, SessionType type, string category) =>
+        new(Guid.NewGuid(), "S-01", title, titleArabic,
+            Guid.NewGuid(), "Main Hall", "القاعة الرئيسية",
+            start, start.AddHours(1),
+            PrimaryThemeName: null, PrimaryThemeNameArabic: null, PrimaryThemeColor: null,
+            CategoryName: category, CategoryNameArabic: category, Type: type);
 
     // Routes the two anonymous public GETs to their canned envelope by path,
     // serialising with the web defaults SimfPublicClient reads with.

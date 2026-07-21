@@ -3018,37 +3018,16 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Delete, $"programme-days/{id}", content: null,
             accessToken, cancellationToken);
 
-    // -- P2.2 (D-227) — Booking approval queue (SIMF.Contracts.Sessions) -----
+    // -- #6/#17 — Booking monitor (read-only; SIMF.Contracts.Sessions) --------
+    // Bookings auto-confirm (no approval step) and no-shows are released by a
+    // background worker, so the CP only reads the active-reservations list.
 
-    public Task<ApiCallResult<GridPage<BookingQueueRow>>> ListPendingBookingsAsync(
+    public Task<ApiCallResult<GridPage<ActiveBookingRow>>> ListActiveBookingsAsync(
         GridQuery query, string accessToken,
         CancellationToken cancellationToken = default) =>
-        SendAsync<GridPage<BookingQueueRow>>(
+        SendAsync<GridPage<ActiveBookingRow>>(
             HttpMethod.Post, "bookings/list",
             JsonContent.Create(query, options: JsonOptions),
-            accessToken, cancellationToken);
-
-    public Task<ApiCallResult<bool>> ApproveBookingAsync(
-        Guid id, string accessToken,
-        CancellationToken cancellationToken = default) =>
-        SendAsync<bool>(
-            HttpMethod.Post, $"bookings/{id}/approve", content: null,
-            accessToken, cancellationToken);
-
-    public Task<ApiCallResult<bool>> RejectBookingAsync(
-        Guid id, RejectBookingRequest request, string accessToken,
-        CancellationToken cancellationToken = default) =>
-        SendAsync<bool>(
-            HttpMethod.Post, $"bookings/{id}/reject",
-            JsonContent.Create(request, options: JsonOptions),
-            accessToken, cancellationToken);
-
-    public Task<ApiCallResult<int>> BulkApproveBookingsAsync(
-        IReadOnlyList<Guid> reservationIds, string accessToken,
-        CancellationToken cancellationToken = default) =>
-        SendAsync<int>(
-            HttpMethod.Post, "bookings/bulk-approve",
-            JsonContent.Create(new { ReservationIds = reservationIds }, options: JsonOptions),
             accessToken, cancellationToken);
 
     // -- P2.3 (D-228) — Speaker presentation files (SIMF.Contracts.Admin) ----

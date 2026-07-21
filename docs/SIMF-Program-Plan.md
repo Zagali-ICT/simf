@@ -53,7 +53,7 @@ plan that produces those.
 
 | Constraint | Value |
 |------------|-------|
-| Forum dates | 23–25 November 2026 — immovable |
+| Forum dates | 23 to 25 November 2026 for the 2026 edition; the dates are configuration data, set in the Control Panel |
 | Operational target | System live ~2 months before the forum |
 | Reference plan | 18 weeks (per `Overall Time & Plan.pdf`) |
 | Stack | .NET 10 + FastEndpoints, Blazor + MudBlazor, Flutter, SQL Server 2022 |
