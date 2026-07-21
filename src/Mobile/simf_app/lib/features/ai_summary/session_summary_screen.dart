@@ -15,6 +15,7 @@ import 'data/session_summary_repository.dart';
 import 'widgets/summary_content_card.dart';
 import 'widgets/summary_generate_card.dart';
 import 'widgets/summary_session_card.dart';
+import 'widgets/summary_video_card.dart';
 
 /// The programme list, reused for the summaries list + this screen's session
 /// resolution + day agenda (`GET /app/programme/sessions`).
@@ -197,6 +198,11 @@ class _AiSummaryScreenState extends ConsumerState<AiSummaryScreen> {
             ),
           ),
         const SizedBox(height: SimfTokens.space4),
+        // Item #35 — the two labeled video players: the session's FULL live
+        // recording and the team's short summary video. Each is present only when
+        // its URL is set (both come from the published summary); when neither is
+        // set this contributes nothing, leaving the layout unchanged.
+        ..._videoPlayers(l10n),
         SessionFilterTabs(
           labels: <String>[
             l10n.aiSummaryKeyPointsHeading,
@@ -221,6 +227,34 @@ class _AiSummaryScreenState extends ConsumerState<AiSummaryScreen> {
         ),
       ],
     );
+  }
+
+  /// Item #35 — the labeled video players for the published summary: the full
+  /// live recording (from `recordingUrl`) then the team's short summary video
+  /// (from `summaryVideoUrl`). Each is added only when its URL is non-empty, so
+  /// a session with neither contributes no widgets (no layout shift). Each is
+  /// followed by a spacer so it sits above the tabs like every other block.
+  List<Widget> _videoPlayers(AppL10n l10n) {
+    final summary = _summary;
+    if (summary == null) {
+      return const <Widget>[];
+    }
+    final players = <Widget>[];
+    final recording = summary.recordingUrl?.trim();
+    if (recording != null && recording.isNotEmpty) {
+      players
+        ..add(
+          SummaryVideoCard(label: l10n.aiSummaryRecordingLabel, url: recording),
+        )
+        ..add(const SizedBox(height: SimfTokens.space4));
+    }
+    final video = summary.summaryVideoUrl?.trim();
+    if (video != null && video.isNotEmpty) {
+      players
+        ..add(SummaryVideoCard(label: l10n.aiSummaryVideoLabel, url: video))
+        ..add(const SizedBox(height: SimfTokens.space4));
+    }
+    return players;
   }
 
   String _activeLabel(AppL10n l10n) => switch (_tab) {

@@ -630,7 +630,14 @@ internal sealed class ProgrammeSessionService(
                 summary.FullText,
                 summary.FullTextArabic,
                 summary.AiModel != null,
-                summary.PublishedAt!.Value))
+                summary.PublishedAt!.Value,
+                // Item #35 — the two videos on the summary surface (screen 34):
+                // the session's FULL live recording (Session.LiveStreamUrl — the
+                // YouTube/HLS feed that doubles as the recording; no schema change)
+                // and the team's OPTIONAL short summary cut. Each is null when
+                // unset, and the app hides that player.
+                summary.Session!.LiveStreamUrl,
+                summary.SummaryVideoUrl))
             .SingleOrDefaultAsync(cancellationToken);
     }
 

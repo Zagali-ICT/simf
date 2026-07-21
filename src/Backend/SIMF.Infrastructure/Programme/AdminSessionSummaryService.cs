@@ -33,6 +33,8 @@ internal sealed class AdminSessionSummaryService(
     private const int SectionMax = 4000;
     private const int SpeakersMax = 1000;
     private const int FullTextMax = 8000;
+    // Item #35 — the summary-video URL column limit (matches Session.LiveStreamUrl).
+    private const int SummaryVideoUrlMax = 1024;
 
     /// <summary>The seeded prompt key the AI draft routes through (D-238).</summary>
     private const string SummaryPromptKey = "session-summary";
@@ -212,6 +214,9 @@ internal sealed class AdminSessionSummaryService(
         var speakersAr = Clean(request.SpeakersArabic, SpeakersMax, "speakers (Arabic)");
         var fullText = Clean(request.FullText, FullTextMax, "full text");
         var fullTextAr = Clean(request.FullTextArabic, FullTextMax, "full text (Arabic)");
+        // Item #35 — validated + normalized up-front, so an invalid URL is a 400
+        // before any DB mutation (blank clears it to null).
+        var summaryVideoUrl = CleanSummaryVideoUrl(request.SummaryVideoUrl);
 
         var summary = await appDbContext.SessionSummaries
             .SingleOrDefaultAsync(s => s.SessionId == sessionId && s.IsActive, cancellationToken);
@@ -238,6 +243,7 @@ internal sealed class AdminSessionSummaryService(
         summary.SpeakersArabic = speakersAr;
         summary.FullText = fullText;
         summary.FullTextArabic = fullTextAr;
+        summary.SummaryVideoUrl = summaryVideoUrl;
         summary.IsActive = true;
         summary.UpdatedAt = now;
         summary.UpdatedByUserId = actorUserId;
@@ -442,6 +448,28 @@ internal sealed class AdminSessionSummaryService(
     private static string Truncate(string value, int max) =>
         value.Length > max ? value[..max] : value;
 
+    /// <summary>Item #35 — validate + normalize the optional summary-video URL:
+    /// blank → null (cleared); otherwise it MUST pass the shared
+    /// <see cref="LiveStreamUrlPolicy"/> (the same YouTube / direct HLS-MP4 rule
+    /// as the session's live feed) and stay within the column limit, else a 400.
+    /// Reuses the one URL rule so the CP form + this write validate identically.</summary>
+    private static string? CleanSummaryVideoUrl(string? value)
+    {
+        var trimmed = (value ?? string.Empty).Trim();
+        if (trimmed.Length == 0)
+        {
+            return null;
+        }
+        if (trimmed.Length > SummaryVideoUrlMax || !LiveStreamUrlPolicy.IsAllowed(trimmed))
+        {
+            throw new ApiException(
+                ErrorCodes.SessionSummaryInvalid, 400,
+                "The summary video URL must be a valid YouTube or direct HLS/MP4 link.",
+                "يجب أن يكون رابط فيديو الملخّص رابط يوتيوب صالحًا أو رابط بث HLS/MP4 مباشر.");
+        }
+        return trimmed;
+    }
+
     private static AdminSessionSummaryDetail ToDetail(
         string code, string title, string titleArabic,
         string? subtitle, string? subtitleArabic, SessionSummary s) =>
@@ -472,5 +500,7 @@ internal sealed class AdminSessionSummaryService(
             Subtitle: subtitle,
             SubtitleArabic: subtitleArabic,
             s.AiDraftFullTextArabic,
-            s.AiDraftGeneratedAt);
+            s.AiDraftGeneratedAt,
+            // Item #35 — the team summary-video URL round-trips to the editor.
+            s.SummaryVideoUrl);
 }

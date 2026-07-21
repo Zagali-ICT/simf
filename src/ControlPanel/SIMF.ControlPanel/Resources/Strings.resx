@@ -1859,6 +1859,8 @@
   <data name="Admin.SessionSummaries.Field.Subtitle" xml:space="preserve"><value>AI source subtitle (English)</value></data>
   <data name="Admin.SessionSummaries.Field.SubtitleArabic" xml:space="preserve"><value>AI source subtitle (Arabic)</value></data>
   <data name="Admin.SessionSummaries.Field.AiDraft" xml:space="preserve"><value>Original AI draft (read-only)</value></data>
+  <data name="Admin.SessionSummaries.Field.SummaryVideoUrl" xml:space="preserve"><value>Summary video URL</value></data>
+  <data name="Admin.SessionSummaries.Field.SummaryVideoUrlHint" xml:space="preserve"><value>Optional. A YouTube or direct HLS/MP4 link to the team's short summary video, shown on the app beside the full recording.</value></data>
   <data name="Admin.SessionSummaries.Editor.Save" xml:space="preserve"><value>Save</value></data>
   <data name="Admin.SessionSummaries.Editor.Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Admin.SessionSummaries.Generated" xml:space="preserve"><value>AI draft generated.</value></data>

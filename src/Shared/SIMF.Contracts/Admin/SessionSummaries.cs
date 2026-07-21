@@ -60,7 +60,11 @@ public sealed record AdminSessionSummaryDetail(
     string? Subtitle,
     string? SubtitleArabic,
     string? AiDraftFullTextArabic,
-    DateTimeOffset? AiDraftGeneratedAt);
+    DateTimeOffset? AiDraftGeneratedAt,
+    // Item #35 (2026-07-20) — the OPTIONAL team summary-video URL the editor
+    // shows/saves (a YouTube or HLS/MP4 feed, LiveStreamUrlPolicy-validated).
+    // Appended (defaulted) so the wire stays append-only. Null = no summary video.
+    string? SummaryVideoUrl = null);
 
 /// <summary>P4.1 — D-238: the Committee's edit (upsert) of a summary's content.
 /// Saving a session that has no summary yet creates a hand-written draft
@@ -76,4 +80,11 @@ public class SaveSessionSummaryRequest
     public string SpeakersArabic { get; set; } = string.Empty;
     public string FullText { get; set; } = string.Empty;
     public string FullTextArabic { get; set; } = string.Empty;
+
+    /// <summary>Item #35 (2026-07-20) — the OPTIONAL team summary-video URL
+    /// (screen 34's second player). A YouTube watch/live URL or a direct HLS/MP4
+    /// stream, validated server-side by <c>LiveStreamUrlPolicy</c> (the same rule
+    /// as the session's live feed); null / blank = clear it. Max length aligns
+    /// with the <c>SummaryVideoUrl</c> column (1024).</summary>
+    public string? SummaryVideoUrl { get; set; }
 }

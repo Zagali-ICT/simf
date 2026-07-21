@@ -247,7 +247,16 @@ public sealed record PublicSessionSummary(
     string FullText,
     string FullTextArabic,
     bool GeneratedByAi,
-    DateTimeOffset PublishedAt);
+    DateTimeOffset PublishedAt,
+    // Item #35 (2026-07-20) — the two videos on the summary surface (screen 34).
+    // RecordingUrl = the session's FULL live recording, sourced from
+    // Session.LiveStreamUrl (the YouTube/HLS live feed that doubles as the
+    // recording in the POC — NOT a schema addition). SummaryVideoUrl = the team's
+    // OPTIONAL short summary cut (the new SessionSummary.SummaryVideoUrl column).
+    // Both nullable: the app hides each player when its URL is null. Appended
+    // (defaulted) so the wire stays append-only (D-219).
+    string? RecordingUrl = null,
+    string? SummaryVideoUrl = null);
 
 /// <summary>D-472 (#9) — the approved محضر served to the session host / moderator
 /// ("ready for المحاور"). Same content as <see cref="PublicSessionSummary"/> but

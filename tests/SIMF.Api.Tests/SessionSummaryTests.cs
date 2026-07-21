@@ -134,7 +134,70 @@ public sealed class SessionSummaryTests : IClassFixture<SimfApiFactory>
         Assert.Equal(sessionId, summary.SessionId);
     }
 
+    // Item #35 (2026-07-20) — the summary surface carries TWO videos: the
+    // session's FULL live recording (Session.LiveStreamUrl) and the team's
+    // OPTIONAL short summary video (SessionSummary.SummaryVideoUrl). Both are
+    // projected onto the public read so the app can render the two labeled players.
+    [Fact]
+    public async Task Published_summary_surfaces_the_recording_and_summary_video_urls()
+    {
+        var sessionId = await SeedSummaryWithVideosAsync(
+            liveStreamUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            summaryVideoUrl: "https://youtu.be/abcdefghijk");
+
+        var response = await _client.GetAsync($"/api/v1/app/programme/sessions/{sessionId}/summary");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var summary = (await response.Content
+            .ReadFromJsonAsync<ApiResult<PublicSessionSummary>>())!.Data!;
+        Assert.Equal("https://www.youtube.com/watch?v=dQw4w9WgXcQ", summary.RecordingUrl);
+        Assert.Equal("https://youtu.be/abcdefghijk", summary.SummaryVideoUrl);
+    }
+
+    [Fact]
+    public async Task Published_summary_with_no_videos_reports_null_urls()
+    {
+        var sessionId = await SeedSummaryAsync(
+            published: true, sessionActive: true, summaryActive: true, aiModel: "echo");
+
+        var response = await _client.GetAsync($"/api/v1/app/programme/sessions/{sessionId}/summary");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var summary = (await response.Content
+            .ReadFromJsonAsync<ApiResult<PublicSessionSummary>>())!.Data!;
+        Assert.Null(summary.RecordingUrl);
+        Assert.Null(summary.SummaryVideoUrl);
+    }
+
     // -- Helpers --------------------------------------------------------------
+
+    private async Task<Guid> SeedSummaryWithVideosAsync(
+        string liveStreamUrl, string summaryVideoUrl)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var session = NewSession(active: true);
+        session.LiveStreamUrl = liveStreamUrl;
+        db.Halls.Add(NewHallFor(session));
+        db.Sessions.Add(session);
+        var now = DateTimeOffset.UtcNow;
+        db.SessionSummaries.Add(new SessionSummary
+        {
+            Id = Guid.NewGuid(),
+            SessionId = session.Id,
+            KeyPoints = "KP-en", KeyPointsArabic = "KP-ar",
+            Recommendations = "REC-en", RecommendationsArabic = "REC-ar",
+            Speakers = "SPK-en", SpeakersArabic = "SPK-ar",
+            FullText = "FULL-en", FullTextArabic = "FULL-ar",
+            AiModel = "echo",
+            SummaryVideoUrl = summaryVideoUrl,
+            IsActive = true,
+            ReviewSubmittedAt = now,
+            ApprovedAt = now,
+            PublishedAt = now,
+            CreatedAt = now,
+        });
+        await db.SaveChangesAsync();
+        return session.Id;
+    }
 
     private async Task<Guid> SeedSummaryAsync(
         bool published, bool sessionActive, bool summaryActive, string? aiModel,

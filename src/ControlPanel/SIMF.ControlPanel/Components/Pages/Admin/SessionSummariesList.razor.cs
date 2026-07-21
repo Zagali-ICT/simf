@@ -171,6 +171,9 @@ public partial class SessionSummariesList
             SpeakersArabic = detail.SpeakersArabic,
             FullText = detail.FullText,
             FullTextArabic = detail.FullTextArabic,
+            // Item #35 — the optional team summary-video URL round-trips through
+            // the same upsert as the content sections.
+            SummaryVideoUrl = detail.SummaryVideoUrl,
         };
     }
 

@@ -67,6 +67,17 @@ public sealed class SessionSummary
     /// editing never clears it (the draft origin is provenance, not state).</summary>
     public string? AiModel { get; set; }
 
+    /// <summary>Item #35 (owner 2026-07-20) — the OPTIONAL team-produced SHORT
+    /// summary video for this session: the second player on the app's summary
+    /// surface (screen 34), shown beside the session's FULL live recording
+    /// (<see cref="Session.LiveStreamUrl"/>). A YouTube watch/live URL (the POC
+    /// provider) or a direct HLS/MP4 stream, validated by the SAME shared
+    /// <c>LiveStreamUrlPolicy</c> rule as <see cref="Session.LiveStreamUrl"/>.
+    /// Null = the app hides the summary-video player (no second feed). Distinct
+    /// from the full recording: this is the Committee's condensed cut, entered by
+    /// an admin in the CP summary editor.</summary>
+    public string? SummaryVideoUrl { get; set; }
+
     // -- Slice D (2026-07-19) — AI transparency --------------------------------
 
     /// <summary>The pristine AI draft: the untouched output the generate action

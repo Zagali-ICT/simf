@@ -226,6 +226,71 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    // -- Item #35 (2026-07-20): the optional team summary-video URL ------------
+
+    [Fact]
+    public async Task Save_round_trips_the_summary_video_url()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var sessionId = await SeedSessionAsync();
+
+        // A valid YouTube watch link (an extractable 11-char id) is persisted...
+        var saved = await SaveAsync(sessionId, new SaveSessionSummaryRequest
+        {
+            FullTextArabic = "محضر.",
+            SummaryVideoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        }, admin);
+        Assert.Equal("https://www.youtube.com/watch?v=dQw4w9WgXcQ", saved.SummaryVideoUrl);
+
+        // ...and survives a fresh editor read.
+        var reread = await GetDetailAsync(sessionId, admin);
+        Assert.Equal("https://www.youtube.com/watch?v=dQw4w9WgXcQ", reread.SummaryVideoUrl);
+    }
+
+    [Fact]
+    public async Task An_invalid_summary_video_url_is_rejected_400()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var sessionId = await SeedSessionAsync();
+
+        // Not a YouTube link and not a direct .m3u8/.mp4 stream → rejected by the
+        // shared LiveStreamUrlPolicy (same rule as the session's live feed).
+        var response = await PutAuthAsync(
+            $"/api/v1/admin/session-summaries/{sessionId}",
+            new SaveSessionSummaryRequest
+            {
+                FullTextArabic = "محضر.",
+                SummaryVideoUrl = "https://vimeo.com/123456789",
+            }, admin);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SessionSummaryInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task A_null_summary_video_url_is_allowed()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var sessionId = await SeedSessionAsync();
+
+        // Omitting the URL (the common case) is fine — the summary saves with no
+        // second video, and the detail reports it as null.
+        var saved = await SaveAsync(sessionId, new SaveSessionSummaryRequest
+        {
+            FullTextArabic = "محضر.",
+            SummaryVideoUrl = null,
+        }, admin);
+        Assert.Null(saved.SummaryVideoUrl);
+
+        // A blank string is normalized to null too (cleared, not an empty value).
+        var cleared = await SaveAsync(sessionId, new SaveSessionSummaryRequest
+        {
+            FullTextArabic = "محضر.",
+            SummaryVideoUrl = "   ",
+        }, admin);
+        Assert.Null(cleared.SummaryVideoUrl);
+    }
+
     [Fact]
     public async Task Publishing_a_session_with_no_summary_is_404()
     {
