@@ -153,8 +153,8 @@ public sealed class SpeakersPageTests : WebComponentTestBase
         string? countryEn = null, string? countryAr = null,
         Guid? id = null, bool hasPhotoAsset = false) =>
         new(id ?? Guid.NewGuid(), name, nameArabic, rank,
-            CountryId: null, countryEn, countryAr,
-            PhotoRelativePath: null, DisplayOrder: 0, hasPhotoAsset);
+            RankArabic: null, CountryId: null, CountryNameEn: countryEn, CountryNameAr: countryAr,
+            PhotoRelativePath: null, DisplayOrder: 0, HasPhotoAsset: hasPhotoAsset);
 
     // The page makes exactly one anonymous GET (speakers); route every request to
     // the canned envelope, serialising with the web defaults SimfPublicClient reads.
