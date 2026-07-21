@@ -133,13 +133,7 @@ class _AiSummaryScreenState extends ConsumerState<AiSummaryScreen> {
     }
     final day = selected.startLocal;
     final rows = all
-        .where(
-          (s) =>
-              s.id != selected.id &&
-              s.startLocal.year == day.year &&
-              s.startLocal.month == day.month &&
-              s.startLocal.day == day.day,
-        )
+        .where((s) => s.id != selected.id && sameLocalDay(s.startLocal, day))
         .toList()
       ..sort((a, b) => a.startUtc.compareTo(b.startUtc));
     return rows;
@@ -153,9 +147,7 @@ class _AiSummaryScreenState extends ConsumerState<AiSummaryScreen> {
       title: l10n.aiSummaryTitle,
       onBack: () => backOrHome(context),
       body: sessions.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: SimfTokens.accent),
-        ),
+        loading: () => const SimfLoadingState(),
         error: (_, __) => SimfEmptyState(
           icon: Icons.event_busy_outlined,
           message: l10n.aiSummaryNoSessions,

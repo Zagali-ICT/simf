@@ -8,6 +8,7 @@ import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import '../sessions/data/session_lifecycle.dart';
 import '../sessions/widgets/favourite_heart_button.dart';
+import '../sessions/widgets/session_card_meta.dart';
 import '../sessions/widgets/session_filter_tabs.dart';
 import '../sessions/widgets/session_state_chip.dart';
 import 'data/my_sessions_models.dart';
@@ -74,9 +75,7 @@ class _MySessionsScreenState extends ConsumerState<MySessionsScreen> {
           const SizedBox(height: SimfTokens.space3),
           Expanded(
             child: sessions.when(
-              loading: () => const Center(
-                child: CircularProgressIndicator(color: SimfTokens.accent),
-              ),
+              loading: () => const SimfLoadingState(),
               error: (_, __) => SimfPullToRefresh(
                 onRefresh: onRefresh,
                 child: ListView(
@@ -232,7 +231,7 @@ class _MySessionCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: SimfTokens.space2),
-                      _IconLine(icon: Icons.access_time, text: timeText),
+                      SessionIconLine(icon: Icons.access_time, text: timeText),
                     ],
                   ),
                 ),
@@ -248,14 +247,14 @@ class _MySessionCard extends StatelessWidget {
                 children: <Widget>[
                   if (speaker != null)
                     Flexible(
-                      child: _MetaGroup(
+                      child: SessionMetaGroup(
                         icon: Icons.person_outline,
                         text: _speakerText(speaker),
                       ),
                     ),
                   if (hall != null && hall.isNotEmpty)
                     Flexible(
-                      child: _MetaGroup(
+                      child: SessionMetaGroup(
                         icon: Icons.location_on_outlined,
                         text: hall,
                       ),
@@ -276,75 +275,5 @@ class _MySessionCard extends StatelessWidget {
   String _speakerText(String speaker) {
     final title = item.speakerTitle?.trim();
     return title == null || title.isEmpty ? speaker : '$speaker · $title';
-  }
-}
-
-/// The clock·time·category line under the title (Figma 1388:9121): a 12px glyph
-/// + a beige 12px label.
-class _IconLine extends StatelessWidget {
-  const _IconLine({required this.icon, required this.text});
-
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: <Widget>[
-        Icon(icon, size: 12, color: SimfTokens.beigeBorder),
-        const SizedBox(width: SimfTokens.space2),
-        Expanded(
-          child: Text(
-            text,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textSm,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// A speaker / hall meta group (Figma 1388:9127 / 9135): a 24px beige icon box
-/// (navy glyph) leading (right in RTL), then the beige 12px label.
-class _MetaGroup extends StatelessWidget {
-  const _MetaGroup({required this.icon, required this.text});
-
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Container(
-          width: 24,
-          height: 24,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: SimfTokens.beigeBorder,
-            borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-          ),
-          child: Icon(icon, size: 12, color: SimfTokens.navy),
-        ),
-        const SizedBox(width: SimfTokens.space2),
-        Flexible(
-          child: Text(
-            text,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textSm,
-            ),
-          ),
-        ),
-      ],
-    );
   }
 }

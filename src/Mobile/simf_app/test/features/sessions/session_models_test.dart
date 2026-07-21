@@ -207,6 +207,38 @@ void main() {
     });
   });
 
+  group('distinctLocalDays', () {
+    test('groups typed items by local day, ascending, deduped, at midnight', () {
+      final days = distinctLocalDays<DateTime>(
+        <DateTime>[
+          DateTime(2026, 11, 25, 12),
+          DateTime(2026, 11, 23, 12),
+          DateTime(2026, 11, 23, 15), // same local day as the previous
+        ],
+        (d) => d,
+      );
+      expect(days, hasLength(2));
+      expect(days.first.isBefore(days.last), isTrue);
+      expect(days.every((d) => d.hour == 0 && d.minute == 0), isTrue);
+    });
+  });
+
+  group('sameLocalDay', () {
+    test('true for the same calendar day regardless of time / arg order', () {
+      final a = DateTime(2026, 11, 23, 8);
+      final b = DateTime(2026, 11, 23, 22);
+      expect(sameLocalDay(a, b), isTrue);
+      expect(sameLocalDay(b, a), isTrue);
+    });
+
+    test('false across a day boundary', () {
+      expect(
+        sameLocalDay(DateTime(2026, 11, 23, 23), DateTime(2026, 11, 24)),
+        isFalse,
+      );
+    });
+  });
+
   group('SessionListItem.phase', () {
     final item = _session(id: 's', startUtc: DateTime.utc(2026, 11, 24, 9));
     // ends 2026-11-24 10:00.

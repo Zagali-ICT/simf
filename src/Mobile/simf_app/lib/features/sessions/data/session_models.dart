@@ -235,6 +235,13 @@ class SessionListItem {
   /// bottom value (Figma 883:2308) and the summary card's duration (1072:13518).
   DateTime get endLocal => endUtc.toLocal();
 
+  /// The session length in whole minutes, floored at 0 — the summary card's
+  /// duration label (Figma 1072:13518). Mirrors `MyAreaSessionItem.durationMinutes`.
+  int get durationMinutes {
+    final minutes = endUtc.difference(startUtc).inMinutes;
+    return minutes < 0 ? 0 : minutes;
+  }
+
   String localizedTitle(bool isArabic) =>
       _pickRequired(titleArabic, title, isArabic);
 
@@ -509,7 +516,7 @@ List<SessionListItem> filterSessions(
     if (view == SessionsView.upcoming && session.startUtc.isBefore(nowUtc)) {
       return false;
     }
-    if (localDay != null && !_sameLocalDay(session.startLocal, localDay)) {
+    if (localDay != null && !sameLocalDay(session.startLocal, localDay)) {
       return false;
     }
     if (needle.isEmpty) {
@@ -529,18 +536,29 @@ List<SessionListItem> filterSessions(
 /// The distinct device-local calendar days present in [items], ascending — the
 /// data-driven day strip (Page_016: the event's "remaining days"). Each entry is
 /// a midnight-local [DateTime].
-List<DateTime> sessionDays(List<SessionListItem> items) {
+List<DateTime> sessionDays(List<SessionListItem> items) =>
+    distinctLocalDays(items, (session) => session.startLocal);
+
+/// The distinct device-local calendar days spanned by [items], ascending, each a
+/// midnight-local [DateTime]. [localStart] pulls the device-local start out of an
+/// item, so every day-grouped list (sessions, presentations, …) shares one
+/// algorithm instead of re-declaring it.
+List<DateTime> distinctLocalDays<T>(
+  Iterable<T> items,
+  DateTime Function(T) localStart,
+) {
   final byKey = <String, DateTime>{};
-  for (final session in items) {
-    final local = session.startLocal;
+  for (final item in items) {
+    final local = localStart(item);
     final key = '${local.year}-${local.month}-${local.day}';
     byKey.putIfAbsent(key, () => DateTime(local.year, local.month, local.day));
   }
-  final days = byKey.values.toList()..sort();
-  return days;
+  return byKey.values.toList()..sort();
 }
 
-bool _sameLocalDay(DateTime a, DateTime b) =>
+/// Whether [a] and [b] fall on the same device-local calendar day (time-of-day-
+/// and argument-order-independent) — the one home for the day-equality predicate.
+bool sameLocalDay(DateTime a, DateTime b) =>
     a.year == b.year && a.month == b.month && a.day == b.day;
 
 /// Decodes a `speakers[]` array (shared by the list item + the detail). A

@@ -76,10 +76,8 @@ class _SessionSummaryListScreenState
           const SizedBox(height: SimfTokens.space3),
           Expanded(
             child: sessions.when(
-              loading: () => const Center(
-                child: CircularProgressIndicator(color: SimfTokens.accent),
-              ),
-              error: (_, __) => SimfPullToRefresh(
+              loading: () => const SimfLoadingState(),
+              error: (_, __) => SimfRefreshableMessage(
                 onRefresh: _refresh,
                 child: SimfPullableHost(
                   child: SimfErrorState(
@@ -110,18 +108,16 @@ class _SessionSummaryListScreenState
     final isArabic = l10n.isArabic;
     final filtered = _filter(items);
     if (filtered.isEmpty) {
-      return SimfPullToRefresh(
+      return SimfRefreshableMessage(
         onRefresh: _refresh,
-        child: SimfPullableHost(
-          child: SimfEmptyState(
-            icon: Icons.summarize_outlined,
-            message: _emptyMessage(l10n, items.isEmpty),
-          ),
+        child: SimfEmptyState(
+          icon: Icons.summarize_outlined,
+          message: _emptyMessage(l10n, items.isEmpty),
         ),
       );
     }
 
-    final days = _distinctDays(filtered);
+    final days = sessionDays(filtered);
 
     return SimfPullToRefresh(
       onRefresh: _refresh,
@@ -137,7 +133,7 @@ class _SessionSummaryListScreenState
         itemBuilder: (context, dayIndex) {
           final day = days[dayIndex];
           final dayItems = filtered
-              .where((s) => _sameDay(s.startLocal, day))
+              .where((s) => sameLocalDay(s.startLocal, day))
               .toList(growable: false);
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -165,7 +161,7 @@ class _SessionSummaryListScreenState
                     isArabic: isArabic,
                     l10n: l10n,
                     durationLabel: l10n.sessionDurationMinutes(
-                      _durationMinutes(item),
+                      item.durationMinutes,
                     ),
                   ),
                 ),
@@ -232,24 +228,5 @@ class _SessionSummaryListScreenState
         // The programme has sessions but none are summarised yet.
         return l10n.sessionSummariesEmpty;
     }
-  }
-
-  List<DateTime> _distinctDays(List<SessionListItem> items) {
-    final byKey = <String, DateTime>{};
-    for (final s in items) {
-      final local = s.startLocal;
-      final key = '${local.year}-${local.month}-${local.day}';
-      byKey.putIfAbsent(key, () => DateTime(local.year, local.month, local.day));
-    }
-    final days = byKey.values.toList()..sort();
-    return days;
-  }
-
-  bool _sameDay(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
-
-  int _durationMinutes(SessionListItem item) {
-    final minutes = item.endUtc.difference(item.startUtc).inMinutes;
-    return minutes < 0 ? 0 : minutes;
   }
 }

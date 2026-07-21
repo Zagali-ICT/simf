@@ -62,17 +62,13 @@ class _SessionPresentationsScreenState
       title: l10n.sessionPresentationsTitle,
       onBack: () => backOrHome(context),
       body: presentations.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: SimfTokens.accent),
-        ),
-        error: (_, __) => SimfPullToRefresh(
+        loading: () => const SimfLoadingState(),
+        error: (_, __) => SimfRefreshableMessage(
           onRefresh: _refresh,
-          child: SimfPullableHost(
-            child: SimfErrorState(
-              message: l10n.presentationsError,
-              retryLabel: l10n.retryLabel,
-              onRetry: () => ref.invalidate(presentationsProvider),
-            ),
+          child: SimfErrorState(
+            message: l10n.presentationsError,
+            retryLabel: l10n.retryLabel,
+            onRetry: () => ref.invalidate(presentationsProvider),
           ),
         ),
         data: (page) => _Body(
@@ -126,20 +122,18 @@ class _Body extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
-      return SimfPullToRefresh(
+      return SimfRefreshableMessage(
         onRefresh: onRefresh,
-        child: SimfPullableHost(
-          child: SimfEmptyState(
-            icon: Icons.description_outlined,
-            message: l10n.presentationsEmpty,
-          ),
+        child: SimfEmptyState(
+          icon: Icons.description_outlined,
+          message: l10n.presentationsEmpty,
         ),
       );
     }
 
     final isArabic = l10n.isArabic;
     final nowUtc = DateTime.now().toUtc();
-    final days = _distinctDays(items);
+    final days = distinctLocalDays(items, (p) => p.sessionStartLocal);
     final tabLabels = <String>[
       l10n.sessionsTabAll,
       for (var i = 0; i < days.length; i++) l10n.eventDayLabel(i + 1),
@@ -149,7 +143,7 @@ class _Body extends StatelessWidget {
     final visible = activeTab == 0
         ? items
         : items
-            .where((p) => _sameDay(p.sessionStartLocal, days[activeTab - 1]))
+            .where((p) => sameLocalDay(p.sessionStartLocal, days[activeTab - 1]))
             .toList(growable: false);
 
     return Column(
@@ -179,7 +173,7 @@ class _Body extends StatelessWidget {
               itemBuilder: (context, index) {
                 final item = visible[index];
                 final dayIndex =
-                    days.indexWhere((d) => _sameDay(item.sessionStartLocal, d));
+                    days.indexWhere((d) => sameLocalDay(item.sessionStartLocal, d));
                 return _PresentationCard(
                   item: item,
                   isArabic: isArabic,
@@ -198,21 +192,6 @@ class _Body extends StatelessWidget {
       ],
     );
   }
-
-  /// The distinct device-local days present in [items], ascending.
-  List<DateTime> _distinctDays(List<PresentationItem> items) {
-    final byKey = <String, DateTime>{};
-    for (final p in items) {
-      final local = p.sessionStartLocal;
-      final key = '${local.year}-${local.month}-${local.day}';
-      byKey.putIfAbsent(key, () => DateTime(local.year, local.month, local.day));
-    }
-    final days = byKey.values.toList()..sort();
-    return days;
-  }
-
-  bool _sameDay(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
 }
 
 /// One session card — tapping it opens the session detail (17); the gold تحميل
