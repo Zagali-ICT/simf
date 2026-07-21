@@ -50,7 +50,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/others/pending` | [`cp-admin-others-pending.md`](cp-admin-others-pending.md) | E2E-OPN-001..016 |
 | `/admin/visitors` | [`cp-admin-visitors.md`](cp-admin-visitors.md) | E2E-VIS-001..025 |
 | `/admin/visitors/pending` | [`cp-admin-visitors-pending.md`](cp-admin-visitors-pending.md) | E2E-VPN-001..025 |
-| `/admin/visitors/vip` | [`cp-vip-registration.md`](cp-vip-registration.md) | E2E-VIPR-001..007 |
+| `/admin/visitors/vip` | [`cp-vip-registration.md`](cp-vip-registration.md) | E2E-VIPR-001..011 |
 | `/admin/visitors/vip/export` | [`cp-vip-export.md`](cp-vip-export.md) | E2E-VIPX-001..008 |
 | `/admin/delegates` | [`cp-admin-delegates.md`](cp-admin-delegates.md) | E2E-DLG-001..012 |
 | `/admin/attendees` | [`cp-admin-attendees.md`](cp-admin-attendees.md) | E2E-ATT-001..016 |
@@ -62,7 +62,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/regions` | [`cp-admin-regions.md`](cp-admin-regions.md) | E2E-REGION-001..016 |
 | `/admin/contacts` | [`cp-admin-contacts.md`](cp-admin-contacts.md) | E2E-CON-001..020 |
 | `/admin/countries` | [`cp-admin-countries.md`](cp-admin-countries.md) | E2E-CTY-001..020 |
-| `/admin/vips` | [`cp-admin-vips.md`](cp-admin-vips.md) | E2E-VIP-001..019 |
+| `/admin/vips` | [`cp-admin-vips.md`](cp-admin-vips.md) | E2E-VIP-001..013 |
 | `/admin/invitations` | [`cp-admin-invitations.md`](cp-admin-invitations.md) | E2E-INV-001..018 |
 | `/admin/reset-2fa` | [`cp-admin-reset-2fa.md`](cp-admin-reset-2fa.md) | E2E-R2F-001..012 |
 | `/admin/roles` | [`cp-admin-roles.md`](cp-admin-roles.md) | E2E-ROL-001..026 |

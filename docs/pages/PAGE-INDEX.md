@@ -42,7 +42,7 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/others/pending` | ✅ Real | Administrator | [cp/admin-others-pending.md](cp/admin-others-pending.md) | [e2e/cp-admin-others-pending.md](../tests/e2e/cp-admin-others-pending.md) |
 | `/admin/visitors` | ✅ Real | Administrator | [cp/admin-visitors.md](cp/admin-visitors.md) | [e2e/cp-admin-visitors.md](../tests/e2e/cp-admin-visitors.md) |
 | `/admin/visitors/pending` | ✅ Real (D-385/386/387: all-data + tier-on-approve + photo viewer) | Administrator | [cp/admin-visitors-pending.md](cp/admin-visitors-pending.md) | [e2e/cp-admin-visitors-pending.md](../tests/e2e/cp-admin-visitors-pending.md) |
-| `/admin/visitors/vip` | ✅ Real (D-429: VVIP/VIP registration + Mawj fields + VIP photo; creates pending) | Administrator | [cp/vip-registration.md](cp/vip-registration.md) | [e2e/cp-vip-registration.md](../tests/e2e/cp-vip-registration.md) |
+| `/admin/visitors/vip` | ✅ Real (VIP/VVIP list — copy of the visitor page: grid + **New VIP** registration wizard (D-429 Mawj fields + VIP photo) + per-row **Edit** name/email/tier/photo/ID/welcome-photo via shared EditAccountForm) | Administrator | [cp/vip-registration.md](cp/vip-registration.md) | [e2e/cp-vip-registration.md](../tests/e2e/cp-vip-registration.md) |
 | `/admin/visitors/vip/export` | ✅ Real (D-429: VVIP/VIP welcome roster — JSON API + CSV + Excel for Mawj) | Administrator | [cp/vip-export.md](cp/vip-export.md) | [e2e/cp-vip-export.md](../tests/e2e/cp-vip-export.md) |
 | `/admin/delegates` | ✅ Real (D-473 #10: delegate = visitor + IsDelegate + invited country; single add + bulk-generate badges) | Administrator | _(see e2e)_ | [e2e/cp-admin-delegates.md](../tests/e2e/cp-admin-delegates.md) |
 | `/admin/attendees` | ✅ Real | Administrator | [cp/admin-attendees.md](cp/admin-attendees.md) | [e2e/cp-admin-attendees.md](../tests/e2e/cp-admin-attendees.md) |
@@ -54,7 +54,7 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/regions` | ✅ Real (D-547) | Administrator  | [cp/admin-regions.md](cp/admin-regions.md) | [e2e/cp-admin-regions.md](../tests/e2e/cp-admin-regions.md) |
 | `/admin/contacts` | ✅ Real (D-281) | Administrator  | [cp/admin-contacts.md](cp/admin-contacts.md) | [e2e/cp-admin-contacts.md](../tests/e2e/cp-admin-contacts.md) |
 | `/admin/countries` | ✅ Real | Administrator  | [cp/admin-countries.md](cp/admin-countries.md) | [e2e/cp-admin-countries.md](../tests/e2e/cp-admin-countries.md) |
-| `/admin/vips` | ✅ Real (bulk-notify + New VIP nav + row Edit: name/email/tier/photo/ID/welcome-photo via shared EditAccountForm) | Administrator  | [cp/admin-vips.md](cp/admin-vips.md) | [e2e/cp-admin-vips.md](../tests/e2e/cp-admin-vips.md) |
+| `/admin/vips` | ✅ Real | Administrator  | [cp/admin-vips.md](cp/admin-vips.md) | [e2e/cp-admin-vips.md](../tests/e2e/cp-admin-vips.md) |
 | `/admin/invitations` | ✅ Real | Administrator | [cp/admin-invitations.md](cp/admin-invitations.md) | [e2e/cp-admin-invitations.md](../tests/e2e/cp-admin-invitations.md) |
 | `/admin/reset-2fa` | ✅ Real | Administrator | [cp/admin-reset-2fa.md](cp/admin-reset-2fa.md) | [e2e/cp-admin-reset-2fa.md](../tests/e2e/cp-admin-reset-2fa.md) |
 | `/admin/roles` | ✅ Real | Administrator | [cp/admin-roles.md](cp/admin-roles.md) | [e2e/cp-admin-roles.md](../tests/e2e/cp-admin-roles.md) |

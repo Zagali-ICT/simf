@@ -56,7 +56,7 @@ GO
 PRINT '=== SIMF_App 2026 content seed — running on [' + DB_NAME() + '] ===';
 GO
 
-PRINT '--- [1/9] Programme  (hall - days - sessions) ---';
+PRINT '--- [1/9] Programme  (hall - themes - days - sessions) ---';
 GO
 :r $(MigrationDir)\SIMF_App_Programme.sql
 GO

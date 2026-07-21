@@ -1,7 +1,5 @@
 using System.Globalization;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
@@ -22,10 +20,6 @@ public partial class VipsList
 {
     [Inject] private IStringLocalizer<Strings> L { get; set; } = default!;
     [Inject] private IJSRuntime JS { get; set; } = default!;
-    [Inject] private NavigationManager Nav { get; set; } = default!;
-    [Inject] private IAuthorizationService Authz { get; set; } = default!;
-
-    [CascadingParameter] private Task<AuthenticationState> AuthState { get; set; } = default!;
 
     private record Toast(string Variant, string Message);
 
@@ -43,27 +37,7 @@ public partial class VipsList
     private string _msgBody = string.Empty;
     private string _msgBodyArabic = string.Empty;
 
-    // UX gates — the "New VIP" and per-row "Edit" affordances only show for admins
-    // who actually hold the underlying visitor permissions (the API enforces the
-    // same policies). The VIP page itself is Vips.View, which is a lower bar.
-    private bool _canRegister;
-    private bool _canEdit;
-
-    // Edit state — the row Edit opens a modal hosting the shared EditAccountForm
-    // keyed by the account id (AdminVipSummary.UserId), scope "visitors" (VIP is a
-    // visitor tier), with the VIP welcome photo field shown.
-    private bool _editOpen;
-    private Guid _editUserId;
-
-    protected override async Task OnInitializedAsync()
-    {
-        var user = (await AuthState).User;
-        _canRegister = (await Authz.AuthorizeAsync(
-            user, PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.RegisterOnsite))).Succeeded;
-        _canEdit = (await Authz.AuthorizeAsync(
-            user, PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.Edit))).Succeeded;
-        await LoadAsync();
-    }
+    protected override async Task OnInitializedAsync() => await LoadAsync();
 
     private async Task LoadAsync()
     {
@@ -119,25 +93,6 @@ public partial class VipsList
 
     private string FormatPage(int current, int total) =>
         string.Format(L["Grid.Page"], current, total);
-
-    // "New VIP" — reuse the dedicated VVIP/VIP registration page (the picker is
-    // restricted to VVIP/VIP there and it captures the موج welcome photo).
-    private void OnAddVip() => Nav.NavigateTo("/admin/visitors/vip");
-
-    // Row Edit — open the shared account edit form for this VIP (change name,
-    // email, tier, photo, ID, and the VIP welcome photo).
-    private void OnEditVip(AdminVipSummary row)
-    {
-        _editUserId = row.UserId;
-        _editOpen = true;
-    }
-
-    private async Task OnEditSavedAsync()
-    {
-        _editOpen = false;
-        _toast = new Toast("success", L["Admin.Vips.Edit.Saved"]);
-        await LoadAsync();
-    }
 
     private void OnNotifySelected()
     {

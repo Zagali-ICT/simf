@@ -101,7 +101,7 @@ The 9 content seeds (run in this order):
 
 | File | Seeds | Decision |
 |------|-------|----------|
-| `SIMF_App_Programme.sql` | Main hall · 3 programme days (20-22 Nov 2026) · 5 placeholder sessions | D-747 (was `DefaultContentSeeder`, D-681) |
+| `SIMF_App_Programme.sql` | Main hall · 5 themes (axes) · 3 programme days (23-25 Nov 2026) · 59 real run-of-show sessions + session↔theme links (soft-deletes the old placeholder days/sessions) | D-747 (was `DefaultContentSeeder`, D-681); real 2026 deck |
 | `SIMF_App_News.sql` | One "Highlights" news item | D-747 (was `DefaultContentSeeder`, D-681) |
 | `SIMF_App_Sponsors.sql` | 10 sponsors (SAMI Platinum · GAMI/RSNF/GADD Gold · 6 Silver fillers) | D-747 (was `IdentitySeeder`, D-348) |
 | `SIMF_App_MediaPartners.sql` | 3 media partners (external placeholder logos) | D-747 (was `IdentitySeeder`, D-348) |

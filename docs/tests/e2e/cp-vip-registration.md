@@ -9,19 +9,35 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell driver _(or: Playwright when adopted)_ |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via `Get-Totp` helper |
-| **Last reviewed** | 2026-06-15 |
+| **Last reviewed** | 2026-07-21 (VIP edit — page is now the VIP/VVIP list) |
+
+> **What this page is (2026-07-21).** `/admin/visitors/vip` is now a **VIP/VVIP
+> list page** — a copy of the visitor page scoped to the VIP guests (the
+> `/admin/vips/list` subset: `ProfileType.Name` in {VVIP, VIP, Gold}). The grid
+> lists name / job title / profile type / email. The toolbar **New VIP** button
+> (gated by `Visitors.RegisterOnsite`) opens the VVIP/VIP **registration wizard**
+> as a full section (the D-429 flow below); the per-row **Edit** (gated by
+> `Visitors.Edit`) opens the shared `EditAccountForm` with `ShowVipPhoto=true` to
+> change name / email / tier / profile photo / ID image / VIP welcome photo. It
+> reuses the existing VIP list + account-id-keyed admin endpoints — no new
+> permission, endpoint, or migration. Grounding:
+> `src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/VipRegistration.razor`.
 
 ## Coverage matrix
 
 | ID | Scenario | Type | Priority | Status |
 |----|----------|------|----------|--------|
-| E2E-VIPR-001 | Golden path — register a VVIP with Mawj data + photo | happy | P0 | _to author_ |
+| E2E-VIPR-001 | Golden path — New VIP → register a VVIP with Mawj data + photo | happy | P0 | _to author_ |
 | E2E-VIPR-002 | Picker restricted to VVIP / VIP only | happy | P0 | _to author_ |
 | E2E-VIPR-003 | Auth gate (no RegisterOnsite permission → /not-permitted) | auth | P0 | _to author_ |
 | E2E-VIPR-004 | Validation — Mawj/honorific over max length | error | P1 | _to author_ |
 | E2E-VIPR-005 | Created account lands PendingApproval, no QR | happy | P0 | _to author_ |
 | E2E-VIPR-006 | Approval reuses the existing pending-visitors queue | happy | P0 | _to author_ |
 | E2E-VIPR-007 | RTL render (Arabic) | i18n | P1 | _to author_ |
+| E2E-VIPR-008 | List shows the VIP/VVIP guests (name / job title / tier / email) | happy | P0 | _to author_ |
+| E2E-VIPR-009 | New VIP opens the registration wizard section; Cancel returns to the list | happy | P1 | _to author_ |
+| E2E-VIPR-010 | Per-row Edit changes name / email / tier / photo / ID / welcome photo | happy | P0 | _to author_ |
+| E2E-VIPR-011 | Add/Edit affordances gated: no `RegisterOnsite`/`Edit` → buttons hidden | auth | P0 | _to author_ |
 
 ## Scenarios
 
@@ -120,4 +136,63 @@ Scenario: Arabic UI renders right-to-left with no overflow
   When I open "/admin/visitors/vip"
   Then the VIP details section labels render in Arabic
   And scrollWidth == clientWidth (no horizontal overflow)
+```
+
+### E2E-VIPR-008 — The list shows the VIP/VVIP guests
+
+```gherkin
+Scenario: The page lists the VIP guests in a grid
+  Given an Administrator holding Visitors.RegisterOnsite is signed in
+  When I open "/admin/visitors/vip"
+  Then POST /account/api/admin/vips/list returns 200
+  And the grid renders columns: Name, Job title, Profile type, Email
+  And every row is a VVIP / VIP guest (the /admin/vips/list subset)
+  And an empty result renders the SimfEmptyState ("No VIPs match the filter.")
+```
+
+### E2E-VIPR-009 — New VIP opens the registration wizard
+
+```gherkin
+Scenario: New VIP toggles the page to the registration wizard, Cancel returns
+  Given I am on "/admin/visitors/vip" with the grid loaded
+  And the toolbar shows a "New VIP" (plus-icon) button
+  When I click "New VIP"
+  Then the grid is replaced by the "Register a VVIP / VIP" section
+  And it hosts the VVIP/VIP registration wizard (picker restricted to VVIP/VIP)
+  When I click Cancel
+  Then the grid is shown again with no account created
+  # Completing the wizard (E2E-VIPR-001) shows the "VIP registered." toast and reloads the grid.
+```
+
+### E2E-VIPR-010 — Per-row Edit changes the VIP's data
+
+```gherkin
+Scenario: Edit a VIP's name / tier / photo / ID from the list
+  Given an Administrator holding Visitors.Edit is on "/admin/visitors/vip"
+  And a VIP row "HRH Faisal" is listed
+  When I click the row Edit (pencil) icon
+  Then an "Edit VIP" modal opens hosting EditAccountForm (Scope=visitors, ShowVipPhoto=true)
+  And it is pre-filled with the VIP's email, display name and current tier
+  And a "Photo & ID" section shows Profile photo, ID document and VIP welcome photo inputs
+  When I change the Display name and the Profile type (e.g. VIP → VVIP)
+  And I pick a new PNG (< 2 MB) for "Profile photo"
+  And I click Save
+  Then PUT /account/api/admin/visitors/{UserId} fires first (email + name + tier)
+  And then POST /account/api/admin/visitors/{UserId}/avatar returns 200
+  And the modal closes with the "VIP updated." toast and the grid reloads
+  # An ID image with no human face returns 400 VISITOR_ID_IMAGE_NO_FACE and the modal stays open.
+```
+
+### E2E-VIPR-011 — Add/Edit affordances are permission-gated
+
+```gherkin
+Scenario: An admin lacking the visitor permissions sees no New VIP or Edit
+  Given a signed-in admin who can reach the page but holds neither
+        Visitors.RegisterOnsite nor Visitors.Edit
+  When I open "/admin/visitors/vip"
+  Then the grid loads normally
+  And the toolbar does NOT show the "New VIP" button
+  And the rows do NOT show a per-row Edit (pencil) icon
+  # SimfDataGrid renders Add/Edit only when the callback HasDelegate; the page
+  # wires them only when Authz.AuthorizeAsync succeeds for the respective policy.
 ```
