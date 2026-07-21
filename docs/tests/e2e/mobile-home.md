@@ -135,8 +135,8 @@ Scenario: A guest sees the KSA guest home without bootstrapping
 Scenario: A signed-in visitor gets the greeting home (frame 758:1134)
   Given a signed-in user whose cached appRole is "Visitor"
   When Home renders
-  Then the greeting header shows the avatar, "صباح الخير/مساء الخير", the
-       user's name, the bell (with the unread badge), the language + inert
+  Then the greeting header shows the avatar, the static "مرحبًا" welcome, the
+       user's first name, the bell (with the unread badge), the language + inert
        dark-mode controls and the menu
   And the discover hero banner and the red LIVE banner render
   And three bordered section bars render — عن الملتقى, الرعاة, الأخبار والتغطية
@@ -225,11 +225,11 @@ Feature: Signed-in greeting (frame 758:1134)
   I want to be greeted by my name
   So that the home feels personal — and my email is never shown as a name
 
-Scenario: Profile name wins over the auth display name
+Scenario: Profile name wins over the auth display name (first name only)
   Given a signed-in visitor whose App profile name is "مهند زقالي محمد"
   And GET /app/account/dashboard returns that identity
   When the signed-in Home loads
-  Then the greeting reads "<time-of-day> مهند زقالي محمد 👋"
+  Then the greeting reads "مرحبًا مهند 👋" (the static welcome + first name only, owner 2026-07-21)
   And the auth session display name is NOT shown
 
 Scenario: The email is never rendered as the name

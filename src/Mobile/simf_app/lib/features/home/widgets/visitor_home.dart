@@ -28,7 +28,6 @@ class VisitorHome extends StatelessWidget {
     this.highlights = const <NewsListItem>[],
     this.isExhibitor = false,
     this.isVip = false,
-    this.now,
     super.key,
   });
 
@@ -45,15 +44,11 @@ class VisitorHome extends StatelessWidget {
   /// shown only to VIP guests; non-VIP don't see it (they can't reach the page).
   final bool isVip;
 
-  /// The clock for the greeting word; defaults to live. Injected by the golden
-  /// so its greeting is deterministic.
-  final DateTime? now;
-
   @override
   Widget build(BuildContext context) {
     return SimfPageShell(
       tab: SimfTab.home,
-      header: GreetingHeader(l10n: l10n, name: name, now: now),
+      header: GreetingHeader(l10n: l10n, name: name),
       body: ListView(
         padding: const EdgeInsets.all(SimfTokens.space4),
         children: <Widget>[

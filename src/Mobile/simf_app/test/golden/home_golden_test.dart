@@ -20,9 +20,9 @@ import 'golden_fonts.dart';
 /// and the guest Home (`GuestHome`, **758:2910**). Compare to the frames:
 ///   flutter test --update-goldens test/golden/home_golden_test.dart
 ///
-/// The greeting word is time-of-day dependent, so the golden injects a fixed
-/// **09:00** `now` → a stable "صباح الخير". The highlights carousel's
-/// auto-advance timer means the render must `pump`, never `pumpAndSettle`.
+/// The greeting is a static "مرحبًا" + first name (owner 2026-07-21), so no
+/// clock is injected. The highlights carousel's auto-advance timer means the
+/// render must `pump`, never `pumpAndSettle`.
 
 // The news-image URL base (VisitorHome takes it as a plain param — the network
 // images fall back in tests, no HTTP).
@@ -111,8 +111,6 @@ void main() {
             // VIP so the "اللقاءات الثنائية" tile renders (matches the Figma home
             // 758:1134, which shows it) — D-745.
             isVip: true,
-            // Fixed morning clock → deterministic "صباح الخير".
-            now: DateTime(2026, 6, 20, 9),
           ),
         ),
       ),

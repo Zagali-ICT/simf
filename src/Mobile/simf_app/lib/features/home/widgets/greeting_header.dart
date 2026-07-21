@@ -5,7 +5,6 @@ import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_app_shell.dart' show SimfShellScope, tabIndex;
 import '../../../app/widgets/simf_bottom_nav.dart' show SimfTab;
 import '../../../app/widgets/simf_page_shell.dart';
-import '../home_greeting.dart';
 
 /// The greeting header (frame node 203:1238): avatar + greeting + name at the
 /// inline start; the bell (with the unread badge) and the menu at the end.
@@ -13,22 +12,19 @@ class GreetingHeader extends StatelessWidget {
   const GreetingHeader({
     required this.l10n,
     required this.name,
-    this.now,
     super.key,
   });
 
   final AppL10n l10n;
   final String name;
 
-  /// The clock used for the time-of-day greeting word; defaults to the live
-  /// `DateTime.now()`. Injected only so the golden renders a fixed greeting.
-  final DateTime? now;
-
   @override
   Widget build(BuildContext context) {
-    // Name-less while the profile loads (or for a name-less account) → just the
-    // wave, never a stray leading space.
-    final nameLine = name.isEmpty ? '👋' : '$name 👋';
+    // First name only (owner 2026-07-21) — the greeting shows just the given
+    // name, not the full multi-part name. Name-less while the profile loads (or
+    // for a name-less account) → just the wave, never a stray leading space.
+    final firstName = name.trim().split(' ').first;
+    final nameLine = firstName.isEmpty ? '👋' : '$firstName 👋';
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: SimfTokens.space4,
@@ -61,7 +57,7 @@ class GreetingHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  homeGreeting(l10n, now ?? DateTime.now()),
+                  l10n.greetingWelcome,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: SimfTokens.textMd,

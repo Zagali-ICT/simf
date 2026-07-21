@@ -398,7 +398,8 @@ void main() {
       // VIP so the "اللقاءات الثنائية" tile is in the section list (D-745).
       await _pump(tester, controller: _SignedInController(), isVip: true);
 
-      expect(find.textContaining('Ahmed Mohammed'), findsOneWidget);
+      // First name only in the greeting (owner 2026-07-21).
+      expect(find.textContaining('Ahmed'), findsOneWidget);
       expect(find.byTooltip('Notifications'), findsOneWidget);
       expect(find.text('LIVE'), findsOneWidget);
       // "عن الملتقى" is now a bordered nav row (SimfLinkRow), not a text header.
@@ -437,12 +438,19 @@ void main() {
       expect(find.text('Home • Guest'), findsNothing);
     });
 
-    testWidgets('greeting follows the time of day', (tester) async {
+    testWidgets('greeting shows the static welcome word, not the time of day',
+        (tester) async {
       await _pump(tester, controller: _SignedInController());
       final l10n = AppL10n.of(
-        tester.element(find.textContaining('Ahmed Mohammed')),
+        tester.element(find.textContaining('Ahmed')),
       );
 
+      // Owner 2026-07-21 — the greeting is a time-independent "مرحبًا"/"Welcome"
+      // shown above the first name; the morning/evening word is gone.
+      expect(find.text(l10n.greetingWelcome), findsOneWidget);
+      expect(find.text(l10n.greetingMorning), findsNothing);
+      expect(find.text(l10n.greetingEvening), findsNothing);
+      // The homeGreeting() helper is retained and still maps hours correctly.
       expect(homeGreeting(l10n, DateTime(2026, 1, 1, 9)), 'Good morning');
       expect(homeGreeting(l10n, DateTime(2026, 1, 1, 15)), 'Good evening');
     });
@@ -454,8 +462,9 @@ void main() {
         controller: _SignedInController(),
         profile: _dashboard(nameEn: 'Mohaned Zagali'),
       );
-      // The App-profile name wins over the auth session display name.
-      expect(find.textContaining('Mohaned Zagali'), findsOneWidget);
+      // The App-profile name wins over the auth session display name; the
+      // greeting shows the first name only (owner 2026-07-21).
+      expect(find.textContaining('Mohaned'), findsOneWidget);
       expect(find.textContaining('Ahmed Mohammed'), findsNothing);
     });
 
@@ -707,7 +716,7 @@ void main() {
     testWidgets('relative time buckets (homePostTime)', (tester) async {
       await _pump(tester, controller: _SignedInController());
       final l10n = AppL10n.of(
-        tester.element(find.textContaining('Ahmed Mohammed')),
+        tester.element(find.textContaining('Ahmed')),
       );
       final base = DateTime.utc(2026, 1, 1, 12);
       expect(homePostTime(l10n, base, base), 'just now');

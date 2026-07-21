@@ -29,8 +29,9 @@ account sees the guest layout with an awaiting-approval note.
 - **Guest** (758:2910): browse banner, 2×2 public tiles, locked بطاقتي card,
   the open-info FAQ + روح السعودية rows, and the sign-in CTA (or the pending
   note).
-- **Visitor** (758:1134): `GreetingHeader` (avatar → My Area, greeting word,
-  name, bell-with-unread-badge + language/theme/menu cluster), discover hero →
+- **Visitor** (758:1134): `GreetingHeader` (avatar → My Area, the static
+  "مرحبًا" welcome + the user's **first name** only (owner 2026-07-21),
+  bell-with-unread-badge + language/theme/menu cluster), discover hero →
   News, LIVE banner → live, the عن الملتقى bar + 4-up about tiles + اسأل المحاور
   tile, the news tiles, the الميزات الذكية smart tiles, the الرعاة + الأخبار
   bars, the **highlights carousel** (auto-advancing image+title slides — a
@@ -59,8 +60,9 @@ Shared tile/row/section widgets (`SimfNavTile`/`SimfTileRow`/`SimfListRow`/
 `SimfLinkRow`/`SimfSectionHeader`/`SimfAvatar`/`SimfHeaderActions`) already live
 in the shell — **reused, not recreated** (the DRY target was already met).
 `_HomeIcons` and `_DiscoverSaudiRow` became the public shared `HomeIcons` /
-`DiscoverSaudiRow` (used by both guest + visitor). Added a minimal
-production-transparent `now` seam on `GreetingHeader`/`VisitorHome` so the
-golden's greeting word is deterministic. Goldens captured for **both** states
+`DiscoverSaudiRow` (used by both guest + visitor). (The former `now` seam on
+`GreetingHeader`/`VisitorHome`, added for a deterministic time-of-day greeting,
+was removed on 2026-07-21 when the greeting became the static "مرحبًا".) Goldens
+captured for **both** states
 and overlay-verified against 758:1134 / 758:2910. Behaviour byte-identical (29
 tests green).
