@@ -273,6 +273,7 @@ public sealed class PublicSpeakersTests : IClassFixture<SimfApiFactory>
                 DescriptionArabic = "كلمة ترحيبية.",
                 HallId = hallId,
                 StartUtc = startUtc,
+                Type = SessionType.Session,
                 EndUtc = endUtc,
                 Speakers = new List<AdminSessionSpeakerEntry>
                 {

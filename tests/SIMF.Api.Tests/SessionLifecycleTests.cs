@@ -214,6 +214,8 @@ public sealed class SessionLifecycleTests : IClassFixture<SimfApiFactory>
                 Title = "Lifecycle session",
                 TitleArabic = "جلسة دورة الحياة",
                 HallId = hall.Id,
+                // #3 — an Event stays valid under the required-type rule with no speaker.
+                Type = SessionType.Event,
                 // S-7 — default to a past start so the Held lifecycle guard passes;
                 // callers testing the pre-start guard pass an explicit future start.
                 StartUtc = startUtc ?? DateTimeOffset.UtcNow.AddHours(-1),

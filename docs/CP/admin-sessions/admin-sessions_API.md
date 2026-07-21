@@ -100,6 +100,12 @@ route, then maps to `AdminUpdateSessionRequest`.)
 
 `AdminSessionSpeakerEntry` = `{ speakerId, name, nameArabic, displayOrder, role }`.
 
+> **#3 / #4 rules.** `Type` (`SessionType?`, Workshop/Session/Event) is **required**
+> on create and update, and `Speakers` must hold **≥1 entry unless `Type == Event`**.
+> Both are enforced in `AdminSessionService.Create/UpdateAsync` with a no-regression
+> grandfather on update (a pre-existing violating row stays saveable; a compliant one
+> cannot regress). Violations return `SESSION_TYPE_REQUIRED` / `SESSION_SPEAKER_REQUIRED`.
+
 ### `SetSessionStatusRequest` (A6)
 `{ "status": 1 }` — a `SessionStatus` int. The service enforces adjacent moves
 (`Scheduled ↔ Held ↔ Recorded ↔ Published`); an illegal jump is a 400
@@ -119,6 +125,8 @@ route, then maps to `AdminUpdateSessionRequest`.)
 | 400 | `SESSION_INVALID_TIME_WINDOW` | `End ≤ Start` |
 | 400 | `SESSION_HALL_NOT_FOUND` | inactive/unknown hall |
 | 400 | `SESSION_SPEAKER_NOT_FOUND` / `SESSION_THEME_NOT_FOUND` | bad M-to-M link |
+| 400 | `SESSION_TYPE_REQUIRED` | no `Type` on create; or clearing a set type on update (#3, grandfathered) |
+| 400 | `SESSION_SPEAKER_REQUIRED` | a non-Event session with no speaker on create; or dropping the last speaker of a compliant non-Event on update (#4, grandfathered) |
 | 400 | `SESSION_STATUS_TRANSITION_INVALID` | illegal lifecycle move (A6) |
 | 400 | `SESSION_RECORDING_INVALID` | non-video / empty / oversize upload (A7) |
 | 400 | `SESSION_INVALID` | a live URL fails the shared `LiveStreamUrlPolicy` |
@@ -139,12 +147,17 @@ read (scoped to this request only). The content-type is resolved from the file
   (`yyyy-MM-ddTHH:mm:ss'Z'`), Status → enum **name**. Speaker roster + theme set
   are **omitted** (M-to-M).
 - **Import** is **insert-only**; row key = `Code`; required headers
-  `Code, Title, TitleArabic, Hall, StartUtc, EndUtc`. Hall resolves from its code
-  (case-insensitive, active-only); Category from its English name (blank = unset).
-  Per-row `DataValidationException` (bad code/title/time-window/capacity,
-  unresolved Hall, unknown Category) is collected — one bad row never aborts the
-  batch. Upload defence (in `AdminGridImportEndpoint`): ZIP-magic gate → 400
-  "not a valid Excel workbook"; > 5 MB → 413; cap 5000 rows.
+  `Code, Title, TitleArabic, Hall, StartUtc, EndUtc`. An optional **`Speakers`**
+  column holds comma-separated speaker **codes** (resolved case-insensitive,
+  active-only; position sets the display order, role defaults to Speaker) so an
+  imported non-Event row can meet the #4 min-1-speaker rule. Hall resolves from its
+  code (case-insensitive, active-only); Category from its English name (blank =
+  unset). Per-row `DataValidationException` — a blank `Type` (#3), a non-Event row
+  with no speakers or an unknown/duplicate speaker code (#4), plus bad
+  code/title/time-window/capacity, unresolved Hall or unknown Category — is
+  collected; one bad row never aborts the batch. The export still omits the roster.
+  Upload defence (in `AdminGridImportEndpoint`): ZIP-magic gate → 400 "not a valid
+  Excel workbook"; > 5 MB → 413; cap 5000 rows.
 
 ## App reads (the same `Session` data, consumed by App Page 016 / 013)
 

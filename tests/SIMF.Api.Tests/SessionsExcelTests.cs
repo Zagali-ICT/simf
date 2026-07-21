@@ -9,6 +9,8 @@ using SIMF.Common;
 using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Programme;
+using SIMF.Infrastructure.Persistence;
 using Xunit;
 
 using SIMF.Common.Enums;
@@ -166,7 +168,7 @@ public sealed class SessionsExcelTests : IClassFixture<SimfApiFactory>
                 LiveSignLanguageUrl = "https://www.youtube.com/watch?v=aaaaaaaaaaa",
                 LiveCaptions = "Welcome.",
                 LiveCaptionsArabic = "مرحبا.",
-                Type = SessionType.Workshop,
+                Type = SessionType.Event,
                 SeatSelectionModeOverride = SeatSelectionMode.OpenSeating,
             },
             adminToken);
@@ -197,7 +199,7 @@ public sealed class SessionsExcelTests : IClassFixture<SimfApiFactory>
         var descCol = headers.IndexOf("Description") + 1;
         var dataRow = sheet.RowsUsed().Skip(1)
             .First(r => r.Cell(codeCol).GetString() == code);
-        Assert.Equal("Workshop", dataRow.Cell(typeCol).GetString());
+        Assert.Equal("Event", dataRow.Cell(typeCol).GetString());
         Assert.Equal("An opening keynote.", dataRow.Cell(descCol).GetString());
     }
 
@@ -283,6 +285,102 @@ public sealed class SessionsExcelTests : IClassFixture<SimfApiFactory>
         Assert.Equal(SeatSelectionMode.OpenSeating, detail.SeatSelectionModeOverride);
     }
 
+    // #4 — the import reads an optional Speakers column of active speaker codes and
+    // attaches them in listed order (default Speaker role).
+    [Fact]
+    public async Task Import_attaches_the_speakers_column_in_order()
+    {
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var hallCode = await CreateHallAsync(adminToken);
+        var code = UniqueCode();
+        var firstCode = ("SPK" + Guid.NewGuid().ToString("N"))[..9].ToUpperInvariant();
+        var secondCode = ("SPK" + Guid.NewGuid().ToString("N"))[..9].ToUpperInvariant();
+        var firstId = await SeedSpeakerAsync(firstCode);
+        var secondId = await SeedSpeakerAsync(secondCode);
+
+        var workbook = BuildTypedRowWorkbook(
+            code, hallCode, "Session", $"{firstCode}, {secondCode}");
+        var response = await PostFileAuthAsync(
+            "/api/v1/admin/sessions/import", workbook, adminToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AdminGridImportResult>>())!.Data!;
+        Assert.True(result.Created >= 1);
+        Assert.Empty(result.Errors);
+
+        var list = await PostAuthAsync(
+            "/api/v1/admin/sessions/list", new GridQuery { Top = 200 }, adminToken);
+        var page = (await list.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminSessionSummary>>>())!.Data!;
+        var summary = page.Items.Single(item => item.Code == code);
+        var detail = (await (await GetAuthAsync(
+            $"/api/v1/admin/sessions/{summary.Id}", adminToken)).Content
+            .ReadFromJsonAsync<ApiResult<AdminSessionDetail>>())!.Data!;
+        Assert.Equal(2, detail.Speakers.Count);
+        Assert.Equal(firstId, detail.Speakers.Single(s => s.DisplayOrder == 0).SpeakerId);
+        Assert.Equal(secondId, detail.Speakers.Single(s => s.DisplayOrder == 1).SpeakerId);
+    }
+
+    // #4 — a non-Event import row with no Speakers cell is a per-row error.
+    [Fact]
+    public async Task Import_non_event_row_without_speakers_is_a_per_row_error()
+    {
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var hallCode = await CreateHallAsync(adminToken);
+        var code = UniqueCode();
+
+        var workbook = BuildTypedRowWorkbook(code, hallCode, "Session", speakers: null);
+        var response = await PostFileAuthAsync(
+            "/api/v1/admin/sessions/import", workbook, adminToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AdminGridImportResult>>())!.Data!;
+        Assert.Equal(0, result.Created);
+        Assert.Single(result.Errors);
+        Assert.Equal(code, result.Errors[0].Key);
+    }
+
+    // The Speakers column rejects a code that is not an active speaker.
+    [Fact]
+    public async Task Import_unknown_speaker_code_is_a_per_row_error()
+    {
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var hallCode = await CreateHallAsync(adminToken);
+        var code = UniqueCode();
+
+        var workbook = BuildTypedRowWorkbook(code, hallCode, "Session", "NO-SUCH-SPK");
+        var response = await PostFileAuthAsync(
+            "/api/v1/admin/sessions/import", workbook, adminToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AdminGridImportResult>>())!.Data!;
+        Assert.Equal(0, result.Created);
+        Assert.Single(result.Errors);
+        Assert.Equal(code, result.Errors[0].Key);
+    }
+
+    // #3 — an import row with a blank Type is a per-row error (a speaker is supplied
+    // so the failure isolates the missing type).
+    [Fact]
+    public async Task Import_row_without_a_type_is_a_per_row_error()
+    {
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var hallCode = await CreateHallAsync(adminToken);
+        var code = UniqueCode();
+        var speakerCode = ("SPK" + Guid.NewGuid().ToString("N"))[..9].ToUpperInvariant();
+        await SeedSpeakerAsync(speakerCode);
+
+        var workbook = BuildTypedRowWorkbook(code, hallCode, type: null, speakerCode);
+        var response = await PostFileAuthAsync(
+            "/api/v1/admin/sessions/import", workbook, adminToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AdminGridImportResult>>())!.Data!;
+        Assert.Equal(0, result.Created);
+        Assert.Single(result.Errors);
+        Assert.Equal(code, result.Errors[0].Key);
+    }
+
     // -- Helpers ---------------------------------------------------------------
 
     // A unique session/hall code within the 2–16 char / uppercase rule (the
@@ -303,6 +401,7 @@ public sealed class SessionsExcelTests : IClassFixture<SimfApiFactory>
         sheet.Cell(1, 4).Value = "Hall";
         sheet.Cell(1, 5).Value = "StartUtc";
         sheet.Cell(1, 6).Value = "EndUtc";
+        sheet.Cell(1, 7).Value = "Type";
         for (var i = 0; i < rows.Length; i++)
         {
             sheet.Cell(i + 2, 1).Value = rows[i].Code;
@@ -311,10 +410,62 @@ public sealed class SessionsExcelTests : IClassFixture<SimfApiFactory>
             sheet.Cell(i + 2, 4).Value = rows[i].Hall;
             sheet.Cell(i + 2, 5).Value = rows[i].StartUtc;
             sheet.Cell(i + 2, 6).Value = rows[i].EndUtc;
+            // #3 — every generated row is an Event so the shared builder stays valid
+            // under the required-type rule (an Event needs no speaker).
+            sheet.Cell(i + 2, 7).Value = "Event";
         }
         using var stream = new MemoryStream();
         workbook.SaveAs(stream);
         return stream.ToArray();
+    }
+
+    // Builds a single-row Sessions workbook carrying the Type + Speakers columns so
+    // the #3/#4 import paths can be exercised; a null type/speakers leaves the cell
+    // blank (the header still exists).
+    private static byte[] BuildTypedRowWorkbook(
+        string code, string hallCode, string? type, string? speakers)
+    {
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.Worksheets.Add("Sessions");
+        sheet.Cell(1, 1).Value = "Code";
+        sheet.Cell(1, 2).Value = "Title";
+        sheet.Cell(1, 3).Value = "TitleArabic";
+        sheet.Cell(1, 4).Value = "Hall";
+        sheet.Cell(1, 5).Value = "StartUtc";
+        sheet.Cell(1, 6).Value = "EndUtc";
+        sheet.Cell(1, 7).Value = "Type";
+        sheet.Cell(1, 8).Value = "Speakers";
+        sheet.Cell(2, 1).Value = code;
+        sheet.Cell(2, 2).Value = $"Session {code}";
+        sheet.Cell(2, 3).Value = $"جلسة {code}";
+        sheet.Cell(2, 4).Value = hallCode;
+        sheet.Cell(2, 5).Value = "2026-02-15T09:00:00Z";
+        sheet.Cell(2, 6).Value = "2026-02-15T10:00:00Z";
+        if (type is not null) { sheet.Cell(2, 7).Value = type; }
+        if (speakers is not null) { sheet.Cell(2, 8).Value = speakers; }
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        return stream.ToArray();
+    }
+
+    // Seeds an active speaker with a known code (the import resolves speakers by code).
+    private async Task<Guid> SeedSpeakerAsync(string code)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var speaker = new Speaker
+        {
+            Id = Guid.NewGuid(),
+            Code = code,
+            Name = $"Speaker {code}",
+            NameArabic = $"متحدّث {code}",
+            DisplayOrder = 0,
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        db.Speakers.Add(speaker);
+        await db.SaveChangesAsync();
+        return speaker.Id;
     }
 
     // Creates an active hall and returns its (unique) code so the imported /
@@ -359,6 +510,8 @@ public sealed class SessionsExcelTests : IClassFixture<SimfApiFactory>
                 Title = $"Session {code}",
                 TitleArabic = $"جلسة {code}",
                 HallId = hallId,
+                // #3 — an Event stays valid under the required-type rule with no speaker.
+                Type = SessionType.Event,
                 StartUtc = DateTimeOffset.Parse(
                     "2026-01-30T09:00:00Z", CultureInfo.InvariantCulture)
                     .AddHours(startHourOffset),

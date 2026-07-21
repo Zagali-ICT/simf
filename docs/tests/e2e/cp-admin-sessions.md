@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-07-11 (speakers redesign — `?speakerId` deep-link filter + "filtered by speaker" note) |
+| **Last reviewed** | 2026-07-22 (#3 required session Type + #4 min-1-speaker-unless-Event, grandfathered on edit; Excel-import Speakers column) |
 
 > **Permissions.** The page is gated `@attribute [RequirePermission(PermissionCatalog.Sessions.View)]`
 > (`"Sessions.View"`). CRUD actions sit behind distinct codes:
@@ -76,6 +76,9 @@
 | E2E-SES-041 | Lifecycle guard: mark Recorded/Published with no recording → 400 `SESSION_STATUS_GUARD_FAILED`; upload a recording first → allowed; a reverse (undo) move carries no guard (S-7) | error | P1 | authored ✓ (`SessionLifecycleTests.SetStatusAsync_MarkRecordedWithoutRecording_ReturnsBadRequest` + `.SetStatusAsync_RevertRecordedToHeld_NoGuard` + `SessionRecordingTests.SetStatusAsync_MarkRecordedWithRecording_Succeeds`) |
 | E2E-SES-042 | Session language (bilingual "at a glance" label) round-trips on save; > 64 chars → 400 `SESSION_INVALID` (Website Session-detail, Figma 5991-85840) | happy | P1 | _to author_ |
 | E2E-SES-043 | Key outcomes ("أبرز المخرجات") add / edit / reorder / remove — repeatable bilingual list, renumbered 0..n-1; one-language-only → 400; blank row dropped; remove-all clears (RemoveRange re-sync) | happy | P1 | _to author_ |
+| E2E-SES-044 | Required session Type (#3) — create with no type → 400 `SESSION_TYPE_REQUIRED` + client marker; a legacy untyped row still saves an unrelated edit (grandfathered); clearing a set type → 400 | error | P1 | authored ✓ (`AdminSessionsTests.Create_without_a_type_is_400_SESSION_TYPE_REQUIRED` + `.Update_legacy_untyped_speakerless_row_is_grandfathered` + `.Update_clearing_a_set_type_is_400_SESSION_TYPE_REQUIRED`) |
+| E2E-SES-045 | Min-1 speaker unless Event (#4) — non-Event create with no speaker → 400 `SESSION_SPEAKER_REQUIRED`; an Event saves with none; a legacy speakerless non-Event row still saves (grandfathered); dropping the last speaker of a non-Event → 400 | error | P1 | authored ✓ (`AdminSessionsTests.Create_non_event_with_no_speakers_is_400_SESSION_SPEAKER_REQUIRED` + `.Create_event_with_no_speakers_succeeds` + `.Update_dropping_the_last_speaker_of_a_non_event_is_400`) |
+| E2E-SES-046 | Excel import Speakers column (#3/#4) — a `Speakers` cell of speaker codes attaches the roster in order; a non-Event row with no speakers, an unknown speaker code, or a blank Type each become a per-row error | error | P1 | authored ✓ (`SessionsExcelTests.Import_attaches_the_speakers_column_in_order` + `.Import_non_event_row_without_speakers_is_a_per_row_error` + `.Import_unknown_speaker_code_is_a_per_row_error` + `.Import_row_without_a_type_is_a_per_row_error`) |
 
 ## Scenarios
 
@@ -568,7 +571,8 @@ Scenario: Import sessions from a workbook and see the per-row outcome
   When they click the toolbar "Import" action (the file picker "sessions-import-input", accept=".xlsx", opens)
   And they choose an .xlsx whose "Sessions" sheet has the required headers
       Code | Title | TitleArabic | Hall | StartUtc | EndUtc
-      with two new rows (Hall="AUD-A", valid ISO StartUtc < EndUtc)
+      plus a Type column, with two new rows (Hall="AUD-A", valid ISO StartUtc < EndUtc,
+      Type="Event" — a non-Event row would also need a Speakers cell, see SES-046)
   Then a POST /account/api/admin/sessions/import fires as multipart form data
   And the import-result modal shows "2 created, 0 updated, 0 skipped." (import is insert-only)
   And the grid reloads and a green toast reads the shared Grid.Import.Done text
@@ -857,6 +861,82 @@ Scenario: Removing all outcomes clears them
   Then the update deletes the SessionOutcome rows (RemoveRange re-sync) and the public read returns none
 ```
 
+### E2E-SES-044 — Required session Type (#3)
+
+```gherkin
+Feature: A session must declare its type (Workshop / Session / Event)
+Scenario: Creating a session with no type is rejected
+  Given the Add form is open with a valid Code, Title, Hall, Start and End
+  And the Type select shows a required marker ("Type *") with a "— No type —" placeholder
+  When they leave Type unselected and click "Create session"
+  Then a bilingual SimfAlert reads "A session type is required (Workshop, Session or Event)."
+      / "نوع الجلسة مطلوب (ورشة عمل أو جلسة أو حدث)." and no POST fires (client guard)
+  And were it to reach the API it would 400 with code "SESSION_TYPE_REQUIRED"
+
+Scenario: A legacy untyped session still saves an unrelated edit (grandfathered)
+  Given a session that predates the rule has Type = null (seeded straight to the DB)
+  When the administrator edits only its Title and saves (leaving Type unselected)
+  Then the PUT returns 200 — a pre-existing untyped row is not forced to acquire a type
+
+Scenario: Clearing a type that was set is rejected (no-regression)
+  Given a session that already has Type = Event
+  When a PUT arrives with Type = null (the type cleared)
+  Then the API returns 400 with code "SESSION_TYPE_REQUIRED"
+```
+
+### E2E-SES-045 — Min-1 speaker unless Event (#4)
+
+```gherkin
+Feature: A non-Event session needs at least one speaker; an Event may have none
+Scenario: A Workshop/Session with no speaker is rejected
+  Given the Add form is open with Type = "Session" and an empty speaker roster
+  When they click "Create session"
+  Then a bilingual SimfAlert reads "A non-event session must have at least one speaker."
+      / "يجب أن يكون للجلسة (غير الحدث) متحدّث واحد على الأقل." and no POST fires (client guard)
+  And were it to reach the API it would 400 with code "SESSION_SPEAKER_REQUIRED"
+
+Scenario: An Event saves with no speaker
+  Given the Add form is open with Type = "Event" and no speakers
+  When they click "Create session"
+  Then the API returns 200 (an opening ceremony etc. legitimately has no speaker)
+
+Scenario: A legacy speakerless non-Event session still saves (grandfathered)
+  Given a Session that predates the rule has no speakers (seeded straight to the DB)
+  When the administrator edits only its Title and saves
+  Then the PUT returns 200 — a pre-existing speakerless row is not forced to gain one
+
+Scenario: Dropping the last speaker of a non-Event is rejected (no-regression)
+  Given a Session that currently has one speaker
+  When the administrator removes it and saves (Type still "Session")
+  Then the API returns 400 with code "SESSION_SPEAKER_REQUIRED"
+```
+
+### E2E-SES-046 — Excel import Speakers column (#3/#4)
+
+```gherkin
+Feature: The Sessions import reads an optional Speakers column and enforces the type/speaker rules
+Scenario: A Speakers cell of codes attaches the roster in order
+  Given two active speakers with codes "SPK-A" and "SPK-B" exist
+  When they import a workbook whose row has Type="Session" and Speakers="SPK-A, SPK-B"
+  Then the row is created and the session's roster is [SPK-A (order 0), SPK-B (order 1)]
+      (position sets the display order; every entry takes the default Speaker role)
+
+Scenario: A non-Event row with no speakers is a per-row error
+  Given an import row with Type="Session" and a blank Speakers cell
+  Then that row errors per-row ("A non-event session must have at least one speaker.")
+      and any valid rows still import
+
+Scenario: An unknown speaker code is a per-row error
+  Given an import row with Speakers="NO-SUCH-SPK"
+  Then that row errors per-row ("No active speaker with code 'NO-SUCH-SPK' was found.")
+
+Scenario: A blank Type is a per-row error
+  Given an import row with a blank Type cell (even with a valid speaker)
+  Then that row errors per-row ("A session type is required (Workshop, Session or Event).")
+# The export still omits the Speakers column; the import is insert-only, so there is
+# no export→import round-trip for the roster.
+```
+
 ---
 
 ## Implementation notes
@@ -866,7 +946,9 @@ Scenario: Removing all outcomes clears them
   retired as E2E coverage lands:
   - `tests/SIMF.Api.Tests/AdminSessionsTests.cs` — CRUD, duplicate-code (409),
     time-window (400), hall-not-found (400), speaker/theme link validation,
-    live-URL validation (D-349 — YouTube/HLS accepted, other → 400 SESSION_INVALID).
+    live-URL validation (D-349 — YouTube/HLS accepted, other → 400 SESSION_INVALID),
+    plus the #3 required-type (400 SESSION_TYPE_REQUIRED) and #4 min-1-speaker-unless-Event
+    (400 SESSION_SPEAKER_REQUIRED) rules with no-regression grandfathering on edit.
   - `tests/SIMF.Api.Tests/SessionLifecycleTests.cs` — the `Scheduled → Held →
     Recorded → Published` transition matrix + the `SESSION_STATUS_TRANSITION_INVALID`
     rejections (P3.2a / D-231).
@@ -881,7 +963,10 @@ Scenario: Removing all outcomes clears them
     `Sessions.Export` / `Sessions.Import` permission gates and the
     ZIP-magic / 5 MB / 5000-row upload defence), plus the D-506 round-trip of the
     eight previously-dropped fields (`Export_includes_the_dropped_round_trip_columns`
-    + `Import_round_trips_the_dropped_fields`).
+    + `Import_round_trips_the_dropped_fields`), and the #3/#4 rules at the import
+    boundary — the optional Speakers column resolved by speaker code
+    (`Import_attaches_the_speakers_column_in_order`) plus the required-type and
+    min-1-speaker per-row errors.
 - **Manual smoke is canonical today.** Until Playwright is adopted, run these
   scenarios as a Chrome DevTools MCP session: sign in per the Auth setup, walk
   each scenario, and capture screenshots into `docs/screenshots/cp-admin-sessions-*.png`.
@@ -896,3 +981,5 @@ Scenario: Removing all outcomes clears them
 ---
 
 _Last reviewed:_ 2026-07-11 by Claude (on-site ops — booking guards on delete/edit + capacity (S-1), same-hall time-overlap guard (S-2), lifecycle clock + recording guards (S-7): SES-033..041).
+
+_Last reviewed:_ 2026-07-22 by Claude (#3 required session Type + #4 min-1-speaker-unless-Event with no-regression grandfathering on edit, and the Excel-import Speakers column: SES-044..046).

@@ -1705,6 +1705,8 @@
   <data name="Admin.Sessions.Field.Hall" xml:space="preserve"><value>القاعة</value></data>
   <data name="Admin.Sessions.Field.HallPlaceholder" xml:space="preserve"><value>— اختر القاعة —</value></data>
   <data name="Admin.Sessions.Field.HallRequired" xml:space="preserve"><value>القاعة مطلوبة.</value></data>
+  <data name="Admin.Sessions.Field.TypeRequired" xml:space="preserve"><value>نوع الجلسة مطلوب (ورشة عمل أو جلسة أو حدث).</value></data>
+  <data name="Admin.Sessions.Field.SpeakerRequired" xml:space="preserve"><value>يجب أن يكون للجلسة (غير الحدث) متحدّث واحد على الأقل.</value></data>
   <data name="Admin.Sessions.Field.StartUtc" xml:space="preserve"><value>البدء (UTC)</value></data>
   <data name="Admin.Sessions.Field.EndUtc" xml:space="preserve"><value>الانتهاء (UTC)</value></data>
   <data name="Admin.Sessions.Field.TimeInvalid" xml:space="preserve"><value>يجب أن تكون أوقات البدء والانتهاء بصيغة UTC صحيحة.</value></data>

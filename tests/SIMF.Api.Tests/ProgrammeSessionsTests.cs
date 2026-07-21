@@ -250,6 +250,7 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
                 Description = "A multi-speaker panel.",
                 DescriptionArabic = "جلسة بعدة متحدثين.",
                 HallId = hallId,
+                Type = SessionType.Session,
                 StartUtc = start,
                 EndUtc = start.AddHours(1),
                 Speakers = new List<AdminSessionSpeakerEntry>
@@ -515,6 +516,7 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
                 DescriptionArabic = "كلمة ترحيبية.",
                 HallId = hallId,
                 StartUtc = startUtc,
+                Type = SessionType.Session,
                 EndUtc = endUtc,
                 CapacityOverride = capacityOverride,
                 Speakers = new List<AdminSessionSpeakerEntry>

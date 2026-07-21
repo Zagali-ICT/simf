@@ -129,11 +129,12 @@ First / Prev / numbered / Next / Last; default `Top = 20`; summary
 | Live sign-language URL | text | no | 1024 | same policy |
 | Hall | select | yes | — | must parse to a Guid; loaded from `…/halls/list` (Top=500, active) |
 | Category | select | no | — | optional; loaded from `…/session-categories/list` |
+| Type | select | yes* | — | Workshop / Session / Event — **required** on create (#3); *grandfathered: a legacy untyped row may stay untyped on edit, but a set type can't be cleared |
 | Start (UTC) | datetime-local | yes | — | parses; treated as UTC |
 | End (UTC) | datetime-local | yes | — | parses; must be `> Start` |
 | Capacity override | number | no | — | blank = inherit hall; else integer ≥ 0 |
 | Seat selection (override) | select | no | — | blank = inherit the hall; else Assigned seat / Open seating (general admission) — D-485 |
-| Add speaker | select | no | — | builds a reorderable roster with per-speaker role (Speaker/Host) |
+| Add speaker | select | yes* | — | reorderable roster with per-speaker role (Speaker/Host); **≥1 required unless Type = Event** (#4); *grandfathered on edit |
 | Add theme | select | no | — | multi-pick theme chips |
 | Active | checkbox | (Edit only) | — | shows in the public agenda |
 
@@ -175,7 +176,10 @@ The Add/Edit form also lazy-loads its pickers on first render:
 - **Client-side guards** (`SessionsAddEdit.HandleSubmitAsync`): Code 2–16, Title
   1–256, Title (Arabic) 1–256, a parseable Hall Guid, parseable Start/End with
   `End > Start`, non-negative integer capacity, and each non-blank live URL
-  passing `LiveStreamUrlPolicy.IsAllowed`. A failed guard sets `_error` (a
+  passing `LiveStreamUrlPolicy.IsAllowed`. It also enforces the **required Type**
+  (#3) and the **≥1-speaker-unless-Event** rule (#4), each mirroring the API with
+  the same no-regression grandfather via `Initial` (a legacy violating row stays
+  saveable; a compliant one cannot be regressed). A failed guard sets `_error` (a
   `SimfAlert`) and **no** request fires.
 - **Server-side:** `IAdminSessionService` (CreateAsync/UpdateAsync/SetStatusAsync).
   Relevant `ErrorCodes`:
@@ -186,17 +190,25 @@ The Add/Edit form also lazy-loads its pickers on first render:
   - `SESSION_SPEAKER_NOT_FOUND` / `SESSION_THEME_NOT_FOUND` (400) — bad M-to-M link.
   - `SESSION_STATUS_TRANSITION_INVALID` (400) — illegal lifecycle move.
   - `SESSION_RECORDING_INVALID` (400) — non-video upload.
+  - `SESSION_TYPE_REQUIRED` (400, #3) — no type on create; or clearing a set type on edit.
+  - `SESSION_SPEAKER_REQUIRED` (400, #4) — a non-Event session with no speaker on create; or dropping the last speaker of a compliant non-Event on edit.
   - `SESSION_INVALID` (400) — live URL fails the shared `LiveStreamUrlPolicy`.
 - **Excel import** (`ImportSessionsEndpoint` over `AdminGridImportEndpoint`):
   insert-only, dedup/row key = **Code**. Required headers: Code, Title,
-  TitleArabic, Hall, StartUtc, EndUtc. Per-row `DataValidationException` (bad
-  code/title/time-window/capacity, unresolved Hall code, unknown Category) is
-  collected into the result's error list — one bad row never aborts the batch.
-  Hall resolves from its **code** (case-insensitive, active-only); Category from
-  its English **name** (blank = unset). Upload defence: ZIP-magic gate → 400
-  "The file is not a valid Excel workbook."; >5 MB → 413; cap 5000 rows; a
-  missing/mis-named "Sessions" sheet or missing required header is rejected at
-  parse.
+  TitleArabic, Hall, StartUtc, EndUtc. An optional **Speakers** column holds
+  comma-separated speaker **codes** (resolved case-insensitive, active-only;
+  position sets the display order, role defaults to Speaker) so an imported
+  non-Event row can meet the #4 min-1-speaker rule. Because the create rules run
+  per row, a **blank Type** (#3), a non-Event row with **no speakers** or an
+  **unknown/duplicate speaker code** (#4), plus the existing bad
+  code/title/time-window/capacity, unresolved Hall code or unknown Category all
+  raise a per-row `DataValidationException` collected into the result's error
+  list — one bad row never aborts the batch. Hall resolves from its **code**
+  (case-insensitive, active-only); Category from its English **name** (blank =
+  unset); the **export still omits the roster** (insert-only import ⇒ no
+  round-trip). Upload defence: ZIP-magic gate → 400 "The file is not a valid Excel
+  workbook."; >5 MB → 413; cap 5000 rows; a missing/mis-named "Sessions" sheet or
+  missing required header is rejected at parse.
 - **Toast strategy:** success toasts `Admin.Sessions.Created` /
   `Admin.Sessions.Updated` / `Admin.Sessions.Deactivated` (each `string.Format`
   with the title); import success `Grid.Import.Done`; load failure

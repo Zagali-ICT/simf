@@ -46,6 +46,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Code = code,
                 Title = "Welcome address",
                 TitleArabic = "كلمة افتتاحية",
+                Type = SessionType.Event,
                 HallId = hall.Id,
                 StartUtc = DateTimeOffset.UtcNow.AddHours(1),
                 EndUtc = DateTimeOffset.UtcNow.AddHours(2),
@@ -75,6 +76,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Code = NewCode(),
                 Title = "Cybersecurity panel",
                 TitleArabic = "حلقة الأمن السيبراني",
+                Type = SessionType.Event,
                 HallId = hall.Id,
                 StartUtc = DateTimeOffset.UtcNow.AddHours(3),
                 EndUtc = DateTimeOffset.UtcNow.AddHours(4),
@@ -142,6 +144,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             new AdminCreateSessionRequest
             {
                 Code = code, Title = "A", TitleArabic = "أ",
+                Type = SessionType.Event,
                 HallId = hall.Id,
                 StartUtc = DateTimeOffset.UtcNow.AddHours(1),
                 EndUtc = DateTimeOffset.UtcNow.AddHours(2),
@@ -154,6 +157,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             new AdminCreateSessionRequest
             {
                 Code = code, Title = "B", TitleArabic = "ب",
+                Type = SessionType.Event,
                 HallId = hall.Id,
                 StartUtc = DateTimeOffset.UtcNow.AddHours(3),
                 EndUtc = DateTimeOffset.UtcNow.AddHours(4),
@@ -178,6 +182,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             {
                 Code = NewCode(),
                 Title = "Joint panel", TitleArabic = "حلقة مشتركة",
+                Type = SessionType.Session,
                 HallId = hall.Id,
                 StartUtc = DateTimeOffset.UtcNow.AddHours(1),
                 EndUtc = DateTimeOffset.UtcNow.AddHours(2),
@@ -218,6 +223,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             new AdminCreateSessionRequest
             {
                 Code = NewCode(), Title = "Linked", TitleArabic = "مرتبطة",
+                Type = SessionType.Session,
                 HallId = hall.Id,
                 StartUtc = DateTimeOffset.UtcNow.AddHours(1),
                 EndUtc = DateTimeOffset.UtcNow.AddHours(2),
@@ -236,6 +242,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             new AdminCreateSessionRequest
             {
                 Code = NewCode(), Title = "Other", TitleArabic = "أخرى",
+                Type = SessionType.Event,
                 HallId = hall.Id,
                 StartUtc = DateTimeOffset.UtcNow.AddHours(3),
                 EndUtc = DateTimeOffset.UtcNow.AddHours(4),
@@ -269,6 +276,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             new AdminCreateSessionRequest
             {
                 Code = NewCode(), Title = "Dx", TitleArabic = "د",
+                Type = SessionType.Event,
                 HallId = hall.Id,
                 StartUtc = DateTimeOffset.UtcNow.AddHours(1),
                 EndUtc = DateTimeOffset.UtcNow.AddHours(2),
@@ -318,6 +326,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             new AdminCreateSessionRequest
             {
                 Code = NewCode(), Title = "Live", TitleArabic = "مباشر",
+                Type = SessionType.Event,
                 HallId = hall.Id,
                 StartUtc = DateTimeOffset.UtcNow.AddHours(1),
                 EndUtc = DateTimeOffset.UtcNow.AddHours(2),
@@ -355,6 +364,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             new AdminCreateSessionRequest
             {
                 Code = NewCode(), Title = "Edit me", TitleArabic = "عدّلني",
+                Type = SessionType.Event,
                 HallId = hall.Id,
                 StartUtc = DateTimeOffset.UtcNow.AddHours(1),
                 EndUtc = DateTimeOffset.UtcNow.AddHours(2),
@@ -378,6 +388,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 StartUtc = created.StartUtc,
                 EndUtc = created.EndUtc,
                 IsActive = true,
+                Type = SessionType.Event,
                 LiveStreamUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                 LiveSignLanguageUrl = "https://youtu.be/abc123XYZ_-",
                 LiveCaptions = "Live caption line.",
@@ -407,6 +418,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             new AdminCreateSessionRequest
             {
                 Code = NewCode(), Title = "Override me", TitleArabic = "تجاوزني",
+                Type = SessionType.Event,
                 HallId = hall.Id,
                 StartUtc = DateTimeOffset.UtcNow.AddHours(1),
                 EndUtc = DateTimeOffset.UtcNow.AddHours(2),
@@ -430,6 +442,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 StartUtc = created.StartUtc,
                 EndUtc = created.EndUtc,
                 IsActive = true,
+                Type = SessionType.Event,
                 SeatSelectionModeOverride = null, // inherit the hall
             },
             token);
@@ -447,6 +460,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
         // class as the D-439 live-URL drop). The type must now survive an edit.
         var token = await CreateAdministratorAndSignInAsync();
         var hall = await SeedHallAsync(capacity: 10);
+        var speaker = await SeedSpeakerAsync();
 
         var create = await PostAuthAsync(
             "/api/v1/admin/sessions",
@@ -457,6 +471,11 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 StartUtc = DateTimeOffset.UtcNow.AddHours(1),
                 EndUtc = DateTimeOffset.UtcNow.AddHours(2),
                 Type = SessionType.Workshop,
+                // #4 — a Workshop is not an Event, so it needs a speaker.
+                Speakers = new List<AdminSessionSpeakerEntry>
+                {
+                    new(speaker.Id, speaker.Name, speaker.NameArabic, 0),
+                },
             },
             token);
         Assert.Equal(HttpStatusCode.OK, create.StatusCode);
@@ -476,6 +495,11 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 EndUtc = created.EndUtc,
                 IsActive = true,
                 Type = SessionType.Workshop, // the CP form re-sends the type
+                // #4 — keep the speaker so the non-Event update stays compliant.
+                Speakers = new List<AdminSessionSpeakerEntry>
+                {
+                    new(speaker.Id, speaker.Name, speaker.NameArabic, 0),
+                },
             },
             token);
         Assert.Equal(HttpStatusCode.OK, update.StatusCode);
@@ -495,6 +519,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             new AdminCreateSessionRequest
             {
                 Code = NewCode(), Title = "HLS", TitleArabic = "بث",
+                Type = SessionType.Event,
                 HallId = hall.Id,
                 StartUtc = DateTimeOffset.UtcNow.AddHours(1),
                 EndUtc = DateTimeOffset.UtcNow.AddHours(2),
@@ -775,6 +800,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             {
                 Code = NewCode(),
                 Title = "Expanded room", TitleArabic = "قاعة موسّعة",
+                Type = SessionType.Event,
                 HallId = hall.Id,
                 StartUtc = DateTimeOffset.UtcNow.AddHours(1),
                 EndUtc = DateTimeOffset.UtcNow.AddHours(2),
@@ -806,6 +832,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 EndUtc = created.EndUtc,
                 CapacityOverride = null,
                 IsActive = created.IsActive,
+                Type = SessionType.Event,
             },
             token);
         Assert.Equal(HttpStatusCode.Conflict, update.StatusCode);
@@ -973,6 +1000,184 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, update.StatusCode);
     }
 
+    // -- #3 / #4: required type + min-1-speaker (grandfathered on edit) --------
+
+    [Fact]
+    public async Task Create_without_a_type_is_400_SESSION_TYPE_REQUIRED()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hall = await SeedHallAsync(capacity: 10);
+        var speaker = await SeedSpeakerAsync();
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/sessions",
+            new AdminCreateSessionRequest
+            {
+                Code = NewCode(), Title = "No type", TitleArabic = "بدون نوع",
+                HallId = hall.Id,
+                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
+                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                // Type omitted → null; the speaker rules out the #4 error so this
+                // isolates the #3 (required type) failure.
+                Speakers = new List<AdminSessionSpeakerEntry>
+                {
+                    new(speaker.Id, speaker.Name, speaker.NameArabic, 0),
+                },
+            },
+            token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SessionTypeRequired, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Create_non_event_with_no_speakers_is_400_SESSION_SPEAKER_REQUIRED()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hall = await SeedHallAsync(capacity: 10);
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/sessions",
+            new AdminCreateSessionRequest
+            {
+                Code = NewCode(), Title = "Speakerless", TitleArabic = "بلا متحدّث",
+                HallId = hall.Id,
+                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
+                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                Type = SessionType.Session, // not an Event → needs a speaker
+            },
+            token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SessionSpeakerRequired, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Create_event_with_no_speakers_succeeds()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hall = await SeedHallAsync(capacity: 10);
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/sessions",
+            new AdminCreateSessionRequest
+            {
+                Code = NewCode(), Title = "Opening", TitleArabic = "افتتاح",
+                HallId = hall.Id,
+                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
+                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                Type = SessionType.Event, // an Event may have no speaker
+            },
+            token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    // Grandfather: a legacy row seeded straight to the DB (untyped, no speakers,
+    // predating the rules) stays editable — an unrelated title edit is not blocked
+    // even though the row still violates both rules.
+    [Fact]
+    public async Task Update_legacy_untyped_speakerless_row_is_grandfathered()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hall = await SeedHallAsync(capacity: 10);
+        var legacy = await SeedLegacySessionAsync(hall.Id);
+
+        var update = await PutAuthAsync(
+            $"/api/v1/admin/sessions/{legacy.Id}",
+            new AdminUpdateSessionRequest
+            {
+                Code = legacy.Code,
+                Title = "Legacy edited title",
+                TitleArabic = legacy.TitleArabic,
+                HallId = legacy.HallId,
+                StartUtc = legacy.StartUtc,
+                EndUtc = legacy.EndUtc,
+                IsActive = true,
+                // Type still null and no speakers — grandfathered.
+            },
+            token);
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+        var edited = (await update.Content
+            .ReadFromJsonAsync<ApiResult<AdminSessionDetail>>())!.Data!;
+        Assert.Equal("Legacy edited title", edited.Title);
+        Assert.Null(edited.Type);
+    }
+
+    // No-regression (#3): a session that already carries a type cannot have it
+    // cleared back to null on edit.
+    [Fact]
+    public async Task Update_clearing_a_set_type_is_400_SESSION_TYPE_REQUIRED()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hall = await SeedHallAsync(capacity: 10);
+        var created = await CreateSimpleSessionAsync(token, hall.Id); // an Event
+
+        var update = await PutAuthAsync(
+            $"/api/v1/admin/sessions/{created.Id}",
+            new AdminUpdateSessionRequest
+            {
+                Code = created.Code,
+                Title = created.Title,
+                TitleArabic = created.TitleArabic,
+                HallId = created.HallId,
+                StartUtc = created.StartUtc,
+                EndUtc = created.EndUtc,
+                IsActive = true,
+                Type = null, // clearing the stored Event → rejected
+            },
+            token);
+        Assert.Equal(HttpStatusCode.BadRequest, update.StatusCode);
+        var body = (await update.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SessionTypeRequired, body.Error!.Code);
+    }
+
+    // No-regression (#4): a compliant non-Event session cannot drop its last speaker.
+    [Fact]
+    public async Task Update_dropping_the_last_speaker_of_a_non_event_is_400()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hall = await SeedHallAsync(capacity: 10);
+        var speaker = await SeedSpeakerAsync();
+
+        var create = await PostAuthAsync(
+            "/api/v1/admin/sessions",
+            new AdminCreateSessionRequest
+            {
+                Code = NewCode(), Title = "Has a speaker", TitleArabic = "لها متحدّث",
+                HallId = hall.Id,
+                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
+                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                Type = SessionType.Session,
+                Speakers = new List<AdminSessionSpeakerEntry>
+                {
+                    new(speaker.Id, speaker.Name, speaker.NameArabic, 0),
+                },
+            },
+            token);
+        Assert.Equal(HttpStatusCode.OK, create.StatusCode);
+        var created = (await create.Content
+            .ReadFromJsonAsync<ApiResult<AdminSessionDetail>>())!.Data!;
+
+        var update = await PutAuthAsync(
+            $"/api/v1/admin/sessions/{created.Id}",
+            new AdminUpdateSessionRequest
+            {
+                Code = created.Code,
+                Title = created.Title,
+                TitleArabic = created.TitleArabic,
+                HallId = created.HallId,
+                StartUtc = created.StartUtc,
+                EndUtc = created.EndUtc,
+                IsActive = true,
+                Type = SessionType.Session,
+                Speakers = new List<AdminSessionSpeakerEntry>(), // stripped → rejected
+            },
+            token);
+        Assert.Equal(HttpStatusCode.BadRequest, update.StatusCode);
+        var body = (await update.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SessionSpeakerRequired, body.Error!.Code);
+    }
+
     // -- Helpers --------------------------------------------------------------
 
     private static string NewCode() =>
@@ -1044,6 +1249,10 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             {
                 Code = NewCode(),
                 Title = "Session", TitleArabic = "جلسة",
+                // #3 / #4 — the shared helper builds an Event so it stays valid
+                // under the new required-type + min-1-speaker rules (an Event needs
+                // no speaker); tests that care about the type set it explicitly.
+                Type = SessionType.Event,
                 HallId = hallId,
                 StartUtc = startUtc,
                 EndUtc = endUtc,
@@ -1077,6 +1286,9 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             EndUtc = endUtc ?? created.EndUtc,
             CapacityOverride = capacityOverride ?? created.CapacityOverride,
             IsActive = isActive ?? created.IsActive,
+            // #3 — re-send the stored type so an unrelated edit does not trip the
+            // no-regression guard (clearing a set type is rejected).
+            Type = created.Type,
         };
 
     private async Task<Guid> SeedApprovedVisitorUserAsync()
@@ -1144,6 +1356,28 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
         db.Sessions.AddRange(first, second);
         await db.SaveChangesAsync();
         return first;
+    }
+
+    // Seeds a session straight to the DB with no type and no speakers — a legacy
+    // row that predates the #3/#4 rules (the create API would now reject it).
+    private async Task<Session> SeedLegacySessionAsync(Guid hallId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var session = new Session
+        {
+            Id = Guid.NewGuid(),
+            Code = NewCode(),
+            Title = "Legacy", TitleArabic = "قديمة",
+            HallId = hallId,
+            StartUtc = DateTimeOffset.UtcNow.AddHours(1),
+            EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        db.Sessions.Add(session);
+        await db.SaveChangesAsync();
+        return session;
     }
 
     private async Task<string> CreateAdministratorAndSignInAsync()

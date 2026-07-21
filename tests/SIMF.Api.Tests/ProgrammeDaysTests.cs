@@ -162,6 +162,7 @@ public sealed class ProgrammeDaysTests : IClassFixture<SimfApiFactory>
     {
         var token = await CreateAdministratorAndSignInAsync();
         var hallId = await SeedHallAsync();
+        var speakerId = await SeedSpeakerAsync();
 
         var create = await PostAuthAsync(
             "/api/v1/admin/sessions",
@@ -171,6 +172,11 @@ public sealed class ProgrammeDaysTests : IClassFixture<SimfApiFactory>
                 Title = "Typed session", TitleArabic = "جلسة مصنّفة بالنوع",
                 HallId = hallId,
                 Type = SessionType.Workshop,
+                // #4 — a Workshop is not an Event, so it needs a speaker.
+                Speakers = new List<AdminSessionSpeakerEntry>
+                {
+                    new(speakerId, "", "", 0),
+                },
                 StartUtc = DateTimeOffset.UtcNow.AddHours(1),
                 EndUtc = DateTimeOffset.UtcNow.AddHours(2),
             },
@@ -200,6 +206,7 @@ public sealed class ProgrammeDaysTests : IClassFixture<SimfApiFactory>
 
         // 08:00 UTC on the date → 11:00 KSA (+3), still the same calendar day,
         // so the session buckets onto the authored day.
+        var speakerId = await SeedSpeakerAsync();
         var start = new DateTimeOffset(date.Year, date.Month, date.Day, 8, 0, 0, TimeSpan.Zero);
         var sessionCreate = await PostAuthAsync(
             "/api/v1/admin/sessions",
@@ -209,6 +216,11 @@ public sealed class ProgrammeDaysTests : IClassFixture<SimfApiFactory>
                 Title = "Grouped session", TitleArabic = "جلسة مجمّعة",
                 HallId = hallId,
                 Type = SessionType.Session,
+                // #4 — a Session is not an Event, so it needs a speaker.
+                Speakers = new List<AdminSessionSpeakerEntry>
+                {
+                    new(speakerId, "", "", 0),
+                },
                 StartUtc = start,
                 EndUtc = start.AddHours(1),
             },
@@ -244,6 +256,25 @@ public sealed class ProgrammeDaysTests : IClassFixture<SimfApiFactory>
         db.Halls.Add(hall);
         await db.SaveChangesAsync();
         return hall.Id;
+    }
+
+    // #4 — the non-Event sessions in these tests need a speaker to be valid.
+    private async Task<Guid> SeedSpeakerAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var speaker = new Speaker
+        {
+            Id = Guid.NewGuid(),
+            Code = "SPK-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+            Name = "PD Speaker", NameArabic = "متحدّث",
+            DisplayOrder = 0,
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        db.Speakers.Add(speaker);
+        await db.SaveChangesAsync();
+        return speaker.Id;
     }
 
     private async Task<string> CreateAdministratorAndSignInAsync()
