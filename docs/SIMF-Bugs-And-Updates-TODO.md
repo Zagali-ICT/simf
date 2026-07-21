@@ -15,13 +15,78 @@
 
 | Metric | Count |
 |--------|-------|
-| Total items | 12 |
-| Open (☐) | 12 |
+| Total items | 41 |
+| Open (☐) | 36 |
 | In progress (◐) | 0 |
-| Done (✅) | 0 |
+| Done (✅) | 5 |
 | Deferred (⏸) | 0 |
 
+_Note: #16 is a single tracked item covering the whole per-feature Flutter clean-code sweep (≈39 features). Items #35-#40 are detailed in the plan (`~/.claude/plans/...`); #40 detailed here in Topic 9._
+_Done (5), shipped to PR: #10 `feat/bulk-badge-email`, #32 `feat/cp-team-roles`, #20+#17 `feat/app-sessions-batch`, #35 `feat/session-summary-video` (#28 in progress)._
+
 ---
+
+# ✅ TO-DO CHECKLIST (grouped by App / CP / Backend, ordered by priority)
+
+> Tick `[x]` when a task is done. Each `#NN` links to its full brief + fix plan in **Part 2 — Details** below.
+> Priority: **P1** high · **P2** medium · **P3** low.
+
+## A. APP (Flutter mobile)
+
+**P1 — bugs / blocking**
+- [ ] **#9** — Biometric / Face ID login not working; logic incorrect. _(= #25)_
+- [ ] **#12** — Face-capture left/right swapped on **Android** (iOS fine): fix Android turn direction + correct prompt image. _(= #26)_
+- [ ] **#17** — Session join + seat mechanism: two cases (register-to-attend / join+pick-seat), **no approval**, auto-cancel 3 min before start, session **check-in + check-out**.
+- [ ] **#18** — "الانضمام إلى الجلسة" (Join session) button does nothing.
+- [ ] **#21** — "مشاركة جهة اتصال" (Share contact) button does nothing.
+- [ ] **#13** — "Meet people like you": show **only Sponsors + Speakers** (hide Normal/VIP), Other-type opt-in checkbox, viewer→gallery / speaker→details, show exact data. _(CP-managed)_
+
+**P2 — updates / UX**
+- [ ] **#11** — Session surfaces scope + phase-gated buttons (Home = future + type=Session only; Summary = past; My Sessions; Agenda = all).
+- [ ] **#14** — Edit interests from profile (not only at sign-up).
+- [ ] **#16** — Clean-code sweep across ~39 features (numbers→tokens, `app_style`, `SimfTokens.surface`, hoist assets, extract private widgets).
+- [ ] **#19** — Login-as-**Guest** label (not "Visitor") + fix wrong Arabic translation.
+- [ ] **#20** — Agenda viewable **without login** + rename program-icon label to "الأجندة".
+- [ ] **#22** — Sign-up (`sign_up_visitor_screen`) category section UI update.
+- [ ] **#23** — Session-summary logic update (keep Home Sessions + Summary buttons as-is; reconcile with #11).
+- [ ] **#27** — Video > 30 min: the session-extension alert must NOT appear.
+- [ ] **#34** — Speaker job title shows English regardless of app language (read `RankArabic`).
+
+## B. CONTROL PANEL (CP)
+
+**P1**
+- [ ] **#10** — Bulk profile/badge generation page (pick type + count, anonymous placeholders, issue QRs, email all to one address).
+- [ ] **#28** — Meeting/speaker date filter = **forum dates only** + all CP times in **Saudi time** (see #8).
+- [ ] **#29** — Workshop management in CP (title / time / allowed count / check-in-out); app shows **title + time only**.
+- [ ] **#30** — B2B / B2G bilateral-meeting management in CP + activate VIP↔speaker "send request" button.
+- [ ] **#31** — Feed the forum program data (content).
+- [ ] **#1** — Upload per-day program images (schema ready, no data uploaded).
+- [ ] **#5** — Configure hall seat layouts (halls with no layout have no seat picker).
+- [ ] **#33** — Deliver CP user manual (⚠ confirm due date — 19-07-2026 is already past).
+
+**P2**
+- [ ] **#32** — CP permissions = **Admin / Security / PR / Scientific** (verify + gap-fill).
+
+## C. BACKEND / CROSS-CUTTING
+
+**P1**
+- [ ] **#8** — Store all times as **Saudi wall-clock, no UTC** (needs scope + data-migration decision).
+- [ ] **#6** — Remove seat/attendance **approval** workflow (D-227) — no approval (implemented via #17).
+- [ ] **#24** — Change-email flow (fixes CP new-account typos + app self-service) + re-verify + uniqueness. _(Identity is frozen)_
+- [ ] **#40** — **Dynamic forum dates** — the fixed "23-25 November 2026" is hardcoded in Website/app/CP/seed strings; drive them all from a single dynamic source (OrganizationProfile event dates or ProgrammeDay). _(overlaps #28)_
+
+**P2 — decisions**
+- [ ] **#2** — Session↔Day linked by date, not FK — confirm intended.
+- [ ] **#3** — Require session `Type` (currently optional) — decide.
+- [ ] **#4** — Session allows zero speakers — add min-1 rule (maybe except Event).
+
+**P3 — decisions**
+- [ ] **#15** — Generic profile / extra-data for Speaker / Company / Booth / others — design.
+- [ ] **#7** — Event / Workshop / Session share one entity — confirm.
+
+---
+
+# Part 2 — Details & fix plans (per item)
 
 ## Topic 1 — Programme model check (Day / Session / Hall / Seat / Speaker)
 
@@ -100,11 +165,11 @@ confirm**, not a broken model.
 - **Not a code gap** — config/data. Only becomes a code item if you want to *block* assigning an `AssignedSeat` session to a hall with no layout.
 - **Status:** ☐ Open
 
-### [#6] Pre-reservation requires admin approval
-- **Type:** ❓ Verify/Decision · **Priority:** P2 · **Area:** API / App
-- **Finding (D-227):** a visitor booking (`UserBooking` / `RandomAssignment` / `OpenSeating`) is created `BookingStatus.Pending` and holds the seat until an admin **Approves or Rejects** it in the CP; admin-blocked rows are created `Approved`. Pending holds auto-expire (`ExpiresUtc`).
-- **Confirm:** is the approve/reject step intended for the user's "pre-reserve" flow, or should a visitor booking confirm instantly? (This is an existing, deliberate workflow — flagged only to confirm it matches intent.)
-- **Status:** ☐ Open
+### [#6] Seat reservation — approval workflow (now: NO approval)
+- **Type:** ✨ Update · **Priority:** P1 · **Area:** API / App
+- **Finding (D-227):** today a visitor booking (`UserBooking` / `RandomAssignment` / `OpenSeating`) is created `BookingStatus.Pending` and held until an admin **Approves/Rejects** it; Pending holds auto-expire (`ExpiresUtc`).
+- **✅ DECISION (owner, 2026-07-20): NO approval.** Neither session-attendance registration nor seat reservation needs admin approval ("لا توجد اعتماد تسجيل حضور جلسة / لا يوجد اعتماد حجز مقعد"). A booking confirms immediately; the only release is the **auto-cancel when the user does not check in** (see #17). → the D-227 Pending→Approve/Reject step must be removed/bypassed for visitor bookings.
+- **Status:** ☐ Open — decision locked (remove approval); implemented as part of **#17**
 
 ### [#7] Event / Workshop / Session share one entity and all carry hall/seat/speaker
 - **Type:** ❓ Verify/Decision · **Priority:** P3 · **Area:** Domain
@@ -212,17 +277,269 @@ confirm**, not a broken model.
 
 ### [#12] Face-capture left/right prompts swapped (create profile)
 - **Type:** 🐞 Bug · **Priority:** P1 · **Area:** App / Sign-up (create profile) · also affects My-Area avatar
-- **Report (owner):** during **user create-profile** face recognition, left/right are inverted — "left shows right and right shows left."
-- **Where (verified):** create-profile reuses the **same** liveness flow as My-Area — `sign_up_visitor_screen` imports `identity_verification_screen` (`CapturedSelfie`), and both run `features/myarea/data/liveness.dart` (`LivenessStep.turnRight/turnLeft`, `livenessPromptDirection`, `livenessStepSatisfied`, `livenessInvertYaw`). So a fix covers both surfaces.
-- **⚠ Known-fragile area:** this exact "prompt swap" was fixed twice before — **D-684** and **PR-103** — and a face-capture regression rode in via a router change (**D-666**). `liveness.dart` explicitly documents the invariant and inverts yaw **only on iOS** (`livenessInvertYaw == platform == iOS`); the detection gate itself looks correct and is unit-tested.
-- **Hypotheses for the current swap (do not assume — verify on-device):**
-  1. **RTL arrow mirroring** — the app is Arabic RTL-first; a directional arrow icon in `identity_verification_screen` may auto-mirror, so "turn right" renders a left-pointing arrow (matches "left↔right" symptom exactly). Prompt text vs arrow may disagree.
-  2. **Android yaw-sign** — owner is on an **Android tablet** (TXZ-W09). Inversion is iOS-only; if this device/orientation delivers `headEulerAngleY` with the opposite sign, the gate accepts the wrong physical turn.
-  3. **Prompt/step label** vs the required physical direction mismatched after a recent change.
-- **Verification required (per app CLAUDE.md §13.3 blast-radius):** reproduce on the actual device, check prompt text + arrow + accepted turn together; a green golden did NOT catch D-666 — needs the flow test + on-device render.
-- **Needed from owner:** confirm it's create-profile (sign-up) and the device/OS (Android tablet?), and whether the **arrow**, the **text**, or the **accepted turn** is the wrong one (or all).
+- **Report (owner):** during **user create-profile** face recognition, left/right are inverted — "left shows right and right shows left." **Update (owner, 2026-07-20): the direction is wrong on Android and works fine on iOS** ("Face detection: modify direction on Android" / "التأكد من نوع الجهاز عند التقاط الصورة الشخصية وعرض الرسالة التفت يمين / التف يسار بالصورة الصحيحة").
+- **Where (verified):** create-profile reuses the **same** liveness flow as My-Area — `sign_up_visitor_screen` imports `identity_verification_screen` (`CapturedSelfie`), and both run `features/myarea/data/liveness.dart`. So a fix covers both surfaces.
+- **Root cause (narrowed by the Android-only report):** `liveness.dart` inverts yaw **only on iOS** (`livenessInvertYaw == platform == iOS`) and iOS is correct — so the **Android** yaw-sign / input-image rotation is the wrong one. The Android-only symptom **rules out RTL arrow-mirroring** (that would break iOS too). Likely fix: correct the Android branch (yaw sign and/or the InputImage rotation fed to ML Kit in `identity_verification_screen` on Android), and **detect the device/platform when capturing** so the "turn right / turn left" prompt+arrow match the physical turn. Prior fixes to this exact swap: **D-684**, **PR-103**; a face regression rode in via a router change **D-666** — change carefully.
+- **Verification required (app CLAUDE.md §13.3):** reproduce on the **Android tablet** (TXZ-W09) — prompt text + arrow + accepted turn must all agree — then confirm iOS unaffected. A green golden did NOT catch D-666 → needs the flow test + on-device render.
 - **Proposed next step:** trace `identity_verification_screen` prompt/arrow rendering + the yaw path on-device, isolate which of the 3 hypotheses holds, then a §11 fix plan + a regression test that pins the direction. **No code yet.**
 - **Status:** ☐ Open
+
+---
+
+## Topic 4 — Profiles & attendee discovery
+
+**Reported:** 2026-07-20 (owner batch)
+
+| # | Type | Priority | Area | Title | Status |
+|---|------|----------|------|-------|--------|
+| 13 | ✨ Update | P1 | App / CP | "Meet People Like You" — filter (Sponsors + Speakers only), Other-type opt-in, result nav | ☐ Open |
+| 14 | ✨ Update | P2 | App | User can edit interests from their profile (not only at sign-up) | ☐ Open |
+| 15 | ❓ Design | P3 | Domain | Speakers / Companies / Booths / others get a profile for extra data | ☐ Open |
+
+### [#13] "Meet People Like You" — discovery filter, opt-in, navigation
+- **Type:** ✨ Update · **Priority:** P1 · **Area:** App + CP
+- **Existing:** `RecommendationService`, `UserProfile.ShowInMeetLikeYou` (D-736, default true), interests M-to-M (`UserProfileInterests`).
+- **Owner requirements (EN + AR consolidated):**
+  1. **Filter — who appears:** ONLY **Sponsors** (shown as the exhibition **company name**) + **Speakers** ("رعاة (اسم الشركة الموجودة في المعرض) + متحدثين"). The two visitor categories **عادي (Normal) + VIP must NOT appear** when pressing "قابل أشخاص مثلك". ("التأكد من عدم ظهور الفئتين عادي - VIP").
+  2. **Manageable from the Control Panel** — an admin controls this filter ("مع إمكانية إدارتها من لوحة التحكم").
+  3. **Other profile type** gets a **checkbox** for whether the user shows in "Meet People Like You" ("الأخرى - نضيف checkbox هل يظهر على قابل أشخاص مثلك") — surface the existing `ShowInMeetLikeYou` flag on the Interest/profile page; make it apply to the Other type, not visitors-only.
+  4. **Show exactly the person's data** ("وبالضبط اعرض بياناته").
+  5. **Result navigation:** tapping a matched **viewer** → open **gallery**; tapping a **speaker** → navigate to **speaker details**.
+- **Open questions:** (a) "viewer → gallery" — which gallery (the person's media, or the general gallery)? (b) exact CP control — a toggle list of which kinds/categories are discoverable? (c) which speaker fields to show under the `Speaker.AllowsDataSharing` consent gate?
+- **Related:** prior "meet-people HELD" note; migration D-736.
+- **Status:** ☐ Open
+
+### [#14] Edit interests from profile
+- **Type:** ✨ Update · **Priority:** P2 · **Area:** App
+- **Requirement:** the user can change their interests from their profile — today interests are picked at sign-up (`sign_up_interests_screen`).
+- **Current:** the `UpsertUserProfileRequest` path already carries interests (validator requires 1–10), so this is likely **surfacing an edit-interests UI** in the profile rather than new backend. Verify the profile-edit screen exposes it.
+- **Status:** ☐ Open
+
+### [#15] Speakers / Companies / Booths / others — profile for extra data
+- **Type:** ❓ Design · **Priority:** P3 · **Area:** Domain
+- **Requirement (owner):** Speakers, companies, booths, and "all others" can each have a **profile** — in addition to their current table — to save **extra data**.
+- **Existing partial mechanism:** the shared **`Contact` directory** (D-260 / FDS-014) already gives Speaker (and others) a linked record via `ContactId` for logo / name / phones / social / website / location / country — i.e. an "extra data alongside the current table" pattern already exists.
+- **Open questions (design, before any plan):** (a) extend the existing Contact-directory link to Company / Booth / etc., or introduce a new generic Profile entity? (b) what "extra data" beyond Contact fields? (c) does "profile" here mean joining the ProfileType/badge system (ties to bulk-badges #10)? (d) schema impact — the App schema is under freeze; needs an owner-approved plan + respects the Identity/App split.
+- **Status:** ☐ Open — needs a design decision
+
+---
+
+## Topic 5 — Flutter clean-code / tokenization sweep (per feature)
+
+**Reported:** 2026-07-20 (owner batch) · **one tracked item, per-feature checklist below.**
+
+### [#16] App tokenization + widget-extraction sweep
+- **Type:** 🧹 Chore · **Priority:** P2 · **Area:** App (`src/Mobile/simf_app`)
+- **Shared rules (apply everywhere):**
+  - **Numbers → tokens:** replace hardcoded numbers with `SimfTokens` spacing (e.g. `16` → `SimfTokens.space4`).
+  - **Text styles → `app_style.dart`:** replace inline `Text` + `TextStyle` with the custom styles.
+  - **Colors → tokens:** replace `Colors.white` (and other hardcoded colors) with `SimfTokens.surface` (create the token if missing).
+  - **Assets → `app_assets.dart`:** hoist hardcoded asset paths (icons/images/videos), then reference from there.
+  - **Private widgets → files:** extract named `_Private` widgets into their own files under the feature's `widgets/`.
+- **⚠ MUST RECONCILE BEFORE STARTING (flag, not a blocker):** `app_style.dart` **does not exist** today; `app/theme/tokens.dart` (`SimfTokens`) and `app/theme/app_assets.dart` **do**. App CLAUDE.md §5.1 says text styles are **named `SimfTokens` styles** and the font is set once in the theme. Creating a rival `app_style.dart` may violate §5.1/§13.4. **Confirm:** create `app_style.dart` as written, OR route "custom text style" through existing `SimfTokens` styles. Same question for "SimfTokens.surface" — confirm the exact token name(s).
+- **Process:** per app CLAUDE.md §12 — **one feature at a time**, plan→approve→apply, behavior-preserving, re-lock goldens/tests per touched screen. Not one giant diff.
+
+**Per-feature checklist** (T=text→app_style · C=Colors.white→SimfTokens.surface · A=hoist asset(s) · X=extract private widget(s) · file names as owner specified; `[sic]` = probable typo to correct at build):
+
+| Feature | Fixes | Extract → file / special note | Status |
+|---|---|---|---|
+| About | numbers | Rename `_Card`→`AboutCard`, `_CardHeading`→`AboutCardHeading` (widgets/about_card.dart) | ☐ |
+| Ai_Summary | T, C | — | ☐ |
+| Archive | T, C | `_ArchiveBody`→`archive_body.dart` [sic achive], `_GalleryTtle`→`archive_gallery_title.dart`, `_PastSpeakerCard`→`archive_gallery_tile.dart` | ☐ |
+| Badge | T, C | replace `Colors.white`+other hardcoded colors with tokens; create tokens if missing | ☐ |
+| Booths | T, C, A | A: `assets/icons/nav_location.svg`. X: `_HallBox`→`booths_hall_box.dart`, `_contactBox`→`booths_contact_box.dart` | ☐ |
+| Chatbot | T, C | — | ☐ |
+| Contact us | T, C | X: `_infoRow`→`contact_us_info_row.dart` [sic jnfo], `_socialButton`→`contact_us_social_button.dart`. Replace `_Field` with `naviFormField` | ☐ |
+| Contacts | T | X: `_ChannelRow`→`contacts_channel_row.dart`, `_ErrorSatate`→`contacts_error_state.dart`, `_contacPreviewSheet`→`contacts_preview_sheet.dart` | ☐ |
+| Content | T, C | — | ☐ |
+| delegations | T, C, A | A: `assets/icons/nav_faq.svg`, `assets/icons/nav_contact.svg`. X: `_DelegationCard`→`delegations_card.dart`, `_SectionHeader`→`delegations_section_header.dart` | ☐ |
+| exhibition | T, C, A | A: `assets/icons/auth_globe.svg`, `assets/icons/ic_back.svg`. X: `_LinkRow`→`exhibition_link_row.dart`, `_IdentityCard`→`exhibition_identity_card.dart` [sic cartd] | ☐ |
+| exhibitor | — | X: `_Centered`→`exhibitor_centered.dart` [sic centerd] | ☐ |
+| Faq | — | X: `_FaqTile`→`faq_tile.dart` [owner wrote faq_title.dart] | ☐ |
+| Feedback | T, C | Replace `TextField` with `naviFormField` | ☐ |
+| Forum guide | C, A | A: `assets/icons/ic_caret_left.svg` | ☐ |
+| Gallery | T, C | X: `_mediaTile`→`gallery_media_tile.dart`, `_PlaceholderBox`→`gallery_placeholder_box.dart` [sic pleace_holder] | ☐ |
+| Gates | T, C | X: `_withPendingBanner`→`gates_with_pending_banner.dart`, `_row`→`gates_row.dart` [sic .dat], `_label`→`gates_label.dart` | ☐ |
+| Guest | T | bg color must match all-screens bg; back icon must match the other back icons | ☐ |
+| Home | T, C, A | A: `assets/icons/ic_caret_left.svg`, `assets/images/discover_hero.jpg`. X: `_HightlighSlide`→`home_high_light_slide.dart`, `_SocialButton`→`home_social_button.dart` | ☐ |
+| Live | T, C | X: `_TogglePill`→`live_toggle_pill.dart`, `_CaptionStrip`→`live_caption_strip.dart`, `_MessageSurface`→`live_message_surface.dart` | ☐ |
+| Media partners | T, C | — | ☐ |
+| Meet | T, C | X: `_topicChip`→`meet_topic_chip.dart` | ☐ |
+| Meetings | T, C, A | A: `assets/icons/chevron_left.svg`, `request_new.svg`, `request_log.svg` | ☐ |
+| Moderation | T, C | X: `_ActionButton`→`moderation_action_button.dart`, `_Chip`→`moderation_chip.dart` | ☐ |
+| More | T, C, A | A: `assets/icons/ic_caret_left.svg` | ☐ |
+| Myarea | T, C | `Colors.white70` → add to `SimfTokens` then use | ☐ |
+| News | T, C | `Colors.white70` → surface | ☐ |
+| Notifications | T, C | — | ☐ |
+| Onboarding | T, C, A | A: hardcoded **video** paths | ☐ |
+| Question | T, C | file `sned_question_content.dart` [sic send] | ☐ |
+| Registration | T, C | — | ☐ |
+| Requests | T, A | `Colors.white` + `Colors.transparent` → tokens. A: `request_log.svg`, `request_new.svg`, `chevron_left.svg` | ☐ |
+| Sessions | T, A | `Colors.white` → tokens. A: `assets/icons/ic_back.svg` | ☐ |
+| Speakers | T, A | `Colors.white` + `Colors.transparent` → tokens. A: `speaker_placeholder.svg`, `ic_back.svg`, `ic_caret_left.svg`. Replace custom text field with `SimfLabeledTextField` (see `sign_up_visitor_screen.dart`) | ☐ |
+| Splash | T, C | — | ☐ |
+| Sponsors | C, A | A: `assets/icons/ic_back.svg` | ☐ |
+| Staff | T, C | — | ☐ |
+| VenueMap | T, C | (owner: "VeneMap") | ☐ |
+
+- **Status:** ☐ Open — sweep not started; reconcile `app_style.dart` question first
+
+---
+
+## Topic 6 — Session join & seat mechanism (agreed logic)
+
+**Agreed with owner 2026-07-20.**
+
+| # | Type | Priority | Area | Title | Status |
+|---|------|----------|------|-------|--------|
+| 17 | ✨ Update | P1 | App / API | Session join + seat mechanism — two cases, no approval, 3-min auto-cancel, check-in/out | ☐ Open |
+| 18 | 🐞 Bug | P1 | App | "الانضمام إلى الجلسة" (Join session) button does nothing | ☐ Open |
+
+### [#17] Session join + seat mechanism (agreed)
+- **Type:** ✨ Update · **Priority:** P1 · **Area:** App + API
+- **Two cases (driven by how the session's seating is managed — maps to `SeatSelectionMode`):**
+  - **Case 1 — all sessions in one hall (open / no specific seat):** button reads **"سجل لحضور الجلسة"** (Register to attend). On tap → alert:
+    > تم تسجيلك لحضور هذه الجلسة بنجاح. هذا التسجيل لا يعني حجز مقعد أو ضمان الدخول للجلسة، سيتم تأكيد دخولك عند تسجيل الدخول للجلسة
+    (Registered — this is NOT a seat reservation or guaranteed entry; entry confirmed at check-in.)
+  - **Case 2 — each session in a different hall (assigned seat):** button reads **"الانضمام إلى الجلسة"** (Join). On tap → **seat-selection screen** showing available seats → user picks a seat → **"حجز"** (Reserve) → seat reserved → alert:
+    > تم حجز المقعد بنجاح. سيتم إلغاء الحجز في حالة عدم تسجيل الدخول للجلسة قبل 3 دقائق قبل بدء الجلسة لإتاحة المقعد لأشخاص آخرين
+    (Seat reserved — cancelled if you don't check in by 3 minutes before start, freeing the seat.)
+- **Summary rules (owner):** **no approval** for attendance registration; **no approval** for seat reservation (see #6); two seat cases = **assigned seats / by seat-count** per the session's reservation-management type; **auto-cancel the seat 3 minutes before start** if not checked in.
+- **Session check-in AND check-out** required ("تسجيل دخول وكذلك تسجيل خروج من الجلسات").
+- **Maps to existing model:** `SeatSelectionMode { AssignedSeat, OpenSeating }` (Hall + per-session override) = the two cases; `SeatReservation.ExpiresUtc` = the auto-cancel guard (but the window must become **"3 min before StartUtc"**, not "created + hold"); session attendance infra partly exists (`HallAttendance` / `HallAttendanceService` / `HallArrivalsConsole` / `GateScan`) — reuse for check-in/out.
+- **Deltas to build:** remove approval (#6); wire the two button variants + copy above; seat-picker "حجز" path; expiry worker to release at start-3min; session-level check-in + **check-out**.
+- **Status:** ☐ Open
+
+### [#18] "Join session" button not working
+- **Type:** 🐞 Bug · **Priority:** P1 · **Area:** App / Sessions
+- **Report (owner + screenshot "تفاصيل الجلسة"):** on session detail, the **"الانضمام إلى الجلسة"** button does nothing on tap.
+- **Note:** likely resolves alongside #17 (the join flow is being redefined) — but verify the current button isn't dead independently of the redesign (missing onTap / disabled-state / nav route).
+- **Status:** ☐ Open
+
+---
+
+## Topic 7 — App bugs & UX items
+
+**Reported:** 2026-07-20 (owner batch + screenshots)
+
+| # | Type | Priority | Area | Title | Status |
+|---|------|----------|------|-------|--------|
+| 19 | 🐞 Bug | P2 | App / Auth | Login-as-Guest label (not "Visitor") + Arabic translation wrong | ☐ Open |
+| 20 | ✨ Update | P2 | App | Agenda accessible without auth + rename program icon label to "الأجندة" | ☐ Open |
+| 21 | 🐞 Bug | P1 | App / Contacts | "مشاركة جهة اتصال" (Share contact) button does nothing | ☐ Open |
+| 22 | ✨ Update | P2 | App / Sign-up | `sign_up_visitor_screen` category section — update UI | ☐ Open |
+| 23 | ✨ Update | P2 | App / Sessions | Session summary logic update (Home Sessions + Summary buttons stay as-is) | ☐ Open |
+| 24 | ✨ Update | P1 | App / CP / Identity | User can update email (also fixes CP new-account typos) | ☐ Open |
+| 25 | 🐞 Bug | P1 | App / Auth | Activate Face biometric (Face ID) — cross-ref #9 | ☐ Open |
+| 26 | 🐞 Bug | P1 | App / Sign-up | Face-capture device-type detection + correct turn image — cross-ref #12 | ☐ Open |
+| 27 | 🐞 Bug | P2 | App / Live | Video > 30 min: session-extension alert must NOT appear | ☐ Open |
+| 34 | 🐞 Bug | P2 | App / Speakers | Speaker job title shows English regardless of app language | ☐ Open |
+
+### [#19] Login-as-Guest label + Arabic translation
+- **Requirement:** the "login as visitor" action should say **Guest** (not Visitor). English is fine; the **Arabic translation is wrong**. Fix the label + the `ar` string in `AppL10n`/resx. Relates to guest mode (`effectiveAppRole`, Home `758-2910`).
+- **Status:** ☐ Open
+
+### [#20] Agenda without auth + rename to "الأجندة"
+- **Requirement:** (a) the Agenda must be **viewable without login** ("Agenda can access without auth") — relates to the login-gate (D-576/D-577) and #11; (b) change the label under the program icon to **"الأجندة"** ("تعديل الاسم الموجود أسفل الأيقونة ... ليكون الأجندة").
+- **Status:** ☐ Open
+
+### [#21] "Share contact" button not working
+- **Report (owner + screenshots):** on the profile ("الملف الشخصي") the **"مشاركة جهة اتصال"** button does nothing; the target is the **"شارك جهة اتصالي"** QR / vCard share screen. Trace the button's onTap/nav and the share-contact flow (`Contacts` / `SavedContact` / `VisitorShareToken`).
+- **Status:** ☐ Open
+
+### [#22] Sign-up category section UI
+- **Requirement:** update the UI of the **category** section on `sign_up_visitor_screen`. Relates to interests (#14). Needs the target design — confirm the Figma node / intended layout.
+- **Status:** ☐ Open
+
+### [#23] Session summary logic update
+- **Requirement:** "Session summary update logic." **And (owner F8):** the **Sessions button on the home screen and the Session-summary button stay as they are** ("زر الجلسات ... وزر ملخص الجلسات تبقى على ما هي عليه").
+- **⚠ Reconcile with #11:** #11 specified Home = future + type=Session and Summary = past-only; F8 says keep those buttons as-is. Confirm which wins, and what exactly "summary logic" should change (the subtitle→AI→committee→publish pipeline?).
+- **Status:** ☐ Open — needs clarification
+
+### [#24] User can update email
+- **Requirement:** allow editing the email — specifically to fix mistakes made when creating a new account **via the Control Panel** ("تجنبا للأخطاء ... عند إضافة حساب جديد عن طريق لوحة التحكم").
+- **Note:** email lives on the **Identity** DB (frozen, D-110). Email is already a column, so likely no schema change — but needs a change-email endpoint + **uniqueness check** + **re-verification** (OTP) + CP action. Flag for the plan.
+- **Status:** ☐ Open
+
+### [#25] Activate Face biometric (Face ID) — see #9
+- **Requirement:** "التأكد من تفعيل بصمة الوجه" / "Face ID is not working." Same as **#9** (biometric login broken). Track the fix under #9; this row is the owner's explicit call-out.
+- **Status:** ☐ Open
+
+### [#26] Face-capture device-type + correct turn image — see #12
+- **Requirement:** detect device type on selfie capture and show the correct "turn right / turn left" prompt image. Same as **#12** (Android direction). Track the fix under #12.
+- **Status:** ☐ Open
+
+### [#27] Video > 30 min — no session-extension alert
+- **Requirement:** add a video **longer than 30 minutes** to test the session and ensure the **session-extension alert does not appear** ("إضافة فيديو أكثر من 30 دقيقة ... وضمان عدم ظهور رسالة التنبيه الخاصة بتمديد الجلسة"). Find the >30-min / extension-alert threshold (likely in the live/recording player or a session-duration guard) and confirm behaviour with a long video.
+- **Status:** ☐ Open
+
+### [#34] Speaker job title shows English in both languages
+- **Report (owner + Speakers screenshot):** the job title / rank under each speaker name renders in **English even when the app is Arabic**.
+- **Likely cause:** `Speaker` has `Rank` + `RankArabic`; the app is showing `Rank` unconditionally, or `RankArabic` is empty in the data. Verify the app reads the locale-correct field AND that `RankArabic` is populated (data vs. code).
+- **Status:** ☐ Open
+
+---
+
+## Topic 8 — Control Panel management & delivery (engineer notes)
+
+**Source:** owner note-set "الملاحظات التي سوف يتم تزويد المهندس مهند بها" (2026-07-20).
+
+| # | Type | Priority | Area | Title | Status |
+|---|------|----------|------|-------|--------|
+| 28 | ✨ Update | P1 | CP | Meeting/speaker date filter = forum dates only + all CP times in Saudi time | ☐ Open |
+| 29 | ✨ Feature | P1 | CP / App | Workshop management in CP (title/time/count/check-in-out); app shows title+time only | ☐ Open |
+| 30 | ✨ Feature | P1 | CP / App | B2B / B2G bilateral-meeting management in CP + activate VIP↔speaker "send request" | ☐ Open |
+| 31 | 🗂 Data | P1 | CP / Content | Feed the forum program data | ☐ Open |
+| 32 | ❓ Verify | P2 | CP / Security | CP permissions = Admin / Security / PR / Scientific | ☐ Open |
+| 33 | 📄 Docs | P1 | CP | Deliver CP user manual (owner due date 19-07-2026 — already past) | ☐ Open |
+
+### [#28] Meeting/speaker date filter + Saudi time in CP
+- **Requirement:** (a) in the CP, the speaker-meeting scheduling must filter **by the forum dates only** ("فلتر ... بمقابلة المتحدثين بتاريخ الملتقى فقط") — the date picker cannot pick dates outside the event; (b) **all CP times in Saudi time** ("التأكد من أن تكون الأوقات في لوحة التحكم بالتوقيت السعودي") — see the timezone decision **#8**.
+- **Status:** ☐ Open
+
+### [#29] Workshop management in CP
+- **Requirement:** manage **workshops** from the CP — **title, time, allowed count**, and **check-in / check-out**. In the **app**, a workshop shows **only its title + time** ("يقتصر بعرض عنوان ورشة العمل والوقت").
+- **Note:** workshops today are `Session.Type == Workshop`. Confirm whether "allowed count" + check-in/out reuse the session capacity + `HallAttendance`, or workshops need their own management surface.
+- **Status:** ☐ Open
+
+### [#30] Bilateral meetings (B2B / B2G) management + VIP↔speaker request
+- **Requirement:** manage the **bilateral meetings (B2B - B2G)** from the CP; and **activate the "send request" button** in the **VIP↔speaker** bilateral meetings ("تفعيل زر إرسال الطلب في اللقاءات الثنائية الخاصة بـ VIP مع المتحدثين").
+- **Maps to:** `BusinessMeeting`, `SpeakerMeetingRequest`, `DelegationMeetingRequest`, `MeetingActionToken`, `HallAvailabilityWindow`. Verify the CP management surface + the app send-request button wiring.
+- **Status:** ☐ Open
+
+### [#31] Feed the forum program data
+- **Requirement:** populate the forum program content ("تغذية البيانات الخاصة ببرنامج الملتقى"). Overlaps day-images (#1) and hall seat-layouts (#5) — content/data task, not code.
+- **Status:** ☐ Open
+
+### [#32] CP permissions — four roles
+- **Requirement:** CP permissions = **Admin**, **Security team**, **PR team**, **Scientific team**.
+- **Verify vs existing:** SIMF already has a per-page/action permission system (roles-only, JWT-baked, `Administrator = "*"`). Check whether Security / PR / Scientific roles + their `BaselineRoles` mappings exist in `PermissionCatalog`, and gap-fill.
+- **Status:** ☐ Open
+
+### [#33] CP user manual delivery
+- **Requirement:** deliver the **Control Panel user manual** by **Sunday 19-07-2026** ("بحد أقصى يوم الأحد الموافق 19-07-2026").
+- **⚠ Date already past** (today is 2026-07-20) — confirm the real deadline (likely a typo for a later date). Docs deliverable, not code.
+- **Status:** ☐ Open
+
+---
+
+## Topic 9 — Dynamic forum dates
+
+**Reported:** 2026-07-20 (owner)
+
+### [#40] Forum dates must be dynamic (not the fixed "23-25 November 2026")
+- **Type:** ✨ Update · **Priority:** P1 · **Area:** cross-cutting (Backend seed + Website + App + CP)
+- **Requirement (owner):** "The forum dates are fixed: 23 to 25 November 2026. This is not correct, must be changed dynamic."
+- **Finding (verified — hardcoded "23-25 November 2026" display strings):**
+  - `src/Backend/SIMF.Infrastructure/Identity/IdentitySeeder.cs:740-741` — seeded org-profile event-date label (EN + AR).
+  - `src/Website/SIMF.Web/Resources/Strings.resx` (+ `.ar.resx`) — `Landing.Subnav.Date`, `Speakers.Band.Date`, `Landing.MetaDescription`.
+  - `src/ControlPanel/SIMF.ControlPanel/Resources/Strings.resx` (+ `.ar.resx`) — `Admin.SpeakerAvailability.BadDateRange` (overlaps **#28** — the dynamic bound message replaces this static string).
+  - `src/Mobile/simf_app/lib/app/localization/app_l10n.dart:689` — home edition label.
+  - NOT this: `Website/.../Landing.razor.cs:51/56/61` are PAST editions (2019/2022/2024) — legitimately fixed history.
+- **Dynamic source (exists):** `OrganizationProfile.EventStartDate/EventEndDate` (App-DB config, CP-editable, `OrganizationProfileMapper`) — currently a stale placeholder. Alternative: `ProgrammeDay` MIN/MAX (what #28 uses).
+- **Open decision:** source = (a) OrganizationProfile config (recommended for display) vs (b) ProgrammeDay-derived. Confirm.
+- **Fix plan (pending decision):** set the real event dates in the config; add a shared bilingual date-range formatter; replace every hardcoded resx/l10n/seed string with a render of the dynamic source; expose to app/website via the OrganizationProfile API. Build in Phase 2 after #28 lands (shared CP message).
+- **Status:** ☐ Open — needs source decision (a/b)
 
 ---
 ```

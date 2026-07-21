@@ -6,278 +6,242 @@
 | **Route** | `/programme` |
 | **Surface** | Website (public marketing site - `ln-` Bootstrap SSR) |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later - keep steps tool-agnostic) |
-| **Auth setup** | **None - the page is anonymous.** `Programme.razor` calls `SimfPublicClient`, which carries **no bearer token**; both `GET /api/v1/app/programme/sessions` and `GET /api/v1/app/speakers` are `AllowAnonymous()`. A signed-in session is neither required nor read. (Seeding the agenda for the golden path uses the Control Panel admin - `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper - to create halls / themes / speakers / sessions over the admin API, then the public page is driven anonymously.) |
-| **Figma** | No dedicated website frame - this is an `ln-`-idiom rebuild reusing the kit (see `web/programme.md` §7). |
+| **Auth setup** | **None - anonymous.** `Programme.razor` calls `SimfPublicClient` (no bearer token); `GET /api/v1/app/programme/sessions` + `GET /api/v1/app/speakers` are `AllowAnonymous()`. (Seed the agenda for the golden path via the Control Panel admin - `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper - creating halls / categories / speakers / typed sessions over the admin API, then drive the public page anonymously.) |
+| **Design** | Adapted from the app "Programme schedule" (Figma `883-2308`); **no dedicated website frame** (`web/programme.md` §7). |
 | **Last reviewed** | 2026-07-20 |
 
 > **What this page is.** `/programme` (`Programme.razor`) is the Website's public,
-> anonymous **full agenda**, re-skinned from the legacy `Simf*` / `MainLayout`
-> page onto the shared `ln-` marketing kit (`LandingShell` + `LandingPageHero` +
-> a new `ln-agenda` band). The data flow is unchanged. On load
-> `OnInitializedAsync`:
-> 1. `await Api.GetProgrammeSessionsAsync()` -> `GET /api/v1/app/programme/sessions`.
->    A `null` result (failed envelope / unreachable service) sets `_error` and the
->    page renders a single `ln-agenda__msg` block (`role="alert"`).
-> 2. otherwise `BuildDays(...)` groups `Items` by the **local calendar date** of
->    `StartUtc` (`StartUtc.ToLocalTime().Date`), ordered by day then by start time
->    within each day. Zero days renders the `ln-fsection` empty state.
-> 3. `await Api.GetSpeakersAsync()` -> `GET /api/v1/app/speakers` is **best-effort**:
->    a `null` result leaves the speakers strip empty and does **not** flip the
->    page into the error state.
+> anonymous **agenda**, presented app-style: a **day strip** switches the visible
+> day, an optional **type filter** narrows by session kind, and each session is a
+> **timeline card**. On load `OnInitializedAsync`:
+> 1. `await Api.GetProgrammeSessionsAsync()`. A `null` result (failed envelope /
+>    unreachable) sets `_error` and renders a single `ln-agenda__msg` (`role="alert"`).
+> 2. otherwise `BuildDays(...)` groups `Items` by the **event-local (+03:00 Riyadh)
+>    date** of `StartUtc` (`EventTime.Local(StartUtc).Date`), ordered by day then
+>    start time; `_types` = the distinct non-null `SessionType`s. Zero days renders
+>    the empty state.
+> 3. `await Api.GetSpeakersAsync()` is **best-effort**: a `null` result just leaves
+>    the speakers strip empty (never flips to error).
 >
-> **Layout of the agenda.** One `ln-agenda__day` group per date, each with an
-> `<h2>` `ln-agenda__dayhead` and a `ul.ln-agenda__list` of `li.ln-agenda__row`.
-> Per row: `ln-agenda__time` (the `HH:mm - HH:mm` local window), an
-> `ln-agenda__main` block holding the `<h3>` `ln-agenda__title` and the
-> `ln-agenda__hall`, and - only when the session carries a primary theme name
-> (resolved for the current culture) - a neutral `ln-agenda__pill`.
+> **Structure.** A dark `ln-fsection--dark ln-agenda` band contains: a
+> `ln-agenda__daystrip` (`role="group"`) of `ln-agenda__daypill` buttons
+> (`aria-pressed`, `data-agenda-day=id`, weekday + date number); a
+> `ln-agenda__tabs` type filter (rendered only when `_types` is non-empty) of
+> `ln-agenda__tab` buttons (`aria-pressed`, `data-agenda-type`; "All" =
+> `data-agenda-type=""`); an `ln-agenda__label` `<h2>` ("Schedule"); and per-day
+> `<section class="ln-agenda__day" data-agenda-daypanel=id>` with an `<h3>` date
+> heading + a `<ul>` of `li.ln-agenda__card` (`data-agenda-cardtype=<SessionType|"">`).
+> Each card = an **aria-hidden** time column (`ln-agenda__when`: `t1` / gold
+> `line` / `t2`) + content (optional gold `ln-agenda__cat` chip, `<h4>`
+> `ln-agenda__title`, `ln-agenda__hall`, a visually-hidden `ln-agenda__time-sr`
+> window for AT, optional `ln-agenda__desc`). A `ln-agenda__none` note replaces a
+> day the filter empties.
 >
-> **Speakers strip** (best-effort, on a navy `ln-fsection--dark` band): the
-> `Programme.Speakers.Title` heading + `li.ln-agenda__spk` chips, each an
-> `ln-agenda__spkname` and - when present - an `ln-agenda__spkrank` (`lang="en"`).
+> **Progressive enhancement.** `landing.js` `initAgenda` toggles
+> `is-active`/`is-hidden`/`is-empty` + `aria-pressed`, then adds `is-enhanced` to
+> the band. The single-day view + the filter are gated on `.is-enhanced`, so with
+> **no JS every day + card stays visible** (nothing is hidden, no filtering).
 >
-> **Bilingual fallback.** `Title` / `Hall` / `SpeakerName` use the shared
-> `LocalizedText.Pick(en, ar)` (RTL prefers Arabic, LTR prefers English; each
-> falls back to the other language when the preferred one is blank); the theme
-> name uses `PickOrNull`, so no theme in either language renders no pill. The day
-> heading uses `dddd, d MMMM yyyy` and the time window `HH:mm - HH:mm`, both in
-> event-local (+03:00 Riyadh) time.
+> **Single `<h1>`** = the `LandingPageHero` title; day headings are `<h3>`, session
+> titles `<h4>`.
 >
-> **Single `<h1>`.** The page's only `<h1>` is the `LandingPageHero` title
-> (`Programme.Banner.Title`); day headings are `<h2>`, session titles `<h3>`.
->
-> **Auth model (Website, anonymous).** This is **not** a Control-Panel page: there
-> is **no** `RequirePermission`, no `/not-permitted` gate, and **no**
-> unauthenticated -> `/login` redirect. The page is reachable by anyone. The "auth"
-> row asserts the *anonymous-by-design* contract, not a redirect.
+> **Auth model (Website, anonymous).** No `RequirePermission`, no `/login` or
+> `/not-permitted` redirect. The "auth" row asserts the anonymous-by-design contract.
 
 ## Coverage matrix
 
 | ID | Scenario | Type | Priority | Status |
 |----|----------|------|----------|--------|
-| E2E-WPG-001 | Golden path - `ln-` hero + day-grouped agenda rows + best-effort speakers strip + shared chrome, exactly one `<h1>` | happy | P0 | _to author_ |
-| E2E-WPG-002 | Day grouping & ordering - sessions group by local calendar date and sort by start time within each day | happy | P1 | _to author_ |
-| E2E-WPG-003 | Theme pill is conditional - no theme name renders no `ln-agenda__pill`; a theme paints the neutral pill; a theme named only in the *other* language renders no empty chip | happy | P1 | _to author_ |
-| E2E-WPG-004 | Speakers strip is best-effort - 0 rows or a failed `/speakers` read omits the strip; the agenda still renders (no error state) | resilience | P1 | _to author_ |
-| E2E-WPG-005 | Empty state - `GET /programme/sessions` returns 0 items => the `ln-fsection` empty state (`Programme.Empty.Title`), no error block | happy | P1 | _to author_ |
-| E2E-WPG-006 | Auth: anonymous-by-design - page loads with no Authorization header, no `/login` and no `/not-permitted` redirect | auth | P0 | _to author_ |
-| E2E-WPG-007 | Error state - `GET /programme/sessions` fails (null envelope / unreachable) => the `ln-agenda__msg` alert, no day sections | resilience | P1 | _to author_ |
-| E2E-WPG-008 | Server 500 on `/programme/sessions` => client maps to null => error block, no unhandled exception | resilience | P2 | _to author_ |
-| E2E-WPG-009 | Speakers-only resilience - sessions 200 but `/speakers` 500 => agenda renders, strip absent, no error state | resilience | P2 | _to author_ |
-| E2E-WPG-010 | RTL / Arabic render - `ln-` mirror: hero photo to the left, right-aligned headings, Arabic day headings / titles / halls / theme pills / speaker names | i18n | P1 | _to author_ |
-| E2E-WPG-011 | Responsive - agenda rows wrap and speakers chips reflow; no horizontal overflow at 1440/1280/1024/768/390 in both languages | responsive | P1 | _to author_ |
-| E2E-WPG-012 | Reachability - the Programs mega-menu "Full agenda" item opens `/programme` | nav | P1 | _to author_ |
+| E2E-WPG-001 | Golden path - hero + day strip + type filter + timeline cards + speakers; one `<h1>` | happy | P0 | _to author_ |
+| E2E-WPG-002 | Day grouping & ordering - group by event-local (+03:00) date, sort by start | happy | P1 | _to author_ |
+| E2E-WPG-003 | Day strip switches the visible day (JS) - only the active day shows; `aria-pressed` moves | happy | P0 | _to author_ |
+| E2E-WPG-004 | Type filter (data-driven) - tabs render only when types exist; a tab hides non-matching cards; an emptied day shows the note | happy | P0 | _to author_ |
+| E2E-WPG-005 | Card content is data-driven - chip (category else theme) + description render when present; both omit when null; Pick fallback | happy | P1 | _to author_ |
+| E2E-WPG-006 | Speakers strip is best-effort - 0 rows or a failed `/speakers` omits the strip; agenda still renders | resilience | P1 | _to author_ |
+| E2E-WPG-007 | Empty state - 0 sessions => the `ln-fsection` empty state, no error | happy | P1 | _to author_ |
+| E2E-WPG-008 | Error state - a failed sessions envelope => `ln-agenda__msg`, no day sections | resilience | P1 | _to author_ |
+| E2E-WPG-009 | Server 500 on `/programme/sessions` => null => error block, no unhandled exception | resilience | P2 | _to author_ |
+| E2E-WPG-010 | Auth: anonymous-by-design - no Authorization header, no `/login` / `/not-permitted` | auth | P0 | _to author_ |
+| E2E-WPG-011 | No-JS fallback - every day + card visible, no filtering, content reachable | resilience | P0 | _to author_ |
+| E2E-WPG-012 | RTL / Arabic - day strip + tabs + time column mirror; Arabic content | i18n | P1 | _to author_ |
+| E2E-WPG-013 | Responsive - day strip scrolls, tabs wrap, cards stack; no overflow at 1440/1280/1024/768/390 both languages | responsive | P1 | _to author_ |
+| E2E-WPG-014 | Reachability - the Programs mega-menu "Full agenda" item opens `/programme` | nav | P1 | _to author_ |
 
 ## Scenarios
 
 ### E2E-WPG-001 — Golden path
 
 ```gherkin
-Feature: Website programme agenda renders the published forum schedule on the ln- kit
+Feature: Website programme agenda shows an app-style schedule
   As any visitor (anonymous or signed in)
-  I want to see the full forum agenda grouped by day
-  So that I can plan which sessions and halls to attend
+  I want a day strip, a type filter and timeline cards
+  So that I can browse the forum schedule by day and kind
 
 Background:
-  Given the API is reachable on http://localhost:5175
-  And the Website is reachable on http://localhost:5115
-  And - to seed the agenda - an Administrator has signed into the Control Panel
-      (superadmin@zagali-ict.com + TOTP via the Get-Totp helper)
+  Given the API is reachable on http://localhost:5175 and the Website on http://localhost:5115
   And via the admin API a Hall "Main Hall" / "القاعة الرئيسية" exists
-  And a Theme "Keynote" / "الكلمة الرئيسية" exists
+  And a Category "Opening & Welcome" / "الافتتاح والترحيب" exists
   And a Speaker "Dr. Sarah Al-Otaibi" / "د. سارة العتيبي" (rank "Chief Scientist") exists and is active
-  And an active published Session "Opening Keynote" / "الكلمة الافتتاحية" is scheduled
-      in "Main Hall", tagged with the "Keynote" theme, from 09:00 to 10:30 local on day D
-  And the browser is a fresh anonymous session (no auth cookie, no bearer token)
+  And a published Session "Opening Session" / "الجلسة الافتتاحية" in "Main Hall", category "Opening & Welcome",
+      type Event, 09:00-10:00 Riyadh on day D, with an Arabic + English description
+  And the browser is a fresh anonymous session
 
-Scenario: The published agenda renders on the shared ln- chrome
+Scenario: The agenda renders the day strip, timeline card and speakers
   When the browser opens /programme
   Then the shared header + footer render (LandingShell chrome)
-  And an interior hero (section.ln-pghero) renders with exactly one <h1> reading "Programme"
-  And a GET /api/v1/app/programme/sessions request fires with NO Authorization header and returns 200
-  And a GET /api/v1/app/speakers request fires (anonymous) and returns 200
-  And a day group (.ln-agenda__day) renders with an <h2> .ln-agenda__dayhead formatted "dddd, d MMMM yyyy" for day D
-  And inside it a li.ln-agenda__row shows .ln-agenda__time "09:00 – 10:30", an <h3> .ln-agenda__title "Opening Keynote", and a .ln-agenda__hall "Main Hall"
-  And that row shows a neutral .ln-agenda__pill reading "Keynote"
-  And a navy speakers band (section.ln-fsection--dark) renders a li.ln-agenda__spk with .ln-agenda__spkname "Dr. Sarah Al-Otaibi" and a .ln-agenda__spkrank "Chief Scientist"
-  And neither the empty state nor the .ln-agenda__msg error is present
+  And an interior hero (section.ln-pghero) renders exactly one <h1> "Programme"
+  And GET /api/v1/app/programme/sessions fires with NO Authorization header and returns 200
+  And GET /api/v1/app/speakers fires (anonymous) and returns 200
+  And a section.ln-fsection--dark.ln-agenda renders
+  And a ln-agenda__daystrip renders a ln-agenda__daypill for day D (weekday + date number), aria-pressed="true" once JS runs
+  And a ln-agenda__tab type filter renders "All" + "Events" (types present)
+  And a ln-agenda__label <h2> reads "Schedule"
+  And a ln-agenda__day for day D renders an <h3> date heading and a li.ln-agenda__card
+  And the card shows a gold ln-agenda__cat "Opening & Welcome", an <h4> "Opening Session", the hall "Main Hall",
+      a ln-agenda__when time column 09:00 / 10:00, and the description
+  And a ln-agenda__time-sr window "09:00 – 10:00" is present for assistive tech
+  And a navy speakers band (section.ln-fsection--dark) renders a li.ln-agenda__spk "Dr. Sarah Al-Otaibi" + rank "Chief Scientist"
   And the page title is "Programme · Saudi International Maritime Forum"
 ```
 
 **Evidence captured:**
-- Screenshot: `docs/screenshots/web-programme-en-1440.png` (EN) + `web-programme-ar-1440.png` (AR)
-- Console errors: 0 expected (the site-wide `favicon.ico` 404 and a benign shared-chrome font-preload warning are allowed)
-- Network: `GET /api/v1/app/programme/sessions` and `GET /api/v1/app/speakers` each 200 (ApiResult envelope, `Success = true`); no Authorization header on either; the hero + footer assets return 200
-- Audit row: none - `/programme` is a read-only anonymous page and writes no `OperationLog` / `RowAudit` row
+- Screenshot: `docs/screenshots/web-programme-en.png` (EN) + `web-programme-ar.png` (AR) + `web-programme-mobile.png`
+- Console errors: 0 (the site-wide `favicon.ico` 404 + a benign shared-chrome font-preload warning are allowed)
+- Network: `GET /api/v1/app/programme/sessions` + `/speakers` each 200, no Authorization header; hero + footer assets 200
+- Audit row: none (read-only anonymous page)
 
-### E2E-WPG-002 — Day grouping & ordering
-
-```gherkin
-Scenario: Sessions group by local calendar date and sort by start time within each day
-  Given three active sessions exist:
-    | code | title            | start (local)  | end (local)    |
-    | S1   | Afternoon Panel  | day D 14:00     | day D 15:00     |
-    | S2   | Opening Keynote  | day D 09:00     | day D 10:30     |
-    | S3   | Day-2 Workshop   | day D+1 09:00   | day D+1 11:00   |
-  When the browser opens /programme
-  Then exactly two .ln-agenda__day groups render, in ascending day order: day D then day D+1
-  And the day-D group lists "Opening Keynote" (09:00 – 10:30) before "Afternoon Panel" (14:00 – 15:00)
-  And the day-D+1 group lists "Day-2 Workshop" (09:00 – 11:00)
-  And the grouping key is the event-local (+03:00) date of StartUtc (EventTime.Local(StartUtc).Date), not the server-local or UTC date
-```
-
-> **Note.** `BuildDays` orders by `StartUtc`, groups by `EventTime.Local(StartUtc).Date`
-> (event-local +03:00 Riyadh), then orders the groups by date. The heading is the
-> event-local date, independent of the server timezone (shared with Session Detail),
-> so a session near midnight buckets to its Riyadh day.
-
-### E2E-WPG-003 — Conditional theme pill
+### E2E-WPG-002 — Day grouping & ordering (event-local +03:00)
 
 ```gherkin
-Scenario: The neutral theme pill renders only when a resolved theme name is present
-  Given an active session "Networking Break" exists with NO theme tagged
-      (PrimaryThemeName and PrimaryThemeNameArabic both null/blank)
-  And an active session "Opening Keynote" exists tagged with the "Keynote" theme (both languages)
+Scenario: Sessions group by the event-local (+03:00) date and sort by start
+  Given sessions: S1 "Afternoon" day D 14:00; S2 "Opening" day D 09:00; S3 "Day-2" day D+1 09:00 (Riyadh)
   When the browser opens /programme
-  Then the "Opening Keynote" row renders a neutral .ln-agenda__pill reading "Keynote"
-  And the "Networking Break" row renders NO .ln-agenda__pill at all
-  And both rows still render their .ln-agenda__time and .ln-agenda__hall
-
-Scenario: A theme named in only one language falls back to that language (no empty chip)
-  Given an active session "Tech Demo" is tagged with a theme whose Arabic name is set but English name is blank
-  And an active session "Networking Break" has NO theme name in either language
-  When the browser opens /programme under the English UI culture
-  Then the "Tech Demo" row renders a .ln-agenda__pill showing the Arabic theme name (PickOrNull falls back to the non-blank language)
-  And the "Networking Break" row renders NO .ln-agenda__pill
-  When the browser opens /programme under the Arabic UI culture
-  Then the "Tech Demo" row renders a .ln-agenda__pill with the Arabic theme name
+  Then two ln-agenda__day panels render (data-agenda-daypanel "0" then "1"), ascending
+  And day 0 lists "Opening" (09:00 – 10:00) before "Afternoon" (14:00 – ...)
+  And the grouping key is EventTime.Local(StartUtc).Date (+03:00), not the server-local or UTC date
 ```
 
-### E2E-WPG-004 — Speakers strip is best-effort
+### E2E-WPG-003 — Day strip switches the day (JS)
 
 ```gherkin
-Scenario: No speakers -> the speakers strip is omitted, the agenda still renders
-  Given at least one active session exists
-  And GET /api/v1/app/speakers returns 200 with Data.Items = []
+Scenario: Clicking a day pill shows that day only
+  Given the agenda has 3 days and JS is enabled
   When the browser opens /programme
-  Then the .ln-agenda__day groups render normally
-  And NO section.ln-fsection--dark speakers band is present (the strip renders only when _speakers.Count > 0)
-  And no .ln-agenda__msg error appears
-
-Scenario: A speakers fetch failure does not break the agenda
-  Given at least one active session exists (GET /programme/sessions returns 200)
-  And GET /api/v1/app/speakers returns a failed/unreachable result (the client maps it to null)
-  When the browser opens /programme
-  Then the .ln-agenda__day groups still render
-  And the speakers strip is omitted
-  And _error stays false - the page does NOT show the .ln-agenda__msg error
+  Then only the first day's ln-agenda__day is visible (is-enhanced hides the others); its pill has aria-pressed="true"
+  When the user clicks the 2nd ln-agenda__daypill (data-agenda-day="1")
+  Then only day 1's panel is visible; its pill has aria-pressed="true" and the others "false"
 ```
 
-### E2E-WPG-005 — Empty state
+### E2E-WPG-004 — Type filter (data-driven + empty-day note)
 
 ```gherkin
-Scenario: Zero published sessions renders the ln- empty state
-  Given GET /api/v1/app/programme/sessions returns 200 with Data.Items = []
+Scenario: The type filter hides non-matching cards and notes an emptied day
+  Given day 0 has an Event and a Session, and at least one Workshop exists on another day
   When the browser opens /programme
-  Then BuildDays produces zero day groups (_days.Count == 0)
-  And a section.ln-fsection renders a .ln-fsection__head with an <h2> reading "No sessions yet" / "لا توجد جلسات بعد"
-  And a .ln-fsection__sub reads "The agenda has not been published yet. Please check back soon." / "لم يتم نشر الأجندة بعد. يُرجى التحقق لاحقًا."
-  And no .ln-agenda__msg error appears
-  And the ln-pghero hero still renders the "Programme" title + subtitle
+  Then a ln-agenda__tabs renders "All" (aria-pressed="true") + "Workshops" + "Sessions" + "Events"
+  When the user clicks the "Workshops" tab (data-agenda-type="Workshop")
+  Then every visible li.ln-agenda__card has data-agenda-cardtype="Workshop" (others get .is-hidden)
+  And a day with no Workshop shows the ln-agenda__none note "No sessions match this filter." (its list hidden)
+  When the sessions carry NO type at all
+  Then the ln-agenda__tabs row is NOT rendered (data-driven)
 ```
 
-### E2E-WPG-006 — Auth gate (anonymous by design)
+### E2E-WPG-005 — Card content is data-driven
 
 ```gherkin
-Scenario: The page is reachable anonymously and never redirects to a login or not-permitted page
-  Given a fresh browser with no auth cookie and no bearer token
-  When the user opens /programme directly
-  Then the page renders (agenda or empty state) WITHOUT redirecting to /login
-  And the page does NOT redirect to /not-permitted
-  And the GET /api/v1/app/programme/sessions request carries NO Authorization header
-  And the API does not return 401/403 for the public reads
-
-Scenario: A signed-in session changes nothing on this page
-  Given an Approved Visitor is signed in on the Website
-  When they open /programme
-  Then the same anonymous public reads fire (no bearer token is attached by SimfPublicClient)
-  And the rendered agenda is identical to the anonymous view
+Scenario: The chip + description render only when present, with the shared fallback
+  Given session A has category "Maritime Security" (EN+AR) and a description; session B has neither
+  When the browser opens /programme
+  Then A's card shows a gold ln-agenda__cat chip and a ln-agenda__desc
+  And B's card shows neither (Chip = PickOrNull(category) ?? PickOrNull(theme) = null; Description = null)
+  And under the English culture, a category set only in Arabic still shows (Pick falls back to the non-blank language)
 ```
 
-### E2E-WPG-007 — Error state (sessions fetch returns null)
+### E2E-WPG-006 — Speakers strip is best-effort
+
+```gherkin
+Scenario: No speakers -> the strip is omitted, the agenda still renders
+  Given at least one session exists and GET /speakers returns 200 with Items = [] (or fails -> null)
+  When the browser opens /programme
+  Then the agenda renders and NO section.ln-fsection--dark speakers band is present; no error appears
+```
+
+### E2E-WPG-007 — Empty state
+
+```gherkin
+Scenario: Zero sessions renders the ln- empty state
+  Given GET /programme/sessions returns 200 with Items = []
+  When the browser opens /programme
+  Then a section.ln-fsection renders <h2> "No sessions yet" + the sub text; no ln-agenda__msg error; the hero still renders
+```
+
+### E2E-WPG-008 — Error state
 
 ```gherkin
 Scenario: A failed sessions envelope shows the ln- error block
-  Given GET /api/v1/app/programme/sessions returns a body whose ApiResult envelope has Success = false
-      (so SimfPublicClient.GetProgrammeSessionsAsync returns null)
+  Given GET /programme/sessions returns Success=false (client -> null)
   When the browser opens /programme
-  Then OnInitializedAsync sets _error = true and returns early
-  And the page renders a single p.ln-agenda__msg with role="alert"
-  And the alert reads "The programme could not be loaded. Please try again." / "تعذّر تحميل البرنامج. حاول مرة أخرى."
-  And NO .ln-agenda__day group, NO empty state, and NO speakers strip render
-  And no GET /api/v1/app/speakers request fires (the method returned before the speakers call)
+  Then a single p.ln-agenda__msg (role="alert") renders "The programme could not be loaded. Please try again."
+  And NO day strip / cards / speakers render; no /speakers request fires
 ```
 
-### E2E-WPG-008 — Server 500 on /programme/sessions
+### E2E-WPG-009 — Server 500
 
 ```gherkin
-Scenario: API 500 on the sessions list degrades to the error block with no unhandled exception
-  Given GET /api/v1/app/programme/sessions returns HTTP 500
+Scenario: API 500 degrades to the error block with no unhandled exception
+  Given GET /programme/sessions returns HTTP 500
   When the browser opens /programme
-  Then SimfPublicClient reads the body and, on a failed/non-JSON envelope, returns null (it never throws)
-  And the page sets _error = true and renders the .ln-agenda__msg error
-  And no unhandled exception reaches the browser console
-  And the speakers call is not reached
+  Then SimfPublicClient returns null (never throws); the ln-agenda__msg error renders; no console exception; the speakers call is not reached
 ```
 
-### E2E-WPG-009 — Speakers-only resilience (sessions OK, speakers 500)
+### E2E-WPG-010 — Auth (anonymous by design)
 
 ```gherkin
-Scenario: A 500 on /speakers leaves the agenda intact
-  Given GET /api/v1/app/programme/sessions returns 200 with at least one session
-  And GET /api/v1/app/speakers returns HTTP 500
-  When the browser opens /programme
-  Then GetSpeakersAsync returns null (no throw)
-  And the speakers strip is omitted
-  And the .ln-agenda__day groups render normally
-  And _error stays false - NO .ln-agenda__msg error renders
-  And no unhandled exception reaches the browser console
+Scenario: Reachable anonymously; never redirects to login / not-permitted
+  Given a fresh browser with no auth cookie / bearer token
+  When the user opens /programme
+  Then the page renders WITHOUT redirecting to /login or /not-permitted
+  And the sessions request carries NO Authorization header; the API does not 401/403
+  And a signed-in session changes nothing (SimfPublicClient attaches no bearer)
 ```
 
-### E2E-WPG-010 — RTL / Arabic render
+### E2E-WPG-011 — No-JS fallback
 
 ```gherkin
-Scenario: The agenda mirrors and renders Arabic content under an Arabic UI culture
-  Given the seeded session has TitleArabic="الكلمة الافتتاحية", HallNameArabic="القاعة الرئيسية", PrimaryThemeNameArabic="الكلمة الرئيسية"
-  And the seeded speaker has NameArabic="د. سارة العتيبي"
-  When the browser opens /programme under the Arabic UI culture (<html dir="rtl" lang="ar">)
-  Then the page mirrors right-to-left and the ln-pghero hero photo sits on the LEFT
-  And the <h1> reads "البرنامج"
-  And the .ln-agenda__dayhead renders in the Arabic culture's "dddd, d MMMM yyyy" form
-  And the .ln-agenda__title shows "الكلمة الافتتاحية" (Pick prefers the *Arabic value)
-  And the .ln-agenda__hall shows "القاعة الرئيسية" and the .ln-agenda__pill shows "الكلمة الرئيسية"
-  And the speakers band heading reads "المتحدثون" and a .ln-agenda__spkname shows "د. سارة العتيبي"
-  And the .ln-agenda__spkrank keeps its English value but is tagged lang="en"
-  And no Latin text leaks where an Arabic value is present
-
-Scenario: Arabic fallback when an *Arabic field is blank
-  Given a session has Title="Tech Demo" but TitleArabic is blank
-  When the page renders under the Arabic culture
-  Then the .ln-agenda__title falls back to the English "Tech Demo" (Pick returns the base when arabic is blank)
+Scenario: With JS disabled every day + card is visible and reachable
+  Given the browser has JavaScript disabled (initAgenda never runs)
+  When the user opens /programme
+  Then the ln-agenda band has NO .is-enhanced class
+  And EVERY ln-agenda__day panel is visible (no day is display:none) with its <h3> date heading
+  And NO ln-agenda__card is hidden and NO ln-agenda__none note shows
+  And the day pills + type tabs render but are inert (no filtering) - all content is reachable by scrolling
 ```
 
-### E2E-WPG-011 — Responsive / no horizontal overflow
+### E2E-WPG-012 — RTL / Arabic
 
 ```gherkin
-Scenario: The agenda + speakers reflow with no horizontal overflow
-  When the browser opens /programme and the viewport width is set to each of 1440, 1280, 1024, 768, 390
+Scenario: The agenda mirrors and renders Arabic under the Arabic culture
+  When the browser opens /programme under <html dir="rtl" lang="ar">
+  Then the <h1> reads "البرنامج"; the ln-agenda__label reads "المواعيد"
+  And the ln-agenda__daystrip + ln-agenda__tabs sit inline-start (right); the day pills read e.g. "الجمعة 20"
+  And the tabs read "الكل / ورش العمل / جلسات / الأحداث"
+  And each card's ln-agenda__when time column sits on the RIGHT; the chip/title/hall/description render Arabic
+  And the ln-agenda__spkrank keeps its English value but is tagged lang="en"
+  And no Latin text leaks where an Arabic value exists (Pick prefers the *Arabic value)
+```
+
+### E2E-WPG-013 — Responsive
+
+```gherkin
+Scenario: The agenda reflows with no horizontal overflow
+  When the viewport width is set to each of 1440, 1280, 1024, 768, 390
   Then at every width document.scrollWidth == document.clientWidth (no horizontal overflow)
-  And at <= 640px each .ln-agenda__row wraps so the .ln-agenda__time takes its own full-width line and the .ln-agenda__pill drops to the start
-  And the speakers chips (.ln-agenda__spk) wrap onto multiple rows
+  And the ln-agenda__daystrip scrolls horizontally if the days overflow; the ln-agenda__tabs wrap
+  And at <= 640px each ln-agenda__card stacks (flex-direction: column) and its ln-agenda__when goes horizontal
   And this holds in BOTH the EN (LTR) and AR (RTL) cultures
 ```
 
-### E2E-WPG-012 — Reachability via the nav
+### E2E-WPG-014 — Reachability via the nav
 
 ```gherkin
 Scenario: The "Full agenda" nav item opens the page
@@ -290,29 +254,22 @@ Scenario: The "Full agenda" nav item opens the page
 
 ## Implementation notes
 
-- **Read-only, anonymous, no CRUD.** `/programme` has no button, modal, form,
-  filter, toggle or grid action - the matrix above is exhaustive for the page's
-  *actual* behaviour (load -> group -> render, plus the best-effort speakers strip
-  and the three terminal states: agenda / empty / error).
-- **ln- re-skin.** The 2026-07-20 changeset replaced the legacy `SimfBanner` /
-  `SimfEmptyState` / `SimfAlert` / `SimfPill` / `simf-card` DOM with the shared
-  `ln-` kit (`ln-pghero` hero, `ln-fsection` sections, the new `ln-agenda*` band,
-  the `ln-fsection--dark` speakers strip). Assert the `ln-` classes above, not the
-  retired `Simf*` ones.
-- **Day-filter parameter not used by this page.** The API supports
-  `GET /api/v1/app/programme/sessions?day=yyyy-MM-dd`, but `Programme.razor` calls
-  the unfiltered `GetProgrammeSessionsAsync()` and groups client-side. The
-  malformed-`day` -> 400 path is exercised at the API layer instead.
-- **Lower-layer coverage:**
-  - component (bUnit, no browser) `tests/SIMF.Web.Tests/ProgrammePageTests.cs` pins
-    the three render branches + the `ln-` DOM (`ln-pghero`, `ln-agenda__row`,
-    `ln-agenda__spk`, `ln-fsection`, `ln-agenda__msg`) via a stub `SimfPublicClient`.
-  - API integration `tests/SIMF.Api.Tests/ProgrammeSessionsTests.cs` +
-    `PublicSpeakersTests.cs` prove the wire contract (anonymous, ordering,
-    soft-delete drop-off, 400/404) at a lower layer.
+- **Read-only, anonymous.** The only interactions are the day strip + type filter
+  (client-side JS) and navigations; no CRUD, no server round-trip on filter.
+- **Filter contract.** The tab's `data-agenda-type` and the card's
+  `data-agenda-cardtype` both come from `SessionType.ToString()`
+  (`Workshop`/`Session`/`Event`); the JS filter is string-equality, so the two
+  must not drift (pinned by the bUnit multi-day/typed test).
+- **Progressive enhancement.** The single-day view + filter are gated on
+  `.is-enhanced` (JS-added), so WPG-011 (no-JS) is the safety contract: all
+  content reachable without JS.
+- **Lower-layer coverage:** component (bUnit) `tests/SIMF.Web.Tests/ProgrammePageTests.cs`
+  pins the render branches + the day-id / filter / chip contract via a stub
+  `SimfPublicClient`; API integration `ProgrammeSessionsTests` + `PublicSpeakersTests`
+  prove the wire contract. The JS toggle path (WPG-003/004/011) is browser-only.
 - **Convert to Playwright** when adopted: copy each Gherkin scenario into a
-  `.feature` under `tests/SIMF.E2E.Tests/`. The steps are already runner-agnostic.
+  `.feature` under `tests/SIMF.E2E.Tests/`.
 
 ---
 
-_Last reviewed:_ 2026-07-20 by Claude (Programme agenda page - `ln-` Bootstrap SSR re-skin; live agenda + speakers strip).
+_Last reviewed:_ 2026-07-20 by Claude (Programme agenda - app-style day strip + type filter + timeline cards, `ln-` SSR, live data).

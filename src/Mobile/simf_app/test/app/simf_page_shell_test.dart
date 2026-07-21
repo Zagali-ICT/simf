@@ -139,7 +139,8 @@ void main() {
         const Scaffold(bottomNavigationBar: SimfBottomNav(current: SimfTab.home)),
       );
 
-      await tester.tap(find.bySemanticsLabel('Sessions'));
+      // D-750 — the program/agenda tab's label + semantics is now "Agenda".
+      await tester.tap(find.bySemanticsLabel('Agenda'));
       await tester.pumpAndSettle();
       expect(find.text('SESSIONS'), findsOneWidget);
     });

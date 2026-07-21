@@ -283,6 +283,14 @@
   <data name="Programme.Empty.Title" xml:space="preserve"><value>No sessions yet</value></data>
   <data name="Programme.Empty.Text" xml:space="preserve"><value>The agenda has not been published yet. Please check back soon.</value></data>
   <data name="Programme.Speakers.Title" xml:space="preserve"><value>Speakers</value></data>
+  <data name="Programme.Agenda.Title" xml:space="preserve"><value>Schedule</value></data>
+  <data name="Programme.DayStrip.Aria" xml:space="preserve"><value>Select a day</value></data>
+  <data name="Programme.Filter.Aria" xml:space="preserve"><value>Filter by session type</value></data>
+  <data name="Programme.Filter.All" xml:space="preserve"><value>All</value></data>
+  <data name="Programme.Filter.Empty" xml:space="preserve"><value>No sessions match this filter.</value></data>
+  <data name="Programme.Type.Workshop" xml:space="preserve"><value>Workshops</value></data>
+  <data name="Programme.Type.Session" xml:space="preserve"><value>Sessions</value></data>
+  <data name="Programme.Type.Event" xml:space="preserve"><value>Events</value></data>
 
   <!-- visits page (/visit) — Figma 5867-24636 (supersedes the old MudBlazor visit-entry page) -->
   <data name="Visit.PageTitle" xml:space="preserve"><value>Visiting &amp; travel — Saudi International Maritime Forum</value></data>

@@ -3173,35 +3173,15 @@ internal static class AccountEndpoints
             return Forward(await api.DeleteVenueMapNodeAsync(id, token));
         });
 
-        // P2.2 (D-227) — booking approval queue passthroughs.
+        // #6/#17 — booking monitor passthrough (read-only; bookings auto-confirm
+        // and no-shows are released by a background worker, so there is no
+        // approve/reject/bulk-approve action).
         group.MapPost("/admin/bookings/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
-            return Forward(await api.ListPendingBookingsAsync(body, token));
-        });
-        group.MapPost("/admin/bookings/{id:guid}/approve",
-            async (Guid id, HttpContext http, SimfAdminClient api) =>
-        {
-            var token = await http.GetTokenAsync("access_token");
-            if (token is null) return Results.Unauthorized();
-            return Forward(await api.ApproveBookingAsync(id, token));
-        });
-        group.MapPost("/admin/bookings/{id:guid}/reject",
-            async (Guid id, RejectBookingRequest body, HttpContext http, SimfAdminClient api) =>
-        {
-            var token = await http.GetTokenAsync("access_token");
-            if (token is null) return Results.Unauthorized();
-            return Forward(await api.RejectBookingAsync(id, body, token));
-        });
-        group.MapPost("/admin/bookings/bulk-approve",
-            async (AdminBulkApprovalRequest body, HttpContext http, SimfAdminClient api) =>
-        {
-            var token = await http.GetTokenAsync("access_token");
-            if (token is null) return Results.Unauthorized();
-            return Forward(await api.BulkApproveBookingsAsync(
-                body.Ids?.ToList() ?? new List<Guid>(), token));
+            return Forward(await api.ListActiveBookingsAsync(body, token));
         });
 
         // Multipart gov-Excel import (same SameSite=Lax CSRF stance as media upload).

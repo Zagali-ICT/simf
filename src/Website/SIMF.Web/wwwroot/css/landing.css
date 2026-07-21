@@ -465,25 +465,69 @@
 @media (max-width: 720px) { .ln-speakers__title { font-size: 24px; } }
 
 /* =========================== PROGRAMME AGENDA ==================== */
-/* Live day-grouped schedule (/programme). Re-skins the legacy Simf* agenda onto
-   the ln- kit: one day group (h2) per local date, each a list of session rows
-   (time window | title + hall | optional theme pill), plus a dark speakers strip.
-   The band reuses the shared ln-fsection chrome verbatim (its 32px inner gap
-   separates the day groups); only the row/chip elements below are page-specific.
-   Elements stretch to the inner's width via the column-flex default. */
-.ln-agenda__day { display: flex; flex-direction: column; gap: 20px; }
-.ln-agenda__dayhead { font-size: 24px; font-weight: 800; line-height: 1.2; color: var(--ink); text-align: start; }
+/* Live day-grouped schedule (/programme), on a dark ln-fsection--dark band.
+   Redesigned to echo the app "Programme schedule" (Figma 883:2308) in the ln-
+   kit: a white day strip switches the visible day, optional type tabs filter by
+   kind, and each session is a timeline card (event-local time column + gold
+   category chip + title + hall + description). Day/type switching is JS
+   progressive enhancement, gated on .is-enhanced so every day + card stays
+   visible with no JS. All colours are ln- tokens; the translucent-white overlays
+   follow the existing dark-band precedent (e.g. ln-scard__btn / ln-tcard). */
+
+/* -- day strip (white bar; shrinks to its pills, scrolls if many days) -- */
+.ln-agenda__daystrip { align-self: flex-start; max-width: 100%; display: flex; gap: 8px; padding: 8px;
+  background: var(--white); border-radius: var(--radius-md); overflow-x: auto; scrollbar-width: none; }
+.ln-agenda__daystrip::-webkit-scrollbar { display: none; }
+.ln-agenda__daypill { flex: 0 0 auto; min-width: 64px; display: flex; flex-direction: column; align-items: center;
+  gap: 2px; padding: 8px 12px; border: 0; border-radius: var(--radius-sm); background: transparent;
+  font-family: inherit; cursor: pointer; transition: background-color .2s ease; }
+.ln-agenda__dayweek { font-size: 12px; line-height: 16px; font-weight: 600; color: var(--gray-darker); text-transform: uppercase; }
+.ln-agenda__daynum { font-size: 20px; line-height: 24px; font-weight: 800; color: var(--ink); }
+.ln-agenda__daypill:hover { background: var(--bg-gray); }
+.ln-agenda__daypill.is-active { background: var(--navy); }
+.ln-agenda__daypill.is-active .ln-agenda__dayweek { color: var(--primary-light); }
+.ln-agenda__daypill.is-active .ln-agenda__daynum { color: var(--gold); }
+
+/* -- type filter tabs -- */
+.ln-agenda__tabs { align-self: flex-start; display: flex; flex-wrap: wrap; gap: 12px; }
+.ln-agenda__tab { padding: 8px 20px; border: 1px solid rgba(255, 255, 255, .25); border-radius: var(--radius-sm);
+  background: transparent; color: var(--white); font-family: inherit; font-size: 16px; line-height: 24px;
+  white-space: nowrap; cursor: pointer; transition: background-color .2s ease, color .2s ease, border-color .2s ease; }
+.ln-agenda__tab:hover { border-color: var(--gold); }
+.ln-agenda__tab.is-active { background: var(--gold); border-color: var(--gold); color: var(--gold-darker); font-weight: 700; }
+
+.ln-agenda__label { font-size: 24px; font-weight: 800; line-height: 1.2; color: var(--white); text-align: start; }
+
+/* -- day panel + timeline cards -- */
+.ln-agenda__day { display: flex; flex-direction: column; gap: 16px; }
+.ln-agenda__dayhead { font-size: 18px; font-weight: 700; line-height: 24px; color: var(--primary-light); text-align: start; }
 .ln-agenda__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
-.ln-agenda__row { display: flex; align-items: center; gap: 24px; padding: 20px 24px; background: var(--white);
-  border: 1px solid var(--border-neutral); border-radius: var(--radius-md); }
-.ln-agenda__time { flex: 0 0 auto; min-width: 132px; font-size: 16px; font-weight: 800; line-height: 24px;
-  color: var(--primary); font-variant-numeric: tabular-nums; }
-.ln-agenda__main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; text-align: start; }
-.ln-agenda__title { font-size: 18px; font-weight: 700; line-height: 24px; color: var(--ink); }
-.ln-agenda__hall { font-size: 14px; line-height: 20px; color: var(--gray-darker); }
-.ln-agenda__pill { flex: 0 0 auto; padding: 4px 12px; border-radius: var(--radius-full);
-  background: var(--bg-gray); font-size: 13px; line-height: 20px; color: var(--ink); white-space: nowrap; }
+.ln-agenda__card { display: flex; gap: 20px; padding: 20px 24px; background: rgba(255, 255, 255, .04);
+  border: 1px solid rgba(255, 255, 255, .08); border-radius: var(--radius-md); }
+.ln-agenda__when { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  min-width: 56px; font-variant-numeric: tabular-nums; }
+.ln-agenda__t1 { font-size: 16px; font-weight: 800; line-height: 20px; color: var(--white); }
+.ln-agenda__line { flex: 1 1 auto; width: 2px; min-height: 16px; border-radius: var(--radius-full); background: var(--gold); opacity: .5; }
+.ln-agenda__t2 { font-size: 14px; font-weight: 600; line-height: 20px; color: var(--primary-light); }
+.ln-agenda__content { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; text-align: start; }
+.ln-agenda__cat { display: inline-flex; align-items: center; gap: 8px; color: var(--gold); font-size: 14px; font-weight: 700; line-height: 20px; }
+.ln-agenda__cat svg { flex: 0 0 auto; width: 16px; height: 16px; }
+.ln-agenda__title { font-size: 18px; font-weight: 800; line-height: 24px; color: var(--white); }
+.ln-agenda__hall { font-size: 14px; line-height: 20px; color: var(--primary-light); }
+.ln-agenda__desc { font-size: 16px; line-height: 24px; color: var(--primary-light); }
+
 .ln-agenda__msg { font-size: 18px; line-height: 28px; color: var(--ink); text-align: center; }
+.ln-agenda__time-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* JS-enhanced: show only the active day; the type filter hides non-matching
+   cards. Gated on .is-enhanced so no-JS keeps every day + card reachable. */
+.ln-agenda.is-enhanced .ln-agenda__day:not(.is-active) { display: none; }
+.ln-agenda .ln-agenda__card.is-hidden { display: none; }
+/* The type filter can empty a day: swap its list for a short note (JS-only). */
+.ln-agenda__none { display: none; font-size: 16px; line-height: 24px; color: var(--primary-light); text-align: start; }
+.ln-agenda__day.is-empty .ln-agenda__none { display: block; }
+.ln-agenda__day.is-empty .ln-agenda__list { display: none; }
+
 /* speakers strip — sits on a dark ln-fsection--dark band */
 .ln-agenda__speakers { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 16px; }
 .ln-agenda__spk { display: inline-flex; align-items: center; gap: 12px; padding: 12px 16px;
@@ -491,10 +535,11 @@
 .ln-agenda__spkname { font-size: 16px; font-weight: 600; line-height: 24px; color: var(--white); }
 .ln-agenda__spkrank { padding: 2px 10px; border-radius: var(--radius-full); background: rgba(255, 255, 255, .16);
   font-size: 13px; line-height: 20px; color: var(--primary-light); white-space: nowrap; }
+
 @media (max-width: 640px) {
-  .ln-agenda__row { flex-wrap: wrap; gap: 8px 16px; }
-  .ln-agenda__time { flex: 1 1 100%; min-width: 0; }
-  .ln-agenda__pill { align-self: flex-start; }
+  .ln-agenda__card { flex-direction: column; gap: 12px; }
+  .ln-agenda__when { flex-direction: row; align-items: center; min-width: 0; }
+  .ln-agenda__line { width: 16px; min-height: 0; height: 2px; flex: 0 0 16px; }
 }
 
 /* ========================== PARTNERS BAND ======================= */
