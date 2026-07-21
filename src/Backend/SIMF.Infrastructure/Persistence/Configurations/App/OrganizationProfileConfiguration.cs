@@ -52,6 +52,9 @@ internal sealed class OrganizationProfileConfiguration
         builder.Property(p => p.RegistrationSuccessMessage).HasMaxLength(1024);
         builder.Property(p => p.RegistrationSuccessMessageArabic).HasMaxLength(1024);
 
+        // Build #13 — the "Meet People Like You" partner-directory switch; on by default.
+        builder.Property(p => p.PartnerDirectoryEnabled).HasDefaultValue(true);
+
         // Stored as int — append-only enum (ForumStatus).
         builder.Property(p => p.Status).HasConversion<int>();
 
@@ -84,6 +87,7 @@ internal sealed class OrganizationProfileConfiguration
             LocationTextArabic = "السعودية",
             RegistrationSuccessMessage = SiteSettingKeys.DefaultRegistrationMessageEn,
             RegistrationSuccessMessageArabic = SiteSettingKeys.DefaultRegistrationMessageAr,
+            PartnerDirectoryEnabled = true,
             CreatedAt = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
         });
     }

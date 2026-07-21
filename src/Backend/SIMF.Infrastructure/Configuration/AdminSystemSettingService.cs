@@ -211,6 +211,14 @@ internal sealed class AdminSystemSettingService(
             set(CleanSocialUrl(value));
             changed = true;
         }
+        // Build #13 — a nullable bool toggle follows the same partial-update rule:
+        // null = leave unchanged, a provided value is applied.
+        void SetBool(bool? value, Action<bool> set)
+        {
+            if (value is null) { return; }
+            set(value.Value);
+            changed = true;
+        }
 
         SetMessage(request.RegistrationMessageAr, v => profile.RegistrationSuccessMessageArabic = v);
         SetMessage(request.RegistrationMessageEn, v => profile.RegistrationSuccessMessage = v);
@@ -221,6 +229,7 @@ internal sealed class AdminSystemSettingService(
         SetSocial(request.YouTube, v => profile.YouTubeUrl = v);
         SetSocial(request.TikTok, v => profile.TikTokUrl = v);
         SetSocial(request.Snapchat, v => profile.SnapchatUrl = v);
+        SetBool(request.PartnerDirectoryEnabled, v => profile.PartnerDirectoryEnabled = v);
 
         if (!changed) { return; }
 

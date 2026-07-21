@@ -10,11 +10,16 @@ class SiteSettings {
     required this.registrationMessageAr,
     required this.registrationMessageEn,
     required this.social,
+    this.partnerDirectoryEnabled = true,
   });
 
   final String registrationMessageAr;
   final String registrationMessageEn;
   final SiteSocialLinks social;
+
+  /// Build #13 — the CP switch for the "Meet People Like You" partner directory.
+  /// Defaults to true (fail-open) while loading / on error / on an older payload.
+  final bool partnerDirectoryEnabled;
 
   /// The welcome message for [languageCode] ('ar' → Arabic, else English).
   String messageFor(String languageCode) =>
@@ -29,6 +34,8 @@ class SiteSettings {
           (json['social'] as Map?)?.cast<String, dynamic>() ??
               const <String, dynamic>{},
         ),
+        partnerDirectoryEnabled:
+            json['partnerDirectoryEnabled'] as bool? ?? true,
       );
 }
 

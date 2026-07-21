@@ -33,6 +33,7 @@ class VisitorHome extends StatelessWidget {
     this.profile,
     this.isExhibitor = false,
     this.isVip = false,
+    this.partnerDirectoryEnabled = true,
     super.key,
   });
 
@@ -56,6 +57,10 @@ class VisitorHome extends StatelessWidget {
   /// D-745 — the "اللقاءات الثنائية" tile (the VIP bilateral-meetings page) is
   /// shown only to VIP guests; non-VIP don't see it (they can't reach the page).
   final bool isVip;
+
+  /// Build #13 — the "قابل أشخاص مثلك" tile is hidden when the CP switch for the
+  /// partner directory is off (the feature is unavailable). Default true.
+  final bool partnerDirectoryEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -188,12 +193,14 @@ class VisitorHome extends StatelessWidget {
           const SizedBox(height: SimfTokens.space4),
           SimfTileRow(
             children: <Widget>[
-              SimfNavTile(
-                label: l10n.tileMeetPeople,
-                iconAsset: HomeIcons.meetPeople,
-                minHeight: 80,
-                onTap: () => context.pushNamed(RouteNames.meetPeople),
-              ),
+              // Build #13 — hidden when the CP partner-directory switch is off.
+              if (partnerDirectoryEnabled)
+                SimfNavTile(
+                  label: l10n.tileMeetPeople,
+                  iconAsset: HomeIcons.meetPeople,
+                  minHeight: 80,
+                  onTap: () => context.pushNamed(RouteNames.meetPeople),
+                ),
               SimfNavTile(
                 label: l10n.chatbotTitle,
                 iconAsset: HomeIcons.aiAssistant,

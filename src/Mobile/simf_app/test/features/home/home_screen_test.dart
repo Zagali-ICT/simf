@@ -8,6 +8,7 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 import 'package:simf_app/core/organization_profile/organization_profile.dart';
+import 'package:simf_app/core/site_settings/site_settings.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_app/features/banners/data/banner_models.dart';
 import 'package:simf_app/features/banners/data/banners_repository.dart';
@@ -253,6 +254,15 @@ Future<void> _pump(
         // #43 — no banners by default, so the hero shows the static fallback
         // (no auto-advance timer) and no real GET /app/banners fetch fires.
         bannersProvider.overrideWith((ref) async => const <PublicBannerItem>[]),
+        // Build #13 — the Home meet-tile visibility reads site-settings; override
+        // it so no real GET /app/site-settings fetch fires (partner directory on).
+        siteSettingsProvider.overrideWith(
+          (ref) async => const SiteSettings(
+            registrationMessageAr: '',
+            registrationMessageEn: '',
+            social: SiteSocialLinks(),
+          ),
+        ),
       ],
       child: MaterialApp.router(
         routerConfig: router,

@@ -1,62 +1,91 @@
-# Meet people — قابل أشخاص مثلك (Page 035, `#35`)
+# Meet people - قابل أشخاص مثلك (Page 035, `#35`)
 
-- **Route:** `/meet` (`RouteNames.meetPeople`). Access: **Visitor (login-only, approved account)** — `RequireApprovedAccount`.
-- **Figma:** **1072:13409** (D-448 parity). **Clean-code freeze:** D-632 (2026-07-04).
+- **Route:** `/meet` (`RouteNames.meetPeople`). Access: **Visitor (login-only, approved account)** - `RequireApprovedAccount`.
+- **Build #13 rework (2026-07-22):** this screen was the AI "% match" recommender; it is now the curated + opt-in **partner directory**. This doc **supersedes** the old recommender behavior (the smart-suggestions header card + per-match "% تطابق" cards + backend match reason are gone). No pinned Figma node - the screen reuses the existing speakers/sponsors list chrome (`SimfIdentityCell`), owner-approved.
 
 ## Purpose
 
-The "meet someone like you" recommendations for an approved visitor
-(`GET /app/account/recommendations/meet-like-you`): a smart-suggestions header
-card (title + subtitle + three topic chips) over per-match cards — the gold **%
-match** (from the scorer's `score`) over the `تطابق` label, the name, the
-profile-type line, the match reason (prefers the backend-generated bilingual
-`matchReason`, D-451; falls back to the shared-interest count) and a gold initials
-avatar.
+Show an approved member a directory of people and organisations worth meeting at
+the forum - not an algorithmic recommendation. The list is the **deduped union**
+of the curated exhibition entities plus opted-in members:
 
-## Structure (post-decomposition)
+| Kind (`entry.kind`) | Who | Tap navigates to |
+|---------------------|-----|------------------|
+| `speaker` | Curated Speakers (name, rank, photo, country) | Speaker profile (`RouteNames.speakerProfile`) |
+| `sponsor` | Sponsors, shown by (Contact-first) company name + tagline | Sponsor detail (`RouteNames.sponsorDetail`) |
+| `booth` | Exhibition booth companies (`id` = booth id, name = exhibitor company name, sector subtitle) | Exhibitor detail (`RouteNames.exhibitorDetail`) |
+| `person` | Opted-in "Other"-type members (name + job title) | Nothing - the row is non-tappable |
+
+**Who never appears:** Normal and VIP visitors. A `person` row is included only
+when the account is **Approved + non-Admin + `UserProfile.ShowInMeetLikeYou == true`
++ `ProfileType.IsForVisitor == false`**. De-dup: a person who is also a curated
+Speaker (linked `UserProfileId`) appears **once, as the speaker** - the curated
+entity wins.
+
+## Data source
+
+`partnerDirectoryProvider` → **`GET /api/v1/app/networking/partner-directory`**
+(`RequireApprovedAccount`, no permission code) → `ApiResult<PartnerDirectoryResponse>`
+where `PartnerDirectoryResponse { entries: PartnerDirectoryEntry[] }`. Each
+`PartnerDirectoryEntry` carries `kind, id, name, nameArabic, subtitle,
+subtitleArabic, logoRelativePath, logoContactId, countryId, countryNameEn,
+countryNameAr`. Logos follow the existing projection convention (a relative path
+or the owning contact id, never an absolute URL); the client builds the per-kind
+asset URL.
+
+## CP control flag
+
+The whole feature is gated by the CP switch
+**`OrganizationProfile.PartnerDirectoryEnabled`** (default true), edited on the CP
+Site-Settings page (`/admin/site-settings`, `Configuration.Edit`). The flag rides
+the public `GET /app/site-settings` payload (`SiteSettingsResponse.partnerDirectoryEnabled`).
+When **off**:
+
+- the endpoint returns an **empty** list, and
+- the Home "Meet People" tile is **hidden** (read off the same site-settings flag).
+
+## Opt-in (Other-type members)
+
+An opted-in `person` only appears if they turned themselves on. The opt-in is a
+checkbox on the **My-interests edit** screen (`RouteNames.myInterests`, the
+`sign_up_interests_screen` in edit mode), surfaced **only to "Other"-type members**
+(`widget.editMode && !isForVisitor`). It toggles `UserProfile.ShowInMeetLikeYou`
+and is re-sent on the profile save. The app gates the checkbox off the append-only
+`UserProfileResponse.isForVisitor` field, so audience visitors never see it.
+
+## Structure
 
 | File | Holds |
 |------|-------|
-| `meet_people_screen.dart` (109) | `MeetPeopleScreen` (`ConsumerWidget`) — reads `meetRecommendationsProvider`, `onRefresh`, the loading / error / data dispatch, and the inline no-matches state (`_EmptyInline`). Re-exports `data/`. |
-| `data/meet_repository.dart` | `meetRecommendationsProvider` (moved here from the screen — D-545), beside the existing `data/meet_models.dart` (`Recommendation`, `MatchedInterest`). |
-| `widgets/meet_header_card.dart` (`MeetHeaderCard` + `_TopicChip`) | The smart-suggestions header card (title / subtitle / three topic chips). |
-| `widgets/meet_match_card.dart` (`MeetMatchCard` + `_PercentBlock`/`_Avatar` + the `_percent`/`_reason`/`_avatarInitials` helpers) | One match card — the gold initials avatar, the name / profile-type / reason column, and the gold `% تطابق` block. |
+| `meet_people_screen.dart` | `MeetPeopleScreen` (`ConsumerWidget`) - reads `partnerDirectoryProvider`, `onRefresh`, the loading / error / empty / data dispatch, and the per-kind tap routing (`_onTapFor`). Rows are the shared `SimfIdentityCell`. Re-exports `data/meet_repository.dart`. |
+| `data/meet_repository.dart` | `partnerDirectoryProvider` (FutureProvider over the directory endpoint). |
+| `data/partner_directory_models.dart` | `PartnerDirectoryEntry` + `PartnerDirectoryResponse` + the `localizedName` / `localizedSubtitle` / `logoUrl` helpers and the `isSpeaker` / `isSponsor` / `isBooth` kind predicates. |
 
-The provider moved to `data/`; the card's pure helpers moved with the card; screen
-was already fully tokenised (no raw `Color(0x..)`). Every file ≤400 lines.
+## Behavior
 
-## DRY (this freeze)
-
-- The load-error `_Error` → the shared **`SimfErrorState`** (message + retry,
-  already hosted inside `SimfPullableHost`) — the standard error state used across
-  gallery/news; the error-state widget test passes unchanged.
-- The no-matches `_EmptyInline` is **kept local (not `SimfEmptyState`)** — by
-  design it renders **inline beneath the always-visible header card**, whereas the
-  shared full-screen empty would replace the header too. The empty-state test
-  ("keeps the header and shows the empty notice") passes unchanged.
-
-## L4 Figma parity (frame 1072:13409)
-
-Captured `meet_people_1072-13409.png` (@375×900, ar, 2 matches) as the **baseline
-before** the refactor, then **held it WITHOUT `--update`** after — proving the
-provider move + the 2-card extraction byte-identical. Golden read: قابل أشخاص مثلك
-header, the smart-suggestions card (title + subtitle + 3 topic chips), two match
-cards (gold avatar + name/type/interests right, gold `% تطابق` left), RTL, no tofu.
-
-## Level-F
-
-Wired: pull-to-refresh + retry re-fetch; each match card renders the score /
-reason / avatar; the header topic chips are display-only (the frame shows them
-static). Reads `GET /app/account/recommendations/meet-like-you`. No missing API.
+- **List:** a lazy `ListView.separated` of `SimfIdentityCell` rows (title = name,
+  subtitle = role/tagline/sector, image = per-kind logo, country tag = `countryId`).
+- **Empty state:** `SimfEmptyState` (people icon) - "No one to show yet" /
+  "لا يوجد أشخاص لعرضهم بعد" (`meetPeopleEmpty`).
+- **Error state:** `SimfErrorState` with retry - "Could not load the directory." /
+  "تعذّر تحميل الدليل." (`meetPeopleError`).
+- **Pull-to-refresh** preserved (`SimfPullToRefresh` + `SimfPullableHost`), on the
+  empty and error states too.
 
 ## Tests
 
-`test/golden/meet_people_golden_test.dart` (frame 1072:13409, @375×900, ar) +
-`test/features/meet/meet_people_screen_test.dart` (header + match % score, empty
-keeps header, error state, Arabic % block position) + `meet_models_test.dart`.
-E2E: `docs/tests/e2e/mobile-meet-people.md`.
+`test/features/meet/partner_directory_models_test.dart` (model decode + the kind
+predicates + logo URL) + `test/features/meet/meet_people_screen_test.dart`
+(list renders the four kinds, empty state, error state, per-kind tap) +
+`test/golden/meet_people_golden_test.dart`.
+E2E: [`../../../tests/e2e/mobile-meet-people.md`](../../../tests/e2e/mobile-meet-people.md).
 
 ## Related decisions
 
-- **D-632** (this clean-code freeze — provider move + 2 card widgets + `SimfErrorState` swap + first golden).
-- **D-313** (screen built), **D-448** (1072:13409 parity), **D-451** (backend match reason).
+- **Build #13** - the partner-directory rework (this doc). CP toggle
+  `OrganizationProfile.PartnerDirectoryEnabled` (migration `AddPartnerDirectoryEnabled`);
+  opt-in surfaced on My-interests via `UserProfileResponse.isForVisitor` (append-only).
+- **D-736** - `UserProfile.ShowInMeetLikeYou` (the opt-in flag) added.
+- **Superseded:** D-313 (recommender screen built), D-448 (Figma `1072:13409`
+  parity), D-451 (backend match reason), D-632 (recommender clean-code freeze) -
+  all describe the old "% match" recommender this build replaced.

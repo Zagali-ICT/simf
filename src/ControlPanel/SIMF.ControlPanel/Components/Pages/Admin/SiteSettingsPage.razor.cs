@@ -33,6 +33,7 @@ public partial class SiteSettingsPage
                 var d = envelope.Data;
                 _model.RegistrationMessageAr = d.RegistrationSuccessMessageAr;
                 _model.RegistrationMessageEn = d.RegistrationSuccessMessageEn;
+                _model.PartnerDirectoryEnabled = d.PartnerDirectoryEnabled;
             }
             else
             {
@@ -61,6 +62,7 @@ public partial class SiteSettingsPage
                 {
                     RegistrationMessageAr = _model.RegistrationMessageAr,
                     RegistrationMessageEn = _model.RegistrationMessageEn,
+                    PartnerDirectoryEnabled = _model.PartnerDirectoryEnabled,
                 });
             if (envelope is { Success: true })
             {
@@ -86,5 +88,8 @@ public partial class SiteSettingsPage
     {
         public string RegistrationMessageAr { get; set; } = string.Empty;
         public string RegistrationMessageEn { get; set; } = string.Empty;
+
+        // Build #13 — the "Meet People Like You" partner-directory switch.
+        public bool PartnerDirectoryEnabled { get; set; } = true;
     }
 }

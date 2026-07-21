@@ -37,6 +37,14 @@
                                    MaxLength="2048"
                                    @bind-Value="_model.RegistrationMessageEn" Disabled="_busy" />
                 </div>
+                @* Build #13 — the "Meet People Like You" partner-directory switch. *@
+                <div class="simf-form__fields">
+                    <h3>@L["Admin.SiteSettings.Section.PartnerDirectory"]</h3>
+                    <p>@L["Admin.SiteSettings.Section.PartnerDirectory.Hint"]</p>
+                    <SimfCheckbox @bind-Value="_model.PartnerDirectoryEnabled" Disabled="_busy">
+                        @L["Admin.SiteSettings.Field.PartnerDirectoryEnabled"]
+                    </SimfCheckbox>
+                </div>
                 <div class="simf-form__actions">
                     <SimfButton Loading="_busy" LoadingLabel="@L["Admin.SiteSettings.Saving"]">
                         @L["Admin.SiteSettings.Save"]

@@ -954,6 +954,9 @@
   <data name="Admin.SiteSettings.Section.Registration.Hint" xml:space="preserve"><value>تُعرض للزائر عند اكتمال التسجيل.</value></data>
   <data name="Admin.SiteSettings.Field.RegMessageAr" xml:space="preserve"><value>رسالة الترحيب (عربي)</value></data>
   <data name="Admin.SiteSettings.Field.RegMessageEn" xml:space="preserve"><value>رسالة الترحيب (إنجليزي)</value></data>
+  <data name="Admin.SiteSettings.Section.PartnerDirectory" xml:space="preserve"><value>قابل أشخاصاً مثلك</value></data>
+  <data name="Admin.SiteSettings.Section.PartnerDirectory.Hint" xml:space="preserve"><value>يتحكم في دليل الشركاء في التطبيق (الرعاة والمتحدثون وشركات المعرض والأعضاء المشاركون).</value></data>
+  <data name="Admin.SiteSettings.Field.PartnerDirectoryEnabled" xml:space="preserve"><value>إظهار دليل «قابل أشخاصاً مثلك» في التطبيق</value></data>
   <data name="Admin.SiteSettings.Save" xml:space="preserve"><value>حفظ</value></data>
   <data name="Admin.SiteSettings.Saving" xml:space="preserve"><value>جارٍ الحفظ…</value></data>
   <data name="Admin.SiteSettings.Saved" xml:space="preserve"><value>تم حفظ إعدادات الموقع.</value></data>

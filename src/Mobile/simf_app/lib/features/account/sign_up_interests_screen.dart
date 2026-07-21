@@ -11,6 +11,7 @@ import '../../app/theme/tokens.dart';
 import '../../core/errors/api_error_l10n.dart';
 import '../../core/responsive/max_width_body.dart';
 import '../../core/widgets/simf_auth_sweep.dart';
+import '../../core/widgets/simf_checkbox_tile.dart';
 import 'data/profile_models.dart';
 import 'data/profile_repository.dart';
 import 'widgets/account_sub_header.dart';
@@ -63,6 +64,11 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
   /// interests-only change nulls no other field.
   UserProfileResponse? _editProfile;
 
+  /// Build #13 — the "show me in Meet People Like You" opt-in, seeded from the
+  /// loaded profile and re-sent on save. Only surfaced to "Other"-type users
+  /// (edit mode + `!isForVisitor`).
+  bool _showInMeetLikeYou = true;
+
   bool _loading = true;
   String? _loadError;
   bool _submitting = false;
@@ -103,6 +109,7 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
       }
       setState(() {
         _editProfile = profile;
+        _showInMeetLikeYou = profile.showInMeetLikeYou;
         _interests = interests;
         _selected
           ..clear()
@@ -234,7 +241,9 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
     final repo = ref.read(profileRepositoryProvider);
     try {
       await repo.upsertMyProfile(
-        profile.toUpsertRequest().copyWith(interestIds: _selected.toList()),
+        profile
+            .toUpsertRequest(showInMeetLikeYou: _showInMeetLikeYou)
+            .copyWith(interestIds: _selected.toList()),
       );
       if (!mounted) {
         return;
@@ -368,6 +377,23 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
+                  // Build #13 — the "show me in Meet People Like You" opt-in,
+                  // offered only to "Other"-type members (not audience visitors).
+                  if (widget.editMode &&
+                      _editProfile != null &&
+                      !_editProfile!.isForVisitor) ...<Widget>[
+                    const SizedBox(height: 24),
+                    const Divider(height: 1, color: SimfTokens.beigeBorder),
+                    const SizedBox(height: 16),
+                    SimfCheckboxTile(
+                      value: _showInMeetLikeYou,
+                      onChanged: (v) =>
+                          setState(() => _showInMeetLikeYou = v),
+                      label: l10n.showInMeetLikeYou,
+                      labelColor: Colors.white,
+                      enabled: !_submitting,
+                    ),
+                  ],
                   if (_submitError != null) ...<Widget>[
                     const SizedBox(height: 12),
                     Text(

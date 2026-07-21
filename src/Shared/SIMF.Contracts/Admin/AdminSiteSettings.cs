@@ -15,4 +15,8 @@ public sealed class AdminUpdateSiteSettingsRequest
     public string? YouTube { get; set; }
     public string? TikTok { get; set; }
     public string? Snapchat { get; set; }
+
+    /// <summary>Build #13 — the "Meet People Like You" partner-directory switch.
+    /// Null means "no change" (partial-update, like the message/social fields).</summary>
+    public bool? PartnerDirectoryEnabled { get; set; }
 }

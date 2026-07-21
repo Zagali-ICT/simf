@@ -68,9 +68,9 @@ internal sealed class UserProfileService(
         }
 
         var nationalityCode = await profiles.ResolveCountryCodeAsync(profile.NationalityId, cancellationToken);
-        var isVip = await ResolveIsVipAsync(profile.ProfileTypeId, cancellationToken);
+        var (isVip, isForVisitor) = await ResolveProfileTypeFlagsAsync(profile.ProfileTypeId, cancellationToken);
         return ToResponse(profile, profile.QrId, nationalityCode,
-            !string.IsNullOrEmpty(user.AvatarRelativePath), isVip);
+            !string.IsNullOrEmpty(user.AvatarRelativePath), isVip, isForVisitor);
     }
 
     public async Task<UserProfileResponse> UpsertMineAsync(
@@ -449,9 +449,9 @@ internal sealed class UserProfileService(
             await DispatchAdminPendingVisitorAsync(user, cancellationToken);
         }
 
-        var isVip = await ResolveIsVipAsync(profile.ProfileTypeId, cancellationToken);
+        var (isVip, isForVisitor) = await ResolveProfileTypeFlagsAsync(profile.ProfileTypeId, cancellationToken);
         return ToResponse(profile, profile.QrId, request.NationalityCode.ToUpperInvariant(),
-            !string.IsNullOrEmpty(user.AvatarRelativePath), isVip);
+            !string.IsNullOrEmpty(user.AvatarRelativePath), isVip, isForVisitor);
     }
 
     /// <summary>
@@ -904,7 +904,7 @@ internal sealed class UserProfileService(
 
     private static UserProfileResponse ToResponse(
         UserProfile profile, string? qrId, string nationalityCode, bool hasAvatar,
-        bool isVip) =>
+        bool isVip, bool isForVisitor) =>
         new()
         {
             ProfileTypeId = profile.ProfileTypeId,
@@ -935,21 +935,26 @@ internal sealed class UserProfileService(
             QrId = qrId,
             IsVip = isVip,
             ShowInMeetLikeYou = profile.ShowInMeetLikeYou,
+            IsForVisitor = isForVisitor,
         };
 
-    // D-729 (owner item 15) — the account's VIP status for the app, from the
-    // assigned ProfileType.AllowsVipMeetingSlots (VVIP/VIP). Computed and passed
-    // into ToResponse (like hasAvatar) rather than read off a nav, so a freshly
-    // upserted profile whose ProfileType nav is not loaded still reports it.
-    private async Task<bool> ResolveIsVipAsync(
+    // D-729 (owner item 15) + Build #13 — the account's ProfileType-derived flags
+    // for the app: IsVip (AllowsVipMeetingSlots, VVIP/VIP) and IsForVisitor
+    // (audience vs "Other" tier). Resolved from the ProfileType in one lookup and
+    // passed into ToResponse (like hasAvatar) rather than read off a nav, so a
+    // freshly upserted profile whose ProfileType nav is not loaded still reports
+    // them. No type assigned yet → not VIP, treated as audience (IsForVisitor true,
+    // so the "show me in Meet People" opt-in stays hidden).
+    private async Task<(bool IsVip, bool IsForVisitor)> ResolveProfileTypeFlagsAsync(
         Guid? profileTypeId, CancellationToken cancellationToken)
     {
         if (profileTypeId is not { } id)
         {
-            return false;
+            return (false, true);
         }
         var profileType = await profiles.FindProfileTypeAsync(id, cancellationToken);
-        return profileType?.AllowsVipMeetingSlots ?? false;
+        return (profileType?.AllowsVipMeetingSlots ?? false,
+            profileType?.IsForVisitor ?? true);
     }
 
     private static string? NormaliseOptional(string? value) =>
