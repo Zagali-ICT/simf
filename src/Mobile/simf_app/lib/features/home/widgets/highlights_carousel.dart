@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
 import '../../news/data/news_models.dart';
+import 'carousel_dots.dart';
 
 /// ابرز الاحداث — the highlights carousel (frame node 758:1239): an
 /// auto-advancing, swipeable PageView of image+title slides drawn from the most
@@ -94,7 +95,7 @@ class _HighlightsCarouselState extends State<HighlightsCarousel> {
         ),
         if (widget.items.length > 1) ...<Widget>[
           const SizedBox(height: SimfTokens.space3),
-          _CarouselDots(count: widget.items.length, index: _index),
+          CarouselDots(count: widget.items.length, index: _index),
         ],
       ],
     );
@@ -189,33 +190,3 @@ class _HighlightSlide extends StatelessWidget {
   }
 }
 
-/// The carousel position dots — the active one is a wider gold pill, the rest
-/// are faint beige.
-class _CarouselDots extends StatelessWidget {
-  const _CarouselDots({required this.count, required this.index});
-
-  final int count;
-  final int index;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List<Widget>.generate(count, (i) {
-        final active = i == index;
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          margin: const EdgeInsets.symmetric(horizontal: 3),
-          width: active ? 16 : 6,
-          height: 6,
-          decoration: BoxDecoration(
-            color: active
-                ? SimfTokens.accent
-                : SimfTokens.beigeBorder.withValues(alpha: 0.4),
-            borderRadius: BorderRadius.circular(3),
-          ),
-        );
-      }),
-    );
-  }
-}

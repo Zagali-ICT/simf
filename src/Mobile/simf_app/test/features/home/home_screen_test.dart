@@ -9,6 +9,8 @@ import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 import 'package:simf_app/core/organization_profile/organization_profile.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart';
+import 'package:simf_app/features/banners/data/banner_models.dart';
+import 'package:simf_app/features/banners/data/banners_repository.dart';
 import 'package:simf_app/features/home/home_screen.dart';
 import 'package:simf_app/features/myarea/data/myarea_models.dart';
 import 'package:simf_app/features/news/data/news_models.dart';
@@ -248,6 +250,9 @@ Future<void> _pump(
             _orgProfile(social, contactWebsite: website),
           ),
         ),
+        // #43 — no banners by default, so the hero shows the static fallback
+        // (no auto-advance timer) and no real GET /app/banners fetch fires.
+        bannersProvider.overrideWith((ref) async => const <PublicBannerItem>[]),
       ],
       child: MaterialApp.router(
         routerConfig: router,

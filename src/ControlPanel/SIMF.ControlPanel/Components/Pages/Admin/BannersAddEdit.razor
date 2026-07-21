@@ -44,6 +44,17 @@
                 @L["Admin.Banners.Field.IsActive"]
             </SimfCheckbox>
         }
+        @* #43 — uploaded hero image via the unified media-asset pipeline (edit
+           only; the banner row must exist before bytes can be attached). Served
+           publicly at /app/assets/Banner/{id}/image and rotated on the app home
+           hero. The ImageUrl field above stays as an optional link fallback. *@
+        @if (IsEdit && Initial is not null)
+        {
+            <div class="simf-field">
+                <span class="simf-field__label">@L["Admin.Asset.Heading"]</span>
+                <SimfImageUpload Category="Banner" OwnerId="@Initial.Id" Alt="@_model.TitleEn" />
+            </div>
+        }
     </div>
     <div class="simf-form__actions">
         <SimfButton Loading="_busy" LoadingLabel="@L["Admin.Banners.Submit"]">

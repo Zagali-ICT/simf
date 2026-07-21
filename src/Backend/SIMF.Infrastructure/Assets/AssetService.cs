@@ -43,6 +43,7 @@ internal sealed class AssetService(
             [AssetCategory.NewsImage] = FileService.NewsImage,
             [AssetCategory.ProgrammeDayImage] = FileService.ProgrammeDayImage,
             [AssetCategory.OrganizationLogo] = FileService.OrganizationLogo,
+            [AssetCategory.Banner] = FileService.Banner,
         };
 
     private static readonly IReadOnlyDictionary<FileService, AssetCategory> ServiceToCategory =
@@ -165,6 +166,13 @@ internal sealed class AssetService(
                 .AnyAsync(x => x.Id == ownerId && x.IsActive, cancellationToken),
             AssetCategory.OrganizationLogo => dbContext.OrganizationProfile
                 .AnyAsync(x => x.Id == ownerId && x.IsActive, cancellationToken),
+            // #43 — a banner image is public only while the banner is active AND
+            // within its display window, matching GET /app/banners visibility.
+            AssetCategory.Banner => dbContext.Banners
+                .AnyAsync(
+                    x => x.Id == ownerId && x.IsActive
+                        && x.StartUtc <= now && x.EndUtc >= now,
+                    cancellationToken),
             _ => Task.FromResult(false),
         };
     }
@@ -364,6 +372,12 @@ internal sealed class AssetService(
                         .Where(x => ids.Contains(x.Id)).Select(x => new { x.Id, x.Title })
                         .ToListAsync(cancellationToken))
                         result[(AssetCategory.NewsImage, r.Id)] = r.Title;
+                    break;
+                case AssetCategory.Banner:
+                    foreach (var r in await dbContext.Banners.AsNoTracking()
+                        .Where(x => ids.Contains(x.Id)).Select(x => new { x.Id, x.Title })
+                        .ToListAsync(cancellationToken))
+                        result[(AssetCategory.Banner, r.Id)] = r.Title;
                     break;
             }
         }

@@ -54,7 +54,7 @@ _Done (5), shipped to PR: #10 `feat/bulk-badge-email`, #32 `feat/cp-team-roles`,
 
 **P3 — home cosmetics**
 - [x] **#42** — Home greeting: **first name only** (first token) + `مرحبًا` (replacing time-of-day `صباح الخير` + full name). **Built** `39685d58` on `feat/app-home-greeting`; PR pending.
-- [ ] **#43** — Home **hero = live forum-edition banner** (title / theme / dates / location) + **rotating image**, replacing the static `اكتشف السعودية` card. _(overlaps #40 dynamic dates)_
+- [x] **#43** — Home **hero = rotating edition banner** (name/theme/dates/location over CP-managed `/app/banners` images), reusing the Banner feature (no new table/migration/freeze-lift). **Built** `feat/app-home-hero`. _(overlaps #40)_
 
 ## B. CONTROL PANEL (CP)
 
@@ -586,18 +586,17 @@ confirm**, not a broken model.
   - **Rotating image — no backend source.** A real auto-advancing carousel already exists (`HighlightsCarousel`: PageView + 4s Timer + dots) but it is fed by **news** images (`/app/news`). No dedicated hero-image collection exists.
 - **Overlap with #40:** same date source (D-755 `EventStartDate/EventEndDate`). #40's app-side piece (render the dynamic date in the app) is **subsumed by this hero** — this is where the app finally surfaces the dynamic range.
 - **Decisions (owner, 2026-07-21):**
-  - **D-A — rotating-image source = (b) NEW backend hero gallery + CP upload.** A dedicated CP-managed hero-image collection (not reuse-news, not bundled). This makes #43 a full-stack vertical with a schema change on the App DB.
-  - **D-B — theme field = `Title/TitleArabic`** (CP-editable; default). The theme `مستقبل أمن قاع البحار...` is typed into the org-profile Title.
-  - **D-C — edition name incl. ordinal = baked into `Name/NameArabic`** (CP-editable; default). The CP enters the full `الملتقى البحري السعودي الدولي الرابع`.
-  - _Note:_ with the profile CP-managed, D-B/D-C are pure data entry — the hero renders whatever `Name`/`Title`/dates/location hold, so they do not block the code build.
-- **Fix plan (full-stack; pending §11 approval):**
-  1. **Backend (additive migration — App DB):** new hero-image entity (e.g. `EditionHeroImage`: ordered, active flag, StoredFile-backed image per D-568 + optional caption) on `SimfAppDbContext`; additive migration (freeze surface — covered by the D-219 broad lift for the event push; confirm freeze in the §11 plan). App-facing read endpoint (fold into the org-profile response or a sibling `GET /app/organization-profile/hero-images`, cached like D-495). Admin CRUD endpoints.
-  2. **CP:** manage page (or a section on `OrganizationProfilePage`) to upload / reorder / activate hero images → **new `PermissionCatalog` code + seed + gate on API and page** (project HARD RULE), admin-only; **E2E catalogue file + PAGE-INDEX + per-page doc** (project HARD RULE).
-  3. **App (additive, D-219-safe):** decode `eventStartDate`/`eventEndDate` in `OrgProfile` + decode the hero-image list; add a Dart bilingual `EventDateRange` (mirror the C# one; `gregorian_month_names.dart` exists); rebuild `DiscoverHeroBanner` as a **rotating** banner (mirror `HighlightsCarousel`: PageView + timer + dots) consuming `orgProfileProvider`, overlaying `Name` (title) + `Title` (theme) + `EventDateRange(EventStartDate,EventEndDate)` + `LocationText`; static `discover_hero.jpg` as the not-loaded/empty fallback; re-lock home goldens + widget tests + on-device render.
-  4. **Data/CP:** owner enters the theme into `Title/TitleArabic`, the full name incl. `الرابع` into `Name/NameArabic`, and uploads the hero images (dates/location already correct via D-755).
-  5. **Docs/DoD:** new D-number in DECISIONS_LOG; E2E for the CP hero-gallery page + the app hero; unit + integration tests; PAGE-INDEX + per-page docs — same changeset.
-- **Scope note:** this grew from an app-only tweak to a **full-stack feature** (new table + migration + app + admin API + CP page + permission + E2E). Serialize the migration; §11 pre-approval + freeze confirmation required before any code.
-- **Status:** ☐ Open — decisions locked (D-A backend gallery / D-B Title / D-C Name); awaiting §11 plan approval + the tablet test freeing the tree. **No code yet.**
+  - **D-A — image source = REUSE the existing `Banner` feature + add CP upload.** A late audit found a fully-built, app-surfaced banner feature (`Banner` entity + CP `BannersList/AddEdit` CRUD + `Banners.*` permissions + public `GET /app/banners`), unused by the app. Reusing it **supersedes the earlier "new EditionHeroImage table" pick** and drops the new table, migration and freeze-lift entirely.
+  - **D-B — theme field = `Title/TitleArabic`**; **D-C — edition name incl. `الرابع` = `Name/NameArabic`** (both CP-editable data entry; the hero renders whatever the profile holds).
+- **As-built (2026-07-21; branch `feat/app-home-hero`, stacked on #42):**
+  1. **Backend (code-only, NO migration/schema/freeze-lift):** `AssetCategory.Banner`(=8, append-only) wired into `AssetService.CategoryToService` + `OwnerIsActiveAsync` (public serve only while the banner is active AND within `[StartUtc,EndUtc]`, matching `/app/banners`) + `AssetPermissionRegistry` (gated by `Banners.View/Edit`) + the Media-Library owner-name resolver. `FileService.Banner`/`FileOwnerEntityType.Banner`/its `PublicImage` policy already existed. `8a76a03f` (+ review fix `843c72c3`).
+  2. **CP:** `SimfImageUpload` (`Category=Banner`) added to `BannersAddEdit` (edit-only) → `POST /admin/assets/Banner/{id}/image`, reusing `Banners.Edit` (no new page/permission/nav). `204415ae`.
+  3. **App:** new `features/banners/data` (`PublicBannerItem` + `bannersProvider`); `OrgProfile` decodes `eventStartDate`/`eventEndDate` (append-only) + `eventDateRange()`; new `core/utils/event_date_range.dart` (mirrors C# `EventDateRange`); new `HomeHeroBanner` (rotating PageView + 4s timer + shared `CarouselDots`) overlaying name/theme/date-range/location, falling back to the static discover photo when empty (home golden byte-identical). `fc0d88b0` + `2dbfc8df` + `843c72c3`.
+  4. **Data/CP (owner):** enter the theme into `Title/TitleArabic`, the full name incl. `الرابع` into `Name/NameArabic`, and upload the hero images in the Banners CP page (dates/location already correct via D-755).
+  5. **DoD:** home README + `mobile-home.md` + `cp-admin-banners.md` E2E updated; unit/widget tests (event-date, banner model, hero rotation/overlay) + backend asset tests. DECISIONS_LOG left to the owner (owner edits it live).
+- **Overlap with #40:** same date source (D-755); this hero is where the app finally renders the dynamic range.
+- **Verify:** `dotnet build -c Release` 0/0; asset guard + endpoint tests 32/32 → 17/17; CP Banners + nav-permission 9/9; `flutter analyze` 0 errors; home tests `+34`/hero `5/5`/`router_role_matrix` 8/8 (only the **pre-existing** avatar-tap harness test red); home golden byte-identical.
+- **Status:** ✅ Built (`feat/app-home-hero`, 5 commits) — **no new table, no migration, no freeze-lift** (reused Banner). PR pending owner confirm; on-device render pending.
 
 ---
 ```

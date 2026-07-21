@@ -4,7 +4,10 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
+import '../../core/organization_profile/organization_profile.dart';
 import '../account/data/profile_repository.dart';
+import '../banners/data/banner_models.dart';
+import '../banners/data/banners_repository.dart';
 import '../myarea/data/myarea_models.dart';
 import '../myarea/data/myarea_repository.dart';
 import '../news/data/news_models.dart';
@@ -88,6 +91,14 @@ class HomeScreen extends ConsumerWidget {
     // D-745 — the "اللقاءات الثنائية" tile is VIP-only, so it is threaded down and
     // hidden for non-VIP (they can't reach the meetings page anyway).
     final isVip = ref.watch(currentUserIsVipProvider).value ?? false;
+    // The rotating hero (#43): the active home banners + the edition config.
+    // Both best-effort — the hero falls back to the static discover photo / copy
+    // while loading or when nothing is configured.
+    final banners = ref.watch(bannersProvider).maybeWhen(
+          data: (items) => items,
+          orElse: () => const <PublicBannerItem>[],
+        );
+    final orgProfile = ref.watch(orgProfileProvider);
     return VisitorHome(
       l10n: l10n,
       name: _greetingName(
@@ -95,6 +106,8 @@ class HomeScreen extends ConsumerWidget {
         user?.displayName,
       ),
       highlights: highlights,
+      banners: banners,
+      profile: orgProfile,
       baseUrl: baseUrl,
       isExhibitor: role == AppRole.exhibitor,
       isVip: isVip,
