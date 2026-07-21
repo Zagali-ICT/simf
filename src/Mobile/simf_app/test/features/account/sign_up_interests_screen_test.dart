@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,8 +18,6 @@ class _FakeProfileRepository implements ProfileRepository {
   _FakeProfileRepository({
     this.interests = _canned,
     this.throwOnSave = false,
-    this.throwOnUpload = false,
-    this.throwOnAvatarUpload = false,
   });
 
   static const List<InterestItem> _canned = <InterestItem>[
@@ -41,11 +37,36 @@ class _FakeProfileRepository implements ProfileRepository {
 
   List<InterestItem> interests;
   bool throwOnSave;
-  bool throwOnUpload;
-  bool throwOnAvatarUpload;
+  bool throwOnUpload = false;
+  bool throwOnAvatarUpload = false;
+  bool throwOnLoadProfile = false;
   UpsertUserProfileRequest? upserted;
   bool uploadCalled = false;
   bool avatarUploadCalled = false;
+
+  /// #14 edit-mode current profile from [getMyProfile]: a non-Saudi VIP
+  /// (admin-assigned `profileTypeId`) carrying the fields a naive full-upsert
+  /// edit would wipe (regionId, jobTitleArabic, iqama/passport/intl mobile) +
+  /// a pre-selected interest (i2), so the round-trip + no-400 can be asserted.
+  UserProfileResponse myProfile = const UserProfileResponse(
+    interestIds: <String>['i2'],
+    profileTypeId: 'vip-type-id',
+    arabicName: 'راكان السالم',
+    englishName: 'Rakan Alsalem',
+    nationalityCode: 'EG',
+    placeOfBirth: 'Cairo',
+    isSaudi: false,
+    gender: AppGender.male,
+    hasIdImage: true,
+    hasAvatar: true,
+    jobTitle: 'Engineer',
+    jobTitleArabic: 'مهندس',
+    organisationId: 'org-3',
+    regionId: 'region-7',
+    iqamaNumber: '2000000009',
+    passportNumber: 'A1234567',
+    internationalMobile: '+201000000000',
+  );
 
   @override
   Future<List<InterestItem>> getInterests() async => interests;
@@ -96,7 +117,12 @@ class _FakeProfileRepository implements ProfileRepository {
   }
 
   @override
-  Future<UserProfileResponse> getMyProfile() => throw UnimplementedError();
+  Future<UserProfileResponse> getMyProfile() async {
+    if (throwOnLoadProfile) {
+      throw const ApiFailure(code: 'X', message: 'load-boom');
+    }
+    return myProfile;
+  }
   @override
   Future<List<CountryItem>> getCountries() => throw UnimplementedError();
   @override
@@ -176,6 +202,59 @@ bool _saveEnabled(WidgetTester tester) {
   return tester.widget<FilledButton>(save).onPressed != null;
 }
 
+/// #14 — pumps the SAME interests screen in EDIT mode, opened from a stub
+/// My-Area screen so the edit save's pop-back returns somewhere real.
+Future<void> _pumpEdit(
+  WidgetTester tester,
+  _FakeProfileRepository repo, {
+  String locale = 'en',
+}) async {
+  final router = GoRouter(
+    initialLocation: '/my-area',
+    routes: <RouteBase>[
+      GoRoute(
+        name: RouteNames.myArea,
+        path: '/my-area',
+        builder: (c, s) => Scaffold(
+          body: Center(
+            child: FilledButton(
+              onPressed: () => c.pushNamed(RouteNames.myInterests),
+              child: const Text('OPEN-INTERESTS'),
+            ),
+          ),
+        ),
+      ),
+      GoRoute(
+        name: RouteNames.myInterests,
+        path: '/my-area/interests',
+        builder: (c, s) => const SignUpInterestsScreen(editMode: true),
+      ),
+    ],
+  );
+
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: <Override>[
+        profileRepositoryProvider.overrideWithValue(repo),
+      ],
+      child: MaterialApp.router(
+        routerConfig: router,
+        locale: Locale(locale),
+        supportedLocales: AppL10n.supportedLocales,
+        localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+          ...AppL10n.localizationsDelegates,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('OPEN-INTERESTS'));
+  await tester.pumpAndSettle();
+}
+
 void main() {
   group('SignUpInterestsScreen (Page 007‑01)', () {
     testWidgets('renders interests + counter; Save disabled until one picked',
@@ -252,6 +331,140 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('DATA'), findsOneWidget);
+    });
+  });
+
+  group('SignUpInterestsScreen edit mode (#14 — My interests)', () {
+    testWidgets('self-loads the profile and pre-selects the saved interests, '
+        'Save enabled', (tester) async {
+      await _pumpEdit(tester, _FakeProfileRepository());
+
+      // No recover state in edit mode; the saved interest (i2) is pre-selected.
+      expect(find.text('DATA'), findsNothing);
+      expect(find.text('My interests'), findsOneWidget);
+      expect(find.text('1 / 10 selected'), findsOneWidget);
+      final save = find.widgetWithText(FilledButton, 'Save');
+      expect(save, findsOneWidget);
+      expect(tester.widget<FilledButton>(save).onPressed, isNotNull);
+    });
+
+    testWidgets('save re-POSTs the FULL profile — interests change while '
+        'region + Arabic job title are preserved (no wipe)', (tester) async {
+      final repo = _FakeProfileRepository();
+      await _pumpEdit(tester, repo);
+
+      // Add a second interest, then save.
+      await tester.tap(find.text('Naval Defence')); // i1
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      await tester.pumpAndSettle();
+
+      expect(repo.upserted, isNotNull);
+      // Interests updated to include both the pre-selected and the new pick.
+      expect(repo.upserted!.interestIds, containsAll(<String>['i2', 'i1']));
+      // Every field a naive full-upsert edit would wipe survives — incl. the
+      // non-Saudi cohort (iqama/passport/international mobile).
+      expect(repo.upserted!.regionId, 'region-7');
+      expect(repo.upserted!.jobTitleArabic, 'مهندس');
+      expect(repo.upserted!.organisationId, 'org-3');
+      expect(repo.upserted!.arabicName, 'راكان السالم');
+      expect(repo.upserted!.iqamaNumber, '2000000009');
+      expect(repo.upserted!.passportNumber, 'A1234567');
+      expect(repo.upserted!.internationalMobile, '+201000000000');
+      // Blocker guard: the admin-assigned profileTypeId is NOT echoed, so the
+      // server never 400s a VIP/VVIP/Staff/partner editing their interests.
+      expect(repo.upserted!.profileTypeId, isNull);
+      // Popped back to My-Area.
+      expect(find.text('OPEN-INTERESTS'), findsOneWidget);
+    });
+
+    testWidgets('a profile-load failure shows the error, no upsert',
+        (tester) async {
+      final repo = _FakeProfileRepository()..throwOnLoadProfile = true;
+      await _pumpEdit(tester, repo);
+
+      expect(find.text('load-boom'), findsOneWidget);
+      expect(repo.upserted, isNull);
+    });
+
+    testWidgets('a save failure shows the error, keeps the selection, no pop',
+        (tester) async {
+      final repo = _FakeProfileRepository(throwOnSave: true);
+      await _pumpEdit(tester, repo);
+
+      await tester.tap(find.text('Naval Defence')); // i1 (now i2 + i1 = 2)
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('boom'), findsOneWidget);
+      // No pop — still on the interests screen; selection + counter preserved.
+      expect(find.text('OPEN-INTERESTS'), findsNothing);
+      expect(find.text('2 / 10 selected'), findsOneWidget);
+      expect(find.text('Your interests were updated'), findsNothing);
+    });
+
+    testWidgets('a successful edit shows the "interests updated" toast',
+        (tester) async {
+      final repo = _FakeProfileRepository();
+      await _pumpEdit(tester, repo);
+
+      await tester.tap(find.text('Naval Defence'));
+      await tester.pump();
+      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      await tester.pump(); // resolve the async save -> showSnackBar + pop
+      // Let the SnackBar animate in before it auto-dismisses.
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('Your interests were updated'), findsOneWidget);
+    });
+
+    testWidgets('the 10-interest cap blocks an 11th and shows the max toast',
+        (tester) async {
+      final many = List<InterestItem>.generate(
+        11,
+        (i) => InterestItem(
+          id: 'c$i',
+          name: 'Topic $i',
+          nameArabic: 'موضوع $i',
+          displayOrder: i,
+        ),
+      );
+      final repo = _FakeProfileRepository(interests: many)
+        ..myProfile = const UserProfileResponse(
+          interestIds: <String>[],
+          arabicName: 'x',
+          englishName: 'x',
+          nationalityCode: 'SA',
+          placeOfBirth: 'Riyadh',
+          isSaudi: true,
+          gender: AppGender.male,
+          hasIdImage: true,
+          hasAvatar: true,
+        );
+      await _pumpEdit(tester, repo);
+
+      for (var i = 0; i < 10; i++) {
+        await tester.ensureVisible(find.text('Topic $i'));
+        await tester.tap(find.text('Topic $i'));
+        await tester.pump();
+      }
+      expect(find.text('10 / 10 selected'), findsOneWidget);
+
+      await tester.ensureVisible(find.text('Topic 10'));
+      await tester.tap(find.text('Topic 10')); // attempt the 11th
+      await tester.pump();
+
+      expect(find.text('You can pick at most 10 interests'), findsOneWidget);
+      expect(find.text('10 / 10 selected'), findsOneWidget); // unchanged
+    });
+
+    testWidgets('renders right-to-left in Arabic (edit mode)', (tester) async {
+      await _pumpEdit(tester, _FakeProfileRepository(), locale: 'ar');
+
+      expect(find.text('اهتماماتي'), findsOneWidget); // interestsTitle (ar)
+      final dir = Directionality.of(tester.element(find.text('اهتماماتي')));
+      expect(dir, TextDirection.rtl);
     });
   });
 }

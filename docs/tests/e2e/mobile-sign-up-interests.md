@@ -7,6 +7,12 @@
 >
 > **Status note:** target spec; the Flutter build (D-332 step 2) authors the widget
 > tests and re-points `Evidence`.
+>
+> **Shared screen (#14, 2026-07-21):** this same screen now also serves the
+> post-sign-up **edit** surface (`myInterests` → `/my-area/interests`,
+> `SignUpInterestsScreen(editMode: true)`). The create render + 505:1083 golden
+> are unchanged; the edit-mode scenarios live in
+> [`mobile-my-interests.md`](mobile-my-interests.md).
 
 | | |
 |--|--|

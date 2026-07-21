@@ -24,6 +24,10 @@ class RouteNames {
   // Page 007‑01 — the interests step, split out of signUpVisitor (D-332). Owns
   // the single profile-upsert save.
   static const String signUpInterests = 'signUpInterests';
+
+  /// #14 — the standalone "My interests" edit surface, opened from My-Area. The
+  /// same screen as [signUpInterests] rendered in edit mode.
+  static const String myInterests = 'myInterests';
   static const String terms = 'terms';
   static const String registrationSuccess = 'registrationSuccess';
   static const String registrationStatus = 'registrationStatus';
