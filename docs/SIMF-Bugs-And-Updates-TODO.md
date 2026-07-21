@@ -16,13 +16,13 @@
 | Metric | Count |
 |--------|-------|
 | Total items | 43 |
-| Open (☐) | 38 |
-| In progress (◐) | 0 |
-| Done (✅) | 5 |
+| Open (☐) | 36 |
+| In progress (◐) | 1 |
+| Done (✅) | 6 |
 | Deferred (⏸) | 0 |
 
 _Note: #16 is a single tracked item covering the whole per-feature Flutter clean-code sweep (≈39 features). Items #35-#40 are detailed in the plan (`~/.claude/plans/...`); #40 detailed here in Topic 9; #42-#43 (home greeting + hero) detailed in Topic 10._
-_Done (5), shipped to PR: #10 `feat/bulk-badge-email`, #32 `feat/cp-team-roles`, #20+#17 `feat/app-sessions-batch`, #35 `feat/session-summary-video` (#28 in progress)._
+_Done (6): #10 `feat/bulk-badge-email`, #32 `feat/cp-team-roles`, #20+#17 `feat/app-sessions-batch`, #35 `feat/session-summary-video`, #19 (guest label already correct on `origin/main` — no PR). #28 date-filter half shipped (`e718e8c3` / D-753) — in progress; the "all CP times Saudi" half rolls up under #8._
 
 ---
 
@@ -45,7 +45,7 @@ _Done (5), shipped to PR: #10 `feat/bulk-badge-email`, #32 `feat/cp-team-roles`,
 - [ ] **#11** — Session surfaces scope + phase-gated buttons (Home = future + type=Session only; Summary = past; My Sessions; Agenda = all).
 - [ ] **#14** — Edit interests from profile (not only at sign-up).
 - [ ] **#16** — Clean-code sweep across ~39 features (numbers→tokens, `app_style`, `SimfTokens.surface`, hoist assets, extract private widgets).
-- [ ] **#19** — Login-as-**Guest** label (not "Visitor") + fix wrong Arabic translation.
+- [x] **#19** — Login-as-**Guest** label (not "Visitor") + fix wrong Arabic translation. ✅ **Done** — verified on `origin/main`: the guest link already reads `الدخول كضيف` / "Enter as guest" (`app_l10n.dart:493`); `git grep كزائر src/Mobile/*` = 0. No code change needed.
 - [ ] **#20** — Agenda viewable **without login** + rename program-icon label to "الأجندة".
 - [ ] **#22** — Sign-up (`sign_up_visitor_screen`) category section UI update.
 - [ ] **#23** — Session-summary logic update (keep Home Sessions + Summary buttons as-is; reconcile with #11).
@@ -60,7 +60,7 @@ _Done (5), shipped to PR: #10 `feat/bulk-badge-email`, #32 `feat/cp-team-roles`,
 
 **P1**
 - [ ] **#10** — Bulk profile/badge generation page (pick type + count, anonymous placeholders, issue QRs, email all to one address).
-- [ ] **#28** — Meeting/speaker date filter = **forum dates only** + all CP times in **Saudi time** (see #8).
+- [ ] **#28** — Meeting/speaker date filter = **forum dates only** + all CP times in **Saudi time** (see #8). ◐ **In progress** — date-filter half **done** (`e718e8c3` / D-753: CP meeting scheduling bound to the forum days); the residual (b) "all CP times Saudi" rolls up under **#8** (not yet done). Overall box left open per owner semantics.
 - [ ] **#29** — Workshop management in CP (title / time / allowed count / check-in-out); app shows **title + time only**.
 - [ ] **#30** — B2B / B2G bilateral-meeting management in CP + activate VIP↔speaker "send request" button.
 - [ ] **#31** — Feed the forum program data (content).
@@ -428,7 +428,7 @@ confirm**, not a broken model.
 
 | # | Type | Priority | Area | Title | Status |
 |---|------|----------|------|-------|--------|
-| 19 | 🐞 Bug | P2 | App / Auth | Login-as-Guest label (not "Visitor") + Arabic translation wrong | ☐ Open |
+| 19 | 🐞 Bug | P2 | App / Auth | Login-as-Guest label (not "Visitor") + Arabic translation wrong | ✅ Done |
 | 20 | ✨ Update | P2 | App | Agenda accessible without auth + rename program icon label to "الأجندة" | ☐ Open |
 | 21 | 🐞 Bug | P1 | App / Contacts | "مشاركة جهة اتصال" (Share contact) button does nothing | ☐ Open |
 | 22 | ✨ Update | P2 | App / Sign-up | `sign_up_visitor_screen` category section — update UI | ☐ Open |
@@ -441,7 +441,7 @@ confirm**, not a broken model.
 
 ### [#19] Login-as-Guest label + Arabic translation
 - **Requirement:** the "login as visitor" action should say **Guest** (not Visitor). English is fine; the **Arabic translation is wrong**. Fix the label + the `ar` string in `AppL10n`/resx. Relates to guest mode (`effectiveAppRole`, Home `758-2910`).
-- **Status:** ☐ Open
+- **Status:** ✅ Done — verified on `origin/main`. The guest sign-in link already reads `الدخول كضيف` / "Enter as guest" (`src/Mobile/simf_app/lib/app/localization/app_l10n.dart:493`); the wrong Arabic label `كزائر` no longer appears anywhere in the app (`git grep كزائر src/Mobile/*` = 0 matches). No code change needed — the fix is already in the shipped source.
 
 ### [#20] Agenda without auth + rename to "الأجندة"
 - **Requirement:** (a) the Agenda must be **viewable without login** ("Agenda can access without auth") — relates to the login-gate (D-576/D-577) and #11; (b) change the label under the program icon to **"الأجندة"** ("تعديل الاسم الموجود أسفل الأيقونة ... ليكون الأجندة").
@@ -490,7 +490,7 @@ confirm**, not a broken model.
 
 | # | Type | Priority | Area | Title | Status |
 |---|------|----------|------|-------|--------|
-| 28 | ✨ Update | P1 | CP | Meeting/speaker date filter = forum dates only + all CP times in Saudi time | ☐ Open |
+| 28 | ✨ Update | P1 | CP | Meeting/speaker date filter = forum dates only + all CP times in Saudi time | ◐ In progress |
 | 29 | ✨ Feature | P1 | CP / App | Workshop management in CP (title/time/count/check-in-out); app shows title+time only | ☐ Open |
 | 30 | ✨ Feature | P1 | CP / App | B2B / B2G bilateral-meeting management in CP + activate VIP↔speaker "send request" | ☐ Open |
 | 31 | 🗂 Data | P1 | CP / Content | Feed the forum program data | ☐ Open |
@@ -499,7 +499,9 @@ confirm**, not a broken model.
 
 ### [#28] Meeting/speaker date filter + Saudi time in CP
 - **Requirement:** (a) in the CP, the speaker-meeting scheduling must filter **by the forum dates only** ("فلتر ... بمقابلة المتحدثين بتاريخ الملتقى فقط") — the date picker cannot pick dates outside the event; (b) **all CP times in Saudi time** ("التأكد من أن تكون الأوقات في لوحة التحكم بالتوقيت السعودي") — see the timezone decision **#8**.
-- **Status:** ☐ Open
+- **(a) date filter — ✅ Done** (`e718e8c3` / D-753): CP business-meeting slots and speaker-availability windows are now bound to the authored `ProgrammeDay` MIN/MAX range (event-local +03:00), replacing the stale `OrganizationProfile.EventStartDate/EventEndDate` placeholder and the hardcoded `2026-11-23..25` window; a new `GET /admin/programme/forum-window` feeds min/max onto the CP datetime-local pickers on `BusinessMeetingsList` + `SpeakerAvailabilityPage`. No schema/migration change; the D-157 two-DB split is preserved (`ProgrammeDay` read on the App context only).
+- **(b) all CP times Saudi — ☐ Open:** rolls up under **#8** (store/display wall-clock Saudi local, no UTC). **Not** claimed done here; tracked and delivered with #8.
+- **Status:** ◐ In progress — half (a) shipped; overall item left open pending (b) via #8.
 
 ### [#29] Workshop management in CP
 - **Requirement:** manage **workshops** from the CP — **title, time, allowed count**, and **check-in / check-out**. In the **app**, a workshop shows **only its title + time** ("يقتصر بعرض عنوان ورشة العمل والوقت").
