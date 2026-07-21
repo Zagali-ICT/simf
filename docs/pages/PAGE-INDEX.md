@@ -71,7 +71,7 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/programme-days` | ✅ Real (D-452) | Administrator  | [cp/admin-programme-days.md](cp/admin-programme-days.md) | [e2e/cp-admin-programme-days.md](../tests/e2e/cp-admin-programme-days.md) |
 | `/admin/session-moderators` | ✅ Real | Administrator  | [cp/admin-session-moderators.md](cp/admin-session-moderators.md) | [e2e/cp-admin-session-moderators.md](../tests/e2e/cp-admin-session-moderators.md) |
 | `/admin/programme/timeline` | ✅ Real | Administrator | — | [e2e/cp-admin-programme-timeline.md](../tests/e2e/cp-admin-programme-timeline.md) |
-| `/admin/bookings` | ✅ Real (D-227) | Administrator  | [cp/admin-bookings.md](cp/admin-bookings.md) | [e2e/cp-admin-bookings.md](../tests/e2e/cp-admin-bookings.md) |
+| `/admin/bookings` | ✅ Real (#6/#17) | Administrator  | [cp/admin-bookings.md](cp/admin-bookings.md) | [e2e/cp-admin-bookings.md](../tests/e2e/cp-admin-bookings.md) |
 | `/admin/speaker-meeting-requests` | ✅ Real (D-269) | Administrator  | [cp/admin-speaker-meeting-requests.md](cp/admin-speaker-meeting-requests.md) | [e2e/cp-admin-speaker-meeting-requests.md](../tests/e2e/cp-admin-speaker-meeting-requests.md) |
 | `/admin/speaker-availability` | ✅ Real (D-474/D-476 #11: team-defined availability windows → VIP free slots) | Administrator | _(see e2e)_ | [e2e/cp-admin-speaker-availability.md](../tests/e2e/cp-admin-speaker-availability.md) |
 | `/admin/hall-availability` | ✅ Real (D-715 item 7 §15 GAP-1: team-defined hall meeting-time windows → free slots) | Administrator | _(see e2e)_ | [e2e/cp-admin-hall-availability.md](../tests/e2e/cp-admin-hall-availability.md) |

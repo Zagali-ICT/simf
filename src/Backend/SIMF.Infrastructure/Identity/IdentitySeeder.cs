@@ -321,6 +321,9 @@ public sealed class IdentitySeeder(
     /// (RoleId, PermissionId). Safe to re-run on every startup.</summary>
     private async Task SeedPermissionCatalogAsync(CancellationToken cancellationToken)
     {
+        // #6/#17 — drop permissions removed from the catalogue before re-seeding.
+        await RetireRemovedPermissionsAsync(cancellationToken);
+
         var permissionsByCode = await dbContext.Permissions
             .ToDictionaryAsync(p => p.Code, cancellationToken);
         var existingGrants = (await dbContext.RolePermissions
@@ -373,6 +376,43 @@ public sealed class IdentitySeeder(
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>#6/#17 (owner 2026-07-20) — codes retired from
+    /// <see cref="PermissionCatalog"/>. The catalogue seed is add-only, so an
+    /// already-seeded database keeps orphan <c>Permission</c> rows (and any custom
+    /// <c>RolePermission</c> grants) until they are removed here. Bookings.Approve /
+    /// Bookings.Reject went with the booking approval step.</summary>
+    private static readonly string[] RetiredPermissionCodes =
+    [
+        "Bookings.Approve",
+        "Bookings.Reject",
+    ];
+
+    /// <summary>#6/#17 — idempotent cleanup of retired permissions: delete any
+    /// role grants of the retired codes, then the permission rows themselves. A
+    /// no-op once they are gone, so it is safe to run on every boot.</summary>
+    private async Task RetireRemovedPermissionsAsync(CancellationToken cancellationToken)
+    {
+        var stale = await dbContext.Permissions
+            .Where(p => RetiredPermissionCodes.Contains(p.Code))
+            .ToListAsync(cancellationToken);
+        if (stale.Count == 0)
+        {
+            return;
+        }
+
+        var staleIds = stale.Select(p => p.Id).ToList();
+        var grants = await dbContext.RolePermissions
+            .Where(rp => staleIds.Contains(rp.PermissionId))
+            .ToListAsync(cancellationToken);
+        dbContext.RolePermissions.RemoveRange(grants);
+        dbContext.Permissions.RemoveRange(stale);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation(
+            "Retired {PermissionCount} removed permission(s) and {GrantCount} grant(s): {Codes}",
+            stale.Count, grants.Count, string.Join(", ", stale.Select(p => p.Code)));
     }
 
     /// <summary>D-124 — idempotent rename. When a row with the old Name
