@@ -171,6 +171,17 @@ public static class DependencyInjection
             configuration.GetSection(DemoSeedOptions.SectionName));
         services.Configure<JwtOptions>(
             configuration.GetSection(JwtOptions.SectionName));
+        // Ops override — the misremembered Session:TimeoutHours (env
+        // SIMF_Session__TimeoutHours) lengthens the short-lived access token
+        // beyond the NCA-default 5 minutes at runtime. Absent → the NCA default
+        // stands; set → clamped to the 24h absolute session cap (D-443) so it
+        // can never exceed it. Kept OUT of the committed set-env-api template so
+        // the shipped deploy posture stays NCA-compliant; an operator opts in.
+        services.PostConfigure<JwtOptions>(options =>
+            options.AccessTokenMinutes = JwtOptions.ResolveAccessTokenMinutes(
+                options.AccessTokenMinutes,
+                configuration.GetValue<int>("Session:TimeoutHours", 0),
+                options.SessionLifetimeHours));
         // A7-13 (NCA) — credential-lifecycle settings (password max age).
         services.Configure<IdentityLifecycleOptions>(
             configuration.GetSection(IdentityLifecycleOptions.SectionName));
