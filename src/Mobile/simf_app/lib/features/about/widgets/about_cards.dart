@@ -20,11 +20,7 @@ class AboutTextCard extends StatelessWidget {
           const SizedBox(height: SimfTokens.space2),
           Text(
             body,
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textSm,
-              height: 1.6,
-            ),
+            style: SimfTokens.bodyBeigeSm16,
           ),
         ],
       ),
@@ -53,11 +49,7 @@ class AboutDetailsCard extends StatelessWidget {
               children: <Widget>[
                 Text(
                   '$label :',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: SimfTokens.textSm,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: SimfTokens.labelWhiteSemiboldSm,
                 ),
                 const SizedBox(width: SimfTokens.space2),
                 Expanded(
@@ -65,10 +57,7 @@ class AboutDetailsCard extends StatelessWidget {
                     value,
                     textDirection: TextDirection.ltr,
                     textAlign: TextAlign.start,
-                    style: const TextStyle(
-                      color: SimfTokens.beigeBorder,
-                      fontSize: SimfTokens.textSm,
-                    ),
+                    style: SimfTokens.labelBeigeSm,
                   ),
                 ),
               ],
@@ -103,11 +92,7 @@ class AboutThemesCard extends StatelessWidget {
               children: <Widget>[
                 Text(
                   number,
-                  style: const TextStyle(
-                    color: SimfTokens.accent,
-                    fontSize: SimfTokens.textLg,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: SimfTokens.labelGoldBoldLg,
                 ),
                 const SizedBox(width: SimfTokens.space3),
                 Expanded(
@@ -116,20 +101,12 @@ class AboutThemesCard extends StatelessWidget {
                     children: <Widget>[
                       Text(
                         themeTitle,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: SimfTokens.textMd,
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: SimfTokens.labelWhiteBoldMd,
                       ),
                       const SizedBox(height: SimfTokens.space1),
                       Text(
                         body,
-                        style: const TextStyle(
-                          color: SimfTokens.beigeBorder,
-                          fontSize: SimfTokens.textSm,
-                          height: 1.5,
-                        ),
+                        style: SimfTokens.bodyBeigeSm15,
                       ),
                     ],
                   ),
@@ -173,11 +150,7 @@ class _CardHeading extends StatelessWidget {
     return Text(
       text,
       textAlign: TextAlign.start,
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: SimfTokens.textMd,
-        fontWeight: FontWeight.w700,
-      ),
+      style: SimfTokens.labelWhiteBoldMd,
     );
   }
 }

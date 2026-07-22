@@ -534,4 +534,20 @@ class SimfTokens {
   static const TextStyle hintBeige = TextStyle(
     color: beigeBorder,
   );
+  // about (Figma 1116:16448) — card body line-heights + status badge.
+  static const TextStyle bodyBeigeSm16 = TextStyle(
+    color: beigeBorder,
+    fontSize: textSm,
+    height: 1.6,
+  );
+  static const TextStyle bodyBeigeSm15 = TextStyle(
+    color: beigeBorder,
+    fontSize: textSm,
+    height: 1.5,
+  );
+  static const TextStyle labelNavyDeepBoldSm = TextStyle(
+    color: navyDeep,
+    fontSize: textSm,
+    fontWeight: FontWeight.w700,
+  );
 }

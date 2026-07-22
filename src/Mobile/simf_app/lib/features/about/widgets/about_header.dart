@@ -34,11 +34,7 @@ class AboutHeader extends StatelessWidget {
               child: Text(
                 forumName,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: SimfTokens.accent,
-                  fontSize: SimfTokens.textLg,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: SimfTokens.labelGoldBoldLg,
               ),
             ),
           ],
@@ -48,11 +44,7 @@ class AboutHeader extends StatelessWidget {
           Text(
             forumTitle,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: SimfTokens.textMd,
-              fontWeight: FontWeight.w600,
-            ),
+            style: SimfTokens.labelWhiteSemibold,
           ),
         ],
         if (statusBadge != null) ...<Widget>[
@@ -69,11 +61,7 @@ class AboutHeader extends StatelessWidget {
               ),
               child: Text(
                 statusBadge!,
-                style: const TextStyle(
-                  color: SimfTokens.navyDeep,
-                  fontSize: SimfTokens.textSm,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: SimfTokens.labelNavyDeepBoldSm,
               ),
             ),
           ),
