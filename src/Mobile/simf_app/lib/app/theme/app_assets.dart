@@ -24,6 +24,11 @@ class AppAssets {
       'assets/icons/speaker_placeholder.svg';
   static const String icCaretLeft = 'assets/icons/ic_caret_left.svg';
 
+  // ── Requests / meetings ─────────────────────────────────────────────────
+  static const String requestNew = 'assets/icons/request_new.svg';
+  static const String requestLog = 'assets/icons/request_log.svg';
+  static const String chevronLeft = 'assets/icons/chevron_left.svg';
+
   // ── Onboarding ──────────────────────────────────────────────────────────
   static const String onboardVideo1 = 'assets/videos/onboard_01.mp4';
   static const String onboardVideo2 = 'assets/videos/onboard_02.mp4';

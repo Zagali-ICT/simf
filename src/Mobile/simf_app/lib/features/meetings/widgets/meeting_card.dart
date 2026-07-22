@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../../app/localization/app_l10n.dart';
+import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
 import '../../../core/country_flag.dart';
@@ -70,7 +71,7 @@ class MeetingCard extends StatelessWidget {
       return card;
     }
     return Material(
-      color: Colors.transparent,
+      color: SimfTokens.transparent,
       borderRadius: BorderRadius.circular(SimfTokens.radius),
       child: InkWell(
         onTap: onTap,
@@ -104,11 +105,7 @@ class MeetingCard extends StatelessWidget {
                 Text(
                   _headline(),
                   textAlign: TextAlign.start,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: SimfTokens.textMd,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: SimfTokens.labelWhiteBoldMd,
                 ),
                 if (rank.isNotEmpty) ...<Widget>[
                   const SizedBox(height: SimfTokens.space1),
@@ -117,10 +114,7 @@ class MeetingCard extends StatelessWidget {
                     textAlign: TextAlign.start,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: SimfTokens.beigeBorder,
-                      fontSize: SimfTokens.textSm,
-                    ),
+                    style: SimfTokens.labelBeigeSm,
                   ),
                 ],
               ],
@@ -160,11 +154,7 @@ class MeetingCard extends StatelessWidget {
               textAlign: TextAlign.start,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: SimfTokens.accent,
-                fontSize: SimfTokens.textSm,
-                fontWeight: FontWeight.w600,
-              ),
+              style: SimfTokens.labelGoldSemiboldSm,
             ),
           ),
           const Spacer(),
@@ -172,7 +162,7 @@ class MeetingCard extends StatelessWidget {
             Transform.rotate(
               angle: -math.pi / 2,
               child: const SimfSvgIcon(
-                'assets/icons/chevron_left.svg',
+                AppAssets.chevronLeft,
                 size: 20,
                 color: SimfTokens.accent,
               ),
@@ -193,11 +183,7 @@ class MeetingCard extends StatelessWidget {
         children: <Widget>[
           Text(
             _dateLine(),
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textXs,
-              fontWeight: FontWeight.w500,
-            ),
+            style: SimfTokens.labelBeigeMediumXs,
           ),
           const SizedBox(width: SimfTokens.space1),
           const Icon(

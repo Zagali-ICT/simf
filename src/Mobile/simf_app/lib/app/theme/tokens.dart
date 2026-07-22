@@ -556,4 +556,12 @@ class SimfTokens {
     fontSize: textLg,
     fontWeight: FontWeight.w600,
   );
+
+  // ── #16 sweep — S3 signed-in features ──────────────────────────────────
+  // meetings (Figma 1408:9726) — the card date/time line.
+  static const TextStyle labelBeigeMediumXs = TextStyle(
+    color: beigeBorder,
+    fontSize: textXs,
+    fontWeight: FontWeight.w500,
+  );
 }

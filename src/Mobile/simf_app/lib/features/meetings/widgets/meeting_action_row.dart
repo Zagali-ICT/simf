@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/localization/app_l10n.dart';
+import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
 import '../../requests/widgets/request_action_row.dart';
 
@@ -35,7 +36,7 @@ class MeetingActionRow extends StatelessWidget {
           Expanded(
             child: RequestActionButton(
               label: l10n.requestNew,
-              asset: 'assets/icons/request_new.svg',
+              asset: AppAssets.requestNew,
               active: false,
               onTap: onNew,
             ),
@@ -44,7 +45,7 @@ class MeetingActionRow extends StatelessWidget {
           Expanded(
             child: RequestActionButton(
               label: l10n.requestsTabLog,
-              asset: 'assets/icons/request_log.svg',
+              asset: AppAssets.requestLog,
               active: true,
               onTap: onHistory,
             ),
