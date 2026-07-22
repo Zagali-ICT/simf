@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' show DateFormat;
 
 import '../../../app/theme/tokens.dart';
+import '../../../app/widgets/simf_forward_chevron.dart';
 import '../../../app/widgets/simf_page_shell.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
 import '../data/myarea_models.dart';
@@ -137,7 +138,7 @@ class MyAreaMoreRow extends StatelessWidget {
                 ),
               ),
             ),
-            const SimfSvgIcon(
+            const SimfForwardChevron(
               'assets/icons/ic_back.svg',
               size: 20,
               color: Colors.white,
