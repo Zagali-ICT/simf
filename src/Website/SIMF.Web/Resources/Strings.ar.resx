@@ -200,6 +200,7 @@
   <data name="Landing.Nav.Discover.Spirit" xml:space="preserve"><value>روح السعودية</value></data>
   <data name="Landing.Nav.Discover.Made" xml:space="preserve"><value>صنع في السعودية</value></data>
   <data name="Landing.Nav.Archive" xml:space="preserve"><value>الأرشيف</value></data>
+  <data name="Landing.Nav.Archive.Title" xml:space="preserve"><value>الأرشيف</value></data>
   <data name="Landing.Nav.Archive.E1" xml:space="preserve"><value>النسخة الأولى 2019</value></data>
   <data name="Landing.Nav.Archive.E2" xml:space="preserve"><value>النسخة الثانية 2022</value></data>
   <data name="Landing.Nav.Archive.E3" xml:space="preserve"><value>النسخة الثالثة 2024</value></data>

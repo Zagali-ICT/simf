@@ -130,6 +130,11 @@ builder.Services.AddScoped<ForumDates>();
 // instead of the bundled hero-video.mp4 asset.
 builder.Services.AddScoped<HeroMedia>();
 
+// Resolves the public past editions (cached) shared by the /archive page cards and
+// the top-nav Archive dropdown, so the dropdown lists the real editions and can
+// never diverge from the page.
+builder.Services.AddScoped<PublicEditions>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

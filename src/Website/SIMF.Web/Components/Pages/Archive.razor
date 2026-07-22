@@ -107,7 +107,7 @@
         <div class="ln-miles__row ln-reveal">
             @foreach (var m in Editions)
             {
-                <article class="ln-mcard">
+                <article class="ln-mcard" id="@m.AnchorId">
                     <div class="ln-mcard__img" style="background-image:url('@m.Image')"></div>
                     <div class="ln-mcard__body">
                         <div class="ln-mcard__top">

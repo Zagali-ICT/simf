@@ -15,7 +15,10 @@ public sealed record Bilingual(string Ar, string En)
 }
 
 // ---- Navigation ---------------------------------------------------------
-public sealed record NavLink(string LabelKey, string Href);
+// LabelKey is a resx key resolved through IStringLocalizer. Label carries literal
+// AR/EN text instead (for data-driven items such as the Archive edition list,
+// whose labels come from the API, not resx); when set it wins over LabelKey.
+public sealed record NavLink(string LabelKey, string Href, Bilingual? Label = null);
 
 // A menu with Links renders as a hover/focus dropdown; a menu with only a
 // Href (Links empty) renders as a plain top-level link.

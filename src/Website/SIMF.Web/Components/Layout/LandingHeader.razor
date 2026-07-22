@@ -4,6 +4,7 @@
    copy. Nav + off-canvas + search are data-driven off LandingChrome. *@
 @inject IStringLocalizer<Strings> L
 @inject NavigationManager Nav
+@inject PublicEditions EditionsSource
 
 @{
     var rtl = CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft;
@@ -37,7 +38,7 @@
                     <img class="ln-nav__logo" src="assets/figma/nav/logo-fill.svg" alt="@L["Brand.LogoAlt"]" />
                 </a>
                 <div class="ln-nav__menu">
-                    @foreach (var menu in LandingChrome.NavMenus)
+                    @foreach (var menu in _menus)
                     {
                         if (menu.Links.Count == 0)
                         {
@@ -55,7 +56,7 @@
                                     <div class="ln-dd__list">
                                         @foreach (var link in menu.Links)
                                         {
-                                            <a href="@link.Href" class="ln-dd__link" role="menuitem">@L[link.LabelKey]</a>
+                                            <a href="@link.Href" class="ln-dd__link" role="menuitem">@(link.Label is { } lbl ? lbl.For(rtl) : L[link.LabelKey])</a>
                                         }
                                     </div>
                                 </div>
@@ -119,7 +120,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="@L["Landing.Search.Close"]"></button>
     </div>
     <div class="offcanvas-body">
-        @foreach (var menu in LandingChrome.NavMenus)
+        @foreach (var menu in _menus)
         {
             <div class="ln-offcanvas__group">
                 @if (menu.Links.Count == 0)
@@ -131,7 +132,7 @@
                     <p class="ln-offcanvas__title">@L[menu.LabelKey]</p>
                     @foreach (var link in menu.Links)
                     {
-                        <a class="ln-offcanvas__link" href="@link.Href" data-bs-dismiss="offcanvas">@L[link.LabelKey]</a>
+                        <a class="ln-offcanvas__link" href="@link.Href" data-bs-dismiss="offcanvas">@(link.Label is { } lbl ? lbl.For(rtl) : L[link.LabelKey])</a>
                     }
                 }
             </div>
@@ -140,6 +141,37 @@
 </div>
 
 @code {
+    private const string ArchiveKey = "Landing.Nav.Archive";
+
+    // The rendered nav: the static LandingChrome menus, with the Archive entry
+    // swapped for a data-driven dropdown of the real past editions (same source as
+    // the /archive page). Pre-render / on failure it stays the static list, where
+    // Archive is a plain link — the header must never throw, it renders on every page.
+    private IReadOnlyList<NavMenu> _menus = LandingChrome.NavMenus;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var editions = (await EditionsSource.GetAsync()).Editions;
+            if (editions.Count == 0)
+            {
+                return;
+            }
+            var links = editions
+                .Select(e => new SIMF.Web.Content.NavLink(string.Empty, e.Href, e.NavLabel))
+                .ToList();
+            var archive = new NavMenu(ArchiveKey, "Landing.Nav.Archive.Title", links);
+            _menus = LandingChrome.NavMenus
+                .Select(m => m.LabelKey == ArchiveKey ? archive : m)
+                .ToList();
+        }
+        catch
+        {
+            _menus = LandingChrome.NavMenus;
+        }
+    }
+
     // A top-level nav link is external when its href is an absolute http(s) URL
     // (e.g. Discover → visitsaudi.com); those open in a new tab with noopener.
     private static bool IsExternal(string? href) =>
