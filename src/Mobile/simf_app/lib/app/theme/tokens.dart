@@ -716,4 +716,22 @@ class SimfTokens {
     fontWeight: FontWeight.w700,
     height: 1.3,
   );
+
+  // ── #16 sweep — S4 sessions-wave features ──────────────────────────────
+  // questions (Figma 934:3668 / 942:3746) — the fixed tinted question box, the
+  // gold inline-span colour, the colourless submit label (rides the theme font
+  // + FilledButton foreground per D-546/D-549), and the tight numbered
+  // session-data line (leading 1.3, tighter than the 1.5 body).
+  static const double questionBoxHeight = 100; // tinted question textarea box
+  static const TextStyle textAccent = TextStyle(color: accent);
+  static const TextStyle labelSemiboldSm = TextStyle(
+    fontSize: textSm,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle bodyBeigeMedium13 = TextStyle(
+    color: beigeBorder,
+    fontSize: textMd,
+    fontWeight: FontWeight.w500,
+    height: 1.3,
+  );
 }

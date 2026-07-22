@@ -17,22 +17,15 @@ class ReviewNote extends StatelessWidget {
         children: <InlineSpan>[
           const TextSpan(
             text: '• ',
-            style: TextStyle(color: SimfTokens.accent),
+            style: SimfTokens.textAccent,
           ),
           TextSpan(
             text: '$label ',
-            style: const TextStyle(
-              color: SimfTokens.accent,
-              fontWeight: FontWeight.w600,
-              fontSize: SimfTokens.textLg,
-            ),
+            style: SimfTokens.labelGoldSemiboldLg,
           ),
           TextSpan(
             text: body,
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textMd,
-            ),
+            style: SimfTokens.bodyBeigeMd,
           ),
         ],
       ),
@@ -70,15 +63,11 @@ class SendQuestionComposer extends StatelessWidget {
           sectionLabel,
           // TextAlign.start = right under RTL (TextAlign.end would be left).
           textAlign: TextAlign.start,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w500,
-            fontSize: SimfTokens.textLg,
-          ),
+          style: SimfTokens.labelWhiteMediumLg,
         ),
         const SizedBox(height: SimfTokens.space2),
         Container(
-          height: 100,
+          height: SimfTokens.questionBoxHeight,
           decoration: BoxDecoration(
             color: SimfTokens.navyDeep,
             borderRadius: BorderRadius.circular(SimfTokens.radius),
@@ -95,22 +84,16 @@ class SendQuestionComposer extends StatelessWidget {
             textAlign: TextAlign.start,
             textAlignVertical: TextAlignVertical.top,
             textInputAction: TextInputAction.newline,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: SimfTokens.textSm,
-            ),
+            style: SimfTokens.bodyWhiteSm,
             cursorColor: SimfTokens.accent,
             decoration: InputDecoration(
               isCollapsed: true,
               border: InputBorder.none,
               counterText: '',
               hintText: hint,
-              hintStyle: const TextStyle(
-                color: SimfTokens.beigeBorder,
-                fontSize: SimfTokens.textSm,
-              ),
+              hintStyle: SimfTokens.labelBeigeSm,
               errorText: errorText,
-              errorStyle: const TextStyle(color: SimfTokens.danger),
+              errorStyle: SimfTokens.bodyDanger,
             ),
             onChanged: onChanged,
           ),
@@ -139,22 +122,19 @@ class SendQuestionSubmitButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      height: 44,
+      height: SimfTokens.tapTarget,
       child: FilledButton(
         onPressed: onPressed,
         style: FilledButton.styleFrom(
           backgroundColor: SimfTokens.accent,
-          foregroundColor: Colors.white,
+          foregroundColor: SimfTokens.surface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
           ),
         ),
         child: Text(
           label,
-          style: const TextStyle(
-            fontSize: SimfTokens.textSm,
-            fontWeight: FontWeight.w600,
-          ),
+          style: SimfTokens.labelSemiboldSm,
         ),
       ),
     );
@@ -179,11 +159,7 @@ class SessionDataBlock extends StatelessWidget {
           label,
           // TextAlign.start = right under RTL (TextAlign.end would be left).
           textAlign: TextAlign.start,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w500,
-            fontSize: SimfTokens.textLg,
-          ),
+          style: SimfTokens.labelWhiteMediumLg,
         ),
         // Frame 1049:12590 — 8px under the label, 16px between data lines.
         const SizedBox(height: SimfTokens.space2),
@@ -205,13 +181,8 @@ class _NumberedLine extends StatelessWidget {
   final int index;
   final String text;
 
-  static const TextStyle _style = TextStyle(
-    color: SimfTokens.beigeBorder,
-    fontSize: SimfTokens.textMd,
-    fontWeight: FontWeight.w500,
-    // Frame 1049:12591 — leading ~normal (1.3), tighter than the old 1.5.
-    height: 1.3,
-  );
+  // Frame 1049:12591 — leading 1.3, tighter than the 1.5 body.
+  static const TextStyle _style = SimfTokens.bodyBeigeMedium13;
 
   @override
   Widget build(BuildContext context) {
