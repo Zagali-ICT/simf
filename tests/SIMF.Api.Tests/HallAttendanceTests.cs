@@ -133,6 +133,29 @@ public sealed class HallAttendanceTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Departure_fires_no_prompt_when_the_Session_rating_type_is_deactivated()
+    {
+        // Owner: the session rate prompt must be CP-controllable. With the "Session"
+        // rating type deactivated in RatingConfig, leaving the hall still closes the
+        // attendance but sends no rating prompt (mirrors the clock-end worker).
+        var visitor = await SeedApprovedVisitorAsync();
+        var sessionId = await SeedSessionAsync(withGeofence: true);
+        await ArriveAsync(sessionId, CenterLat, CenterLon, visitor);
+        await SetSessionRatingTypeActiveAsync(false);
+        try
+        {
+            var departed = await PostAuthAsync(
+                $"/api/v1/app/sessions/{sessionId}/departure", new { }, visitor);
+            Assert.Equal(HttpStatusCode.OK, departed.StatusCode);
+            Assert.Equal(0, await CountSessionRatingPromptsAsync(sessionId));
+        }
+        finally
+        {
+            await SetSessionRatingTypeActiveAsync(true);
+        }
+    }
+
+    [Fact]
     public async Task Invalid_coordinate_is_400()
     {
         var visitor = await SeedApprovedVisitorAsync();
@@ -231,6 +254,17 @@ public sealed class HallAttendanceTests : IClassFixture<SimfApiFactory>
         return await idDb.Notifications.CountAsync(n =>
             n.Kind == NotificationKind.SessionRatingRequest
             && n.RelatedEntityId == sessionId);
+    }
+
+    // Flips the seeded "Session" rating type active/inactive — the CP RatingConfig
+    // toggle both session-rating-prompt producers now honour.
+    private async Task SetSessionRatingTypeActiveAsync(bool active)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var type = await db.RatingTypes.SingleAsync(t => t.Code == "Session");
+        type.IsActive = active;
+        await db.SaveChangesAsync();
     }
 
     private async Task<Guid> SeedSessionAsync(

@@ -157,7 +157,55 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
         Assert.Null(session.RatingPromptSentUtc);
     }
 
+    [Fact]
+    public async Task Scan_sends_nothing_when_the_Session_rating_type_is_deactivated_in_the_CP()
+    {
+        // Owner: the rate prompt must be controllable from the CP. When an admin
+        // deactivates the "Session" rating type (RatingConfig), the end-of-session
+        // worker sends no prompt and does not stamp the session, so re-enabling
+        // later resumes prompts for sessions still in the back-fill window.
+        var now = DateTimeOffset.UtcNow;
+        var visitorId = await SeedVisitorAsync();
+        var sessionId = await SeedEndedSessionWithAttendanceAsync(now.AddMinutes(-5), visitorId);
+        await SetSessionRatingTypeActiveAsync(false);
+        try
+        {
+            var prompted = await RunScanAsync(now);
+            Assert.Equal(0, prompted);
+
+            using var scope = _factory.Services.CreateScope();
+            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var idDb = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+
+            // Not stamped, so re-enabling the type resumes prompting this session.
+            var session = await appDb.Sessions.SingleAsync(s => s.Id == sessionId);
+            Assert.Null(session.RatingPromptSentUtc);
+
+            var count = await idDb.Notifications.CountAsync(n =>
+                n.Kind == NotificationKind.SessionRatingRequest
+                && n.RelatedEntityId == sessionId
+                && n.UserId == visitorId);
+            Assert.Equal(0, count);
+        }
+        finally
+        {
+            // Restore for the rest of this class's isolated DB.
+            await SetSessionRatingTypeActiveAsync(true);
+        }
+    }
+
     // -- Helpers ---------------------------------------------------------------
+
+    // Flips the seeded "Session" rating type active/inactive — the CP RatingConfig
+    // toggle the worker now honours.
+    private async Task SetSessionRatingTypeActiveAsync(bool active)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var type = await db.RatingTypes.SingleAsync(t => t.Code == "Session");
+        type.IsActive = active;
+        await db.SaveChangesAsync();
+    }
 
     private async Task<int> RunScanAsync(DateTimeOffset now)
     {

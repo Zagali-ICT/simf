@@ -42,6 +42,11 @@ internal sealed class SessionRatingPromptWorker(
     /// it ends.</summary>
     internal static readonly TimeSpan BackfillWindow = TimeSpan.FromHours(6);
 
+    /// <summary>The CP rating-type <c>Code</c> whose active state (RatingConfig)
+    /// gates this prompt: deactivating the "Session" type in the CP silences the
+    /// end-of-session rating notification.</summary>
+    private const string SessionRatingTypeCode = "Session";
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         logger.LogInformation(
@@ -118,6 +123,17 @@ internal sealed class SessionRatingPromptWorker(
         DateTimeOffset now, TimeSpan backfillWindow, ILogger logger,
         CancellationToken cancellationToken)
     {
+        // Respect the CP: if an admin deactivated the "Session" rating type in
+        // RatingConfig, send no session prompt (the rate form already 404s for an
+        // inactive type, so a prompt would deep-link to an unavailable form). Not
+        // stamped, so re-enabling resumes prompts for sessions still in the window.
+        var sessionRatingEnabled = await db.RatingTypes
+            .AnyAsync(t => t.Code == SessionRatingTypeCode && t.IsActive, cancellationToken);
+        if (!sessionRatingEnabled)
+        {
+            return 0;
+        }
+
         var windowStart = now - backfillWindow;
         var due = await db.Sessions
             .Where(s => s.IsActive

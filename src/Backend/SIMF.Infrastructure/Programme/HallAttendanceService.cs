@@ -432,6 +432,13 @@ internal sealed class HallAttendanceService(
     {
         try
         {
+            // Respect the CP toggle: no prompt when the "Session" rating type is
+            // deactivated in RatingConfig (the rate form is unavailable then) —
+            // mirrors SessionRatingPromptWorker so both producers honour the CP.
+            var sessionRatingEnabled = await appDbContext.RatingTypes
+                .AnyAsync(t => t.Code == "Session" && t.IsActive, cancellationToken);
+            if (!sessionRatingEnabled) { return; }
+
             var session = await appDbContext.Sessions
                 .AsNoTracking()
                 .Where(s => s.Id == sessionId)
