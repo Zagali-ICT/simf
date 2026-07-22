@@ -115,6 +115,11 @@ public sealed class OrganizationProfile : BaseAuditEntity
     /// the per-session <c>Session.LiveStreamUrl</c> (D-349).</summary>
     public string? LiveStreamUrl { get; set; }
 
+    /// <summary>The hero-section background video link (a YouTube URL or a direct
+    /// MP4/HLS link). Rendered muted + looping behind the home hero on both the app
+    /// and the website; blank falls back to the bundled hero media (D-756).</summary>
+    public string? BackgroundVideoUrl { get; set; }
+
     // --- Social links (the fixed SocialLinks wire contract) ---
 
     public string? FacebookUrl { get; set; }

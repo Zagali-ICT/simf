@@ -30,6 +30,7 @@ are columns. Logo is `Asset`-backed (category `OrganizationLogo`).
 - **Location:** location text (bilingual), latitude, longitude.
 - **Contact:** phone, email, website.
 - **Live stream:** main home-page YouTube link.
+- **Hero background video (D-756):** a YouTube link (or a direct MP4/HLS link) played muted + looping behind the home hero on both the app and the website; blank falls back to the bundled hero media. Absolute http(s), max 1024.
 - **Social:** Facebook, X, Instagram, LinkedIn, YouTube, TikTok, Snapchat (each an absolute http(s) URL).
 - **About items** (repeating): title + text (bilingual). **Details** (repeating): name (bilingual) + value.
 

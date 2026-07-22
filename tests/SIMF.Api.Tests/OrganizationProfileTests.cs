@@ -87,6 +87,7 @@ public sealed class OrganizationProfileTests : IClassFixture<SimfApiFactory>
                 CurrentYear = 2026,
                 Status = "Open",
                 LiveStreamUrl = "https://youtube.com/watch?v=simf2026",
+                BackgroundVideoUrl = "https://youtu.be/rmW5sJTp-Zo",
                 Facebook = "https://facebook.com/simf",
                 AboutItems =
                 [
@@ -111,6 +112,7 @@ public sealed class OrganizationProfileTests : IClassFixture<SimfApiFactory>
         var saved = (await put.Content
             .ReadFromJsonAsync<ApiResult<OrganizationProfileResponse>>())!.Data!;
         Assert.Equal("https://youtube.com/watch?v=simf2026", saved.LiveStreamUrl);
+        Assert.Equal("https://youtu.be/rmW5sJTp-Zo", saved.BackgroundVideoUrl);
         Assert.Equal("https://facebook.com/simf", saved.Social.Facebook);
         Assert.Single(saved.AboutItems);
         Assert.Single(saved.Details);

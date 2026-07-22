@@ -148,7 +148,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/configuration` | [`cp-admin-configuration.md`](cp-admin-configuration.md) | E2E-CFG-001..024 |
 | `/admin/email/templates` | [`cp-admin-email-templates.md`](cp-admin-email-templates.md) | E2E-EMT-001..013 |
 | `/admin/site-settings` | [`cp-site-settings.md`](cp-site-settings.md) | E2E-CPSET-001..009 |
-| `/admin/organization-profile` | [`cp-organization-profile.md`](cp-organization-profile.md) | E2E-ORGP-001..008 |
+| `/admin/organization-profile` | [`cp-organization-profile.md`](cp-organization-profile.md) | E2E-ORGP-001..009 |
 | `/admin/contact-inquiries` | [`cp-contact-inquiries.md`](cp-contact-inquiries.md) | E2E-CINQ-001..008 |
 | `/admin/operations` | [`cp-admin-operations.md`](cp-admin-operations.md) | E2E-OPS-001..011 |
 | `/admin/operation-log` | [`cp-admin-operation-log.md`](cp-admin-operation-log.md) | E2E-OPL-001..018 |
@@ -172,7 +172,8 @@ not reused. Each page owns a unique 3–4 letter namespace.
 
 | Page | File | Scenarios |
 |------|------|-----------|
-| `/` (marketing landing) | [`web-landing.md`](web-landing.md) | E2E-WLD-001..008 |
+| `/` + `/landing` (marketing landing — live Bootstrap SSR rebuild) | [`web-landing-rebuild.md`](web-landing-rebuild.md) | E2E-WLB-001..013 |
+| `/` (old static landing — retired 2026-07-14) | [`web-landing.md`](web-landing.md) | E2E-WLD-001..008 |
 | `/account` | [`web-home.md`](web-home.md) | E2E-WHM-001..010 |
 | `/programme` | [`web-programme.md`](web-programme.md) | E2E-WPG-001..014 |
 | `/speakers` | [`web-speakers.md`](web-speakers.md) | E2E-WSPK-001..011 |
@@ -220,7 +221,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #9 `terms` (`GET /app/content/terms`) | [`mobile-terms.md`](mobile-terms.md) | E2E-MOB009-001..008 |
 | #10 `registrationSuccess` (no API — static confirmation) | [`mobile-registration-success.md`](mobile-registration-success.md) | E2E-MOB010-001..007 |
 | #11 `registrationStatus` (`GET /app/users/me`) | [`mobile-registration-status.md`](mobile-registration-status.md) | E2E-MOB011-001..007 |
-| #13 `home` (`GET /app/bootstrap`) | [`mobile-home.md`](mobile-home.md) | E2E-MOB013-001..007 |
+| #13 `home` (`GET /app/bootstrap`) | [`mobile-home.md`](mobile-home.md) | E2E-MOB013-001..022 |
 | #14 `myArea` (`GET /app/account/dashboard` + `.ics` + `.vcf`) | [`mobile-my-area.md`](mobile-my-area.md) | E2E-MOB014-001..012 |
 | #103 `identityVerification` (`POST /app/account/avatar`) | [`mobile-identity-verification.md`](mobile-identity-verification.md) | E2E-MOBIDV-001..004 |
 | #104 `sessionModerate` (`GET/PUT /app/sessions/{id}/questions/moderate·push·hide`) | [`mobile-session-moderate.md`](mobile-session-moderate.md) | E2E-MOBMOD-001..004 |

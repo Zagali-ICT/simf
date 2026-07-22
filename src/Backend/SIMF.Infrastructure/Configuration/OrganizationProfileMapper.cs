@@ -40,6 +40,7 @@ internal static class OrganizationProfileMapper
             NullIfBlank(p.ContactEmail),
             SafeUrl(p.ContactWebsite),
             SafeUrl(p.LiveStreamUrl),
+            SafeUrl(p.BackgroundVideoUrl),
             new SocialLinks(
                 SafeUrl(p.FacebookUrl),
                 SafeUrl(p.XUrl),

@@ -33,6 +33,7 @@
 | E2E-WLB-010 | Clean console + assets — no console errors and no failed/404 asset requests on load in either language | resilience | P0 | _to author_ |
 | E2E-WLB-011 | Culture persistence — after switching language the choice survives a reload (culture cookie) | i18n | P2 | _to author_ |
 | E2E-WLB-012 | Route cutover — `/` returns 200 and serves this landing via the Blazor endpoint (not static-file middleware); `/landing` still returns 200 (same page); the deleted `/index.html` returns 404 | routing | P0 | _to author_ |
+| E2E-WLB-013 | Hero background video (D-756) — with `OrganizationProfile.BackgroundVideoUrl` set to a YouTube link the hero renders a covering muted/loop/no-controls `youtube-nocookie` `<iframe.ln-hero__video--yt>`; a direct MP4/HLS link renders `<video.ln-hero__video src=...>`; unset keeps `assets/hero-video.mp4`; the CSP `frame-src` permits the YouTube host | happy | P1 | authored ✓ (`HeroMediaTests` classification) |
 
 ## Scenarios
 
@@ -118,4 +119,26 @@ Scenario: The old static index.html is gone
   Then the response status is 404
 ```
 
+### E2E-WLB-013 — Hero background video is config-driven (D-756)
+
+```gherkin
+Scenario: A configured YouTube link becomes a covering background iframe
+  Given OrganizationProfile.BackgroundVideoUrl is "https://youtu.be/rmW5sJTp-Zo"
+  When a visitor opens "/"
+  Then the hero contains an "iframe.ln-hero__video--yt" whose src targets youtube-nocookie.com/embed/rmW5sJTp-Zo
+  And the embed params include autoplay=1, mute=1, loop=1, controls=0
+  And the Content-Security-Policy report-only frame-src permits www.youtube-nocookie.com
+
+Scenario: A configured direct file becomes the hero <video> source
+  Given OrganizationProfile.BackgroundVideoUrl is "https://cdn.example.com/hero.mp4"
+  When a visitor opens "/"
+  Then the hero contains a "video.ln-hero__video" with src "https://cdn.example.com/hero.mp4"
+
+Scenario: No configured video keeps the bundled hero asset
+  Given OrganizationProfile.BackgroundVideoUrl is empty
+  When a visitor opens "/"
+  Then the hero contains a "video.ln-hero__video" with src "assets/hero-video.mp4"
+```
+
+_Last authored:_ 2026-07-22 by Claude (added E2E-WLB-013 hero background video; D-756).
 _Last authored:_ 2026-07-14 by Claude (added E2E-WLB-012 route cutover; `/` cutover).
