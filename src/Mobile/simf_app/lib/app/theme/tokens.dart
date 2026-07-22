@@ -744,4 +744,49 @@ class SimfTokens {
   static const double opacityDisabledFill = 0.4; // disabled button fill alpha
   static const double opacityDisabledText = 0.6; // disabled button text alpha
   static const double fillOpacitySubtle = 0.08; // gold/verdict subtle tint fill
+  // moderation — the moderator desk (Figma 805:1876 / 1461:12565 / 1462:12236):
+  // filter-chip bar, navy header, question card + its three action buttons.
+  // radius5 is shared with the live AI-caption badge.
+  static const double radius5 = 5;
+  static const double moderatorFilterChipHeight = 58;
+  static const double moderatorChipBorderWidth = 1.18; // off-scale hairline
+  static const double moderatorCountBadgeSize = 28; // chip count-badge square
+  static const double moderatorCardTopBorderWidth = 8; // gold card top accent
+  static const double moderatorActionButtonHeight = 88;
+  static const double moderatorActionShadowBlur = 10;
+  static const double moderatorActionShadowOffsetY = 8;
+  static const double moderatorCountBadgeActiveOpacity = 0.3;
+  // 25% overlay — question-box inset fill + on-stage button shadow.
+  static const double moderatorScrimOpacity = 0.25;
+  static const double moderatorActionRestingFillOpacity = 0.1;
+  static const TextStyle labelWhiteBoldHero = TextStyle(
+    color: surface,
+    fontSize: textHero,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle labelWhiteExtraBoldHero = TextStyle(
+    color: surface,
+    fontSize: textHero,
+    fontWeight: FontWeight.w800,
+  );
+  static const TextStyle labelWhiteBoldHeroTall = TextStyle(
+    color: surface,
+    fontSize: textHero,
+    fontWeight: FontWeight.w700,
+    height: 1.5,
+  );
+  static const TextStyle labelWhiteBoldTitle = TextStyle(
+    color: surface,
+    fontSize: textTitle,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle labelBeigeSemibold24 = TextStyle(
+    color: beigeBorder,
+    fontSize: text24,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle labelGoldTitle = TextStyle(
+    color: accent,
+    fontSize: textTitle,
+  );
 }

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart' show DateFormat;
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
 import '../data/moderation_models.dart';
+import 'moderator_action_button.dart';
 
 final DateFormat _hm = DateFormat('HH:mm');
 
@@ -54,7 +55,12 @@ class ModeratorQuestionCard extends StatelessWidget {
       decoration: const BoxDecoration(
         color: SimfTokens.navyDeep,
         borderRadius: BorderRadius.all(Radius.circular(SimfTokens.radius)),
-        border: Border(top: BorderSide(color: SimfTokens.accent, width: 8)),
+        border: Border(
+          top: BorderSide(
+            color: SimfTokens.accent,
+            width: SimfTokens.moderatorCardTopBorderWidth,
+          ),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -63,11 +69,7 @@ class ModeratorQuestionCard extends StatelessWidget {
             children: <Widget>[
               Text(
                 _hm.format(question.createdAt.toLocal()),
-                style: const TextStyle(
-                  color: SimfTokens.beigeBorder,
-                  fontWeight: FontWeight.w600,
-                  fontSize: SimfTokens.textHero - 4, // 24
-                ),
+                style: SimfTokens.labelBeigeSemibold24,
               ),
               const Spacer(),
               Flexible(
@@ -79,19 +81,12 @@ class ModeratorQuestionCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.end,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: SimfTokens.textHero, // 28
-                      ),
+                      style: SimfTokens.labelWhiteBoldHero,
                     ),
                     if (question.recipient == QuestionRecipient.host)
                       Text(
                         l10n.moderatorToHost,
-                        style: const TextStyle(
-                          color: SimfTokens.accent,
-                          fontSize: SimfTokens.textTitle,
-                        ),
+                        style: SimfTokens.labelGoldTitle,
                       ),
                   ],
                 ),
@@ -107,11 +102,7 @@ class ModeratorQuestionCard extends StatelessWidget {
                 ),
                 child: Text(
                   _initials(question.submitterName),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: SimfTokens.textHero,
-                  ),
+                  style: SimfTokens.labelWhiteExtraBoldHero,
                 ),
               ),
             ],
@@ -122,31 +113,31 @@ class ModeratorQuestionCard extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(SimfTokens.space5),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.25),
-              border: Border.all(color: SimfTokens.accent, width: 2),
+              color: Colors.black.withValues(
+                alpha: SimfTokens.moderatorScrimOpacity,
+              ),
+              border: Border.all(
+                color: SimfTokens.accent,
+                width: SimfTokens.borderThick,
+              ),
               borderRadius: const BorderRadius.only(
-                topRight: Radius.circular(16),
-                topLeft: Radius.circular(8),
-                bottomLeft: Radius.circular(16),
-                bottomRight: Radius.circular(16),
+                topRight: Radius.circular(SimfTokens.radiusLg),
+                topLeft: Radius.circular(SimfTokens.radius),
+                bottomLeft: Radius.circular(SimfTokens.radiusLg),
+                bottomRight: Radius.circular(SimfTokens.radiusLg),
               ),
             ),
             child: Text(
               question.questionText,
               textAlign: TextAlign.start,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                fontSize: SimfTokens.textHero, // 28
-                height: 1.5,
-              ),
+              style: SimfTokens.labelWhiteBoldHeroTall,
             ),
           ),
           const SizedBox(height: SimfTokens.space6),
           Row(
             children: <Widget>[
               Expanded(
-                child: _ActionButton(
+                child: ModeratorActionButton(
                   label: l10n.moderatorActionReject,
                   icon: Icons.close,
                   color: SimfTokens.qReject,
@@ -157,7 +148,7 @@ class ModeratorQuestionCard extends StatelessWidget {
               ),
               const SizedBox(width: SimfTokens.space4),
               Expanded(
-                child: _ActionButton(
+                child: ModeratorActionButton(
                   label: l10n.moderatorActionAnswered,
                   icon: Icons.check,
                   color: SimfTokens.qAnswered,
@@ -168,7 +159,7 @@ class ModeratorQuestionCard extends StatelessWidget {
               ),
               const SizedBox(width: SimfTokens.space4),
               Expanded(
-                child: _ActionButton(
+                child: ModeratorActionButton(
                   label: l10n.moderatorActionOnStage,
                   icon: Icons.access_time,
                   color: SimfTokens.qStage,
@@ -181,74 +172,6 @@ class ModeratorQuestionCard extends StatelessWidget {
             ],
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ActionButton extends StatelessWidget {
-  const _ActionButton({
-    required this.label,
-    required this.icon,
-    required this.color,
-    required this.filled,
-    required this.primary,
-    required this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final Color color;
-  final bool filled;
-
-  /// The on-stage action is drawn solid by default (Figma); reject/answered are
-  /// outline until their state is active.
-  final bool primary;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final solid = filled || primary;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(SimfTokens.radiusLg),
-      child: Container(
-        height: 88,
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space2),
-        decoration: BoxDecoration(
-          color: solid ? color : color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(SimfTokens.radiusLg),
-          border: Border.all(color: color, width: 2),
-          boxShadow: primary
-              ? <BoxShadow>[
-                  BoxShadow(
-                    color: color.withValues(alpha: 0.25),
-                    blurRadius: 10,
-                    offset: const Offset(0, 8),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Icon(icon, size: 30, color: solid ? Colors.white : color),
-            const SizedBox(width: SimfTokens.space3),
-            Flexible(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: solid ? Colors.white : color,
-                  fontWeight: FontWeight.w700,
-                  fontSize: SimfTokens.textHero - 4, // 24
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
