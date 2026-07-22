@@ -139,15 +139,14 @@ class _GuestBanner extends StatelessWidget {
       decoration: BoxDecoration(
         color: SimfTokens.navy,
         borderRadius: BorderRadius.circular(SimfTokens.radius),
-        border: Border.all(color: SimfTokens.accent, width: 0.2),
+        border: Border.all(
+          color: SimfTokens.accent,
+          width: SimfTokens.hairline,
+        ),
       ),
       child: Text.rich(
         TextSpan(
-          style: const TextStyle(
-            color: SimfTokens.beigeBorder,
-            fontSize: SimfTokens.textMd,
-            height: 1.5,
-          ),
+          style: SimfTokens.bodyBeige,
           children: <InlineSpan>[
             TextSpan(text: l10n.guestBannerPrefix),
             TextSpan(

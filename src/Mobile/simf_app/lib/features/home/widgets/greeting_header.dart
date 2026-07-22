@@ -58,21 +58,14 @@ class GreetingHeader extends StatelessWidget {
               children: <Widget>[
                 Text(
                   l10n.greetingWelcome,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: SimfTokens.textMd,
-                  ),
+                  style: SimfTokens.bodyWhiteMd,
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: SimfTokens.gap2),
                 Text(
                   nameLine,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: SimfTokens.accent,
-                    fontSize: SimfTokens.textLg,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: SimfTokens.labelGoldSemiboldLg,
                 ),
               ],
             ),

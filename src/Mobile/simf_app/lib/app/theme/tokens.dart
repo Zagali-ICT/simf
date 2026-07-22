@@ -185,6 +185,13 @@ class SimfTokens {
   static const double headingBarWidth = 4;
   static const double headingBarHeight = 20;
 
+  // #16 S3 — home (Figma 758:1183+) metrics.
+  static const double hairlineWide = 0.8; // social-button border (follow-us)
+  static const double liveBadgeSize = 60; // home LIVE banner مباشر badge square
+  static const double highlightSlideHeight = 170; // highlights carousel slide
+  static const double heroBannerHeight = 160; // home hero banner strip
+  static const double navTileHeight = 80; // home tall nav-tile min height
+
   // #16 S3 — requests card icon-box + status-chip metrics (Figma 1408:9761+).
   static const double requestIconBox = 32; // gold type-icon box on a request card
   static const double statusChipHeight = 32; // status filter chip height
@@ -699,5 +706,14 @@ class SimfTokens {
   );
   static const TextStyle bodyDanger = TextStyle(
     color: danger,
+  );
+  // home (Figma 758:1239) — highlights carousel slide title. Most home text
+  // reuses S3 tokens (labelWhiteMediumSm, labelGoldSemiboldLg, bodyWhiteSm,
+  // labelGoldBoldLg, labelGoldBold, labelWhiteSemibold, bodyWhiteMd, bodyBeige).
+  static const TextStyle labelWhiteBoldLgTall = TextStyle(
+    color: surface,
+    fontSize: textLg,
+    fontWeight: FontWeight.w700,
+    height: 1.3,
   );
 }

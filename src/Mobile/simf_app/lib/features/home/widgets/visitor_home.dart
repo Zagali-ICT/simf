@@ -96,13 +96,13 @@ class VisitorHome extends StatelessWidget {
                 SimfNavTile(
                   label: l10n.scanVisitorTitle,
                   icon: Icons.qr_code_scanner,
-                  minHeight: 80,
+                  minHeight: SimfTokens.navTileHeight,
                   onTap: () => context.pushNamed(RouteNames.scanVisitor),
                 ),
                 SimfNavTile(
                   label: l10n.myVisitorsTitle,
                   icon: Icons.groups_outlined,
-                  minHeight: 80,
+                  minHeight: SimfTokens.navTileHeight,
                   onTap: () => context.pushNamed(RouteNames.myVisitors),
                 ),
               ],
@@ -172,13 +172,13 @@ class VisitorHome extends StatelessWidget {
                 SimfNavTile(
                   label: l10n.tileBilateralMeetings,
                   iconAsset: HomeIcons.bilateral,
-                  minHeight: 80,
+                  minHeight: SimfTokens.navTileHeight,
                   onTap: () => context.pushNamed(RouteNames.meetings),
                 ),
               SimfNavTile(
                 label: l10n.tileArchive,
                 iconAsset: HomeIcons.archive,
-                minHeight: 80,
+                minHeight: SimfTokens.navTileHeight,
                 onTap: () => context.pushNamed(RouteNames.archive),
               ),
             ],
@@ -198,13 +198,13 @@ class VisitorHome extends StatelessWidget {
                 SimfNavTile(
                   label: l10n.tileMeetPeople,
                   iconAsset: HomeIcons.meetPeople,
-                  minHeight: 80,
+                  minHeight: SimfTokens.navTileHeight,
                   onTap: () => context.pushNamed(RouteNames.meetPeople),
                 ),
               SimfNavTile(
                 label: l10n.chatbotTitle,
                 iconAsset: HomeIcons.aiAssistant,
-                minHeight: 80,
+                minHeight: SimfTokens.navTileHeight,
                 onTap: () => context.pushNamed(RouteNames.chatbot),
               ),
             ],
@@ -215,7 +215,7 @@ class VisitorHome extends StatelessWidget {
               SimfNavTile(
                 label: l10n.tileSessionSummary,
                 iconAsset: HomeIcons.sessionSummary,
-                minHeight: 80,
+                minHeight: SimfTokens.navTileHeight,
                 // Owner 2026-07-01: the smart-features "ملخص الجلسات" tile opens
                 // the AI session-summaries list (Figma 1388:8392, header
                 // "ملخص الجلسات") — matching its summary icon + label. The
@@ -226,7 +226,7 @@ class VisitorHome extends StatelessWidget {
               SimfNavTile(
                 label: l10n.tileEntryBadge,
                 iconAsset: HomeIcons.badge,
-                minHeight: 80,
+                minHeight: SimfTokens.navTileHeight,
                 onTap: () => context.pushNamed(RouteNames.badge),
               ),
             ],
