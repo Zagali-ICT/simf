@@ -22,9 +22,14 @@
      content (fresh elements with no mark) still gets wired each time. */
   function firstInit(el, key) {
     if (!el) { return false; }
-    var attr = 'lnInit' + key;
-    if (el.dataset[attr]) { return false; }
-    el.dataset[attr] = '1';
+    // Mark via a JS property, NOT a data-* attribute. Blazor's enhanced-navigation
+    // DOM morph re-syncs a PRESERVED element's attributes back to the server-rendered
+    // state (which has no data-lnInit*), so a dataset flag would be stripped and
+    // run() would re-wire the shared header on every navigation — stacking duplicate
+    // listeners. A JS property survives the morph, so the bind-once guard holds.
+    var prop = '_lnInit' + key;
+    if (el[prop]) { return false; }
+    el[prop] = true;
     return true;
   }
 
@@ -249,7 +254,38 @@
     });
   }
 
-  function run() { initReveal(); initSearch(); initCountUp(); initThemeTabs(); initAgenda(); initChatbot(); }
+  /* ---- 9. nav mega-menu: dismiss on click ------------------------------- */
+  function initDropdowns() {
+    var dds = document.querySelectorAll('.ln-dd');
+    if (!dds.length) { return; }
+    dds.forEach(function (dd) {
+      if (!firstInit(dd, 'Dd')) { return; }
+      var toggle = dd.querySelector('.ln-nav__item');
+      // A pointer press must not latch the panel open via :focus-within (that
+      // leaves it stuck open until you click elsewhere). preventDefault on
+      // mousedown stops the click focusing the toggle; hover and keyboard focus
+      // still open the panel.
+      if (toggle) {
+        toggle.addEventListener('mousedown', function (e) { e.preventDefault(); });
+      }
+      // Clicking a menu item navigates — dismiss the panel (drop focus + a class
+      // that overrides :hover) so it does not linger open on the destination page.
+      dd.addEventListener('click', function (e) {
+        if (e.target.closest('.ln-dd__link')) {
+          dd.classList.add('is-dismissed');
+          if (document.activeElement && document.activeElement.blur) { document.activeElement.blur(); }
+        }
+      });
+      // Re-enable opening once the pointer leaves OR focus (re-)enters the menu.
+      // The focusin path matters for keyboard users: an item is a same-page anchor,
+      // so mouseleave may never fire — without this, tabbing back could not re-open
+      // the panel (is-dismissed would override :focus-within indefinitely).
+      dd.addEventListener('mouseleave', function () { dd.classList.remove('is-dismissed'); });
+      dd.addEventListener('focusin', function () { dd.classList.remove('is-dismissed'); });
+    });
+  }
+
+  function run() { initReveal(); initSearch(); initCountUp(); initThemeTabs(); initAgenda(); initChatbot(); initDropdowns(); }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', run);
   } else {

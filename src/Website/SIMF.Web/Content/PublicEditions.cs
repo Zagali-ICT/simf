@@ -66,19 +66,28 @@ public sealed class PublicEditions(SimfPublicClient api, IMemoryCache cache)
             return cached;
         }
 
-        EditionsView view;
+        PublicArchive? result;
         try
         {
-            var result = await api.GetArchiveAsync(cancellationToken);
-            view = Build(result?.Items ?? []);
+            result = await api.GetArchiveAsync(cancellationToken);
         }
-        catch
+        catch (Exception e) when (e is not OperationCanceledException)
         {
-            // A transient API failure falls back to the static editions and is NOT
-            // cached, so the next request retries the live source.
+            // The client already returns null (not throws) on a transient failure;
+            // this only guards a malformed payload. Either way it is a failure.
+            result = null;
+        }
+
+        // A transient failure surfaces as null (network error, timeout, a non-JSON
+        // error page) — serve the static fallback but do NOT cache it, so the next
+        // request retries the live source. A genuinely hidden archive returns a
+        // non-null empty list, which IS a real answer and is cached below.
+        if (result is null)
+        {
             return Build([]);
         }
 
+        var view = Build(result.Items);
         cache.Set(CacheKey, view, CacheFor);
         return view;
     }
@@ -92,16 +101,21 @@ public sealed class PublicEditions(SimfPublicClient api, IMemoryCache cache)
         if (items.Count > 0)
         {
             var ordered = items.OrderByDescending(e => e.Year).ToList();
-            var editions = ordered.Select((e, i) => new PublicEdition(
-                AnchorId: $"ed-{i}",
-                NavLabel: Label(new Bilingual(e.TitleAr, e.TitleEn), e.Year),
-                Image: !string.IsNullOrWhiteSpace(e.CoverImageRelativePath)
-                    ? e.CoverImageRelativePath!
-                    : FallbackCovers[i % FallbackCovers.Length],
-                Date: new Bilingual(e.DateLabelAr ?? e.Year.ToString(), e.DateLabelEn ?? e.Year.ToString()),
-                Name: new Bilingual(e.TitleAr, e.TitleEn),
-                Text: new Bilingual(e.SummaryAr ?? string.Empty, e.SummaryEn ?? string.Empty)))
-                .ToList();
+            var editions = ordered.Select((e, i) =>
+            {
+                // TitleAr/En are non-nullable on the contract, but System.Text.Json
+                // does not enforce it — coalesce so a null title never NREs here.
+                var title = new Bilingual(e.TitleAr ?? string.Empty, e.TitleEn ?? string.Empty);
+                return new PublicEdition(
+                    AnchorId: $"ed-{i}",
+                    NavLabel: Label(title, e.Year),
+                    Image: !string.IsNullOrWhiteSpace(e.CoverImageRelativePath)
+                        ? e.CoverImageRelativePath!
+                        : FallbackCovers[i % FallbackCovers.Length],
+                    Date: new Bilingual(e.DateLabelAr ?? e.Year.ToString(), e.DateLabelEn ?? e.Year.ToString()),
+                    Name: title,
+                    Text: new Bilingual(e.SummaryAr ?? string.Empty, e.SummaryEn ?? string.Empty));
+            }).ToList();
             var latest = ordered[0];
             return new EditionsView(editions, $"+{latest.Speakers}", $"+{latest.Attendees}", $"+{latest.Sessions}");
         }

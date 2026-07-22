@@ -191,6 +191,11 @@ Scenario: Clicking an edition opens /archive and scrolls to its card
   `PublicEditions` (the same source as the page). Each card renders `id="ed-N"` and each
   dropdown item links to `/archive#ed-N`; enhanced navigation does not honour the URL
   fragment, so `landing.js` scrolls to the target on `enhancedload`.
+- **Dismiss on click.** The mega-menu opens on hover / keyboard focus. A pointer click on
+  the toggle no longer latches it open (`mousedown` `preventDefault` suppresses the click
+  focus), and clicking an item dismisses the panel immediately (`is-dismissed`, cleared on
+  `mouseleave` OR `focusin` so keyboard users can re-open it). `PublicEditionsTests` also
+  pins that a transient API failure is NOT cached (retries the live source next request).
 - **Convert to Playwright** when adopted: copy each Gherkin scenario into a `.feature`
   under `tests/SIMF.E2E.Tests/`.
 
