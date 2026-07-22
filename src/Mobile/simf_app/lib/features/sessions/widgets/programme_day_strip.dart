@@ -13,7 +13,9 @@ import '../data/session_models.dart';
 /// day is muted grey and not selectable. When the band fits the width the cells
 /// distribute (event centred, as on a tablet); when it doesn't (e.g. a narrow
 /// phone once the pad days are added) it scrolls horizontally from the leading
-/// day.
+/// day. The cell **order** follows the ambient text direction — left→right in
+/// English, and right→left in Arabic (earliest programme day on the right), the
+/// scroll leading from the right edge (owner 2026-07-22).
 class ProgrammeDayStrip extends StatelessWidget {
   const ProgrammeDayStrip({
     required this.days,
@@ -42,13 +44,14 @@ class ProgrammeDayStrip extends StatelessWidget {
         borderRadius:
             BorderRadius.all(Radius.circular(SimfTokens.radiusSmall)),
       ),
-      // The frame render lays the calendar band LTR — dates ascend
-      // left→right (SAT 12 … FRI 18) with English weekday labels — even on
-      // the RTL page, so the strip pins its own direction (like the times).
-      child: Directionality(
-        textDirection: TextDirection.ltr,
-        child: _buildBand(entries),
-      ),
+      // The band inherits the AMBIENT text direction (owner 2026-07-22): in
+      // Arabic the agenda page is RTL, so the day cells order right→left — the
+      // earliest programme day on the right, the latest on the left — and the
+      // horizontal scroll leads from the right edge; in English (LTR) the cells
+      // stay left→right (SAT 12 … FRI 18) exactly as before. This OVERRIDES the
+      // earlier 883:2327 LTR pin, which forced the strip left→right in every
+      // locale ("like the times"). The weekday labels stay English 3-letter.
+      child: _buildBand(entries),
     );
   }
 

@@ -216,6 +216,35 @@ builder.Services.AddRateLimiter(rateLimiter =>
             });
     });
 
+    // The Control Panel help assistant (POST /admin/ai/assistant) hits the AI
+    // provider on every question. Same per-sub partition rationale as "ai-test"
+    // (the per-IP "auth" window cannot bound a shared office or an IP-rotating
+    // botnet), with the same tight no-sub fallback; a slightly higher permit
+    // count because the assistant is used interactively across CP pages.
+    rateLimiter.AddPolicy("ai-assistant", httpContext =>
+    {
+        var sub = httpContext.User.FindFirst("sub")?.Value;
+        if (string.IsNullOrEmpty(sub))
+        {
+            return RateLimitPartition.GetFixedWindowLimiter(
+                "ai-assistant:no-sub",
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    // Defense-in-depth: tight cap so a claim-mapper regression
+                    // cannot silently kill the rate-limit guard.
+                    PermitLimit = 5,
+                    Window = TimeSpan.FromMinutes(1),
+                });
+        }
+        return RateLimitPartition.GetFixedWindowLimiter(
+            "ai-assistant:" + sub,
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = rateLimitOptions.AiAssistantPermitLimit,
+                Window = TimeSpan.FromSeconds(rateLimitOptions.AiAssistantWindowSeconds),
+            });
+    });
+
     rateLimiter.OnRejected = async (context, cancellationToken) =>
     {
         var http = context.HttpContext;

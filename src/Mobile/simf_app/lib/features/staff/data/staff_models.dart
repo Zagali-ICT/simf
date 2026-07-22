@@ -19,6 +19,7 @@ class StaffWalkInRequest {
     required this.gender,
     this.email,
     this.jobTitle,
+    this.jobTitleArabic,
     this.organisationId,
     this.nationalId,
     this.iqamaNumber,
@@ -36,6 +37,7 @@ class StaffWalkInRequest {
   final AppGender gender;
   final String? email;
   final String? jobTitle;
+  final String? jobTitleArabic;
   final String? organisationId;
   final String? nationalId;
   final String? iqamaNumber;
@@ -53,6 +55,7 @@ class StaffWalkInRequest {
         'gender': gender.value,
         if (email != null) 'email': email,
         if (jobTitle != null) 'jobTitle': jobTitle,
+        if (jobTitleArabic != null) 'jobTitleArabic': jobTitleArabic,
         if (organisationId != null) 'organisationId': organisationId,
         if (nationalId != null) 'nationalId': nationalId,
         if (iqamaNumber != null) 'iqamaNumber': iqamaNumber,

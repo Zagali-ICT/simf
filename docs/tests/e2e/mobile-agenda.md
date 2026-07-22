@@ -25,9 +25,12 @@
 > day's **own title + logo banner** ("تفاصيل اليوم" carries the day title — owner:
 > not a static label), the **type tabs** (الكل / جلسات / ورش العمل — client-side
 > filter on `SessionType`; the احداث tab was dropped to match the 3-tab frame,
-> owner 2026-07-03 D-598 — event sessions show under الكل; the **day strip is
-> pinned LTR**, dates ascending left→right as the frame renders), then the
-> **المواعيد** list with the
+> owner 2026-07-03 D-598 — event sessions show under الكل; the **day strip
+> follows the ambient text direction** — Arabic (RTL) orders the days
+> right→left with the earliest programme day on the **right** and the scroll
+> leading from the right edge, English (LTR) stays left→right as the frame
+> renders (owner 2026-07-22, overriding the earlier 883:2327 LTR pin)), then
+> the **المواعيد** list with the
 > first session **featured** (expanded with the day banner). Widget tests cover:
 > header + day title + tabs + timeline rows; search filter; **type-tab filter**;
 > day-strip day switch; selected-cell inversion; row→detail; empty; error→retry;
@@ -57,7 +60,7 @@
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
 | **Auth setup** | **Public screen (D-750, reverses D-576)** — the Sessions/Agenda screen is open to a signed-out guest (no redirect). The public reads stay `AllowAnonymous`. Admin token only to seed sessions/speakers/themes. **No literal secrets.** |
-| **Last reviewed** | 2026-07-20 (D-750 — screen public again; program tab label الجلسات → الأجندة) |
+| **Last reviewed** | 2026-07-22 (owner — agenda day strip orders RTL in Arabic, overriding the 883:2327 LTR pin) |
 
 ## Coverage matrix
 
@@ -71,12 +74,12 @@
 | E2E-MOB016-006 | Soft-deleted session drops from the list | edge | P1 | authored ✓ (covered by the delete test) |
 | E2E-MOB016-007 | Tap a row → Session detail (17) route opens; "main session" = category tag | happy | P1 | authored ✓ (screen — `tapping a row navigates to the session detail`) |
 | E2E-MOB016-008 | Client filters (Upcoming/Forum pills, day strip, search) slice the cache — no refetch | happy | P0 | authored ✓ (screen — `Forum pill reveals…`, `search box filters…`) |
-| E2E-MOB016-009 | RTL render + day strip scroll | i18n | P1 | authored ✓ (screen RTL-primary; day strip uses directional insets) |
+| E2E-MOB016-009 | RTL render + day-strip order/scroll — Arabic orders the days right→left (earliest programme day on the right; scroll leads from the right edge), English stays left→right | i18n | P1 | authored ✓ (screen RTL-primary; `sessions_screen_test` RTL day-order assertion — the earliest day is right of the latest; the English counterpart keeps it on the left) |
 | E2E-MOB016-010 | Empty programme → empty state (not a blank list) | edge | P1 | authored ✓ (screen — `an empty programme shows the empty state`) |
 | E2E-MOB016-011 | Fetch fails → error + Retry that re-runs the read | resilience | P0 | authored ✓ (screen — `a load failure shows the error + retry`) |
 | E2E-MOB016-012 | `status` / speaker `role` decode tolerantly (int **or** name; unknown → default) | contract | P0 | authored ✓ (model — `SessionStatus.fromJson` / `SessionSpeakerRole.fromJson`) |
 | E2E-MOB016-013 | List item binds the real wire names incl. the D-271 speaker country+photo | contract | P0 | authored ✓ (model — `SessionListItem.fromJson`) |
-| E2E-MOB016-014 | **Full-width calendar (#4):** the day strip is a WHITE band over the FULL event date range (first→last programme day, empty in-between days filled), **pinned LTR** (dates ascend left→right as the frame renders), full-width (cells distributed, scroll fallback when long); a day **with** sessions = navy text ("active"), the **selected** day = navy pill/white text, an empty day = muted grey and **not** selectable; weekend labels red | happy/visual | P1 | authored ✓ (screen — `ProgrammeDayStrip`/`_calendarRange`; existing selected-cell-navy + switch-day tests) |
+| E2E-MOB016-014 | **Full-width calendar (#4):** the day strip is a WHITE band over the FULL event date range (first→last programme day, empty in-between days filled), **ordered by the ambient text direction** (owner 2026-07-22, overriding the earlier 883:2327 LTR pin) — Arabic (RTL) orders the days right→left with the earliest programme day on the **right** and the scroll leading from the right edge, English (LTR) stays left→right; full-width (cells distributed, scroll fallback when long); a day **with** sessions = navy text ("active"), the **selected** day = navy pill/white text, an empty day = muted grey and **not** selectable; weekend labels red; the weekday labels stay English 3-letter (open owner question — whether Arabic weekday names are also wanted) | happy/visual | P1 | authored ✓ (screen — `ProgrammeDayStrip`/`_calendarRange`; selected-cell-navy + switch-day tests + `sessions_screen_test` RTL/LTR day-order assertions; Arabic golden `sessions_883-2308.png` re-locked) |
 | E2E-MOB016-015 | **Public screen (D-750, reverses D-576):** a signed-out guest navigating to the `/sessions` screen sees the agenda (no redirect); My seat (18) stays attendee-gated | auth | P0 | authored ✓ (router-gate `D-750 — a signed-out guest hitting /sessions or a session detail is NOT redirected`; `routePathRequiresAuth('/sessions')` is FALSE) |
 | E2E-MOB016-018 | **Program tab label (D-750):** the bottom-nav program/agenda tab reads "الأجندة" / "Agenda" (`agendaTitle`) — the screen header "برنامج الملتقى" and the `sessionsTitle` "الجلسات" on other surfaces (home tile, etc.) are unchanged | i18n/visual | P1 | authored ✓ (`sessions_screen_test` RTL: active bottom-nav label = "الأجندة"; `simf_page_shell_test`: the "Agenda" tab navigates to /sessions; goldens re-locked) |
 | E2E-MOB016-016 | **Time-rail from→to connector (D-705):** every المواعيد row shows the vertical beige line between its start and end time — including a **collapsed/short row** (title only, no banner/description) where it previously collapsed to zero (Figma 1310:3243/3244) | visual | P1 | authored ✓ (golden `sessions_883-2308.png` — the connector renders on the featured AND the collapsed row) |
@@ -195,12 +198,24 @@ Scenario: The agenda renders right-to-left in Arabic
   Given the device locale is Arabic
   When the agenda renders
   Then the layout and day strip are right-to-left
+  And the day cells order right-to-left — the earliest programme day sits on the right, the latest on the left
+  And the day strip's horizontal scroll leads from the right edge
   And times render in the device timezone
+
+Scenario: The agenda keeps left-to-right day order in English
+  Given the device locale is English
+  When the agenda renders
+  Then the day cells order left-to-right — the earliest programme day sits on the left (unchanged from before the RTL override)
 ```
 
-**Evidence:** the screen is RTL-primary (Arabic default); the day strip uses
-`EdgeInsetsDirectional` so chip spacing flows start→end. (The active/next-session
-brass highlight is deferred to the SIMF-VID-001 visual pass — interim UI.)
+**Evidence:** the screen is RTL-primary (Arabic default); the day strip inherits
+the ambient text direction (the earlier LTR pin was removed, owner 2026-07-22), so
+its `Row` + horizontal `SingleChildScrollView` order the days and lead the scroll
+right→left under RTL and left→right under LTR. Covered by `sessions_screen_test.dart`
+— `the day strip orders days right-to-left in Arabic` (the earliest day is right of
+the latest) and `the day strip keeps left-to-right order in English`. (The
+active/next-session brass highlight is deferred to the SIMF-VID-001 visual pass —
+interim UI.)
 
 ### E2E-MOB016-010 — Empty state
 
@@ -298,7 +313,14 @@ the 6 sessions-tab goldens re-locked to the new label.
 
 ---
 
-_Last reviewed:_ `2026-07-20` by `Apexium` — **D-750: the Sessions/Agenda screen is
+_Last reviewed:_ `2026-07-22` by `Apexium` — **owner 2026-07-22: the agenda day
+strip now orders the days by the ambient text direction — in Arabic (RTL) the
+earliest programme day sits on the right and the scroll leads from the right edge,
+overriding the earlier 883:2327 LTR pin; English stays left→right. Intro +
+E2E-MOB016-009 + E2E-MOB016-014 updated; RTL/LTR day-order assertions added and the
+Arabic golden `sessions_883-2308.png` re-locked. The weekday labels stay English
+3-letter (open owner question — whether Arabic names are also wanted).** _Prior:_
+`2026-07-20` by `Apexium` — **D-750: the Sessions/Agenda screen is
 public again (reverses the D-576 login-gate) — a guest browses the programme without
 signing in; the bottom-nav program tab label changed "الجلسات" → "الأجندة"
 (`agendaTitle`), leaving `sessionsTitle` + the screen header unchanged.

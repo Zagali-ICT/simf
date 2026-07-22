@@ -180,6 +180,8 @@ class AppL10n {
   String get englishNameLabel =>
       _t('الاسم الكامل (بالإنجليزية)', 'Full name (English)');
   String get jobTitleLabel => _t('المسمى الوظيفي', 'Job title');
+  String get jobTitleArabicLabel =>
+      _t('المسمى الوظيفي (بالعربية)', 'Job title (Arabic)');
   String get nationalityLabel => _t('الجنسية', 'Nationality');
   String get isSaudiLabel => _t('سعودي الجنسية', 'Saudi national');
   String get nationalIdLabel => _t('رقم الهوية الوطنية', 'National ID');
@@ -2189,9 +2191,9 @@ class AppL10n {
         'Could not play this feed. Try again.',
       );
 
-  // AI assistant (Page 036 · المساعد الذكي) — KSA frame 1064:13066. No backend
-  // chatbot endpoint exists (verified); the transcript below is the scripted
-  // demo the Figma shows, and any new prompt gets a canned bilingual reply.
+  // AI assistant (Page 036 · المساعد الذكي) — KSA frame 1064:13066. Backed by the
+  // centralised AI (POST /app/ai/assistance, grounded on the live event context);
+  // the screen opens with the greeting and answers each prompt through that endpoint.
   String get chatbotTitle => _t('المساعد الذكي', 'AI assistant');
   String get chatbotInputHint => _t('اكتب رسالتك...', 'Type your message…');
   String get chatbotSendTooltip => _t('إرسال', 'Send');
@@ -2199,21 +2201,9 @@ class AppL10n {
         'مرحباً 🤝 أنا مساعدك الذكي. كيف يمكنني المساعدة اليوم؟',
         'Hello 🤝 I’m your smart assistant. How can I help today?',
       );
-  String get chatbotSeedQ1 =>
-      _t('متى تبدأ جلسة الافتتاح؟', 'When does the opening session start?');
-  String get chatbotSeedA1 => _t(
-        'جلسة الافتتاح والترحيب تبدأ الساعة 8:00 صباحاً في القاعة الرئيسية. '
-            'هل تريدني أن أضيفها لأجندتك؟',
-        'The opening & welcome session starts at 8:00 AM in the Main Hall. '
-            'Want me to add it to your agenda?',
-      );
-  String get chatbotSeedQ2 =>
-      _t('أين القاعة الرئيسية؟', 'Where is the Main Hall?');
-  String get chatbotSeedA2 => _t(
-        'القاعة الرئيسية (HALL A) في الطابق الأول. أفضل مسار من المدخل '
-            'يستغرق دقيقتين تقريباً – هل تريدني أن أفتح الخريطة ثلاثية الأبعاد؟',
-        'The Main Hall (HALL A) is on the first floor. The best route from the '
-            'entrance takes about two minutes — want me to open the 3D map?',
+  String get chatbotError => _t(
+        'تعذّر الحصول على رد الآن. حاول مرة أخرى.',
+        'Couldn’t get a reply right now. Please try again.',
       );
   // The four quick-reply chips under the transcript (frame 1070:13389).
   String get chatbotChipMeeting => _t('طلب لقاء', 'Request a meeting');

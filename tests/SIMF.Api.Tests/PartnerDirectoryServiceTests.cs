@@ -17,6 +17,7 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Networking;
+using SIMF.Domain.Contacts;
 using SIMF.Domain.Exhibition;
 using SIMF.Domain.Exhibitors;
 using SIMF.Domain.IdentityAccess;
@@ -140,6 +141,139 @@ public sealed class PartnerDirectoryServiceTests : IClassFixture<SimfApiFactory>
             e => e.Id == boothId
                 && e.Kind == PartnerDirectoryKind.Booth
                 && e.Name == exhibitorName);
+    }
+
+    [Fact]
+    public async Task Company_that_is_both_a_sponsor_and_a_booth_is_deduped_to_the_sponsor()
+    {
+        // Same company linked (by the shared Contact directory record, SIMF-FDS-014)
+        // to BOTH a Sponsor and a booth Exhibitor. Owner decision (2026-07-22): it
+        // must appear ONCE — as the Sponsor (kind=sponsor). Robust key = shared Contact.
+        Guid sponsorId;
+        Guid boothId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+
+            var contactId = Guid.NewGuid();
+            db.Contacts.Add(new Contact
+            {
+                Id = contactId,
+                Name = $"PD Dual Co {Guid.NewGuid().ToString("N")[..8]}",
+                NameArabic = "شركة",
+                IsActive = true,
+                CreatedAt = DateTimeOffset.UtcNow,
+            });
+
+            var sponsor = new Sponsor
+            {
+                Id = Guid.NewGuid(),
+                Name = "PD Dual Sponsor",
+                NameArabic = "راعٍ مزدوج",
+                Tier = SponsorTier.Gold,
+                DisplayOrder = 0,
+                IsActive = true,
+                ContactId = contactId,
+                CreatedAt = DateTimeOffset.UtcNow,
+            };
+            db.Sponsors.Add(sponsor);
+
+            var exhibitorId = Guid.NewGuid();
+            db.Set<Exhibitor>().Add(new Exhibitor
+            {
+                Id = exhibitorId,
+                Name = "PD Dual Exhibitor",
+                NameArabic = "عارض مزدوج",
+                IsActive = true,
+                ContactId = contactId,
+                CreatedAt = DateTimeOffset.UtcNow,
+            });
+            var booth = new Booth
+            {
+                Id = Guid.NewGuid(),
+                Code = "B-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+                Name = "Booth",
+                NameArabic = "جناح",
+                ExhibitorId = exhibitorId,
+                IsActive = true,
+                CreatedAt = DateTimeOffset.UtcNow,
+            };
+            db.Set<Booth>().Add(booth);
+
+            await db.SaveChangesAsync();
+            sponsorId = sponsor.Id;
+            boothId = booth.Id;
+        }
+
+        var token = await SeedApprovedCallerTokenAsync();
+        var body = await GetDirectoryAsync(token);
+
+        // The Sponsor row is present...
+        Assert.Contains(body.Entries,
+            e => e.Id == sponsorId && e.Kind == PartnerDirectoryKind.Sponsor);
+        // ...and the duplicate booth-company row is dropped (dedup by shared Contact).
+        Assert.DoesNotContain(body.Entries,
+            e => e.Id == boothId && e.Kind == PartnerDirectoryKind.Booth);
+    }
+
+    [Fact]
+    public async Task Booth_company_matching_a_sponsor_by_name_is_deduped_to_the_sponsor()
+    {
+        // No shared Contact — the only overlap is the company name. The
+        // case-insensitive, trimmed name fallback still collapses it to the Sponsor.
+        var companyName = $"PD NameDup Co {Guid.NewGuid().ToString("N")[..8]}";
+        Guid sponsorId;
+        Guid boothId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+
+            var sponsor = new Sponsor
+            {
+                Id = Guid.NewGuid(),
+                Name = companyName,
+                NameArabic = "راعٍ",
+                Tier = SponsorTier.Gold,
+                DisplayOrder = 0,
+                IsActive = true,
+                CreatedAt = DateTimeOffset.UtcNow,
+            };
+            db.Sponsors.Add(sponsor);
+
+            var exhibitorId = Guid.NewGuid();
+            db.Set<Exhibitor>().Add(new Exhibitor
+            {
+                Id = exhibitorId,
+                // Same English name, different case — must still match on the fallback.
+                Name = companyName.ToUpperInvariant(),
+                NameArabic = "عارض",
+                IsActive = true,
+                CreatedAt = DateTimeOffset.UtcNow,
+            });
+            var booth = new Booth
+            {
+                Id = Guid.NewGuid(),
+                Code = "B-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+                Name = "Booth",
+                NameArabic = "جناح",
+                ExhibitorId = exhibitorId,
+                IsActive = true,
+                CreatedAt = DateTimeOffset.UtcNow,
+            };
+            db.Set<Booth>().Add(booth);
+
+            await db.SaveChangesAsync();
+            sponsorId = sponsor.Id;
+            boothId = booth.Id;
+        }
+
+        var token = await SeedApprovedCallerTokenAsync();
+        var body = await GetDirectoryAsync(token);
+
+        Assert.Contains(body.Entries,
+            e => e.Id == sponsorId && e.Kind == PartnerDirectoryKind.Sponsor);
+        Assert.DoesNotContain(body.Entries,
+            e => e.Id == boothId && e.Kind == PartnerDirectoryKind.Booth);
     }
 
     [Fact]

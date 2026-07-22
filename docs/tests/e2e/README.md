@@ -136,6 +136,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/ai/services/{feature}` | [`cp-admin-ai-service-detail.md`](cp-admin-ai-service-detail.md) | E2E-AISD-001..011 |
 | `/admin/ai/prompts` | [`cp-admin-ai-prompts.md`](cp-admin-ai-prompts.md) | E2E-AIP-001..022 |
 | `/admin/ai/invocations` | [`cp-admin-ai-invocations.md`](cp-admin-ai-invocations.md) | E2E-AIV-001..012 |
+| _(floating widget — every CP page)_ | [`cp-assistant.md`](cp-assistant.md) | E2E-CPA-001..009 |
 
 ### Control Panel — Access control & system
 
@@ -232,8 +233,8 @@ API endpoints land (D-249). The per-screen design docs live under
 | `seatPicker` (`GET …/seats` + `POST …/seats/reserve` / `reserve-random`) — D-485 | [`mobile-seat-picker.md`](mobile-seat-picker.md) | E2E-MOBPICK-001..007 |
 | `joinSessionHub` (`GET /app/programme/sessions`) — D-485 | [`mobile-join-hub.md`](mobile-join-hub.md) | E2E-MOBHUB-001..005 |
 | `savedSessions` (`GET /app/sessions/favourites` ∩ programme) — #8, D-584 | [`mobile-saved-sessions.md`](mobile-saved-sessions.md) | E2E-MOBSAVED-001..007 |
-| #19 `speakers` (`GET /app/speakers`) | [`mobile-speakers.md`](mobile-speakers.md) | E2E-MOB019-001..007 |
-| #20 `speakerProfile` (`GET /app/speakers/{id}` + meeting-request) | [`mobile-speaker-profile.md`](mobile-speaker-profile.md) | E2E-MOB020-001..010 |
+| #19 `speakers` (`GET /app/speakers`) | [`mobile-speakers.md`](mobile-speakers.md) | E2E-MOB019-001..013 |
+| #20 `speakerProfile` (`GET /app/speakers/{id}` + meeting-request) | [`mobile-speaker-profile.md`](mobile-speaker-profile.md) | E2E-MOB020-001..020 |
 | #22 `booths` (`GET /app/booths` + `/{id}`) — #9: country name + أرشدني→map | [`mobile-booths.md`](mobile-booths.md) | E2E-MOB022-001..013 |
 | `boothMap` (`/booths/:id/map` → venue map focused on the booth) — #9 | [`mobile-booths.md`](mobile-booths.md) | E2E-MOB022-013 |
 | #23 `sponsors` (`GET /app/sponsors`) | [`mobile-sponsors.md`](mobile-sponsors.md) | E2E-MOB023-001..004 |
@@ -258,7 +259,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #26 `sendQuestion` (`POST /app/sessions/{id}/questions`) | [`mobile-send-question.md`](mobile-send-question.md) | E2E-MOB026-001..014 |
 | #32 `badge` (`GET /app/account/dashboard`) | [`mobile-badge.md`](mobile-badge.md) | E2E-MOB032-001..004 |
 | #25 `liveBroadcast` (`GET /app/programme/sessions/{id}`) | [`mobile-live.md`](mobile-live.md) | E2E-MOB025-001..007 |
-| #36 `chatbot` (interim shell — no API) | [`mobile-chatbot.md`](mobile-chatbot.md) | E2E-MOB036-001..006 |
+| #36 `chatbot` (AI assistant → `/app/ai/assistance`) | [`mobile-chatbot.md`](mobile-chatbot.md) | E2E-MOB036-001..007 |
 | #24-01 `archiveDetail` (`GET /app/archive/{id}`) | [`mobile-archive-detail.md`](mobile-archive-detail.md) | E2E-MOB024D-001..009 |
 | `My Contacts` / `Share my contact` (`/app/account/share-token` + `/app/contacts/*`) | [`mobile-my-contacts.md`](mobile-my-contacts.md) | E2E-MMC-001..014 |
 | `requests` (`GET /app/my-requests` + `POST …/document-requests` · `…/badge-requests` · `…/my-requests/cancel`) — Wave 5 (D-500), retitled **طلباتي** when the meetings page split off (D-745); the full requests history | [`mobile-requests.md`](mobile-requests.md) | E2E-REQ-001..013 |

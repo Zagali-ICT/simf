@@ -105,12 +105,14 @@ internal sealed class AiService(
                 $"موفّر الذكاء الاصطناعي '{effectiveProvider}' غير مسجَّل.");
         }
 
+        var modelForCall = ResolveModelForCall(prompt.Model, effectiveProvider);
+
         var stopwatch = Stopwatch.StartNew();
         AiProviderResponse providerResponse;
         try
         {
             providerResponse = await provider.CallAsync(new AiProviderCall(
-                Model: prompt.Model,
+                Model: modelForCall,
                 SystemPrompt: systemPrompt,
                 UserPrompt: userPrompt,
                 Temperature: prompt.Temperature,
@@ -252,13 +254,33 @@ internal sealed class AiService(
         }, cancellationToken);
     }
 
-    // D-179 (review-pass) — single source of truth for AI input caps.
-    // Test analyst flagged the duplicated constants on the admin path;
-    // the tests should reference these so a future cap-raise doesn't
-    // pass an outdated boundary test.
-    public const int MaxInputsCount = 16;
-    public const int MaxInputKeyLength = 64;
-    public const int MaxInputValueLength = 4000;
+    // D-179 (review-pass) — single source of truth for AI input caps. The
+    // numbers live in the shared SIMF.Contracts.Ai.AiInputLimits so producers
+    // outside this assembly (the CP grounding builder) reference the same values;
+    // these aliases keep the in-assembly references and the boundary tests
+    // pointing at that one place.
+    public const int MaxInputsCount = AiInputLimits.MaxInputsCount;
+    public const int MaxInputKeyLength = AiInputLimits.MaxInputKeyLength;
+    public const int MaxInputValueLength = AiInputLimits.MaxInputValueLength;
+
+    // D-484 follow-up — every prompt is seeded with the sentinel Model="echo".
+    // When routing redirects an Echo-default prompt to a REAL provider (D-484),
+    // that literal would be sent to the vendor API as a model name and 404. Blank
+    // it so the real provider substitutes its configured DefaultModel; an Echo call
+    // keeps "echo" so its "[echo:echo]" label is unchanged. This is what lets a
+    // go-live flip DefaultProvider + set a key without editing each prompt's Model.
+    // (internal for the unit test in AiServiceModelResolutionTests.)
+    internal static string ResolveModelForCall(string model, AiProvider effectiveProvider) =>
+        effectiveProvider != AiProvider.Echo && IsEchoOrBlank(model)
+            ? string.Empty
+            : model;
+
+    // True for the offline sentinel model (EchoAiProvider.ModelName) or an unset
+    // model — the two cases where a real provider should fall back to its own
+    // configured DefaultModel.
+    private static bool IsEchoOrBlank(string? model) =>
+        string.IsNullOrWhiteSpace(model)
+        || string.Equals(model, EchoAiProvider.ModelName, StringComparison.OrdinalIgnoreCase);
 
     private static string Substitute(
         string template, IReadOnlyDictionary<string, string> inputs)

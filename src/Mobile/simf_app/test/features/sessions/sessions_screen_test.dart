@@ -368,5 +368,52 @@ void main() {
         TextDirection.rtl,
       );
     });
+
+    testWidgets('the day strip orders days right-to-left in Arabic — earliest '
+        'day on the right (owner 2026-07-22)', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeSessionsRepository(days: <ProgrammeDay>[
+          _day('d1', DateTime(2026, 9, 13), 'Day One', 'اليوم الأول',
+              <SessionListItem>[_session('s1', 9, 'Opening')],),
+          _day('d2', DateTime(2026, 9, 14), 'Day Two', 'اليوم الثاني',
+              <SessionListItem>[_session('s2', 9, 'Closing')],),
+        ],),
+        locale: const Locale('ar'),
+      );
+
+      // Under RTL the earliest programme day (13th) sits to the RIGHT of the
+      // latest (14th): a higher dx means further right.
+      final earliestDx = tester.getCenter(find.text('13')).dx;
+      final latestDx = tester.getCenter(find.text('14')).dx;
+      expect(
+        earliestDx,
+        greaterThan(latestDx),
+        reason: 'earliest day must be right of the latest under RTL',
+      );
+    });
+
+    testWidgets('the day strip keeps left-to-right order in English — earliest '
+        'day on the left', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeSessionsRepository(days: <ProgrammeDay>[
+          _day('d1', DateTime(2026, 9, 13), 'Day One', 'اليوم الأول',
+              <SessionListItem>[_session('s1', 9, 'Opening')],),
+          _day('d2', DateTime(2026, 9, 14), 'Day Two', 'اليوم الثاني',
+              <SessionListItem>[_session('s2', 9, 'Closing')],),
+        ],),
+      );
+
+      // Under LTR the earliest day (the 13th) stays to the LEFT of the latest
+      // (the 14th) — unchanged from before the RTL override.
+      final earliestDx = tester.getCenter(find.text('13')).dx;
+      final latestDx = tester.getCenter(find.text('14')).dx;
+      expect(
+        earliestDx,
+        lessThan(latestDx),
+        reason: 'earliest day must be left of the latest under LTR',
+      );
+    });
   });
 }

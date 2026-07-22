@@ -200,6 +200,24 @@ public class AskFaqRequest
 public class AssistanceRequest
 {
     public string Message { get; set; } = string.Empty;
+
+    /// <summary>The caller's UI language ("ar" / "en") so the grounded answer
+    /// matches the app's active language. Appended (defaulted) — older callers
+    /// that omit it keep working. The server also grounds the answer on the live
+    /// event context, resolved server-side (not sent by the client).</summary>
+    public string Locale { get; set; } = "en";
+}
+
+/// <summary>Control Panel operator assistant request. <see cref="Question"/> is
+/// the operator's free-text ask; <see cref="Pages"/> is the grounding directory
+/// (the CP pages the caller can access, name -> route, built server-side by the
+/// Control Panel from its navigation catalogue); <see cref="Locale"/> is the
+/// operator's UI language ("ar" / "en") so the answer matches the interface.</summary>
+public class CpAssistantRequest
+{
+    public string Question { get; set; } = string.Empty;
+    public string Pages { get; set; } = string.Empty;
+    public string Locale { get; set; } = "en";
 }
 
 public class TranslateRequest

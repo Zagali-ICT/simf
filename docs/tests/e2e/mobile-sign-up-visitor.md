@@ -66,7 +66,8 @@
 | E2E-MOB007-020 | **Top avatar (D-437):** once the face photo is captured, the placeholder person icon at the top of the card is replaced by the captured face | happy | P1 | authored ✓ (widget — header avatar swaps to the captured bytes) |
 | E2E-MOB007-021 | **Name rules (D-437/D-459):** the Arabic name accepts only Arabic letters + spaces (Latin/digits filtered at the keystroke); the English name only Latin letters + spaces; each must be a **full name of 2 to 4 parts** or Next is blocked with "Enter your full name (2 to 4 parts)". Mirrored server-side in `UpsertUserProfileRequestValidator` (400) | validation | P0 | authored ✓ (widget formatter+validator test + server name-rule tests) |
 | E2E-MOB007-022 | **Birth location (D-469/D-471):** a Saudi registrant's "place of birth" is a **searchable region picker** — the same beige search sheet the country picker uses (D-471) — over the 13 official Saudi regions (stored as the region's localized name); a non-Saudi gets the free-text field with an "as in passport" hint. The picker is **code-keyed**, so a region stored in the other language still preselects, and a stored value that is not a region (legacy free text) is kept, not erased. Switching nationality Saudi↔non-Saudi reconciles the field | validation | P1 | authored ✓ (widget — prefill + cross-locale select + open-search-pick; `SaudiRegionsTests` ByName/ByCode) |
-| E2E-MOB007-023 | **All fields mandatory except plate (owner item 4 / D-723):** job title, place of birth (Saudi region / non-Saudi free text) and the mobile number are now **required** — an empty one blocks Next with its inline error ("Job title is required" / "Place of birth is required" / "Mobile number is required"); only the plate stays optional. The women's face-photo exception (D-694) is unchanged | validation | P0 | authored ✓ (widget — each empty field blocks Next) |
+| E2E-MOB007-023 | **All fields mandatory except plate + Arabic job title (owner item 4 / D-723; #37):** job title, place of birth (Saudi region / non-Saudi free text) and the mobile number are now **required** — an empty one blocks Next with its inline error ("Job title is required" / "Place of birth is required" / "Mobile number is required"); only the plate and the Arabic job title stay optional. The women's face-photo exception (D-694) is unchanged | validation | P0 | authored ✓ (widget — each empty field blocks Next) |
+| E2E-MOB007-024 | **Arabic job title (backlog #37):** an **optional** "المسمى الوظيفي (بالعربية)" input sits right after the job title (RTL). Leaving it empty still advances Next; when filled, `Next` carries it into the profile upsert (`jobTitleArabic`) + the interests-screen draft, so `UserProfile.JobTitleArabic` (already carried by the backend + CP) is finally captured by the app. Prefilled on re-entry from the stored profile | happy | P1 | authored ✓ (widget — prefill → upsert + draft round-trip) |
 
 ## Scenarios
 
@@ -337,6 +338,34 @@ Scenario: The complete-profile entry shows an attention banner
   Then a gold-bordered info banner at the top reads the same "complete the required
        fields" prompt, so the user knows this is the completion step
 ```
+
+### E2E-MOB007-024 — Optional Arabic job title captured (backlog #37)
+
+```gherkin
+Feature: Arabic job title
+Scenario: The optional Arabic job title is not required
+  Given a signed-in visitor on the complete-profile form
+  Then an optional "المسمى الوظيفي (بالعربية)" input renders right after the
+       job title (right-to-left)
+  When every required field is valid and the Arabic job title is left empty
+  Then Next still advances to the interests screen (the field is optional)
+
+Scenario: A filled Arabic job title is carried into the save
+  Given the visitor types "مهندس بحري" into the Arabic job title
+  When they tap Next
+  Then the profile upsert (POST /app/account/user-profile on the interests step)
+       carries jobTitleArabic = "مهندس بحري"
+  And the value persists to UserProfile.JobTitleArabic (already carried by the
+      backend + CP)
+
+Scenario: The stored Arabic job title prefills on re-entry
+  Given a profile whose stored JobTitleArabic is "مهندس بحري"
+  When the form is reopened
+  Then the Arabic job title field is prefilled with "مهندس بحري"
+```
+
+**Evidence:** `sign_up_visitor_screen_test` — "carries the optional Arabic job
+title into the saved request (backlog #37)".
 
 ---
 

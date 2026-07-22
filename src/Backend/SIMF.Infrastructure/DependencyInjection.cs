@@ -619,6 +619,10 @@ public static class DependencyInjection
             SIMF.Infrastructure.Ai.AiService>();
         services.AddScoped<SIMF.Application.Ai.Abstractions.IAdminAiPromptService,
             SIMF.Infrastructure.Ai.AdminAiPromptService>();
+        // Grounds the app AI assistant (assistance prompt) on the live event data
+        // — reuses the same public read services the app's own screens call.
+        services.AddScoped<SIMF.Application.Ai.Abstractions.IAssistanceContextBuilder,
+            SIMF.Infrastructure.Ai.AssistanceContextBuilder>();
         // D-735 — transactional-email templates: the resolver (DB override else
         // code default) and the CP admin service.
         services.AddScoped<SIMF.Application.Email.IEmailTemplateResolver,

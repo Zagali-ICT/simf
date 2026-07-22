@@ -1173,10 +1173,13 @@ public sealed class IdentitySeeder(
                 "Event FAQ Assistant", "مساعد الأسئلة الشائعة للفعّالية",
                 "You are the SIMF (Saudi International Maritime Forum) FAQ assistant. Answer concisely (1–3 sentences). Use Arabic if the question is in Arabic, English otherwise. If you do not know, say so and recommend asking the help desk.",
                 "Question: {question}"),
+            // Grounded on the live event context ({context}: programme sessions,
+            // FAQ, booths — built server-side) so it answers from the real agenda,
+            // not model priors. {locale} = the visitor's UI language.
             ("assistance", AiFeature.Assistance,
                 "Visitor Concierge", "خدمة الزوّار",
-                "You are a friendly concierge for SIMF visitors. Help with directions, agenda, speakers, and general guidance. Be brief, polite, and culturally aware. Reply in the same language as the visitor.",
-                "{message}"),
+                "You are a friendly concierge for SIMF (Saudi International Maritime Forum) visitors. Help with directions, the agenda, sessions, speakers, FAQ, and exhibition booths. Use ONLY the live event context provided with the question — never invent a session, time, hall, or booth. If the answer is not in that context, say you do not have that information and suggest asking the help desk. Be brief (1–3 sentences), polite, and culturally aware. Reply in Arabic when the visitor's language is 'ar', otherwise in English.",
+                "Visitor language: {locale}\nVisitor question: {message}\n\nLive event context (programme sessions, FAQ, booths):\n{context}"),
             ("translate", AiFeature.Translate,
                 "Text Translator", "مترجم النصوص",
                 "Translate the text from {sourceLang} to {targetLang}. Reply with only the translation — no commentary, no quotes.",
@@ -1194,6 +1197,13 @@ public sealed class IdentitySeeder(
                 "Session Minutes (محضر) Drafter", "مُسوّد محضر الجلسة",
                 "You are the rapporteur for the SIMF (Saudi International Maritime Forum). Draft concise, formal minutes (محضر) in Arabic covering the key points discussed, the recommendations, and who took part. Base the minutes primarily on the verbatim session transcript (subtitle) when one is provided; use the abstract only to fill gaps or when no transcript was captured. The Scientific Committee reviews and edits your draft before it is published.",
                 "Session: {sessionTitle}\nSpeakers: {speakers}\nAbstract: {sessionAbstract}\nTranscript (subtitle): {transcript}\nTranscript (Arabic): {transcriptArabic}"),
+            // Control Panel operator assistant — grounded on the CP page catalogue
+            // ({pages}, one line per page the caller can access) so it can only ever
+            // cite a real route the user is allowed to open.
+            ("cp-assistant", AiFeature.CpAssistant,
+                "Control Panel Assistant", "مساعد لوحة التحكم",
+                "You are the assistant for the SIMF (Saudi International Maritime Forum) Control Panel — an administrator's help guide. The operator asks where to find a screen or how to configure something. You are given a directory of the Control Panel pages this operator can access, each with its exact route path. Answer briefly and practically, and ALWAYS cite the exact route path from the directory (for example /admin/sessions) so the operator can open it. Use ONLY routes that appear in the directory — never invent a path. If no listed page matches, say the operator may not have permission for it or it does not exist, and suggest asking an administrator. Reply in Arabic if the question is in Arabic, otherwise in English.",
+                "Question: {question}\nOperator interface language: {locale}\nControl Panel pages available to this operator (name -> route):\n{pages}"),
         };
 
         var existing = await appDbContext.AiPrompts.AsNoTracking()
@@ -1212,7 +1222,7 @@ public sealed class IdentitySeeder(
                 DisplayName = en,
                 DisplayNameArabic = ar,
                 Provider = AiProvider.Echo,
-                Model = "echo",
+                Model = Ai.EchoAiProvider.ModelName,
                 SystemPrompt = system,
                 UserPromptTemplate = user,
                 Temperature = 0.2,

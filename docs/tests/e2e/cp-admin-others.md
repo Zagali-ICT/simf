@@ -47,6 +47,7 @@
 | E2E-OTH-022 | Organisation required + digit-only IDs on the Others walk-in (D-354) | error | P1 | _to author_ |
 | E2E-OTH-023 | Presentation toggle: switch to full-page + persists across reload (D-353) | happy | P1 | _to author_ |
 | E2E-OTH-024 | Full-page mode: Add (walk-in) / Edit / Details take over the content area, Save returns to grid (D-353) | happy | P1 | _to author_ |
+| E2E-OTH-027 | Edit-email guard on the shared EditAccountForm (Scope=others, D-214 + #24) — duplicate → 409 `ADMIN_EMAIL_ALREADY_REGISTERED` inline SimfAlert (form stays open); a successful change rolls stamp + revokes sessions + marks unverified; bad format → 400 (golden Other email edit is E2E-OTH-005) | error | P1 | _to author_ |
 
 ## Scenarios
 
@@ -516,6 +517,57 @@ Scenario: the name column renders a photo thumbnail when the Other account has a
 Others list). The thumbnail is the shared `SimfIdentityCell`; confirm visually in
 the Chrome DevTools MCP smoke.
 
+### E2E-OTH-027 — Edit-email guard on the shared EditAccountForm (D-214 + #24)
+
+```gherkin
+Feature: Edit-email guard on the Others desk
+  The Others Edit modal hosts the same EditAccountForm (Scope="others") as the Visitors
+  desk, so the email-uniqueness re-check, the identity-change protection and the inline
+  error surfacing behave identically — this is the focused partner-side guard. The golden
+  Other email edit (200 + toast + EmailConfirmed re-verify) is E2E-OTH-005; here we drive
+  the conflict, the sign-out enforcement and the format guard.
+
+Background:
+  Given an Administrator has signed in and is on /admin/others with the grid loaded
+  And an Other account "khalid.press@example.com" exists
+  And a separate account "taken.other@example.com" already exists
+
+Scenario: Duplicate email is rejected inline and the form stays open
+  When the administrator opens Edit on "khalid.press@example.com", changes Email to
+      "taken.other@example.com" (already registered to another account) and clicks "Save"
+  Then PUT /account/api/admin/others/{id} returns HTTP 409
+  And ApiResult.Error.Code = "ADMIN_EMAIL_ALREADY_REGISTERED" (ErrorCodes.AdminEmailAlreadyRegistered)
+  And the Edit form stays open showing the inline SimfAlert (Variant="error") with the bilingual
+      MessageForCurrentCulture() "An account with this email address already exists." /
+      "يوجد حساب مسجّل بهذا البريد الإلكتروني بالفعل."
+  And no success toast is raised and the grid is not reloaded
+
+Scenario: A successful email change signs the partner out and re-verifies the new address
+  When the administrator changes Email to an unused "khalid.new@example.com" and clicks "Save"
+  Then PUT /account/api/admin/others/{id} returns 200 and the host list raises the green toast
+      "The account was updated." / "تم تحديث الحساب." (Admin.Edit.Saved)
+  And AdminAccountService.UpdateAccountAsync rolls the security stamp + revokes the account's
+      refresh tokens (a partner type may carry Staff / Moderator app authority, so any live
+      session dies at the next request), and marks the new address unverified
+      (EmailConfirmed=false) so the next sign-in email-OTP 2FA re-proves it — NOT a lockout
+      (sign-in gates on AccountState)
+
+Scenario: A malformed email is rejected with a 400 field error
+  When the administrator changes Email to "not-an-email" and clicks "Save"
+  Then PUT /account/api/admin/others/{id} returns HTTP 400
+      (UpdateOtherRouteRequestValidator — RuleFor(Email).EmailAddress())
+  And the inline SimfAlert shows "A valid email address is required." / "يجب إدخال بريد إلكتروني صالح."
+  And the form stays open and no row changes
+```
+
+**Covered (lower layer):** the partner edit shares
+`AdminAccountService.UpdateAccountAsync` with the visitor edit, so
+`tests/SIMF.Api.Tests/AdminUpdateUserTests.cs` (duplicate-email 409, email-change
+stamp roll + session revoke, email / display-name validation) exercises the same
+guard; `UpdateOtherRouteRequestValidator` adds the mandatory-tier rule on top of the
+shared Email rules. Live browser drive pending the E2E-OTH authoring pass (all
+E2E-OTH rows are `_to author_`).
+
 ---
 
 ## Implementation notes
@@ -545,4 +597,4 @@ the Chrome DevTools MCP smoke.
 
 ---
 
-_Last reviewed:_ 2026-07-22 by SIMF Team (Build #24 - noted on E2E-OTH-005 that changing the email now marks it unverified (EmailConfirmed=false) for re-verification at next sign-in; not a lockout). Prior: 2026-07-09 by SIMF Team (D-728 - added E2E-OTH-025 for the change-account-type action on the Other Details view). Earlier: 2026-06-10 (D-356 Phase 5 - Excel + toggle; D-353 presentation toggle scenarios added).
+_Last reviewed:_ 2026-07-22 by Claude (#24 DoD - added E2E-OTH-027, the focused partner-side edit-email guard for PUT /admin/others/{id}: duplicate 409 ADMIN_EMAIL_ALREADY_REGISTERED inline, email-change stamp roll + session revoke + EmailConfirmed=false re-verify, bad-format 400; the golden Other email edit stays on E2E-OTH-005). Prior: 2026-07-22 by SIMF Team (Build #24 - noted on E2E-OTH-005 that changing the email now marks it unverified (EmailConfirmed=false) for re-verification at next sign-in; not a lockout). Prior: 2026-07-09 by SIMF Team (D-728 - added E2E-OTH-025 for the change-account-type action on the Other Details view). Earlier: 2026-06-10 (D-356 Phase 5 - Excel + toggle; D-353 presentation toggle scenarios added).
