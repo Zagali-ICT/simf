@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using SIMF.Application.Recommendations.Abstractions;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Recommendations;
+using SIMF.Infrastructure.IdentityAccess;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Recommendations;
@@ -55,12 +56,10 @@ internal sealed class RecommendationService(
         var callerInterests = caller.InterestIds.ToHashSet();
 
         // 2) Load every Approved non-Admin user id from Identity DB —
-        //    the pool the matcher considers.
+        //    the pool the matcher considers (minus the caller).
         var approvedIds = await identityDbContext.Users
             .AsNoTracking()
-            .Where(u => u.AccountState == AccountState.Approved
-                && u.UserType != UserType.Admin
-                && u.Id != callerUserId)
+            .WhereApprovedNonAdmin(callerUserId)
             .Select(u => u.Id)
             .ToListAsync(cancellationToken);
         if (approvedIds.Count == 0)
