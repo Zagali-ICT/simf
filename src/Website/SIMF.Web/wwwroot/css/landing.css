@@ -611,14 +611,25 @@
 .ln-pband__head { max-width: calc(var(--content-w) + 2 * var(--section-gutter)); margin-inline: auto; width: 100%; padding-inline: clamp(16px, 5.5vw, var(--section-gutter)); display: flex; flex-direction: column; align-items: flex-start; gap: 24px; }
 .ln-pband__title { font-size: 32px; font-weight: 800; line-height: 1.2; color: var(--ink); text-align: start; }
 .ln-pband__desc { font-size: 16px; line-height: 24px; color: var(--ink); text-align: start; }
-.ln-pband__strip { overflow-x: auto; scrollbar-width: none; }
-.ln-pband__strip::-webkit-scrollbar { display: none; }
-/* Figma's partner strip is LTR-authored (first logo on the left); force LTR so the 4 logos keep that order on the RTL page. */
-.ln-pband__track { display: flex; width: max-content; direction: ltr; }
-.ln-pcard { flex: 0 0 360px; width: 360px; background: #fff; border: 1px solid #e0e0e0; display: flex; flex-direction: column; }
-.ln-pcard__logo { height: 238px; display: grid; place-items: center; padding: 32px; background: #fff; }
+/* Full-bleed auto-scroll marquee (Figma's over-wide partner strip). The track
+   (4 repeats of the 4 logos) scrolls -50% forever; forced LTR so the over-wide
+   track anchors at its left edge; pauses on hover. Reduced-motion falls back to
+   a manual scroll strip. */
+.ln-pband__strip { overflow: hidden; direction: ltr; }
+.ln-pband__track { display: flex; width: max-content; animation: ln-marquee 45s linear infinite; }
+.ln-pband__strip:hover .ln-pband__track { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .ln-pband__track { animation: none; }
+  .ln-pband__strip { overflow-x: auto; scrollbar-width: none; }
+  .ln-pband__strip::-webkit-scrollbar { display: none; }
+}
+.ln-pcard { flex: 0 0 360px; width: 360px; background: #fff; border: 1px solid #e0e0e0; display: flex; flex-direction: column;
+  transition: background-color .3s ease, border-color .3s ease; }
+.ln-pcard:hover { border-color: var(--primary-light); }
+.ln-pcard:hover .ln-pcard__logo, .ln-pcard:hover .ln-pcard__label { background: #e7e9f1; }
+.ln-pcard__logo { height: 238px; display: grid; place-items: center; padding: 32px; background: #fff; transition: background-color .3s ease; }
 .ln-pcard__logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
-.ln-pcard__label { min-height: 88px; background: #fafafa; border-top: 1px solid #e0e0e0; display: grid; place-items: center; padding: 13px; font-size: 22px; font-weight: 600; color: #212121; text-align: center; }
+.ln-pcard__label { min-height: 88px; background: #fafafa; border-top: 1px solid #e0e0e0; display: grid; place-items: center; padding: 13px; font-size: 22px; font-weight: 600; color: #212121; text-align: center; transition: background-color .3s ease; }
 .ln-pband__bar { max-width: calc(var(--content-w) + 2 * var(--section-gutter)); margin-inline: auto; width: 100%; padding: 16px clamp(16px, 5.5vw, var(--section-gutter)); }
 .ln-pband__rail { height: 6px; background: rgba(0, 0, 0, .1); border-radius: 10px; position: relative; }
 .ln-pband__thumb { position: absolute; inset-inline-start: 0; top: 0; height: 6px; width: 200px; background: var(--gold); border-radius: 10px; }
