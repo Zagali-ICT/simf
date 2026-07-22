@@ -193,6 +193,10 @@
   box-shadow: inset 0 -3px 0 var(--gold-active); }
 .ln-dd:hover > .ln-nav__item .ln-nav__chev,
 .ln-dd:focus-within > .ln-nav__item .ln-nav__chev { transform: rotate(180deg); }
+/* Dismiss-on-click: set by landing.js when a menu item is clicked so the panel
+   closes even while the pointer is still over it (else :hover keeps it open on the
+   navigated-to page). Cleared on mouseleave, so hovering re-opens it normally. */
+.ln-dd.is-dismissed > .ln-dd__panel { opacity: 0; visibility: hidden; }
 .ln-dd__title { font-size: 18px; font-weight: 800; line-height: 28px; color: var(--gold-active);
   text-align: start; padding-inline: 16px; margin: 0; }
 .ln-dd__list { display: flex; flex-direction: column; gap: 4px; }

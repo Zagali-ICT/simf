@@ -8,7 +8,9 @@ namespace SIMF.Web.Content;
 
 // One ordered past-edition (newest-first), shared by BOTH the /archive page cards
 // and the top-nav Archive dropdown so the two can never diverge. AnchorId is the
-// stable in-page id the card renders and the dropdown links to (/archive#ed-N);
+// edition's stable in-page id — its year (e.g. "ed-2025"), so a dropdown link built
+// from an older cache snapshot still targets the right card after the list is
+// re-ordered; the card renders it and the dropdown links to /archive#{AnchorId}.
 // NavLabel is the dropdown text ("title year").
 public sealed record PublicEdition(
     string AnchorId,
@@ -66,42 +68,57 @@ public sealed class PublicEditions(SimfPublicClient api, IMemoryCache cache)
             return cached;
         }
 
-        EditionsView view;
+        PublicArchive? result;
         try
         {
-            var result = await api.GetArchiveAsync(cancellationToken);
-            view = Build(result?.Items ?? []);
+            result = await api.GetArchiveAsync(cancellationToken);
         }
-        catch
+        catch (Exception e) when (e is not OperationCanceledException)
         {
-            // A transient API failure falls back to the static editions and is NOT
-            // cached, so the next request retries the live source.
+            // The client already returns null (not throws) on a transient failure;
+            // this only guards a malformed payload. Either way it is a failure.
+            result = null;
+        }
+
+        // A transient failure surfaces as null (network error, timeout, a non-JSON
+        // error page) — serve the static fallback but do NOT cache it, so the next
+        // request retries the live source. A genuinely hidden archive returns a
+        // non-null empty list, which IS a real answer and is cached below.
+        if (result is null)
+        {
             return Build([]);
         }
 
+        var view = Build(result.Items);
         cache.Set(CacheKey, view, CacheFor);
         return view;
     }
 
     // Live editions (newest-first) when present; else the landing's past Milestones
-    // (drop the "future" card, newest-first). Index-based AnchorId keeps the card id
-    // and the dropdown href aligned in either branch. Pure + internal so the mapping
-    // is unit-testable without the API.
+    // (drop the "future" card, newest-first). AnchorId is the edition's year (stable
+    // across a re-order; the Milestones fallback parses it from the date, falling back
+    // to the index if absent) and the card id + dropdown href come from the same value,
+    // so they always align. Pure + internal so the mapping is unit-testable.
     internal static EditionsView Build(IReadOnlyList<PublicArchiveEdition> items)
     {
         if (items.Count > 0)
         {
             var ordered = items.OrderByDescending(e => e.Year).ToList();
-            var editions = ordered.Select((e, i) => new PublicEdition(
-                AnchorId: $"ed-{i}",
-                NavLabel: Label(new Bilingual(e.TitleAr, e.TitleEn), e.Year),
-                Image: !string.IsNullOrWhiteSpace(e.CoverImageRelativePath)
-                    ? e.CoverImageRelativePath!
-                    : FallbackCovers[i % FallbackCovers.Length],
-                Date: new Bilingual(e.DateLabelAr ?? e.Year.ToString(), e.DateLabelEn ?? e.Year.ToString()),
-                Name: new Bilingual(e.TitleAr, e.TitleEn),
-                Text: new Bilingual(e.SummaryAr ?? string.Empty, e.SummaryEn ?? string.Empty)))
-                .ToList();
+            var editions = ordered.Select((e, i) =>
+            {
+                // TitleAr/En are non-nullable on the contract, but System.Text.Json
+                // does not enforce it — coalesce so a null title never NREs here.
+                var title = new Bilingual(e.TitleAr ?? string.Empty, e.TitleEn ?? string.Empty);
+                return new PublicEdition(
+                    AnchorId: $"ed-{e.Year}",
+                    NavLabel: Label(title, e.Year),
+                    Image: !string.IsNullOrWhiteSpace(e.CoverImageRelativePath)
+                        ? e.CoverImageRelativePath!
+                        : FallbackCovers[i % FallbackCovers.Length],
+                    Date: new Bilingual(e.DateLabelAr ?? e.Year.ToString(), e.DateLabelEn ?? e.Year.ToString()),
+                    Name: title,
+                    Text: new Bilingual(e.SummaryAr ?? string.Empty, e.SummaryEn ?? string.Empty));
+            }).ToList();
             var latest = ordered[0];
             return new EditionsView(editions, $"+{latest.Speakers}", $"+{latest.Attendees}", $"+{latest.Sessions}");
         }
@@ -109,13 +126,17 @@ public sealed class PublicEditions(SimfPublicClient api, IMemoryCache cache)
         var fallback = Landing.Milestones
             .Where(m => !m.IsFuture)
             .Reverse()
-            .Select((m, i) => new PublicEdition(
-                AnchorId: $"ed-{i}",
-                NavLabel: Label(m.Name, ParseYear(m.Date)),
-                Image: m.Image,
-                Date: m.Date,
-                Name: m.Name,
-                Text: m.Text))
+            .Select((m, i) =>
+            {
+                var year = ParseYear(m.Date);
+                return new PublicEdition(
+                    AnchorId: year > 0 ? $"ed-{year}" : $"ed-{i}",
+                    NavLabel: Label(m.Name, year),
+                    Image: m.Image,
+                    Date: m.Date,
+                    Name: m.Name,
+                    Text: m.Text);
+            })
             .ToList();
         return new EditionsView(fallback, DefaultSpeakers, DefaultAttendees, DefaultSessions);
     }

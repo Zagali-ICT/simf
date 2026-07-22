@@ -32,9 +32,11 @@ public partial class Archive
     ];
 
     // The past editions (newest-first), each carrying the anchor id the top-nav
-    // dropdown links to (/archive#ed-N).
+    // dropdown links to (/archive#ed-N). Both are (re)assigned in OnInitializedAsync
+    // before the SSR render; the empty stat placeholder never reaches the DOM, so the
+    // default figures live in one place only — PublicEditions.
     private IReadOnlyList<PublicEdition> Editions { get; set; } = [];
-    private StatTriple Stats { get; set; } = new("+250", "+375", "+30");
+    private StatTriple Stats { get; set; } = new("", "", "");
 
     protected override async Task OnInitializedAsync()
     {
