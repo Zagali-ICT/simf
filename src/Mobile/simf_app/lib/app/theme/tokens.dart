@@ -166,6 +166,7 @@ class SimfTokens {
   static const double gap18 = 18; // off-grid 18px gap (forum-guide step content -> caret, Figma 1388:7512)
   static const double newsThumbWidth = 155; // news card thumbnail tile (Figma 958:2202)
   static const double newsThumbHeight = 85; // news card thumbnail tile (Figma 958:2202)
+  static const double partnerCardAspectRatio = 163.5 / 104; // media-partners grid tile (Figma 958:2246)
   static const double statsStripHeight = 100; // delegations decorative stats-strip map (Figma 1426:10781)
   static const double mapControlSize = 40; // venue-map floating zoom/locate control square (Figma 758:1358)
   static const double tapTarget = 44; // minimum touch-target height — venue-map direct-me button (Figma 758:1358)
@@ -511,5 +512,18 @@ class SimfTokens {
   static const TextStyle titleBoldXl = TextStyle(
     fontSize: textXl,
     fontWeight: FontWeight.w700,
+  );
+  // media partners (Figma 958:2263) — partner name + initials fallback tile.
+  static const TextStyle labelWhiteSemiboldSm13 = TextStyle(
+    color: surface,
+    fontSize: textSm,
+    fontWeight: FontWeight.w600,
+    height: 1.3,
+  );
+  static const TextStyle labelNavyBoldTracked = TextStyle(
+    color: navy,
+    fontSize: textMd,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 0.5,
   );
 }

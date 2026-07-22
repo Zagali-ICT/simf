@@ -30,12 +30,7 @@ class PartnerCard extends StatelessWidget {
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: SimfTokens.textSm,
-                  fontWeight: FontWeight.w600,
-                  height: 1.3,
-                ),
+                style: SimfTokens.labelWhiteSemiboldSm13,
               ),
             ),
           ],
@@ -119,12 +114,7 @@ class _InitialsTile extends StatelessWidget {
       child: Center(
         child: Text(
           initials,
-          style: const TextStyle(
-            color: SimfTokens.navy,
-            fontWeight: FontWeight.w700,
-            fontSize: SimfTokens.textMd,
-            letterSpacing: 0.5,
-          ),
+          style: SimfTokens.labelNavyBoldTracked,
         ),
       ),
     );
