@@ -95,6 +95,48 @@ public sealed class AiModuleTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Assistance_persists_the_turn_and_history_returns_it()
+    {
+        // A fresh visitor → an isolated conversation, so exactly the one exchange
+        // is present afterwards.
+        var visitor = await SignInApprovedVisitorAsync();
+        var post = await PostAuthAsync(
+            "/api/v1/app/ai/assistance",
+            new AssistanceRequest { Message = "Where is hall H1?", Locale = "en" },
+            visitor);
+        Assert.Equal(HttpStatusCode.OK, post.StatusCode);
+
+        var history = await PostAuthGetAsync<List<AiChatTurn>>(
+            "/api/v1/app/ai/assistance/history", visitor);
+        Assert.Equal(2, history.Count);
+        Assert.Equal("user", history[0].Role);
+        Assert.Equal("Where is hall H1?", history[0].Content);
+        Assert.Equal("assistant", history[1].Role);
+        Assert.NotEmpty(history[1].Content);
+    }
+
+    [Fact]
+    public async Task Assistance_second_call_includes_prior_turns_as_memory()
+    {
+        var visitor = await SignInApprovedVisitorAsync();
+        await PostAuthAsync(
+            "/api/v1/app/ai/assistance",
+            new AssistanceRequest { Message = "My name is Sam.", Locale = "en" },
+            visitor);
+        var second = await PostAuthAsync(
+            "/api/v1/app/ai/assistance",
+            new AssistanceRequest { Message = "What did I just say?", Locale = "en" },
+            visitor);
+        Assert.Equal(HttpStatusCode.OK, second.StatusCode);
+        var body = (await second.Content
+            .ReadFromJsonAsync<ApiResult<AiCallResult>>())!.Data!;
+        // Echo echoes the fully-substituted prompt, so the {history} block from the
+        // first turn appears in the second answer — proving memory is injected.
+        Assert.Contains("Conversation so far", body.OutputText);
+        Assert.Contains("My name is Sam.", body.OutputText);
+    }
+
+    [Fact]
     public async Task Anonymous_translate_substitutes_lang_inputs_into_template()
     {
         var response = await _client.PostAsJsonAsync(

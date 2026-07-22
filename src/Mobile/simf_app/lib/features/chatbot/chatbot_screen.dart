@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import 'data/ai_chat_history_repository.dart';
 import 'data/chat_message.dart';
 import 'data/chatbot_responder.dart';
 import 'widgets/chat_bubble.dart';
@@ -27,6 +28,9 @@ export 'data/chatbot_responder.dart';
 /// the overridable [chatbotResponderProvider] — its default [ApiChatbotResponder]
 /// calls `POST /app/ai/assistance` (the `assistance` prompt, grounded server-side
 /// on the live event context). A wire error surfaces as a localized error bubble.
+/// Past turns are loaded from `GET /app/ai/assistance/history` and each new turn
+/// is persisted server-side by the assistance endpoint, so the conversation
+/// survives navigation / app-restart and the assistant remembers earlier turns.
 class ChatbotScreen extends ConsumerStatefulWidget {
   const ChatbotScreen({super.key});
 
@@ -38,9 +42,17 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
   final TextEditingController _input = TextEditingController();
   final ScrollController _scroll = ScrollController();
 
-  /// User/assistant lines added after the scripted opening transcript.
+  /// User/assistant lines added THIS session, shown after the greeting and the
+  /// loaded history. The server persists each turn (via the assistance
+  /// endpoint), so they reload as history on the next visit.
   final List<ChatMessage> _added = <ChatMessage>[];
   bool _sending = false;
+
+  /// The saved transcript frozen at the first send. Before any send the live
+  /// [aiChatHistoryProvider] snapshot is shown; freezing on the first send stops
+  /// a late-resolving history load — which by then already includes the
+  /// just-sent turn — from double-rendering it alongside [_added].
+  List<ChatMessage>? _openedHistory;
 
   @override
   void dispose() {
@@ -63,6 +75,11 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
     // Resolved before the await so the error fallback needs no post-await context.
     final errorReply = AppL10n.of(context).chatbotError;
     final responder = ref.read(chatbotResponderProvider);
+    // Freeze the open-time history snapshot on the first send (see the field).
+    _openedHistory ??= ref.read(aiChatHistoryProvider).maybeWhen(
+          data: (history) => history,
+          orElse: () => const <ChatMessage>[],
+        );
     setState(() {
       _added.add(ChatMessage(ChatAuthor.user, text));
       _input.clear();
@@ -105,7 +122,17 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    final messages = <ChatMessage>[..._seed(l10n), ..._added];
+    // The saved transcript loaded at open (survives navigation/restart; the
+    // assistant also remembers it server-side). Best-effort: empty while loading
+    // or on a wire error, so a history failure never blanks the chat — the
+    // greeting still shows and the composer still works. Frozen to the open-time
+    // snapshot once the user has sent (see [_openedHistory]).
+    final loaded = ref.watch(aiChatHistoryProvider).maybeWhen(
+          data: (history) => history,
+          orElse: () => const <ChatMessage>[],
+        );
+    final saved = _openedHistory ?? loaded;
+    final messages = <ChatMessage>[..._seed(l10n), ...saved, ..._added];
     return SimfPageShell(
       title: l10n.chatbotTitle,
       onBack: () => backOrHome(context),
