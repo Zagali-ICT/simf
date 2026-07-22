@@ -164,6 +164,15 @@
 
         @* ========================= THEMES (PILLARS) ==================== *@
         <section class="ln-themes" id="themes">
+            @* Per-theme maritime backdrops: the one matching the hovered card lifts
+               in behind the whole section (CSS :has()). Order matches the cards below. *@
+            <div class="ln-themes__bgs" aria-hidden="true">
+                <span class="ln-themes__bg"></span>
+                <span class="ln-themes__bg"></span>
+                <span class="ln-themes__bg"></span>
+                <span class="ln-themes__bg"></span>
+                <span class="ln-themes__bg"></span>
+            </div>
             <div class="ln-themes__inner ln-reveal">
                 <div class="ln-themes__head">
                     <h2 class="ln-themes__title">@L["Landing.Themes.Title"]</h2>

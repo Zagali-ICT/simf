@@ -444,41 +444,53 @@
 @media (max-width: 720px) { .ln-hero2__block { width: 100%; } }
 
 /* ========================= THEMES (PILLARS) ===================== */
-.ln-themes { background: var(--navy); padding: 64px clamp(16px, 5.5vw, 80px) 128px; }
-.ln-themes__inner { max-width: var(--content-w); margin-inline: auto; display: flex;
+.ln-themes { position: relative; overflow: hidden; background: var(--navy); padding: 64px clamp(16px, 5.5vw, 80px) 128px; }
+/* Section backdrop: one maritime image per theme, revealed behind the whole
+   section when that theme's card is hovered (the Figma hover state). A dark
+   overlay keeps the non-active cards' white text legible over the image. */
+.ln-themes__bgs { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.ln-themes__bg { position: absolute; inset: 0; background-size: cover; background-position: center;
+  opacity: 0; transition: opacity .55s ease; }
+.ln-themes__bg:nth-child(1) { background-image: url('/assets/figma/sessions/session-card-1.jpg'); }
+.ln-themes__bg:nth-child(2) { background-image: url('/assets/figma/sessions/session-card-2.jpg'); }
+.ln-themes__bg:nth-child(3) { background-image: url('/assets/figma/sessions/session-card-3.jpg'); }
+.ln-themes__bg:nth-child(4) { background-image: url('/assets/figma/themes/theme-explorer.jpg'); }
+.ln-themes__bg:nth-child(5) { background-image: url('/assets/figma/hero/hero-bg.png'); }
+.ln-themes__bgs::after { content: ""; position: absolute; inset: 0; background: rgba(0, 22, 64, .66); }
+/* reveal the backdrop that matches the hovered card (nth card -> nth image) */
+.ln-themes:has(.ln-tcard:nth-child(1):hover) .ln-themes__bg:nth-child(1),
+.ln-themes:has(.ln-tcard:nth-child(2):hover) .ln-themes__bg:nth-child(2),
+.ln-themes:has(.ln-tcard:nth-child(3):hover) .ln-themes__bg:nth-child(3),
+.ln-themes:has(.ln-tcard:nth-child(4):hover) .ln-themes__bg:nth-child(4),
+.ln-themes:has(.ln-tcard:nth-child(5):hover) .ln-themes__bg:nth-child(5) { opacity: 1; }
+.ln-themes__inner { position: relative; z-index: 1; max-width: var(--content-w); margin-inline: auto; display: flex;
   flex-direction: column; align-items: center; gap: 32px; }
 .ln-themes__head { display: flex; flex-direction: column; align-items: center; gap: 24px; width: 100%; text-align: center; }
 .ln-themes__title { font-size: 32px; font-weight: 800; line-height: 1.2; color: var(--white); }
 .ln-themes__sub { font-size: 16px; line-height: 24px; color: var(--primary-light); width: 100%; }
 .ln-themes__row { display: flex; width: 100%; }
-/* Hover-expand accordion (the Figma active-card state): the hovered card grows,
-   a faint maritime backdrop lifts in, and the badge turns gold. */
-.ln-tcard { position: relative; overflow: hidden; flex: 1 1 0; min-width: 0; min-height: 296px; padding: 24px;
+/* Hover state (Figma): the hovered card grows into a LIGHT panel with dark text
+   and a gold badge, while its theme's maritime backdrop lifts in behind the
+   section (.ln-themes__bg). Non-hovered cards stay dark over the dimmed image. */
+.ln-tcard { flex: 1 1 0; min-width: 0; min-height: 296px; padding: 24px;
   border: 1px solid var(--border-neutral); background: transparent;
   display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 24px;
-  transition: flex-grow .55s cubic-bezier(.22, .61, .36, 1), background-color .45s ease; }
+  transition: flex-grow .55s cubic-bezier(.22, .61, .36, 1), background-color .45s ease, border-color .45s ease; }
 .ln-tcard:not(:first-child) { margin-inline-start: -1px; }
-/* Hover backdrop: the maritime image with a navy gradient baked in so the image
-   can lift to full opacity (a clearly-visible background change) while the white
-   title + grey desc stay legible over it. */
-.ln-tcard::before { content: ""; position: absolute; inset: 0; z-index: 0;
-  background:
-    linear-gradient(180deg, rgba(1, 19, 45, .40) 0%, rgba(1, 19, 45, .72) 100%),
-    url('/assets/figma/sessions/session-card-1.jpg') center/cover no-repeat;
-  opacity: 0; transition: opacity .45s ease; }
-.ln-tcard > * { position: relative; z-index: 1; }
 .ln-tcard__topgrp { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; width: 100%; }
 .ln-tcard__badge { background: rgba(230, 242, 251, .12); border-radius: var(--radius-full); padding: 12px; display: inline-grid;
   place-items: center; color: var(--white); transition: background-color .35s ease, color .35s ease; }
 .ln-tcard__badge svg { width: 24px; height: 24px; display: block; }
-.ln-tcard__title { font-size: 18px; font-weight: 700; line-height: 24px; color: var(--white); text-align: start; }
-.ln-tcard__desc { font-size: 16px; line-height: 24px; color: var(--primary-light); text-align: start; }
-.ln-tcard:hover, .ln-tcard:focus-within { flex-grow: 2.2; background-color: rgba(230, 242, 251, .06); }
-.ln-tcard:hover::before, .ln-tcard:focus-within::before { opacity: 1; }
+.ln-tcard__title { font-size: 18px; font-weight: 700; line-height: 24px; color: var(--white); text-align: start; transition: color .35s ease; }
+.ln-tcard__desc { font-size: 16px; line-height: 24px; color: var(--primary-light); text-align: start; transition: color .35s ease; }
+.ln-tcard:hover, .ln-tcard:focus-within { flex-grow: 2.2; background: rgba(233, 237, 241, .96); border-color: rgba(233, 237, 241, .96); }
 .ln-tcard:hover .ln-tcard__badge, .ln-tcard:focus-within .ln-tcard__badge { background: var(--gold); color: var(--navy); }
+.ln-tcard:hover .ln-tcard__title, .ln-tcard:focus-within .ln-tcard__title { color: var(--navy); }
+.ln-tcard:hover .ln-tcard__desc, .ln-tcard:focus-within .ln-tcard__desc { color: var(--ink); }
 @media (prefers-reduced-motion: reduce) {
   .ln-tcard { transition: none; }
   .ln-tcard:hover, .ln-tcard:focus-within { flex-grow: 1; }
+  .ln-themes__bg { transition: none; }
 }
 @media (max-width: 1000px) {
   .ln-themes__row { flex-wrap: wrap; }
