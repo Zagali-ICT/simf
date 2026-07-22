@@ -58,7 +58,7 @@ class AccountTermsCheckbox extends StatelessWidget {
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: SimfTokens.space2),
             Expanded(
               child: GestureDetector(
                 // Tapping the lead text toggles the box; the terms span below
@@ -102,7 +102,7 @@ class AccountTermsCheckbox extends StatelessWidget {
             padding: const EdgeInsetsDirectional.only(start: 27),
             child: Text(
               l10n.termsMustAccept,
-              style: const TextStyle(color: SimfTokens.danger, fontSize: 12),
+              style: const TextStyle(color: SimfTokens.danger, fontSize: SimfTokens.textSm),
             ),
           ),
         ],
