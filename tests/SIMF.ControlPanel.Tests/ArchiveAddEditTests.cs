@@ -60,6 +60,27 @@ public sealed class ArchiveAddEditTests : CpComponentTestBase
     }
 
     [Fact]
+    public void Edit_mode_renders_the_form_while_the_detail_fetch_is_in_flight()
+    {
+        // Regression: on a real circuit the edit-mode detail fetch (getJson)
+        // yields, so ArchiveAddEdit renders once BEFORE its continuation runs.
+        // If the EditContext were built after that await, <EditForm> would see a
+        // null EditContext at that intermediate render and throw, terminating the
+        // circuit. Plan the fetch but leave it pending (no SetResult) to force the
+        // async yield, then assert the form still renders.
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        var row = Summary();
+        JSInterop.Setup<ApiResult<AdminArchiveEditionDetail>>(
+            "simfAccount.getJson", _ => true); // pending — never completed
+
+        var cut = RenderComponent<ArchiveAddEdit>(p => p
+            .Add(x => x.IsEdit, true)
+            .Add(x => x.Initial, row));
+
+        Assert.Contains("simf-form", cut.Markup);
+    }
+
+    [Fact]
     public void Edit_mode_puts_an_update_request_to_the_row_id()
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
