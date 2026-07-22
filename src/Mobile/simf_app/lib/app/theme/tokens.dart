@@ -573,4 +573,15 @@ class SimfTokens {
     color: timestampMuted,
     fontSize: textSm,
   );
+  // badge (Figma 758:1469) — scan-to-enter hint on the white QR card + the
+  // muted tier / ID lines on the gold identity strip.
+  static const TextStyle bodyBlackLgTracked = TextStyle(
+    color: Colors.black,
+    fontSize: textLg,
+    letterSpacing: -0.366,
+  );
+  static const TextStyle labelOnGoldMutedSm = TextStyle(
+    color: onGoldMuted,
+    fontSize: textSm,
+  );
 }

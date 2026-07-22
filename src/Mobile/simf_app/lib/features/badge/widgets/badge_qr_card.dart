@@ -83,11 +83,7 @@ class BadgeQrCard extends StatelessWidget {
           Text(
             l10n.badgeScanToEnter,
             // Frame 758:1469 — black, 16px, slight negative tracking.
-            style: const TextStyle(
-              color: Colors.black,
-              fontSize: SimfTokens.textLg,
-              letterSpacing: -0.366,
-            ),
+            style: SimfTokens.bodyBlackLgTracked,
           ),
           const SizedBox(height: SimfTokens.space4),
           Container(
@@ -112,21 +108,14 @@ class BadgeQrCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         // Frame 758:1469 — 18px SemiBold white.
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: SimfTokens.textTitle,
-                        ),
+                        style: SimfTokens.labelWhiteSemiboldTitle,
                       ),
                       if (tier != null) ...<Widget>[
                         const SizedBox(height: SimfTokens.space2),
                         Text(
                           tier,
                           // Frame 758:1469 — 12px, muted #F0F0F0.
-                          style: const TextStyle(
-                            color: SimfTokens.onGoldMuted,
-                            fontSize: SimfTokens.textSm,
-                          ),
+                          style: SimfTokens.labelOnGoldMutedSm,
                         ),
                       ],
                       const SizedBox(height: SimfTokens.space2),
@@ -134,10 +123,7 @@ class BadgeQrCard extends StatelessWidget {
                         'ID · $maskedId',
                         textDirection: TextDirection.ltr,
                         // Frame 758:1469 — 12px, muted #F0F0F0.
-                        style: const TextStyle(
-                          color: SimfTokens.onGoldMuted,
-                          fontSize: SimfTokens.textSm,
-                        ),
+                        style: SimfTokens.labelOnGoldMutedSm,
                       ),
                     ],
                   ),

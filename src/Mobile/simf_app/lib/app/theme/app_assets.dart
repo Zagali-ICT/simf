@@ -24,6 +24,9 @@ class AppAssets {
       'assets/icons/speaker_placeholder.svg';
   static const String icCaretLeft = 'assets/icons/ic_caret_left.svg';
 
+  // ── Badge ───────────────────────────────────────────────────────────────
+  static const String badgeScan = 'assets/icons/badge_scan.svg';
+
   // ── Requests / meetings ─────────────────────────────────────────────────
   static const String requestNew = 'assets/icons/request_new.svg';
   static const String requestLog = 'assets/icons/request_log.svg';
