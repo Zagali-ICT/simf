@@ -261,7 +261,17 @@
   display: flex; flex-direction: column; align-items: center;
 }
 .ln-hero__bg { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%;
-  object-fit: cover; pointer-events: none; }
+  object-fit: cover; pointer-events: none;
+  /* Subtle Ken-Burns drift so the still Figma hero has life without a heavy
+     video; starts at scale 1.04 so an edge is never exposed (the hero clips). */
+  transform-origin: 50% 50%; animation: ln-heropan 26s ease-in-out infinite alternate; }
+@keyframes ln-heropan {
+  from { transform: scale(1.04); }
+  to   { transform: scale(1.12) translate3d(-1.4%, -1%, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ln-hero__bg { animation: none; transform: none; }
+}
 .ln-hero__overlay { position: absolute; inset: 0; z-index: 1; pointer-events: none;
   background: linear-gradient(180deg, rgba(0, 9, 32, .55) 0%, rgba(0, 9, 32, .12) 42%, rgba(0, 9, 32, .42) 100%); }
 .ln-hero__content { position: relative; z-index: 2; width: 100%; max-width: var(--content-w);
