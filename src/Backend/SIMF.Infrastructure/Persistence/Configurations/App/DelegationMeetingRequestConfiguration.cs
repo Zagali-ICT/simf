@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Domain.BusinessMeetings;
+using SIMF.Domain.Programme;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
@@ -32,7 +33,32 @@ internal sealed class DelegationMeetingRequestConfiguration
             .HasForeignKey(r => r.TargetCountryId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // Bi-Meeting rework — the picked delegation-availability window (SetNull), the
+        // hall + optional table an Approve bound the meeting to (SetNull; a deleted
+        // hall/table clears the binding). Mirrors SpeakerMeetingRequestConfiguration.
+        builder.HasOne<DelegationAvailabilityWindow>()
+            .WithMany()
+            .HasForeignKey(r => r.AvailabilityWindowId)
+            .OnDelete(DeleteBehavior.SetNull);
+        builder.HasOne(r => r.Hall)
+            .WithMany()
+            .HasForeignKey(r => r.HallId)
+            .OnDelete(DeleteBehavior.SetNull);
+        builder.HasOne(r => r.MeetingTable)
+            .WithMany()
+            .HasForeignKey(r => r.MeetingTableId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         builder.HasIndex(r => new { r.TargetCountryId, r.Status, r.CreatedAt });
         builder.HasIndex(r => r.RequestedByUserId);
+
+        // Bi-Meeting rework — at most one live meeting per (hall, slot): a hall slot
+        // cannot be double-booked. Same slot-holding live set as the speaker index
+        // (`MeetingRequestStatuses.SlotHolding` = "not a released state"), the DB
+        // backstop for the app-level free-slot re-check. NULLs collide in a SQL Server
+        // unique index, so the NOT NULL guards exclude un-bound rows.
+        builder.HasIndex(r => new { r.HallId, r.SlotStartUtc })
+            .IsUnique()
+            .HasFilter("[HallId] IS NOT NULL AND [SlotStartUtc] IS NOT NULL AND [Status] <> 0 AND [Status] <> 2 AND [Status] <> 3");
     }
 }
