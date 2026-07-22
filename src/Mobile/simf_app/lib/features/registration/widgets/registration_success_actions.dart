@@ -28,17 +28,17 @@ class RegistrationSuccessActions extends StatelessWidget {
           child: Text(
             statusLabel,
             style: const TextStyle(
-              fontSize: 16,
+              fontSize: SimfTokens.textLg,
               fontWeight: FontWeight.w700,
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: SimfTokens.space4),
         OutlinedButton(
           onPressed: onHome,
           style: OutlinedButton.styleFrom(
             side: const BorderSide(color: SimfTokens.accent),
-            foregroundColor: Colors.white,
+            foregroundColor: SimfTokens.surface,
             minimumSize: const Size.fromHeight(48),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
@@ -47,7 +47,7 @@ class RegistrationSuccessActions extends StatelessWidget {
           child: Text(
             homeLabel,
             style: const TextStyle(
-              fontSize: 16,
+              fontSize: SimfTokens.textLg,
               fontWeight: FontWeight.w700,
             ),
           ),

@@ -17,10 +17,10 @@ class ReferenceNumberCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 24),
+      padding: const EdgeInsets.symmetric(vertical: SimfTokens.space6),
       decoration: BoxDecoration(
         color: SimfTokens.navyFill80,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(SimfTokens.radius),
       ),
       child: Column(
         children: <Widget>[
@@ -28,16 +28,16 @@ class ReferenceNumberCard extends StatelessWidget {
             label,
             style: const TextStyle(
               color: SimfTokens.beigeBorder,
-              fontSize: 14,
+              fontSize: SimfTokens.textMd,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: SimfTokens.space2),
           Text(
             reference,
             textDirection: TextDirection.ltr,
             style: const TextStyle(
               color: SimfTokens.accent,
-              fontSize: 16,
+              fontSize: SimfTokens.textLg,
               fontWeight: FontWeight.w700,
             ),
           ),
