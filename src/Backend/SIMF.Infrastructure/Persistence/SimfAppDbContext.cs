@@ -153,6 +153,10 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     // D-478 (#11, Group G phase 2) — delegation↔delegation (G2G) meeting requests.
     public DbSet<DelegationMeetingRequest> DelegationMeetingRequests => Set<DelegationMeetingRequest>();
 
+    // Bi-Meeting rework — delegation availability windows (parity with
+    // SpeakerAvailabilityWindows) so a delegation meeting can be booked on real time.
+    public DbSet<DelegationAvailabilityWindow> DelegationAvailabilityWindows => Set<DelegationAvailabilityWindow>();
+
     // D-500 (Wave 5, الطلبات 1408:9726) — the two new standalone request types
     // surfaced in the unified requests feed: participation-document + badge-update.
     public DbSet<SIMF.Domain.Requests.ParticipationDocumentRequest> ParticipationDocumentRequests =>

@@ -318,6 +318,9 @@ public static class AuditEvents
     // D-715 (item 7, FDS-013 §15 GAP-1) — hall availability windows.
     public const string HallAvailabilityWindowCreated = "HallAvailabilityWindow.Created";
     public const string HallAvailabilityWindowDeleted = "HallAvailabilityWindow.Deleted";
+    // Bi-Meeting rework — delegation availability windows (parity with speaker).
+    public const string DelegationAvailabilityWindowCreated = "DelegationAvailabilityWindow.Created";
+    public const string DelegationAvailabilityWindowDeleted = "DelegationAvailabilityWindow.Deleted";
     // D-478 (#11, Group G phase 2) — delegation↔delegation (G2G) meeting requests.
     public const string DelegationMeetingRequestSubmitted = "DelegationMeetingRequest.Submitted";
     public const string DelegationMeetingRequestResponded = "DelegationMeetingRequest.Responded";
