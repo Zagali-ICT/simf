@@ -212,10 +212,16 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
         // entries are one PNG per generated badge (sum of the batch counts).
         var messages = _factory.Emails.Messages.Where(m => m.To == recipient).ToList();
         var message = Assert.Single(messages);
-        var attachment = Assert.Single(message.Attachments!);
-        Assert.Equal("application/zip", attachment.ContentType);
+        // D-759 (#10 Phase 3) — the pack now carries BOTH a ZIP of PNGs and a PDF sheet.
+        Assert.Equal(2, message.Attachments!.Count);
+        var attachment = Assert.Single(message.Attachments!, a => a.ContentType == "application/zip");
         Assert.StartsWith("badges-", attachment.FileName);
         Assert.EndsWith(".zip", attachment.FileName);
+        var pdf = Assert.Single(message.Attachments!, a => a.ContentType == "application/pdf");
+        Assert.EndsWith(".pdf", pdf.FileName);
+        // The PDF is a real, non-empty PDF (magic bytes "%PDF").
+        Assert.True(pdf.Content.Length > 4);
+        Assert.Equal(new byte[] { 0x25, 0x50, 0x44, 0x46 }, pdf.Content.Take(4).ToArray());
 
         using var zip = new ZipArchive(new MemoryStream(attachment.Content), ZipArchiveMode.Read);
         Assert.Equal(5, zip.Entries.Count);
@@ -377,8 +383,10 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
         Assert.True(body.Data!.EmailQueued);
 
         var message = Assert.Single(_factory.Emails.Messages, m => m.To == recipient);
-        var attachment = Assert.Single(message.Attachments!);
-        Assert.Equal("application/zip", attachment.ContentType);
+        // D-759 (#10 Phase 3) — re-email carries the ZIP + the PDF sheet, same as generate.
+        Assert.Equal(2, message.Attachments!.Count);
+        var attachment = Assert.Single(message.Attachments!, a => a.ContentType == "application/zip");
+        Assert.Single(message.Attachments!, a => a.ContentType == "application/pdf");
         using var zip = new ZipArchive(new MemoryStream(attachment.Content), ZipArchiveMode.Read);
         Assert.Equal(3, zip.Entries.Count);
     }

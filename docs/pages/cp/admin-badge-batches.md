@@ -25,9 +25,9 @@ the whole batch.
   `GridPage<AdminBadgeBatchSummary>`), newest-first. Server-paged `SimfDataGrid`.
 - **Re-email** — `POST /account/api/admin/visitors/badge-batches/re-email`
   (`{ BatchId, RecipientEmail }`). Re-materialises the pack from the batch's minted
-  badges (tier name + QR id, stable order), rebuilds the ZIP of QR PNGs, and enqueues
-  it to the organiser. The badges themselves are unchanged; the batch remembers the
-  last recipient.
+  badges (tier name + QR id, stable order), rebuilds the QR pack — a **ZIP of PNGs +
+  a printable PDF contact sheet** (D-759) — and enqueues it to the organiser. The
+  badges themselves are unchanged; the batch remembers the last recipient.
 - **Revoke** — `POST /account/api/admin/visitors/badge-batches/revoke` (`{ BatchId }`).
   Disables every account the batch minted (reusing the audience-scoped bulk-delete
   path: `AccountState = Disabled` + token revoke + per-account audit) and marks the
@@ -71,9 +71,17 @@ Row actions (active batches only, gated `Visitors.ViewBatches`): **Re-email QR p
   the Identity accounts, then deactivate the App batch) — never a distributed
   transaction (D-157).
 - The emailed pack is built by one shared helper (`EnqueueBadgePackEmailAsync`) used by
-  both bulk-generate and re-email, so both send the identical ZIP.
+  both bulk-generate and re-email, so both send the identical **ZIP + PDF** pack.
+- **D-759 (#10 Phase 3) — PDF contact sheet.** The email now also carries a printable
+  PDF (3-up grid of QR + tier + `#N` + QR id) rendered with **QuestPDF**, beside the
+  ZIP of individual PNGs. **Licence caveat (owner-accepted follow-up):** QuestPDF's
+  free Community licence only covers organisations under ~$1M revenue; the production
+  customer (RSNF) needs a **paid QuestPDF licence** before go-live. Owner chose
+  QuestPDF over the MIT alternative (PDFsharp) on 2026-07-22, accepting this.
 
 ## Changelog
 
+- **2026-07-22 (D-759, #10 Phase 3)** — the emailed pack (bulk-generate + re-email)
+  now attaches a QuestPDF contact-sheet PDF beside the ZIP. Licence follow-up flagged.
 - **2026-07-22 (D-758, #10 Phase 2)** — page created. Persisted `BadgeBatch` +
   `BadgeBatchId`, list / re-email / revoke, `Visitors.ViewBatches` permission.

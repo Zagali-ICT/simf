@@ -4,6 +4,7 @@ using System.IO.Compression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using QRCoder;
+using QuestPDF.Fluent;
 using SIMF.Application.Auditing;
 using SIMF.Application.Email;
 using SIMF.Application.Excel;
@@ -1179,6 +1180,9 @@ internal sealed partial class AdminAccountService
         var attachments = new List<EmailAttachment>
         {
             new($"badges-{stamp}.zip", "application/zip", BuildBadgeZip(badgeArtifacts)),
+            // D-759 (#10 Phase 3) — a printable contact-sheet PDF beside the ZIP of
+            // individual PNGs, so the organiser can print all badges on one page.
+            new($"badges-{stamp}.pdf", "application/pdf", BuildBadgeSheetPdf(badgeArtifacts)),
         };
         var tokens = new Dictionary<string, string>
         {
@@ -1194,20 +1198,17 @@ internal sealed partial class AdminAccountService
             "Admin {ActorId} emailed {Count} badges to {Recipient}.", actorUserId, count, recipient);
     }
 
-    // D-751 — QRCoder PngByteQRCode (same ECC level Q as PrintBag) + a ZIP entry per
-    // badge. No System.Drawing dependency; PngByteQRCode emits raw PNG bytes.
+    // D-751 — one ZIP entry per badge (an individual QR PNG). No System.Drawing
+    // dependency; PngByteQRCode emits raw PNG bytes.
     private static byte[] BuildBadgeZip(
         IReadOnlyList<(string ProfileTypeName, int Seq, string QrId)> badges)
     {
         using var buffer = new MemoryStream();
         using (var archive = new ZipArchive(buffer, ZipArchiveMode.Create, leaveOpen: true))
-        using (var qrGenerator = new QRCodeGenerator())
         {
             foreach (var badge in badges)
             {
-                using var qrData = qrGenerator.CreateQrCode(
-                    badge.QrId, QRCodeGenerator.ECCLevel.Q);
-                var png = new PngByteQRCode(qrData).GetGraphic(pixelsPerModule: 10);
+                var png = RenderQrPng(badge.QrId);
                 var entryName = $"{SafeSegment(badge.ProfileTypeName)}-{badge.Seq}-{badge.QrId}.png";
                 var entry = archive.CreateEntry(entryName, CompressionLevel.Optimal);
                 using var entryStream = entry.Open();
@@ -1215,6 +1216,78 @@ internal sealed partial class AdminAccountService
             }
         }
         return buffer.ToArray();
+    }
+
+    // D-759 (#10 Phase 3) — a printable contact-sheet PDF: a 3-column grid of badge
+    // cards (QR + tier + #N + QR id) via QuestPDF, reusing the same QRCoder PNGs as the
+    // ZIP. LICENCE (owner-accepted follow-up): QuestPDF's free Community licence covers
+    // organisations under ~$1M revenue; a paid QuestPDF licence is required for the
+    // production customer (RSNF). Set here (idempotent) so it is in force before any
+    // GeneratePdf call regardless of host.
+    private static byte[] BuildBadgeSheetPdf(
+        IReadOnlyList<(string ProfileTypeName, int Seq, string QrId)> badges)
+    {
+        QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+        var document = Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(QuestPDF.Helpers.PageSizes.A4);
+                page.Margin(1, QuestPDF.Infrastructure.Unit.Centimetre);
+                page.DefaultTextStyle(text => text.FontSize(9));
+                page.Header().PaddingBottom(8).Text("SIMF — Badge sheet").SemiBold().FontSize(14);
+                // 3-up grid via Column-of-Rows (QuestPDF's Grid element is deprecated).
+                // The outer Column paginates across pages automatically.
+                const int perRow = 3;
+                page.Content().Column(rows =>
+                {
+                    rows.Spacing(8);
+                    for (var start = 0; start < badges.Count; start += perRow)
+                    {
+                        rows.Item().Row(row =>
+                        {
+                            row.Spacing(8);
+                            for (var offset = 0; offset < perRow; offset++)
+                            {
+                                var index = start + offset;
+                                if (index >= badges.Count)
+                                {
+                                    row.RelativeItem(); // filler so cells keep equal width
+                                    continue;
+                                }
+                                var badge = badges[index];
+                                row.RelativeItem().Border(1).Padding(6).Column(cell =>
+                                {
+                                    cell.Item().AlignCenter().Width(110).Image(RenderQrPng(badge.QrId));
+                                    cell.Item().PaddingTop(4).AlignCenter()
+                                        .Text($"{badge.ProfileTypeName} #{badge.Seq}").SemiBold();
+                                    cell.Item().AlignCenter()
+                                        .Text(badge.QrId).FontSize(7)
+                                        .FontColor(QuestPDF.Helpers.Colors.Grey.Medium);
+                                });
+                            }
+                        });
+                    }
+                });
+                page.Footer().AlignRight().Text(text =>
+                {
+                    text.Span("SIMF ").FontColor(QuestPDF.Helpers.Colors.Grey.Medium);
+                    text.CurrentPageNumber();
+                    text.Span(" / ");
+                    text.TotalPages();
+                });
+            });
+        });
+        return document.GeneratePdf();
+    }
+
+    // D-751 / D-759 — one QR PNG (ECC level Q, same as PrintBag), shared by the ZIP
+    // entries and the PDF sheet cells.
+    private static byte[] RenderQrPng(string qrId)
+    {
+        using var qrGenerator = new QRCodeGenerator();
+        using var qrData = qrGenerator.CreateQrCode(qrId, QRCodeGenerator.ECCLevel.Q);
+        return new PngByteQRCode(qrData).GetGraphic(pixelsPerModule: 10);
     }
 
     // Keeps a profile-type name safe + readable inside a ZIP entry / file name.
