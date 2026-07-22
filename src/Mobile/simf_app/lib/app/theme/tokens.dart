@@ -385,4 +385,26 @@ class SimfTokens {
     fontSize: textSm,
     fontWeight: FontWeight.w700,
   );
+  // exhibition detail (Figma 1439:11881/11826) — entity name, logo initials,
+  // tier-pill label + about-card header.
+  static const TextStyle labelWhiteBoldXl = TextStyle(
+    color: surface,
+    fontSize: textXl,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle labelWhiteBoldXxl = TextStyle(
+    color: surface,
+    fontSize: textXxl,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle labelGoldBold = TextStyle(
+    color: accent,
+    fontSize: textMd,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle labelWhiteMediumLg = TextStyle(
+    color: surface,
+    fontSize: textLg,
+    fontWeight: FontWeight.w500,
+  );
 }

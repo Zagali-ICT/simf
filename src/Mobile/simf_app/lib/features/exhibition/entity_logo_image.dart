@@ -18,11 +18,7 @@ class EntityLogoImage extends StatelessWidget {
       child: Text(
         initials,
         textDirection: TextDirection.ltr,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w700,
-          fontSize: SimfTokens.textXl,
-        ),
+        style: SimfTokens.labelWhiteBoldXl,
       ),
     );
     return Container(
