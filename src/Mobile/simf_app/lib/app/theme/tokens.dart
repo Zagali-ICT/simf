@@ -718,10 +718,10 @@ class SimfTokens {
   );
 
   // ── #16 sweep — S4 sessions-wave features ──────────────────────────────
-  // questions (Figma 934:3668 / 942:3746) — the fixed tinted question box, the
-  // gold inline-span colour, the colourless submit label (rides the theme font
-  // + FilledButton foreground per D-546/D-549), and the tight numbered
-  // session-data line (leading 1.3, tighter than the 1.5 body).
+  // questions (Figma 934:3668 / 942:3746) — the fixed tinted question box,
+  // the gold inline-span colour, the colourless submit label (rides the
+  // theme font + FilledButton foreground per D-546/D-549), and the tight
+  // numbered session-data line (leading 1.3, tighter than the 1.5 body).
   static const double questionBoxHeight = 100; // tinted question textarea box
   static const TextStyle textAccent = TextStyle(color: accent);
   static const TextStyle labelSemiboldSm = TextStyle(
@@ -734,4 +734,14 @@ class SimfTokens {
     fontWeight: FontWeight.w500,
     height: 1.3,
   );
+  // gates (Figma 758:4651+) — the gold QR-glyph tile box, the 2px emphasis
+  // border (shared with the moderator boxes), and the disabled / subtle-tint
+  // opacity stops on the setup + verdict cards.
+  static const double qrTileSize = 134; // setup gold QR-glyph tile box
+  // 2px emphasis border (gate tile, moderator boxes).
+  static const double borderThick = 2;
+  static const double opacityDisabled = 0.5; // disabled control (Opacity)
+  static const double opacityDisabledFill = 0.4; // disabled button fill alpha
+  static const double opacityDisabledText = 0.6; // disabled button text alpha
+  static const double fillOpacitySubtle = 0.08; // gold/verdict subtle tint fill
 }

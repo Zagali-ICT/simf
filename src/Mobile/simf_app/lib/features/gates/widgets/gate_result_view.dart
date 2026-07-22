@@ -41,7 +41,7 @@ class GateResultView extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(SimfTokens.space5),
         decoration: BoxDecoration(
-          color: accent.withValues(alpha: 0.08),
+          color: accent.withValues(alpha: SimfTokens.fillOpacitySubtle),
           borderRadius: BorderRadius.circular(SimfTokens.radiusLg),
           border: Border.all(color: accent),
         ),
@@ -104,8 +104,8 @@ class GateResultView extends StatelessWidget {
               onPressed: onScanAgain,
               style: FilledButton.styleFrom(
                 backgroundColor: accent,
-                foregroundColor: Colors.white,
-                minimumSize: const Size.fromHeight(48),
+                foregroundColor: SimfTokens.surface,
+                minimumSize: const Size.fromHeight(SimfTokens.controlHeight),
               ),
               icon: const Icon(Icons.qr_code_scanner),
               label: Text(l10n.gateScanAgain),
@@ -125,7 +125,7 @@ class GateResultView extends StatelessWidget {
             child: Text(
               value,
               style: TextStyle(
-                color: valueColor ?? Colors.white,
+                color: valueColor ?? SimfTokens.surface,
                 fontWeight: FontWeight.w700,
                 fontSize: SimfTokens.textSm,
               ),
@@ -133,10 +133,7 @@ class GateResultView extends StatelessWidget {
           ),
           Text(
             label,
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textSm,
-            ),
+            style: SimfTokens.labelBeigeSm,
           ),
         ],
       ),

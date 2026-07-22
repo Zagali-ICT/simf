@@ -43,12 +43,17 @@ class GateSetupView extends StatelessWidget {
           // QR glyph in a gold-tinted, gold-bordered tile (Figma 758:4658).
           Center(
             child: Container(
-              width: 134,
-              height: 134,
+              width: SimfTokens.qrTileSize,
+              height: SimfTokens.qrTileSize,
               decoration: BoxDecoration(
-                color: SimfTokens.accent.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: SimfTokens.accent, width: 2),
+                color: SimfTokens.accent.withValues(
+                  alpha: SimfTokens.fillOpacitySubtle,
+                ),
+                borderRadius: BorderRadius.circular(SimfTokens.radius6),
+                border: Border.all(
+                  color: SimfTokens.accent,
+                  width: SimfTokens.borderThick,
+                ),
               ),
               child: const Icon(
                 Icons.qr_code_2,
@@ -98,22 +103,23 @@ class GateSetupView extends StatelessWidget {
             Text(
               l10n.gateChooseDirectionFirst,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: SimfTokens.textMd,
-              ),
+              style: SimfTokens.bodyWhiteMd,
             ),
           ],
           const Spacer(flex: 2),
           SizedBox(
-            height: 48,
+            height: SimfTokens.controlHeight,
             child: FilledButton.icon(
               onPressed: direction == null ? null : onScan,
               style: FilledButton.styleFrom(
                 backgroundColor: SimfTokens.accent,
-                foregroundColor: Colors.white,
-                disabledBackgroundColor: SimfTokens.accent.withValues(alpha: 0.4),
-                disabledForegroundColor: Colors.white.withValues(alpha: 0.6),
+                foregroundColor: SimfTokens.surface,
+                disabledBackgroundColor: SimfTokens.accent.withValues(
+                  alpha: SimfTokens.opacityDisabledFill,
+                ),
+                disabledForegroundColor: SimfTokens.surface.withValues(
+                  alpha: SimfTokens.opacityDisabledText,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
                 ),
@@ -121,10 +127,7 @@ class GateSetupView extends StatelessWidget {
               icon: const Icon(Icons.photo_camera_outlined, size: 22),
               label: Text(
                 l10n.gateScanCode,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: SimfTokens.textLg,
-                ),
+                style: SimfTokens.titleBold,
               ),
             ),
           ),
@@ -136,10 +139,6 @@ class GateSetupView extends StatelessWidget {
   Widget _label(String text) => Text(
         text,
         textAlign: TextAlign.end,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: SimfTokens.textLg,
-          fontWeight: FontWeight.w500,
-        ),
+        style: SimfTokens.labelWhiteMediumLg,
       );
 }

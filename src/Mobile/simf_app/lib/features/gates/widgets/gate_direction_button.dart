@@ -24,31 +24,30 @@ class GateDirectionButton extends StatelessWidget {
     // Figma 758:4687/4693 — selected = gold fill, unselected = navy; both with a
     // thin beige hairline and white bold label/icon. Radius 4.
     return Opacity(
-      opacity: enabled ? 1 : 0.5,
+      opacity: enabled ? 1 : SimfTokens.opacityDisabled,
       child: InkWell(
         onTap: enabled ? onTap : null,
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
         child: Container(
-          height: 48,
+          height: SimfTokens.controlHeight,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: selected ? SimfTokens.accent : SimfTokens.navy,
             borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-            border: Border.all(color: SimfTokens.beigeBorder, width: 0.5),
+            border: Border.all(
+              color: SimfTokens.beigeBorder,
+              width: SimfTokens.hairlineBold,
+            ),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               Text(
                 label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: SimfTokens.textLg,
-                ),
+                style: SimfTokens.labelWhiteBoldLg,
               ),
               const SizedBox(width: SimfTokens.space2),
-              Icon(icon, size: 18, color: Colors.white),
+              Icon(icon, size: 18, color: SimfTokens.surface),
             ],
           ),
         ),

@@ -245,21 +245,17 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
             textDirection: TextDirection.ltr,
             child: AppBar(
               backgroundColor: SimfTokens.navySurface,
-              foregroundColor: Colors.white,
+              foregroundColor: SimfTokens.surface,
               elevation: 0,
               centerTitle: true,
               title: Text(
                 title,
                 textDirection: TextDirection.rtl,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
+                style: SimfTokens.labelWhiteSemiboldTitle,
               ),
               // Figma 758:4655 — circular navy back button (left).
               leading: Padding(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(SimfTokens.space2),
                 child: Material(
                   color: SimfTokens.navyDeep,
                   shape: const CircleBorder(),
@@ -267,10 +263,10 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
                     customBorder: const CircleBorder(),
                     onTap: _back,
                     child: const Padding(
-                      padding: EdgeInsets.all(6),
+                      padding: EdgeInsets.all(SimfTokens.gap6),
                       child: Icon(
                         Icons.chevron_left,
-                        color: Colors.white,
+                        color: SimfTokens.surface,
                         size: 26,
                       ),
                     ),
@@ -393,10 +389,7 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
               Expanded(
                 child: Text(
                   l10n.gatePendingSync(_pending),
-                  style: const TextStyle(
-                    color: SimfTokens.beigeBorder,
-                    fontSize: SimfTokens.textSm,
-                  ),
+                  style: SimfTokens.labelBeigeSm,
                 ),
               ),
             ],
