@@ -173,7 +173,7 @@ void main() {
       await _pump(tester, profile: _FakeProfileRepo(), staff: staff);
 
       // Saudi default → fields order: email, phone, arabicName, englishName,
-      // nationalId, jobTitle.
+      // nationalId, jobTitle, jobTitleArabic.
       final fields = find.byType(TextFormField);
       await tester.enterText(fields.at(0), 'raed@example.com');
       await tester.enterText(fields.at(1), '0512345678');
@@ -181,6 +181,7 @@ void main() {
       await tester.enterText(fields.at(3), 'Raed Salem');
       await tester.enterText(fields.at(4), '1000000008'); // Luhn-valid (D-700)
       await tester.enterText(fields.at(5), 'Engineer'); // jobTitle (required, D-723)
+      await tester.enterText(fields.at(6), 'مهندس'); // jobTitleArabic (optional, #37)
 
       // Pick the organisation (the second/last dropdown; nationality defaults SA).
       final orgDropdown = find.byType(DropdownButtonFormField<String>).last;
@@ -202,6 +203,7 @@ void main() {
       expect(staff.lastRequest?.isSaudi, isTrue);
       expect(staff.lastRequest?.organisationId, 'org-1');
       expect(staff.lastRequest?.profileTypeId, 'pt-normal');
+      expect(staff.lastRequest?.jobTitleArabic, 'مهندس');
       expect(find.textContaining('pending approval'), findsOneWidget);
     });
 

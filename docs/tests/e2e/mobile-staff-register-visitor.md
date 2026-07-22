@@ -39,10 +39,12 @@ Scenario: Staff register a walk-in visitor
   And the lookups load (countries, visitor profile types, organisations)
   When they fill the Arabic + English name, pick gender, pick nationality,
     enter the document number (national ID for Saudi; Iqama/passport otherwise),
-    enter a mobile number, and pick the organisation
+    enter a mobile number, the job title, optionally the Arabic job title
+    (المسمى الوظيفي بالعربية — backlog #37), and pick the organisation
   And optionally attach the ID-document image and a personal photo
   And tap "التالي / Next"
   Then POST /app/staff/visitors/register-onsite is sent with the walk-in payload
+    (including jobTitleArabic when the Arabic job title was filled — additive key)
   And it returns HTTP 200 with a PendingApproval visitor (empty QR)
   And the optional images are uploaded to /app/staff/visitors/{id}/id-document
     and /avatar

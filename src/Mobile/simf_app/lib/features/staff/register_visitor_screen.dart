@@ -58,6 +58,7 @@ class _StaffRegisterVisitorScreenState
   final TextEditingController _arabicName = TextEditingController();
   final TextEditingController _englishName = TextEditingController();
   final TextEditingController _jobTitle = TextEditingController();
+  final TextEditingController _jobTitleArabic = TextEditingController();
   final TextEditingController _phone = TextEditingController();
   final TextEditingController _nationalId = TextEditingController();
   final TextEditingController _documentNumber = TextEditingController();
@@ -95,6 +96,7 @@ class _StaffRegisterVisitorScreenState
     _arabicName.dispose();
     _englishName.dispose();
     _jobTitle.dispose();
+    _jobTitleArabic.dispose();
     _phone.dispose();
     _nationalId.dispose();
     _documentNumber.dispose();
@@ -202,6 +204,7 @@ class _StaffRegisterVisitorScreenState
       gender: _gender,
       email: _emptyToNull(_email.text),
       jobTitle: _emptyToNull(_jobTitle.text),
+      jobTitleArabic: _emptyToNull(_jobTitleArabic.text),
       organisationId: _organisationId,
       nationalId: isSaudi ? _emptyToNull(_nationalId.text) : null,
       iqamaNumber: !isSaudi && _docType == _DocType.iqama
@@ -286,6 +289,7 @@ class _StaffRegisterVisitorScreenState
       _arabicName.clear();
       _englishName.clear();
       _jobTitle.clear();
+      _jobTitleArabic.clear();
       _phone.clear();
       _nationalId.clear();
       _documentNumber.clear();
@@ -571,8 +575,16 @@ class _StaffRegisterVisitorScreenState
             // D-723 — required (matches the app self-registration form).
             validator: (v) => _required(l10n, v),
           ),
-          _organisationField(l10n),
+          // Optional Arabic job title — the backend already carries
+          // AdminWalkInRegistrationRequest.JobTitleArabic; capture it here too.
+          _textField(
+            l10n.jobTitleArabicLabel,
+            _jobTitleArabic,
+            maxLength: 100,
+          ),
         ),
+        gap,
+        _organisationField(l10n),
         gap,
         _twoCol(
           wide,
