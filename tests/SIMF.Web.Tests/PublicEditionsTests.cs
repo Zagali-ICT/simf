@@ -59,10 +59,10 @@ public sealed class PublicEditionsTests
         Assert.Equal("SIMF 2025", view.Editions[0].NavLabel.En);
         Assert.Equal("SIMF 2024", view.Editions[1].NavLabel.En);
         Assert.Equal("SIMF 2022", view.Editions[2].NavLabel.En);
-        // index-based anchor + href aligned with the /archive cards
-        Assert.Equal("ed-0", view.Editions[0].AnchorId);
-        Assert.Equal("/archive#ed-0", view.Editions[0].Href);
-        Assert.Equal("/archive#ed-2", view.Editions[2].Href);
+        // year-based anchor (stable across a re-order) + href aligned with the cards
+        Assert.Equal("ed-2025", view.Editions[0].AnchorId);
+        Assert.Equal("/archive#ed-2025", view.Editions[0].Href);
+        Assert.Equal("/archive#ed-2022", view.Editions[2].Href);
         // headline stats come from the latest edition (2025)
         Assert.Equal("+300", view.Speakers);
         Assert.Equal("+1500", view.Attendees);

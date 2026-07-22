@@ -8,7 +8,9 @@ namespace SIMF.Web.Content;
 
 // One ordered past-edition (newest-first), shared by BOTH the /archive page cards
 // and the top-nav Archive dropdown so the two can never diverge. AnchorId is the
-// stable in-page id the card renders and the dropdown links to (/archive#ed-N);
+// edition's stable in-page id — its year (e.g. "ed-2025"), so a dropdown link built
+// from an older cache snapshot still targets the right card after the list is
+// re-ordered; the card renders it and the dropdown links to /archive#{AnchorId}.
 // NavLabel is the dropdown text ("title year").
 public sealed record PublicEdition(
     string AnchorId,
@@ -93,9 +95,10 @@ public sealed class PublicEditions(SimfPublicClient api, IMemoryCache cache)
     }
 
     // Live editions (newest-first) when present; else the landing's past Milestones
-    // (drop the "future" card, newest-first). Index-based AnchorId keeps the card id
-    // and the dropdown href aligned in either branch. Pure + internal so the mapping
-    // is unit-testable without the API.
+    // (drop the "future" card, newest-first). AnchorId is the edition's year (stable
+    // across a re-order; the Milestones fallback parses it from the date, falling back
+    // to the index if absent) and the card id + dropdown href come from the same value,
+    // so they always align. Pure + internal so the mapping is unit-testable.
     internal static EditionsView Build(IReadOnlyList<PublicArchiveEdition> items)
     {
         if (items.Count > 0)
@@ -107,7 +110,7 @@ public sealed class PublicEditions(SimfPublicClient api, IMemoryCache cache)
                 // does not enforce it — coalesce so a null title never NREs here.
                 var title = new Bilingual(e.TitleAr ?? string.Empty, e.TitleEn ?? string.Empty);
                 return new PublicEdition(
-                    AnchorId: $"ed-{i}",
+                    AnchorId: $"ed-{e.Year}",
                     NavLabel: Label(title, e.Year),
                     Image: !string.IsNullOrWhiteSpace(e.CoverImageRelativePath)
                         ? e.CoverImageRelativePath!
@@ -123,13 +126,17 @@ public sealed class PublicEditions(SimfPublicClient api, IMemoryCache cache)
         var fallback = Landing.Milestones
             .Where(m => !m.IsFuture)
             .Reverse()
-            .Select((m, i) => new PublicEdition(
-                AnchorId: $"ed-{i}",
-                NavLabel: Label(m.Name, ParseYear(m.Date)),
-                Image: m.Image,
-                Date: m.Date,
-                Name: m.Name,
-                Text: m.Text))
+            .Select((m, i) =>
+            {
+                var year = ParseYear(m.Date);
+                return new PublicEdition(
+                    AnchorId: year > 0 ? $"ed-{year}" : $"ed-{i}",
+                    NavLabel: Label(m.Name, year),
+                    Image: m.Image,
+                    Date: m.Date,
+                    Name: m.Name,
+                    Text: m.Text);
+            })
             .ToList();
         return new EditionsView(fallback, DefaultSpeakers, DefaultAttendees, DefaultSessions);
     }

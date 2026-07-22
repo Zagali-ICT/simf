@@ -37,7 +37,7 @@
 | E2E-WAR-007 | RTL / Arabic ⇄ LTR / English — hero + bands mirror; Arabic content in AR, English in EN | i18n | P1 | _to author_ |
 | E2E-WAR-008 | Responsive — grid 3→2→1, cards wrap; no horizontal overflow at 1440/1280/1024/768/390 both languages | responsive | P1 | _to author_ |
 | E2E-WAR-009 | Nav — the "Archive" top-menu dropdown lists the real past editions (title + year, newest-first), same source as the page | nav | P1 | _to author_ |
-| E2E-WAR-010 | Nav → anchor — clicking an edition in the dropdown opens `/archive` and scrolls to that edition's card (`#ed-N`) | nav | P1 | _to author_ |
+| E2E-WAR-010 | Nav → anchor — clicking an edition in the dropdown opens `/archive` and scrolls to that edition's card (`#ed-{year}`) | nav | P1 | _to author_ |
 
 ## Scenarios
 
@@ -163,10 +163,10 @@ Scenario: The "Archive" top-menu is a dropdown of the real editions
 ```gherkin
 Scenario: Clicking an edition opens /archive and scrolls to its card
   Given the browser is on the Website home page
-  When the user opens the "Archive" mega-menu and clicks the second edition
-  Then the browser navigates to /archive#ed-1
+  When the user opens the "Archive" mega-menu and clicks the second edition (e.g. 2024)
+  Then the browser navigates to /archive#ed-2024 (the edition's year, not an index)
   And the first-paint splash does NOT cover the page (enhanced navigation)
-  And the #ed-1 edition card is scrolled into view near the top of the viewport
+  And the #ed-2024 edition card is scrolled into view near the top of the viewport
   And the scrolled-to card's name matches the clicked dropdown label
 ```
 
@@ -188,9 +188,11 @@ Scenario: Clicking an edition opens /archive and scrolls to its card
   "title year" label, latest-edition stats, static fallback) that feeds both the page
   cards and the nav dropdown.
 - **Nav editions dropdown.** The top-menu "Archive" is a data-driven dropdown built from
-  `PublicEditions` (the same source as the page). Each card renders `id="ed-N"` and each
-  dropdown item links to `/archive#ed-N`; enhanced navigation does not honour the URL
-  fragment, so `landing.js` scrolls to the target on `enhancedload`.
+  `PublicEditions` (the same source as the page). Each card renders `id="ed-{year}"` and
+  each dropdown item links to `/archive#ed-{year}` (year-based so a link built from an
+  older cache snapshot survives a re-order); enhanced navigation does not honour the URL
+  fragment, so `landing.js` re-asserts the scroll to the target on `enhancedload` (a short
+  retry that stops once the card lands, tolerating a late morph / Blazor scroll reset).
 - **Dismiss on click.** The mega-menu opens on hover / keyboard focus. A pointer click on
   the toggle no longer latches it open (`mousedown` `preventDefault` suppresses the click
   focus), and clicking an item dismisses the panel immediately (`is-dismissed`, cleared on

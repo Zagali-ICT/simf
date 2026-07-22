@@ -298,12 +298,24 @@
      until a manual reload. Re-run after every enhanced load; firstInit() keeps the
      preserved shared header from being wired twice. */
   // Scroll to the element named by location.hash. A full page load scrolls to a
-  // #fragment natively, but enhanced navigation (below) does NOT — so a
-  // "/archive#ed-1" click from the nav lands at the page top without this.
+  // #fragment natively, but enhanced navigation (below) does NOT — a "/archive#ed-1"
+  // click from the nav would land at the page top. Because the target may render a
+  // frame late AND Blazor may reset scroll after enhancedload, re-assert the scroll
+  // across a few frames and STOP once it has landed (so it never fights the user).
   function scrollToHash() {
     if (!location.hash) { return; }
-    var el = document.getElementById(decodeURIComponent(location.hash.slice(1)));
-    if (el) { el.scrollIntoView(); }
+    var id = decodeURIComponent(location.hash.slice(1));
+    var tries = 0;
+    (function settle() {
+      // bail if another navigation changed the hash under us
+      if (!location.hash || decodeURIComponent(location.hash.slice(1)) !== id) { return; }
+      var el = document.getElementById(id);
+      if (el) {
+        if (Math.abs(el.getBoundingClientRect().top) < 4) { return; } // landed — done
+        el.scrollIntoView();
+      }
+      if (++tries < 8) { window.setTimeout(settle, 50); }
+    })();
   }
 
   function onEnhancedLoad() {
@@ -314,9 +326,7 @@
     var loader = document.getElementById('ln-loader');
     if (loader) { loader.style.transition = 'none'; loader.classList.add('is-gone'); }
     run();
-    // Enhanced nav does not honour the URL #fragment; do it after the morph (a
-    // short delay so it wins over Blazor's own scroll reset).
-    if (location.hash) { window.setTimeout(scrollToHash, 60); }
+    scrollToHash();
   }
 
   var enhancedHooked = false;
