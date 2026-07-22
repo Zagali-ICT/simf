@@ -21,7 +21,7 @@ class MoreSection extends StatelessWidget {
             title,
             textAlign: TextAlign.start,
             style: const TextStyle(
-              color: Colors.white,
+              color: SimfTokens.surface,
               fontSize: SimfTokens.textLg,
               fontWeight: FontWeight.w600,
             ),
@@ -71,7 +71,7 @@ class MoreRow extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: SimfTokens.surface,
                       fontSize: SimfTokens.textMd,
                       fontWeight: FontWeight.w500,
                     ),
@@ -92,7 +92,7 @@ class MoreRow extends StatelessWidget {
                 // 2026-07-07: nav arrows are white, not gold).
                 const SimfForwardChevron(
                   'assets/icons/ic_caret_left.svg',
-                  color: Colors.white,
+                  color: SimfTokens.surface,
                   size: 22,
                 ),
               ],

@@ -43,7 +43,7 @@ class MoreProfileCard extends StatelessWidget {
                     Text(
                       l10n.moreMyAreaCardTitle,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: SimfTokens.surface,
                         fontSize: SimfTokens.textMd,
                         fontWeight: FontWeight.w700,
                       ),

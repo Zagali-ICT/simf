@@ -163,7 +163,7 @@ class _TabbedList extends StatelessWidget {
             child: Text(
               l10n.mySessionsCount(items.length, tabLabel),
               style: const TextStyle(
-                color: Colors.white,
+                color: SimfTokens.surface,
                 fontSize: SimfTokens.textLg, // 16
                 fontWeight: FontWeight.w500,
               ),
@@ -225,7 +225,7 @@ class _MySessionCard extends StatelessWidget {
                         item.localizedTitle(isArabic),
                         textAlign: TextAlign.start,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: SimfTokens.surface,
                           fontWeight: FontWeight.w500,
                           fontSize: SimfTokens.textMd, // 14
                         ),

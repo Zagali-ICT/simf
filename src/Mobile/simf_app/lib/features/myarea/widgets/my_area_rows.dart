@@ -55,7 +55,7 @@ class MyAreaScheduleRow extends StatelessWidget {
                   Text(
                     item.localizedTitle(isArabic),
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: SimfTokens.surface,
                       fontWeight: FontWeight.w500,
                       fontSize: SimfTokens.textMd,
                     ),
@@ -132,7 +132,7 @@ class MyAreaMoreRow extends StatelessWidget {
               child: Text(
                 label,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: SimfTokens.surface,
                   fontWeight: FontWeight.w500,
                   fontSize: SimfTokens.textMd,
                 ),
@@ -141,7 +141,7 @@ class MyAreaMoreRow extends StatelessWidget {
             const SimfForwardChevron(
               'assets/icons/ic_back.svg',
               size: 20,
-              color: Colors.white,
+              color: SimfTokens.surface,
             ),
           ],
         ),
@@ -183,7 +183,7 @@ class MyAreaShareTile extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: SimfTokens.surface,
                     fontSize: SimfTokens.textSm,
                     fontWeight: FontWeight.w600,
                   ),

@@ -251,7 +251,7 @@ class _FaceIdToggleTileState extends ConsumerState<FaceIdToggleTile> {
       secondary: const Icon(Icons.fingerprint, color: SimfTokens.accent),
       title: Text(
         l10n.biometricEnableToggle,
-        style: const TextStyle(color: Colors.white),
+        style: const TextStyle(color: SimfTokens.surface),
       ),
       value: enabled,
       activeThumbColor: SimfTokens.accent,
