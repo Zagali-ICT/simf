@@ -13,7 +13,7 @@ class ChatBubble extends StatelessWidget {
   final ChatMessage message;
 
   static const Radius _r = Radius.circular(SimfTokens.radius); // 8 — large corners
-  static const Radius _tail = Radius.circular(2); // Figma bubble tail
+  static const Radius _tail = Radius.circular(SimfTokens.radiusTail);
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +21,7 @@ class ChatBubble extends StatelessWidget {
     final text = Text(
       message.text,
       style: TextStyle(
-        color: isUser ? Colors.white : SimfTokens.chatBubbleText,
+        color: isUser ? SimfTokens.surface : SimfTokens.chatBubbleText,
         fontSize: SimfTokens.textMd,
         height: 1.5,
         fontWeight: isUser ? FontWeight.w600 : FontWeight.w400,
@@ -32,10 +32,12 @@ class ChatBubble extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: SimfTokens.space3),
         padding: const EdgeInsets.symmetric(
-          horizontal: SimfTokens.space3 + 3, // ≈15 (frame text inset)
+          horizontal: SimfTokens.chatBubblePadH,
           vertical: SimfTokens.space3,
         ),
-        constraints: const BoxConstraints(maxWidth: 288),
+        constraints: const BoxConstraints(
+          maxWidth: SimfTokens.chatBubbleMaxWidth,
+        ),
         decoration: BoxDecoration(
           color: isUser ? SimfTokens.accent : SimfTokens.navyDeep,
           borderRadius: BorderRadius.only(
@@ -71,7 +73,7 @@ class _AiBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: SimfTokens.space2,
-        vertical: 2,
+        vertical: SimfTokens.gap2,
       ),
       decoration: BoxDecoration(
         color: SimfTokens.accent,
@@ -79,12 +81,7 @@ class _AiBadge extends StatelessWidget {
       ),
       child: const Text(
         'AI',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: SimfTokens.textSm,
-          height: 16 / 12,
-          fontWeight: FontWeight.w700,
-        ),
+        style: SimfTokens.labelWhiteBold12Tall,
       ),
     );
   }

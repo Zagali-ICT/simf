@@ -174,6 +174,13 @@ class SimfTokens {
   static const double dayCardWidth = 58; // meeting-request day card (Figma 1776:4975)
   static const double dayCardHeight = 64; // meeting-request day card + its picker row (Figma 1776:5052)
 
+  // #16 S3 — chatbot (Figma 1064:13275) + quick-reply strip metrics.
+  static const double radiusTail = 2; // chat-bubble inner-bottom tail corner
+  static const double chatBubblePadH = 15; // chat-bubble horizontal text inset
+  static const double chatBubbleMaxWidth = 288; // chat-bubble max width
+  static const double sendSquareSize = 24; // composer send-button box
+  static const double quickReplyStripHeight = 34; // quick-reply chip strip
+
   // Type scale (Material text styles override these for actual rendering;
   // tokens here are for places that need a raw size).
   static const double textXs = 10.5;
@@ -601,5 +608,23 @@ class SimfTokens {
     fontSize: textSm,
     fontWeight: FontWeight.w600,
     height: 1.4,
+  );
+  // chatbot (Figma 1064:13275) — gold "AI" badge, composer input/hint (surface
+  // 12; [bodyWhiteSm] also serves home's white captions), quick-reply chip.
+  static const TextStyle labelWhiteBold12Tall = TextStyle(
+    color: surface,
+    fontSize: textSm,
+    fontWeight: FontWeight.w700,
+    height: 16 / 12,
+  );
+  static const TextStyle bodyWhiteSm = TextStyle(
+    color: surface,
+    fontSize: textSm,
+  );
+  static const TextStyle labelBeigeSemibold12Tall = TextStyle(
+    color: beigeBorder,
+    fontSize: textSm,
+    fontWeight: FontWeight.w600,
+    height: 18 / 12,
   );
 }

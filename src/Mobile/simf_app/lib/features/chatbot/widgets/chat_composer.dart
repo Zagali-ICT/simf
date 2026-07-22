@@ -24,7 +24,7 @@ class ChatComposer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(minHeight: 48),
+      constraints: const BoxConstraints(minHeight: SimfTokens.controlHeight),
       padding: const EdgeInsets.symmetric(
         horizontal: SimfTokens.space4,
         vertical: SimfTokens.space2,
@@ -45,17 +45,11 @@ class ChatComposer extends StatelessWidget {
               minLines: 1,
               maxLines: 4,
               textInputAction: TextInputAction.send,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: SimfTokens.textSm,
-              ),
+              style: SimfTokens.bodyWhiteSm,
               onSubmitted: (_) => onSend(),
               decoration: InputDecoration(
                 hintText: hint,
-                hintStyle: const TextStyle(
-                  color: Colors.white,
-                  fontSize: SimfTokens.textSm,
-                ),
+                hintStyle: SimfTokens.bodyWhiteSm,
                 isCollapsed: true,
                 filled: false,
                 border: InputBorder.none,
@@ -73,8 +67,8 @@ class ChatComposer extends StatelessWidget {
               onTap: sending ? null : onSend,
               borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
               child: Container(
-                width: 24,
-                height: 24,
+                width: SimfTokens.sendSquareSize,
+                height: SimfTokens.sendSquareSize,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: SimfTokens.accent,
@@ -86,10 +80,14 @@ class ChatComposer extends StatelessWidget {
                         height: 12,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: SimfTokens.surface,
                         ),
                       )
-                    : const Icon(Icons.send, size: 14, color: Colors.white),
+                    : const Icon(
+                        Icons.send,
+                        size: 14,
+                        color: SimfTokens.surface,
+                      ),
               ),
             ),
           ),
