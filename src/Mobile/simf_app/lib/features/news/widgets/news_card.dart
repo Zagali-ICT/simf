@@ -52,11 +52,7 @@ class NewsCard extends StatelessWidget {
                         category,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: SimfTokens.beigeBorder,
-                          fontSize: SimfTokens.textSm,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: SimfTokens.labelBeigeMediumSm,
                       ),
                       const SizedBox(height: SimfTokens.space1),
                     ],
@@ -65,22 +61,14 @@ class NewsCard extends StatelessWidget {
                       // Keep DD-MM-YYYY left-to-right so the Arabic/RTL paragraph
                       // direction does not reorder the date segments.
                       textDirection: TextDirection.ltr,
-                      style: const TextStyle(
-                        color: SimfTokens.accent,
-                        fontSize: SimfTokens.textMd,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: SimfTokens.labelGoldSemibold,
                     ),
                     const SizedBox(height: SimfTokens.space2),
                     Text(
                       item.localizedTitle(isArabic),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: SimfTokens.textLg,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: SimfTokens.labelWhiteBoldLg,
                     ),
                   ],
                 ),
@@ -118,15 +106,11 @@ class _NewsThumbnail extends StatelessWidget {
   final String imageUrl;
   final String category;
 
-  // Frame 958:2202 — the thumbnail is a fixed 155×85 tile.
-  static const double _width = 155;
-  static const double _height = 85;
-
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: _width,
-      height: _height,
+      width: SimfTokens.newsThumbWidth,
+      height: SimfTokens.newsThumbHeight,
       child: ClipRRect(
         borderRadius:
             const BorderRadius.all(Radius.circular(SimfTokens.radius)),
@@ -161,7 +145,10 @@ class _NewsThumbnail extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.center,
                   end: Alignment.bottomCenter,
-                  colors: <Color>[Colors.transparent, SimfTokens.bannerScrim],
+                  colors: <Color>[
+                    SimfTokens.transparent,
+                    SimfTokens.bannerScrim,
+                  ],
                 ),
               ),
             ),
@@ -218,11 +205,7 @@ class _CategoryChip extends StatelessWidget {
         label,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: SimfTokens.textXs,
-          fontWeight: FontWeight.w700,
-        ),
+        style: SimfTokens.labelWhiteBoldXs,
       ),
     );
   }

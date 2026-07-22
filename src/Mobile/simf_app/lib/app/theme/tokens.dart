@@ -164,6 +164,8 @@ class SimfTokens {
   static const double gap2 = 2; // off-grid 2px micro-gap (below the space-4 scale)
   static const double gap6 = 6; // off-grid 6px micro-gap (below the space-4 scale)
   static const double gap18 = 18; // off-grid 18px gap (forum-guide step content -> caret, Figma 1388:7512)
+  static const double newsThumbWidth = 155; // news card thumbnail tile (Figma 958:2202)
+  static const double newsThumbHeight = 85; // news card thumbnail tile (Figma 958:2202)
   static const double statsStripHeight = 100; // delegations decorative stats-strip map (Figma 1426:10781)
   static const double mapControlSize = 40; // venue-map floating zoom/locate control square (Figma 758:1358)
   static const double tapTarget = 44; // minimum touch-target height — venue-map direct-me button (Figma 758:1358)
@@ -494,5 +496,20 @@ class SimfTokens {
     color: beigeBorder,
     fontSize: textSm,
     height: 1.4,
+  );
+  // news (Figma 957:2197 / article) — category chip + article category/title.
+  static const TextStyle labelWhiteBoldXs = TextStyle(
+    color: surface,
+    fontSize: textXs,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle labelGoldBoldXs = TextStyle(
+    color: accent,
+    fontSize: textXs,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle titleBoldXl = TextStyle(
+    fontSize: textXl,
+    fontWeight: FontWeight.w700,
   );
 }
