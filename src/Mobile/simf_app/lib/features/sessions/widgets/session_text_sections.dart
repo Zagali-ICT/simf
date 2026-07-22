@@ -13,11 +13,7 @@ class SessionSectionHeading extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(
-        color: Colors.white,
-        fontWeight: FontWeight.w500,
-        fontSize: SimfTokens.textLg,
-      ),
+      style: SimfTokens.labelWhiteMediumLg,
     );
   }
 }
@@ -40,11 +36,7 @@ class SessionDescriptionCard extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: SimfTokens.textMd,
-          height: 1.5,
-        ),
+        style: SimfTokens.bodyWhite,
       ),
     );
   }

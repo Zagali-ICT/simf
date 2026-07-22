@@ -120,20 +120,13 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
           Text(
             map.localizedSessionTitle(l10n.isArabic) ?? l10n.seatPickerTitle,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: SimfTokens.surface,
-              fontSize: SimfTokens.textTitle,
-              fontWeight: FontWeight.w700,
-            ),
+            style: SimfTokens.labelWhiteBoldTitle,
           ),
           const SizedBox(height: SimfTokens.space2),
           Text(
             l10n.seatPickerHint,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textSm,
-            ),
+            style: SimfTokens.labelBeigeSm,
           ),
           const SizedBox(height: SimfTokens.space5),
           // The shared hall card in its selectable configuration: available
@@ -144,15 +137,15 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
             l10n: l10n,
             busy: _busy,
             onSeatTap: (row, seat) => unawaited(_reserve(l10n, row, seat)),
-            maxSeatSize: 26,
+            maxSeatSize: SimfTokens.seatCapPicker,
             availableBorderColor: SimfTokens.accent,
-            swatchSize: 16,
+            swatchSize: SimfTokens.seatSwatchLg,
           ),
           const SizedBox(height: SimfTokens.space5),
           FilledButton.icon(
             onPressed: _busy ? null : () => unawaited(_reserveRandom(l10n)),
             style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(48),
+              minimumSize: const Size.fromHeight(SimfTokens.controlHeight),
               backgroundColor: SimfTokens.accent,
               foregroundColor: SimfTokens.surface,
               shape: RoundedRectangleBorder(
@@ -162,10 +155,7 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
             icon: const Icon(Icons.shuffle, size: 20),
             label: Text(
               l10n.seatPickerRandomCta,
-              style: const TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: SimfTokens.textLg,
-              ),
+              style: SimfTokens.titleBold,
             ),
           ),
         ],

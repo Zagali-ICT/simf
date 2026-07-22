@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/localization/app_l10n.dart';
+import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_page_shell.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
@@ -54,19 +55,12 @@ class SessionReservationCard extends StatelessWidget {
                 children: <Widget>[
                   Text(
                     title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: SimfTokens.textLg,
-                    ),
+                    style: SimfTokens.labelWhiteSemiboldLg,
                   ),
                   const SizedBox(height: SimfTokens.space2),
                   Text(
                     hint,
-                    style: const TextStyle(
-                      color: SimfTokens.beigeBorder,
-                      fontSize: SimfTokens.textSm,
-                    ),
+                    style: SimfTokens.labelBeigeSm,
                   ),
                 ],
               ),
@@ -78,7 +72,7 @@ class SessionReservationCard extends StatelessWidget {
               // ic_back.svg is that stroked chevron; SimfSvgIcon never mirrors,
               // so it stays left-pointing in RTL (same fix as speakers_screen).
               const SimfSvgIcon(
-                'assets/icons/ic_back.svg',
+                AppAssets.icBack,
                 size: 20,
                 color: SimfTokens.beigeBorder,
               ),
@@ -98,17 +92,17 @@ class _SeatMarker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 44,
-      height: 44,
+      width: SimfTokens.tapTarget,
+      height: SimfTokens.tapTarget,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: SimfTokens.accent.withValues(alpha: 0.15),
+        color: SimfTokens.accent.withValues(alpha: SimfTokens.seatFillOpacity),
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
         border: Border.all(color: SimfTokens.accent),
       ),
       child: Container(
-        width: 20,
-        height: 20,
+        width: SimfTokens.seatMarkerInner,
+        height: SimfTokens.seatMarkerInner,
         decoration: BoxDecoration(
           color: SimfTokens.accent,
           borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),

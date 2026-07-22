@@ -25,9 +25,9 @@ class HallSeatMapCard extends StatelessWidget {
     required this.l10n,
     this.onSeatTap,
     this.busy = false,
-    this.maxSeatSize = 20,
+    this.maxSeatSize = SimfTokens.seatCapDefault,
     this.availableBorderColor = SimfTokens.beigeBorder,
-    this.swatchSize = 14,
+    this.swatchSize = SimfTokens.seatSwatchSm,
     super.key,
   });
 
@@ -98,7 +98,7 @@ class _StageBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      height: 48,
+      height: SimfTokens.controlHeight,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: SimfTokens.navyDeep,
@@ -111,10 +111,7 @@ class _StageBar extends StatelessWidget {
       child: Text(
         label,
         textAlign: TextAlign.center,
-        style: const TextStyle(
-          fontSize: SimfTokens.textMd,
-          color: SimfTokens.accent,
-        ),
+        style: SimfTokens.bodyGold,
       ),
     );
   }
@@ -150,8 +147,8 @@ class _SeatGridRow extends StatelessWidget {
     // grid Column. Frame 902:1402 = row letter (12px box) + 8px.
     return LayoutBuilder(
       builder: (context, constraints) {
-        const labelWidth = 12.0;
-        const seatGap = 6.0;
+        const labelWidth = SimfTokens.seatRowLabelWidth;
+        const seatGap = SimfTokens.gap6;
         final seatsArea = constraints.maxWidth - labelWidth - SimfTokens.space2;
         final fit = (seatsArea - seatGap * (seatsPerRow - 1)) / seatsPerRow;
         final seat = fit.clamp(0.0, maxSeatSize).toDouble();
@@ -163,10 +160,7 @@ class _SeatGridRow extends StatelessWidget {
               child: Text(
                 rowLabel,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: SimfTokens.textSm,
-                  color: SimfTokens.beigeBorder,
-                ),
+                style: SimfTokens.labelBeigeSm,
               ),
             ),
             const SizedBox(width: SimfTokens.space2),
@@ -223,7 +217,7 @@ class _SeatBox extends StatelessWidget {
       case _SeatStatus.reserved:
         fill = SimfTokens.navy;
       case _SeatStatus.available:
-        fill = Colors.transparent;
+        fill = SimfTokens.transparent;
         border = Border.all(color: availableBorderColor);
     }
     final box = Container(
@@ -232,7 +226,7 @@ class _SeatBox extends StatelessWidget {
       decoration: BoxDecoration(
         color: fill,
         border: border,
-        borderRadius: BorderRadius.circular(3),
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSeat),
       ),
     );
     // Only available seats are tappable; reserved / own seats are inert.
@@ -282,9 +276,9 @@ class _Legend extends StatelessWidget {
           ),
           _LegendItem(
             label: l10n.legendAvailable,
-            color: Colors.transparent,
+            color: SimfTokens.transparent,
             borderColor: availableBorderColor,
-            size: 16,
+            size: SimfTokens.seatSwatchLg,
           ),
           _LegendItem(
             label: l10n.legendMine,
@@ -317,10 +311,7 @@ class _LegendItem extends StatelessWidget {
       children: <Widget>[
         Text(
           label,
-          style: const TextStyle(
-            color: SimfTokens.beigeBorder,
-            fontSize: SimfTokens.textSm,
-          ),
+          style: SimfTokens.labelBeigeSm,
         ),
         const SizedBox(width: SimfTokens.space2),
         Container(
@@ -329,7 +320,7 @@ class _LegendItem extends StatelessWidget {
           decoration: BoxDecoration(
             color: color,
             border: borderColor != null ? Border.all(color: borderColor!) : null,
-            borderRadius: BorderRadius.circular(3),
+            borderRadius: BorderRadius.circular(SimfTokens.radiusSeat),
           ),
         ),
       ],

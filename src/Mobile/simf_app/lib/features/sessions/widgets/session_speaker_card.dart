@@ -64,11 +64,7 @@ class SessionSpeakerCard extends StatelessWidget {
                           name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: SimfTokens.textLg,
-                          ),
+                          style: SimfTokens.labelWhiteSemiboldLg,
                         ),
                       ),
                       if (flag != null) ...<Widget>[
@@ -89,10 +85,7 @@ class SessionSpeakerCard extends StatelessWidget {
                     const SizedBox(height: SimfTokens.space2),
                     Text(
                       subParts.join(' · '),
-                      style: const TextStyle(
-                        color: SimfTokens.beigeBorder,
-                        fontSize: SimfTokens.textSm,
-                      ),
+                      style: SimfTokens.labelBeigeSm,
                     ),
                   ],
                 ],

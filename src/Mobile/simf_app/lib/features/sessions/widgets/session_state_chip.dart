@@ -93,9 +93,9 @@ class SessionStateChip extends StatelessWidget {
     final fill = switch (kind) {
       SessionChipKind.live => SimfTokens.liveRed,
       SessionChipKind.recorded => SimfTokens.accent,
-      SessionChipKind.summaryReady => Colors.transparent,
+      SessionChipKind.summaryReady => SimfTokens.transparent,
     };
-    final fg = outlined ? SimfTokens.accent : Colors.white;
+    final fg = outlined ? SimfTokens.accent : SimfTokens.surface;
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: SimfTokens.space4, // 16

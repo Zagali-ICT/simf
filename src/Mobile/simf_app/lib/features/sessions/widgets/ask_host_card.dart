@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_page_shell.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
@@ -26,7 +27,7 @@ class AskHostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = enabled ? Colors.white : SimfTokens.navyDisabledText;
+    final color = enabled ? SimfTokens.surface : SimfTokens.navyDisabledText;
     // Frame 1056:12876 — the user glyph is gold (accent) over a white label.
     final iconColor =
         enabled ? SimfTokens.accent : SimfTokens.navyDisabledText;
@@ -40,7 +41,7 @@ class AskHostCard extends StatelessWidget {
             // Figma 1056:12877 — solar:user-outline, the design-system user
             // glyph (bundled), not Material's person_outline.
             SimfSvgIcon(
-              'assets/icons/nav_user.svg',
+              AppAssets.navUser,
               size: 24,
               color: iconColor,
             ),
@@ -58,10 +59,7 @@ class AskHostCard extends StatelessWidget {
               Text(
                 disabledHint!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: SimfTokens.beigeBorder,
-                  fontSize: SimfTokens.textXs,
-                ),
+                style: SimfTokens.bodyBeigeXs,
               ),
             ],
           ],
