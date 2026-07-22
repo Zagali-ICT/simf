@@ -24,14 +24,33 @@ LivenessPromptDirection livenessPromptDirection(LivenessStep step) =>
       LivenessStep.turnLeft => LivenessPromptDirection.left,
     };
 
-/// Whether ML Kit's `headEulerAngleY` must be sign-inverted for [platform]
-/// before the turn gate. iOS mirrors the front-camera image and is fed a
-/// different InputImage rotation, so the same physical turn arrives with the
-/// opposite sign; inverting on iOS makes a positive yaw a physical RIGHT turn
-/// on every platform. A pure function so the per-platform decision is
-/// unit-tested (the inline `Platform.isIOS` at the call site was untestable).
-bool livenessInvertYaw(TargetPlatform platform) =>
-    platform == TargetPlatform.iOS;
+/// Whether ML Kit's `headEulerAngleY` must be sign-inverted before the turn
+/// gate, so that after normalisation a **positive yaw is always a physical
+/// RIGHT turn**.
+///
+/// The raw sign for a physical RIGHT turn depends on the InputImage rotation
+/// `identity_verification_screen._toInputImage` feeds the detector, which
+/// differs by platform AND by the front camera's sensor orientation:
+///  - **iOS** feeds the raw sensor rotation and mirrors the front preview, so a
+///    physical RIGHT turn already arrives POSITIVE — do NOT invert.
+///  - **Android** feeds the device-orientation-compensated rotation with no
+///    mirror flag, so the sign is sensor-orientation dependent: at the common
+///    front sensor 270 (the RSNF tablet) a physical RIGHT turn arrives NEGATIVE
+///    (invert); a 90 sensor is the mirror case (do NOT invert). Liveness is
+///    portrait, so [frontCameraSensorOrientation] alone (deviceDegrees 0)
+///    decides it — `>= 180` covers 270 (and 180), `< 180` covers 90 (and 0).
+///
+/// A pure function so the per-platform / per-sensor decision is unit-tested
+/// (the inline `Platform.isIOS` at the call site was untestable).
+bool livenessInvertYaw(
+  TargetPlatform platform,
+  int frontCameraSensorOrientation,
+) {
+  if (platform == TargetPlatform.iOS) {
+    return false;
+  }
+  return frontCameraSensorOrientation >= 180;
+}
 
 /// The smile threshold (ML Kit `smilingProbability`, 0..1) that satisfies the
 /// smile step.
