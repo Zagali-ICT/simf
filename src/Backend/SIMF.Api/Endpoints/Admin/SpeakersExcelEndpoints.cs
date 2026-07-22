@@ -32,6 +32,7 @@ public sealed class ExportSpeakersEndpoint(IAdminSpeakerService service, IGridEx
         new("Name", row => row.Name),
         new("NameArabic", row => row.NameArabic),
         new("Rank", row => row.Rank),
+        new("RankArabic", row => row.RankArabic),
         new("Country", row => row.CountryNameEn),
         new("DisplayOrder", row => row.DisplayOrder),
         new("IsActive", row => row.IsActive),
@@ -50,7 +51,7 @@ public sealed class ExportSpeakersEndpoint(IAdminSpeakerService service, IGridEx
 /// subclass binds one row to <see cref="AdminCreateSpeakerRequest"/> and creates
 /// it (the service rejects a duplicate code → a per-row error, not a batch abort).
 /// <para>
-/// Bound columns: Code, Name, NameArabic, Rank, DisplayOrder. The Country column
+/// Bound columns: Code, Name, NameArabic, Rank, RankArabic, DisplayOrder. The Country column
 /// (a numeric FK to <c>Country.Id</c>) and the bilingual rich-text, social-URL
 /// and consent fields are intentionally <b>omitted</b> from import — they cannot
 /// be expressed safely as plain text in a flat sheet, so the admin sets them via
@@ -102,6 +103,7 @@ public sealed class ImportSpeakersEndpoint(IAdminSpeakerService service, IGridEx
             Name = name.Trim(),
             NameArabic = nameArabic.Trim(),
             Rank = NullIfBlank(row.Cells.GetValueOrDefault("Rank", string.Empty)),
+            RankArabic = NullIfBlank(row.Cells.GetValueOrDefault("RankArabic", string.Empty)),
             DisplayOrder = int.TryParse(
                 row.Cells.GetValueOrDefault("DisplayOrder", string.Empty), out var order) ? order : 0,
         }, ct);

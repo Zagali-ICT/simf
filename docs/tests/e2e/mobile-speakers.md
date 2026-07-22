@@ -35,7 +35,7 @@
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
 | **Auth setup** | **None** — the list is `AllowAnonymous` (guest+). An **Admin** token is used **only** to seed the speakers (and to soft-delete one). **No literal secrets** (admin TOTP via the `Get-Totp` helper). |
-| **Last reviewed** | 2026-06-16 |
+| **Last reviewed** | 2026-07-22 |
 
 > **Figma parity (D-432):** the screen is re-skinned to the KSA-Project frame
 > **908:1744 "Speakers"** — the navy shell with a centred header `المتحدثون`
@@ -63,6 +63,8 @@
 | E2E-MOB019-009 | Anchor tile shows for EVERY speaker; no host star on this global list (D-432) | happy | P0 | _to author_ |
 | E2E-MOB019-010 | Centred header `المتحدثون` flanked by circled back chevron + balancing spacer (908:2110) | happy | P2 | _to author_ |
 | E2E-MOB019-011 | Card with no rank/affiliation drops the beige sub-line, keeps the name | edge | P2 | _to author_ |
+| E2E-MOB019-012 | Arabic app renders the speaker's `rankArabic` when populated (CP-entered **or** Excel-imported) | i18n | P1 | _to author_ |
+| E2E-MOB019-013 | Arabic app falls back to the English `rank` when `rankArabic` is blank — intended, not a bug | i18n | P1 | _to author_ |
 
 ## Scenarios
 
@@ -198,6 +200,42 @@ Scenario: A speaker with no rank and no country drops the sub-line
   And the gold anchor tile and the beige caret still render
 ```
 
+### E2E-MOB019-012 — Arabic rank renders under the Arabic app
+
+```gherkin
+Scenario: The card shows the Arabic rank when rankArabic is populated
+  Given an active speaker whose rank is "Captain" and whose rankArabic is "القبطان البحري"
+  And the speaker was created either via the CP add/edit form OR the Speakers Excel import (the "RankArabic" workbook column)
+  And the device locale is Arabic
+  When the المتحدثون list renders that speaker's card
+  Then the beige rank sub-line shows the Arabic rank "القبطان البحري"
+  And the English "Captain" is not shown under the Arabic locale
+  # localizedRank(isArabic:true) = _pickOpt(rankArabic, rank) → rankArabic when non-empty
+```
+
+### E2E-MOB019-013 — English fallback when rankArabic is blank (intended, not a bug)
+
+```gherkin
+Scenario: The card falls back to the English rank when rankArabic is blank
+  Given an active speaker whose rank is "Commander" and whose rankArabic is null/blank
+  And the device locale is Arabic
+  When the المتحدثون list renders that speaker's card
+  Then the beige rank sub-line shows the English rank "Commander"
+  And this English fallback is INTENDED behaviour — the Arabic app shows the English rank only because no Arabic rank was provided (_pickOpt returns rank when rankArabic is empty)
+  # History: before the importer fix, Excel-created speakers ALWAYS hit this fallback
+  # because the Speakers import bound only the English "Rank" column and dropped the
+  # Arabic rank (RankArabic=null); the CP form always persisted rankArabic. The importer
+  # now maps the "RankArabic" column too, so a populated Arabic rank survives the Excel
+  # path (E2E-MOB019-012) and this fallback fires only when the Arabic rank is genuinely absent.
+```
+
 ---
 
-_Last reviewed:_ `2026-06-16` by `SIMF Team`.
+_Last reviewed:_ `2026-07-22` by `SIMF Team` — added E2E-MOB019-012/013: the Arabic
+app renders `rankArabic` when populated (CP **or** Excel import) and intentionally
+falls back to the English `rank` when it is blank. Documents the Speakers Excel
+importer fix (the `RankArabic` column now round-trips; previously Excel-created
+speakers landed with `rankArabic=null`). No app render change — the render was
+already correct.
+
+_Prior review:_ `2026-06-16` by `SIMF Team`.

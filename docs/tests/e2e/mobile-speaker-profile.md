@@ -20,7 +20,7 @@
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
 | **Auth setup** | **Anonymous** for the profile read; an **approved Visitor** token for the meeting request; an **Admin** token only to seed the speakers (and set `allowsMeetingRequests` / `allowsDataSharing`). **No literal secrets** (admin TOTP via the `Get-Totp` helper). |
-| **Last reviewed** | 2026-06-05 |
+| **Last reviewed** | 2026-07-22 |
 
 ## Coverage matrix
 
@@ -44,6 +44,8 @@
 | E2E-MOB020-015 | Speaker with no CV content shows no tabs and no bio card | edge | P1 | _to author_ |
 | E2E-MOB020-016 | Meeting form has **no name field**; only subject (+ optional slot) is entered; `requesterName` is auto-sent from the signed-in account | happy | P1 | authored ✓ (`a signed-in visitor can submit a meeting request`) |
 | E2E-MOB020-017 | Meeting form (D-589, Figma 1776:4958/5036): light sheet — the VIP slot is chosen from a row of **day cards** then that day's **time-slot chips**, both sourced from the speaker's **real** available slots (D-709 restored this after the D-703 free-picker interlude); the chips appear only after a day is tapped | happy | P2 | authored ✓ (`meeting_request_sheet_test` — "presents the speaker's REAL available days + that day's slots") |
+| E2E-MOB020-019 | Arabic app renders the profile-hero `rankArabic` when populated (CP-entered **or** Excel-imported) | i18n | P1 | _to author_ |
+| E2E-MOB020-020 | Arabic app falls back to the English `rank` in the hero when `rankArabic` is blank — intended, not a bug | i18n | P1 | _to author_ |
 
 ## Scenarios
 
@@ -291,6 +293,35 @@ Scenario: Only a VIP guest sees and can use the request-meeting CTA
   # slot-booking).
 ```
 
+### E2E-MOB020-019 — Arabic rank in the profile hero
+
+```gherkin
+Scenario: The profile hero shows the Arabic rank when rankArabic is populated
+  Given a seeded active speaker whose rank is "Captain" and whose rankArabic is "القبطان البحري"
+  And the speaker was created via the CP add/edit form OR the Speakers Excel import (the "RankArabic" workbook column)
+  And the device locale is Arabic
+  When the speaker profile (frame 908:2110) renders the two-line header
+  Then the beige rank line beneath the white name shows the Arabic rank "القبطان البحري"
+  And the English "Captain" is not shown under the Arabic locale
+  # SpeakerDetail.localizedRank(isArabic:true) = _pickOpt(rankArabic, rank) → rankArabic when non-empty
+```
+
+### E2E-MOB020-020 — English fallback in the hero when rankArabic is blank (intended, not a bug)
+
+```gherkin
+Scenario: The profile hero falls back to the English rank when rankArabic is blank
+  Given a seeded active speaker whose rank is "Commander" and whose rankArabic is null/blank
+  And the device locale is Arabic
+  When the speaker profile renders the header
+  Then the beige rank line shows the English "Commander"
+  And this is INTENDED fallback behaviour, not a bug — the Arabic app shows the English rank only when no Arabic rank exists (_pickOpt returns rank when rankArabic is empty)
+  # History: the Speakers Excel importer used to bind only the English "Rank" column
+  # and drop the Arabic rank, so Excel-created speakers ALWAYS landed with rankArabic=null
+  # and hit this fallback; the CP form always persisted rankArabic. The importer now maps
+  # the "RankArabic" column too, so an Arabic rank entered in the workbook survives to this
+  # render (E2E-MOB020-019); the fallback now fires only when the Arabic rank is genuinely absent.
+```
+
 > **Owner change (2026-07-02, Figma 1776:4958 → 1776:5036):** the meeting sheet
 > was redesigned from the D-579 date/time **dropdowns** to a light "طلب مقابلة"
 > sheet — a subject field, a row of **day cards**, then that day's **time-slot
@@ -322,7 +353,14 @@ Scenario: Only a VIP guest sees and can use the request-meeting CTA
 
 ---
 
-_Last reviewed:_ `2026-07-10` by `SIMF Team` — **D-731 (review follow-up to
+_Last reviewed:_ `2026-07-22` by `SIMF Team` — added E2E-MOB020-019/020: the Arabic
+app renders the profile-hero `rankArabic` when populated (CP **or** Excel import) and
+intentionally falls back to the English `rank` when it is blank. Documents the Speakers
+Excel importer fix (the `RankArabic` column now round-trips; previously Excel-created
+speakers landed with `rankArabic=null`). No app render change — the hero render was
+already correct.
+
+_Prior review:_ `2026-07-10` by `SIMF Team` — **D-731 (review follow-up to
 D-729): the VIP-flag read (`currentUserIsVipProvider`) now makes NO network call
 for a guest and is cached across speaker-profile opens (re-fetched only on an
 auth transition, not per screen-open), so browsing speaker profiles no longer

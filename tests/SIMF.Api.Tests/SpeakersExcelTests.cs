@@ -86,6 +86,49 @@ public sealed class SpeakersExcelTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Import_round_trips_the_arabic_rank()
+    {
+        // Regression: the importer used to bind only the English "Rank" column and
+        // silently dropped the Arabic rank, so Excel-created speakers landed with
+        // RankArabic = null and the Arabic app fell back to the English rank. This
+        // asserts a populated "RankArabic" column persists, and a blank one persists
+        // null (the intended fallback), through the same list projection the grid reads.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var withArabicCode = RandomCode();
+        var blankArabicCode = RandomCode();
+        var withArabicName = $"With Arabic Rank {Guid.NewGuid():N}";
+        var blankArabicName = $"Blank Arabic Rank {Guid.NewGuid():N}";
+        const string arabicRank = "القبطان البحري";
+        var workbook = BuildSpeakersWorkbookWithArabicRank("Speakers",
+            (withArabicCode, withArabicName, "متحدّث ١", "Captain", arabicRank, 5),
+            (blankArabicCode, blankArabicName, "متحدّث ٢", "Commander", string.Empty, 6));
+
+        var response = await PostFileAuthAsync(
+            "/api/v1/admin/speakers/import", workbook, adminToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AdminGridImportResult>>())!.Data!;
+        Assert.True(result.Created >= 2);
+        Assert.Empty(result.Errors);
+
+        var list = await PostAuthAsync(
+            "/api/v1/admin/speakers/list", new GridQuery { Top = 500 }, adminToken);
+        var page = (await list.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminSpeakerSummary>>>())!.Data!;
+
+        // A populated Arabic-rank cell round-trips into RankArabic.
+        var withArabic = page.Items.Single(item => item.Name == withArabicName);
+        Assert.Equal(arabicRank, withArabic.RankArabic);
+        Assert.Equal("Captain", withArabic.Rank);
+
+        // A blank Arabic-rank cell persists as null (the intended English fallback).
+        var blankArabic = page.Items.Single(item => item.Name == blankArabicName);
+        Assert.Null(blankArabic.RankArabic);
+        Assert.Equal("Commander", blankArabic.Rank);
+    }
+
+    [Fact]
     public async Task Non_admin_caller_is_forbidden_from_export()
     {
         var tokens = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
@@ -120,6 +163,33 @@ public sealed class SpeakersExcelTests : IClassFixture<SimfApiFactory>
             sheet.Cell(i + 2, 3).Value = rows[i].NameArabic;
             sheet.Cell(i + 2, 4).Value = rows[i].Rank;
             sheet.Cell(i + 2, 5).Value = rows[i].DisplayOrder;
+        }
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        return stream.ToArray();
+    }
+
+    private static byte[] BuildSpeakersWorkbookWithArabicRank(
+        string sheetName,
+        params (string Code, string Name, string NameArabic, string Rank,
+            string RankArabic, int DisplayOrder)[] rows)
+    {
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.Worksheets.Add(sheetName);
+        sheet.Cell(1, 1).Value = "Code";
+        sheet.Cell(1, 2).Value = "Name";
+        sheet.Cell(1, 3).Value = "NameArabic";
+        sheet.Cell(1, 4).Value = "Rank";
+        sheet.Cell(1, 5).Value = "RankArabic";
+        sheet.Cell(1, 6).Value = "DisplayOrder";
+        for (var i = 0; i < rows.Length; i++)
+        {
+            sheet.Cell(i + 2, 1).Value = rows[i].Code;
+            sheet.Cell(i + 2, 2).Value = rows[i].Name;
+            sheet.Cell(i + 2, 3).Value = rows[i].NameArabic;
+            sheet.Cell(i + 2, 4).Value = rows[i].Rank;
+            sheet.Cell(i + 2, 5).Value = rows[i].RankArabic;
+            sheet.Cell(i + 2, 6).Value = rows[i].DisplayOrder;
         }
         using var stream = new MemoryStream();
         workbook.SaveAs(stream);
