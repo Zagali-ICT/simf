@@ -75,7 +75,10 @@ public partial class Landing
             new("الابتكار البحري", "Maritime innovation"),
             new("الظهران، المملكة العربية السعودية — منصة الابتكار واستراتيجية الاقتصاد الأزرق.",
                 "Dhahran, Saudi Arabia — an innovation platform and blue-economy strategy.")),
-        new("assets/figma/milestones/card1-future-startime.png",
+        // The upcoming (4th) edition — SIMF 2026. The Figma placed the design
+        // agency's STARTIME logo here as a placeholder; ship the forum's OWN
+        // navy mark instead (never the agency logo).
+        new("assets/logo-simf.png",
             new("قريباً", "Soon"),
             new("المستقبل", "The future"),
             new("النسخة الأكبر والأكثر طموحاً — حدث سيادي رفيع المستوى يُنظّم تحت إشراف القوات البحرية، يرسّخ مكانة المملكة.",
