@@ -76,6 +76,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   final TextEditingController _arabicName = TextEditingController();
   final TextEditingController _englishName = TextEditingController();
   final TextEditingController _jobTitle = TextEditingController();
+  final TextEditingController _jobTitleArabic = TextEditingController();
   final TextEditingController _placeOfBirth = TextEditingController();
   // D-469 — the selected Saudi region code (birth-location dropdown); null for a
   // non-Saudi (free-text place of birth) or an unmatched stored value.
@@ -168,6 +169,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     _arabicName.dispose();
     _englishName.dispose();
     _jobTitle.dispose();
+    _jobTitleArabic.dispose();
     _placeOfBirth.dispose();
     _nationalId.dispose();
     _documentNumber.dispose();
@@ -224,6 +226,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     _arabicName.text = profile.arabicName;
     _englishName.text = profile.englishName;
     _jobTitle.text = profile.jobTitle ?? '';
+    _jobTitleArabic.text = profile.jobTitleArabic ?? '';
     _placeOfBirth.text = profile.placeOfBirth;
     _birthRegionCode = regionByName(profile.placeOfBirth)?.code;
     _nationalId.text = profile.nationalId ?? '';
@@ -582,6 +585,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       arabicName: _arabicName.text.trim(),
       englishName: _englishName.text.trim(),
       jobTitle: _emptyToNull(_jobTitle.text),
+      jobTitleArabic: _emptyToNull(_jobTitleArabic.text),
       nationalityCode: _nationalityCode ?? '',
       dateOfBirth: _dateOfBirth == null ? null : _formatDate(_dateOfBirth!),
       placeOfBirth: _placeOfBirth.text.trim(),
@@ -823,6 +827,16 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     validator: (String? v) => (v == null || v.trim().isEmpty)
                         ? l10n.jobTitleRequired
                         : null,
+                  ),
+                  const SizedBox(height: 16),
+                  // Optional Arabic job title — the backend + CP already
+                  // carry UserProfile.JobTitleArabic; captured here too
+                  // (server validates only when present).
+                  SimfLabeledTextField(
+                    label: l10n.jobTitleArabicLabel,
+                    controller: _jobTitleArabic,
+                    maxLength: 100,
+                    textDirection: TextDirection.rtl,
                   ),
                   const SizedBox(height: 16),
                   _buildNationalityField(l10n),

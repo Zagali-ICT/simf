@@ -8,7 +8,7 @@
 | Figma node | `168:2972` (KSA-Project, file `PSXHhY0UVTAPSaIOf9uNKd`; D-368) |
 | Shell | `SimfFormScaffold` (`pinnedHeader: true`) — the shared account/entry scaffold (back + globe toggle, logo + forum name) |
 | Providers | `profileRepositoryProvider` → `ProfileRepository` (pre-fill + 3 lookups) |
-| Tests | `test/features/account/sign_up_visitor_screen_test.dart` (widget, 23 cases) · `plate_validation_test.dart` · `phone_validation_test.dart` · `profile_models_test.dart` · golden `test/golden/sign_up_visitor_golden_test.dart` (`goldens/sign_up_visitor_168-2972.png`) · E2E [`mobile-sign-up-visitor.md`](../../../tests/e2e/mobile-sign-up-visitor.md) (E2E-MOB007-001..022) |
+| Tests | `test/features/account/sign_up_visitor_screen_test.dart` (widget, 24 cases) · `plate_validation_test.dart` · `phone_validation_test.dart` · `profile_models_test.dart` · golden `test/golden/sign_up_visitor_golden_test.dart` (`goldens/sign_up_visitor_168-2972.png`) · E2E [`mobile-sign-up-visitor.md`](../../../tests/e2e/mobile-sign-up-visitor.md) (E2E-MOB007-001..024) |
 | Status | ✅ Real — D-332 (rework: save moved to interests) → D-368 (Figma 168:2972) → D-371/D-373/D-374/D-375 amendments → **clean-code frozen (D-546, 2026-06-30)** |
 | Legacy detail | `docs/App/Page_007/` (Function / Logic / API / Design) — retained as the detailed historical spec |
 
@@ -39,7 +39,10 @@ stretch edge-to-edge on a tablet — §13.7) holds, in order:
 4. **الجنس** — `GenderPillsField` (ذكر / أنثى; default Male).
 5. **الجهة / Organisation** (`SimfPickerField` typeahead → `LookupSearchSheet`) —
    **required** (B3 / D-221).
-6. **المسمى الوظيفي** — job title (**required**, D-723).
+6. **المسمى الوظيفي** — job title (**required**, D-723), followed by **المسمى
+   الوظيفي (بالعربية)** — the Arabic job title (`SimfLabeledTextField`, RTL,
+   **optional**, backlog #37; persists `UserProfile.JobTitleArabic`, which the
+   backend + CP already carry).
 7. **الجنسية** — searchable country sheet (default SA). The pick **drives the
    document path** (D-373): SA → national-ID; else Iqama / Passport tabs + number.
 8. **document fields** (`_buildDocumentFields`).
@@ -48,8 +51,8 @@ stretch edge-to-edge on a tablet — §13.7) holds, in order:
 10. **تاريخ الميلاد** — `DateOfBirthField` (**≥ 18**, D-197).
 11. **مكان الميلاد** — place of birth (**required**, D-723; Saudi = region picker,
     else free text).
-12. **رقم اللوحة** — Saudi plate (**optional** — the one optional field, C6/D-371;
-    assemble/parse in
+12. **رقم اللوحة** — Saudi plate (**optional** — alongside the Arabic job title,
+    one of the two optional fields, C6/D-371; assemble/parse in
     `plate_validation.dart`).
 13. **المرفقات** — `AttachmentField` ID document (mandatory) + face photo
     (**camera-only**, mandatory for men — C7/D-371; server face-gate).
@@ -93,9 +96,10 @@ font (`FSAlbertArabic`) is applied once in the theme — including the gold CTA,
 the D-545 theme fix (see Changelog).
 
 ## 7. Testing
-- **Widget** (`sign_up_visitor_screen_test.dart`, 23 cases): type filter, the
+- **Widget** (`sign_up_visitor_screen_test.dart`, 24 cases): type filter, the
   Visitor/Other picker lock, the D-373 nationality→document switch + gate +
-  fallback, the D-375 lookup retry, load-failure retry, Next draft assembly.
+  fallback, the D-375 lookup retry, load-failure retry, Next draft assembly, and
+  the optional Arabic job title round-trip (prefill → upsert + draft, #37).
 - **Unit**: `plate_validation_test.dart` (assemble/parse round-trips, D-468/D-471),
   `phone_validation_test.dart`, `profile_models_test.dart`.
 - **Golden** (`sign_up_visitor_golden_test.dart`): `goldens/sign_up_visitor_168-2972.png`
@@ -114,6 +118,13 @@ the D-545 theme fix (see Changelog).
 - [x] `flutter analyze` 0 errors / 0 warnings; full suite green; wire contract unchanged
 
 ## 9. Changelog
+- **2026-07-22 (backlog #37):** added the optional Arabic job title input
+  (`المسمى الوظيفي (بالعربية)`, RTL) right after the job title — it fills
+  `UpsertUserProfileRequest.jobTitleArabic` (already serialized) so the app now
+  captures `UserProfile.JobTitleArabic` the backend + CP already carried.
+  Prefilled from the profile; optional (server validates only when present).
+  Golden `sign_up_visitor_168-2972.png` re-locked (owner-approved); +1 widget
+  case. No wire-contract change (additive key already present).
 - **2026-06-30 (Phase 2, D-548):** moved to `lib/features/account/` (auth+profile
   consolidation); place-of-birth now reads the D-547 region API (`regionsProvider`)
   with the const list as offline fallback; mobile maxLength via the shared

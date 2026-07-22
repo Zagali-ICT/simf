@@ -36,7 +36,9 @@ column on the tablet).
 3. **Two-column field grid** (`_twoCol`; RTL: first arg → right column):
    email | phone · Arabic name | English name · gender toggle | nationality ·
    document section (Saudi → national-ID field; non-Saudi → الإقامة/جواز toggle +
-   document number) · job title | organisation · two attachment pickers.
+   document number) · job title | **Arabic job title (المسمى الوظيفي بالعربية,
+   optional, backlog #37)** · organisation (own full-width row) · two attachment
+   pickers.
 4. **Terms link** "الموافقة على الشروط والأحكام؟" → terms screen.
 5. **Gold CTA "التالي"** — full-width, h56; busy spinner while posting.
 On success: a bilingual "تم تسجيل الزائر — بانتظار الاعتماد" SnackBar + the form
@@ -44,7 +46,9 @@ resets for the next walk-in.
 
 ## 4. Data / API (wire contract D-219 frozen)
 - `StaffWalkInRequest.toJson` → `POST /app/staff/visitors/register-onsite`
-  (mirrors the backend `AdminWalkInRegistrationRequest`).
+  (mirrors the backend `AdminWalkInRegistrationRequest`). Backlog #37 added the
+  optional `jobTitleArabic` key (additive, D-219-safe — only sent when filled);
+  the backend `AdminWalkInRegistrationRequest.JobTitleArabic` already existed.
 - `StaffWalkInResult.fromJson` ← the response (empty `qrId` = PendingApproval).
 - Optional `…/{id}/id-document` + `…/{id}/avatar` multipart uploads.
 - The **classification (ProfileType)** is not in the frame → auto-assigned to the
@@ -71,8 +75,8 @@ Brand font applied once in the theme.
 - **Widget** (`register_visitor_screen_test.dart`, 5 cases): renders after the
   lookups load, the load-failure Retry surface, the empty-submit guard (no API
   call), every input caps its length, a filled form posts the walk-in payload
-  (Saudi path → `saudiMobile`, `isSaudi`, org + Normal profile type) and shows the
-  pending-approval toast.
+  (Saudi path → `saudiMobile`, `isSaudi`, org + Normal profile type, plus the
+  optional `jobTitleArabic`, #37) and shows the pending-approval toast.
 - **Golden** (`staff_register_visitor_golden_test.dart`):
   `goldens/staff_register_visitor_1467-12357.png` @1024×1314 RTL (Saudi default,
   empty state) — locks the frozen two-column tablet parity. `pumpAndSettle` is safe
@@ -98,6 +102,13 @@ Brand font applied once in the theme.
       (`StaffWalkInRequest`/`StaffWalkInResult`, D-219) unchanged
 
 ## 9. Changelog
+- **2026-07-22 (backlog #37):** added the optional Arabic job title input
+  (`المسمى الوظيفي (بالعربية)`) paired beside the job title; organisation moved to
+  its own full-width row. Adds the additive `jobTitleArabic` key to
+  `StaffWalkInRequest.toJson` (only sent when filled — the backend already carried
+  `AdminWalkInRegistrationRequest.JobTitleArabic`). Golden
+  `staff_register_visitor_1467-12357.png` re-locked (owner-approved); the filled-form
+  widget case now asserts `jobTitleArabic`. Wire contract otherwise unchanged.
 - **2026-06-30 (Phase 3, D-559):** folded into the clean-code program (owner request);
   reviewed + frozen. Extracted `_buildHeader`; added the §9 doc tail; added the
   `1467:12357` render-lock golden + this per-page doc. No behaviour/render change.

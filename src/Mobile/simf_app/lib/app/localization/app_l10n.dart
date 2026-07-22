@@ -180,6 +180,8 @@ class AppL10n {
   String get englishNameLabel =>
       _t('الاسم الكامل (بالإنجليزية)', 'Full name (English)');
   String get jobTitleLabel => _t('المسمى الوظيفي', 'Job title');
+  String get jobTitleArabicLabel =>
+      _t('المسمى الوظيفي (بالعربية)', 'Job title (Arabic)');
   String get nationalityLabel => _t('الجنسية', 'Nationality');
   String get isSaudiLabel => _t('سعودي الجنسية', 'Saudi national');
   String get nationalIdLabel => _t('رقم الهوية الوطنية', 'National ID');

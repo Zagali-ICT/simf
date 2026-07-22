@@ -229,6 +229,7 @@ UserProfileResponse _completeProfile({
   bool hasAvatar = true, // face photo — mandatory for men, optional for women
   String? plateNumber,
   String? jobTitle = 'Engineer', // D-723 — required; pass null for the empty case
+  String? jobTitleArabic, // optional Arabic job title
   String? saudiMobile = '0512345678', // D-723 — required; pass null for empty case
   String placeOfBirth = 'Riyadh',
 }) =>
@@ -239,6 +240,7 @@ UserProfileResponse _completeProfile({
       englishName: 'Rakan Abdullah Ahmed Alsalem',
       nationalityCode: 'SA',
       jobTitle: jobTitle,
+      jobTitleArabic: jobTitleArabic,
       placeOfBirth: placeOfBirth,
       isSaudi: true,
       gender: gender,
@@ -434,6 +436,23 @@ void main() {
       // Blocked at the profile step — the required error shows, no navigation.
       expect(find.text('INTERESTS'), findsNothing);
       expect(find.text('Job title is required'), findsOneWidget);
+    });
+
+    testWidgets('carries the optional Arabic job title into the saved request '
+        '(backlog #37)', (tester) async {
+      final repo = _FakeProfileRepository(
+        profile: _completeProfile(jobTitleArabic: 'مهندس بحري'),
+      );
+      await _pump(tester, repo);
+
+      // The field renders (optional) and prefills; _buildRequest carries the
+      // Arabic job title into both the upsert and the interests-screen draft.
+      expect(find.text('Job title (Arabic)'), findsOneWidget);
+
+      await _tapNext(tester);
+
+      expect(repo.upserted?.jobTitleArabic, 'مهندس بحري');
+      expect(capturedDraft?.request.jobTitleArabic, 'مهندس بحري');
     });
 
     testWidgets(
