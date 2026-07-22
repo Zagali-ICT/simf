@@ -36,12 +36,7 @@ import 'widgets/sessions_search_field.dart';
 /// programme_day_strip, programme_day_banner, session_type_tabs,
 /// session_timeline_row).
 class SessionsScreen extends ConsumerStatefulWidget {
-  const SessionsScreen({super.key, this.initialType});
-
-  /// Pre-selected type tab. Set from a "Sessions" home tile (`?type=Session`)
-  /// so the programme opens on جلسات and shows only sessions; null (the
-  /// "Agenda" nav tab) opens on الكل / All — the full programme.
-  final SessionType? initialType;
+  const SessionsScreen({super.key});
 
   @override
   ConsumerState<SessionsScreen> createState() => _SessionsScreenState();
@@ -58,9 +53,6 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
   @override
   void initState() {
     super.initState();
-    // A "Sessions" tile opens straight onto the جلسات tab; the "Agenda" tab
-    // leaves this null and opens on الكل / All.
-    _typeFilter = widget.initialType;
     unawaited(_load());
   }
 
@@ -76,18 +68,14 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
       }
       setState(() {
         _days = days;
-        // Open on the first day that actually has an item of the active filter
-        // (not blindly the first day) — otherwise, opened as "Sessions", a
-        // programme whose sessions sit on a later day renders an empty schedule
-        // until the user taps that day by hand. With no filter (Agenda) this is
-        // just the first day that has anything.
+        // Open on the first day that actually has sessions, not blindly the
+        // first day — otherwise a programme whose sessions sit on a later day
+        // renders an empty schedule until the user taps that day by hand.
         _selectedDayId = days.isEmpty
             ? null
             : days
                 .firstWhere(
-                  (day) => day.sessions.any(
-                    (s) => _typeFilter == null || s.type == _typeFilter,
-                  ),
+                  (day) => day.sessions.isNotEmpty,
                   orElse: () => days.first,
                 )
                 .id;
@@ -125,13 +113,9 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     return SimfPageShell(
-      // Frame 883:2314 — the full programme (Agenda entry) is headed
-      // "برنامج الملتقى". Opened from a "Sessions" tile (initialType = session)
-      // the header instead reads "الجلسات" / "Sessions" so the page is clearly
-      // the sessions view, not the agenda.
-      title: widget.initialType == SessionType.session
-          ? l10n.sessionsTitle
-          : l10n.sessionsProgrammeTitle,
+      // Frame 883:2314 — the screen header is "برنامج الملتقى" (the bottom-nav
+      // tab carries the shared "الجلسات" label, nav component 206:1732).
+      title: l10n.sessionsProgrammeTitle,
       onBack: () => backOrHome(context),
       tab: SimfTab.sessions,
       showSweep: true,

@@ -63,11 +63,11 @@ void main() {
     '/booths/:boothId/map', // 112
     '/forum-guide', // 200
     '/faq', // 201
+    '/session-presentations', // 202 — public (owner 2026-07-22; a guest opens the
+    // "الجلسات" Sessions list from the home tile; reads are AllowAnonymous)
     '/contact-us', // 203
     '/about-app', // 207
-    // Coming-soon sentinels — currently public even signed-out, while the
-    // sibling 202 (/session-presentations) is attendee-gated: an inconsistent
-    // tier, encoded as-built and reported separately (NOT changed here).
+    // Coming-soon sentinels — public even signed-out.
     '/bilateral-meetings', // 204
     '/saved-meetings', // 206
   ];
@@ -95,7 +95,6 @@ void main() {
     '/meetings', // 116 (VIP-only enforced in-screen; role gate = attendee)
     '/sessions/:sessionId/pick-seat', // 109
     '/sessions/join', // 110
-    '/session-presentations', // 202
   ];
 
   const exhibitorPaths = <String>[

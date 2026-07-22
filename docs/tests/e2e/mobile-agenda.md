@@ -84,7 +84,6 @@
 | E2E-MOB016-018 | **Program tab label (D-750):** the bottom-nav program/agenda tab reads "الأجندة" / "Agenda" (`agendaTitle`) — the screen header "برنامج الملتقى" and the `sessionsTitle` "الجلسات" on other surfaces (home tile, etc.) are unchanged | i18n/visual | P1 | authored ✓ (`sessions_screen_test` RTL: active bottom-nav label = "الأجندة"; `simf_page_shell_test`: the "Agenda" tab navigates to /sessions; goldens re-locked) |
 | E2E-MOB016-016 | **Time-rail from→to connector (D-705):** every المواعيد row shows the vertical beige line between its start and end time — including a **collapsed/short row** (title only, no banner/description) where it previously collapsed to zero (Figma 1310:3243/3244) | visual | P1 | authored ✓ (golden `sessions_883-2308.png` — the connector renders on the featured AND the collapsed row) |
 | E2E-MOB016-017 | **State chips (owner 2026-07-14):** each timeline row shows a state chip derived from its phase + flags — `مباشر الآن` (live, red), `الملخص متاح` (a published summary, gold outline), `مسجّل` (recorded, gold); an upcoming session shows no chip | visual | P1 | authored ✓ (`session_state_chip_test.dart` unit + golden `session_state_chips.png`; shared `SessionStateChipRow`) |
-| E2E-MOB016-019 | **Sessions-tile entry (owner 2026-07-22):** the guest-home **"Sessions"** tile opens `/sessions?type=Session` — the screen heads **"الجلسات" / "Sessions"** (not "برنامج الملتقى"), opens on the **جلسات** filter (only session-type items; ceremony events + workshops hidden until the user switches tabs) and lands on the first day that actually has a session. The bottom-nav **"Agenda"** tab passes no query and still heads "برنامج الملتقى" on **الكل / All** (the full programme). One screen, two entry points. | happy/i18n | P1 | authored ✓ (`sessions_screen_test` — `opened from a "Sessions" tile … heads "Sessions" and shows only sessions` + `opened as the Agenda … heads "Forum programme" and defaults to All`; on-device guest verify 2026-07-22) |
 
 ## Scenarios
 
@@ -311,45 +310,6 @@ Scenario: The active program tab reads الأجندة, not الجلسات
 **Evidence:** `sessions_screen_test.dart` RTL — the active bottom-nav label is
 "الأجندة"; `simf_page_shell_test.dart` — the "Agenda" tab navigates to /sessions;
 the 6 sessions-tab goldens re-locked to the new label.
-
----
-
-### E2E-MOB016-019 — Sessions-tile entry vs Agenda tab (owner 2026-07-22)
-
-```gherkin
-Feature: The "Sessions" tile opens the sessions view, not the agenda
-  As a guest on the home page (no login)
-  I want the "Sessions" tile to open the sessions list
-  So that I see sessions, not the full ceremony agenda (owner 2026-07-22)
-
-Scenario: Tapping the home "Sessions" tile opens /sessions on the جلسات filter
-  Given I am a guest on the home page (opened without signing in)
-  When I tap the "Sessions" tile
-  Then the sessions screen opens (route /sessions?type=Session)
-  And the screen header reads "الجلسات" / "Sessions" (not "برنامج الملتقى")
-  And the "جلسات" (Sessions) type tab is the active filter
-  And the schedule lists only session-type items
-    (e.g. "Keynote", "Axis 1 Introduction", "Panel 1")
-  And ceremony events (Reception, Arrival, Quran) and workshops are hidden
-  And the selected day is the first day that actually has a session
-  When I tap the "الكل / All" tab
-  Then the full agenda (events + sessions + workshops) is shown again
-
-Scenario: The bottom-nav Agenda tab still opens the full programme on All
-  Given I am on any tab
-  When I tap the bottom-nav "الأجندة / Agenda" program tab
-  Then the sessions screen opens (route /sessions, no ?type=)
-  And the screen header reads "برنامج الملتقى" / "Forum programme"
-  And the "الكل / All" filter is active (the full agenda)
-```
-
-**Evidence:** `sessions_screen_test.dart` — `opened from a "Sessions" tile
-(initialType=session) heads the page "Sessions" and shows only sessions` +
-`opened as the Agenda (no initialType) heads "Forum programme" and defaults to
-All`; on-device guest verification on tablet 5MKUN25726G03504 (2026-07-22).
-**Scope:** only the **guest** "Sessions" tile passes `?type=Session`. The visitor
-tile opens session materials (`sessionPresentations`, owner 2026-07-01) and the
-operational/moderator tile opens the full programme — both unchanged.
 
 ---
 

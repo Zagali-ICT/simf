@@ -6,7 +6,6 @@ import '../../../app/route_names.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_bottom_nav.dart';
 import '../../../app/widgets/simf_page_shell.dart';
-import '../../sessions/data/session_models.dart';
 import 'discover_saudi_row.dart';
 import 'home_icons.dart';
 import 'pending_approval_card.dart';
@@ -52,15 +51,12 @@ class GuestHome extends StatelessWidget {
             children: <Widget>[
               SimfNavTile(
                 label: l10n.tileSessions,
-                iconAsset: HomeIcons.sessions,
-                // Opens the programme on the جلسات tab (sessions only) — the
-                // "Agenda" nav tab opens the same page on الكل / All.
-                onTap: () => context.pushNamed(
-                  RouteNames.sessions,
-                  queryParameters: <String, String>{
-                    RouteParams.sessionTypeQuery: SessionType.session.wireName,
-                  },
-                ),
+                // Same icon as the signed-in "Sessions" tile (owner 2026-07-22).
+                iconAsset: HomeIcons.aboutSessions,
+                // Owner 2026-07-22: the "Sessions" tile opens the Sessions list
+                // (session_presentations, header "الجلسات") — the SAME page the
+                // signed-in "Sessions" tile opens — NOT the bottom-nav agenda.
+                onTap: () => context.pushNamed(RouteNames.sessionPresentations),
               ),
               SimfNavTile(
                 label: l10n.tileSpeakers,

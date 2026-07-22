@@ -89,7 +89,6 @@ Future<void> _pump(
   WidgetTester tester, {
   required SessionsRepository repo,
   Locale locale = const Locale('en'),
-  SessionType? initialType,
 }) async {
   // A tall surface renders the whole list (day strip + banner + tabs + rows)
   // without lazy-ListView fold-off, so finds + taps reach every row.
@@ -102,7 +101,7 @@ Future<void> _pump(
       GoRoute(
         path: '/sessions',
         name: RouteNames.sessions,
-        builder: (_, __) => SessionsScreen(initialType: initialType),
+        builder: (_, __) => const SessionsScreen(),
       ),
       GoRoute(
         path: '/sessions/:sessionId',
@@ -225,54 +224,6 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining('Diving workshop'), findsOneWidget);
       expect(find.textContaining('Gala dinner'), findsOneWidget);
-    });
-
-    testWidgets('opened from a "Sessions" tile (initialType=session) heads the '
-        'page "Sessions" and shows only sessions — not the agenda', (tester) async {
-      await _pump(
-        tester,
-        initialType: SessionType.session,
-        repo: _FakeSessionsRepository(days: <ProgrammeDay>[
-          _dayOne(<SessionListItem>[
-            _session('s1', 9, 'Keynote', type: SessionType.session),
-            _session('w1', 11, 'Diving workshop', type: SessionType.workshop),
-            _session('e1', 13, 'Reception', type: SessionType.event),
-          ],),
-        ],),
-      );
-
-      // The header reads "Sessions", not "Forum programme" (the Agenda entry).
-      expect(find.text('Sessions'), findsWidgets);
-      expect(find.text('Forum programme'), findsNothing);
-      // Opens straight on the جلسات filter: only the session shows; the
-      // workshop and the ceremony event are hidden until the user switches tabs.
-      expect(find.textContaining('Keynote'), findsOneWidget);
-      expect(find.textContaining('Diving workshop'), findsNothing);
-      expect(find.textContaining('Reception'), findsNothing);
-
-      // Switching to All reveals the full agenda again — same page, one screen.
-      await tester.tap(find.text('All'));
-      await tester.pumpAndSettle();
-      expect(find.textContaining('Diving workshop'), findsOneWidget);
-      expect(find.textContaining('Reception'), findsOneWidget);
-    });
-
-    testWidgets('opened as the Agenda (no initialType) heads "Forum programme" '
-        'and defaults to All', (tester) async {
-      await _pump(
-        tester,
-        repo: _FakeSessionsRepository(days: <ProgrammeDay>[
-          _dayOne(<SessionListItem>[
-            _session('s1', 9, 'Keynote', type: SessionType.session),
-            _session('e1', 13, 'Reception', type: SessionType.event),
-          ],),
-        ],),
-      );
-
-      // The Agenda entry keeps the programme header and shows everything.
-      expect(find.text('Forum programme'), findsOneWidget);
-      expect(find.textContaining('Keynote'), findsOneWidget);
-      expect(find.textContaining('Reception'), findsOneWidget);
     });
 
     testWidgets('the day strip switches the selected day', (tester) async {
