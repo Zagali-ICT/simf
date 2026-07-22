@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/localization/app_l10n.dart';
@@ -8,6 +11,7 @@ import '../../../app/widgets/simf_bottom_nav.dart';
 import '../../../app/widgets/simf_page_shell.dart';
 import '../../../core/organization_profile/organization_profile.dart';
 import '../../banners/data/banner_models.dart';
+import '../../live/data/current_live_session.dart';
 import '../../news/data/news_models.dart';
 import '../../news/news_article_screen.dart';
 import 'discover_saudi_row.dart';
@@ -80,10 +84,30 @@ class VisitorHome extends StatelessWidget {
             onTap: () => context.pushNamed(RouteNames.news),
           ),
           const SizedBox(height: SimfTokens.space6),
-          // The live banner (frame node 758:1150) — opens the live view.
-          LiveBanner(
-            l10n: l10n,
-            onTap: () => context.pushNamed(RouteNames.liveBroadcast),
+          // The live banner (frame node 758:1150) — deep-links to the session
+          // that is live right now (resolved on tap from the shared programme
+          // cache) so it opens that session's feed, not the empty "no live
+          // session" screen. With nothing live it opens id-less and falls back
+          // to the live screen's event-wide stream.
+          Consumer(
+            builder: (context, ref, _) => LiveBanner(
+              l10n: l10n,
+              onTap: () async {
+                final liveId =
+                    await ref.read(currentLiveSessionIdProvider.future);
+                if (!context.mounted) {
+                  return;
+                }
+                unawaited(
+                  context.pushNamed(
+                    RouteNames.liveBroadcast,
+                    queryParameters: liveId != null
+                        ? <String, String>{RouteParams.sessionId: liveId}
+                        : const <String, String>{},
+                  ),
+                );
+              },
+            ),
           ),
           const SizedBox(height: SimfTokens.space6),
           // Exhibitor (العارض) lead-capture tools — D-519. Shown only to the
