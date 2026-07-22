@@ -31,7 +31,7 @@ class DiscoverSaudiRow extends StatelessWidget {
         outlined ? 'KSA' : l10n.discoverSaudiBadge,
         textAlign: TextAlign.center,
         style: TextStyle(
-          color: outlined ? SimfTokens.accent : Colors.white,
+          color: outlined ? SimfTokens.accent : SimfTokens.surface,
           fontSize: SimfTokens.textMd,
           fontWeight: outlined ? FontWeight.w800 : FontWeight.w600,
         ),

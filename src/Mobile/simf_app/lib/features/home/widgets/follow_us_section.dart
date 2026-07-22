@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/localization/app_l10n.dart';
+import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/confirm_external_link.dart';
 import '../../../app/widgets/simf_page_shell.dart';
@@ -33,24 +34,24 @@ class FollowUsSection extends ConsumerWidget {
     // (asset, url, label) — the exact Figma beige glyphs (node 758:1186); kept
     // only when the URL is set so an unconfigured platform is hidden, not inert.
     final links = <(String, String, String)>[
-      ('assets/icons/social_x.svg', social?.x ?? BuildConfig.socialXUrl, 'X'),
+      (AppAssets.socialX, social?.x ?? BuildConfig.socialXUrl, 'X'),
       (
-        'assets/icons/social_instagram.svg',
+        AppAssets.socialInstagram,
         social?.instagram ?? BuildConfig.socialInstagramUrl,
         'Instagram',
       ),
       (
-        'assets/icons/social_linkedin.svg',
+        AppAssets.socialLinkedin,
         social?.linkedin ?? BuildConfig.socialLinkedInUrl,
         'LinkedIn',
       ),
       (
-        'assets/icons/social_youtube.svg',
+        AppAssets.socialYoutube,
         social?.youtube ?? BuildConfig.socialYouTubeUrl,
         'YouTube',
       ),
       (
-        'assets/icons/social_tiktok.svg',
+        AppAssets.socialTiktok,
         social?.tiktok ?? BuildConfig.socialTikTokUrl,
         'TikTok',
       ),
@@ -88,11 +89,7 @@ class FollowUsSection extends ConsumerWidget {
             l10n.followUsHandle,
             textAlign: TextAlign.center,
             // Frame 758:1202 — handle line is Medium, beige.
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textSm,
-              fontWeight: FontWeight.w500,
-            ),
+            style: SimfTokens.labelBeigeMediumSm,
           ),
         ],
         // Owner 2026-07-08 — the org website on Home. No Figma home node carries
@@ -123,18 +120,21 @@ class _SocialButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.transparent,
+      color: SimfTokens.transparent,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-        side: const BorderSide(color: SimfTokens.navyDeep, width: 0.8),
+        borderRadius: BorderRadius.circular(SimfTokens.radius10),
+        side: const BorderSide(
+          color: SimfTokens.navyDeep,
+          width: SimfTokens.hairlineWide,
+        ),
       ),
       child: InkWell(
         onTap: url.isEmpty
             ? null
             : () => unawaited(confirmThenLaunchExternal(context, url)),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(SimfTokens.radius10),
         child: SizedBox(
-          height: 48,
+          height: SimfTokens.controlHeight,
           child: Semantics(
             button: true,
             label: label,
@@ -176,18 +176,14 @@ class _WebsiteLink extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               const SimfSvgIcon(
-                'assets/icons/auth_globe.svg',
+                AppAssets.authGlobe,
                 size: 16,
                 color: SimfTokens.accent,
               ),
               const SizedBox(width: SimfTokens.space2),
               Text(
                 label,
-                style: const TextStyle(
-                  color: SimfTokens.accent,
-                  fontSize: SimfTokens.textSm,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: SimfTokens.labelGoldSemiboldSm,
               ),
             ],
           ),

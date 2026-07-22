@@ -26,7 +26,7 @@ class RateGoldButton extends StatelessWidget {
         onTap: loading ? null : onTap,
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
         child: SizedBox(
-          height: 48,
+          height: SimfTokens.controlHeight,
           child: Center(
             child: loading
                 ? const SizedBox(
@@ -34,16 +34,12 @@ class RateGoldButton extends StatelessWidget {
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Colors.white,
+                      color: SimfTokens.surface,
                     ),
                   )
                 : Text(
                     label,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: SimfTokens.textLg,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: SimfTokens.labelWhiteMediumLg,
                   ),
           ),
         ),

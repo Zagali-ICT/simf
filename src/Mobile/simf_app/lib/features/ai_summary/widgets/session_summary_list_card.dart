@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/route_names.dart';
+import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_page_shell.dart';
 import '../../sessions/data/session_models.dart';
@@ -70,16 +71,12 @@ class SessionSummaryCard extends StatelessWidget {
                       Text(
                         item.localizedTitle(isArabic),
                         textAlign: TextAlign.start,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w500,
-                          fontSize: SimfTokens.textMd, // 14
-                        ),
+                        style: SimfTokens.labelWhiteMedium,
                       ),
                       const SizedBox(height: SimfTokens.space2),
                       SessionIconLine(
                         // Figma 1388:8441 — the exact iconify clock, not Material.
-                        asset: 'assets/icons/session_clock.svg',
+                        asset: AppAssets.sessionClock,
                         text: '$time · $durationLabel',
                       ),
                     ],
@@ -99,7 +96,7 @@ class SessionSummaryCard extends StatelessWidget {
                     Flexible(
                       child: SessionMetaGroup(
                         // Figma 1388:8457 — the exact iconify "users" glyph.
-                        asset: 'assets/icons/session_users.svg',
+                        asset: AppAssets.sessionUsers,
                         text: speaker,
                       ),
                     ),
@@ -107,7 +104,7 @@ class SessionSummaryCard extends StatelessWidget {
                     Flexible(
                       child: SessionMetaGroup(
                         // Figma 1388:8449 — the exact iconify map-pin glyph.
-                        asset: 'assets/icons/session_location.svg',
+                        asset: AppAssets.sessionLocation,
                         text: hall,
                       ),
                     ),
@@ -172,11 +169,7 @@ class _CategoryPill extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         textAlign: TextAlign.center,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: SimfTokens.textSm, // 12
-          fontWeight: FontWeight.w500,
-        ),
+        style: SimfTokens.labelWhiteMediumSm,
       ),
     );
   }

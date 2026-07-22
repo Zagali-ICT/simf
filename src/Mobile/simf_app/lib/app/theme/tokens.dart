@@ -174,6 +174,32 @@ class SimfTokens {
   static const double dayCardWidth = 58; // meeting-request day card (Figma 1776:4975)
   static const double dayCardHeight = 64; // meeting-request day card + its picker row (Figma 1776:5052)
 
+  // #16 S3 — chatbot (Figma 1064:13275) + quick-reply strip metrics.
+  static const double radiusTail = 2; // chat-bubble inner-bottom tail corner
+  static const double chatBubblePadH = 15; // chat-bubble horizontal text inset
+  static const double chatBubbleMaxWidth = 288; // chat-bubble max width
+  static const double sendSquareSize = 24; // composer send-button box
+  static const double quickReplyStripHeight = 34; // quick-reply chip strip
+
+  // #16 S3 — ai_summary section-heading gold bar (Figma 1072:14660).
+  static const double headingBarWidth = 4;
+  static const double headingBarHeight = 20;
+
+  // #16 S3 — home (Figma 758:1183+) metrics.
+  static const double hairlineWide = 0.8; // social-button border (follow-us)
+  static const double liveBadgeSize = 60; // home LIVE banner مباشر badge square
+  static const double highlightSlideHeight = 170; // highlights carousel slide
+  static const double heroBannerHeight = 160; // home hero banner strip
+  static const double navTileHeight = 80; // home tall nav-tile min height
+
+  // #16 S3 — requests card icon-box + status-chip metrics (Figma 1408:9761+).
+  static const double requestIconBox = 32; // gold type-icon box on a request card
+  static const double statusChipHeight = 32; // status filter chip height
+  static const double statusChipPadH = 13; // status filter chip horizontal padding
+  static const double chipFillActiveOpacity = 0.24; // selected chip fill alpha
+  static const double chipFillOpacity = 0.12; // resting chip fill alpha
+  static const double chipBorderOpacity = 0.2; // resting chip border alpha
+
   // Type scale (Material text styles override these for actual rendering;
   // tokens here are for places that need a raw size).
   static const double textXs = 10.5;
@@ -555,5 +581,139 @@ class SimfTokens {
   static const TextStyle titleSemibold = TextStyle(
     fontSize: textLg,
     fontWeight: FontWeight.w600,
+  );
+
+  // ── #16 sweep — S3 signed-in features ──────────────────────────────────
+  // meetings (Figma 1408:9726) — the card date/time line.
+  static const TextStyle labelBeigeMediumXs = TextStyle(
+    color: beigeBorder,
+    fontSize: textXs,
+    fontWeight: FontWeight.w500,
+  );
+  // notifications (Figma 758:2491) — mark-all link + card timestamp line.
+  static const TextStyle labelGoldSm = TextStyle(
+    color: accent,
+    fontSize: textSm,
+  );
+  static const TextStyle labelTimestampSm = TextStyle(
+    color: timestampMuted,
+    fontSize: textSm,
+  );
+  // badge (Figma 758:1469) — scan-to-enter hint on the white QR card + the
+  // muted tier / ID lines on the gold identity strip.
+  static const TextStyle bodyBlackLgTracked = TextStyle(
+    color: Colors.black,
+    fontSize: textLg,
+    letterSpacing: -0.366,
+  );
+  static const TextStyle labelOnGoldMutedSm = TextStyle(
+    color: onGoldMuted,
+    fontSize: textSm,
+  );
+  // feedback / rate (Figma #40) — kicker + score body, the bold lead line, and
+  // the navy note-chip message.
+  static const TextStyle bodyBeigeMd = TextStyle(
+    color: beigeBorder,
+    fontSize: textMd,
+  );
+  static const TextStyle labelWhiteBoldTitleTall = TextStyle(
+    color: surface,
+    fontSize: textTitle,
+    fontWeight: FontWeight.w700,
+    height: 1.4,
+  );
+  static const TextStyle labelBeigeSemiboldSmTall = TextStyle(
+    color: beigeBorder,
+    fontSize: textSm,
+    fontWeight: FontWeight.w600,
+    height: 1.4,
+  );
+  // chatbot (Figma 1064:13275) — gold "AI" badge, composer input/hint (surface
+  // 12; [bodyWhiteSm] also serves home's white captions), quick-reply chip.
+  static const TextStyle labelWhiteBold12Tall = TextStyle(
+    color: surface,
+    fontSize: textSm,
+    fontWeight: FontWeight.w700,
+    height: 16 / 12,
+  );
+  static const TextStyle bodyWhiteSm = TextStyle(
+    color: surface,
+    fontSize: textSm,
+  );
+  static const TextStyle labelBeigeSemibold12Tall = TextStyle(
+    color: beigeBorder,
+    fontSize: textSm,
+    fontWeight: FontWeight.w600,
+    height: 18 / 12,
+  );
+  // contacts (SIMF-FDS-014) — empty-state title (bare bold, also requests'
+  // submit label), contact-card avatar initials, job-title + note lines, and
+  // the share-hint caption.
+  static const TextStyle emphasisBold = TextStyle(
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle labelNavyBold = TextStyle(
+    color: navy,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle bodyInkMutedSm = TextStyle(
+    color: inkMuted,
+    fontSize: textSm,
+  );
+  static const TextStyle labelInkMutedBoldXs = TextStyle(
+    color: inkMuted,
+    fontSize: textXs,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle bodyWhite70 = TextStyle(
+    color: Colors.white70,
+  );
+  // ai_summary (Figma 1072:14628 / 1388:8392) — list card title/category, day
+  // header, session label, agenda rows, section heading, bullets + paragraph.
+  // [labelWhiteMediumSm] + [labelGoldSemiboldLg] also serve home.
+  static const TextStyle labelWhiteMediumSm = TextStyle(
+    color: surface,
+    fontSize: textSm,
+    fontWeight: FontWeight.w500,
+  );
+  static const TextStyle labelGoldSemiboldLg = TextStyle(
+    color: accent,
+    fontSize: textLg,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle labelBeigeBoldSm = TextStyle(
+    color: beigeBorder,
+    fontSize: textSm,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle bodyBeigeRegularTall = TextStyle(
+    color: beigeBorder,
+    fontSize: textMd,
+    fontWeight: FontWeight.w400,
+    height: 1.5,
+  );
+  static const TextStyle bodyBeigeMediumTall = TextStyle(
+    color: beigeBorder,
+    fontSize: textMd,
+    fontWeight: FontWeight.w500,
+    height: 1.5,
+  );
+  // requests (Figma 1408:9773+) — card date line + cancel-action danger label.
+  static const TextStyle labelBeigeSemiboldXs = TextStyle(
+    color: beigeBorder,
+    fontSize: textXs,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle bodyDanger = TextStyle(
+    color: danger,
+  );
+  // home (Figma 758:1239) — highlights carousel slide title. Most home text
+  // reuses S3 tokens (labelWhiteMediumSm, labelGoldSemiboldLg, bodyWhiteSm,
+  // labelGoldBoldLg, labelGoldBold, labelWhiteSemibold, bodyWhiteMd, bodyBeige).
+  static const TextStyle labelWhiteBoldLgTall = TextStyle(
+    color: surface,
+    fontSize: textLg,
+    fontWeight: FontWeight.w700,
+    height: 1.3,
   );
 }

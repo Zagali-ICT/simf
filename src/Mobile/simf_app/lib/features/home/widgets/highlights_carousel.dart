@@ -32,7 +32,7 @@ class HighlightsCarousel extends StatefulWidget {
 }
 
 class _HighlightsCarouselState extends State<HighlightsCarousel> {
-  static const double _slideHeight = 170;
+  static const double _slideHeight = SimfTokens.highlightSlideHeight;
   static const Duration _interval = Duration(seconds: 4);
 
   late final PageController _controller;
@@ -162,7 +162,7 @@ class _HighlightSlide extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.center,
                     end: Alignment.bottomCenter,
-                    colors: <Color>[Colors.transparent, Color(0xCC01132D)],
+                    colors: <Color>[SimfTokens.transparent, Color(0xCC01132D)],
                   ),
                 ),
               ),
@@ -174,12 +174,7 @@ class _HighlightSlide extends StatelessWidget {
                   title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: SimfTokens.textLg,
-                    height: 1.3,
-                  ),
+                  style: SimfTokens.labelWhiteBoldLgTall,
                 ),
               ),
             ],

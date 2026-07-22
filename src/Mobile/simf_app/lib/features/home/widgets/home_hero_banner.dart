@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../app/localization/app_l10n.dart';
+import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../core/organization_profile/organization_profile.dart';
 import '../../banners/data/banner_models.dart';
@@ -39,7 +40,7 @@ class HomeHeroBanner extends StatefulWidget {
 }
 
 class _HomeHeroBannerState extends State<HomeHeroBanner> {
-  static const double _height = 160;
+  static const double _height = SimfTokens.heroBannerHeight;
   static const Duration _interval = Duration(seconds: 4);
 
   late final PageController _controller;
@@ -109,7 +110,7 @@ class _HomeHeroBannerState extends State<HomeHeroBanner> {
           fit: StackFit.expand,
           children: <Widget>[
             if (banners.isEmpty)
-              Image.asset('assets/images/discover_hero.jpg', fit: BoxFit.fill)
+              Image.asset(AppAssets.discoverHero, fit: BoxFit.fill)
             else
               PageView.builder(
                 controller: _controller,
@@ -122,7 +123,7 @@ class _HomeHeroBannerState extends State<HomeHeroBanner> {
               ),
             const ColoredBox(color: Color(0x80000000)),
             Material(
-              color: Colors.transparent,
+              color: SimfTokens.transparent,
               child: InkWell(
                 onTap: widget.onTap,
                 child: Padding(
@@ -181,7 +182,7 @@ class _HeroImage extends StatelessWidget {
   }
 
   Widget get _placeholder =>
-      Image.asset('assets/images/discover_hero.jpg', fit: BoxFit.fill);
+      Image.asset(AppAssets.discoverHero, fit: BoxFit.fill);
 }
 
 /// The hero text overlay: the forum edition (name + theme + date range +
@@ -206,20 +207,12 @@ class _HeroOverlay extends StatelessWidget {
         children: <Widget>[
           Text(
             l10n.discoverSection,
-            style: const TextStyle(
-              color: SimfTokens.accent,
-              fontWeight: FontWeight.w700,
-              fontSize: SimfTokens.textLg,
-            ),
+            style: SimfTokens.labelGoldBoldLg,
           ),
           const SizedBox(height: SimfTokens.space2),
           Text(
             l10n.discoverBannerSubtitle,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w500,
-              fontSize: SimfTokens.textSm,
-            ),
+            style: SimfTokens.labelWhiteMediumSm,
           ),
         ],
       );
@@ -236,11 +229,7 @@ class _HeroOverlay extends StatelessWidget {
           name,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            color: SimfTokens.accent,
-            fontWeight: FontWeight.w700,
-            fontSize: SimfTokens.textMd,
-          ),
+          style: SimfTokens.labelGoldBold,
         ),
         if (theme.isNotEmpty) ...<Widget>[
           const SizedBox(height: SimfTokens.space1),
@@ -248,11 +237,7 @@ class _HeroOverlay extends StatelessWidget {
             theme,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w500,
-              fontSize: SimfTokens.textSm,
-            ),
+            style: SimfTokens.labelWhiteMediumSm,
           ),
         ],
         if (dates != null) ...<Widget>[
@@ -280,17 +265,14 @@ class _MetaLine extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        Icon(icon, size: 14, color: Colors.white),
+        Icon(icon, size: 14, color: SimfTokens.surface),
         const SizedBox(width: SimfTokens.space1),
         Flexible(
           child: Text(
             text,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: SimfTokens.textSm,
-            ),
+            style: SimfTokens.bodyWhiteSm,
           ),
         ),
       ],

@@ -57,11 +57,7 @@ class SummarySessionCard extends StatelessWidget {
             // frame (right-aligned) and adapts to the language (was .end,
             // which renders LEFT in RTL).
             textAlign: TextAlign.start,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: SimfTokens.textLg,
-              fontWeight: FontWeight.w500,
-            ),
+            style: SimfTokens.labelWhiteMediumLg,
           ),
           const SizedBox(height: SimfTokens.space4),
           // The bordered selected-session box (frame 1072:14603).
@@ -85,20 +81,13 @@ class SummarySessionCard extends StatelessWidget {
                 Text(
                   session.localizedTitle(isArabic),
                   textAlign: TextAlign.start,
-                  style: const TextStyle(
-                    color: SimfTokens.accent,
-                    fontSize: SimfTokens.textLg,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: SimfTokens.labelGoldSemiboldLg,
                 ),
                 const SizedBox(height: SimfTokens.space2),
                 Text(
                   sub,
                   textAlign: TextAlign.start,
-                  style: const TextStyle(
-                    color: SimfTokens.beigeBorder,
-                    fontSize: SimfTokens.textSm,
-                  ),
+                  style: SimfTokens.labelBeigeSm,
                 ),
               ],
             ),
@@ -141,22 +130,14 @@ class SummaryAgendaRow extends StatelessWidget {
               textAlign: TextAlign.start,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: SimfTokens.textMd,
-                fontWeight: FontWeight.w500,
-              ),
+              style: SimfTokens.labelWhiteMedium,
             ),
           ),
           const SizedBox(width: SimfTokens.space3),
           Text(
             _agendaTime.format(item.startLocal),
             textDirection: TextDirection.ltr,
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textSm,
-              fontWeight: FontWeight.w700,
-            ),
+            style: SimfTokens.labelBeigeBoldSm,
           ),
         ],
       ),

@@ -180,7 +180,7 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
               child: Center(
                 child: Text(
                   l10n.requestsNoResults,
-                  style: const TextStyle(color: SimfTokens.beigeBorder),
+                  style: SimfTokens.hintBeige,
                 ),
               ),
             )

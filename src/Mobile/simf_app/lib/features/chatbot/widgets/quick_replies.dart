@@ -14,7 +14,7 @@ class QuickReplies extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 34,
+      height: SimfTokens.quickReplyStripHeight,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
@@ -52,12 +52,7 @@ class _QuickReplyChip extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: const TextStyle(
-            color: SimfTokens.beigeBorder,
-            fontSize: SimfTokens.textSm,
-            height: 18 / 12,
-            fontWeight: FontWeight.w600,
-          ),
+          style: SimfTokens.labelBeigeSemibold12Tall,
         ),
       ),
     );

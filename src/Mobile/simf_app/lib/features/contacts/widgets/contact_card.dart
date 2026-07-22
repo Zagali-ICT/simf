@@ -52,10 +52,7 @@ class ContactCard extends StatelessWidget {
                   backgroundColor: SimfTokens.accent,
                   child: Text(
                     _initials(name),
-                    style: const TextStyle(
-                      color: SimfTokens.navy,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: SimfTokens.labelNavyBold,
                   ),
                 ),
                 const SizedBox(width: SimfTokens.space3),
@@ -65,19 +62,13 @@ class ContactCard extends StatelessWidget {
                     children: <Widget>[
                       Text(
                         available ? name : l10n.contactUnavailable,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: SimfTokens.textLg,
-                        ),
+                        style: SimfTokens.titleBold,
                       ),
                       if (available && _has(jobTitle)) ...<Widget>[
                         const SizedBox(height: SimfTokens.space1),
                         Text(
                           jobTitle!,
-                          style: const TextStyle(
-                            color: SimfTokens.inkMuted,
-                            fontSize: SimfTokens.textSm,
-                          ),
+                          style: SimfTokens.bodyInkMutedSm,
                         ),
                       ],
                     ],
@@ -99,11 +90,7 @@ class ContactCard extends StatelessWidget {
               const Divider(height: SimfTokens.space5),
               Text(
                 l10n.contactNoteLabel,
-                style: const TextStyle(
-                  color: SimfTokens.inkMuted,
-                  fontSize: SimfTokens.textXs,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: SimfTokens.labelInkMutedBoldXs,
               ),
               const SizedBox(height: SimfTokens.space1),
               Text(note!),

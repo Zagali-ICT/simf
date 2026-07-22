@@ -11,6 +11,7 @@ import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import 'data/contact_models.dart';
 import 'data/contacts_repository.dart';
+import 'widgets/contacts_empty_state.dart';
 import 'widgets/saved_contact_sheet.dart';
 import 'widgets/saved_contact_tile.dart';
 
@@ -115,7 +116,7 @@ class _MyContactsScreenState extends ConsumerState<MyContactsScreen> {
       );
     }
     if (_rows.isEmpty) {
-      return _EmptyState(
+      return ContactsEmptyState(
         title: l10n.myContactsEmpty,
         hint: l10n.myContactsEmptyHint,
         actionLabel: l10n.contactScanAdd,
@@ -136,57 +137,6 @@ class _MyContactsScreenState extends ConsumerState<MyContactsScreen> {
             onTap: () => unawaited(_openDetail(row)),
           );
         },
-      ),
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({
-    required this.title,
-    required this.hint,
-    required this.actionLabel,
-    required this.onAction,
-  });
-
-  final String title;
-  final String hint;
-  final String actionLabel;
-  final VoidCallback onAction;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            const Icon(
-              Icons.contacts_outlined,
-              size: 56,
-              color: SimfTokens.inkMuted,
-            ),
-            const SizedBox(height: SimfTokens.space3),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: SimfTokens.space1),
-            Text(
-              hint,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: SimfTokens.inkMuted),
-            ),
-            const SizedBox(height: SimfTokens.space4),
-            FilledButton.icon(
-              onPressed: onAction,
-              icon: const Icon(Icons.qr_code_scanner),
-              label: Text(actionLabel),
-            ),
-          ],
-        ),
       ),
     );
   }

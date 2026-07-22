@@ -186,26 +186,22 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
             Text(
               l10n.shareMyContactHint,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white70),
+              style: SimfTokens.bodyWhite70,
             ),
             const SizedBox(height: SimfTokens.space5),
             FilledButton.icon(
               onPressed: () => unawaited(_shareVcard()),
               style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(48),
+                minimumSize: const Size.fromHeight(SimfTokens.controlHeight),
                 backgroundColor: SimfTokens.accent,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
                 ),
               ),
-              icon: const Icon(Icons.ios_share, color: Colors.white),
+              icon: const Icon(Icons.ios_share, color: SimfTokens.surface),
               label: Text(
                 l10n.shareContact,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: SimfTokens.textLg,
-                ),
+                style: SimfTokens.labelWhiteBoldLg,
               ),
             ),
             const SizedBox(height: SimfTokens.space2),
@@ -214,7 +210,7 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
                   ? null
                   : () => unawaited(_rotate()),
               style: OutlinedButton.styleFrom(
-                minimumSize: const Size.fromHeight(48),
+                minimumSize: const Size.fromHeight(SimfTokens.controlHeight),
                 side: const BorderSide(color: SimfTokens.accent, width: 1),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
@@ -229,11 +225,7 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
                   : const Icon(Icons.autorenew, color: SimfTokens.accent),
               label: Text(
                 l10n.shareMyContactRotate,
-                style: const TextStyle(
-                  color: SimfTokens.accent,
-                  fontWeight: FontWeight.w700,
-                  fontSize: SimfTokens.textLg,
-                ),
+                style: SimfTokens.labelGoldBoldLg,
               ),
             ),
           ],

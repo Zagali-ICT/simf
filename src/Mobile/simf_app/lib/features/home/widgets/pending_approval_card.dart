@@ -51,7 +51,10 @@ class PendingApprovalCard extends ConsumerWidget {
       decoration: BoxDecoration(
         color: SimfTokens.navyDeep,
         borderRadius: BorderRadius.circular(SimfTokens.radius),
-        border: Border.all(color: SimfTokens.accent, width: 0.5),
+        border: Border.all(
+          color: SimfTokens.accent,
+          width: SimfTokens.hairlineBold,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

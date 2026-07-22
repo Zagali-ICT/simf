@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/route_names.dart';
+import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
 import '../../contacts/scan_contact_screen.dart';
@@ -26,9 +27,9 @@ class BadgeActions extends StatelessWidget {
             // gold-FILLED button; the share action below it stays outlined.
             filled: true,
             icon: const SimfSvgIcon(
-              'assets/icons/badge_scan.svg',
+              AppAssets.badgeScan,
               size: 24,
-              color: Colors.white,
+              color: SimfTokens.surface,
             ),
             label: l10n.badgeAddPerson,
             // Open as a self-contained fullscreen modal (NOT a go_router route):
@@ -43,7 +44,11 @@ class BadgeActions extends StatelessWidget {
           ),
           const SizedBox(height: SimfTokens.space3),
           _actionButton(
-            icon: const Icon(Icons.qr_code_2, size: 24, color: Colors.white),
+            icon: const Icon(
+              Icons.qr_code_2,
+              size: 24,
+              color: SimfTokens.surface,
+            ),
             label: l10n.shareMyContactTitle,
             onTap: () => context.pushNamed(RouteNames.shareMyContact),
           ),
@@ -52,9 +57,9 @@ class BadgeActions extends StatelessWidget {
     }
     return _actionButton(
       icon: const SimfSvgIcon(
-        'assets/icons/badge_scan.svg',
+        AppAssets.badgeScan,
         size: 24,
-        color: Colors.white,
+        color: SimfTokens.surface,
       ),
       label: l10n.badgeScanVisitor,
       onTap: () => context.pushNamed(RouteNames.scanVisitor),
@@ -72,17 +77,13 @@ class BadgeActions extends StatelessWidget {
   }) {
     final labelText = Text(
       label,
-      style: const TextStyle(
-        color: Colors.white,
-        fontWeight: FontWeight.w700,
-        fontSize: SimfTokens.textLg,
-      ),
+      style: SimfTokens.labelWhiteBoldLg,
     );
     if (filled) {
       return FilledButton.icon(
         onPressed: onTap,
         style: FilledButton.styleFrom(
-          minimumSize: const Size.fromHeight(48),
+          minimumSize: const Size.fromHeight(SimfTokens.controlHeight),
           backgroundColor: SimfTokens.accent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
@@ -95,7 +96,7 @@ class BadgeActions extends StatelessWidget {
     return OutlinedButton.icon(
       onPressed: onTap,
       style: OutlinedButton.styleFrom(
-        minimumSize: const Size.fromHeight(48),
+        minimumSize: const Size.fromHeight(SimfTokens.controlHeight),
         side: const BorderSide(color: SimfTokens.accent, width: 1),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),

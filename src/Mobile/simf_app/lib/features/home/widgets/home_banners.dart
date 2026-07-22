@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/localization/app_l10n.dart';
+import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
 
@@ -16,10 +17,13 @@ class LiveBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final flip = !l10n.isArabic;
     return Material(
-      color: Colors.transparent,
+      color: SimfTokens.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        side: const BorderSide(color: SimfTokens.danger, width: 0.5),
+        side: const BorderSide(
+          color: SimfTokens.danger,
+          width: SimfTokens.hairlineBold,
+        ),
       ),
       child: InkWell(
         onTap: onTap,
@@ -29,8 +33,8 @@ class LiveBanner extends StatelessWidget {
           child: Row(
             children: <Widget>[
               Container(
-                width: 60,
-                height: 60,
+                width: SimfTokens.liveBadgeSize,
+                height: SimfTokens.liveBadgeSize,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: SimfTokens.danger,
@@ -38,12 +42,8 @@ class LiveBanner extends StatelessWidget {
                 ),
                 child: Text(
                   l10n.liveNowLabel,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: SimfTokens.textMd,
-                    // Frame 758:1157 — the "مباشر" badge is SemiBold.
-                    fontWeight: FontWeight.w600,
-                  ),
+                  // Frame 758:1157 — the "مباشر" badge is SemiBold.
+                  style: SimfTokens.labelWhiteSemibold,
                 ),
               ),
               const SizedBox(width: SimfTokens.space3),
@@ -53,19 +53,12 @@ class LiveBanner extends StatelessWidget {
                   children: <Widget>[
                     Text(
                       l10n.homeLiveTitle,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: SimfTokens.textMd,
-                      ),
+                      style: SimfTokens.labelWhiteSemibold,
                     ),
                     const SizedBox(height: SimfTokens.space2),
                     Text(
                       l10n.homeLiveSubtitle,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: SimfTokens.textSm,
-                      ),
+                      style: SimfTokens.bodyWhiteSm,
                     ),
                   ],
                 ),
@@ -80,8 +73,8 @@ class LiveBanner extends StatelessWidget {
               Transform.flip(
                 flipX: flip,
                 child: const SimfSvgIcon(
-                  'assets/icons/ic_caret_left.svg',
-                  color: Colors.white,
+                  AppAssets.icCaretLeft,
+                  color: SimfTokens.surface,
                   size: 24,
                 ),
               ),
