@@ -44,6 +44,7 @@
 | E2E-MOB013-008 | Locked بطاقتي card is visible but inert as a guest | auth | P1 | authored ✓ (screen — disabled tile ignores taps) |
 | E2E-MOB013-009 | FAQ row opens the FAQ screen (Wave 1 `GET /app/faq`) | happy | P2 | authored ✓ (screen) |
 | E2E-MOB013-010 | Social + Visit-Saudi links launch externally; unset URL = inert button | happy | P2 | authored ✓ (screen — 5 brand buttons render; D-369 contract) |
+| E2E-MOB013-011 | The guest agenda tile reads "الأجندة"/"Agenda" (agendaTitle — matches the D-750 nav rename, was "Sessions") and opens the programme; signed-in/staff homes keep "Sessions" per D-750 | i18n | P2 | authored ✓ (`home_screen_test` guest layout — `find.text('Agenda')`) |
 | E2E-MOB013-011 | Greeting shows the App-profile name, never the email (frame 758:1134, D-408) | happy | P1 | authored ✓ (screen — profile name wins; email fallback suppressed) |
 | E2E-MOB013-012 | **#43 — rotating edition hero:** forum name/theme/dates/location (GET /app/organization-profile) over the rotating GET /app/banners images (dots); empty config → the static discover fallback; taps open News | happy | P1 | authored ✓ (widget — home_hero_banner_test; screen — tap → News) |
 | E2E-MOB013-013 | Home tiles render the exact iconify SVG glyphs (frame 758:1134, D-446) | i18n/visual | P2 | authored ✓ (screen — `KsaNavTile.iconAsset`) |
@@ -370,7 +371,9 @@ Scenario: The Home about-tile "الجلسات" opens the session downloads scree
 
 ---
 
-_Last reviewed:_ `2026-07-01` by `SIMF Team` — D-583: the two Home session tiles
+_Last reviewed:_ `2026-07-22` by `Claude` — the guest agenda tile now reads
+"الأجندة"/"Agenda" (agendaTitle, matching the D-750 nav rename); E2E-MOB013-011.
+Prior: `2026-07-01` by `SIMF Team` — D-583: the two Home session tiles
 were crossed against their Figma node titles and swapped so each label opens the
 same-titled screen — about "الجلسات" → session-downloads (1388:7621), smart-features
 "ملخص الجلسات" → AI-summaries list (1388:8392). Supersedes D-582 (which relabelled the
