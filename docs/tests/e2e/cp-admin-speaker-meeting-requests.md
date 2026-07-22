@@ -569,8 +569,9 @@ Scenario: Checking in a non-Confirmed meeting is rejected
 `Checking_in_a_non_confirmed_meeting_is_409` (a Pending row → 409
 `APP_REQUEST_ALREADY_RESPONDED`, unchanged) — both green. The 15-minute reminder that
 precedes check-in is covered by `MeetingReminderWorkerTests` (speaker + delegation,
-lead-window bound + once-only dedup). The delegation check-in twin (E2E-DLM-011) shares
-`DelegationMeetingRequestService.CheckInAsync` and remains `_to author_` at the API layer.
+lead-window bound + once-only dedup). The delegation check-in twin (E2E-DLM-011) is covered by
+`DelegationMeetingRequestsTests.Checking_in_a_confirmed_delegation_meeting_marks_it_Done` +
+`Checking_in_a_non_confirmed_delegation_meeting_is_409`.
 
 ---
 

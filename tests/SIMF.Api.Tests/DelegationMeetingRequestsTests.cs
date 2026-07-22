@@ -504,6 +504,79 @@ public sealed class DelegationMeetingRequestsTests : IClassFixture<SimfApiFactor
             .ReadFromJsonAsync<ApiResult<DelegationMeetingRequestSubmitted>>())!.Data!.Id;
     }
 
+    [Fact]
+    public async Task Checking_in_a_confirmed_delegation_meeting_marks_it_Done()
+    {
+        // Bi-Meeting rework — an operator checks a confirmed (Accepted) delegation meeting
+        // in at the hall; it flips to Done and stamps CheckedInAt / CheckedInByUserId.
+        var homeId = await EnsureCountryAsync("SA", 682, invited: true);
+        await EnsureCountryAsync("EG", 818, invited: true);
+        var (delegate1, _) = await CreateDelegateAsync(homeId, isDelegate: true);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var submit = await PostAuthAsync(
+            "/api/v1/app/delegation-meeting-requests",
+            new SubmitDelegationMeetingRequestRequest
+            {
+                TargetCountryCode = "EG", AttendeeCount = 6, Subject = "Naval cooperation",
+            },
+            delegate1);
+        var requestId = (await submit.Content
+            .ReadFromJsonAsync<ApiResult<DelegationMeetingRequestSubmitted>>())!.Data!.Id;
+
+        // A plain Accept (no hall) books the request directly to Accepted.
+        var respond = await PostAuthAsync(
+            $"/api/v1/admin/delegation-meeting-requests/{requestId}/respond",
+            new RespondToDelegationMeetingRequestRequest { Status = MeetingRequestStatus.Accepted },
+            admin, HttpMethod.Put);
+        Assert.Equal(HttpStatusCode.OK, respond.StatusCode);
+
+        var checkIn = await PostAuthAsync(
+            $"/api/v1/admin/delegation-meeting-requests/{requestId}/check-in",
+            new { }, admin);
+        Assert.Equal(HttpStatusCode.OK, checkIn.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var row = await db.DelegationMeetingRequests.SingleAsync(r => r.Id == requestId);
+        Assert.Equal(MeetingRequestStatus.Done, row.Status);
+        Assert.NotNull(row.CheckedInAt);
+        Assert.NotNull(row.CheckedInByUserId);
+    }
+
+    [Fact]
+    public async Task Checking_in_a_non_confirmed_delegation_meeting_is_409()
+    {
+        // Only a confirmed (Accepted) meeting can be checked in — a Pending row is 409.
+        var homeId = await EnsureCountryAsync("SA", 682, invited: true);
+        await EnsureCountryAsync("EG", 818, invited: true);
+        var (delegate1, _) = await CreateDelegateAsync(homeId, isDelegate: true);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var submit = await PostAuthAsync(
+            "/api/v1/app/delegation-meeting-requests",
+            new SubmitDelegationMeetingRequestRequest
+            {
+                TargetCountryCode = "EG", AttendeeCount = 3, Subject = "Pending topic",
+            },
+            delegate1);
+        var requestId = (await submit.Content
+            .ReadFromJsonAsync<ApiResult<DelegationMeetingRequestSubmitted>>())!.Data!.Id;
+
+        // Still Pending — check-in must be rejected.
+        var checkIn = await PostAuthAsync(
+            $"/api/v1/admin/delegation-meeting-requests/{requestId}/check-in",
+            new { }, admin);
+        Assert.Equal(HttpStatusCode.Conflict, checkIn.StatusCode);
+        var body = (await checkIn.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.AppRequestAlreadyResponded, body.Error!.Code);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var row = await db.DelegationMeetingRequests.SingleAsync(r => r.Id == requestId);
+        Assert.Equal(MeetingRequestStatus.Pending, row.Status);
+    }
+
     // -- helpers --------------------------------------------------------------
 
     private async Task<int> EnsureCountryAsync(string code, int id, bool invited)
