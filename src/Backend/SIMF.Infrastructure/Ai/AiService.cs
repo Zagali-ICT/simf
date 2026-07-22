@@ -105,12 +105,14 @@ internal sealed class AiService(
                 $"موفّر الذكاء الاصطناعي '{effectiveProvider}' غير مسجَّل.");
         }
 
+        var modelForCall = ResolveModelForCall(prompt.Model, effectiveProvider);
+
         var stopwatch = Stopwatch.StartNew();
         AiProviderResponse providerResponse;
         try
         {
             providerResponse = await provider.CallAsync(new AiProviderCall(
-                Model: prompt.Model,
+                Model: modelForCall,
                 SystemPrompt: systemPrompt,
                 UserPrompt: userPrompt,
                 Temperature: prompt.Temperature,
@@ -260,6 +262,25 @@ internal sealed class AiService(
     public const int MaxInputsCount = AiInputLimits.MaxInputsCount;
     public const int MaxInputKeyLength = AiInputLimits.MaxInputKeyLength;
     public const int MaxInputValueLength = AiInputLimits.MaxInputValueLength;
+
+    // D-484 follow-up — every prompt is seeded with the sentinel Model="echo".
+    // When routing redirects an Echo-default prompt to a REAL provider (D-484),
+    // that literal would be sent to the vendor API as a model name and 404. Blank
+    // it so the real provider substitutes its configured DefaultModel; an Echo call
+    // keeps "echo" so its "[echo:echo]" label is unchanged. This is what lets a
+    // go-live flip DefaultProvider + set a key without editing each prompt's Model.
+    // (internal for the unit test in AiServiceModelResolutionTests.)
+    internal static string ResolveModelForCall(string model, AiProvider effectiveProvider) =>
+        effectiveProvider != AiProvider.Echo && IsEchoOrBlank(model)
+            ? string.Empty
+            : model;
+
+    // True for the offline sentinel model (EchoAiProvider.ModelName) or an unset
+    // model — the two cases where a real provider should fall back to its own
+    // configured DefaultModel.
+    private static bool IsEchoOrBlank(string? model) =>
+        string.IsNullOrWhiteSpace(model)
+        || string.Equals(model, EchoAiProvider.ModelName, StringComparison.OrdinalIgnoreCase);
 
     private static string Substitute(
         string template, IReadOnlyDictionary<string, string> inputs)

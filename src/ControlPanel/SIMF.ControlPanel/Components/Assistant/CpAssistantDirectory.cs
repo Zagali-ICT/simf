@@ -13,13 +13,11 @@ namespace SIMF.ControlPanel.Components.Assistant;
 /// (<c>AiService.MaxInputValueLength</c> = 4000).</summary>
 public static class CpAssistantDirectory
 {
-    /// <summary>The maximum directory length. The directory is one AI input value
-    /// (<see cref="AiInputLimits.MaxInputValueLength"/>), so it is kept a safe
-    /// margin below that shared cap — deriving from it so a future cap change
-    /// carries through. The current catalogue is well under it; the guard only
-    /// bites if the catalogue ever balloons, and it then truncates on a
-    /// whole-line boundary so a route is never half-emitted.</summary>
-    public const int MaxLength = AiInputLimits.MaxInputValueLength - 200;
+    /// <summary>The maximum directory length, shared with the app assistant's
+    /// grounding via <see cref="AiGroundingText.MaxLength"/>: one AI input value
+    /// (<see cref="AiInputLimits.MaxInputValueLength"/>) kept a safe margin below
+    /// that cap. Exposed so the tests assert against the real guard constant.</summary>
+    public const int MaxLength = AiGroundingText.MaxLength;
 
     /// <summary>Renders the directory for the given permission snapshot.</summary>
     /// <param name="permissions">The operator's permission codes (from the JWT
@@ -46,30 +44,13 @@ public static class CpAssistantDirectory
                 continue;
             }
 
-            var headerWritten = false;
-            foreach (var item in visible)
-            {
-                var line = "- " + localizer[item.LabelKey].Value + " -> " + item.Href;
-                if (!headerWritten)
-                {
-                    // Start the group only if the header AND its first item both
-                    // fit, so we never leave a dangling group heading. (+1 each for
-                    // the newline AppendLine adds.)
-                    var header = "## " + localizer[group.LabelKey].Value;
-                    if (builder.Length + header.Length + 1 + line.Length + 1 > MaxLength)
-                    {
-                        return builder.ToString().TrimEnd();
-                    }
-                    builder.AppendLine(header);
-                    headerWritten = true;
-                }
-                else if (builder.Length + line.Length + 1 > MaxLength)
-                {
-                    // Stop on a whole-line boundary — a route is never half-emitted.
-                    return builder.ToString().TrimEnd();
-                }
-                builder.AppendLine(line);
-            }
+            // One line per permitted page ("- Label -> /route"), capped + truncated
+            // on a whole-line boundary by the shared grounding primitive.
+            AiGroundingText.AppendCappedSection(
+                builder,
+                "## " + localizer[group.LabelKey].Value,
+                visible.Select(item =>
+                    "- " + localizer[item.LabelKey].Value + " -> " + item.Href));
         }
 
         return builder.ToString().TrimEnd();

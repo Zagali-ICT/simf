@@ -72,7 +72,8 @@ public sealed class AskFaqEndpoint(IAiService service)
     }
 }
 
-public sealed class AssistanceEndpoint(IAiService service)
+public sealed class AssistanceEndpoint(
+    IAiService service, IAssistanceContextBuilder contextBuilder)
     : Endpoint<AssistanceRequest, ApiResult<AiCallResult>>
 {
     public override void Configure()
@@ -85,9 +86,17 @@ public sealed class AssistanceEndpoint(IAiService service)
     public override async Task HandleAsync(AssistanceRequest req, CancellationToken ct)
     {
         var caller = AiCaller.FromUser(User);
+        // Ground the answer on the live event (sessions / FAQ / booths), resolved
+        // server-side — so the assistant cites the real agenda, not model priors.
+        var context = await contextBuilder.BuildAsync(ct);
         var result = await service.InvokeAsync(
             "assistance",
-            new Dictionary<string, string> { ["message"] = req.Message ?? string.Empty },
+            new Dictionary<string, string>
+            {
+                ["message"] = req.Message ?? string.Empty,
+                ["context"] = context,
+                ["locale"] = string.IsNullOrWhiteSpace(req.Locale) ? "en" : req.Locale,
+            },
             caller, ct);
         await Send.OkAsync(ApiResult<AiCallResult>.Ok(result), ct);
     }

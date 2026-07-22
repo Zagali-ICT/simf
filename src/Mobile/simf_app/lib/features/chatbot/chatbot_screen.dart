@@ -17,17 +17,16 @@ import 'widgets/quick_replies.dart';
 // injects a fake responder) keep resolving off this screen.
 export 'data/chatbot_responder.dart';
 
-/// Page 036 — المساعد الذكي · AI assistant (#36, `/chatbot`, Guest+).
+/// Page 036 — المساعد الذكي · AI assistant (#36, `/chatbot`, signed-in).
 ///
-/// **Public.** Pixel-parity to KSA Figma frame `1064:13066`: the navy
-/// [SimfPageShell] shell, a scrolling transcript (assistant bubbles left + gold "AI"
-/// badge, user bubbles right + gold fill), the horizontal quick-reply chips
-/// (frame `1070:13389`) and the bottom input bar (frame `1070:13398`). The
-/// opening transcript is the scripted demo the Figma shows — there is **no
-/// backend chatbot endpoint** (verified), so a new prompt (typed or a chip) is
-/// echoed as a user bubble and answered by the overridable
-/// [chatbotResponderProvider] seam, whose default returns a canned bilingual
-/// notice. The screen makes **no API call**.
+/// Pixel-parity to KSA Figma frame `1064:13066`: the navy [SimfPageShell] shell, a
+/// scrolling transcript (assistant bubbles left + gold "AI" badge, user bubbles
+/// right + gold fill), the horizontal quick-reply chips (frame `1070:13389`) and
+/// the bottom input bar (frame `1070:13398`). The screen opens with the assistant
+/// greeting; each prompt (typed or a chip) is answered by the centralised AI via
+/// the overridable [chatbotResponderProvider] — its default [ApiChatbotResponder]
+/// calls `POST /app/ai/assistance` (the `assistance` prompt, grounded server-side
+/// on the live event context). A wire error surfaces as a localized error bubble.
 class ChatbotScreen extends ConsumerStatefulWidget {
   const ChatbotScreen({super.key});
 
@@ -50,14 +49,10 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
     super.dispose();
   }
 
-  /// The scripted opening transcript (frame `1064:13066`). Built from l10n each
+  /// The assistant's opening greeting (frame `1064:13066`). Built from l10n each
   /// render so it re-translates on an AR↔EN toggle.
   List<ChatMessage> _seed(AppL10n l10n) => <ChatMessage>[
         ChatMessage(ChatAuthor.assistant, l10n.chatbotGreeting),
-        ChatMessage(ChatAuthor.user, l10n.chatbotSeedQ1),
-        ChatMessage(ChatAuthor.assistant, l10n.chatbotSeedA1),
-        ChatMessage(ChatAuthor.user, l10n.chatbotSeedQ2),
-        ChatMessage(ChatAuthor.assistant, l10n.chatbotSeedA2),
       ];
 
   Future<void> _send(String prompt, bool isArabic) async {
@@ -65,6 +60,8 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
     if (text.isEmpty || _sending) {
       return;
     }
+    // Resolved before the await so the error fallback needs no post-await context.
+    final errorReply = AppL10n.of(context).chatbotError;
     final responder = ref.read(chatbotResponderProvider);
     setState(() {
       _added.add(ChatMessage(ChatAuthor.user, text));
@@ -73,7 +70,20 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
     });
     _scrollToEnd();
 
-    final answer = await responder.reply(text, isArabic: isArabic);
+    // A failed (or empty) AI call becomes the localized error bubble, and
+    // `_sending` is always cleared in the setState below — a failed send must
+    // never leave the composer spinner stuck. reply() can throw beyond
+    // ApiFailure (e.g. a token-refresh / keystore error on the 401 path), so
+    // catch every throwable and fall back to the error bubble.
+    var answer = errorReply;
+    try {
+      final reply = await responder.reply(text, isArabic: isArabic);
+      if (reply.isNotEmpty) {
+        answer = reply;
+      }
+    } on Object catch (_) {
+      // Keep the error bubble for any failure.
+    }
     if (!mounted) {
       return;
     }
