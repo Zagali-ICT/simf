@@ -41,7 +41,7 @@
                     {
                         if (menu.Links.Count == 0)
                         {
-                            <a href="@menu.Href" class="ln-nav__item">@L[menu.LabelKey]</a>
+                            <a href="@menu.Href" class="ln-nav__item" target="@(IsExternal(menu.Href) ? "_blank" : null)" rel="@(IsExternal(menu.Href) ? "noopener noreferrer" : null)">@L[menu.LabelKey]</a>
                         }
                         else
                         {
@@ -124,7 +124,7 @@
             <div class="ln-offcanvas__group">
                 @if (menu.Links.Count == 0)
                 {
-                    <a class="ln-offcanvas__title ln-offcanvas__link" href="@menu.Href" data-bs-dismiss="offcanvas">@L[menu.LabelKey]</a>
+                    <a class="ln-offcanvas__title ln-offcanvas__link" href="@menu.Href" target="@(IsExternal(menu.Href) ? "_blank" : null)" rel="@(IsExternal(menu.Href) ? "noopener noreferrer" : null)" data-bs-dismiss="offcanvas">@L[menu.LabelKey]</a>
                 }
                 else
                 {
@@ -138,3 +138,10 @@
         }
     </div>
 </div>
+
+@code {
+    // A top-level nav link is external when its href is an absolute http(s) URL
+    // (e.g. Discover → visitsaudi.com); those open in a new tab with noopener.
+    private static bool IsExternal(string? href) =>
+        href?.StartsWith("http", StringComparison.OrdinalIgnoreCase) == true;
+}
