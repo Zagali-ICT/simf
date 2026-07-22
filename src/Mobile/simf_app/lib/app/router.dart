@@ -605,15 +605,16 @@ Widget _auxScreenFor(BuildContext context, GoRouterState state, _Route r) {
   );
 }
 
-/// Incrementing counter so every page key is unique — Flutter 3.44.5's
-/// `_debugCheckDuplicatedPageKeys` builds a reservation set from existing
-/// overlay routes, and a static key (even a unique one) still collides when
-/// `router.refresh()` triggers `Navigator.didUpdateWidget`.
-var _pageKeyCounter = 0;
-
-/// A page key that is unique for the lifetime of the process.
-String _nextPageKey(String prefix) => '$prefix:${_pageKeyCounter++}';
-
+/// Page keys use go_router's stable [GoRouterState.pageKey] (unique per route
+/// match, stable across `router.refresh()`), so an auth-state refresh re-runs
+/// the redirect gate WITHOUT disposing and recreating every page. An earlier
+/// incrementing-counter key gave every page a new key on each refresh, so a
+/// token proactive-refresh churned all pages — silently dropping in-flight work
+/// on a PUSHED route (e.g. the avatar upload that resumes after the multi-second
+/// liveness, whose caller then read `!mounted`) and reloading screens under it.
+/// go_router disambiguates duplicate locations internally, so `pageKey` does not
+/// collide in Flutter's `_debugCheckDuplicatedPageKeys`.
+///
 /// Builds the go_router instance.
 ///
 /// The redirect logic implements the auth gate (SIMF-MAA-001 §8): a request
@@ -658,7 +659,7 @@ GoRouter buildRouter(Ref ref) {
         name: RouteNames.home,
         path: '/',
         pageBuilder: (context, state) => NoTransitionPage(
-          key: ValueKey(_nextPageKey('shell')),
+          key: state.pageKey,
           child: const SimfAppShell(),
         ),
       ),
@@ -669,7 +670,7 @@ GoRouter buildRouter(Ref ref) {
             name: r.name,
             path: r.path,
             pageBuilder: (context, state) => NoTransitionPage(
-              key: ValueKey(_nextPageKey('route:${r.name}')),
+              key: state.pageKey,
               child: _screenFor(context, state, r),
             ),
           ),
@@ -678,7 +679,7 @@ GoRouter buildRouter(Ref ref) {
           name: r.name,
           path: r.path,
           pageBuilder: (context, state) => NoTransitionPage(
-            key: ValueKey(_nextPageKey('aux:${r.name}')),
+            key: state.pageKey,
             child: _auxScreenFor(context, state, r),
           ),
         ),
