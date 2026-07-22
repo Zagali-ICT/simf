@@ -59,7 +59,7 @@ class ProgrammeDayStrip extends StatelessWidget {
           // Comfortable per-day width (owner 2026-06-30 — the strip was cramped);
           // when the full date range exceeds the width the band scrolls
           // horizontally rather than squeezing every day.
-          const double minCell = 52;
+          const double minCell = SimfTokens.dayStripCellWidth;
           final width = entries.length * minCell + (entries.length - 1) * gap;
           // Guard the unbounded-width case (e.g. if ever placed outside a
           // width-bounded parent) so the Expanded row can't throw.
@@ -166,14 +166,14 @@ class _DayCell extends StatelessWidget {
     final Color weekdayColor;
     if (selected) {
       fill = SimfTokens.navy;
-      numberColor = Colors.white;
-      weekdayColor = Colors.white;
+      numberColor = SimfTokens.surface;
+      weekdayColor = SimfTokens.surface;
     } else if (hasSessions) {
-      fill = Colors.transparent;
+      fill = SimfTokens.transparent;
       numberColor = SimfTokens.navy;
       weekdayColor = isWeekend ? SimfTokens.danger : SimfTokens.navy;
     } else {
-      fill = Colors.transparent;
+      fill = SimfTokens.transparent;
       numberColor = SimfTokens.dayInactive;
       weekdayColor = SimfTokens.dayInactive;
     }

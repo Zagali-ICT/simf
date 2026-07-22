@@ -96,7 +96,7 @@ class _Pill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color fg = selected ? Colors.white : SimfTokens.beigeBorder;
+    final Color fg = selected ? SimfTokens.surface : SimfTokens.beigeBorder;
     final Widget text = Text(
       label,
       textAlign: TextAlign.center,
@@ -109,7 +109,7 @@ class _Pill extends StatelessWidget {
       ),
     );
     return Material(
-      color: selected ? SimfTokens.accent : Colors.transparent,
+      color: selected ? SimfTokens.accent : SimfTokens.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(SimfTokens.radius),
         side: selected

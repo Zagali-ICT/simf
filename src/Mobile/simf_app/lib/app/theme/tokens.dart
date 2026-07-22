@@ -808,4 +808,54 @@ class SimfTokens {
     fontWeight: FontWeight.w500,
     height: 1.5,
   );
+  // sessions (Figma 758:5307+) — seat-map caps / legend swatches / row-label
+  // column / seat corner; the my-seat + header action chip; the day banner +
+  // calendar-strip cell; the meta icon box; type-tab; time rail; seat marker.
+  static const double actionChipHeight = 34; // my-seat + header action chip
+  static const double seatCapDefault = 20; // my-seat seat-square cap
+  static const double seatCapPicker = 26; // seat-picker seat-square cap
+  static const double seatSwatchSm = 14; // my-seat legend swatch
+  static const double seatSwatchLg = 16; // picker + available legend swatch
+  static const double seatRowLabelWidth = 12; // seat-map row-letter column
+  static const double radiusSeat = 3; // seat square / legend swatch corner
+  static const double seatMarkerInner = 20; // reservation seat-marker inner
+  static const double dayBannerHeight = 85; // programme day banner
+  static const double dayStripCellWidth = 52; // programme calendar-day cell
+  static const double metaIconBox = 24; // session-card meta icon box
+  static const double typeTabHeight = 41; // session type-tab cell
+  static const double timeRailMinHeight = 44; // timeline time-rail min height
+  static const double timeRailWidth = 48; // timeline time-rail column width
+  static const double opacityHalf = 0.5; // 50% (resting favourite heart)
+  static const double seatFillOpacity = 0.15; // reservation seat-marker fill
+  static const TextStyle labelBeigeSemiboldLg = TextStyle(
+    color: beigeBorder,
+    fontSize: textLg,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle bodyGold = TextStyle(
+    color: accent,
+    fontSize: textMd,
+  );
+  static const TextStyle labelWhiteSemiboldLgTall = TextStyle(
+    color: surface,
+    fontSize: textLg,
+    fontWeight: FontWeight.w600,
+    height: 1.4,
+  );
+  static const TextStyle labelWhiteExtraboldLg = TextStyle(
+    color: surface,
+    fontSize: textLg,
+    fontWeight: FontWeight.w800,
+  );
+  static const TextStyle labelWhiteBlackLg = TextStyle(
+    color: surface,
+    fontSize: textLg,
+    fontWeight: FontWeight.w900,
+  );
+  static const TextStyle labelGoldMediumTall = TextStyle(
+    color: accent,
+    fontSize: textMd,
+    fontWeight: FontWeight.w500,
+    height: 1.3,
+  );
 }

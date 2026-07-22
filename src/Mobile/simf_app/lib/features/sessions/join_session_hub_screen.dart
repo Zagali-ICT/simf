@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
+import '../../app/theme/app_assets.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../../app/widgets/simf_page_shell.dart';
@@ -89,10 +90,7 @@ class _HubList extends StatelessWidget {
             child: Text(
               l10n.joinHubHint,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: SimfTokens.beigeBorder,
-                fontSize: SimfTokens.textSm,
-              ),
+              style: SimfTokens.labelBeigeSm,
             ),
           );
         }
@@ -143,19 +141,12 @@ class _HubRow extends StatelessWidget {
                 children: <Widget>[
                   Text(
                     title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: SimfTokens.textLg,
-                    ),
+                    style: SimfTokens.labelWhiteSemiboldLg,
                   ),
                   const SizedBox(height: SimfTokens.space1),
                   Text(
                     subtitle,
-                    style: const TextStyle(
-                      color: SimfTokens.beigeBorder,
-                      fontSize: SimfTokens.textSm,
-                    ),
+                    style: SimfTokens.labelBeigeSm,
                   ),
                 ],
               ),
@@ -167,7 +158,7 @@ class _HubRow extends StatelessWidget {
             // (chevron_left carries matchTextDirection, so Flutter flipped it
             // back to pointing right) — SimfSvgIcon never mirrors (D-601).
             const SimfSvgIcon(
-              'assets/icons/ic_back.svg',
+              AppAssets.icBack,
               size: 20,
               color: SimfTokens.beigeBorder,
             ),

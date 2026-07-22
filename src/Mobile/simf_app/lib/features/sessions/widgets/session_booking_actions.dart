@@ -31,7 +31,7 @@ class SessionJoinButton extends StatelessWidget {
     return FilledButton(
       onPressed: busy ? null : onJoin,
       style: FilledButton.styleFrom(
-        minimumSize: const Size.fromHeight(48),
+        minimumSize: const Size.fromHeight(SimfTokens.controlHeight),
         backgroundColor: SimfTokens.accent,
         foregroundColor: SimfTokens.surface,
         shape: RoundedRectangleBorder(
@@ -40,10 +40,7 @@ class SessionJoinButton extends StatelessWidget {
       ),
       child: Text(
         label ?? l10n.joinSessionCta,
-        style: const TextStyle(
-          fontWeight: FontWeight.w700,
-          fontSize: SimfTokens.textLg,
-        ),
+        style: SimfTokens.titleBold,
       ),
     );
   }
@@ -71,11 +68,7 @@ class CancelReservationLink extends StatelessWidget {
         onPressed: busy ? null : onCancel,
         child: Text(
           label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-            fontSize: SimfTokens.textMd,
-          ),
+          style: SimfTokens.labelWhiteSemibold,
         ),
       ),
     );
@@ -111,7 +104,7 @@ class SessionCtaRow extends StatelessWidget {
           child: FilledButton(
             onPressed: onAddToCalendar,
             style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(48),
+              minimumSize: const Size.fromHeight(SimfTokens.controlHeight),
               backgroundColor: SimfTokens.accent,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
@@ -123,7 +116,7 @@ class SessionCtaRow extends StatelessWidget {
                 const Icon(
                   Icons.calendar_today_outlined,
                   size: 24,
-                  color: Colors.white,
+                  color: SimfTokens.surface,
                 ),
                 const SizedBox(width: SimfTokens.space2),
                 Flexible(
@@ -131,11 +124,7 @@ class SessionCtaRow extends StatelessWidget {
                     l10n.addToCalendar,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: SimfTokens.textLg,
-                    ),
+                    style: SimfTokens.labelWhiteBoldLg,
                   ),
                 ),
               ],
@@ -150,7 +139,7 @@ class SessionCtaRow extends StatelessWidget {
             // of the Row, so Size.fromHeight (width = infinity) would force an
             // infinite width and crash layout. The calendar button beside it
             // takes the remaining width via Expanded.
-            minimumSize: const Size(0, 48),
+            minimumSize: const Size(0, SimfTokens.controlHeight),
             padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space6),
             side: const BorderSide(color: SimfTokens.accent),
             shape: RoundedRectangleBorder(
@@ -163,7 +152,7 @@ class SessionCtaRow extends StatelessWidget {
               const Icon(
                 Icons.schedule_outlined,
                 size: 24,
-                color: Colors.white,
+                color: SimfTokens.surface,
               ),
               const SizedBox(width: SimfTokens.space2),
               Flexible(
@@ -171,11 +160,7 @@ class SessionCtaRow extends StatelessWidget {
                   l10n.reminder,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: SimfTokens.textLg,
-                  ),
+                  style: SimfTokens.labelWhiteBoldLg,
                 ),
               ),
             ],

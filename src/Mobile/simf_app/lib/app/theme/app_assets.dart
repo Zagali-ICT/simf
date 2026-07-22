@@ -31,6 +31,11 @@ class AppAssets {
   static const String sessionClock = 'assets/icons/session_clock.svg';
   static const String sessionUsers = 'assets/icons/session_users.svg';
   static const String sessionLocation = 'assets/icons/session_location.svg';
+  static const String heartFilled = 'assets/icons/heart_filled.svg';
+  static const String heartOutline = 'assets/icons/heart_outline.svg';
+  static const String icLocation = 'assets/icons/ic_location.svg';
+  static const String navUser = 'assets/icons/nav_user.svg';
+  static const String icSearch = 'assets/icons/ic_search.svg';
 
   // ── Social (follow-us) ──────────────────────────────────────────────────
   static const String socialX = 'assets/icons/social_x.svg';

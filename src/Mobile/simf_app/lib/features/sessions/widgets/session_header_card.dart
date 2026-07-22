@@ -70,12 +70,7 @@ class SessionHeaderCard extends StatelessWidget {
                   detail.localizedTitle(isArabic),
                   textAlign: TextAlign.start,
                   // Frame 889:2705 — 16px SemiBold white title line.
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: SimfTokens.textLg,
-                    height: 1.4,
-                  ),
+                  style: SimfTokens.labelWhiteSemiboldLgTall,
                 ),
               ),
             ],
@@ -144,7 +139,7 @@ class _HeaderActionButton extends StatelessWidget {
     // tokens (same greying the locked اسأل المحاور / بطاقتي cards use).
     final fg = !enabled
         ? SimfTokens.navyDisabledText
-        : (accented ? SimfTokens.accent : Colors.white);
+        : (accented ? SimfTokens.accent : SimfTokens.surface);
     final borderColor = !enabled
         ? SimfTokens.navyDisabledBorder
         : (accented ? SimfTokens.accent : SimfTokens.beigeBorder);
@@ -155,7 +150,7 @@ class _HeaderActionButton extends StatelessWidget {
         onTap: enabled ? onTap : null,
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
         child: Container(
-          height: 34,
+          height: SimfTokens.actionChipHeight,
           alignment: Alignment.center,
           padding: const EdgeInsets.all(SimfTokens.space2),
           decoration: BoxDecoration(
@@ -192,15 +187,15 @@ class _IndexBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 40,
-      height: 40,
+      width: SimfTokens.mapControlSize,
+      height: SimfTokens.mapControlSize,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: SimfTokens.accent,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusLarge + 2),
+        borderRadius: BorderRadius.circular(SimfTokens.radius14),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
+        padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space1),
         // A two-digit ordinal ("02") shows at full size; a longer fallback code
         // ("S-001" / "S-TODAY") scales down to fit the 40×40 badge instead of
         // overflowing or wrapping.
@@ -211,11 +206,7 @@ class _IndexBadge extends StatelessWidget {
             textDirection: TextDirection.ltr,
             maxLines: 1,
             softWrap: false,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w800,
-              fontSize: SimfTokens.textLg,
-            ),
+            style: SimfTokens.labelWhiteExtraboldLg,
           ),
         ),
       ),
@@ -254,11 +245,7 @@ class _MetaRow extends StatelessWidget {
             '·',
             // Frame 889:2702 — the separator dot is white (#FFFFFF), heavier than
             // the beige time/date items beside it.
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w900,
-              fontSize: SimfTokens.textLg,
-            ),
+            style: SimfTokens.labelWhiteBlackLg,
           ),
           _MetaItem(
             icon: Icons.calendar_today_outlined,
@@ -291,11 +278,7 @@ class _MetaItem extends StatelessWidget {
           // SemiBold (owner 2026-06-30): the time/date numbers read bolder than
           // the frame's Regular. The ambient Directionality is LTR so the time
           // digits read start→end and the icon leads on the left.
-          style: const TextStyle(
-            color: SimfTokens.beigeBorder,
-            fontSize: SimfTokens.textSm,
-            fontWeight: FontWeight.w600,
-          ),
+          style: SimfTokens.labelBeigeSemiboldSm,
         ),
       ],
     );
