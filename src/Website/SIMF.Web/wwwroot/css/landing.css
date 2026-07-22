@@ -109,8 +109,16 @@
 .landing h4,
 .landing p { margin: 0; }
 
-/* Each section caps its own content band at --content-w with margin-inline:auto
-   and pads to the clamped gutter (kept per-section, all token-driven). */
+/* ONE content-column system for every section, so all columns share the same
+   80px edge. The gutter is a clamped token (clamp(16px, 5.5vw, --section-gutter)).
+   Two placements exist, and both resolve the inner content to the SAME edge:
+     A) sections WITHOUT a full-bleed child put the gutter on the SECTION and the
+        inner caps at --content-w  -> content = min(content-w, vw - 2*gutter).
+     B) sections WITH a full-bleed child (hero bg, milestones cards, partners
+        marquee) keep section padding 0 so the child can bleed, and put the gutter
+        INSIDE the inner wrapper; that wrapper caps at (--content-w + 2*gutter) so
+        its content still resolves to min(content-w, vw - 2*gutter) — identical to A.
+   At the 1440 Figma artboard both give 1280 content / 80px gutters (pixel-identical). */
 
 /* reveal-on-scroll. Gated behind .ln-js (added by an inline head script) so
    that WITHOUT JavaScript nothing is ever hidden — every section renders at
@@ -246,8 +254,9 @@
 
 /* sub-nav strip (date / venue / weather) */
 .ln-subnav { background: var(--primary); border-bottom: 1px solid var(--navy); }
-/* cap at the Figma frame width (1440) so the distributed strip does not over-spread past the design on ultra-wide monitors */
-.ln-subnav__inner { display: flex; align-items: center; min-height: 64px; padding-inline: 32px; max-width: 1440px; margin-inline: auto; }
+/* Pattern B: share the page's 80px content edge (was a 1440 cap that left the
+   strip stranded ~200px in from the edge on wide monitors). */
+.ln-subnav__inner { display: flex; align-items: center; min-height: 64px; padding-inline: clamp(16px, 5.5vw, var(--section-gutter)); max-width: calc(var(--content-w) + 2 * var(--section-gutter)); margin-inline: auto; }
 .ln-subnav__info { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; min-width: 0; }
 .ln-subnav__item { display: inline-flex; align-items: center; gap: 12px; color: var(--white); font-size: 20px;
   line-height: 32px; white-space: nowrap; }
@@ -278,7 +287,7 @@
 }
 .ln-hero__overlay { position: absolute; inset: 0; z-index: 1; pointer-events: none;
   background: linear-gradient(180deg, rgba(0, 9, 32, .55) 0%, rgba(0, 9, 32, .12) 42%, rgba(0, 9, 32, .42) 100%); }
-.ln-hero__content { position: relative; z-index: 2; width: 100%; max-width: var(--content-w);
+.ln-hero__content { position: relative; z-index: 2; width: 100%; max-width: calc(var(--content-w) + 2 * var(--section-gutter));
   padding: 128px clamp(16px, 5.5vw, var(--section-gutter)) 40px; display: flex; flex-direction: column;
   align-items: flex-start; text-align: start; gap: 40px; color: var(--white); }
 .ln-hero__title { font-size: 60px; line-height: 72px; font-weight: 700; letter-spacing: -1.2px; }
@@ -381,13 +390,16 @@
 /* ===================== MILESTONES / NEWS TEASER ================== */
 .ln-miles { background: var(--bg-gray); padding: 64px 0 128px; display: flex; flex-direction: column;
   align-items: center; gap: 48px; }
-.ln-miles__head { width: 100%; max-width: var(--content-w); margin-inline: auto; padding-inline: clamp(16px, 5.5vw, 80px);
+.ln-miles__head { width: 100%; max-width: calc(var(--content-w) + 2 * var(--section-gutter)); margin-inline: auto; padding-inline: clamp(16px, 5.5vw, var(--section-gutter));
   display: flex; flex-direction: column; align-items: flex-start; gap: 24px; }
 .ln-miles__titlerow { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 24px; }
 .ln-miles__title { font-size: 32px; font-weight: 800; line-height: 1.2; color: var(--ink); text-align: start; }
 .ln-miles__desc { font-size: 16px; line-height: 24px; color: var(--ink); text-align: start; max-width: 964px; }
-.ln-miles__row { display: flex; width: 100%; max-width: 1440px; margin-inline: auto; justify-content: center; }
-.ln-mcard { flex: 0 0 360px; width: 360px; height: 369px; display: flex; flex-direction: column;
+/* Cards align to the same content column as the head and grow to fill it
+   (Figma packs 4 touching cards across the frame; flex:1 keeps them edge-to-edge
+   at the 80px gutter on any width, and adapts if the milestone count changes). */
+.ln-miles__row { display: flex; width: 100%; max-width: calc(var(--content-w) + 2 * var(--section-gutter)); margin-inline: auto; padding-inline: clamp(16px, 5.5vw, var(--section-gutter)); }
+.ln-mcard { flex: 1 1 0; min-width: 0; height: 369px; display: flex; flex-direction: column;
   border: 1px solid #e0e0e0; background: #fafafa; overflow: hidden; }
 .ln-mcard__img { flex: 0 0 259px; position: relative; background-size: cover; background-position: center;
   transition: flex-basis .45s ease; }
@@ -583,7 +595,7 @@
 
 /* ========================== PARTNERS BAND ======================= */
 .ln-pband { background: var(--bg-gray); padding-block: 40px; display: flex; flex-direction: column; gap: 32px; }
-.ln-pband__head { max-width: var(--content-w); margin-inline: auto; width: 100%; padding-inline: clamp(16px, 5.5vw, 80px); display: flex; flex-direction: column; align-items: flex-start; gap: 24px; }
+.ln-pband__head { max-width: calc(var(--content-w) + 2 * var(--section-gutter)); margin-inline: auto; width: 100%; padding-inline: clamp(16px, 5.5vw, var(--section-gutter)); display: flex; flex-direction: column; align-items: flex-start; gap: 24px; }
 .ln-pband__title { font-size: 32px; font-weight: 800; line-height: 1.2; color: var(--ink); text-align: start; }
 .ln-pband__desc { font-size: 16px; line-height: 24px; color: var(--ink); text-align: start; }
 .ln-pband__strip { overflow-x: auto; scrollbar-width: none; }
@@ -594,7 +606,7 @@
 .ln-pcard__logo { height: 238px; display: grid; place-items: center; padding: 32px; background: #fff; }
 .ln-pcard__logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
 .ln-pcard__label { min-height: 88px; background: #fafafa; border-top: 1px solid #e0e0e0; display: grid; place-items: center; padding: 13px; font-size: 22px; font-weight: 600; color: #212121; text-align: center; }
-.ln-pband__bar { max-width: var(--content-w); margin-inline: auto; width: 100%; padding: 16px clamp(16px, 5.5vw, 80px); }
+.ln-pband__bar { max-width: calc(var(--content-w) + 2 * var(--section-gutter)); margin-inline: auto; width: 100%; padding: 16px clamp(16px, 5.5vw, var(--section-gutter)); }
 .ln-pband__rail { height: 6px; background: rgba(0, 0, 0, .1); border-radius: 10px; position: relative; }
 .ln-pband__thumb { position: absolute; inset-inline-start: 0; top: 0; height: 6px; width: 200px; background: var(--gold); border-radius: 10px; }
 
