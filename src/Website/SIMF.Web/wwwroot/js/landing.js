@@ -261,11 +261,21 @@
      keeps its .ln-reveal blocks hidden (opacity:0) and its interactions unwired
      until a manual reload. Re-run after every enhanced load; firstInit() keeps the
      preserved shared header from being wired twice. */
+  function onEnhancedLoad() {
+    // Enhanced nav also morphs a fresh #ln-loader (without is-gone) back into the
+    // DOM, and window 'load' never refires — so without this the splash covers the
+    // navigated-to page at z-index 99999 and blocks all interaction. Hide it
+    // instantly (no fade on a client-side nav), then re-wire the page interactions.
+    var loader = document.getElementById('ln-loader');
+    if (loader) { loader.style.transition = 'none'; loader.classList.add('is-gone'); }
+    run();
+  }
+
   var enhancedHooked = false;
   function hookEnhancedNav() {
     if (enhancedHooked) { return true; }
     if (window.Blazor && typeof window.Blazor.addEventListener === 'function') {
-      window.Blazor.addEventListener('enhancedload', run);
+      window.Blazor.addEventListener('enhancedload', onEnhancedLoad);
       enhancedHooked = true;
       return true;
     }
