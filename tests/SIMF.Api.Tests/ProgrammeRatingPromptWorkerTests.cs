@@ -143,6 +143,70 @@ public sealed class ProgrammeRatingPromptWorkerTests : IClassFixture<SimfApiFact
             "The end-of-programme marker must be committed before dispatch so a restart cannot re-fire.");
     }
 
+    [Fact]
+    public async Task Day_scan_sends_nothing_when_the_Day_rating_type_is_deactivated_in_the_CP()
+    {
+        // Owner: the day rating prompt must be CP-controllable. Deactivating the
+        // "Day" rating type in RatingConfig silences the day prompt and does not
+        // stamp the day, so re-enabling later resumes it.
+        await DeactivateExistingDaysAsync();
+        var now = DateTimeOffset.UtcNow;
+        var start = now.AddHours(-3);
+        var end = now.AddHours(-2);
+        var dayDate = DateOnly.FromDateTime(start.ToOffset(Ast).DateTime);
+        var dayId = await SeedDayWithSessionAsync(dayDate, start, end);
+        var checkedIn = await SeedApprovedVisitorAsync();
+        await SeedProfileWithScanAsync(checkedIn, scanUtc: start);
+
+        await SetRatingTypeActiveAsync("Day", false);
+        try
+        {
+            var prompted = await RunDayScanAsync(now);
+            Assert.Equal(0, prompted);
+            Assert.Equal(0, await CountAsync(NotificationKind.DayRatingRequest, checkedIn, dayId));
+
+            using var scope = _factory.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var day = await db.ProgrammeDays.SingleAsync(d => d.Id == dayId);
+            Assert.Null(day.RatingPromptSentUtc); // not stamped -> re-enabling resumes
+        }
+        finally
+        {
+            await SetRatingTypeActiveAsync("Day", true);
+        }
+    }
+
+    [Fact]
+    public async Task Program_end_scan_skips_a_deactivated_overall_rating_type()
+    {
+        // Owner: each overall rating is CP-controllable. Deactivating "App" in
+        // RatingConfig drops it from the end-of-programme trio; Event + Exhibition
+        // still fire.
+        await DeactivateExistingDaysAsync();
+        await ClearProgramEndMarkerAsync();
+        var now = DateTimeOffset.UtcNow;
+        var start = now.AddHours(-3);
+        var end = now.AddHours(-2);
+        var lastDate = DateOnly.FromDateTime(start.ToOffset(Ast).DateTime);
+        await SeedDayWithSessionAsync(lastDate, start, end);
+        var checkedIn = await SeedApprovedVisitorAsync();
+        await SeedProfileWithScanAsync(checkedIn, scanUtc: start);
+
+        await SetRatingTypeActiveAsync("App", false);
+        try
+        {
+            var fired = await RunProgramEndScanAsync(now);
+            Assert.True(fired);
+            Assert.Equal(1, await CountAsync(NotificationKind.EventRatingRequest, checkedIn, null));
+            Assert.Equal(1, await CountAsync(NotificationKind.ExhibitionRatingRequest, checkedIn, null));
+            Assert.Equal(0, await CountAsync(NotificationKind.AppRatingRequest, checkedIn, null));
+        }
+        finally
+        {
+            await SetRatingTypeActiveAsync("App", true);
+        }
+    }
+
     // -- Runners ---------------------------------------------------------------
 
     /// <summary>A dispatcher that, on the first notification, reads the global
@@ -366,5 +430,16 @@ public sealed class ProgrammeRatingPromptWorkerTests : IClassFixture<SimfApiFact
             db.SystemSettings.RemoveRange(rows);
             await db.SaveChangesAsync();
         }
+    }
+
+    // Flips a seeded rating type active/inactive — the CP RatingConfig toggle the
+    // prompt workers now honour.
+    private async Task SetRatingTypeActiveAsync(string code, bool active)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var type = await db.RatingTypes.SingleAsync(t => t.Code == code);
+        type.IsActive = active;
+        await db.SaveChangesAsync();
     }
 }

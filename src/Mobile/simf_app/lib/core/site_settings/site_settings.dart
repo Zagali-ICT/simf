@@ -11,6 +11,7 @@ class SiteSettings {
     required this.registrationMessageEn,
     required this.social,
     this.partnerDirectoryEnabled = true,
+    this.sessionRatingEnabled = true,
   });
 
   final String registrationMessageAr;
@@ -20,6 +21,11 @@ class SiteSettings {
   /// Build #13 — the CP switch for the "Meet People Like You" partner directory.
   /// Defaults to true (fail-open) while loading / on error / on an older payload.
   final bool partnerDirectoryEnabled;
+
+  /// 2026-07-22 — the CP RatingConfig "Session" rating-type toggle. When false the
+  /// app suppresses the after-watch rate prompt. Defaults to true (fail-open) while
+  /// loading / on error / on an older payload.
+  final bool sessionRatingEnabled;
 
   /// The welcome message for [languageCode] ('ar' → Arabic, else English).
   String messageFor(String languageCode) =>
@@ -36,6 +42,8 @@ class SiteSettings {
         ),
         partnerDirectoryEnabled:
             json['partnerDirectoryEnabled'] as bool? ?? true,
+        sessionRatingEnabled:
+            json['sessionRatingEnabled'] as bool? ?? true,
       );
 }
 

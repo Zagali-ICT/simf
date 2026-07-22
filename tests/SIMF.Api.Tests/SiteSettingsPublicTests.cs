@@ -89,4 +89,36 @@ public sealed class SiteSettingsPublicTests : IClassFixture<SimfApiFactory>
             .ReadFromJsonAsync<ApiResult<SiteSettingsResponse>>())!;
         Assert.Null(body.Data!.Social.YouTube);
     }
+
+    [Fact]
+    public async Task GET_reflects_the_CP_Session_rating_toggle_in_sessionRatingEnabled()
+    {
+        // The seeded "Session" rating type is active by default → the app-facing
+        // flag reads true; deactivating it in the CP flips the flag to false so the
+        // app suppresses the after-watch rate prompt.
+        var enabled = (await (await _client.GetAsync("/api/v1/app/site-settings"))
+            .Content.ReadFromJsonAsync<ApiResult<SiteSettingsResponse>>())!;
+        Assert.True(enabled.Data!.SessionRatingEnabled);
+
+        await SetSessionRatingActiveAsync(false);
+        try
+        {
+            var disabled = (await (await _client.GetAsync("/api/v1/app/site-settings"))
+                .Content.ReadFromJsonAsync<ApiResult<SiteSettingsResponse>>())!;
+            Assert.False(disabled.Data!.SessionRatingEnabled);
+        }
+        finally
+        {
+            await SetSessionRatingActiveAsync(true);
+        }
+    }
+
+    private async Task SetSessionRatingActiveAsync(bool active)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var type = await db.RatingTypes.SingleAsync(t => t.Code == "Session");
+        type.IsActive = active;
+        await db.SaveChangesAsync();
+    }
 }
