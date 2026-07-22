@@ -243,36 +243,10 @@
             <div class="ln-pband__bar"><div class="ln-pband__rail"><span class="ln-pband__thumb"></span></div></div>
         </section>
 
-        @* ====================== SPONSORS CAROUSEL ======================= *@
-        <section class="ln-spon">
-            <div class="ln-spon__inner ln-reveal">
-                <div class="ln-spon__head">
-                    <div class="ln-spon__titlerow">
-                        <h2 class="ln-spon__title">@L["Landing.Sponsors.Title"]</h2>
-                        <button type="button" class="ln-btn ln-btn--outline">@L["Landing.Sponsors.ViewAll"]</button>
-                    </div>
-                    <p class="ln-spon__desc">@L["Landing.Sponsors.Desc"]</p>
-                </div>
-                <div class="ln-spon__carousel">
-                    <button type="button" class="ln-spon__arrow" aria-label="@L["Landing.Sponsors.Prev"]"><img src="assets/figma/sponsors/icon-arrow-left.svg" alt="" /></button>
-                    <div class="ln-spon__viewport">
-                        <div class="ln-spon__track">
-                            @foreach (var sp in Sponsors)
-                            {
-                                <div class="ln-scard2">
-                                    <img class="ln-scard2__icon" src="assets/figma/sponsors/icon-external-link.svg" alt="" />
-                                    <div class="ln-scard2__col">
-                                        <img class="ln-scard2__logo" src="@sp.Logo" alt="@sp.Tag.For(rtl)" />
-                                        <span class="ln-scard2__tag">@sp.Tag.For(rtl)</span>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    </div>
-                    <button type="button" class="ln-spon__arrow" aria-label="@L["Landing.Sponsors.Next"]"><img src="assets/figma/sponsors/icon-arrow-right.svg" alt="" /></button>
-                </div>
-            </div>
-        </section>
+        @* ====================== SPONSORS MARQUEE ======================= *@
+        @* Live backend roster in the shared marquee; the landing offers a "view
+           all" jump to the dedicated /partners listing. Hidden when empty. *@
+        <SponsorsMarquee Items="SponsorItems" ViewAllHref="/partners" />
 
         @* ========================= NEWS & ARTICLES ====================== *@
         <section class="ln-news" id="news">

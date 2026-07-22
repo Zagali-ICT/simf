@@ -5,9 +5,10 @@
  *   1. Page-loader fade-out on window load.
  *   2. Reveal-on-scroll for .ln-reveal blocks (IntersectionObserver).
  *   3. Search drop-panel toggle.
- *   4. Sponsors carousel: prev/next arrows scroll the (static) sponsor strip.
  *   5. Hero video paused while off-screen (saves decode CPU/battery).
  *   6. Theme explorer: vertical tabs switch the visible theme panel.
+ *   7. Programme agenda: day strip + type filter.
+ * (The sponsors marquee is pure CSS now — no JS; see landing.css .ln-spon__track.)
  */
 (function () {
   'use strict';
@@ -59,19 +60,6 @@
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && panel.classList.contains('is-open')) { setOpen(false); toggle.focus(); }
     });
-  }
-
-  /* ---- 4. sponsors carousel: prev/next arrows scroll the strip ---------- */
-  function initSponsors() {
-    var vp = document.querySelector('.ln-spon__viewport');
-    var carousel = document.querySelector('.ln-spon__carousel');
-    if (!vp || !carousel) { return; }
-    var arrows = carousel.querySelectorAll('.ln-spon__arrow');
-    if (arrows.length < 2) { return; }
-    var step = 259; // one sponsor card (243px) + gap (16px)
-    // carousel is forced LTR (see landing.css): standard scrollLeft, so prev = -step (left/back), next = +step (right/advance).
-    arrows[0].addEventListener('click', function () { vp.scrollBy({ left: -step, behavior: 'smooth' }); });
-    arrows[1].addEventListener('click', function () { vp.scrollBy({ left: step, behavior: 'smooth' }); });
   }
 
   /* ---- 5. hero video: pause while off-screen ---------------------------- */
@@ -155,7 +143,7 @@
     root.classList.add('is-enhanced');
   }
 
-  function run() { initReveal(); initSearch(); initSponsors(); initHeroVideo(); initThemeTabs(); initAgenda(); }
+  function run() { initReveal(); initSearch(); initHeroVideo(); initThemeTabs(); initAgenda(); }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', run);
   } else {

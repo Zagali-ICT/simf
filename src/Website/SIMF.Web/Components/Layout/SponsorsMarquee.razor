@@ -1,0 +1,50 @@
+@* Shared sponsors band for the public "ln-" pages (the landing + /partners): a
+   continuous logo marquee of the LIVE backend roster (SponsorsFeed). Renders
+   nothing when the roster is empty, so an unseeded or unreachable sponsors list
+   never ships a placeholder. Bilingual via the shared LocalizedText.Rtl. *@
+@inject IStringLocalizer<Strings> L
+
+@if (Items.Count > 0)
+{
+    <section class="ln-spon" aria-label="@L["Landing.Sponsors.Title"]">
+        <div class="ln-spon__inner ln-reveal">
+            <div class="ln-spon__head">
+                <div class="ln-spon__titlerow">
+                    <h2 class="ln-spon__title">@L["Landing.Sponsors.Title"]</h2>
+                    @if (!string.IsNullOrEmpty(ViewAllHref))
+                    {
+                        <a href="@ViewAllHref" class="ln-btn ln-btn--outline">@L["Landing.Sponsors.ViewAll"]</a>
+                    }
+                </div>
+                <p class="ln-spon__desc">@L["Landing.Sponsors.Desc"]</p>
+            </div>
+            <div class="ln-spon__marquee">
+                <div class="ln-spon__track">
+                    @* Rendered twice for the seamless -50% loop; the 2nd pass is
+                       decorative (hidden from assistive tech). *@
+                    @for (var pass = 0; pass < 2; pass++)
+                    {
+                        @foreach (var sp in Items)
+                        {
+                            <div class="ln-scard2" aria-hidden="@(pass == 1 ? "true" : null)">
+                                <span class="ln-scard2__name">@sp.Name.For(Rtl)</span>
+                                <span class="ln-scard2__tag">@sp.Tier.For(Rtl)</span>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
+}
+
+@code {
+    /// <summary>The live sponsor roster (from SponsorsFeed). An empty list renders
+    /// nothing.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<SponsorCard> Items { get; set; } = [];
+
+    /// <summary>Optional "view all" CTA target. The landing points at /partners;
+    /// the dedicated /partners page omits it (it IS the full listing) by leaving
+    /// this null.</summary>
+    [Parameter] public string? ViewAllHref { get; set; }
+}
