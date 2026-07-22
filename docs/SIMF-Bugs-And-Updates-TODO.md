@@ -34,7 +34,7 @@ _Done (6), shipped to PR: #10 `feat/bulk-badge-email`, #32 `feat/cp-team-roles`,
 ## A. APP (Flutter mobile)
 
 **P1 — bugs / blocking**
-- [ ] **#9** — Biometric / Face ID login not working; logic incorrect. _(= #25)_
+- [x] **#9** — Biometric / Face ID login not working; logic incorrect. _(= #25)_ **DONE (owner-confirmed 2026-07-22)** — biometric works; implemented under D-737/738; the earlier failures were prod 5xx infra, not app logic.
 - [ ] **#12** — Face-capture left/right swapped on **Android** (iOS fine): fix Android turn direction + correct prompt image. _(= #26)_
 - [ ] **#17** — Session join + seat mechanism: two cases (register-to-attend / join+pick-seat), **no approval**, auto-cancel 3 min before start, session **check-in + check-out**.
 - [ ] **#18** — "الانضمام إلى الجلسة" (Join session) button does nothing.
@@ -192,7 +192,7 @@ confirm**, not a broken model.
 | # | Type | Priority | Area | Title | Status |
 |---|------|----------|------|-------|--------|
 | 8 | ✨ Update | P1 | Whole system | Store & handle **all** times in Saudi local time (AST, UTC+3) — no UTC | ☐ Open |
-| 9 | 🐞 Bug | P1 | App / Auth | Biometric login not working / logic incorrect | ☐ Open |
+| 9 | 🐞 Bug | P1 | App / Auth | Biometric login not working / logic incorrect | ✅ Done |
 | 10 | ✨ Feature | P1 | CP / Badges | Bulk profile + badge (QR) generation page, no user account attached | ☐ Open |
 
 ---
@@ -222,7 +222,7 @@ confirm**, not a broken model.
   3. What actually happens — no prompt, prompt then error, wrong user, loops, silent fail? Exact on-screen/toast text.
   4. Expected behaviour in your words.
 - **Proposed next step:** once the flow is identified, trace `simf_app` biometric service + the device-key / token exchange end-to-end, state root cause, then propose a fix (no code until approved).
-- **Status:** ☐ Open
+- **Status:** ✅ Done — owner-confirmed 2026-07-22; biometric is working. Implemented under D-737/738 (badge-QR login + banking-style biometric); the earlier failures were prod 5xx infra (502/504), not app logic. Closed together with #25.
 
 ### [#10] Bulk profile + badge (QR) generation page
 - **Type:** ✨ Feature · **Priority:** P1 · **Area:** CP / Badges / Email
@@ -435,7 +435,7 @@ confirm**, not a broken model.
 | 22 | ✨ Update | P2 | App / Sign-up | `sign_up_visitor_screen` category section — update UI | ☐ Open |
 | 23 | ✨ Update | P2 | App / Sessions | Session summary logic update (Home Sessions + Summary buttons stay as-is) | ☐ Open |
 | 24 | ✨ Update | P1 | App / CP / Identity | User can update email (also fixes CP new-account typos) | ☐ Open |
-| 25 | 🐞 Bug | P1 | App / Auth | Activate Face biometric (Face ID) — cross-ref #9 | ☐ Open |
+| 25 | 🐞 Bug | P1 | App / Auth | Activate Face biometric (Face ID) — cross-ref #9 | ✅ Done |
 | 26 | 🐞 Bug | P1 | App / Sign-up | Face-capture device-type detection + correct turn image — cross-ref #12 | ☐ Open |
 | 27 | 🐞 Bug | P2 | App / Live | Video > 30 min: session-extension alert must NOT appear | ☐ Open |
 | 34 | 🐞 Bug | P2 | App / Speakers | Speaker job title shows English regardless of app language | ☐ Open |
@@ -468,7 +468,7 @@ confirm**, not a broken model.
 
 ### [#25] Activate Face biometric (Face ID) — see #9
 - **Requirement:** "التأكد من تفعيل بصمة الوجه" / "Face ID is not working." Same as **#9** (biometric login broken). Track the fix under #9; this row is the owner's explicit call-out.
-- **Status:** ☐ Open
+- **Status:** ✅ Done — closed together with #9 (owner-confirmed 2026-07-22).
 
 ### [#26] Face-capture device-type + correct turn image — see #12
 - **Requirement:** detect device type on selfie capture and show the correct "turn right / turn left" prompt image. Same as **#12** (Android direction). Track the fix under #12.
