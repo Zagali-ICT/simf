@@ -79,8 +79,22 @@ Row actions (active batches only, gated `Visitors.ViewBatches`): **Re-email QR p
   customer (RSNF) needs a **paid QuestPDF licence** before go-live. Owner chose
   QuestPDF over the MIT alternative (PDFsharp) on 2026-07-22, accepting this.
 
+## Self-claim (#10 Phase 4, Option A)
+
+When the person who receives a badge scans + activates it (`badge_activation_screen`
+→ `CompleteActivationAsync` sets their first password + attaches their email) and then
+signs in, the placeholder profile is completed by the person, not left as
+`{Type} #N` / `NationalityId = 0`. This needs **no new code**: a bulk-badge placeholder
+has no interests and no ID image, so `IsProfileCompleteAsync` is `false`, and the
+existing D-374 `routeAfterAuth` rule force-routes any signed-in user with
+`profileComplete = false` into the add-profile stage (`signUpVisitor`). Saving the real
+profile replaces the placeholder display name (D-609). Pinned by
+`DelegatesAndBulkBadgesTests.Bulk_generated_badge_profile_is_incomplete_so_self_claim_prompts_the_profile_stage`.
+
 ## Changelog
 
+- **2026-07-22 (#10 Phase 4, Option A)** — documented + test-pinned that badge
+  self-claim rides the existing D-374 profile-completion flow (no new code).
 - **2026-07-22 (D-759, #10 Phase 3)** — the emailed pack (bulk-generate + re-email)
   now attaches a QuestPDF contact-sheet PDF beside the ZIP. Licence follow-up flagged.
 - **2026-07-22 (D-758, #10 Phase 2)** — page created. Persisted `BadgeBatch` +

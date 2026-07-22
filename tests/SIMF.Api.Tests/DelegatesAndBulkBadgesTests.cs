@@ -461,6 +461,36 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
+    [Fact]
+    public async Task Bulk_generated_badge_profile_is_incomplete_so_self_claim_prompts_the_profile_stage()
+    {
+        // #10 Phase 4 (Option A) — the self-claim capture is delivered by the existing
+        // D-374 flow with NO new code: a bulk-badge placeholder has no interests and no
+        // ID image, so IsProfileCompleteAsync is false. When the badge holder activates
+        // (sets a password) and signs in, /app/users/me returns profileComplete=false
+        // and the app's routeAfterAuth forces the add-profile stage. This pins that
+        // the placeholder is genuinely flagged incomplete.
+        var admin = await CreateAdministratorAndSignInAsync();
+        var typeId = await FreshVisitorProfileTypeAsync();
+        await PostAuthAsync(
+            "/api/v1/admin/visitors/bulk-generate",
+            new AdminBulkGenerateBadgesRequest
+            {
+                Batches = new List<BulkBadgeBatch> { new() { ProfileTypeId = typeId, Count = 1 } },
+            },
+            admin);
+
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var userId = await appDb.UserProfiles
+            .Where(p => p.ProfileTypeId == typeId)
+            .Select(p => p.UserId)
+            .FirstAsync();
+        var profiles = scope.ServiceProvider
+            .GetRequiredService<SIMF.Application.IdentityAccess.IUserProfileService>();
+        Assert.False(await profiles.IsProfileCompleteAsync(userId));
+    }
+
     private async Task<Guid> BatchIdForTypeAsync(Guid profileTypeId)
     {
         using var scope = _factory.Services.CreateScope();
