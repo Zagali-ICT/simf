@@ -9,6 +9,7 @@ import 'package:video_player/video_player.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/localization/locale_controller.dart';
 import '../../app/route_names.dart';
+import '../../app/theme/app_assets.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_logo.dart';
 import 'widgets/onboarding_background.dart';
@@ -18,9 +19,9 @@ import 'widgets/onboarding_top_bar.dart';
 // D-373 — one looping, muted background video per step. The same hero clip
 // ships as all three placeholders; the owner replaces 02/03 in place later.
 const List<String> _videoAssets = <String>[
-  'assets/videos/onboard_01.mp4',
-  'assets/videos/onboard_02.mp4',
-  'assets/videos/onboard_03.mp4',
+  AppAssets.onboardVideo1,
+  AppAssets.onboardVideo2,
+  AppAssets.onboardVideo3,
 ];
 
 /// Page 002 — التهيئة · Onboarding (first-run only). The KSA-Project Figma
@@ -175,11 +176,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   onBack: _onBack,
                   onToggleLanguage: _toggleLanguage,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: SimfTokens.space2),
                 const SimfLogo(size: 136),
-                const SizedBox(height: 40),
+                const SizedBox(height: SimfTokens.space10),
                 SizedBox(
-                  height: 170,
+                  height: SimfTokens.onboardCarouselHeight,
                   child: PageView.builder(
                     controller: _pageController,
                     itemCount: _stepCount,
@@ -189,7 +190,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       unawaited(_loadVideo(i));
                     },
                     itemBuilder: (context, i) => Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: SimfTokens.space6,
+                      ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
@@ -198,23 +201,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                             // three steps (148:22 / 159:943 / 159:1053).
                             l10n.onboardingTitle1,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.w600,
-                              height: 1.5,
-                            ),
+                            style: SimfTokens.labelWhiteSemibold24Tall,
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: SimfTokens.space3),
                           Flexible(
                             child: Text(
                               bodies[i],
                               textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                color: SimfTokens.beigeBorder,
-                                fontSize: 18,
-                                height: 1.5,
-                              ),
+                              style: SimfTokens.bodyBeigeTitleTall,
                             ),
                           ),
                         ],
@@ -222,28 +216,27 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: SimfTokens.space6),
                 OnboardingDots(count: _stepCount, activeIndex: _index),
                 const Spacer(),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: SimfTokens.space4,
+                  ),
                   child: FilledButton(
                     onPressed: _onNext,
                     child: Text(
                       l10n.onboardingNext,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: SimfTokens.titleBold,
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: SimfTokens.space4),
                 // تخطي sits under the primary action, centered, on every step
                 // but the last — Figma 758:1077 (node 758:1091). A matching
                 // spacer holds the last step steady when the link is gone.
                 if (isLast)
-                  const SizedBox(height: 48)
+                  const SizedBox(height: SimfTokens.controlHeight)
                 else
                   TextButton(
                     onPressed: _onSkip,
@@ -252,13 +245,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     ),
                     child: Text(
                       l10n.onboardingSkip,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: SimfTokens.titleSemibold,
                     ),
                   ),
-                const SizedBox(height: 16),
+                const SizedBox(height: SimfTokens.space4),
               ],
             ),
           ),

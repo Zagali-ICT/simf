@@ -24,7 +24,7 @@ class OnboardingDots extends StatelessWidget {
         for (int i = 0; i < count; i++)
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            margin: const EdgeInsets.symmetric(horizontal: 4),
+            margin: const EdgeInsets.symmetric(horizontal: SimfTokens.space1),
             width: i == activeIndex ? 32 : 16,
             height: 8,
             decoration: BoxDecoration(

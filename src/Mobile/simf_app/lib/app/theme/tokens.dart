@@ -167,6 +167,7 @@ class SimfTokens {
   static const double newsThumbWidth = 155; // news card thumbnail tile (Figma 958:2202)
   static const double newsThumbHeight = 85; // news card thumbnail tile (Figma 958:2202)
   static const double partnerCardAspectRatio = 163.5 / 104; // media-partners grid tile (Figma 958:2246)
+  static const double onboardCarouselHeight = 170; // onboarding step carousel viewport (Figma 148:22)
   static const double statsStripHeight = 100; // delegations decorative stats-strip map (Figma 1426:10781)
   static const double mapControlSize = 40; // venue-map floating zoom/locate control square (Figma 758:1358)
   static const double tapTarget = 44; // minimum touch-target height — venue-map direct-me button (Figma 758:1358)
@@ -549,5 +550,10 @@ class SimfTokens {
     color: navyDeep,
     fontSize: textSm,
     fontWeight: FontWeight.w700,
+  );
+  // onboarding (Figma 148:22) — colourless Skip-button label.
+  static const TextStyle titleSemibold = TextStyle(
+    fontSize: textLg,
+    fontWeight: FontWeight.w600,
   );
 }
