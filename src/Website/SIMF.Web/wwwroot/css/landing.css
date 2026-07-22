@@ -71,7 +71,11 @@
   --radius-full: 999px;
   --shadow-card: 0 2px 10px rgba(76, 78, 100, .12);
   /* layout */
-  --content-w: 1280px;
+  /* Content band cap. At the 1440 Figma artboard the section gutters (80px) bind,
+     so content is 1280 (pixel-identical to Figma). On wider screens the content
+     grows to fill viewport-minus-gutters up to this cap, so the side margins stay
+     ~80px instead of ballooning (they used to at the old 1280 cap). */
+  --content-w: 1760px;
   --section-gutter: 80px;
   --landing-font: 'Almarai', system-ui, 'Segoe UI', Tahoma, sans-serif;
 
@@ -264,10 +268,10 @@
   object-fit: cover; pointer-events: none;
   /* Subtle Ken-Burns drift so the still Figma hero has life without a heavy
      video; starts at scale 1.04 so an edge is never exposed (the hero clips). */
-  transform-origin: 50% 50%; animation: ln-heropan 26s ease-in-out infinite alternate; }
+  transform-origin: 50% 50%; animation: ln-heropan 20s ease-in-out infinite alternate; }
 @keyframes ln-heropan {
-  from { transform: scale(1.04); }
-  to   { transform: scale(1.12) translate3d(-1.4%, -1%, 0); }
+  from { transform: scale(1.06) translate3d(0, 0, 0); }
+  to   { transform: scale(1.18) translate3d(-2.4%, -1.6%, 0); }
 }
 @media (prefers-reduced-motion: reduce) {
   .ln-hero__bg { animation: none; transform: none; }
