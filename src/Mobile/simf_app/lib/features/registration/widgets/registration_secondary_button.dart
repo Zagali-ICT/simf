@@ -23,7 +23,7 @@ class RegistrationSecondaryButton extends StatelessWidget {
       height: 48,
       width: double.infinity,
       child: Material(
-        color: Colors.transparent,
+        color: SimfTokens.transparent,
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
         child: InkWell(
           onTap: onTap,

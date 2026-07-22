@@ -10,6 +10,7 @@ import '../../app/widgets/simf_page_shell.dart';
 import '../contacts/widgets/contact_card.dart';
 import 'data/exhibitor_models.dart';
 import 'data/exhibitor_repository.dart';
+import 'widgets/exhibitor_centered.dart';
 
 /// D-426 — زواري / My Visitors. The exhibitor's ("Other" profile type) captured
 /// visitors: everyone they scanned at their booth, newest first, each with the
@@ -78,7 +79,7 @@ class _MyVisitorsScreenState extends ConsumerState<MyVisitorsScreen> {
       return const Center(child: CircularProgressIndicator());
     }
     if (_forbidden) {
-      return _Centered(text: l10n.scanVisitorForbidden);
+      return ExhibitorCentered(text: l10n.scanVisitorForbidden);
     }
     if (_error) {
       return SimfErrorState(
@@ -88,7 +89,7 @@ class _MyVisitorsScreenState extends ConsumerState<MyVisitorsScreen> {
       );
     }
     if (_visitors.isEmpty) {
-      return _Centered(text: l10n.myVisitorsEmpty);
+      return ExhibitorCentered(text: l10n.myVisitorsEmpty);
     }
     final isArabic = l10n.isArabic;
     return SimfPullToRefresh(
@@ -112,26 +113,6 @@ class _MyVisitorsScreenState extends ConsumerState<MyVisitorsScreen> {
             internationalMobile: card.internationalMobile,
           );
         },
-      ),
-    );
-  }
-}
-
-class _Centered extends StatelessWidget {
-  const _Centered({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space6),
-        child: Text(
-          text,
-          textAlign: TextAlign.center,
-          style: const TextStyle(color: SimfTokens.beigeBorder),
-        ),
       ),
     );
   }

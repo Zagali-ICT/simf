@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/localization/app_l10n.dart';
+import '../../../app/theme/tokens.dart';
 import '../../../core/widgets/simf_radio_pill.dart';
 import '../data/profile_models.dart';
 
@@ -31,7 +32,7 @@ class GenderPillsField extends StatelessWidget {
             textDirection: TextDirection.rtl,
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: SimfTokens.space2),
         Expanded(
           child: SimfRadioPill(
             label: l10n.genderFemale,

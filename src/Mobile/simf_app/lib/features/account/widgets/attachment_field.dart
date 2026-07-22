@@ -45,22 +45,22 @@ class AttachmentField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         SimfFieldLabel(label),
-        const SizedBox(height: 8),
+        const SizedBox(height: SimfTokens.space2),
         if (hintText != null) ...<Widget>[
           Text(
             hintText!,
             style: TextStyle(
               color: hintDanger ? SimfTokens.danger : SimfTokens.greyText,
-              fontSize: 12,
+              fontSize: SimfTokens.textSm,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: SimfTokens.space2),
         ],
         if (data == null)
           _AttachBox(label: attachLabel, icon: attachIcon, onTap: onAttach)
         else
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(SimfTokens.space2),
             decoration: BoxDecoration(
               border: Border.all(color: SimfTokens.beigeBorder),
               borderRadius: SimfTokens.borderRadiusSmall,
@@ -86,14 +86,14 @@ class AttachmentField extends StatelessWidget {
                       fit: BoxFit.cover,
                     ),
                   ),
-                const SizedBox(width: 12),
+                const SizedBox(width: SimfTokens.space3),
                 Expanded(
                   child: Text(
                     attachedName,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: SimfTokens.inputInk,
-                      fontSize: 14,
+                      fontSize: SimfTokens.textMd,
                     ),
                   ),
                 ),
@@ -144,12 +144,12 @@ class _AttachBox extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               Icon(icon, size: 24, color: SimfTokens.accent),
-              const SizedBox(width: 8),
+              const SizedBox(width: SimfTokens.space2),
               Text(
                 label,
                 style: const TextStyle(
                   color: SimfTokens.inputInk,
-                  fontSize: 14,
+                  fontSize: SimfTokens.textMd,
                   fontWeight: FontWeight.w500,
                 ),
               ),

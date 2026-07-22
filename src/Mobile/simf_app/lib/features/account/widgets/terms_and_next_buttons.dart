@@ -39,7 +39,7 @@ class TermsAndNextButtons extends StatelessWidget {
             child: Text(
               l10n.termsAgreeQuestion,
               style: const TextStyle(
-                fontSize: 14,
+                fontSize: SimfTokens.textMd,
                 fontWeight: FontWeight.w600,
                 decoration: TextDecoration.underline,
                 // The frame underlines in navySurface, not the navy foreground
@@ -49,7 +49,7 @@ class TermsAndNextButtons extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: SimfTokens.space6),
         FilledButton(
           onPressed: busy ? null : onNext,
           child: busy
@@ -58,13 +58,13 @@ class TermsAndNextButtons extends StatelessWidget {
                   width: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white,
+                    color: SimfTokens.surface,
                   ),
                 )
               : Text(
                   l10n.nextLabel,
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: SimfTokens.textLg,
                     fontWeight: FontWeight.w700,
                   ),
                 ),

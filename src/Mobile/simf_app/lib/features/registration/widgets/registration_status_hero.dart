@@ -42,7 +42,7 @@ class RegistrationStatusHero extends StatelessWidget {
           style: const TextStyle(
             fontSize: SimfTokens.text24, // 24
             fontWeight: FontWeight.w700,
-            color: Colors.white,
+            color: SimfTokens.surface,
           ),
         ),
         const SizedBox(height: SimfTokens.space4),

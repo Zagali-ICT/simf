@@ -35,41 +35,41 @@ class RegistrationSuccessBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 400),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              const SizedBox(height: 24),
+              const SizedBox(height: SimfTokens.space6),
               const RegistrationSuccessMark(),
-              const SizedBox(height: 16),
+              const SizedBox(height: SimfTokens.space4),
               Text(
                 l10n.registrationSuccessTitle,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontSize: 24,
+                  fontSize: SimfTokens.text24,
                   fontWeight: FontWeight.w700,
-                  color: Colors.white,
+                  color: SimfTokens.surface,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: SimfTokens.space4),
               Text(
                 welcomeMessage,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: SimfTokens.beigeBorder,
-                  fontSize: 14,
+                  fontSize: SimfTokens.textMd,
                   height: 1.5,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: SimfTokens.space6),
               ReferenceNumberCard(
                 label: l10n.referenceNumberLabel,
                 reference: referenceNumber ?? _maskedReference,
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: SimfTokens.space8),
               RegistrationSuccessActions(
                 statusLabel: l10n.registrationStatusButton,
                 homeLabel: l10n.goHomeButton,
@@ -77,12 +77,12 @@ class RegistrationSuccessBody extends StatelessWidget {
                     context.goNamed(RouteNames.registrationStatus),
                 onHome: () => context.go('/'),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: SimfTokens.space8),
               ContactUsSection(
                 title: l10n.contactUsTitle,
                 socialFooter: l10n.simfSocialFooter,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: SimfTokens.space6),
             ],
           ),
         ),

@@ -211,6 +211,7 @@ class SimfTokens {
   static const double textXxl = 22; // exhibitor/sponsor name (Figma 1439:11894)
   static const double text24 = 24; // registration-status headline (Figma 1701:3803)
   static const double textHero = 28;
+  static const double text32 = 32; // staff register-visitor headline number
 
   // Named text styles — built incrementally per screen (§5.1). The font family
   // comes from the theme; these bundle only colour/size/weight/line-height so a
