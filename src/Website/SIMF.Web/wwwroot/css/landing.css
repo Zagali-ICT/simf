@@ -455,7 +455,7 @@
    a faint maritime backdrop lifts in, and the badge turns gold. */
 .ln-tcard { position: relative; overflow: hidden; flex: 1 1 0; min-width: 0; min-height: 296px; padding: 24px;
   border: 1px solid var(--border-neutral); background: transparent;
-  display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 24px;
+  display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 24px;
   transition: flex-grow .55s cubic-bezier(.22, .61, .36, 1), background-color .45s ease; }
 .ln-tcard:not(:first-child) { margin-inline-start: -1px; }
 /* Hover backdrop: the maritime image with a navy gradient baked in so the image
@@ -467,12 +467,12 @@
     url('/assets/figma/sessions/session-card-1.jpg') center/cover no-repeat;
   opacity: 0; transition: opacity .45s ease; }
 .ln-tcard > * { position: relative; z-index: 1; }
-.ln-tcard__topgrp { display: flex; flex-direction: column; align-items: center; gap: 24px; width: 100%; }
+.ln-tcard__topgrp { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; width: 100%; }
 .ln-tcard__badge { background: rgba(230, 242, 251, .12); border-radius: var(--radius-full); padding: 12px; display: inline-grid;
   place-items: center; color: var(--white); transition: background-color .35s ease, color .35s ease; }
 .ln-tcard__badge svg { width: 24px; height: 24px; display: block; }
-.ln-tcard__title { font-size: 18px; font-weight: 700; line-height: 24px; color: var(--white); text-align: center; }
-.ln-tcard__desc { font-size: 16px; line-height: 24px; color: var(--primary-light); text-align: center; }
+.ln-tcard__title { font-size: 18px; font-weight: 700; line-height: 24px; color: var(--white); text-align: start; }
+.ln-tcard__desc { font-size: 16px; line-height: 24px; color: var(--primary-light); text-align: start; }
 .ln-tcard:hover, .ln-tcard:focus-within { flex-grow: 2.2; background-color: rgba(230, 242, 251, .06); }
 .ln-tcard:hover::before, .ln-tcard:focus-within::before { opacity: 1; }
 .ln-tcard:hover .ln-tcard__badge, .ln-tcard:focus-within .ln-tcard__badge { background: var(--gold); color: var(--navy); }
