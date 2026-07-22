@@ -32,11 +32,10 @@ public partial class CpShellLayout
 
     // True when the user may see a nav item: ungated items (RequiredPermission
     // null — the dashboard + not-yet-built stubs) are always shown; otherwise
-    // the user must hold the code (or the Administrator wildcard).
+    // the user must hold the code (or the Administrator wildcard). The rule lives
+    // on NavItem so the side menu and the help-assistant directory share it.
     private bool CanSee(CpNavigation.NavItem item) =>
-        item.RequiredPermission is null
-        || _hasAllPermissions
-        || _permissions.Contains(item.RequiredPermission);
+        item.IsPermittedFor(_permissions, _hasAllPermissions);
 
     // The live side-menu filter (the search box at the top of the nav). Empty =
     // show everything; otherwise an item is kept when its resolved label

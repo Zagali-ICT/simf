@@ -136,6 +136,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/ai/services/{feature}` | [`cp-admin-ai-service-detail.md`](cp-admin-ai-service-detail.md) | E2E-AISD-001..011 |
 | `/admin/ai/prompts` | [`cp-admin-ai-prompts.md`](cp-admin-ai-prompts.md) | E2E-AIP-001..022 |
 | `/admin/ai/invocations` | [`cp-admin-ai-invocations.md`](cp-admin-ai-invocations.md) | E2E-AIV-001..012 |
+| _(floating widget — every CP page)_ | [`cp-assistant.md`](cp-assistant.md) | E2E-CPA-001..009 |
 
 ### Control Panel — Access control & system
 

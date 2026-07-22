@@ -252,13 +252,14 @@ internal sealed class AiService(
         }, cancellationToken);
     }
 
-    // D-179 (review-pass) — single source of truth for AI input caps.
-    // Test analyst flagged the duplicated constants on the admin path;
-    // the tests should reference these so a future cap-raise doesn't
-    // pass an outdated boundary test.
-    public const int MaxInputsCount = 16;
-    public const int MaxInputKeyLength = 64;
-    public const int MaxInputValueLength = 4000;
+    // D-179 (review-pass) — single source of truth for AI input caps. The
+    // numbers live in the shared SIMF.Contracts.Ai.AiInputLimits so producers
+    // outside this assembly (the CP grounding builder) reference the same values;
+    // these aliases keep the in-assembly references and the boundary tests
+    // pointing at that one place.
+    public const int MaxInputsCount = AiInputLimits.MaxInputsCount;
+    public const int MaxInputKeyLength = AiInputLimits.MaxInputKeyLength;
+    public const int MaxInputValueLength = AiInputLimits.MaxInputValueLength;
 
     private static string Substitute(
         string template, IReadOnlyDictionary<string, string> inputs)

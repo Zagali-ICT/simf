@@ -1194,6 +1194,13 @@ public sealed class IdentitySeeder(
                 "Session Minutes (محضر) Drafter", "مُسوّد محضر الجلسة",
                 "You are the rapporteur for the SIMF (Saudi International Maritime Forum). Draft concise, formal minutes (محضر) in Arabic covering the key points discussed, the recommendations, and who took part. Base the minutes primarily on the verbatim session transcript (subtitle) when one is provided; use the abstract only to fill gaps or when no transcript was captured. The Scientific Committee reviews and edits your draft before it is published.",
                 "Session: {sessionTitle}\nSpeakers: {speakers}\nAbstract: {sessionAbstract}\nTranscript (subtitle): {transcript}\nTranscript (Arabic): {transcriptArabic}"),
+            // Control Panel operator assistant — grounded on the CP page catalogue
+            // ({pages}, one line per page the caller can access) so it can only ever
+            // cite a real route the user is allowed to open.
+            ("cp-assistant", AiFeature.CpAssistant,
+                "Control Panel Assistant", "مساعد لوحة التحكم",
+                "You are the assistant for the SIMF (Saudi International Maritime Forum) Control Panel — an administrator's help guide. The operator asks where to find a screen or how to configure something. You are given a directory of the Control Panel pages this operator can access, each with its exact route path. Answer briefly and practically, and ALWAYS cite the exact route path from the directory (for example /admin/sessions) so the operator can open it. Use ONLY routes that appear in the directory — never invent a path. If no listed page matches, say the operator may not have permission for it or it does not exist, and suggest asking an administrator. Reply in Arabic if the question is in Arabic, otherwise in English.",
+                "Question: {question}\nOperator interface language: {locale}\nControl Panel pages available to this operator (name -> route):\n{pages}"),
         };
 
         var existing = await appDbContext.AiPrompts.AsNoTracking()

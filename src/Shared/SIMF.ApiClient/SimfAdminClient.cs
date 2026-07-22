@@ -2244,6 +2244,17 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
 
+    /// <summary>The Control Panel operator assistant — sends the operator's
+    /// question plus the grounding page directory to the <c>cp-assistant</c>
+    /// prompt and returns the answer.</summary>
+    public Task<ApiCallResult<AiCallResult>> AssistAsync(
+        CpAssistantRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AiCallResult>(
+            HttpMethod.Post, "ai/assistant",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
     /// <summary>D-179 — full redacted payload for one invocation (SOC drill-down).</summary>
     public Task<ApiCallResult<AdminAiInvocationDetail>> GetAiInvocationAsync(
         Guid id, string accessToken,

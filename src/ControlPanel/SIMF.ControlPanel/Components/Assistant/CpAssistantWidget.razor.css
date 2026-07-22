@@ -1,0 +1,182 @@
+/* CpAssistantWidget — floating Control Panel help assistant. Uses only theme
+   tokens (no raw colours) and logical properties so it mirrors correctly in RTL.
+   The launcher sits at the bottom inline-end corner; the panel opens above it. */
+
+.cpa {
+    position: fixed;
+    inset-block-end: var(--space-5);
+    inset-inline-end: var(--space-5);
+    z-index: 60;
+}
+
+/* Click-outside catcher — closes the panel without stealing focus. */
+.cpa__backdrop {
+    position: fixed;
+    inset: 0;
+    background: transparent;
+    z-index: 59;
+}
+
+.cpa__launcher {
+    position: relative;
+    z-index: 61;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding-block: var(--space-2);
+    padding-inline: var(--space-4);
+    border: 0;
+    border-radius: 999px;
+    background: var(--color-accent-blue);
+    color: var(--color-text-on-primary);
+    box-shadow: var(--shadow-2);
+    cursor: pointer;
+    font-size: var(--font-size-body-small);
+    font-weight: 600;
+}
+
+.cpa__launcher:hover,
+.cpa__launcher:focus-visible {
+    filter: brightness(0.94);
+}
+
+.cpa__launcher-icon {
+    flex: 0 0 auto;
+}
+
+.cpa__panel {
+    position: absolute;
+    inset-block-end: calc(100% + var(--space-3));
+    inset-inline-end: 0;
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+    inline-size: 22rem;
+    max-inline-size: calc(100vw - 2 * var(--space-4));
+    block-size: 30rem;
+    max-block-size: calc(100vh - 6rem);
+    background: var(--color-surface);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-2);
+    overflow: hidden;
+}
+
+.cpa__head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.cpa__head-icon {
+    color: var(--color-accent-blue);
+    flex: 0 0 auto;
+}
+
+.cpa__title {
+    font-weight: 600;
+    flex: 1 1 auto;
+}
+
+.cpa__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+    border: 0;
+    background: transparent;
+    color: var(--color-text-muted);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+}
+
+.cpa__close:hover,
+.cpa__close:focus-visible {
+    background: var(--color-surface-2);
+    color: var(--color-text);
+}
+
+.cpa__log {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-3);
+}
+
+.cpa__msg {
+    max-inline-size: 85%;
+    padding-block: var(--space-2);
+    padding-inline: var(--space-3);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-body-small);
+    line-height: 1.5;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.cpa__msg--ai {
+    align-self: flex-start;
+    background: var(--color-surface-2);
+    color: var(--color-text);
+    border-start-start-radius: 0;
+}
+
+.cpa__msg--user {
+    align-self: flex-end;
+    background: var(--color-accent-blue);
+    color: var(--color-text-on-primary);
+    border-start-end-radius: 0;
+}
+
+.cpa__msg--typing {
+    color: var(--color-text-muted);
+    font-style: italic;
+}
+
+.cpa__composer {
+    display: flex;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border-block-start: var(--border-width) solid var(--color-border);
+}
+
+.cpa__input {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    padding-block: var(--space-2);
+    padding-inline: var(--space-3);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-size: var(--font-size-body-small);
+}
+
+.cpa__input:focus-visible {
+    outline: 2px solid var(--color-accent-blue);
+    outline-offset: 1px;
+}
+
+.cpa__send {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 2.25rem;
+    block-size: 2.25rem;
+    flex: 0 0 auto;
+    border: 0;
+    border-radius: var(--radius-md);
+    background: var(--color-accent-blue);
+    color: var(--color-text-on-primary);
+    cursor: pointer;
+}
+
+.cpa__send:disabled {
+    opacity: 0.5;
+    cursor: default;
+}

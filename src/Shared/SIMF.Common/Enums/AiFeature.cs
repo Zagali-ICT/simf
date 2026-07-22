@@ -17,4 +17,10 @@ public enum AiFeature
     /// <summary>P4.1 — D-238: AI session-summary / محضر drafting (Completion
     /// Programme §6.4.1). Additive value — appended, never reorders the above.</summary>
     SessionSummary = 6,
+
+    /// <summary>Control Panel operator assistant — answers an admin's "where is
+    /// the screen for X / how do I configure Y" grounded on the CP page catalogue,
+    /// and returns the exact page route. Additive value — appended, never reorders
+    /// the above.</summary>
+    CpAssistant = 7,
 }

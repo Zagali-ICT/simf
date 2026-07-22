@@ -60,4 +60,16 @@ public sealed class RateLimitOptions
     /// <summary>The per-admin AI-test window length, in seconds. Default
     /// 3600 (1 hour) so 20 permits = 20 dry-runs per admin per hour.</summary>
     public int AiTestWindowSeconds { get; set; } = 3600;
+
+    /// <summary>Per-operator cap on the Control Panel help assistant
+    /// (<c>POST /admin/ai/assistant</c>), whose every call hits the AI
+    /// provider. Same per-<c>sub</c> rationale as <see cref="AiTestPermitLimit"/>
+    /// — the per-IP "auth" window cannot bound a shared office or an
+    /// IP-rotating botnet — but a little higher because the assistant is used
+    /// interactively across pages. Default 40.</summary>
+    public int AiAssistantPermitLimit { get; set; } = 40;
+
+    /// <summary>The per-operator assistant window length, in seconds. Default
+    /// 3600 (1 hour) so 40 permits = 40 questions per operator per hour.</summary>
+    public int AiAssistantWindowSeconds { get; set; } = 3600;
 }

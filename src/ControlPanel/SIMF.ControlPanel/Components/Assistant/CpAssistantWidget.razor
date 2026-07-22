@@ -1,0 +1,54 @@
+@* CpAssistantWidget — the Control Panel operator help assistant. A floating
+   launcher (bottom inline-end) opens a chat panel where an operator asks where a
+   screen is or how to configure something; the answer comes from the centralised
+   AI (the cp-assistant prompt) grounded on the pages this operator can open, and
+   cites the exact route. Rendered once by the shell, on every signed-in page. It
+   renders nothing for a user without the Assistant.Use permission. *@
+@namespace SIMF.ControlPanel.Components.Assistant
+
+@if (_canUse)
+{
+    <div class="cpa">
+        @if (_open)
+        {
+            <div class="cpa__backdrop" @onclick="Close"></div>
+            <section class="cpa__panel" role="dialog" aria-modal="true"
+                     aria-label="@L["Assistant.Title"]"
+                     @onkeydown="OnKeyDown">
+                <header class="cpa__head">
+                    <SimfIcon Name="sparkle" Class="cpa__head-icon" Size="18" />
+                    <span class="cpa__title">@L["Assistant.Title"]</span>
+                    <button type="button" class="cpa__close" @onclick="Close"
+                            aria-label="@L["Assistant.Close"]">
+                        <SimfIcon Name="close" Size="16" />
+                    </button>
+                </header>
+                <div class="cpa__log" @ref="_logEl" aria-live="polite">
+                    @foreach (var line in _messages)
+                    {
+                        <div class="cpa__msg cpa__msg--@(line.IsUser ? "user" : "ai")">@line.Text</div>
+                    }
+                    @if (_busy)
+                    {
+                        <div class="cpa__msg cpa__msg--ai cpa__msg--typing">@L["Assistant.Thinking"]</div>
+                    }
+                </div>
+                <form class="cpa__composer" @onsubmit="SendAsync" @onsubmit:preventDefault="true">
+                    <input class="cpa__input" @ref="_inputEl" @bind="_input" @bind:event="oninput"
+                           placeholder="@L["Assistant.Placeholder"]"
+                           aria-label="@L["Assistant.Placeholder"]" disabled="@_busy" />
+                    <button type="submit" class="cpa__send" aria-label="@L["Assistant.Send"]"
+                            disabled="@(_busy || string.IsNullOrWhiteSpace(_input))">
+                        <SimfIcon Name="send" Size="16" />
+                    </button>
+                </form>
+            </section>
+        }
+        <button type="button" class="cpa__launcher" @ref="_launcherEl" @onclick="Toggle"
+                aria-expanded="@_open.ToString().ToLowerInvariant()"
+                aria-label="@L["Assistant.Launch"]">
+            <SimfIcon Name="message-circle" Class="cpa__launcher-icon" Size="20" />
+            <span class="cpa__launcher-text">@L["Assistant.Launch"]</span>
+        </button>
+    </div>
+}
