@@ -47,6 +47,7 @@
 | E2E-VIS-023 | Presentation toggle: switch Add/Edit/Details to full-page + persists across reload (D-353) | happy | P1 | _to author_ |
 | E2E-VIS-024 | Full-page mode: Add/Edit/Details take over the content area, save/close returns to grid (D-353) | happy | P1 | _to author_ |
 | E2E-VIS-025 | Walk-in birth location (D-469) — Saudi → region `<select>` over the 13 official regions (code-keyed, cross-locale preselect); non-Saudi → free-text "as in passport" | validation | P1 | _to author_ |
+| E2E-VIS-030 | Edit login email (D-214 + #24) — golden change → 200 + save toast, stamp roll + old-session revoke + new address unverified (re-verify at next sign-in); duplicate → 409 `ADMIN_EMAIL_ALREADY_REGISTERED` inline SimfAlert; name-only edit keeps the session; bad format → 400 | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -609,6 +610,75 @@ Scenario: the visitor Edit form can replace the profile photo and ID image
 `WalkInRegistrationTests.cs` (`Admin_uploads_visitor_avatar_sets_path`) and
 `AdminIdDocumentAuditTests.cs` cover the upload endpoints the Edit form reuses.
 
+### E2E-VIS-030 — Edit visitor: change the login email (D-214 + #24)
+
+```gherkin
+Feature: Edit a visitor's login email
+  As an Administrator on the Visitors desk
+  I want to correct a visitor's login email from the Edit form
+  So that a mistyped address is fixed, stale sessions die, and the new address is re-proven
+
+Background:
+  Given an Administrator has signed in via /login + /login/totp using the Get-Totp helper
+  And they are on /admin/visitors with the grid loaded
+  And an Approved visitor "faisal@example.com" exists
+  And a separate account "taken@example.com" already exists
+
+Scenario: Golden — change the login email
+  When the administrator clicks the "Edit" action on the "faisal@example.com" row
+  Then the SimfModal "Edit visitor" opens hosting EditAccountForm (Scope=visitors)
+  And GET /account/api/admin/visitors/{id}/profile returns 200 and pre-fills Email, Display name and tier
+  When they change Email to "faisal.new@example.com" (leaving the display name and tier unchanged) and click "Save"
+  Then PUT /account/api/admin/visitors/{id} (AdminUpdateVisitorRequest) returns 200
+  And the modal closes and the host list raises a green toast
+      "The account was updated." / "تم تحديث الحساب." (Admin.Edit.Saved)
+  And the grid reloads showing the new email
+
+Scenario: The email change rolls the security stamp, revokes sessions and re-verifies the new address (#24)
+  Given the golden change above returned 200
+  Then AdminAccountService.UpdateAccountAsync rolled the security stamp and revoked the
+       visitor's refresh tokens (emailChanged=true), so the visitor's live app / Website
+       sessions are signed out at their next request and a refresh with the old refresh
+       token is rejected
+  And the new address is marked unverified (EmailConfirmed=false), so the visitor's next
+      sign-in email-OTP 2FA is sent to "faisal.new@example.com" to re-prove deliverability
+  And this is NOT a lockout — sign-in gates on AccountState (still Approved), not EmailConfirmed
+  And an AdminUserUpdated audit row is written with Detail containing "emailChanged=True"
+
+Scenario: Duplicate email is rejected inline and the form stays open
+  When the administrator opens Edit on "faisal@example.com", changes Email to
+      "taken@example.com" (already registered to another account) and clicks "Save"
+  Then PUT /account/api/admin/visitors/{id} returns HTTP 409
+  And ApiResult.Error.Code = "ADMIN_EMAIL_ALREADY_REGISTERED" (ErrorCodes.AdminEmailAlreadyRegistered)
+  And the Edit form stays open showing the inline SimfAlert (Variant="error") with the bilingual
+      MessageForCurrentCulture() "An account with this email address already exists." /
+      "يوجد حساب مسجّل بهذا البريد الإلكتروني بالفعل."
+  And no success toast is raised and the grid is not reloaded
+
+Scenario: A name-only edit keeps the visitor signed in
+  When the administrator opens Edit and changes ONLY the Display name (Email and tier unchanged) and clicks "Save"
+  Then PUT /account/api/admin/visitors/{id} returns 200 and the "The account was updated." toast shows
+  And because the email did not change the security stamp is NOT rolled and no refresh token is
+      revoked (emailChanged=false) — the visitor's existing sessions stay valid and EmailConfirmed is unchanged
+
+Scenario: A malformed email is rejected with a 400 field error
+  Given the client CanSave gate only requires the email to be non-blank, so "not-an-email" enables Save
+  When the administrator changes Email to "not-an-email" and clicks "Save"
+  Then PUT /account/api/admin/visitors/{id} returns HTTP 400
+      (UpdateVisitorRouteRequestValidator — RuleFor(Email).EmailAddress())
+  And the inline SimfAlert shows "A valid email address is required." / "يجب إدخال بريد إلكتروني صالح."
+  And the form stays open and no row changes
+```
+
+**Covered (lower layer):** `tests/SIMF.Api.Tests/AdminUpdateUserTests.cs` —
+`Update_visitor_changes_email_and_display_name` (golden),
+`Update_visitor_email_change_rolls_security_stamp` (stamp roll + session revoke),
+`Update_visitor_duplicate_email_is_409` (the 409), and
+`Update_visitor_short_display_name_is_400` (the validator). Live browser drive of the
+auth-gated Edit form is pending the broader E2E-VIS authoring pass (all E2E-VIS rows
+are `_to author_`). The email-change re-verify note also anchors the E2E-VIS-001
+golden Edit step (Build #24).
+
 ---
 
-_Last reviewed:_ 2026-07-22 by SIMF Team (Build #24 - noted on E2E-VIS-001 that an Edit which changes the email now marks it unverified (EmailConfirmed=false) for re-verification at next sign-in; not a lockout). Prior: 2026-07-21 by Claude (VIP edit - the shared EditAccountForm gained a Photo & ID section; E2E-VIS-029). Earlier: 2026-07-11 by Claude (W4 on-site remediation - H-1 duplicate-identity guard; E2E-VIS-027). Earlier: 2026-07-09 by SIMF Team (D-728 - E2E-VIS-026 change-account-type); 2026-06-20 (D-469 - E2E-VIS-025 Saudi birth-location region dropdown); 2026-06-10 (D-356 Phase 5 - Excel + toggle; E2E-VIS-023/024).
+_Last reviewed:_ 2026-07-22 by Claude (#24 DoD - added E2E-VIS-030, the dedicated edit-email scenario for PUT /admin/visitors/{id}: golden change, stamp roll + old-session revoke + EmailConfirmed=false re-verify, duplicate 409 ADMIN_EMAIL_ALREADY_REGISTERED inline, name-only keeps the session, bad-format 400). Prior: 2026-07-22 by SIMF Team (Build #24 - noted on E2E-VIS-001 that an Edit which changes the email now marks it unverified (EmailConfirmed=false) for re-verification at next sign-in; not a lockout). Prior: 2026-07-21 by Claude (VIP edit - the shared EditAccountForm gained a Photo & ID section; E2E-VIS-029). Earlier: 2026-07-11 by Claude (W4 on-site remediation - H-1 duplicate-identity guard; E2E-VIS-027). Earlier: 2026-07-09 by SIMF Team (D-728 - E2E-VIS-026 change-account-type); 2026-06-20 (D-469 - E2E-VIS-025 Saudi birth-location region dropdown); 2026-06-10 (D-356 Phase 5 - Excel + toggle; E2E-VIS-023/024).
