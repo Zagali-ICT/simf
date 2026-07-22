@@ -81,7 +81,8 @@ internal sealed class AdminProfileTypeCommandService(
                 profileType.MobileAppRole.ToString(),
                 profileType.IsActive,
                 profileType.IsForVisitor,
-                profileType.IsAppRegisterable))
+                profileType.IsAppRegisterable,
+                profileType.ShowInPartnerDirectory))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminProfileTypeSummary>.Of(page, total,
@@ -151,6 +152,8 @@ internal sealed class AdminProfileTypeCommandService(
             // D-725: app sign-up picker visibility (default true; the CP
             // form sends false for CP-only operational types).
             IsAppRegisterable = request.IsAppRegisterable,
+            // D-760: Meet-People networking visibility (default true).
+            ShowInPartnerDirectory = request.ShowInPartnerDirectory,
             IsActive = request.IsActive,
             CreatedAt = now,
         };
@@ -222,6 +225,8 @@ internal sealed class AdminProfileTypeCommandService(
         // D-725: app sign-up picker visibility — the admin toggles whether a
         // self-registering user may pick this type.
         profileType.IsAppRegisterable = request.IsAppRegisterable;
+        // D-760: Meet-People networking visibility.
+        profileType.ShowInPartnerDirectory = request.ShowInPartnerDirectory;
         profileType.UpdatedAt = timeProvider.GetUtcNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -306,7 +311,8 @@ internal sealed class AdminProfileTypeCommandService(
             profileType.MobileAppRole.ToString(),
             profileType.IsActive,
             profileType.IsForVisitor,
-            profileType.IsAppRegisterable);
+            profileType.IsAppRegisterable,
+            profileType.ShowInPartnerDirectory);
 
     /// <summary>D-161 — parses the wire-side stringly mobile-app-role,
     /// rejecting unknown values with a typed 400. Null / empty defaults

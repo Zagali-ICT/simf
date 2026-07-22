@@ -137,7 +137,10 @@ internal sealed class PartnerDirectoryService(
             var people = await appDbContext.UserProfiles.AsNoTracking()
                 .Where(p => approvedIds.Contains(p.UserId)
                     && p.ShowInMeetLikeYou
-                    && p.ProfileType != null && !p.ProfileType.IsForVisitor)
+                    && p.ProfileType != null && !p.ProfileType.IsForVisitor
+                    // D-760: admin master switch — hiding a partner type drops
+                    // ALL its accounts here (AND with the per-user opt-in).
+                    && p.ProfileType.ShowInPartnerDirectory)
                 .OrderBy(p => p.NameArabic).ThenBy(p => p.Name)
                 .Select(p => new
                 {

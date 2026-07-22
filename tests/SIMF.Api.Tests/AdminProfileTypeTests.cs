@@ -399,6 +399,75 @@ public sealed class AdminProfileTypeTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task ShowInPartnerDirectory_round_trips_through_Create_Get_and_Update()
+    {
+        // D-760 (owner request): the "Meet People" visibility flag on a partner
+        // type must persist through Create → Get and be flippable on Update, so an
+        // admin can hide a whole Other type from the networking directory.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var name = $"Hidden {Guid.NewGuid():N}";
+
+        var created = await PostAuthAsync(
+            "/api/v1/admin/profile-types",
+            new AdminCreateProfileTypeRequest
+            {
+                UserType = "Visitor",
+                IsVisitor = false,
+                Name = name,
+                NameArabic = "شريك",
+                PageColor = "#10B981",
+                IsActive = true,
+                ShowInPartnerDirectory = false,
+            }, adminToken);
+        Assert.Equal(HttpStatusCode.OK, created.StatusCode);
+        var detail = (await created.Content
+            .ReadFromJsonAsync<ApiResult<AdminProfileTypeSummary>>())!.Data!;
+        Assert.False(detail.ShowInPartnerDirectory);
+
+        var get = await GetAuthAsync(
+            $"/api/v1/admin/profile-types/{detail.Id}", adminToken);
+        var fetched = (await get.Content
+            .ReadFromJsonAsync<ApiResult<AdminProfileTypeSummary>>())!.Data!;
+        Assert.False(fetched.ShowInPartnerDirectory);
+
+        // Flip it back on — the admin re-exposes the type in Meet People.
+        var update = await PutAuthAsync(
+            $"/api/v1/admin/profile-types/{detail.Id}",
+            new AdminUpdateProfileTypeRequest
+            {
+                Name = detail.Name,
+                NameArabic = detail.NameArabic,
+                PageColor = detail.PageColor,
+                IsActive = true,
+                IsVisitor = detail.IsVisitor,
+                ShowInPartnerDirectory = true,
+            }, adminToken);
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+        var after = (await update.Content
+            .ReadFromJsonAsync<ApiResult<AdminProfileTypeSummary>>())!.Data!;
+        Assert.True(after.ShowInPartnerDirectory);
+
+        // The grid projection must carry the new trailing flag too (the Edit
+        // modal pre-fills from the row summary) — a mis-ordered projection of the
+        // last positional bool would surface here.
+        var list = await PostAuthAsync(
+            "/api/v1/admin/profile-types/list",
+            new GridQuery
+            {
+                Top = 200,
+                Filters = new Dictionary<string, string>
+                {
+                    ["userType"] = "Visitor",
+                    ["isVisitor"] = "false",
+                },
+            }, adminToken);
+        var page = (await list.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminProfileTypeSummary>>>())!.Data!;
+        var listed = Assert.Single(page.Items, row => row.Id == detail.Id);
+        Assert.True(listed.ShowInPartnerDirectory);
+    }
+
+    [Fact]
     public async Task Update_flipping_IsVisitor_persists_and_audits_the_change()
     {
         // D-186 review-pass (threat-detection H-1): an admin flipping

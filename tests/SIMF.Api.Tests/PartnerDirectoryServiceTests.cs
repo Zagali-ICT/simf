@@ -320,6 +320,23 @@ public sealed class PartnerDirectoryServiceTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Other_type_hidden_from_meet_people_never_appears_even_when_opted_in()
+    {
+        // D-760: the admin master switch on the profile TYPE
+        // (ShowInPartnerDirectory=false) hides ALL its accounts from the
+        // directory, regardless of the per-user ShowInMeetLikeYou opt-in.
+        var hiddenTypeId = await SeedProfileTypeAsync(
+            isForVisitor: false, showInPartnerDirectory: false);
+        var profileId = await SeedAccountWithProfileAsync(
+            hiddenTypeId, showInMeetLikeYou: true);
+
+        var token = await SeedApprovedCallerTokenAsync();
+        var body = await GetDirectoryAsync(token);
+
+        Assert.DoesNotContain(body.Entries, e => e.Id == profileId);
+    }
+
+    [Fact]
     public async Task Person_linked_to_a_curated_speaker_is_deduped_to_the_speaker()
     {
         var otherTypeId = await SeedProfileTypeAsync(isForVisitor: false);
@@ -390,7 +407,8 @@ public sealed class PartnerDirectoryServiceTests : IClassFixture<SimfApiFactory>
         await db.SaveChangesAsync();
     }
 
-    private async Task<Guid> SeedProfileTypeAsync(bool isForVisitor)
+    private async Task<Guid> SeedProfileTypeAsync(
+        bool isForVisitor, bool showInPartnerDirectory = true)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -401,6 +419,7 @@ public sealed class PartnerDirectoryServiceTests : IClassFixture<SimfApiFactory>
             NameArabic = "نوع",
             PageColor = "#3B82F6",
             IsForVisitor = isForVisitor,
+            ShowInPartnerDirectory = showInPartnerDirectory,
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };

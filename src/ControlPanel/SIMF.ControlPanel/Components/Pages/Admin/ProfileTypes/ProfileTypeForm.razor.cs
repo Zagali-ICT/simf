@@ -59,6 +59,13 @@ public partial class ProfileTypeForm
     private bool ShowMobileAppRolePicker =>
         _isEdit ? Initial?.IsVisitor == false : IsPartnerForm;
 
+    // D-760 — the "Show in Meet-People" toggle is only meaningful for partner
+    // (Other) types, the pool the networking directory + recommender draw from;
+    // gated exactly like the app-role picker (Edit reads the persisted
+    // IsVisitor flag; Create reads the host page's IsPartnerForm).
+    private bool ShowPartnerDirectoryToggle =>
+        _isEdit ? Initial?.IsVisitor == false : IsPartnerForm;
+
     protected override void OnInitialized()
     {
         _isEdit = Initial is not null;
@@ -71,6 +78,7 @@ public partial class ProfileTypeForm
                 ? "None" : Initial.MobileAppRole;
             _model.IsActive = Initial.IsActive;
             _model.IsAppRegisterable = Initial.IsAppRegisterable;
+            _model.ShowInPartnerDirectory = Initial.ShowInPartnerDirectory;
         }
         _editContext = new EditContext(_model);
         _messages = new ValidationMessageStore(_editContext);
@@ -182,6 +190,8 @@ public partial class ProfileTypeForm
                         IsVisitor = Initial.IsVisitor,
                         // D-725: app sign-up picker visibility toggle.
                         IsAppRegisterable = _model.IsAppRegisterable,
+                        // D-760: Meet-People networking visibility toggle.
+                        ShowInPartnerDirectory = _model.ShowInPartnerDirectory,
                     });
             }
             else
@@ -202,6 +212,8 @@ public partial class ProfileTypeForm
                         IsVisitor = !IsPartnerForm,
                         // D-725: app sign-up picker visibility toggle.
                         IsAppRegisterable = _model.IsAppRegisterable,
+                        // D-760: Meet-People networking visibility toggle.
+                        ShowInPartnerDirectory = _model.ShowInPartnerDirectory,
                     });
             }
 
@@ -232,5 +244,7 @@ public partial class ProfileTypeForm
         public bool IsActive { get; set; } = true;
         // D-725 — app sign-up picker visibility; default true (visible).
         public bool IsAppRegisterable { get; set; } = true;
+        // D-760 — "Meet People" networking visibility; default true (shown).
+        public bool ShowInPartnerDirectory { get; set; } = true;
     }
 }

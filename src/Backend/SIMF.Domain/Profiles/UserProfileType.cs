@@ -87,4 +87,16 @@ public sealed class UserProfileType : BaseAuditEntity
     /// listings (which always show every type) or any permission — it is a
     /// pure app-registration-picker visibility flag.</summary>
     public bool IsAppRegisterable { get; set; } = true;
+
+    /// <summary>D-760 (owner request) — whether accounts of this profile type
+    /// appear in the "Meet People (same interests)" networking surfaces: the
+    /// partner directory (<c>GET /app/networking/partner-directory</c>) and the
+    /// app's "people like you" recommender. Acts as an admin master switch that
+    /// AND-combines with the per-user <c>UserProfile.ShowInMeetLikeYou</c> opt-in:
+    /// hiding the type removes ALL its accounts from those surfaces regardless of
+    /// the individual opt-in. Defaults to <c>true</c> so existing + freshly
+    /// created types keep showing until an admin hides them. Only meaningful for
+    /// partner (Other) types — visitor/audience types are curated separately;
+    /// the CP exposes the checkbox on the "Others" profile-type form only.</summary>
+    public bool ShowInPartnerDirectory { get; set; } = true;
 }
