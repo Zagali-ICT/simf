@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
+using SIMF.ApiClient;
 using SIMF.Web.Content;
 
 namespace SIMF.Web.Components.Pages;
@@ -19,6 +20,11 @@ public partial class Landing
     // then falls back to the Landing.Subnav.Date resx label.
     [Inject] private ForumDates Dates { get; set; } = default!;
 
+    // The sponsors carousel is read live from the anonymous public API instead of
+    // a hardcoded placeholder list; a null/unreachable result or an empty roster
+    // simply hides the section (see the @if guard in Landing.razor).
+    [Inject] private SimfPublicClient Api { get; set; } = default!;
+
     // D-756 — the CP-editable hero background video (from OrganizationProfile),
     // resolved server-side during static SSR. Null when none is configured / the
     // profile is unavailable; the view then falls back to the bundled hero-video.mp4.
@@ -27,11 +33,17 @@ public partial class Landing
     private string? ForumDate { get; set; }
     private HeroVideoSource? HeroVideo { get; set; }
 
+    // Real sponsors from GET /api/v1/app/sponsors (see SponsorsFeed), flattened in
+    // the API's highest-tier-first order. Empty when none are published, which
+    // hides the section (SponsorsMarquee renders nothing for an empty list).
+    public IReadOnlyList<SponsorCard> SponsorItems { get; private set; } = [];
+
     protected override async Task OnInitializedAsync()
     {
         ForumDate = await Dates.GetRangeDisplayAsync(
             CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft);
         HeroVideo = await Hero.GetAsync();
+        SponsorItems = await SponsorsFeed.LoadAsync(Api);
     }
 
     public sealed record ThreatStat(Bilingual Value, Bilingual Caption);
@@ -84,7 +96,10 @@ public partial class Landing
             new("الابتكار البحري", "Maritime innovation"),
             new("الظهران، المملكة العربية السعودية — منصة الابتكار واستراتيجية الاقتصاد الأزرق.",
                 "Dhahran, Saudi Arabia — an innovation platform and blue-economy strategy.")),
-        new("assets/figma/milestones/card1-future-startime.png",
+        // The upcoming (4th) edition — SIMF 2026. The Figma placed the design
+        // agency's STARTIME logo here as a placeholder; ship the forum's OWN
+        // navy mark instead (never the agency logo).
+        new("assets/logo-simf.png",
             new("قريباً", "Soon"),
             new("المستقبل", "The future"),
             new("النسخة الأكبر والأكثر طموحاً — حدث سيادي رفيع المستوى يُنظّم تحت إشراف القوات البحرية، يرسّخ مكانة المملكة.",
@@ -142,15 +157,8 @@ public partial class Landing
         new("assets/figma/partnersband/partner-4-dakhiliya.png", new("وزارة الداخلية", "Ministry of Interior")),
     ];
 
-    // ---- Sponsors (carousel) --------------------------------------------
-    // Placeholder logos until real sponsor data is wired; modelled as a list
-    // (like PartnerLogos) so the marquee stays data-driven — the view renders
-    // it ×2 for the seamless -50% loop regardless of how many entries there are.
-    public sealed record SponsorLogo(string Logo, Bilingual Tag);
-
-    public static readonly IReadOnlyList<SponsorLogo> Sponsors =
-        [.. Enumerable.Repeat(
-            new SponsorLogo("assets/figma/sponsors/sponsor-1.svg", new("مستضيف", "Host")), 8)];
+    // Sponsors are read live from the backend (see SponsorsFeed / SponsorCard)
+    // and rendered by the shared <SponsorsMarquee> component — no hardcoded list.
 
     // ---- News & articles -------------------------------------------------
     public sealed record NewsCard(string Image, string Date, Bilingual Title, Bilingual Excerpt);

@@ -7,18 +7,10 @@
 
 <LandingShell Title="@L["Speakers.PageTitle"]" Description="@L["Speakers.Meta"]">
 
-    @* ===== Event page-title band: logo lockup + theme + date/time/venue ===== *@
-    <section class="ln-pagehero" aria-label="@L["Speakers.Band.Aria"]">
-        <div class="ln-pagehero__inner">
-            <div class="ln-pagehero__info ln-reveal">
-                <h1 class="ln-pagehero__title">@L["Speakers.Band.Theme"]</h1>
-                <span class="ln-pagehero__meta"><span class="ln-ico ln-ico--calendar" aria-hidden="true"></span>@(BandDate ?? L["Speakers.Band.Date"].Value)</span>
-                <span class="ln-pagehero__meta"><span class="ln-ico ln-ico--clock" aria-hidden="true"></span>@L["Speakers.Band.Time"]</span>
-                <span class="ln-pagehero__meta"><span class="ln-ico ln-ico--pin" aria-hidden="true"></span>@L["Speakers.Band.Venue"]</span>
-            </div>
-            <img class="ln-pagehero__logo" src="assets/figma/speakers-page/hero-logo.png" alt="@L["Brand.LogoAlt"]" />
-        </div>
-    </section>
+    @* ===== Interior hero (dark event photo) — matches Figma 5840-26779 ===== *@
+    <LandingPageHero Title="@L["Speakers.Band.Theme"]"
+                     ImageSrc="assets/figma/about/about-hero.jpg"
+                     DateText="@BandDate" />
 
     @* ===== Speakers grid (live data) ===== *@
     <section class="ln-spklist" aria-label="@L["Speakers.Section.Title"]">

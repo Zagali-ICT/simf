@@ -5,9 +5,10 @@
  *   1. Page-loader fade-out on window load.
  *   2. Reveal-on-scroll for .ln-reveal blocks (IntersectionObserver).
  *   3. Search drop-panel toggle.
- *   4. Sponsors carousel: prev/next arrows scroll the (static) sponsor strip.
- *   5. Hero video paused while off-screen (saves decode CPU/battery).
+ *   5. Stat count-up: participation counters tick from 0 when scrolled in.
  *   6. Theme explorer: vertical tabs switch the visible theme panel.
+ *   7. Programme agenda: day strip + type filter.
+ * (The hero drift + sponsors marquee are pure CSS now — see landing.css.)
  */
 (function () {
   'use strict';
@@ -61,30 +62,45 @@
     });
   }
 
-  /* ---- 4. sponsors carousel: prev/next arrows scroll the strip ---------- */
-  function initSponsors() {
-    var vp = document.querySelector('.ln-spon__viewport');
-    var carousel = document.querySelector('.ln-spon__carousel');
-    if (!vp || !carousel) { return; }
-    var arrows = carousel.querySelectorAll('.ln-spon__arrow');
-    if (arrows.length < 2) { return; }
-    var step = 259; // one sponsor card (243px) + gap (16px)
-    // carousel is forced LTR (see landing.css): standard scrollLeft, so prev = -step (left/back), next = +step (right/advance).
-    arrows[0].addEventListener('click', function () { vp.scrollBy({ left: -step, behavior: 'smooth' }); });
-    arrows[1].addEventListener('click', function () { vp.scrollBy({ left: step, behavior: 'smooth' }); });
-  }
-
-  /* ---- 5. hero video: pause while off-screen ---------------------------- */
-  function initHeroVideo() {
-    var video = document.querySelector('.ln-hero__video');
-    if (!video || !('IntersectionObserver' in window)) { return; }
+  /* ---- 5. stat count-up: numbers tick from 0 when scrolled into view ---- */
+  function initCountUp() {
+    var nums = document.querySelectorAll('.ln-stat__num');
+    if (!nums.length) { return; }
+    // Reduced-motion / no-IO: leave the final value rendered as-is.
+    if (prefersReducedMotion || !('IntersectionObserver' in window)) { return; }
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (e) {
-        if (e.isIntersecting) { var p = video.play(); if (p && p.catch) { p.catch(function () {}); } }
-        else { video.pause(); }
+        if (!e.isIntersecting) { return; }
+        io.unobserve(e.target);
+        animateCount(e.target);
       });
-    }, { threshold: 0.05 });
-    io.observe(video);
+    }, { threshold: 0.6 });
+    nums.forEach(function (n) { io.observe(n); });
+  }
+
+  // Tick el's numeric part from 0 to its target over ~1.3s, preserving any
+  // non-digit prefix/suffix ("+500" -> "+0".."+500"); restores the exact
+  // original text at the end so formatting is never altered.
+  function animateCount(el) {
+    var raw = el.textContent.trim();
+    var parts = raw.match(/^(\D*)([\d,]+)(.*)$/);
+    if (!parts) { return; }
+    var prefix = parts[1], suffix = parts[3];
+    var target = parseInt(parts[2].replace(/,/g, ''), 10);
+    if (!isFinite(target)) { return; }
+    var startTs = null, duration = 1300;
+    function step(ts) {
+      if (startTs === null) { startTs = ts; }
+      var p = Math.min((ts - startTs) / duration, 1);
+      var eased = 1 - Math.pow(1 - p, 3); // easeOutCubic
+      if (p < 1) {
+        el.textContent = prefix + Math.round(eased * target).toLocaleString('en-US') + suffix;
+        window.requestAnimationFrame(step);
+      } else {
+        el.textContent = raw; // restore the exact authored string
+      }
+    }
+    window.requestAnimationFrame(step);
   }
 
   /* ---- 6. theme explorer: vertical tabs switch the visible panel -------- */
@@ -155,7 +171,7 @@
     root.classList.add('is-enhanced');
   }
 
-  function run() { initReveal(); initSearch(); initSponsors(); initHeroVideo(); initThemeTabs(); initAgenda(); }
+  function run() { initReveal(); initSearch(); initCountUp(); initThemeTabs(); initAgenda(); }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', run);
   } else {

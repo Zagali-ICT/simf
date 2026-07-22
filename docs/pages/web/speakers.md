@@ -7,7 +7,7 @@
 | **Audience** | Anyone (public) |
 | **Auth** | None — anonymous |
 | **Status** | ✅ Real — bilingual (AR RTL / EN LTR), responsive; live speaker data via `SimfPublicClient` |
-| **Source** | [`Speakers.razor`](../../../src/Website/SIMF.Web/Components/Pages/Speakers.razor) · [`Speakers.razor.cs`](../../../src/Website/SIMF.Web/Components/Pages/Speakers.razor.cs) · [`LandingShell.razor`](../../../src/Website/SIMF.Web/Components/Layout/LandingShell.razor) · [`landing.css`](../../../src/Website/SIMF.Web/wwwroot/css/landing.css) (`ln-pagehero` / `ln-spklist` / `ln-spkcard` / `ln-ico`) |
+| **Source** | [`Speakers.razor`](../../../src/Website/SIMF.Web/Components/Pages/Speakers.razor) · [`Speakers.razor.cs`](../../../src/Website/SIMF.Web/Components/Pages/Speakers.razor.cs) · [`LandingPageHero.razor`](../../../src/Website/SIMF.Web/Components/Layout/LandingPageHero.razor) (shared dark interior hero) · [`LandingShell.razor`](../../../src/Website/SIMF.Web/Components/Layout/LandingShell.razor) · [`landing.css`](../../../src/Website/SIMF.Web/wwwroot/css/landing.css) (`ln-pghero` / `ln-spklist` / `ln-spkcard` / `ln-ico`) |
 | **Strings** | [`Strings.resx`](../../../src/Website/SIMF.Web/Resources/Strings.resx) / [`Strings.ar.resx`](../../../src/Website/SIMF.Web/Resources/Strings.ar.resx) (`Speakers.*` keys) |
 | **Data** | `GET /api/v1/speakers` (anonymous) → `PublicSpeakers.Items` of `PublicSpeakerSummary` |
 | **Figma** | KSA Maritime Forum — Speakers (Desktop AR), node `5840-26779` (event band `5840:26981`; card `5840:26994`; card content `5840:26996`) |
@@ -17,10 +17,13 @@
 
 The public **speakers & participants** listing for SIMF 2026, delivered as a
 **Blazor SSR** Razor page on the shared `ln-` marketing chrome. It reproduces the
-Figma Speakers frame (`5840-26779`): a white **event page-title band** (logo
-lockup + theme + date/time/venue) over a responsive **grid of speaker cards**,
-each a ringed gradient portrait with the speaker's name, a gold role pill and a
-country row — bound to live data from the anonymous public API.
+Figma Speakers frame (`5840-26779`): the shared **dark interior hero**
+(the event photo + the forum-theme `<h1>` + date/venue pills, via the reusable
+`LandingPageHero`) over a responsive **grid of speaker cards**, each a ringed
+gradient portrait with the speaker's name, a gold role pill and a country row —
+bound to live data from the anonymous public API. (2026-07-22: the hero was
+switched from a bespoke light logo-lockup band to the standard dark
+`LandingPageHero` used by every other interior page, to match the frame.)
 
 ## 2. Architecture
 
@@ -48,7 +51,7 @@ country row — bound to live data from the anonymous public API.
 
 | # | Section | Class | Content |
 |---|---------|-------|---------|
-| 1 | Event page-title band | `ln-pagehero` | Logo lockup + `<h1>` theme (`Speakers.Band.Theme`) + three meta rows date/time/venue (`Speakers.Band.Date` / `.Time` / `.Venue`), each with a navy `.ln-ico` |
+| 1 | Interior hero (dark event photo) | `ln-pghero` (via `LandingPageHero`) | `<h1>` forum theme (`Speakers.Band.Theme`) + venue & date pills; the date pill is fed the CP-editable range (`BandDate`, D-755) through the hero's new `DateText` param, falling back to `Landing.Subnav.Date` |
 | 2 | Speaker grid | `ln-spklist` → `ln-spklist-grid` | Section header (`Speakers.Section.Title` + `.Desc`) then a `@foreach` of `ln-spkcard`, or the `Speakers.Empty` paragraph when the list is empty |
 
 **Per card** (`ln-spkcard`):
@@ -93,12 +96,17 @@ logo above the theme block); below 560px the band + grid padding tighten and the
 type down-sizes. No horizontal overflow at 1440 / 1024 / 768 / 390
 (`scrollWidth == clientWidth` verified in both languages).
 
-## 7. Verification (2026-07-15)
+## 7. Verification (2026-07-22)
 
-- **Build** — `dotnet build -c Release` 0 warnings / 0 errors.
+- **Build** — `dotnet build -c Release` 0 warnings / 0 errors; Web tests 100/100.
 - **Component tests** — `tests/SIMF.Web.Tests/SpeakersPageTests.cs` (5, green):
   populated grid, empty state, failure-degrades-to-empty, media-asset photo route,
   conditional role-pill / location.
+- **Hero swap (2026-07-22)** — the light `ln-pagehero` logo-lockup band was
+  replaced with the shared dark `LandingPageHero` to match Figma `5840-26779`
+  and the rest of the site; verified live at AR@1440 (dark event-photo hero +
+  theme title + date/venue pills, D-755 date preserved). Dead `ln-pagehero` CSS
+  removed; `ln-ico` kept (still used by the card location pin).
 - **Live render (prod data)** — 32 real speakers + portraits from the prod API;
   visually verified against Figma at **AR@1440**, **EN@1440** and **mobile-390**:
   band (navy meta icons + logo lockup), cards (ringed gradient photo, navy name,
@@ -118,4 +126,4 @@ type down-sizes. No horizontal overflow at 1440 / 1024 / 768 / 390
   fetched-but-unused on cold load — align the two URLs in `LandingShell` (see
   [`landing-rebuild.md`](landing-rebuild.md) §6).
 
-_Last reviewed:_ 2026-07-15 by Claude (Speakers page — `ln-` Bootstrap SSR, Figma 5840-26779).
+_Last reviewed:_ 2026-07-22 by Claude (Speakers page — dark `LandingPageHero` to match Figma 5840-26779; D-755 date preserved via `DateText`).
