@@ -366,11 +366,7 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
                   session.localizedHall(isArabic),
                 ),
                 textAlign: TextAlign.start,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: SimfTokens.textLg,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: SimfTokens.labelWhiteMediumLg,
               ),
               const SizedBox(height: SimfTokens.space4),
               GoldBullet(
@@ -424,11 +420,7 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
                 Text(
                   l10n.liveUpcomingSessions,
                   textAlign: TextAlign.start,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: SimfTokens.textLg,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: SimfTokens.labelWhiteMediumLg,
                 ),
                 const SizedBox(height: SimfTokens.space4),
                 for (final upcoming in _upcoming) ...<Widget>[

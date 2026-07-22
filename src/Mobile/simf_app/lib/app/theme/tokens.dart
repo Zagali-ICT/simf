@@ -789,4 +789,23 @@ class SimfTokens {
     color: accent,
     fontSize: textTitle,
   );
+  // live (Figma 934:3450+) — LIVE/language-chip pads, the 16:9 player band
+  // (5 uses), the fixed HH:mm time-chip + AI-caption badge boxes, and the two
+  // white body styles. bodyWhiteRegularSm is shared with the sessions timeline.
+  static const double gap5 = 5; // off-grid 5px micro-gap
+  static const double gap10 = 10; // off-grid 10px chip padding
+  static const double videoAspectRatio = 16 / 9; // live player band
+  static const double timeChipWidth = 53; // upcoming-session HH:mm chip
+  static const double aiBadgeSize = 20; // AI live-caption badge box
+  static const TextStyle bodyWhiteRegularSm = TextStyle(
+    color: surface,
+    fontSize: textSm,
+    fontWeight: FontWeight.w400,
+  );
+  static const TextStyle bodyWhiteMediumTall = TextStyle(
+    color: surface,
+    fontSize: textMd,
+    fontWeight: FontWeight.w500,
+    height: 1.5,
+  );
 }

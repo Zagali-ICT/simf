@@ -18,7 +18,7 @@ class LiveBadge extends StatelessWidget {
     return Container(
       // Frame 934:3609 — px10 py4 on a brick-red (#C0392B) pill, radius 6.
       padding: const EdgeInsets.symmetric(
-        horizontal: 10,
+        horizontal: SimfTokens.gap10,
         vertical: SimfTokens.space1,
       ),
       decoration: BoxDecoration(
@@ -34,14 +34,10 @@ class LiveBadge extends StatelessWidget {
         children: <Widget>[
           Text(
             label,
-            style: const TextStyle(
-              color: SimfTokens.surface,
-              fontWeight: FontWeight.w700,
-              // Frame 934:3611 — 12px Bold.
-              fontSize: SimfTokens.textSm,
-            ),
+            // Frame 934:3611 — 12px Bold.
+            style: SimfTokens.labelWhiteBoldSm,
           ),
-          const SizedBox(width: 5),
+          const SizedBox(width: SimfTokens.gap5),
           Container(
             width: 7,
             height: 7,
@@ -82,21 +78,17 @@ class LanguageChip extends ConsumerWidget {
             unawaited(ref.read(localeControllerProvider.notifier).toggle()),
         child: Padding(
           padding: const EdgeInsets.symmetric(
-            horizontal: 10,
-            vertical: 5,
+            horizontal: SimfTokens.gap10,
+            vertical: SimfTokens.gap5,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Text(
                 isArabic ? 'العربية' : 'English',
-                style: const TextStyle(
-                  color: SimfTokens.surface,
-                  fontWeight: FontWeight.w400,
-                  fontSize: SimfTokens.textSm,
-                ),
+                style: SimfTokens.bodyWhiteRegularSm,
               ),
-              const SizedBox(width: 5),
+              const SizedBox(width: SimfTokens.gap5),
               const Icon(Icons.language, size: 14, color: SimfTokens.surface),
             ],
           ),
