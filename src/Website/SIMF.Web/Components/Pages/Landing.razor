@@ -25,9 +25,10 @@
 
         @* =============================== HERO ============================== *@
         <section class="ln-hero" aria-label="@L["Landing.Hero.Title"]">
-            <video class="ln-hero__video" autoplay muted loop playsinline webkit-playsinline
-                   preload="metadata" poster="assets/figma/hero/hero-bg.png"
-                   src="assets/hero-video.mp4"></video>
+            @* Static Figma hero image (node 5328:23001). Replaces a 72.6MB
+               autoplay video that (a) crushed first-load and (b) played bright
+               footage that did not match the frame's dark aesthetic. *@
+            <img class="ln-hero__bg" src="assets/figma/hero/hero-bg.png" alt="" />
             <div class="ln-hero__overlay"></div>
             <div class="ln-hero__content ln-reveal">
                 <h1 class="ln-hero__title">@L["Landing.Hero.Title"]</h1>
