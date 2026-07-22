@@ -152,6 +152,13 @@ internal sealed class ProgrammeRatingPromptWorker(
         DateTimeOffset now, TimeSpan backfillWindow, ILogger logger,
         CancellationToken cancellationToken)
     {
+        // Respect the CP: if an admin deactivated the "Day" rating type in
+        // RatingConfig, send no day prompt (not stamped, so re-enabling resumes).
+        if (!await db.RatingTypes.AnyAsync(t => t.Code == "Day" && t.IsActive, cancellationToken))
+        {
+            return 0;
+        }
+
         var days = await db.ProgrammeDays
             .Where(d => d.IsActive && d.RatingPromptSentUtc == null)
             .ToListAsync(cancellationToken);
@@ -255,6 +262,19 @@ internal sealed class ProgrammeRatingPromptWorker(
             return false; // already dispatched
         }
 
+        // Respect the CP: only the overall rating types still active in RatingConfig
+        // are prompted. If all three are deactivated, skip entirely (no marker) so
+        // re-enabling one later still fires.
+        var activeOverallCodes = await db.RatingTypes
+            .Where(t => t.IsActive
+                && (t.Code == "Event" || t.Code == "Exhibition" || t.Code == "App"))
+            .Select(t => t.Code)
+            .ToListAsync(cancellationToken);
+        if (activeOverallCodes.Count == 0)
+        {
+            return false;
+        }
+
         var recipientIds = await CheckedInUserIdsAsync(db, day: null, cancellationToken);
 
         // Claim the once-only marker BEFORE dispatching the trio so a restart
@@ -277,21 +297,25 @@ internal sealed class ProgrammeRatingPromptWorker(
         });
         await db.SaveChangesAsync(cancellationToken);
 
-        var trio = new (NotificationKind Kind, string Title, string TitleAr, string Body, string BodyAr)[]
+        var trio = new (NotificationKind Kind, string Code, string Title, string TitleAr, string Body, string BodyAr)[]
         {
-            (NotificationKind.EventRatingRequest, "Rate the forum", "قيّم الملتقى",
+            (NotificationKind.EventRatingRequest, "Event", "Rate the forum", "قيّم الملتقى",
                 "The forum has ended — tap to share your overall rating.",
                 "انتهى الملتقى — اضغط لمشاركة تقييمك العام."),
-            (NotificationKind.ExhibitionRatingRequest, "Rate the exhibition", "قيّم المعرض",
+            (NotificationKind.ExhibitionRatingRequest, "Exhibition", "Rate the exhibition", "قيّم المعرض",
                 "Tap to rate the exhibition.", "اضغط لتقييم المعرض."),
-            (NotificationKind.AppRatingRequest, "Rate the app", "قيّم التطبيق",
+            (NotificationKind.AppRatingRequest, "App", "Rate the app", "قيّم التطبيق",
                 "Enjoying the app? Tap to rate it.", "هل أعجبك التطبيق؟ اضغط لتقييمه."),
         };
 
         foreach (var userId in recipientIds)
         {
-            foreach (var (kind, title, titleAr, body, bodyAr) in trio)
+            foreach (var (kind, code, title, titleAr, body, bodyAr) in trio)
             {
+                if (!activeOverallCodes.Contains(code))
+                {
+                    continue; // this overall rating is deactivated in the CP
+                }
                 try
                 {
                     await notifications.DispatchAsync(new NotificationRequest

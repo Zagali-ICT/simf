@@ -7,9 +7,13 @@ namespace SIMF.Contracts.Configuration;
 /// the control inert, D-369).
 /// <para>Build #13 — <see cref="PartnerDirectoryEnabled"/> is the CP switch for
 /// the "Meet People Like You" partner directory (append-only field; defaults to
-/// true / fail-open so an older payload keeps the feature on).</para></summary>
+/// true / fail-open so an older payload keeps the feature on).</para>
+/// <para>2026-07-22 — <see cref="SessionRatingEnabled"/> mirrors the CP RatingConfig
+/// "Session" rating-type toggle so the app can suppress the after-watch rate prompt
+/// when it is off (append-only; defaults to true / fail-open).</para></summary>
 public sealed record SiteSettingsResponse(
     string RegistrationSuccessMessageAr,
     string RegistrationSuccessMessageEn,
     SocialLinks Social,
-    bool PartnerDirectoryEnabled = true);
+    bool PartnerDirectoryEnabled = true,
+    bool SessionRatingEnabled = true);
