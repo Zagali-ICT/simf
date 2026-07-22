@@ -35,7 +35,7 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
         var now = DateTimeOffset.UtcNow;
         var visitorId = await SeedVisitorAsync();
         // Ended five minutes ago — inside the back-fill window.
-        var sessionId = await SeedEndedSessionWithSeatAsync(now.AddMinutes(-5), visitorId);
+        var sessionId = await SeedEndedSessionWithAttendanceAsync(now.AddMinutes(-5), visitorId);
 
         var firstPass = await RunScanAsync(now);
         Assert.True(firstPass >= 1);
@@ -77,7 +77,7 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
         // still stamps the session so it stops scanning it.
         var now = DateTimeOffset.UtcNow;
         var visitorId = await SeedVisitorAsync();
-        var sessionId = await SeedEndedSessionWithSeatAsync(now.AddMinutes(-5), visitorId);
+        var sessionId = await SeedEndedSessionWithAttendanceAsync(now.AddMinutes(-5), visitorId);
         await SeedExistingRatingPromptAsync(sessionId, visitorId);
 
         await RunScanAsync(now);
@@ -97,12 +97,41 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
     }
 
     [Fact]
+    public async Task Scan_does_not_prompt_a_booked_but_absent_user()
+    {
+        // The reported leak: a seat BOOKING is not attendance. A user who reserved
+        // a seat but never checked in to the hall must NOT get the rating prompt
+        // (matching the submit gate). The session is still stamped so the worker
+        // stops re-scanning it.
+        var now = DateTimeOffset.UtcNow;
+        var visitorId = await SeedVisitorAsync();
+        var sessionId = await SeedEndedSessionWithBookingOnlyAsync(now.AddMinutes(-5), visitorId);
+
+        var prompted = await RunScanAsync(now);
+        Assert.True(prompted >= 1); // the session was in-window and scanned
+
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var idDb = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+
+        // Stamped (so it stops scanning) but no prompt sent to the absent booker.
+        var session = await appDb.Sessions.SingleAsync(s => s.Id == sessionId);
+        Assert.NotNull(session.RatingPromptSentUtc);
+
+        var count = await idDb.Notifications.CountAsync(n =>
+            n.Kind == NotificationKind.SessionRatingRequest
+            && n.RelatedEntityId == sessionId
+            && n.UserId == visitorId);
+        Assert.Equal(0, count);
+    }
+
+    [Fact]
     public async Task Scan_ignores_a_session_that_ended_before_the_backfill_window()
     {
         var now = DateTimeOffset.UtcNow;
         var visitorId = await SeedVisitorAsync();
         // Ended eight hours ago — beyond the 6-hour back-fill window.
-        var sessionId = await SeedEndedSessionWithSeatAsync(now.AddHours(-8), visitorId);
+        var sessionId = await SeedEndedSessionWithAttendanceAsync(now.AddHours(-8), visitorId);
 
         await RunScanAsync(now);
 
@@ -118,7 +147,7 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
         var now = DateTimeOffset.UtcNow;
         var visitorId = await SeedVisitorAsync();
         // Ends in an hour — not yet over.
-        var sessionId = await SeedEndedSessionWithSeatAsync(now.AddHours(1), visitorId);
+        var sessionId = await SeedEndedSessionWithAttendanceAsync(now.AddHours(1), visitorId);
 
         await RunScanAsync(now);
 
@@ -177,33 +206,37 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
         return user.Id;
     }
 
-    private async Task<Guid> SeedEndedSessionWithSeatAsync(DateTimeOffset endUtc, Guid visitorId)
+    // Seeds a just-/long-ended session plus a HallAttendance (hall check-in) for
+    // the visitor — the attendance the rating prompt is now gated on.
+    private async Task<Guid> SeedEndedSessionWithAttendanceAsync(DateTimeOffset endUtc, Guid visitorId)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var hall = new Hall
-        {
-            Id = Guid.NewGuid(),
-            Code = "H-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
-            Name = "Hall",
-            NameArabic = "قاعة",
-            Capacity = 10,
-            IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
-        };
+        var (hall, session) = BuildEndedSession(endUtc);
         db.Halls.Add(hall);
-        var session = new Session
+        db.Sessions.Add(session);
+        db.HallAttendances.Add(new HallAttendance
         {
             Id = Guid.NewGuid(),
-            Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
-            Title = "Keynote",
-            TitleArabic = "الكلمة الرئيسية",
+            SessionId = session.Id,
             HallId = hall.Id,
-            StartUtc = endUtc.AddHours(-1),
-            EndUtc = endUtc,
-            IsActive = true,
+            UserId = visitorId,
+            Method = AttendanceMethod.QrScan,
+            EnterUtc = session.StartUtc,
             CreatedAt = DateTimeOffset.UtcNow,
-        };
+        });
+        await db.SaveChangesAsync();
+        return session.Id;
+    }
+
+    // Seeds a just-ended session with only a SEAT BOOKING (no hall check-in) for
+    // the visitor — the "booked but absent" case that must NOT be prompted.
+    private async Task<Guid> SeedEndedSessionWithBookingOnlyAsync(DateTimeOffset endUtc, Guid visitorId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var (hall, session) = BuildEndedSession(endUtc);
+        db.Halls.Add(hall);
         db.Sessions.Add(session);
         db.SeatReservations.Add(new SeatReservation
         {
@@ -218,5 +251,32 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
         });
         await db.SaveChangesAsync();
         return session.Id;
+    }
+
+    private static (Hall Hall, Session Session) BuildEndedSession(DateTimeOffset endUtc)
+    {
+        var hall = new Hall
+        {
+            Id = Guid.NewGuid(),
+            Code = "H-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+            Name = "Hall",
+            NameArabic = "قاعة",
+            Capacity = 10,
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        var session = new Session
+        {
+            Id = Guid.NewGuid(),
+            Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+            Title = "Keynote",
+            TitleArabic = "الكلمة الرئيسية",
+            HallId = hall.Id,
+            StartUtc = endUtc.AddHours(-1),
+            EndUtc = endUtc,
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        return (hall, session);
     }
 }

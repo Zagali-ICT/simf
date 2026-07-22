@@ -15,7 +15,8 @@ namespace SIMF.Infrastructure.Operations;
 /// minute it finds active sessions that have just ended (<c>EndUtc</c> within a
 /// recent back-fill window) and have not yet been prompted, then dispatches an
 /// in-app <see cref="NotificationKind.SessionRatingRequest"/> to every attendee
-/// with an active seat in that session. The notification's
+/// who checked in to the hall for that session (a <c>HallAttendance</c> row) —
+/// not everyone who merely booked a seat. The notification's
 /// <c>RelatedEntityType="Session"</c> + <c>RelatedEntityId</c> let the app
 /// deep-link to the session's rating screen.
 ///
@@ -106,7 +107,7 @@ internal sealed class SessionRatingPromptWorker(
 
     /// <summary>
     /// The core scan, extracted for direct unit testing. Notifies every attendee
-    /// with an active seat in each just-ended session, then stamps
+    /// who checked in to the hall for each just-ended session, then stamps
     /// <c>RatingPromptSentUtc</c> so each session is prompted exactly once.
     /// Returns the number of sessions prompted. A single attendee's dispatch
     /// failure is logged and skipped — it never aborts the batch or blocks the
@@ -131,11 +132,17 @@ internal sealed class SessionRatingPromptWorker(
 
         foreach (var session in due)
         {
-            var attendeeIds = await db.SeatReservations
-                .Where(r => r.SessionId == session.Id
-                    && r.ReleasedAt == null
-                    && r.ReservedForUserId != null)
-                .Select(r => r.ReservedForUserId!.Value)
+            // Audience = attendees who actually CHECKED IN to the hall for this
+            // session (a HallAttendance row), NOT everyone holding a seat booking.
+            // This mirrors the submit gate (RatingFormService.IsAttendedAsync,
+            // PerSession), so a prompted user can always submit, and it stops a
+            // booked-but-absent user being asked to rate a session they never
+            // attended. It also covers attendees who never scanned out — the
+            // HallAttendanceCloseoutWorker auto-closes their row without dispatching
+            // the departure prompt, but their check-in row already exists here.
+            var attendeeIds = await db.HallAttendances
+                .Where(a => a.SessionId == session.Id)
+                .Select(a => a.UserId)
                 .Distinct()
                 .ToListAsync(cancellationToken);
 
