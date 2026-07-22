@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SIMF.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.App
 {
     [DbContext(typeof(SimfAppDbContext))]
-    partial class SimfAppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260722142226_AddDelegationAvailabilityWindows")]
+    partial class AddDelegationAvailabilityWindows
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -984,31 +987,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("AttendeeCount")
                         .HasColumnType("int");
 
-                    b.Property<Guid?>("AvailabilityWindowId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTimeOffset?>("CheckedInAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<Guid?>("CheckedInByUserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTimeOffset?>("ConfirmedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<Guid?>("ConfirmedByUserId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<Guid?>("HallId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("MeetingTableId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTimeOffset?>("ReminderSentUtc")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<Guid>("RequestedByUserId")
@@ -1046,17 +1025,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AvailabilityWindowId");
-
-                    b.HasIndex("MeetingTableId");
-
                     b.HasIndex("RequestedByUserId");
 
                     b.HasIndex("RequestingCountryId");
-
-                    b.HasIndex("HallId", "SlotStartUtc")
-                        .IsUnique()
-                        .HasFilter("[HallId] IS NOT NULL AND [SlotStartUtc] IS NOT NULL AND [Status] <> 0 AND [Status] <> 2 AND [Status] <> 3");
 
                     b.HasIndex("TargetCountryId", "Status", "CreatedAt");
 
@@ -1294,12 +1265,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("AvailabilityWindowId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("CheckedInAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<Guid?>("CheckedInByUserId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
@@ -1308,9 +1273,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<Guid?>("MeetingTableId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTimeOffset?>("ReminderSentUtc")
-                        .HasColumnType("datetimeoffset");
 
                     b.Property<Guid>("RequestedByUserId")
                         .HasColumnType("uniqueidentifier");
@@ -5782,21 +5744,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
             modelBuilder.Entity("SIMF.Domain.BusinessMeetings.DelegationMeetingRequest", b =>
                 {
-                    b.HasOne("SIMF.Domain.BusinessMeetings.DelegationAvailabilityWindow", null)
-                        .WithMany()
-                        .HasForeignKey("AvailabilityWindowId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("SIMF.Domain.Programme.Hall", "Hall")
-                        .WithMany()
-                        .HasForeignKey("HallId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("SIMF.Domain.BusinessMeetings.MeetingTable", "MeetingTable")
-                        .WithMany()
-                        .HasForeignKey("MeetingTableId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("SIMF.Domain.Common.Country", "RequestingCountry")
                         .WithMany()
                         .HasForeignKey("RequestingCountryId")
@@ -5808,10 +5755,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasForeignKey("TargetCountryId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.Navigation("Hall");
-
-                    b.Navigation("MeetingTable");
 
                     b.Navigation("RequestingCountry");
 

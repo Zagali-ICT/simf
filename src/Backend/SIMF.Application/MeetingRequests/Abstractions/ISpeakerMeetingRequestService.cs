@@ -33,4 +33,11 @@ public interface ISpeakerMeetingRequestService
     /// sent) and re-email the links. 409 when the request is not AwaitingSpeaker.</summary>
     Task ResendSpeakerConfirmationAsync(
         Guid actorUserId, Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>Bi-Meeting rework — an operator checks the meeting in at the hall,
+    /// flipping a confirmed (Accepted) meeting to <see cref="MeetingRequestStatus.Done"/>
+    /// and stamping <c>CheckedInAt</c>/<c>CheckedInByUserId</c>. 409 when the meeting is
+    /// not confirmed.</summary>
+    Task<AdminSpeakerMeetingRequestDetail> CheckInAsync(
+        Guid actorUserId, Guid id, CancellationToken cancellationToken = default);
 }

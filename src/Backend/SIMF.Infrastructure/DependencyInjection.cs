@@ -349,6 +349,9 @@ public static class DependencyInjection
         services.AddHostedService<SIMF.Infrastructure.Operations.RegistrationGateAutoCloseWorker>();
         // P1.7 (D-217) — automated "session starting soon" reminder worker.
         services.AddHostedService<SIMF.Infrastructure.Operations.SessionReminderWorker>();
+        // Bi-Meeting rework — 15-min "meeting starting soon" reminder (email + app) for
+        // confirmed speaker + delegation meetings.
+        services.AddHostedService<SIMF.Infrastructure.Operations.MeetingReminderWorker>();
         // R-1 — revert a stuck AwaitingSpeaker speaker meeting request to Pending once
         // its 72h double-opt-in tokens expire (no re-send ever came); frees the held slot.
         services.AddHostedService<SIMF.Infrastructure.Operations.MeetingAwaitingSpeakerExpiryWorker>();
@@ -399,6 +402,9 @@ public static class DependencyInjection
         // D-474 (#11, Group G) — speaker availability windows + free-slot derivation.
         services.AddScoped<SIMF.Application.MeetingRequests.Abstractions.ISpeakerAvailabilityService,
             SIMF.Infrastructure.MeetingRequests.SpeakerAvailabilityService>();
+        // Bi-Meeting rework — delegation availability windows + free-slot derivation.
+        services.AddScoped<SIMF.Application.MeetingRequests.Abstractions.IDelegationAvailabilityService,
+            SIMF.Infrastructure.MeetingRequests.DelegationAvailabilityService>();
         // D-715 (item 7, FDS-013 §15 GAP-1) — hall availability windows (hall time
         // for business meetings) + free-slot derivation.
         services.AddScoped<SIMF.Application.MeetingRequests.Abstractions.IHallAvailabilityService,

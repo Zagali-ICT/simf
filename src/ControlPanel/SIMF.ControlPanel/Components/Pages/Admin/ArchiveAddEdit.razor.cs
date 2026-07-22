@@ -25,7 +25,7 @@ public partial class ArchiveAddEdit
     // whose detail fetch succeeded). False ⇒ send null lists (keep existing).
     private bool _listsLoaded;
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         if (Initial is not null)
         {
@@ -43,33 +43,51 @@ public partial class ArchiveAddEdit
             _model.DateLabelEn = Initial.DateLabelEn;
             _model.DateLabelAr = Initial.DateLabelAr;
             _model.IsActive = Initial.IsActive;
-
-            // D-432 — the grid summary carries no rich lists; fetch the detail to
-            // pre-populate the gallery / session-title / past-speaker textareas.
-            try
-            {
-                var env = await JS.InvokeAsync<ApiResult<AdminArchiveEditionDetail>>(
-                    "simfAccount.getJson", $"/account/api/admin/archive/{Initial.Id}");
-                if (env is { Success: true, Data: not null })
-                {
-                    _model.GalleryText = FormatGallery(env.Data.Gallery);
-                    _model.SessionTitlesText = FormatSessionTitles(env.Data.SessionTitles);
-                    _model.PastSpeakersText = FormatPastSpeakers(env.Data.PastSpeakers);
-                    _listsLoaded = true;
-                }
-            }
-            catch (Exception)
-            {
-                // Leave the textareas empty on a fetch failure; an edit that does
-                // not touch them sends null (keep) so nothing is lost.
-            }
+            // The rich lists (gallery / session titles / past speakers) load
+            // asynchronously in OnInitializedAsync; _listsLoaded stays false until
+            // that detail fetch succeeds, so an edit submitted before it lands
+            // sends null (keep existing) for those lists.
         }
         else
         {
             _model.Year = DateTime.UtcNow.Year;
             _listsLoaded = true; // create authors the lists from scratch
         }
+
+        // Build the EditContext synchronously, before any await, so the form's
+        // intermediate render (while the edit-mode detail fetch below is still in
+        // flight) always has a non-null EditContext for <EditForm>. A null
+        // EditContext there throws and terminates the circuit. Mirrors every
+        // sibling Add/Edit form (Speakers, Sessions, Banners, ...).
         _editContext = new EditContext(_model);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Initial is null)
+        {
+            return;
+        }
+
+        // D-432 — the grid summary carries no rich lists; fetch the detail to
+        // pre-populate the gallery / session-title / past-speaker textareas.
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<AdminArchiveEditionDetail>>(
+                "simfAccount.getJson", $"/account/api/admin/archive/{Initial.Id}");
+            if (env is { Success: true, Data: not null })
+            {
+                _model.GalleryText = FormatGallery(env.Data.Gallery);
+                _model.SessionTitlesText = FormatSessionTitles(env.Data.SessionTitles);
+                _model.PastSpeakersText = FormatPastSpeakers(env.Data.PastSpeakers);
+                _listsLoaded = true;
+            }
+        }
+        catch (Exception)
+        {
+            // Leave the textareas empty on a fetch failure; an edit that does
+            // not touch them sends null (keep) so nothing is lost.
+        }
     }
 
     private async Task HandleSubmitAsync()

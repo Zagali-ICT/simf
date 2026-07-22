@@ -57,7 +57,7 @@ internal sealed class SpeakerMeetingRequestConfiguration
 
         // D-611 (Wave B) — at most one LIVE request per (speaker, slot). D-716
         // widened this from Accepted-only to the slot-holding set
-        // (`MeetingRequestStatuses.SlotHolding` = Accepted + AwaitingSpeaker): a
+        // (`MeetingRequestStatuses.SlotHolding` = Accepted + AwaitingSpeaker + Done): a
         // hall-bound request in AwaitingSpeaker writes the hall slot into
         // SlotStartUtc and so occupies the speaker's calendar — it must be the DB
         // backstop for the speaker double-booking re-check, symmetric with the hall

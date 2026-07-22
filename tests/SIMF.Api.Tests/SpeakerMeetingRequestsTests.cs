@@ -834,9 +834,11 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
         return body.Data!.Tokens!.AccessToken;
     }
 
-    // D-729 — assign a VIP-tier profile (AllowsVipMeetingSlots) to the signed-up
-    // requester, reusing the seeded VVIP/VIP type when present, so the VIP-only
-    // speaker-meeting gate lets the flow tests through.
+    // Bi-Meeting rework (was D-729 VIP-only) — grant the signed-up requester the
+    // per-user UserProfile.AllowsSpeakerMeeting flag (admin-assigned in prod) so the
+    // speaker-meeting eligibility gate lets the flow tests through. Still assigns a
+    // VIP tier too (harmless; some assertions read the tier). The dedicated
+    // eligibility-gate coverage lives in SpeakerMeetingVipSlotTests.
     private async Task AssignVipProfileAsync(string email)
     {
         using var scope = _factory.Services.CreateScope();
@@ -866,6 +868,7 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
                 Id = Guid.NewGuid(),
                 UserId = user.Id,
                 ProfileTypeId = vipType.Id,
+                AllowsSpeakerMeeting = true,
                 Name = "SMR Visitor", NameArabic = "زائر",
                 CreatedAt = DateTimeOffset.UtcNow,
             });
@@ -873,6 +876,7 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
         else
         {
             profile.ProfileTypeId = vipType.Id;
+            profile.AllowsSpeakerMeeting = true;
         }
         await appDb.SaveChangesAsync();
     }

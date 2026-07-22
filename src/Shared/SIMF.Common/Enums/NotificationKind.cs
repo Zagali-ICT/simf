@@ -169,4 +169,20 @@ public enum NotificationKind
     /// Rejects their badge-update request. In-app row only. Additive value.</summary>
     [Display(Description = nameof(ResNotificationKind.BadgeUpdateDecided), ResourceType = typeof(ResNotificationKind))]
     BadgeUpdateDecided = 53,
+
+    /// <summary>Bi-Meeting rework — dispatched to the OTHER PARTY of a bilateral meeting
+    /// (each eligible target-delegation member) when an admin approves a request and it
+    /// now awaits their confirmation. Carries a confirm deep-link so the app can confirm
+    /// on tap. <c>RelatedEntityType="DelegationMeetingRequest"</c> + <c>RelatedEntityId</c>.
+    /// Sent as an in-app row + a queued email. Additive value (append-only, the
+    /// frozen-enum rule); persisted by NAME so no schema/data change.</summary>
+    [Display(Description = nameof(ResNotificationKind.MeetingRequested), ResourceType = typeof(ResNotificationKind))]
+    MeetingRequested = 54,
+
+    /// <summary>Bi-Meeting rework — dispatched by the automated reminder worker to both
+    /// parties of a confirmed meeting about 15 minutes before it starts. Sent as an in-app
+    /// row + a queued email (email is the real-time channel). Additive value (append-only,
+    /// the frozen-enum rule); persisted by NAME so no schema/data change.</summary>
+    [Display(Description = nameof(ResNotificationKind.MeetingReminder), ResourceType = typeof(ResNotificationKind))]
+    MeetingReminder = 55,
 }

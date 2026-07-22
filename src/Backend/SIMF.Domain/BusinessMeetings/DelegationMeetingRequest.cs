@@ -1,5 +1,6 @@
 using SIMF.Common.Enums;
 using SIMF.Domain.Common;
+using SIMF.Domain.Programme;
 
 namespace SIMF.Domain.BusinessMeetings;
 
@@ -39,11 +40,52 @@ public sealed class DelegationMeetingRequest
     public DateTimeOffset? SlotStartUtc { get; set; }
     public DateTimeOffset? SlotEndUtc { get; set; }
 
-    /// <summary>Lifecycle state. Pending on create; Accepted/Rejected after review.</summary>
+    /// <summary>Lifecycle state (unified machine — Bi-Meeting rework): Pending on
+    /// create; AwaitingSpeaker = admin Approved + bound a hall slot, awaiting the other
+    /// party's confirmation; Accepted = Confirmed (admin-verbal or other-party link/tap);
+    /// Done = checked in at the hall; Rejected/Cancelled are releases.</summary>
     public MeetingRequestStatus Status { get; set; } = MeetingRequestStatus.Pending;
 
-    /// <summary>Optional admin response note shown to the requester.</summary>
+    /// <summary>Bi-Meeting rework — the picked availability window the bound slot
+    /// belongs to. Real FK to <see cref="DelegationAvailabilityWindow"/> (SetNull).
+    /// Null for a requester-proposed slot or when the window is later removed.</summary>
+    public Guid? AvailabilityWindowId { get; set; }
+
+    /// <summary>Bi-Meeting rework — the hall the admin bound the meeting to on Approve.
+    /// Real FK to <see cref="Hall"/> (SetNull). Null before approval; when set,
+    /// <see cref="SlotStartUtc"/>/<see cref="SlotEndUtc"/> hold the bound hall slot.</summary>
+    public Guid? HallId { get; set; }
+    public Hall? Hall { get; set; }
+
+    /// <summary>Bi-Meeting rework — the optional meeting table inside
+    /// <see cref="HallId"/>. Real FK to <see cref="MeetingTable"/> (SetNull).</summary>
+    public Guid? MeetingTableId { get; set; }
+    public MeetingTable? MeetingTable { get; set; }
+
+    /// <summary>Optional admin response note / cancellation justification shown to the
+    /// requester.</summary>
     public string? ResponseNote { get; set; }
+
+    /// <summary>Bi-Meeting rework — when the meeting became Confirmed (admin-verbal or
+    /// the other party's link/tap). Null until confirmed.</summary>
+    public DateTimeOffset? ConfirmedAt { get; set; }
+
+    /// <summary>Bi-Meeting rework — the actor who confirmed (admin id for a verbal
+    /// confirm; null when confirmed by the other party's token/app-tap). Logical FK
+    /// (Identity); no cross-DB relation (D-157).</summary>
+    public Guid? ConfirmedByUserId { get; set; }
+
+    /// <summary>Bi-Meeting rework — once-only dedup stamp for the 15-minute reminder
+    /// worker (mirrors <c>Session.ReminderSentUtc</c>). Null until the reminder fires.</summary>
+    public DateTimeOffset? ReminderSentUtc { get; set; }
+
+    /// <summary>Bi-Meeting rework — when an operator checked the meeting in at the hall
+    /// (flips it to <see cref="MeetingRequestStatus.Done"/>). Null until checked in.</summary>
+    public DateTimeOffset? CheckedInAt { get; set; }
+
+    /// <summary>Bi-Meeting rework — the operator who checked it in. Logical FK
+    /// (Identity); no cross-DB relation (D-157).</summary>
+    public Guid? CheckedInByUserId { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? RespondedAt { get; set; }

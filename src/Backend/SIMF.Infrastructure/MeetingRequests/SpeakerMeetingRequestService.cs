@@ -86,19 +86,17 @@ internal sealed class SpeakerMeetingRequestService(
                 "هذا المتحدّث لا يقبل طلبات المقابلة.");
         }
 
-        // D-729 (owner item 15) — requesting a speaker meeting is now VIP-only
-        // (VVIP/VIP tier, via ProfileType.AllowsVipMeetingSlots). Previously any
-        // approved attendee could submit a topic-only request and VIP was
-        // required only to *book a slot* (the later check). The owner restricted
-        // the whole request to VIP guests: the app hides the CTA for non-VIP
-        // (UserProfileResponse.IsVip) and this is the server-side backstop. The
-        // slot-only VIP check below is now subsumed but kept as defence in depth.
-        if (!await IsVipAsync(requesterUserId, cancellationToken))
+        // Bi-Meeting rework (was D-729 VIP-only) — requesting a speaker meeting is now
+        // gated by the per-user UserProfile.AllowsSpeakerMeeting flag (admin-assigned),
+        // decoupled from the VIP tier. The app hides the CTA when the flag is false
+        // (UserProfileResponse.AllowsSpeakerMeeting); this is the server-side backstop.
+        // The slot-only check below now tests the same flag (defence in depth).
+        if (!await AllowsSpeakerMeetingAsync(requesterUserId, cancellationToken))
         {
             throw new ApiException(
                 ErrorCodes.Forbidden, 403,
-                "Requesting a speaker meeting is available to VIP guests only.",
-                "طلب مقابلة المتحدّث متاح لضيوف كبار الشخصيات فقط.");
+                "Requesting a speaker meeting is not enabled for your account.",
+                "طلب مقابلة المتحدّث غير مُفعَّل لحسابك.");
         }
 
         // A1 — one open request per (requester, speaker): a duplicate Pending
@@ -116,9 +114,10 @@ internal sealed class SpeakerMeetingRequestService(
                 "لديك بالفعل طلب مقابلة قيد المراجعة لهذا المتحدّث.");
         }
 
-        // D-474 (#11) — the VIP slot flow: when the requester picked a slot, they
-        // must be a VIP/VVIP and the slot must still be free. A null slot is the
-        // legacy topic-only request (any approved attendee).
+        // D-474 (#11) — slot flow: when the requester picked a slot it must still be
+        // free. Eligibility (AllowsSpeakerMeeting) is already enforced by the gate
+        // above, so there is no re-check here. A null slot is the legacy topic-only
+        // request.
         DateTimeOffset? slotStart = null;
         DateTimeOffset? slotEnd = null;
         Guid? availabilityWindowId = null;
@@ -130,13 +129,6 @@ internal sealed class SpeakerMeetingRequestService(
                     ErrorCodes.SpeakerMeetingRequestInvalid, 400,
                     "A valid meeting slot (start and end) is required.",
                     "يلزم اختيار فترة اجتماع صحيحة (بداية ونهاية).");
-            }
-            if (!await IsVipAsync(requesterUserId, cancellationToken))
-            {
-                throw new ApiException(
-                    ErrorCodes.Forbidden, 403,
-                    "Booking a meeting slot is available to VIP guests only.",
-                    "حجز فترة اجتماع متاح لضيوف كبار الشخصيات فقط.");
             }
             var slots = await availability.GetAvailableSlotsAsync(speakerId, cancellationToken);
             if (!slots.Any(s => s.StartUtc == pickedStart && s.EndUtc == pickedEnd))
@@ -362,7 +354,13 @@ internal sealed class SpeakerMeetingRequestService(
         // token pair. Staged ONCE here, before the retryable block, so a serialization
         // retry re-commits the same pair rather than minting a duplicate. Only the
         // email that follows is best-effort.
-        var links = bindHall ? meetingActionTokens.StageTokensForRequest(req.Id) : null;
+        // Bi-Meeting rework — the 3-button model. Approve (bindHall && !VerbalConfirmed)
+        // mints the speaker confirmation link pair. Confirm (bindHall && VerbalConfirmed)
+        // means the admin already has the speaker's verbal confirmation, so no link is
+        // minted and the meeting goes straight to Accepted (Confirmed) below.
+        var links = bindHall && !request.VerbalConfirmed
+            ? meetingActionTokens.StageTokensForRequest(req.Id)
+            : null;
 
         // FIX #22 (R-1 held item) — close the CONCURRENT speaker double-book race. The
         // app-level overlap re-check (SpeakerHasOverlappingMeetingAsync) already blocks
@@ -417,7 +415,18 @@ internal sealed class SpeakerMeetingRequestService(
                     }
                 }
 
-                req.Status = bindHall ? MeetingRequestStatus.AwaitingSpeaker : request.Status;
+                // Bi-Meeting rework — Confirm (verbal) with a bound hall goes straight to
+                // Accepted and stamps the (verbal) speaker decision; Approve goes to
+                // AwaitingSpeaker; accept-without-hall keeps the legacy Status.
+                if (bindHall && request.VerbalConfirmed)
+                {
+                    req.Status = MeetingRequestStatus.Accepted;
+                    req.SpeakerDecisionAt = now;
+                }
+                else
+                {
+                    req.Status = bindHall ? MeetingRequestStatus.AwaitingSpeaker : request.Status;
+                }
                 req.ResponseNote = string.IsNullOrWhiteSpace(request.ResponseNote)
                     ? null : request.ResponseNote.Trim();
                 req.RespondedAt = now;
@@ -469,16 +478,51 @@ internal sealed class SpeakerMeetingRequestService(
         // outcome notification it emails the SPEAKER a double-opt-in Approve/Reject
         // link (the tokens were already committed atomically above). The requester
         // "confirmed"/"declined" notification fires only when the speaker acts.
-        if (bindHall)
+        if (links is not null)
         {
+            // Approve (accept-with-hall, not yet verbally confirmed) — email the speaker
+            // the double-opt-in Approve/Reject links (tokens already committed above).
             await meetingActionTokens.AuditMintedAsync(req.Id, cancellationToken);
-            await EmailSpeakerConfirmationLinksAsync(req, links!, cancellationToken);
+            await EmailSpeakerConfirmationLinksAsync(req, links, cancellationToken);
         }
         else
         {
+            // Reject, accept-without-hall, OR Confirm (verbal → already Accepted) — the
+            // requester gets the outcome notification directly.
             await NotifyOutcomeAsync(req, cancellationToken);
         }
 
+        return await LoadDetailAsync(id, cancellationToken);
+    }
+
+    public async Task<AdminSpeakerMeetingRequestDetail> CheckInAsync(
+        Guid actorUserId, Guid id, CancellationToken cancellationToken = default)
+    {
+        var req = await appDbContext.SpeakerMeetingRequests
+            .SingleOrDefaultAsync(r => r.Id == id, cancellationToken)
+            ?? throw new ApiException(
+                ErrorCodes.SpeakerMeetingRequestNotFound, 404,
+                "Speaker meeting request not found.",
+                "لم يتم العثور على طلب مقابلة المتحدّث.");
+        if (req.Status != MeetingRequestStatus.Accepted)
+        {
+            throw new ApiException(
+                ErrorCodes.AppRequestAlreadyResponded, 409,
+                "Only a confirmed meeting can be checked in.",
+                "لا يمكن تسجيل الحضور إلا لاجتماع مؤكَّد.");
+        }
+        var now = timeProvider.GetUtcNow();
+        req.Status = MeetingRequestStatus.Done;
+        req.CheckedInAt = now;
+        req.CheckedInByUserId = actorUserId;
+        await appDbContext.SaveChangesAsync(cancellationToken);
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.SpeakerMeetingRequestCheckedIn,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = DetailJson(new { speakerMeetingRequestId = id }),
+        }, cancellationToken);
         return await LoadDetailAsync(id, cancellationToken);
     }
 
@@ -698,7 +742,7 @@ internal sealed class SpeakerMeetingRequestService(
                 && r.SlotStartUtc != null && r.SlotEndUtc != null
                 && r.SlotStartUtc < end && start < r.SlotEndUtc, cancellationToken);
 
-    // M-7 — does the REQUESTER already hold a LIVE meeting (Accepted or AwaitingSpeaker)
+    // M-7 — does the REQUESTER already hold a LIVE meeting (Accepted, AwaitingSpeaker or Done)
     // overlapping [start, end) with any speaker — excluding this request? The speaker-side
     // guard above stops one speaker being double-booked; this stops one VIP holding two
     // concurrent meetings with two different speakers. Same half-open overlap rule.
@@ -712,16 +756,15 @@ internal sealed class SpeakerMeetingRequestService(
                 && r.SlotStartUtc != null && r.SlotEndUtc != null
                 && r.SlotStartUtc < end && start < r.SlotEndUtc, cancellationToken);
 
-    // D-474 / D-611 — VIP gate: the requester's profile type opts into VIP
-    // meeting slots. D-611 replaced the former brittle "profile-type Name
-    // contains 'VIP'" substring test with the explicit
-    // ProfileType.AllowsVipMeetingSlots flag (the seeder sets it for VVIP + VIP),
-    // so a future type whose name merely embeds "VIP" no longer matches by accident.
-    private async Task<bool> IsVipAsync(Guid userId, CancellationToken cancellationToken)
+    // Bi-Meeting rework — eligibility gate: the requester's per-user
+    // UserProfile.AllowsSpeakerMeeting flag (admin-assigned), replacing the former
+    // VIP-tier test (ProfileType.AllowsVipMeetingSlots) so eligibility to request a
+    // speaker meeting is decoupled from the audience tier.
+    private async Task<bool> AllowsSpeakerMeetingAsync(Guid userId, CancellationToken cancellationToken)
     {
         return await appDbContext.UserProfiles.AsNoTracking()
-            .Where(p => p.UserId == userId && p.ProfileTypeId != null)
-            .Select(p => p.ProfileType!.AllowsVipMeetingSlots)
+            .Where(p => p.UserId == userId)
+            .Select(p => p.AllowsSpeakerMeeting)
             .SingleOrDefaultAsync(cancellationToken);
     }
 

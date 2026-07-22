@@ -96,4 +96,11 @@ public class RespondToSpeakerMeetingRequestRequest : RespondToRequest
     /// is set, must match a currently-free slot for that hall.</summary>
     public DateTimeOffset? SlotStartUtc { get; set; }
     public DateTimeOffset? SlotEndUtc { get; set; }
+
+    /// <summary>Bi-Meeting rework — the admin's 3-button model. With a bound hall:
+    /// <c>false</c> = <b>Approve</b> (→ AwaitingSpeaker, mints the speaker
+    /// confirmation link); <c>true</c> = <b>Confirm</b> (the admin has the other
+    /// party's verbal confirmation → straight to Accepted, no link). Ignored on
+    /// Reject / accept-without-hall. Append-only field (defaults false = Approve).</summary>
+    public bool VerbalConfirmed { get; set; }
 }

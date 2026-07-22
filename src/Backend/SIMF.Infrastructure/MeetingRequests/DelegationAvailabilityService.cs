@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/SpeakerAvailabilityTests.cs
+// Tests: SIMF.Api.Tests/DelegationAvailabilityTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -12,37 +12,39 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.MeetingRequests;
 
-/// <summary>D-474 (#11, Group G phase 1) — speaker availability windows + the free
-/// slots derived from them. Windows are team-defined; a window is chopped into
-/// fixed-length slots, and a slot is offered when it is in the future and not
-/// taken by an accepted meeting (half-open overlap, mirroring the BusinessMeeting
-/// overlap pattern).</summary>
-internal sealed class SpeakerAvailabilityService(
+/// <summary>Bi-Meeting rework — delegation availability windows + the free slots
+/// derived from them, mirroring <see cref="SpeakerAvailabilityService"/>. Windows are
+/// team-defined per delegation (country); a window is chopped into fixed-length slots,
+/// and a slot is offered when it is in the future and not taken by a live delegation
+/// meeting involving that country (half-open overlap).</summary>
+internal sealed class DelegationAvailabilityService(
     SimfAppDbContext appDbContext,
     IForumWindowService forumWindow,
     IAuditLog auditLog,
     TimeProvider timeProvider,
-    ILogger<SpeakerAvailabilityService> logger) : ISpeakerAvailabilityService
+    ILogger<DelegationAvailabilityService> logger) : IDelegationAvailabilityService
 {
     private const int MinSlotMinutes = 5;
     private const int MaxSlotMinutes = 480;
 
-    /// <summary>The event's local-day boundary (KSA, UTC+3) — the same convention
-    /// the programme uses to bucket a session to a Riyadh calendar day. A window's
-    /// start/end are converted to this zone before the forum-day bound is checked.</summary>
+    /// <summary>The event's local-day boundary (KSA, UTC+3) — same convention as the
+    /// speaker/hall availability services for the forum-day bound check.</summary>
     private static readonly TimeSpan EventOffset = TimeSpan.FromHours(3);
 
-    public async Task<AdminSpeakerAvailabilityWindow> CreateWindowAsync(
-        Guid actorUserId, Guid speakerId,
-        CreateSpeakerAvailabilityWindowRequest request,
+    public async Task<AdminDelegationAvailabilityWindow> CreateWindowAsync(
+        Guid actorUserId, int countryId,
+        CreateDelegationAvailabilityWindowRequest request,
         CancellationToken cancellationToken = default)
     {
-        var speakerOk = await appDbContext.Speakers.AsNoTracking()
-            .AnyAsync(s => s.Id == speakerId && s.IsActive, cancellationToken);
-        if (!speakerOk)
+        // The delegation must be an active, invited country (only invited delegations
+        // can hold bilateral meetings — mirrors DelegationMeetingRequestService).
+        var invited = await appDbContext.Countries.AsNoTracking()
+            .AnyAsync(c => c.Id == countryId && c.IsActive && c.IsInvited, cancellationToken);
+        if (!invited)
         {
-            throw new ApiException(ErrorCodes.SpeakerNotFound, 404,
-                "The speaker was not found.", "لم يتم العثور على المتحدّث.");
+            throw new ApiException(ErrorCodes.DelegateCountryNotInvited, 400,
+                "The delegation is not an invited country.",
+                "الوفد ليس من الدول المدعوّة.");
         }
         if (request.SlotMinutes is < MinSlotMinutes or > MaxSlotMinutes)
         {
@@ -58,12 +60,8 @@ internal sealed class SpeakerAvailabilityService(
                 "يجب أن تنتهي الفترة بعد بدايتها وأن تتّسع لفترة واحدة على الأقل.");
         }
 
-        // D-753 — forum-day bound: an availability window may only be defined on the
-        // authored event days (MIN/MAX over active ProgrammeDay.Date — NOT the stale
-        // OrganizationProfile placeholder). The window's start and end are converted
-        // to the event-local (+03:00) calendar date and both must fall inside
-        // [MinDate, MaxDate]. When no programme days are seeded the window is null and
-        // no bound is applied.
+        // Forum-day bound — a window may only be defined on the authored event days
+        // (identical rule to SpeakerAvailabilityService).
         var forum = await forumWindow.GetForumDaysAsync(cancellationToken);
         if (forum is { } bounds)
         {
@@ -80,10 +78,10 @@ internal sealed class SpeakerAvailabilityService(
         }
 
         var now = timeProvider.GetUtcNow();
-        var window = new SpeakerAvailabilityWindow
+        var window = new DelegationAvailabilityWindow
         {
             Id = Guid.NewGuid(),
-            SpeakerId = speakerId,
+            CountryId = countryId,
             StartUtc = request.StartUtc,
             EndUtc = request.EndUtc,
             SlotMinutes = request.SlotMinutes,
@@ -91,39 +89,39 @@ internal sealed class SpeakerAvailabilityService(
             CreatedAt = now,
             CreatedByUserId = actorUserId,
         };
-        appDbContext.SpeakerAvailabilityWindows.Add(window);
+        appDbContext.DelegationAvailabilityWindows.Add(window);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
         {
-            EventType = AuditEvents.SpeakerAvailabilityWindowCreated,
+            EventType = AuditEvents.DelegationAvailabilityWindowCreated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
-            Detail = $"windowId={window.Id}; speakerId={speakerId}",
+            Detail = $"windowId={window.Id}; countryId={countryId}",
         }, cancellationToken);
 
         logger.LogInformation(
-            "Speaker availability window {WindowId} created for speaker {SpeakerId} by {Actor}",
-            window.Id, speakerId, actorUserId);
+            "Delegation availability window {WindowId} created for country {CountryId} by {Actor}",
+            window.Id, countryId, actorUserId);
 
         return ToDto(window);
     }
 
-    public async Task<IReadOnlyList<AdminSpeakerAvailabilityWindow>> ListWindowsAsync(
-        Guid speakerId, CancellationToken cancellationToken = default) =>
-        await appDbContext.SpeakerAvailabilityWindows.AsNoTracking()
-            .Where(w => w.SpeakerId == speakerId && w.IsActive)
+    public async Task<IReadOnlyList<AdminDelegationAvailabilityWindow>> ListWindowsAsync(
+        int countryId, CancellationToken cancellationToken = default) =>
+        await appDbContext.DelegationAvailabilityWindows.AsNoTracking()
+            .Where(w => w.CountryId == countryId && w.IsActive)
             .OrderBy(w => w.StartUtc)
-            .Select(w => new AdminSpeakerAvailabilityWindow(
-                w.Id, w.SpeakerId, w.StartUtc, w.EndUtc, w.SlotMinutes, w.IsActive, w.CreatedAt))
+            .Select(w => new AdminDelegationAvailabilityWindow(
+                w.Id, w.CountryId, w.StartUtc, w.EndUtc, w.SlotMinutes, w.IsActive, w.CreatedAt))
             .ToListAsync(cancellationToken);
 
     public async Task DeleteWindowAsync(
         Guid actorUserId, Guid windowId, CancellationToken cancellationToken = default)
     {
-        var window = await appDbContext.SpeakerAvailabilityWindows
+        var window = await appDbContext.DelegationAvailabilityWindows
             .SingleOrDefaultAsync(w => w.Id == windowId && w.IsActive, cancellationToken)
-            ?? throw new ApiException(ErrorCodes.SpeakerAvailabilityWindowNotFound, 404,
+            ?? throw new ApiException(ErrorCodes.DelegationAvailabilityWindowNotFound, 404,
                 "The availability window was not found.", "لم يتم العثور على فترة التوفّر.");
         window.IsActive = false;
         window.UpdatedAt = timeProvider.GetUtcNow();
@@ -131,41 +129,38 @@ internal sealed class SpeakerAvailabilityService(
 
         await auditLog.WriteAsync(new AuditEntry
         {
-            EventType = AuditEvents.SpeakerAvailabilityWindowDeleted,
+            EventType = AuditEvents.DelegationAvailabilityWindowDeleted,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
             Detail = $"windowId={windowId}",
         }, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<SpeakerAvailableSlot>> GetAvailableSlotsAsync(
-        Guid speakerId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<DelegationAvailableSlot>> GetAvailableSlotsAsync(
+        int countryId, CancellationToken cancellationToken = default)
     {
         var now = timeProvider.GetUtcNow();
-        var windows = await appDbContext.SpeakerAvailabilityWindows.AsNoTracking()
-            .Where(w => w.SpeakerId == speakerId && w.IsActive && w.EndUtc > now)
+        var windows = await appDbContext.DelegationAvailabilityWindows.AsNoTracking()
+            .Where(w => w.CountryId == countryId && w.IsActive && w.EndUtc > now)
             .OrderBy(w => w.StartUtc)
             .ToListAsync(cancellationToken);
         if (windows.Count == 0)
         {
-            return Array.Empty<SpeakerAvailableSlot>();
+            return Array.Empty<DelegationAvailableSlot>();
         }
 
-        // Slots already taken by a LIVE meeting for this speaker. "Taken" = a
-        // request in the slot-holding set (`MeetingRequestStatuses.SlotHolding` =
-        // Accepted + AwaitingSpeaker + Done) — the single authority the accept re-check +
-        // the DB filtered-unique indexes also key off. Keying on Accepted only would
-        // advertise a slot already held by a hall-bound AwaitingSpeaker meeting as
-        // free, creating a request the admin could never accept (mirrors
-        // HallAvailabilityService's taken-filter).
-        var taken = await appDbContext.SpeakerMeetingRequests.AsNoTracking()
-            .Where(r => r.SpeakerId == speakerId
+        // Slots already taken by a LIVE delegation meeting involving this country
+        // (as requester OR target). "Taken" = a request in the slot-holding set
+        // (`MeetingRequestStatuses.SlotHolding` = Accepted + AwaitingSpeaker + Done) —
+        // the single authority the accept re-check + the DB indexes also key off.
+        var taken = await appDbContext.DelegationMeetingRequests.AsNoTracking()
+            .Where(r => (r.RequestingCountryId == countryId || r.TargetCountryId == countryId)
                 && MeetingRequestStatuses.SlotHolding.Contains(r.Status)
                 && r.SlotStartUtc != null && r.SlotEndUtc != null)
             .Select(r => new { Start = r.SlotStartUtc!.Value, End = r.SlotEndUtc!.Value })
             .ToListAsync(cancellationToken);
 
-        var slots = new List<SpeakerAvailableSlot>();
+        var slots = new List<DelegationAvailableSlot>();
         foreach (var w in windows)
         {
             var length = TimeSpan.FromMinutes(w.SlotMinutes);
@@ -177,7 +172,7 @@ internal sealed class SpeakerAvailabilityService(
                 var isTaken = taken.Any(t => t.Start < slotEnd && slotStart < t.End);
                 if (!isPast && !isTaken)
                 {
-                    slots.Add(new SpeakerAvailableSlot(slotStart, slotEnd));
+                    slots.Add(new DelegationAvailableSlot(slotStart, slotEnd));
                 }
                 slotStart = slotEnd;
             }
@@ -185,6 +180,6 @@ internal sealed class SpeakerAvailabilityService(
         return slots;
     }
 
-    private static AdminSpeakerAvailabilityWindow ToDto(SpeakerAvailabilityWindow w) =>
-        new(w.Id, w.SpeakerId, w.StartUtc, w.EndUtc, w.SlotMinutes, w.IsActive, w.CreatedAt);
+    private static AdminDelegationAvailabilityWindow ToDto(DelegationAvailabilityWindow w) =>
+        new(w.Id, w.CountryId, w.StartUtc, w.EndUtc, w.SlotMinutes, w.IsActive, w.CreatedAt);
 }

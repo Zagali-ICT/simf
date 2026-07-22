@@ -427,6 +427,9 @@ public sealed class DelegationMeetingRequestsTests : IClassFixture<SimfApiFactor
                 Name = user.DisplayName, NameArabic = user.DisplayName,
                 NationalityId = nationalityId,
                 IsDelegate = isDelegate,
+                // Bi-Meeting rework — the delegation-meeting gate now reads this
+                // per-user flag (was IsDelegate). Map the fixture's intent onto it.
+                AllowsDelegationMeeting = isDelegate,
                 CreatedAt = DateTimeOffset.UtcNow,
             });
             await appDb.SaveChangesAsync();
