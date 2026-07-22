@@ -41,10 +41,7 @@ class VenueMapBoothSheet extends StatelessWidget {
               Expanded(
                 child: Text(
                   booth?.localizedName(isArabic) ?? node.localizedLabel(isArabic),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: SimfTokens.textLg,
-                  ),
+                  style: SimfTokens.titleBold,
                 ),
               ),
               if (booth != null)
@@ -59,10 +56,7 @@ class VenueMapBoothSheet extends StatelessWidget {
                   ),
                   child: Text(
                     booth.code,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: SimfTokens.textSm,
-                    ),
+                    style: SimfTokens.codeLabelSm,
                   ),
                 ),
             ],
@@ -80,7 +74,7 @@ class VenueMapBoothSheet extends StatelessWidget {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Text(
                     l10n.loadingLabel,
-                    style: const TextStyle(color: SimfTokens.inkMuted),
+                    style: SimfTokens.bodyInkMuted,
                   );
                 }
                 final description =
@@ -116,7 +110,7 @@ class _SubLine extends StatelessWidget {
     }
     return Text(
       parts.join(' · '),
-      style: const TextStyle(color: SimfTokens.inkMuted),
+      style: SimfTokens.bodyInkMuted,
     );
   }
 }

@@ -163,6 +163,8 @@ class SimfTokens {
   static const double gap2 = 2; // off-grid 2px micro-gap (below the space-4 scale)
   static const double gap6 = 6; // off-grid 6px micro-gap (below the space-4 scale)
   static const double statsStripHeight = 100; // delegations decorative stats-strip map (Figma 1426:10781)
+  static const double mapControlSize = 40; // venue-map floating zoom/locate control square (Figma 758:1358)
+  static const double tapTarget = 44; // minimum touch-target height — venue-map direct-me button (Figma 758:1358)
 
   // Type scale (Material text styles override these for actual rendering;
   // tokens here are for places that need a raw size).
@@ -358,6 +360,29 @@ class SimfTokens {
   static const TextStyle labelGoldBoldXl = TextStyle(
     color: accent,
     fontSize: textXl,
+    fontWeight: FontWeight.w700,
+  );
+  // venue map (Figma 758:1358) — light info-card subtitle + node-marker caption.
+  static const TextStyle bodyGreySm = TextStyle(
+    color: greyText,
+    fontSize: textSm,
+  );
+  static const TextStyle bodyInkMuted = TextStyle(
+    color: inkMuted,
+  );
+  static const TextStyle labelWhiteSemibold9 = TextStyle(
+    color: surface,
+    fontSize: 9,
+    fontWeight: FontWeight.w600,
+  );
+  // Colourless (inherit the ambient text colour, exactly as the inline styles
+  // they replace did) — the booth-sheet title + code chip.
+  static const TextStyle titleBold = TextStyle(
+    fontSize: textLg,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle codeLabelSm = TextStyle(
+    fontSize: textSm,
     fontWeight: FontWeight.w700,
   );
 }

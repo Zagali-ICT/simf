@@ -19,8 +19,8 @@ class VenueMapControl extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
         child: SizedBox(
-          width: 40,
-          height: 40,
+          width: SimfTokens.mapControlSize,
+          height: SimfTokens.mapControlSize,
           child: Icon(icon, size: 20, color: SimfTokens.navy),
         ),
       ),
