@@ -1,0 +1,79 @@
+# CP — Badge batches (`/admin/visitors/badge-batches`)
+
+| | |
+|---|---|
+| **Route** | `/admin/visitors/badge-batches` |
+| **Component** | `Components/Pages/Admin/BadgeBatchesPage.razor` (+ `.razor.cs`) |
+| **Permission** | `Visitors.ViewBatches` (Administrator baseline) — gates the API, the page, and both row actions |
+| **Nav** | People → **Badge batches** (`Module.AdminBadgeBatches`) |
+| **Decision** | D-758 (#10 Phase 2) |
+| **E2E** | [`cp-admin-badge-batches.md`](../../tests/e2e/cp-admin-badge-batches.md) (E2E-BBT-001..009) |
+
+## Purpose
+
+Bulk-badge generation (D-473 / D-751, the Delegates + Visitors desks) mints a set of
+placeholder QR badges in one action. Before D-758 that "batch" existed only in the
+request DTO and vanished once the loop finished — the minted accounts were ordinary
+rows with no shared handle. This page makes each bulk-generate run a **persisted
+`BadgeBatch`** (App DB), so an admin can manage the generated set as a unit after the
+fact: see what was generated, **re-email** the QR pack to an organiser, or **revoke**
+the whole batch.
+
+## Data flow
+
+- **List** — `POST /account/api/admin/visitors/badge-batches/list` (GridQuery →
+  `GridPage<AdminBadgeBatchSummary>`), newest-first. Server-paged `SimfDataGrid`.
+- **Re-email** — `POST /account/api/admin/visitors/badge-batches/re-email`
+  (`{ BatchId, RecipientEmail }`). Re-materialises the pack from the batch's minted
+  badges (tier name + QR id, stable order), rebuilds the ZIP of QR PNGs, and enqueues
+  it to the organiser. The badges themselves are unchanged; the batch remembers the
+  last recipient.
+- **Revoke** — `POST /account/api/admin/visitors/badge-batches/revoke` (`{ BatchId }`).
+  Disables every account the batch minted (reusing the audience-scoped bulk-delete
+  path: `AccountState = Disabled` + token revoke + per-account audit) and marks the
+  batch `IsActive = false`. Not reversible.
+
+All three forward through `SimfAdminClient` (CP proxy in `AccountEndpoints`) to the
+FastEndpoints in `BadgeBatchEndpoints.cs` → `IAdminUserBulkService`
+(`AdminAccountService.Bulk.cs`).
+
+## Columns & actions
+
+| Column | Source |
+|---|---|
+| Contents | `CountsSummary` (e.g. `VIP × 3 + Normal × 2`, built invariant-culture at generate time) |
+| Total | `TotalCount` |
+| Delegation | `IsDelegate` pill |
+| Emailed to | `RecipientEmail` (last organiser, or —) |
+| Generated | `CreatedAt` (Saudi time) |
+| Status | `IsActive` → Active / Revoked pill |
+
+Row actions (active batches only, gated `Visitors.ViewBatches`): **Re-email QR pack**
+(modal — edit the organiser address, Send) and **Revoke batch** (confirm modal).
+
+## Edge cases
+
+- Empty list → `SimfEmptyState` (`Admin.BadgeBatches.None`).
+- Re-email with an invalid organiser email → `400 VALIDATION_FAILED`, nothing sent.
+- Re-email / revoke an unknown (or already-revoked) batch → `404 ADMIN_USER_NOT_FOUND`.
+- Revoke is idempotent-safe: a revoked batch drops its row actions and cannot be
+  re-revoked (the endpoint 404s on `IsActive = false`).
+
+## Design notes (D-758)
+
+- **Owner-approved D-110/D-199 freeze-lift** for one additive App-DB table
+  `BadgeBatches` + one additive nullable column `UserProfile.BadgeBatchId`
+  (migration `App/D758_AddBadgeBatch`). Identity schema untouched.
+- The `UserProfile → BadgeBatch` FK is an **intra-App-DB** relation (nullable +
+  `OnDelete.Restrict`, mirroring the Organisation / Region FKs) — the D-157 bare-Guid
+  rule does not apply (no Identity-owned data in the batch).
+- Revoke crosses the App/Identity boundary as **two separate units of work** (disable
+  the Identity accounts, then deactivate the App batch) — never a distributed
+  transaction (D-157).
+- The emailed pack is built by one shared helper (`EnqueueBadgePackEmailAsync`) used by
+  both bulk-generate and re-email, so both send the identical ZIP.
+
+## Changelog
+
+- **2026-07-22 (D-758, #10 Phase 2)** — page created. Persisted `BadgeBatch` +
+  `BadgeBatchId`, list / re-email / revoke, `Visitors.ViewBatches` permission.

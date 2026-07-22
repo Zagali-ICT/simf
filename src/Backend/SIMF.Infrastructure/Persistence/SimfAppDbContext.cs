@@ -5,6 +5,7 @@ using SIMF.Domain.AccessControl;
 using SIMF.Domain.Ai;
 using SIMF.Domain.Archive;
 using SIMF.Domain.Auditing;
+using SIMF.Domain.Badges;
 using SIMF.Domain.BusinessMeetings;
 using SIMF.Domain.Cms;
 using SIMF.Domain.Common;
@@ -288,6 +289,11 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     // Replaces the seven bespoke filesystem stores + the D-357 Asset table. Bytes
     // live out-of-row (D-90); owner is a bare polymorphic Guid (D-157).
     public DbSet<StoredFile> StoredFiles => Set<StoredFile>();
+
+    // D-758 (#10 Phase 2) — bulk-badge generation runs, so a minted set of
+    // placeholder badges can be re-emailed / revoked as a unit. Each member
+    // UserProfile carries a nullable BadgeBatchId back-reference (intra-App FK).
+    public DbSet<BadgeBatch> BadgeBatches => Set<BadgeBatch>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

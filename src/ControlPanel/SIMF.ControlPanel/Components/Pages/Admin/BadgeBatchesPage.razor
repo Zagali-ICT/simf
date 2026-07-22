@@ -1,0 +1,168 @@
+@* D-758 (#10 Phase 2) — persisted bulk-badge batches desk. Lists every
+   bulk-generate run (BadgeBatch) newest-first; a batch can be re-emailed (re-render
+   its QR pack + send to an organiser) or revoked (disable every account it minted +
+   mark it inactive). SimfDataGrid (server-paged); quiet row actions shown only for
+   active batches. Mirrors DelegationMeetingsList. *@
+@page "/admin/visitors/badge-batches"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Visitors.ViewBatches)]
+
+<PageTitle>@L["Admin.BadgeBatches.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.BadgeBatches.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <SimfDataGrid TItem="AdminBadgeBatchSummary"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="false"
+                      RowKey="@(r => r.Id.ToString())"
+                      RowLabel="@(r => r.CountsSummary)"
+                      Caption="@L["Admin.BadgeBatches.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.BadgeBatches.Loading"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      ActionsHeader="@L["Grid.Actions"]"
+                      SelectAllLabel="@L["Grid.SelectAll"]"
+                      SelectRowLabel="@L["Grid.SelectRow"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminBadgeBatchSummary" Key="summary"
+                                    Header="@L["Admin.BadgeBatches.Col.Summary"]">
+                    <CellTemplate>@context.CountsSummary</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminBadgeBatchSummary" Key="total"
+                                    Header="@L["Admin.BadgeBatches.Col.Total"]">
+                    <CellTemplate>@context.TotalCount</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminBadgeBatchSummary" Key="delegate"
+                                    Header="@L["Admin.BadgeBatches.Col.Delegate"]">
+                    <CellTemplate>
+                        @if (context.IsDelegate)
+                        {
+                            <SimfPill Variant="on">@L["Admin.BadgeBatches.Delegate.Yes"]</SimfPill>
+                        }
+                        else
+                        {
+                            <span class="simf-table__sub">—</span>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminBadgeBatchSummary" Key="recipient"
+                                    Header="@L["Admin.BadgeBatches.Col.Recipient"]">
+                    <CellTemplate>
+                        @if (!string.IsNullOrEmpty(context.RecipientEmail))
+                        {
+                            @context.RecipientEmail
+                        }
+                        else
+                        {
+                            <span class="simf-table__sub">—</span>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminBadgeBatchSummary" Key="createdAt"
+                                    Header="@L["Admin.BadgeBatches.Col.CreatedAt"]">
+                    <CellTemplate>@context.CreatedAt.FormatSaudi("yyyy-MM-dd HH:mm")</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminBadgeBatchSummary" Key="status"
+                                    Header="@L["Admin.BadgeBatches.Col.Status"]">
+                    <CellTemplate>
+                        @if (context.IsActive)
+                        {
+                            <SimfPill Variant="on">@L["Admin.BadgeBatches.Status.Active"]</SimfPill>
+                        }
+                        else
+                        {
+                            <SimfPill Variant="off">@L["Admin.BadgeBatches.Status.Revoked"]</SimfPill>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <RowActions>
+                @* Re-email + revoke only make sense for an active batch. *@
+                @if (context.IsActive)
+                {
+                    <AuthorizedAction Permission="@PermissionCatalog.Visitors.ViewBatches">
+                        <SimfToolbarButton Icon="mail" Title="@L["Admin.BadgeBatches.ReEmail"]"
+                                           Disabled="_busy"
+                                           OnClick="@(() => OpenReEmail(context))" />
+                    </AuthorizedAction>
+                    <AuthorizedAction Permission="@PermissionCatalog.Visitors.ViewBatches">
+                        <SimfToolbarButton Icon="ban" Title="@L["Admin.BadgeBatches.Revoke"]"
+                                           Disabled="_busy"
+                                           OnClick="@(() => OpenRevoke(context))" />
+                    </AuthorizedAction>
+                }
+            </RowActions>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.BadgeBatches.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
+    </div>
+</div>
+
+@if (_reEmailTarget is not null)
+{
+    <SimfModal Open="true" Title="@L["Admin.BadgeBatches.ReEmail.Title"]"
+               OnClose="@(() => _reEmailTarget = null)">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <dl class="simf-dl">
+                    <dt>@L["Admin.BadgeBatches.Col.Summary"]</dt>
+                    <dd>@_reEmailTarget.CountsSummary</dd>
+                    <dt>@L["Admin.BadgeBatches.Col.Total"]</dt>
+                    <dd>@_reEmailTarget.TotalCount</dd>
+                </dl>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.BadgeBatches.ReEmail.Recipient"]</span>
+                    <input class="simf-field__input" type="email" dir="ltr"
+                           placeholder="@L["Admin.BadgeBatches.ReEmail.Placeholder"]"
+                           @bind="_reEmailRecipient" disabled="@_busy" />
+                </label>
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Variant="secondary" Disabled="_busy"
+                        OnClick="@(() => _reEmailTarget = null)">
+                @L["Admin.BadgeBatches.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" OnClick="ReEmailAsync" Loading="_busy">
+                @L["Admin.BadgeBatches.ReEmail.Send"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@if (_revokeTarget is not null)
+{
+    <SimfModal Open="true" Title="@L["Admin.BadgeBatches.Revoke.Title"]"
+               OnClose="@(() => _revokeTarget = null)">
+        <ChildContent>
+            <p>@string.Format(L["Admin.BadgeBatches.Revoke.Body"], _revokeTarget.TotalCount, _revokeTarget.CountsSummary)</p>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Variant="secondary" Disabled="_busy"
+                        OnClick="@(() => _revokeTarget = null)">
+                @L["Admin.BadgeBatches.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" Variant="danger" OnClick="RevokeAsync" Loading="_busy">
+                @L["Admin.BadgeBatches.Revoke.Confirm"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}

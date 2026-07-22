@@ -297,6 +297,172 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
             _factory.Emails.Messages.Count(m => m.Attachments is { Count: > 0 }));
     }
 
+    // -- D-758 (#10 Phase 2) — persisted batch + list / re-email / revoke ------
+
+    [Fact]
+    public async Task Bulk_generate_persists_a_batch_and_stamps_each_profile()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var typeId = await FreshVisitorProfileTypeAsync();
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/visitors/bulk-generate",
+            new AdminBulkGenerateBadgesRequest
+            {
+                Batches = new List<BulkBadgeBatch> { new() { ProfileTypeId = typeId, Count = 2 } },
+            },
+            admin);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var badges = await appDb.UserProfiles.Where(p => p.ProfileTypeId == typeId).ToListAsync();
+        Assert.Equal(2, badges.Count);
+        // Every badge back-references the same, persisted batch row.
+        var batchId = Assert.Single(badges.Select(b => b.BadgeBatchId).Distinct());
+        Assert.NotNull(batchId);
+        var batch = await appDb.BadgeBatches.SingleAsync(b => b.Id == batchId!.Value);
+        Assert.Equal(2, batch.TotalCount);
+        Assert.True(batch.IsActive);
+        Assert.Contains("× 2", batch.CountsSummary);
+    }
+
+    [Fact]
+    public async Task List_badge_batches_includes_a_generated_batch()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var typeId = await FreshVisitorProfileTypeAsync();
+        await PostAuthAsync(
+            "/api/v1/admin/visitors/bulk-generate",
+            new AdminBulkGenerateBadgesRequest
+            {
+                Batches = new List<BulkBadgeBatch> { new() { ProfileTypeId = typeId, Count = 1 } },
+            },
+            admin);
+
+        var batchId = await BatchIdForTypeAsync(typeId);
+
+        var listResponse = await PostAuthAsync(
+            "/api/v1/admin/visitors/badge-batches/list", new GridQuery { Top = 200 }, admin);
+        Assert.Equal(HttpStatusCode.OK, listResponse.StatusCode);
+        var page = (await listResponse.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminBadgeBatchSummary>>>())!;
+        Assert.Contains(page.Data!.Items,
+            b => b.Id == batchId && b.TotalCount == 1 && b.IsActive);
+    }
+
+    [Fact]
+    public async Task Re_email_a_batch_enqueues_a_fresh_zip_to_the_recipient()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var typeId = await FreshVisitorProfileTypeAsync();
+        await PostAuthAsync(
+            "/api/v1/admin/visitors/bulk-generate",
+            new AdminBulkGenerateBadgesRequest
+            {
+                Batches = new List<BulkBadgeBatch> { new() { ProfileTypeId = typeId, Count = 3 } },
+            },
+            admin);
+        var batchId = await BatchIdForTypeAsync(typeId);
+
+        var recipient = $"reemail-{Guid.NewGuid():N}@simf.test";
+        var response = await PostAuthAsync(
+            "/api/v1/admin/visitors/badge-batches/re-email",
+            new AdminReEmailBadgeBatchRequest { BatchId = batchId, RecipientEmail = recipient },
+            admin);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AdminReEmailBadgeBatchResponse>>())!;
+        Assert.Equal(3, body.Data!.BadgeCount);
+        Assert.True(body.Data!.EmailQueued);
+
+        var message = Assert.Single(_factory.Emails.Messages, m => m.To == recipient);
+        var attachment = Assert.Single(message.Attachments!);
+        Assert.Equal("application/zip", attachment.ContentType);
+        using var zip = new ZipArchive(new MemoryStream(attachment.Content), ZipArchiveMode.Read);
+        Assert.Equal(3, zip.Entries.Count);
+    }
+
+    [Fact]
+    public async Task Re_email_an_unknown_batch_is_404()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var response = await PostAuthAsync(
+            "/api/v1/admin/visitors/badge-batches/re-email",
+            new AdminReEmailBadgeBatchRequest
+            {
+                BatchId = Guid.NewGuid(),
+                RecipientEmail = "organiser@simf.test",
+            },
+            admin);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Revoke_a_batch_disables_its_accounts_and_marks_it_inactive()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var typeId = await FreshVisitorProfileTypeAsync();
+        await PostAuthAsync(
+            "/api/v1/admin/visitors/bulk-generate",
+            new AdminBulkGenerateBadgesRequest
+            {
+                Batches = new List<BulkBadgeBatch> { new() { ProfileTypeId = typeId, Count = 2 } },
+            },
+            admin);
+
+        Guid batchId;
+        List<Guid> memberIds;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var members = await appDb.UserProfiles.Where(p => p.ProfileTypeId == typeId).ToListAsync();
+            batchId = members[0].BadgeBatchId!.Value;
+            memberIds = members.Select(m => m.UserId).ToList();
+        }
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/visitors/badge-batches/revoke",
+            new AdminRevokeBadgeBatchRequest { BatchId = batchId }, admin);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AdminRevokeBadgeBatchResponse>>())!;
+        Assert.Equal(2, body.Data!.RevokedCount);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var batch = await appDb.BadgeBatches.SingleAsync(b => b.Id == batchId);
+            Assert.False(batch.IsActive);
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+            foreach (var id in memberIds)
+            {
+                var user = await users.FindByIdAsync(id.ToString());
+                Assert.Equal(AccountState.Disabled, user!.AccountState);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task Revoke_an_unknown_batch_is_404()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var response = await PostAuthAsync(
+            "/api/v1/admin/visitors/badge-batches/revoke",
+            new AdminRevokeBadgeBatchRequest { BatchId = Guid.NewGuid() }, admin);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    private async Task<Guid> BatchIdForTypeAsync(Guid profileTypeId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        return (await appDb.UserProfiles
+            .Where(p => p.ProfileTypeId == profileTypeId)
+            .Select(p => p.BadgeBatchId)
+            .FirstAsync())!.Value;
+    }
+
     // -- helpers --------------------------------------------------------------
 
     private static AdminWalkInRegistrationRequest BuildRequest(

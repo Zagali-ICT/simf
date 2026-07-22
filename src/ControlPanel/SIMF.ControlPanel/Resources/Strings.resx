@@ -3296,6 +3296,33 @@
   <data name="Admin.VipExport.Download" xml:space="preserve"><value>Download</value></data>
   <data name="Module.AdminVisitorsVip" xml:space="preserve"><value>VIP registration</value></data>
   <data name="Module.AdminDelegates" xml:space="preserve"><value>Delegates</value></data>
+  <!-- D-758 (#10 Phase 2) — persisted bulk-badge batches: list / re-email / revoke. -->
+  <data name="Module.AdminBadgeBatches" xml:space="preserve"><value>Badge batches</value></data>
+  <data name="Admin.BadgeBatches.Title" xml:space="preserve"><value>Badge batches</value></data>
+  <data name="Admin.BadgeBatches.Loading" xml:space="preserve"><value>Loading batches…</value></data>
+  <data name="Admin.BadgeBatches.LoadFailed" xml:space="preserve"><value>Could not load the badge batches.</value></data>
+  <data name="Admin.BadgeBatches.None" xml:space="preserve"><value>No badge batches yet — generate a set from the Delegates or Visitors desk.</value></data>
+  <data name="Admin.BadgeBatches.Col.Summary" xml:space="preserve"><value>Contents</value></data>
+  <data name="Admin.BadgeBatches.Col.Total" xml:space="preserve"><value>Total</value></data>
+  <data name="Admin.BadgeBatches.Col.Delegate" xml:space="preserve"><value>Delegation</value></data>
+  <data name="Admin.BadgeBatches.Col.Recipient" xml:space="preserve"><value>Emailed to</value></data>
+  <data name="Admin.BadgeBatches.Col.CreatedAt" xml:space="preserve"><value>Generated</value></data>
+  <data name="Admin.BadgeBatches.Col.Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Admin.BadgeBatches.Delegate.Yes" xml:space="preserve"><value>Delegates</value></data>
+  <data name="Admin.BadgeBatches.Status.Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.BadgeBatches.Status.Revoked" xml:space="preserve"><value>Revoked</value></data>
+  <data name="Admin.BadgeBatches.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.BadgeBatches.ReEmail" xml:space="preserve"><value>Re-email QR pack</value></data>
+  <data name="Admin.BadgeBatches.ReEmail.Title" xml:space="preserve"><value>Re-email badge pack</value></data>
+  <data name="Admin.BadgeBatches.ReEmail.Recipient" xml:space="preserve"><value>Organiser email</value></data>
+  <data name="Admin.BadgeBatches.ReEmail.Placeholder" xml:space="preserve"><value>name@example.com</value></data>
+  <data name="Admin.BadgeBatches.ReEmail.Send" xml:space="preserve"><value>Send</value></data>
+  <data name="Admin.BadgeBatches.ReEmail.Done" xml:space="preserve"><value>Emailed {0} badge(s) to {1}.</value></data>
+  <data name="Admin.BadgeBatches.Revoke" xml:space="preserve"><value>Revoke batch</value></data>
+  <data name="Admin.BadgeBatches.Revoke.Title" xml:space="preserve"><value>Revoke badge batch</value></data>
+  <data name="Admin.BadgeBatches.Revoke.Body" xml:space="preserve"><value>This disables all {0} account(s) in this batch ({1}). This cannot be undone.</value></data>
+  <data name="Admin.BadgeBatches.Revoke.Confirm" xml:space="preserve"><value>Revoke</value></data>
+  <data name="Admin.BadgeBatches.Revoke.Done" xml:space="preserve"><value>Revoked {0} account(s).</value></data>
   <data name="Admin.Delegates.Title" xml:space="preserve"><value>Delegates</value></data>
   <data name="Admin.Delegates.Single.Title" xml:space="preserve"><value>Register a delegate</value></data>
   <data name="Admin.Delegates.Single.Hint" xml:space="preserve"><value>A delegate is a normal visitor flagged as a delegation member; their nationality must be a country invited to send a delegation.</value></data>

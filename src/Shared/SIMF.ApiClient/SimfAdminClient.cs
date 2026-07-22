@@ -633,6 +633,36 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
+    /// <summary>D-758 (#10 Phase 2) — the server-paged list of persisted bulk-badge batches.</summary>
+    public Task<ApiCallResult<GridPage<AdminBadgeBatchSummary>>> ListBadgeBatchesAsync(
+        GridQuery query,
+        string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminBadgeBatchSummary>>(
+            HttpMethod.Post, "visitors/badge-batches/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>D-758 (#10 Phase 2) — re-email a batch's QR pack to an organiser.</summary>
+    public Task<ApiCallResult<AdminReEmailBadgeBatchResponse>> ReEmailBadgeBatchAsync(
+        AdminReEmailBadgeBatchRequest request,
+        string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminReEmailBadgeBatchResponse>(
+            HttpMethod.Post, "visitors/badge-batches/re-email",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>D-758 (#10 Phase 2) — revoke a batch (disable its accounts + mark it inactive).</summary>
+    public Task<ApiCallResult<AdminRevokeBadgeBatchResponse>> RevokeBadgeBatchAsync(
+        AdminRevokeBadgeBatchRequest request,
+        string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminRevokeBadgeBatchResponse>(
+            HttpMethod.Post, "visitors/badge-batches/revoke",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
     /// <summary>D-127 — on-site walk-in Other registration.</summary>
     public Task<ApiCallResult<AdminWalkInRegistrationResponse>> RegisterOtherOnSiteAsync(
         AdminWalkInRegistrationRequest request,

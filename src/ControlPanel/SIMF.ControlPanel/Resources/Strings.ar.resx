@@ -3289,6 +3289,33 @@
   <data name="Admin.VipExport.Download" xml:space="preserve"><value>تنزيل</value></data>
   <data name="Module.AdminVisitorsVip" xml:space="preserve"><value>تسجيل كبار الشخصيات</value></data>
   <data name="Module.AdminDelegates" xml:space="preserve"><value>الوفود</value></data>
+  <!-- D-758 (#10 Phase 2) — دفعات الشارات المُولّدة بالجملة: عرض / إعادة إرسال / إلغاء. -->
+  <data name="Module.AdminBadgeBatches" xml:space="preserve"><value>دفعات الشارات</value></data>
+  <data name="Admin.BadgeBatches.Title" xml:space="preserve"><value>دفعات الشارات</value></data>
+  <data name="Admin.BadgeBatches.Loading" xml:space="preserve"><value>جارٍ تحميل الدفعات…</value></data>
+  <data name="Admin.BadgeBatches.LoadFailed" xml:space="preserve"><value>تعذّر تحميل دفعات الشارات.</value></data>
+  <data name="Admin.BadgeBatches.None" xml:space="preserve"><value>لا توجد دفعات شارات بعد — أنشئ مجموعة من مكتب الوفود أو الزوار.</value></data>
+  <data name="Admin.BadgeBatches.Col.Summary" xml:space="preserve"><value>المحتوى</value></data>
+  <data name="Admin.BadgeBatches.Col.Total" xml:space="preserve"><value>الإجمالي</value></data>
+  <data name="Admin.BadgeBatches.Col.Delegate" xml:space="preserve"><value>وفد</value></data>
+  <data name="Admin.BadgeBatches.Col.Recipient" xml:space="preserve"><value>أُرسلت إلى</value></data>
+  <data name="Admin.BadgeBatches.Col.CreatedAt" xml:space="preserve"><value>تاريخ التوليد</value></data>
+  <data name="Admin.BadgeBatches.Col.Status" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Admin.BadgeBatches.Delegate.Yes" xml:space="preserve"><value>وفد</value></data>
+  <data name="Admin.BadgeBatches.Status.Active" xml:space="preserve"><value>نشطة</value></data>
+  <data name="Admin.BadgeBatches.Status.Revoked" xml:space="preserve"><value>ملغاة</value></data>
+  <data name="Admin.BadgeBatches.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.BadgeBatches.ReEmail" xml:space="preserve"><value>إعادة إرسال حزمة الرموز</value></data>
+  <data name="Admin.BadgeBatches.ReEmail.Title" xml:space="preserve"><value>إعادة إرسال حزمة الشارات</value></data>
+  <data name="Admin.BadgeBatches.ReEmail.Recipient" xml:space="preserve"><value>بريد المنظّم الإلكتروني</value></data>
+  <data name="Admin.BadgeBatches.ReEmail.Placeholder" xml:space="preserve"><value>name@example.com</value></data>
+  <data name="Admin.BadgeBatches.ReEmail.Send" xml:space="preserve"><value>إرسال</value></data>
+  <data name="Admin.BadgeBatches.ReEmail.Done" xml:space="preserve"><value>تم إرسال {0} شارة إلى {1}.</value></data>
+  <data name="Admin.BadgeBatches.Revoke" xml:space="preserve"><value>إلغاء الدفعة</value></data>
+  <data name="Admin.BadgeBatches.Revoke.Title" xml:space="preserve"><value>إلغاء دفعة الشارات</value></data>
+  <data name="Admin.BadgeBatches.Revoke.Body" xml:space="preserve"><value>سيؤدي هذا إلى تعطيل جميع الحسابات البالغ عددها {0} في هذه الدفعة ({1}). لا يمكن التراجع عن ذلك.</value></data>
+  <data name="Admin.BadgeBatches.Revoke.Confirm" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.BadgeBatches.Revoke.Done" xml:space="preserve"><value>تم إلغاء {0} حساب.</value></data>
   <data name="Admin.Delegates.Title" xml:space="preserve"><value>الوفود</value></data>
   <data name="Admin.Delegates.Single.Title" xml:space="preserve"><value>تسجيل عضو وفد</value></data>
   <data name="Admin.Delegates.Single.Hint" xml:space="preserve"><value>عضو الوفد زائر عادي مميَّز كعضو في وفد؛ ويجب أن تكون جنسيته من دولة مدعوّة لإرسال وفد.</value></data>

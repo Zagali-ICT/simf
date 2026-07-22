@@ -73,6 +73,8 @@ public static class CpNavigation
             new("Module.AdminVisitorsVipExport", "/admin/visitors/vip/export", RequiredPermission: PermissionCatalog.Visitors.ExportVip, Icon: "download"),
             // D-473 (#10) — delegates (وفد): a separate desk for delegate registration + bulk badges.
             new("Module.AdminDelegates", "/admin/delegates", RequiredPermission: PermissionCatalog.Visitors.RegisterOnsite, Icon: "users"),
+            // D-758 (#10 Phase 2) — persisted bulk-badge batches: re-email / revoke a generated set.
+            new("Module.AdminBadgeBatches", "/admin/visitors/badge-batches", RequiredPermission: PermissionCatalog.Visitors.ViewBatches, Icon: "layers"),
             new("Module.AdminOthers", "/admin/others", RequiredPermission: PermissionCatalog.Others.View, Icon: "id-card"),
             new("Module.AdminOthersPending", "/admin/others/pending", RequiredPermission: PermissionCatalog.Others.View, Icon: "hourglass"),
             // D-130 — print-bag station: lookup by QR id + reprint badge.

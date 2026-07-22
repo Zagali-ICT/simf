@@ -132,6 +132,16 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
             .HasForeignKey(profile => profile.RegionId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // D-758 (#10 Phase 2) — the bulk-badge batch this placeholder profile was
+        // minted by. Intra-App-DB FK (nullable + Restrict, same shape as the
+        // Organisation / Region FKs) so a batch cannot be hard-deleted while any
+        // badge references it — batches are soft-deleted (revoke → IsActive=false).
+        builder.HasIndex(profile => profile.BadgeBatchId);
+        builder.HasOne(profile => profile.BadgeBatch)
+            .WithMany()
+            .HasForeignKey(profile => profile.BadgeBatchId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // P9 — M-to-M with Interests (D-050). Composite-PK join table
         // UserProfileInterests, both FKs Cascade so deleting either side
         // cleans up the join row.

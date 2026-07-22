@@ -109,6 +109,10 @@ public static class PermissionCatalog
         /// <summary>D-473 (#10) — bulk-generate placeholder badges by profile
         /// type + count (visitors or delegates).</summary>
         public const string BulkGenerate = "Visitors.BulkGenerate";
+
+        /// <summary>D-758 (#10 Phase 2) — view the persisted bulk-badge batches and
+        /// re-email / revoke a batch as a unit.</summary>
+        public const string ViewBatches = "Visitors.ViewBatches";
     }
 
     /// <summary>Cross-scope account operations that span both the audience
@@ -777,6 +781,7 @@ public static class PermissionCatalog
         new(Visitors.Import, "Visitors", "Import", "Import visitors", AdminOnly),
         new(Visitors.RegisterOnsite, "Visitors", "RegisterOnsite", "Walk-in register a visitor", AdminOnly),
         new(Visitors.BulkGenerate, "Visitors", "BulkGenerate", "Bulk-generate placeholder badges (visitors / delegates)", AdminOnly),
+        new(Visitors.ViewBatches, "Visitors", "ViewBatches", "View / re-email / revoke bulk-badge batches", AdminOnly),
         new(Visitors.ExportVip, "Visitors", "ExportVip", "Export the VVIP/VIP welcome roster (Mawj)", AdminOnly),
 
         new(Accounts.ChangeType, "Accounts", "ChangeType", "Change an account's type (Visitor <-> Other)", AdminOnly),

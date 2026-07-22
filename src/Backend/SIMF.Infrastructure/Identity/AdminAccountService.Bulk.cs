@@ -11,6 +11,7 @@ using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.Auditing;
+using SIMF.Domain.Badges;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Profiles;
 using SIMF.Common.Enums;
@@ -921,6 +922,26 @@ internal sealed partial class AdminAccountService
             plan.Add((batch, profileType));
         }
 
+        // D-758 (#10 Phase 2) — persist the batch so this generated set can be
+        // re-emailed / revoked together later. Created + saved BEFORE the badge loop
+        // so each profile's BadgeBatchId FK resolves. CountsSummary is built
+        // invariant-culture (an ar-SA request culture would otherwise store
+        // Arabic-Indic digits). × is the multiplication sign, kept per the house
+        // doc rule. Same App DB only — no cross-DB write (D-157).
+        var badgeBatch = new BadgeBatch
+        {
+            Id = Guid.NewGuid(),
+            CountsSummary = string.Join(" + ", plan.Select(p =>
+                $"{p.ProfileType.Name} × {p.Batch.Count.ToString(CultureInfo.InvariantCulture)}")),
+            TotalCount = plan.Sum(p => p.Batch.Count),
+            IsDelegate = request.IsDelegate,
+            RecipientEmail = recipient,
+            CreatedAt = now,
+            CreatedBy = actorUserId,
+        };
+        appDbContext.BadgeBatches.Add(badgeBatch);
+        await appDbContext.SaveChangesAsync(cancellationToken);
+
         // D-751 — collected only when an organiser recipient is supplied; drives the
         // ZIP-of-PNGs built after the badges commit. (profile-type name, 1-based seq,
         // minted QR id) per badge.
@@ -973,6 +994,8 @@ internal sealed partial class AdminAccountService
                     // Placeholder default data — filled in when the badge is assigned.
                     NationalityId = 0,
                     IsDelegate = request.IsDelegate,
+                    // D-758 (#10 Phase 2) — back-reference to the persisted batch.
+                    BadgeBatchId = badgeBatch.Id,
                     CreatedAt = now,
                 };
                 // Mint + save per badge so the QR-uniqueness check sees prior rows.
@@ -989,42 +1012,186 @@ internal sealed partial class AdminAccountService
             EventType = AuditEvents.AdminBulkBadgesGenerated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
-            Detail = $"created={created}; isDelegate={request.IsDelegate}",
+            Detail = $"created={created}; isDelegate={request.IsDelegate}; batchId={badgeBatch.Id}",
         }, cancellationToken);
         logger.LogInformation(
             "Admin {ActorId} bulk-generated {Created} badges (isDelegate={IsDelegate}).",
             actorUserId, created, request.IsDelegate);
 
-        // D-751 — when an organiser recipient was supplied, render each badge's QR to
-        // a PNG, pack them into one ZIP, and email the ZIP as a single attachment. The
-        // badges are already committed; a mail-side failure must NOT roll them back, so
-        // dispatch through the swallow-and-audit helper (D-083).
+        // D-751 — when an organiser recipient was supplied, render the QR pack and email
+        // it. The badges are already committed; a mail-side failure must NOT roll them
+        // back (the helper dispatches through the swallow-and-audit path, D-083).
         var emailQueued = false;
         if (recipient is not null && badgeArtifacts is { Count: > 0 })
         {
-            var zipBytes = BuildBadgeZip(badgeArtifacts);
-            // Invariant formatting throughout — an Arabic (ar-SA) request culture would
-            // otherwise render the filename / tokens with a Hijri year + Arabic-Indic
-            // digits, which the same value is then substituted into both bodies.
-            var fileName = $"badges-{now.ToString("yyyyMMdd-HHmm", CultureInfo.InvariantCulture)}.zip";
-            var attachment = new EmailAttachment(fileName, "application/zip", zipBytes);
-            var tokens = new Dictionary<string, string>
-            {
-                ["Count"] = created.ToString(CultureInfo.InvariantCulture),
-                ["GeneratedAt"] = now.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture),
-            };
-            var cover = await emailTemplates.RenderAsync(
-                EmailTemplateType.BulkBadgeDelivery, recipient, tokens, cancellationToken);
-            await emailQueue.TryEnqueueAsync(
-                cover with { Attachments = new[] { attachment } },
-                "BulkBadgeDelivery", recipient, actorUserId, auditLog, logger, cancellationToken);
+            await EnqueueBadgePackEmailAsync(
+                recipient, badgeArtifacts, created, now, actorUserId, cancellationToken);
             emailQueued = true;
-            logger.LogInformation(
-                "Admin {ActorId} emailed {Count} bulk badges to {Recipient} as a ZIP.",
-                actorUserId, created, recipient);
         }
 
         return new AdminBulkGenerateBadgesResponse(created, emailQueued);
+    }
+
+    public async Task<GridPage<AdminBadgeBatchSummary>> ListBadgeBatchesAsync(
+        Guid actorUserId, GridQuery query, CancellationToken cancellationToken = default)
+    {
+        // Admin-only list (no per-actor scope). Newest-first; a revoked batch keeps its
+        // row with IsActive=false so the history stays visible.
+        var (skip, top) = query.ClampPage();
+        var total = await appDbContext.BadgeBatches.CountAsync(cancellationToken);
+        var rows = await appDbContext.BadgeBatches
+            .AsNoTracking()
+            .OrderByDescending(batch => batch.CreatedAt)
+            .Skip(skip).Take(top)
+            .Select(batch => new AdminBadgeBatchSummary(
+                batch.Id, batch.CountsSummary, batch.TotalCount, batch.IsDelegate,
+                batch.RecipientEmail, batch.CreatedAt, batch.IsActive))
+            .ToListAsync(cancellationToken);
+        return GridPage<AdminBadgeBatchSummary>.Of(rows, total, skip, top);
+    }
+
+    public async Task<AdminReEmailBadgeBatchResponse> ReEmailBadgeBatchAsync(
+        Guid actorUserId, AdminReEmailBadgeBatchRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var batch = await appDbContext.BadgeBatches
+            .SingleOrDefaultAsync(b => b.Id == request.BatchId, cancellationToken)
+            ?? throw new ApiException(
+                ErrorCodes.AdminUserNotFound, 404,
+                "The badge batch was not found.",
+                "لم يتم العثور على دفعة الشارات.");
+
+        // Validate the organiser address the same way BulkGenerateBadgesAsync does — a
+        // 400 must leave nothing sent (SIMF-API-001).
+        var recipient = (request.RecipientEmail ?? string.Empty).Trim();
+        if (recipient.Length == 0 || recipient.Length > 256
+            || !System.Net.Mail.MailAddress.TryCreate(recipient, out var parsed)
+            || !parsed.Host.Contains('.'))
+        {
+            throw new ApiException(
+                ErrorCodes.ValidationFailed, 400,
+                "The organiser email address is not valid.",
+                "عنوان البريد الإلكتروني للمنظّم غير صالح.");
+        }
+
+        // Re-materialise the pack from the batch's minted badges (tier name + QR id),
+        // ordered stably so the re-issued sequence numbers match the original run.
+        var members = await appDbContext.UserProfiles
+            .AsNoTracking()
+            .Where(profile => profile.BadgeBatchId == batch.Id && profile.QrId != null)
+            .OrderBy(profile => profile.CreatedAt).ThenBy(profile => profile.Id)
+            .Join(appDbContext.ProfileTypes,
+                profile => profile.ProfileTypeId, type => type.Id,
+                (profile, type) => new { type.Name, profile.QrId })
+            .ToListAsync(cancellationToken);
+        if (members.Count == 0)
+        {
+            throw new ApiException(
+                ErrorCodes.ValidationFailed, 400,
+                "This batch has no badges to email.",
+                "لا توجد شارات في هذه الدفعة لإرسالها.");
+        }
+
+        var now = timeProvider.GetUtcNow();
+        var badgeArtifacts = members
+            .Select((member, index) => (member.Name, Seq: index + 1, QrId: member.QrId!))
+            .ToList();
+        await EnqueueBadgePackEmailAsync(
+            recipient, badgeArtifacts, badgeArtifacts.Count, now, actorUserId, cancellationToken);
+
+        // Remember the last recipient so a future re-email pre-fills it.
+        batch.RecipientEmail = recipient;
+        batch.UpdatedAt = now;
+        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.AdminBulkBadgesGenerated,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = $"re-email batchId={batch.Id}; count={badgeArtifacts.Count}; to={recipient}",
+        }, cancellationToken);
+        return new AdminReEmailBadgeBatchResponse(badgeArtifacts.Count, true);
+    }
+
+    public async Task<AdminRevokeBadgeBatchResponse> RevokeBadgeBatchAsync(
+        Guid actorUserId, AdminRevokeBadgeBatchRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var batch = await appDbContext.BadgeBatches
+            .SingleOrDefaultAsync(b => b.Id == request.BatchId && b.IsActive, cancellationToken)
+            ?? throw new ApiException(
+                ErrorCodes.AdminUserNotFound, 404,
+                "The badge batch was not found or is already revoked.",
+                "لم يتم العثور على دفعة الشارات أو أنها ملغاة بالفعل.");
+
+        // Disable every account the batch minted, reusing the type-scoped bulk-delete
+        // path (audience Visitors) so each account's disable + token-revoke + audit is
+        // identical to a manual bulk delete. Cross-DB (D-157): these SimfUsers live in
+        // the Identity DB — disabled first, THEN the App-DB batch is deactivated as a
+        // separate unit of work (no distributed transaction).
+        var memberIds = await appDbContext.UserProfiles
+            .AsNoTracking()
+            .Where(profile => profile.BadgeBatchId == batch.Id)
+            .Select(profile => profile.UserId)
+            .ToListAsync(cancellationToken);
+
+        var revoked = 0;
+        if (memberIds.Count > 0)
+        {
+            var deleteResult = await BulkDeleteUsersByKindAsync(
+                actorUserId, UserType.Visitor, requirePartnerScope: false,
+                new AdminBulkDeleteRequest
+                {
+                    Ids = memberIds,
+                    Reason = $"Badge batch {batch.Id} revoked",
+                },
+                cancellationToken);
+            revoked = deleteResult.Deleted;
+        }
+
+        batch.Deactivate();
+        batch.UpdatedAt = timeProvider.GetUtcNow();
+        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.AdminBulkBadgesGenerated,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = $"revoke batchId={batch.Id}; disabled={revoked}",
+        }, cancellationToken);
+        return new AdminRevokeBadgeBatchResponse(revoked);
+    }
+
+    // D-751 / D-758 — render the batch's QR pack and enqueue it to the organiser as a
+    // single email. Extracted so bulk-generate and the D-758 re-email build the
+    // identical pack. Invariant formatting throughout — an ar-SA request culture would
+    // otherwise render the filename / body tokens with a Hijri year + Arabic-Indic
+    // digits. `attachments` is a list so Phase 3 (D-759) can add the PDF sheet beside
+    // the ZIP without touching either caller.
+    private async Task EnqueueBadgePackEmailAsync(
+        string recipient,
+        IReadOnlyList<(string ProfileTypeName, int Seq, string QrId)> badgeArtifacts,
+        int count, DateTimeOffset generatedAt, Guid actorUserId, CancellationToken cancellationToken)
+    {
+        var stamp = generatedAt.ToString("yyyyMMdd-HHmm", CultureInfo.InvariantCulture);
+        var attachments = new List<EmailAttachment>
+        {
+            new($"badges-{stamp}.zip", "application/zip", BuildBadgeZip(badgeArtifacts)),
+        };
+        var tokens = new Dictionary<string, string>
+        {
+            ["Count"] = count.ToString(CultureInfo.InvariantCulture),
+            ["GeneratedAt"] = generatedAt.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture),
+        };
+        var cover = await emailTemplates.RenderAsync(
+            EmailTemplateType.BulkBadgeDelivery, recipient, tokens, cancellationToken);
+        await emailQueue.TryEnqueueAsync(
+            cover with { Attachments = attachments.ToArray() },
+            "BulkBadgeDelivery", recipient, actorUserId, auditLog, logger, cancellationToken);
+        logger.LogInformation(
+            "Admin {ActorId} emailed {Count} badges to {Recipient}.", actorUserId, count, recipient);
     }
 
     // D-751 — QRCoder PngByteQRCode (same ECC level Q as PrintBag) + a ZIP entry per
