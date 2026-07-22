@@ -373,6 +373,8 @@ public sealed class SpeakerMeetingVipSlotTests : IClassFixture<SimfApiFactory>
                 Id = Guid.NewGuid(),
                 UserId = userId,
                 ProfileTypeId = profileTypeId,
+                // Bi-Meeting rework — eligibility is now the per-user flag, not the tier.
+                AllowsSpeakerMeeting = vip,
                 Name = user.DisplayName, NameArabic = user.DisplayName,
                 CreatedAt = DateTimeOffset.UtcNow,
             });

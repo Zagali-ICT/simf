@@ -125,7 +125,7 @@ internal sealed class HallAvailabilityService(
 
         // D-716 (GAP-2) — the slots already taken by a bound meeting are removed.
         // "Taken" = a request in the slot-holding live set
-        // (`MeetingRequestStatuses.SlotHolding` = Accepted + AwaitingSpeaker), the
+        // (`MeetingRequestStatuses.SlotHolding` = Accepted + AwaitingSpeaker + Done), the
         // single authority the accept re-check + the DB indexes also key off. Load
         // the busy ranges once, then drop any generated slot that overlaps one
         // (half-open overlap, the same rule the accept re-check uses).

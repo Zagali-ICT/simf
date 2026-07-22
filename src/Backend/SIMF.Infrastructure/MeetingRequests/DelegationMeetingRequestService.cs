@@ -65,16 +65,19 @@ internal sealed class DelegationMeetingRequestService(
             slotEnd = pickedEnd;
         }
 
-        // The requester must be a delegate; their nationality is the requesting country.
+        // Bi-Meeting rework — the requester must hold the per-user
+        // AllowsDelegationMeeting flag (admin-assigned; replaces the former IsDelegate
+        // requester-gate). Their nationality is the requesting country; it must still
+        // be an invited delegation (Country.IsInvited, checked below).
         var profile = await appDbContext.UserProfiles.AsNoTracking()
             .Where(p => p.UserId == requesterUserId)
-            .Select(p => new { p.IsDelegate, p.NationalityId })
+            .Select(p => new { p.AllowsDelegationMeeting, p.NationalityId })
             .SingleOrDefaultAsync(cancellationToken);
-        if (profile is null || !profile.IsDelegate)
+        if (profile is null || !profile.AllowsDelegationMeeting)
         {
             throw new ApiException(ErrorCodes.Forbidden, 403,
-                "Delegation meetings are available to delegation members only.",
-                "اجتماعات الوفود متاحة لأعضاء الوفود فقط.");
+                "Requesting a delegation meeting is not enabled for your account.",
+                "طلب اجتماع وفد غير مُفعَّل لحسابك.");
         }
         var requestingCountry = await appDbContext.Countries.AsNoTracking()
             .Where(c => c.Id == profile.NationalityId && c.IsActive)

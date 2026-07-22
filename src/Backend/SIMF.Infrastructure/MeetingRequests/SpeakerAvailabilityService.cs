@@ -153,7 +153,7 @@ internal sealed class SpeakerAvailabilityService(
 
         // Slots already taken by a LIVE meeting for this speaker. "Taken" = a
         // request in the slot-holding set (`MeetingRequestStatuses.SlotHolding` =
-        // Accepted + AwaitingSpeaker) — the single authority the accept re-check +
+        // Accepted + AwaitingSpeaker + Done) — the single authority the accept re-check +
         // the DB filtered-unique indexes also key off. Keying on Accepted only would
         // advertise a slot already held by a hall-bound AwaitingSpeaker meeting as
         // free, creating a request the admin could never accept (mirrors

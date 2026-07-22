@@ -93,6 +93,21 @@ public sealed class UserProfileResponse
     /// the endpoint enforces the same rule server-side. Append-only field.</summary>
     public bool IsVip { get; set; }
 
+    /// <summary>Bi-Meeting rework — admin-assigned per-user eligibility to request a
+    /// <b>speaker meeting</b>. Replaces <see cref="IsVip"/> as the meetings gate: the
+    /// app shows the "request a speaker meeting" affordance when this is true (and the
+    /// speaker has opted in), regardless of tier; the endpoint enforces the same rule
+    /// server-side. Append-only field; defaults false so an older payload is not
+    /// eligible.</summary>
+    public bool AllowsSpeakerMeeting { get; set; }
+
+    /// <summary>Bi-Meeting rework — admin-assigned per-user eligibility to request a
+    /// <b>delegation (country) meeting</b>. Replaces the old delegate-only gate: the
+    /// app shows the "request a delegation meeting" affordance when this is true,
+    /// regardless of tier (the target country must still be an invited delegation).
+    /// Append-only field; defaults false.</summary>
+    public bool AllowsDelegationMeeting { get; set; }
+
     /// <summary>D-736 — whether this profile appears in "Meet People Like You"
     /// recommendations. Defaults to true; the user can opt out via the sign-up
     /// form or profile settings.</summary>

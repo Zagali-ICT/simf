@@ -91,7 +91,9 @@ internal sealed class MyRequestsService(
 
         items.AddRange(delegation.Select(r => new AppRequestItem(
             AppRequestKind.DelegationMeeting, r.Id, r.Name, r.NameArabic,
-            r.Status, r.SlotStartUtc, r.CreatedAt, CanCancel: false,
+            // Same fold as the speaker projection so the unified state machine's admin-only
+            // states (AwaitingSpeaker / Done) never leak past the shipped wire contract (0–3).
+            ToRequesterDisplayStatus(r.Status), r.SlotStartUtc, r.CreatedAt, CanCancel: false,
             CountryId: r.TargetCountryId)));
 
         items.AddRange(bookings.Select(r => new AppRequestItem(
@@ -228,14 +230,17 @@ internal sealed class MyRequestsService(
         }
     }
 
-    // D-716 (item 7, GAP-2) — AwaitingSpeaker is an admin-only intermediate state
-    // (accepted + bound to a hall, awaiting the speaker's confirmation). The shipped
-    // mobile wire contract only knows values 0–3, and from the requester's view the
-    // request is still under review, so fold it back to Pending on the app feed.
-    private static MeetingRequestStatus ToRequesterDisplayStatus(MeetingRequestStatus status) =>
-        status == MeetingRequestStatus.AwaitingSpeaker
-            ? MeetingRequestStatus.Pending
-            : status;
+    // D-716 (item 7, GAP-2) + Bi-Meeting rework — the unified state machine adds two
+    // admin/operator-only states the shipped mobile wire contract (values 0–3) never sees:
+    //   • AwaitingSpeaker (accepted + bound to a hall, awaiting the other party's confirmation)
+    //     is still "under review" from the requester's view      -> fold to Pending;
+    //   • Done (the meeting took place, marked at hall check-in)  -> fold to Accepted.
+    private static MeetingRequestStatus ToRequesterDisplayStatus(MeetingRequestStatus status) => status switch
+    {
+        MeetingRequestStatus.AwaitingSpeaker => MeetingRequestStatus.Pending,
+        MeetingRequestStatus.Done => MeetingRequestStatus.Accepted,
+        _ => status,
+    };
 
     // BookingStatus → the unified display status (Approved counts as Accepted;
     // Cancelled/Rejected map straight across).
