@@ -63,15 +63,19 @@
                 </div>
                 <div class="ln-intro__strip">
                     <div class="ln-marquee__track">
-                        @foreach (var s in ThreatStats)
+                        @* Rendered twice for the seamless -50% marquee loop; the 2nd pass is decorative. *@
+                        @for (var pass = 0; pass < 2; pass++)
                         {
-                            <div class="ln-tstat">
-                                <div class="ln-tstat__top">
-                                    <span class="ln-tstat__val">@s.Value.For(rtl)</span>
-                                    <span class="ln-tstat__badge"><img src="assets/figma/intro/stat-icon.svg" alt="" /></span>
+                            @foreach (var s in ThreatStats)
+                            {
+                                <div class="ln-tstat" aria-hidden="@(pass == 1 ? "true" : null)">
+                                    <div class="ln-tstat__top">
+                                        <span class="ln-tstat__val">@s.Value.For(rtl)</span>
+                                        <span class="ln-tstat__badge"><img src="assets/figma/intro/stat-icon.svg" alt="" /></span>
+                                    </div>
+                                    <span class="ln-tstat__cap">@s.Caption.For(rtl)</span>
                                 </div>
-                                <span class="ln-tstat__cap">@s.Caption.For(rtl)</span>
-                            </div>
+                            }
                         }
                     </div>
                 </div>

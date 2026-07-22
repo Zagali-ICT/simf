@@ -307,15 +307,26 @@
 .ln-intro__title { font-size: 32px; font-weight: 800; line-height: 1.15; color: var(--white); }
 .ln-intro__sub { font-size: 16px; line-height: 24px; color: #bbc7d5; max-width: 720px; }
 .ln-intro__lead { font-size: 16px; line-height: 24px; color: var(--white); max-width: 720px; }
-/* static overflow row (matches the Figma mockup — no auto-scroll); horizontally scrollable, native scrollbar hidden, edges masked. */
-.ln-intro__strip { width: 100%; overflow-x: auto; scrollbar-width: none;
+/* Continuous marquee: two copies of the threat stats scroll -50% forever. Forced
+   LTR so the over-wide track anchors at its left edge; both edges masked; pauses
+   on hover. (Was a static manual-scroll row — the design wants it moving.) */
+.ln-intro__strip { width: 100%; overflow: hidden; direction: ltr;
   -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 95%, transparent 100%);
           mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 95%, transparent 100%); }
-.ln-intro__strip::-webkit-scrollbar { display: none; }
-.ln-marquee__track { display: flex; gap: 16px; width: max-content; }
-.ln-tstat { flex: 0 0 217px; width: 217px; height: 152px; background: rgba(36, 74, 119, .12);
-  border: 1px solid rgba(27, 56, 89, .5); padding: 16px; display: flex; flex-direction: column;
-  align-items: flex-start; gap: 24px; }
+.ln-marquee__track { display: flex; width: max-content;
+  animation: ln-marquee 60s linear infinite; }
+.ln-intro__strip:hover .ln-marquee__track { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .ln-marquee__track { animation: none; }
+  .ln-intro__strip { overflow-x: auto; scrollbar-width: none; }
+  .ln-intro__strip::-webkit-scrollbar { display: none; }
+}
+/* margin-inline-end (not track gap) so the two copies split exactly at -50% */
+.ln-tstat { flex: 0 0 217px; width: 217px; height: 152px; margin-inline-end: 16px;
+  background: rgba(36, 74, 119, .12); border: 1px solid rgba(27, 56, 89, .5); padding: 16px;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 24px;
+  transition: background-color .35s ease, border-color .35s ease; }
+.ln-tstat:hover { background: rgba(232, 192, 96, .12); border-color: var(--gold); }
 .ln-tstat__top { display: flex; align-items: center; gap: 8px; width: 100%; }
 .ln-tstat__val { font-size: 18px; font-weight: 800; line-height: 24px; color: var(--gold-active);
   text-align: start; flex: 1 1 auto; min-width: 0; }
@@ -424,16 +435,30 @@
 .ln-themes__title { font-size: 32px; font-weight: 800; line-height: 1.2; color: var(--white); }
 .ln-themes__sub { font-size: 16px; line-height: 24px; color: var(--primary-light); max-width: 900px; }
 .ln-themes__row { display: flex; width: 100%; }
-.ln-tcard { flex: 1 1 0; min-width: 0; min-height: 296px; padding: 24px; border: 1px solid var(--border-neutral);
+/* Hover-expand accordion (the Figma active-card state): the hovered card grows,
+   a faint maritime backdrop lifts in, and the badge turns gold. */
+.ln-tcard { position: relative; overflow: hidden; flex: 1 1 0; min-width: 0; min-height: 296px; padding: 24px;
+  border: 1px solid var(--border-neutral); background: transparent;
   display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 24px;
-  background: transparent; }
+  transition: flex-grow .55s cubic-bezier(.22, .61, .36, 1), background-color .45s ease; }
 .ln-tcard:not(:first-child) { margin-inline-start: -1px; }
+.ln-tcard::before { content: ""; position: absolute; inset: 0; z-index: 0;
+  background: url('/assets/figma/sessions/session-card-1.jpg') center/cover no-repeat;
+  opacity: 0; transition: opacity .45s ease; }
+.ln-tcard > * { position: relative; z-index: 1; }
 .ln-tcard__topgrp { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; width: 100%; }
 .ln-tcard__badge { background: rgba(230, 242, 251, .12); border-radius: var(--radius-full); padding: 12px; display: inline-grid;
-  place-items: center; color: var(--white); }
+  place-items: center; color: var(--white); transition: background-color .35s ease, color .35s ease; }
 .ln-tcard__badge svg { width: 24px; height: 24px; display: block; }
 .ln-tcard__title { font-size: 18px; font-weight: 700; line-height: 24px; color: var(--white); text-align: start; }
 .ln-tcard__desc { font-size: 16px; line-height: 24px; color: var(--primary-light); text-align: start; }
+.ln-tcard:hover, .ln-tcard:focus-within { flex-grow: 2.2; background-color: rgba(230, 242, 251, .06); }
+.ln-tcard:hover::before, .ln-tcard:focus-within::before { opacity: .28; }
+.ln-tcard:hover .ln-tcard__badge, .ln-tcard:focus-within .ln-tcard__badge { background: var(--gold); color: var(--navy); }
+@media (prefers-reduced-motion: reduce) {
+  .ln-tcard { transition: none; }
+  .ln-tcard:hover, .ln-tcard:focus-within { flex-grow: 1; }
+}
 @media (max-width: 1000px) {
   .ln-themes__row { flex-wrap: wrap; }
   .ln-tcard { flex: 1 1 45%; margin-inline-start: 0; }
