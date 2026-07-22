@@ -188,4 +188,9 @@ class RouteParams {
   static const String speakerId = 'speakerId';
   static const String boothId = 'boothId';
   static const String sponsorId = 'sponsorId';
+
+  /// Query key on `/sessions` that pre-selects a type tab. A "Sessions" home
+  /// tile passes `?type=Session` so the programme opens on جلسات (sessions
+  /// only); the "Agenda" nav tab passes nothing and opens on الكل / All.
+  static const String sessionTypeQuery = 'type';
 }

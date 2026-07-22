@@ -61,6 +61,7 @@ import '../features/account/sign_up_interests_screen.dart';
 import '../features/account/sign_up_visitor_screen.dart';
 import '../features/registration/registration_status_screen.dart';
 import '../features/registration/registration_success_screen.dart';
+import '../features/sessions/data/session_models.dart';
 import '../features/sessions/join_session_hub_screen.dart';
 import '../features/sessions/my_seat_screen.dart';
 import '../features/sessions/seat_picker_screen.dart';
@@ -376,7 +377,13 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
     );
   }
   if (r.name == RouteNames.sessions) {
-    return const SessionsScreen();
+    // A "Sessions" home tile passes `?type=Session` to open on the جلسات tab;
+    // the "Agenda" nav tab passes nothing and opens on الكل / All.
+    return SessionsScreen(
+      initialType: SessionType.fromJson(
+        state.uri.queryParameters[RouteParams.sessionTypeQuery],
+      ),
+    );
   }
   if (r.name == RouteNames.sessionDetail) {
     return SessionDetailScreen(
