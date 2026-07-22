@@ -186,7 +186,70 @@
     root.classList.add('is-enhanced');
   }
 
-  function run() { initReveal(); initSearch(); initCountUp(); initThemeTabs(); initAgenda(); }
+  /* ---- 8. floating chat assistant --------------------------------------- */
+  function initChatbot() {
+    var root = document.getElementById('ln-chat');
+    if (!root) { return; }
+    if (!firstInit(root, 'Chat')) { return; }
+    var launcher = document.getElementById('ln-chat-launcher');
+    var panel = document.getElementById('ln-chat-panel');
+    var closeBtn = document.getElementById('ln-chat-close');
+    var form = document.getElementById('ln-chat-form');
+    var input = document.getElementById('ln-chat-input');
+    var log = document.getElementById('ln-chat-log');
+    if (!launcher || !panel || !form || !input || !log) { return; }
+
+    function setOpen(open) {
+      panel.hidden = !open;
+      root.classList.toggle('is-open', open);
+      launcher.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open) { input.focus(); }
+    }
+    launcher.addEventListener('click', function () { setOpen(panel.hidden); });
+    if (closeBtn) { closeBtn.addEventListener('click', function () { setOpen(false); launcher.focus(); }); }
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !panel.hidden) { setOpen(false); launcher.focus(); }
+    });
+
+    function addMsg(text, who) {
+      var el = document.createElement('div');
+      el.className = 'ln-chat__msg ln-chat__msg--' + who;
+      el.textContent = text;
+      log.appendChild(el);
+      log.scrollTop = log.scrollHeight;
+      return el;
+    }
+    function unavailable() {
+      return document.documentElement.lang === 'ar'
+        ? 'تعذّر الوصول إلى المساعد الآن. حاول لاحقاً.'
+        : 'The assistant is unavailable right now. Please try again.';
+    }
+
+    var busy = false;
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var q = input.value.trim();
+      if (!q || busy) { return; }
+      addMsg(q, 'user');
+      input.value = '';
+      busy = true;
+      var typing = addMsg('…', 'ai');
+      typing.classList.add('ln-chat__msg--typing');
+      window.fetch('/chat/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: q })
+      }).then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (data) {
+          typing.remove();
+          addMsg((data && data.answer) || unavailable(), 'ai');
+        })
+        .catch(function () { typing.remove(); addMsg(unavailable(), 'ai'); })
+        .finally(function () { busy = false; input.focus(); });
+    });
+  }
+
+  function run() { initReveal(); initSearch(); initCountUp(); initThemeTabs(); initAgenda(); initChatbot(); }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', run);
   } else {
