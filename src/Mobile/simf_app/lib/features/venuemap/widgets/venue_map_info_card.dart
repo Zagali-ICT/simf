@@ -46,9 +46,12 @@ class VenueMapInfoCard extends StatelessWidget {
         SimfTokens.space4,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: SimfTokens.surface,
         borderRadius: BorderRadius.circular(SimfTokens.radius),
-        border: Border.all(color: SimfTokens.accent, width: 0.5),
+        border: Border.all(
+          color: SimfTokens.accent,
+          width: SimfTokens.hairlineBold,
+        ),
         boxShadow: const <BoxShadow>[
           BoxShadow(
             color: SimfTokens.cardShadow,
@@ -72,16 +75,15 @@ class VenueMapInfoCard extends StatelessWidget {
                     // Frame — pale-beige with a gold hairline.
                     color: SimfTokens.codeBoxBeige,
                     borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-                    border: Border.all(color: SimfTokens.accent, width: 0.5),
+                    border: Border.all(
+                      color: SimfTokens.accent,
+                      width: SimfTokens.hairlineBold,
+                    ),
                   ),
                   child: Text(
                     code,
                     textDirection: TextDirection.ltr,
-                    style: const TextStyle(
-                      color: SimfTokens.accent,
-                      fontWeight: FontWeight.w600,
-                      fontSize: SimfTokens.textMd,
-                    ),
+                    style: SimfTokens.labelGoldSemibold,
                   ),
                 ),
               if (code != null) const SizedBox(width: SimfTokens.space3),
@@ -94,11 +96,7 @@ class VenueMapInfoCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       // Frame — navy #01132D, 14px SemiBold.
-                      style: const TextStyle(
-                        color: SimfTokens.navy,
-                        fontWeight: FontWeight.w600,
-                        fontSize: SimfTokens.textMd,
-                      ),
+                      style: SimfTokens.labelNavySemibold,
                     ),
                     if (subtitleParts.isNotEmpty) ...<Widget>[
                       const SizedBox(height: SimfTokens.space2),
@@ -106,10 +104,7 @@ class VenueMapInfoCard extends StatelessWidget {
                         subtitleParts.join(' · '),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: SimfTokens.greyText,
-                          fontSize: SimfTokens.textSm,
-                        ),
+                        style: SimfTokens.bodyGreySm,
                       ),
                     ],
                   ],
@@ -135,7 +130,7 @@ class VenueMapInfoCard extends StatelessWidget {
                 child: FilledButton.icon(
                   onPressed: onDirect,
                   style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(44),
+                    minimumSize: const Size.fromHeight(SimfTokens.tapTarget),
                   ),
                   icon: const Icon(Icons.navigation_outlined, size: 18),
                   label: Text(l10n.venueMapDirectMe),

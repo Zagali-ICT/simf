@@ -6,13 +6,12 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
-import '../../../core/country_flag.dart';
 import '../../../core/utils/gregorian_month_names.dart';
 import '../../../core/utils/weekday_names.dart';
 import '../data/speaker_models.dart';
 import '../data/speakers_repository.dart';
 import 'meeting_slot_pickers.dart';
-import 'speaker_photo_tile.dart';
+import 'speaker_option_tile.dart';
 
 /// The meeting-request form (bottom sheet) — approved-account only (E2). The
 /// beige "طلب مقابلة" sheet, Figma **1776:5036**: a gold drag handle, the
@@ -288,11 +287,7 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
           Text(
             l10n.requestMeeting, // طلب مقابلة
             textAlign: TextAlign.end,
-            style: const TextStyle(
-              color: SimfTokens.headlineInk,
-              fontWeight: FontWeight.w600,
-              fontSize: SimfTokens.textTitle, // 18
-            ),
+            style: SimfTokens.labelInkSemiboldTitle,
           ),
           const SizedBox(height: SimfTokens.space4),
           // Bilateral entry (speakerId == null): the speaker picker. A speaker
@@ -362,11 +357,7 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
         alignment: AlignmentDirectional.centerStart,
         child: Text(
           text,
-          style: const TextStyle(
-            color: SimfTokens.navy,
-            fontSize: SimfTokens.textSm, // 12
-            fontWeight: FontWeight.w500,
-          ),
+          style: SimfTokens.labelNavyMediumSm,
         ),
       );
 
@@ -377,10 +368,7 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
           padding: const EdgeInsets.symmetric(vertical: SimfTokens.space1),
           child: Text(
             text,
-            style: const TextStyle(
-              color: SimfTokens.greyText,
-              fontSize: SimfTokens.textSm,
-            ),
+            style: SimfTokens.bodyGreySm,
           ),
         ),
       );
@@ -393,17 +381,11 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
         textAlign: TextAlign.start,
         maxLength: 1000,
         maxLines: 1,
-        style: const TextStyle(
-          color: SimfTokens.inputInk,
-          fontSize: SimfTokens.textMd,
-        ),
+        style: SimfTokens.bodyInputMd,
         decoration: InputDecoration(
           counterText: '',
           hintText: l10n.meetingSubjectHint, // اكتب الموضوع
-          hintStyle: const TextStyle(
-            color: SimfTokens.greyText,
-            fontSize: SimfTokens.textMd,
-          ),
+          hintStyle: SimfTokens.bodyGreyMd,
           filled: true,
           fillColor: SimfTokens.surface,
           contentPadding: const EdgeInsets.symmetric(
@@ -469,7 +451,7 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
                   const SizedBox(height: SimfTokens.space2),
               itemBuilder: (context, i) {
                 final speaker = matches[i];
-                return _SpeakerOptionTile(
+                return SpeakerOptionTile(
                   speaker: speaker,
                   isArabic: isArabic,
                   baseUrl: widget.baseUrl,
@@ -511,17 +493,11 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
   Widget _speakerSearchField(AppL10n l10n) => TextField(
         key: const ValueKey<String>('meeting-speaker-search'),
         onChanged: (value) => setState(() => _speakerQuery = value),
-        style: const TextStyle(
-          color: SimfTokens.inputInk,
-          fontSize: SimfTokens.textMd,
-        ),
+        style: SimfTokens.bodyInputMd,
         decoration: InputDecoration(
           isDense: true,
           hintText: l10n.speakersSearchHint, // ما الذي تبحث عنه
-          hintStyle: const TextStyle(
-            color: SimfTokens.greyText,
-            fontSize: SimfTokens.textMd,
-          ),
+          hintStyle: SimfTokens.bodyGreyMd,
           prefixIcon: const Icon(
             Icons.search,
             color: SimfTokens.greyText,
@@ -549,7 +525,7 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
   Widget _dayCards(bool isArabic) {
     final days = _daysWithSlots;
     return SizedBox(
-      height: 64,
+      height: SimfTokens.dayCardHeight,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: days.length,
@@ -608,128 +584,13 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
               : () => unawaited(_submit()),
           borderRadius: SimfTokens.borderRadiusSmall,
           child: Container(
-            height: 48,
+            height: SimfTokens.controlHeight,
             alignment: Alignment.center,
             child: Text(
               _submitting ? l10n.loadingLabel : l10n.meetingSendButton,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: SimfTokens.textLg, // 16
-                fontWeight: FontWeight.w700,
-              ),
+              style: SimfTokens.labelWhiteBoldLg,
             ),
           ),
         ),
       );
-}
-
-/// One selectable speaker row in the bilateral picker (owner 2026-07-11): the
-/// shared [SpeakerPhotoTile] photo + the speaker's name (with the country flag
-/// inline) over the rank line, in a beige-bordered tile that turns gold when
-/// selected. Reuses the same photo tile + [countryFlagEmoji] helper as the
-/// speakers list so the identity looks identical across the app.
-class _SpeakerOptionTile extends StatelessWidget {
-  const _SpeakerOptionTile({
-    required this.speaker,
-    required this.isArabic,
-    required this.baseUrl,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final SpeakerSummary speaker;
-  final bool isArabic;
-  final String baseUrl;
-  final bool selected;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final flag = countryFlagEmoji(speaker.countryId);
-    final rank = speaker.localizedRank(isArabic)?.trim() ?? '';
-    return Material(
-      color: SimfTokens.surface,
-      borderRadius: SimfTokens.borderRadiusSmall,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: SimfTokens.borderRadiusSmall,
-        child: Container(
-          padding: const EdgeInsets.all(SimfTokens.space2),
-          decoration: BoxDecoration(
-            borderRadius: SimfTokens.borderRadiusSmall,
-            border: Border.all(
-              color: selected ? SimfTokens.accent : SimfTokens.beigeBorder,
-              width: selected ? SimfTokens.hairlineBold : SimfTokens.hairline,
-            ),
-          ),
-          child: Row(
-            children: <Widget>[
-              SpeakerPhotoTile(
-                imageUrl:
-                    '$baseUrl/app/assets/SpeakerPhoto/${speaker.id}/image',
-                size: 40,
-              ),
-              const SizedBox(width: SimfTokens.space3),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Flexible(
-                          child: Text(
-                            speaker.localizedName(isArabic),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: SimfTokens.headlineInk,
-                              fontWeight: FontWeight.w600,
-                              fontSize: SimfTokens.textMd,
-                            ),
-                          ),
-                        ),
-                        if (flag != null) ...<Widget>[
-                          const SizedBox(width: SimfTokens.space2),
-                          Text(
-                            flag,
-                            textDirection: TextDirection.ltr,
-                            style: const TextStyle(
-                              fontSize: SimfTokens.textSm,
-                              height: 1,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    if (rank.isNotEmpty) ...<Widget>[
-                      const SizedBox(height: SimfTokens.space1),
-                      Text(
-                        rank,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: SimfTokens.greyText,
-                          fontSize: SimfTokens.textSm,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              if (selected) ...<Widget>[
-                const SizedBox(width: SimfTokens.space2),
-                const Icon(
-                  Icons.check_circle,
-                  color: SimfTokens.accent,
-                  size: 20,
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }

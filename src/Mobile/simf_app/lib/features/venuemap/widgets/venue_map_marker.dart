@@ -41,17 +41,13 @@ class VenueMapMarker extends StatelessWidget {
           ),
           child: Icon(style.icon, size: 18, color: style.foreground),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: SimfTokens.gap2),
         Text(
           node.localizedLabel(isArabic),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 9,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
+          style: SimfTokens.labelWhiteSemibold9,
         ),
       ],
     );
@@ -73,7 +69,7 @@ class VenueMapMarker extends StatelessWidget {
         return const _MarkerStyle(
           icon: Icons.meeting_room_outlined,
           fill: SimfTokens.navy,
-          foreground: Colors.white,
+          foreground: SimfTokens.surface,
           border: SimfTokens.beigeBorder,
           shape: BoxShape.rectangle,
         );
@@ -96,7 +92,7 @@ class VenueMapMarker extends StatelessWidget {
       case VenueMapNodeKind.pointOfInterest:
         return const _MarkerStyle(
           icon: Icons.place,
-          fill: Colors.white,
+          fill: SimfTokens.surface,
           foreground: SimfTokens.danger,
           border: SimfTokens.danger,
           shape: BoxShape.circle,

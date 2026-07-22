@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_language_toggle.dart';
 
 /// The onboarding top bar: a back chevron on steps 2–3 at the physical left and
@@ -23,9 +24,12 @@ class OnboardingTopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 48,
+      height: SimfTokens.controlHeight,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.symmetric(
+          horizontal: SimfTokens.space2,
+          vertical: SimfTokens.space1,
+        ),
         child: Row(
           textDirection: TextDirection.ltr,
           children: <Widget>[
@@ -34,7 +38,7 @@ class OnboardingTopBar extends StatelessWidget {
                 onPressed: onBack,
                 icon: const Icon(
                   Icons.arrow_back_ios_new,
-                  color: Colors.white,
+                  color: SimfTokens.surface,
                   size: 20,
                   textDirection: TextDirection.ltr,
                 ),

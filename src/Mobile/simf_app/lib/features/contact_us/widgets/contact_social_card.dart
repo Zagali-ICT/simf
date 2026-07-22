@@ -98,7 +98,7 @@ class _SocialButton extends StatelessWidget {
               width: SimfTokens.hairline,
             ),
           ),
-          child: Icon(icon, color: Colors.white, size: 20),
+          child: Icon(icon, color: SimfTokens.surface, size: 20),
         ),
       ),
     );

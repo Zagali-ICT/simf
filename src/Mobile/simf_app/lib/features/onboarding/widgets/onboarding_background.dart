@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
 
-const String _worldMapAsset = 'assets/images/onboarding_world_map.jpg';
+const String _worldMapAsset = AppAssets.onboardingWorldMap;
 
 /// The onboarding step background (Figma 148:22): the active step's looping muted
 /// video under a 90%-navy overlay; until the decoder is ready (or when it is

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/route_names.dart';
+import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_page_shell.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
@@ -18,12 +19,7 @@ class SpeakerSectionHeading extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(
-        color: SimfTokens.beigeBorder,
-        fontWeight: FontWeight.w700,
-        fontSize: SimfTokens.textXs,
-        letterSpacing: 0.8,
-      ),
+      style: SimfTokens.labelBeigeBoldXsTracked,
     );
   }
 }
@@ -62,20 +58,13 @@ class SpeakerSessionRow extends StatelessWidget {
                 children: <Widget>[
                   Text(
                     session.localizedTitle(isArabic),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: SimfTokens.textSm,
-                    ),
+                    style: SimfTokens.labelWhiteSemiboldSm,
                   ),
                   if (hall != null) ...<Widget>[
                     const SizedBox(height: SimfTokens.space1),
                     Text(
                       hall,
-                      style: const TextStyle(
-                        color: SimfTokens.beigeBorder,
-                        fontSize: SimfTokens.textXs,
-                      ),
+                      style: SimfTokens.bodyBeigeXs,
                     ),
                   ],
                 ],
@@ -83,7 +72,7 @@ class SpeakerSessionRow extends StatelessWidget {
             ),
             const SizedBox(width: SimfTokens.space2),
             const SimfSvgIcon(
-              'assets/icons/ic_caret_left.svg',
+              AppAssets.icCaretLeft,
               color: SimfTokens.txtTertiary,
               size: 18,
             ),

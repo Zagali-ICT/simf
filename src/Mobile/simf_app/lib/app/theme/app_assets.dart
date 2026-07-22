@@ -18,4 +18,16 @@ class AppAssets {
 
   // ── Booths / venue ──────────────────────────────────────────────────────
   static const String navLocation = 'assets/icons/nav_location.svg';
+
+  // ── Speakers ────────────────────────────────────────────────────────────
+  static const String speakerPlaceholder =
+      'assets/icons/speaker_placeholder.svg';
+  static const String icCaretLeft = 'assets/icons/ic_caret_left.svg';
+
+  // ── Onboarding ──────────────────────────────────────────────────────────
+  static const String onboardVideo1 = 'assets/videos/onboard_01.mp4';
+  static const String onboardVideo2 = 'assets/videos/onboard_02.mp4';
+  static const String onboardVideo3 = 'assets/videos/onboard_03.mp4';
+  static const String onboardingWorldMap =
+      'assets/images/onboarding_world_map.jpg';
 }

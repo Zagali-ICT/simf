@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
 
@@ -29,7 +30,7 @@ class SpeakerPhotoTile extends StatelessWidget {
     // Keep the speakers-list 24px anchor at the default 44px tile; scale with size.
     final anchorSize = size / 44 * 24;
     final fallback = SimfSvgIcon(
-      'assets/icons/speaker_placeholder.svg',
+      AppAssets.speakerPlaceholder,
       size: anchorSize,
       color: SimfTokens.accent,
     );

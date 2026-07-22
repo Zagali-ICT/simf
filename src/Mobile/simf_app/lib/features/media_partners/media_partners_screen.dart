@@ -104,7 +104,7 @@ class MediaPartnersScreen extends ConsumerWidget {
                       crossAxisCount: 2,
                       mainAxisSpacing: SimfTokens.space4,
                       crossAxisSpacing: SimfTokens.space4,
-                      childAspectRatio: 163.5 / 104,
+                      childAspectRatio: SimfTokens.partnerCardAspectRatio,
                     ),
                     itemCount: items.length,
                     itemBuilder: (context, index) {

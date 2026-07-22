@@ -79,7 +79,7 @@ class _NewsArticleScreenState extends ConsumerState<NewsArticleScreen> {
       return Center(
         child: Text(
           l10n.newsNotFound,
-          style: const TextStyle(color: SimfTokens.inkMuted),
+          style: SimfTokens.bodyInkMuted,
         ),
       );
     }
@@ -108,19 +108,12 @@ class _NewsArticleScreenState extends ConsumerState<NewsArticleScreen> {
       children: <Widget>[
         Text(
           article.localizedCategory(isArabic),
-          style: const TextStyle(
-            color: SimfTokens.accent,
-            fontWeight: FontWeight.w700,
-            fontSize: SimfTokens.textXs,
-          ),
+          style: SimfTokens.labelGoldBoldXs,
         ),
         const SizedBox(height: SimfTokens.space2),
         Text(
           article.localizedTitle(isArabic),
-          style: const TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: SimfTokens.textXl,
-          ),
+          style: SimfTokens.titleBoldXl,
         ),
         const SizedBox(height: SimfTokens.space4),
         Text(article.localizedBody(isArabic)),

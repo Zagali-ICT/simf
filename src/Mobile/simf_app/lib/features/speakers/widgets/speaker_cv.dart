@@ -64,13 +64,13 @@ class _CvTab extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(SimfTokens.radius),
       child: Container(
-        height: 48,
+        height: SimfTokens.controlHeight,
         alignment: Alignment.center,
         padding: const EdgeInsets.all(SimfTokens.space2),
         decoration: BoxDecoration(
           // Figma 912:2312 — the inactive pill is border-only (no fill); it
           // reads the navySurface scaffold through, the active pill is gold.
-          color: selected ? SimfTokens.accent : Colors.transparent,
+          color: selected ? SimfTokens.accent : SimfTokens.transparent,
           borderRadius: BorderRadius.circular(SimfTokens.radius),
           border: selected
               ? null
@@ -85,7 +85,7 @@ class _CvTab extends StatelessWidget {
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            color: selected ? Colors.white : SimfTokens.beigeBorder,
+            color: selected ? SimfTokens.surface : SimfTokens.beigeBorder,
             fontWeight: FontWeight.w600,
             fontSize: SimfTokens.textSm,
             height: 1.2,
@@ -119,11 +119,7 @@ class SpeakerCvCard extends StatelessWidget {
       child: Text(
         body,
         textAlign: TextAlign.start,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: SimfTokens.textMd,
-          height: 1.5,
-        ),
+        style: SimfTokens.bodyWhite,
       ),
     );
   }

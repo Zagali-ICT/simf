@@ -29,7 +29,7 @@ class SpeakerSortControl extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(SimfTokens.radius),
         child: Container(
-          height: 48,
+          height: SimfTokens.controlHeight,
           // Frame 1341:3583 — 8px horizontal padding, 0.2px beige hairline.
           padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space2),
           decoration: BoxDecoration(

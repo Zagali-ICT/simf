@@ -48,35 +48,23 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               const SimfLogo(size: 136),
-              const SizedBox(height: 8),
+              const SizedBox(height: SimfTokens.space2),
               Text(
                 l10n.splashTagline,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: SimfTokens.beigeBorder,
-                  fontSize: 16,
-                ),
+                style: SimfTokens.bodyBeigeLg,
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: SimfTokens.space10),
               Text(
                 l10n.splashTitle,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w600,
-                  height: 1.5, // 36/24 — the design's Title line height.
-                ),
+                style: SimfTokens.labelWhiteSemibold24Tall,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: SimfTokens.space6),
               Text(
                 l10n.splashEventLine,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: SimfTokens.beigeBorder,
-                  fontSize: 18,
-                  height: 1.5, // 27/18 — the design's Sub-title line height.
-                ),
+                style: SimfTokens.bodyBeigeTitleTall,
               ),
             ],
           ),

@@ -127,6 +127,7 @@ class SimfTokens {
   static const double space5 = 20;
   static const double space6 = 24;
   static const double space8 = 32;
+  static const double space10 = 40; // 10*4 extension of the spacing scale (onboarding/splash vertical gaps)
 
   // Radii.
   static const double radiusSmall = 4;
@@ -162,7 +163,16 @@ class SimfTokens {
   static const double headBoxPad = 9; // delegations head-of-delegation box padding (Figma 1426:10838)
   static const double gap2 = 2; // off-grid 2px micro-gap (below the space-4 scale)
   static const double gap6 = 6; // off-grid 6px micro-gap (below the space-4 scale)
+  static const double gap18 = 18; // off-grid 18px gap (forum-guide step content -> caret, Figma 1426:11374)
+  static const double newsThumbWidth = 155; // news card thumbnail tile (Figma 958:2202)
+  static const double newsThumbHeight = 85; // news card thumbnail tile (Figma 958:2202)
+  static const double partnerCardAspectRatio = 163.5 / 104; // media-partners grid tile (Figma 958:2246)
+  static const double onboardCarouselHeight = 170; // onboarding step carousel viewport (Figma 148:22)
   static const double statsStripHeight = 100; // delegations decorative stats-strip map (Figma 1426:10781)
+  static const double mapControlSize = 40; // venue-map floating zoom/locate control square (Figma 758:1358)
+  static const double tapTarget = 44; // minimum touch-target height — venue-map direct-me button (Figma 758:1358)
+  static const double dayCardWidth = 58; // meeting-request day card (Figma 1776:4975)
+  static const double dayCardHeight = 64; // meeting-request day card + its picker row (Figma 1776:5052)
 
   // Type scale (Material text styles override these for actual rendering;
   // tokens here are for places that need a raw size).
@@ -359,5 +369,191 @@ class SimfTokens {
     color: accent,
     fontSize: textXl,
     fontWeight: FontWeight.w700,
+  );
+  // venue map (Figma 758:1358) — light info-card subtitle + node-marker caption.
+  static const TextStyle bodyGreySm = TextStyle(
+    color: greyText,
+    fontSize: textSm,
+  );
+  static const TextStyle bodyInkMuted = TextStyle(
+    color: inkMuted,
+  );
+  static const TextStyle labelWhiteSemibold9 = TextStyle(
+    color: surface,
+    fontSize: 9,
+    fontWeight: FontWeight.w600,
+  );
+  // Colourless (inherit the ambient text colour, exactly as the inline styles
+  // they replace did) — the booth-sheet title + code chip.
+  static const TextStyle titleBold = TextStyle(
+    fontSize: textLg,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle codeLabelSm = TextStyle(
+    fontSize: textSm,
+    fontWeight: FontWeight.w700,
+  );
+  // exhibition detail (Figma 1439:11881/11826) — entity name, logo initials,
+  // tier-pill label + about-card header.
+  static const TextStyle labelWhiteBoldXl = TextStyle(
+    color: surface,
+    fontSize: textXl,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle labelWhiteBoldXxl = TextStyle(
+    color: surface,
+    fontSize: textXxl,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle labelGoldBold = TextStyle(
+    color: accent,
+    fontSize: textMd,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle labelWhiteMediumLg = TextStyle(
+    color: surface,
+    fontSize: textLg,
+    fontWeight: FontWeight.w500,
+  );
+  // speakers (Figma 908:1744 / 908:2110 / 1776:5036) — list card, profile header,
+  // CV body, sessions heading + meeting-request sheet/picker.
+  static const TextStyle labelWhiteSemiboldLg = TextStyle(
+    color: surface,
+    fontSize: textLg,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle labelWhiteSemiboldTitle = TextStyle(
+    color: surface,
+    fontSize: textTitle,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle labelWhiteBoldLg = TextStyle(
+    color: surface,
+    fontSize: textLg,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle bodyWhite = TextStyle(
+    color: surface,
+    fontSize: textMd,
+    height: 1.5,
+  );
+  static const TextStyle labelBeigeBoldXsTracked = TextStyle(
+    color: beigeBorder,
+    fontSize: textXs,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 0.8,
+  );
+  static const TextStyle labelInkSemiboldTitle = TextStyle(
+    color: headlineInk,
+    fontSize: textTitle,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle labelInkSemibold = TextStyle(
+    color: headlineInk,
+    fontSize: textMd,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle labelNavyMediumSm = TextStyle(
+    color: navy,
+    fontSize: textSm,
+    fontWeight: FontWeight.w500,
+  );
+  static const TextStyle bodyInputMd = TextStyle(
+    color: inputInk,
+    fontSize: textMd,
+  );
+  static const TextStyle bodyGreyMd = TextStyle(
+    color: greyText,
+    fontSize: textMd,
+  );
+  // splash / onboarding (Figma 159:573 / 148:22) — brand splash + intro carousel.
+  static const TextStyle bodyBeigeLg = TextStyle(
+    color: beigeBorder,
+    fontSize: textLg,
+  );
+  static const TextStyle labelWhiteSemibold24Tall = TextStyle(
+    color: surface,
+    fontSize: text24,
+    fontWeight: FontWeight.w600,
+    height: 1.5,
+  );
+  static const TextStyle bodyBeigeTitleTall = TextStyle(
+    color: beigeBorder,
+    fontSize: textTitle,
+    height: 1.5,
+  );
+  // forum guide (Figma 1388:7503/7512) — gold banner + numbered step cards.
+  static const TextStyle labelWhiteMediumTall = TextStyle(
+    color: surface,
+    fontSize: textMd,
+    fontWeight: FontWeight.w500,
+    height: 1.4,
+  );
+  static const TextStyle labelWhiteBoldMd = TextStyle(
+    color: surface,
+    fontSize: textMd,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle bodyBeigeSm14 = TextStyle(
+    color: beigeBorder,
+    fontSize: textSm,
+    height: 1.4,
+  );
+  // news (Figma 957:2197 / article) — category chip + article category/title.
+  static const TextStyle labelWhiteBoldXs = TextStyle(
+    color: surface,
+    fontSize: textXs,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle labelGoldBoldXs = TextStyle(
+    color: accent,
+    fontSize: textXs,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle titleBoldXl = TextStyle(
+    fontSize: textXl,
+    fontWeight: FontWeight.w700,
+  );
+  // media partners (Figma 958:2263) — partner name + initials fallback tile.
+  static const TextStyle labelWhiteSemiboldSm13 = TextStyle(
+    color: surface,
+    fontSize: textSm,
+    fontWeight: FontWeight.w600,
+    height: 1.3,
+  );
+  static const TextStyle labelNavyBoldTracked = TextStyle(
+    color: navy,
+    fontSize: textMd,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 0.5,
+  );
+  // contact us (Figma 1388:7711) — message-form input + hint.
+  static const TextStyle bodyWhiteMd = TextStyle(
+    color: surface,
+    fontSize: textMd,
+  );
+  static const TextStyle hintBeige = TextStyle(
+    color: beigeBorder,
+  );
+  // about (Figma 1116:16448) — card body line-heights + status badge.
+  static const TextStyle bodyBeigeSm16 = TextStyle(
+    color: beigeBorder,
+    fontSize: textSm,
+    height: 1.6,
+  );
+  static const TextStyle bodyBeigeSm15 = TextStyle(
+    color: beigeBorder,
+    fontSize: textSm,
+    height: 1.5,
+  );
+  static const TextStyle labelNavyDeepBoldSm = TextStyle(
+    color: navyDeep,
+    fontSize: textSm,
+    fontWeight: FontWeight.w700,
+  );
+  // onboarding (Figma 148:22) — colourless Skip-button label.
+  static const TextStyle titleSemibold = TextStyle(
+    fontSize: textLg,
+    fontWeight: FontWeight.w600,
   );
 }

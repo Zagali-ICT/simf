@@ -47,11 +47,7 @@ class SpeakerProfileHeader extends StatelessWidget {
                     textAlign: TextAlign.center,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: SimfTokens.textMd,
-                      fontWeight: FontWeight.w600,
-                      color: SimfTokens.beigeBorder,
-                    ),
+                    style: SimfTokens.labelBeigeSemibold,
                   ),
                 ],
               ],
@@ -81,11 +77,7 @@ class _NameLine extends StatelessWidget {
       textAlign: TextAlign.center,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: const TextStyle(
-        fontSize: SimfTokens.textTitle,
-        fontWeight: FontWeight.w600,
-        color: Colors.white,
-      ),
+      style: SimfTokens.labelWhiteSemiboldTitle,
     );
     if (flag.isEmpty) {
       return nameText;
