@@ -28,6 +28,10 @@ public sealed class EmailRateLimitKeyMiddleware
         "/api/v1/app/auth/forgot-password",
         "/api/v1/app/auth/reset-password",
         "/api/v1/app/auth/badge-sign-in",
+        // #24 — key the per-email partition on the TARGET new address (the body
+        // field is `newEmail`, not `email`; the fallback scan below reads it).
+        "/api/v1/app/auth/change-email/send-otp",
+        "/api/v1/app/auth/change-email/confirm",
     };
 
     private readonly RequestDelegate _next;
@@ -89,10 +93,12 @@ public sealed class EmailRateLimitKeyMiddleware
             // Case-insensitive scan — System.Text.Json defaults to
             // PascalCase on the wire (`{"Email":"..."}`) but a future
             // serialiser change or a hand-rolled client may use lowercase.
-            // The badge sign-in body carries no `email` field, so fall back to
-            // the scanned `qrId` — the "auth-email" limiter then partitions per
-            // badge (same normalisation) instead of collapsing to the per-IP key.
+            // The badge sign-in body carries no `email` field, so fall back to the
+            // scanned `qrId`; the change-email bodies carry `newEmail` (the target
+            // address). Either fallback lets the "auth-email" limiter partition per
+            // target (same normalisation) instead of collapsing to the per-IP key.
             string? qrId = null;
+            string? newEmail = null;
             foreach (var prop in doc.RootElement.EnumerateObject())
             {
                 if (prop.Value.ValueKind != JsonValueKind.String)
@@ -107,8 +113,12 @@ public sealed class EmailRateLimitKeyMiddleware
                 {
                     qrId = prop.Value.GetString();
                 }
+                if (string.Equals(prop.Name, "newEmail", StringComparison.OrdinalIgnoreCase))
+                {
+                    newEmail = prop.Value.GetString();
+                }
             }
-            return qrId;
+            return qrId ?? newEmail;
         }
         catch (OperationCanceledException)
         {

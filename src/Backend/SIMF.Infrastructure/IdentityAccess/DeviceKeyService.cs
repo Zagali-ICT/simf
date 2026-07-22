@@ -215,7 +215,7 @@ internal sealed class DeviceKeyService(
         }, cancellationToken);
 
         return new SendBiometricStepUpResponse(
-            MaskEmail(user.Email!), (int)StepUpLifetime.TotalSeconds);
+            EmailMask.Mask(user.Email!), (int)StepUpLifetime.TotalSeconds);
     }
 
     public async Task<IReadOnlyList<DeviceKeyEntry>> ListMineAsync(
@@ -558,19 +558,6 @@ internal sealed class DeviceKeyService(
         emailTemplates.RenderAsync(
             EmailTemplateType.BiometricStepUp, email,
             EmailTokens.ForCode(code, StepUpLifetime), cancellationToken);
-
-    /// <summary>Masks an email for the "we sent a code to a***@x.com" line —
-    /// keeps the first character + the full domain and stars the rest of the
-    /// local part. Never returns the full address.</summary>
-    private static string MaskEmail(string email)
-    {
-        var at = email.IndexOf('@');
-        if (at <= 0)
-        {
-            return "***";
-        }
-        return $"{email[..1]}***{email[at..]}";
-    }
 
     /// <summary>Compares the stored + supplied code hashes in constant time,
     /// so no timing side channel leaks.</summary>

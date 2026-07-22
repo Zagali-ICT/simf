@@ -186,6 +186,10 @@ Scenario: Edit changes email, display name and profile type
   Then PUT /account/api/admin/others/{id} returns 200
   And a green toast reads "The account was updated."
   And the hint warns that changing the email signs the account out
+  And (Build #24) the changed email is marked unverified (EmailConfirmed=false), so it
+      is re-verified at the user's next sign-in via the email-OTP 2FA (sign-in gates on
+      AccountState, not EmailConfirmed, so this is NOT a lockout - it just re-proves the
+      corrected address is deliverable)
   And the "Save" button is disabled while Display name is under 2 chars or email is blank
 ```
 
@@ -541,4 +545,4 @@ the Chrome DevTools MCP smoke.
 
 ---
 
-_Last reviewed:_ 2026-07-09 by SIMF Team (D-728 — added E2E-OTH-025 for the change-account-type action on the Other Details view). Earlier: 2026-06-10 (D-356 Phase 5 — Excel + toggle; D-353 presentation toggle scenarios added).
+_Last reviewed:_ 2026-07-22 by SIMF Team (Build #24 - noted on E2E-OTH-005 that changing the email now marks it unverified (EmailConfirmed=false) for re-verification at next sign-in; not a lockout). Prior: 2026-07-09 by SIMF Team (D-728 - added E2E-OTH-025 for the change-account-type action on the Other Details view). Earlier: 2026-06-10 (D-356 Phase 5 - Excel + toggle; D-353 presentation toggle scenarios added).

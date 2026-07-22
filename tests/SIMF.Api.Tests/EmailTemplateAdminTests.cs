@@ -1,6 +1,6 @@
 // D-735 — integration tests for the CP admin email-template surface: the DB
 // holds only overrides, the code catalogue backs every read so the grid always
-// shows all six templates, save validates the copy references no unknown token
+// shows all nine templates, save validates the copy references no unknown token
 // and bumps a version, reset drops the override, preview renders sample values.
 // All routes are gated RequireApprovedAccount + an EmailTemplates permission and
 // return the ApiResult<T> envelope; {type} is the EmailTemplateType name
@@ -36,11 +36,13 @@ public sealed class EmailTemplateAdminTests : IClassFixture<SimfApiFactory>
     // -- List ----------------------------------------------------------------
 
     [Fact]
-    public async Task List_returns_all_six_templates_clean_by_default()
+    public async Task List_returns_all_nine_templates_clean_by_default()
     {
         // Order-independent: every mutating test in this class resets its
         // override so, with parallelism disabled, the DB is clean at every
-        // test boundary and the grid shows the six catalogue defaults.
+        // test boundary and the grid shows the nine catalogue defaults (#24 added
+        // EmailChangeVerification + EmailChangedNotice; the assertion was stale at
+        // 6 on the base branch after D-751 added BulkBadgeDelivery, the 7th).
         var admin = await CreateAdministratorAndSignInAsync();
 
         var response = await PostAuthAsync(
@@ -49,7 +51,7 @@ public sealed class EmailTemplateAdminTests : IClassFixture<SimfApiFactory>
 
         var page = (await response.Content
             .ReadFromJsonAsync<ApiResult<GridPage<AdminEmailTemplateSummary>>>())!.Data!;
-        Assert.Equal(6, page.Items.Count);
+        Assert.Equal(9, page.Items.Count);
         Assert.All(page.Items, row =>
         {
             Assert.False(row.IsOverride);

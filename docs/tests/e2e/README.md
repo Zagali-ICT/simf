@@ -265,6 +265,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | `meetings` (`GET /app/my-requests` filtered to approved-upcoming meetings) — **اللقاءات الثنائية** (D-745), Figma `1408:9726`; **VIP-only** page split from the requests feed, with the طلب جديد create sheet + السجل history link + speaker photo/flag cards | [`mobile-meetings.md`](mobile-meetings.md) | E2E-MOBMEET-001..011 |
 | `myMeetings` (`GET /app/my-requests`, filtered to meetings) — المقابلات (D-587), Figma `1701:9406`; speaker + delegation meetings over status chips; reached from the My-Area "مقابلات" counter | [`mobile-my-meetings.md`](mobile-my-meetings.md) | E2E-MOBMTG-001..007 |
 | `Confirm Face ID` step-up (`POST /app/auth/device-keys/step-up` + gated register) — #7a biometric-enable; **D-738** OS device-credential confirm + sign-in device-PIN fallback | [`mobile-biometric-step-up.md`](mobile-biometric-step-up.md) | E2E-MBSU-001..015 |
+| `Change email` self-service (`POST /app/auth/change-email/send-otp` + `/confirm`) - Build #24 signed-in login-email change; code emailed to the NEW address, confirm rolls the stamp + forces a fresh sign-in; reached from More → Settings | [`mobile-change-email.md`](mobile-change-email.md) | E2E-MCE-001..011 |
 | `Badge activation` + **badge sign-in** (`resolve-badge` · `badge-sign-in` · `badge-activation/{start,complete}`) — Part B passwordless activation **+ D-738 password step + D-737 unified scanner** | [`mobile-badge-activation.md`](mobile-badge-activation.md) | E2E-MOBBADGE-001..013 |
 | `Badge password` step (`POST /app/auth/badge-sign-in`) — D-738 returning has-password holder; doc [`mobile/badge-password/`](../../pages/mobile/badge-password/README.md) | [`mobile-badge-activation.md`](mobile-badge-activation.md) | E2E-MOBBADGE-008..013 |
 | #200 `forumGuide` (no API — static guide) — built from ComingSoon, Figma `1388:7493` | [`mobile-forum-guide.md`](mobile-forum-guide.md) | E2E-MOB200-001..005 |
@@ -355,3 +356,16 @@ API endpoints land (D-249). The per-screen design docs live under
   `mobile-biometric-step-up.md`.
 - **No new namespaces:** the additions extend existing per-page namespaces
   (MOBGATE / MOBSCANVIS / MMC / MOBBADGE / MBSU); no scenario was renumbered.
+
+### Update - 2026-07-22 (Build #24 - self-service change-email + CP edit tighten)
+
+- **New mobile catalogue:** `Change email` (`mobile-change-email.md`,
+  E2E-MCE-001..011) - the signed-in self-service login-email change. Two phases in
+  one screen (enter the new address → a 6-digit code is emailed TO it → confirm);
+  the confirm rolls the security stamp + revokes sessions, so the app forces a fresh
+  sign-in. New per-page doc [`docs/pages/mobile/change-email.md`](../../pages/mobile/change-email.md).
+  Fresh namespace **MCE**.
+- **CP note (no new scenario):** the existing account-edit path now sets
+  `EmailConfirmed=false` when it changes an email. A short note was added to the Edit
+  scenarios of `cp-admin-visitors.md` (E2E-VIS-001) and `cp-admin-others.md`
+  (E2E-OTH-005); no existing scenario was renumbered.

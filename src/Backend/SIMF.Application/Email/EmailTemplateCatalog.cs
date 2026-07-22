@@ -49,6 +49,14 @@ public static class EmailTemplateCatalog
     private static readonly IReadOnlyList<EmailTemplateToken> BulkBadgeTokens =
         [CountToken, GeneratedAtToken];
 
+    // #24 — the masked new address on the change-email security alert to the old
+    // address. No one-time code (the change already happened).
+    private static readonly EmailTemplateToken NewEmailToken =
+        new("NewEmail", "New email (masked)", "البريد الجديد (مقنّع)", "n***@example.com");
+
+    private static readonly IReadOnlyList<EmailTemplateToken> NewEmailTokens =
+        [NewEmailToken];
+
     private static readonly IReadOnlyList<EmailTemplateDefinition> Definitions =
     [
         new(EmailTemplateType.SignInOtp,
@@ -116,6 +124,30 @@ public static class EmailTemplateCatalog
             "<p>تم توليد دفعة من {Count} شارة في نظام سيمف بتاريخ {GeneratedAt} بتوقيت UTC.</p>" +
             "<p>صور رموز QR للشارات مرفقة بهذه الرسالة في ملف مضغوط واحد، صورة PNG لكل شارة.</p>",
             BulkBadgeTokens),
+
+        new(EmailTemplateType.EmailChangeVerification,
+            "SIMF email change verification",
+            "<p>Your SIMF email change verification code is <strong>{Code}</strong>.</p>" +
+            "<p>The code expires in {ExpiryMinutes} minutes. Enter it in the app to " +
+            "confirm this is your new email address. " +
+            "If you did not request an email change, ignore this message.</p>",
+            "<p>رمز تأكيد تغيير البريد الإلكتروني الخاص بك هو <strong>{Code}</strong>.</p>" +
+            "<p>ينتهي الرمز خلال {ExpiryMinutes} دقائق. أدخله في التطبيق لتأكيد أن هذا " +
+            "بريدك الإلكتروني الجديد. " +
+            "إذا لم تطلب تغيير البريد الإلكتروني فتجاهل هذه الرسالة.</p>",
+            CodeTokens),
+
+        new(EmailTemplateType.EmailChangedNotice,
+            "SIMF login email changed",
+            "<p>The login email for your SIMF account was just changed to " +
+            "<strong>{NewEmail}</strong>.</p>" +
+            "<p>If you made this change, no action is needed. If you did NOT change " +
+            "it, your account may be compromised — contact SIMF support immediately.</p>",
+            "<p>تم تغيير البريد الإلكتروني لتسجيل الدخول إلى حسابك في سيمف إلى " +
+            "<strong>{NewEmail}</strong>.</p>" +
+            "<p>إذا كنت أنت من أجرى هذا التغيير فلا حاجة لأي إجراء. وإذا لم تكن أنت، " +
+            "فقد يكون حسابك معرّضاً للخطر — تواصل مع دعم سيمف فوراً.</p>",
+            NewEmailTokens),
     ];
 
     private static readonly IReadOnlyDictionary<EmailTemplateType, EmailTemplateDefinition> Map =

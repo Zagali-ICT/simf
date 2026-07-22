@@ -78,6 +78,49 @@ public sealed class AdminUpdateUserTests : IClassFixture<SimfApiFactory>
         Assert.NotEqual(stampBefore, stampAfter);
     }
 
+    // #24 — an admin correcting a login email (the new-account typo case) marks
+    // the corrected address unverified, so the next sign-in re-verifies it via the
+    // 2FA email-OTP (sign-in gates on AccountState, not EmailConfirmed).
+    [Fact]
+    public async Task Update_visitor_email_change_marks_email_unconfirmed()
+    {
+        var token = await CreateAdminAndSignInAsync();
+        var id = await CreateVisitorAsync();
+
+        await PutAuthAsync(
+            $"/api/v1/admin/visitors/{id}",
+            new AdminUpdateVisitorRequest
+            {
+                Email = $"corrected-{Guid.NewGuid():N}@simf.test",
+                DisplayName = "Corrected",
+            },
+            token);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var user = await db.Users.AsNoTracking().SingleAsync(u => u.Id == id);
+        Assert.False(user.EmailConfirmed);
+    }
+
+    // A rename that leaves the email unchanged must NOT drop the confirmed flag.
+    [Fact]
+    public async Task Update_visitor_without_email_change_keeps_email_confirmed()
+    {
+        var token = await CreateAdminAndSignInAsync();
+        var email = $"stable-{Guid.NewGuid():N}@simf.test";
+        var id = await CreateVisitorAsync(email);
+
+        await PutAuthAsync(
+            $"/api/v1/admin/visitors/{id}",
+            new AdminUpdateVisitorRequest { Email = email, DisplayName = "Renamed Only" },
+            token);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var user = await db.Users.AsNoTracking().SingleAsync(u => u.Id == id);
+        Assert.True(user.EmailConfirmed);
+    }
+
     [Fact]
     public async Task Update_visitor_duplicate_email_is_409()
     {
