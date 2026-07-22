@@ -51,7 +51,7 @@ class _IdentityVerificationScreenState
   bool _cameraFailed = false;
 
   // TEMP diagnostic (remove before merge, D-XXX): show the live headEulerAngleY
-  // + its normalised value so the iOS yaw-sign can be confirmed on-device in one
+  // + its normalised value so the yaw-sign can be confirmed on-device in one
   // DEBUG build. Double-gated: it only renders when BOTH this flag is on AND
   // kDebugMode — so a release/production build never shows this security
   // control's internal telemetry. The readout rides its own ValueNotifier so
@@ -127,6 +127,13 @@ class _IdentityVerificationScreenState
     }
   }
 
+  /// The active front camera's sensor orientation (degrees), used to normalise
+  /// the ML Kit yaw sign per device (see [livenessInvertYaw]). Falls back to 0
+  /// when the camera is not yet bound — only read while a frame or the overlay
+  /// is live, so the fallback is never actually consumed.
+  int get _frontCameraSensorOrientation =>
+      _camera?.description.sensorOrientation ?? 0;
+
   Future<void> _onFrame(CameraImage image) async {
     if (_processing || !mounted) {
       return;
@@ -156,10 +163,14 @@ class _IdentityVerificationScreenState
         _step,
         smilingProbability: face.smilingProbability,
         headEulerAngleY: face.headEulerAngleY,
-        // iOS reports the yaw with the opposite sign for the same physical turn
-        // (front-camera mirror + per-platform input-image rotation); normalise
-        // so a positive yaw is always a physical RIGHT turn.
-        invertYaw: livenessInvertYaw(defaultTargetPlatform),
+        // The raw yaw sign for a physical turn depends on the platform AND the
+        // front camera's sensor orientation (front-camera mirror + per-platform
+        // input-image rotation); normalise so a positive yaw is always a
+        // physical RIGHT turn.
+        invertYaw: livenessInvertYaw(
+          defaultTargetPlatform,
+          _frontCameraSensorOrientation,
+        ),
       )) {
         return;
       }
@@ -385,7 +396,10 @@ class _IdentityVerificationScreenState
   // should go positive toward +20. Only the readout text rebuilds (ValueNotifier),
   // not the camera preview.
   Widget _yawDebugOverlay() {
-    final invert = livenessInvertYaw(defaultTargetPlatform);
+    final invert =
+        livenessInvertYaw(defaultTargetPlatform, _frontCameraSensorOrientation);
+    final platform =
+        defaultTargetPlatform == TargetPlatform.iOS ? 'iOS' : 'Android';
     return Positioned(
       top: 8,
       left: 8,
@@ -400,7 +414,7 @@ class _IdentityVerificationScreenState
               'yaw ${raw?.toStringAsFixed(1) ?? "—"}  '
               'norm ${norm?.toStringAsFixed(1) ?? "—"}  '
               'step ${_step.name}  '
-              '${invert ? "iOS" : "Android"}',
+              '$platform s$_frontCameraSensorOrientation inv:$invert',
               style: const TextStyle(color: Colors.greenAccent, fontSize: 13),
             ),
           );

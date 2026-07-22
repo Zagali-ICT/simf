@@ -134,12 +134,12 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Padding(
-                          padding: const EdgeInsets.only(left: 8),
+                          padding: const EdgeInsets.only(left: SimfTokens.space2),
                           child: IconButton(
                             onPressed: _back,
                             icon: const Icon(
                               Icons.arrow_back_ios_new,
-                              color: Colors.white,
+                              color: SimfTokens.surface,
                               size: 20,
                               textDirection: TextDirection.ltr,
                             ),
@@ -149,8 +149,8 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
                       Text(
                         l10n.termsTitle,
                         style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
+                          color: SimfTokens.surface,
+                          fontSize: SimfTokens.text24,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -205,30 +205,30 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
       children: <Widget>[
         Expanded(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
             // Full-width content (owner 2026-06-20): the cards stretch to the
             // page width instead of the old 400-wide centred column.
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                const SizedBox(height: 16),
+                const SizedBox(height: SimfTokens.space4),
                 Align(
                   alignment: AlignmentDirectional.centerStart,
                   child: Text(
                     l10n.termsImportantInfoTitle,
                     style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
+                      color: SimfTokens.surface,
+                      fontSize: SimfTokens.textLg,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: SimfTokens.space4),
                 for (final item in items) ...<Widget>[
                   TermsBulletCard(text: item),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: SimfTokens.space4),
                 ],
-                const SizedBox(height: 8),
+                const SizedBox(height: SimfTokens.space2),
               ],
             ),
           ),
@@ -236,7 +236,12 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
         // The frame shows موافق unconditionally (505:1684); standalone it
         // simply leaves the page, in consent mode it returns true (D-375).
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+          padding: const EdgeInsets.fromLTRB(
+            SimfTokens.space4,
+            0,
+            SimfTokens.space4,
+            SimfTokens.space6,
+          ),
           child: SizedBox(
             width: double.infinity,
             child: FilledButton(
@@ -244,7 +249,7 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
               child: Text(
                 l10n.termsAcceptButton,
                 style: const TextStyle(
-                  fontSize: 16,
+                  fontSize: SimfTokens.textLg,
                   fontWeight: FontWeight.w700,
                 ),
               ),

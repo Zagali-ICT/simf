@@ -36,7 +36,6 @@ public partial class SpeakerMeetingRequestsList
     // rows do not carry email (the D-185 pattern).
     private AdminSpeakerMeetingRequestDetail? _respondTarget;
     private bool _loadingDetail;
-    private MeetingRequestStatus _respondStatus = MeetingRequestStatus.Accepted;
     private string _respondNote = string.Empty;
 
     // D-716 (item 7, GAP-2) — optional hall binding on Accept: pick a meeting hall,
@@ -134,7 +133,6 @@ public partial class SpeakerMeetingRequestsList
             row.RequestedByUserId, row.RequesterName, RequesterEmail: null,
             row.Subject, row.Status, row.ResponseNote,
             row.CreatedAt, row.RespondedAt);
-        _respondStatus = MeetingRequestStatus.Accepted;
         _respondNote = string.Empty;
         _bindHallId = null;
         ClearBindSelection();
@@ -177,16 +175,31 @@ public partial class SpeakerMeetingRequestsList
         finally { _busy = false; }
     }
 
-    private void OnRespondStatusChanged(ChangeEventArgs e)
-    {
-        if (int.TryParse(e.Value?.ToString(), out var v))
-        {
-            _respondStatus = (MeetingRequestStatus)v;
-        }
-    }
-
     private void OnRespondNoteChanged(ChangeEventArgs e) =>
         _respondNote = e.Value?.ToString() ?? string.Empty;
+
+    // Bi-Meeting rework — an operator checks a confirmed (Accepted) meeting in at the
+    // hall; the backend flips it to Done. Quiet row action (no modal).
+    private async Task OnCheckInAsync(AdminSpeakerMeetingRequestRow row)
+    {
+        if (_busy) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<AdminSpeakerMeetingRequestDetail>>(
+                "simfAccount.postJson",
+                $"/account/api/admin/speaker-meeting-requests/{row.Id}/check-in",
+                new { });
+            _toast = env is { Success: true }
+                ? new Toast("success", L["Admin.Meetings.CheckIn.Done"])
+                : new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.SpeakerMeetingRequests.LoadFailed"]);
+            if (env is { Success: true }) { await LoadAsync(); }
+        }
+        finally { _busy = false; }
+    }
 
     // D-716 — reset the hall-binding selection (the chosen hall is set separately;
     // this clears the slot/table choice + their loaded lists).
@@ -236,16 +249,38 @@ public partial class SpeakerMeetingRequestsList
     private void OnBindTableChanged(ChangeEventArgs e) =>
         _bindTableId = Guid.TryParse(e.Value?.ToString(), out var g) ? g : null;
 
-    private async Task SendResponseAsync()
+    // Bi-Meeting rework — the 3-button model. Decline = Reject (justification
+    // required). Approve = accept + bind the hall slot, verbal=false → the speaker's
+    // own confirmation link is emailed. Confirm = accept + bind + verbal=true → booked
+    // straight away (the admin already has the speaker's verbal confirmation).
+    private Task DeclineAsync() =>
+        SendRespondAsync(MeetingRequestStatus.Rejected, verbal: false, requireHall: false);
+
+    private Task ApproveAsync() =>
+        SendRespondAsync(MeetingRequestStatus.Accepted, verbal: false, requireHall: true);
+
+    private Task ConfirmAsync() =>
+        SendRespondAsync(MeetingRequestStatus.Accepted, verbal: true, requireHall: true);
+
+    private async Task SendRespondAsync(
+        MeetingRequestStatus status, bool verbal, bool requireHall)
     {
         if (_respondTarget is null || _busy) return;
 
-        // D-716 — when a hall is chosen on Accept, a free slot is required.
-        var bindHall = _respondStatus == MeetingRequestStatus.Accepted
-            && _bindHallId is not null;
-        if (bindHall && (_bindSlotIndex < 0 || _bindSlotIndex >= _hallSlots.Count))
+        // A decline must carry a justification (owner rule: cancel-with-justification).
+        if (status == MeetingRequestStatus.Rejected
+            && string.IsNullOrWhiteSpace(_respondNote))
         {
-            _toast = new Toast("error", L["Admin.SpeakerMeetingRequests.Bind.SlotRequired"]);
+            _toast = new Toast("error", L["Admin.Meetings.Decline.NoteRequired"]);
+            return;
+        }
+
+        // Approve / Confirm bind the meeting to a free hall slot.
+        var haveSlot = _bindHallId is not null
+            && _bindSlotIndex >= 0 && _bindSlotIndex < _hallSlots.Count;
+        if (requireHall && !haveSlot)
+        {
+            _toast = new Toast("error", L["Admin.Meetings.Bind.HallSlotRequired"]);
             return;
         }
 
@@ -255,11 +290,12 @@ public partial class SpeakerMeetingRequestsList
         {
             var body = new RespondToSpeakerMeetingRequestRequest
             {
-                Status = _respondStatus,
+                Status = status,
+                VerbalConfirmed = verbal,
                 ResponseNote = string.IsNullOrWhiteSpace(_respondNote)
                     ? null : _respondNote.Trim(),
             };
-            if (bindHall)
+            if (requireHall && haveSlot)
             {
                 var slot = _hallSlots[_bindSlotIndex];
                 body.HallId = _bindHallId;

@@ -40,7 +40,7 @@ class AuthAltButton extends StatelessWidget {
             child: Text(
               label,
               style: const TextStyle(
-                fontSize: 14,
+                fontSize: SimfTokens.textMd,
                 fontWeight: FontWeight.w600,
                 color: SimfTokens.goldSoft,
               ),
@@ -100,15 +100,15 @@ class AuthSubmitButton extends StatelessWidget {
               height: 20,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                color: Colors.white,
+                color: SimfTokens.surface,
               ),
             )
           : Text(
               label,
               style: const TextStyle(
-                fontSize: 16,
+                fontSize: SimfTokens.textLg,
                 fontWeight: FontWeight.w700,
-                color: Colors.white,
+                color: SimfTokens.surface,
               ),
             ),
     );

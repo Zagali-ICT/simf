@@ -13,7 +13,7 @@ class ProgrammeDayBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 85,
+      height: SimfTokens.dayBannerHeight,
       width: double.infinity,
       child: ClipRRect(
         borderRadius:
@@ -40,7 +40,10 @@ class ProgrammeDayBanner extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.center,
                   end: Alignment.bottomCenter,
-                  colors: <Color>[Colors.transparent, SimfTokens.bannerScrim],
+                  colors: <Color>[
+                    SimfTokens.transparent,
+                    SimfTokens.bannerScrim,
+                  ],
                 ),
               ),
             ),
@@ -50,8 +53,8 @@ class ProgrammeDayBanner extends StatelessWidget {
               top: SimfTokens.space2,
               start: SimfTokens.space2,
               child: Container(
-                width: 32,
-                height: 32,
+                width: SimfTokens.requestIconBox,
+                height: SimfTokens.requestIconBox,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: SimfTokens.accent,

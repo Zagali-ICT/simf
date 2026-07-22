@@ -153,6 +153,10 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     // D-478 (#11, Group G phase 2) — delegation↔delegation (G2G) meeting requests.
     public DbSet<DelegationMeetingRequest> DelegationMeetingRequests => Set<DelegationMeetingRequest>();
 
+    // Bi-Meeting rework — delegation availability windows (parity with
+    // SpeakerAvailabilityWindows) so a delegation meeting can be booked on real time.
+    public DbSet<DelegationAvailabilityWindow> DelegationAvailabilityWindows => Set<DelegationAvailabilityWindow>();
+
     // D-500 (Wave 5, الطلبات 1408:9726) — the two new standalone request types
     // surfaced in the unified requests feed: participation-document + badge-update.
     public DbSet<SIMF.Domain.Requests.ParticipationDocumentRequest> ParticipationDocumentRequests =>
@@ -172,6 +176,11 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     /// <summary>D-176 (gap doc G12) — centralised AI prompt catalogue.
     /// Editable from the CP at runtime; one row per logical key.</summary>
     public DbSet<AiPrompt> AiPrompts => Set<AiPrompt>();
+
+    /// <summary>Per-user AI-assistant chat history (Page 036) — the persisted
+    /// conversation + the assistant's short-term memory. Keyed by a bare Guid
+    /// user id (D-157).</summary>
+    public DbSet<AiChatMessage> AiChatMessages => Set<AiChatMessage>();
 
     /// <summary>D-188 (D-181 carry-over) — append-only snapshot table
     /// for AiPrompt edits. One row per (AiPromptId, Version) captured

@@ -125,7 +125,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             ),
             Expanded(child: _buildBody(l10n)),
             _buildBottomActions(l10n),
-            const SizedBox(height: 24),
+            const SizedBox(height: SimfTokens.space6),
           ],
         ),
       ),
@@ -134,7 +134,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
   Widget _buildBody(AppL10n l10n) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: MaxWidthBody(
         maxWidth: 560,
         child: Form(
@@ -144,13 +144,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             children: <Widget>[
               const SizedBox(height: 48),
               const Center(child: OtpMark(icon: Icons.lock_outline)),
-              const SizedBox(height: 24),
+              const SizedBox(height: SimfTokens.space6),
               Text(
                 l10n.forgotPasswordBody,
                 textAlign: TextAlign.center,
                 style: SimfTokens.bodyBeige,
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: SimfTokens.space8),
               NaviFormField(
                 label: l10n.emailLabel,
                 controller: _email,
@@ -174,16 +174,16 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 },
               ),
               if (_error != null) ...<Widget>[
-                const SizedBox(height: 12),
+                const SizedBox(height: SimfTokens.space3),
                 Text(
                   _error!,
                   style: const TextStyle(
                     color: SimfTokens.danger,
-                    fontSize: 12,
+                    fontSize: SimfTokens.textSm,
                   ),
                 ),
               ],
-              const SizedBox(height: 24),
+              const SizedBox(height: SimfTokens.space6),
             ],
           ),
         ),
@@ -195,7 +195,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   /// foot.
   Widget _buildBottomActions(AppL10n l10n) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: MaxWidthBody(
         maxWidth: 560,
         child: Column(
@@ -206,7 +206,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               busy: _busy,
               onPressed: _canSubmit ? () => unawaited(_submit()) : null,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: SimfTokens.space4),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
@@ -214,8 +214,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   child: Text(
                     l10n.rememberedPasswordQuestion,
                     style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
+                      color: SimfTokens.surface,
+                      fontSize: SimfTokens.textMd,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -228,7 +228,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     child: Text(
                       l10n.signInTitle,
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: SimfTokens.textMd,
                         fontWeight: FontWeight.w700,
                       ),
                     ),

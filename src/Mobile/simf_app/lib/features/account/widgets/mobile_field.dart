@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../app/localization/app_l10n.dart';
+import '../../../app/theme/tokens.dart';
 import '../../../core/validation/digit_normalization.dart';
 import '../../../core/widgets/simf_field_label.dart';
 import '../../../core/widgets/simf_field_style.dart';
@@ -30,7 +31,7 @@ class MobileField extends StatelessWidget {
         SimfFieldLabel(
           saudi ? l10n.saudiMobileLabel : l10n.internationalMobileLabel,
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: SimfTokens.space2),
         TextFormField(
           controller: controller,
           keyboardType: TextInputType.phone,

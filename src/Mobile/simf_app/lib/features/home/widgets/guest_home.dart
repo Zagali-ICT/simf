@@ -51,8 +51,12 @@ class GuestHome extends StatelessWidget {
             children: <Widget>[
               SimfNavTile(
                 label: l10n.tileSessions,
-                iconAsset: HomeIcons.sessions,
-                onTap: () => context.pushNamed(RouteNames.sessions),
+                // Same icon as the signed-in "Sessions" tile (owner 2026-07-22).
+                iconAsset: HomeIcons.aboutSessions,
+                // Owner 2026-07-22: the "Sessions" tile opens the Sessions list
+                // (session_presentations, header "الجلسات") — the SAME page the
+                // signed-in "Sessions" tile opens — NOT the bottom-nav agenda.
+                onTap: () => context.pushNamed(RouteNames.sessionPresentations),
               ),
               SimfNavTile(
                 label: l10n.tileSpeakers,

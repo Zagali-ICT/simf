@@ -34,4 +34,6 @@
   <data name="BookingReleased" xml:space="preserve"><value>تم إلغاء حجز المقعد</value></data>
   <data name="ParticipationDocumentDecided" xml:space="preserve"><value>تم تحديث طلب الوثيقة</value></data>
   <data name="BadgeUpdateDecided" xml:space="preserve"><value>تم تحديث طلب البادج</value></data>
+  <data name="MeetingRequested" xml:space="preserve"><value>لديك طلب اجتماع</value></data>
+  <data name="MeetingReminder" xml:space="preserve"><value>يبدأ الاجتماع قريباً</value></data>
 </root>

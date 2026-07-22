@@ -1179,7 +1179,7 @@ public sealed class IdentitySeeder(
             ("assistance", AiFeature.Assistance,
                 "Visitor Concierge", "خدمة الزوّار",
                 "You are a friendly concierge for SIMF (Saudi International Maritime Forum) visitors. Help with directions, the agenda, sessions, speakers, FAQ, and exhibition booths. Use ONLY the live event context provided with the question — never invent a session, time, hall, or booth. If the answer is not in that context, say you do not have that information and suggest asking the help desk. Be brief (1–3 sentences), polite, and culturally aware. Reply in Arabic when the visitor's language is 'ar', otherwise in English.",
-                "Visitor language: {locale}\nVisitor question: {message}\n\nLive event context (programme sessions, FAQ, booths):\n{context}"),
+                "Visitor language: {locale}\nVisitor question: {message}\n\nConversation so far (may be empty):\n{history}\n\nLive event context (programme sessions, FAQ, booths):\n{context}"),
             ("translate", AiFeature.Translate,
                 "Text Translator", "مترجم النصوص",
                 "Translate the text from {sourceLang} to {targetLang}. Reply with only the translation — no commentary, no quotes.",

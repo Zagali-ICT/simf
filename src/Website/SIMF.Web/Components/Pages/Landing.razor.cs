@@ -25,7 +25,13 @@ public partial class Landing
     // simply hides the section (see the @if guard in Landing.razor).
     [Inject] private SimfPublicClient Api { get; set; } = default!;
 
+    // D-756 — the CP-editable hero background video (from OrganizationProfile),
+    // resolved server-side during static SSR. Null when none is configured / the
+    // profile is unavailable; the view then falls back to the bundled hero-video.mp4.
+    [Inject] private HeroMedia Hero { get; set; } = default!;
+
     private string? ForumDate { get; set; }
+    private HeroVideoSource? HeroVideo { get; set; }
 
     // Real sponsors from GET /api/v1/app/sponsors (see SponsorsFeed), flattened in
     // the API's highest-tier-first order. Empty when none are published, which
@@ -34,8 +40,9 @@ public partial class Landing
 
     protected override async Task OnInitializedAsync()
     {
-        var rtl = CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft;
-        ForumDate = await Dates.GetRangeDisplayAsync(rtl);
+        ForumDate = await Dates.GetRangeDisplayAsync(
+            CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft);
+        HeroVideo = await Hero.GetAsync();
         SponsorItems = await SponsorsFeed.LoadAsync(Api);
     }
 

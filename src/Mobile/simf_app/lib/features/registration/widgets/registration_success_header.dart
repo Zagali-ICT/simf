@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/theme/tokens.dart';
+
 /// The success-frame header band (Figma 505:1456): a back chevron pinned to the
 /// inline-start with a centred title. Kept as a local header (not `SimfPageShell`)
 /// because the frame's title is 24/w500 and the screen carries a decorative
@@ -24,12 +26,12 @@ class RegistrationSuccessHeader extends StatelessWidget {
           Align(
             alignment: Alignment.centerLeft,
             child: Padding(
-              padding: const EdgeInsets.only(left: 8),
+              padding: const EdgeInsets.only(left: SimfTokens.space2),
               child: IconButton(
                 onPressed: onBack,
                 icon: const Icon(
                   Icons.arrow_back_ios_new,
-                  color: Colors.white,
+                  color: SimfTokens.surface,
                   size: 20,
                   textDirection: TextDirection.ltr,
                 ),
@@ -39,8 +41,8 @@ class RegistrationSuccessHeader extends StatelessWidget {
           Text(
             title,
             style: const TextStyle(
-              color: Colors.white,
-              fontSize: 24,
+              color: SimfTokens.surface,
+              fontSize: SimfTokens.text24,
               fontWeight: FontWeight.w500,
             ),
           ),

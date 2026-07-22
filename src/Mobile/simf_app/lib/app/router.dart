@@ -289,7 +289,9 @@ const Map<int, Set<AppRole>> _routeRoles = <int, Set<AppRole>>{
   109: _attendee, // Seat picker (D-485)
   110: _attendee, // Join-a-session hub (D-485)
   113: _attendee, // My sessions (D-710, restored — owner reversed the D-609 removal)
-  202: _attendee, // Session presentations (Wave 2)
+  // 202 (Session presentations — the "الجلسات" list) is PUBLIC (owner 2026-07-22):
+  // a guest opens it from the home "Sessions" tile, so it is intentionally NOT
+  // gated here. Its reads (`GET /app/presentations[/{id}/file]`) are AllowAnonymous.
   // (D-609: routes 115 My-meetings, 205 Saved-sessions removed — screens backed
   // up as `.bk`; 113 My-sessions restored by D-710.)
   // Exhibitor-only — lead capture (D-426).

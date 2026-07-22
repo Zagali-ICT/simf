@@ -50,6 +50,7 @@ class OrgProfile {
     this.contactEmail,
     this.contactWebsite,
     this.liveStreamUrl,
+    this.backgroundVideoUrl,
     this.logoUrl,
     this.version,
     this.eventStartDate,
@@ -75,6 +76,12 @@ class OrgProfile {
   final String? contactEmail;
   final String? contactWebsite;
   final String? liveStreamUrl;
+
+  /// The hero-section background video link (a YouTube URL or a direct MP4/HLS
+  /// link), set in the CP Organization Profile. Played muted + looping behind the
+  /// home hero (#43 / D-756); null falls back to the banner image / discover photo.
+  final String? backgroundVideoUrl;
+
   final String? logoUrl;
   final String? version;
 
@@ -118,6 +125,7 @@ class OrgProfile {
         contactEmail: json['contactEmail'] as String?,
         contactWebsite: json['contactWebsite'] as String?,
         liveStreamUrl: json['liveStreamUrl'] as String?,
+        backgroundVideoUrl: json['backgroundVideoUrl'] as String?,
         logoUrl: json['logoUrl'] as String?,
         version: json['version'] as String?,
         eventStartDate: _asDate(json['eventStartDate']),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_svg_icon.dart';
+import '../../../app/widgets/simf_forward_chevron.dart';
 
 /// A titled group of nav rows (frames 1129:17… "معلومات الملتقى" etc.).
 class MoreSection extends StatelessWidget {
@@ -21,7 +21,7 @@ class MoreSection extends StatelessWidget {
             title,
             textAlign: TextAlign.start,
             style: const TextStyle(
-              color: Colors.white,
+              color: SimfTokens.surface,
               fontSize: SimfTokens.textLg,
               fontWeight: FontWeight.w600,
             ),
@@ -71,7 +71,7 @@ class MoreRow extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: SimfTokens.surface,
                       fontSize: SimfTokens.textMd,
                       fontWeight: FontWeight.w500,
                     ),
@@ -90,9 +90,9 @@ class MoreRow extends StatelessWidget {
                 const SizedBox(width: SimfTokens.space2),
                 // White caret per the More-menu frame 1129:17224 (owner
                 // 2026-07-07: nav arrows are white, not gold).
-                const SimfSvgIcon(
+                const SimfForwardChevron(
                   'assets/icons/ic_caret_left.svg',
-                  color: Colors.white,
+                  color: SimfTokens.surface,
                   size: 22,
                 ),
               ],

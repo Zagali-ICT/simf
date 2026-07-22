@@ -32,8 +32,8 @@ class SessionDetailHeader extends StatelessWidget {
         textDirection: TextDirection.ltr,
         children: <Widget>[
           SizedBox(
-            width: 40,
-            height: 40,
+            width: SimfTokens.mapControlSize,
+            height: SimfTokens.mapControlSize,
             child: SimfCircledBackButton(onBack: onBack),
           ),
           Expanded(
@@ -43,16 +43,12 @@ class SessionDetailHeader extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               // Figma 889:2456 — 18px / SemiBold white.
-              style: const TextStyle(
-                fontSize: SimfTokens.textTitle,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
+              style: SimfTokens.labelWhiteSemiboldTitle,
             ),
           ),
           SizedBox(
-            width: 40,
-            height: 40,
+            width: SimfTokens.mapControlSize,
+            height: SimfTokens.mapControlSize,
             child: onModerate == null
                 ? null
                 : IconButton(
@@ -60,7 +56,7 @@ class SessionDetailHeader extends StatelessWidget {
                     onPressed: onModerate,
                     icon: const Icon(
                       Icons.forum_outlined,
-                      color: Colors.white,
+                      color: SimfTokens.surface,
                       size: 22,
                     ),
                   ),

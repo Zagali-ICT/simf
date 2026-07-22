@@ -58,7 +58,11 @@ public static class NotificationKindCatalog
 
         NotificationKind.MeetingScheduled or
         NotificationKind.MeetingCancelled or
-        NotificationKind.MeetingRequestConfirmed => Groups.Meetings,
+        NotificationKind.MeetingRequestConfirmed or
+        // Bi-Meeting rework — the other-party request-to-confirm + the 15-min reminder
+        // both belong with the app's Meetings filter chip.
+        NotificationKind.MeetingRequested or
+        NotificationKind.MeetingReminder => Groups.Meetings,
 
         NotificationKind.SessionRatingRequest or
         NotificationKind.DayRatingRequest or
@@ -76,6 +80,10 @@ public static class NotificationKindCatalog
     public static string? ClickUrlFor(NotificationKind kind, Guid? relatedId) => kind switch
     {
         NotificationKind.BookingConfirmed => "/badge",
+        // Bi-Meeting rework — the other party confirms the meeting on tap; the app opens the
+        // meeting-confirm screen for this delegation request (route wired in the mobile phase).
+        NotificationKind.MeetingRequested when relatedId is { } requestId =>
+            $"/meeting-confirm?requestId={requestId}",
         NotificationKind.SessionRatingRequest when relatedId is { } sessionId =>
             $"/rate?code=Session&targetId={sessionId}",
         NotificationKind.DayRatingRequest when relatedId is { } dayId =>

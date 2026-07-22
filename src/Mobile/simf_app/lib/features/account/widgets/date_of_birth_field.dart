@@ -27,7 +27,7 @@ class DateOfBirthField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         SimfFieldLabel(l10n.dateOfBirthLabel),
-        const SizedBox(height: 8),
+        const SizedBox(height: SimfTokens.space2),
         InkWell(
           onTap: onTap,
           borderRadius: SimfTokens.borderRadiusSmall,

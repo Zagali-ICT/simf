@@ -79,7 +79,7 @@ class _TypeTab extends StatelessWidget {
       borderColor: active ? SimfTokens.accent : SimfTokens.beigeBorder,
       child: SizedBox(
         // Figma tab cell 883:2321 — 41px tall.
-        height: 41,
+        height: SimfTokens.typeTabHeight,
         child: Center(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space1),
@@ -88,11 +88,7 @@ class _TypeTab extends StatelessWidget {
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: SimfTokens.textSm,
-                fontWeight: FontWeight.w600,
-              ),
+              style: SimfTokens.labelWhiteSemiboldSm,
             ),
           ),
         ),

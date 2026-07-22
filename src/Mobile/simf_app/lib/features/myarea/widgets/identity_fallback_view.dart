@@ -34,7 +34,7 @@ class IdentityFallbackView extends StatelessWidget {
             Text(
               l10n.identityCameraUnavailable,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: SimfTokens.surface),
             ),
             const SizedBox(height: SimfTokens.space6),
             FilledButton.icon(

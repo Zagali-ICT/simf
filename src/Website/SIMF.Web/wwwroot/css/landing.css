@@ -273,18 +273,14 @@
   position: relative; min-height: 710px; overflow: hidden; background: var(--navy);
   display: flex; flex-direction: column; align-items: center;
 }
-.ln-hero__bg { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%;
-  object-fit: cover; pointer-events: none;
-  /* Subtle Ken-Burns drift so the still Figma hero has life without a heavy
-     video; starts at scale 1.04 so an edge is never exposed (the hero clips). */
-  transform-origin: 50% 50%; animation: ln-heropan 20s ease-in-out infinite alternate; }
-@keyframes ln-heropan {
-  from { transform: scale(1.06) translate3d(0, 0, 0); }
-  to   { transform: scale(1.18) translate3d(-2.4%, -1.6%, 0); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .ln-hero__bg { animation: none; transform: none; }
-}
+.ln-hero__video { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%;
+  object-fit: cover; pointer-events: none; }
+/* D-756 — a YouTube embed can't object-fit (it is not a replaced element), so the
+   16:9 iframe is centred and over-sized to the larger of the band's width or height
+   and the excess is clipped by .ln-hero { overflow:hidden } — the same cover result. */
+.ln-hero__video--yt { position: absolute; z-index: 0; top: 50%; left: 50%;
+  transform: translate(-50%, -50%); width: 100vw; height: 56.25vw;
+  min-width: 177.78vh; min-height: 100vh; border: 0; pointer-events: none; }
 .ln-hero__overlay { position: absolute; inset: 0; z-index: 1; pointer-events: none;
   background: linear-gradient(180deg, rgba(0, 9, 32, .55) 0%, rgba(0, 9, 32, .12) 42%, rgba(0, 9, 32, .42) 100%); }
 .ln-hero__content { position: relative; z-index: 2; width: 100%; max-width: calc(var(--content-w) + 2 * var(--section-gutter));

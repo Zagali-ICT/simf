@@ -125,6 +125,11 @@ builder.Services.AddHttpClient<SimfPublicClient>(client => client.BaseAddress = 
 // date is driven by CP config instead of a hardcoded resx literal.
 builder.Services.AddScoped<ForumDates>();
 
+// D-756 — resolves the hero-section background video from the public
+// OrganizationProfile (cached) so the landing hero plays the CP-configured video
+// instead of the bundled hero-video.mp4 asset.
+builder.Services.AddScoped<HeroMedia>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -154,6 +159,8 @@ app.Use(async (context, next) =>
         + "img-src 'self' data: blob: https:; "
         + "font-src 'self' data:; "
         + "connect-src 'self' ws: wss: https:; "
+        // D-756 — the hero background video may be a YouTube embed (privacy host).
+        + "frame-src 'self' https://www.youtube-nocookie.com https://www.youtube.com; "
         + "object-src 'none'; base-uri 'self'; form-action 'self'; "
         + "frame-ancestors 'none'";
     await next();

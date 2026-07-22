@@ -143,6 +143,9 @@ internal sealed class AdminApprovalReadService(
                 InterestIds = p.Interests.Select(interest => interest.Id).ToList(),
                 p.RejectionReason,
                 p.RejectionReasonArabic,
+                // Bi-Meeting rework — the two admin-assigned meeting-eligibility flags.
+                p.AllowsSpeakerMeeting,
+                p.AllowsDelegationMeeting,
             })
             .SingleOrDefaultAsync(cancellationToken);
 
@@ -183,7 +186,11 @@ internal sealed class AdminApprovalReadService(
             profile?.RejectionReason,
             profile?.RejectionReasonArabic,
             user.CreatedAt,
-            user.UpdatedAt);
+            user.UpdatedAt,
+            // Bi-Meeting rework — surface the two meeting-eligibility flags so the CP
+            // edit form can pre-fill (and round-trip) the checkboxes.
+            profile?.AllowsSpeakerMeeting ?? false,
+            profile?.AllowsDelegationMeeting ?? false);
     }
 
     private async Task<PendingProfileResponse?> GetAsync(

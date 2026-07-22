@@ -49,11 +49,14 @@ class _MessageSurface extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(SimfTokens.space4),
         child: AspectRatio(
-          aspectRatio: 16 / 9,
+          aspectRatio: SimfTokens.videoAspectRatio,
           child: DecoratedBox(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(SimfTokens.radius),
-              border: Border.all(color: SimfTokens.beigeBorder, width: 0.2),
+              border: Border.all(
+                color: SimfTokens.beigeBorder,
+                width: SimfTokens.hairline,
+              ),
             ),
             child: Center(
               child: Padding(
@@ -66,7 +69,7 @@ class _MessageSurface extends StatelessWidget {
                     Text(
                       message,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: SimfTokens.beigeBorder),
+                      style: SimfTokens.hintBeige,
                     ),
                   ],
                 ),

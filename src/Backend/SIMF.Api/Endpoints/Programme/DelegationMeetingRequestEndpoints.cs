@@ -88,6 +88,35 @@ public sealed class GetAdminDelegationMeetingRequestEndpoint(IDelegationMeetingR
     }
 }
 
+// Bi-Meeting rework — the other party (a target-delegation member) confirms an
+// Approved (AwaitingSpeaker) meeting from the app by tapping their notification.
+public sealed class ConfirmDelegationMeetingRoute
+{
+    public Guid Id { get; set; }
+}
+
+public sealed class ConfirmDelegationMeetingEndpoint(IDelegationMeetingRequestService service)
+    : Endpoint<ConfirmDelegationMeetingRoute, ApiResult<AdminDelegationMeetingRequestDetail>>
+{
+    public override void Configure()
+    {
+        Post("/app/delegation-meeting-requests/{id:guid}/confirm");
+        Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Delegates");
+    }
+    public override async Task HandleAsync(ConfirmDelegationMeetingRoute req, CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        await Send.OkAsync(ApiResult<AdminDelegationMeetingRequestDetail>.Ok(
+            await service.ConfirmByOtherPartyAsync(actorId, req.Id, ct)), ct);
+    }
+}
+
 public sealed class RespondToDelegationMeetingRequestRoute : RespondToDelegationMeetingRequestRequest
 {
     public Guid Id { get; set; }
@@ -113,5 +142,34 @@ public sealed class RespondToDelegationMeetingRequestEndpoint(IDelegationMeeting
         }
         await Send.OkAsync(ApiResult<AdminDelegationMeetingRequestDetail>.Ok(
             await service.RespondAsync(actorId, req.Id, req, ct)), ct);
+    }
+}
+
+// Bi-Meeting rework — an operator checks a confirmed meeting in at the hall → Done.
+public sealed class CheckInDelegationMeetingRoute
+{
+    public Guid Id { get; set; }
+}
+
+public sealed class CheckInDelegationMeetingEndpoint(IDelegationMeetingRequestService service)
+    : Endpoint<CheckInDelegationMeetingRoute, ApiResult<AdminDelegationMeetingRequestDetail>>
+{
+    public override void Configure()
+    {
+        Post("/admin/delegation-meeting-requests/{id:guid}/check-in");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.DelegationMeetings.Manage),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Admin");
+    }
+    public override async Task HandleAsync(CheckInDelegationMeetingRoute req, CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        await Send.OkAsync(ApiResult<AdminDelegationMeetingRequestDetail>.Ok(
+            await service.CheckInAsync(actorId, req.Id, ct)), ct);
     }
 }

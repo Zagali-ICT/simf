@@ -86,10 +86,30 @@ public sealed class PublicPresentationsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task List_without_a_token_returns_401()
+    public async Task List_without_a_token_is_public_and_returns_the_presentations()
     {
+        // Owner 2026-07-22 — the "الجلسات" Sessions list is ANONYMOUS (a guest
+        // opens it from the home "Sessions" tile). No token, still 200 with data.
+        var (presentationId, fileName) = await SeedPresentationAsync();
+
         var response = await _client.GetAsync("/api/v1/app/presentations");
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var page = (await response.Content
+            .ReadFromJsonAsync<ApiResult<PublicPresentations>>())!.Data!;
+        Assert.Contains(page.Items, p => p.Id == presentationId && p.FileName == fileName);
+    }
+
+    [Fact]
+    public async Task File_download_without_a_token_is_public()
+    {
+        // Owner 2026-07-22 — the presentation bytes are anonymous too (the same
+        // bytes the public website download route already serves).
+        var (presentationId, _) = await SeedPresentationAsync();
+
+        var response = await _client.GetAsync(
+            $"/api/v1/app/presentations/{presentationId}/file");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(PdfBytes, await response.Content.ReadAsByteArrayAsync());
     }
 
     // -- Helpers --------------------------------------------------------------

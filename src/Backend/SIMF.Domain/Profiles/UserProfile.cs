@@ -180,6 +180,22 @@ public class UserProfile : BaseAuditEntity
     /// Additive column (owner-authorised freeze lift), defaults false.</summary>
     public bool IsDelegate { get; set; }
 
+    /// <summary>Bi-Meeting rework — admin-assigned per-user eligibility to request a
+    /// <b>delegation (country-to-country) meeting</b>. Replaces the old
+    /// <see cref="IsDelegate"/> requester-gate: a user may now request a delegation
+    /// meeting iff this flag is set, regardless of their user/profile type (the target
+    /// country must still be an invited delegation — <see cref="Common.Country.IsInvited"/>).
+    /// Additive column (owner-authorised freeze lift), defaults false.</summary>
+    public bool AllowsDelegationMeeting { get; set; }
+
+    /// <summary>Bi-Meeting rework — admin-assigned per-user eligibility to request a
+    /// <b>speaker meeting</b>. Replaces the old VIP-only gate
+    /// (<see cref="UserProfileType.AllowsVipMeetingSlots"/>): a user may now request a
+    /// speaker meeting iff this flag is set, regardless of their tier (the speaker must
+    /// still opt in via <c>Speaker.AllowsMeetingRequests</c>). Additive column
+    /// (owner-authorised freeze lift), defaults false.</summary>
+    public bool AllowsSpeakerMeeting { get; set; }
+
     /// <summary>
     /// The user's <see cref="ProfileType"/> when one is assigned
     /// (P8 — D-049). Null until the admin assigns one. The lookup row's

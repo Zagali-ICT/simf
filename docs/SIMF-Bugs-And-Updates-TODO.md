@@ -34,7 +34,7 @@ _Done (6), shipped to PR: #10 `feat/bulk-badge-email`, #32 `feat/cp-team-roles`,
 ## A. APP (Flutter mobile)
 
 **P1 — bugs / blocking**
-- [ ] **#9** — Biometric / Face ID login not working; logic incorrect. _(= #25)_
+- [x] **#9** — Biometric / Face ID login not working; logic incorrect. _(= #25)_ **DONE (owner-confirmed 2026-07-22)** — biometric works; implemented under D-737/738; the earlier failures were prod 5xx infra, not app logic.
 - [ ] **#12** — Face-capture left/right swapped on **Android** (iOS fine): fix Android turn direction + correct prompt image. _(= #26)_
 - [ ] **#17** — Session join + seat mechanism: two cases (register-to-attend / join+pick-seat), **no approval**, auto-cancel 3 min before start, session **check-in + check-out**.
 - [ ] **#18** — "الانضمام إلى الجلسة" (Join session) button does nothing.
@@ -44,9 +44,9 @@ _Done (6), shipped to PR: #10 `feat/bulk-badge-email`, #32 `feat/cp-team-roles`,
 **P2 — updates / UX**
 - [ ] **#11** — Session surfaces scope + phase-gated buttons (Home = future + type=Session only; Summary = past; My Sessions; Agenda = all).
 - [ ] **#14** — Edit interests from profile (not only at sign-up).
-- [ ] **#16** — Clean-code sweep across ~39 features (numbers→tokens, `app_style`, `SimfTokens.surface`, hoist assets, extract private widgets).
+- [~] **#16** — Clean-code sweep across ~39 features (numbers→tokens, `app_style`, `SimfTokens.surface`, hoist assets, extract private widgets). **~98% done:** waves S1–S3 (27 features) merged to `main`; S4 (sessions cluster) + S5 (identity cluster) done & PR-pending; only `myarea/identity_verification_screen.dart` (2 literals) deferred behind the liveness PR. On-device deploy-verified on the tablet 2026-07-22 (byte-identical goldens; no render regression).
 - [ ] **#19** — Login-as-**Guest** label (not "Visitor") + fix wrong Arabic translation.
-- [ ] **#20** — Agenda viewable **without login** + rename program-icon label to "الأجندة".
+- [ ] **#20** — Agenda viewable **without login** + rename program-icon label to "الأجندة". **Owner ruling 2026-07-22:** the guest-home **tile stays "Sessions"** (`tileSessions`) and opens the programme page (`RouteNames.sessions`); **"Agenda" (`agendaTitle`) belongs only on the bottom-nav program icon.** On-device confirmed 2026-07-22: guest opens "Forum programme" from the Sessions tile without login, and the bottom nav labels that destination "Agenda".
 - [ ] **#22** — Sign-up (`sign_up_visitor_screen`) category section UI update.
 - [ ] **#23** — Session-summary logic update (keep Home Sessions + Summary buttons as-is; reconcile with #11).
 - [ ] **#27** — Video > 30 min: the session-extension alert must NOT appear.
@@ -192,7 +192,7 @@ confirm**, not a broken model.
 | # | Type | Priority | Area | Title | Status |
 |---|------|----------|------|-------|--------|
 | 8 | ✨ Update | P1 | Whole system | Store & handle **all** times in Saudi local time (AST, UTC+3) — no UTC | ☐ Open |
-| 9 | 🐞 Bug | P1 | App / Auth | Biometric login not working / logic incorrect | ☐ Open |
+| 9 | 🐞 Bug | P1 | App / Auth | Biometric login not working / logic incorrect | ✅ Done |
 | 10 | ✨ Feature | P1 | CP / Badges | Bulk profile + badge (QR) generation page, no user account attached | ☐ Open |
 
 ---
@@ -222,7 +222,7 @@ confirm**, not a broken model.
   3. What actually happens — no prompt, prompt then error, wrong user, loops, silent fail? Exact on-screen/toast text.
   4. Expected behaviour in your words.
 - **Proposed next step:** once the flow is identified, trace `simf_app` biometric service + the device-key / token exchange end-to-end, state root cause, then propose a fix (no code until approved).
-- **Status:** ☐ Open
+- **Status:** ✅ Done — owner-confirmed 2026-07-22; biometric is working. Implemented under D-737/738 (badge-QR login + banking-style biometric); the earlier failures were prod 5xx infra (502/504), not app logic. Closed together with #25.
 
 ### [#10] Bulk profile + badge (QR) generation page
 - **Type:** ✨ Feature · **Priority:** P1 · **Area:** CP / Badges / Email
@@ -348,46 +348,46 @@ confirm**, not a broken model.
 
 | Feature | Fixes | Extract → file / special note | Status |
 |---|---|---|---|
-| About | numbers | Rename `_Card`→`AboutCard`, `_CardHeading`→`AboutCardHeading` (widgets/about_card.dart) | ☐ |
-| Ai_Summary | T, C | — | ☐ |
-| Archive | T, C | `_ArchiveBody`→`archive_body.dart` [sic achive], `_GalleryTtle`→`archive_gallery_title.dart`, `_PastSpeakerCard`→`archive_gallery_tile.dart` | ☐ |
-| Badge | T, C | replace `Colors.white`+other hardcoded colors with tokens; create tokens if missing | ☐ |
-| Booths | T, C, A | A: `assets/icons/nav_location.svg`. X: `_HallBox`→`booths_hall_box.dart`, `_contactBox`→`booths_contact_box.dart` | ☐ |
-| Chatbot | T, C | — | ☐ |
-| Contact us | T, C | X: `_infoRow`→`contact_us_info_row.dart` [sic jnfo], `_socialButton`→`contact_us_social_button.dart`. Replace `_Field` with `naviFormField` | ☐ |
-| Contacts | T | X: `_ChannelRow`→`contacts_channel_row.dart`, `_ErrorSatate`→`contacts_error_state.dart`, `_contacPreviewSheet`→`contacts_preview_sheet.dart` | ☐ |
-| Content | T, C | — | ☐ |
-| delegations | T, C, A | A: `assets/icons/nav_faq.svg`, `assets/icons/nav_contact.svg`. X: `_DelegationCard`→`delegations_card.dart`, `_SectionHeader`→`delegations_section_header.dart` | ☐ |
-| exhibition | T, C, A | A: `assets/icons/auth_globe.svg`, `assets/icons/ic_back.svg`. X: `_LinkRow`→`exhibition_link_row.dart`, `_IdentityCard`→`exhibition_identity_card.dart` [sic cartd] | ☐ |
-| exhibitor | — | X: `_Centered`→`exhibitor_centered.dart` [sic centerd] | ☐ |
-| Faq | — | X: `_FaqTile`→`faq_tile.dart` [owner wrote faq_title.dart] | ☐ |
-| Feedback | T, C | Replace `TextField` with `naviFormField` | ☐ |
-| Forum guide | C, A | A: `assets/icons/ic_caret_left.svg` | ☐ |
-| Gallery | T, C | X: `_mediaTile`→`gallery_media_tile.dart`, `_PlaceholderBox`→`gallery_placeholder_box.dart` [sic pleace_holder] | ☐ |
-| Gates | T, C | X: `_withPendingBanner`→`gates_with_pending_banner.dart`, `_row`→`gates_row.dart` [sic .dat], `_label`→`gates_label.dart` | ☐ |
-| Guest | T | bg color must match all-screens bg; back icon must match the other back icons | ☐ |
-| Home | T, C, A | A: `assets/icons/ic_caret_left.svg`, `assets/images/discover_hero.jpg`. X: `_HightlighSlide`→`home_high_light_slide.dart`, `_SocialButton`→`home_social_button.dart` | ☐ |
-| Live | T, C | X: `_TogglePill`→`live_toggle_pill.dart`, `_CaptionStrip`→`live_caption_strip.dart`, `_MessageSurface`→`live_message_surface.dart` | ☐ |
-| Media partners | T, C | — | ☐ |
-| Meet | T, C | X: `_topicChip`→`meet_topic_chip.dart` | ☐ |
-| Meetings | T, C, A | A: `assets/icons/chevron_left.svg`, `request_new.svg`, `request_log.svg` | ☐ |
-| Moderation | T, C | X: `_ActionButton`→`moderation_action_button.dart`, `_Chip`→`moderation_chip.dart` | ☐ |
-| More | T, C, A | A: `assets/icons/ic_caret_left.svg` | ☐ |
-| Myarea | T, C | `Colors.white70` → add to `SimfTokens` then use | ☐ |
-| News | T, C | `Colors.white70` → surface | ☐ |
-| Notifications | T, C | — | ☐ |
-| Onboarding | T, C, A | A: hardcoded **video** paths | ☐ |
-| Question | T, C | file `sned_question_content.dart` [sic send] | ☐ |
-| Registration | T, C | — | ☐ |
-| Requests | T, A | `Colors.white` + `Colors.transparent` → tokens. A: `request_log.svg`, `request_new.svg`, `chevron_left.svg` | ☐ |
-| Sessions | T, A | `Colors.white` → tokens. A: `assets/icons/ic_back.svg` | ☐ |
-| Speakers | T, A | `Colors.white` + `Colors.transparent` → tokens. A: `speaker_placeholder.svg`, `ic_back.svg`, `ic_caret_left.svg`. Replace custom text field with `SimfLabeledTextField` (see `sign_up_visitor_screen.dart`) | ☐ |
-| Splash | T, C | — | ☐ |
-| Sponsors | C, A | A: `assets/icons/ic_back.svg` | ☐ |
-| Staff | T, C | — | ☐ |
-| VenueMap | T, C | (owner: "VeneMap") | ☐ |
+| About | numbers | Rename `_Card`→`AboutCard`, `_CardHeading`→`AboutCardHeading` (widgets/about_card.dart) | ✅ merged |
+| Ai_Summary | T, C | — | ✅ merged |
+| Archive | T, C | `_ArchiveBody`→`archive_body.dart` [sic achive], `_GalleryTtle`→`archive_gallery_title.dart`, `_PastSpeakerCard`→`archive_gallery_tile.dart` | ✅ merged |
+| Badge | T, C | replace `Colors.white`+other hardcoded colors with tokens; create tokens if missing | ✅ merged |
+| Booths | T, C, A | A: `assets/icons/nav_location.svg`. X: `_HallBox`→`booths_hall_box.dart`, `_contactBox`→`booths_contact_box.dart` | ✅ merged |
+| Chatbot | T, C | — | ✅ merged |
+| Contact us | T, C | X: `_infoRow`→`contact_us_info_row.dart` [sic jnfo], `_socialButton`→`contact_us_social_button.dart`. Replace `_Field` with `naviFormField` | ✅ merged |
+| Contacts | T | X: `_ChannelRow`→`contacts_channel_row.dart`, `_ErrorSatate`→`contacts_error_state.dart`, `_contacPreviewSheet`→`contacts_preview_sheet.dart` | ✅ merged |
+| Content | T, C | — | 🔜 S5 PR-pending (tokenize-identity) |
+| delegations | T, C, A | A: `assets/icons/nav_faq.svg`, `assets/icons/nav_contact.svg`. X: `_DelegationCard`→`delegations_card.dart`, `_SectionHeader`→`delegations_section_header.dart` | ✅ merged |
+| exhibition | T, C, A | A: `assets/icons/auth_globe.svg`, `assets/icons/ic_back.svg`. X: `_LinkRow`→`exhibition_link_row.dart`, `_IdentityCard`→`exhibition_identity_card.dart` [sic cartd] | ✅ merged |
+| exhibitor | — | X: `_Centered`→`exhibitor_centered.dart` [sic centerd] | 🔜 S5 PR-pending (tokenize-identity) |
+| Faq | — | X: `_FaqTile`→`faq_tile.dart` [owner wrote faq_title.dart] | ✅ merged |
+| Feedback | T, C | Replace `TextField` with `naviFormField` | ✅ merged |
+| Forum guide | C, A | A: `assets/icons/ic_caret_left.svg` | ✅ merged |
+| Gallery | T, C | X: `_mediaTile`→`gallery_media_tile.dart`, `_PlaceholderBox`→`gallery_placeholder_box.dart` [sic pleace_holder] | ✅ merged |
+| Gates | T, C | X: `_withPendingBanner`→`gates_with_pending_banner.dart`, `_row`→`gates_row.dart` [sic .dat], `_label`→`gates_label.dart` | 🔜 S4 PR-pending (tokenize-sessions) |
+| Guest | T | bg color must match all-screens bg; back icon must match the other back icons | ✅ already clean (0 literals) |
+| Home | T, C, A | A: `assets/icons/ic_caret_left.svg`, `assets/images/discover_hero.jpg`. X: `_HightlighSlide`→`home_high_light_slide.dart`, `_SocialButton`→`home_social_button.dart` | ✅ merged |
+| Live | T, C | X: `_TogglePill`→`live_toggle_pill.dart`, `_CaptionStrip`→`live_caption_strip.dart`, `_MessageSurface`→`live_message_surface.dart` | 🔜 S4 PR-pending (tokenize-sessions) |
+| Media partners | T, C | — | ✅ merged |
+| Meet | T, C | X: `_topicChip`→`meet_topic_chip.dart` | ✅ already clean (0 literals) |
+| Meetings | T, C, A | A: `assets/icons/chevron_left.svg`, `request_new.svg`, `request_log.svg` | ✅ merged |
+| Moderation | T, C | X: `_ActionButton`→`moderation_action_button.dart`, `_Chip`→`moderation_chip.dart` | 🔜 S4 PR-pending (tokenize-sessions) |
+| More | T, C, A | A: `assets/icons/ic_caret_left.svg` | 🔜 S5 PR-pending (tokenize-identity) |
+| Myarea | T, C | `Colors.white70` → add to `SimfTokens` then use | 🔜 S5 PR-pending (tokenize-identity); `identity_verification_screen.dart` deferred behind liveness PR |
+| News | T, C | `Colors.white70` → surface | ✅ merged |
+| Notifications | T, C | — | ✅ merged |
+| Onboarding | T, C, A | A: hardcoded **video** paths | ✅ merged |
+| Question | T, C | file `sned_question_content.dart` [sic send] | 🔜 S4 PR-pending (tokenize-sessions) |
+| Registration | T, C | — | 🔜 S5 PR-pending (tokenize-identity) |
+| Requests | T, A | `Colors.white` + `Colors.transparent` → tokens. A: `request_log.svg`, `request_new.svg`, `chevron_left.svg` | ✅ merged |
+| Sessions | T, A | `Colors.white` → tokens. A: `assets/icons/ic_back.svg` | 🔜 S4 PR-pending (tokenize-sessions) |
+| Speakers | T, A | `Colors.white` + `Colors.transparent` → tokens. A: `speaker_placeholder.svg`, `ic_back.svg`, `ic_caret_left.svg`. Replace custom text field with `SimfLabeledTextField` (see `sign_up_visitor_screen.dart`) | ✅ merged |
+| Splash | T, C | — | ✅ merged |
+| Sponsors | C, A | A: `assets/icons/ic_back.svg` | ✅ merged |
+| Staff | T, C | — | 🔜 S5 PR-pending (tokenize-identity) |
+| VenueMap | T, C | (owner: "VeneMap") | ✅ merged |
 
-- **Status:** ☐ Open — sweep not started; reconcile `app_style.dart` question first
+- **Status:** ~98% done. Waves **S1 static + S2 browse + S3 signed-in (27 features) MERGED to `main`**. **S4 sessions cluster** (Gates/Live/Moderation/Question/Sessions) done on `chore/app-16-tokenize-sessions` (PR-pending). **S5 identity cluster** (Content/exhibitor/More/Myarea/Registration/Staff + account) done on `chore/app-16-tokenize-identity` (`0823e144`, PR-pending). `Guest`/`Meet` already clean. **Only `myarea/identity_verification_screen.dart` (2 literals) deferred** — sweep it once the liveness PR merges (it also touches that file). Reconcile note resolved: text styles route through existing named `SimfTokens` styles (no `app_style.dart`); `Colors.white`→`SimfTokens.surface`, `Colors.transparent`→`SimfTokens.transparent`. Kept raw (by design): all off-scale spacing/font/radius values, icon `size:` values, and `Colors.white70` (no `surfaceMuted` token exists; the only surviving `white70` is inside the deferred `identity_capture_view.dart`). All waves behavior-preserving (byte-identical goldens). **On-device deploy-verified on tablet 5MKUN25726G03504 (2026-07-22):** sign_in, guest, guest-home, and forum-programme screens render with no regression.
 
 ---
 
@@ -435,7 +435,7 @@ confirm**, not a broken model.
 | 22 | ✨ Update | P2 | App / Sign-up | `sign_up_visitor_screen` category section — update UI | ☐ Open |
 | 23 | ✨ Update | P2 | App / Sessions | Session summary logic update (Home Sessions + Summary buttons stay as-is) | ☐ Open |
 | 24 | ✨ Update | P1 | App / CP / Identity | User can update email (also fixes CP new-account typos) | ☐ Open |
-| 25 | 🐞 Bug | P1 | App / Auth | Activate Face biometric (Face ID) — cross-ref #9 | ☐ Open |
+| 25 | 🐞 Bug | P1 | App / Auth | Activate Face biometric (Face ID) — cross-ref #9 | ✅ Done |
 | 26 | 🐞 Bug | P1 | App / Sign-up | Face-capture device-type detection + correct turn image — cross-ref #12 | ☐ Open |
 | 27 | 🐞 Bug | P2 | App / Live | Video > 30 min: session-extension alert must NOT appear | ☐ Open |
 | 34 | 🐞 Bug | P2 | App / Speakers | Speaker job title shows English regardless of app language | ☐ Open |
@@ -468,7 +468,7 @@ confirm**, not a broken model.
 
 ### [#25] Activate Face biometric (Face ID) — see #9
 - **Requirement:** "التأكد من تفعيل بصمة الوجه" / "Face ID is not working." Same as **#9** (biometric login broken). Track the fix under #9; this row is the owner's explicit call-out.
-- **Status:** ☐ Open
+- **Status:** ✅ Done — closed together with #9 (owner-confirmed 2026-07-22).
 
 ### [#26] Face-capture device-type + correct turn image — see #12
 - **Requirement:** detect device type on selfie capture and show the correct "turn right / turn left" prompt image. Same as **#12** (Android direction). Track the fix under #12.

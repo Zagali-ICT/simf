@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/localization/app_l10n.dart';
+import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
 
@@ -25,16 +26,13 @@ class SessionsSearchField extends StatelessWidget {
     return TextField(
       onChanged: onChanged,
       textInputAction: TextInputAction.search,
-      style: const TextStyle(color: Colors.white, fontSize: SimfTokens.textSm),
+      style: SimfTokens.bodyWhiteSm,
       decoration: InputDecoration(
         isDense: true,
         filled: true,
         fillColor: SimfTokens.navyDeep,
         hintText: l10n.sessionsSearchHint,
-        hintStyle: const TextStyle(
-          color: Colors.white,
-          fontSize: SimfTokens.textSm,
-        ),
+        hintStyle: SimfTokens.bodyWhiteSm,
         // Frame 883:2316 — the 18px magnifier hugs the inline-start (physical
         // right under RTL), packed next to the hint (8px from the edge, 8px
         // before the text); the rest of the field is empty. A prefixIcon lands
@@ -45,9 +43,9 @@ class SessionsSearchField extends StatelessWidget {
             end: SimfTokens.space2,
           ),
           child: SimfSvgIcon(
-            'assets/icons/ic_search.svg',
+            AppAssets.icSearch,
             size: 18,
-            color: Colors.white,
+            color: SimfTokens.surface,
           ),
         ),
         prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
@@ -57,8 +55,10 @@ class SessionsSearchField extends StatelessWidget {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(SimfTokens.radius),
-          borderSide:
-              const BorderSide(color: SimfTokens.beigeBorder, width: 0.5),
+          borderSide: const BorderSide(
+            color: SimfTokens.beigeBorder,
+            width: SimfTokens.hairlineBold,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(SimfTokens.radius),

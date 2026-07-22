@@ -34,4 +34,6 @@
   <data name="BookingReleased" xml:space="preserve"><value>Seat reservation released</value></data>
   <data name="ParticipationDocumentDecided" xml:space="preserve"><value>Your document request was updated</value></data>
   <data name="BadgeUpdateDecided" xml:space="preserve"><value>Your badge request was updated</value></data>
+  <data name="MeetingRequested" xml:space="preserve"><value>You have a meeting request</value></data>
+  <data name="MeetingReminder" xml:space="preserve"><value>Meeting starting soon</value></data>
 </root>

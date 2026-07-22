@@ -73,6 +73,7 @@ public partial class OrganizationProfilePage
         _model.ContactEmail = d.ContactEmail ?? string.Empty;
         _model.ContactWebsite = d.ContactWebsite ?? string.Empty;
         _model.LiveStreamUrl = d.LiveStreamUrl ?? string.Empty;
+        _model.BackgroundVideoUrl = d.BackgroundVideoUrl ?? string.Empty;
         _model.Facebook = d.Social.Facebook ?? string.Empty;
         _model.X = d.Social.X ?? string.Empty;
         _model.Instagram = d.Social.Instagram ?? string.Empty;
@@ -127,6 +128,7 @@ public partial class OrganizationProfilePage
                 ContactEmail = _model.ContactEmail,
                 ContactWebsite = _model.ContactWebsite,
                 LiveStreamUrl = _model.LiveStreamUrl,
+                BackgroundVideoUrl = _model.BackgroundVideoUrl,
                 Facebook = _model.Facebook,
                 X = _model.X,
                 Instagram = _model.Instagram,
@@ -204,6 +206,7 @@ public partial class OrganizationProfilePage
         public string ContactEmail { get; set; } = string.Empty;
         public string ContactWebsite { get; set; } = string.Empty;
         public string LiveStreamUrl { get; set; } = string.Empty;
+        public string BackgroundVideoUrl { get; set; } = string.Empty;
         public string Facebook { get; set; } = string.Empty;
         public string X { get; set; } = string.Empty;
         public string Instagram { get; set; } = string.Empty;

@@ -12,21 +12,27 @@ class TermsBulletCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(SimfTokens.space2),
       decoration: BoxDecoration(
         // The frame's hairline (505:1639 — 0.2px); kept ≥0.2 so it still
         // rasterises on every phone density.
         border: Border.all(color: SimfTokens.accent, width: 0.2),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(SimfTokens.radius),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           const Padding(
-            padding: EdgeInsetsDirectional.only(start: 4, end: 12),
+            padding: EdgeInsetsDirectional.only(
+              start: SimfTokens.space1,
+              end: SimfTokens.space3,
+            ),
             child: Text(
               '•',
-              style: TextStyle(color: SimfTokens.accent, fontSize: 16),
+              style: TextStyle(
+                color: SimfTokens.accent,
+                fontSize: SimfTokens.textLg,
+              ),
             ),
           ),
           Expanded(
@@ -34,7 +40,7 @@ class TermsBulletCard extends StatelessWidget {
               text,
               style: const TextStyle(
                 color: SimfTokens.beigeBorder,
-                fontSize: 14,
+                fontSize: SimfTokens.textMd,
                 height: 1.5,
               ),
             ),

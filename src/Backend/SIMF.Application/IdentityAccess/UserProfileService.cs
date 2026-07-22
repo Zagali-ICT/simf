@@ -934,6 +934,11 @@ internal sealed class UserProfileService(
             HasAvatar = hasAvatar,
             QrId = qrId,
             IsVip = isVip,
+            // Bi-Meeting rework — the two per-user meeting-eligibility flags read
+            // straight off the profile row (admin-assigned; they replace the VIP /
+            // delegate gates the app used to key the meeting affordances on).
+            AllowsSpeakerMeeting = profile.AllowsSpeakerMeeting,
+            AllowsDelegationMeeting = profile.AllowsDelegationMeeting,
             ShowInMeetLikeYou = profile.ShowInMeetLikeYou,
             IsForVisitor = isForVisitor,
         };

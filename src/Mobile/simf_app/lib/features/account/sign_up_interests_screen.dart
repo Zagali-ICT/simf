@@ -336,44 +336,44 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
       children: <Widget>[
         Expanded(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
             child: MaxWidthBody(
               maxWidth: 560,
               child: Column(
                 children: <Widget>[
-                  const SizedBox(height: 24),
+                  const SizedBox(height: SimfTokens.space6),
                   Text(
                     l10n.interestsChooseTitle,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
+                      color: SimfTokens.surface,
+                      fontSize: SimfTokens.text24,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: SimfTokens.space4),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space6),
                     child: Text(
                       l10n.interestsHelper,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         color: SimfTokens.beigeBorder,
-                        fontSize: 16,
+                        fontSize: SimfTokens.textLg,
                         fontWeight: FontWeight.w500,
                         height: 21 / 16,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: SimfTokens.space8),
                   _buildChips(l10n),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: SimfTokens.space6),
                   Text(
                     l10n.interestsCounter(_selected.length),
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       color: SimfTokens.beigeBorder,
-                      fontSize: 14,
+                      fontSize: SimfTokens.textMd,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -382,37 +382,37 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
                   if (widget.editMode &&
                       _editProfile != null &&
                       !_editProfile!.isForVisitor) ...<Widget>[
-                    const SizedBox(height: 24),
+                    const SizedBox(height: SimfTokens.space6),
                     const Divider(height: 1, color: SimfTokens.beigeBorder),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: SimfTokens.space4),
                     SimfCheckboxTile(
                       value: _showInMeetLikeYou,
                       onChanged: (v) =>
                           setState(() => _showInMeetLikeYou = v),
                       label: l10n.showInMeetLikeYou,
-                      labelColor: Colors.white,
+                      labelColor: SimfTokens.surface,
                       enabled: !_submitting,
                     ),
                   ],
                   if (_submitError != null) ...<Widget>[
-                    const SizedBox(height: 12),
+                    const SizedBox(height: SimfTokens.space3),
                     Text(
                       _submitError!,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         color: SimfTokens.danger,
-                        fontSize: 12,
+                        fontSize: SimfTokens.textSm,
                       ),
                     ),
                   ],
-                  const SizedBox(height: 24),
+                  const SizedBox(height: SimfTokens.space6),
                 ],
               ),
             ),
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+          padding: const EdgeInsets.fromLTRB(SimfTokens.space4, 0, SimfTokens.space4, SimfTokens.space6),
           child: MaxWidthBody(
             maxWidth: 560,
             child: SizedBox(

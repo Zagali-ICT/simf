@@ -2461,6 +2461,15 @@ internal static class AccountEndpoints
             return Forward(await api.ResendSpeakerMeetingConfirmationAsync(id, token));
         });
 
+        // Bi-Meeting rework — operator check-in of a confirmed speaker meeting → Done.
+        group.MapPost("/admin/speaker-meeting-requests/{id:guid}/check-in",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CheckInSpeakerMeetingAsync(id, token));
+        });
+
         // D-500 (Wave 5, الطلبات) — participation-document request BFF passthroughs.
         group.MapPost("/admin/document-requests/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
@@ -2595,6 +2604,40 @@ internal static class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.RespondToAdminDelegationMeetingRequestAsync(
                 id, body, token));
+        });
+
+        // Bi-Meeting rework — operator check-in of a confirmed delegation meeting → Done.
+        group.MapPost("/admin/delegation-meeting-requests/{id:guid}/check-in",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CheckInDelegationMeetingAsync(id, token));
+        });
+
+        // Bi-Meeting rework — delegation availability windows (parity with the
+        // speaker-availability passthroughs; keyed on the ISO-numeric country id).
+        group.MapGet("/admin/countries/{countryId:int}/availability-windows",
+            async (int countryId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListDelegationAvailabilityWindowsAsync(countryId, token));
+        });
+        group.MapPost("/admin/countries/{countryId:int}/availability-windows",
+            async (int countryId, CreateDelegationAvailabilityWindowRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateDelegationAvailabilityWindowAsync(countryId, body, token));
+        });
+        group.MapDelete("/admin/delegation-availability-windows/{windowId:guid}",
+            async (Guid windowId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeleteDelegationAvailabilityWindowAsync(windowId, token));
         });
 
         // D-199 — News admin CRUD BFF passthroughs.

@@ -75,6 +75,18 @@ public sealed class SpeakerMeetingRequest
     /// <summary>Optional admin response note shown to the requester.</summary>
     public string? ResponseNote { get; set; }
 
+    /// <summary>Bi-Meeting rework — once-only dedup stamp for the 15-minute reminder
+    /// worker (mirrors <c>Session.ReminderSentUtc</c>). Null until the reminder fires.</summary>
+    public DateTimeOffset? ReminderSentUtc { get; set; }
+
+    /// <summary>Bi-Meeting rework — when an operator checked the meeting in at the hall
+    /// (flips it to <see cref="MeetingRequestStatus.Done"/>). Null until checked in.</summary>
+    public DateTimeOffset? CheckedInAt { get; set; }
+
+    /// <summary>Bi-Meeting rework — the operator who checked it in. Logical FK
+    /// (Identity); no cross-DB relation (D-157).</summary>
+    public Guid? CheckedInByUserId { get; set; }
+
     public DateTimeOffset CreatedAt { get; set; }
 
     /// <summary>When the admin moved the row off Pending. Null while still

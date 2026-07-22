@@ -346,6 +346,59 @@ public sealed class DelegationMeetingRequestsTests : IClassFixture<SimfApiFactor
         Assert.Equal(ErrorCodes.DelegationMeetingRequestInvalid, body.Error!.Code);
     }
 
+    // -- Bi-Meeting rework: admin CONFIRM finalises an Approved (AwaitingSpeaker) --
+
+    [Fact]
+    public async Task Admin_confirm_of_an_awaiting_request_books_it_without_a_hall()
+    {
+        // After Approve, a request sits AwaitingSpeaker with a bound slot. The admin
+        // then gets the other party's verbal confirmation and clicks Confirm — the CP
+        // sends {Status=Accepted, VerbalConfirmed=true, HallId=null} (the bound slot is
+        // kept). Regression: tying confirmVerbal to a non-null HallId made this 409.
+        var homeId = await EnsureCountryAsync("SA", 682, invited: true);
+        await EnsureCountryAsync("EG", 818, invited: true);
+        var (delegate1, _) = await CreateDelegateAsync(homeId, isDelegate: true);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var requestId = await SubmitWithSlotAsync(
+            delegate1, "EG",
+            new DateTimeOffset(2040, 3, 1, 9, 0, 0, TimeSpan.Zero),
+            new DateTimeOffset(2040, 3, 1, 10, 0, 0, TimeSpan.Zero));
+
+        // Simulate a prior Approve + hall-bind: the request is AwaitingSpeaker with a
+        // future bound slot (a distinct far-future date so the class-shared DB does not
+        // cross-contaminate the overlap guard).
+        var boundStart = new DateTimeOffset(2040, 3, 1, 9, 0, 0, TimeSpan.Zero);
+        using (var seed = _factory.Services.CreateScope())
+        {
+            var db = seed.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var req = await db.DelegationMeetingRequests.SingleAsync(r => r.Id == requestId);
+            req.Status = MeetingRequestStatus.AwaitingSpeaker;
+            req.SlotStartUtc = boundStart;
+            req.SlotEndUtc = boundStart.AddHours(1);
+            await db.SaveChangesAsync();
+        }
+
+        var confirm = await PostAuthAsync(
+            $"/api/v1/admin/delegation-meeting-requests/{requestId}/respond",
+            new RespondToDelegationMeetingRequestRequest
+            {
+                Status = MeetingRequestStatus.Accepted,
+                VerbalConfirmed = true,
+                // No HallId — the already-bound slot is kept.
+            },
+            admin, HttpMethod.Put);
+        Assert.Equal(HttpStatusCode.OK, confirm.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var confirmed = await appDb.DelegationMeetingRequests.SingleAsync(r => r.Id == requestId);
+        Assert.Equal(MeetingRequestStatus.Accepted, confirmed.Status);
+        Assert.Equal(boundStart, confirmed.SlotStartUtc);
+        Assert.NotNull(confirmed.ConfirmedAt);
+        Assert.NotNull(confirmed.ConfirmedByUserId);
+    }
+
     private async Task<Guid> SubmitWithSlotAsync(
         string delegateToken, string targetCode, DateTimeOffset slotStart, DateTimeOffset slotEnd)
     {
@@ -427,6 +480,9 @@ public sealed class DelegationMeetingRequestsTests : IClassFixture<SimfApiFactor
                 Name = user.DisplayName, NameArabic = user.DisplayName,
                 NationalityId = nationalityId,
                 IsDelegate = isDelegate,
+                // Bi-Meeting rework — the delegation-meeting gate now reads this
+                // per-user flag (was IsDelegate). Map the fixture's intent onto it.
+                AllowsDelegationMeeting = isDelegate,
                 CreatedAt = DateTimeOffset.UtcNow,
             });
             await appDb.SaveChangesAsync();

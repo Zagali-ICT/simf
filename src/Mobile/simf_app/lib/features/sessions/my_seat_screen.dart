@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
+import '../../app/theme/app_assets.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
@@ -98,7 +99,7 @@ class _SeatMapView extends StatelessWidget {
           // Read-only defaults = this frame (898:2873): beige available
           // border, 20px seat cap, 14px reserved/mine swatches.
           HallSeatMapCard(map: map, l10n: l10n),
-          const SizedBox(height: 40),
+          const SizedBox(height: SimfTokens.space10),
           _Actions(l10n: l10n, onNavigate: onNavigate, onShare: onShare),
         ],
       ),
@@ -129,11 +130,7 @@ class _SessionCard extends StatelessWidget {
           Text(
             l10n.sessionLabel,
             textAlign: TextAlign.start,
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textLg,
-              fontWeight: FontWeight.w600,
-            ),
+            style: SimfTokens.labelBeigeSemiboldLg,
           ),
           const SizedBox(height: SimfTokens.space4),
           Text(
@@ -145,11 +142,7 @@ class _SessionCard extends StatelessWidget {
                     ? l10n.seatLocation(cell.rowLabel, cell.seatNumber)
                     : l10n.noSeatYet),
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: SimfTokens.surface,
-              fontSize: SimfTokens.textTitle,
-              fontWeight: FontWeight.w600,
-            ),
+            style: SimfTokens.labelWhiteSemiboldTitle,
           ),
           const SizedBox(height: SimfTokens.space4),
           Row(
@@ -199,7 +192,7 @@ class _SeatChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 34,
+      height: SimfTokens.actionChipHeight,
       alignment: Alignment.center,
       padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space2),
       decoration: BoxDecoration(
@@ -212,22 +205,14 @@ class _SeatChip extends StatelessWidget {
           children: <InlineSpan>[
             TextSpan(
               text: goldLabel,
-              style: const TextStyle(
-                color: SimfTokens.accent,
-                fontSize: SimfTokens.textSm,
-                fontWeight: FontWeight.w600,
-              ),
+              style: SimfTokens.labelGoldSemiboldSm,
             ),
             const TextSpan(text: ' '),
             TextSpan(
               text: value,
               // Frame 905:1577/1579 — the value (12 / B) is white; only the
               // leading label word (مقعد / الصف) is gold.
-              style: const TextStyle(
-                color: SimfTokens.surface,
-                fontSize: SimfTokens.textMd,
-                fontWeight: FontWeight.w600,
-              ),
+              style: SimfTokens.labelWhiteSemibold,
             ),
           ],
         ),
@@ -270,16 +255,13 @@ class _Actions extends StatelessWidget {
               ),
             ),
             icon: const SimfSvgIcon(
-              'assets/icons/ic_location.svg',
+              AppAssets.icLocation,
               size: 18,
               color: SimfTokens.surface,
             ),
             label: Text(
               l10n.navigateToSeat,
-              style: const TextStyle(
-                fontSize: SimfTokens.textSm,
-                fontWeight: FontWeight.w600,
-              ),
+              style: SimfTokens.labelSemiboldSm,
             ),
           ),
         ),
@@ -301,10 +283,7 @@ class _Actions extends StatelessWidget {
             icon: const Icon(Icons.share_outlined, size: 18),
             label: Text(
               l10n.shareLocation,
-              style: const TextStyle(
-                fontSize: SimfTokens.textSm,
-                fontWeight: FontWeight.w600,
-              ),
+              style: SimfTokens.labelSemiboldSm,
             ),
           ),
         ),

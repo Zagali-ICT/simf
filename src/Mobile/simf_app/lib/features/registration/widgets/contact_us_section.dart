@@ -33,12 +33,12 @@ class ContactUsSection extends StatelessWidget {
           title,
           textAlign: TextAlign.center,
           style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
+            color: SimfTokens.surface,
+            fontSize: SimfTokens.textLg,
             fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: SimfTokens.space4),
         Row(
           children: <Widget>[
             // Frame 522:2223 (RTL): the mail tile leads (right edge), the call
@@ -58,7 +58,7 @@ class ContactUsSection extends StatelessWidget {
                         ),
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: SimfTokens.space4),
             Expanded(
               child: _ContactTile(
                 icon: Icons.call_outlined,
@@ -76,13 +76,13 @@ class ContactUsSection extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: SimfTokens.space4),
         Text(
           socialFooter,
           textAlign: TextAlign.center,
           style: const TextStyle(
             color: SimfTokens.beigeBorder,
-            fontSize: 12,
+            fontSize: SimfTokens.textSm,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -103,15 +103,15 @@ class _ContactTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(SimfTokens.radius10),
       child: Container(
         height: 52,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           border: Border.all(color: SimfTokens.tileBorderNavy, width: 0.8),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(SimfTokens.radius10),
         ),
-        child: Icon(icon, color: Colors.white, size: 24),
+        child: Icon(icon, color: SimfTokens.surface, size: 24),
       ),
     );
   }

@@ -257,6 +257,8 @@ public static class ErrorCodes
     public const string SpeakerAvailabilityWindowNotFound = "SPEAKER_AVAILABILITY_WINDOW_NOT_FOUND";
     /// <summary>D-715 (item 7) — the hall availability window was not found.</summary>
     public const string HallAvailabilityWindowNotFound = "HALL_AVAILABILITY_WINDOW_NOT_FOUND";
+    /// <summary>Bi-Meeting rework — the delegation availability window was not found.</summary>
+    public const string DelegationAvailabilityWindowNotFound = "DELEGATION_AVAILABILITY_WINDOW_NOT_FOUND";
     /// <summary>D-478 (#11) — invalid delegation meeting request (subject/count/self).</summary>
     public const string DelegationMeetingRequestInvalid = "DELEGATION_MEETING_REQUEST_INVALID";
     /// <summary>D-478 (#11) — the delegation meeting request was not found.</summary>

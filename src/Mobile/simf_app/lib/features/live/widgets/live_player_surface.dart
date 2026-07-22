@@ -104,7 +104,10 @@ class _CaptionStrip extends ConsumerWidget {
       ),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        border: Border.all(color: SimfTokens.beigeBorder, width: 0.2),
+        border: Border.all(
+          color: SimfTokens.beigeBorder,
+          width: SimfTokens.hairline,
+        ),
       ),
       child: Row(
         children: <Widget>[
@@ -122,22 +125,15 @@ class _CaptionStrip extends ConsumerWidget {
           ),
           const SizedBox(width: SimfTokens.space2),
           Container(
-            width: 20,
-            height: 20,
+            width: SimfTokens.aiBadgeSize,
+            height: SimfTokens.aiBadgeSize,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: SimfTokens.accent,
-              borderRadius: BorderRadius.circular(5),
+              borderRadius: BorderRadius.circular(SimfTokens.radius5),
             ),
-            child: const Text(
-              'AI',
-              style: TextStyle(
-                color: Colors.white,
-                // Frame 934:3602 — 12px SemiBold.
-                fontSize: SimfTokens.textSm,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            // Frame 934:3602 — 12px SemiBold.
+            child: const Text('AI', style: SimfTokens.labelWhiteSemiboldSm),
           ),
         ],
       ),

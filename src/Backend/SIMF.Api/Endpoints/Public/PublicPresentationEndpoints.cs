@@ -1,6 +1,5 @@
 // Tests: SIMF.Api.Tests/PublicPresentationsTests.cs
 using FastEndpoints;
-using SIMF.Api.Endpoints.Admin;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Programme;
@@ -11,14 +10,17 @@ namespace SIMF.Api.Endpoints.Public;
 /// <c>GET /api/v1/app/presentations</c>: every active session-presentation file,
 /// time-ordered by session start so the app groups by day. Each item carries the
 /// session (title + start) + the presenting speaker + the file metadata; the
-/// bytes come from the download route. Approved account (attendee materials).</summary>
+/// bytes come from the download route. ANONYMOUS (owner 2026-07-22 — the "الجلسات"
+/// Sessions list is public, opened from the home "Sessions" tile by a guest); the
+/// data is active-forum content (session titles/speakers/decks), consistent with
+/// the already-public agenda (D-750) and the public website download route below.</summary>
 public sealed class ListPublicPresentationsEndpoint(IPublicSpeakerPresentationService service)
     : EndpointWithoutRequest<ApiResult<PublicPresentations>>
 {
     public override void Configure()
     {
         Get("/app/presentations");
-        Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
+        AllowAnonymous();
         Tags("Sessions");
         Summary(summary => summary.Summary =
             "Session presentations: downloadable decks grouped by session/day.");
@@ -31,7 +33,9 @@ public sealed class ListPublicPresentationsEndpoint(IPublicSpeakerPresentationSe
 /// <summary>Wave 2 — <c>GET /api/v1/app/presentations/{id}/file</c>: streams one
 /// presentation's stored bytes as an attachment (the تحميل button on
 /// Figma 1388:7621). A 404 when the presentation / session is missing or
-/// soft-deleted. Approved account.</summary>
+/// soft-deleted. ANONYMOUS (owner 2026-07-22 — the Sessions list is public, and
+/// the same file bytes are already served anonymously by the website download
+/// route below, so this exposes nothing new).</summary>
 public sealed class DownloadPublicPresentationRoute
 {
     public Guid Id { get; set; }
@@ -43,7 +47,7 @@ public sealed class DownloadPublicPresentationEndpoint(IPublicSpeakerPresentatio
     public override void Configure()
     {
         Get("/app/presentations/{id:guid}/file");
-        Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
+        AllowAnonymous();
         Tags("Sessions");
         Summary(summary => summary.Summary = "Download a session presentation file.");
     }
