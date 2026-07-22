@@ -61,11 +61,12 @@ void main() {
       );
     });
 
-    test('invertYaw normalises the iOS sign (physical right = negative raw)',
+    test('invertYaw normalises a negative-raw right turn (positive = right)',
         () {
-      // On iOS the front-camera mirror + per-platform input-image rotation
-      // report the OPPOSITE sign, so a physical RIGHT turn arrives as a
-      // negative raw yaw. invertYaw normalises it so positive means right.
+      // On some platform/sensor combinations (e.g. Android front sensor 270) the
+      // front-camera mirror + input-image rotation make a physical RIGHT turn
+      // arrive as a negative raw yaw. invertYaw normalises it so positive means
+      // right. (livenessInvertYaw: iOS never, Android sensor >= 180.)
       expect(
         livenessStepSatisfied(
           LivenessStep.turnRight,

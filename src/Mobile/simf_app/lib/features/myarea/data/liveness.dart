@@ -64,16 +64,18 @@ const double kTurnYawDegrees = 20;
 /// top-level function so the liveness logic is unit-testable without a camera
 /// or the native plugin.
 ///
-/// **Yaw sign convention.** ML Kit `headEulerAngleY` reaches this gate with the
-/// OPPOSITE sign on iOS vs Android for the same physical head turn: the front
-/// camera is mirrored and `identity_verification_screen` feeds ML Kit a
-/// different input-image rotation per platform (raw sensor on iOS, device-
-/// orientation-compensated on Android). Earlier fixes (D-684, PR-103) tried to
-/// compensate in the prompt/arrow, which mislabels the step and left iOS
-/// turning the wrong way. Instead we normalise the sign HERE: the caller passes
-/// [invertYaw] = true on iOS so that, after normalisation, a **positive yaw is
-/// always a physical RIGHT turn** on every platform. The prompt and arrow can
-/// then always match the step name (turnRight → "turn right" + right arrow).
+/// **Yaw sign convention.** ML Kit `headEulerAngleY` reaches this gate with a
+/// sign that depends on the platform AND the front camera's sensor orientation
+/// for the same physical turn (the front preview is mirrored and
+/// `identity_verification_screen` feeds ML Kit a per-platform input-image
+/// rotation: raw sensor on iOS, device-orientation-compensated on Android).
+/// Earlier fixes (D-684, PR-103) tried to compensate in the prompt/arrow, which
+/// mislabels the step; instead we normalise the sign HERE. The caller passes
+/// [invertYaw] from [livenessInvertYaw] — iOS never inverts, Android inverts
+/// when the front sensor orientation is >= 180 (e.g. 270) — so that after
+/// normalisation a **positive yaw is always a physical RIGHT turn** on every
+/// device. The prompt and arrow then always match the step name (turnRight →
+/// "turn right" + right arrow).
 bool livenessStepSatisfied(
   LivenessStep step, {
   double? smilingProbability,
