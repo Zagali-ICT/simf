@@ -64,14 +64,22 @@ class RequestStatusChips extends StatelessWidget {
       onTap: () => onSelect(active ? null : status),
       borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
       child: Container(
-        height: 32,
+        height: SimfTokens.statusChipHeight,
         alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: 13),
+        padding: const EdgeInsets.symmetric(
+          horizontal: SimfTokens.statusChipPadH,
+        ),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: active ? 0.24 : 0.12),
+          color: color.withValues(
+            alpha: active
+                ? SimfTokens.chipFillActiveOpacity
+                : SimfTokens.chipFillOpacity,
+          ),
           borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
           border: Border.all(
-            color: color.withValues(alpha: active ? 1 : 0.2),
+            color: color.withValues(
+              alpha: active ? 1 : SimfTokens.chipBorderOpacity,
+            ),
           ),
         ),
         child: Text(

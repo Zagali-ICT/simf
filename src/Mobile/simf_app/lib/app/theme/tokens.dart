@@ -185,6 +185,14 @@ class SimfTokens {
   static const double headingBarWidth = 4;
   static const double headingBarHeight = 20;
 
+  // #16 S3 — requests card icon-box + status-chip metrics (Figma 1408:9761+).
+  static const double requestIconBox = 32; // gold type-icon box on a request card
+  static const double statusChipHeight = 32; // status filter chip height
+  static const double statusChipPadH = 13; // status filter chip horizontal padding
+  static const double chipFillActiveOpacity = 0.24; // selected chip fill alpha
+  static const double chipFillOpacity = 0.12; // resting chip fill alpha
+  static const double chipBorderOpacity = 0.2; // resting chip border alpha
+
   // Type scale (Material text styles override these for actual rendering;
   // tokens here are for places that need a raw size).
   static const double textXs = 10.5;
@@ -682,5 +690,14 @@ class SimfTokens {
     fontSize: textMd,
     fontWeight: FontWeight.w500,
     height: 1.5,
+  );
+  // requests (Figma 1408:9773+) — card date line + cancel-action danger label.
+  static const TextStyle labelBeigeSemiboldXs = TextStyle(
+    color: beigeBorder,
+    fontSize: textXs,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle bodyDanger = TextStyle(
+    color: danger,
   );
 }

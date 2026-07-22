@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/localization/app_l10n.dart';
+import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
 import '../data/request_models.dart';
@@ -43,7 +44,7 @@ class RequestActionRow extends StatelessWidget {
             Expanded(
               child: RequestActionButton(
                 label: l10n.requestNew,
-                asset: 'assets/icons/request_new.svg',
+                asset: AppAssets.requestNew,
                 active: false,
                 onTap: onNew,
               ),
@@ -53,7 +54,7 @@ class RequestActionRow extends StatelessWidget {
           Expanded(
             child: RequestActionButton(
               label: l10n.requestsTabLog,
-              asset: 'assets/icons/request_log.svg',
+              asset: AppAssets.requestLog,
               active: filter == null,
               onTap: () => onSelect(null),
             ),
@@ -82,14 +83,14 @@ class RequestActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color fg = active ? Colors.white : SimfTokens.beigeBorder;
+    final Color fg = active ? SimfTokens.surface : SimfTokens.beigeBorder;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(SimfTokens.radius),
       child: Container(
         padding: const EdgeInsets.all(SimfTokens.space2),
         decoration: BoxDecoration(
-          color: active ? SimfTokens.accent : Colors.transparent,
+          color: active ? SimfTokens.accent : SimfTokens.transparent,
           borderRadius: BorderRadius.circular(SimfTokens.radius),
           border: active
               ? null

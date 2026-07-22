@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../../app/localization/app_l10n.dart';
+import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
 import '../data/request_models.dart';
@@ -64,11 +65,7 @@ class _RequestCardState extends State<RequestCard> {
                         Text(
                           _kindHeadline(l10n, item.kind),
                           textAlign: TextAlign.start,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: SimfTokens.textMd, // 14
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: SimfTokens.labelWhiteMedium,
                         ),
                         if (subtitle.isNotEmpty) ...<Widget>[
                           const SizedBox(height: SimfTokens.space2),
@@ -77,10 +74,7 @@ class _RequestCardState extends State<RequestCard> {
                             textAlign: TextAlign.start,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: SimfTokens.beigeBorder,
-                              fontSize: SimfTokens.textSm, // 12
-                            ),
+                            style: SimfTokens.labelBeigeSm,
                           ),
                         ],
                         const SizedBox(height: SimfTokens.space2),
@@ -92,11 +86,7 @@ class _RequestCardState extends State<RequestCard> {
                           // the right-aligned title.
                           textDirection: TextDirection.ltr,
                           textAlign: TextAlign.end,
-                          style: const TextStyle(
-                            color: SimfTokens.beigeBorder,
-                            fontSize: SimfTokens.textXs, // ~10
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: SimfTokens.labelBeigeSemiboldXs,
                         ),
                       ],
                     ),
@@ -108,7 +98,7 @@ class _RequestCardState extends State<RequestCard> {
                   Transform.rotate(
                     angle: _expanded ? math.pi / 2 : -math.pi / 2,
                     child: const SimfSvgIcon(
-                      'assets/icons/chevron_left.svg',
+                      AppAssets.chevronLeft,
                       size: 20,
                       color: SimfTokens.accent,
                     ),
@@ -169,10 +159,7 @@ class _RequestCardState extends State<RequestCard> {
             Text(
               item.responseNote!,
               textAlign: TextAlign.start,
-              style: const TextStyle(
-                color: SimfTokens.beigeBorder,
-                fontSize: SimfTokens.textSm,
-              ),
+              style: SimfTokens.labelBeigeSm,
             ),
           ],
           if (item.canCancel) ...<Widget>[
@@ -184,7 +171,7 @@ class _RequestCardState extends State<RequestCard> {
                 icon: const Icon(Icons.close, size: 16, color: SimfTokens.danger),
                 label: Text(
                   l10n.requestCancel,
-                  style: const TextStyle(color: SimfTokens.danger),
+                  style: SimfTokens.bodyDanger,
                 ),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: SimfTokens.danger),
@@ -241,8 +228,8 @@ class _IconBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 32,
-      height: 32,
+      width: SimfTokens.requestIconBox,
+      height: SimfTokens.requestIconBox,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: SimfTokens.accent,
