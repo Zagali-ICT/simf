@@ -1,7 +1,10 @@
 // Tests: SIMF.ControlPanel.Tests/AccountEndpointsTests.cs (todo).
+using System.Globalization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.Extensions.Localization;
 using SIMF.ApiClient;
+using SIMF.ControlPanel.Components.Assistant;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
 using SIMF.Contracts.Ai;
@@ -2271,6 +2274,34 @@ internal static class AccountEndpoints
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
             return Forward(await api.GetAiDashboardAsync(token));
+        });
+
+        // Control Panel operator assistant — the floating help chat. The browser
+        // posts only the question; the CP builds the grounding page directory
+        // server-side (filtered to the pages THIS operator may open) and the UI
+        // locale, then forwards to the cp-assistant prompt. Building the directory
+        // here — not in the browser — is what keeps the answer honest: a user
+        // cannot widen it to pages they lack.
+        group.MapPost("/admin/ai/assistant",
+            async (CpAssistantRequest body, HttpContext http,
+                   SimfAdminClient api, IStringLocalizer<Strings> localizer) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            var permissions = http.User.FindAll(PermissionCatalog.ClaimType)
+                .Select(claim => claim.Value)
+                .ToHashSet(StringComparer.Ordinal);
+            var hasAll = permissions.Contains(PermissionCatalog.Wildcard);
+            var pages = CpAssistantDirectory.Build(permissions, hasAll, localizer);
+            var locale = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
+                ? "ar" : "en";
+            return Forward(await api.AssistAsync(
+                new CpAssistantRequest
+                {
+                    Question = body.Question ?? string.Empty,
+                    Pages = pages,
+                    Locale = locale,
+                }, token));
         });
 
         // D-735 — transactional email-template editor (list / read / edit /

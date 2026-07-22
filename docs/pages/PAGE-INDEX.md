@@ -108,6 +108,7 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/ai/services/{feature}` | ✅ Real (CP Phase-2) | Administrator | [cp/admin-ai-service-detail.md](cp/admin-ai-service-detail.md) | [e2e/cp-admin-ai-service-detail.md](../tests/e2e/cp-admin-ai-service-detail.md) |
 | `/admin/ai/prompts` | ✅ Real (D-176) | Administrator  | [cp/admin-ai-prompts.md](cp/admin-ai-prompts.md) | [e2e/cp-admin-ai-prompts.md](../tests/e2e/cp-admin-ai-prompts.md) |
 | `/admin/ai/invocations` | ✅ Real (D-176/D-179) | Administrator | — | [e2e/cp-admin-ai-invocations.md](../tests/e2e/cp-admin-ai-invocations.md) |
+| _(floating widget — every CP page)_ | ✅ Real | Any CP operator (`Assistant.Use`) | [cp/assistant.md](cp/assistant.md) | [e2e/cp-assistant.md](../tests/e2e/cp-assistant.md) |
 | **Access control & system** | | | | |
 | `/admin/gates` | ✅ Real (D-148) | Administrator  | [cp/admin-gates.md](cp/admin-gates.md) | [e2e/cp-admin-gates.md](../tests/e2e/cp-admin-gates.md) |
 | `/admin/gates/operator` | ✅ Real (D-148) | Gate operator | — | [e2e/cp-admin-gates-operator.md](../tests/e2e/cp-admin-gates-operator.md) |

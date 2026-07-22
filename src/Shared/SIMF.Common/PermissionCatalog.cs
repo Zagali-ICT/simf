@@ -512,6 +512,14 @@ public static class PermissionCatalog
         public const string View = "AiDashboard.View";
     }
 
+    /// <summary>The Control Panel operator assistant (the floating help chat).
+    /// Any CP team may use it; the answers are already filtered to the pages the
+    /// signed-in user can see, so it never points anyone at a page they lack.</summary>
+    public static class Assistant
+    {
+        public const string Use = "Assistant.Use";
+    }
+
     /// <summary>D-735 — the transactional email-template editor.</summary>
     public static class EmailTemplates
     {
@@ -722,6 +730,15 @@ public static class PermissionCatalog
     // Security team, so their baseline list carries both roles.
     private static readonly IReadOnlyList<string> GateOperatorOrSecurity =
         [AppRoles.GateOperator, AppRoles.SecurityTeam];
+
+    // Every built-in non-Administrator CP team, for permissions that any operator
+    // should hold (e.g. the help assistant). Derived from the single source of
+    // truth (AppRoles.CpRoles) so a future role added there is granted
+    // automatically; Administrator is excluded because it gets everything via the
+    // "*" wildcard (BaselineRoles list only the non-Administrator roles). Must be
+    // declared before `All` (static-init order).
+    private static readonly IReadOnlyList<string> AllCpTeams =
+        AppRoles.CpRoles.Where(role => role != AppRoles.Administrator).ToList();
 
     /// <summary>Every permission in the catalogue, in display order. The
     /// seeder inserts one row per entry (idempotent by <see cref="PermissionDef.Code"/>).</summary>
@@ -978,6 +995,7 @@ public static class PermissionCatalog
 
         new(AiInvocations.View, "AiInvocations", "View", "View AI invocations log", AdminOnly),
         new(AiDashboard.View, "AiDashboard", "View", "View the AI dashboard", AdminOnly),
+        new(Assistant.Use, "Assistant", "Use", "Use the Control Panel help assistant", AllCpTeams),
 
         new(EmailTemplates.View, "EmailTemplates", "View", "View email templates", AdminOnly),
         new(EmailTemplates.Edit, "EmailTemplates", "Edit", "Edit email templates", AdminOnly),

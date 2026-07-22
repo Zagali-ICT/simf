@@ -26,7 +26,20 @@ public static class CpNavigation
     /// (sub-menu items only).</summary>
     public sealed record NavItem(
         string LabelKey, string Href, bool IsStub = false, string? RequiredPermission = null,
-        string? Icon = null);
+        string? Icon = null)
+    {
+        /// <summary>Whether an operator holding the given permission codes may
+        /// reach this item: an ungated item is always visible, the Administrator
+        /// wildcard sees everything, otherwise the operator must hold the item's
+        /// permission. The single source of truth for nav visibility — shared by
+        /// the side menu (<c>CpShellLayout</c>) and the help-assistant directory
+        /// (<c>CpAssistantDirectory</c>).</summary>
+        public bool IsPermittedFor(
+            IReadOnlySet<string> permissions, bool hasAllPermissions) =>
+            RequiredPermission is null
+            || hasAllPermissions
+            || permissions.Contains(RequiredPermission);
+    }
 
     /// <summary>One navigation group — a heading and its items.</summary>
     public sealed record NavGroup(string LabelKey, IReadOnlyList<NavItem> Items);

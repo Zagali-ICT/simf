@@ -46,6 +46,15 @@ window.simfAccount = {
         return await simfReadEnvelope(response);
     },
 
+    // Scrolls a scrollable element to its bottom — used by the CP assistant chat
+    // to keep the newest message in view after a send. No-op if the element is
+    // missing (e.g. the panel closed before the render flushed).
+    scrollToEnd(element) {
+        if (element) {
+            element.scrollTop = element.scrollHeight;
+        }
+    },
+
     async postJson(url, body) {
         const response = await fetch(url, {
             method: 'POST',
