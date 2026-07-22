@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
-import 'data/faq_models.dart';
 import 'data/faq_repository.dart';
+import 'widgets/faq_tile.dart';
 
 /// Page 201 — الأسئلة الشائعة · FAQ (`/faq`, public). Pixel-parity to KSA Figma
 /// frame **1388:7567**: the navy [SimfPageShell] shell over an accordion of
@@ -77,7 +77,7 @@ class FaqScreen extends ConsumerWidget {
                     const SizedBox(height: SimfTokens.space3),
                   ],
                   for (final entry in group.entries) ...<Widget>[
-                    _FaqTile(entry: entry, isArabic: isArabic),
+                    FaqTile(entry: entry, isArabic: isArabic),
                     const SizedBox(height: SimfTokens.space3),
                   ],
                 ],
@@ -85,73 +85,6 @@ class FaqScreen extends ConsumerWidget {
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-/// One accordion card (frame 1388:7569…): the question row with a gold
-/// expand/collapse chevron, revealing the answer below a hairline when open.
-class _FaqTile extends StatefulWidget {
-  const _FaqTile({required this.entry, required this.isArabic});
-
-  final FaqEntry entry;
-  final bool isArabic;
-
-  @override
-  State<_FaqTile> createState() => _FaqTileState();
-}
-
-class _FaqTileState extends State<_FaqTile> {
-  bool _expanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final question = widget.entry.localizedQuestion(widget.isArabic);
-    final answer = widget.entry.localizedAnswer(widget.isArabic);
-    return SimfCard(
-      onTap: () => setState(() => _expanded = !_expanded),
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space2), // p-8 (Figma 1388:7577)
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text(
-                    question,
-                    textAlign: TextAlign.start,
-                    // beige Medium 14 — Figma 1388:7582
-                    style: SimfTokens.labelBeigeMedium,
-                  ),
-                ),
-                const SizedBox(width: SimfTokens.space2),
-                Icon(
-                  _expanded
-                      ? Icons.keyboard_arrow_up_rounded
-                      : Icons.keyboard_arrow_down_rounded,
-                  color: SimfTokens.accent,
-                  size: 20,
-                ),
-              ],
-            ),
-            if (_expanded) ...<Widget>[
-              const SizedBox(height: SimfTokens.space2),
-              const Divider(
-                height: 1,
-                thickness: SimfTokens.hairline,
-                color: SimfTokens.beigeBorder,
-              ),
-              const SizedBox(height: SimfTokens.space2),
-              Text(
-                answer,
-                textAlign: TextAlign.start,
-                style: SimfTokens.bodyBeige, // beige 14, line-height 1.5
-              ),
-            ],
-          ],
-        ),
       ),
     );
   }
