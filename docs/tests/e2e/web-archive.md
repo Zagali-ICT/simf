@@ -8,7 +8,7 @@
 | **Test runner** | Chrome DevTools MCP (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | **None — anonymous.** No bearer token; one anonymous GET `/api/v1/app/archive`. |
 | **Figma** | KSA Maritime Forum — Archive (Desktop AR), node `5840-27997` |
-| **Last reviewed** | 2026-07-19 |
+| **Last reviewed** | 2026-07-22 |
 
 > **What this page is.** `/archive` (`Archive.razor`) is the Website's public,
 > anonymous **forum archive** page (Figma `5840-27997`). SSR on the shared
@@ -36,7 +36,8 @@
 | E2E-WAR-006 | The live edition band wraps (ln-miles--wrap) — many editions reflow, no horizontal overflow | responsive | P0 | _to author_ |
 | E2E-WAR-007 | RTL / Arabic ⇄ LTR / English — hero + bands mirror; Arabic content in AR, English in EN | i18n | P1 | _to author_ |
 | E2E-WAR-008 | Responsive — grid 3→2→1, cards wrap; no horizontal overflow at 1440/1280/1024/768/390 both languages | responsive | P1 | _to author_ |
-| E2E-WAR-009 | Reachability — the "Archive" nav menu's "Browse all editions" item opens `/archive` | nav | P1 | _to author_ |
+| E2E-WAR-009 | Nav — the "Archive" top-menu dropdown lists the real past editions (title + year, newest-first), same source as the page | nav | P1 | _to author_ |
+| E2E-WAR-010 | Nav → anchor — clicking an edition in the dropdown opens `/archive` and scrolls to that edition's card (`#ed-N`) | nav | P1 | _to author_ |
 
 ## Scenarios
 
@@ -145,13 +146,28 @@ Scenario: The bands reflow with no horizontal overflow
   And this holds in BOTH the EN (LTR) and AR (RTL) cultures
 ```
 
-### E2E-WAR-009 — Reachability
+### E2E-WAR-009 — Nav editions dropdown
 
 ```gherkin
-Scenario: The "Archive" nav menu opens the page
+Scenario: The "Archive" top-menu is a dropdown of the real editions
   Given the browser is on any Website page with the shared nav header
-  When the user opens the "Archive" mega-menu and clicks "Browse all editions"
-  Then the browser navigates to /archive
+  When the user opens the "Archive" mega-menu
+  Then the dropdown lists one item per past edition, newest-first
+  And each item label is the edition title followed by its year (e.g. "SIMF 2025" / "سيمف 2025")
+  And the items match the cards on /archive (same source, same order)
+  And each item href is "/archive#ed-N" (a real in-page anchor, never a dead "#")
+```
+
+### E2E-WAR-010 — Nav item scrolls to the edition card
+
+```gherkin
+Scenario: Clicking an edition opens /archive and scrolls to its card
+  Given the browser is on the Website home page
+  When the user opens the "Archive" mega-menu and clicks the second edition
+  Then the browser navigates to /archive#ed-1
+  And the first-paint splash does NOT cover the page (enhanced navigation)
+  And the #ed-1 edition card is scrolled into view near the top of the viewport
+  And the scrolled-to card's name matches the clicked dropdown label
 ```
 
 ---
@@ -167,10 +183,17 @@ Scenario: The "Archive" nav menu opens the page
   (`web/archive.md` §7). Add scenarios when they land.
 - **Lower-layer coverage:** component (bUnit, no browser)
   `tests/SIMF.Web.Tests/ArchivePageTests.cs` pins the live-render, the fallback and the
-  reused bands via a stub `SimfPublicClient`.
+  reused bands via a stub `SimfPublicClient`; `tests/SIMF.Web.Tests/PublicEditionsTests.cs`
+  pins the shared editions source (ordering, `ed-N` anchor + `/archive#ed-N` href, the
+  "title year" label, latest-edition stats, static fallback) that feeds both the page
+  cards and the nav dropdown.
+- **Nav editions dropdown.** The top-menu "Archive" is a data-driven dropdown built from
+  `PublicEditions` (the same source as the page). Each card renders `id="ed-N"` and each
+  dropdown item links to `/archive#ed-N`; enhanced navigation does not honour the URL
+  fragment, so `landing.js` scrolls to the target on `enhancedload`.
 - **Convert to Playwright** when adopted: copy each Gherkin scenario into a `.feature`
   under `tests/SIMF.E2E.Tests/`.
 
 ---
 
-_Last reviewed:_ 2026-07-19 by Claude (Forum archive page — `ln-` Bootstrap SSR, Figma 5840-27997; live archive data + static fallback).
+_Last reviewed:_ 2026-07-22 by Claude (Forum archive page — `ln-` Bootstrap SSR, Figma 5840-27997; live archive data + static fallback; top-menu editions dropdown + `#ed-N` anchors).

@@ -200,6 +200,7 @@
   <data name="Landing.Nav.Discover.Spirit" xml:space="preserve"><value>Saudi spirit</value></data>
   <data name="Landing.Nav.Discover.Made" xml:space="preserve"><value>Made in Saudi Arabia</value></data>
   <data name="Landing.Nav.Archive" xml:space="preserve"><value>Archive</value></data>
+  <data name="Landing.Nav.Archive.Title" xml:space="preserve"><value>Archive</value></data>
   <data name="Landing.Nav.Archive.E1" xml:space="preserve"><value>First edition 2019</value></data>
   <data name="Landing.Nav.Archive.E2" xml:space="preserve"><value>Second edition 2022</value></data>
   <data name="Landing.Nav.Archive.E3" xml:space="preserve"><value>Third edition 2024</value></data>

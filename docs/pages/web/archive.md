@@ -26,10 +26,16 @@ falls back gracefully when the archive is hidden or unreachable.
   public API during pre-render (`Archive.razor.cs`), like `Speakers.razor`. Shared
   chrome via `LandingShell`; the hero is the reusable `LandingPageHero` (no breadcrumb)
   and carries the page's single `<h1>`.
-- **Live data + fallback** — `GetArchiveAsync()` returns the archive edition list
-  (newest-first). When it is empty (archive-visibility toggle off) or null
-  (unreachable), the page falls back to the landing's static `Landing.Milestones` past
+- **Live data + fallback** — the page reads its editions from **`PublicEditions`** (the
+  cached, single source shared with the top-nav Archive dropdown, backed by
+  `GetArchiveAsync()`), newest-first. When the archive is empty (visibility toggle off) or
+  null (unreachable), it falls back to the landing's static `Landing.Milestones` past
   editions (reversed to newest-first) + a default headline triple, so it never blanks.
+- **Nav editions dropdown** — the top-menu "Archive" is a data-driven dropdown built from
+  the same `PublicEditions` source, so it can never diverge from the page. Each edition
+  card renders `id="ed-N"` and each dropdown item links to `/archive#ed-N` ("title year"
+  label, e.g. "SIMF 2025"); `landing.js` scrolls to the target on `enhancedload` (enhanced
+  navigation does not honour the URL fragment natively).
 - **Reuse** — the counters reuse `ln-stats` (navy band), the session cards reuse
   `ln-sessions`/`ln-scard` + `Landing.Sessions`, the past speakers reuse `ln-speakers`
   (collage + a link to `/speakers`), and the edition cards reuse `ln-miles`/`ln-mcard`.

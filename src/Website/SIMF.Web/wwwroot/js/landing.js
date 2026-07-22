@@ -261,6 +261,15 @@
      keeps its .ln-reveal blocks hidden (opacity:0) and its interactions unwired
      until a manual reload. Re-run after every enhanced load; firstInit() keeps the
      preserved shared header from being wired twice. */
+  // Scroll to the element named by location.hash. A full page load scrolls to a
+  // #fragment natively, but enhanced navigation (below) does NOT — so a
+  // "/archive#ed-1" click from the nav lands at the page top without this.
+  function scrollToHash() {
+    if (!location.hash) { return; }
+    var el = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+    if (el) { el.scrollIntoView(); }
+  }
+
   function onEnhancedLoad() {
     // Enhanced nav also morphs a fresh #ln-loader (without is-gone) back into the
     // DOM, and window 'load' never refires — so without this the splash covers the
@@ -269,6 +278,9 @@
     var loader = document.getElementById('ln-loader');
     if (loader) { loader.style.transition = 'none'; loader.classList.add('is-gone'); }
     run();
+    // Enhanced nav does not honour the URL #fragment; do it after the morph (a
+    // short delay so it wins over Blazor's own scroll reset).
+    if (location.hash) { window.setTimeout(scrollToHash, 60); }
   }
 
   var enhancedHooked = false;
