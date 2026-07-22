@@ -115,6 +115,54 @@ Configuration follows SIMF-SES-001 section 4.4.
   (D-355). The prefix keeps SIMF's variables from colliding with other apps' on
   a shared host.
 
+### 6.1 AI provider go-live (turning the AI features from echo to real)
+
+Every AI feature (the app assistant, FAQ, translate, live translation / sign
+language, the session-summary محضر draft, and the Control Panel assistant) routes
+through the one `IAiService` chokepoint. By default the stack ships **offline**:
+`Ai:DefaultProvider = "Echo"`, every seeded prompt is pinned to `Provider = Echo`
+/ `Model = "echo"`, and every provider API key is empty, so each feature returns
+the echo stub (`[echo:...] ` + the prompt) instead of a real answer. To turn the
+whole stack on, set these Machine-scope environment variables (`SIMF_` prefix,
+`__` = section nesting) and restart the API:
+
+1. `SIMF_Ai__DefaultProvider = Anthropic` (or `Gemini` / `OpenAi`). Because every
+   seeded prompt is on `Provider = Echo`, this one setting redirects **all** of
+   them to the chosen provider (D-484); a prompt pinned to a concrete provider in
+   the CP is honoured as-is.
+2. `SIMF_Ai__Anthropic__ApiKey = <key>` (and/or `SIMF_Ai__Gemini__ApiKey`,
+   `SIMF_Ai__OpenAi__ApiKey`). A missing key returns `AI_PROVIDER_NOT_CONFIGURED`
+   (503) for that provider, not a real answer. Keys are never committed.
+3. Model: the seeded sentinel `Model = "echo"` is treated as "use the provider's
+   configured `DefaultModel`" whenever the effective provider is real, so **no
+   per-prompt model edit is needed**. To pin a specific model, either set the
+   prompt's Model in the CP (`/admin/ai/prompts`) or set
+   `SIMF_Ai__<Provider>__DefaultModel`.
+4. Keep prompts active (the seeder sets `IsActive = true`; a disabled prompt
+   returns `AI_FEATURE_DISABLED`, 503).
+5. `SIMF_Ai__PromptHash__Secret = <32-byte base64>` is a Production **boot gate**
+   (the audit HMAC key) - the API refuses to start without it.
+6. Optional: `SIMF_SessionQuestions__AiFilterEnabled = true` swaps the offline
+   `StubQuestionAiFilter` for the real `AiQuestionFilter` on the Q&A submit path
+   (advisory only - it never blocks a question).
+
+**Existing databases and the grounded assistant prompt.** The prompt seeder is
+idempotent: it inserts a missing prompt but never updates an existing row. A
+database seeded **before** the app assistant was grounded still carries the old
+`assistance` template (message-only), so the endpoint's `{context}`/`{locale}`
+inputs are dropped and the assistant answers ungrounded. Run the idempotent data
+update `docs/migrations/2026/SIMF_App_AssistancePromptGrounding.sql` once against
+`SIMF_App` (it rewrites the `assistance` row to the grounded template; safe to
+re-run; a freshly-seeded database already carries the template, so the script
+updates 0 rows there). An operator may instead edit the prompt in the CP
+(`/admin/ai/prompts`). The event context itself (sessions / FAQ / booths) is built
+live from the App database on every call, so it needs no configuration.
+
+**Verify.** After the restart: the CP `/admin/ai/services` dashboard records real
+calls; the app assistant answers with real agenda / FAQ / booth facts; and outputs
+no longer start with `[echo:...]`. Manage per-prompt provider / model / active
+state at runtime in the CP (`/admin/ai/prompts`, `PUT /admin/ai/prompts/{id}`).
+
 ## 7. Database and migrations
 
 - The database is SQL Server 2022; the schema is EF Core code-first.

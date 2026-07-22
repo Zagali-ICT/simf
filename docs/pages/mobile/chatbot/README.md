@@ -1,56 +1,65 @@
 # AI assistant — المساعد الذكي (Page 036, `#36`)
 
-- **Route:** `/chatbot` (`RouteNames.chatbot`). Access: **Guest+ (public)**. Makes **no API call**.
-- **Figma:** **1064:13066** (D-448 parity). **Clean-code freeze:** D-631 (2026-07-04).
+- **Route:** `/chatbot` (`RouteNames.chatbot`). Access: **signed-in** (reached from the visitor home).
+- **API:** `POST /app/ai/assistance` — the centralised AI (`assistance` prompt), **grounded server-side on the live event context**.
+- **Figma:** **1064:13066** (D-448 parity).
 
 ## Purpose
 
-An interim AI-assistant shell. There is **no backend chatbot endpoint** (verified,
-Page_036 / DECISIONS_LOG). It opens on the scripted Figma transcript, then a new
-prompt (typed or a quick-reply chip) is echoed as a user bubble and answered by
-the overridable `chatbotResponderProvider` seam — whose default
-`CannedChatbotResponder` returns a fixed bilingual "coming soon" notice. When a
-real provider is procured server-side, only the seam swaps; the screen stays.
+The visitor AI assistant. It opens with the assistant greeting, then each prompt
+(typed or a quick-reply chip) is answered by the **centralised AI** through the
+overridable `chatbotResponderProvider` seam — whose default `ApiChatbotResponder`
+calls `POST /app/ai/assistance`. The backend grounds the `assistance` prompt on the
+live programme sessions, FAQ, and exhibition booths (built server-side by
+`AssistanceContextBuilder`), so the assistant answers from the **real event data**,
+not the model's general knowledge. A wire error surfaces as a localized error bubble.
 
-## Structure (post-decomposition)
+> Superseded: the earlier interim shell had **no backend endpoint** — it opened on a
+> scripted demo transcript and every prompt got a canned "coming soon" reply. Both the
+> scripted "history" and the `CannedChatbotResponder` were removed (owner directive:
+> no fake data) when the screen was wired to the real assistant.
+
+## Structure
 
 | File | Holds |
 |------|-------|
-| `chatbot_screen.dart` (142) | `ChatbotScreen` + State — the input / scroll controllers, the added-messages list, `_send` (echo + responder reply + scroll), the l10n-built `_seed` transcript, and the transcript + chips + composer layout. Re-exports the responder seam. |
-| `data/chatbot_responder.dart` | `ChatbotResponder` (abstract) + `CannedChatbotResponder` (the interim canned reply) + `chatbotResponderProvider` (the overridable seam). |
+| `chatbot_screen.dart` | `ChatbotScreen` + State — input / scroll controllers, the added-messages list, `_send` (append user bubble → responder reply / error bubble → scroll), the l10n greeting `_seed`, and the transcript + chips + composer layout. Re-exports the responder seam. |
+| `data/chatbot_responder.dart` | `ChatbotResponder` (abstract) + **`ApiChatbotResponder`** (`POST /app/ai/assistance` via `SimfApiClient`, decodes `outputText`) + `chatbotResponderProvider` (the overridable seam, default = the API responder). |
 | `data/chat_message.dart` | `ChatAuthor` enum + `ChatMessage` (one transcript line). |
-| `widgets/chat_bubble.dart` (`ChatBubble` + `_AiBadge`) | One bubble — assistant left (navy + gold "AI" badge) / user right (gold), the 2px inner tail. |
-| `widgets/quick_replies.dart` (`QuickReplies` + `_QuickReplyChip`) | The horizontal beige-hairline chip strip; a tap sends the chip as the next prompt. |
+| `widgets/chat_bubble.dart` (`ChatBubble` + `_AiBadge`) | One bubble — assistant left (navy + gold "AI" badge) / user right (gold). |
+| `widgets/quick_replies.dart` (`QuickReplies` + `_QuickReplyChip`) | The horizontal chip strip; a tap sends the chip as the next prompt. |
 | `widgets/chat_composer.dart` (`ChatComposer`) | The bottom input bar — text field + the gold send square (spinner while sending). |
 
-The responder seam + the message model moved to `data/` (D-545), the responder
-re-exported (the test injects a fake `ChatbotResponder`). Screen was already fully
-tokenised (no raw `Color(0x..)`). Every file ≤400 lines.
+## Data flow
 
-## L4 Figma parity (frame 1064:13066)
+`ChatbotScreen._send` → `chatbotResponderProvider` (`ApiChatbotResponder`) →
+`SimfApiClient.post('/app/ai/assistance', { message, locale })` →
+`AssistanceEndpoint` → `AssistanceContextBuilder.BuildAsync()` (reuses
+`IProgrammeSessionService` / `IPublicFaqService` / `IPublicBoothService`) →
+`IAiService.InvokeAsync("assistance", { message, context, locale })` → provider →
+`AiCallResult.outputText`.
 
-Captured `chatbot_1064-13066.png` (@375×812, ar, seed transcript) as the
-**baseline before** the refactor, then **held it WITHOUT `--update`** after —
-proving the data/model move + the 3-widget extraction byte-identical. Golden read:
-المساعد الذكي header, the scripted transcript (assistant bubbles + gold "AI" badge
-left / user bubbles gold right), the quick-reply chip strip, the composer with the
-gold send square, RTL, no tofu.
+The endpoint requires an approved account and is rate-limited (`auth`). Backed by the
+offline `echo` provider until an operator configures a real provider + key (see the AI
+go-live runbook in `docs/SIMF-OPS-001-Deployment-and-Operations.md`).
 
-## Level-F
+## Figma parity (frame 1064:13066)
 
-Wired: typed prompt + chip → echo user bubble + `chatbotResponderProvider` reply
-(default = canned notice); empty prompt is a no-op; auto-scroll to the latest;
-AR↔EN re-seeds the transcript. **No backend endpoint** (interim by design — the
-seam is ready for a real provider).
+Golden `goldens/chatbot_1064-13066.png` (@375×812, ar) — the greeting bubble +
+gold "AI" badge, the quick-reply chip strip, the composer with the gold send square,
+RTL, no tofu. The sample Q&A shown in the Figma frame was illustrative demo content
+and is **not** seeded (removed with the fake data); the golden was re-locked to the
+greeting-only open state in the same changeset.
 
 ## Tests
 
 `test/golden/chatbot_golden_test.dart` (frame 1064:13066, @375×812, ar) +
-`test/features/chatbot/chatbot_screen_test.dart` (seed transcript, typed send,
-chip send, empty no-op, the default canned responder, Arabic RTL bubble order).
-E2E: `docs/tests/e2e/mobile-chatbot.md`.
+`test/features/chatbot/chatbot_screen_test.dart` (greeting-only open — **no scripted
+transcript**, typed send, chip send, empty no-op, **wire-error → error bubble**,
+Arabic greeting + RTL bubble order). E2E: `docs/tests/e2e/mobile-chatbot.md`.
 
 ## Related decisions
 
-- **D-631** (this clean-code freeze — responder/model → `data/` + 3 widgets + first golden).
-- **D-322** (screen built), **D-448** (1064:13066 parity). No backend chatbot endpoint (verified).
+- **D-322** (screen built), **D-448** (1064:13066 parity), **D-176** (centralised AI module).
+- Wired to the real `/app/ai/assistance` + grounded on the live event context; scripted
+  transcript + `CannedChatbotResponder` removed (owner directive: no fake data, 2026-07-22).

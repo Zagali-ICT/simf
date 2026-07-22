@@ -75,6 +75,26 @@ public sealed class AiModuleTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Assistance_prompt_is_grounded_with_the_event_context_block()
+    {
+        // The grounded assistance template folds in the visitor language + the live
+        // event-context block (built server-side). Echo echoes the fully-substituted
+        // user prompt, so both markers appear — proving the endpoint injected the
+        // context builder and the seeded template consumes {context}/{locale}.
+        var visitor = await SignInApprovedVisitorAsync();
+        var response = await PostAuthAsync(
+            "/api/v1/app/ai/assistance",
+            new AssistanceRequest { Message = "Hello", Locale = "en" },
+            visitor);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AiCallResult>>())!.Data!;
+        Assert.Equal("assistance", body.PromptKey);
+        Assert.Contains("Live event context", body.OutputText);
+        Assert.Contains("Visitor language: en", body.OutputText);
+    }
+
+    [Fact]
     public async Task Anonymous_translate_substitutes_lang_inputs_into_template()
     {
         var response = await _client.PostAsJsonAsync(

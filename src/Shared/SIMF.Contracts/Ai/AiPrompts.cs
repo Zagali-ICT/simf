@@ -200,6 +200,12 @@ public class AskFaqRequest
 public class AssistanceRequest
 {
     public string Message { get; set; } = string.Empty;
+
+    /// <summary>The caller's UI language ("ar" / "en") so the grounded answer
+    /// matches the app's active language. Appended (defaulted) — older callers
+    /// that omit it keep working. The server also grounds the answer on the live
+    /// event context, resolved server-side (not sent by the client).</summary>
+    public string Locale { get; set; } = "en";
 }
 
 /// <summary>Control Panel operator assistant request. <see cref="Question"/> is

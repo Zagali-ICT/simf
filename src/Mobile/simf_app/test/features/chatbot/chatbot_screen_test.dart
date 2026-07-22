@@ -21,6 +21,23 @@ class _FakeResponder implements ChatbotResponder {
   }
 }
 
+/// Simulates a wire error so the screen shows its error bubble (never network).
+class _ThrowingResponder implements ChatbotResponder {
+  @override
+  Future<String> reply(String prompt, {required bool isArabic}) async {
+    throw const ApiFailure(code: 'AI_PROVIDER_FAILED', message: 'boom');
+  }
+}
+
+/// Throws a NON-ApiFailure (mirrors the 401-refresh / keystore path). The screen
+/// must still recover — clear the sending state and show the error bubble.
+class _StateErrorResponder implements ChatbotResponder {
+  @override
+  Future<String> reply(String prompt, {required bool isArabic}) async {
+    throw StateError('unexpected');
+  }
+}
+
 // SimfPageShell renders the bottom nav + the المزيد drawer, which read the data
 // config; the destinations are stubbed so the shell builds.
 const _testConfig = SimfDataConfig(
@@ -30,7 +47,10 @@ const _testConfig = SimfDataConfig(
 );
 
 const _greetingEn = 'Hello 🤝 I’m your smart assistant. How can I help today?';
-const _seedQ1En = 'When does the opening session start?';
+const _greetingAr = 'مرحباً 🤝 أنا مساعدك الذكي. كيف يمكنني المساعدة اليوم؟';
+const _errorEn = 'Couldn’t get a reply right now. Please try again.';
+// The old scripted-demo line — must NOT appear any more (no fake transcript).
+const _oldSeedQ1En = 'When does the opening session start?';
 
 Future<void> _pump(
   WidgetTester tester, {
@@ -85,29 +105,31 @@ Future<void> _pump(
 
 void main() {
   group('ChatbotScreen (Page 036 — KSA frame 1064:13066)', () {
-    testWidgets('opens with the scripted Figma transcript', (tester) async {
+    testWidgets('opens with only the greeting — no scripted transcript',
+        (tester) async {
       await _pump(tester, responder: _FakeResponder('hi'));
 
       expect(find.text('AI assistant'), findsOneWidget); // header title
       expect(find.text(_greetingEn), findsOneWidget);
-      expect(find.text(_seedQ1En), findsOneWidget);
-      // The four quick-reply chips.
+      // The removed fake "history" must not render.
+      expect(find.text(_oldSeedQ1En), findsNothing);
+      // The four quick-reply chips are still there.
       expect(find.text('Request a meeting'), findsOneWidget);
       expect(find.text('Today’s sessions'), findsOneWidget);
     });
 
-    testWidgets('typing + send appends the user message and the reply',
+    testWidgets('typing + send appends the user message and the AI reply',
         (tester) async {
-      final responder = _FakeResponder('Canned reply');
+      final responder = _FakeResponder('The opening session is at 08:00.');
       await _pump(tester, responder: responder);
 
-      await tester.enterText(find.byType(TextField), 'Custom question?');
+      await tester.enterText(find.byType(TextField), 'When is the opening?');
       await tester.tap(find.byIcon(Icons.send));
       await tester.pumpAndSettle();
 
-      expect(responder.lastPrompt, 'Custom question?');
-      expect(find.text('Custom question?'), findsOneWidget);
-      expect(find.text('Canned reply'), findsOneWidget);
+      expect(responder.lastPrompt, 'When is the opening?');
+      expect(find.text('When is the opening?'), findsOneWidget);
+      expect(find.text('The opening session is at 08:00.'), findsOneWidget);
     });
 
     testWidgets('tapping a quick-reply chip sends it as the next prompt',
@@ -132,40 +154,50 @@ void main() {
       expect(find.text('reply'), findsNothing);
     });
 
-    testWidgets('the default responder returns the canned interim notice',
-        (tester) async {
-      // No responder override — exercise the real CannedChatbotResponder.
-      await _pump(tester);
+    testWidgets('a wire error shows the localized error bubble', (tester) async {
+      await _pump(tester, responder: _ThrowingResponder());
 
-      await tester.enterText(find.byType(TextField), 'hello');
+      await tester.enterText(find.byType(TextField), 'anything');
       await tester.tap(find.byIcon(Icons.send));
       await tester.pumpAndSettle();
 
-      expect(
-        find.text(
-          'The AI assistant is being connected — automatic replies are coming soon.',
-        ),
-        findsOneWidget,
-      );
+      expect(find.text('anything'), findsOneWidget); // the user's message stayed
+      expect(find.text(_errorEn), findsOneWidget); // replaced by the error bubble
     });
 
-    testWidgets('Arabic: seeds the Arabic transcript and replies RTL',
+    testWidgets('a non-ApiFailure error recovers (composer is not stuck)',
         (tester) async {
-      await _pump(tester, locale: const Locale('ar'));
+      await _pump(tester, responder: _StateErrorResponder());
 
-      expect(
-        find.text('مرحباً 🤝 أنا مساعدك الذكي. كيف يمكنني المساعدة اليوم؟'),
-        findsOneWidget,
-      );
+      await tester.enterText(find.byType(TextField), 'first');
+      await tester.tap(find.byIcon(Icons.send));
+      await tester.pumpAndSettle();
+      expect(find.text(_errorEn), findsOneWidget);
 
-      // Position: the user bubble (seed Q1) sits to the right of the assistant
-      // greeting under RTL — the Figma pins user-right / assistant-left (D-436).
-      final assistantX = tester
-          .getCenter(
-            find.text('مرحباً 🤝 أنا مساعدك الذكي. كيف يمكنني المساعدة اليوم؟'),
-          )
-          .dx;
-      final userX = tester.getCenter(find.text('متى تبدأ جلسة الافتتاح؟')).dx;
+      // The composer is not stuck: a second send goes through and errors again.
+      await tester.enterText(find.byType(TextField), 'second');
+      await tester.tap(find.byIcon(Icons.send));
+      await tester.pumpAndSettle();
+      expect(find.text('second'), findsOneWidget);
+      expect(find.text(_errorEn), findsNWidgets(2));
+    });
+
+    testWidgets('Arabic: greets in Arabic and pins the sent bubble RTL',
+        (tester) async {
+      final responder = _FakeResponder('رد');
+      await _pump(tester, responder: responder, locale: const Locale('ar'));
+
+      expect(find.text(_greetingAr), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), 'متى تبدأ جلسة الافتتاح؟');
+      await tester.tap(find.byIcon(Icons.send));
+      await tester.pumpAndSettle();
+
+      // The user bubble sits to the RIGHT of the assistant greeting under RTL —
+      // the Figma pins user-right / assistant-left (D-436).
+      final assistantX = tester.getCenter(find.text(_greetingAr)).dx;
+      final userX =
+          tester.getCenter(find.text('متى تبدأ جلسة الافتتاح؟')).dx;
       expect(userX, greaterThan(assistantX));
     });
   });

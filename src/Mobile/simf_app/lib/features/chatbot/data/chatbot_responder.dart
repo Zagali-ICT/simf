@@ -1,29 +1,39 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// The seam that turns a user prompt into an assistant reply.
 ///
-/// There is **no backend chatbot endpoint** (verified — see Page_036 README and
-/// DECISIONS_LOG). The default implementation is an honest interim stub that
-/// returns a fixed bilingual canned message; it never calls the API or the
-/// network. When a real assistant provider is procured server-side, swap the
-/// implementation behind [chatbotResponderProvider] — the screen stays.
+/// Backed by the centralised AI (`POST /app/ai/assistance` — the `assistance`
+/// prompt, grounded server-side on the live event context). Overridable via
+/// [chatbotResponderProvider] so widget tests inject a fake responder (no network).
 abstract class ChatbotResponder {
   Future<String> reply(String prompt, {required bool isArabic});
 }
 
-/// The interim canned responder: every prompt gets the same bilingual notice.
-class CannedChatbotResponder implements ChatbotResponder {
-  const CannedChatbotResponder();
+/// Calls the centralised AI assistance endpoint and returns its answer text.
+/// Throws [ApiFailure] on a wire error — the screen surfaces it as an error bubble.
+class ApiChatbotResponder implements ChatbotResponder {
+  ApiChatbotResponder(this._client);
+
+  final SimfApiClient _client;
 
   @override
-  Future<String> reply(String prompt, {required bool isArabic}) async {
-    return isArabic
-        ? 'المساعد الذكي قيد التفعيل — سيتوفر الرد التلقائي قريباً.'
-        : 'The AI assistant is being connected — automatic replies are coming soon.';
+  Future<String> reply(String prompt, {required bool isArabic}) {
+    return _client.post<String>(
+      '/app/ai/assistance',
+      body: <String, dynamic>{
+        'message': prompt,
+        'locale': isArabic ? 'ar' : 'en',
+      },
+      decodeData: (data) {
+        final map = data is Map ? data : const <dynamic, dynamic>{};
+        return (map['outputText'] as String? ?? '').trim();
+      },
+    );
   }
 }
 
 /// Overridable seam so widget tests inject a fake responder (no network).
 final chatbotResponderProvider = Provider<ChatbotResponder>(
-  (ref) => const CannedChatbotResponder(),
+  (ref) => ApiChatbotResponder(ref.watch(simfApiClientProvider)),
 );

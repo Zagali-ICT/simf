@@ -10,6 +10,12 @@ namespace SIMF.Infrastructure.Ai;
 /// disabling the feature outright.</summary>
 internal sealed class EchoAiProvider : IAiProvider
 {
+    /// <summary>The sentinel model name every prompt is seeded with. When the
+    /// effective provider is real, <see cref="AiService"/> treats it (like a blank
+    /// model) as "use the provider's configured DefaultModel" — see
+    /// <c>AiService.ResolveModelForCall</c>.</summary>
+    public const string ModelName = "echo";
+
     public AiProvider Tag => AiProvider.Echo;
 
     public Task<AiProviderResponse> CallAsync(
