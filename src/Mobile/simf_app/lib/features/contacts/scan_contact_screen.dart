@@ -213,10 +213,7 @@ class _ContactPreviewSheetState extends ConsumerState<_ContactPreviewSheet> {
           children: <Widget>[
             Text(
               l10n.contactPreviewTitle,
-              style: const TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: SimfTokens.textLg,
-              ),
+              style: SimfTokens.titleBold,
             ),
             const SizedBox(height: SimfTokens.space3),
             ContactCard(

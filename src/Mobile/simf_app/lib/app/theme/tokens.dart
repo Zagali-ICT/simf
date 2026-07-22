@@ -627,4 +627,26 @@ class SimfTokens {
     fontWeight: FontWeight.w600,
     height: 18 / 12,
   );
+  // contacts (SIMF-FDS-014) — empty-state title (bare bold, also requests'
+  // submit label), contact-card avatar initials, job-title + note lines, and
+  // the share-hint caption.
+  static const TextStyle emphasisBold = TextStyle(
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle labelNavyBold = TextStyle(
+    color: navy,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle bodyInkMutedSm = TextStyle(
+    color: inkMuted,
+    fontSize: textSm,
+  );
+  static const TextStyle labelInkMutedBoldXs = TextStyle(
+    color: inkMuted,
+    fontSize: textXs,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle bodyWhite70 = TextStyle(
+    color: Colors.white70,
+  );
 }
