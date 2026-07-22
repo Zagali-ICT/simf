@@ -395,10 +395,10 @@
 .ln-miles__titlerow { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 24px; }
 .ln-miles__title { font-size: 32px; font-weight: 800; line-height: 1.2; color: var(--ink); text-align: start; }
 .ln-miles__desc { font-size: 16px; line-height: 24px; color: var(--ink); text-align: start; max-width: 964px; }
-/* Cards align to the same content column as the head and grow to fill it
-   (Figma packs 4 touching cards across the frame; flex:1 keeps them edge-to-edge
-   at the 80px gutter on any width, and adapts if the milestone count changes). */
-.ln-miles__row { display: flex; width: 100%; max-width: calc(var(--content-w) + 2 * var(--section-gutter)); margin-inline: auto; padding-inline: clamp(16px, 5.5vw, var(--section-gutter)); }
+/* Figma packs the milestone cards FULL-BLEED (x=0..1440, touching the frame
+   edges) while only the head is inset 80px — the one full-width card row on the
+   page. flex:1 fills the viewport edge-to-edge and adapts to the card count. */
+.ln-miles__row { display: flex; width: 100%; }
 .ln-mcard { flex: 1 1 0; min-width: 0; height: 369px; display: flex; flex-direction: column;
   border: 1px solid #e0e0e0; background: #fafafa; overflow: hidden; }
 .ln-mcard__img { flex: 0 0 259px; position: relative; background-size: cover; background-position: center;
@@ -455,19 +455,19 @@
    a faint maritime backdrop lifts in, and the badge turns gold. */
 .ln-tcard { position: relative; overflow: hidden; flex: 1 1 0; min-width: 0; min-height: 296px; padding: 24px;
   border: 1px solid var(--border-neutral); background: transparent;
-  display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 24px;
+  display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 24px;
   transition: flex-grow .55s cubic-bezier(.22, .61, .36, 1), background-color .45s ease; }
 .ln-tcard:not(:first-child) { margin-inline-start: -1px; }
 .ln-tcard::before { content: ""; position: absolute; inset: 0; z-index: 0;
   background: url('/assets/figma/sessions/session-card-1.jpg') center/cover no-repeat;
   opacity: 0; transition: opacity .45s ease; }
 .ln-tcard > * { position: relative; z-index: 1; }
-.ln-tcard__topgrp { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; width: 100%; }
+.ln-tcard__topgrp { display: flex; flex-direction: column; align-items: center; gap: 24px; width: 100%; }
 .ln-tcard__badge { background: rgba(230, 242, 251, .12); border-radius: var(--radius-full); padding: 12px; display: inline-grid;
   place-items: center; color: var(--white); transition: background-color .35s ease, color .35s ease; }
 .ln-tcard__badge svg { width: 24px; height: 24px; display: block; }
-.ln-tcard__title { font-size: 18px; font-weight: 700; line-height: 24px; color: var(--white); text-align: start; }
-.ln-tcard__desc { font-size: 16px; line-height: 24px; color: var(--primary-light); text-align: start; }
+.ln-tcard__title { font-size: 18px; font-weight: 700; line-height: 24px; color: var(--white); text-align: center; }
+.ln-tcard__desc { font-size: 16px; line-height: 24px; color: var(--primary-light); text-align: center; }
 .ln-tcard:hover, .ln-tcard:focus-within { flex-grow: 2.2; background-color: rgba(230, 242, 251, .06); }
 .ln-tcard:hover::before, .ln-tcard:focus-within::before { opacity: .28; }
 .ln-tcard:hover .ln-tcard__badge, .ln-tcard:focus-within .ln-tcard__badge { background: var(--gold); color: var(--navy); }
@@ -1006,19 +1006,24 @@
 .landing .ln-sessthemes__title { margin: 0; font-weight: 800; font-size: 32px; color: var(--white); }
 .landing .ln-sessthemes__subtitle { margin: 8px 0 0; font-weight: 400; font-size: 18px; color: color-mix(in srgb, var(--white) 75%, transparent); }
 .landing .ln-sessthemes__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
-.landing .ln-tcard {
+/* SCOPED to the session-detail grid: this `.ln-tcard` is a DIFFERENT component
+   from the landing themes card (which also uses `.ln-tcard`). Left unscoped, the
+   `.landing .ln-tcard`/`__desc` rules out-specified the landing card and forced
+   its desc to 14px/near-white — scoping them here lets the landing card keep its
+   own Figma-correct 16px/#e9edf1 desc. */
+.landing .ln-sessthemes__grid .ln-tcard {
   display: flex; flex-direction: column; gap: 16px; align-items: flex-start;
   background: color-mix(in srgb, var(--primary) 50%, transparent);
   border: 1px solid var(--primary);
   border-radius: var(--radius-sm); padding: 24px; box-shadow: var(--shadow-card);
 }
-.landing .ln-tcard__icon {
+.landing .ln-sessthemes__grid .ln-tcard__icon {
   display: inline-flex; align-items: center; justify-content: center;
   width: 54px; height: 54px; border-radius: var(--radius-sm); background: var(--gold);
 }
-.landing .ln-tcard__icon .ln-ico { width: 24px; height: 24px; background-color: var(--gold-darker); }
-.landing .ln-tcard__name { margin: 0; font-weight: 700; font-size: 20px; line-height: 28px; color: var(--white); text-align: start; }
-.landing .ln-tcard__desc { margin: 0; font-weight: 400; font-size: 14px; line-height: 22px; color: var(--bg-gray); text-align: start; }
+.landing .ln-sessthemes__grid .ln-tcard__icon .ln-ico { width: 24px; height: 24px; background-color: var(--gold-darker); }
+.landing .ln-sessthemes__grid .ln-tcard__name { margin: 0; font-weight: 700; font-size: 20px; line-height: 28px; color: var(--white); text-align: start; }
+.landing .ln-sessthemes__grid .ln-tcard__desc { margin: 0; font-weight: 400; font-size: 14px; line-height: 22px; color: var(--bg-gray); text-align: start; }
 
 /* -- 5. Related sessions -- */
 .landing .ln-sessrelated { background: var(--bg-gray); }
