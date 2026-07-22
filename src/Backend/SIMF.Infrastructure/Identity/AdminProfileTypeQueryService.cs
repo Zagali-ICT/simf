@@ -47,7 +47,8 @@ internal sealed class AdminProfileTypeQueryService(
                 profileType.MobileAppRole.ToString(),
                 profileType.IsActive,
                 profileType.IsForVisitor,
-                profileType.IsAppRegisterable))
+                profileType.IsAppRegisterable,
+                profileType.ShowInPartnerDirectory))
             .ToListAsync(cancellationToken);
     }
 }

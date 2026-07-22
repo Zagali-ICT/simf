@@ -59,6 +59,14 @@ internal sealed class ProfileTypeConfiguration : IEntityTypeConfiguration<UserPr
             .HasDefaultValue(true)
             .IsRequired();
 
+        // D-760 (owner request) — "Meet People" networking visibility. Default
+        // true so existing rows backfill to visible and stay in the partner
+        // directory + recommender; the CP "Others" form lets an admin hide a
+        // whole partner type.
+        builder.Property(profileType => profileType.ShowInPartnerDirectory)
+            .HasDefaultValue(true)
+            .IsRequired();
+
         // D-186 — after the UserType collapse every profile type is
         // Visitor-scope; the CP picker + approval queues filter by
         // (IsForVisitor, IsActive), so one composite index serves both.

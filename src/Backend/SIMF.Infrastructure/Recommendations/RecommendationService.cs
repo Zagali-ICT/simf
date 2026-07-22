@@ -72,6 +72,9 @@ internal sealed class RecommendationService(
             .AsNoTracking()
             .Where(p => approvedIds.Contains(p.UserId))
             .Where(p => p.ShowInMeetLikeYou)
+            // D-760: honour the per-type "Meet People" master switch too, so a
+            // partner type an admin hid drops out of the recommender as well.
+            .Where(p => p.ProfileType == null || p.ProfileType.ShowInPartnerDirectory)
             .Select(p => new
             {
                 p.Id,

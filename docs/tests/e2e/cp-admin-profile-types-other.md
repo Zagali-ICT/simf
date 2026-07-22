@@ -43,6 +43,7 @@
 | E2E-OPT-014 | Server 500 on `/list` → empty grid, no crash | resilience | P2 | _to author_ |
 | E2E-OPT-015 | RTL / Arabic render mirrors page + Add modal | i18n | P1 | _to author_ |
 | E2E-OPT-016 | "Show in the app sign-up picker" toggle hides the type from the app (D-725) | happy | P1 | _to author_ |
+| E2E-OPT-017 | "Show in Meet People" toggle hides the whole partner type from the networking directory + recommender (D-760) | happy | P1 | authored ✓ (API twins) |
 
 ## Scenarios
 
@@ -355,6 +356,28 @@ Scenario: The seeded Staff / Moderator types are hidden out of the box
   And their rows still appear in THIS CP grid (CP admin listings show every type)
 ```
 
+### E2E-OPT-017 — "Show in Meet People (same interests)" toggle (D-760)
+
+```gherkin
+Scenario: Un-ticking "Show in Meet People" hides the whole partner type from networking
+  Given the Add modal is open on /admin/profile-types/other
+  Then the "Show in Meet People (same interests)" checkbox is present and ticked by default
+  And a helper reads "When off, no account of this partner type appears in the app's Meet
+    People directory or the \"people like you\" suggestions, even if the person opted in."
+  And this checkbox is ABSENT on the Visitor sibling page (/admin/profile-types/visitor)
+  When the administrator fills Name (English)="Press", Name (Arabic)="إعلام", Page colour "#EF4444"
+  And un-ticks "Show in Meet People (same interests)"
+  And clicks "Create profile type"
+  Then the POST /account/api/admin/profile-types body carries ShowInPartnerDirectory=false
+  And the API returns HTTP 200
+  Given an Approved "Press"-type account exists with ShowInMeetLikeYou=true (opted in)
+  When any approved app user opens Meet People (GET /app/networking/partner-directory)
+  Then that account is ABSENT from the directory — the type master switch overrides the opt-in
+  And it is likewise absent from the "people like you" recommender
+  When the administrator re-opens the row's Edit modal, re-ticks the box, and saves
+  Then the PUT body carries ShowInPartnerDirectory=true and the account re-appears in Meet People
+```
+
 ---
 
 ## Implementation notes
@@ -377,7 +400,11 @@ Scenario: The seeded Staff / Moderator types are hidden out of the box
   - `A_non_admin_caller_is_forbidden_from_every_profile_type_endpoint` (auth, lower-layer twin of E2E-OPT-009),
   - `IsVisitor_round_trips_through_Create_Get_List` (Theory) + `Update_flipping_IsVisitor_persists_and_audits_the_change` (the audience/partner flag + audit Detail),
   - `IsAppRegisterable_round_trips_through_Create_Get_and_Update` (D-725 — the app-picker visibility flag persists + flips, backing E2E-OPT-016),
+  - `ShowInPartnerDirectory_round_trips_through_Create_Get_and_Update` (D-760 — the Meet-People visibility flag persists + flips, backing E2E-OPT-017),
   - `Create_others_rejects_an_audience_profile_type` (the partner-side guard backing this page).
+  The D-760 Meet-People exclusion (a hidden partner type drops all its accounts) is covered by
+  [`tests/SIMF.Api.Tests/PartnerDirectoryServiceTests.cs`](../../../tests/SIMF.Api.Tests/PartnerDirectoryServiceTests.cs)
+  `Other_type_hidden_from_meet_people_never_appears_even_when_opted_in`.
   The app-side exclusion is covered by
   [`tests/SIMF.Api.Tests/ProfileTypePickerTests.cs`](../../../tests/SIMF.Api.Tests/ProfileTypePickerTests.cs)
   `Non_app_registerable_types_are_excluded` (a non-registerable partner row never reaches the picker).
@@ -388,4 +415,6 @@ Scenario: The seeded Staff / Moderator types are hidden out of the box
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-07-23 by Claude (added E2E-OPT-017 for the D-760 "Show in
+Meet People" per-type master switch — hides a whole partner type from the
+networking directory + recommender). Prior: 2026-06-02 (E2E catalogue rebuild).
