@@ -19,8 +19,17 @@
 | **APIs** | `GET /api/v1/app/delegations` (`AllowAnonymous`) → `AppDelegations { countryCount, totalParticipants, items[] }`, each `AppDelegationItem { countryId, countryCode, countryName, countryNameArabic, headName?, headNameArabic?, headTitle?, arrivalDate?, departureDate?, memberCount }`. |
 | **Surface** | Mobile (Flutter) |
 | **Figma** | `1426:10771` |
-| **Auth setup** | **None** — `GET /app/delegations` is anonymous (public delegations content); a guest can open the screen. |
-| **Last reviewed** | 2026-06-26 |
+| **Auth setup** | **None** — `GET /app/delegations` is anonymous (public delegations content); a guest can open the screen. For the tappable-card path (below) an approved account with `allowsDelegationMeeting = true`. |
+| **Last reviewed** | 2026-07-22 |
+
+> **⚑ Bi-meeting rework update (2026-07-22).** For an account whose profile has
+> `allowsDelegationMeeting = true` (`currentUserMeetingAccessProvider.delegation`), each
+> **delegation card becomes tappable** (a `GestureDetector`, opaque) and opens the delegation
+> meeting request sheet for that country —
+> [`mobile-delegation-request.md`](mobile-delegation-request.md). A guest / non-entitled user
+> keeps the plain, non-tappable info cards (the screen stays fully public for reading). The
+> read-only content, stats strip, search, and flag filter below are unchanged. Widget test:
+> `delegations_screen_test.dart` pumps with `currentUserMeetingAccessProvider = MeetingAccess.none`.
 
 ## Layout
 
@@ -64,6 +73,7 @@
 | E2E-DEL-008 | Wire error → inline retry surface "تعذر تحميل الوفود." / "Could not load delegations." | resilience | P2 | _to author_ |
 | E2E-DEL-009 | RTL render (Arabic) — header, stats, search hint, cards mirror right-to-left; head label "رئيس الوفد" | i18n | P1 | _to author_ |
 | E2E-DEL-010 | Tap a stats-strip flag → list narrows to that country; tapped flag ringed; active-filter chip appears; tapping the chip (or the flag again) restores every country; flag + search filters compose | happy | P1 | _to author_ |
+| E2E-DEL-011 | Tappable cards — an entitled account (`allowsDelegationMeeting`) taps a card → the delegation request sheet opens with that country fixed; a guest / non-entitled user's cards are plain (not tappable) (bi-meeting rework) | happy | P0 | authored ✓ (`delegations_screen_test.dart`, widget — guest = non-tappable) |
 
 ## Scenarios
 
@@ -206,11 +216,31 @@ projects only invited + active countries, resolves the head from
 delegate profiles (`IsDelegate && IsActive`) on the country's `NationalityId`.
 The CP head-of-delegation picker is fed by `GET /admin/countries/{id}/delegates`.
 
+### E2E-DEL-011 — Tappable cards → delegation request sheet (bi-meeting rework)
+
+```gherkin
+Scenario: An entitled account taps a delegation card to request a meeting
+  Given I am signed in and my profile has allowsDelegationMeeting = true
+  When I open /delegations and tap the "France" card
+  Then the delegation meeting request sheet opens with France as the fixed target
+      (mobile-delegation-request.md)
+
+Scenario: A guest sees plain, non-tappable cards
+  Given no session (a guest) or an account with allowsDelegationMeeting = false
+  When I open /delegations
+  Then the cards render the public read-only content and are NOT tappable
+      (currentUserMeetingAccessProvider = MeetingAccess.none → no GestureDetector)
+```
+
+**Evidence:** `delegations_screen_test.dart` (widget) pumps the screen with
+`currentUserMeetingAccessProvider` overridden to `MeetingAccess.none` (guest — cards stay
+plain); the entitled tap-through is on-device / `_to author_`.
+
 ---
 
-_Last reviewed:_ `2026-07-13` by `SIMF Team` — added the stats-strip **flag
-filter** (`E2E-DEL-010`): tapping a scattered country flag narrows the list to
-that country (ringed flag + removable active-filter chip; composes with search).
-Originating: D-499 Wave 4 delegations screen (الوفود, Figma 1426:10771): public
-invited-country delegations with head + arrival/departure dates + member count;
-screen #21 restored from D-277.
+_Last reviewed:_ `2026-07-22` by `Claude` — bi-meeting rework: delegation cards are
+**tappable** for an entitled account (`allowsDelegationMeeting`) → the delegation request
+sheet (`E2E-DEL-011`); guests keep plain non-tappable cards. Prior: `2026-07-13` by `SIMF
+Team` — the stats-strip **flag filter** (`E2E-DEL-010`). Originating: D-499 Wave 4
+delegations screen (الوفود, Figma 1426:10771): public invited-country delegations with head
++ arrival/departure dates + member count; screen #21 restored from D-277.
