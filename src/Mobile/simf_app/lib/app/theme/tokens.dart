@@ -163,6 +163,7 @@ class SimfTokens {
   static const double headBoxPad = 9; // delegations head-of-delegation box padding (Figma 1426:10838)
   static const double gap2 = 2; // off-grid 2px micro-gap (below the space-4 scale)
   static const double gap6 = 6; // off-grid 6px micro-gap (below the space-4 scale)
+  static const double gap18 = 18; // off-grid 18px gap (forum-guide step content -> caret, Figma 1388:7512)
   static const double statsStripHeight = 100; // delegations decorative stats-strip map (Figma 1426:10781)
   static const double mapControlSize = 40; // venue-map floating zoom/locate control square (Figma 758:1358)
   static const double tapTarget = 44; // minimum touch-target height — venue-map direct-me button (Figma 758:1358)
@@ -476,5 +477,22 @@ class SimfTokens {
     color: beigeBorder,
     fontSize: textTitle,
     height: 1.5,
+  );
+  // forum guide (Figma 1388:7503/7512) — gold banner + numbered step cards.
+  static const TextStyle labelWhiteMediumTall = TextStyle(
+    color: surface,
+    fontSize: textMd,
+    fontWeight: FontWeight.w500,
+    height: 1.4,
+  );
+  static const TextStyle labelWhiteBoldMd = TextStyle(
+    color: surface,
+    fontSize: textMd,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle bodyBeigeSm14 = TextStyle(
+    color: beigeBorder,
+    fontSize: textSm,
+    height: 1.4,
   );
 }

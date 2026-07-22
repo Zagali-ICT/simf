@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
 
@@ -30,16 +31,15 @@ class ForumGuideBanner extends StatelessWidget {
             child: Text(
               text,
               textAlign: TextAlign.start,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: SimfTokens.textMd,
-                fontWeight: FontWeight.w500,
-                height: 1.4,
-              ),
+              style: SimfTokens.labelWhiteMediumTall,
             ),
           ),
           const SizedBox(width: SimfTokens.space2),
-          const Icon(Icons.menu_book_outlined, color: Colors.white, size: 14),
+          const Icon(
+            Icons.menu_book_outlined,
+            color: SimfTokens.surface,
+            size: 14,
+          ),
         ],
       ),
     );
@@ -88,11 +88,7 @@ class ForumGuideStep extends StatelessWidget {
             ),
             child: Text(
               '$number',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: SimfTokens.textMd, // 14
-                fontWeight: FontWeight.w700,
-              ),
+              style: SimfTokens.labelWhiteBoldMd,
             ),
           ),
           const SizedBox(width: SimfTokens.space2), // gap-8 (number → text)
@@ -103,28 +99,20 @@ class ForumGuideStep extends StatelessWidget {
                 Text(
                   title,
                   textAlign: TextAlign.start,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: SimfTokens.textMd, // 14
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: SimfTokens.labelWhiteMedium,
                 ),
                 const SizedBox(height: SimfTokens.space2),
                 Text(
                   body,
                   textAlign: TextAlign.start,
-                  style: const TextStyle(
-                    color: SimfTokens.beigeBorder,
-                    fontSize: SimfTokens.textSm, // 12
-                    height: 1.4,
-                  ),
+                  style: SimfTokens.bodyBeigeSm14,
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 18), // gap-18 (content → caret, Figma 1426:11374)
+          const SizedBox(width: SimfTokens.gap18),
           const SimfSvgIcon(
-            'assets/icons/ic_caret_left.svg',
+            AppAssets.icCaretLeft,
             color: SimfTokens.accent,
             size: 20,
           ),
