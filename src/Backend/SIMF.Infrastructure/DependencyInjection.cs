@@ -349,6 +349,9 @@ public static class DependencyInjection
         services.AddHostedService<SIMF.Infrastructure.Operations.RegistrationGateAutoCloseWorker>();
         // P1.7 (D-217) — automated "session starting soon" reminder worker.
         services.AddHostedService<SIMF.Infrastructure.Operations.SessionReminderWorker>();
+        // Bi-Meeting rework — 15-min "meeting starting soon" reminder (email + app) for
+        // confirmed speaker + delegation meetings.
+        services.AddHostedService<SIMF.Infrastructure.Operations.MeetingReminderWorker>();
         // R-1 — revert a stuck AwaitingSpeaker speaker meeting request to Pending once
         // its 72h double-opt-in tokens expire (no re-send ever came); frees the held slot.
         services.AddHostedService<SIMF.Infrastructure.Operations.MeetingAwaitingSpeakerExpiryWorker>();

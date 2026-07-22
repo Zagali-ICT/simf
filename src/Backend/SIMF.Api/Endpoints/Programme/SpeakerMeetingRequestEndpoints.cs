@@ -167,3 +167,32 @@ public sealed class ResendSpeakerMeetingConfirmationEndpoint(ISpeakerMeetingRequ
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
 }
+
+// Bi-Meeting rework — an operator checks a confirmed meeting in at the hall → Done.
+public sealed class CheckInSpeakerMeetingRoute
+{
+    public Guid Id { get; set; }
+}
+
+public sealed class CheckInSpeakerMeetingEndpoint(ISpeakerMeetingRequestService service)
+    : Endpoint<CheckInSpeakerMeetingRoute, ApiResult<AdminSpeakerMeetingRequestDetail>>
+{
+    public override void Configure()
+    {
+        Post("/admin/speaker-meeting-requests/{id:guid}/check-in");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.SpeakerMeetingRequests.Manage),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Admin");
+    }
+    public override async Task HandleAsync(CheckInSpeakerMeetingRoute req, CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        await Send.OkAsync(ApiResult<AdminSpeakerMeetingRequestDetail>.Ok(
+            await service.CheckInAsync(actorId, req.Id, ct)), ct);
+    }
+}

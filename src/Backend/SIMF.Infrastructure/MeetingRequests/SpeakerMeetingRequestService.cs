@@ -495,6 +495,37 @@ internal sealed class SpeakerMeetingRequestService(
         return await LoadDetailAsync(id, cancellationToken);
     }
 
+    public async Task<AdminSpeakerMeetingRequestDetail> CheckInAsync(
+        Guid actorUserId, Guid id, CancellationToken cancellationToken = default)
+    {
+        var req = await appDbContext.SpeakerMeetingRequests
+            .SingleOrDefaultAsync(r => r.Id == id, cancellationToken)
+            ?? throw new ApiException(
+                ErrorCodes.SpeakerMeetingRequestNotFound, 404,
+                "Speaker meeting request not found.",
+                "لم يتم العثور على طلب مقابلة المتحدّث.");
+        if (req.Status != MeetingRequestStatus.Accepted)
+        {
+            throw new ApiException(
+                ErrorCodes.AppRequestAlreadyResponded, 409,
+                "Only a confirmed meeting can be checked in.",
+                "لا يمكن تسجيل الحضور إلا لاجتماع مؤكَّد.");
+        }
+        var now = timeProvider.GetUtcNow();
+        req.Status = MeetingRequestStatus.Done;
+        req.CheckedInAt = now;
+        req.CheckedInByUserId = actorUserId;
+        await appDbContext.SaveChangesAsync(cancellationToken);
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.SpeakerMeetingRequestCheckedIn,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = DetailJson(new { speakerMeetingRequestId = id }),
+        }, cancellationToken);
+        return await LoadDetailAsync(id, cancellationToken);
+    }
+
     // R-1 — an admin re-sends the speaker confirmation links for a request that is still
     // AwaitingSpeaker: the prior token pair expired (or the email never went out because
     // the public URL / speaker email was unset). Invalidate any live token, mint a fresh

@@ -36,4 +36,11 @@ public interface IDelegationMeetingRequestService
     /// Flips AwaitingSpeaker → Accepted (Confirmed) via a race-safe conditional update.</summary>
     Task<AdminDelegationMeetingRequestDetail> ConfirmByOtherPartyAsync(
         Guid callerUserId, Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>Bi-Meeting rework — an operator checks the meeting in at the hall,
+    /// flipping a confirmed (Accepted) meeting to <see cref="MeetingRequestStatus.Done"/>
+    /// and stamping <c>CheckedInAt</c>/<c>CheckedInByUserId</c>. 409 when the meeting is
+    /// not confirmed.</summary>
+    Task<AdminDelegationMeetingRequestDetail> CheckInAsync(
+        Guid actorUserId, Guid id, CancellationToken cancellationToken = default);
 }

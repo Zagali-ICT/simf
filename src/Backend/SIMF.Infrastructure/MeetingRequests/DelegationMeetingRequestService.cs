@@ -456,6 +456,35 @@ internal sealed class DelegationMeetingRequestService(
         return detail;
     }
 
+    public async Task<AdminDelegationMeetingRequestDetail> CheckInAsync(
+        Guid actorUserId, Guid id, CancellationToken cancellationToken = default)
+    {
+        var req = await appDbContext.DelegationMeetingRequests
+            .SingleOrDefaultAsync(r => r.Id == id, cancellationToken)
+            ?? throw new ApiException(ErrorCodes.DelegationMeetingRequestNotFound, 404,
+                "Delegation meeting request not found.",
+                "لم يتم العثور على طلب اجتماع الوفد.");
+        if (req.Status != MeetingRequestStatus.Accepted)
+        {
+            throw new ApiException(ErrorCodes.AppRequestAlreadyResponded, 409,
+                "Only a confirmed meeting can be checked in.",
+                "لا يمكن تسجيل الحضور إلا لاجتماع مؤكَّد.");
+        }
+        var now = timeProvider.GetUtcNow();
+        req.Status = MeetingRequestStatus.Done;
+        req.CheckedInAt = now;
+        req.CheckedInByUserId = actorUserId;
+        await appDbContext.SaveChangesAsync(cancellationToken);
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.DelegationMeetingRequestCheckedIn,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = $"requestId={id}",
+        }, cancellationToken);
+        return await LoadDetailAsync(id, cancellationToken);
+    }
+
     // Bi-Meeting rework — dispatch the other-party request-to-confirm notification to
     // every eligible member of the target delegation (profile country == target country
     // AND AllowsDelegationMeeting). App row (confirm-on-tap deep-link from
