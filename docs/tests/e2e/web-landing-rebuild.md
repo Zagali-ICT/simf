@@ -33,7 +33,7 @@
 | E2E-WLB-010 | Clean console + assets — no console errors and no failed/404 asset requests on load in either language | resilience | P0 | _to author_ |
 | E2E-WLB-011 | Culture persistence — after switching language the choice survives a reload (culture cookie) | i18n | P2 | _to author_ |
 | E2E-WLB-012 | Route cutover — `/` returns 200 and serves this landing via the Blazor endpoint (not static-file middleware); `/landing` still returns 200 (same page); the deleted `/index.html` returns 404 | routing | P0 | _to author_ |
-| E2E-WLB-013 | Hero background video (D-756) — with `OrganizationProfile.BackgroundVideoUrl` set to a YouTube link the hero renders a covering muted/loop/no-controls `youtube-nocookie` `<iframe.ln-hero__video--yt>`; a direct MP4/HLS link renders `<video.ln-hero__video src=...>`; unset keeps `assets/hero-video.mp4`; the CSP `frame-src` permits the YouTube host | happy | P1 | authored ✓ (`HeroMediaTests` classification) |
+| E2E-WLB-013 | Hero background video (D-756) — with `OrganizationProfile.BackgroundVideoUrl` set to a YouTube link the hero renders a covering muted/loop/no-controls `youtube-nocookie` `<iframe.ln-hero__video--yt>`; a direct MP4/HLS link renders `<video.ln-hero__video src=...>`; unset keeps `assets/hero-video.mp4`; the CSP `frame-src` permits the YouTube host | happy | P1 | authored ✓ (`HeroMediaTests` classification + `LandingHeroTests` bUnit DOM render — all 3 cases) |
 
 ## Scenarios
 
