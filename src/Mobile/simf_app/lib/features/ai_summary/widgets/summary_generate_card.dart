@@ -40,7 +40,7 @@ class SummaryGenerateCard extends StatelessWidget {
               onTap: onToggle,
               borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
               child: Container(
-                height: 48,
+                height: SimfTokens.controlHeight,
                 padding: const EdgeInsets.symmetric(
                   horizontal: SimfTokens.space4,
                   vertical: SimfTokens.space3,
@@ -54,7 +54,7 @@ class SummaryGenerateCard extends StatelessWidget {
                           const Icon(
                             Icons.auto_awesome,
                             size: 18,
-                            color: Colors.white,
+                            color: SimfTokens.surface,
                           ),
                           const SizedBox(width: SimfTokens.space2),
                           Flexible(
@@ -62,11 +62,7 @@ class SummaryGenerateCard extends StatelessWidget {
                               label,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: SimfTokens.textLg,
-                                fontWeight: FontWeight.w500,
-                              ),
+                              style: SimfTokens.labelWhiteMediumLg,
                             ),
                           ),
                         ],
@@ -77,7 +73,7 @@ class SummaryGenerateCard extends StatelessWidget {
                           ? Icons.keyboard_arrow_up
                           : Icons.keyboard_arrow_down,
                       size: 20,
-                      color: Colors.white,
+                      color: SimfTokens.surface,
                     ),
                   ],
                 ),
@@ -89,12 +85,7 @@ class SummaryGenerateCard extends StatelessWidget {
             Text(
               paragraph,
               textAlign: TextAlign.start,
-              style: const TextStyle(
-                color: SimfTokens.beigeBorder,
-                fontSize: SimfTokens.textMd,
-                fontWeight: FontWeight.w500,
-                height: 1.5,
-              ),
+              style: SimfTokens.bodyBeigeMediumTall,
             ),
           ],
         ],

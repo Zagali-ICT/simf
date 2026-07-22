@@ -146,11 +146,7 @@ class _SessionSummaryListScreenState
                 child: Text(
                   l10n.eventDayLabel(dayIndex + 1),
                   // Frame 1388:8428 — day header is Inter Medium (w500), not w600.
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: SimfTokens.textLg,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: SimfTokens.labelWhiteMediumLg,
                 ),
               ),
               for (final item in dayItems)

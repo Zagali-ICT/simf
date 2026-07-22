@@ -49,8 +49,8 @@ class SummarySectionHeading extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         Container(
-          width: 4,
-          height: 20,
+          width: SimfTokens.headingBarWidth,
+          height: SimfTokens.headingBarHeight,
           decoration: BoxDecoration(
             color: SimfTokens.accent,
             borderRadius: BorderRadius.circular(SimfTokens.radius),
@@ -59,11 +59,7 @@ class SummarySectionHeading extends StatelessWidget {
         const SizedBox(width: SimfTokens.space2),
         Text(
           text,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-            fontSize: SimfTokens.textMd,
-          ),
+          style: SimfTokens.labelWhiteBoldMd,
         ),
       ],
     );
@@ -83,7 +79,7 @@ class SummaryBullet extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         const Padding(
-          padding: EdgeInsets.only(top: 7),
+          padding: EdgeInsets.only(top: SimfTokens.bulletTopNudge),
           child: SizedBox(
             width: 6,
             height: 6,
@@ -100,12 +96,7 @@ class SummaryBullet extends StatelessWidget {
           child: Text(
             text,
             textAlign: TextAlign.start,
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textMd,
-              fontWeight: FontWeight.w400,
-              height: 1.5,
-            ),
+            style: SimfTokens.bodyBeigeRegularTall,
           ),
         ),
       ],

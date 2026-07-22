@@ -181,6 +181,10 @@ class SimfTokens {
   static const double sendSquareSize = 24; // composer send-button box
   static const double quickReplyStripHeight = 34; // quick-reply chip strip
 
+  // #16 S3 — ai_summary section-heading gold bar (Figma 1072:14660).
+  static const double headingBarWidth = 4;
+  static const double headingBarHeight = 20;
+
   // Type scale (Material text styles override these for actual rendering;
   // tokens here are for places that need a raw size).
   static const double textXs = 10.5;
@@ -648,5 +652,35 @@ class SimfTokens {
   );
   static const TextStyle bodyWhite70 = TextStyle(
     color: Colors.white70,
+  );
+  // ai_summary (Figma 1072:14628 / 1388:8392) — list card title/category, day
+  // header, session label, agenda rows, section heading, bullets + paragraph.
+  // [labelWhiteMediumSm] + [labelGoldSemiboldLg] also serve home.
+  static const TextStyle labelWhiteMediumSm = TextStyle(
+    color: surface,
+    fontSize: textSm,
+    fontWeight: FontWeight.w500,
+  );
+  static const TextStyle labelGoldSemiboldLg = TextStyle(
+    color: accent,
+    fontSize: textLg,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle labelBeigeBoldSm = TextStyle(
+    color: beigeBorder,
+    fontSize: textSm,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle bodyBeigeRegularTall = TextStyle(
+    color: beigeBorder,
+    fontSize: textMd,
+    fontWeight: FontWeight.w400,
+    height: 1.5,
+  );
+  static const TextStyle bodyBeigeMediumTall = TextStyle(
+    color: beigeBorder,
+    fontSize: textMd,
+    fontWeight: FontWeight.w500,
+    height: 1.5,
   );
 }

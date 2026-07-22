@@ -283,11 +283,7 @@ class _AiSummaryScreenState extends ConsumerState<AiSummaryScreen> {
       return Text(
         l10n.aiSummaryNone,
         textAlign: TextAlign.start,
-        style: const TextStyle(
-          color: SimfTokens.beigeBorder,
-          height: 1.5,
-          fontSize: SimfTokens.textMd,
-        ),
+        style: SimfTokens.bodyBeige,
       );
     }
     return Column(

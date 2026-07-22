@@ -27,6 +27,11 @@ class AppAssets {
   // ── Badge ───────────────────────────────────────────────────────────────
   static const String badgeScan = 'assets/icons/badge_scan.svg';
 
+  // ── Sessions / summaries ────────────────────────────────────────────────
+  static const String sessionClock = 'assets/icons/session_clock.svg';
+  static const String sessionUsers = 'assets/icons/session_users.svg';
+  static const String sessionLocation = 'assets/icons/session_location.svg';
+
   // ── Requests / meetings ─────────────────────────────────────────────────
   static const String requestNew = 'assets/icons/request_new.svg';
   static const String requestLog = 'assets/icons/request_log.svg';
