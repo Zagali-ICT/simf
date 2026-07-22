@@ -29,7 +29,7 @@ class RegistrationPrimaryButton extends StatelessWidget {
             child: Text(
               label,
               style: const TextStyle(
-                color: Colors.white,
+                color: SimfTokens.surface,
                 fontSize: SimfTokens.textLg, // 16
                 fontWeight: FontWeight.w700,
               ),

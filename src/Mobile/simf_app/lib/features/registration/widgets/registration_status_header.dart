@@ -31,7 +31,7 @@ class RegistrationStatusHeader extends StatelessWidget {
               onPressed: onBack,
               icon: const Icon(
                 Icons.arrow_back_ios_new,
-                color: Colors.white,
+                color: SimfTokens.surface,
                 size: 20,
               ),
               splashRadius: 22,
@@ -45,7 +45,7 @@ class RegistrationStatusHeader extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: SimfTokens.textTitle,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  color: SimfTokens.surface,
                 ),
               ),
             ),
