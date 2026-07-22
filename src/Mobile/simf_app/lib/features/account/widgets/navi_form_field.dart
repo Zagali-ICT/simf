@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../app/theme/tokens.dart';
 import '../../../core/widgets/simf_field_label.dart';
 import '../../../core/widgets/simf_field_style.dart';
 
@@ -57,8 +58,8 @@ class NaviFormField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        SimfFieldLabel(label, color: Colors.white),
-        const SizedBox(height: 8),
+        SimfFieldLabel(label, color: SimfTokens.surface),
+        const SizedBox(height: SimfTokens.space2),
         TextFormField(
           controller: controller,
           enabled: enabled,

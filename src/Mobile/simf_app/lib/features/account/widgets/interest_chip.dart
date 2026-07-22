@@ -26,7 +26,7 @@ class InterestChip extends StatelessWidget {
       borderRadius: BorderRadius.circular(999),
       child: Container(
         alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4, vertical: SimfTokens.space2),
         decoration: BoxDecoration(
           color: selected ? SimfTokens.accent : SimfTokens.navyDeep,
           borderRadius: BorderRadius.circular(999),
@@ -40,8 +40,8 @@ class InterestChip extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(
-            color: Colors.white,
-            fontSize: 14,
+            color: SimfTokens.surface,
+            fontSize: SimfTokens.textMd,
             fontWeight: FontWeight.w700,
           ),
         ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme/app_assets.dart';
+import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_language_toggle.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
 
@@ -29,7 +30,7 @@ class AccountTopControls extends StatelessWidget {
   Widget build(BuildContext context) {
     final onBack = this.onBack;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space3, vertical: SimfTokens.space2),
       child: Row(
         textDirection: TextDirection.ltr,
         children: <Widget>[
@@ -40,7 +41,7 @@ class AccountTopControls extends StatelessWidget {
               icon: const SimfSvgIcon(
                 AppAssets.authBack,
                 size: 24,
-                color: Colors.white,
+                color: SimfTokens.surface,
               ),
             ),
           const Spacer(),

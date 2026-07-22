@@ -50,7 +50,7 @@ class OtpCodeBoxes extends StatelessWidget {
               autocorrect: false,
               showCursor: false,
               enableInteractiveSelection: false,
-              style: const TextStyle(color: Colors.transparent, fontSize: 1),
+              style: const TextStyle(color: SimfTokens.transparent, fontSize: 1),
               inputFormatters: <TextInputFormatter>[
                 FilteringTextInputFormatter.digitsOnly,
               ],
@@ -75,13 +75,13 @@ class OtpCodeBoxes extends StatelessWidget {
               textDirection: TextDirection.ltr,
               children: <Widget>[
                 for (int i = 0; i < 6; i++) ...<Widget>[
-                  if (i > 0) const SizedBox(width: 16),
+                  if (i > 0) const SizedBox(width: SimfTokens.space4),
                   Expanded(
                     child: Container(
                       height: 52,
                       decoration: BoxDecoration(
                         color: SimfTokens.navy,
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(SimfTokens.radius14),
                         border: Border.all(
                           width: 1.5,
                           color: focusNode.hasFocus && i == activeIndex
@@ -93,8 +93,8 @@ class OtpCodeBoxes extends StatelessWidget {
                       child: Text(
                         i < digits.length ? digits[i] : '',
                         style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
+                          color: SimfTokens.surface,
+                          fontSize: SimfTokens.textXl,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
