@@ -43,6 +43,7 @@
 | E2E-MOB035-010 | Load failure → "Could not load the directory." error state + retry | resilience | P1 | authored ✓ (screen) |
 | E2E-MOB035-011 | The My-interests opt-in checkbox is shown only to "Other"-type members and persists `ShowInMeetLikeYou` | happy | P0 | authored ✓ (`sign_up_interests_screen` edit-mode) |
 | E2E-MOB035-012 | RTL render (Arabic) - rows and country tags mirror correctly | i18n | P1 | spec |
+| E2E-MOB035-013 | De-dup - a company that is both a Sponsor and a booth exhibitor appears once, as the sponsor | edge | P1 | authored ✓ (`PartnerDirectoryServiceTests`) |
 
 ## Scenarios
 
@@ -82,6 +83,18 @@ Scenario: A person who is also a curated speaker appears once
   When GET /app/networking/partner-directory is called
   Then the member appears exactly once, as a speaker entry (kind = "speaker")
   And there is no duplicate person entry for the same profile
+```
+
+### E2E-MOB035-013 - De-dup a sponsor that is also a booth company
+
+```gherkin
+Scenario: A company that is both a sponsor and a booth exhibitor appears once
+  Given an active Sponsor and an active booth Exhibitor are the same company
+  And they either share one Contact directory record or carry the same company name
+  When GET /app/networking/partner-directory is called
+  Then the company appears exactly once, as a sponsor entry (kind = "sponsor")
+  And there is no duplicate booth entry for the same company
+  # dedup key: shared Contact id (robust) else case-insensitive trimmed name; the sponsor wins
 ```
 
 ### E2E-MOB035-004 / 005 / 006 - Per-kind tap navigation
