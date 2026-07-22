@@ -1,7 +1,9 @@
 @* SIMF public "The venue" page — Figma node 5866-40935. Fifth About-cluster
    page. Built on the shared LandingShell + LandingPageHero (3-level breadcrumb
    Home / About / The venue) + the ln-fsection chrome, with a single venue-info
-   card. Bilingual AR-RTL / EN-LTR. Static content (no API). Serves "/about/venue".
+   card. Bilingual AR-RTL / EN-LTR. Serves "/about/venue". Mostly static resx
+   content; the event-date line is config-driven (OrganizationProfile dates via
+   ForumDates, with the resx label as fallback) so a CP date edit propagates here.
 
    NOTE: the Figma frame 5866-40935 is a pure stub — an un-customised clone of the
    Organizer placeholder (same "الجهة المنظمة" title + MOD cards, no venue design).
@@ -11,6 +13,7 @@
 @page "/about/venue"
 @layout LandingLayout
 @inject IStringLocalizer<Strings> L
+@inject ForumDates Dates
 
 <LandingShell Title="@L["Venue.PageTitle"]" Description="@L["Venue.Meta"]">
 
@@ -36,7 +39,7 @@
                 <h3 class="ln-venue__name">@L["Landing.Hero.Venue"]</h3>
                 <p class="ln-venue__addr">@L["Venue.Address"]</p>
                 <dl class="ln-venue__meta">
-                    <div><dt>@L["Venue.Meta.Date"]</dt><dd>@L["Landing.Subnav.Date"]</dd></div>
+                    <div><dt>@L["Venue.Meta.Date"]</dt><dd>@(ForumDate ?? L["Landing.Subnav.Date"].Value)</dd></div>
                     <div><dt>@L["Venue.Meta.Time"]</dt><dd>@L["Landing.Subnav.Time"]</dd></div>
                 </dl>
                 <a class="ln-btn ln-btn--primary" href="https://www.google.com/maps/search/?api=1&query=Sofitel%20Riyadh%20Hotel%20Convention%20Centre"
@@ -46,3 +49,14 @@
     </section>
 
 </LandingShell>
+
+@code {
+    // D-755 — the event-date line is driven by OrganizationProfile config
+    // (ForumDate), falling back to the resx label when the profile is unavailable
+    // or carries no dates. Mirrors Landing/Speakers so the public pages never drift.
+    private string? ForumDate;
+
+    protected override async Task OnInitializedAsync()
+        => ForumDate = await Dates.GetRangeDisplayAsync(
+            CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft);
+}

@@ -6,19 +6,22 @@
 | **Route** | `/about/venue` |
 | **Surface** | Website (public marketing site — `ln-` Bootstrap SSR) |
 | **Test runner** | Chrome DevTools MCP (Playwright later — keep steps tool-agnostic) |
-| **Auth setup** | **None — anonymous and static.** No API call, no bearer token, no seeding. |
+| **Auth setup** | **None — anonymous.** No bearer token, no seeding. One anonymous `GET /api/v1/app/organization-profile` supplies the config-driven event date (fail-open — see D-755); otherwise no API. |
 | **Figma** | KSA Maritime Forum — Forum Venue (Desktop AR), node `5866-40935` — **a pure stub** |
-| **Last reviewed** | 2026-07-15 |
+| **Last reviewed** | 2026-07-22 |
 
 > **What this page is.** `/about/venue` (`Venue.razor`) is the Website's public,
-> anonymous **venue overview** — the fifth About-cluster page. Static SSR on the
-> shared `LandingShell` chrome, no CRUD. Two sections:
+> anonymous **venue overview** — the fifth About-cluster page. SSR on the shared
+> `LandingShell` chrome, no CRUD; mostly static resx, except the event **date**,
+> which is config-driven from `OrganizationProfile` via the `ForumDates` service
+> (D-755) with the resx label as fallback. Two sections:
 > 1. **Interior hero** (`ln-pghero`, via `LandingPageHero`) — photo + gradient, a
 >    **3-level breadcrumb** (Home / About / The venue), the single `<h1>`, a subtitle
 >    and the venue + date pills.
 > 2. **Venue card** (`ln-fsection` → `ln-venue`) — a title + subtitle, then a centred
 >    card: a pin icon + the venue name (`Landing.Hero.Venue`) + address + a date/time
->    meta pair (`Landing.Subnav.*`) + a "Get directions" button that opens Google Maps
+>    meta pair (the date is config-driven via `ForumDates`, the time is
+>    `Landing.Subnav.Time`) + a "Get directions" button that opens Google Maps
 >    in a new tab.
 >
 > **Content note.** The Figma frame is a pure stub (an un-customised Organizer
@@ -33,11 +36,13 @@
 |----|----------|------|----------|--------|
 | E2E-WVEN-001 | Golden path — hero + venue card render + shared chrome, one `<h1>` | happy | P0 | _to author_ |
 | E2E-WVEN-002 | Hero 3-level breadcrumb — Home / About / The venue, the "About" level links to `/about` | happy | P1 | _to author_ |
-| E2E-WVEN-003 | Venue card — pin icon + venue name (reused `Landing.Hero.Venue`) + address + date/time (reused `Landing.Subnav.*`) | happy | P1 | _to author_ |
+| E2E-WVEN-003 | Venue card — pin icon + venue name (reused `Landing.Hero.Venue`) + address + config-driven date + time (`Landing.Subnav.Time`) | happy | P1 | _to author_ |
 | E2E-WVEN-004 | Directions link — opens Google Maps in a new tab with `rel="noopener noreferrer"` (no opener leak) | happy | P1 | _to author_ |
-| E2E-WVEN-005 | Static/anonymous — no `/api/...` request, no Authorization header, no `/login` or `/not-permitted` redirect | auth | P0 | _to author_ |
+| E2E-WVEN-005 | Anonymous — only the anonymous `/app/organization-profile` GET (no Authorization header), no `/login` or `/not-permitted` redirect | auth | P0 | _to author_ |
 | E2E-WVEN-006 | RTL / Arabic ⇄ LTR / English — mirrors correctly (hero photo side flips); Arabic venue name in AR, English in EN | i18n | P0 | _to author_ |
 | E2E-WVEN-007 | Responsive — the centred card holds; no horizontal overflow at 1440/1024/768/390 in both languages | responsive | P1 | _to author_ |
+| E2E-WVEN-008 | Config-driven date — the venue date reflects the CP `OrganizationProfile` event dates (D-755), matching Landing/Speakers, in both languages | happy | P1 | _to author_ |
+| E2E-WVEN-009 | Date fallback — with no configured event dates (or the profile API unreachable), the date cell shows the resx label and the page never blanks or errors | resilience | P1 | _to author_ |
 
 ## Scenarios
 
@@ -55,7 +60,7 @@ Background:
 
 Scenario: The page renders the hero + the venue card
   When the browser opens /about/venue
-  Then NO request to /api/... is made (the page is static)
+  Then the only /api request is an anonymous GET /api/v1/app/organization-profile (the config-driven date; no Authorization header)
   And the shared header + footer render (LandingShell chrome)
   And an interior hero (section.ln-pghero) renders with exactly one <h1>
   And a section (section.ln-fsection) renders one .ln-venue card
@@ -65,7 +70,7 @@ Scenario: The page renders the hero + the venue card
 **Evidence captured:**
 - Screenshot: `docs/screenshots/web-venue-ar-1440.png` (AR) + `web-venue-en-1440.png` (EN)
 - Console errors: 0 expected
-- Network: no `/api/v1/...` request; the hero photo returns 200
+- Network: one anonymous `GET /api/v1/app/organization-profile` (the date) + the hero photo 200; no other `/api/v1/...` request
 - Audit row: none
 
 ### E2E-WVEN-002 — Hero 3-level breadcrumb
@@ -88,7 +93,7 @@ Scenario: The venue card shows the reused event facts
   And the .ln-venue__name equals the shared Landing.Hero.Venue value
       ("Sofitel Riyadh Hotel & Convention Center" in EN / "فندق ومركز مؤتمرات سوفيتيل الرياض" in AR)
   And the .ln-venue__addr shows Venue.Address
-  And the date/time meta pair shows Landing.Subnav.Date and Landing.Subnav.Time
+  And the date meta cell shows the config-driven event date (the CP OrganizationProfile range, or the Landing.Subnav.Date label as fallback) and the time cell shows Landing.Subnav.Time
 ```
 
 ### E2E-WVEN-004 — Directions link
@@ -104,11 +109,11 @@ Scenario: The "Get directions" button opens an external map safely
 ### E2E-WVEN-005 — Static / anonymous
 
 ```gherkin
-Scenario: The page loads anonymously and fires no API request
+Scenario: The page loads anonymously with only the public date fetch
   Given a fresh browser with no auth cookie and no bearer token
   When the user opens /about/venue directly
   Then the page renders WITHOUT redirecting to /login or /not-permitted
-  And NO request to /api/... is made and no Authorization header is sent
+  And the only /api request is the anonymous GET /api/v1/app/organization-profile and no Authorization header is sent
 
 Scenario: A signed-in session changes nothing
   Given an Approved Visitor is signed in on the Website
@@ -140,20 +145,52 @@ Scenario: The venue card holds with no horizontal overflow
   And this holds in BOTH the EN (LTR) and AR (RTL) cultures
 ```
 
+### E2E-WVEN-008 — Config-driven date reflects the CP OrganizationProfile
+
+```gherkin
+Scenario: The venue date follows the CP-configured forum dates
+  Given an admin has set OrganizationProfile.EventStartDate = 2026-11-23 and EventEndDate = 2026-11-25 in the Control Panel
+  When the browser opens /about/venue in English
+  Then the .ln-venue__meta date cell reads "23-25 November 2026"
+  And this matches the date shown on /  (Landing) and /speakers — a single config source, no drift
+
+  When the browser opens /about/venue in Arabic
+  Then the date cell reads "23-25 نوفمبر 2026" (Western digits, Arabic month), matching Landing/Speakers
+```
+
+### E2E-WVEN-009 — Date falls back to the resx label when unset / API down
+
+```gherkin
+Scenario: A profile with no event dates keeps the resx label
+  Given OrganizationProfile carries no EventStartDate/EventEndDate
+  When the browser opens /about/venue
+  Then the date cell shows the Landing.Subnav.Date resx label (the marketing page never blanks)
+  And the page renders with 0 console errors
+
+Scenario: A transient organization-profile API outage does not break the page
+  Given the /api/v1/app/organization-profile endpoint is unreachable (5xx / timeout)
+  When the browser opens /about/venue
+  Then the page still renders fully with the resx date label (fail-open) and no unhandled error
+  And a later request (after the API recovers) shows the configured date — the null miss was not cached
+```
+
 ---
 
 ## Implementation notes
 
-- **Read-only, anonymous, static, no CRUD.** The only interaction is the external
-  "Get directions" link. The matrix above is exhaustive.
+- **Read-only, anonymous, no CRUD.** The only user interaction is the external
+  "Get directions" link; the only server call is the anonymous, cached
+  `/app/organization-profile` GET that supplies the config-driven date (fail-open).
+  The matrix above is exhaustive.
 - **Stub Figma frame → real minimal content.** The Figma is an un-customised Organizer
   clone; this page shows the real venue facts instead. A full venue design (map +
   gallery) awaits a real Figma frame (`web/venue.md` §7).
 - **Lower-layer coverage:** component (bUnit, no browser)
-  `tests/SIMF.Web.Tests/VenuePageTests.cs` pins the render + the directions link.
+  `tests/SIMF.Web.Tests/VenuePageTests.cs` (5 tests) pins the render + the directions
+  link + the config-driven date (WVEN-008) and the resx fallback (WVEN-009).
 - **Convert to Playwright** when adopted: copy each Gherkin scenario into a `.feature`
   under `tests/SIMF.E2E.Tests/`.
 
 ---
 
-_Last reviewed:_ 2026-07-15 by Claude (The venue page — `ln-` Bootstrap SSR, Figma 5866-40935 [stub]).
+_Last reviewed:_ 2026-07-22 by Claude (The venue page — config-driven event date via ForumDates, D-755 / #40).
