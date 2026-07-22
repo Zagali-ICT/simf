@@ -235,9 +235,11 @@ Future<void> _pump(
     ProviderScope(
       overrides: <Override>[
         authControllerProvider.overrideWith(() => controller),
-        // D-745 — the VIP flag drives the "اللقاءات الثنائية" tile; overridden so
-        // no real getMyProfile() network call happens in the home tests.
-        currentUserIsVipProvider.overrideWith((ref) => isVip),
+        // Bi-Meeting rework — the meeting-access flags drive the "اللقاءات الثنائية"
+        // tile; overridden so no real getMyProfile() network call happens.
+        currentUserMeetingAccessProvider.overrideWith(
+          (ref) => MeetingAccess(speaker: isVip, delegation: isVip),
+        ),
         simfDataConfigProvider.overrideWithValue(_testConfig),
         notificationsRepositoryProvider
             .overrideWithValue(_FakeNotificationsRepository(unread)),

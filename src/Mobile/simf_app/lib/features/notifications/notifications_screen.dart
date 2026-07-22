@@ -28,7 +28,12 @@ const Set<String> _vipChipGroups = <String>{'Vip'};
 /// The only in-app locations a notification `clickUrl` may open — a guard so a
 /// stale or foreign value never pushes an unknown route (the router has no error
 /// page). Only the path is matched; the query string is ignored (D-678).
-const Set<String> _allowedClickPaths = <String>{'/rate', '/badge'};
+const Set<String> _allowedClickPaths = <String>{
+  '/rate',
+  '/badge',
+  // Bi-Meeting rework — the other-party confirm deep-link (?requestId=…).
+  '/meeting-confirm',
+};
 
 /// The group for [item]: the server `group`, or a client fallback derived from
 /// the kind for rows created before the group column existed.
@@ -45,6 +50,9 @@ String _groupForItem(NotificationItem item) {
       return 'Sessions';
     case 'MeetingScheduled':
     case 'MeetingCancelled':
+    // Bi-Meeting rework — the other-party confirm request + the 15-min reminder.
+    case 'MeetingRequested':
+    case 'MeetingReminder':
       return 'Meetings';
     case 'InvitationReceived':
     case 'VipBroadcast':

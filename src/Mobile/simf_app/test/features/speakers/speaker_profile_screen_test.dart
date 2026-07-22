@@ -180,8 +180,11 @@ Future<void> _pump(
         simfDataConfigProvider.overrideWithValue(_testConfig),
         speakersRepositoryProvider.overrideWithValue(repo),
         authControllerProvider.overrideWith(() => controller),
-        // D-729 — the speaker "request meeting" CTA is VIP-only; gate it here.
-        currentUserIsVipProvider.overrideWith((ref) async => isVip),
+        // Bi-Meeting rework — the speaker "request meeting" CTA gates on the
+        // AllowsSpeakerMeeting flag; override it here.
+        currentUserMeetingAccessProvider.overrideWith(
+          (ref) async => MeetingAccess(speaker: isVip, delegation: isVip),
+        ),
       ],
       child: MaterialApp.router(
         routerConfig: router,

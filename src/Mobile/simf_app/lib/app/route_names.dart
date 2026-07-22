@@ -111,6 +111,10 @@ class RouteNames {
   // Home VIP-only tile; the full history stays on [requests] in My-Area.
   static const String meetings = 'meetings';
 
+  // Bi-Meeting rework — the other-party confirm screen, reached by tapping a
+  // "MeetingRequested" notification (deep-link /meeting-confirm?requestId=…).
+  static const String meetingConfirm = 'meetingConfirm';
+
   // (D-609: myMeetings + myAreaSessions route names removed — their screens are
   // backed up as `.bk` and their routes + My-Area/More entry points are gone.)
 

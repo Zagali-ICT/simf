@@ -76,7 +76,9 @@ Future<void> _pump(
           }
           return data ?? const <AppRequestItem>[];
         }),
-        currentUserIsVipProvider.overrideWith((ref) => isVip),
+        currentUserMeetingAccessProvider.overrideWith(
+          (ref) => MeetingAccess(speaker: isVip, delegation: isVip),
+        ),
         simfDataConfigProvider.overrideWithValue(_config),
       ],
       child: MaterialApp.router(
@@ -117,8 +119,9 @@ void main() {
       expect(find.text('Speaker meeting request'), findsOneWidget);
       expect(find.text('Dr Mohammed Al-Omari'), findsOneWidget);
       expect(find.text('Marine researcher'), findsOneWidget);
-      // The two-button row.
-      expect(find.text('New request'), findsOneWidget);
+      // The two request buttons (both flags on) + the history pill.
+      expect(find.text('Request a speaker meeting'), findsOneWidget);
+      expect(find.text('Request a delegation meeting'), findsOneWidget);
       expect(find.text('Log'), findsOneWidget);
     });
 
@@ -126,8 +129,8 @@ void main() {
         (tester) async {
       await _pump(tester);
       expect(find.text('No meetings yet.'), findsOneWidget);
-      // The action row still shows so a VIP can start a new meeting.
-      expect(find.text('New request'), findsOneWidget);
+      // The request buttons still show so an entitled user can start a meeting.
+      expect(find.text('Request a speaker meeting'), findsOneWidget);
     });
 
     testWidgets('only approved + upcoming meetings appear (pending/past/rejected '
@@ -225,11 +228,13 @@ void main() {
         ],
       );
       expect(
-        find.text('Booking a meeting slot is for VIP guests only'),
+        find.text(
+          'Bilateral meetings are available to authorised accounts only',
+        ),
         findsOneWidget,
       );
       expect(find.text('Should Not Show'), findsNothing);
-      expect(find.text('New request'), findsNothing);
+      expect(find.text('Request a speaker meeting'), findsNothing);
     });
 
     testWidgets('shows the error state on a wire failure', (tester) async {

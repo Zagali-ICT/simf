@@ -89,9 +89,11 @@ class HomeScreen extends ConsumerWidget {
     // The post card builds `{base}/app/assets/NewsImage/{id}/image`; the base
     // already includes `/api/v1` (same anonymous D-357 route as the news list).
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
-    // D-745 — the "اللقاءات الثنائية" tile is VIP-only, so it is threaded down and
-    // hidden for non-VIP (they can't reach the meetings page anyway).
-    final isVip = ref.watch(currentUserIsVipProvider).value ?? false;
+    // Bi-Meeting rework — the "اللقاءات الثنائية" tile shows to anyone entitled to
+    // request a meeting (speaker OR delegation flag); hidden otherwise (they can't
+    // reach the meetings page anyway).
+    final canRequestMeetings =
+        ref.watch(currentUserMeetingAccessProvider).value?.any ?? false;
     // The rotating hero (#43): the active home banners + the edition config.
     // Both best-effort — the hero falls back to the static discover photo / copy
     // while loading or when nothing is configured.
@@ -117,7 +119,7 @@ class HomeScreen extends ConsumerWidget {
       profile: orgProfile,
       baseUrl: baseUrl,
       isExhibitor: role == AppRole.exhibitor,
-      isVip: isVip,
+      canRequestMeetings: canRequestMeetings,
       partnerDirectoryEnabled: partnerDirectoryEnabled,
     );
   }

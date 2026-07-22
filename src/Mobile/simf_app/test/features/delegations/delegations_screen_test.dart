@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_app/features/delegations/data/delegation_models.dart';
 import 'package:simf_app/features/delegations/data/delegations_repository.dart';
 import 'package:simf_app/features/delegations/delegations_screen.dart';
@@ -53,6 +54,10 @@ Future<void> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: <Override>[
+        // Bi-Meeting rework — the public screen reads the meeting-access flags to
+        // decide card tappability; a guest (none) keeps the plain info cards.
+        currentUserMeetingAccessProvider
+            .overrideWith((ref) => MeetingAccess.none),
         delegationsProvider.overrideWith((ref) async {
           if (fail) {
             throw Exception('boom');

@@ -97,7 +97,9 @@ void main() {
       ProviderScope(
         overrides: <Override>[
           simfDataConfigProvider.overrideWithValue(_config),
-          currentUserIsVipProvider.overrideWith((ref) => true),
+          currentUserMeetingAccessProvider.overrideWith(
+            (ref) => const MeetingAccess(speaker: true, delegation: true),
+          ),
           myRequestsProvider.overrideWith((ref) async => _meetings),
         ],
         child: MaterialApp.router(

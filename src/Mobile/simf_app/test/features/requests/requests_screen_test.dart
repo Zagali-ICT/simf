@@ -52,7 +52,9 @@ Future<void> _pump(
           }
           return data ?? const <AppRequestItem>[];
         }),
-        currentUserIsVipProvider.overrideWith((ref) => isVip),
+        currentUserMeetingAccessProvider.overrideWith(
+          (ref) => MeetingAccess(speaker: isVip, delegation: isVip),
+        ),
       ],
       child: MaterialApp.router(
         routerConfig: router,

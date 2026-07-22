@@ -36,7 +36,7 @@ class VisitorHome extends StatelessWidget {
     this.banners = const <PublicBannerItem>[],
     this.profile,
     this.isExhibitor = false,
-    this.isVip = false,
+    this.canRequestMeetings = false,
     this.partnerDirectoryEnabled = true,
     super.key,
   });
@@ -58,9 +58,10 @@ class VisitorHome extends StatelessWidget {
   /// (scan a visitor's QR + my visitors). D-519.
   final bool isExhibitor;
 
-  /// D-745 — the "اللقاءات الثنائية" tile (the VIP bilateral-meetings page) is
-  /// shown only to VIP guests; non-VIP don't see it (they can't reach the page).
-  final bool isVip;
+  /// Bi-Meeting rework — the "اللقاءات الثنائية" tile is shown to anyone entitled
+  /// to request a meeting (speaker OR delegation flag); others don't see it (they
+  /// can't reach the page).
+  final bool canRequestMeetings;
 
   /// Build #13 — the "قابل أشخاص مثلك" tile is hidden when the CP switch for the
   /// partner directory is off (the feature is unavailable). Default true.
@@ -192,7 +193,7 @@ class VisitorHome extends StatelessWidget {
           // fills the row on its own (SimfTileRow expands each child).
           SimfTileRow(
             children: <Widget>[
-              if (isVip)
+              if (canRequestMeetings)
                 SimfNavTile(
                   label: l10n.tileBilateralMeetings,
                   iconAsset: HomeIcons.bilateral,
