@@ -1019,6 +1019,16 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
           ),
           decoration: simfFieldDecoration(
             errorText: showError ? l10n.profileTypeRequired : null,
+          ).copyWith(
+            // A DropdownButton's dense content floor is a fixed 24px (vs a text
+            // field's ~21px line box), so with the shared 15px vertical inset
+            // this field renders ~4px taller than the sibling standard fields.
+            // Trim the vertical inset so the field lands at their 50px height
+            // (24 + 2*13); the 14px horizontal inset is the shared field inset.
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 13,
+            ),
           ),
           dropdownColor: SimfTokens.surface,
           hint: Text(
