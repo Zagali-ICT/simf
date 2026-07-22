@@ -54,6 +54,10 @@ public partial class EditAccountForm
     private Guid? _profileTypeId;
     private IReadOnlyList<AdminProfileTypeSummary> _profileTypes = new List<AdminProfileTypeSummary>();
 
+    // Bi-Meeting rework — the two admin-assigned per-user meeting-eligibility flags.
+    private bool _allowsSpeakerMeeting;
+    private bool _allowsDelegationMeeting;
+
     private bool _loading = true;
     private bool _busy;
     private string? _loadError;
@@ -132,6 +136,8 @@ public partial class EditAccountForm
             _email = envelope.Data.Email;
             _displayName = envelope.Data.DisplayName;
             _profileTypeId = envelope.Data.ProfileTypeId;
+            _allowsSpeakerMeeting = envelope.Data.AllowsSpeakerMeeting;
+            _allowsDelegationMeeting = envelope.Data.AllowsDelegationMeeting;
             _hasAvatar = envelope.Data.HasAvatar;
             _hasIdImage = envelope.Data.HasIdImage;
         }
@@ -174,12 +180,16 @@ public partial class EditAccountForm
                     Email = _email.Trim(),
                     DisplayName = _displayName.Trim(),
                     ProfileTypeId = _profileTypeId,
+                    AllowsSpeakerMeeting = _allowsSpeakerMeeting,
+                    AllowsDelegationMeeting = _allowsDelegationMeeting,
                 }
                 : new AdminUpdateOtherRequest
                 {
                     Email = _email.Trim(),
                     DisplayName = _displayName.Trim(),
                     ProfileTypeId = _profileTypeId ?? Guid.Empty,
+                    AllowsSpeakerMeeting = _allowsSpeakerMeeting,
+                    AllowsDelegationMeeting = _allowsDelegationMeeting,
                 };
 
             var envelope = await JS.InvokeAsync<ApiResult<bool>>(

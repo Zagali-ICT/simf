@@ -69,11 +69,20 @@
                             case MeetingRequestStatus.Pending:
                                 <SimfPill Variant="warn">@L["Admin.DelegationMeetings.Filter.Pending"]</SimfPill>
                                 break;
+                            case MeetingRequestStatus.AwaitingSpeaker:
+                                <SimfPill Variant="warn">@L["Admin.Meetings.Status.AwaitingConfirmation"]</SimfPill>
+                                break;
                             case MeetingRequestStatus.Accepted:
                                 <SimfPill Variant="on">@L["Admin.DelegationMeetings.Filter.Accepted"]</SimfPill>
                                 break;
+                            case MeetingRequestStatus.Done:
+                                <SimfPill Variant="on">@L["Admin.Meetings.Status.Done"]</SimfPill>
+                                break;
                             case MeetingRequestStatus.Rejected:
                                 <SimfPill Variant="off">@L["Admin.DelegationMeetings.Filter.Rejected"]</SimfPill>
+                                break;
+                            case MeetingRequestStatus.Cancelled:
+                                <SimfPill Variant="off">@L["Admin.Meetings.Status.Cancelled"]</SimfPill>
                                 break;
                         }
                     </CellTemplate>
@@ -84,13 +93,23 @@
                 </SimfDataGridColumn>
             </Columns>
             <RowActions>
-                @* Page-specific quiet action: respond (accept / reject) to a
-                   Pending request. Only Pending rows can transition. *@
-                @if (context.Status == MeetingRequestStatus.Pending)
+                @* Bi-Meeting rework — quiet actions by state: Respond (review + bind a
+                   hall) on Pending; Confirm/Cancel on an Approved (AwaitingSpeaker)
+                   request; Check in a confirmed (Accepted) meeting → Done. *@
+                @if (context.Status is MeetingRequestStatus.Pending
+                    or MeetingRequestStatus.AwaitingSpeaker)
                 {
                     <AuthorizedAction Permission="@PermissionCatalog.DelegationMeetings.Manage">
                         <SimfToolbarButton Icon="reply" Title="@L["Admin.DelegationMeetings.Respond"]"
                                            OnClick="@(() => OnRespondAsync(context))" />
+                    </AuthorizedAction>
+                }
+                else if (context.Status == MeetingRequestStatus.Accepted)
+                {
+                    <AuthorizedAction Permission="@PermissionCatalog.DelegationMeetings.Manage">
+                        <SimfToolbarButton Icon="log-in" Title="@L["Admin.Meetings.CheckIn"]"
+                                           Disabled="_busy"
+                                           OnClick="@(() => OnCheckInAsync(context))" />
                     </AuthorizedAction>
                 }
             </RowActions>
@@ -132,20 +151,76 @@
                     <dt>@L["Admin.DelegationMeetings.Col.Subject"]</dt>
                     <dd>@_respondTarget.Subject</dd>
                 </dl>
+
+                @* Bi-Meeting rework — Pending review binds the meeting to a free hall
+                   slot (Approve → the other delegation is emailed a confirm link + gets
+                   an app notification to confirm; Confirm → the admin already has the
+                   other party's verbal confirmation, booked straight away). An Approved
+                   (AwaitingSpeaker) request only needs a Confirm (verbal) or a Cancel —
+                   the hall is already bound. *@
+                @if (_respondTarget.Status == MeetingRequestStatus.Pending)
+                {
+                    <label class="simf-field">
+                        <span class="simf-field__label">@L["Admin.Meetings.Bind.Hall"]</span>
+                        <select class="simf-field__input" value="@(_bindHallId?.ToString() ?? string.Empty)"
+                                @onchange="OnBindHallChangedAsync" disabled="@_busy">
+                            <option value="">@L["Admin.Meetings.Bind.PickHall"]</option>
+                            @foreach (var hall in _halls)
+                            {
+                                <option value="@hall.Id">@hall.Name</option>
+                            }
+                        </select>
+                    </label>
+                    @if (_bindHallId is not null)
+                    {
+                        <label class="simf-field">
+                            <span class="simf-field__label">@L["Admin.Meetings.Bind.Slot"]</span>
+                            @if (_loadingSlots)
+                            {
+                                <div class="simf-table__sub">@L["Admin.Meetings.Bind.LoadingSlots"]</div>
+                            }
+                            else if (_hallSlots.Count == 0)
+                            {
+                                <div class="simf-table__sub">@L["Admin.Meetings.Bind.NoSlots"]</div>
+                            }
+                            else
+                            {
+                                <select class="simf-field__input" value="@_bindSlotIndex"
+                                        @onchange="OnBindSlotChanged" disabled="@_busy">
+                                    <option value="-1">@L["Admin.Meetings.Bind.SelectSlot"]</option>
+                                    @for (var i = 0; i < _hallSlots.Count; i++)
+                                    {
+                                        <option value="@i">@FormatSlot(_hallSlots[i])</option>
+                                    }
+                                </select>
+                            }
+                        </label>
+                        @if (_hallTables.Count > 0)
+                        {
+                            <label class="simf-field">
+                                <span class="simf-field__label">@L["Admin.Meetings.Bind.Table"]</span>
+                                <select class="simf-field__input" value="@(_bindTableId?.ToString() ?? string.Empty)"
+                                        @onchange="OnBindTableChanged" disabled="@_busy">
+                                    <option value="">@L["Admin.Meetings.Bind.NoTable"]</option>
+                                    @foreach (var table in _hallTables)
+                                    {
+                                        <option value="@table.Id">@table.Code</option>
+                                    }
+                                </select>
+                            </label>
+                        }
+                    }
+                }
+                else if (_respondTarget.Status == MeetingRequestStatus.AwaitingSpeaker
+                    && _respondTarget.SlotStartUtc is { } awaitStart)
+                {
+                    <dl class="simf-dl">
+                        <dt>@L["Admin.Meetings.Bind.Slot"]</dt>
+                        <dd>@awaitStart.FormatSaudi("yyyy-MM-dd HH:mm")</dd>
+                    </dl>
+                }
                 <label class="simf-field">
-                    <span class="simf-field__label">@L["Admin.DelegationMeetings.Respond.Status"]</span>
-                    <select class="simf-field__input" value="@((int)_respondStatus)"
-                            @onchange="OnRespondStatusChanged" disabled="@_busy">
-                        <option value="@((int)MeetingRequestStatus.Accepted)">
-                            @L["Admin.DelegationMeetings.Respond.Accept"]
-                        </option>
-                        <option value="@((int)MeetingRequestStatus.Rejected)">
-                            @L["Admin.DelegationMeetings.Respond.Reject"]
-                        </option>
-                    </select>
-                </label>
-                <label class="simf-field">
-                    <span class="simf-field__label">@L["Admin.DelegationMeetings.Respond.Note"]</span>
+                    <span class="simf-field__label">@L["Admin.Meetings.Note"]</span>
                     <textarea class="simf-field__input" rows="4"
                               value="@_respondNote"
                               @onchange="OnRespondNoteChanged"
@@ -156,10 +231,21 @@
         <Footer>
             <SimfButton Type="button" Variant="secondary" Disabled="_busy"
                         OnClick="@(() => _respondOpen = false)">
-                @L["Admin.DelegationMeetings.Cancel"]
+                @L["Admin.Meetings.Close"]
             </SimfButton>
-            <SimfButton Type="button" OnClick="SendResponseAsync" Loading="_busy">
-                @L["Admin.DelegationMeetings.Respond.Submit"]
+            <SimfButton Type="button" Variant="danger" Disabled="_busy"
+                        OnClick="DeclineAsync">
+                @(_respondTarget.Status == MeetingRequestStatus.Pending
+                    ? L["Admin.Meetings.Decline"] : L["Admin.Meetings.Cancel"])
+            </SimfButton>
+            @if (_respondTarget.Status == MeetingRequestStatus.Pending)
+            {
+                <SimfButton Type="button" OnClick="ApproveAsync" Loading="_busy">
+                    @L["Admin.Meetings.Approve"]
+                </SimfButton>
+            }
+            <SimfButton Type="button" OnClick="ConfirmAsync" Loading="_busy">
+                @L["Admin.Meetings.Confirm"]
             </SimfButton>
         </Footer>
     </SimfModal>

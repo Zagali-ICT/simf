@@ -114,6 +114,8 @@ public static class CpNavigation
             new("Module.AdminHallAvailability", "/admin/hall-availability", RequiredPermission: PermissionCatalog.SpeakerMeetingRequests.Manage, Icon: "calendar"),
             // D-478 (#11, Group G phase 2) — delegation↔delegation meeting requests review desk.
             new("Module.AdminDelegationMeetings", "/admin/delegation-meetings", RequiredPermission: PermissionCatalog.DelegationMeetings.View, Icon: "inbox"),
+            // Bi-Meeting rework — the team defines a delegation/country's availability windows.
+            new("Module.AdminDelegationAvailability", "/admin/delegation-availability", RequiredPermission: PermissionCatalog.DelegationMeetings.Manage, Icon: "calendar"),
             // D-500 (Wave 5, الطلبات) — participation-document + badge-update request review desks.
             new("Module.AdminDocumentRequests", "/admin/document-requests", RequiredPermission: PermissionCatalog.ParticipationDocumentRequests.View, Icon: "inbox"),
             new("Module.AdminBadgeRequests", "/admin/badge-requests", RequiredPermission: PermissionCatalog.BadgeUpdateRequests.View, Icon: "inbox"),

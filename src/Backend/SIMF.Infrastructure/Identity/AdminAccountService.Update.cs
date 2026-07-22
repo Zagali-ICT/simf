@@ -27,7 +27,9 @@ internal sealed partial class AdminAccountService
         UpdateAccountAsync(
             actorUserId, userId, request.Email, request.DisplayName,
             request.ProfileTypeId, expectedIsVisitor: true,
-            profileTypeRequired: false, cancellationToken);
+            profileTypeRequired: false,
+            request.AllowsSpeakerMeeting, request.AllowsDelegationMeeting,
+            cancellationToken);
 
     public Task UpdateOtherAsync(
         Guid actorUserId, Guid userId, AdminUpdateOtherRequest request,
@@ -35,11 +37,14 @@ internal sealed partial class AdminAccountService
         UpdateAccountAsync(
             actorUserId, userId, request.Email, request.DisplayName,
             request.ProfileTypeId, expectedIsVisitor: false,
-            profileTypeRequired: true, cancellationToken);
+            profileTypeRequired: true,
+            request.AllowsSpeakerMeeting, request.AllowsDelegationMeeting,
+            cancellationToken);
 
     private async Task UpdateAccountAsync(
         Guid actorUserId, Guid userId, string email, string displayName,
         Guid? profileTypeId, bool expectedIsVisitor, bool profileTypeRequired,
+        bool allowsSpeakerMeeting, bool allowsDelegationMeeting,
         CancellationToken cancellationToken)
     {
         var trimmedEmail = (email ?? string.Empty).Trim();
@@ -140,7 +145,9 @@ internal sealed partial class AdminAccountService
                     target.Id, now, innerCt);
             }
 
-            await UpsertProfileTypeAsync(target.Id, resolvedProfileTypeId, now, innerCt);
+            await UpsertProfileTypeAsync(
+                target.Id, resolvedProfileTypeId,
+                allowsSpeakerMeeting, allowsDelegationMeeting, now, innerCt);
 
             await auditLog.WriteAsync(new AuditEntry
             {
@@ -202,18 +209,22 @@ internal sealed partial class AdminAccountService
         return profileType.Id;
     }
 
-    // Sets the subject's ProfileTypeId on the App-DB UserProfile row. The row
-    // may not exist yet (a self-signed-up visitor with no admin-assigned type);
-    // create a minimal row in that case so the tier sticks.
+    // Sets the subject's ProfileTypeId and the two Bi-Meeting eligibility flags
+    // (AllowsSpeakerMeeting / AllowsDelegationMeeting) on the App-DB UserProfile
+    // row. The row may not exist yet (a self-signed-up visitor with no
+    // admin-assigned type); create a minimal row when a tier OR a meeting flag is
+    // set so the assignment sticks. A no-tier, no-flag edit of a profile-less
+    // account stays a no-op (nothing to persist).
     private async Task UpsertProfileTypeAsync(
-        Guid subjectId, Guid? profileTypeId, DateTimeOffset now,
+        Guid subjectId, Guid? profileTypeId,
+        bool allowsSpeakerMeeting, bool allowsDelegationMeeting, DateTimeOffset now,
         CancellationToken cancellationToken)
     {
         var profile = await appDbContext.UserProfiles
             .SingleOrDefaultAsync(p => p.UserId == subjectId, cancellationToken);
         if (profile is null)
         {
-            if (profileTypeId is null)
+            if (profileTypeId is null && !allowsSpeakerMeeting && !allowsDelegationMeeting)
             {
                 return;
             }
@@ -222,12 +233,16 @@ internal sealed partial class AdminAccountService
                 Id = Guid.NewGuid(),
                 UserId = subjectId,
                 ProfileTypeId = profileTypeId,
+                AllowsSpeakerMeeting = allowsSpeakerMeeting,
+                AllowsDelegationMeeting = allowsDelegationMeeting,
                 CreatedAt = now,
             });
         }
         else
         {
             profile.ProfileTypeId = profileTypeId;
+            profile.AllowsSpeakerMeeting = allowsSpeakerMeeting;
+            profile.AllowsDelegationMeeting = allowsDelegationMeeting;
             profile.UpdatedAt = now;
         }
         await appDbContext.SaveChangesAsync(cancellationToken);
