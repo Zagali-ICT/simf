@@ -50,7 +50,9 @@ class GuestHome extends StatelessWidget {
           SimfTileRow(
             children: <Widget>[
               SimfNavTile(
-                label: l10n.tileSessions,
+                // Matches the D-750 nav rename: this tile's icon + destination
+                // are the agenda, so it carries the agendaTitle label too.
+                label: l10n.agendaTitle,
                 iconAsset: HomeIcons.sessions,
                 onTap: () => context.pushNamed(RouteNames.sessions),
               ),
