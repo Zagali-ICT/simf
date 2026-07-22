@@ -103,10 +103,24 @@ Scenario: Cancelling mid-flow leaves the avatar unchanged
   When the user taps back before finishing
   Then no upload happens and the avatar is unchanged
 
-Scenario: Upload failure surfaces a toast
-  Given a selfie was captured/picked
+Scenario: Upload failure surfaces the server's reason
+  Given a selfie was captured
   When POST /app/account/avatar fails
-  Then the avatarUploadFailed toast shows and the avatar is unchanged
+  Then a toast shows the server's bilingual message (e.g. the 2 MB / MIME
+       reason), falling back to avatarUploadFailed when the server sent none,
+       and the avatar is unchanged
+
+Scenario: Upload survives a background token refresh mid-capture (D-758/D-759)
+  # The guided liveness takes several seconds; a token proactive-refresh in
+  # that window used to rebuild My-Area (go_router page-key churn, D-759) so the
+  # caller resumed on an unmounted State and the `!mounted` guard silently
+  # dropped the upload — the photo never reached the server.
+  Given the user is on منطقتي and taps their avatar
+  And a token proactive-refresh fires while the liveness challenge is in progress
+  When the user completes the challenge and the selfie is captured
+  Then POST /app/account/avatar is still sent and returns 200
+  And the new avatar is persisted and refetched on the (rebuilt) card
+  And no loading-spinner "reload flash" appears under the returning screen
 
 Scenario: RTL
   Given the app language is Arabic
@@ -115,7 +129,9 @@ Scenario: RTL
 
 ---
 
-_Last reviewed:_ `2026-07-22` by `Claude` (#12/#26 — added E2E-MOBIDV-005 for the
-per-platform / per-sensor yaw-sign normalisation so a physical turn matches the
-prompt on every device; clarified E2E-MOBIDV-001 that the ±20° gate is on the
-NORMALISED yaw). Prior: `2026-07-06` by `SIMF Team`.
+_Last reviewed:_ `2026-07-22` by `Claude` (D-758/D-759 — the avatar upload now
+survives a background token-refresh page rebuild mid-capture, and the failure
+toast shows the server's real reason; added the two E2E-MOBIDV-004 scenarios).
+Prior same day: added E2E-MOBIDV-005 for the per-platform / per-sensor yaw-sign
+normalisation and clarified E2E-MOBIDV-001 that the ±20° gate is on the
+NORMALISED yaw. Prior: `2026-07-06` by `SIMF Team`.
