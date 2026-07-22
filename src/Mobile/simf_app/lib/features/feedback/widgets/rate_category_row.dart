@@ -20,7 +20,7 @@ class RateCategoryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 48,
+      height: SimfTokens.controlHeight,
       padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       decoration: BoxDecoration(
         border: Border.all(
@@ -37,11 +37,7 @@ class RateCategoryRow extends StatelessWidget {
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: SimfTokens.beigeBorder,
-                fontWeight: FontWeight.w600,
-                fontSize: SimfTokens.textMd,
-              ),
+              style: SimfTokens.labelBeigeSemibold,
             ),
           ),
           const SizedBox(width: SimfTokens.space2),

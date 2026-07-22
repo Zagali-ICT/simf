@@ -21,10 +21,7 @@ class RateLoadError extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: SimfTokens.textMd,
-              ),
+              style: SimfTokens.bodyWhiteMd,
             ),
             const SizedBox(height: SimfTokens.space4),
             OutlinedButton(

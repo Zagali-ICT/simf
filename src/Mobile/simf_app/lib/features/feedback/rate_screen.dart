@@ -13,6 +13,7 @@ import 'data/rating_models.dart';
 import 'widgets/rate_category_row.dart';
 import 'widgets/rate_gold_button.dart';
 import 'widgets/rate_load_error.dart';
+import 'widgets/rate_navy_note_chip.dart';
 import 'widgets/star_row.dart';
 
 /// Page 040 — تقييم الملتقى · Rate (#40, `/rate`, login-only).
@@ -195,7 +196,7 @@ class _RateScreenState extends ConsumerState<RateScreen> {
     // D-713 (item 8) — the "watched at" context header on a per-session rating.
     final watchedSession = form.localizedTargetName(isArabic);
     if (watchedSession != null) {
-      children.add(_NavyNoteChip(
+      children.add(RateNavyNoteChip(
         icon: Icons.event_available_outlined,
         text: l10n.rateWatchedAt(
           watchedSession,
@@ -211,21 +212,13 @@ class _RateScreenState extends ConsumerState<RateScreen> {
           Text(
             l10n.rateKicker,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textMd,
-            ),
+            style: SimfTokens.bodyBeigeMd,
           ),
           const SizedBox(height: SimfTokens.space6),
           Text(
             l10n.rateLead,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontSize: SimfTokens.textTitle,
-              height: 1.4,
-            ),
+            style: SimfTokens.labelWhiteBoldTitleTall,
           ),
           const SizedBox(height: SimfTokens.space6),
           StarRow(
@@ -236,15 +229,12 @@ class _RateScreenState extends ConsumerState<RateScreen> {
           ),
           const SizedBox(height: SimfTokens.space5),
           if (_overall < 1)
-            const SizedBox(height: 20)
+            const SizedBox(height: SimfTokens.space5)
           else
             Text(
               l10n.rateScoreSummary(_overall),
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: SimfTokens.beigeBorder,
-                fontSize: SimfTokens.textMd,
-              ),
+              style: SimfTokens.bodyBeigeMd,
             ),
         ],
       ),);
@@ -283,15 +273,12 @@ class _RateScreenState extends ConsumerState<RateScreen> {
         maxLength: 2000,
         maxLines: 4,
         minLines: 4,
-        style: const TextStyle(color: Colors.white, fontSize: SimfTokens.textMd),
+        style: SimfTokens.bodyWhiteMd,
         decoration: InputDecoration(
           filled: true,
           fillColor: SimfTokens.navyDeep,
           hintText: l10n.rateCommentHint,
-          hintStyle: const TextStyle(
-            color: SimfTokens.beigeBorder,
-            fontSize: SimfTokens.textSm,
-          ),
+          hintStyle: SimfTokens.labelBeigeSm,
           counterText: '',
           contentPadding: const EdgeInsets.symmetric(
             horizontal: SimfTokens.space3,
@@ -318,7 +305,10 @@ class _RateScreenState extends ConsumerState<RateScreen> {
     // the form visible but leave submit disabled (the server also 403s).
     if (!form.isEligible) {
       children.add(
-        _NavyNoteChip(icon: Icons.info_outline, text: l10n.rateAttendRequired),
+        RateNavyNoteChip(
+          icon: Icons.info_outline,
+          text: l10n.rateAttendRequired,
+        ),
       );
       children.add(const SizedBox(height: SimfTokens.space3));
     }
@@ -358,48 +348,5 @@ class _RateScreenState extends ConsumerState<RateScreen> {
     final mm = local.minute.toString().padLeft(2, '0');
     return '${local.day.toString().padLeft(2, '0')} '
         '${gregorianMonthName(local.month, isArabic)} · $hh:$mm';
-  }
-}
-
-/// A navy chip with a leading accent glyph + a beige message, shown above the
-/// rating form. Two call sites: the D-713 "watched at" line (event icon) and
-/// the owner-2026-07-19 "attend to rate" note (info icon) when not eligible.
-class _NavyNoteChip extends StatelessWidget {
-  const _NavyNoteChip({required this.icon, required this.text});
-
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        horizontal: SimfTokens.space3,
-        vertical: SimfTokens.space3,
-      ),
-      decoration: BoxDecoration(
-        color: SimfTokens.navyDeep,
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Icon(icon, size: 16, color: SimfTokens.accent),
-          const SizedBox(width: SimfTokens.space2),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(
-                color: SimfTokens.beigeBorder,
-                fontSize: SimfTokens.textSm,
-                fontWeight: FontWeight.w600,
-                height: 1.4,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }

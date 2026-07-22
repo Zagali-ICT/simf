@@ -584,4 +584,22 @@ class SimfTokens {
     color: onGoldMuted,
     fontSize: textSm,
   );
+  // feedback / rate (Figma #40) — kicker + score body, the bold lead line, and
+  // the navy note-chip message.
+  static const TextStyle bodyBeigeMd = TextStyle(
+    color: beigeBorder,
+    fontSize: textMd,
+  );
+  static const TextStyle labelWhiteBoldTitleTall = TextStyle(
+    color: surface,
+    fontSize: textTitle,
+    fontWeight: FontWeight.w700,
+    height: 1.4,
+  );
+  static const TextStyle labelBeigeSemiboldSmTall = TextStyle(
+    color: beigeBorder,
+    fontSize: textSm,
+    fontWeight: FontWeight.w600,
+    height: 1.4,
+  );
 }
