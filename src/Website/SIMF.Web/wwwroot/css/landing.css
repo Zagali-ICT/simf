@@ -714,8 +714,9 @@
 
 /* ============================================================= *
  *  SPEAKERS PAGE  (/speakers — Figma 5840-26779)                *
- *  Shared with the other ln- public pages: the event page-title *
- *  band (ln-pagehero) and the speaker card/grid (ln-spkcard).   *
+ *  The interior hero is the shared LandingPageHero (ln-pghero);  *
+ *  this block styles the speaker card/grid (ln-spkcard) + the    *
+ *  shared recolourable ln-ico glyph used by the card location.   *
  * ============================================================= */
 
 /* -- Recolorable line-icon --------------------------------------------- *
@@ -737,50 +738,6 @@
 .landing .ln-ico--calendar { -webkit-mask-image: url("/assets/figma/secondnav/icon-calendar.svg"); mask-image: url("/assets/figma/secondnav/icon-calendar.svg"); }
 .landing .ln-ico--clock    { -webkit-mask-image: url("/assets/figma/secondnav/icon-clock.svg");    mask-image: url("/assets/figma/secondnav/icon-clock.svg"); }
 .landing .ln-ico--pin      { -webkit-mask-image: url("/assets/figma/secondnav/icon-location.svg"); mask-image: url("/assets/figma/secondnav/icon-location.svg"); }
-
-/* -- Event page-title band: logo lockup + theme + date/time/venue -- */
-.landing .ln-pagehero { background: var(--white); }
-.landing .ln-pagehero__inner {
-  max-width: var(--content-w);
-  margin-inline: auto;
-  padding: 64px 80px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 64px;
-}
-.landing .ln-pagehero__info {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  text-align: start;
-  gap: 24px;
-  min-width: 0;
-}
-.landing .ln-pagehero__title {
-  margin: 0;
-  font-weight: 800;
-  font-size: 40px;
-  line-height: 1;
-  color: var(--navy);
-  text-align: start;
-  max-width: 536px;
-}
-/* the h1 is programmatically focused on nav (Routes.razor FocusOnNavigate);
-   it is tabindex=-1, never a keyboard stop, so suppress the focus ring */
-.landing .ln-pagehero__title:focus,
-.landing .ln-pagehero__title:focus-visible { box-shadow: none; outline: none; }
-.landing .ln-pagehero__meta {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-weight: 400;
-  font-size: 16px;
-  line-height: 24px;
-  color: var(--navy);
-}
-.landing .ln-pagehero__meta .ln-ico { width: 24px; height: 24px; background-color: var(--navy); }
-.landing .ln-pagehero__logo { width: 326px; height: 256px; object-fit: contain; flex-shrink: 0; }
 
 /* -- Speakers grid section -- */
 .landing .ln-spklist { background: var(--bg-gray); }
@@ -889,13 +846,9 @@
 }
 @media (max-width: 860px) {
   .landing .ln-spklist-grid { grid-template-columns: repeat(2, 1fr); }
-  .landing .ln-pagehero__inner { flex-direction: column-reverse; align-items: flex-start; gap: 40px; }
-  .landing .ln-pagehero__logo { width: 240px; height: auto; }
 }
 @media (max-width: 560px) {
   .landing .ln-spklist-grid { grid-template-columns: 1fr; }
-  .landing .ln-pagehero__inner { padding: 40px 20px; }
-  .landing .ln-pagehero__title { font-size: 28px; }
   .landing .ln-spklist__inner { padding: 64px 20px; }
   .landing .ln-spklist__title { font-size: 26px; }
 }
