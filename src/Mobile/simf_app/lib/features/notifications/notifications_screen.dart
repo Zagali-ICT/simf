@@ -337,10 +337,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                       _markingAll ? null : () => unawaited(_onMarkAll(l10n)),
                   child: Text(
                     l10n.notificationsMarkAll,
-                    style: const TextStyle(
-                      color: SimfTokens.accent,
-                      fontSize: SimfTokens.textSm,
-                    ),
+                    style: SimfTokens.labelGoldSm,
                   ),
                 ),
             ],

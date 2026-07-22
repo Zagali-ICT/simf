@@ -27,7 +27,7 @@ class NotificationCategoryIcon extends StatelessWidget {
       width: 40,
       height: 40,
       decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-      child: Icon(icon, size: 20, color: Colors.white),
+      child: Icon(icon, size: 20, color: SimfTokens.surface),
     );
   }
 

@@ -48,7 +48,7 @@ class NotificationCard extends StatelessWidget {
         // non-actionable rows.
         onTap: onTap,
         color: SimfTokens.navyDeep,
-        borderColor: Colors.transparent,
+        borderColor: SimfTokens.transparent,
         borderWidth: 0,
         child: Stack(
           children: <Widget>[
@@ -68,29 +68,18 @@ class NotificationCard extends StatelessWidget {
                       children: <Widget>[
                         Text(
                           item.localizedTitle(isArabic),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: SimfTokens.textLg,
-                          ),
+                          style: SimfTokens.labelWhiteSemiboldLg,
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: SimfTokens.gap6),
                         Text(
                           item.localizedBody(isArabic),
-                          style: const TextStyle(
-                            color: SimfTokens.beigeBorder,
-                            fontSize: SimfTokens.textSm,
-                            height: 1.5,
-                          ),
+                          style: SimfTokens.bodyBeigeSm15,
                         ),
                         if (stamp != null) ...<Widget>[
-                          const SizedBox(height: 6),
+                          const SizedBox(height: SimfTokens.gap6),
                           Text(
                             stamp,
-                            style: const TextStyle(
-                              color: SimfTokens.timestampMuted,
-                              fontSize: SimfTokens.textSm,
-                            ),
+                            style: SimfTokens.labelTimestampSm,
                           ),
                         ],
                       ],

@@ -564,4 +564,13 @@ class SimfTokens {
     fontSize: textXs,
     fontWeight: FontWeight.w500,
   );
+  // notifications (Figma 758:2491) — mark-all link + card timestamp line.
+  static const TextStyle labelGoldSm = TextStyle(
+    color: accent,
+    fontSize: textSm,
+  );
+  static const TextStyle labelTimestampSm = TextStyle(
+    color: timestampMuted,
+    fontSize: textSm,
+  );
 }

@@ -20,7 +20,7 @@ class NotificationFilterChip extends StatelessWidget {
     // Frame 758:2491 — gold fill when selected, beige 0.2 hairline otherwise;
     // radius 4, 14px SemiBold, label always white.
     return Material(
-      color: selected ? SimfTokens.accent : Colors.transparent,
+      color: selected ? SimfTokens.accent : SimfTokens.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
         side: const BorderSide(
@@ -35,11 +35,7 @@ class NotificationFilterChip extends StatelessWidget {
           padding: const EdgeInsets.all(SimfTokens.space2),
           child: Text(
             label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-              fontSize: SimfTokens.textMd,
-            ),
+            style: SimfTokens.labelWhiteSemibold,
           ),
         ),
       ),

@@ -51,11 +51,7 @@ class NotificationGroupedList extends StatelessWidget {
               child: Text(
                 group.key,
                 // Frame 758:2491 — 16px Medium, white.
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: SimfTokens.textLg,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: SimfTokens.labelWhiteMediumLg,
               ),
             ),
           for (final item in group.value)
