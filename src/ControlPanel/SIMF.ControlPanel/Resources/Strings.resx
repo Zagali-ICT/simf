@@ -1042,6 +1042,8 @@
   <data name="Admin.WalkIn.Field.IdDocument.Selected" xml:space="preserve"><value>Selected: {0}</value></data>
   <data name="Admin.WalkIn.Field.Photo" xml:space="preserve"><value>Profile photo (optional)</value></data>
   <data name="Admin.WalkIn.Field.Photo.Hint" xml:space="preserve"><value>A photo or logo for the badge. PNG, JPEG or WebP, up to 2 MB.</value></data>
+  <data name="Admin.WalkIn.Field.IdDocument" xml:space="preserve"><value>ID document image (optional)</value></data>
+  <data name="Admin.WalkIn.FilePicked" xml:space="preserve"><value>Selected:</value></data>
   <!-- B3 — D-221 — required organisation (الجهة) picker on the walk-in form. -->
   <data name="Admin.WalkIn.Section.Organisation" xml:space="preserve"><value>Organisation</value></data>
   <data name="Admin.WalkIn.Field.Organisation" xml:space="preserve"><value>Organisation</value></data>
@@ -1161,6 +1163,7 @@
   <data name="Admin.Users.Action.SelectAll" xml:space="preserve"><value>Select all</value></data>
   <data name="Admin.Users.Action.SelectRow" xml:space="preserve"><value>Select row</value></data>
   <data name="Admin.Users.Action.Add" xml:space="preserve"><value>Add</value></data>
+  <data name="Admin.Users.Action.BulkAdd" xml:space="preserve"><value>Bulk add</value></data>
   <data name="Admin.Users.Action.Edit" xml:space="preserve"><value>Edit</value></data>
   <data name="Admin.Users.Action.Delete" xml:space="preserve"><value>Delete</value></data>
   <data name="Admin.Users.Action.Duplicate" xml:space="preserve"><value>Duplicate</value></data>
@@ -3313,5 +3316,13 @@
   <data name="Admin.Delegates.Bulk.Confirm.EmailHelper" xml:space="preserve"><value>Leave blank to skip emailing. The QR badges are zipped and sent to this address.</value></data>
   <data name="Admin.Delegates.Bulk.Confirm.EmailTo" xml:space="preserve"><value>The ZIP of QR badges will be emailed to {0}.</value></data>
   <data name="Admin.Delegates.Bulk.Confirm.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <!-- #10 (2026-07-22) — batch-builder: pick a type + count, Add to a list, then Generate. -->
+  <data name="Admin.Delegates.Bulk.ProfileType" xml:space="preserve"><value>Profile type</value></data>
+  <data name="Admin.Delegates.Bulk.ProfileType.Placeholder" xml:space="preserve"><value>Choose a profile type</value></data>
+  <data name="Admin.Delegates.Bulk.Add" xml:space="preserve"><value>Add</value></data>
+  <data name="Admin.Delegates.Bulk.Empty" xml:space="preserve"><value>No badges added yet — choose a profile type and a count, then Add.</value></data>
+  <data name="Admin.Delegates.Bulk.Total" xml:space="preserve"><value>Total: {0} badge(s)</value></data>
+  <data name="Admin.Delegates.Bulk.Remove" xml:space="preserve"><value>Remove {0}</value></data>
+  <data name="Admin.Delegates.Bulk.PickType" xml:space="preserve"><value>Choose a profile type and a count above zero.</value></data>
   <data name="Module.AdminVisitorsVipExport" xml:space="preserve"><value>VIP welcome export</value></data>
 </root>

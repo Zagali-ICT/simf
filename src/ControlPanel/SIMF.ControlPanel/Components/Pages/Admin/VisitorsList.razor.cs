@@ -39,6 +39,9 @@ public partial class VisitorsList
     private AdminUserSummary? _duplicateSource;
     private string _duplicateEmail = string.Empty;
 
+    // #10 — bulk badge generator, opened from the toolbar (gated Visitors.BulkGenerate).
+    private bool _bulkAddOpen;
+
     private AdminImportUsersResponse? _importResult;
     private Toast? _toast;
 

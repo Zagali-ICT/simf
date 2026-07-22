@@ -1,11 +1,20 @@
 @* D-127 — On-site walk-in registration form. The exhibition staff at the
    registration desk uses this to register a walk-in Visitor or Other
-   face-to-face. Hosts the full profile shape in one scrollable form with
-   grouped <fieldset> sections; on submit the server auto-approves and
-   mints the QR badge in one transaction. The parent receives the response
-   via OnSuccess and is responsible for showing the success modal.
+   face-to-face. On submit the server auto-approves and mints the QR badge in
+   one transaction. The parent receives the response via OnSuccess and is
+   responsible for showing the success modal.
 
-   D-129 updates:
+   UI (2026-07-22) — professional redesign. The long record is grouped into
+   numbered <SimfFormSection> cards laid out with the house responsive
+   simf-form__grid (bilingual pairs side by side), matching SpeakersAddEdit —
+   replacing the older <fieldset>/<legend> sections + the bespoke 3-column
+   scaffold. The native gender/language/nationality/region <select>s, the DOB
+   date input and the file inputs now use SimfSelect / SimfDatePicker /
+   SimfFileUpload for one consistent field shell. Behaviour, fields, endpoints
+   and validation are unchanged; a single wrapping <fieldset disabled> keeps the
+   submit-time lockout of every control.
+
+   D-129 rules (unchanged):
      - Saudi national ID validated as 10 digits starting with 1.
      - When Saudi: country picker hidden, NationalityCode forced to "SA".
      - When non-Saudi: country picker required; Iqama-or-Passport radio
@@ -21,6 +30,7 @@
 @using SIMF.Contracts.Organisations
 @using SIMF.Contracts.Regions
 @using SIMF.Common
+@using SIMF.Common.Enums
 @implements IDisposable
 
 @if (_error is not null)
@@ -29,192 +39,149 @@
 }
 
 <EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form simf-walkin">
-    @* -- Section 1: Profile type ---------------------------------------- *@
-    <fieldset class="simf-walkin__section" disabled="@(_busy ? "disabled" : null)">
-        <legend>@L["Admin.WalkIn.Section.ProfileType"]</legend>
-        <p class="simf-walkin__hint">@L["Admin.WalkIn.Section.ProfileType.Hint"]</p>
-        @if (_profileTypes.Length == 0)
-        {
-            <SimfAlert Variant="info">@L["Admin.WalkIn.ProfileType.NoneSeeded"]</SimfAlert>
-        }
-        else
-        {
-            <div class="simf-walkin__cards" role="radiogroup"
-                 aria-label="@L["Admin.WalkIn.Section.ProfileType"]">
-                @foreach (var pt in _profileTypes)
-                {
-                    var selected = _model.ProfileTypeId == pt.Id;
-                    <button type="button"
-                            class="simf-walkin__card @(selected ? "is-selected" : null)"
-                            style="@($"--simf-walkin-card-color: {pt.PageColor}")"
-                            role="radio" aria-checked="@(selected ? "true" : "false")"
-                            @onclick="@(() => SelectProfileType(pt.Id))">
-                        <span class="simf-walkin__swatch" aria-hidden="true"></span>
-                        <span class="simf-walkin__card-name">@LabelFor(pt)</span>
-                    </button>
-                }
-            </div>
-        }
-    </fieldset>
+    @* One disabled-able fieldset wraps every section so a submit locks all
+       controls at once (native inputs, SimfSelect/SimfTextField inputs, the
+       custom picker/toggle/chip buttons) — no per-field Disabled needed. The
+       default fieldset chrome is reset in the scoped stylesheet. *@
+    <fieldset class="simf-walkin__fields" disabled="@(_busy ? "disabled" : null)">
+        @{ var step = 0; }
 
-    @* -- V-1 (D-429): VIP details (موج) — only on the VIP page. Optional
-       welcome-message fields the technical teams use to greet the VVIP/VIP. *@
-    @if (VipMode)
-    {
-        <fieldset class="simf-walkin__section" disabled="@(_busy ? "disabled" : null)">
-            <legend>@L["Admin.WalkIn.Section.Vip"]</legend>
-            <p class="simf-walkin__hint">@L["Admin.WalkIn.Section.Vip.Hint"]</p>
-            <div class="simf-walkin__grid">
-                <SimfTextField Label="@L["Admin.WalkIn.Field.MawjId"]"
-                               Helper="@L["Admin.WalkIn.Field.MawjId.Hint"]"
-                               MaxLength="64"
-                               Value="@(_model.MawjId ?? string.Empty)"
-                               ValueChanged="@(v => _model.MawjId = string.IsNullOrWhiteSpace(v) ? null : v)"
-                               ValueExpression="@(() => _model.MawjId)" />
-                <SimfTextField Label="@L["Admin.WalkIn.Field.Honorific"]"
-                               Helper="@L["Admin.WalkIn.Field.Honorific.Hint"]"
-                               MaxLength="64"
-                               Value="@(_model.Honorific ?? string.Empty)"
-                               ValueChanged="@(v => _model.Honorific = string.IsNullOrWhiteSpace(v) ? null : v)"
-                               ValueExpression="@(() => _model.Honorific)" />
-                <SimfTextField Label="@L["Admin.WalkIn.Field.HonorificArabic"]"
-                               MaxLength="64"
-                               Value="@(_model.HonorificArabic ?? string.Empty)"
-                               ValueChanged="@(v => _model.HonorificArabic = string.IsNullOrWhiteSpace(v) ? null : v)"
-                               ValueExpression="@(() => _model.HonorificArabic)" />
-            </div>
-            <div class="simf-walkin__grid">
-                <div class="simf-field">
-                    <label class="simf-field__label" for="walkin-preflang">
-                        @L["Admin.WalkIn.Field.PreferredLanguage"]
-                    </label>
-                    <div class="simf-field__control">
-                        <select id="walkin-preflang" class="simf-field__input"
-                                value="@(_model.PreferredLanguage ?? string.Empty)"
-                                @onchange="OnPreferredLanguageChanged">
-                            <option value="">@L["Admin.WalkIn.Field.PreferredLanguage.Placeholder"]</option>
-                            <option value="ar">@L["Admin.WalkIn.Field.PreferredLanguage.Ar"]</option>
-                            <option value="en">@L["Admin.WalkIn.Field.PreferredLanguage.En"]</option>
-                        </select>
-                    </div>
-                    <div class="simf-field__helper">@L["Admin.WalkIn.Field.PreferredLanguage.Hint"]</div>
+        @* -- Profile type -------------------------------------------------- *@
+        <SimfFormSection Number="@(++step)" Title="@L["Admin.WalkIn.Section.ProfileType"]"
+                         Hint="@L["Admin.WalkIn.Section.ProfileType.Hint"]">
+            @if (_profileTypes.Length == 0)
+            {
+                <SimfAlert Variant="info">@L["Admin.WalkIn.ProfileType.NoneSeeded"]</SimfAlert>
+            }
+            else
+            {
+                <div class="simf-walkin__cards" role="radiogroup"
+                     aria-label="@L["Admin.WalkIn.Section.ProfileType"]">
+                    @foreach (var pt in _profileTypes)
+                    {
+                        var selected = _model.ProfileTypeId == pt.Id;
+                        <button type="button"
+                                class="simf-walkin__card @(selected ? "is-selected" : null)"
+                                style="@($"--simf-walkin-card-color: {pt.PageColor}")"
+                                role="radio" aria-checked="@(selected ? "true" : "false")"
+                                @onclick="@(() => SelectProfileType(pt.Id))">
+                            <span class="simf-walkin__swatch" aria-hidden="true"></span>
+                            <span class="simf-walkin__card-name">@LabelFor(pt)</span>
+                        </button>
+                    }
                 </div>
-            </div>
-        </fieldset>
-    }
+            }
+        </SimfFormSection>
 
-    @* D-393 — wide single-page layout: the badge picker stays full-width on
-       top; the rest of the record lays out in up to three columns so the whole
-       form is visible at once (collapses to 2 then 1 column when narrow). *@
-    <div class="simf-walkin__columns">
-      <div class="simf-walkin__col">
-
-    @* -- Section 2: Identity -------------------------------------------
-       Field order matches the conversation at the desk: badge name first
-       (it's the most visible part of the printed badge), then DOB on the
-       same row; the two full names (English then Arabic) each take their
-       own full-width row for the record (owner request); optional job
-       title + free-form place-of-birth share the final row. *@
-    <fieldset class="simf-walkin__section" disabled="@(_busy ? "disabled" : null)">
-        <legend>@L["Admin.WalkIn.Section.Identity"]</legend>
-        <div class="simf-walkin__grid">
-            <SimfTextField Label="@L["Admin.WalkIn.Field.DisplayName"]"
-                           Helper="@L["Admin.WalkIn.Field.DisplayName.Hint"]"
-                           MaxLength="128"
-                           @bind-Value="_model.DisplayName" />
-            <div class="simf-field">
-                <label class="simf-field__label" for="walkin-dob">
-                    @L["Admin.WalkIn.Field.DateOfBirth"]
-                </label>
-                <div class="simf-field__control">
-                    <input id="walkin-dob" type="date" class="simf-field__input"
-                           value="@(_model.DateOfBirth?.ToString("yyyy-MM-dd"))"
-                           @onchange="OnDateOfBirthChanged" />
+        @* -- VIP (موج) — VIP page only. Optional welcome-message fields the
+           technical teams use to greet the VVIP/VIP. *@
+        @if (VipMode)
+        {
+            <SimfFormSection Number="@(++step)" Title="@L["Admin.WalkIn.Section.Vip"]"
+                             Hint="@L["Admin.WalkIn.Section.Vip.Hint"]">
+                <div class="simf-form__grid">
+                    <SimfTextField Label="@L["Admin.WalkIn.Field.MawjId"]"
+                                   Helper="@L["Admin.WalkIn.Field.MawjId.Hint"]"
+                                   MaxLength="64"
+                                   Value="@(_model.MawjId ?? string.Empty)"
+                                   ValueChanged="@(v => _model.MawjId = string.IsNullOrWhiteSpace(v) ? null : v)"
+                                   ValueExpression="@(() => _model.MawjId)" />
+                    <SimfTextField Label="@L["Admin.WalkIn.Field.Honorific"]"
+                                   Helper="@L["Admin.WalkIn.Field.Honorific.Hint"]"
+                                   MaxLength="64"
+                                   Value="@(_model.Honorific ?? string.Empty)"
+                                   ValueChanged="@(v => _model.Honorific = string.IsNullOrWhiteSpace(v) ? null : v)"
+                                   ValueExpression="@(() => _model.Honorific)" />
+                    <SimfTextField Label="@L["Admin.WalkIn.Field.HonorificArabic"]"
+                                   MaxLength="64"
+                                   Value="@(_model.HonorificArabic ?? string.Empty)"
+                                   ValueChanged="@(v => _model.HonorificArabic = string.IsNullOrWhiteSpace(v) ? null : v)"
+                                   ValueExpression="@(() => _model.HonorificArabic)" />
+                    <SimfSelect TValue="string"
+                                Label="@L["Admin.WalkIn.Field.PreferredLanguage"]"
+                                Helper="@L["Admin.WalkIn.Field.PreferredLanguage.Hint"]"
+                                Placeholder="@L["Admin.WalkIn.Field.PreferredLanguage.Placeholder"]"
+                                Items="PreferredLanguages"
+                                ValueFor="@(c => c)"
+                                LabelFor="@(c => PreferredLanguageLabel(c))"
+                                Value="_model.PreferredLanguage"
+                                ValueChanged="OnPreferredLanguagePicked" />
                 </div>
+            </SimfFormSection>
+        }
+
+        @* -- Identity. Badge name first (most visible on the printed badge),
+           DOB beside it; the two full names each take a full-width row (owner
+           request); job title + place of birth, then gender + the vehicle plate. *@
+        <SimfFormSection Number="@(++step)" Title="@L["Admin.WalkIn.Section.Identity"]">
+            <div class="simf-form__grid">
+                <SimfTextField Label="@L["Admin.WalkIn.Field.DisplayName"]"
+                               Helper="@L["Admin.WalkIn.Field.DisplayName.Hint"]"
+                               MaxLength="128"
+                               @bind-Value="_model.DisplayName" />
+                <SimfDatePicker Label="@L["Admin.WalkIn.Field.DateOfBirth"]"
+                                Value="@(_model.DateOfBirth?.ToString("yyyy-MM-dd") ?? string.Empty)"
+                                ValueChanged="OnDateOfBirthChanged" />
             </div>
-        </div>
-        @* الاسم الكامل (إنجليزي) — full-width row of its own (owner request). *@
-        <div class="simf-walkin__grid simf-walkin__grid--single">
+            @* الاسم الكامل (إنجليزي) — full-width row of its own (owner request). *@
             <SimfTextField Label="@L["Admin.WalkIn.Field.EnglishName"]"
                            Helper="@L["Admin.WalkIn.Field.EnglishName.Hint"]"
                            MaxLength="128"
                            @bind-Value="_model.EnglishName" />
-        </div>
-        @* الاسم الكامل (عربي) — full-width row of its own (owner request). *@
-        <div class="simf-walkin__grid simf-walkin__grid--single">
+            @* الاسم الكامل (عربي) — full-width row of its own (owner request). *@
             <SimfTextField Label="@L["Admin.WalkIn.Field.ArabicName"]"
                            Helper="@L["Admin.WalkIn.Field.ArabicName.Hint"]"
                            MaxLength="128"
                            @bind-Value="_model.ArabicName" />
-        </div>
-        @* Optional badge job title + free-form place of birth share the row. *@
-        <div class="simf-walkin__grid">
-            @* D-163 (PDF §2.6) — optional job title for the badge. *@
-            <SimfTextField Label="@L["Admin.WalkIn.Field.JobTitle"]"
-                           Helper="@L["Admin.WalkIn.Field.JobTitle.Hint"]"
-                           MaxLength="128"
-                           Value="@(_model.JobTitle ?? string.Empty)"
-                           ValueChanged="@(v => _model.JobTitle = string.IsNullOrWhiteSpace(v) ? null : v)"
-                           ValueExpression="@(() => _model.JobTitle)" />
-            <SimfTextField Label="@L["Admin.WalkIn.Field.JobTitleArabic"]"
-                           MaxLength="100"
-                           Value="@(_model.JobTitleArabic ?? string.Empty)"
-                           ValueChanged="@(v => _model.JobTitleArabic = string.IsNullOrWhiteSpace(v) ? null : v)"
-                           ValueExpression="@(() => _model.JobTitleArabic)" />
-            @* D-469 — birth location: a Saudi walk-in picks one of the 13 official
-               regions; a non-Saudi gets the free-text field "as in passport". *@
-            @if (_model.IsSaudi)
-            {
-                <div class="simf-field">
-                    <label class="simf-field__label" for="walkin-birth-region">
-                        @L["Admin.WalkIn.Field.PlaceOfBirth"]
-                    </label>
-                    <div class="simf-field__control">
-                        @* Keyed on the stable region code (not the localized name) so a
-                           record stored in the other language still selects correctly
-                           when the CP UI culture differs. D-547 — the option list is the
-                           DB-backed regions lookup, falling back to the offline
-                           SaudiRegions constant when the fetch fails / returns empty. *@
-                        <select id="walkin-birth-region" class="simf-field__input"
-                                value="@(RegionCodeForName(_model.PlaceOfBirth))"
-                                @onchange="OnBirthRegionChanged">
-                            <option value="">@L["Admin.WalkIn.Field.PlaceOfBirth.Select"]</option>
-                            @foreach (var region in _regions)
-                            {
-                                <option value="@region.Code">@RegionName(region)</option>
-                            }
-                        </select>
-                    </div>
-                </div>
-            }
-            else
-            {
-                <SimfTextField Label="@L["Admin.WalkIn.Field.PlaceOfBirth"]"
-                               Helper="@L["Admin.WalkIn.Field.PlaceOfBirth.PassportHint"]"
+            <div class="simf-form__grid">
+                @* D-163 (PDF §2.6) — optional job title for the badge. *@
+                <SimfTextField Label="@L["Admin.WalkIn.Field.JobTitle"]"
+                               Helper="@L["Admin.WalkIn.Field.JobTitle.Hint"]"
                                MaxLength="128"
-                               @bind-Value="_model.PlaceOfBirth" />
-            }
-        </div>
-        @* D-395 — gender + optional vehicle plate share the final identity row. *@
-        <div class="simf-walkin__grid">
-            <div class="simf-field">
-                <label class="simf-field__label" for="walkin-gender">
-                    @L["Admin.WalkIn.Field.Gender"]
-                </label>
-                <div class="simf-field__control">
-                    <select id="walkin-gender" class="simf-field__input"
-                            value="@_model.Gender.ToString()"
-                            @onchange="OnGenderChanged">
-                        <option value="Unspecified">@L["Admin.WalkIn.Field.Gender.Unspecified"]</option>
-                        <option value="Male">@L["Admin.WalkIn.Field.Gender.Male"]</option>
-                        <option value="Female">@L["Admin.WalkIn.Field.Gender.Female"]</option>
-                    </select>
-                </div>
+                               Value="@(_model.JobTitle ?? string.Empty)"
+                               ValueChanged="@(v => _model.JobTitle = string.IsNullOrWhiteSpace(v) ? null : v)"
+                               ValueExpression="@(() => _model.JobTitle)" />
+                <SimfTextField Label="@L["Admin.WalkIn.Field.JobTitleArabic"]"
+                               MaxLength="100"
+                               Value="@(_model.JobTitleArabic ?? string.Empty)"
+                               ValueChanged="@(v => _model.JobTitleArabic = string.IsNullOrWhiteSpace(v) ? null : v)"
+                               ValueExpression="@(() => _model.JobTitleArabic)" />
             </div>
-            @* C6 (D-459) — رقم اللوحة: standard Saudi-plate entry, the same shape
-               as the app — three 17-letter dropdowns (Arabic · Latin) + a 1–4
-               digit field. The picks assemble into _model.PlateNumber; the server
-               validates SaudiPlate.IsValid and stores the canonical code. *@
+            <div class="simf-form__grid">
+                @* D-469 / D-547 — birth location: a Saudi walk-in picks one of the
+                   13 official regions (keyed on the stable region code); a non-Saudi
+                   gets the free-text field "as in passport". *@
+                @if (_model.IsSaudi)
+                {
+                    <SimfSelect TValue="RegionOption"
+                                Label="@L["Admin.WalkIn.Field.PlaceOfBirth"]"
+                                Placeholder="@L["Admin.WalkIn.Field.PlaceOfBirth.Select"]"
+                                Items="_regions"
+                                ValueFor="@(r => r.Code)"
+                                LabelFor="@(r => RegionName(r))"
+                                Value="@(_regions.FirstOrDefault(r => r.Code == RegionCodeForName(_model.PlaceOfBirth)))"
+                                ValueChanged="OnBirthRegionPicked" />
+                }
+                else
+                {
+                    <SimfTextField Label="@L["Admin.WalkIn.Field.PlaceOfBirth"]"
+                                   Helper="@L["Admin.WalkIn.Field.PlaceOfBirth.PassportHint"]"
+                                   MaxLength="128"
+                                   @bind-Value="_model.PlaceOfBirth" />
+                }
+                @* D-395 — gender picker (enum-name option values). *@
+                <SimfSelect TValue="string"
+                            Label="@L["Admin.WalkIn.Field.Gender"]"
+                            Items="GenderCodes"
+                            ValueFor="@(c => c)"
+                            LabelFor="@(c => GenderLabel(c))"
+                            Value="@(_model.Gender.ToString())"
+                            ValueChanged="OnGenderPicked" />
+            </div>
+            @* C6 (D-459) — رقم اللوحة: standard Saudi-plate entry — three
+               17-letter dropdowns (Arabic · Latin) + a 1–4 digit field. The picks
+               assemble into _model.PlateNumber; the server validates
+               SaudiPlate.IsValid and stores the canonical code. *@
             <div class="simf-field">
                 <label class="simf-field__label">@L["Admin.WalkIn.Field.PlateNumber"]</label>
                 <div class="simf-field__control simf-walkin__plate">
@@ -240,17 +207,12 @@
                 </div>
                 <div class="simf-field__helper">@L["Admin.WalkIn.Field.PlateNumber.Hint"]</div>
             </div>
-        </div>
-    </fieldset>
-      </div>
-      <div class="simf-walkin__col">
+        </SimfFormSection>
 
-    @* -- Section 2b: Organisation (الجهة) — required (B3 / D-221) --------
-       Searchable typeahead over the active organisations lookup; mirrors the
-       mobile sign-up picker. The desk must pick a registered organisation. *@
-    <fieldset class="simf-walkin__section" disabled="@(_busy ? "disabled" : null)">
-        <legend>@L["Admin.WalkIn.Section.Organisation"]</legend>
-        <div class="simf-walkin__grid simf-walkin__grid--single">
+        @* -- Organisation (الجهة) — required (B3 / D-221). Searchable typeahead
+           over the active organisations lookup; the desk must pick a registered
+           organisation. *@
+        <SimfFormSection Number="@(++step)" Title="@L["Admin.WalkIn.Section.Organisation"]">
             <div class="simf-field @(_orgError is not null ? "simf-field--error" : null)">
                 <label class="simf-field__label" for="walkin-org-search">
                     @L["Admin.WalkIn.Field.Organisation"]
@@ -307,77 +269,62 @@
                     <div class="simf-field__helper">@L["Admin.WalkIn.Field.Organisation.Hint"]</div>
                 }
             </div>
-        </div>
-    </fieldset>
+        </SimfFormSection>
 
-    @* -- Section 3: Nationality + identity document -------------------- *@
-    <fieldset class="simf-walkin__section" disabled="@(_busy ? "disabled" : null)">
-        <legend>@L["Admin.WalkIn.Section.Nationality"]</legend>
-        <div class="simf-walkin__toggle" role="radiogroup"
-             aria-label="@L["Admin.WalkIn.Field.IsSaudi"]">
-            <button type="button"
-                    class="simf-walkin__toggle-btn @(_model.IsSaudi ? "is-selected" : null)"
-                    role="radio" aria-checked="@(_model.IsSaudi ? "true" : "false")"
-                    @onclick="@(() => SetIsSaudi(true))">
-                @L["Admin.WalkIn.IsSaudi.Yes"]
-            </button>
-            <button type="button"
-                    class="simf-walkin__toggle-btn @(!_model.IsSaudi ? "is-selected" : null)"
-                    role="radio" aria-checked="@(!_model.IsSaudi ? "true" : "false")"
-                    @onclick="@(() => SetIsSaudi(false))">
-                @L["Admin.WalkIn.IsSaudi.No"]
-            </button>
-        </div>
-        @if (_model.IsSaudi)
-        {
-            @* Saudi visitors: nationality is implicitly SA, no picker.
-               National ID is the only ID field. *@
-            <div class="simf-walkin__grid">
+        @* -- Nationality + identity document ------------------------------ *@
+        <SimfFormSection Number="@(++step)" Title="@L["Admin.WalkIn.Section.Nationality"]">
+            <div class="simf-walkin__toggle" role="radiogroup"
+                 aria-label="@L["Admin.WalkIn.Field.IsSaudi"]">
+                <button type="button"
+                        class="simf-walkin__toggle-btn @(_model.IsSaudi ? "is-selected" : null)"
+                        role="radio" aria-checked="@(_model.IsSaudi ? "true" : "false")"
+                        @onclick="@(() => SetIsSaudi(true))">
+                    @L["Admin.WalkIn.IsSaudi.Yes"]
+                </button>
+                <button type="button"
+                        class="simf-walkin__toggle-btn @(!_model.IsSaudi ? "is-selected" : null)"
+                        role="radio" aria-checked="@(!_model.IsSaudi ? "true" : "false")"
+                        @onclick="@(() => SetIsSaudi(false))">
+                    @L["Admin.WalkIn.IsSaudi.No"]
+                </button>
+            </div>
+            @if (_model.IsSaudi)
+            {
+                @* Saudi visitors: nationality is implicitly SA, no picker.
+                   National ID is the only ID field. *@
                 <SimfTextField Label="@L["Admin.WalkIn.Field.NationalId"]"
                                Helper="@L["Admin.WalkIn.Field.NationalId.Hint"]"
                                MaxLength="10" Numeric="true" Autocomplete="off"
                                @bind-Value="_model.NationalId" />
-            </div>
-        }
-        else
-        {
-            @* Non-Saudi visitors: country picker is required, plus a second
-               toggle row that picks ONE document — Iqama or Passport — so
-               the form never carries stale data from the other branch. *@
-            <div class="simf-walkin__grid">
-                <div class="simf-field">
-                    <label class="simf-field__label" for="walkin-nationality">
-                        @L["Admin.WalkIn.Field.Nationality"]
-                    </label>
-                    <div class="simf-field__control">
-                        <select id="walkin-nationality" class="simf-field__input"
-                                value="@_model.NationalityCode"
-                                @onchange="OnNationalityChanged">
-                            <option value="">@L["Admin.WalkIn.Field.Nationality.Placeholder"]</option>
-                            @foreach (var c in _countries)
-                            {
-                                <option value="@c.Code">@CountryLabel(c)</option>
-                            }
-                        </select>
-                    </div>
+            }
+            else
+            {
+                @* Non-Saudi visitors: country picker is required, plus a second
+                   toggle that picks ONE document — Iqama or Passport — so the form
+                   never carries stale data from the other branch. *@
+                <SimfSelect TValue="CountryDto"
+                            Label="@L["Admin.WalkIn.Field.Nationality"]"
+                            Placeholder="@L["Admin.WalkIn.Field.Nationality.Placeholder"]"
+                            Items="_countries"
+                            ValueFor="@(c => c.Code)"
+                            LabelFor="@(c => CountryLabel(c))"
+                            Value="@(_countries.FirstOrDefault(c => c.Code == _model.NationalityCode))"
+                            ValueChanged="OnNationalityPicked" />
+                <div class="simf-walkin__toggle" role="radiogroup"
+                     aria-label="@L["Admin.WalkIn.Field.NonSaudiIdKind"]">
+                    <button type="button"
+                            class="simf-walkin__toggle-btn @(_idKind == "Iqama" ? "is-selected" : null)"
+                            role="radio" aria-checked="@(_idKind == "Iqama" ? "true" : "false")"
+                            @onclick="@(() => SetNonSaudiIdKind("Iqama"))">
+                        @L["Admin.WalkIn.NonSaudiIdKind.Iqama"]
+                    </button>
+                    <button type="button"
+                            class="simf-walkin__toggle-btn @(_idKind == "Passport" ? "is-selected" : null)"
+                            role="radio" aria-checked="@(_idKind == "Passport" ? "true" : "false")"
+                            @onclick="@(() => SetNonSaudiIdKind("Passport"))">
+                        @L["Admin.WalkIn.NonSaudiIdKind.Passport"]
+                    </button>
                 </div>
-            </div>
-            <div class="simf-walkin__toggle" role="radiogroup"
-                 aria-label="@L["Admin.WalkIn.Field.NonSaudiIdKind"]">
-                <button type="button"
-                        class="simf-walkin__toggle-btn @(_idKind == "Iqama" ? "is-selected" : null)"
-                        role="radio" aria-checked="@(_idKind == "Iqama" ? "true" : "false")"
-                        @onclick="@(() => SetNonSaudiIdKind("Iqama"))">
-                    @L["Admin.WalkIn.NonSaudiIdKind.Iqama"]
-                </button>
-                <button type="button"
-                        class="simf-walkin__toggle-btn @(_idKind == "Passport" ? "is-selected" : null)"
-                        role="radio" aria-checked="@(_idKind == "Passport" ? "true" : "false")"
-                        @onclick="@(() => SetNonSaudiIdKind("Passport"))">
-                    @L["Admin.WalkIn.NonSaudiIdKind.Passport"]
-                </button>
-            </div>
-            <div class="simf-walkin__grid">
                 @if (_idKind == "Iqama")
                 {
                     <SimfTextField Label="@L["Admin.WalkIn.Field.IqamaNumber"]"
@@ -392,111 +339,86 @@
                                    MaxLength="20" Autocomplete="off"
                                    @bind-Value="_model.PassportNumber" />
                 }
+            }
+        </SimfFormSection>
+
+        @* -- Contact ------------------------------------------------------ *@
+        <SimfFormSection Number="@(++step)" Title="@L["Admin.WalkIn.Section.Contact"]">
+            <div class="simf-form__grid">
+                @if (_model.IsSaudi)
+                {
+                    <SimfTextField Label="@L["Admin.WalkIn.Field.SaudiMobile"]"
+                                   Helper="@L["Admin.WalkIn.Field.SaudiMobile.Hint"]"
+                                   @bind-Value="_model.SaudiMobile" Autocomplete="off"
+                                   MaxLength="32" InputMode="tel" Type="tel" />
+                }
+                else
+                {
+                    <SimfTextField Label="@L["Admin.WalkIn.Field.InternationalMobile"]"
+                                   Helper="@L["Admin.WalkIn.Field.InternationalMobile.Hint"]"
+                                   @bind-Value="_model.InternationalMobile" Autocomplete="off"
+                                   MaxLength="32" InputMode="tel" Type="tel" />
+                }
+                <SimfTextField Label="@L["Admin.WalkIn.Field.Email"]"
+                               Helper="@L["Admin.WalkIn.Field.Email.Hint"]"
+                               @bind-Value="_model.Email"
+                               MaxLength="256" InputMode="email" Type="email" />
             </div>
-        }
-    </fieldset>
-      </div>
-      <div class="simf-walkin__col">
+        </SimfFormSection>
 
-    @* -- Section 4: Contact ------------------------------------------- *@
-    <fieldset class="simf-walkin__section" disabled="@(_busy ? "disabled" : null)">
-        <legend>@L["Admin.WalkIn.Section.Contact"]</legend>
-        <div class="simf-walkin__grid">
-            @if (_model.IsSaudi)
+        @* -- ID document + optional photos (deferred upload after create) -- *@
+        <SimfFormSection Number="@(++step)" Title="@L["Admin.WalkIn.Section.IdDocument"]"
+                         Hint="@L["Admin.WalkIn.Section.IdDocument.Hint"]">
+            <SimfFileUpload @ref="_idDocUpload"
+                            Label="@L["Admin.WalkIn.Field.IdDocument"]"
+                            Accept="image/png,image/jpeg,image/webp"
+                            PickedFilename="@_idDocumentName"
+                            PickedLabel="@L["Admin.WalkIn.FilePicked"]"
+                            OnFilePicked="OnIdDocumentPicked" />
+            @* D-427 (CS-3) — optional profile photo (the visitor's "logo"); shown
+               next to the ID image in the approve modal. Any PNG/JPEG/WebP. *@
+            <SimfFileUpload @ref="_avatarUpload"
+                            Label="@L["Admin.WalkIn.Field.Photo"]"
+                            Helper="@L["Admin.WalkIn.Field.Photo.Hint"]"
+                            Accept="image/png,image/jpeg,image/webp"
+                            PickedFilename="@_avatarName"
+                            PickedLabel="@L["Admin.WalkIn.FilePicked"]"
+                            OnFilePicked="OnAvatarPicked" />
+            @* V-1 (D-429) — separate VIP welcome photo (موج). A clear high-res
+               portrait shared with the technical teams. VIP page only. *@
+            @if (VipMode)
             {
-                <SimfTextField Label="@L["Admin.WalkIn.Field.SaudiMobile"]"
-                               Helper="@L["Admin.WalkIn.Field.SaudiMobile.Hint"]"
-                               @bind-Value="_model.SaudiMobile" Autocomplete="off"
-                               MaxLength="32" InputMode="tel" Type="tel" />
+                <SimfFileUpload @ref="_vipPhotoUpload"
+                                Label="@L["Admin.WalkIn.Field.VipPhoto"]"
+                                Helper="@L["Admin.WalkIn.Field.VipPhoto.Hint"]"
+                                Accept="image/png,image/jpeg,image/webp"
+                                PickedFilename="@_vipPhotoName"
+                                PickedLabel="@L["Admin.WalkIn.FilePicked"]"
+                                OnFilePicked="OnVipPhotoPicked" />
             }
-            else
-            {
-                <SimfTextField Label="@L["Admin.WalkIn.Field.InternationalMobile"]"
-                               Helper="@L["Admin.WalkIn.Field.InternationalMobile.Hint"]"
-                               @bind-Value="_model.InternationalMobile" Autocomplete="off"
-                               MaxLength="32" InputMode="tel" Type="tel" />
-            }
-            <SimfTextField Label="@L["Admin.WalkIn.Field.Email"]"
-                           Helper="@L["Admin.WalkIn.Field.Email.Hint"]"
-                           @bind-Value="_model.Email"
-                           MaxLength="256" InputMode="email" Type="email" />
-        </div>
-    </fieldset>
+        </SimfFormSection>
 
-    @* -- Section 5: ID document (file upload) -------------------------- *@
-    <fieldset class="simf-walkin__section" disabled="@(_busy ? "disabled" : null)">
-        <legend>@L["Admin.WalkIn.Section.IdDocument"]</legend>
-        <p class="simf-walkin__hint">@L["Admin.WalkIn.Section.IdDocument.Hint"]</p>
-        <div class="simf-field">
-            <input id="walkin-id-document" type="file" class="simf-field__input"
-                   accept="image/png,image/jpeg,image/webp"
-                   @onchange="OnIdDocumentChanged" />
-            @if (!string.IsNullOrEmpty(_idDocumentName))
-            {
-                <div class="simf-field__helper">
-                    @string.Format(L["Admin.WalkIn.Field.IdDocument.Selected"], _idDocumentName)
-                </div>
-            }
-        </div>
-        @* D-427 (CS-3) — optional profile photo (the visitor's "logo"); shown
-           next to the ID image in the approve modal. Any PNG/JPEG/WebP, up to 2 MB. *@
-        <div class="simf-field">
-            <label class="simf-field__label" for="walkin-avatar">@L["Admin.WalkIn.Field.Photo"]</label>
-            <input id="walkin-avatar" type="file" class="simf-field__input"
-                   accept="image/png,image/jpeg,image/webp"
-                   @onchange="OnAvatarChanged" />
-            <div class="simf-field__helper">@L["Admin.WalkIn.Field.Photo.Hint"]</div>
-            @if (!string.IsNullOrEmpty(_avatarName))
-            {
-                <div class="simf-field__helper">
-                    @string.Format(L["Admin.WalkIn.Field.IdDocument.Selected"], _avatarName)
-                </div>
-            }
-        </div>
-        @* V-1 (D-429) — separate VIP welcome photo (موج). Distinct from the
-           avatar above: a clear high-resolution portrait shared with the
-           technical teams for the welcome message. VIP page only. *@
-        @if (VipMode)
+        @* -- Interests (visitor only) ------------------------------------- *@
+        @if (string.Equals(Kind, "Visitor", StringComparison.OrdinalIgnoreCase) && _interests.Length > 0)
         {
-            <div class="simf-field">
-                <label class="simf-field__label" for="walkin-vip-photo">@L["Admin.WalkIn.Field.VipPhoto"]</label>
-                <input id="walkin-vip-photo" type="file" class="simf-field__input"
-                       accept="image/png,image/jpeg,image/webp"
-                       @onchange="OnVipPhotoChanged" />
-                <div class="simf-field__helper">@L["Admin.WalkIn.Field.VipPhoto.Hint"]</div>
-                @if (!string.IsNullOrEmpty(_vipPhotoName))
-                {
-                    <div class="simf-field__helper">
-                        @string.Format(L["Admin.WalkIn.Field.IdDocument.Selected"], _vipPhotoName)
-                    </div>
-                }
-            </div>
+            <SimfFormSection Number="@(++step)" Title="@L["Admin.WalkIn.Section.Interests"]"
+                             Hint="@L["Admin.WalkIn.Section.Interests.Hint"]">
+                <div class="simf-walkin__chips" role="group"
+                     aria-label="@L["Admin.WalkIn.Section.Interests"]">
+                    @foreach (var interest in _interests)
+                    {
+                        var selected = _model.InterestIds.Contains(interest.Id);
+                        <button type="button"
+                                class="simf-walkin__chip @(selected ? "is-selected" : null)"
+                                aria-pressed="@(selected ? "true" : "false")"
+                                @onclick="@(() => ToggleInterest(interest.Id))">
+                            @InterestLabel(interest)
+                        </button>
+                    }
+                </div>
+            </SimfFormSection>
         }
     </fieldset>
-
-    @* -- Section 6: Interests (visitor only) -------------------------- *@
-    @if (string.Equals(Kind, "Visitor", StringComparison.OrdinalIgnoreCase) && _interests.Length > 0)
-    {
-        <fieldset class="simf-walkin__section" disabled="@(_busy ? "disabled" : null)">
-            <legend>@L["Admin.WalkIn.Section.Interests"]</legend>
-            <p class="simf-walkin__hint">@L["Admin.WalkIn.Section.Interests.Hint"]</p>
-            <div class="simf-walkin__chips" role="group"
-                 aria-label="@L["Admin.WalkIn.Section.Interests"]">
-                @foreach (var interest in _interests)
-                {
-                    var selected = _model.InterestIds.Contains(interest.Id);
-                    <button type="button"
-                            class="simf-walkin__chip @(selected ? "is-selected" : null)"
-                            aria-pressed="@(selected ? "true" : "false")"
-                            @onclick="@(() => ToggleInterest(interest.Id))">
-                        @InterestLabel(interest)
-                    </button>
-                }
-            </div>
-        </fieldset>
-    }
-      </div>
-    </div>
 
     @* -- Submit row ---------------------------------------------------- *@
     <div class="simf-form__actions simf-walkin__actions">

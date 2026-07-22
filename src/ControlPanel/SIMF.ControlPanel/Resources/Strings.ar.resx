@@ -1034,6 +1034,8 @@
   <data name="Admin.WalkIn.Field.IdDocument.Selected" xml:space="preserve"><value>تم اختيار: {0}</value></data>
   <data name="Admin.WalkIn.Field.Photo" xml:space="preserve"><value>صورة الملف الشخصي (اختياري)</value></data>
   <data name="Admin.WalkIn.Field.Photo.Hint" xml:space="preserve"><value>صورة أو شعار للشارة. PNG أو JPEG أو WebP، حتى 2 ميغابايت.</value></data>
+  <data name="Admin.WalkIn.Field.IdDocument" xml:space="preserve"><value>صورة وثيقة الهوية (اختياري)</value></data>
+  <data name="Admin.WalkIn.FilePicked" xml:space="preserve"><value>تم الاختيار:</value></data>
   <!-- B3 — D-221 — حقل الجهة المطلوب في نموذج التسجيل الفوري. -->
   <data name="Admin.WalkIn.Section.Organisation" xml:space="preserve"><value>الجهة</value></data>
   <data name="Admin.WalkIn.Field.Organisation" xml:space="preserve"><value>الجهة</value></data>
@@ -1151,6 +1153,7 @@
   <data name="Admin.Users.Action.SelectAll" xml:space="preserve"><value>تحديد الكل</value></data>
   <data name="Admin.Users.Action.SelectRow" xml:space="preserve"><value>تحديد الصف</value></data>
   <data name="Admin.Users.Action.Add" xml:space="preserve"><value>إضافة</value></data>
+  <data name="Admin.Users.Action.BulkAdd" xml:space="preserve"><value>إضافة جماعية</value></data>
   <data name="Admin.Users.Action.Edit" xml:space="preserve"><value>تعديل</value></data>
   <data name="Admin.Users.Action.Delete" xml:space="preserve"><value>حذف</value></data>
   <data name="Admin.Users.Action.Duplicate" xml:space="preserve"><value>تكرار</value></data>
@@ -3306,5 +3309,13 @@
   <data name="Admin.Delegates.Bulk.Confirm.EmailHelper" xml:space="preserve"><value>اتركه فارغاً لتخطّي الإرسال. تُضغط رموز QR وتُرسل إلى هذا العنوان.</value></data>
   <data name="Admin.Delegates.Bulk.Confirm.EmailTo" xml:space="preserve"><value>سيتم إرسال ملف رموز QR المضغوط إلى {0}.</value></data>
   <data name="Admin.Delegates.Bulk.Confirm.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <!-- #10 (2026-07-22) — منشئ الدفعة: اختر نوعاً وعدداً، أضِفه للقائمة، ثم أنشئ. -->
+  <data name="Admin.Delegates.Bulk.ProfileType" xml:space="preserve"><value>نوع الملف</value></data>
+  <data name="Admin.Delegates.Bulk.ProfileType.Placeholder" xml:space="preserve"><value>اختر نوع الملف</value></data>
+  <data name="Admin.Delegates.Bulk.Add" xml:space="preserve"><value>إضافة</value></data>
+  <data name="Admin.Delegates.Bulk.Empty" xml:space="preserve"><value>لم تتم إضافة أي شارات بعد — اختر نوع الملف والعدد ثم اضغط إضافة.</value></data>
+  <data name="Admin.Delegates.Bulk.Total" xml:space="preserve"><value>الإجمالي: {0} شارة</value></data>
+  <data name="Admin.Delegates.Bulk.Remove" xml:space="preserve"><value>إزالة {0}</value></data>
+  <data name="Admin.Delegates.Bulk.PickType" xml:space="preserve"><value>اختر نوع الملف وعدداً أكبر من صفر.</value></data>
   <data name="Module.AdminVisitorsVipExport" xml:space="preserve"><value>تصدير ترحيب كبار الشخصيات</value></data>
 </root>

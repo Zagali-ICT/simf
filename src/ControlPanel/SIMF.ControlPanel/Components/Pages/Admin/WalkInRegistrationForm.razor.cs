@@ -5,6 +5,7 @@ using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Components.Forms;
 using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Organisations;
@@ -35,6 +36,19 @@ public partial class WalkInRegistrationForm : IDisposable
     private string? _idDocumentName;
     private string? _avatarName;
     private string? _vipPhotoName;
+
+    // The three file inputs use SimfFileUpload — the parent reads each control's
+    // generated ElementId via JS interop and uploads the picked file after a
+    // successful register-onsite (deferred pattern; needs the new user id).
+    private SimfFileUpload _idDocUpload = default!;
+    private SimfFileUpload _avatarUpload = default!;
+    private SimfFileUpload _vipPhotoUpload = default!;
+
+    // Option lists for the SimfSelect pickers. Enum-name / language-code option
+    // values; the visible labels are localized at render (GenderLabel /
+    // PreferredLanguageLabel).
+    private static readonly string[] GenderCodes = { "Unspecified", "Male", "Female" };
+    private static readonly string[] PreferredLanguages = { "ar", "en" };
 
     // C6 (D-459) — standard plate entry: three 17-letter picks (Latin codes) + a
     // digit field, assembled into _model.PlateNumber.
@@ -222,26 +236,25 @@ public partial class WalkInRegistrationForm : IDisposable
         else { _model.IqamaNumber = null; }
     }
 
-    private void OnNationalityChanged(ChangeEventArgs e)
-    {
-        _model.NationalityCode = e.Value?.ToString() ?? string.Empty;
-    }
+    private void OnNationalityPicked(CountryDto? country) =>
+        _model.NationalityCode = country?.Code ?? string.Empty;
 
-    private void OnDateOfBirthChanged(ChangeEventArgs e)
-    {
-        var raw = e.Value?.ToString();
+    private void OnDateOfBirthChanged(string raw) =>
         _model.DateOfBirth = string.IsNullOrEmpty(raw) || !DateOnly.TryParse(raw, out var parsed)
             ? null
             : parsed;
-    }
 
-    // D-395 — gender picker (native <select>); falls back to Unspecified.
-    private void OnGenderChanged(ChangeEventArgs e)
+    // D-395 — gender picker (SimfSelect over enum-name option values); falls
+    // back to Unspecified.
+    private void OnGenderPicked(string? value) =>
+        _model.Gender = Enum.TryParse<Gender>(value, out var g) ? g : Gender.Unspecified;
+
+    private string GenderLabel(string code) => code switch
     {
-        _model.Gender = Enum.TryParse<Gender>(e.Value?.ToString(), out var g)
-            ? g
-            : Gender.Unspecified;
-    }
+        "Male" => L["Admin.WalkIn.Field.Gender.Male"],
+        "Female" => L["Admin.WalkIn.Field.Gender.Female"],
+        _ => L["Admin.WalkIn.Field.Gender.Unspecified"],
+    };
 
     // C6 (D-459) — plate letter dropdowns + digit field assemble into the model;
     // the server validates SaudiPlate.IsValid and stores the canonical code.
@@ -289,48 +302,43 @@ public partial class WalkInRegistrationForm : IDisposable
         return match?.Code ?? string.Empty;
     }
 
-    private void OnBirthRegionChanged(ChangeEventArgs e)
-    {
-        // The <option> values are region codes; store the localized name back into
-        // the free-text column so it round-trips identically to the app.
-        var code = e.Value?.ToString();
-        var region = _regions.FirstOrDefault(r => r.Code == code);
+    // The picker values are region codes; store the localized name back into the
+    // free-text column so it round-trips identically to the app.
+    private void OnBirthRegionPicked(RegionOption? region) =>
         _model.PlaceOfBirth = region is null ? string.Empty : RegionName(region);
-    }
 
-    private async Task OnIdDocumentChanged(ChangeEventArgs _)
-    {
-        // Grab the picked file name (best-effort, browsers expose only
-        // the file name for native <input type="file">). The actual upload
-        // happens after a successful register-onsite — we need the new
-        // user id first.
-        var name = await JS.InvokeAsync<string?>(
-            "eval", "document.getElementById('walkin-id-document')?.files?.[0]?.name ?? null");
-        _idDocumentName = name;
-    }
+    // The picked-file name (best-effort: browsers expose only the name for a
+    // native file input). The actual upload happens after a successful
+    // register-onsite — we need the new user id first. Each handler reads its
+    // SimfFileUpload's generated element id.
+    private async Task OnIdDocumentPicked() =>
+        _idDocumentName = await PickedFileNameAsync(_idDocUpload);
 
     // D-427 (CS-3) — optional profile photo; uploaded after register-onsite
     // succeeds (same deferred pattern as the ID document — needs the new id).
-    private async Task OnAvatarChanged(ChangeEventArgs _)
-    {
-        _avatarName = await JS.InvokeAsync<string?>(
-            "eval", "document.getElementById('walkin-avatar')?.files?.[0]?.name ?? null");
-    }
+    private async Task OnAvatarPicked() =>
+        _avatarName = await PickedFileNameAsync(_avatarUpload);
 
     // V-1 (D-429) — VIP welcome photo; same deferred-upload pattern, posted to
     // the dedicated vip-photo endpoint after the account is created.
-    private async Task OnVipPhotoChanged(ChangeEventArgs _)
-    {
-        _vipPhotoName = await JS.InvokeAsync<string?>(
-            "eval", "document.getElementById('walkin-vip-photo')?.files?.[0]?.name ?? null");
-    }
+    private async Task OnVipPhotoPicked() =>
+        _vipPhotoName = await PickedFileNameAsync(_vipPhotoUpload);
 
-    // V-1 (D-429) — preferred-language picker (native <select>).
-    private void OnPreferredLanguageChanged(ChangeEventArgs e)
-    {
-        var value = e.Value?.ToString();
+    private async Task<string?> PickedFileNameAsync(SimfFileUpload upload) =>
+        await JS.InvokeAsync<string?>(
+            "eval",
+            $"document.getElementById('{upload.ElementId}')?.files?.[0]?.name ?? null");
+
+    // V-1 (D-429) — preferred-language picker (SimfSelect over language codes).
+    private void OnPreferredLanguagePicked(string? value) =>
         _model.PreferredLanguage = string.IsNullOrWhiteSpace(value) ? null : value;
-    }
+
+    private string PreferredLanguageLabel(string code) => code switch
+    {
+        "ar" => L["Admin.WalkIn.Field.PreferredLanguage.Ar"],
+        "en" => L["Admin.WalkIn.Field.PreferredLanguage.En"],
+        _ => code,
+    };
 
     private void ToggleInterest(Guid id)
     {
@@ -558,7 +566,7 @@ public partial class WalkInRegistrationForm : IDisposable
                         await JS.InvokeAsync<object?>(
                             "simfAccount.uploadFile",
                             $"{basePath}/{envelope.Data.UserId}/id-document",
-                            "walkin-id-document");
+                            _idDocUpload.ElementId);
                     }
                     catch (Exception) { /* surfaces as HasIdImage=false in the View modal */ }
                 }
@@ -570,7 +578,7 @@ public partial class WalkInRegistrationForm : IDisposable
                         await JS.InvokeAsync<object?>(
                             "simfAccount.uploadFile",
                             $"{basePath}/{envelope.Data.UserId}/avatar",
-                            "walkin-avatar");
+                            _avatarUpload.ElementId);
                     }
                     catch (Exception) { /* avatar is optional; failure is non-fatal */ }
                 }
@@ -583,7 +591,7 @@ public partial class WalkInRegistrationForm : IDisposable
                         await JS.InvokeAsync<object?>(
                             "simfAccount.uploadFile",
                             $"{basePath}/{envelope.Data.UserId}/vip-photo",
-                            "walkin-vip-photo");
+                            _vipPhotoUpload.ElementId);
                     }
                     catch (Exception) { /* VIP photo is optional; failure is non-fatal */ }
                 }

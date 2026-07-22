@@ -59,7 +59,7 @@ _Done (6), shipped to PR: #10 `feat/bulk-badge-email`, #32 `feat/cp-team-roles`,
 ## B. CONTROL PANEL (CP)
 
 **P1**
-- [ ] **#10** — Bulk profile/badge generation page (pick type + count, anonymous placeholders, issue QRs, email all to one address).
+- [x] **#10** — Bulk profile/badge generation page (pick type + count, anonymous placeholders, issue QRs, email all to one address). **Base + 2026-07-22 batch-builder redesign shipped** (on `/admin/delegates` + `/admin/visitors`); persisted batch / PDF contact-sheet / self-claim = Phases 2–4 (owner-gated) — see Topic 2 #10.
 - [ ] **#28** — Meeting/speaker date filter = **forum dates only** + all CP times in **Saudi time** (see #8).
 - [ ] **#29** — Workshop management in CP (title / time / allowed count / check-in-out); app shows **title + time only**.
 - [ ] **#30** — B2B / B2G bilateral-meeting management in CP + activate VIP↔speaker "send request" button.
@@ -193,7 +193,7 @@ confirm**, not a broken model.
 |---|------|----------|------|-------|--------|
 | 8 | ✨ Update | P1 | Whole system | Store & handle **all** times in Saudi local time (AST, UTC+3) — no UTC | ☐ Open |
 | 9 | 🐞 Bug | P1 | App / Auth | Biometric login not working / logic incorrect | ☐ Open |
-| 10 | ✨ Feature | P1 | CP / Badges | Bulk profile + badge (QR) generation page, no user account attached | ☐ Open |
+| 10 | ✨ Feature | P1 | CP / Badges | Bulk profile + badge (QR) generation page, no user account attached | ◐ Base + redesign shipped; Ph2–4 open |
 
 ---
 
@@ -234,14 +234,85 @@ confirm**, not a broken model.
   2. "Bulk add" → popup with the batch summary + an **email** input.
   3. On confirm: generate N profiles per type (no `SimfUser` link), tag them with one batch id, generate each badge QR, and email all QRs to the address.
 - **✅ DECISION (owner, 2026-07-20): anonymous placeholders.** Each generated badge is a placeholder (e.g. "VIP #1..#5") with **no `SimfUser`/Identity account** and no per-person name/email. All generated QRs are emailed to the **one organiser address** entered in the popup. → resolves the "no user associated" + email-destination questions.
-- **Open questions (still blocking design):**
-  1. **"Linked together"** — what does the link mean? One shared batch/group id on the profiles (so a batch can be re-emailed / revoked / reported together)? Confirm.
-  2. **Badge/QR format in the email** — one PDF contact-sheet of all QRs, or individual PNG attachments? Reuse the existing badge-QR renderer (square + `tryHarder`, per the QR-decodability fix) and `StoredFile` path.
-  3. **Profile-type source** — the dynamic `UserProfileType` catalogue, or a fixed Visitor / Other / Delegate set? (Owner wording lists those three.)
-  4. **Later claim** — can an anonymous badge later be attached to a real person/account (self-claim by scanning), or does it stay anonymous for the whole event?
-- **Confirmed constraints:** new CP page ⇒ new `PermissionCatalog` code + seed + gate on API **and** page (project HARD RULE), admin-only; pure `UserProfile` (App DB) rows keep D-157 data/identity separation intact (no Identity account created).
-- **Proposed next step:** answer the 4 open questions → I write the §11 pre-approval plan (App-DB placeholder entity/batch + migration, generate endpoint + permission, CP page + popup, badge/QR render + single-email send, docs + E2E + tests) → you approve → build. **No code yet.**
-- **Status:** ☐ Open — anonymous-placeholder decision locked; 4 Qs pending
+### AS-BUILT (base feature — shipped & merged, D-473 / D-751)
+
+The base bulk generator **already exists and is merged** into the current branch
+(originated on `feat/bulk-badge-email`, commit `e5fa0422`). It is not a standalone
+"BulkBadge" page — it lives on the **Delegates desk** (`/admin/delegates`) and
+posts to a real endpoint:
+
+- **Endpoint:** `POST /api/v1/admin/visitors/bulk-generate`
+  (`VisitorBulkEndpoints.BulkGenerateVisitorBadgesEndpoint`), gated by
+  `PermissionCatalog.Visitors.BulkGenerate` + `RequireApprovedAccount`.
+- **Service:** `AdminAccountService.Bulk.cs → BulkGenerateBadgesAsync` — caps 1000
+  badges/request; pre-validates every `ProfileTypeId` (must be `IsForVisitor`);
+  per badge creates a synthetic **Approved** `SimfUser` (`badge-{guid}@simf.local`,
+  passwordless) + a placeholder `UserProfile` (`NationalityId = 0`, name
+  `"{Type} #N"`, `IsDelegate` per request) and mints its QR. **No batch entity** —
+  the "batch" lives only in the request DTO (`AdminBulkGenerateBadgesRequest.Batches`).
+- **Email (D-751):** when an organiser email is supplied, all QR PNGs are zipped
+  (`BuildBadgeZip`, QRCoder `PngByteQRCode`) and emailed via
+  `EmailTemplateType.BulkBadgeDelivery`. Mail failure never rolls back the badges.
+- **Tests:** `tests/SIMF.Api.Tests/DelegatesAndBulkBadgesTests.cs` (9 facts).
+
+### REDESIGN (2026-07-22, Phase 1 — front-end, behaviour-preserving, shipped)
+
+Owner asked (via `/front-end-design`) to redesign "create new user" professionally
+for `/admin/visitors` (single **new** + **bulk**). Delivered without any schema /
+API / package change:
+
+- **Single create form** (`WalkInRegistrationForm.razor`) rebuilt to the house
+  `SimfFormSection` numbered-card pattern (SpeakersAddEdit parity) with the
+  responsive `simf-form__grid`; native select / date / file inputs replaced by
+  `SimfSelect` / `SimfDatePicker` / `SimfFileUpload`. Fields, endpoint
+  (`.../register-onsite` + deferred uploads) and validation unchanged.
+- **Bulk generator** extracted into a reusable component
+  (`BulkBadgeGenerator.razor`) and reshaped into the requested **batch-builder**:
+  `[profile type ▾] [count] [+ Add]` → a removable batch list (swatch · name ×
+  count) + live total → Generate → confirm popup (summary + optional organiser
+  email). Same request contract.
+- **Surfaced on both** `/admin/delegates` (in place, delegate-flagged by default)
+  **and** `/admin/visitors` (a gated **"Bulk add"** toolbar button → dialog).
+- **Bug fixed in passing:** the confirm-modal email field was missing
+  `ValueExpression` (the D-648 freeze gotcha) — now added.
+- **Tests:** `WalkInRegistrationFormTests` (3) + `BulkBadgeGeneratorTests` (5);
+  full CP suite 221/221 green; CP `dotnet build -c Release` 0/0.
+
+### Open questions → resolved
+
+1. **"Linked together" (persisted batch)** — NOT persisted today (badges are
+   ordinary rows). → **Phase 2** below adds a `BadgeBatch` table + a
+   `UserProfile.BadgeBatchId` back-link so a batch can be re-emailed / revoked /
+   reported together.
+2. **Email format** — as-built = **ZIP of one PNG per badge**. A **PDF
+   contact-sheet** is **Phase 3** (no PDF library exists in the solution yet —
+   needs a package).
+3. **Profile-type source** — **resolved as-built**: the dynamic `UserProfileType`
+   catalogue filtered `IsActive && IsVisitor` (mirrors the API guard). No change.
+4. **Later self-claim** — **resolved as-built**: already possible via the
+   badge-activation flow (`BadgeAuthService`, D-430/D-737/D-738) which "promotes
+   in place" a `@simf.local` placeholder when its QR is scanned + activated
+   (freeze-safe, no Identity schema change). **Phase 4** only adds capturing the
+   claimer's profile data on activation.
+
+### Remaining phases (owner-gated — NOT yet built)
+
+- **Phase 2 — persisted batch:** additive App-DB `BadgeBatch` + `UserProfile.BadgeBatchId`
+  (real intra-DB FK). **Needs owner freeze-lift (D-110/D-199 App-additive) + a
+  migration** + new `PermissionCatalog` codes for a batch view/re-email/revoke CP
+  surface (gate API **and** page).
+- **Phase 3 — PDF contact-sheet email:** add a PDF library (e.g. QuestPDF) to
+  `SIMF.Infrastructure.csproj`. **Needs owner package approval** (§1.7 csproj +
+  §14). The email attachment path is content-type generic, so no sender change.
+- **Phase 4 — self-claim profile capture:** extend `badge_activation_screen.dart`
+  + `CompleteActivationAsync` to fill the placeholder profile (name / nationality
+  / interests) on claim. App + backend, **no migration** (freeze-safe).
+
+- **Confirmed constraints:** admin-only; pure `UserProfile` (App DB) placeholder
+  rows keep the D-157 data/identity separation intact (no Identity account with
+  real credentials until self-claim).
+- **Status:** ◐ In progress — **base feature + Phase-1 redesign shipped**; Phases
+  2–4 (persisted batch / PDF / self-claim) remain, each owner-gated per above.
 
 ---
 

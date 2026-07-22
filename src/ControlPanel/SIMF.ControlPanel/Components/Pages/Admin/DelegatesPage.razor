@@ -1,7 +1,8 @@
 @* D-473 (#10) — Delegates (وفد) desk. A delegate is an ordinary visitor with the
    IsDelegate flag + an invited nationality. This is a SEPARATE page (a copy of the
-   visitor walk-in) so the visitor flow is untouched. It also hosts the bulk-generate
-   panel (profile type + count → default-data badges) usable for visitors OR delegates. *@
+   visitor walk-in) so the visitor flow is untouched. It also hosts the reusable
+   bulk badge generator (BulkBadgeGenerator) — profile type + count → default-data
+   badges — usable for visitors OR delegates. *@
 @page "/admin/delegates"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Visitors.RegisterOnsite)]
@@ -27,82 +28,11 @@
                         OnPrint="OnPrintAsync"
                         OnRegisterAnother="OnRegisterAnother" />
 
-    @* Bulk-generate placeholder badges by profile type + count (e.g. 10 VIP, 500 Normal). *@
+    @* Bulk-generate placeholder badges by profile type + count (e.g. 10 VIP,
+       500 Normal), delegate-flagged by default on this desk. *@
     <AuthorizedAction Permission="@PermissionCatalog.Visitors.BulkGenerate">
         <div class="simf-surface">
-            <h2 class="simf-section-title">@L["Admin.Delegates.Bulk.Title"]</h2>
-            <p class="simf-section-hint">@L["Admin.Delegates.Bulk.Hint"]</p>
-
-            @if (_bulkToast is not null)
-            {
-                <SimfAlert Variant="@_bulkToast.Variant">@_bulkToast.Message</SimfAlert>
-            }
-
-            @if (_profileTypes.Count == 0)
-            {
-                <SimfEmptyState Title="@L["Admin.Delegates.Bulk.NoTypes"]" />
-            }
-            else
-            {
-                <div class="simf-form__fields">
-                    @foreach (var pt in _profileTypes)
-                    {
-                        <div class="simf-bulk-row">
-                            <span class="simf-bulk-row__name">@pt.Name</span>
-                            <SimfTextField Label="@L["Admin.Delegates.Bulk.Count"]"
-                                           Numeric="true" MaxLength="4"
-                                           Value="@CountFor(pt.Id)"
-                                           ValueChanged="@(v => SetCount(pt.Id, v))"
-                                           Disabled="_busy" />
-                        </div>
-                    }
-                    <SimfCheckbox @bind-Value="_bulkIsDelegate" Disabled="_busy">
-                        @L["Admin.Delegates.Bulk.IsDelegate"]
-                    </SimfCheckbox>
-                </div>
-                <div class="simf-form__actions">
-                    <SimfButton Type="button" Disabled="_busy"
-                                OnClick="OpenConfirm">
-                        @L["Admin.Delegates.Bulk.Generate"]
-                    </SimfButton>
-                </div>
-            }
+            <BulkBadgeGenerator DefaultIsDelegate="true" />
         </div>
-
-        @* D-751 (#10) — confirm step: shows the count summary + an optional organiser
-           email; on confirm the QR badges are zipped and emailed to that address. *@
-        <SimfModal Open="_confirmOpen"
-                   Title="@L["Admin.Delegates.Bulk.Confirm.Title"]"
-                   CloseLabel="@L["Admin.Delegates.Bulk.Confirm.Cancel"]"
-                   OnClose="CloseConfirm">
-            <ChildContent>
-                <p class="simf-section-hint">
-                    @string.Format(L["Admin.Delegates.Bulk.Confirm.Summary"], _confirmCountsText, ConfirmTotal)
-                </p>
-                <SimfTextField Label="@L["Admin.Delegates.Bulk.Confirm.Email"]"
-                               Type="email" MaxLength="256"
-                               Helper="@L["Admin.Delegates.Bulk.Confirm.EmailHelper"]"
-                               Value="@_recipientEmail"
-                               ValueChanged="@(v => _recipientEmail = v)"
-                               Disabled="_busy" />
-                @if (!string.IsNullOrWhiteSpace(_recipientEmail))
-                {
-                    <p class="simf-section-hint">
-                        @string.Format(L["Admin.Delegates.Bulk.Confirm.EmailTo"], _recipientEmail.Trim())
-                    </p>
-                }
-            </ChildContent>
-            <Footer>
-                <SimfButton Type="button" Variant="secondary"
-                            Disabled="_busy" OnClick="CloseConfirm">
-                    @L["Admin.Delegates.Bulk.Confirm.Cancel"]
-                </SimfButton>
-                <SimfButton Type="button" Loading="_busy"
-                            LoadingLabel="@L["Admin.Delegates.Bulk.Generating"]"
-                            OnClick="GenerateBulkAsync">
-                    @L["Admin.Delegates.Bulk.Generate"]
-                </SimfButton>
-            </Footer>
-        </SimfModal>
     </AuthorizedAction>
 </div>

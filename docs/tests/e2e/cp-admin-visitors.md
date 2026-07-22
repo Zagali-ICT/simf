@@ -48,6 +48,7 @@
 | E2E-VIS-024 | Full-page mode: Add/Edit/Details take over the content area, save/close returns to grid (D-353) | happy | P1 | _to author_ |
 | E2E-VIS-025 | Walk-in birth location (D-469) — Saudi → region `<select>` over the 13 official regions (code-keyed, cross-locale preselect); non-Saudi → free-text "as in passport" | validation | P1 | _to author_ |
 | E2E-VIS-030 | Edit login email (D-214 + #24) — golden change → 200 + save toast, stamp roll + old-session revoke + new address unverified (re-verify at next sign-in); duplicate → 409 `ADMIN_EMAIL_ALREADY_REGISTERED` inline SimfAlert; name-only edit keeps the session; bad format → 400 | happy | P1 | _to author_ |
+| E2E-VIS-031 | Bulk add (#10 batch-builder) — gated toolbar "Bulk add" opens the `BulkBadgeGenerator` dialog; build a batch (type + count → Add), Generate → confirm → `bulk-generate` 200; hidden without `Visitors.BulkGenerate` | happy | P1 | authored ✓ (BulkBadgeGeneratorTests; gate by CpNavigationPermission/PermissionEnforcement) |
 
 ## Scenarios
 
@@ -530,6 +531,14 @@ filter + POST wiring). Live browser drive pending the E2E-VIS authoring pass.
   account is created already-Approved (no pending queue) and a QR id is minted
   in the same transaction. `/admin/visitors/new` (`CreateVisitor.razor`) is a
   preserved deep-link fallback to the same flow.
+- **2026-07-22 redesign (behaviour-preserving).** The wizard is now grouped into
+  numbered `SimfFormSection` cards (SpeakersAddEdit parity) on the responsive
+  `simf-form__grid`; the DOB / gender / preferred-language / nationality /
+  birth-region controls use `SimfDatePicker` / `SimfSelect`, and the ID-document /
+  photo inputs use `SimfFileUpload`. All still render native `<input>` / `<select>`
+  under the field shell, so the field-level scenarios above are unchanged. A single
+  wrapping `<fieldset disabled>` preserves the submit-time lockout. Structure pinned
+  by `tests/SIMF.ControlPanel.Tests/WalkInRegistrationFormTests.cs`.
 - **API integration tests cover the same surface at a lower layer** (no browser):
   - `tests/SIMF.Api.Tests/AdminGridVisitorsTests.cs` — list/grid + bulk-delete /
     duplicate / export / import type-scoping (incl. the `AdminUserNotFound` 404
@@ -679,6 +688,38 @@ auth-gated Edit form is pending the broader E2E-VIS authoring pass (all E2E-VIS 
 are `_to author_`). The email-change re-verify note also anchors the E2E-VIS-001
 golden Edit step (Build #24).
 
+### E2E-VIS-031 — Bulk add badges from the visitors list (#10 batch-builder)
+
+```gherkin
+Feature: Bulk badge generation is reachable from the Visitors list
+  As an Administrator holding Visitors.BulkGenerate
+  I want to generate placeholder badges without leaving /admin/visitors
+
+Scenario: Build a batch and generate from the toolbar dialog
+  Given the administrator is on /admin/visitors with Visitors.BulkGenerate
+  And the grid toolbar shows a "Bulk add" button (AuthorizedAction, Visitors.BulkGenerate)
+  When they click "Bulk add"
+  Then a SimfModal opens hosting the shared BulkBadgeGenerator (ShowHeader=false)
+  When they choose the "VIP" profile type, enter count "5", and click "Add"
+  Then a batch row "VIP × 5" appears with a running total of 5
+  When they click "Generate badges" and confirm the popup (no organiser email)
+  Then POST /account/api/admin/visitors/bulk-generate returns 200 with Created = 5
+  And a success toast reads "5 badge(s) generated."
+  # IsDelegate is off by default here (the delegates desk defaults it on).
+
+Scenario: The Bulk add button is hidden without the permission
+  Given a signed-in admin whose roles do NOT grant Visitors.BulkGenerate
+  When they open /admin/visitors
+  Then the "Bulk add" toolbar button is not rendered
+  And a hand-crafted bulk-generate POST is rejected by the endpoint policy
+```
+
+**Covered (lower layer):** `tests/SIMF.ControlPanel.Tests/BulkBadgeGeneratorTests.cs`
+(add / merge / pick-type / post the built batch); the endpoint gate by
+`PermissionEnforcementTests` (`Visitors.BulkGenerate`) and the toolbar `AuthorizedAction`.
+The same generator + request contract is exercised on `/admin/delegates`
+(`cp-admin-delegates.md`, E2E-DLG-004/013/014).
+
 ---
 
-_Last reviewed:_ 2026-07-22 by Claude (#24 DoD - added E2E-VIS-030, the dedicated edit-email scenario for PUT /admin/visitors/{id}: golden change, stamp roll + old-session revoke + EmailConfirmed=false re-verify, duplicate 409 ADMIN_EMAIL_ALREADY_REGISTERED inline, name-only keeps the session, bad-format 400). Prior: 2026-07-22 by SIMF Team (Build #24 - noted on E2E-VIS-001 that an Edit which changes the email now marks it unverified (EmailConfirmed=false) for re-verification at next sign-in; not a lockout). Prior: 2026-07-21 by Claude (VIP edit - the shared EditAccountForm gained a Photo & ID section; E2E-VIS-029). Earlier: 2026-07-11 by Claude (W4 on-site remediation - H-1 duplicate-identity guard; E2E-VIS-027). Earlier: 2026-07-09 by SIMF Team (D-728 - E2E-VIS-026 change-account-type); 2026-06-20 (D-469 - E2E-VIS-025 Saudi birth-location region dropdown); 2026-06-10 (D-356 Phase 5 - Excel + toggle; E2E-VIS-023/024).
+_Last reviewed:_ 2026-07-22 by Claude (#10 front-end redesign - the walk-in wizard regrouped into SimfFormSection cards + SimfSelect/SimfDatePicker/SimfFileUpload (behaviour-preserving, E2E-VIS structure note + WalkInRegistrationFormTests); added E2E-VIS-031 - the gated "Bulk add" toolbar dialog hosting the shared BulkBadgeGenerator batch-builder). Prior: 2026-07-22 by Claude (#24 DoD - added E2E-VIS-030, the dedicated edit-email scenario for PUT /admin/visitors/{id}: golden change, stamp roll + old-session revoke + EmailConfirmed=false re-verify, duplicate 409 ADMIN_EMAIL_ALREADY_REGISTERED inline, name-only keeps the session, bad-format 400). Prior: 2026-07-22 by SIMF Team (Build #24 - noted on E2E-VIS-001 that an Edit which changes the email now marks it unverified (EmailConfirmed=false) for re-verification at next sign-in; not a lockout). Prior: 2026-07-21 by Claude (VIP edit - the shared EditAccountForm gained a Photo & ID section; E2E-VIS-029). Earlier: 2026-07-11 by Claude (W4 on-site remediation - H-1 duplicate-identity guard; E2E-VIS-027). Earlier: 2026-07-09 by SIMF Team (D-728 - E2E-VIS-026 change-account-type); 2026-06-20 (D-469 - E2E-VIS-025 Saudi birth-location region dropdown); 2026-06-10 (D-356 Phase 5 - Excel + toggle; E2E-VIS-023/024).

@@ -1,0 +1,94 @@
+/* #10 batch-builder — the "pick a type + count → Add → batch list" bulk badge
+   generator. Tokens only (no hardcoded colours/sizes), BEM naming; scoped to
+   this component to avoid touching the shared simf-components.css bundle. */
+
+/* The add row: type picker (wide) + count + Add button aligned to the row base. */
+.simf-bulk-builder__add {
+    display: grid;
+    grid-template-columns: 2fr 1fr auto;
+    gap: var(--space-3);
+    align-items: end;
+    margin-block-end: var(--space-4);
+}
+
+.simf-bulk-builder__add-action {
+    display: flex;
+}
+
+@media (max-width: 640px) {
+    .simf-bulk-builder__add {
+        grid-template-columns: 1fr;
+        align-items: stretch;
+    }
+}
+
+/* The batch list — one row per profile type in the batch. */
+.simf-bulk-builder__list {
+    list-style: none;
+    margin: 0 0 var(--space-2);
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.simf-bulk-builder__row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-field);
+    background: var(--color-surface-sunken);
+}
+
+.simf-bulk-builder__swatch {
+    inline-size: var(--space-3);
+    block-size: var(--space-3);
+    border-radius: var(--radius-sm);
+    background: var(--simf-bulk-swatch-color, var(--color-secondary));
+    flex: 0 0 auto;
+}
+
+.simf-bulk-builder__name {
+    font-weight: var(--font-weight-heading);
+    margin-inline-end: auto;
+}
+
+.simf-bulk-builder__count {
+    color: var(--color-text-muted);
+}
+
+.simf-bulk-builder__remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: var(--space-6);
+    block-size: var(--space-6);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.simf-bulk-builder__remove:hover,
+.simf-bulk-builder__remove:focus-visible {
+    background: var(--color-surface);
+    color: var(--color-error);
+}
+
+.simf-bulk-builder__remove:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.simf-bulk-builder__total {
+    font-weight: var(--font-weight-heading);
+    margin-block: var(--space-2) var(--space-4);
+}
+
+.simf-bulk-builder__empty {
+    margin-block-end: var(--space-4);
+}
