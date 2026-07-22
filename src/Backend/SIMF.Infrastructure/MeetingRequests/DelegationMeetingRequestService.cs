@@ -22,10 +22,14 @@ internal sealed class DelegationMeetingRequestService(
     SimfAppDbContext appDbContext,
     IIdentityUserDirectory userDirectory,
     INotificationDispatcher notifications,
+    IHallAvailabilityService hallAvailability,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<DelegationMeetingRequestService> logger) : IDelegationMeetingRequestService
 {
+    private static readonly SIMF.Common.Enums.HallPurpose[] MeetingHallPurposes =
+        { SIMF.Common.Enums.HallPurpose.Meeting, SIMF.Common.Enums.HallPurpose.General };
+
     private const int MaxAttendees = 100;
 
     public async Task<DelegationMeetingRequestSubmitted> SubmitAsync(
@@ -227,62 +231,80 @@ internal sealed class DelegationMeetingRequestService(
                 "Delegation meeting request not found.",
                 "لم يتم العثور على طلب اجتماع الوفد.");
 
-        // A1 — only a Pending request may be decided (guards double-response and
-        // overwriting a prior decision).
-        if (req.Status != MeetingRequestStatus.Pending)
-        {
-            throw new ApiException(ErrorCodes.AppRequestAlreadyResponded, 409,
-                "This meeting request has already been responded to.",
-                "تمت معالجة طلب المقابلة هذا بالفعل.");
-        }
-
         var now = timeProvider.GetUtcNow();
 
-        // M-3 (owner default: admin-brokered, NO target-consent step) — an accept that
-        // carries a proposed slot must reserve it honestly: the slot cannot be in the
-        // past, and neither delegation may already hold an Accepted meeting that
-        // overlaps it. The Accepted row + its slot IS the reservation (mirrors the
-        // speaker flow, where an Accepted/AwaitingSpeaker slot holds the calendar); this
-        // overlap guard is what stops a delegation being double-booked. A topic-only
-        // request (no slot) accepts unchanged, so the legacy path is untouched.
-        //
-        // NOTE — this overlap check is a read-then-write with an ACCEPTED residual race:
-        // two admins concurrently accepting two overlapping G2G requests could both pass
-        // the AnyAsync guard. That matches the pre-M-5 business-meeting stance and is
-        // acceptable for this admin-brokered, low-concurrency, tiny G2G table; it is NOT
-        // wrapped in a Serializable transaction (unlike M-5's higher-volume path).
-        if (request.Status == MeetingRequestStatus.Accepted
-            && req.SlotStartUtc is { } slotStart && req.SlotEndUtc is { } slotEnd)
+        // Bi-Meeting rework — unified 3-button model. Status=Rejected is CANCEL (with a
+        // justification note). Status=Accepted with a bound HallId is APPROVE
+        // (VerbalConfirmed=false → AwaitingSpeaker, awaiting the other party's confirm,
+        // wired in P4) or CONFIRM (true → Accepted, the admin has the verbal confirmation).
+        // A legacy accept without a hall keeps the requester-proposed-slot behaviour.
+        // This is admin-brokered + low-concurrency; the DB (HallId, SlotStartUtc)
+        // filtered-unique index is the equal-start hall double-book backstop.
+        var cancel = request.Status == MeetingRequestStatus.Rejected;
+        var bindHall = request.Status == MeetingRequestStatus.Accepted && request.HallId is not null;
+        var confirmVerbal = bindHall && request.VerbalConfirmed;
+
+        if (cancel)
         {
-            if (slotStart < now)
+            // Cancel/Decline is allowed from any non-terminal state: a Pending decline
+            // → Rejected; a post-approval cancel releases the held slot → Cancelled.
+            if (req.Status is MeetingRequestStatus.Rejected or MeetingRequestStatus.Cancelled
+                or MeetingRequestStatus.Done)
             {
-                throw new ApiException(ErrorCodes.DelegationMeetingRequestInvalid, 400,
-                    "The proposed meeting slot is in the past.",
-                    "فترة الاجتماع المقترحة في الماضي.");
+                throw new ApiException(ErrorCodes.AppRequestAlreadyResponded, 409,
+                    "This meeting request has already been responded to.",
+                    "تمت معالجة طلب المقابلة هذا بالفعل.");
+            }
+            var wasPending = req.Status == MeetingRequestStatus.Pending;
+            req.Status = wasPending ? MeetingRequestStatus.Rejected : MeetingRequestStatus.Cancelled;
+            // Release any held hall slot so it frees up for another meeting.
+            req.HallId = null;
+            req.MeetingTableId = null;
+        }
+        else
+        {
+            // Approve is valid only from Pending; Confirm may also finalise a previously
+            // Approved (AwaitingSpeaker) request.
+            var allowed = confirmVerbal
+                ? req.Status is MeetingRequestStatus.Pending or MeetingRequestStatus.AwaitingSpeaker
+                : req.Status == MeetingRequestStatus.Pending;
+            if (!allowed)
+            {
+                throw new ApiException(ErrorCodes.AppRequestAlreadyResponded, 409,
+                    "This meeting request has already been responded to.",
+                    "تمت معالجة طلب المقابلة هذا بالفعل.");
             }
 
-            var reqId = req.Id;
-            var homeCountryId = req.RequestingCountryId;
-            var targetCountryId = req.TargetCountryId;
-            var overlaps = await appDbContext.DelegationMeetingRequests.AsNoTracking()
-                .Where(r => r.Id != reqId
-                    && r.Status == MeetingRequestStatus.Accepted
-                    && r.SlotStartUtc != null && r.SlotEndUtc != null
-                    && (r.RequestingCountryId == homeCountryId
-                        || r.TargetCountryId == homeCountryId
-                        || r.RequestingCountryId == targetCountryId
-                        || r.TargetCountryId == targetCountryId))
-                .AnyAsync(r => r.SlotStartUtc < slotEnd && slotStart < r.SlotEndUtc,
-                    cancellationToken);
-            if (overlaps)
+            if (bindHall)
             {
-                throw new ApiException(ErrorCodes.DelegationMeetingRequestInvalid, 409,
-                    "One of the delegations already has a meeting at that time.",
-                    "لدى أحد الوفدين اجتماع بالفعل في ذلك الوقت.");
+                await BindDelegationHallSlotAsync(req, request, now, cancellationToken);
+            }
+            else if (req.SlotStartUtc is { } sStart && req.SlotEndUtc is { } sEnd)
+            {
+                // Legacy accept-without-hall — honour the requester-proposed slot with the
+                // past + cross-country overlap guard.
+                if (sStart < now)
+                {
+                    throw new ApiException(ErrorCodes.DelegationMeetingRequestInvalid, 400,
+                        "The proposed meeting slot is in the past.",
+                        "فترة الاجتماع المقترحة في الماضي.");
+                }
+                await GuardDelegationOverlapAsync(req, sStart, sEnd, cancellationToken);
+            }
+
+            if (confirmVerbal)
+            {
+                req.Status = MeetingRequestStatus.Accepted;
+                req.ConfirmedAt = now;
+                req.ConfirmedByUserId = actorUserId;
+            }
+            else
+            {
+                // Approve with a hall → AwaitingSpeaker; legacy accept-without-hall → Accepted.
+                req.Status = bindHall ? MeetingRequestStatus.AwaitingSpeaker : MeetingRequestStatus.Accepted;
             }
         }
 
-        req.Status = request.Status;
         req.ResponseNote = string.IsNullOrWhiteSpace(request.ResponseNote)
             ? null : request.ResponseNote.Trim();
         req.RespondedAt = now;
@@ -314,26 +336,133 @@ internal sealed class DelegationMeetingRequestService(
 
         // Notify (and on accept email) the requesting delegate — they are a SimfUser,
         // so the dispatcher's email path applies. Best-effort.
-        var accepted = req.Status == MeetingRequestStatus.Accepted;
+        // Notify the requester of the outcome. Confirmed (Accepted) and Approved
+        // (AwaitingSpeaker) email + in-app; a decline is in-app + email too so the
+        // requester always learns the result. The rich other-party 2-email + app-tap
+        // confirm flow is added in P4.
+        var (title, titleAr, body, bodyAr, kind, email) = req.Status switch
+        {
+            MeetingRequestStatus.Accepted => (
+                "Delegation meeting confirmed", "تم تأكيد اجتماع الوفد",
+                $"Your delegation meeting with {detail.TargetCountry} is confirmed.",
+                $"تم تأكيد اجتماع وفدك مع {detail.TargetCountry}.",
+                NotificationKind.MeetingScheduled, true),
+            MeetingRequestStatus.AwaitingSpeaker => (
+                "Delegation meeting approved", "تمت الموافقة على اجتماع الوفد",
+                $"Your delegation meeting with {detail.TargetCountry} was approved and is awaiting confirmation.",
+                $"تمت الموافقة على اجتماع وفدك مع {detail.TargetCountry} وهو بانتظار التأكيد.",
+                NotificationKind.MeetingScheduled, true),
+            _ => (
+                "Delegation meeting declined", "تم رفض اجتماع الوفد",
+                $"Your delegation meeting with {detail.TargetCountry} was declined.",
+                $"تم رفض اجتماع وفدك مع {detail.TargetCountry}.",
+                NotificationKind.MeetingCancelled, false),
+        };
         await notifications.TryDispatchAsync(new NotificationRequest
         {
             UserId = req.RequestedByUserId,
-            Kind = accepted ? NotificationKind.MeetingScheduled : NotificationKind.MeetingCancelled,
-            Title = accepted ? "Delegation meeting accepted" : "Delegation meeting declined",
-            TitleArabic = accepted ? "تم قبول اجتماع الوفد" : "تم رفض اجتماع الوفد",
-            Body = accepted
-                ? $"Your delegation meeting with {detail.TargetCountry} was accepted."
-                : $"Your delegation meeting with {detail.TargetCountry} was declined.",
-            BodyArabic = accepted
-                ? $"تم قبول اجتماع وفدك مع {detail.TargetCountry}."
-                : $"تم رفض اجتماع وفدك مع {detail.TargetCountry}.",
+            Kind = kind,
+            Title = title, TitleArabic = titleAr,
+            Body = body, BodyArabic = bodyAr,
             Severity = NotificationSeverity.Info,
             RelatedEntityType = nameof(DelegationMeetingRequest),
             RelatedEntityId = req.Id,
-            SendEmail = accepted,
+            SendEmail = email,
         }, logger, cancellationToken);
 
         return detail;
+    }
+
+    // Bi-Meeting rework — bind the meeting to a free hall slot on Approve/Confirm,
+    // mirroring SpeakerMeetingRequestService.BindHallSlotAsync. Validates the hall
+    // hosts meetings, the picked slot is currently free (hall availability already
+    // subtracts bound meetings), neither delegation overlaps, and the optional table
+    // belongs to the hall. The (HallId, SlotStartUtc) filtered-unique index is the race
+    // backstop.
+    private async Task BindDelegationHallSlotAsync(
+        DelegationMeetingRequest req,
+        RespondToDelegationMeetingRequestRequest request,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        var hallId = request.HallId!.Value;
+        if (request.SlotStartUtc is not { } start
+            || request.SlotEndUtc is not { } end || end <= start)
+        {
+            throw new ApiException(ErrorCodes.DelegationMeetingRequestInvalid, 400,
+                "A valid hall slot (start and end) is required to bind a hall.",
+                "يلزم اختيار فترة قاعة صحيحة (بداية ونهاية) لربط القاعة.");
+        }
+        if (start < now)
+        {
+            throw new ApiException(ErrorCodes.DelegationMeetingRequestInvalid, 400,
+                "The meeting slot is in the past.",
+                "فترة الاجتماع في الماضي.");
+        }
+        var hall = await appDbContext.Halls.AsNoTracking()
+            .Where(h => h.Id == hallId)
+            .Select(h => new { h.IsActive, h.Purpose })
+            .SingleOrDefaultAsync(cancellationToken)
+            ?? throw new ApiException(ErrorCodes.HallNotFound, 404,
+                "The hall was not found.", "لم يتم العثور على القاعة.");
+        if (!hall.IsActive || !MeetingHallPurposes.Contains(hall.Purpose))
+        {
+            throw new ApiException(ErrorCodes.HallNotFound, 404,
+                "The hall does not host meetings.",
+                "هذه القاعة لا تستضيف الاجتماعات.");
+        }
+
+        var slots = await hallAvailability.GetAvailableSlotsAsync(hallId, cancellationToken);
+        if (!slots.Any(s => s.StartUtc == start && s.EndUtc == end))
+        {
+            throw new ApiException(ErrorCodes.DelegationMeetingRequestInvalid, 409,
+                "That hall slot is no longer available.",
+                "لم تعد فترة القاعة هذه متاحة.");
+        }
+
+        await GuardDelegationOverlapAsync(req, start, end, cancellationToken);
+
+        if (request.MeetingTableId is { } tableId)
+        {
+            var tableOk = await appDbContext.MeetingTables.AsNoTracking()
+                .AnyAsync(t => t.Id == tableId && t.HallId == hallId && t.IsActive, cancellationToken);
+            if (!tableOk)
+            {
+                throw new ApiException(ErrorCodes.DelegationMeetingRequestInvalid, 400,
+                    "The meeting table was not found in this hall.",
+                    "لم يتم العثور على طاولة الاجتماع في هذه القاعة.");
+            }
+            req.MeetingTableId = tableId;
+        }
+        req.HallId = hallId;
+        req.SlotStartUtc = start;
+        req.SlotEndUtc = end;
+    }
+
+    // Neither delegation (as requester OR target) may already hold a LIVE meeting
+    // (`MeetingRequestStatuses.SlotHolding`) overlapping [start, end) — the cross-country
+    // double-book guard. Read-then-write, acceptable for this admin-brokered,
+    // low-concurrency G2G table (the DB hall index is the equal-start backstop).
+    private async Task GuardDelegationOverlapAsync(
+        DelegationMeetingRequest req, DateTimeOffset start, DateTimeOffset end,
+        CancellationToken cancellationToken)
+    {
+        var reqId = req.Id;
+        var homeCountryId = req.RequestingCountryId;
+        var targetCountryId = req.TargetCountryId;
+        var overlaps = await appDbContext.DelegationMeetingRequests.AsNoTracking()
+            .Where(r => r.Id != reqId
+                && MeetingRequestStatuses.SlotHolding.Contains(r.Status)
+                && r.SlotStartUtc != null && r.SlotEndUtc != null
+                && (r.RequestingCountryId == homeCountryId || r.TargetCountryId == homeCountryId
+                    || r.RequestingCountryId == targetCountryId || r.TargetCountryId == targetCountryId))
+            .AnyAsync(r => r.SlotStartUtc < end && start < r.SlotEndUtc, cancellationToken);
+        if (overlaps)
+        {
+            throw new ApiException(ErrorCodes.DelegationMeetingRequestInvalid, 409,
+                "One of the delegations already has a meeting at that time.",
+                "لدى أحد الوفدين اجتماع بالفعل في ذلك الوقت.");
+        }
     }
 
     private async Task<AdminDelegationMeetingRequestDetail> LoadDetailAsync(

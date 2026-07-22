@@ -55,7 +55,27 @@ public sealed record AdminDelegationMeetingRequestDetail(
     DateTimeOffset CreatedAt,
     DateTimeOffset? RespondedAt);
 
-/// <summary>D-478 — the team's Accept/Reject response.</summary>
+/// <summary>D-478 + Bi-Meeting rework — the team's respond action, unified with the
+/// speaker flow. <c>Status = Rejected</c> is <b>Cancel</b> (with a justification note).
+/// <c>Status = Accepted</c> with a bound <see cref="HallId"/> is either <b>Approve</b>
+/// (<see cref="VerbalConfirmed"/> = false → AwaitingSpeaker, awaiting the other party's
+/// confirmation) or <b>Confirm</b> (<see cref="VerbalConfirmed"/> = true → Accepted, the
+/// admin has the other party's verbal confirmation). Approve/Confirm require the hall +
+/// a free slot from <c>GET /admin/halls/{id}/available-slots</c>.</summary>
 public class RespondToDelegationMeetingRequestRequest : RespondToRequest
 {
+    /// <summary>The hall to bind the meeting to (required for Approve/Confirm).</summary>
+    public Guid? HallId { get; set; }
+
+    /// <summary>Optional meeting table inside <see cref="HallId"/>.</summary>
+    public Guid? MeetingTableId { get; set; }
+
+    /// <summary>The picked hall slot start/end — required when <see cref="HallId"/> is
+    /// set, must match a currently-free slot for that hall.</summary>
+    public DateTimeOffset? SlotStartUtc { get; set; }
+    public DateTimeOffset? SlotEndUtc { get; set; }
+
+    /// <summary>Bi-Meeting rework — Approve (false) vs Confirm (true). See the class
+    /// summary. Append-only field (defaults false = Approve).</summary>
+    public bool VerbalConfirmed { get; set; }
 }

@@ -136,6 +136,18 @@ internal sealed class HallAvailabilityService(
             .Select(r => new { Start = r.SlotStartUtc!.Value, End = r.SlotEndUtc!.Value })
             .ToListAsync(cancellationToken);
 
+        // Bi-Meeting rework — a DELEGATION meeting bound to this hall occupies the slot
+        // too. Once delegation meetings bind halls (P3), the hall free-slot read MUST
+        // subtract them as well, or a hall slot held by a delegation meeting is offered
+        // as free and double-booked across a speaker + a delegation meeting.
+        var delegationBusy = await appDbContext.DelegationMeetingRequests.AsNoTracking()
+            .Where(r => r.HallId == hallId
+                && MeetingRequestStatuses.SlotHolding.Contains(r.Status)
+                && r.SlotStartUtc != null && r.SlotEndUtc != null)
+            .Select(r => new { Start = r.SlotStartUtc!.Value, End = r.SlotEndUtc!.Value })
+            .ToListAsync(cancellationToken);
+        busy.AddRange(delegationBusy);
+
         var slots = new List<HallAvailableSlot>();
         foreach (var w in windows)
         {

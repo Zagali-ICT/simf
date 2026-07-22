@@ -354,7 +354,13 @@ internal sealed class SpeakerMeetingRequestService(
         // token pair. Staged ONCE here, before the retryable block, so a serialization
         // retry re-commits the same pair rather than minting a duplicate. Only the
         // email that follows is best-effort.
-        var links = bindHall ? meetingActionTokens.StageTokensForRequest(req.Id) : null;
+        // Bi-Meeting rework — the 3-button model. Approve (bindHall && !VerbalConfirmed)
+        // mints the speaker confirmation link pair. Confirm (bindHall && VerbalConfirmed)
+        // means the admin already has the speaker's verbal confirmation, so no link is
+        // minted and the meeting goes straight to Accepted (Confirmed) below.
+        var links = bindHall && !request.VerbalConfirmed
+            ? meetingActionTokens.StageTokensForRequest(req.Id)
+            : null;
 
         // FIX #22 (R-1 held item) — close the CONCURRENT speaker double-book race. The
         // app-level overlap re-check (SpeakerHasOverlappingMeetingAsync) already blocks
@@ -409,7 +415,18 @@ internal sealed class SpeakerMeetingRequestService(
                     }
                 }
 
-                req.Status = bindHall ? MeetingRequestStatus.AwaitingSpeaker : request.Status;
+                // Bi-Meeting rework — Confirm (verbal) with a bound hall goes straight to
+                // Accepted and stamps the (verbal) speaker decision; Approve goes to
+                // AwaitingSpeaker; accept-without-hall keeps the legacy Status.
+                if (bindHall && request.VerbalConfirmed)
+                {
+                    req.Status = MeetingRequestStatus.Accepted;
+                    req.SpeakerDecisionAt = now;
+                }
+                else
+                {
+                    req.Status = bindHall ? MeetingRequestStatus.AwaitingSpeaker : request.Status;
+                }
                 req.ResponseNote = string.IsNullOrWhiteSpace(request.ResponseNote)
                     ? null : request.ResponseNote.Trim();
                 req.RespondedAt = now;
@@ -461,13 +478,17 @@ internal sealed class SpeakerMeetingRequestService(
         // outcome notification it emails the SPEAKER a double-opt-in Approve/Reject
         // link (the tokens were already committed atomically above). The requester
         // "confirmed"/"declined" notification fires only when the speaker acts.
-        if (bindHall)
+        if (links is not null)
         {
+            // Approve (accept-with-hall, not yet verbally confirmed) — email the speaker
+            // the double-opt-in Approve/Reject links (tokens already committed above).
             await meetingActionTokens.AuditMintedAsync(req.Id, cancellationToken);
-            await EmailSpeakerConfirmationLinksAsync(req, links!, cancellationToken);
+            await EmailSpeakerConfirmationLinksAsync(req, links, cancellationToken);
         }
         else
         {
+            // Reject, accept-without-hall, OR Confirm (verbal → already Accepted) — the
+            // requester gets the outcome notification directly.
             await NotifyOutcomeAsync(req, cancellationToken);
         }
 
