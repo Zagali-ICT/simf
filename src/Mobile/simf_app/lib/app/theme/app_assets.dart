@@ -18,4 +18,9 @@ class AppAssets {
 
   // ── Booths / venue ──────────────────────────────────────────────────────
   static const String navLocation = 'assets/icons/nav_location.svg';
+
+  // ── Speakers ────────────────────────────────────────────────────────────
+  static const String speakerPlaceholder =
+      'assets/icons/speaker_placeholder.svg';
+  static const String icCaretLeft = 'assets/icons/ic_caret_left.svg';
 }

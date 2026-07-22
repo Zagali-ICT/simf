@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_page_shell.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
@@ -68,11 +69,7 @@ class SpeakerListCard extends StatelessWidget {
                           textAlign: TextAlign.start,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: SimfTokens.textLg,
-                          ),
+                          style: SimfTokens.labelWhiteSemiboldLg,
                         ),
                       ),
                       if (flag != null) ...<Widget>[
@@ -94,10 +91,7 @@ class SpeakerListCard extends StatelessWidget {
                     Text(
                       label,
                       textAlign: TextAlign.start,
-                      style: const TextStyle(
-                        color: SimfTokens.beigeBorder,
-                        fontSize: SimfTokens.textSm,
-                      ),
+                      style: SimfTokens.labelBeigeSm,
                     ),
                   ],
                 ],
@@ -112,7 +106,7 @@ class SpeakerListCard extends StatelessWidget {
             Transform.flip(
               flipX: flip,
               child: const SimfSvgIcon(
-                'assets/icons/ic_back.svg',
+                AppAssets.icBack,
                 size: 20,
                 color: SimfTokens.accent,
               ),

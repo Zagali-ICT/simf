@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
 
@@ -24,7 +25,7 @@ class SpeakerAvatar extends StatelessWidget {
     // text initials are used only when the SVG itself fails to load.
     final placeholder = Center(
       child: SimfSvgIcon(
-        'assets/icons/speaker_placeholder.svg',
+        AppAssets.speakerPlaceholder,
         size: 64,
         color: SimfTokens.accent,
       ),

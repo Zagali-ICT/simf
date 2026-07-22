@@ -30,8 +30,8 @@ class MeetingDayCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(SimfTokens.radius),
         child: Container(
-          width: 58,
-          height: 64,
+          width: SimfTokens.dayCardWidth,
+          height: SimfTokens.dayCardHeight,
           padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space1),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(SimfTokens.radius),

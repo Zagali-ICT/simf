@@ -165,6 +165,8 @@ class SimfTokens {
   static const double statsStripHeight = 100; // delegations decorative stats-strip map (Figma 1426:10781)
   static const double mapControlSize = 40; // venue-map floating zoom/locate control square (Figma 758:1358)
   static const double tapTarget = 44; // minimum touch-target height — venue-map direct-me button (Figma 758:1358)
+  static const double dayCardWidth = 58; // meeting-request day card (Figma 1776:4975)
+  static const double dayCardHeight = 64; // meeting-request day card + its picker row (Figma 1776:5052)
 
   // Type scale (Material text styles override these for actual rendering;
   // tokens here are for places that need a raw size).
@@ -406,5 +408,56 @@ class SimfTokens {
     color: surface,
     fontSize: textLg,
     fontWeight: FontWeight.w500,
+  );
+  // speakers (Figma 908:1744 / 908:2110 / 1776:5036) — list card, profile header,
+  // CV body, sessions heading + meeting-request sheet/picker.
+  static const TextStyle labelWhiteSemiboldLg = TextStyle(
+    color: surface,
+    fontSize: textLg,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle labelWhiteSemiboldTitle = TextStyle(
+    color: surface,
+    fontSize: textTitle,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle labelWhiteBoldLg = TextStyle(
+    color: surface,
+    fontSize: textLg,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle bodyWhite = TextStyle(
+    color: surface,
+    fontSize: textMd,
+    height: 1.5,
+  );
+  static const TextStyle labelBeigeBoldXsTracked = TextStyle(
+    color: beigeBorder,
+    fontSize: textXs,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 0.8,
+  );
+  static const TextStyle labelInkSemiboldTitle = TextStyle(
+    color: headlineInk,
+    fontSize: textTitle,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle labelInkSemibold = TextStyle(
+    color: headlineInk,
+    fontSize: textMd,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle labelNavyMediumSm = TextStyle(
+    color: navy,
+    fontSize: textSm,
+    fontWeight: FontWeight.w500,
+  );
+  static const TextStyle bodyInputMd = TextStyle(
+    color: inputInk,
+    fontSize: textMd,
+  );
+  static const TextStyle bodyGreyMd = TextStyle(
+    color: greyText,
+    fontSize: textMd,
   );
 }
