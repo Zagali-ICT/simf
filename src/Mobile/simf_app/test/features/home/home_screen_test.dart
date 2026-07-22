@@ -288,9 +288,7 @@ void main() {
 
       expect(find.text('Home • Guest'), findsOneWidget);
       expect(find.textContaining('browsing as a guest'), findsOneWidget);
-      // The guest agenda tile now reads "Agenda" (agendaTitle), matching the
-      // D-750 nav rename (was tileSessions "Sessions").
-      expect(find.text('Agenda'), findsOneWidget);
+      expect(find.text('Sessions'), findsOneWidget);
       expect(find.text('Speakers'), findsOneWidget);
       expect(find.text('Exhibition'), findsOneWidget);
       // The guest tiles use the exact Figma SVG glyphs now (frame 758:2910),
@@ -386,9 +384,7 @@ void main() {
       await _pump(tester, controller: _UnapprovedController());
 
       // The guest tiles render…
-      // The guest agenda tile now reads "Agenda" (agendaTitle), matching the
-      // D-750 nav rename (was tileSessions "Sessions").
-      expect(find.text('Agenda'), findsOneWidget);
+      expect(find.text('Sessions'), findsOneWidget);
       expect(find.text('Speakers'), findsOneWidget);
       // …but the "browsing as a guest, sign in" banner is NOT shown — the
       // account is already logged in (D-666), so that prompt would be wrong.
