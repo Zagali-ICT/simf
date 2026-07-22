@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using SIMF.Common;
+using SIMF.Contracts.Ai;
 using SIMF.Contracts.Archive;
 using SIMF.Contracts.Cms;
 using SIMF.Contracts.Configuration;
@@ -94,6 +95,14 @@ public sealed class SimfPublicClient(HttpClient http)
     /// envelope or an unreachable service.</summary>
     public Task<PublicSponsors?> GetSponsorsAsync(CancellationToken cancellationToken = default) =>
         GetAsync<PublicSponsors>("sponsors", cancellationToken);
+
+    /// <summary>Ask the public FAQ assistant a free-text question
+    /// (<c>POST /api/v1/app/ai/faq</c>, anonymous). The answer is grounded on the
+    /// forum FAQ by the centralised AI. Returns <c>null</c> on a failed envelope
+    /// or an unreachable service; the caller then shows a graceful fallback.</summary>
+    public Task<AiCallResult?> AskFaqAsync(string question, CancellationToken cancellationToken = default) =>
+        PostAsync<AskFaqRequest, AiCallResult>(
+            "ai/faq", new AskFaqRequest { Question = question }, cancellationToken);
 
     /// <summary>One page of the public media gallery
     /// (<c>GET /api/v1/app/media</c>), optionally narrowed to one album.

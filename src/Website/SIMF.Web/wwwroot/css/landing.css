@@ -611,14 +611,25 @@
 .ln-pband__head { max-width: calc(var(--content-w) + 2 * var(--section-gutter)); margin-inline: auto; width: 100%; padding-inline: clamp(16px, 5.5vw, var(--section-gutter)); display: flex; flex-direction: column; align-items: flex-start; gap: 24px; }
 .ln-pband__title { font-size: 32px; font-weight: 800; line-height: 1.2; color: var(--ink); text-align: start; }
 .ln-pband__desc { font-size: 16px; line-height: 24px; color: var(--ink); text-align: start; }
-.ln-pband__strip { overflow-x: auto; scrollbar-width: none; }
-.ln-pband__strip::-webkit-scrollbar { display: none; }
-/* Figma's partner strip is LTR-authored (first logo on the left); force LTR so the 4 logos keep that order on the RTL page. */
-.ln-pband__track { display: flex; width: max-content; direction: ltr; }
-.ln-pcard { flex: 0 0 360px; width: 360px; background: #fff; border: 1px solid #e0e0e0; display: flex; flex-direction: column; }
-.ln-pcard__logo { height: 238px; display: grid; place-items: center; padding: 32px; background: #fff; }
+/* Full-bleed auto-scroll marquee (Figma's over-wide partner strip). The track
+   (4 repeats of the 4 logos) scrolls -50% forever; forced LTR so the over-wide
+   track anchors at its left edge; pauses on hover. Reduced-motion falls back to
+   a manual scroll strip. */
+.ln-pband__strip { overflow: hidden; direction: ltr; }
+.ln-pband__track { display: flex; width: max-content; animation: ln-marquee 45s linear infinite; }
+.ln-pband__strip:hover .ln-pband__track { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .ln-pband__track { animation: none; }
+  .ln-pband__strip { overflow-x: auto; scrollbar-width: none; }
+  .ln-pband__strip::-webkit-scrollbar { display: none; }
+}
+.ln-pcard { flex: 0 0 360px; width: 360px; background: #fff; border: 1px solid #e0e0e0; display: flex; flex-direction: column;
+  transition: background-color .3s ease, border-color .3s ease; }
+.ln-pcard:hover { border-color: var(--primary-light); }
+.ln-pcard:hover .ln-pcard__logo, .ln-pcard:hover .ln-pcard__label { background: #e7e9f1; }
+.ln-pcard__logo { height: 238px; display: grid; place-items: center; padding: 32px; background: #fff; transition: background-color .3s ease; }
 .ln-pcard__logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
-.ln-pcard__label { min-height: 88px; background: #fafafa; border-top: 1px solid #e0e0e0; display: grid; place-items: center; padding: 13px; font-size: 22px; font-weight: 600; color: #212121; text-align: center; }
+.ln-pcard__label { min-height: 88px; background: #fafafa; border-top: 1px solid #e0e0e0; display: grid; place-items: center; padding: 13px; font-size: 22px; font-weight: 600; color: #212121; text-align: center; transition: background-color .3s ease; }
 .ln-pband__bar { max-width: calc(var(--content-w) + 2 * var(--section-gutter)); margin-inline: auto; width: 100%; padding: 16px clamp(16px, 5.5vw, var(--section-gutter)); }
 .ln-pband__rail { height: 6px; background: rgba(0, 0, 0, .1); border-radius: 10px; position: relative; }
 .ln-pband__thumb { position: absolute; inset-inline-start: 0; top: 0; height: 6px; width: 200px; background: var(--gold); border-radius: 10px; }
@@ -1311,3 +1322,71 @@
 .ln-exhibit__scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .ln-exhibit__map { display: block; height: auto; width: 1232px; max-width: 100%; margin-inline: auto; }
 @media (max-width: 720px) { .ln-exhibit__map { max-width: none; width: 900px; } }
+
+/* ===================== FLOATING CHAT ASSISTANT ==================== */
+/* A lighthouse launcher (bottom inline-end) that opens a chat panel; wired by
+   initChatbot in landing.js, posting to the same-origin /chat/ask BFF proxy. */
+.ln-chat { position: fixed; z-index: 900; bottom: 24px; inset-inline-end: 24px;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
+
+.ln-chat__launcher { position: relative; width: 88px; height: 88px; padding: 0; border: 0;
+  border-radius: 50%; background: #e9edf1; color: var(--navy); cursor: pointer;
+  display: grid; place-items: center; box-shadow: 0 10px 30px rgba(0, 22, 64, .22);
+  transition: transform .2s ease, box-shadow .2s ease;
+  animation: ln-chat-bob 3.2s ease-in-out infinite; }
+.ln-chat__launcher:hover { transform: translateY(-3px) scale(1.04); box-shadow: 0 14px 36px rgba(0, 22, 64, .3); }
+.ln-chat__launcher:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+.ln-chat__lh { width: 40px; height: 40px; display: block; }
+.ln-chat__badge { position: absolute; top: 2px; inset-inline-end: 2px; width: 30px; height: 30px;
+  color: var(--gold); filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .18)); }
+.ln-chat__badge svg { width: 100%; height: 100%; display: block; }
+/* attention pulse ring + gentle bob; both stop while the panel is open */
+.ln-chat__launcher::after { content: ""; position: absolute; inset: 0; border-radius: 50%;
+  box-shadow: 0 0 0 0 rgba(232, 192, 96, .5); animation: ln-chat-pulse 2.6s ease-out infinite; }
+@keyframes ln-chat-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes ln-chat-pulse { 0% { box-shadow: 0 0 0 0 rgba(232, 192, 96, .5); }
+  70% { box-shadow: 0 0 0 16px rgba(232, 192, 96, 0); } 100% { box-shadow: 0 0 0 0 rgba(232, 192, 96, 0); } }
+.ln-chat.is-open .ln-chat__launcher, .ln-chat.is-open .ln-chat__launcher::after { animation: none; }
+
+.ln-chat__panel { width: min(372px, calc(100vw - 48px)); height: min(487px, calc(100vh - 150px));
+  background: var(--white); border: 1px solid var(--primary-light); border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(0, 22, 64, .28); display: flex; flex-direction: column;
+  overflow: hidden; animation: ln-chat-in .25s ease; }
+.ln-chat__panel[hidden] { display: none; }
+@keyframes ln-chat-in { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: none; } }
+.ln-chat__head { display: flex; align-items: center; gap: 10px; padding: 16px; background: var(--navy); color: var(--white); }
+.ln-chat__head-mark { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 50%;
+  background: rgba(230, 242, 251, .14); color: var(--white); display: grid; place-items: center; }
+.ln-chat__head-mark .ln-chat__lh { width: 22px; height: 22px; }
+.ln-chat__title { flex: 1; min-width: 0; font-size: 16px; font-weight: 700; text-align: start; }
+.ln-chat__close { border: 0; background: transparent; color: var(--white); cursor: pointer;
+  padding: 4px; display: grid; place-items: center; border-radius: 8px; }
+.ln-chat__close:hover { background: rgba(255, 255, 255, .12); }
+.ln-chat__close svg { width: 18px; height: 18px; }
+.ln-chat__log { flex: 1; min-height: 0; overflow-y: auto; padding: 16px; background: var(--bg-gray);
+  display: flex; flex-direction: column; gap: 12px; }
+.ln-chat__msg { max-width: 82%; padding: 10px 14px; border-radius: 14px; font-size: 14px;
+  line-height: 22px; white-space: pre-wrap; word-break: break-word; }
+.ln-chat__msg--ai { align-self: flex-start; background: var(--white); color: var(--ink);
+  border: 1px solid var(--primary-light); border-start-start-radius: 4px; }
+.ln-chat__msg--user { align-self: flex-end; background: var(--primary); color: var(--white); border-start-end-radius: 4px; }
+.ln-chat__msg--typing { color: var(--primary); font-style: italic; }
+.ln-chat__composer { display: flex; align-items: center; gap: 8px; padding: 12px;
+  border-top: 1px solid var(--primary-light); background: var(--white); }
+.ln-chat__input { flex: 1; min-width: 0; border: 1px solid var(--primary-light); border-radius: 999px;
+  padding: 10px 16px; font: inherit; font-size: 14px; color: var(--ink); background: var(--bg-gray); }
+.ln-chat__input:focus { outline: none; border-color: var(--primary); }
+.ln-chat__send { flex: 0 0 auto; width: 42px; height: 42px; border: 0; border-radius: 50%;
+  background: var(--primary); color: var(--white); cursor: pointer; display: grid; place-items: center; }
+.ln-chat__send:hover { background: var(--navy); }
+.ln-chat__send svg { width: 20px; height: 20px; }
+[dir="rtl"] .ln-chat__send svg { transform: scaleX(-1); }
+@media (max-width: 480px) {
+  .ln-chat { bottom: 16px; inset-inline-end: 16px; gap: 12px; }
+  .ln-chat__launcher { width: 72px; height: 72px; }
+  .ln-chat__panel { height: min(70vh, 487px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ln-chat__launcher, .ln-chat__launcher::after { animation: none; }
+  .ln-chat__panel { animation: none; }
+}

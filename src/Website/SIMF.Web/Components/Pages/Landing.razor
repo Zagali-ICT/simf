@@ -263,12 +263,18 @@
             </div>
             <div class="ln-pband__strip">
                 <div class="ln-pband__track">
-                    @foreach (var p in PartnerLogos)
+                    @* Full-bleed auto-scroll marquee (Figma's over-wide strip). The four
+                       logos are repeated so the track is wider than any viewport and the
+                       -50% loop is seamless; passes after the first are decorative. *@
+                    @for (var pass = 0; pass < 4; pass++)
                     {
-                        <div class="ln-pcard">
-                            <div class="ln-pcard__logo"><img src="@p.Image" alt="@p.Label.For(rtl)" loading="lazy" /></div>
-                            <div class="ln-pcard__label">@p.Label.For(rtl)</div>
-                        </div>
+                        @foreach (var p in PartnerLogos)
+                        {
+                            <div class="ln-pcard" aria-hidden="@(pass > 0 ? "true" : null)">
+                                <div class="ln-pcard__logo"><img src="@p.Image" alt="@p.Label.For(rtl)" loading="lazy" /></div>
+                                <div class="ln-pcard__label">@p.Label.For(rtl)</div>
+                            </div>
+                        }
                     }
                 </div>
             </div>

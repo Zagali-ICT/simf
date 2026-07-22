@@ -186,6 +186,7 @@ app.MapStaticAssets();
 app.MapAuthEndpoints();
 app.MapAccountEndpoints();
 app.MapSiteContentEndpoints();
+app.MapChatEndpoints();
 app.MapCultureEndpoint();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

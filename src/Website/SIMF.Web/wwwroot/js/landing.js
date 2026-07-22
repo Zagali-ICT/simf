@@ -16,6 +16,18 @@
   var prefersReducedMotion = window.matchMedia
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  /* Bind-once guard. run() re-fires on every Blazor enhanced navigation (see the
+     enhancedload hook at the bottom), so this marks an element as wired: the shared
+     header (preserved across enhanced nav) is not wired twice, while swapped page
+     content (fresh elements with no mark) still gets wired each time. */
+  function firstInit(el, key) {
+    if (!el) { return false; }
+    var attr = 'lnInit' + key;
+    if (el.dataset[attr]) { return false; }
+    el.dataset[attr] = '1';
+    return true;
+  }
+
   /* ---- 1. page loader ---------------------------------------------------- */
   function hideLoader() {
     var el = document.getElementById('ln-loader');
@@ -38,7 +50,7 @@
         if (e.isIntersecting) { e.target.classList.add('is-visible'); io.unobserve(e.target); }
       });
     }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
-    nodes.forEach(function (n) { io.observe(n); });
+    nodes.forEach(function (n) { if (firstInit(n, 'Reveal')) { io.observe(n); } });
   }
 
   /* ---- 3. search drop-panel toggle -------------------------------------- */
@@ -46,6 +58,7 @@
     var toggle = document.getElementById('ln-search-toggle');
     var panel = document.getElementById('ln-search-panel');
     if (!toggle || !panel) { return; }
+    if (!firstInit(toggle, 'Search')) { return; }
     var closeBtn = panel.querySelector('.ln-search__close');
     function setOpen(open) {
       panel.classList.toggle('is-open', open);
@@ -75,7 +88,7 @@
         animateCount(e.target);
       });
     }, { threshold: 0.6 });
-    nums.forEach(function (n) { io.observe(n); });
+    nums.forEach(function (n) { if (firstInit(n, 'Count')) { io.observe(n); } });
   }
 
   // Tick el's numeric part from 0 to its target over ~1.3s, preserving any
@@ -107,6 +120,7 @@
   function initThemeTabs() {
     var ex = document.querySelector('.ln-themex');
     if (!ex) { return; }
+    if (!firstInit(ex, 'Tabs')) { return; }
     var tabs = ex.querySelectorAll('.ln-themex__tab');
     var panels = ex.querySelectorAll('.ln-themex__panel');
     if (!tabs.length || tabs.length !== panels.length) { return; }
@@ -129,6 +143,7 @@
   function initAgenda() {
     var root = document.querySelector('.ln-agenda');
     if (!root) { return; }
+    if (!firstInit(root, 'Agenda')) { return; }
     var dayPills = root.querySelectorAll('[data-agenda-day]');
     var dayPanels = root.querySelectorAll('[data-agenda-daypanel]');
     var typeTabs = root.querySelectorAll('[data-agenda-type]');
@@ -171,10 +186,94 @@
     root.classList.add('is-enhanced');
   }
 
-  function run() { initReveal(); initSearch(); initCountUp(); initThemeTabs(); initAgenda(); }
+  /* ---- 8. floating chat assistant --------------------------------------- */
+  function initChatbot() {
+    var root = document.getElementById('ln-chat');
+    if (!root) { return; }
+    if (!firstInit(root, 'Chat')) { return; }
+    var launcher = document.getElementById('ln-chat-launcher');
+    var panel = document.getElementById('ln-chat-panel');
+    var closeBtn = document.getElementById('ln-chat-close');
+    var form = document.getElementById('ln-chat-form');
+    var input = document.getElementById('ln-chat-input');
+    var log = document.getElementById('ln-chat-log');
+    if (!launcher || !panel || !form || !input || !log) { return; }
+
+    function setOpen(open) {
+      panel.hidden = !open;
+      root.classList.toggle('is-open', open);
+      launcher.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open) { input.focus(); }
+    }
+    launcher.addEventListener('click', function () { setOpen(panel.hidden); });
+    if (closeBtn) { closeBtn.addEventListener('click', function () { setOpen(false); launcher.focus(); }); }
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !panel.hidden) { setOpen(false); launcher.focus(); }
+    });
+
+    function addMsg(text, who) {
+      var el = document.createElement('div');
+      el.className = 'ln-chat__msg ln-chat__msg--' + who;
+      el.textContent = text;
+      log.appendChild(el);
+      log.scrollTop = log.scrollHeight;
+      return el;
+    }
+    function unavailable() {
+      return document.documentElement.lang === 'ar'
+        ? 'تعذّر الوصول إلى المساعد الآن. حاول لاحقاً.'
+        : 'The assistant is unavailable right now. Please try again.';
+    }
+
+    var busy = false;
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var q = input.value.trim();
+      if (!q || busy) { return; }
+      addMsg(q, 'user');
+      input.value = '';
+      busy = true;
+      var typing = addMsg('…', 'ai');
+      typing.classList.add('ln-chat__msg--typing');
+      window.fetch('/chat/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: q })
+      }).then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (data) {
+          typing.remove();
+          addMsg((data && data.answer) || unavailable(), 'ai');
+        })
+        .catch(function () { typing.remove(); addMsg(unavailable(), 'ai'); })
+        .finally(function () { busy = false; input.focus(); });
+    });
+  }
+
+  function run() { initReveal(); initSearch(); initCountUp(); initThemeTabs(); initAgenda(); initChatbot(); }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', run);
   } else {
     run();
+  }
+
+  /* Blazor enhanced navigation swaps the page DOM WITHOUT a full reload, so
+     DOMContentLoaded never fires again. Without re-running, a navigated-to page
+     keeps its .ln-reveal blocks hidden (opacity:0) and its interactions unwired
+     until a manual reload. Re-run after every enhanced load; firstInit() keeps the
+     preserved shared header from being wired twice. */
+  var enhancedHooked = false;
+  function hookEnhancedNav() {
+    if (enhancedHooked) { return true; }
+    if (window.Blazor && typeof window.Blazor.addEventListener === 'function') {
+      window.Blazor.addEventListener('enhancedload', run);
+      enhancedHooked = true;
+      return true;
+    }
+    return false;
+  }
+  // blazor.web.js may load after this script, so try now and again once it is up.
+  if (!hookEnhancedNav()) {
+    document.addEventListener('DOMContentLoaded', hookEnhancedNav);
+    window.addEventListener('load', hookEnhancedNav);
   }
 })();
