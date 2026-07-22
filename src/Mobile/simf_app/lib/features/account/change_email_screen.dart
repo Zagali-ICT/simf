@@ -228,10 +228,10 @@ class _ChangeEmailScreenState extends ConsumerState<ChangeEmailScreen> {
                 ),
                 _buildSubmitButton(l10n),
                 if (_phase == _Phase.verifyCode) ...<Widget>[
-                  const SizedBox(height: 16),
+                  const SizedBox(height: SimfTokens.space4),
                   _buildResendRow(l10n),
                 ],
-                const SizedBox(height: 24),
+                const SizedBox(height: SimfTokens.space6),
               ],
             ),
           ),
@@ -242,7 +242,7 @@ class _ChangeEmailScreenState extends ConsumerState<ChangeEmailScreen> {
 
   Widget _buildEmailPhase(AppL10n l10n) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: MaxWidthBody(
         maxWidth: 560,
         child: Form(
@@ -252,15 +252,15 @@ class _ChangeEmailScreenState extends ConsumerState<ChangeEmailScreen> {
             children: <Widget>[
               const SizedBox(height: 48),
               const Center(child: OtpMark(icon: Icons.alternate_email)),
-              const SizedBox(height: 24),
+              const SizedBox(height: SimfTokens.space6),
               Text(
                 l10n.changeEmailHeading,
                 textAlign: TextAlign.center,
                 style: SimfTokens.bodyBeige,
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: SimfTokens.space8),
               Text(l10n.changeEmailCurrentLabel, style: SimfTokens.bodyBeige),
-              const SizedBox(height: 8),
+              const SizedBox(height: SimfTokens.space2),
               Text(
                 _currentEmail,
                 textDirection: TextDirection.ltr,
@@ -270,7 +270,7 @@ class _ChangeEmailScreenState extends ConsumerState<ChangeEmailScreen> {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: SimfTokens.space6),
               NaviFormField(
                 label: l10n.changeEmailNewLabel,
                 controller: _newEmail,
@@ -287,16 +287,16 @@ class _ChangeEmailScreenState extends ConsumerState<ChangeEmailScreen> {
                 },
               ),
               if (_error != null) ...<Widget>[
-                const SizedBox(height: 12),
+                const SizedBox(height: SimfTokens.space3),
                 Text(
                   _error!,
                   style: const TextStyle(
                     color: SimfTokens.danger,
-                    fontSize: 12,
+                    fontSize: SimfTokens.textSm,
                   ),
                 ),
               ],
-              const SizedBox(height: 24),
+              const SizedBox(height: SimfTokens.space6),
             ],
           ),
         ),
@@ -321,41 +321,41 @@ class _ChangeEmailScreenState extends ConsumerState<ChangeEmailScreen> {
 
   Widget _buildCodePhase(AppL10n l10n) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: MaxWidthBody(
         maxWidth: 560,
         child: Column(
           children: <Widget>[
             const SizedBox(height: 48),
             const OtpMark(icon: Icons.mail_outline),
-            const SizedBox(height: 24),
+            const SizedBox(height: SimfTokens.space6),
             Text(
               l10n.changeEmailVerifyHeading,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
+                color: SimfTokens.surface,
+                fontSize: SimfTokens.textXl,
                 fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: SimfTokens.space6),
             if (_maskedEmail.isNotEmpty) ...<Widget>[
               Text(
                 l10n.otpSentToPrefix,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: SimfTokens.beigeBorder,
-                  fontSize: 14,
+                  fontSize: SimfTokens.textMd,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: SimfTokens.space2),
               Text(
                 _maskedEmail,
                 textAlign: TextAlign.center,
                 textDirection: TextDirection.ltr,
                 style: const TextStyle(
                   color: SimfTokens.accent,
-                  fontSize: 14,
+                  fontSize: SimfTokens.textMd,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -372,7 +372,7 @@ class _ChangeEmailScreenState extends ConsumerState<ChangeEmailScreen> {
                 }
               },
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: SimfTokens.space6),
             // Re-authenticate: the current password proves the account owner (not
             // just a held session) is making this identity change.
             NaviFormField(
@@ -393,7 +393,7 @@ class _ChangeEmailScreenState extends ConsumerState<ChangeEmailScreen> {
                 }
               },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: SimfTokens.space4),
             Text.rich(
               TextSpan(
                 children: <InlineSpan>[
@@ -409,21 +409,21 @@ class _ChangeEmailScreenState extends ConsumerState<ChangeEmailScreen> {
               ),
               style: const TextStyle(
                 color: SimfTokens.beigeBorder,
-                fontSize: 14,
+                fontSize: SimfTokens.textMd,
               ),
             ),
             if (_error != null) ...<Widget>[
-              const SizedBox(height: 12),
+              const SizedBox(height: SimfTokens.space3),
               Text(
                 _error!,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: SimfTokens.danger,
-                  fontSize: 12,
+                  fontSize: SimfTokens.textSm,
                 ),
               ),
             ],
-            const SizedBox(height: 24),
+            const SizedBox(height: SimfTokens.space6),
           ],
         ),
       ),
@@ -435,7 +435,7 @@ class _ChangeEmailScreenState extends ConsumerState<ChangeEmailScreen> {
         ? l10n.changeEmailSendButton
         : l10n.verifyButton;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: MaxWidthBody(
         maxWidth: 560,
         child: SizedBox(
@@ -478,7 +478,10 @@ class _ChangeEmailScreenState extends ConsumerState<ChangeEmailScreen> {
         ],
       ),
       textAlign: TextAlign.center,
-      style: const TextStyle(color: Colors.white, fontSize: 14),
+      style: const TextStyle(
+        color: SimfTokens.surface,
+        fontSize: SimfTokens.textMd,
+      ),
     );
   }
 }
