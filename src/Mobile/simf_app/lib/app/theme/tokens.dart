@@ -526,4 +526,12 @@ class SimfTokens {
     fontWeight: FontWeight.w700,
     letterSpacing: 0.5,
   );
+  // contact us (Figma 1388:7711) — message-form input + hint.
+  static const TextStyle bodyWhiteMd = TextStyle(
+    color: surface,
+    fontSize: textMd,
+  );
+  static const TextStyle hintBeige = TextStyle(
+    color: beigeBorder,
+  );
 }

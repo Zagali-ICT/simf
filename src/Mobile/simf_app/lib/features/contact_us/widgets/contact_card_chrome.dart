@@ -37,11 +37,7 @@ class ContactCardHeading extends StatelessWidget {
     return Text(
       text,
       textAlign: TextAlign.start,
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: SimfTokens.textLg,
-        fontWeight: FontWeight.w500,
-      ),
+      style: SimfTokens.labelWhiteMediumLg,
     );
   }
 }

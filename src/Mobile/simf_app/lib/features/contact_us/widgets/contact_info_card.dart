@@ -100,19 +100,12 @@ class _InfoRow extends StatelessWidget {
                   value,
                   textAlign: TextAlign.start,
                   textDirection: valueLtr ? TextDirection.ltr : null,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: SimfTokens.textMd, // 14
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: SimfTokens.labelWhiteMedium,
                 ),
                 const SizedBox(height: SimfTokens.space2), // gap-8
                 Text(
                   sublabel,
-                  style: const TextStyle(
-                    color: SimfTokens.beigeBorder,
-                    fontSize: SimfTokens.textSm, // 12
-                  ),
+                  style: SimfTokens.labelBeigeSm,
                 ),
               ],
             ),
