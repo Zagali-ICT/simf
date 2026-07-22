@@ -36,7 +36,7 @@ class NeedLoginState extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: SimfTokens.beigeBorder),
+              style: SimfTokens.hintBeige,
             ),
             const SizedBox(height: SimfTokens.space4),
             FilledButton(
