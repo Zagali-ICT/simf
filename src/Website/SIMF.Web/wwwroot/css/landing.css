@@ -458,8 +458,13 @@
   display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 24px;
   transition: flex-grow .55s cubic-bezier(.22, .61, .36, 1), background-color .45s ease; }
 .ln-tcard:not(:first-child) { margin-inline-start: -1px; }
+/* Hover backdrop: the maritime image with a navy gradient baked in so the image
+   can lift to full opacity (a clearly-visible background change) while the white
+   title + grey desc stay legible over it. */
 .ln-tcard::before { content: ""; position: absolute; inset: 0; z-index: 0;
-  background: url('/assets/figma/sessions/session-card-1.jpg') center/cover no-repeat;
+  background:
+    linear-gradient(180deg, rgba(1, 19, 45, .40) 0%, rgba(1, 19, 45, .72) 100%),
+    url('/assets/figma/sessions/session-card-1.jpg') center/cover no-repeat;
   opacity: 0; transition: opacity .45s ease; }
 .ln-tcard > * { position: relative; z-index: 1; }
 .ln-tcard__topgrp { display: flex; flex-direction: column; align-items: center; gap: 24px; width: 100%; }
@@ -469,7 +474,7 @@
 .ln-tcard__title { font-size: 18px; font-weight: 700; line-height: 24px; color: var(--white); text-align: center; }
 .ln-tcard__desc { font-size: 16px; line-height: 24px; color: var(--primary-light); text-align: center; }
 .ln-tcard:hover, .ln-tcard:focus-within { flex-grow: 2.2; background-color: rgba(230, 242, 251, .06); }
-.ln-tcard:hover::before, .ln-tcard:focus-within::before { opacity: .28; }
+.ln-tcard:hover::before, .ln-tcard:focus-within::before { opacity: 1; }
 .ln-tcard:hover .ln-tcard__badge, .ln-tcard:focus-within .ln-tcard__badge { background: var(--gold); color: var(--navy); }
 @media (prefers-reduced-motion: reduce) {
   .ln-tcard { transition: none; }
