@@ -199,9 +199,9 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
                 ),
                 Expanded(child: _buildContent(l10n, email)),
                 _buildSubmitButton(l10n),
-                const SizedBox(height: 16),
+                const SizedBox(height: SimfTokens.space4),
                 _buildResendRow(l10n),
-                const SizedBox(height: 24),
+                const SizedBox(height: SimfTokens.space6),
               ],
             ),
           ),
@@ -212,23 +212,23 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
 
   Widget _buildContent(AppL10n l10n, String? email) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: MaxWidthBody(
         maxWidth: 560,
         child: Column(
           children: <Widget>[
             const SizedBox(height: 48),
             const OtpMark(icon: Icons.mail_outline),
-            const SizedBox(height: 24),
+            const SizedBox(height: SimfTokens.space6),
             Text(
               l10n.enterOtpTitle,
               style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
+                color: SimfTokens.surface,
+                fontSize: SimfTokens.textXl,
                 fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: SimfTokens.space6),
             // Frame 758:2616 — "أرسلنا رمزاً الى" + the recipient
             // email on a gold line (falls back to the generic
             // sentence when no address is carried).
@@ -238,17 +238,17 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: SimfTokens.beigeBorder,
-                  fontSize: 14,
+                  fontSize: SimfTokens.textMd,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: SimfTokens.space2),
               Text(
                 email,
                 textAlign: TextAlign.center,
                 textDirection: TextDirection.ltr,
                 style: const TextStyle(
                   color: SimfTokens.accent,
-                  fontSize: 14,
+                  fontSize: SimfTokens.textMd,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -258,7 +258,7 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: SimfTokens.beigeBorder,
-                  fontSize: 14,
+                  fontSize: SimfTokens.textMd,
                 ),
               ),
             const SizedBox(height: 64),
@@ -273,7 +273,7 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
                 }
               },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: SimfTokens.space4),
             // The resend countdown (frame 758:2616).
             Text.rich(
               TextSpan(
@@ -290,21 +290,21 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
               ),
               style: const TextStyle(
                 color: SimfTokens.beigeBorder,
-                fontSize: 14,
+                fontSize: SimfTokens.textMd,
               ),
             ),
             if (_error != null) ...<Widget>[
-              const SizedBox(height: 12),
+              const SizedBox(height: SimfTokens.space3),
               Text(
                 _error!,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: SimfTokens.danger,
-                  fontSize: 12,
+                  fontSize: SimfTokens.textSm,
                 ),
               ),
             ],
-            const SizedBox(height: 24),
+            const SizedBox(height: SimfTokens.space6),
           ],
         ),
       ),
@@ -313,7 +313,7 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
 
   Widget _buildSubmitButton(AppL10n l10n) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: MaxWidthBody(
         maxWidth: 560,
         child: SizedBox(
@@ -352,8 +352,8 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
       ),
       textAlign: TextAlign.center,
       style: const TextStyle(
-        color: Colors.white,
-        fontSize: 14,
+        color: SimfTokens.surface,
+        fontSize: SimfTokens.textMd,
       ),
     );
   }

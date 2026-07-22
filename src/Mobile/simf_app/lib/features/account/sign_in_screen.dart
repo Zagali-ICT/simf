@@ -284,7 +284,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               children: <Widget>[
                 SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
+                    horizontal: SimfTokens.space4,
                     vertical: 56,
                   ),
                   child: MaxWidthBody(
@@ -294,7 +294,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
                         AccountHeader(title: l10n.signInForumTitle),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: SimfTokens.space6),
                         _buildCard(l10n),
                       ],
                     ),
@@ -336,12 +336,12 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 l10n.signInTitle,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontSize: 24,
+                  fontSize: SimfTokens.text24,
                   fontWeight: FontWeight.w600,
                   color: SimfTokens.headlineInk,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: SimfTokens.space6),
               AccountEmailField(
                 controller: _email,
                 label: l10n.emailLabel,
@@ -353,7 +353,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   AutofillHints.email,
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: SimfTokens.space4),
               AccountPasswordField(
                 controller: _password,
                 label: l10n.passwordLabel,
@@ -369,7 +369,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 },
                 autofillHints: const <String>[AutofillHints.password],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: SimfTokens.space2),
               AccountRememberForgot(
                 rememberMe: _rememberMe,
                 onRememberChanged: (v) => setState(() => _rememberMe = v),
@@ -379,29 +379,29 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 enabled: !_busy,
               ),
               if (_error != null) ...<Widget>[
-                const SizedBox(height: 12),
+                const SizedBox(height: SimfTokens.space3),
                 Text(
                   _error!,
                   style: const TextStyle(
                     color: SimfTokens.danger,
-                    fontSize: 12,
+                    fontSize: SimfTokens.textSm,
                   ),
                 ),
               ],
-              const SizedBox(height: 24),
+              const SizedBox(height: SimfTokens.space6),
               AuthSubmitButton(
                 label: l10n.signInButton,
                 busy: _busy,
                 onPressed: _canSubmit ? () => unawaited(_submit()) : null,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: SimfTokens.space2),
               AccountAuthPrompt(
                 question: l10n.createAccountQuestion,
                 linkLabel: l10n.createAccountLink,
                 onTap: () => context.pushNamed(RouteNames.signUpForm),
                 enabled: !_busy,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: SimfTokens.space6),
               SignInAltActions(
                 biometricAvailable: biometricAvailable,
                 busy: _busy,

@@ -210,7 +210,7 @@ class _SignUpEmailVerifyScreenState
                 ),
                 Expanded(child: _buildContent(l10n)),
                 _buildBottomActions(l10n),
-                const SizedBox(height: 24),
+                const SizedBox(height: SimfTokens.space6),
               ],
             ),
           ),
@@ -221,7 +221,7 @@ class _SignUpEmailVerifyScreenState
 
   Widget _buildContent(AppL10n l10n) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: MaxWidthBody(
         maxWidth: 560,
         child: Column(
@@ -229,32 +229,32 @@ class _SignUpEmailVerifyScreenState
             const SizedBox(height: 48),
             // Gold-ringed mail mark (Figma 505:969).
             const OtpMark(icon: Icons.mail_outline),
-            const SizedBox(height: 24),
+            const SizedBox(height: SimfTokens.space6),
             Text(
               l10n.enterOtpTitle,
               style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
+                color: SimfTokens.surface,
+                fontSize: SimfTokens.textXl,
                 fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: SimfTokens.space6),
             Text(
               l10n.emailVerifySentTo,
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: SimfTokens.beigeBorder,
-                fontSize: 14,
+                fontSize: SimfTokens.textMd,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: SimfTokens.space2),
             Text(
               widget.email,
               textDirection: TextDirection.ltr,
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: SimfTokens.accent,
-                fontSize: 14,
+                fontSize: SimfTokens.textMd,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -270,20 +270,20 @@ class _SignUpEmailVerifyScreenState
                 }
               },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: SimfTokens.space4),
             if (_cooldown > 0) _buildCooldownRow(l10n),
             if (_error != null) ...<Widget>[
-              const SizedBox(height: 12),
+              const SizedBox(height: SimfTokens.space3),
               Text(
                 _error!,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: SimfTokens.danger,
-                  fontSize: 12,
+                  fontSize: SimfTokens.textSm,
                 ),
               ),
             ],
-            const SizedBox(height: 24),
+            const SizedBox(height: SimfTokens.space6),
           ],
         ),
       ),
@@ -296,7 +296,7 @@ class _SignUpEmailVerifyScreenState
       children: <Widget>[
         Text(
           l10n.resendInLabel,
-          style: const TextStyle(color: otpMutedBlue, fontSize: 14),
+          style: const TextStyle(color: otpMutedBlue, fontSize: SimfTokens.textMd),
         ),
         const SizedBox(width: 6),
         Text(
@@ -304,7 +304,7 @@ class _SignUpEmailVerifyScreenState
           textDirection: TextDirection.ltr,
           style: const TextStyle(
             color: SimfTokens.accent,
-            fontSize: 14,
+            fontSize: SimfTokens.textMd,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -315,7 +315,7 @@ class _SignUpEmailVerifyScreenState
   /// Bottom actions (Figma 505:1003): the gold verify CTA + the resend row.
   Widget _buildBottomActions(AppL10n l10n) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: MaxWidthBody(
         maxWidth: 560,
         child: Column(
@@ -326,15 +326,15 @@ class _SignUpEmailVerifyScreenState
               busy: _busy,
               onPressed: _canVerify ? () => unawaited(_verify()) : null,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: SimfTokens.space4),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
                 Text(
                   l10n.noCodeQuestion,
                   style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
+                    color: SimfTokens.surface,
+                    fontSize: SimfTokens.textMd,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -345,7 +345,7 @@ class _SignUpEmailVerifyScreenState
                   child: Text(
                     l10n.resendAction,
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: SimfTokens.textMd,
                       fontWeight: FontWeight.w700,
                     ),
                   ),

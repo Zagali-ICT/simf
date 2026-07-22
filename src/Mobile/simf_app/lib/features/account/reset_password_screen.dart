@@ -137,7 +137,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
             ),
             Expanded(child: _buildBody(l10n)),
             _buildBottomActions(l10n),
-            const SizedBox(height: 24),
+            const SizedBox(height: SimfTokens.space6),
           ],
         ),
       ),
@@ -146,7 +146,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
 
   Widget _buildBody(AppL10n l10n) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: MaxWidthBody(
         maxWidth: 560,
         child: Form(
@@ -156,13 +156,13 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
             children: <Widget>[
               const SizedBox(height: 48),
               const Center(child: OtpMark(icon: Icons.lock_outline)),
-              const SizedBox(height: 24),
+              const SizedBox(height: SimfTokens.space6),
               Text(
                 l10n.resetPasswordSent,
                 textAlign: TextAlign.center,
                 style: SimfTokens.bodyBeige,
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: SimfTokens.space8),
               NaviFormField(
                 label: l10n.otpLabel,
                 controller: _code,
@@ -180,7 +180,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     : null,
                 onChanged: (_) => setState(() {}),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: SimfTokens.space4),
               NaviFormField(
                 label: l10n.newPasswordLabel,
                 controller: _password,
@@ -202,7 +202,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 },
                 onChanged: (_) => setState(() {}),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: SimfTokens.space4),
               NaviFormField(
                 label: l10n.confirmPasswordLabel,
                 controller: _confirm,
@@ -220,16 +220,16 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 },
               ),
               if (_error != null) ...<Widget>[
-                const SizedBox(height: 12),
+                const SizedBox(height: SimfTokens.space3),
                 Text(
                   _error!,
                   style: const TextStyle(
                     color: SimfTokens.danger,
-                    fontSize: 12,
+                    fontSize: SimfTokens.textSm,
                   ),
                 ),
               ],
-              const SizedBox(height: 24),
+              const SizedBox(height: SimfTokens.space6),
             ],
           ),
         ),
@@ -239,7 +239,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
 
   Widget _buildBottomActions(AppL10n l10n) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: MaxWidthBody(
         maxWidth: 560,
         child: AuthSubmitButton(
