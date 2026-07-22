@@ -173,6 +173,11 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     /// Editable from the CP at runtime; one row per logical key.</summary>
     public DbSet<AiPrompt> AiPrompts => Set<AiPrompt>();
 
+    /// <summary>Per-user AI-assistant chat history (Page 036) — the persisted
+    /// conversation + the assistant's short-term memory. Keyed by a bare Guid
+    /// user id (D-157).</summary>
+    public DbSet<AiChatMessage> AiChatMessages => Set<AiChatMessage>();
+
     /// <summary>D-188 (D-181 carry-over) — append-only snapshot table
     /// for AiPrompt edits. One row per (AiPromptId, Version) captured
     /// BEFORE the version bump that produced it.</summary>

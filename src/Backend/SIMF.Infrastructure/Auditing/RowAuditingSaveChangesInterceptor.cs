@@ -53,6 +53,11 @@ internal sealed class RowAuditingSaveChangesInterceptor(
         // D-148 — ScanIdempotency is a short-lived replay store, not domain
         // data. Auditing it would add a RowAudit row per scan.
         "ScanIdempotency",
+        // D-756 — AiChatMessages is append-only, per-user and high-volume (two
+        // rows per assistant turn), and its Content is raw conversation text (PII)
+        // that the AiInvocation path already redacts. Auditing it would double the
+        // write volume and store that text unredacted.
+        "AiChatMessage",
     };
 
     private static readonly HashSet<string> RedactedColumnNames = new(StringComparer.OrdinalIgnoreCase)

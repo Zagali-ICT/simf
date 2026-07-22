@@ -1,6 +1,7 @@
 // Tests: SIMF.Api.Tests/AiFeatureTests.cs
 using System.Security.Claims;
 using FastEndpoints;
+using Microsoft.Extensions.Logging;
 using SIMF.Api.Endpoints.Admin;
 using SIMF.Application.Ai.Abstractions;
 using SIMF.Common;
@@ -73,7 +74,7 @@ public sealed class AskFaqEndpoint(IAiService service)
 }
 
 public sealed class AssistanceEndpoint(
-    IAiService service, IAssistanceContextBuilder contextBuilder)
+    IAiService service, IAssistanceContextBuilder contextBuilder, IAiChatHistoryService history)
     : Endpoint<AssistanceRequest, ApiResult<AiCallResult>>
 {
     public override void Configure()
@@ -89,16 +90,59 @@ public sealed class AssistanceEndpoint(
         // Ground the answer on the live event (sessions / FAQ / booths), resolved
         // server-side — so the assistant cites the real agenda, not model priors.
         var context = await contextBuilder.BuildAsync(ct);
+        // Short-term memory: feed the visitor's recent turns so the assistant
+        // stays consistent across the conversation (empty for a first message).
+        var priorTurns = caller.UserId is Guid memoryUserId
+            ? await history.GetRecentContextAsync(memoryUserId, ct)
+            : string.Empty;
         var result = await service.InvokeAsync(
             "assistance",
             new Dictionary<string, string>
             {
                 ["message"] = req.Message ?? string.Empty,
                 ["context"] = context,
+                ["history"] = priorTurns,
                 ["locale"] = string.IsNullOrWhiteSpace(req.Locale) ? "en" : req.Locale,
             },
             caller, ct);
+        // Persist this exchange so the conversation survives navigation/restart
+        // and becomes memory for the next message. Best-effort: persistence must
+        // never fail the (already computed, billed) answer — log and return it.
+        if (caller.UserId is Guid persistUserId && !string.IsNullOrWhiteSpace(req.Message))
+        {
+            try
+            {
+                await history.AppendTurnAsync(persistUserId, req.Message, result.OutputText, ct);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                Logger.LogWarning(
+                    ex, "Failed to persist AI assistant chat turn for {UserId}.", persistUserId);
+            }
+        }
         await Send.OkAsync(ApiResult<AiCallResult>.Ok(result), ct);
+    }
+}
+
+public sealed class AssistanceHistoryEndpoint(IAiChatHistoryService history)
+    : EndpointWithoutRequest<ApiResult<IReadOnlyList<AiChatTurn>>>
+{
+    public override void Configure()
+    {
+        Get("/app/ai/assistance/history");
+        Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("AI");
+    }
+    public override async Task HandleAsync(CancellationToken ct)
+    {
+        if (AiCaller.FromUser(User).UserId is not Guid userId)
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        var turns = await history.GetHistoryAsync(userId, ct);
+        await Send.OkAsync(ApiResult<IReadOnlyList<AiChatTurn>>.Ok(turns), ct);
     }
 }
 

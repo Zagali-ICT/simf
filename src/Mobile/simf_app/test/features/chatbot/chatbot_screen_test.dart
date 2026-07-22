@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/chatbot/chatbot_screen.dart';
+import 'package:simf_app/features/chatbot/data/ai_chat_history_repository.dart';
+import 'package:simf_app/features/chatbot/data/chat_message.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 class _FakeResponder implements ChatbotResponder {
@@ -56,6 +58,7 @@ Future<void> _pump(
   WidgetTester tester, {
   ChatbotResponder? responder,
   Locale locale = const Locale('en'),
+  List<ChatMessage> history = const <ChatMessage>[],
 }) async {
   final router = GoRouter(
     initialLocation: '/chatbot',
@@ -86,6 +89,8 @@ Future<void> _pump(
         simfDataConfigProvider.overrideWithValue(_testConfig),
         if (responder != null)
           chatbotResponderProvider.overrideWithValue(responder),
+        // Never hit the network for the saved transcript — inject it directly.
+        aiChatHistoryProvider.overrideWith((ref) async => history),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -116,6 +121,24 @@ void main() {
       // The four quick-reply chips are still there.
       expect(find.text('Request a meeting'), findsOneWidget);
       expect(find.text('Today’s sessions'), findsOneWidget);
+    });
+
+    testWidgets('renders the saved history under the greeting (persisted)',
+        (tester) async {
+      await _pump(
+        tester,
+        responder: _FakeResponder('ok'),
+        history: const <ChatMessage>[
+          ChatMessage(ChatAuthor.user, 'Where is hall H1?'),
+          ChatMessage(ChatAuthor.assistant, 'Hall H1 is on level 2.'),
+        ],
+      );
+
+      // The greeting plus the two restored turns are shown — the conversation
+      // survived a re-open.
+      expect(find.text(_greetingEn), findsOneWidget);
+      expect(find.text('Where is hall H1?'), findsOneWidget);
+      expect(find.text('Hall H1 is on level 2.'), findsOneWidget);
     });
 
     testWidgets('typing + send appends the user message and the AI reply',

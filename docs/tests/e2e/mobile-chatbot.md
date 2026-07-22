@@ -31,6 +31,8 @@
 | E2E-MOB036-005 | A wire error (offline / provider failure) shows the localized error bubble | error | P0 | authored ✓ (screen `a wire error shows the localized error bubble`) |
 | E2E-MOB036-006 | Arabic: greets in Arabic; the sent user bubble sits right of assistant (RTL) | rtl | P1 | authored ✓ (screen `Arabic: greets in Arabic and pins the sent bubble RTL`) |
 | E2E-MOB036-007 | Grounded answer cites the real agenda (live, requires a configured provider) | happy | P1 | manual (live) — see below |
+| E2E-MOB036-008 | Re-open → the saved transcript reloads (conversation persists, D-756) | happy | P1 | authored ✓ (screen `renders the saved history under the greeting`) + backend `Assistance_persists_the_turn_and_history_returns_it` |
+| E2E-MOB036-009 | The assistant remembers earlier turns (memory across messages, D-756) | happy | P1 | backend `Assistance_second_call_includes_prior_turns_as_memory` |
 
 ## Scenarios
 
@@ -106,6 +108,26 @@ Scenario: The assistant answers from the real event data
 echoed prompt, so this scenario is asserted only against a real provider). The grounding
 plumbing is unit-tested in `AssistanceContextBuilderTests` and
 `AiModuleTests.Assistance_prompt_is_grounded_with_the_event_context_block`.
+
+### E2E-MOB036-008 / 009 — Persisted history + memory (D-756)
+
+```gherkin
+Scenario: The conversation survives navigation / app-restart
+  Given the visitor previously asked "Where is hall H1?" and got an answer
+  When they re-open /chatbot
+  Then GET /app/ai/assistance/history is called
+  And the transcript shows the greeting followed by the saved turns (oldest-first)
+
+Scenario: The assistant remembers earlier turns
+  Given the visitor said "My name is Sam." earlier in the conversation
+  When they later ask "What did I just say?"
+  Then the assistance call carries the recent turns as a {history} context block
+  And the answer reflects the earlier turn (not a fresh, memory-less reply)
+```
+
+**Evidence:** screen test `renders the saved history under the greeting (persisted)`;
+backend `AiModuleTests.Assistance_persists_the_turn_and_history_returns_it` +
+`Assistance_second_call_includes_prior_turns_as_memory`.
 
 ---
 

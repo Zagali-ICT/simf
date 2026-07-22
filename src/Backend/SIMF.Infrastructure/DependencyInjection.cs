@@ -623,6 +623,10 @@ public static class DependencyInjection
         // — reuses the same public read services the app's own screens call.
         services.AddScoped<SIMF.Application.Ai.Abstractions.IAssistanceContextBuilder,
             SIMF.Infrastructure.Ai.AssistanceContextBuilder>();
+        // Persists the app AI assistant's per-user conversation (Page 036) so it
+        // survives navigation/restart and the assistant remembers earlier turns.
+        services.AddScoped<SIMF.Application.Ai.Abstractions.IAiChatHistoryService,
+            SIMF.Infrastructure.Ai.AiChatHistoryService>();
         // D-735 — transactional-email templates: the resolver (DB override else
         // code default) and the CP admin service.
         services.AddScoped<SIMF.Application.Email.IEmailTemplateResolver,
