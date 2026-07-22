@@ -83,7 +83,12 @@ class VisitorHome extends StatelessWidget {
           // The live banner (frame node 758:1150) — opens the live view.
           LiveBanner(
             l10n: l10n,
-            onTap: () => context.pushNamed(RouteNames.liveBroadcast),
+            onTap: () => context.pushNamed(
+              RouteNames.liveBroadcast,
+              queryParameters: <String, String>{
+                RouteParams.liveUrl: 'asset:assets/videos/onboard_01.mp4',
+              },
+            ),
           ),
           const SizedBox(height: SimfTokens.space6),
           // Exhibitor (العارض) lead-capture tools — D-519. Shown only to the

@@ -483,6 +483,7 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   if (r.name == RouteNames.liveBroadcast) {
     return LiveBroadcastScreen(
       sessionId: state.uri.queryParameters[RouteParams.sessionId],
+      liveUrl: state.uri.queryParameters[RouteParams.liveUrl],
     );
   }
   if (r.name == RouteNames.badge) {

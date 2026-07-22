@@ -1,24 +1,21 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:video_player/video_player.dart';
 
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../core/organization_profile/organization_profile.dart';
 import '../../banners/data/banner_models.dart';
-import 'carousel_dots.dart';
 
-/// The home hero (replaces the static discover banner, #43): the forum edition —
-/// name (gold), theme, date range and location — overlaid on a rotating strip of
-/// CP-managed banner images (`GET /app/banners`, each served by row id at
-/// `/app/assets/Banner/{id}/image`). Auto-advances every 4 s when there is more
-/// than one banner, with position dots.
+/// The home hero playing the onboard_01 video (#43): the forum edition — name
+/// (gold), theme, date range and location — overlaid on a looping muted video
+/// background. Replaced the rotating CP-managed banner strip (D-373).
 ///
-/// Falls back to the bundled discover photo + the "اكتشف السعودية" copy when no
-/// banners are configured AND no edition is loaded, so a fresh install / empty
-/// config renders exactly as the old static hero (zero regression). Tapping the
-/// hero runs [onTap] (the home opens News).
+/// Falls back to the bundled discover photo when the decoder is unavailable
+/// (tests / unsupported runtime). Tapping the hero runs [onTap] (the home opens
+/// News).
 class HomeHeroBanner extends StatefulWidget {
   const HomeHeroBanner({
     required this.l10n,
@@ -41,66 +38,52 @@ class HomeHeroBanner extends StatefulWidget {
 
 class _HomeHeroBannerState extends State<HomeHeroBanner> {
   static const double _height = SimfTokens.heroBannerHeight;
-  static const Duration _interval = Duration(seconds: 4);
 
-  late final PageController _controller;
-  Timer? _timer;
-  int _index = 0;
+  VideoPlayerController? _video;
+  bool _videoReady = false;
 
   @override
   void initState() {
     super.initState();
-    _controller = PageController();
-    _startAutoAdvance();
+    unawaited(_initVideo());
   }
 
-  @override
-  void didUpdateWidget(HomeHeroBanner oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // The banner list is delivered asynchronously — the first frame is empty and
-    // the list arrives on a later rebuild (the State is reused, so initState's
-    // timer set-up already ran against an empty list). Re-evaluate the
-    // auto-advance whenever the count changes: clamp the index into the new
-    // range and (re)start or stop the timer as the count crosses the > 1 line.
-    if (widget.banners.length != oldWidget.banners.length) {
-      _timer?.cancel();
-      _timer = null;
-      if (_index >= widget.banners.length) {
-        _index = 0;
-      }
-      _startAutoAdvance();
-    }
-  }
-
-  // Auto-advance to the next banner every [_interval], wrapping at the end. Only
-  // runs when there is more than one banner (mirrors HighlightsCarousel).
-  void _startAutoAdvance() {
-    if (widget.banners.length <= 1) {
-      return;
-    }
-    _timer = Timer.periodic(_interval, (_) {
-      if (!mounted || !_controller.hasClients) {
+  /// Best-effort background video — a missing decoder silently falls back to
+  /// the bundled discover photo.
+  Future<void> _initVideo() async {
+    final controller = VideoPlayerController.asset(AppAssets.onboardVideo1);
+    try {
+      await controller.initialize();
+      await controller.setLooping(true);
+      await controller.setVolume(0);
+      controller.addListener(() {
+        if (controller.value.isCompleted) {
+          unawaited(controller.seekTo(Duration.zero));
+          unawaited(controller.play());
+        }
+      });
+      await controller.play();
+      if (!mounted) {
+        await controller.dispose();
         return;
       }
-      final next = (_index + 1) % widget.banners.length;
-      _controller.animateToPage(
-        next,
-        duration: const Duration(milliseconds: 450),
-        curve: Curves.easeInOut,
-      );
-    });
+      setState(() {
+        _video = controller;
+        _videoReady = true;
+      });
+    } catch (_) {
+      await controller.dispose();
+    }
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
-    _controller.dispose();
+    unawaited(_video?.dispose());
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final banners = widget.banners;
     return SizedBox(
       height: _height,
       width: double.infinity,
@@ -109,18 +92,18 @@ class _HomeHeroBannerState extends State<HomeHeroBanner> {
         child: Stack(
           fit: StackFit.expand,
           children: <Widget>[
-            if (banners.isEmpty)
-              Image.asset(AppAssets.discoverHero, fit: BoxFit.fill)
-            else
-              PageView.builder(
-                controller: _controller,
-                onPageChanged: (i) => setState(() => _index = i),
-                itemCount: banners.length,
-                itemBuilder: (context, i) => _HeroImage(
-                  url: banners[i].assetImageUrl(widget.baseUrl),
-                  fallbackUrl: banners[i].imageUrl,
+            if (_videoReady && _video != null)
+              FittedBox(
+                fit: BoxFit.cover,
+                clipBehavior: Clip.hardEdge,
+                child: SizedBox(
+                  width: _video!.value.size.width,
+                  height: _video!.value.size.height,
+                  child: VideoPlayer(_video!),
                 ),
-              ),
+              )
+            else
+              Image.asset(AppAssets.discoverHero, fit: BoxFit.fill),
             const ColoredBox(color: Color(0x80000000)),
             Material(
               color: SimfTokens.transparent,
@@ -135,54 +118,11 @@ class _HomeHeroBannerState extends State<HomeHeroBanner> {
                 ),
               ),
             ),
-            if (banners.length > 1)
-              Positioned(
-                bottom: SimfTokens.space2,
-                left: 0,
-                right: 0,
-                child: CarouselDots(count: banners.length, index: _index),
-              ),
           ],
         ),
       ),
     );
   }
-}
-
-/// One hero background image: the uploaded banner asset, falling back to the
-/// banner's pasted [fallbackUrl], then the bundled discover photo — so the hero
-/// always shows something even before an image is uploaded.
-class _HeroImage extends StatelessWidget {
-  const _HeroImage({required this.url, this.fallbackUrl});
-
-  final String url;
-  final String? fallbackUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    return ColoredBox(
-      color: SimfTokens.navy,
-      child: Image.network(
-        url,
-        fit: BoxFit.fill,
-        gaplessPlayback: true,
-        errorBuilder: (context, error, stackTrace) {
-          final fallback = fallbackUrl;
-          if (fallback != null && fallback.isNotEmpty) {
-            return Image.network(
-              fallback,
-              fit: BoxFit.fill,
-              errorBuilder: (_, __, ___) => _placeholder,
-            );
-          }
-          return _placeholder;
-        },
-      ),
-    );
-  }
-
-  Widget get _placeholder =>
-      Image.asset(AppAssets.discoverHero, fit: BoxFit.fill);
 }
 
 /// The hero text overlay: the forum edition (name + theme + date range +

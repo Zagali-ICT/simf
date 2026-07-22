@@ -32,10 +32,10 @@ class DelegationCard extends StatelessWidget {
             _identityRow(),
             if (item.hasHead) ...<Widget>[
               const SizedBox(height: SimfTokens.space4),
-              _headBox(),
+              // _headBox(),
             ],
             const SizedBox(height: SimfTokens.space4),
-            _bottomRow(),
+            // _bottomRow(),
           ],
         ),
       ),

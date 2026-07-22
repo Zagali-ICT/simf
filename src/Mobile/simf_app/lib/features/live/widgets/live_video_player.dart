@@ -85,6 +85,8 @@ class _LiveVideoPlayerState extends ConsumerState<LiveVideoPlayer> {
         // surface rather than crashing the screen (Page_025 L-7).
         _error = true;
       }
+    } else if (widget.url.startsWith('asset:')) {
+      unawaited(_initAssetVideo(widget.url.substring(6)));
     } else {
       unawaited(_initVideo(widget.url));
     }
@@ -100,6 +102,26 @@ class _LiveVideoPlayerState extends ConsumerState<LiveVideoPlayer> {
       _videoReady = false;
     });
     _bind();
+  }
+
+  Future<void> _initAssetVideo(String assetPath) async {
+    try {
+      final controller = VideoPlayerController.asset(assetPath);
+      _video = controller;
+      await controller.initialize();
+      await controller.setLooping(true);
+      await controller.setVolume(0);
+      await controller.play();
+      if (!mounted) {
+        return;
+      }
+      setState(() => _videoReady = true);
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _error = true);
+    }
   }
 
   Future<void> _initVideo(String url) async {
