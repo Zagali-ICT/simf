@@ -17,6 +17,11 @@ public sealed class BadgeBatchesPageTests : CpComponentTestBase
 
     private IRenderedComponent<BadgeBatchesPage> RenderWithBatches()
     {
+        // Grant the ViewBatches policy so the AuthorizedAction-wrapped row actions
+        // (re-email / revoke, incl. their SimfIcons) actually render. The live check
+        // found an invalid icon name ("ban") only crashes the circuit once a populated
+        // row shows its actions — which the default (no-policy) auth context had hidden.
+        Authorization.SetPolicies(PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.ViewBatches));
         JSInterop.Mode = JSRuntimeMode.Loose;
         JSInterop.Setup<ApiResult<GridPage<AdminBadgeBatchSummary>>>(
                 "simfAccount.postJson",
@@ -42,5 +47,9 @@ public sealed class BadgeBatchesPageTests : CpComponentTestBase
         // Status reflects IsActive (active vs revoked) via the pass-through resx keys.
         Assert.Contains("Admin.BadgeBatches.Status.Active", cut.Markup);
         Assert.Contains("Admin.BadgeBatches.Status.Revoked", cut.Markup);
+        // The active batch renders its re-email + revoke actions (exercises the icons,
+        // so an unknown SimfIcon name would throw here — the D-758 regression guard).
+        Assert.Contains("Admin.BadgeBatches.ReEmail", cut.Markup);
+        Assert.Contains("Admin.BadgeBatches.Revoke", cut.Markup);
     }
 }
