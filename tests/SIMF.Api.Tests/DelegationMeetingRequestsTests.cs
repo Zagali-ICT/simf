@@ -399,6 +399,92 @@ public sealed class DelegationMeetingRequestsTests : IClassFixture<SimfApiFactor
         Assert.NotNull(confirmed.ConfirmedByUserId);
     }
 
+    [Fact]
+    public async Task Admin_confirm_of_an_awaiting_request_with_a_PAST_bound_slot_still_succeeds()
+    {
+        // Regression: a verbal Confirm at/after the bound slot's start (meet-then-confirm at
+        // the hall) must NOT re-run the legacy "slot in the past" guard — the slot was
+        // validated + bound at Approve time. Previously this 400'd and stranded the meeting.
+        var homeId = await EnsureCountryAsync("SA", 682, invited: true);
+        await EnsureCountryAsync("EG", 818, invited: true);
+        var (delegate1, _) = await CreateDelegateAsync(homeId, isDelegate: true);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var requestId = await SubmitWithSlotAsync(
+            delegate1, "EG",
+            new DateTimeOffset(2041, 4, 1, 9, 0, 0, TimeSpan.Zero),
+            new DateTimeOffset(2041, 4, 1, 10, 0, 0, TimeSpan.Zero));
+
+        // Approved (AwaitingSpeaker) with a slot whose start is already in the PAST.
+        var pastStart = new DateTimeOffset(2020, 4, 1, 9, 0, 0, TimeSpan.Zero);
+        using (var seed = _factory.Services.CreateScope())
+        {
+            var db = seed.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var req = await db.DelegationMeetingRequests.SingleAsync(r => r.Id == requestId);
+            req.Status = MeetingRequestStatus.AwaitingSpeaker;
+            req.SlotStartUtc = pastStart;
+            req.SlotEndUtc = pastStart.AddHours(1);
+            await db.SaveChangesAsync();
+        }
+
+        var confirm = await PostAuthAsync(
+            $"/api/v1/admin/delegation-meeting-requests/{requestId}/respond",
+            new RespondToDelegationMeetingRequestRequest
+            {
+                Status = MeetingRequestStatus.Accepted, VerbalConfirmed = true,
+            },
+            admin, HttpMethod.Put);
+        Assert.Equal(HttpStatusCode.OK, confirm.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var confirmed = await appDb.DelegationMeetingRequests.SingleAsync(r => r.Id == requestId);
+        Assert.Equal(MeetingRequestStatus.Accepted, confirmed.Status);
+    }
+
+    [Fact]
+    public async Task Other_party_confirm_response_does_not_leak_the_requester_email()
+    {
+        // The /app confirm endpoint is called by a TARGET-delegation member (a different,
+        // non-admin user). The response must NOT carry the requester's Identity login email.
+        var homeId = await EnsureCountryAsync("SA", 682, invited: true);
+        var targetId = await EnsureCountryAsync("EG", 818, invited: true);
+        var (requester, _) = await CreateDelegateAsync(homeId, isDelegate: true);
+        var (targetMember, _) = await CreateDelegateAsync(targetId, isDelegate: true);
+
+        var submit = await PostAuthAsync(
+            "/api/v1/app/delegation-meeting-requests",
+            new SubmitDelegationMeetingRequestRequest
+            {
+                TargetCountryCode = "EG", AttendeeCount = 4, Subject = "Confirm-leak probe",
+            },
+            requester);
+        var requestId = (await submit.Content
+            .ReadFromJsonAsync<ApiResult<DelegationMeetingRequestSubmitted>>())!.Data!.Id;
+
+        // Put it in AwaitingSpeaker (as an Approve would) with a future bound slot.
+        var slotStart = new DateTimeOffset(2042, 5, 1, 9, 0, 0, TimeSpan.Zero);
+        using (var seed = _factory.Services.CreateScope())
+        {
+            var db = seed.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var req = await db.DelegationMeetingRequests.SingleAsync(r => r.Id == requestId);
+            req.Status = MeetingRequestStatus.AwaitingSpeaker;
+            req.SlotStartUtc = slotStart;
+            req.SlotEndUtc = slotStart.AddHours(1);
+            await db.SaveChangesAsync();
+        }
+
+        var confirm = await PostAuthAsync(
+            $"/api/v1/app/delegation-meeting-requests/{requestId}/confirm",
+            new { },
+            targetMember);
+        Assert.Equal(HttpStatusCode.OK, confirm.StatusCode);
+        var body = (await confirm.Content
+            .ReadFromJsonAsync<ApiResult<AdminDelegationMeetingRequestDetail>>())!;
+        Assert.True(body.Success);
+        Assert.Null(body.Data!.RequesterEmail);
+    }
+
     private async Task<Guid> SubmitWithSlotAsync(
         string delegateToken, string targetCode, DateTimeOffset slotStart, DateTimeOffset slotEnd)
     {

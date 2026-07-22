@@ -249,6 +249,11 @@ internal sealed class DelegationMeetingRequestService(
         var bindHall = request.Status == MeetingRequestStatus.Accepted && request.HallId is not null;
         var confirmVerbal = request.Status == MeetingRequestStatus.Accepted && request.VerbalConfirmed;
 
+        // A cancel from a state where the target delegation was already asked to confirm
+        // (AwaitingSpeaker) or had confirmed (Accepted) must retract that request from
+        // them — set below and dispatched with the requester's outcome notification.
+        var retractFromTargetMembers = false;
+
         if (cancel)
         {
             // Cancel/Decline is allowed from any non-terminal state: a Pending decline
@@ -261,6 +266,9 @@ internal sealed class DelegationMeetingRequestService(
                     "تمت معالجة طلب المقابلة هذا بالفعل.");
             }
             var wasPending = req.Status == MeetingRequestStatus.Pending;
+            // The target members were notified only once the request left Pending (Approve),
+            // so only a non-Pending cancel needs a retraction notice.
+            retractFromTargetMembers = !wasPending;
             req.Status = wasPending ? MeetingRequestStatus.Rejected : MeetingRequestStatus.Cancelled;
             // Release any held hall slot so it frees up for another meeting.
             req.HallId = null;
@@ -284,10 +292,15 @@ internal sealed class DelegationMeetingRequestService(
             {
                 await BindDelegationHallSlotAsync(req, request, now, cancellationToken);
             }
-            else if (req.SlotStartUtc is { } sStart && req.SlotEndUtc is { } sEnd)
+            else if (req.Status == MeetingRequestStatus.Pending
+                && req.SlotStartUtc is { } sStart && req.SlotEndUtc is { } sEnd)
             {
-                // Legacy accept-without-hall — honour the requester-proposed slot with the
-                // past + cross-country overlap guard.
+                // Legacy accept-without-hall from PENDING — honour the requester-proposed
+                // slot with the past + cross-country overlap guard. This guard must NOT run
+                // on a verbal Confirm of an already-Approved (AwaitingSpeaker) request: that
+                // slot was validated + bound at approve time, so re-checking "in the past"
+                // here would spuriously 400 (and strand the meeting) once the bound slot's
+                // start has passed — the natural case for a meet-then-confirm at the hall.
                 if (sStart < now)
                 {
                     throw new ApiException(ErrorCodes.DelegationMeetingRequestInvalid, 400,
@@ -380,7 +393,21 @@ internal sealed class DelegationMeetingRequestService(
         // (or by the email link, P4c). A verbal Confirm skips this (already Accepted).
         if (req.Status == MeetingRequestStatus.AwaitingSpeaker)
         {
-            await NotifyTargetMembersAsync(req, detail.RequestingCountry, cancellationToken);
+            await NotifyTargetMembersAsync(req, NotificationKind.MeetingRequested,
+                "Delegation meeting request", "طلب اجتماع وفد",
+                $"A meeting request from {detail.RequestingCountry} is awaiting your confirmation.",
+                $"طلب اجتماع من {detail.RequestingCountry} بانتظار تأكيدك.",
+                cancellationToken);
+        }
+        else if (retractFromTargetMembers)
+        {
+            // Cancel of an approved/confirmed meeting — tell the target members it is off
+            // so they are not left tapping a stale "please confirm" prompt (which 409s).
+            await NotifyTargetMembersAsync(req, NotificationKind.MeetingCancelled,
+                "Delegation meeting cancelled", "تم إلغاء اجتماع الوفد",
+                $"The delegation meeting request from {detail.RequestingCountry} was cancelled.",
+                $"تم إلغاء طلب اجتماع الوفد من {detail.RequestingCountry}.",
+                cancellationToken);
         }
 
         return detail;
@@ -458,7 +485,11 @@ internal sealed class DelegationMeetingRequestService(
             SendEmail = true,
         }, logger, cancellationToken);
 
-        return detail;
+        // This is an APP caller (the other-party confirmer), not an admin — never disclose
+        // the requester's Identity login email over the app wire. LoadDetailAsync resolves
+        // it for the admin desks (audited per D-185); strip it here so a peer app user
+        // cannot read another user's private email from the confirm response.
+        return detail with { RequesterEmail = null };
     }
 
     public async Task<AdminDelegationMeetingRequestDetail> CheckInAsync(
@@ -490,13 +521,16 @@ internal sealed class DelegationMeetingRequestService(
         return await LoadDetailAsync(id, cancellationToken);
     }
 
-    // Bi-Meeting rework — dispatch the other-party request-to-confirm notification to
-    // every eligible member of the target delegation (profile country == target country
-    // AND AllowsDelegationMeeting). App row (confirm-on-tap deep-link from
-    // NotificationKindCatalog) + email. Members are resolved on the App DB; their emails
-    // are resolved by the dispatcher (Identity) — no cross-DB JOIN.
+    // Bi-Meeting rework — dispatch a notification to every eligible member of the target
+    // delegation (profile country == target country AND AllowsDelegationMeeting). App row
+    // (deep-link from NotificationKindCatalog) + email. Members are resolved on the App DB;
+    // their emails are resolved by the dispatcher (Identity) — no cross-DB JOIN. Used both
+    // on Approve (request-to-confirm) and on Cancel-after-approval (retract that request so
+    // the other party is not left with a stale "please confirm" prompt).
     private async Task NotifyTargetMembersAsync(
-        DelegationMeetingRequest req, string requestingCountry, CancellationToken cancellationToken)
+        DelegationMeetingRequest req, NotificationKind kind,
+        string title, string titleArabic, string body, string bodyArabic,
+        CancellationToken cancellationToken)
     {
         var memberIds = await appDbContext.UserProfiles.AsNoTracking()
             .Where(p => p.NationalityId == req.TargetCountryId && p.AllowsDelegationMeeting)
@@ -507,11 +541,11 @@ internal sealed class DelegationMeetingRequestService(
             await notifications.TryDispatchAsync(new NotificationRequest
             {
                 UserId = userId,
-                Kind = NotificationKind.MeetingRequested,
-                Title = "Delegation meeting request",
-                TitleArabic = "طلب اجتماع وفد",
-                Body = $"A meeting request from {requestingCountry} is awaiting your confirmation.",
-                BodyArabic = $"طلب اجتماع من {requestingCountry} بانتظار تأكيدك.",
+                Kind = kind,
+                Title = title,
+                TitleArabic = titleArabic,
+                Body = body,
+                BodyArabic = bodyArabic,
                 Severity = NotificationSeverity.Info,
                 RelatedEntityType = nameof(DelegationMeetingRequest),
                 RelatedEntityId = req.Id,
