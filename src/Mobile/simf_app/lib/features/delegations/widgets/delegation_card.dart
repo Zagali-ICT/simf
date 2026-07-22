@@ -12,6 +12,7 @@ class DelegationCard extends StatelessWidget {
     required this.item,
     required this.isArabic,
     required this.l10n,
+    this.onTap,
     super.key,
   });
 
@@ -19,9 +20,14 @@ class DelegationCard extends StatelessWidget {
   final bool isArabic;
   final AppL10n l10n;
 
+  /// Bi-Meeting rework — when set (the signed-in user holds AllowsDelegationMeeting)
+  /// tapping the card opens the delegation meeting-request sheet for this country.
+  /// Null → the card is a plain, non-interactive info card (guests / unentitled).
+  final VoidCallback? onTap;
+
   @override
   Widget build(BuildContext context) {
-    return SimfCard(
+    final card = SimfCard(
       radius: SimfTokens.radius, // 8 (Figma 1426:10838)
       borderWidth: 0, // borderless
       child: Padding(
@@ -39,6 +45,14 @@ class DelegationCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+    if (onTap == null) {
+      return card;
+    }
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: card,
     );
   }
 

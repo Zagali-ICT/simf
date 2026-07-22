@@ -4,7 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../account/data/profile_repository.dart';
+import 'data/delegation_models.dart';
 import 'data/delegations_repository.dart';
+import 'widgets/delegation_meeting_request_sheet.dart';
 import 'widgets/delegations_body.dart';
 
 /// The Delegations screen — App "الوفود" (Figma 1426:10771): the invited
@@ -39,11 +42,32 @@ class _DelegationsScreenState extends ConsumerState<DelegationsScreen> {
     setState(() => _selectedFlagCode = _selectedFlagCode == code ? null : code);
   }
 
+  /// Bi-Meeting rework — open the delegation meeting-request sheet for a tapped
+  /// country (only wired when the user holds AllowsDelegationMeeting).
+  Future<void> _openRequest(DelegationItem country) async {
+    final l10n = AppL10n.of(context);
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: SimfTokens.cardBeige,
+      showDragHandle: false,
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(SimfTokens.radius)),
+      ),
+      builder: (_) => DelegationMeetingRequestSheet(country: country, l10n: l10n),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     final isArabic = Directionality.of(context) == TextDirection.rtl;
     final delegations = ref.watch(delegationsProvider);
+    // Bi-Meeting rework — a signed-in user holding AllowsDelegationMeeting can tap a
+    // country card to request a meeting; others see plain info cards.
+    final canRequestDelegation =
+        ref.watch(currentUserMeetingAccessProvider).value?.delegation ?? false;
 
     Future<void> onRefresh() async {
       ref.invalidate(delegationsProvider);
@@ -82,6 +106,7 @@ class _DelegationsScreenState extends ConsumerState<DelegationsScreen> {
             selectedCountryCode: _selectedFlagCode,
             onFlagTap: _onFlagTap,
             onClearFilter: () => setState(() => _selectedFlagCode = null),
+            onRequestMeeting: canRequestDelegation ? _openRequest : null,
           ),
         ),
       ),

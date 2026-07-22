@@ -5,50 +5,71 @@ import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
 import '../../requests/widgets/request_action_row.dart';
 
-/// The اللقاءات الثنائية top action row (Figma 1408:9736): two equal pills —
-/// **"طلب جديد"** (beige outline → opens the new-meeting sheet) and **"السجل"**
-/// (gold-filled → opens the requests-history page). Reuses the shared
-/// [RequestActionButton] pill so the meetings page and the requests-history page
-/// keep an identical control, rather than a page-local copy.
-///
-/// The whole meetings page is VIP-only, so "طلب جديد" always shows here (unlike
-/// the history page, where it is VIP-gated).
+/// Bi-Meeting rework — the اللقاءات الثنائية top action area. The owner's two
+/// request buttons — **"طلب مقابلة متحدث"** (speaker) and **"طلب اجتماع وفد"**
+/// (delegation) — each shown only when the signed-in user holds the matching
+/// per-user flag ([showSpeaker] / [showDelegation]); the entitled request pills
+/// sit on one row above the gold **"السجل"** history pill. Reuses the shared
+/// [RequestActionButton] so the meetings + requests-history pages keep one control.
 class MeetingActionRow extends StatelessWidget {
   const MeetingActionRow({
     required this.l10n,
-    required this.onNew,
+    required this.showSpeaker,
+    required this.showDelegation,
+    required this.onRequestSpeaker,
+    required this.onRequestDelegation,
     required this.onHistory,
     super.key,
   });
 
   final AppL10n l10n;
-  final VoidCallback onNew;
+  final bool showSpeaker;
+  final bool showDelegation;
+  final VoidCallback onRequestSpeaker;
+  final VoidCallback onRequestDelegation;
   final VoidCallback onHistory;
 
   @override
   Widget build(BuildContext context) {
-    // The Figma lays this row left→right (طلب جديد · السجل) as a fixed LTR
-    // control — force LTR so the RTL shell doesn't mirror it, matching the frame.
+    // The Figma lays the pills left→right as a fixed LTR control — force LTR so
+    // the RTL shell doesn't mirror it, matching the frame.
     return Directionality(
       textDirection: TextDirection.ltr,
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Expanded(
-            child: RequestActionButton(
-              label: l10n.requestNew,
-              asset: AppAssets.requestNew,
-              active: false,
-              onTap: onNew,
+          if (showSpeaker || showDelegation) ...<Widget>[
+            Row(
+              children: <Widget>[
+                if (showSpeaker)
+                  Expanded(
+                    child: RequestActionButton(
+                      label: l10n.requestSpeakerMeeting,
+                      asset: AppAssets.requestNew,
+                      active: false,
+                      onTap: onRequestSpeaker,
+                    ),
+                  ),
+                if (showSpeaker && showDelegation)
+                  const SizedBox(width: SimfTokens.space4),
+                if (showDelegation)
+                  Expanded(
+                    child: RequestActionButton(
+                      label: l10n.requestDelegationMeeting,
+                      asset: AppAssets.requestNew,
+                      active: false,
+                      onTap: onRequestDelegation,
+                    ),
+                  ),
+              ],
             ),
-          ),
-          const SizedBox(width: SimfTokens.space4),
-          Expanded(
-            child: RequestActionButton(
-              label: l10n.requestsTabLog,
-              asset: AppAssets.requestLog,
-              active: true,
-              onTap: onHistory,
-            ),
+            const SizedBox(height: SimfTokens.space4),
+          ],
+          RequestActionButton(
+            label: l10n.requestsTabLog,
+            asset: AppAssets.requestLog,
+            active: true,
+            onTap: onHistory,
           ),
         ],
       ),

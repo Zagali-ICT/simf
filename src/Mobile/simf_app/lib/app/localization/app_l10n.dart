@@ -1235,6 +1235,52 @@ class AppL10n {
         'Could not send the request. Try again.',
       );
 
+  // Bi-Meeting rework — the اللقاءات الثنائية page's two request buttons + the
+  // no-access state, and the delegation-meeting request sheet + confirm screen.
+  String get requestSpeakerMeeting =>
+      _t('طلب مقابلة متحدث', 'Request a speaker meeting');
+  String get requestDelegationMeeting =>
+      _t('طلب اجتماع وفد', 'Request a delegation meeting');
+  String get meetingAccessRequired => _t(
+        'اللقاءات الثنائية متاحة للحسابات المصرَّح لها فقط',
+        'Bilateral meetings are available to authorised accounts only',
+      );
+  String get delegationRequestTitle => _t('طلب اجتماع وفد', 'Delegation meeting request');
+  String get delegationSelectCountryLabel => _t('اختر الوفد', 'Select the delegation');
+  String get delegationSelectCountryFirst =>
+      _t('اختر الوفد أولاً', 'Select a delegation first');
+  String get delegationNoneAvailable =>
+      _t('لا توجد وفود متاحة', 'No delegations available');
+  String get delegationAttendeeCountLabel => _t('عدد الحضور', 'Number of attendees');
+  String get delegationAttendeeCountHint => _t('مثال: 5', 'e.g. 5');
+  String get delegationAttendeeCountInvalid =>
+      _t('أدخل عدد حضور صحيحاً', 'Enter a valid number of attendees');
+  String get delegationNotAllowed => _t(
+        'غير مصرَّح لك بطلب اجتماعات الوفود',
+        'You are not permitted to request delegation meetings',
+      );
+  String get delegationTargetNotInvited => _t(
+        'هذا الوفد غير متاح للاجتماعات',
+        'This delegation is not available for meetings',
+      );
+  String get meetingConfirmTitle => _t('تأكيد الاجتماع', 'Confirm meeting');
+  String get meetingConfirmIntro => _t(
+        'اضغط لتأكيد هذا الاجتماع مع الطرف الآخر.',
+        'Tap to confirm this meeting with the other party.',
+      );
+  String get meetingConfirmButton => _t('تأكيد الاجتماع', 'Confirm meeting');
+  String get meetingConfirmDone => _t('تم تأكيد الاجتماع', 'Meeting confirmed');
+  String get meetingConfirmNotAwaiting => _t(
+        'هذا الاجتماع ليس بانتظار التأكيد',
+        'This meeting is not awaiting confirmation',
+      );
+  String get meetingConfirmFailed => _t(
+        'تعذّر تأكيد الاجتماع. حاول مرة أخرى.',
+        'Could not confirm the meeting. Try again.',
+      );
+  String get meetingConfirmMissing =>
+      _t('لم يتم العثور على الاجتماع', 'Meeting not found');
+
   // D-500 (Wave 5, الطلبات 1408:9726) — the unified requests feed (supersedes the
   // D-479 read-only My-meetings screen).
   // D-745 (owner 2026-07-11): the requests feed became the history page ("طلباتي")

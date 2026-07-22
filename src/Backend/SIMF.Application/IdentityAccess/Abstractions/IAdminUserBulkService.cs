@@ -1,3 +1,4 @@
+using SIMF.Common;
 using SIMF.Contracts.Authentication;
 
 using SIMF.Common.Enums;
@@ -127,5 +128,37 @@ public interface IAdminUserBulkService
         Guid actorUserId,
         UserType kind,
         AdminBulkGenerateBadgesRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// D-758 (#10 Phase 2) — the server-paged list of persisted bulk-badge batches
+    /// (<see cref="BulkGenerateBadgesAsync"/> runs), newest first. A revoked batch
+    /// stays in the list with <c>IsActive = false</c>.
+    /// </summary>
+    Task<GridPage<AdminBadgeBatchSummary>> ListBadgeBatchesAsync(
+        Guid actorUserId,
+        GridQuery query,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// D-758 (#10 Phase 2) — re-render the batch's QR pack and email it to the
+    /// supplied organiser address (a fresh copy; the badges are unchanged). Throws
+    /// 404 for an unknown batch, 400 for an invalid email or an empty batch.
+    /// </summary>
+    Task<AdminReEmailBadgeBatchResponse> ReEmailBadgeBatchAsync(
+        Guid actorUserId,
+        AdminReEmailBadgeBatchRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// D-758 (#10 Phase 2) — revoke a batch: disable every account it minted
+    /// (reusing the type-scoped bulk-delete path) and mark the batch inactive.
+    /// Throws 404 for an unknown / already-revoked batch. Not a cross-DB
+    /// transaction (D-157): the member accounts (Identity DB) are disabled first,
+    /// then the batch (App DB) is deactivated as a separate unit of work.
+    /// </summary>
+    Task<AdminRevokeBadgeBatchResponse> RevokeBadgeBatchAsync(
+        Guid actorUserId,
+        AdminRevokeBadgeBatchRequest request,
         CancellationToken cancellationToken = default);
 }

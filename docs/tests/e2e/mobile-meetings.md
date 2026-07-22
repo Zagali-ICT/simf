@@ -13,8 +13,22 @@
 | **Route** | `/meetings` (route #116; `RouteNames.meetings`) |
 | **Surface** | Mobile (Flutter) |
 | **Test runner** | Flutter `flutter test` (widget + golden) + on-device manual E2E |
-| **Auth setup** | An **approved VIP** app account (`ProfileType.AllowsVipMeetingSlots`); a non-VIP approved account for the gate cases. TOTP via `Get-Totp` — never a literal secret. |
-| **Last reviewed** | 2026-07-11 |
+| **Auth setup** | An approved app account whose profile has **`allowsSpeakerMeeting`** and/or **`allowsDelegationMeeting`** = true (bi-meeting rework — replaces the VIP gate); a non-entitled approved account for the gate cases. TOTP via `Get-Totp` — never a literal secret. |
+| **Last reviewed** | 2026-07-22 |
+
+> **⚑ Bi-meeting rework update (2026-07-22).** The page is no longer "VIP-only": access is
+> gated by the two per-user flags via `currentUserMeetingAccessProvider`
+> (`MeetingAccess { speaker, delegation, any }`, from `allowsSpeakerMeeting` /
+> `allowsDelegationMeeting`). The single "طلب جديد" button is **replaced by two flag-gated
+> buttons** in `MeetingActionRow` — **"طلب مقابلة متحدث"** (`requestSpeakerMeeting`, shown when
+> `access.speaker`, opens the speaker `MeetingRequestSheet`) and **"طلب اجتماع وفد"**
+> (`requestDelegationMeeting`, shown when `access.delegation`, opens the delegation sheet —
+> [`mobile-delegation-request.md`](mobile-delegation-request.md)) — with **السجل** (Log)
+> below. The Home tile shows when `access.any`. The in-screen no-access text is now
+> **"اللقاءات الثنائية متاحة للحسابات المصرَّح لها فقط"** / "Bilateral meetings are available to
+> authorised accounts only" (`meetingAccessRequired`), replacing the old VIP-only copy. Where
+> the scenarios below say "طلب جديد" / "VIP" / the old copy, read them per this banner. Widget
+> tests: `meetings_screen_test.dart` (8/8) asserts the two buttons + the gate + the new copy.
 
 ## Coverage matrix
 
@@ -27,11 +41,12 @@
 | E2E-MOBMEET-005 | Only approved + upcoming meetings appear (pending/rejected/past excluded) | filter | P0 | _to author_ |
 | E2E-MOBMEET-006 | Speaker-meeting card taps through to the speaker profile | nav | P2 | _to author_ |
 | E2E-MOBMEET-007 | Empty state (no upcoming approved meetings) | happy | P1 | _to author_ |
-| E2E-MOBMEET-008 | VIP gate — the Home tile is hidden for a non-VIP account | auth | P0 | _to author_ |
-| E2E-MOBMEET-009 | VIP gate — a non-VIP who reaches `/meetings` sees the VIP-only state | auth | P0 | _to author_ |
+| E2E-MOBMEET-008 | Flag gate — the Home tile is hidden when neither meeting flag is set (bi-meeting rework) | auth | P0 | authored ✓ (`meetings_screen_test.dart` / `home_screen_test.dart`, widget) |
+| E2E-MOBMEET-009 | Flag gate — a non-entitled account on `/meetings` sees "…متاحة للحسابات المصرَّح لها فقط" (bi-meeting rework) | auth | P0 | authored ✓ (`meetings_screen_test.dart`, widget) |
 | E2E-MOBMEET-010 | Server 500 on the feed → error state + retry | resilience | P2 | _to author_ |
 | E2E-MOBMEET-011 | RTL render (Arabic) matches Figma 1408:9726 | i18n | P1 | _to author_ |
 | E2E-MOBMEET-012 | Picker search filters speakers by name/rank; no-match hint (D-746) | filter | P1 | _to author_ |
+| E2E-MOBMEET-013 | Two flag-gated buttons — "طلب مقابلة متحدث" (speaker flag) + "طلب اجتماع وفد" (delegation flag); a single-flag account sees only its button (bi-meeting rework) | happy | P0 | authored ✓ (`meetings_screen_test.dart`, widget) |
 
 ## Scenarios
 
@@ -65,10 +80,11 @@ Scenario: The meetings page lists my approved upcoming meetings
 ### E2E-MOBMEET-002 — Create a new meeting
 
 ```gherkin
-Scenario: طلب جديد opens the meeting sheet and submits
-  Given I am on /meetings as a VIP
-  When I tap "طلب جديد"
+Scenario: طلب مقابلة متحدث opens the speaker meeting sheet and submits
+  Given I am on /meetings and my account has allowsSpeakerMeeting = true
+  When I tap "طلب مقابلة متحدث" (Request a speaker meeting)
   Then the "طلب مقابلة" sheet opens with a speaker picker
+  # The sibling "طلب اجتماع وفد" button opens the delegation sheet (mobile-delegation-request.md).
   When I select the speaker "د. محمد العمري"
   And I enter the subject "تعاون في الأبحاث البحرية"
   And I pick an available day and time slot
@@ -134,25 +150,33 @@ Scenario: No upcoming approved meetings
   And pull-to-refresh works
 ```
 
-### E2E-MOBMEET-008 — VIP gate (tile hidden)
+### E2E-MOBMEET-008 — Flag gate (tile hidden)
 
 ```gherkin
-Scenario: A non-VIP does not see the Home tile
-  Given I am signed in as an approved NON-VIP account
+Scenario: A non-entitled account does not see the Home tile
+  Given I am signed in as an approved account with allowsSpeakerMeeting = false AND allowsDelegationMeeting = false
   When I view the Home page
-  Then the "اللقاءات الثنائية" tile is not shown
+  Then the "اللقاءات الثنائية" tile is not shown (currentUserMeetingAccessProvider.any is false)
   And the "الأرشيف" tile fills the news-tiles row on its own
 ```
 
-### E2E-MOBMEET-009 — VIP gate (in-screen)
+### E2E-MOBMEET-009 — Flag gate (in-screen)
 
 ```gherkin
-Scenario: A non-VIP who reaches /meetings sees the VIP-only state
-  Given I am an approved NON-VIP account
+Scenario: A non-entitled account who reaches /meetings sees the no-access state
+  Given I am an approved account with neither meeting flag set
   When I navigate directly to /meetings
-  Then the body shows the VIP-only message
-      "حجز فترة اجتماع متاح لضيوف كبار الشخصيات فقط"
-  And no create button or list is shown
+  Then the body shows
+      "اللقاءات الثنائية متاحة للحسابات المصرَّح لها فقط" /
+      "Bilateral meetings are available to authorised accounts only"
+  And neither request button nor the list is shown
+  # A load error also falls back to this no-access state (safe default).
+
+Scenario: A single-flag account sees only its button
+  Given allowsSpeakerMeeting = true AND allowsDelegationMeeting = false
+  When I open /meetings
+  Then only "طلب مقابلة متحدث" is shown (not "طلب اجتماع وفد")
+  # And vice-versa for a delegation-only account.
 ```
 
 ### E2E-MOBMEET-010 — Server 500
@@ -202,4 +226,4 @@ Scenario: The selected speaker is never hidden by the filter
 
 ---
 
-_Last reviewed:_ `2026-07-11` by `SIMF Team`.
+_Last reviewed:_ `2026-07-22` by `Claude` — bi-meeting rework: the page is flag-gated (`currentUserMeetingAccessProvider`, not VIP); the single "طلب جديد" button becomes two flag-gated buttons ("طلب مقابلة متحدث" / "طلب اجتماع وفد"); the no-access copy is "اللقاءات الثنائية متاحة للحسابات المصرَّح لها فقط" (E2E-MOBMEET-008/009/013 now widget-backed by `meetings_screen_test.dart`). Prior: `2026-07-11` by `SIMF Team` (D-745 page split).

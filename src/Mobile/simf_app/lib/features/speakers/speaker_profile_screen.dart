@@ -178,9 +178,11 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
     // The avatar builds `{base}/app/assets/SpeakerPhoto/{id}/image` for the
     // uploaded photo; the base already includes `/api/v1`.
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
-    // D-729 (owner item 15) — requesting a speaker meeting is VIP-only; false
-    // while the profile loads / for guests / non-VIP (the endpoint also gates).
-    final isVip = ref.watch(currentUserIsVipProvider).value ?? false;
+    // Bi-Meeting rework — requesting a speaker meeting is gated by the per-user
+    // AllowsSpeakerMeeting flag (replaces the VIP tier). False while the profile
+    // loads / for guests / unentitled (the endpoint also gates server-side).
+    final canRequestSpeakerMeeting =
+        ref.watch(currentUserMeetingAccessProvider).value?.speaker ?? false;
     final sections = <SpeakerCvSection>[
       SpeakerCvSection(l10n.cvBio, speaker.localizedBio(isArabic)),
       SpeakerCvSection(
@@ -230,9 +232,9 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
           const SizedBox(height: SimfTokens.space6), // 24
           SpeakerCvCard(body: sections[activeCv].body!),
         ],
-        // D-729 (owner item 15) — VIP-only: only VVIP/VIP guests see the
-        // "request meeting" CTA (the endpoint enforces the same rule).
-        if (speaker.allowsMeetingRequests && isVip) ...<Widget>[
+        // Bi-Meeting rework — the "request meeting" CTA shows only when the speaker
+        // accepts requests AND this user holds AllowsSpeakerMeeting (endpoint enforces).
+        if (speaker.allowsMeetingRequests && canRequestSpeakerMeeting) ...<Widget>[
           const SizedBox(height: SimfTokens.space5),
           // Figma 1049:2302 — a text-only gold CTA (no leading icon).
           FilledButton(

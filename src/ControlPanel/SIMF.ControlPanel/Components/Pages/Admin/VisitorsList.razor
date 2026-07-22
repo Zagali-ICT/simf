@@ -67,6 +67,13 @@
                           SummaryFormatter="@FormatSummary">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
+                    @* #10 — bulk badge generator, gated by Visitors.BulkGenerate. *@
+                    <AuthorizedAction Permission="@PermissionCatalog.Visitors.BulkGenerate">
+                        <SimfButton Type="button" Variant="secondary"
+                                    OnClick="@(() => _bulkAddOpen = true)">
+                            @L["Admin.Users.Action.BulkAdd"]
+                        </SimfButton>
+                    </AuthorizedAction>
                 </CustomToolbar>
                 <Columns>
                     <SimfDataGridColumn TItem="AdminUserSummary" Key="email"
@@ -178,6 +185,18 @@
                 @L["Admin.Users.Duplicate.Submit"]
             </SimfButton>
         </Footer>
+    </SimfModal>
+}
+
+@* #10 — bulk badge generator in a dialog (the generator supplies its own
+   Generate button + confirm popup; the dialog title covers the header). *@
+@if (_bulkAddOpen)
+{
+    <SimfModal Open="true" Title="@L["Admin.Delegates.Bulk.Title"]"
+               OnClose="@(() => _bulkAddOpen = false)">
+        <ChildContent>
+            <BulkBadgeGenerator ShowHeader="false" />
+        </ChildContent>
     </SimfModal>
 }
 

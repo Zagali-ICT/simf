@@ -108,7 +108,7 @@ internal sealed class MeetingReminderWorker(
         var count = 0;
 
         // Speaker meetings — confirmed, slot inside the lead window, not yet reminded.
-        var speakerDue = await db.SpeakerMeetingRequests
+        var speakerDue = await db.SpeakerMeetingRequests.AsNoTracking()
             .Where(r => r.Status == MeetingRequestStatus.Accepted
                 && r.ReminderSentUtc == null
                 && r.SlotStartUtc != null
@@ -116,15 +116,24 @@ internal sealed class MeetingReminderWorker(
             .ToListAsync(cancellationToken);
         foreach (var req in speakerDue)
         {
-            req.ReminderSentUtc = now;
-            await db.SaveChangesAsync(cancellationToken);
+            // Claim conditionally so a meeting cancelled / checked-in AFTER the batch load
+            // is not reminded: stamp ReminderSentUtc only while the row is still Accepted +
+            // unreminded, and dispatch only when this claim actually won (affected == 1) —
+            // at-most-once, no stale "starts soon" for a now-cancelled meeting. Mirrors the
+            // conditional-update claim in ConfirmByOtherPartyAsync / MeetingActionToken.
+            var claimed = await db.SpeakerMeetingRequests
+                .Where(r => r.Id == req.Id
+                    && r.Status == MeetingRequestStatus.Accepted
+                    && r.ReminderSentUtc == null)
+                .ExecuteUpdateAsync(s => s.SetProperty(r => r.ReminderSentUtc, now), cancellationToken);
+            if (claimed == 0) { continue; }
             await DispatchAsync(notifications, req.RequestedByUserId, req.Subject, req.Id,
                 "SpeakerMeetingRequest", logger, cancellationToken);
             count++;
         }
 
         // Delegation meetings — confirmed, slot inside the lead window, not yet reminded.
-        var delegationDue = await db.DelegationMeetingRequests
+        var delegationDue = await db.DelegationMeetingRequests.AsNoTracking()
             .Where(r => r.Status == MeetingRequestStatus.Accepted
                 && r.ReminderSentUtc == null
                 && r.SlotStartUtc != null
@@ -132,8 +141,13 @@ internal sealed class MeetingReminderWorker(
             .ToListAsync(cancellationToken);
         foreach (var req in delegationDue)
         {
-            req.ReminderSentUtc = now;
-            await db.SaveChangesAsync(cancellationToken);
+            // Same conditional claim as the speaker loop (at-most-once, cancel-safe).
+            var claimed = await db.DelegationMeetingRequests
+                .Where(r => r.Id == req.Id
+                    && r.Status == MeetingRequestStatus.Accepted
+                    && r.ReminderSentUtc == null)
+                .ExecuteUpdateAsync(s => s.SetProperty(r => r.ReminderSentUtc, now), cancellationToken);
+            if (claimed == 0) { continue; }
 
             // Both parties: the requester + every eligible member of the target delegation.
             var recipientIds = await db.UserProfiles.AsNoTracking()

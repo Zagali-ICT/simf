@@ -11,10 +11,10 @@
 | **Status** | ✅ Real |
 | **Implements use case(s)** | UC-VIS-LIST, UC-VIS-WALKIN-CREATE (D-127), UC-VIS-DETAILS-WITH-ID-IMAGE (D-129), UC-VIS-DELETE, UC-VIS-DUPLICATE, UC-VIS-IMPORT, UC-VIS-EXPORT _(pending UCS)_ |
 | **Backend endpoints** | `POST /account/api/admin/visitors/list`, `POST /admin/visitors/register-onsite` (D-127), `GET /admin/visitors/{id}/profile` (D-126), `POST /bulk-delete`, `POST /duplicate`, `POST /export`, `POST /import`; ID-document upload `POST /admin/visitors/{id}/id-document` (D-129); QR lookup `GET /admin/qr-lookup/{qrId}` (D-130 — also reachable via `/admin/print-bag`) |
-| **Source file** | [`VisitorsList.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/VisitorsList.razor) + child [`CreateVisitorForm.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/CreateVisitorForm.razor) + walk-in wizard [`WalkInRegistrationForm.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/WalkInRegistrationForm.razor) (D-127/D-129/D-131) + [`WalkInSuccessModal.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/WalkInSuccessModal.razor) |
+| **Source file** | [`VisitorsList.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/VisitorsList.razor) + child [`CreateVisitorForm.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/CreateVisitorForm.razor) + walk-in wizard [`WalkInRegistrationForm.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/WalkInRegistrationForm.razor) (D-127/D-129/D-131; **2026-07-22 SimfFormSection redesign**) + [`WalkInSuccessModal.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/WalkInSuccessModal.razor) + bulk-add [`BulkBadgeGenerator.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/BulkBadgeGenerator.razor) (#10, shared with `/admin/delegates`) |
 | **Deep-link fallback** | `/admin/visitors/new` → [`CreateVisitor.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/CreateVisitor.razor) |
-| **Tests** | `tests/SIMF.Api.Tests/AdminGridVisitorsTests.cs`, `WalkInRegistrationTests.cs` |
-| **Last reviewed** | 2026-05-28 |
+| **Tests** | `tests/SIMF.Api.Tests/AdminGridVisitorsTests.cs`, `WalkInRegistrationTests.cs`; `tests/SIMF.ControlPanel.Tests/WalkInRegistrationFormTests.cs`, `BulkBadgeGeneratorTests.cs` |
+| **Last reviewed** | 2026-07-22 (create-form SimfFormSection redesign + #10 Bulk-add dialog) |
 
 ---
 
@@ -38,6 +38,25 @@ and export the attendee list to XLSX for reporting.
   encrypted (D-129); admin can view it inline on the Details modal. Streamed
   decrypted via `GET /admin/visitors/{id}/id-document` with a freshness query
   param to bust browser cache.
+- **Bulk add (#10):** a toolbar **"Bulk add"** button — gated by
+  `Visitors.BulkGenerate` (`<AuthorizedAction>`) — opens the shared
+  `BulkBadgeGenerator` dialog (batch-builder: profile type + count → Add → list →
+  Generate → confirm popup with an optional organiser email). It posts
+  `POST /admin/visitors/bulk-generate`, creating anonymous placeholder badges and
+  optionally emailing a ZIP of their QRs. The same component powers the
+  `/admin/delegates` bulk section.
+
+## 2b. Walk-in wizard — 2026-07-22 professional redesign
+
+`WalkInRegistrationForm` was regrouped from `<fieldset>/<legend>` sections + a
+bespoke 3-column scaffold into the house **numbered `SimfFormSection` cards** on
+the responsive `simf-form__grid` (SpeakersAddEdit parity). The gender / preferred
+language / nationality / Saudi birth-region controls now use `SimfSelect`, the DOB
+uses `SimfDatePicker`, and the ID-document / photo inputs use `SimfFileUpload` —
+one consistent field shell. **Fields, the `register-onsite` endpoint (+ deferred
+ID/avatar/VIP-photo uploads) and all validation are unchanged**; a single wrapping
+`<fieldset disabled>` preserves the submit-time lockout. A latent D-648 gotcha
+(the bulk confirm-email field missing `ValueExpression`) was fixed in passing.
 
 ## 3. Screenshots
 

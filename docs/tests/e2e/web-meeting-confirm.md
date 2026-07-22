@@ -21,6 +21,13 @@
 > `GET`/`POST /api/v1/app/meeting-actions/{token}` (`AllowAnonymous`, rate-limited) and
 > covered by `tests/SIMF.Api.Tests/MeetingActionTokenTests.cs`.
 
+> **Scope note (bi-meeting rework, 2026-07-22).** This token page is the **speaker** side
+> only — the rework did **not** generalize the token to delegations (the token still FKs a
+> `SpeakerMeetingRequest`; the preview carries `RequesterName`, not a type-agnostic party
+> label). The **delegation** other-party confirm is a separate **authenticated app screen**
+> (`POST /app/delegation-meeting-requests/{id}/confirm`) —
+> [`mobile-meeting-confirm.md`](mobile-meeting-confirm.md) — not this page.
+
 ## Coverage matrix
 
 | ID | Scenario | Type | Priority | Status |

@@ -46,6 +46,7 @@ import '../features/more/more_screen.dart';
 import '../features/notifications/notifications_screen.dart';
 import '../features/questions/send_question_screen.dart';
 import '../features/exhibitor/my_visitors_screen.dart';
+import '../features/meetings/meeting_confirm_screen.dart';
 import '../features/meetings/meetings_screen.dart';
 import '../features/requests/requests_screen.dart';
 import '../features/exhibitor/scan_visitor_screen.dart';
@@ -181,6 +182,8 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 108, name: RouteNames.requests, path: '/requests', labelAr: 'طلباتي', labelEn: 'My requests'),
   // D-745 — the VIP bilateral-meetings page (اللقاءات الثنائية, Figma 1408:9726).
   _Route(number: 116, name: RouteNames.meetings, path: '/meetings', labelAr: 'اللقاءات الثنائية', labelEn: 'Bilateral meetings'),
+  // Bi-Meeting rework — the other-party confirm screen (deep-link from a notification).
+  _Route(number: 117, name: RouteNames.meetingConfirm, path: '/meeting-confirm', labelAr: 'تأكيد الاجتماع', labelEn: 'Confirm meeting'),
   // (D-609: route 115 My-meetings removed — screen backed up as `.bk`.)
   // D-485 — the session-join flow (approved-only): the seat picker + the hub.
   _Route(number: 109, name: RouteNames.seatPicker, path: '/sessions/:sessionId/pick-seat', labelAr: 'اختر مقعدك', labelEn: 'Select your seat'),
@@ -286,6 +289,8 @@ const Map<int, Set<AppRole>> _routeRoles = <int, Set<AppRole>>{
   108: _attendee, // Requests feed (D-500, approved-only)
   116: _attendee, // Bilateral meetings (D-745) — role gate keeps guest/staff/
   // moderator out; VIP-only is enforced in-screen + server-side, not here.
+  117: _attendee, // Meeting confirm (Bi-Meeting) — the other-party confirm screen;
+  // eligibility (target-delegation member) is enforced server-side.
   109: _attendee, // Seat picker (D-485)
   110: _attendee, // Join-a-session hub (D-485)
   113: _attendee, // My sessions (D-710, restored — owner reversed the D-609 removal)
@@ -527,6 +532,11 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.meetings) {
     return const MeetingsScreen();
+  }
+  if (r.name == RouteNames.meetingConfirm) {
+    return MeetingConfirmScreen(
+      requestId: state.uri.queryParameters['requestId'] ?? '',
+    );
   }
   if (r.name == RouteNames.forumGuide) {
     return const ForumGuideScreen();

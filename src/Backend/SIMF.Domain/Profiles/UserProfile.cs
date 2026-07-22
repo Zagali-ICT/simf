@@ -120,6 +120,17 @@ public class UserProfile : BaseAuditEntity
     /// <summary>Navigation to the picked <see cref="SIMF.Domain.Regions.Region"/>.</summary>
     public SIMF.Domain.Regions.Region? Region { get; set; }
 
+    /// <summary>D-758 (#10 Phase 2) — the bulk-badge generation run this placeholder
+    /// profile was minted by, if any. A real intra-App-DB FK to
+    /// <see cref="SIMF.Domain.Badges.BadgeBatch"/> (nullable + <c>OnDelete.Restrict</c>,
+    /// same shape as <see cref="OrganisationId"/>) so a generated set can be
+    /// re-emailed / revoked together. Null for every profile created through the
+    /// normal sign-up / walk-in paths.</summary>
+    public Guid? BadgeBatchId { get; set; }
+
+    /// <summary>Navigation to the owning <see cref="SIMF.Domain.Badges.BadgeBatch"/>.</summary>
+    public SIMF.Domain.Badges.BadgeBatch? BadgeBatch { get; set; }
+
 
 
 

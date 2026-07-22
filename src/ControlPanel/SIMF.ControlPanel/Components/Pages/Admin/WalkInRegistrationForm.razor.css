@@ -1,3 +1,15 @@
+/* The whole form body is wrapped in one <fieldset> so a submit disables every
+   control at once (native inputs + SimfSelect/SimfTextField inputs + the custom
+   picker/toggle/chip buttons). Reset the default fieldset chrome — the layout is
+   supplied by the SimfFormSection cards + simf-form__grid. Scoped to this
+   component; tokens only where a value is needed. */
+.simf-walkin__fields {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-inline-size: 0;
+}
+
 /* B3 — D-221 — organisation typeahead dropdown for the walk-in form. Tokens
    only (no hardcoded values), per the CSS rules. Scoped to this component to
    avoid touching the shared simf-components.css bundle. */

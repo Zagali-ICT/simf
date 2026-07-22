@@ -20,7 +20,38 @@
 > `DelegationMeetings.View` (page + nav); the Respond action by `DelegationMeetings.Manage`.
 > API: `POST /admin/delegation-meeting-requests/list`, `GET …/{id}`,
 > `PUT …/{id}/respond`; the public submit is `POST /app/delegation-meeting-requests` —
-> all covered by `tests/SIMF.Api.Tests/DelegationMeetingRequestsTests.cs` (5/5).
+> all covered by `tests/SIMF.Api.Tests/DelegationMeetingRequestsTests.cs`.
+
+> **⚑ Bi-meeting rework update (2026-07-22).** The delegation flow is brought up to full
+> parity with the speaker flow and both desks now share the **unified state machine + the
+> three-button modal**:
+> - **Requester eligibility** moved to the per-user **`AllowsDelegationMeeting`** flag
+>   (admin-assigned on the account; **replaces** the former `IsDelegate` submit gate) —
+>   grounded in `DelegationMeetingRequestService.SubmitAsync` (403 `FORBIDDEN` without it).
+>   `Country.IsInvited` still validates the **target** delegation.
+> - **Availability + hall-bind**: an invited delegation now has **availability windows**
+>   ([`cp-admin-delegation-availability.md`](cp-admin-delegation-availability.md)); the respond
+>   modal binds a **hall + free slot (+ optional meeting table)** via the shared
+>   `Admin.Meetings.Bind.*` pickers (hall-hosts-meetings + free-slot + both-country overlap
+>   guards), the same as the speaker desk.
+> - **Three-button modal**: **Close**; the danger button is **Decline**
+>   (`Admin.Meetings.Decline` "Decline"/"رفض") when the row is Pending, else **Cancel meeting**
+>   (`Admin.Meetings.Cancel` "Cancel meeting"/"إلغاء الاجتماع"); **Approve**
+>   (`Admin.Meetings.Approve` "Approve"/"موافقة", **Pending only**); and **Confirm**
+>   (`Admin.Meetings.Confirm` "Confirm"/"تأكيد"). Decline/Cancel **require a justification**
+>   (`Admin.Meetings.Decline.NoteRequired`). There is **no verbal checkbox** — Approve sends
+>   `VerbalConfirmed=false`, Confirm sends `VerbalConfirmed=true`.
+> - **Status set** (delegation pills): Pending; **AwaitingConfirmation**
+>   (`Admin.Meetings.Status.AwaitingConfirmation` "Awaiting confirmation"/"بانتظار التأكيد" —
+>   the shared `AwaitingSpeaker=4` value); **Accepted** = the *Confirmed* terminal (there is no
+>   separate "Confirmed" pill); **Done** (`Admin.Meetings.Status.Done` "Done"/"منتهٍ");
+>   Rejected; Cancelled (`Admin.Meetings.Status.Cancelled` "Cancelled"/"ملغى").
+> - **Other-party confirm**: on Approve, each eligible **target-delegation member** is
+>   notified in-app (`MeetingRequested`) + emailed and confirms from the app —
+>   [`mobile-meeting-confirm.md`](mobile-meeting-confirm.md),
+>   `POST /app/delegation-meeting-requests/{id}/confirm`.
+> - **Operator Check-in → Done**: a Confirmed (Accepted) row exposes a **Check in**
+>   (`Admin.Meetings.CheckIn` "Check in"/"تسجيل الحضور") row action that flips it to `Done`.
 
 ## Coverage matrix
 
@@ -32,6 +63,10 @@
 | E2E-DLM-004 | A non-delegate submit → 403; a non-invited target country → 400 (`DELEGATION` / `DELEGATE_COUNTRY_NOT_INVITED`) | error | P0 | authored ✓ (DelegationMeetingRequestsTests, API) |
 | E2E-DLM-005 | Auth gate — admin lacking `DelegationMeetings.View` → `/not-permitted`; nav item hidden; lacking `.Manage` → Respond action hidden | auth | P0 | _to author_ (gate verified by CpNavigationPermissionTests) |
 | E2E-DLM-006 | RTL / Arabic render — grid + respond modal mirror | i18n | P1 | _to author_ |
+| E2E-DLM-010 | Unified 3-button modal — Close / Decline (Pending) or Cancel (non-terminal) / Approve (Pending) / Confirm; justification required; no verbal checkbox (bi-meeting rework) | happy | P0 | authored ✓ (`Admin_confirm_of_an_awaiting_request_books_it_without_a_hall`, API) |
+| E2E-DLM-011 | Operator Check-in — a Confirmed (Accepted) row → Check in → status `Done`; a non-Accepted check-in → 409 (bi-meeting rework) | happy | P0 | _to author_ (API test `_to author_`) |
+| E2E-DLM-012 | Other-party confirm — Approve notifies each target-delegation member (`MeetingRequested`) who confirms from the app (cross-ref `mobile-meeting-confirm.md`) | happy | P0 | authored ✓ (`Other_party_confirm_response_does_not_leak_the_requester_email`, API) |
+| E2E-DLM-013 | Confirm of an AwaitingConfirmation request books it (even on a past bound slot) → Accepted (bi-meeting rework) | happy | P1 | authored ✓ (`Admin_confirm_of_an_awaiting_request_with_a_PAST_bound_slot_still_succeeds`, API) |
 
 ## Scenarios
 
@@ -108,6 +143,83 @@ Scenario: Neither delegation may be double-booked
 
 **Evidence:** `DelegationMeetingRequestsTests.Accepting_a_request_with_a_free_future_slot_succeeds`, `Accepting_a_request_with_a_slot_in_the_past_is_400`, `Accepting_an_overlapping_slot_for_the_same_delegation_is_409` (all green).
 
+### E2E-DLM-010 — Unified 3-button respond modal (bi-meeting rework)
+
+```gherkin
+Feature: The delegation respond modal is the unified three-button control
+Background:
+  Given an Administrator with DelegationMeetings.Manage has signed in
+  And a Pending delegation meeting request is on the desk
+
+Scenario: Pending row — Close / Decline / Approve / Confirm
+  When they open Respond on the Pending row
+  Then the footer shows Close ("إغلاق"), Decline ("رفض"), Approve ("موافقة"), Confirm ("تأكيد")
+  And there is NO verbal-confirmation checkbox
+
+Scenario: Approve binds a hall + slot and awaits the other party's confirmation
+  When they pick a hall + a free slot (+ optional table) and click Approve
+  Then PUT .../respond fires with Status=Accepted, VerbalConfirmed=false, HallId + SlotStartUtc/EndUtc
+  And the row moves to AwaitingConfirmation (pill "Awaiting confirmation" / "بانتظار التأكيد")
+  And each eligible target-delegation member is notified (MeetingRequested) + emailed to confirm
+  When they click Approve / Confirm without a hall + slot
+  Then the CP shows "Select a hall and a free slot to approve or confirm." /
+      "اختر قاعة وفترة متاحة للموافقة أو التأكيد." and does not submit
+
+Scenario: Confirm books the meeting (verbal), Cancel/Decline needs a justification
+  When they click Confirm on an AwaitingConfirmation row
+  Then PUT .../respond fires with Status=Accepted, VerbalConfirmed=true and the row becomes Accepted
+  When instead they click Cancel meeting ("إلغاء الاجتماع") on a non-terminal row with the note empty
+  Then the CP blocks submit with "A justification is required to decline or cancel." /
+      "يلزم إدخال مبرّر للرفض أو الإلغاء."
+  # On a Pending row the danger button reads Decline ("رفض"); on a non-terminal row it reads
+  # Cancel meeting ("إلغاء الاجتماع"). Both release any held hall slot.
+```
+
+**Evidence:** `DelegationMeetingRequestsTests.Admin_confirm_of_an_awaiting_request_books_it_without_a_hall` (green — the Confirm path books an AwaitingConfirmation request without needing a hall bind).
+
+### E2E-DLM-011 — Operator Check-in → Done (bi-meeting rework)
+
+```gherkin
+Scenario: Check a confirmed delegation meeting in → Done
+  Given a delegation meeting request is Confirmed (Accepted)
+  And the Accepted row shows the "Check in" (log-in icon) row action ("تسجيل الحضور");
+      no non-Accepted row shows it
+  When the operator clicks Check in
+  Then POST /account/api/admin/delegation-meeting-requests/{id}/check-in returns 200
+  And the row status becomes Done (pill "Done" / "منتهٍ")
+  And a green toast reads "Meeting checked in." / "تم تسجيل حضور الاجتماع."
+
+Scenario: Checking in a non-Confirmed meeting is rejected
+  Given a Pending / AwaitingConfirmation / Rejected request
+  When POST .../{id}/check-in is issued
+  Then the API returns 409 APP_REQUEST_ALREADY_RESPONDED
+    ("Only a confirmed meeting can be checked in." / "لا يمكن تسجيل الحضور إلا لاجتماع مؤكَّد.")
+  # Gated DelegationMeetings.Manage; no ?requesterQr= param exists.
+```
+
+**Evidence:** grounded in `DelegationMeetingRequestService.CheckInAsync` (`Accepted → Done`,
+stamps `CheckedInAt`/`CheckedInByUserId`, else `APP_REQUEST_ALREADY_RESPONDED` 409). A dedicated
+API integration test is **`_to author_`**.
+
+### E2E-DLM-012/013 — Other-party confirm + Confirm books a past-slot request
+
+```gherkin
+Scenario: The other party confirms from the app
+  Given an admin approved a request and it is AwaitingConfirmation
+  When an eligible target-delegation member confirms via
+      POST /app/delegation-meeting-requests/{id}/confirm (mobile-meeting-confirm.md)
+  Then the row becomes Accepted (Confirmed) and the requester is notified
+  And the confirm response never carries the requester's email (PII strip, a908f22c)
+
+Scenario: Admin Confirm of an AwaitingConfirmation request with a past bound slot still books it
+  Given an AwaitingConfirmation request whose bound slot is already in the past
+  When the admin clicks Confirm
+  Then PUT .../respond returns 200 and the row becomes Accepted (a past slot does not block Confirm)
+```
+
+**Evidence:** `DelegationMeetingRequestsTests.Other_party_confirm_response_does_not_leak_the_requester_email`,
+`Admin_confirm_of_an_awaiting_request_with_a_PAST_bound_slot_still_succeeds` (both green).
+
 ---
 
-_Last reviewed:_ 2026-07-11 by Claude — on-site W2b (M-3 accept-slot validation: not-in-past + no delegation double-book; added E2E-DLM-007/008/009). Prior: 2026-06-20 by SIMF Team — D-478 (#11) delegation↔delegation meeting desk (Group G phase 2, batch complete).
+_Last reviewed:_ 2026-07-22 by Claude — bi-meeting rework: requester gate moved to `AllowsDelegationMeeting`; availability windows + hall-bind; unified 3-button modal (Close/Decline-or-Cancel/Approve/Confirm, no verbal checkbox); AwaitingConfirmation + Done statuses; other-party app-tap confirm; operator Check-in (E2E-DLM-010/011/012/013). Prior: on-site W2b (M-3 accept-slot validation; E2E-DLM-007/008/009, 2026-07-11); D-478 (#11) delegation↔delegation meeting desk (Group G phase 2, 2026-06-20).

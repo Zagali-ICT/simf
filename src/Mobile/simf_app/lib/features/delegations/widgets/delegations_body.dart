@@ -23,6 +23,7 @@ class DelegationsBody extends StatelessWidget {
     required this.selectedCountryCode,
     required this.onFlagTap,
     required this.onClearFilter,
+    this.onRequestMeeting,
     super.key,
   });
 
@@ -41,6 +42,10 @@ class DelegationsBody extends StatelessWidget {
 
   /// Clears the flag filter (from the active-filter chip).
   final VoidCallback onClearFilter;
+
+  /// Bi-Meeting rework — when set (the user holds AllowsDelegationMeeting), fired
+  /// with a delegation when its card is tapped to request a meeting with it.
+  final void Function(DelegationItem delegation)? onRequestMeeting;
 
   @override
   Widget build(BuildContext context) {
@@ -100,7 +105,14 @@ class DelegationsBody extends StatelessWidget {
           )
         else
           for (final item in filtered) ...<Widget>[
-            DelegationCard(item: item, isArabic: isArabic, l10n: l10n),
+            DelegationCard(
+              item: item,
+              isArabic: isArabic,
+              l10n: l10n,
+              onTap: onRequestMeeting == null
+                  ? null
+                  : () => onRequestMeeting!(item),
+            ),
             const SizedBox(height: SimfTokens.space3),
           ],
       ],

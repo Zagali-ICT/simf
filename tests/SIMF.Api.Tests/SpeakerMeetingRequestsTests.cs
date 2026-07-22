@@ -684,6 +684,49 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(MeetingRequestStatus.Accepted, detail.Status);
     }
 
+    [Fact]
+    public async Task Checking_in_a_confirmed_meeting_marks_it_Done()
+    {
+        // Bi-Meeting rework — an operator checks a confirmed (Accepted) meeting in at
+        // the hall; it flips to Done and stamps CheckedInAt / CheckedInByUserId.
+        var speaker = await SeedSpeakerAsync(allowsMeetings: true);
+        var reqId = await SeedSpeakerRequestAsync(
+            speaker.Id, MeetingRequestStatus.Accepted,
+            DateTimeOffset.UtcNow.AddHours(1), DateTimeOffset.UtcNow.AddHours(1).AddMinutes(30));
+        var (admin, adminId) = await CreateAdministratorAndSignInWithIdAsync();
+
+        var checkIn = await PostAuthAsync(
+            $"/api/v1/admin/speaker-meeting-requests/{reqId}/check-in", new { }, admin);
+        Assert.Equal(HttpStatusCode.OK, checkIn.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var row = await db.SpeakerMeetingRequests.SingleAsync(r => r.Id == reqId);
+        Assert.Equal(MeetingRequestStatus.Done, row.Status);
+        Assert.NotNull(row.CheckedInAt);
+        Assert.Equal(adminId, row.CheckedInByUserId);
+    }
+
+    [Fact]
+    public async Task Checking_in_a_non_confirmed_meeting_is_409()
+    {
+        // Only a confirmed (Accepted) meeting can be checked in — a Pending row is 409.
+        var speaker = await SeedSpeakerAsync(allowsMeetings: true);
+        var reqId = await SeedSpeakerRequestAsync(speaker.Id, MeetingRequestStatus.Pending);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var checkIn = await PostAuthAsync(
+            $"/api/v1/admin/speaker-meeting-requests/{reqId}/check-in", new { }, admin);
+        Assert.Equal(HttpStatusCode.Conflict, checkIn.StatusCode);
+        var body = (await checkIn.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.AppRequestAlreadyResponded, body.Error!.Code);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var row = await db.SpeakerMeetingRequests.SingleAsync(r => r.Id == reqId);
+        Assert.Equal(MeetingRequestStatus.Pending, row.Status);
+    }
+
     // -- Helpers --------------------------------------------------------------
 
     // M-7 — seed a SpeakerMeetingRequest for a SPECIFIC requester (so two rows can

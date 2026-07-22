@@ -827,6 +827,52 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.ToTable("RowAudits", "app");
                 });
 
+            modelBuilder.Entity("SIMF.Domain.Badges.BadgeBatch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CountsSummary")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDelegate")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("RecipientEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<int>("TotalCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsActive", "CreatedAt");
+
+                    b.ToTable("BadgeBatches", (string)null);
+                });
+
             modelBuilder.Entity("SIMF.Domain.BusinessMeetings.BusinessMeeting", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3820,6 +3866,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<bool>("AllowsSpeakerMeeting")
                         .HasColumnType("bit");
 
+                    b.Property<Guid?>("BadgeBatchId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
@@ -3970,6 +4019,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("nvarchar(260)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BadgeBatchId");
 
                     b.HasIndex("IqamaNumberHash")
                         .IsUnique()
@@ -6060,6 +6111,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
             modelBuilder.Entity("SIMF.Domain.Profiles.UserProfile", b =>
                 {
+                    b.HasOne("SIMF.Domain.Badges.BadgeBatch", "BadgeBatch")
+                        .WithMany()
+                        .HasForeignKey("BadgeBatchId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("SIMF.Domain.Organisations.Organisation", "Organisation")
                         .WithMany()
                         .HasForeignKey("OrganisationId")
@@ -6074,6 +6130,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .WithMany()
                         .HasForeignKey("RegionId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("BadgeBatch");
 
                     b.Navigation("Organisation");
 

@@ -194,6 +194,46 @@ final currentUserIsVipProvider = FutureProvider<bool>((ref) async {
   }
 });
 
+/// Bi-Meeting rework — the signed-in user's two admin-assigned meeting-eligibility
+/// flags (speaker / delegation), which REPLACE the VIP tier as the Bi-Meeting gate.
+/// Same guest short-circuit + non-autoDispose caching + auth-transition re-fetch as
+/// [currentUserIsVipProvider] (one profile read serves both flags; the gates read
+/// [MeetingAccess.speaker] / [.delegation] / [.any]). [MeetingAccess.none] for
+/// guests / on error.
+final currentUserMeetingAccessProvider =
+    FutureProvider<MeetingAccess>((ref) async {
+  final auth = ref.watch(authControllerProvider);
+  if (auth is! AuthStateSignedIn) {
+    return MeetingAccess.none;
+  }
+  try {
+    final profile = await ref.watch(profileRepositoryProvider).getMyProfile();
+    return MeetingAccess(
+      speaker: profile.allowsSpeakerMeeting,
+      delegation: profile.allowsDelegationMeeting,
+    );
+  } on ApiFailure {
+    return MeetingAccess.none;
+  }
+});
+
+/// The signed-in user's Bi-Meeting entitlements (admin-assigned per-user flags).
+class MeetingAccess {
+  const MeetingAccess({required this.speaker, required this.delegation});
+
+  /// May request a **speaker** meeting.
+  final bool speaker;
+
+  /// May request a **delegation** (وفد) meeting.
+  final bool delegation;
+
+  /// Entitled to at least one meeting type (gates the Bi-Meeting page / home tile).
+  bool get any => speaker || delegation;
+
+  static const MeetingAccess none =
+      MeetingAccess(speaker: false, delegation: false);
+}
+
 /// Cache-buster for the signed-in user's avatar. Bumped after a successful
 /// avatar upload so [myAvatarBytesProvider] refetches and every avatar on
 /// screen (home greeting / badge / profile) shows the new photo immediately —

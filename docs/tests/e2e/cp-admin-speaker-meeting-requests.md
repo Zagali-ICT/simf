@@ -55,6 +55,29 @@
 > `SpeakerMeetingRequest.Submitted`; every response is audited
 > `SpeakerMeetingRequest.Responded`.
 
+> **⚑ Bi-meeting rework update (2026-07-22).** The respond modal is now the **unified
+> three-button** control shared with the delegation desk
+> ([`cp-admin-delegation-meetings.md`](cp-admin-delegation-meetings.md)), replacing the
+> old "Decision select (Accept / Reject) + Send response" form. The footer buttons are
+> **Close** (`Admin.Meetings.Close` "Close"/"إغلاق"), **Decline**
+> (`Admin.Meetings.Decline` "Decline"/"رفض", **requires a justification** —
+> `Admin.Meetings.Decline.NoteRequired` "A justification is required to decline or
+> cancel."/"يلزم إدخال مبرّر للرفض أو الإلغاء."), **Approve** (`Admin.Meetings.Approve`
+> "Approve"/"موافقة"), and **Confirm** (`Admin.Meetings.Confirm` "Confirm"/"تأكيد"). There is
+> **no verbal-confirmation checkbox**: pressing **Confirm** is the verbal confirmation —
+> Approve sends `VerbalConfirmed = false`, Confirm sends `VerbalConfirmed = true` on the same
+> `RespondToSpeakerMeetingRequestRequest` (Status `Accepted`/`Rejected` + note + `VerbalConfirmed`).
+> The note field label is `Admin.Meetings.Note` "Note / justification (≤2000 chars)"/"ملاحظة /
+> مبرّر (٢٠٠٠ حرف كحد أقصى)". Approve/Confirm bind a hall + free slot (+ optional meeting table)
+> via the shared `Admin.Meetings.Bind.*` pickers; the client blocks submit without a
+> hall + slot (`Admin.Meetings.Bind.HallSlotRequired` "Select a hall and a free slot to
+> approve or confirm."/"اختر قاعة وفترة متاحة للموافقة أو التأكيد."). A **new status value
+> `Done = 5`** (`Admin.Meetings.Status.Done` "Done"/"منتهٍ") and a **Check in** row action
+> (see E2E-SMR-023) complete the lifecycle. The **API respond contract is unchanged** at the
+> Status level, so the earlier Accept/Reject scenarios (E2E-SMR-001/002/004/007) still hold
+> at the API layer; their **modal-UI** steps ("Decision select" / "Send response") are
+> **superseded** by E2E-SMR-022 for the browser layer.
+
 ## Coverage matrix
 
 | ID | Scenario | Type | Priority | Status |
@@ -77,6 +100,8 @@
 | E2E-SMR-016 | Accept + bind a hall + free slot (+ optional table) → status `AwaitingSpeaker`, binding stamped (D-716) | happy | P0 | authored ✓ (`Accept_with_a_hall_binds_the_slot_and_awaits_the_speaker`) |
 | E2E-SMR-017 | Accept with a hall chosen but no slot → 400 `SPEAKER_MEETING_REQUEST_INVALID`; CP blocks submit with the SlotRequired toast (D-716) | error | P1 | authored ✓ (`Accept_with_a_hall_but_no_slot_is_400`) |
 | E2E-SMR-018 | Binding a hall slot removes it for the next meeting → a second accept onto the same slot → 409 (D-716) | error | P0 | authored ✓ (`Binding_a_hall_slot_makes_it_unavailable_to_a_second_meeting`) |
+| E2E-SMR-022 | Unified 3-button modal — Close / Decline (justification required) / Approve (verbal:false) / Confirm (verbal:true); no verbal checkbox (bi-meeting rework) | happy | P0 | _to author_ (browser) |
+| E2E-SMR-023 | Operator Check-in — a Confirmed (Accepted) row → Check in → status `Done`; a non-Accepted check-in → 409 (bi-meeting rework) | happy | P0 | authored ✓ (`Checking_in_a_confirmed_meeting_marks_it_Done` + `Checking_in_a_non_confirmed_meeting_is_409`, API) |
 
 ## Scenarios
 
@@ -481,6 +506,72 @@ Scenario: E2E-SMR-021b — A non-overlapping second meeting is allowed
 
 **Evidence:** `SpeakerMeetingRequestsTests.Accepting_a_second_meeting_that_overlaps_the_requesters_existing_accepted_meeting_with_another_speaker_is_409`, `Accepting_with_hall_when_the_requester_already_holds_an_overlapping_meeting_is_409`, `Two_non_overlapping_meetings_for_the_same_requester_are_both_accepted` (all green).
 
+### E2E-SMR-022 — Unified 3-button respond modal (bi-meeting rework)
+
+```gherkin
+Feature: The speaker respond modal is the unified three-button control
+Background:
+  Given an Administrator with SpeakerMeetingRequests.Manage has signed in
+  And a Pending speaker meeting request is on the queue
+
+Scenario: The modal shows Close / Decline / Approve / Confirm — no verbal checkbox
+  When they open the Respond (reply ↩) action on the Pending row
+  Then the footer shows Close ("إغلاق"), Decline ("رفض"), Approve ("موافقة"), Confirm ("تأكيد")
+  And there is NO verbal-confirmation checkbox
+
+Scenario: Decline requires a justification
+  When they click Decline with the note field empty
+  Then the CP blocks submit with "A justification is required to decline or cancel." /
+      "يلزم إدخال مبرّر للرفض أو الإلغاء."
+  When they type a justification and click Decline
+  Then PUT .../respond fires with Status=Rejected + the note and the row flips to Rejected
+
+Scenario: Approve vs Confirm carry VerbalConfirmed false/true
+  When they pick a hall + a free slot and click Approve
+  Then PUT .../respond fires with Status=Accepted, VerbalConfirmed=false, HallId + SlotStartUtc/EndUtc
+  # Approve keeps the speaker double-opt-in (→ AwaitingSpeaker; the speaker still confirms by email — E2E-SMR-016).
+  When instead they click Confirm (the admin has verbal confirmation)
+  Then PUT .../respond fires with Status=Accepted, VerbalConfirmed=true and the meeting is booked directly
+
+Scenario: Approve / Confirm require a hall + slot
+  When they click Approve or Confirm without picking a hall + free slot
+  Then the CP shows "Select a hall and a free slot to approve or confirm." /
+      "اختر قاعة وفترة متاحة للموافقة أو التأكيد." and does not submit
+```
+
+### E2E-SMR-023 — Operator Check-in → Done (bi-meeting rework)
+
+```gherkin
+Feature: Check a confirmed speaker meeting in at the hall
+Background:
+  Given an Administrator with SpeakerMeetingRequests.Manage has signed in
+  And a speaker meeting request is Confirmed (Accepted, bound to a hall slot)
+
+Scenario: Check in a confirmed meeting → Done
+  Given the grid shows the Accepted row with the "Check in" (log-in icon) row action
+      (Title "Check in" / "تسجيل الحضور"); the action is absent on every non-Accepted row
+  When the operator clicks Check in
+  Then POST /account/api/admin/speaker-meeting-requests/{id}/check-in returns 200
+  And the row status becomes Done (pill "Done" / "منتهٍ")
+  And a green toast reads "Meeting checked in." / "تم تسجيل حضور الاجتماع."
+  And CheckedInAt / CheckedInByUserId are stamped
+
+Scenario: Checking in a non-Confirmed meeting is rejected
+  Given a Pending (or AwaitingSpeaker / Rejected) request
+  When POST .../{id}/check-in is issued
+  Then the API returns 409 APP_REQUEST_ALREADY_RESPONDED
+    ("Only a confirmed meeting can be checked in." / "لا يمكن تسجيل الحضور إلا لاجتماع مؤكَّد.")
+  # The Check-in action + endpoint are gated SpeakerMeetingRequests.Manage; no ?requesterQr= param exists.
+```
+
+**Evidence:** `SpeakerMeetingRequestsTests.Checking_in_a_confirmed_meeting_marks_it_Done`
+(Accepted → Done, stamps `CheckedInAt`/`CheckedInByUserId`) and
+`Checking_in_a_non_confirmed_meeting_is_409` (a Pending row → 409
+`APP_REQUEST_ALREADY_RESPONDED`, unchanged) — both green. The 15-minute reminder that
+precedes check-in is covered by `MeetingReminderWorkerTests` (speaker + delegation,
+lead-window bound + once-only dedup). The delegation check-in twin (E2E-DLM-011) shares
+`DelegationMeetingRequestService.CheckInAsync` and remains `_to author_` at the API layer.
+
 ---
 
 ## Implementation notes
@@ -524,4 +615,4 @@ Scenario: E2E-SMR-021b — A non-overlapping second meeting is allowed
 
 ---
 
-_Last reviewed:_ `2026-07-11` by `Claude` (on-site W2b — R-1a AwaitingSpeaker auto-revert worker + R-1b re-send confirmation row action + M-7 requester-overlap guard; added E2E-SMR-019/020/021). Earlier: D-716 item 7 Slice B, accept-binds-hall-slot (E2E-SMR-016/017/018, 2026-07-09); D-356 Phase 5 Excel (E2E-SMR-015, 2026-06-10); original D-269 authoring 2026-06-03.
+_Last reviewed:_ `2026-07-22` by `Claude` — bi-meeting rework: unified 3-button respond modal (Close/Decline/Approve/Confirm, no verbal checkbox; Approve=verbal:false, Confirm=verbal:true) + `Done=5` status + operator Check-in row action (E2E-SMR-022/023). Earlier: on-site W2b (E2E-SMR-019/020/021, R-1a/R-1b/M-7, 2026-07-11); D-716 item 7 Slice B, accept-binds-hall-slot (E2E-SMR-016/017/018, 2026-07-09); D-356 Phase 5 Excel (E2E-SMR-015, 2026-06-10); original D-269 authoring 2026-06-03.

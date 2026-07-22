@@ -188,6 +188,8 @@ class UserProfileResponse {
     this.organisationId,
     this.qrId,
     this.isVip = false,
+    this.allowsSpeakerMeeting = false,
+    this.allowsDelegationMeeting = false,
     this.showInMeetLikeYou = true,
     this.isForVisitor = true,
     this.regionId,
@@ -237,6 +239,15 @@ class UserProfileResponse {
   /// "request a speaker meeting" CTA to VIP guests. Append-only wire field
   /// (defaults false when an older server omits it).
   final bool isVip;
+
+  /// Bi-Meeting rework — the admin-assigned per-user flag that lets this account
+  /// request a **speaker** meeting. Replaces [isVip] as the speaker-meeting gate
+  /// (independent of the VIP tier). Append-only wire field (defaults false).
+  final bool allowsSpeakerMeeting;
+
+  /// Bi-Meeting rework — the admin-assigned per-user flag that lets this account
+  /// request a **delegation** (وفد) meeting. Append-only wire field (defaults false).
+  final bool allowsDelegationMeeting;
 
   /// D-736 — whether this profile appears in "Meet People Like You"
   /// recommendations. Defaults to true.
@@ -295,6 +306,8 @@ class UserProfileResponse {
       hasAvatar: json['hasAvatar'] as bool? ?? false,
       qrId: json['qrId'] as String?,
       isVip: json['isVip'] as bool? ?? false,
+      allowsSpeakerMeeting: json['allowsSpeakerMeeting'] as bool? ?? false,
+      allowsDelegationMeeting: json['allowsDelegationMeeting'] as bool? ?? false,
       showInMeetLikeYou: json['showInMeetLikeYou'] as bool? ?? true,
       isForVisitor: json['isForVisitor'] as bool? ?? true,
       regionId: json['regionId'] as String?,

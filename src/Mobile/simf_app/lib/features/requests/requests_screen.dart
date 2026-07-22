@@ -133,9 +133,10 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
 
   Widget _buildBody(AppL10n l10n, List<AppRequestItem> items) {
     final isArabic = l10n.isArabic;
-    // D-729 — a new meeting request is VIP-only, so hide the "طلب جديد" button
-    // for non-VIP viewers (they would otherwise hit the endpoint's 403 wall).
-    final isVip = ref.watch(currentUserIsVipProvider).value ?? false;
+    // Bi-Meeting rework — the "طلب جديد" here opens the SPEAKER meeting sheet, so
+    // it shows only to users holding AllowsSpeakerMeeting (endpoint also gates).
+    final canRequestSpeakerMeeting =
+        ref.watch(currentUserMeetingAccessProvider).value?.speaker ?? false;
     // A selected status whose chip has dropped to zero items (e.g. the user just
     // cancelled their only pending request) falls back to "All" so the screen
     // never strands the user on a chip-less "no results" view.
@@ -158,7 +159,7 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
             filter: effectiveFilter,
             onNew: () => unawaited(_openNewRequest()),
             onSelect: (status) => setState(() => _filter = status),
-            showNew: isVip,
+            showNew: canRequestSpeakerMeeting,
           ),
           const SizedBox(height: SimfTokens.space4),
           if (items.isNotEmpty)

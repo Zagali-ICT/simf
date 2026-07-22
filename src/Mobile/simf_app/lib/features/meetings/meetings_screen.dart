@@ -11,6 +11,7 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import '../account/data/profile_repository.dart';
+import '../delegations/widgets/delegation_meeting_request_sheet.dart';
 import '../requests/data/request_models.dart';
 import '../requests/data/requests_repository.dart';
 import '../speakers/widgets/meeting_request_sheet.dart';
@@ -24,7 +25,7 @@ import 'widgets/meeting_card.dart';
 ///   "السجل" link to the full requests history. Split from the requests-history
 ///   page (owner 2026-07-11, D-745) which stays in My-Area.
 /// Data: [upcomingMeetingsProvider] (a filtered view of [myRequestsProvider] —
-///   `GET /app/my-requests`), gated by [currentUserIsVipProvider].
+///   `GET /app/my-requests`), gated by [currentUserMeetingAccessProvider].
 /// Figma: 1408:9726 (اللقاءات الثنائية).
 /// Perf: non-lazy ListView over the (small) meetings subset; pull-to-refresh.
 /// Contract: reads the D-219-frozen my-requests feed; VIP enforced server-side
@@ -37,10 +38,10 @@ class MeetingsScreen extends ConsumerStatefulWidget {
 }
 
 class _MeetingsScreenState extends ConsumerState<MeetingsScreen> {
-  /// "طلب جديد" — open the meeting-request sheet (Figma 1776:5036) with the
-  /// speaker picker for a new bilateral-meeting request. The feed refreshes when
-  /// the sheet closes so a just-submitted meeting can appear once approved.
-  Future<void> _openNewMeeting() async {
+  /// "طلب مقابلة متحدث" — open the SPEAKER meeting-request sheet (Figma 1776:5036)
+  /// with the speaker picker. The feed refreshes when the sheet closes so a
+  /// just-submitted meeting can appear once approved.
+  Future<void> _openSpeakerMeeting() async {
     final auth = ref.read(authControllerProvider);
     if (auth is! AuthStateSignedIn) {
       if (mounted) {
@@ -49,6 +50,34 @@ class _MeetingsScreenState extends ConsumerState<MeetingsScreen> {
       return;
     }
     final l10n = AppL10n.of(context);
+    await _openMeetingSheet(
+      (_) => MeetingRequestSheet(
+        speakerId: null, // no fixed speaker → the picker is shown
+        defaultName: auth.session.user.displayName,
+        baseUrl: ref.read(simfDataConfigProvider).baseUrl,
+        l10n: l10n,
+      ),
+    );
+  }
+
+  /// "طلب اجتماع وفد" — open the DELEGATION meeting-request sheet with the
+  /// delegation picker.
+  Future<void> _openDelegationMeeting() async {
+    final auth = ref.read(authControllerProvider);
+    if (auth is! AuthStateSignedIn) {
+      if (mounted) {
+        context.pushNamed(RouteNames.signIn);
+      }
+      return;
+    }
+    final l10n = AppL10n.of(context);
+    await _openMeetingSheet(
+      (_) => DelegationMeetingRequestSheet(country: null, l10n: l10n),
+    );
+  }
+
+  /// Shared modal-sheet host for both request flows; refreshes the feed on close.
+  Future<void> _openMeetingSheet(WidgetBuilder builder) async {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -58,12 +87,7 @@ class _MeetingsScreenState extends ConsumerState<MeetingsScreen> {
         borderRadius:
             BorderRadius.vertical(top: Radius.circular(SimfTokens.radius)),
       ),
-      builder: (_) => MeetingRequestSheet(
-        speakerId: null, // no fixed speaker → the picker is shown
-        defaultName: auth.session.user.displayName,
-        baseUrl: ref.read(simfDataConfigProvider).baseUrl,
-        l10n: l10n,
-      ),
+      builder: builder,
     );
     if (mounted) {
       ref.invalidate(myRequestsProvider);
@@ -79,31 +103,32 @@ class _MeetingsScreenState extends ConsumerState<MeetingsScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    // Gate the whole page on VIP (the create endpoint is VIP-only). Resolve the
-    // VIP flag first so non-VIP never briefly sees the list; a failed check is
-    // treated as non-VIP (safe default).
+    // Bi-Meeting rework — gate the whole page on the two per-user meeting flags
+    // (speaker OR delegation). Resolve access first so an unentitled user never
+    // briefly sees the list; a failed check is treated as no-access (safe default).
     return SimfPageShell(
       title: l10n.meetingsTitle,
       onBack: () => backOrHome(context),
-      body: ref.watch(currentUserIsVipProvider).when(
+      body: ref.watch(currentUserMeetingAccessProvider).when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, __) => _vipOnly(l10n),
-            data: (isVip) => isVip ? _meetingsBody(l10n) : _vipOnly(l10n),
+            error: (_, __) => _noAccess(l10n),
+            data: (access) =>
+                access.any ? _meetingsBody(l10n, access) : _noAccess(l10n),
           ),
     );
   }
 
-  Widget _vipOnly(AppL10n l10n) => Center(
+  Widget _noAccess(AppL10n l10n) => Center(
         child: Padding(
           padding: const EdgeInsets.all(SimfTokens.space6),
           child: SimfEmptyState(
             icon: Icons.workspace_premium_outlined,
-            message: l10n.meetingVipOnly,
+            message: l10n.meetingAccessRequired,
           ),
         ),
       );
 
-  Widget _meetingsBody(AppL10n l10n) {
+  Widget _meetingsBody(AppL10n l10n, MeetingAccess access) {
     return ref.watch(upcomingMeetingsProvider).when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (_, __) => SimfPullToRefresh(
@@ -116,11 +141,12 @@ class _MeetingsScreenState extends ConsumerState<MeetingsScreen> {
               ),
             ),
           ),
-          data: (items) => _buildList(l10n, items),
+          data: (items) => _buildList(l10n, access, items),
         );
   }
 
-  Widget _buildList(AppL10n l10n, List<AppRequestItem> items) {
+  Widget _buildList(
+      AppL10n l10n, MeetingAccess access, List<AppRequestItem> items) {
     final isArabic = l10n.isArabic;
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
     return SimfPullToRefresh(
@@ -131,7 +157,10 @@ class _MeetingsScreenState extends ConsumerState<MeetingsScreen> {
         children: <Widget>[
           MeetingActionRow(
             l10n: l10n,
-            onNew: () => unawaited(_openNewMeeting()),
+            showSpeaker: access.speaker,
+            showDelegation: access.delegation,
+            onRequestSpeaker: () => unawaited(_openSpeakerMeeting()),
+            onRequestDelegation: () => unawaited(_openDelegationMeeting()),
             onHistory: () => context.pushNamed(RouteNames.requests),
           ),
           const SizedBox(height: SimfTokens.space4),
