@@ -127,6 +127,7 @@ class SimfTokens {
   static const double space5 = 20;
   static const double space6 = 24;
   static const double space8 = 32;
+  static const double space10 = 40; // 10*4 extension of the spacing scale (onboarding/splash vertical gaps)
 
   // Radii.
   static const double radiusSmall = 4;
@@ -459,5 +460,21 @@ class SimfTokens {
   static const TextStyle bodyGreyMd = TextStyle(
     color: greyText,
     fontSize: textMd,
+  );
+  // splash / onboarding (Figma 159:573 / 148:22) — brand splash + intro carousel.
+  static const TextStyle bodyBeigeLg = TextStyle(
+    color: beigeBorder,
+    fontSize: textLg,
+  );
+  static const TextStyle labelWhiteSemibold24Tall = TextStyle(
+    color: surface,
+    fontSize: text24,
+    fontWeight: FontWeight.w600,
+    height: 1.5,
+  );
+  static const TextStyle bodyBeigeTitleTall = TextStyle(
+    color: beigeBorder,
+    fontSize: textTitle,
+    height: 1.5,
   );
 }
