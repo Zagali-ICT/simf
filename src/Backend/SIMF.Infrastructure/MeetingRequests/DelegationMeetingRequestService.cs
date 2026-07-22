@@ -370,7 +370,120 @@ internal sealed class DelegationMeetingRequestService(
             SendEmail = email,
         }, logger, cancellationToken);
 
+        // Bi-Meeting rework — on Approve (AwaitingSpeaker) notify the OTHER PARTY (each
+        // eligible target-delegation member) by app + email so they can confirm on tap
+        // (or by the email link, P4c). A verbal Confirm skips this (already Accepted).
+        if (req.Status == MeetingRequestStatus.AwaitingSpeaker)
+        {
+            await NotifyTargetMembersAsync(req, detail.RequestingCountry, cancellationToken);
+        }
+
         return detail;
+    }
+
+    public async Task<AdminDelegationMeetingRequestDetail> ConfirmByOtherPartyAsync(
+        Guid callerUserId, Guid id, CancellationToken cancellationToken = default)
+    {
+        var req = await appDbContext.DelegationMeetingRequests.AsNoTracking()
+            .SingleOrDefaultAsync(r => r.Id == id, cancellationToken)
+            ?? throw new ApiException(ErrorCodes.DelegationMeetingRequestNotFound, 404,
+                "Delegation meeting request not found.",
+                "لم يتم العثور على طلب اجتماع الوفد.");
+
+        // Only an Approved (AwaitingSpeaker) request can be confirmed by the other party.
+        if (req.Status != MeetingRequestStatus.AwaitingSpeaker)
+        {
+            throw new ApiException(ErrorCodes.AppRequestAlreadyResponded, 409,
+                "This meeting is not awaiting confirmation.",
+                "هذا الاجتماع ليس بانتظار التأكيد.");
+        }
+
+        // The caller must be an eligible member of the TARGET delegation (their profile
+        // country is the target country and they hold the delegation-meeting flag).
+        var isTargetMember = await appDbContext.UserProfiles.AsNoTracking()
+            .AnyAsync(p => p.UserId == callerUserId
+                && p.NationalityId == req.TargetCountryId
+                && p.AllowsDelegationMeeting, cancellationToken);
+        if (!isTargetMember)
+        {
+            throw new ApiException(ErrorCodes.Forbidden, 403,
+                "You are not permitted to confirm this meeting.",
+                "غير مسموح لك بتأكيد هذا الاجتماع.");
+        }
+
+        var now = timeProvider.GetUtcNow();
+
+        // Race-safe conditional flip AwaitingSpeaker → Accepted (any one eligible member's
+        // tap confirms; a concurrent second confirm matches 0 rows and 409s cleanly).
+        var affected = await appDbContext.DelegationMeetingRequests
+            .Where(r => r.Id == id && r.Status == MeetingRequestStatus.AwaitingSpeaker)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(r => r.Status, MeetingRequestStatus.Accepted)
+                .SetProperty(r => r.ConfirmedAt, now)
+                .SetProperty(r => r.ConfirmedByUserId, callerUserId), cancellationToken);
+        if (affected == 0)
+        {
+            throw new ApiException(ErrorCodes.AppRequestAlreadyResponded, 409,
+                "This meeting is not awaiting confirmation.",
+                "هذا الاجتماع ليس بانتظار التأكيد.");
+        }
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.DelegationMeetingRequestResponded,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = callerUserId,
+            Detail = $"requestId={id}; status=Accepted; confirmedByOtherParty=true",
+        }, cancellationToken);
+
+        var detail = await LoadDetailAsync(id, cancellationToken);
+
+        // Notify the requester their meeting is now confirmed.
+        await notifications.TryDispatchAsync(new NotificationRequest
+        {
+            UserId = req.RequestedByUserId,
+            Kind = NotificationKind.MeetingRequestConfirmed,
+            Title = "Delegation meeting confirmed",
+            TitleArabic = "تم تأكيد اجتماع الوفد",
+            Body = $"Your delegation meeting with {detail.TargetCountry} is confirmed.",
+            BodyArabic = $"تم تأكيد اجتماع وفدك مع {detail.TargetCountry}.",
+            Severity = NotificationSeverity.Info,
+            RelatedEntityType = nameof(DelegationMeetingRequest),
+            RelatedEntityId = id,
+            SendEmail = true,
+        }, logger, cancellationToken);
+
+        return detail;
+    }
+
+    // Bi-Meeting rework — dispatch the other-party request-to-confirm notification to
+    // every eligible member of the target delegation (profile country == target country
+    // AND AllowsDelegationMeeting). App row (confirm-on-tap deep-link from
+    // NotificationKindCatalog) + email. Members are resolved on the App DB; their emails
+    // are resolved by the dispatcher (Identity) — no cross-DB JOIN.
+    private async Task NotifyTargetMembersAsync(
+        DelegationMeetingRequest req, string requestingCountry, CancellationToken cancellationToken)
+    {
+        var memberIds = await appDbContext.UserProfiles.AsNoTracking()
+            .Where(p => p.NationalityId == req.TargetCountryId && p.AllowsDelegationMeeting)
+            .Select(p => p.UserId)
+            .ToListAsync(cancellationToken);
+        foreach (var userId in memberIds)
+        {
+            await notifications.TryDispatchAsync(new NotificationRequest
+            {
+                UserId = userId,
+                Kind = NotificationKind.MeetingRequested,
+                Title = "Delegation meeting request",
+                TitleArabic = "طلب اجتماع وفد",
+                Body = $"A meeting request from {requestingCountry} is awaiting your confirmation.",
+                BodyArabic = $"طلب اجتماع من {requestingCountry} بانتظار تأكيدك.",
+                Severity = NotificationSeverity.Info,
+                RelatedEntityType = nameof(DelegationMeetingRequest),
+                RelatedEntityId = req.Id,
+                SendEmail = true,
+            }, logger, cancellationToken);
+        }
     }
 
     // Bi-Meeting rework — bind the meeting to a free hall slot on Approve/Confirm,

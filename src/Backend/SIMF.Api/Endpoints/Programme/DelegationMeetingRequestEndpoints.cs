@@ -88,6 +88,35 @@ public sealed class GetAdminDelegationMeetingRequestEndpoint(IDelegationMeetingR
     }
 }
 
+// Bi-Meeting rework — the other party (a target-delegation member) confirms an
+// Approved (AwaitingSpeaker) meeting from the app by tapping their notification.
+public sealed class ConfirmDelegationMeetingRoute
+{
+    public Guid Id { get; set; }
+}
+
+public sealed class ConfirmDelegationMeetingEndpoint(IDelegationMeetingRequestService service)
+    : Endpoint<ConfirmDelegationMeetingRoute, ApiResult<AdminDelegationMeetingRequestDetail>>
+{
+    public override void Configure()
+    {
+        Post("/app/delegation-meeting-requests/{id:guid}/confirm");
+        Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Delegates");
+    }
+    public override async Task HandleAsync(ConfirmDelegationMeetingRoute req, CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        await Send.OkAsync(ApiResult<AdminDelegationMeetingRequestDetail>.Ok(
+            await service.ConfirmByOtherPartyAsync(actorId, req.Id, ct)), ct);
+    }
+}
+
 public sealed class RespondToDelegationMeetingRequestRoute : RespondToDelegationMeetingRequestRequest
 {
     public Guid Id { get; set; }

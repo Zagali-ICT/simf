@@ -29,4 +29,11 @@ public interface IDelegationMeetingRequestService
     Task<AdminDelegationMeetingRequestDetail> RespondAsync(
         Guid actorUserId, Guid id, RespondToDelegationMeetingRequestRequest request,
         CancellationToken cancellationToken = default);
+
+    /// <summary>Bi-Meeting rework — the OTHER PARTY confirms an Approved (AwaitingSpeaker)
+    /// meeting from the app (confirm-on-tap). 403 when the caller is not an eligible
+    /// member of the target delegation; 409 when the request is not awaiting confirmation.
+    /// Flips AwaitingSpeaker → Accepted (Confirmed) via a race-safe conditional update.</summary>
+    Task<AdminDelegationMeetingRequestDetail> ConfirmByOtherPartyAsync(
+        Guid callerUserId, Guid id, CancellationToken cancellationToken = default);
 }
