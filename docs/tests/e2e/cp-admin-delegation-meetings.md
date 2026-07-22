@@ -64,7 +64,7 @@
 | E2E-DLM-005 | Auth gate — admin lacking `DelegationMeetings.View` → `/not-permitted`; nav item hidden; lacking `.Manage` → Respond action hidden | auth | P0 | _to author_ (gate verified by CpNavigationPermissionTests) |
 | E2E-DLM-006 | RTL / Arabic render — grid + respond modal mirror | i18n | P1 | _to author_ |
 | E2E-DLM-010 | Unified 3-button modal — Close / Decline (Pending) or Cancel (non-terminal) / Approve (Pending) / Confirm; justification required; no verbal checkbox (bi-meeting rework) | happy | P0 | authored ✓ (`Admin_confirm_of_an_awaiting_request_books_it_without_a_hall`, API) |
-| E2E-DLM-011 | Operator Check-in — a Confirmed (Accepted) row → Check in → status `Done`; a non-Accepted check-in → 409 (bi-meeting rework) | happy | P0 | _to author_ (API test `_to author_`) |
+| E2E-DLM-011 | Operator Check-in — a Confirmed (Accepted) row → Check in → status `Done`; a non-Accepted check-in → 409 (bi-meeting rework) | happy | P0 | authored ✓ (`Checking_in_a_confirmed_delegation_meeting_marks_it_Done` + `Checking_in_a_non_confirmed_delegation_meeting_is_409`, API) |
 | E2E-DLM-012 | Other-party confirm — Approve notifies each target-delegation member (`MeetingRequested`) who confirms from the app (cross-ref `mobile-meeting-confirm.md`) | happy | P0 | authored ✓ (`Other_party_confirm_response_does_not_leak_the_requester_email`, API) |
 | E2E-DLM-013 | Confirm of an AwaitingConfirmation request books it (even on a past bound slot) → Accepted (bi-meeting rework) | happy | P1 | authored ✓ (`Admin_confirm_of_an_awaiting_request_with_a_PAST_bound_slot_still_succeeds`, API) |
 
@@ -197,9 +197,11 @@ Scenario: Checking in a non-Confirmed meeting is rejected
   # Gated DelegationMeetings.Manage; no ?requesterQr= param exists.
 ```
 
-**Evidence:** grounded in `DelegationMeetingRequestService.CheckInAsync` (`Accepted → Done`,
-stamps `CheckedInAt`/`CheckedInByUserId`, else `APP_REQUEST_ALREADY_RESPONDED` 409). A dedicated
-API integration test is **`_to author_`**.
+**Evidence:** `DelegationMeetingRequestsTests.Checking_in_a_confirmed_delegation_meeting_marks_it_Done`
+(submit → Approve → check-in: `Accepted → Done`, stamps `CheckedInAt`/`CheckedInByUserId`) and
+`Checking_in_a_non_confirmed_delegation_meeting_is_409` (a Pending row → 409
+`APP_REQUEST_ALREADY_RESPONDED`) — both green — grounded in
+`DelegationMeetingRequestService.CheckInAsync`.
 
 ### E2E-DLM-012/013 — Other-party confirm + Confirm books a past-slot request
 
