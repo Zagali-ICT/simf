@@ -101,7 +101,7 @@
 | E2E-SMR-017 | Accept with a hall chosen but no slot → 400 `SPEAKER_MEETING_REQUEST_INVALID`; CP blocks submit with the SlotRequired toast (D-716) | error | P1 | authored ✓ (`Accept_with_a_hall_but_no_slot_is_400`) |
 | E2E-SMR-018 | Binding a hall slot removes it for the next meeting → a second accept onto the same slot → 409 (D-716) | error | P0 | authored ✓ (`Binding_a_hall_slot_makes_it_unavailable_to_a_second_meeting`) |
 | E2E-SMR-022 | Unified 3-button modal — Close / Decline (justification required) / Approve (verbal:false) / Confirm (verbal:true); no verbal checkbox (bi-meeting rework) | happy | P0 | _to author_ (browser) |
-| E2E-SMR-023 | Operator Check-in — a Confirmed (Accepted) row → Check in → status `Done`; a non-Accepted check-in → 409 (bi-meeting rework) | happy | P0 | _to author_ (gate verified by code; API test `_to author_`) |
+| E2E-SMR-023 | Operator Check-in — a Confirmed (Accepted) row → Check in → status `Done`; a non-Accepted check-in → 409 (bi-meeting rework) | happy | P0 | authored ✓ (`Checking_in_a_confirmed_meeting_marks_it_Done` + `Checking_in_a_non_confirmed_meeting_is_409`, API) |
 
 ## Scenarios
 
@@ -564,11 +564,13 @@ Scenario: Checking in a non-Confirmed meeting is rejected
   # The Check-in action + endpoint are gated SpeakerMeetingRequests.Manage; no ?requesterQr= param exists.
 ```
 
-**Evidence:** the Check-in endpoint (`POST /admin/speaker-meeting-requests/{id:guid}/check-in`,
-`SpeakerMeetingRequests.Manage`) flips `Accepted → Done` and stamps `CheckedInAt`/`CheckedInByUserId`,
-throwing `APP_REQUEST_ALREADY_RESPONDED` (409) otherwise — grounded in
-`SpeakerMeetingRequestService.CheckInAsync`. A dedicated API integration test is **`_to author_`**
-(the delegation twin is exercised via `DelegationMeetingRequestsTests`).
+**Evidence:** `SpeakerMeetingRequestsTests.Checking_in_a_confirmed_meeting_marks_it_Done`
+(Accepted → Done, stamps `CheckedInAt`/`CheckedInByUserId`) and
+`Checking_in_a_non_confirmed_meeting_is_409` (a Pending row → 409
+`APP_REQUEST_ALREADY_RESPONDED`, unchanged) — both green. The 15-minute reminder that
+precedes check-in is covered by `MeetingReminderWorkerTests` (speaker + delegation,
+lead-window bound + once-only dedup). The delegation check-in twin (E2E-DLM-011) shares
+`DelegationMeetingRequestService.CheckInAsync` and remains `_to author_` at the API layer.
 
 ---
 
