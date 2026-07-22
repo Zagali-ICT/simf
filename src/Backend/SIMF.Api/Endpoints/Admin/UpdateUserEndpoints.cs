@@ -18,6 +18,10 @@ public sealed class UpdateVisitorRouteRequest
     public string Email { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
     public Guid? ProfileTypeId { get; set; }
+
+    /// <summary>Bi-Meeting rework — the admin-assigned speaker/delegation meeting flags.</summary>
+    public bool AllowsSpeakerMeeting { get; set; }
+    public bool AllowsDelegationMeeting { get; set; }
 }
 
 /// <summary>P1.3 (D-214) — the route id + body for the Other edit endpoint.</summary>
@@ -27,6 +31,10 @@ public sealed class UpdateOtherRouteRequest
     public string Email { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
     public Guid ProfileTypeId { get; set; }
+
+    /// <summary>Bi-Meeting rework — the admin-assigned speaker/delegation meeting flags.</summary>
+    public bool AllowsSpeakerMeeting { get; set; }
+    public bool AllowsDelegationMeeting { get; set; }
 }
 
 /// <summary>Validates the visitor edit (Email + DisplayName; tier optional).</summary>
@@ -111,6 +119,8 @@ public sealed class UpdateVisitorEndpoint(IAdminUserProvisioningService service)
                 Email = req.Email,
                 DisplayName = req.DisplayName,
                 ProfileTypeId = req.ProfileTypeId,
+                AllowsSpeakerMeeting = req.AllowsSpeakerMeeting,
+                AllowsDelegationMeeting = req.AllowsDelegationMeeting,
             }, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -145,6 +155,8 @@ public sealed class UpdateOtherEndpoint(IAdminUserProvisioningService service)
                 Email = req.Email,
                 DisplayName = req.DisplayName,
                 ProfileTypeId = req.ProfileTypeId,
+                AllowsSpeakerMeeting = req.AllowsSpeakerMeeting,
+                AllowsDelegationMeeting = req.AllowsDelegationMeeting,
             }, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

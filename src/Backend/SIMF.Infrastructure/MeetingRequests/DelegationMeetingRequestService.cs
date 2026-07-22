@@ -236,13 +236,18 @@ internal sealed class DelegationMeetingRequestService(
         // Bi-Meeting rework — unified 3-button model. Status=Rejected is CANCEL (with a
         // justification note). Status=Accepted with a bound HallId is APPROVE
         // (VerbalConfirmed=false → AwaitingSpeaker, awaiting the other party's confirm,
-        // wired in P4) or CONFIRM (true → Accepted, the admin has the verbal confirmation).
-        // A legacy accept without a hall keeps the requester-proposed-slot behaviour.
-        // This is admin-brokered + low-concurrency; the DB (HallId, SlotStartUtc)
-        // filtered-unique index is the equal-start hall double-book backstop.
+        // wired in P4) or CONFIRM (VerbalConfirmed=true → Accepted, the admin has the
+        // verbal confirmation). CONFIRM is independent of the hall: from Pending the CP
+        // binds a fresh slot (HallId set); from AwaitingSpeaker (already Approved) it
+        // sends HallId=null so the already-bound slot is kept — tying confirmVerbal to
+        // bindHall would 409 that finalise-after-approve path, since a null HallId would
+        // be read as a plain accept whose only legal source state is Pending. A legacy
+        // accept without a hall keeps the requester-proposed-slot behaviour. This is
+        // admin-brokered + low-concurrency; the DB (HallId, SlotStartUtc) filtered-unique
+        // index is the equal-start hall double-book backstop.
         var cancel = request.Status == MeetingRequestStatus.Rejected;
         var bindHall = request.Status == MeetingRequestStatus.Accepted && request.HallId is not null;
-        var confirmVerbal = bindHall && request.VerbalConfirmed;
+        var confirmVerbal = request.Status == MeetingRequestStatus.Accepted && request.VerbalConfirmed;
 
         if (cancel)
         {

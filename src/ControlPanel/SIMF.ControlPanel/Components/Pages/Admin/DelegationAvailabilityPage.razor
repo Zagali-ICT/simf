@@ -1,0 +1,81 @@
+@* Bi-Meeting rework — the team defines a delegation/country's availability windows;
+   the delegation-meeting flow offers their free slots (parity with the speaker
+   availability page). Gated by DelegationMeetings.Manage. *@
+@page "/admin/delegation-availability"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.DelegationMeetings.Manage)]
+@using System.Globalization
+@using SIMF.Contracts.Programme
+
+<PageTitle>@L["Admin.DelegationAvailability.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.DelegationAvailability.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <div class="simf-field">
+            <label class="simf-field__label" for="del-pick">@L["Admin.DelegationAvailability.Country"]</label>
+            <div class="simf-field__control">
+                <select id="del-pick" class="simf-field__input"
+                        value="@(_countryId?.ToString() ?? string.Empty)" @onchange="OnCountryChanged">
+                    <option value="">@L["Admin.DelegationAvailability.PickCountry"]</option>
+                    @foreach (var c in _countries)
+                    {
+                        <option value="@c.Id">@c.Name</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        @if (_countryId is not null)
+        {
+            <h3 class="simf-section-title">@L["Admin.DelegationAvailability.AddWindow"]</h3>
+            <div class="simf-form__fields">
+                @* Bound the pickers to the forum days (MIN/MAX programme day), read
+                   from the backend instead of a hardcoded event window. *@
+                <SimfTextField Label="@L["Admin.DelegationAvailability.Start"]" Type="datetime-local"
+                               @bind-Value="_start" Disabled="_busy"
+                               Min="@_forumMin" Max="@_forumMax" />
+                <SimfTextField Label="@L["Admin.DelegationAvailability.End"]" Type="datetime-local"
+                               @bind-Value="_end" Disabled="_busy"
+                               Min="@_forumMin" Max="@_forumMax" />
+                <SimfTextField Label="@L["Admin.DelegationAvailability.SlotMinutes"]" Type="number"
+                               @bind-Value="_slotMinutes" Disabled="_busy" />
+            </div>
+            <div class="simf-form__actions">
+                <SimfButton Type="button" Loading="_busy" OnClick="AddWindowAsync">
+                    @L["Admin.DelegationAvailability.Add"]
+                </SimfButton>
+            </div>
+
+            <h3 class="simf-section-title">@L["Admin.DelegationAvailability.Windows"]</h3>
+            @if (_windows.Count == 0)
+            {
+                <SimfEmptyState Title="@L["Admin.DelegationAvailability.None"]" />
+            }
+            else
+            {
+                <ul class="simf-plain-list">
+                    @foreach (var w in _windows)
+                    {
+                        <li>
+                            @w.StartUtc.FormatSaudi("yyyy-MM-dd HH:mm")
+                            – @w.EndUtc.FormatSaudi("HH:mm")
+                            · @w.SlotMinutes @L["Admin.DelegationAvailability.Min"]
+                            <AuthorizedAction Permission="@PermissionCatalog.DelegationMeetings.Manage">
+                                <SimfToolbarButton Icon="trash" Title="@L["Grid.Delete"]"
+                                                   Disabled="_busy"
+                                                   OnClick="@(() => DeleteWindowAsync(w.Id))" />
+                            </AuthorizedAction>
+                        </li>
+                    }
+                </ul>
+            }
+        }
+    </div>
+</div>

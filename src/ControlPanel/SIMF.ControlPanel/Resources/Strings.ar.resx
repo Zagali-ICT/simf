@@ -123,6 +123,48 @@
   <data name="Admin.SpeakerAvailability.BadDates" xml:space="preserve"><value>أدخل بداية ونهاية صحيحتين.</value></data>
   <data name="Admin.SpeakerAvailability.BadSlot" xml:space="preserve"><value>أدخل مدة فترة موجبة.</value></data>
   <data name="Admin.SpeakerAvailability.BadDateRange" xml:space="preserve"><value>يجب أن تكون التواريخ ضمن {0}.</value></data>
+  <!-- Bi-Meeting rework — delegation availability page + shared meeting-desk strings. -->
+  <data name="Module.AdminDelegationAvailability" xml:space="preserve"><value>أوقات إتاحة الوفود</value></data>
+  <data name="Admin.DelegationAvailability.Title" xml:space="preserve"><value>أوقات إتاحة الوفود</value></data>
+  <data name="Admin.DelegationAvailability.Country" xml:space="preserve"><value>الوفد (الدولة)</value></data>
+  <data name="Admin.DelegationAvailability.PickCountry" xml:space="preserve"><value>اختر دولة مدعوّة…</value></data>
+  <data name="Admin.DelegationAvailability.AddWindow" xml:space="preserve"><value>إضافة فترة إتاحة</value></data>
+  <data name="Admin.DelegationAvailability.Start" xml:space="preserve"><value>البداية (UTC)</value></data>
+  <data name="Admin.DelegationAvailability.End" xml:space="preserve"><value>النهاية (UTC)</value></data>
+  <data name="Admin.DelegationAvailability.SlotMinutes" xml:space="preserve"><value>مدة الفترة (دقائق)</value></data>
+  <data name="Admin.DelegationAvailability.Add" xml:space="preserve"><value>إضافة فترة</value></data>
+  <data name="Admin.DelegationAvailability.Windows" xml:space="preserve"><value>الفترات</value></data>
+  <data name="Admin.DelegationAvailability.None" xml:space="preserve"><value>لا توجد فترات إتاحة بعد.</value></data>
+  <data name="Admin.DelegationAvailability.Min" xml:space="preserve"><value>دقيقة لكل فترة</value></data>
+  <data name="Admin.DelegationAvailability.Added" xml:space="preserve"><value>تمت إضافة الفترة.</value></data>
+  <data name="Admin.DelegationAvailability.Failed" xml:space="preserve"><value>فشلت العملية.</value></data>
+  <data name="Admin.DelegationAvailability.BadDates" xml:space="preserve"><value>أدخل بداية ونهاية صحيحتين.</value></data>
+  <data name="Admin.DelegationAvailability.BadSlot" xml:space="preserve"><value>أدخل مدة فترة موجبة.</value></data>
+  <data name="Admin.DelegationAvailability.BadDateRange" xml:space="preserve"><value>يجب أن تكون التواريخ ضمن {0}.</value></data>
+  <data name="Admin.Meetings.CheckIn" xml:space="preserve"><value>تسجيل الحضور</value></data>
+  <data name="Admin.Meetings.CheckIn.Done" xml:space="preserve"><value>تم تسجيل حضور الاجتماع.</value></data>
+  <data name="Admin.Meetings.Bind.Hall" xml:space="preserve"><value>القاعة</value></data>
+  <data name="Admin.Meetings.Bind.PickHall" xml:space="preserve"><value>— اختر قاعة —</value></data>
+  <data name="Admin.Meetings.Bind.Slot" xml:space="preserve"><value>فترة القاعة</value></data>
+  <data name="Admin.Meetings.Bind.LoadingSlots" xml:space="preserve"><value>جارٍ تحميل الفترات المتاحة…</value></data>
+  <data name="Admin.Meetings.Bind.NoSlots" xml:space="preserve"><value>لا توجد فترات متاحة في هذه القاعة. أضف أوقات إتاحة القاعة أولاً.</value></data>
+  <data name="Admin.Meetings.Bind.SelectSlot" xml:space="preserve"><value>— اختر فترة متاحة —</value></data>
+  <data name="Admin.Meetings.Bind.Table" xml:space="preserve"><value>طاولة الاجتماع (اختياري)</value></data>
+  <data name="Admin.Meetings.Bind.NoTable" xml:space="preserve"><value>— بدون طاولة —</value></data>
+  <data name="Admin.Meetings.Bind.HallSlotRequired" xml:space="preserve"><value>اختر قاعة وفترة متاحة للموافقة أو التأكيد.</value></data>
+  <data name="Admin.Meetings.Note" xml:space="preserve"><value>ملاحظة / مبرّر (٢٠٠٠ حرف كحد أقصى)</value></data>
+  <data name="Admin.Meetings.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Meetings.Decline" xml:space="preserve"><value>رفض</value></data>
+  <data name="Admin.Meetings.Decline.NoteRequired" xml:space="preserve"><value>يلزم إدخال مبرّر للرفض أو الإلغاء.</value></data>
+  <data name="Admin.Meetings.Cancel" xml:space="preserve"><value>إلغاء الاجتماع</value></data>
+  <data name="Admin.Meetings.Approve" xml:space="preserve"><value>موافقة</value></data>
+  <data name="Admin.Meetings.Confirm" xml:space="preserve"><value>تأكيد</value></data>
+  <data name="Admin.Meetings.Status.AwaitingConfirmation" xml:space="preserve"><value>بانتظار التأكيد</value></data>
+  <data name="Admin.Meetings.Status.Done" xml:space="preserve"><value>منتهٍ</value></data>
+  <data name="Admin.Meetings.Status.Cancelled" xml:space="preserve"><value>ملغى</value></data>
+  <data name="Admin.Edit.Meetings.Section" xml:space="preserve"><value>صلاحية اللقاءات الثنائية</value></data>
+  <data name="Admin.Edit.Meetings.AllowsSpeaker" xml:space="preserve"><value>يمكنه طلب لقاءات المتحدثين</value></data>
+  <data name="Admin.Edit.Meetings.AllowsDelegation" xml:space="preserve"><value>يمكنه طلب اجتماعات الوفود</value></data>
   <data name="Admin.HallAvailability.Title" xml:space="preserve"><value>توفّر القاعات (وقت الاجتماعات)</value></data>
   <data name="Admin.HallAvailability.Hall" xml:space="preserve"><value>القاعة</value></data>
   <data name="Admin.HallAvailability.PickHall" xml:space="preserve"><value>اختر قاعة…</value></data>

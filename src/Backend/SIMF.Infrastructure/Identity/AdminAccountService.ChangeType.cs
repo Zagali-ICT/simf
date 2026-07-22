@@ -71,6 +71,15 @@ internal sealed partial class AdminAccountService
             newProfileTypeId, expectedIsVisitor: targetIsVisitor,
             profileTypeRequired: true, cancellationToken);
 
+        // Bi-Meeting rework — a scope flip must NOT clobber the two admin-assigned
+        // meeting-eligibility flags; read the current values so the upsert below
+        // preserves them (defaults false when the subject has no profile row yet).
+        var currentFlags = await appDbContext.UserProfiles
+            .AsNoTracking()
+            .Where(p => p.UserId == target.Id)
+            .Select(p => new { p.AllowsSpeakerMeeting, p.AllowsDelegationMeeting })
+            .SingleOrDefaultAsync(cancellationToken);
+
         var now = timeProvider.GetUtcNow();
 
         // A type flip is ALWAYS a privilege change (the new type's MobileAppRole
@@ -90,9 +99,13 @@ internal sealed partial class AdminAccountService
                 target.Id, now, innerCt);
         }, cancellationToken);
 
-        // Then apply the scope flip on the App DB (no cross-DB transaction).
+        // Then apply the scope flip on the App DB (no cross-DB transaction). Preserve
+        // the two meeting-eligibility flags read above.
         await UpsertProfileTypeAsync(
-            target.Id, resolvedProfileTypeId, now, cancellationToken);
+            target.Id, resolvedProfileTypeId,
+            currentFlags?.AllowsSpeakerMeeting ?? false,
+            currentFlags?.AllowsDelegationMeeting ?? false,
+            now, cancellationToken);
 
         // Audit the completed flip — after it is durable, so the trail reflects
         // reality; a retry after a mid-way failure is idempotent (the stamp roll

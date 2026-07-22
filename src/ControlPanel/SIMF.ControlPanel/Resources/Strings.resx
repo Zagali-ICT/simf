@@ -123,6 +123,48 @@
   <data name="Admin.SpeakerAvailability.BadDates" xml:space="preserve"><value>Enter a valid start and end.</value></data>
   <data name="Admin.SpeakerAvailability.BadSlot" xml:space="preserve"><value>Enter a positive slot length.</value></data>
   <data name="Admin.SpeakerAvailability.BadDateRange" xml:space="preserve"><value>Dates must be within {0}.</value></data>
+  <!-- Bi-Meeting rework — delegation availability page + shared meeting-desk strings. -->
+  <data name="Module.AdminDelegationAvailability" xml:space="preserve"><value>Delegation availability</value></data>
+  <data name="Admin.DelegationAvailability.Title" xml:space="preserve"><value>Delegation availability</value></data>
+  <data name="Admin.DelegationAvailability.Country" xml:space="preserve"><value>Delegation (country)</value></data>
+  <data name="Admin.DelegationAvailability.PickCountry" xml:space="preserve"><value>Select an invited country…</value></data>
+  <data name="Admin.DelegationAvailability.AddWindow" xml:space="preserve"><value>Add an availability window</value></data>
+  <data name="Admin.DelegationAvailability.Start" xml:space="preserve"><value>Start (UTC)</value></data>
+  <data name="Admin.DelegationAvailability.End" xml:space="preserve"><value>End (UTC)</value></data>
+  <data name="Admin.DelegationAvailability.SlotMinutes" xml:space="preserve"><value>Slot length (minutes)</value></data>
+  <data name="Admin.DelegationAvailability.Add" xml:space="preserve"><value>Add window</value></data>
+  <data name="Admin.DelegationAvailability.Windows" xml:space="preserve"><value>Windows</value></data>
+  <data name="Admin.DelegationAvailability.None" xml:space="preserve"><value>No availability windows yet.</value></data>
+  <data name="Admin.DelegationAvailability.Min" xml:space="preserve"><value>min slots</value></data>
+  <data name="Admin.DelegationAvailability.Added" xml:space="preserve"><value>Window added.</value></data>
+  <data name="Admin.DelegationAvailability.Failed" xml:space="preserve"><value>The operation failed.</value></data>
+  <data name="Admin.DelegationAvailability.BadDates" xml:space="preserve"><value>Enter a valid start and end.</value></data>
+  <data name="Admin.DelegationAvailability.BadSlot" xml:space="preserve"><value>Enter a positive slot length.</value></data>
+  <data name="Admin.DelegationAvailability.BadDateRange" xml:space="preserve"><value>Dates must be within {0}.</value></data>
+  <data name="Admin.Meetings.CheckIn" xml:space="preserve"><value>Check in</value></data>
+  <data name="Admin.Meetings.CheckIn.Done" xml:space="preserve"><value>Meeting checked in.</value></data>
+  <data name="Admin.Meetings.Bind.Hall" xml:space="preserve"><value>Hall</value></data>
+  <data name="Admin.Meetings.Bind.PickHall" xml:space="preserve"><value>— Select a hall —</value></data>
+  <data name="Admin.Meetings.Bind.Slot" xml:space="preserve"><value>Hall slot</value></data>
+  <data name="Admin.Meetings.Bind.LoadingSlots" xml:space="preserve"><value>Loading free slots…</value></data>
+  <data name="Admin.Meetings.Bind.NoSlots" xml:space="preserve"><value>This hall has no free slots. Add hall availability first.</value></data>
+  <data name="Admin.Meetings.Bind.SelectSlot" xml:space="preserve"><value>— Select a free slot —</value></data>
+  <data name="Admin.Meetings.Bind.Table" xml:space="preserve"><value>Meeting table (optional)</value></data>
+  <data name="Admin.Meetings.Bind.NoTable" xml:space="preserve"><value>— No table —</value></data>
+  <data name="Admin.Meetings.Bind.HallSlotRequired" xml:space="preserve"><value>Select a hall and a free slot to approve or confirm.</value></data>
+  <data name="Admin.Meetings.Note" xml:space="preserve"><value>Note / justification (≤2000 chars)</value></data>
+  <data name="Admin.Meetings.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.Meetings.Decline" xml:space="preserve"><value>Decline</value></data>
+  <data name="Admin.Meetings.Decline.NoteRequired" xml:space="preserve"><value>A justification is required to decline or cancel.</value></data>
+  <data name="Admin.Meetings.Cancel" xml:space="preserve"><value>Cancel meeting</value></data>
+  <data name="Admin.Meetings.Approve" xml:space="preserve"><value>Approve</value></data>
+  <data name="Admin.Meetings.Confirm" xml:space="preserve"><value>Confirm</value></data>
+  <data name="Admin.Meetings.Status.AwaitingConfirmation" xml:space="preserve"><value>Awaiting confirmation</value></data>
+  <data name="Admin.Meetings.Status.Done" xml:space="preserve"><value>Done</value></data>
+  <data name="Admin.Meetings.Status.Cancelled" xml:space="preserve"><value>Cancelled</value></data>
+  <data name="Admin.Edit.Meetings.Section" xml:space="preserve"><value>Bi-Meeting access</value></data>
+  <data name="Admin.Edit.Meetings.AllowsSpeaker" xml:space="preserve"><value>Can request speaker meetings</value></data>
+  <data name="Admin.Edit.Meetings.AllowsDelegation" xml:space="preserve"><value>Can request delegation meetings</value></data>
   <data name="Admin.HallAvailability.Title" xml:space="preserve"><value>Hall availability (meeting time)</value></data>
   <data name="Admin.HallAvailability.Hall" xml:space="preserve"><value>Hall</value></data>
   <data name="Admin.HallAvailability.PickHall" xml:space="preserve"><value>Select a hall…</value></data>

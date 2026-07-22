@@ -44,6 +44,19 @@ else
 
         <p class="simf-form__hint">@L["Admin.Edit.EmailChangeNote"]</p>
 
+        @* Bi-Meeting rework — the two admin-assigned per-user meeting-eligibility flags.
+           When on, the account sees the matching Bi-Meeting request button in the app
+           (speaker meetings / delegation meetings) regardless of its tier. *@
+        <fieldset class="simf-form__section" disabled="@(_busy ? "disabled" : null)">
+            <legend>@L["Admin.Edit.Meetings.Section"]</legend>
+            <SimfCheckbox @bind-Value="_allowsSpeakerMeeting" Disabled="_busy">
+                @L["Admin.Edit.Meetings.AllowsSpeaker"]
+            </SimfCheckbox>
+            <SimfCheckbox @bind-Value="_allowsDelegationMeeting" Disabled="_busy">
+                @L["Admin.Edit.Meetings.AllowsDelegation"]
+            </SimfCheckbox>
+        </fieldset>
+
         @* VIP edit — change the account's photo, ID image, and (VIP page only)
            the VVIP/VIP welcome photo. Each is optional: pick a file to replace
            the current image; leave empty to keep it. Uploads run on Save via the

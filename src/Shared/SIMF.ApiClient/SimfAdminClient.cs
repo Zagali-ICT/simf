@@ -2410,6 +2410,14 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Post, $"speaker-meeting-requests/{id}/resend-confirmation",
             content: null, accessToken, cancellationToken);
 
+    // Bi-Meeting rework — an operator checks a confirmed speaker meeting in at the hall → Done.
+    public Task<ApiCallResult<AdminSpeakerMeetingRequestDetail>> CheckInSpeakerMeetingAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminSpeakerMeetingRequestDetail>(
+            HttpMethod.Post, $"speaker-meeting-requests/{id}/check-in",
+            content: null, accessToken, cancellationToken);
+
     // -- D-500 (Wave 5, الطلبات) — participation-document + badge-update request
     //    desks (SIMF.Contracts.Requests) -------------------------------------
 
@@ -2549,6 +2557,40 @@ public sealed class SimfAdminClient(HttpClient http)
         SendAsync<AdminDelegationMeetingRequestDetail>(
             HttpMethod.Put, $"delegation-meeting-requests/{id}/respond",
             JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    // Bi-Meeting rework — an operator checks a confirmed delegation meeting in → Done.
+    public Task<ApiCallResult<AdminDelegationMeetingRequestDetail>> CheckInDelegationMeetingAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminDelegationMeetingRequestDetail>(
+            HttpMethod.Post, $"delegation-meeting-requests/{id}/check-in",
+            content: null, accessToken, cancellationToken);
+
+    // Bi-Meeting rework — delegation availability windows (parity with the speaker
+    // stack): the team defines a country/delegation's free windows; the app offers
+    // their slots. Keyed on the ISO-numeric CountryId (int), not a Guid.
+    public Task<ApiCallResult<IReadOnlyList<AdminDelegationAvailabilityWindow>>>
+        ListDelegationAvailabilityWindowsAsync(int countryId, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<IReadOnlyList<AdminDelegationAvailabilityWindow>>(
+            HttpMethod.Get, $"countries/{countryId}/availability-windows", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminDelegationAvailabilityWindow>>
+        CreateDelegationAvailabilityWindowAsync(int countryId,
+            CreateDelegationAvailabilityWindowRequest request, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<AdminDelegationAvailabilityWindow>(
+            HttpMethod.Post, $"countries/{countryId}/availability-windows",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>>
+        DeleteDelegationAvailabilityWindowAsync(Guid windowId, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"delegation-availability-windows/{windowId}", content: null,
             accessToken, cancellationToken);
 
     // -- D-199 — News admin CRUD (SIMF.Contracts.PublicRelations) -----------

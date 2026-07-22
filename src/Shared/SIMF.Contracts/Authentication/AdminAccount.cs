@@ -136,6 +136,14 @@ public sealed class AdminUpdateVisitorRequest
     /// supplied the row must be active with <c>UserType = Visitor</c> and
     /// <c>IsVisitor = true</c> (audience scope).</summary>
     public Guid? ProfileTypeId { get; set; }
+
+    /// <summary>Bi-Meeting rework — the admin-assigned per-user flag that lets this
+    /// account request a speaker meeting (لقاء ثنائي). Independent of the VIP tier.</summary>
+    public bool AllowsSpeakerMeeting { get; set; }
+
+    /// <summary>Bi-Meeting rework — the admin-assigned per-user flag that lets this
+    /// account request a delegation (وفد) meeting. Independent of the delegate flag.</summary>
+    public bool AllowsDelegationMeeting { get; set; }
 }
 
 /// <summary>
@@ -157,6 +165,14 @@ public sealed class AdminUpdateOtherRequest
     /// row must be active with <c>UserType = Visitor</c> and
     /// <c>IsVisitor = false</c> (partner scope).</summary>
     public Guid ProfileTypeId { get; set; }
+
+    /// <summary>Bi-Meeting rework — the admin-assigned per-user speaker-meeting flag
+    /// (see <see cref="AdminUpdateVisitorRequest.AllowsSpeakerMeeting"/>).</summary>
+    public bool AllowsSpeakerMeeting { get; set; }
+
+    /// <summary>Bi-Meeting rework — the admin-assigned per-user delegation-meeting flag
+    /// (see <see cref="AdminUpdateVisitorRequest.AllowsDelegationMeeting"/>).</summary>
+    public bool AllowsDelegationMeeting { get; set; }
 }
 
 /// <summary>
@@ -623,4 +639,8 @@ public sealed record AdminUserProfileView(
     string? RejectionReason,
     string? RejectionReasonArabic,
     DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt);
+    DateTimeOffset? UpdatedAt,
+    // Bi-Meeting rework — the two admin-assigned per-user meeting-eligibility flags.
+    // Trailing-optional (append-only, wire-safe); default false where unresolved.
+    bool AllowsSpeakerMeeting = false,
+    bool AllowsDelegationMeeting = false);
