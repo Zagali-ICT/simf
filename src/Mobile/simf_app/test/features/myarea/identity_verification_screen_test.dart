@@ -61,11 +61,12 @@ void main() {
       );
     });
 
-    test('invertYaw normalises the iOS sign (physical right = negative raw)',
+    test('invertYaw normalises a negative-raw right turn (positive = right)',
         () {
-      // On iOS the front-camera mirror + per-platform input-image rotation
-      // report the OPPOSITE sign, so a physical RIGHT turn arrives as a
-      // negative raw yaw. invertYaw normalises it so positive means right.
+      // On some platform/sensor combinations (e.g. Android front sensor 270) the
+      // front-camera mirror + input-image rotation make a physical RIGHT turn
+      // arrive as a negative raw yaw. invertYaw normalises it so positive means
+      // right. (livenessInvertYaw: iOS never, Android sensor >= 180.)
       expect(
         livenessStepSatisfied(
           LivenessStep.turnRight,
@@ -131,7 +132,7 @@ void main() {
         ),
         isFalse,
       );
-      // Boundary also holds after inversion (iOS): raw -20 → normalised +20.
+      // Boundary also holds after inversion: raw -20 → normalised +20.
       expect(
         livenessStepSatisfied(
           LivenessStep.turnRight,
@@ -144,9 +145,19 @@ void main() {
   });
 
   group('liveness platform + direction helpers', () {
-    test('livenessInvertYaw is true only on iOS', () {
-      expect(livenessInvertYaw(TargetPlatform.iOS), isTrue);
-      expect(livenessInvertYaw(TargetPlatform.android), isFalse);
+    test('livenessInvertYaw: iOS never inverts; Android inverts by sensor',
+        () {
+      // iOS feeds the raw sensor rotation + a mirrored preview, so a physical
+      // RIGHT turn already reads positive — never invert (any sensor value).
+      expect(livenessInvertYaw(TargetPlatform.iOS, 270), isFalse);
+      expect(livenessInvertYaw(TargetPlatform.iOS, 90), isFalse);
+      // Android is sensor-orientation dependent: 270 (the common front camera +
+      // the RSNF tablet) reads a physical RIGHT turn negative → invert; 90 is
+      // the mirror case → do not invert. Threshold is `>= 180`.
+      expect(livenessInvertYaw(TargetPlatform.android, 270), isTrue);
+      expect(livenessInvertYaw(TargetPlatform.android, 180), isTrue);
+      expect(livenessInvertYaw(TargetPlatform.android, 90), isFalse);
+      expect(livenessInvertYaw(TargetPlatform.android, 0), isFalse);
     });
 
     test('livenessPromptDirection matches the step name (no platform branch)',
