@@ -163,7 +163,7 @@ class SimfTokens {
   static const double headBoxPad = 9; // delegations head-of-delegation box padding (Figma 1426:10838)
   static const double gap2 = 2; // off-grid 2px micro-gap (below the space-4 scale)
   static const double gap6 = 6; // off-grid 6px micro-gap (below the space-4 scale)
-  static const double gap18 = 18; // off-grid 18px gap (forum-guide step content -> caret, Figma 1388:7512)
+  static const double gap18 = 18; // off-grid 18px gap (forum-guide step content -> caret, Figma 1426:11374)
   static const double newsThumbWidth = 155; // news card thumbnail tile (Figma 958:2202)
   static const double newsThumbHeight = 85; // news card thumbnail tile (Figma 958:2202)
   static const double partnerCardAspectRatio = 163.5 / 104; // media-partners grid tile (Figma 958:2246)
