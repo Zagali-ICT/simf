@@ -6,7 +6,7 @@
 | Surface | Mobile (Flutter) |
 | Screen | `lib/features/home/home_screen.dart` (`HomeScreen`, 111 lines — role router only) |
 | Helpers | `lib/features/home/home_greeting.dart` (`homeGreeting` / `homePostTime`, re-exported from the screen) |
-| Widgets | `lib/features/home/widgets/` — `guest_home` · `operational_homes` (staff/moderator) · `visitor_home` · `greeting_header` · `home_banners` (live banner) · `home_hero_banner` (rotating edition hero, #43) · `highlights_carousel` · `carousel_dots` (shared) · `follow_us_section` · `discover_saudi_row` · `home_icons` |
+| Widgets | `lib/features/home/widgets/` — `guest_home` · `operational_homes` (staff/moderator) · `visitor_home` · `greeting_header` · `home_banners` (live banner) · `home_hero_banner` (rotating edition hero, #43) · `hero_background_video` (D-756 CP-configured hero video) · `highlights_carousel` · `carousel_dots` (shared) · `follow_us_section` · `discover_saudi_row` · `home_icons` |
 | Figma nodes | signed-in **758:1134** · guest **758:2910** · highlights carousel 758:1239 (documented multi-slide deviation) |
 | Shell | `SimfPageShell` (`SimfTab.home`); signed-in uses the `GreetingHeader`, guest/staff/moderator use the standard header |
 | API | `GET /app/notifications/unread-count` (bell badge, signed-in) · `GET /app/news` (highlights, reused) · `GET /app/banners` (hero images, #43) · `GET /app/organization-profile` (hero edition overlay) · `GET /app/me/dashboard` (best-effort greeting name); all best-effort — Home never blocks on them |
@@ -34,7 +34,10 @@ account sees the guest layout with an awaiting-approval note.
   bell-with-unread-badge + language/theme/menu cluster), the **rotating edition
   hero** (#43 — forum name / theme / dates / location overlaid on the CP-managed
   `/app/banners` images; auto-advances with dots; falls back to the static
-  discover photo + "اكتشف السعودية" copy when nothing is configured) → News, LIVE
+  discover photo + "اكتشف السعودية" copy when nothing is configured. **D-756:**
+  when `OrganizationProfile.backgroundVideoUrl` is set the hero plays that
+  YouTube/MP4 video muted + looping + no-controls as the base layer instead of
+  the image strip, with the overlay + scrim on top and the tap-to-News intact) → News, LIVE
   banner → live, the عن الملتقى bar + 4-up about tiles + اسأل المحاور
   tile, the news tiles, the الميزات الذكية smart tiles, the الرعاة + الأخبار
   bars, the **highlights carousel** (auto-advancing image+title slides — a

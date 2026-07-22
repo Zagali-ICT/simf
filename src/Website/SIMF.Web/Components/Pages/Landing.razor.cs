@@ -19,11 +19,20 @@ public partial class Landing
     // then falls back to the Landing.Subnav.Date resx label.
     [Inject] private ForumDates Dates { get; set; } = default!;
 
-    private string? ForumDate { get; set; }
+    // D-756 — the CP-editable hero background video (from OrganizationProfile),
+    // resolved server-side during static SSR. Null when none is configured / the
+    // profile is unavailable; the view then falls back to the bundled hero-video.mp4.
+    [Inject] private HeroMedia Hero { get; set; } = default!;
 
-    protected override async Task OnInitializedAsync() =>
+    private string? ForumDate { get; set; }
+    private HeroVideoSource? HeroVideo { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
         ForumDate = await Dates.GetRangeDisplayAsync(
             CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft);
+        HeroVideo = await Hero.GetAsync();
+    }
 
     public sealed record ThreatStat(Bilingual Value, Bilingual Caption);
 

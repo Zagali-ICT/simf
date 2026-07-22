@@ -93,6 +93,7 @@ internal sealed class OrganizationProfileAdminService(
         profile.ContactEmail = Trim(request.ContactEmail, 256);
         profile.ContactWebsite = ValidateUrl(request.ContactWebsite, "website");
         profile.LiveStreamUrl = ValidateUrl(request.LiveStreamUrl, "live-stream link");
+        profile.BackgroundVideoUrl = ValidateUrl(request.BackgroundVideoUrl, "background video link");
         profile.FacebookUrl = ValidateUrl(request.Facebook, "Facebook link");
         profile.XUrl = ValidateUrl(request.X, "X link");
         profile.InstagramUrl = ValidateUrl(request.Instagram, "Instagram link");

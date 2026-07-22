@@ -40,6 +40,7 @@ internal sealed class OrganizationProfileConfiguration
         builder.Property(p => p.ContactEmail).HasMaxLength(256);
         builder.Property(p => p.ContactWebsite).HasMaxLength(1024);
         builder.Property(p => p.LiveStreamUrl).HasMaxLength(1024);
+        builder.Property(p => p.BackgroundVideoUrl).HasMaxLength(1024);
 
         builder.Property(p => p.FacebookUrl).HasMaxLength(1024);
         builder.Property(p => p.XUrl).HasMaxLength(1024);

@@ -262,6 +262,12 @@
 }
 .ln-hero__video { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%;
   object-fit: cover; pointer-events: none; }
+/* D-756 — a YouTube embed can't object-fit (it is not a replaced element), so the
+   16:9 iframe is centred and over-sized to the larger of the band's width or height
+   and the excess is clipped by .ln-hero { overflow:hidden } — the same cover result. */
+.ln-hero__video--yt { position: absolute; z-index: 0; top: 50%; left: 50%;
+  transform: translate(-50%, -50%); width: 100vw; height: 56.25vw;
+  min-width: 177.78vh; min-height: 100vh; border: 0; pointer-events: none; }
 .ln-hero__overlay { position: absolute; inset: 0; z-index: 1; pointer-events: none;
   background: linear-gradient(180deg, rgba(0, 9, 32, .55) 0%, rgba(0, 9, 32, .12) 42%, rgba(0, 9, 32, .42) 100%); }
 .ln-hero__content { position: relative; z-index: 2; width: 100%; max-width: var(--content-w);

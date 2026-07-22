@@ -8,6 +8,7 @@ import '../../../app/theme/tokens.dart';
 import '../../../core/organization_profile/organization_profile.dart';
 import '../../banners/data/banner_models.dart';
 import 'carousel_dots.dart';
+import 'hero_background_video.dart';
 
 /// The home hero (replaces the static discover banner, #43): the forum edition —
 /// name (gold), theme, date range and location — overlaid on a rotating strip of
@@ -101,6 +102,12 @@ class _HomeHeroBannerState extends State<HomeHeroBanner> {
   @override
   Widget build(BuildContext context) {
     final banners = widget.banners;
+    // A CP-configured background video (D-756) is the base layer when set,
+    // taking precedence over the banner image strip; the edition text overlay +
+    // scrim stay on top. The image carousel (and its dots) show only when there
+    // is no video.
+    final videoUrl = widget.profile?.backgroundVideoUrl;
+    final hasVideo = HeroBackgroundVideo.isSupported(videoUrl);
     return SizedBox(
       height: _height,
       width: double.infinity,
@@ -109,7 +116,9 @@ class _HomeHeroBannerState extends State<HomeHeroBanner> {
         child: Stack(
           fit: StackFit.expand,
           children: <Widget>[
-            if (banners.isEmpty)
+            if (hasVideo)
+              HeroBackgroundVideo(url: videoUrl!)
+            else if (banners.isEmpty)
               Image.asset(AppAssets.discoverHero, fit: BoxFit.fill)
             else
               PageView.builder(
@@ -135,7 +144,7 @@ class _HomeHeroBannerState extends State<HomeHeroBanner> {
                 ),
               ),
             ),
-            if (banners.length > 1)
+            if (!hasVideo && banners.length > 1)
               Positioned(
                 bottom: SimfTokens.space2,
                 left: 0,

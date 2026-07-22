@@ -29,6 +29,7 @@
 | E2E-ORGP-006 | Edition switch — change current year + status (Open→Archived) + the about/detail content → the app About screen + status badge re-skin to that edition from the cached profile | happy | P1 | spec |
 | E2E-ORGP-007 | A save wire failure (5xx / network) → error toast, the form keeps the entered values | resilience | P1 | spec |
 | E2E-ORGP-008 | RTL render (Arabic) — sections/labels/button mirror; URL + GPS fields stay LTR; the bilingual about-items/details edit cleanly | i18n | P1 | spec |
+| E2E-ORGP-009 | Hero background video (D-756) — set the "Hero background video" field to a YouTube link → Save → success; `GET /app/organization-profile` returns `backgroundVideoUrl`; clearing it → the field returns null; a non-http(s) value → `400` | happy | P1 | authored ✓ (`OrganizationProfileTests` PUT save+reflect incl. `BackgroundVideoUrl`; URL-reject) |
 
 ## Scenarios
 
@@ -77,6 +78,29 @@ Scenario: Only admins with the OrganizationProfile permission reach the page
 Scenario: A non-http(s) URL is rejected
   Given an admin editing the profile
   When they set the live-stream link to "javascript:alert(1)" and tap Save
+  Then PUT /admin/organization-profile returns 400 ORGANIZATION_PROFILE_INVALID
+  And nothing is persisted
+```
+
+### E2E-ORGP-009 — Hero background video round-trips to both clients (D-756)
+
+```gherkin
+Scenario: An admin sets the hero background video and both clients read it
+  Given an admin with OrganizationProfile.Manage opens /admin/organization-profile
+  When they set "Hero background video (YouTube or MP4/HLS link)" to "https://youtu.be/rmW5sJTp-Zo" and tap Save
+  Then PUT /admin/organization-profile returns 200 and a success toast shows
+  And GET /app/organization-profile returns backgroundVideoUrl = "https://youtu.be/rmW5sJTp-Zo"
+  And the app home hero and the website landing hero play that video muted + looping
+
+Scenario: Clearing the field falls the hero back to the bundled media
+  Given the hero background video is set
+  When the admin clears the "Hero background video" field and taps Save
+  Then GET /app/organization-profile returns backgroundVideoUrl = null
+  And the app hero shows the banner image / discover photo and the website hero shows assets/hero-video.mp4
+
+Scenario: A non-http(s) background video URL is rejected
+  Given an admin editing the profile
+  When they set the hero background video to "javascript:alert(1)" and tap Save
   Then PUT /admin/organization-profile returns 400 ORGANIZATION_PROFILE_INVALID
   And nothing is persisted
 ```
