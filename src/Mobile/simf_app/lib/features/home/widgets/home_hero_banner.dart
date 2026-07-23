@@ -102,10 +102,12 @@ class _HomeHeroBannerState extends State<HomeHeroBanner> {
   @override
   Widget build(BuildContext context) {
     final banners = widget.banners;
-    // A CP-configured background video (D-756) is the base layer when set,
-    // taking precedence over the banner image strip; the edition text overlay +
-    // scrim stay on top. The image carousel (and its dots) show only when there
-    // is no video.
+    // A CP-configured background video (D-756 / D-761) is the base layer when a
+    // playable (direct MP4/HLS) URL is set, taking precedence over the banner
+    // image strip; the edition text overlay + scrim stay on top. A YouTube URL is
+    // not played in-app (an Android WebView can't be clipped into the band — see
+    // D-761) and falls through to the image carousel, which also shows when no
+    // video is set.
     final videoUrl = widget.profile?.backgroundVideoUrl;
     final hasVideo = HeroBackgroundVideo.isSupported(videoUrl);
     return SizedBox(

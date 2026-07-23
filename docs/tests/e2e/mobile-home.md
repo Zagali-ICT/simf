@@ -55,7 +55,7 @@
 | E2E-MOB013-019 | **اللقاءات الثنائية → Coming soon (owner 2026-06-21):** the bilateral-meetings news tile opens the **ComingSoon** placeholder (the feature is not designed yet), not the media gallery | happy | P2 | authored ✓ (screen — tile → `bilateralMeetings` ComingSoon route) |
 | E2E-MOB013-020 | **Smart-features tile → AI-summaries (D-580→D-583):** the smart-row-2 tile reads "ملخص الجلسات" and opens the AI-summaries list (1388:8392, header "ملخص الجلسات") | happy | P2 | authored ✓ (screen — smart-row-2 label + section-scan) |
 | E2E-MOB013-021 | **About-tile → session downloads (D-583):** the Home about-row (4-up) tile reads "الجلسات" and opens the session-materials downloads screen (1388:7621, header "الجلسات"); label matches the screen title | happy | P2 | authored ✓ (screen — about-row label + order) |
-| E2E-MOB013-022 | **Hero background video (D-756):** when `OrganizationProfile.backgroundVideoUrl` is a YouTube (or MP4/HLS) link the home hero plays it muted + looping + no-controls as the base layer (edition text overlay + scrim stay on top); when null/unsupported the hero keeps the banner-image carousel / discover photo | happy | P2 | authored ✓ (widget — `HeroBackgroundVideo.isSupported` gate + hero base-layer selection) |
+| E2E-MOB013-022 | **Hero background video (D-756 / D-761):** when `OrganizationProfile.backgroundVideoUrl` is a **direct MP4/HLS** link the home hero plays it muted + looping + no-controls, cover-fitted as the base layer (edition text overlay + scrim stay on top); a **YouTube** link is NOT played in-app (an Android WebView can't be clipped into the band — D-761) and falls back to the banner-image carousel / discover photo, same as null/unsupported | happy | P2 | authored ✓ (widget — `HeroBackgroundVideo.isSupported` gate + hero base-layer selection) |
 
 ## Scenarios
 
@@ -369,16 +369,26 @@ Scenario: The Home about-tile "الجلسات" opens the session downloads scree
   # (1388:8392) is the "ملخص الجلسات" smart-features tile.
 ```
 
-### E2E-MOB013-022 — Hero plays the CP-configured background video (D-756)
+### E2E-MOB013-022 — Hero plays the CP-configured background video (D-756 / D-761)
 
 ```gherkin
-Scenario: A configured background video plays behind the hero
-  Given the CP has set OrganizationProfile.backgroundVideoUrl to "https://youtu.be/rmW5sJTp-Zo"
+Scenario: A direct MP4/HLS background video plays behind the hero
+  Given the CP has set OrganizationProfile.backgroundVideoUrl to "https://cdn.example.com/hero.mp4"
   And the app has warmed the organization profile
   When a signed-in visitor opens Home
-  Then the hero plays that video muted, looping, with no controls, cover-fitted
+  Then the hero plays that video muted, looping, with no controls, cover-fitted into the 160px band
+  And the video never overflows the hero band (no full-screen spill over the greeting header)
   And the edition name / theme / date / location overlay and the dark scrim stay on top
   And tapping the hero still opens News (the video is non-interactive)
+
+Scenario: A YouTube background link falls back to the banner-image hero (D-761)
+  Given the CP has set OrganizationProfile.backgroundVideoUrl to "https://youtu.be/rmW5sJTp-Zo"
+  When a signed-in visitor opens Home
+  Then the hero shows the rotating banner images (or the discover photo when there are none)
+  And no video surface is mounted
+  # A YouTube embed is an Android WebView that cannot be clipped into the band, so
+  # it is not played in-app; the website still plays the same link (it crops the
+  # iframe in CSS). To show a moving video in the app, set a direct MP4/HLS URL.
 
 Scenario: No configured video keeps the banner-image hero
   Given OrganizationProfile.backgroundVideoUrl is null
