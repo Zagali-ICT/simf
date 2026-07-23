@@ -114,8 +114,10 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
     // only the on-screen feedback stays gated on `mounted`.
     final repo = ref.read(myAreaRepositoryProvider);
     final bust = ref.read(avatarBustProvider.notifier);
-    final selfie = await context
-        .pushNamed<CapturedSelfie>(RouteNames.identityVerification);
+    final selfie = await context.pushNamed<CapturedSelfie>(
+      RouteNames.identityVerification,
+      extra: true, // showConfirmation
+    );
     if (selfie == null) {
       return;
     }

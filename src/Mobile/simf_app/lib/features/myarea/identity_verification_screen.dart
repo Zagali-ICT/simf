@@ -35,7 +35,9 @@ export 'data/liveness.dart';
 /// device without Google Play Services) the screen shows a "camera required"
 /// message with a retry — never a gallery fallback.
 class IdentityVerificationScreen extends StatefulWidget {
-  const IdentityVerificationScreen({super.key});
+  const IdentityVerificationScreen({this.showConfirmation = false, super.key});
+
+  final bool showConfirmation;
 
   @override
   State<IdentityVerificationScreen> createState() =>
@@ -63,11 +65,12 @@ class _IdentityVerificationScreenState
   /// predictable — a fixed smile→right→left order is easier to defeat with a
   /// pre-recorded clip. The forward selfie is still grabbed on the smile step,
   /// wherever it lands in the order.
-  late final List<LivenessStep> _sequence;
+  late List<LivenessStep> _sequence;
   int _stepIndex = 0;
   LivenessStep get _step => _sequence[_stepIndex];
   Uint8List? _forwardFrame;
   String _forwardName = 'selfie.jpg';
+  Uint8List? _preview;
 
   static const Map<DeviceOrientation, int> _orientationDegrees =
       <DeviceOrientation, int>{
@@ -233,6 +236,11 @@ class _IdentityVerificationScreenState
     if (!mounted) {
       return;
     }
+    if (bytes != null && widget.showConfirmation) {
+      _preview = bytes;
+      setState(() {});
+      return;
+    }
     if (bytes != null) {
       Navigator.of(context).pop<CapturedSelfie>(
         (bytes: bytes, filename: _forwardName),
@@ -240,6 +248,14 @@ class _IdentityVerificationScreenState
     } else {
       setState(() => _cameraFailed = true);
     }
+  }
+
+  void _retake() {
+    _preview = null;
+    _forwardFrame = null;
+    _stepIndex = 0;
+    _sequence = List<LivenessStep>.of(LivenessStep.values)..shuffle();
+    unawaited(_initCamera());
   }
 
   /// Retry the live capture after the "camera required" message (e.g. once the
@@ -354,6 +370,10 @@ class _IdentityVerificationScreenState
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
+    final preview = _preview;
+    if (preview != null) {
+      return _previewView(preview, l10n);
+    }
     return Scaffold(
       backgroundColor: SimfTokens.navy,
       appBar: AppBar(
@@ -385,6 +405,68 @@ class _IdentityVerificationScreenState
               _yawDebugOverlay(),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _previewView(Uint8List bytes, AppL10n l10n) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          Image.memory(bytes, fit: BoxFit.contain),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              padding: EdgeInsets.only(
+                left: SimfTokens.space4,
+                right: SimfTokens.space4,
+                top: SimfTokens.space8,
+                bottom: MediaQuery.of(context).padding.bottom + SimfTokens.space4,
+              ),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    SimfTokens.transparent,
+                    SimfTokens.navy.withValues(alpha: 0.9),
+                  ],
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: () {
+                        Navigator.of(context).pop<CapturedSelfie>(
+                          (bytes: bytes, filename: _forwardName),
+                        );
+                      },
+                      child: Text(l10n.saveLabel),
+                    ),
+                  ),
+                  const SizedBox(height: SimfTokens.space2),
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton(
+                      onPressed: _retake,
+                      style: TextButton.styleFrom(
+                        foregroundColor: SimfTokens.beigeBorder,
+                      ),
+                      child: Text(l10n.retryLabel),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
