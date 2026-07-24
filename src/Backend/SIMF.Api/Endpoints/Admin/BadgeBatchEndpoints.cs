@@ -49,7 +49,7 @@ public sealed class ReEmailBadgeBatchEndpoint(IAdminUserBulkService adminAccount
     public override void Configure()
     {
         Post("/admin/visitors/badge-batches/re-email");
-        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.ViewBatches), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.ManageBatches), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =
@@ -79,7 +79,7 @@ public sealed class RevokeBadgeBatchEndpoint(IAdminUserBulkService adminAccountS
     public override void Configure()
     {
         Post("/admin/visitors/badge-batches/revoke");
-        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.ViewBatches), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.ManageBatches), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =
