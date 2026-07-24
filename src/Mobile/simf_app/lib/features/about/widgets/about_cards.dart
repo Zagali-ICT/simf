@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../../app/theme/tokens.dart';
 
-/// The detail value's script decides its direction: a value containing any
-/// Arabic-block character (U+0600..U+06FF) reads RTL, a language-neutral value
-/// (a year, a date range, a URL, an email) reads LTR so its digits/segments
-/// keep their natural order.
+/// A detail value's internal reading direction, from its script: an Arabic
+/// value reads RTL; a language-neutral value (a year, a "01-2026 — 04-2026"
+/// range, a URL) reads LTR so its segments keep their order. Block position is
+/// pinned to the row's end separately, so this only fixes glyph/segment order.
 TextDirection _valueDirection(String value) =>
     value.codeUnits.any((c) => c >= 0x0600 && c <= 0x06FF)
         ? TextDirection.rtl
@@ -62,11 +62,16 @@ class AboutDetailsCard extends StatelessWidget {
                 ),
                 const SizedBox(width: SimfTokens.space2),
                 Expanded(
-                  child: Text(
-                    value,
-                    textDirection: _valueDirection(value),
-                    textAlign: TextAlign.start,
-                    style: SimfTokens.labelBeigeSm,
+                  child: Align(
+                    // Pin the value to the end edge (left in RTL), opposite the
+                    // start-aligned label — the Figma details card's justified
+                    // two-column row. Directional, so English mirrors it.
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: Text(
+                      value,
+                      textDirection: _valueDirection(value),
+                      style: SimfTokens.labelBeigeSm,
+                    ),
                   ),
                 ),
               ],
