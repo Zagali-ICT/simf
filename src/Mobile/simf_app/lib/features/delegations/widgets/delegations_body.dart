@@ -68,7 +68,6 @@ class DelegationsBody extends StatelessWidget {
       children: <Widget>[
         DelegationsStatsStrip(
           countryCount: data.countryCount,
-          totalParticipants: data.totalParticipants,
           flagItems: flagItems,
           selectedCountryCode: selectedCountryCode,
           onFlagTap: onFlagTap,
@@ -108,7 +107,6 @@ class DelegationsBody extends StatelessWidget {
             DelegationCard(
               item: item,
               isArabic: isArabic,
-              l10n: l10n,
               onTap: onRequestMeeting == null
                   ? null
                   : () => onRequestMeeting!(item),

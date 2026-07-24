@@ -113,11 +113,14 @@ void main() {
       );
 
       expect(find.text('United States'), findsOneWidget);
-      expect(find.text('James Mitchell'), findsOneWidget);
-      expect(find.text('Ambassador'), findsOneWidget);
-      expect(find.text('3 members'), findsOneWidget);
       expect(find.text('Participating countries'), findsOneWidget);
-      expect(find.text('Total participants'), findsOneWidget);
+      // The head-of-delegation box, the member/date bottom row, and the
+      // total-participants stat are intentionally hidden in the current layout
+      // (owner 2026-07-24) — only the country identity row + countries stat show.
+      expect(find.text('James Mitchell'), findsNothing);
+      expect(find.text('Ambassador'), findsNothing);
+      expect(find.text('3 members'), findsNothing);
+      expect(find.text('Total participants'), findsNothing);
     });
 
     testWidgets('shows the empty state when there are no delegations',
