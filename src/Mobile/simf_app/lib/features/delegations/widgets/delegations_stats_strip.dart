@@ -13,7 +13,6 @@ import '../data/delegation_models.dart';
 class DelegationsStatsStrip extends StatelessWidget {
   const DelegationsStatsStrip({
     required this.countryCount,
-    required this.totalParticipants,
     required this.flagItems,
     required this.selectedCountryCode,
     required this.onFlagTap,
@@ -22,7 +21,6 @@ class DelegationsStatsStrip extends StatelessWidget {
   });
 
   final int countryCount;
-  final int totalParticipants;
 
   /// The invited countries whose flag renders a scattered tap target. Only the
   /// first [_spots] of these are placed (the strip is a fixed-size decorative
@@ -93,15 +91,6 @@ class DelegationsStatsStrip extends StatelessWidget {
                   value: countryCount,
                   label: l10n.delegationsCountriesStat,
                   alignEnd: false,
-                ),
-              ),
-              Positioned(
-                right: SimfTokens.space4,
-                bottom: SimfTokens.space3,
-                child: _Stat(
-                  value: totalParticipants,
-                  label: l10n.delegationsParticipantsStat,
-                  alignEnd: true,
                 ),
               ),
             ],

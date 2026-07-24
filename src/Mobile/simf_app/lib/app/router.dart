@@ -509,7 +509,9 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
     return const ScanContactScreen();
   }
   if (r.name == RouteNames.identityVerification) {
-    return const IdentityVerificationScreen();
+    return IdentityVerificationScreen(
+      showConfirmation: state.extra == true,
+    );
   }
   if (r.name == RouteNames.sessionModerate) {
     return SessionModerateScreen(
