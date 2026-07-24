@@ -53,7 +53,8 @@ internal static class OrganizationProfileMapper
             about.Select(a => new OrganizationAboutItemDto(
                 a.Id, a.Title, a.TitleArabic, a.Text, a.TextArabic, a.DisplayOrder)).ToList(),
             details.Select(d => new OrganizationDetailDto(
-                d.Id, d.Name, d.NameArabic, d.Value, d.DisplayOrder)).ToList());
+                d.Id, d.Name, d.NameArabic, d.Value, NullIfBlank(d.ValueArabic),
+                d.DisplayOrder)).ToList());
 
     private static string? NullIfBlank(string? v) =>
         string.IsNullOrWhiteSpace(v) ? null : v.Trim();

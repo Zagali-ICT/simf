@@ -63,12 +63,14 @@ public sealed class AdminOrganizationAboutItem
     public int DisplayOrder { get; set; }
 }
 
-/// <summary>One detail row in the upsert. <c>Id</c> null/empty = a new row.</summary>
+/// <summary>One detail row in the upsert. <c>Id</c> null/empty = a new row.
+/// <c>ValueArabic</c> is optional — blank falls back to <c>Value</c> on read.</summary>
 public sealed class AdminOrganizationDetail
 {
     public Guid? Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string NameArabic { get; set; } = string.Empty;
     public string Value { get; set; } = string.Empty;
+    public string? ValueArabic { get; set; }
     public int DisplayOrder { get; set; }
 }

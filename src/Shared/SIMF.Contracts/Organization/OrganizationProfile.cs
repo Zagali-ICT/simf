@@ -46,10 +46,13 @@ public sealed record OrganizationAboutItemDto(
     string TextArabic,
     int DisplayOrder);
 
-/// <summary>One "detail" row — a bilingual label + a value (e.g. year / date / location).</summary>
+/// <summary>One "detail" row — a bilingual label + a value (e.g. year / date /
+/// location). <c>ValueArabic</c> is the Arabic value; null when the value is
+/// language-neutral (a year, a URL) and the app falls back to <c>Value</c>.</summary>
 public sealed record OrganizationDetailDto(
     Guid Id,
     string Name,
     string NameArabic,
     string Value,
+    string? ValueArabic,
     int DisplayOrder);

@@ -122,6 +122,7 @@ internal sealed class OrganizationDetailConfiguration
         builder.Property(d => d.Name).HasMaxLength(256).IsRequired();
         builder.Property(d => d.NameArabic).HasMaxLength(256).IsRequired();
         builder.Property(d => d.Value).HasMaxLength(1024).IsRequired();
+        builder.Property(d => d.ValueArabic).HasMaxLength(1024);
 
         builder.HasIndex(d => new { d.OrganizationProfileId, d.IsActive, d.DisplayOrder });
     }

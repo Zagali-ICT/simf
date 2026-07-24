@@ -2,7 +2,10 @@
    (name / title / slogan / bio, version + dates, status + year, location + GPS,
    contact, live-stream link, social links, and the about-items + details lists).
    Reads / writes via /admin/organization-profile; the app + website consume it
-   through GET /app/organization-profile. View opens it; Manage saves. *@
+   through GET /app/organization-profile. View opens it; Manage saves.
+   The long field set is grouped into titled SimfFormSection steps with a
+   responsive two-column grid (bilingual pairs side by side); the about-items and
+   details lists use the simf-repeater card (index + reorder + remove) — D-762. *@
 @page "/admin/organization-profile"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.OrganizationProfile.View)]
@@ -27,85 +30,132 @@
         else
         {
             <EditForm EditContext="_editContext" OnSubmit="SaveAsync" class="simf-form">
-                <div class="simf-form__fields">
-                    <h3>Identity</h3>
-                    <SimfTextField Label="Name (EN)" MaxLength="256" @bind-Value="_model.Name" Disabled="_busy" />
-                    <SimfTextField Label="Name (AR)" MaxLength="256" @bind-Value="_model.NameArabic" Disabled="_busy" />
-                    <SimfTextField Label="Title (EN)" MaxLength="256" @bind-Value="_model.Title" Disabled="_busy" />
-                    <SimfTextField Label="Title (AR)" MaxLength="256" @bind-Value="_model.TitleArabic" Disabled="_busy" />
-                    <SimfTextField Label="Slogan (EN)" MaxLength="512" @bind-Value="_model.Slogan" Disabled="_busy" />
-                    <SimfTextField Label="Slogan (AR)" MaxLength="512" @bind-Value="_model.SloganArabic" Disabled="_busy" />
-                    <SimfTextField Label="Bio (EN)" MaxLength="4000" @bind-Value="_model.Bio" Disabled="_busy" />
-                    <SimfTextField Label="Bio (AR)" MaxLength="4000" @bind-Value="_model.BioArabic" Disabled="_busy" />
-
-                    <h3>Edition</h3>
-                    <SimfTextField Label="Current year" MaxLength="4" @bind-Value="_model.CurrentYear" Disabled="_busy" />
-                    <label class="simf-field">
-                        <span class="simf-field__label">Status</span>
-                        <select class="simf-field__input" @bind="_model.Status" disabled="@_busy">
-                            <option value="Soon">Soon</option>
-                            <option value="Open">Open</option>
-                            <option value="Archived">Archived (closed)</option>
-                        </select>
-                    </label>
-                    <SimfTextField Label="Event start (YYYY-MM-DD)" MaxLength="10" @bind-Value="_model.EventStartDate" Disabled="_busy" />
-                    <SimfTextField Label="Event end (YYYY-MM-DD)" MaxLength="10" @bind-Value="_model.EventEndDate" Disabled="_busy" />
-                    <SimfTextField Label="Version" MaxLength="64" @bind-Value="_model.Version" Disabled="_busy" />
-                    <SimfTextField Label="System version" MaxLength="64" @bind-Value="_model.SysVersion" Disabled="_busy" />
-
-                    <h3>Location</h3>
-                    <SimfTextField Label="Location (EN)" MaxLength="512" @bind-Value="_model.LocationText" Disabled="_busy" />
-                    <SimfTextField Label="Location (AR)" MaxLength="512" @bind-Value="_model.LocationTextArabic" Disabled="_busy" />
-                    <SimfTextField Label="Latitude" MaxLength="16" @bind-Value="_model.Latitude" Disabled="_busy" />
-                    <SimfTextField Label="Longitude" MaxLength="16" @bind-Value="_model.Longitude" Disabled="_busy" />
-
-                    <h3>Contact</h3>
-                    <SimfTextField Label="Phone" MaxLength="64" @bind-Value="_model.ContactPhone" Disabled="_busy" />
-                    <SimfTextField Label="Email" MaxLength="256" @bind-Value="_model.ContactEmail" Disabled="_busy" />
-                    <SimfTextField Label="Website" MaxLength="1024" @bind-Value="_model.ContactWebsite" Disabled="_busy" />
-
-                    <h3>Live stream</h3>
-                    <SimfTextField Label="Main live-stream link (YouTube)" MaxLength="1024" @bind-Value="_model.LiveStreamUrl" Disabled="_busy" />
-                    <SimfTextField Label="Hero background video (YouTube or MP4/HLS link)" MaxLength="1024" @bind-Value="_model.BackgroundVideoUrl" Disabled="_busy" />
-
-                    <h3>Social links</h3>
-                    <SimfTextField Label="Facebook" MaxLength="1024" @bind-Value="_model.Facebook" Disabled="_busy" />
-                    <SimfTextField Label="X (Twitter)" MaxLength="1024" @bind-Value="_model.X" Disabled="_busy" />
-                    <SimfTextField Label="Instagram" MaxLength="1024" @bind-Value="_model.Instagram" Disabled="_busy" />
-                    <SimfTextField Label="LinkedIn" MaxLength="1024" @bind-Value="_model.LinkedIn" Disabled="_busy" />
-                    <SimfTextField Label="YouTube" MaxLength="1024" @bind-Value="_model.YouTube" Disabled="_busy" />
-                    <SimfTextField Label="TikTok" MaxLength="1024" @bind-Value="_model.TikTok" Disabled="_busy" />
-                    <SimfTextField Label="Snapchat" MaxLength="1024" @bind-Value="_model.Snapchat" Disabled="_busy" />
-
-                    <h3>About items</h3>
-                    @foreach (var item in _model.AboutItems)
-                    {
-                        <div class="simf-form__row">
-                            <SimfTextField Label="Title (EN)" MaxLength="256" @bind-Value="item.Title" Disabled="_busy" />
-                            <SimfTextField Label="Title (AR)" MaxLength="256" @bind-Value="item.TitleArabic" Disabled="_busy" />
-                            <SimfTextField Label="Text (EN)" MaxLength="4000" @bind-Value="item.Text" Disabled="_busy" />
-                            <SimfTextField Label="Text (AR)" MaxLength="4000" @bind-Value="item.TextArabic" Disabled="_busy" />
-                            <button type="button" class="simf-button simf-button--ghost"
-                                    @onclick="() => _model.AboutItems.Remove(item)" disabled="@_busy">Remove</button>
+                <SimfFormSection Number="1" Title="Identity"
+                                 Hint="The forum name, title, slogan and biography — each paired English / Arabic.">
+                    <div class="simf-form__grid">
+                        <SimfTextField Label="Name (EN)" MaxLength="256" @bind-Value="_model.Name" Disabled="_busy" />
+                        <SimfTextField Label="Name (AR)" MaxLength="256" @bind-Value="_model.NameArabic" Disabled="_busy" />
+                        <SimfTextField Label="Title (EN)" MaxLength="256" @bind-Value="_model.Title" Disabled="_busy" />
+                        <SimfTextField Label="Title (AR)" MaxLength="256" @bind-Value="_model.TitleArabic" Disabled="_busy" />
+                        <SimfTextField Label="Slogan (EN)" MaxLength="512" @bind-Value="_model.Slogan" Disabled="_busy" />
+                        <SimfTextField Label="Slogan (AR)" MaxLength="512" @bind-Value="_model.SloganArabic" Disabled="_busy" />
+                        <div class="simf-form__grid-item--full">
+                            <SimfTextarea Label="Bio (EN)" Rows="3" MaxLength="4000"
+                                          Value="@_model.Bio" ValueChanged="@(v => _model.Bio = v)" Disabled="_busy" />
                         </div>
-                    }
-                    <button type="button" class="simf-button simf-button--ghost"
-                            @onclick="AddAbout" disabled="@_busy">+ Add about item</button>
-
-                    <h3>Details</h3>
-                    @foreach (var row in _model.Details)
-                    {
-                        <div class="simf-form__row">
-                            <SimfTextField Label="Name (EN)" MaxLength="256" @bind-Value="row.Name" Disabled="_busy" />
-                            <SimfTextField Label="Name (AR)" MaxLength="256" @bind-Value="row.NameArabic" Disabled="_busy" />
-                            <SimfTextField Label="Value" MaxLength="1024" @bind-Value="row.Value" Disabled="_busy" />
-                            <button type="button" class="simf-button simf-button--ghost"
-                                    @onclick="() => _model.Details.Remove(row)" disabled="@_busy">Remove</button>
+                        <div class="simf-form__grid-item--full">
+                            <SimfTextarea Label="Bio (AR)" Rows="3" MaxLength="4000"
+                                          Value="@_model.BioArabic" ValueChanged="@(v => _model.BioArabic = v)" Disabled="_busy" />
                         </div>
-                    }
-                    <button type="button" class="simf-button simf-button--ghost"
-                            @onclick="AddDetail" disabled="@_busy">+ Add detail</button>
-                </div>
+                    </div>
+                </SimfFormSection>
+
+                <SimfFormSection Number="2" Title="Edition"
+                                 Hint="The active year, status and dates shown across the app and website.">
+                    <div class="simf-form__grid">
+                        <SimfTextField Label="Current year" MaxLength="4" @bind-Value="_model.CurrentYear" Disabled="_busy" />
+                        <label class="simf-field">
+                            <span class="simf-field__label">Status</span>
+                            <select class="simf-field__input" @bind="_model.Status" disabled="@_busy">
+                                <option value="Soon">Soon</option>
+                                <option value="Open">Open</option>
+                                <option value="Archived">Archived (closed)</option>
+                            </select>
+                        </label>
+                        <SimfTextField Label="Event start (YYYY-MM-DD)" MaxLength="10" @bind-Value="_model.EventStartDate" Disabled="_busy" />
+                        <SimfTextField Label="Event end (YYYY-MM-DD)" MaxLength="10" @bind-Value="_model.EventEndDate" Disabled="_busy" />
+                        <SimfTextField Label="Version" MaxLength="64" @bind-Value="_model.Version" Disabled="_busy" />
+                        <SimfTextField Label="System version" MaxLength="64" @bind-Value="_model.SysVersion" Disabled="_busy" />
+                    </div>
+                </SimfFormSection>
+
+                <SimfFormSection Number="3" Title="Location"
+                                 Hint="The venue text (bilingual) and its map coordinates.">
+                    <div class="simf-form__grid">
+                        <SimfTextField Label="Location (EN)" MaxLength="512" @bind-Value="_model.LocationText" Disabled="_busy" />
+                        <SimfTextField Label="Location (AR)" MaxLength="512" @bind-Value="_model.LocationTextArabic" Disabled="_busy" />
+                        <SimfTextField Label="Latitude" MaxLength="16" @bind-Value="_model.Latitude" Disabled="_busy" />
+                        <SimfTextField Label="Longitude" MaxLength="16" @bind-Value="_model.Longitude" Disabled="_busy" />
+                    </div>
+                </SimfFormSection>
+
+                <SimfFormSection Number="4" Title="Contact">
+                    <div class="simf-form__grid">
+                        <SimfTextField Label="Phone" MaxLength="64" @bind-Value="_model.ContactPhone" Disabled="_busy" />
+                        <SimfTextField Label="Email" MaxLength="256" @bind-Value="_model.ContactEmail" Disabled="_busy" />
+                        <div class="simf-form__grid-item--full">
+                            <SimfTextField Label="Website" MaxLength="1024" @bind-Value="_model.ContactWebsite" Disabled="_busy" />
+                        </div>
+                    </div>
+                </SimfFormSection>
+
+                <SimfFormSection Number="5" Title="Media"
+                                 Hint="A YouTube (or direct MP4/HLS) link; absolute http(s).">
+                    <div class="simf-form__grid">
+                        <div class="simf-form__grid-item--full">
+                            <SimfTextField Label="Main live-stream link (YouTube)" MaxLength="1024" @bind-Value="_model.LiveStreamUrl" Disabled="_busy" />
+                        </div>
+                        <div class="simf-form__grid-item--full">
+                            <SimfTextField Label="Hero background video (YouTube or MP4/HLS link)" MaxLength="1024" @bind-Value="_model.BackgroundVideoUrl" Disabled="_busy" />
+                        </div>
+                    </div>
+                </SimfFormSection>
+
+                <SimfFormSection Number="6" Title="Social links"
+                                 Hint="Each an absolute http(s) URL; leave blank to hide the icon.">
+                    <div class="simf-form__grid">
+                        <SimfTextField Label="Facebook" MaxLength="1024" @bind-Value="_model.Facebook" Disabled="_busy" />
+                        <SimfTextField Label="X (Twitter)" MaxLength="1024" @bind-Value="_model.X" Disabled="_busy" />
+                        <SimfTextField Label="Instagram" MaxLength="1024" @bind-Value="_model.Instagram" Disabled="_busy" />
+                        <SimfTextField Label="LinkedIn" MaxLength="1024" @bind-Value="_model.LinkedIn" Disabled="_busy" />
+                        <SimfTextField Label="YouTube" MaxLength="1024" @bind-Value="_model.YouTube" Disabled="_busy" />
+                        <SimfTextField Label="TikTok" MaxLength="1024" @bind-Value="_model.TikTok" Disabled="_busy" />
+                        <SimfTextField Label="Snapchat" MaxLength="1024" @bind-Value="_model.Snapchat" Disabled="_busy" />
+                    </div>
+                </SimfFormSection>
+
+                <SimfFormSection Number="7" Title="About items"
+                                 Hint="Vision / mission cards — a bilingual title and body each. Order top to bottom.">
+                    <SimfRepeater TItem="AboutRow" Items="_model.AboutItems" IndexLabel="Item"
+                                  EmptyText="No about items yet. Add the mission, the vision, or any about-card."
+                                  AddLabel="+ Add about item" Disabled="_busy"
+                                  OnAdd="AddAbout" OnRemove="RemoveAbout"
+                                  OnMove="@(m => MoveAbout(m.Item, m.Delta))">
+                        <RowTemplate Context="item">
+                            <div class="simf-form__grid">
+                                <SimfTextField Label="Title (EN)" MaxLength="256" @bind-Value="item.Title" Disabled="_busy" />
+                                <SimfTextField Label="Title (AR)" MaxLength="256" @bind-Value="item.TitleArabic" Disabled="_busy" />
+                                <div class="simf-form__grid-item--full">
+                                    <SimfTextarea Label="Text (EN)" Rows="3" MaxLength="4000"
+                                                  Value="@item.Text" ValueChanged="@(v => item.Text = v)" Disabled="_busy" />
+                                </div>
+                                <div class="simf-form__grid-item--full">
+                                    <SimfTextarea Label="Text (AR)" Rows="3" MaxLength="4000"
+                                                  Value="@item.TextArabic" ValueChanged="@(v => item.TextArabic = v)" Disabled="_busy" />
+                                </div>
+                            </div>
+                        </RowTemplate>
+                    </SimfRepeater>
+                </SimfFormSection>
+
+                <SimfFormSection Number="8" Title="Details"
+                                 Hint="Name : value fact rows (e.g. Organiser, Edition, Dates). The label and value are each bilingual; leave Value (AR) blank for a language-neutral value like a year or a URL — the app then shows Value (EN).">
+                    <SimfRepeater TItem="DetailRow" Items="_model.Details" IndexLabel="Detail"
+                                  EmptyText="No details yet. Add a name / value fact row."
+                                  AddLabel="+ Add detail" Disabled="_busy"
+                                  OnAdd="AddDetail" OnRemove="RemoveDetail"
+                                  OnMove="@(m => MoveDetail(m.Item, m.Delta))">
+                        <RowTemplate Context="row">
+                            <div class="simf-form__grid">
+                                <SimfTextField Label="Name (EN)" MaxLength="256" @bind-Value="row.Name" Disabled="_busy" />
+                                <SimfTextField Label="Name (AR)" MaxLength="256" @bind-Value="row.NameArabic" Disabled="_busy" />
+                                <SimfTextField Label="Value (EN)" MaxLength="1024" @bind-Value="row.Value" Disabled="_busy" />
+                                <SimfTextField Label="Value (AR)" MaxLength="1024" @bind-Value="row.ValueArabic" Disabled="_busy" />
+                            </div>
+                        </RowTemplate>
+                    </SimfRepeater>
+                </SimfFormSection>
+
                 <div class="simf-form__actions">
                     <AuthorizedAction Permission="@PermissionCatalog.OrganizationProfile.Manage">
                         <SimfButton Loading="_busy" LoadingLabel="@L["Admin.OrganizationProfile.Saving"]">

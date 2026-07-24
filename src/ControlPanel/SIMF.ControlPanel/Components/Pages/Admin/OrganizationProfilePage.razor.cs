@@ -90,12 +90,28 @@ public partial class OrganizationProfilePage
         _model.Details = d.Details
             .Select(x => new DetailRow
             {
-                Id = x.Id, Name = x.Name, NameArabic = x.NameArabic, Value = x.Value,
+                Id = x.Id, Name = x.Name, NameArabic = x.NameArabic,
+                Value = x.Value, ValueArabic = x.ValueArabic ?? string.Empty,
             }).ToList();
     }
 
     private void AddAbout() => _model.AboutItems.Add(new AboutRow());
+    private void RemoveAbout(AboutRow row) => _model.AboutItems.Remove(row);
+    private void MoveAbout(AboutRow row, int delta) => Move(_model.AboutItems, row, delta);
+
     private void AddDetail() => _model.Details.Add(new DetailRow());
+    private void RemoveDetail(DetailRow row) => _model.Details.Remove(row);
+    private void MoveDetail(DetailRow row, int delta) => Move(_model.Details, row, delta);
+
+    // Swap a row with its neighbour so the admin can reorder the list; the array
+    // index becomes the persisted DisplayOrder on save.
+    private static void Move<T>(List<T> list, T row, int delta)
+    {
+        var i = list.IndexOf(row);
+        var j = i + delta;
+        if (i < 0 || j < 0 || j >= list.Count) { return; }
+        (list[i], list[j]) = (list[j], list[i]);
+    }
 
     private async Task SaveAsync()
     {
@@ -146,7 +162,7 @@ public partial class OrganizationProfilePage
                     .Select((x, i) => new AdminOrganizationDetail
                     {
                         Id = x.Id, Name = x.Name, NameArabic = x.NameArabic,
-                        Value = x.Value, DisplayOrder = i,
+                        Value = x.Value, ValueArabic = x.ValueArabic, DisplayOrder = i,
                     }).ToList(),
             };
 
@@ -233,5 +249,6 @@ public partial class OrganizationProfilePage
         public string Name { get; set; } = string.Empty;
         public string NameArabic { get; set; } = string.Empty;
         public string Value { get; set; } = string.Empty;
+        public string ValueArabic { get; set; } = string.Empty;
     }
 }
