@@ -85,8 +85,12 @@ void main() {
       final repo = FakeContactsRepo(token: 'OLD', rotatedToken: 'NEW');
       await _pump(tester, repo);
 
-      // Open the confirm dialog (the screen's rotate button is a TextButton).
-      await tester.tap(find.widgetWithText(TextButton, 'Rotate code'));
+      // Open the confirm dialog — the rotate button is an OutlinedButton below
+      // the fold, so scroll it into view before tapping.
+      final rotateButton = find.widgetWithText(OutlinedButton, 'Rotate code');
+      await tester.ensureVisible(rotateButton);
+      await tester.pumpAndSettle();
+      await tester.tap(rotateButton);
       await tester.pumpAndSettle();
       // Confirm (the dialog's confirm button is a FilledButton).
       await tester.tap(find.widgetWithText(FilledButton, 'Rotate code'));
@@ -102,7 +106,10 @@ void main() {
       final repo = FakeContactsRepo(token: 'OLD', rotatedToken: 'NEW');
       await _pump(tester, repo);
 
-      await tester.tap(find.widgetWithText(TextButton, 'Rotate code'));
+      final rotateButton = find.widgetWithText(OutlinedButton, 'Rotate code');
+      await tester.ensureVisible(rotateButton);
+      await tester.pumpAndSettle();
+      await tester.tap(rotateButton);
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
       await tester.pumpAndSettle();
