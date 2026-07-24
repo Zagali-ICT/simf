@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_page_shell.dart';
@@ -40,6 +41,7 @@ class SponsorCard extends StatelessWidget {
     // (925:2979 `text-white`) and the navy premium card; only the secondary
     // line changes colour with the card.
     final Color subColor = hero ? SimfTokens.navyDeep : SimfTokens.beigeBorder;
+    final flip = !AppL10n.of(context).isArabic;
     return SimfCard(
       onTap: onTap,
       color: hero ? SimfTokens.accent : SimfTokens.navyDeep,
@@ -106,12 +108,17 @@ class SponsorCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: SimfTokens.space2),
-              SimfSvgIcon(
-                // Frame 925:2990 — the iconamoon thin chevron (navy on the gold
-                // hero card, gold on a premium card), NOT a filled triangle.
-                AppAssets.icBack,
-                size: 20,
-                color: hero ? SimfTokens.navy : SimfTokens.accent,
+              // The bundled SVG does not auto-mirror under RTL, so flip
+              // horizontally in English so the caret points forward (→ in LTR).
+              Transform.flip(
+                flipX: flip,
+                child: SimfSvgIcon(
+                  // Frame 925:2990 — the iconamoon thin chevron (navy on the gold
+                  // hero card, gold on a premium card), NOT a filled triangle.
+                  AppAssets.icBack,
+                  size: 20,
+                  color: hero ? SimfTokens.navy : SimfTokens.accent,
+                ),
               ),
             ],
           ),
