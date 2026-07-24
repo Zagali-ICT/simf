@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/widgets/simf_app_shell.dart';
+import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 import 'package:simf_app/core/organization_profile/organization_profile.dart';
@@ -13,6 +15,7 @@ import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_app/features/banners/data/banner_models.dart';
 import 'package:simf_app/features/banners/data/banners_repository.dart';
 import 'package:simf_app/features/home/home_screen.dart';
+import 'package:simf_app/features/live/data/current_live_session.dart';
 import 'package:simf_app/features/myarea/data/myarea_models.dart';
 import 'package:simf_app/features/news/data/news_models.dart';
 import 'package:simf_app/features/news/news_screen.dart' show newsListProvider;
@@ -190,6 +193,7 @@ Future<void> _pump(
   OrgSocial social = _allSocial,
   String? website,
   bool isVip = false,
+  void Function(int tabIndex)? onSwitchTab,
 }) async {
   final router = GoRouter(
     initialLocation: '/',
@@ -197,7 +201,12 @@ Future<void> _pump(
       GoRoute(
         name: RouteNames.home,
         path: '/',
-        builder: (c, s) => const HomeScreen(),
+        // The greeting-avatar / back affordances switch the shell tab via
+        // SimfShellScope, so provide one (a no-op unless a test records it).
+        builder: (c, s) => SimfShellScope(
+          switchTab: onSwitchTab ?? (_) {},
+          child: const HomeScreen(),
+        ),
       ),
       for (final (name, path, label) in <(String, String, String)>[
         (RouteNames.sessions, '/sessions', 'SESSIONS'),
@@ -240,6 +249,9 @@ Future<void> _pump(
         currentUserMeetingAccessProvider.overrideWith(
           (ref) => MeetingAccess(speaker: isVip, delegation: isVip),
         ),
+        // The home LIVE banner resolves the currently-live session id on tap
+        // (D-757); override it (no live session) so a tap never hits the network.
+        currentLiveSessionIdProvider.overrideWith((ref) async => null),
         simfDataConfigProvider.overrideWithValue(_testConfig),
         notificationsRepositoryProvider
             .overrideWithValue(_FakeNotificationsRepository(unread)),
@@ -559,13 +571,20 @@ void main() {
       expect(find.text('NOTIFICATIONS'), findsOneWidget);
     });
 
-    testWidgets('tapping the greeting avatar opens My Area (owner 2026-06-27)',
-        (tester) async {
-      await _pump(tester, controller: _SignedInController());
+    testWidgets('tapping the greeting avatar switches to the Profile tab '
+        '(owner 2026-06-27)', (tester) async {
+      int? switchedTo;
+      await _pump(
+        tester,
+        controller: _SignedInController(),
+        onSwitchTab: (index) => switchedTo = index,
+      );
 
+      // The avatar is an in-shell affordance (SimfShellScope): it switches the
+      // bottom nav to the Profile tab (= My Area), it does not push a route.
       await tester.tap(find.byType(SimfAvatar));
       await tester.pumpAndSettle();
-      expect(find.text('MY-AREA'), findsOneWidget);
+      expect(switchedTo, tabIndex(SimfTab.profile));
     });
 
     testWidgets('the live banner opens the live broadcast', (tester) async {
