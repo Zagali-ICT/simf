@@ -39,10 +39,14 @@ stretch edge-to-edge on a tablet — §13.7) holds, in order:
 4. **الجنس** — `GenderPillsField` (ذكر / أنثى; default Male).
 5. **الجهة / Organisation** (`SimfPickerField` typeahead → `LookupSearchSheet`) —
    **required** (B3 / D-221).
-6. **المسمى الوظيفي** — job title (**required**, D-723), followed by **المسمى
-   الوظيفي (بالعربية)** — the Arabic job title (`SimfLabeledTextField`, RTL,
-   **optional**, backlog #37; persists `UserProfile.JobTitleArabic`, which the
-   backend + CP already carry).
+6. **المسمى الوظيفي (بالإنجليزية)** — English job title (**required**, D-723;
+   Latin letters + spaces only, filtered at the keystroke, LTR), followed by
+   **المسمى الوظيفي (بالعربية)** — the Arabic job title (`SimfLabeledTextField`,
+   RTL, Arabic letters + spaces only, **optional**, backlog #37; persists
+   `UserProfile.JobTitleArabic`, which the backend + CP already carry). Both
+   labels now carry the language marker and each field takes the same per-script
+   keystroke filter as the matching name field, so neither can hold the other's
+   script.
 7. **الجنسية** — searchable country sheet (default SA). The pick **drives the
    document path** (D-373): SA → national-ID; else Iqama / Passport tabs + number.
 8. **document fields** (`_buildDocumentFields`).
