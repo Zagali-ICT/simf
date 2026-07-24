@@ -109,12 +109,6 @@ class VisitorHome extends StatelessWidget {
                 );
               },
             ),
-            onTap: () => context.pushNamed(
-              RouteNames.liveBroadcast,
-              queryParameters: <String, String>{
-                RouteParams.liveUrl: 'asset:assets/videos/onboard_01.mp4',
-              },
-            ),
           ),
           const SizedBox(height: SimfTokens.space6),
           // Exhibitor (العارض) lead-capture tools — D-519. Shown only to the
@@ -148,7 +142,7 @@ class VisitorHome extends StatelessWidget {
           const SizedBox(height: SimfTokens.space6),
           // About tiles (frame 758:1215, h72) — a 4-up grid of the shared tile,
           // the same SimfNavTile reused as grid columns. Right→left under RTL:
-          // المتحدثون · الأجنحة · الوٝود · جلسات.
+          // المتحدثون · الأجنحة · الوفود · جلسات.
           SimfTileRow(
             children: <Widget>[
               SimfNavTile(
@@ -162,7 +156,7 @@ class VisitorHome extends StatelessWidget {
                 iconAsset: HomeIcons.booths,
                 onTap: () => context.pushNamed(RouteNames.booths),
               ),
-              // الوٝود — delegations sits in the about row (frame 758:1220) with
+              // الوفود — delegations sits in the about row (frame 758:1220) with
               // the design's exact formkit:people glyph (node 1408:10399).
               SimfNavTile(
                 label: l10n.delegationsTitle,
@@ -192,10 +186,10 @@ class VisitorHome extends StatelessWidget {
             onTap: () => context.pushNamed(RouteNames.sendQuestion),
           ),
           const SizedBox(height: SimfTokens.space6),
-          // News tiles (758:1228, h80): right→left اللقاءات الثنائية · الأرشيٝ.
+          // News tiles (758:1228, h80): right→left اللقاءات الثنائية · الأرشيف.
           // D-745 — "اللقاءات الثنائية" now opens the VIP-only bilateral-meetings
           // page ([RouteNames.meetings], Figma 1408:9726) and is hidden for
-          // non-VIP; the requests history moved to My-Area. When hidden, الأرشيٝ
+          // non-VIP; the requests history moved to My-Area. When hidden, الأرشيف
           // fills the row on its own (SimfTileRow expands each child).
           SimfTileRow(
             children: <Widget>[
@@ -292,7 +286,7 @@ class VisitorHome extends StatelessWidget {
             ),
           ],
           const SizedBox(height: SimfTokens.space6),
-          // "اكتشٝ" (758:1270) — header + the روح السعودية discover row.
+          // "اكتشف" (758:1270) — header + the روح السعودية discover row.
           SimfSectionHeader(title: l10n.discoverSection),
           const SizedBox(height: SimfTokens.space4),
           DiscoverSaudiRow(l10n: l10n),

@@ -108,9 +108,9 @@ void main() {
             name: 'أحمد محمد',
             baseUrl: _baseUrl,
             highlights: _highlights,
-            // VIP so the "اللقاءات الثنائية" tile renders (matches the Figma home
-            // 758:1134, which shows it) — D-745.
-            isVip: true,
+            // Meeting-eligible so the "اللقاءات الثنائية" tile renders (matches the
+            // Figma home 758:1134, which shows it) — D-745.
+            canRequestMeetings: true,
           ),
         ),
       ),
