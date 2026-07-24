@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/core/organization_profile/organization_profile.dart';
 import 'package:simf_app/features/banners/data/banner_models.dart';
-import 'package:simf_app/features/home/widgets/carousel_dots.dart';
 import 'package:simf_app/features/home/widgets/home_hero_banner.dart';
 
 OrgProfile _edition() => OrgProfile(
@@ -21,15 +20,6 @@ OrgProfile _edition() => OrgProfile(
       social: const OrgSocial(),
       aboutItems: const <OrgAboutItem>[],
       details: const <OrgDetail>[],
-    );
-
-PublicBannerItem _banner(String id) => PublicBannerItem(
-      id: id,
-      title: '',
-      titleArabic: '',
-      body: '',
-      bodyArabic: '',
-      displayOrder: 0,
     );
 
 Widget _harness({
@@ -68,7 +58,6 @@ Future<void> _pumpHero(
   await tester.pumpWidget(
     _harness(profile: profile, banners: banners, locale: locale),
   );
-  // pump (NOT pumpAndSettle) — a multi-banner hero auto-advances on a timer.
   await tester.pump(const Duration(milliseconds: 100));
 }
 
@@ -90,63 +79,15 @@ void main() {
       expect(find.textContaining('الرياض'), findsOneWidget);
     });
 
-    testWidgets('no banners + no edition → static discover fallback, no dots',
+    testWidgets('video unavailable → static discover fallback image',
         (tester) async {
       await _pumpHero(
         tester,
         profile: null,
         banners: const <PublicBannerItem>[],
       );
+      // No PageView, no carousel — the hero is a static image now.
       expect(find.byType(PageView), findsNothing);
-      expect(find.byType(CarouselDots), findsNothing);
-    });
-
-    testWidgets('multiple banners → a rotating PageView with position dots',
-        (tester) async {
-      await _pumpHero(
-        tester,
-        profile: _edition(),
-        banners: <PublicBannerItem>[
-          _banner('a'),
-          _banner('b'),
-          _banner('c'),
-        ],
-      );
-      expect(find.byType(PageView), findsOneWidget);
-      expect(find.byType(CarouselDots), findsOneWidget);
-      // The edition overlay still rides over the rotating images.
-      expect(
-        find.textContaining('الملتقى البحري السعودي الدولي الرابع'),
-        findsOneWidget,
-      );
-    });
-
-    testWidgets('banners arriving after the empty first frame auto-advance',
-        (tester) async {
-      // First frame: the async provider is still loading → no banners.
-      await tester.pumpWidget(
-        _harness(profile: _edition(), banners: const <PublicBannerItem>[]),
-      );
-      await tester.pump();
-      expect(find.byType(PageView), findsNothing);
-
-      // The list resolves → HomeScreen rebuilds in place (State reused, no key),
-      // so didUpdateWidget must (re)start the timer that initState skipped when
-      // the list was empty. Regression guard for the "hero never rotates" bug.
-      await tester.pumpWidget(
-        _harness(
-          profile: _edition(),
-          banners: <PublicBannerItem>[_banner('a'), _banner('b')],
-        ),
-      );
-      await tester.pump();
-      expect(find.byType(PageView), findsOneWidget);
-
-      // The auto-advance fires after the 4s interval and animates to page 1.
-      await tester.pump(const Duration(seconds: 4));
-      await tester.pump(const Duration(milliseconds: 600));
-      final pageView = tester.widget<PageView>(find.byType(PageView));
-      expect(pageView.controller!.page, closeTo(1, 0.01));
     });
 
     testWidgets('English overlay uses the English edition fields',
