@@ -153,6 +153,26 @@ class AppL10n {
             '• at least one digit\n'
             '• at least one special character',
       );
+  String get passwordLength => _t(
+        'من ٨ إلى ١٢٨ حرفًا',
+        '8 to 128 characters',
+      );
+  String get passwordUppercase => _t(
+        'حرف كبير واحد على الأقل',
+        'at least one upper-case letter',
+      );
+  String get passwordLowercase => _t(
+        'حرف صغير واحد على الأقل',
+        'at least one lower-case letter',
+      );
+  String get passwordDigit => _t(
+        'رقم واحد على الأقل',
+        'at least one digit',
+      );
+  String get passwordSpecial => _t(
+        'رمز خاص واحد على الأقل',
+        'at least one special character',
+      );
   String get signUpCheckEmail =>
       _t('تحقق من بريدك الإلكتروني', 'Check your email');
 
