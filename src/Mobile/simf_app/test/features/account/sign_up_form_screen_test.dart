@@ -239,6 +239,37 @@ void main() {
       expect(controller.signUpCalled, isFalse);
     });
 
+    testWidgets('the weak-password error renders the full checklist — one rule '
+        'per line, never truncated', (tester) async {
+      final controller = _FakeSignUpController();
+      await _pump(tester, controller: controller);
+
+      await _fill(
+        tester,
+        email: 'visitor@example.sa',
+        password: 'short',
+        confirm: 'short',
+      );
+      await _tapCreate(tester);
+
+      // The error is one Text carrying every rule on its own line — proof it is
+      // neither collapsed to a single line nor clipped with an ellipsis.
+      final errorFinder = find.textContaining('Your password must meet');
+      expect(errorFinder, findsOneWidget);
+      final message = tester.widget<Text>(errorFinder).data!;
+      expect(message.split('\n').length, greaterThanOrEqualTo(6));
+      for (final rule in const <String>[
+        '8 to 128 characters',
+        'at least one upper-case letter',
+        'at least one lower-case letter',
+        'at least one digit',
+        'at least one special character',
+      ]) {
+        expect(message, contains(rule));
+      }
+      expect(controller.signUpCalled, isFalse);
+    });
+
     testWidgets('a wire failure surfaces the message and keeps the form',
         (tester) async {
       final controller = _FakeSignUpController(
