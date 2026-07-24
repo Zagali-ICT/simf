@@ -14,3 +14,6 @@ IN MOBILE APP:
 
 [x] on main now, the session show session summary, and session sumary show my session (in my profile)
 [x] request meeting , this in speakers list on slect one, add   select datetime from  Available time, no need for name,and then will show in cp and wait for approve
+
+[]add in button list add into vistor and vip and other and add bulk, add bulck must show , seslect orginzation,country and most important data, then in row: ,dropdown(profile type) list and count(users) and then add btn to save then send to email all bulks qr.
+[]delegate must be as vistor and vip and other, show list an then2 btn 
