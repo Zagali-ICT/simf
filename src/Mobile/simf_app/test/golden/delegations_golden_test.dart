@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/app_theme.dart';
 import 'package:simf_app/features/delegations/data/delegation_models.dart';
+import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_app/features/delegations/data/delegations_repository.dart';
 import 'package:simf_app/features/delegations/delegations_screen.dart';
 
@@ -86,6 +87,11 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: <Override>[
+          // The public screen reads the meeting-access flags for card
+          // tappability; a guest (none) keeps the plain info cards (matches the
+          // delegations widget-test harness).
+          currentUserMeetingAccessProvider
+              .overrideWith((ref) => MeetingAccess.none),
           delegationsProvider.overrideWith((ref) async => _delegations),
         ],
         child: MaterialApp(
