@@ -166,6 +166,13 @@ an environment that mirrors Production.
 - A feature is accepted at its sprint demo when its acceptance criteria pass and
   the client signs off (SIMF-PGP-001).
 - UAT sign-off is recorded and is part of the test deliverables.
+- The owner's prioritised acceptance journeys are catalogued as a living round in
+  [`tests/SIMF-Owner-Acceptance-Round-2026-07.md`](tests/SIMF-Owner-Acceptance-Round-2026-07.md)
+  (`E2E-OA-01..09`): welcome/greeting name, sign-in/out/session, rating triggers,
+  dynamic forum dates, meeting request + speaker email, the 15-minute reminder and
+  hall check-in, session attendance + seat reservation, data entry + filter + AI,
+  and live stream + rating. Each journey is grounded in the source and carries the
+  candidate defects surfaced while grounding it (`OA-D1..D6`).
 
 ## 13. Defect management
 

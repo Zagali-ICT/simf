@@ -54,6 +54,7 @@
 | E2E-MOB014-009 | KSA layout: language tile toggles AR/EN; theme tile visible but disabled | happy | P1 | authored ✓ (screen — disabled palette + no tap) |
 | E2E-MOB014-010 | ~~مشاركة ملفي opens the share-my-contact QR screen~~ — **🗑️ REMOVED (#21, owner):** the مشاركة ملفي pill was a duplicate of مشاركة جهة اتصال (same QR-screen nav) and was dropped; see E2E-MOB014-016 | happy | — | removed ✓ (screen asserts مشاركة ملفي is absent) |
 | E2E-MOB014-016 | **مشاركة جهة اتصال opens the share-my-contact QR screen (#21):** the single share-contact pill (and the identity-card مشاركة button) navigate to `RouteNames.shareMyContact`; the old native `.vcf` OS share sheet and the duplicate مشاركة ملفي pill are both gone | happy | P2 | authored ✓ (screen — tapping "Share contact" routes to the QR screen; مشاركة ملفي absent) |
+| E2E-MOB014-017 | **Header back chevron → Home (bug fix):** on the Profile tab of the bottom-nav shell the header back chevron returns to the **Home** tab. Previously it was a dead no-op — an in-shell tab never leaves the shell's `/` location, so `backOrHome`'s `goNamed(home)` navigated to `/` while already there | nav | P1 | authored ✓ (`simf_page_shell_test` — `backOrHome on an in-shell tab (nothing to pop) switches the shell to the Home tab`) |
 | E2E-MOB014-011 | ~~Photos-only profile edit (D-437): "Update ID photo" row~~ — **🗑️ REMOVED (D-654, owner):** the "تحديث صورة الهوية" row is gone from My Area; the face photo (avatar) is still changed via the tap-the-avatar flow (`_changeAvatar`) | happy | — | removed ✓ (screen asserts the row is absent) |
 | E2E-MOB014-012 | **Face-ID toggle (D-445):** the المزيد section shows an enable/disable **"Face ID sign-in"** switch that **self-hides when the device has no usable biometric**; turning it on enrols a device key (+ success toast); turning it **off first asks to confirm the permanent delete** ("…permanently deleted from this device") and only revokes after the user taps **Delete** (Cancel keeps the key). Mirrored in the side menu. | happy | P1 | authored ✓ (widget — `FaceIdToggleTile` hidden-when-unavailable / on→enrol+flip / off→confirm→revoke+flip / cancel→keep) |
 | E2E-MOB014-013 | **جدولي اليوم grouping (758:1283, D-447):** the schedule splits into a "جلسات" group then a "مقابلات" group, each under its gold sub-header; both empty → the no-items placeholder | i18n/visual | P1 | authored ✓ (screen — groups + RTL `dy` order: sessions above meetings) |
@@ -257,6 +258,26 @@ Scenario: Arabic card renders right-to-left
   And the badge QR is hidden when qrId is null (not yet approved)
 ```
 
+### E2E-MOB014-017 — Header back chevron returns to Home
+
+```gherkin
+Scenario: The back chevron on the Profile tab returns to Home
+  Given the user is on the Profile tab of the bottom-nav shell
+  When they tap the back chevron in the header
+  Then the shell switches to the Home tab
+```
+
+> The five bottom-nav tabs render inside `SimfAppShell`'s IndexedStack at the
+> shell's `/` location, so `context.canPop()` is false and the old
+> `goNamed(home)` was a no-op (navigating to `/` while already at `/`). The
+> shared `backOrHome` now switches the shell tab to Home when it can't pop.
+
+**Evidence:** `simf_page_shell_test.dart` — `backOrHome on an in-shell tab
+(nothing to pop) switches the shell to the Home tab`.
+
 ---
 
-_Last reviewed:_ `2026-06-19` by `SIMF Team` (D-447).
+_Last reviewed:_ `2026-07-24` by `SIMF Team` — **bug fix: the header back chevron
+on the in-shell Profile tab was a dead no-op; the shared `backOrHome` now switches
+the shell to the Home tab when there is nothing to pop (E2E-MOB014-017).**
+_Prior:_ `2026-06-19` by `SIMF Team` (D-447).
