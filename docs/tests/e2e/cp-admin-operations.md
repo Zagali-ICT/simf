@@ -17,7 +17,7 @@
 > controls:
 >
 > 1. **Registration gate → "Registration is open"** checkbox (`_gateIsOpen`).
-> 2. **Registration gate → "Auto-close (UTC)"** `datetime-local` field (`_gateAutoCloseInput`).
+> 2. **Registration gate → "Auto-close (Saudi time)"** `datetime-local` field (`_gateAutoCloseInput`).
 > 3. **Registration gate → "Save"** button → `SaveGateAsync` → `PUT /account/api/admin/registration-gate`.
 > 4. **Archive visibility → "Archive is visible to the public"** checkbox (`_archiveIsVisible`).
 > 5. **Archive visibility → "Save"** button → `SaveArchiveAsync` → `PUT /account/api/admin/archive/visibility`.
@@ -34,11 +34,11 @@
 | ID | Scenario | Type | Priority | Status |
 |----|----------|------|----------|--------|
 | E2E-OPS-001 | Golden round-trip — toggle registration gate closed → save → reload → reopen → save | happy | P0 | _to author_ |
-| E2E-OPS-002 | Schedule auto-close — set "Auto-close (UTC)" → save → field round-trips | happy | P1 | _to author_ |
+| E2E-OPS-002 | Schedule auto-close — set "Auto-close (Saudi time)" → save → field round-trips | happy | P1 | _to author_ |
 | E2E-OPS-003 | Toggle archive visibility — hide → save → public `GET /archive/visibility` reflects `IsVisible=false` | happy | P0 | _to author_ |
 | E2E-OPS-004 | Auth gate — admin lacking `Operations.View` → `/not-permitted` | auth | P0 | _to author_ |
 | E2E-OPS-005 | Edit gate — View-only admin can load but Save is rejected (403 → fallback toast) | auth | P0 | _to author_ |
-| E2E-OPS-006 | Validation — malformed "Auto-close (UTC)" → client bilingual error, no PUT fires | error | P1 | _to author_ |
+| E2E-OPS-006 | Validation — malformed "Auto-close (Saudi time)" → client bilingual error, no PUT fires | error | P1 | _to author_ |
 | E2E-OPS-007 | Idempotent no-op — Save with no change writes no audit row + still shows success toast | edge | P2 | _to author_ |
 | E2E-OPS-008 | Singleton self-heal — missing seed row → page loads a default (open / visible), no error | edge | P2 | _to author_ |
 | E2E-OPS-009 | Server 500 on load — `GET registration-gate` 500 → bilingual load-failed toast | resilience | P2 | _to author_ |
@@ -103,8 +103,8 @@ Scenario: Close registration, persist across reload, then reopen
 ```gherkin
 Scenario: Set a future auto-close moment and confirm it round-trips
   Given the "Registration is open" checkbox is TICKED
-  And the "Auto-close (UTC)" field is empty
-  When the administrator types a future UTC datetime into "Auto-close (UTC)"
+  And the "Auto-close (Saudi time)" field is empty
+  When the administrator types a future UTC datetime into "Auto-close (Saudi time)"
     (e.g. "2026-12-31T23:59")
   And clicks "Save" in the Registration gate section
   Then the BFF forwards PUT /account/api/admin/registration-gate
@@ -113,7 +113,7 @@ Scenario: Set a future auto-close moment and confirm it round-trips
   And the green "Registration gate updated." toast appears
 
   When the administrator reloads /admin/operations
-  Then the "Auto-close (UTC)" field is pre-filled with "2026-12-31T23:59"
+  Then the "Auto-close (Saudi time)" field is pre-filled with "2026-12-31T23:59"
     (the page formats AutoCloseUtc as "yyyy-MM-ddTHH:mm")
 
   # Past auto-close behaviour (verified at the API layer, see OperationsTogglesTests):
@@ -204,7 +204,7 @@ Scenario: A View-only admin loads both sections but Save is rejected
 Scenario: A malformed Auto-close value is rejected client-side before any PUT
   Given the Registration gate section is loaded
   When the administrator enters a value that DateTime.TryParse cannot read
-    into "Auto-close (UTC)" (e.g. via a forced non-date string)
+    into "Auto-close (Saudi time)" (e.g. via a forced non-date string)
   And clicks "Save" in the Registration gate section
   Then a red SimfAlert reads
     "Auto-close must be a valid UTC datetime." / "يجب أن يكون الإغلاق التلقائي وقتاً UTC صحيحاً."
@@ -297,7 +297,7 @@ Scenario: Arabic toggle mirrors the whole page
   And the SimfBanner title reads "مفاتيح التشغيل"
   And the Registration gate heading reads "بوّابة التسجيل"
   And the gate checkbox label reads "التسجيل مفتوح"
-  And the "Auto-close (UTC)" label reads "الإغلاق التلقائي (UTC)"
+  And the "Auto-close (Saudi time)" label reads "الإغلاق التلقائي (بتوقيت السعودية)"
   And the Archive visibility heading reads "إظهار الأرشيف"
   And the archive checkbox label reads "الأرشيف ظاهر للعموم"
   And both "Save" buttons read "حفظ"

@@ -66,7 +66,7 @@ Scenario: The monitor renders the active bookings
   Given the BFF POSTs /account/api/admin/bookings/list with a GridQuery
   And the API returns HTTP 200 with ApiResult.Success=true
   Then the grid shows a row with Session="Naval Logistics Forum", Seat="A1",
-    Attendee="Layla Al-Harbi", and the "Booked (UTC)" timestamp
+    Attendee="Layla Al-Harbi", and the "Booked (Saudi time)" timestamp
   And the summary line reads "Showing 1–{N} of {N}"
   And an info banner reads the monitor hint (bookings auto-confirm + 3-min no-show release)
   And no console error is logged
@@ -175,7 +175,7 @@ Scenario: Arabic toggle mirrors the monitor
   Then the page reloads with <html dir="rtl" lang="ar">
   And the SimfBanner title reads "مراقبة الحجوزات"
   And the info hint reads the Arabic monitor hint
-  And the column headers read "الجلسة", "تبدأ (UTC)", "المقعد", "الحاضر", "تاريخ الحجز (UTC)"
+  And the column headers read "الجلسة", "تبدأ (بتوقيت السعودية)", "المقعد", "الحاضر", "تاريخ الحجز (بتوقيت السعودية)"
   And the grid + nav rail mirror to RTL
 ```
 
@@ -205,7 +205,7 @@ Scenario: Typing into the Session column filter narrows the grid
 
 ```gherkin
 Scenario: Clicking a sortable header toggles ascending then descending
-  Given the "Session", "Starts (UTC)", "Seat" and "Booked (UTC)" headers are
+  Given the "Session", "Starts (Saudi time)", "Seat" and "Booked (Saudi time)" headers are
     sortable (the "Attendee" column is NOT sortable)
   When the administrator clicks the "Session" column header
   Then the BFF POSTs /account/api/admin/bookings/list with Sort="session",

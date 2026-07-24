@@ -38,7 +38,7 @@
 >
 > **AddEdit form fields (in render order):** Title (English), Title (Arabic),
 > Body (English), Body (Arabic), Image URL, Click-through URL,
-> Start (UTC) `datetime-local`, End (UTC) `datetime-local`, Display order
+> Start (Saudi time) `datetime-local`, End (Saudi time) `datetime-local`, Display order
 > `number`, and (Edit only) an **Active** checkbox. Submit button label is
 > **Save**; the create vs. edit branch is chosen by `_isEdit`.
 >
@@ -108,10 +108,10 @@ Scenario: Create, read-back via Edit, toggle Active, then delete one banner
   When the administrator clicks the grid's Add (+) toolbar action
   Then the Add modal opens titled "New banner"
   And it shows fields: Title (English), Title (Arabic), Body (English),
-      Body (Arabic), Image URL, Click-through URL, Start (UTC), End (UTC),
+      Body (Arabic), Image URL, Click-through URL, Start (Saudi time), End (Saudi time),
       Display order
   And the Active checkbox is NOT shown (it is Edit-only)
-  And Start (UTC) defaults to now and End (UTC) defaults to now + 1 day
+  And Start (Saudi time) defaults to now and End (Saudi time) defaults to now + 1 day
   And Display order defaults to "0"
 
   When they fill Title (English)="SIMF 2026 Keynote"
@@ -120,8 +120,8 @@ Scenario: Create, read-back via Edit, toggle Active, then delete one banner
   And they fill Body (Arabic)="تُفتح الأبواب الساعة 09:00 في القاعة الرئيسية."
   And they fill Image URL="/content/banners/keynote.png"
   And they fill Click-through URL="https://simf.example/agenda"
-  And they set Start (UTC)="2026-06-10T08:00"
-  And they set End (UTC)="2026-06-12T18:00"
+  And they set Start (Saudi time)="2026-06-10T08:00"
+  And they set End (Saudi time)="2026-06-12T18:00"
   And they fill Display order="5"
   And they click "Save"
   Then the BFF posts POST /account/api/admin/banners and the API returns 200
@@ -231,8 +231,8 @@ Scenario: Empty English or Arabic body returns BANNER_INVALID
 Scenario: End not after Start returns BANNER_INVALID_TIME_WINDOW
   Given the Add modal is open
   When the administrator fills both titles and both bodies
-  And sets Start (UTC)="2026-06-12T18:00"
-  And sets End (UTC)="2026-06-10T08:00"
+  And sets Start (Saudi time)="2026-06-12T18:00"
+  And sets End (Saudi time)="2026-06-10T08:00"
   And fills Display order="0"
   And clicks "Save"
   Then the BFF posts POST /account/api/admin/banners
@@ -261,7 +261,7 @@ Scenario: Negative Display order returns BANNER_INVALID
 ```gherkin
 Scenario: Unparseable Start/End is caught before any request fires
   Given the Add modal is open with all text fields filled
-  When the Start (UTC) or End (UTC) value cannot be parsed by DateTime.TryParse
+  When the Start (Saudi time) or End (Saudi time) value cannot be parsed by DateTime.TryParse
     (e.g. a cleared / malformed datetime-local value)
   And the administrator clicks "Save"
   Then SubmitAsync returns early WITHOUT posting to the BFF
@@ -278,7 +278,7 @@ Scenario: Edit re-reads the detail and pre-fills every field
   When the administrator clicks the row's Edit (pencil) icon action
   Then the BFF calls GET /account/api/admin/banners/{id} and returns 200
   And the Edit modal opens with Title (EN/AR), Body (EN/AR), Image URL,
-      Click-through URL, Start (UTC), End (UTC), Display order and the
+      Click-through URL, Start (Saudi time), End (Saudi time), Display order and the
       Active checkbox all populated from AdminBannerDetail
   And the Start/End values render as yyyy-MM-ddTHH:mm in the datetime-local inputs
 ```

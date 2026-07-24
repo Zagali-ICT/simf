@@ -49,7 +49,7 @@
 | `code` | Code | ✓ | ✓ |
 | `title` | Session | ✓ | ✓ |
 | `hall` | Hall | — | — |
-| `startUtc` | Start (UTC) | ✓ | — |
+| `startUtc` | Start (Saudi time) | ✓ | — |
 | `total` | Total attendees | — | — |
 | `live` | Live now (`SimfPill` when > 0) | — | — |
 
@@ -202,7 +202,7 @@ Scenario: Typing into the Code / Session column filters narrows the grid
 
 ```gherkin
 Scenario: Sorting by Start, Code, then Session toggles ascending/descending
-  Given the grid is sorted by Start (UTC) ascending by default (Sort="startUtc")
+  Given the grid is sorted by Start (Saudi time) ascending by default (Sort="startUtc")
   When the administrator clicks the "Code" column header
   Then the list call carries Sort="code", SortDescending=false and the rows reorder by code A→Z
   When they click "Code" again
@@ -250,7 +250,7 @@ Scenario: Arabic toggle mirrors the dashboard
   Then the page reloads with <html dir="rtl" lang="ar">
   And the tab title is "حضور الجلسات · SIMF" and the banner reads "حضور الجلسات"
   And the tiles read "الحاضرون الآن", "جلسات بها حضور", "إجمالي الوصول"
-  And the grid headers read "الرمز", "الجلسة", "القاعة", "البداية (UTC)", "إجمالي الحضور", "الآن"
+  And the grid headers read "الرمز", "الجلسة", "القاعة", "البداية (بتوقيت السعودية)", "إجمالي الحضور", "الآن"
   And the grid + nav rail mirror right-to-left
 ```
 

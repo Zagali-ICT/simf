@@ -111,8 +111,8 @@
   <data name="Admin.SpeakerAvailability.Speaker" xml:space="preserve"><value>Speaker</value></data>
   <data name="Admin.SpeakerAvailability.PickSpeaker" xml:space="preserve"><value>Select a speaker…</value></data>
   <data name="Admin.SpeakerAvailability.AddWindow" xml:space="preserve"><value>Add an availability window</value></data>
-  <data name="Admin.SpeakerAvailability.Start" xml:space="preserve"><value>Start (UTC)</value></data>
-  <data name="Admin.SpeakerAvailability.End" xml:space="preserve"><value>End (UTC)</value></data>
+  <data name="Admin.SpeakerAvailability.Start" xml:space="preserve"><value>Start (Saudi time)</value></data>
+  <data name="Admin.SpeakerAvailability.End" xml:space="preserve"><value>End (Saudi time)</value></data>
   <data name="Admin.SpeakerAvailability.SlotMinutes" xml:space="preserve"><value>Slot length (minutes)</value></data>
   <data name="Admin.SpeakerAvailability.Add" xml:space="preserve"><value>Add window</value></data>
   <data name="Admin.SpeakerAvailability.Windows" xml:space="preserve"><value>Windows</value></data>
@@ -129,8 +129,8 @@
   <data name="Admin.DelegationAvailability.Country" xml:space="preserve"><value>Delegation (country)</value></data>
   <data name="Admin.DelegationAvailability.PickCountry" xml:space="preserve"><value>Select an invited country…</value></data>
   <data name="Admin.DelegationAvailability.AddWindow" xml:space="preserve"><value>Add an availability window</value></data>
-  <data name="Admin.DelegationAvailability.Start" xml:space="preserve"><value>Start (UTC)</value></data>
-  <data name="Admin.DelegationAvailability.End" xml:space="preserve"><value>End (UTC)</value></data>
+  <data name="Admin.DelegationAvailability.Start" xml:space="preserve"><value>Start (Saudi time)</value></data>
+  <data name="Admin.DelegationAvailability.End" xml:space="preserve"><value>End (Saudi time)</value></data>
   <data name="Admin.DelegationAvailability.SlotMinutes" xml:space="preserve"><value>Slot length (minutes)</value></data>
   <data name="Admin.DelegationAvailability.Add" xml:space="preserve"><value>Add window</value></data>
   <data name="Admin.DelegationAvailability.Windows" xml:space="preserve"><value>Windows</value></data>
@@ -169,8 +169,8 @@
   <data name="Admin.HallAvailability.Hall" xml:space="preserve"><value>Hall</value></data>
   <data name="Admin.HallAvailability.PickHall" xml:space="preserve"><value>Select a hall…</value></data>
   <data name="Admin.HallAvailability.AddWindow" xml:space="preserve"><value>Add an availability window</value></data>
-  <data name="Admin.HallAvailability.Start" xml:space="preserve"><value>Start (UTC)</value></data>
-  <data name="Admin.HallAvailability.End" xml:space="preserve"><value>End (UTC)</value></data>
+  <data name="Admin.HallAvailability.Start" xml:space="preserve"><value>Start (Saudi time)</value></data>
+  <data name="Admin.HallAvailability.End" xml:space="preserve"><value>End (Saudi time)</value></data>
   <data name="Admin.HallAvailability.SlotMinutes" xml:space="preserve"><value>Slot length (minutes)</value></data>
   <data name="Admin.HallAvailability.Add" xml:space="preserve"><value>Add window</value></data>
   <data name="Admin.HallAvailability.Windows" xml:space="preserve"><value>Windows</value></data>
@@ -1529,8 +1529,8 @@
   <data name="Admin.Sessions.Column.Title" xml:space="preserve"><value>Title</value></data>
   <data name="Admin.Sessions.Column.TitleArabic" xml:space="preserve"><value>Title (Arabic)</value></data>
   <data name="Admin.Sessions.Column.Hall" xml:space="preserve"><value>Hall</value></data>
-  <data name="Admin.Sessions.Column.StartUtc" xml:space="preserve"><value>Start (UTC)</value></data>
-  <data name="Admin.Sessions.Column.EndUtc" xml:space="preserve"><value>End (UTC)</value></data>
+  <data name="Admin.Sessions.Column.StartUtc" xml:space="preserve"><value>Start (Saudi time)</value></data>
+  <data name="Admin.Sessions.Column.EndUtc" xml:space="preserve"><value>End (Saudi time)</value></data>
   <data name="Admin.Sessions.Column.Capacity" xml:space="preserve"><value>Capacity</value></data>
   <data name="Admin.Sessions.Column.Active" xml:space="preserve"><value>Status</value></data>
   <data name="Admin.Sessions.Column.Actions" xml:space="preserve"><value>Actions</value></data>
@@ -1619,11 +1619,11 @@
   <data name="Admin.Bookings.None" xml:space="preserve"><value>No active bookings.</value></data>
   <data name="Admin.Bookings.MonitorHint" xml:space="preserve"><value>Bookings confirm instantly — there is no approval step. A reserved seat is released automatically if the visitor has not checked in 3 minutes before the session starts.</value></data>
   <data name="Admin.Bookings.Col.Session" xml:space="preserve"><value>Session</value></data>
-  <data name="Admin.Bookings.Col.Start" xml:space="preserve"><value>Starts (UTC)</value></data>
+  <data name="Admin.Bookings.Col.Start" xml:space="preserve"><value>Starts (Saudi time)</value></data>
   <data name="Admin.Bookings.Col.Seat" xml:space="preserve"><value>Seat</value></data>
   <data name="Admin.Bookings.GeneralAdmission" xml:space="preserve"><value>General admission</value></data>
   <data name="Admin.Bookings.Col.Attendee" xml:space="preserve"><value>Attendee</value></data>
-  <data name="Admin.Bookings.Col.BookedAt" xml:space="preserve"><value>Booked (UTC)</value></data>
+  <data name="Admin.Bookings.Col.BookedAt" xml:space="preserve"><value>Booked (Saudi time)</value></data>
   <data name="Admin.Bookings.Approve" xml:space="preserve"><value>Approve</value></data>
   <data name="Admin.Bookings.Reject" xml:space="preserve"><value>Reject</value></data>
   <data name="Admin.Bookings.ApproveSelected" xml:space="preserve"><value>Approve selected ({0})</value></data>
@@ -1769,9 +1769,9 @@
   <data name="Admin.Sessions.Field.HallRequired" xml:space="preserve"><value>Hall is required.</value></data>
   <data name="Admin.Sessions.Field.TypeRequired" xml:space="preserve"><value>A session type is required (Workshop, Session or Event).</value></data>
   <data name="Admin.Sessions.Field.SpeakerRequired" xml:space="preserve"><value>A non-event session must have at least one speaker.</value></data>
-  <data name="Admin.Sessions.Field.StartUtc" xml:space="preserve"><value>Start (UTC)</value></data>
-  <data name="Admin.Sessions.Field.EndUtc" xml:space="preserve"><value>End (UTC)</value></data>
-  <data name="Admin.Sessions.Field.TimeInvalid" xml:space="preserve"><value>Both start and end times must be valid UTC datetimes.</value></data>
+  <data name="Admin.Sessions.Field.StartUtc" xml:space="preserve"><value>Start (Saudi time)</value></data>
+  <data name="Admin.Sessions.Field.EndUtc" xml:space="preserve"><value>End (Saudi time)</value></data>
+  <data name="Admin.Sessions.Field.TimeInvalid" xml:space="preserve"><value>Both start and end times must be valid dates and times.</value></data>
   <data name="Admin.Sessions.Field.TimeWindowInvalid" xml:space="preserve"><value>End time must be after start time.</value></data>
   <data name="Admin.Sessions.Field.CapacityOverride" xml:space="preserve"><value>Capacity override</value></data>
   <data name="Admin.Sessions.Field.CapacityHint" xml:space="preserve"><value>Leave blank to inherit the hall's seat count. Set a value only if the room is reconfigured for this session.</value></data>
@@ -1805,9 +1805,9 @@
   <data name="Admin.Operations.RegistrationGate.Heading" xml:space="preserve"><value>Registration gate</value></data>
   <data name="Admin.Operations.RegistrationGate.Desc" xml:space="preserve"><value>Open or close public sign-up. When closed, the sign-up endpoint returns a typed 403 and no account row is created.</value></data>
   <data name="Admin.Operations.RegistrationGate.IsOpen" xml:space="preserve"><value>Registration is open</value></data>
-  <data name="Admin.Operations.RegistrationGate.AutoCloseUtc" xml:space="preserve"><value>Auto-close (UTC)</value></data>
+  <data name="Admin.Operations.RegistrationGate.AutoCloseUtc" xml:space="preserve"><value>Auto-close (Saudi time)</value></data>
   <data name="Admin.Operations.RegistrationGate.AutoCloseHint" xml:space="preserve"><value>Optional. The background worker flips the gate to closed the first minute after this moment. Leave blank for no scheduled close.</value></data>
-  <data name="Admin.Operations.RegistrationGate.AutoCloseInvalid" xml:space="preserve"><value>Auto-close must be a valid UTC datetime.</value></data>
+  <data name="Admin.Operations.RegistrationGate.AutoCloseInvalid" xml:space="preserve"><value>Auto-close must be a valid date and time.</value></data>
   <data name="Admin.Operations.RegistrationGate.LastChangedAt" xml:space="preserve"><value>Last changed</value></data>
   <data name="Admin.Operations.RegistrationGate.Saved" xml:space="preserve"><value>Registration gate updated.</value></data>
   <data name="Admin.Operations.Archive.Heading" xml:space="preserve"><value>Archive visibility</value></data>
@@ -2023,8 +2023,8 @@
   <data name="Admin.Banners.Field.BodyAr" xml:space="preserve"><value>Body (Arabic)</value></data>
   <data name="Admin.Banners.Field.ImageUrl" xml:space="preserve"><value>Image URL</value></data>
   <data name="Admin.Banners.Field.LinkUrl" xml:space="preserve"><value>Click-through URL</value></data>
-  <data name="Admin.Banners.Field.StartUtc" xml:space="preserve"><value>Start (UTC)</value></data>
-  <data name="Admin.Banners.Field.EndUtc" xml:space="preserve"><value>End (UTC)</value></data>
+  <data name="Admin.Banners.Field.StartUtc" xml:space="preserve"><value>Start (Saudi time)</value></data>
+  <data name="Admin.Banners.Field.EndUtc" xml:space="preserve"><value>End (Saudi time)</value></data>
   <data name="Admin.Banners.Field.DisplayOrder" xml:space="preserve"><value>Display order</value></data>
   <data name="Admin.Banners.Field.IsActive" xml:space="preserve"><value>Active</value></data>
   <data name="Admin.Banners.Submit" xml:space="preserve"><value>Save</value></data>
@@ -2692,7 +2692,7 @@
   <data name="Admin.Attendance.Col.Code" xml:space="preserve"><value>Code</value></data>
   <data name="Admin.Attendance.Col.Session" xml:space="preserve"><value>Session</value></data>
   <data name="Admin.Attendance.Col.Hall" xml:space="preserve"><value>Hall</value></data>
-  <data name="Admin.Attendance.Col.Start" xml:space="preserve"><value>Start (UTC)</value></data>
+  <data name="Admin.Attendance.Col.Start" xml:space="preserve"><value>Start (Saudi time)</value></data>
   <data name="Admin.Attendance.Col.TotalAttendees" xml:space="preserve"><value>Total attendees</value></data>
   <data name="Admin.Attendance.Col.LiveNow" xml:space="preserve"><value>Live now</value></data>
   <!-- 2026-07-18 — live per-session hall view (4-state seat map + who's present). -->
@@ -2718,7 +2718,7 @@
   <data name="Admin.SessionLiveHall.Col.Type" xml:space="preserve"><value>Type</value></data>
   <data name="Admin.SessionLiveHall.Col.JobTitle" xml:space="preserve"><value>Job title</value></data>
   <data name="Admin.SessionLiveHall.Col.Seat" xml:space="preserve"><value>Seat</value></data>
-  <data name="Admin.SessionLiveHall.Col.Entered" xml:space="preserve"><value>Entered (UTC)</value></data>
+  <data name="Admin.SessionLiveHall.Col.Entered" xml:space="preserve"><value>Entered (Saudi time)</value></data>
   <data name="Admin.SessionLiveHall.Col.Method" xml:space="preserve"><value>Method</value></data>
   <data name="Admin.SessionLiveHall.Method.QrScan" xml:space="preserve"><value>QR scan</value></data>
   <data name="Admin.SessionLiveHall.Method.Geofence" xml:space="preserve"><value>Geofence</value></data>
@@ -2952,8 +2952,8 @@
   <data name="Admin.BusinessMeetings.Field.Table" xml:space="preserve"><value>Table</value></data>
   <data name="Admin.BusinessMeetings.Field.TableChoose" xml:space="preserve"><value>— choose a table —</value></data>
   <data name="Admin.BusinessMeetings.Field.Type" xml:space="preserve"><value>Type</value></data>
-  <data name="Admin.BusinessMeetings.Field.Start" xml:space="preserve"><value>Start (UTC)</value></data>
-  <data name="Admin.BusinessMeetings.Field.End" xml:space="preserve"><value>End (UTC)</value></data>
+  <data name="Admin.BusinessMeetings.Field.Start" xml:space="preserve"><value>Start (Saudi time)</value></data>
+  <data name="Admin.BusinessMeetings.Field.End" xml:space="preserve"><value>End (Saudi time)</value></data>
   <data name="Admin.BusinessMeetings.Field.Participants" xml:space="preserve"><value>Participants</value></data>
   <data name="Admin.BusinessMeetings.Field.Notes" xml:space="preserve"><value>Notes</value></data>
   <data name="Admin.BusinessMeetings.Party.Company" xml:space="preserve"><value>Company</value></data>

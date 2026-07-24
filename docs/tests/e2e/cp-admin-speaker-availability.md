@@ -8,10 +8,11 @@
 | **Last reviewed** | 2026-06-20 (D-476 #11, Group G phase 1c) |
 
 > **What this page does (grounded in `SpeakerAvailabilityPage.razor`, D-474/D-476).**
-> The team defines a speaker's **availability windows** (Start/End UTC + slot length);
+> The team defines a speaker's **availability windows** (Start/End in Saudi time + slot length);
 > the VIP-meeting flow (D-475) chops each window into free slots a VIP can book. The
 > page: a speaker `<select>`, an **add-window** form (Start, End, slot minutes), and the
-> selected speaker's window list with delete. Gated by `SpeakerMeetingRequests.Manage`
+> selected speaker's window list with delete. The window list renders each start/end on the
+> Saudi wall clock in 12-hour form (e.g. `2026-11-20 10:00 AM – 10:30 AM`). Gated by `SpeakerMeetingRequests.Manage`
 > (page + nav + each action). API: `GET`/`POST /admin/speakers/{id}/availability-windows`,
 > `DELETE /admin/speaker-availability-windows/{id}` — covered by
 > `tests/SIMF.Api.Tests/SpeakerAvailabilityTests.cs` (4/4: create→list→2 slots;
