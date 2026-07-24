@@ -45,6 +45,22 @@ public sealed class PublicEditionsTests
     }
 
     [Fact]
+    public async Task GetAsync_falls_back_when_the_archive_has_no_items()
+    {
+        // A malformed / partial envelope can deserialize Items to null despite the
+        // non-nullable contract; GetAsync must serve the static Milestones fallback
+        // (same as the empty-archive path), not throw. Regression for DEF-003.
+        var handler = new NullItemsHandler();
+        var api = new SimfPublicClient(new HttpClient(handler) { BaseAddress = new Uri("https://api.test/") });
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var sut = new PublicEditions(api, cache);
+
+        var view = await sut.GetAsync();
+
+        Assert.Contains("2024", view.Editions[0].NavLabel.En);
+    }
+
+    [Fact]
     public void Build_orders_newest_first_with_aligned_anchor_href_label_and_latest_stats()
     {
         var view = PublicEditions.Build(new[]
@@ -120,6 +136,24 @@ public sealed class PublicEditionsTests
             {
                 Edition(2030, "SIMF", attendees: 100, sessions: 10, speakers: 20),
             }));
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = JsonContent.Create(
+                    JsonSerializer.Deserialize<object>(JsonSerializer.Serialize(archive, Web), Web)),
+            });
+        }
+    }
+
+    // Returns a 200 envelope whose archive carries a null Items list (a malformed /
+    // partial payload) — exercises the DEF-003 null-collection guard.
+    private sealed class NullItemsHandler : HttpMessageHandler
+    {
+        private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            var archive = ApiResult<PublicArchive>.Ok(new PublicArchive(null!));
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = JsonContent.Create(

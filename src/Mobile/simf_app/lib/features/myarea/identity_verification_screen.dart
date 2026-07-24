@@ -4,7 +4,7 @@ import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart'
-    show defaultTargetPlatform, kDebugMode, kIsWeb;
+    show defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show DeviceOrientation;
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
@@ -51,15 +51,6 @@ class _IdentityVerificationScreenState
   bool _processing = false;
   bool _cameraReady = false;
   bool _cameraFailed = false;
-
-  // TEMP diagnostic (remove before merge, D-XXX): show the live headEulerAngleY
-  // + its normalised value so the yaw-sign can be confirmed on-device in one
-  // DEBUG build. Double-gated: it only renders when BOTH this flag is on AND
-  // kDebugMode — so a release/production build never shows this security
-  // control's internal telemetry. The readout rides its own ValueNotifier so
-  // updating it does NOT rebuild the camera preview.
-  static const bool _kShowYawDebug = true;
-  final ValueNotifier<double?> _debugYaw = ValueNotifier<double?>(null);
 
   /// The challenge order is shuffled per session (D-422) so the sequence is not
   /// predictable — a fixed smile→right→left order is easier to defeat with a
@@ -153,15 +144,6 @@ class _IdentityVerificationScreenState
         return;
       }
       final face = faces.first;
-      if (_kShowYawDebug && kDebugMode) {
-        // Update the readout's own notifier (a >=1° throttle); no setState, so
-        // the camera preview is not rebuilt each frame.
-        final yaw = face.headEulerAngleY;
-        if (yaw != null &&
-            (_debugYaw.value == null || (yaw - _debugYaw.value!).abs() >= 1)) {
-          _debugYaw.value = yaw;
-        }
-      }
       if (!livenessStepSatisfied(
         _step,
         smilingProbability: face.smilingProbability,
@@ -362,7 +344,6 @@ class _IdentityVerificationScreenState
 
   @override
   void dispose() {
-    _debugYaw.dispose();
     unawaited(_stop());
     super.dispose();
   }
@@ -401,8 +382,6 @@ class _IdentityVerificationScreenState
                 stepIndex: _stepIndex,
                 stepCount: _sequence.length,
               ),
-            if (_kShowYawDebug && kDebugMode && !_cameraFailed)
-              _yawDebugOverlay(),
           ],
         ),
       ),
@@ -471,37 +450,4 @@ class _IdentityVerificationScreenState
     );
   }
 
-  // TEMP diagnostic (remove before merge, D-XXX); only ever built in a DEBUG
-  // build (kDebugMode-gated at the call site). Shows the raw ML Kit yaw, its
-  // normalised value (what the gate uses — positive should mean a physical RIGHT
-  // turn), the current step and the platform. Turn RIGHT on the device: "norm"
-  // should go positive toward +20. Only the readout text rebuilds (ValueNotifier),
-  // not the camera preview.
-  Widget _yawDebugOverlay() {
-    final invert =
-        livenessInvertYaw(defaultTargetPlatform, _frontCameraSensorOrientation);
-    final platform =
-        defaultTargetPlatform == TargetPlatform.iOS ? 'iOS' : 'Android';
-    return Positioned(
-      top: 8,
-      left: 8,
-      child: ValueListenableBuilder<double?>(
-        valueListenable: _debugYaw,
-        builder: (context, raw, _) {
-          final norm = raw == null ? null : (invert ? -raw : raw);
-          return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            color: Colors.black54,
-            child: Text(
-              'yaw ${raw?.toStringAsFixed(1) ?? "—"}  '
-              'norm ${norm?.toStringAsFixed(1) ?? "—"}  '
-              'step ${_step.name}  '
-              '$platform s$_frontCameraSensorOrientation inv:$invert',
-              style: const TextStyle(color: Colors.greenAccent, fontSize: 13),
-            ),
-          );
-        },
-      ),
-    );
-  }
 }

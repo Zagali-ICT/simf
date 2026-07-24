@@ -59,7 +59,7 @@ public partial class OrganizationProfilePage
         _model.SloganArabic = d.SloganArabic ?? string.Empty;
         _model.Bio = d.Bio ?? string.Empty;
         _model.BioArabic = d.BioArabic ?? string.Empty;
-        _model.CurrentYear = d.CurrentYear.ToString();
+        _model.CurrentYear = d.CurrentYear.ToString(CultureInfo.InvariantCulture);
         _model.Status = d.Status;
         _model.EventStartDate = DateString(d.EventStartDate);
         _model.EventEndDate = DateString(d.EventEndDate);
@@ -67,8 +67,8 @@ public partial class OrganizationProfilePage
         _model.SysVersion = d.SysVersion ?? string.Empty;
         _model.LocationText = d.LocationText ?? string.Empty;
         _model.LocationTextArabic = d.LocationTextArabic ?? string.Empty;
-        _model.Latitude = d.Latitude?.ToString() ?? string.Empty;
-        _model.Longitude = d.Longitude?.ToString() ?? string.Empty;
+        _model.Latitude = d.Latitude?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
+        _model.Longitude = d.Longitude?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
         _model.ContactPhone = d.ContactPhone ?? string.Empty;
         _model.ContactEmail = d.ContactEmail ?? string.Empty;
         _model.ContactWebsite = d.ContactWebsite ?? string.Empty;
@@ -130,7 +130,7 @@ public partial class OrganizationProfilePage
                 SloganArabic = _model.SloganArabic,
                 Bio = _model.Bio,
                 BioArabic = _model.BioArabic,
-                CurrentYear = int.TryParse(_model.CurrentYear, out var y) ? y : 0,
+                CurrentYear = int.TryParse(_model.CurrentYear, NumberStyles.Integer, CultureInfo.InvariantCulture, out var y) ? y : 0,
                 Status = _model.Status,
                 EventStartDate = ParseDate(_model.EventStartDate),
                 EventEndDate = ParseDate(_model.EventEndDate),
@@ -196,7 +196,7 @@ public partial class OrganizationProfilePage
         DateTimeOffset.TryParse(raw, out var d) ? d : null;
 
     private static decimal? ParseDecimal(string? raw) =>
-        decimal.TryParse(raw, out var v) ? v : null;
+        decimal.TryParse(raw, NumberStyles.Number, CultureInfo.InvariantCulture, out var v) ? v : null;
 
     private sealed class Model
     {

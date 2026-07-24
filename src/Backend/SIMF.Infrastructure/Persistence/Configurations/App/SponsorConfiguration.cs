@@ -29,8 +29,8 @@ internal sealed class SponsorConfiguration : IEntityTypeConfiguration<Sponsor>
         builder.Property(sponsor => sponsor.LogoRelativePath).HasMaxLength(256);
         builder.Property(sponsor => sponsor.Url).HasMaxLength(512);
 
-        // D-432 — optional bilingual tagline (≤256, mirrors the validator + CP
-        // MaxLength). Additive nullable columns (D-219 freeze-lift).
+        // D-432 — optional bilingual tagline (<=256, mirrors the service-layer
+        // validation + CP MaxLength). Additive nullable columns (D-219 freeze-lift).
         builder.Property(sponsor => sponsor.Tagline).HasMaxLength(256);
         builder.Property(sponsor => sponsor.TaglineArabic).HasMaxLength(256);
 

@@ -73,6 +73,39 @@ public sealed class PermissionEnforcementTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.Forbidden, denied.StatusCode);
     }
 
+    [Fact]
+    public async Task Create_admin_with_roles_requires_the_AssignRoles_permission()
+    {
+        // A creator granted Admins.Create but deliberately NOT Admins.AssignRoles
+        // must not be able to mint an elevated (Administrator) account by passing
+        // Roles on the create payload - that would bypass the separate role gate.
+        var token = await CreateAdminWithCustomRoleAsync(
+            grantedCodes: [PermissionCatalog.Admins.Create]);
+
+        var elevated = await PostAuthAsync(
+            "/api/v1/admin/admins",
+            new AdminCreateAdminRequest
+            {
+                Email = "priv.escalation@example.com",
+                DisplayName = "Priv Escalation",
+                Roles = new List<string> { AdministratorRole },
+            },
+            token);
+        Assert.Equal(HttpStatusCode.Forbidden, elevated.StatusCode);
+
+        // The same creator can still create a plain admin with no role grant.
+        var plain = await PostAuthAsync(
+            "/api/v1/admin/admins",
+            new AdminCreateAdminRequest
+            {
+                Email = "plain.newadmin@example.com",
+                DisplayName = "Plain Admin",
+                Roles = new List<string>(),
+            },
+            token);
+        Assert.Equal(HttpStatusCode.OK, plain.StatusCode);
+    }
+
     // Issue-29 — the build-time guard the CLAUDE.md HARD RULE promises but the
     // three behavioural [Fact]s above do not provide: they spot-check two
     // hardcoded routes, so a NEW admin endpoint that forgets its gate ships
