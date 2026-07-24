@@ -130,10 +130,10 @@ public partial class VenueMapAddEdit
             : VenueMapNodeKind.Hall;
 
     private void OnXChanged(ChangeEventArgs e) =>
-        _model.X = double.TryParse(e.Value?.ToString(), out var v) ? v : 0;
+        _model.X = double.TryParse(e.Value?.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var v) ? v : 0;
 
     private void OnYChanged(ChangeEventArgs e) =>
-        _model.Y = double.TryParse(e.Value?.ToString(), out var v) ? v : 0;
+        _model.Y = double.TryParse(e.Value?.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var v) ? v : 0;
 
     private sealed class Model
     {

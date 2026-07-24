@@ -23,10 +23,6 @@ namespace SIMF.Domain.Profiles;
 /// </summary>
 public class UserProfile : BaseAuditEntity
 {
-    /// <summary>Surrogate id — separate from <see cref="UserId"/> so the
-    /// row can be re-created if the user is recovered.</summary>
-    //public Guid Id { get; set; } = Guid.NewGuid();
-
     /// <summary>The owning user (logical FK to <c>SimfUser.Id</c> on the
     /// Identity DB — D-167 moved this entity to the App DB so the FK is
     /// enforced at write time by the service layer, not by a DB

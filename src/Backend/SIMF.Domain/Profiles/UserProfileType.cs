@@ -52,11 +52,6 @@ public sealed class UserProfileType : BaseAuditEntity
     /// </summary>
     public string PageColor { get; set; } = string.Empty;
 
-    /// <summary>Which <see cref="UserType"/> this profile type applies to.
-    /// After D-186 this is <c>Visitor</c> for every audience or partner
-    /// profile type; reserved for future Admin-side profile types.</summary>
-    //public UserType UserType { get; set; }
-
    
 
     /// <summary>D-161 — the mobile-app authority any user assigned to this
