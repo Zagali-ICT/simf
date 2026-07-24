@@ -25,9 +25,12 @@ public static class SponsorsFeed
         {
             return [];
         }
+        // Groups is non-nullable on the contract, but System.Text.Json can still
+        // deserialize a malformed/partial envelope's list to null; degrade to the
+        // documented empty band rather than throwing (DEF-003).
         return
         [
-            .. sponsors.Groups
+            .. (sponsors.Groups ?? [])
                 .SelectMany(group => group.Sponsors)
                 .Select(sponsor => new SponsorCard(
                     new Bilingual(sponsor.NameAr, sponsor.NameEn),
