@@ -15,10 +15,12 @@ Branch delivered: `chore/clean-code-hardening-2026-07` @ `15bef3d4` (3 fix commi
 ## 1. Executive summary
 
 The shipped code is materially cleaner and better tested than a typical build:
-per-project Release builds are warning-free under `TreatWarningsAsErrors`, the
-unit/component suites are broadly green, inputs are validated (mostly at the
-service layer with bilingual coded errors), and no AI scaffold/sample files were
-found. The engagement fixed three genuine defects (a culture-sensitive number
+per-project Release builds are warning-free under `TreatWarningsAsErrors`; the
+full test run is green apart from a known-red baseline (Api.Tests 1774/1799,
+Domain/ApiClient/ControlPanel/Web all green, Application 59/62, Flutter
+1068/1068); a live public-site smoke rendered every page HTTP 200 with zero
+broken assets; inputs are validated (mostly at the service layer with bilingual
+coded errors); and no AI scaffold/sample files were found. The engagement fixed three genuine defects (a culture-sensitive number
 bug, a privilege-escalation gap, and a null-collection crash family) with
 red-first regression tests, and correctly avoided four false-positive "fixes"
 that would have caused regressions.
@@ -71,7 +73,8 @@ the audit rule; do not disable auditing globally.
 | SIMF.ControlPanel.Tests | 223 / 223 pass | includes the CP permission-gate tests + P0 CP changes |
 | SIMF.Web.Tests | 129 / 129 pass | includes the 2 new DEF-003 regression tests |
 | SIMF.Application.Tests | 59 / 62 pass | 3 pre-existing baseline failures (see below) |
-| SIMF.Api.Tests (P1 slice) | 95 / 95 pass | verified when commit `7fed8014` landed; not re-run in full this session |
+| SIMF.Api.Tests (full) | 1774 / 1799 pass | 25 failures = known-red baseline (see below); the P1 regression test passed |
+| Flutter (full suite) | 1068 / 1068 pass | goldens included; fully green on this branch |
 
 **Application.Tests 3 failures = pre-existing baseline drift, not introduced by
 this branch.** The failing tests are
@@ -84,17 +87,64 @@ nor `PermissionCatalogBaselineTests.cs`, so these failures exist on the base
 commit independent of the fixes. Remediation: update the baseline expected sets
 to match the current catalogue (owner/feature-team task).
 
-**Known-red baseline not re-run in full this session (heavy, LocalDB-bound):**
-`SIMF.Api.Tests` carries roughly two dozen seed-fixture cascade failures and
-`BusinessMeetingsTests` is partly red (recorded as D-753). These are baseline
-conditions on `origin/main`, not regressions from this branch.
+**The 25 Api.Tests failures are the known-red baseline (D-753), not regressions.**
+Full run: 1774 passed / 1799 total in 18m57s. The failures are
+`BusinessMeetingsTests` x19, `SpeakerAvailabilityTests` x4, and two seeder tests
+(`IdentitySeederTests.SeedAsync_creates_the_super_admin`,
+`SqlContentSeederTests.Applies_the_programme_and_news_content_and_is_idempotent`) -
+the seed-fixture cascade where `SqlContentSeeder` yields 0 rows in the test host.
+Reproducible on the base commit; independent of this branch's fixes. The P1
+regression test `Create_admin_with_roles_requires_the_AssignRoles_permission`
+passed (trx outcome Passed), and every `PermissionEnforcementTests` passed.
 
-**Flutter:** `flutter analyze` was clean at the P0 verification; the golden suite
-has a known-red baseline (committed failure artifacts under `test/golden/failures/`).
-The mobile edits in P0 were debug-line and color-token removals verified by analyze.
-The golden reds were not re-baselined (no `--update-goldens`), by policy.
+**Flutter:** the full suite ran green this session - 1068 passed / 0 failed
+(goldens included). This branch's goldens pass; the committed
+`test/golden/failures/` artifacts are stale from an earlier main revision. The
+P0 mobile edits were debug-line and color-token removals. No `--update-goldens`
+was run, by policy.
 
 ---
+
+## 4A. Live E2E smoke (Phase 3)
+
+The QA API + Website were launched from `C:\sqa` on QA-only ports
+(API 5275, Web 5280) against fresh throwaway LocalDB databases
+(`SIMF_QA_Identity` / `SIMF_QA_App`), with SMTP pointed at `localhost:2525` so no
+mail could leave. Production was never contacted. Startup migrated both DBs and
+seeded content (Programme, News, Sponsors, MediaPartners, Archive, Organization,
+SeedGaps all applied). Teardown: both servers stopped, ports released, both QA
+DBs dropped (verified none remain).
+
+| Check | Result |
+|-------|--------|
+| API `/health` | 200 "Healthy" |
+| Public pages `/`, `/partners`, `/archive`, `/speakers`, `/programme` | all HTTP 200, real seeded content, zero server-error markers |
+| DEF-003 feeds live | home marquee + `/partners` render seeded sponsors; `/archive` renders editions - no NRE (the P2 fix exercised against live data) |
+| Asset integrity | `/` 48 assets, `/partners` 36, `/archive` 39 - **0 broken / 0 404s** |
+
+**Not executed (honest):** the JS console-error sweep and the DOM
+horizontal-overflow (`scrollWidth==clientWidth`) check are browser-only and were
+blocked - the shared Chrome DevTools browser profile was locked by a concurrent
+session, and the recovery would have disrupted that session. Server-side render
+and asset-integrity were verified in their place. The Control Panel was not
+driven live (interactive TOTP auth required); it is covered by 223 green
+component tests including the permission-gate tests.
+
+## 4B. Coverage gap scan (Phase 4)
+
+Enumerated the endpoint surface against the Api.Tests suite: **568 endpoint
+class declarations** across 26 areas vs **227 Api.Tests classes**. The
+security-critical **anonymous surface (39 endpoint files) is near-completely
+covered** by name-matched test classes - every `Auth/*` (SignIn, SignUp, Refresh,
+Verify*, Reset/Forgot password, Totp, RecoveryCodes, DeviceKey, Badge), every
+`Public/*` (Delegation, OrganizationProfile, Booths, Cms, Faq, Media,
+Presentation, Speaker, VenueMap, SiteSettings), plus AI (`AiHardeningTests`),
+`Files` (`FileAuthorizationTests`), `Sponsors`, `Archive`, `News`, and
+`ContactInquiry`. No untested anonymous endpoint was found. Conclusion: no
+high-value missing test was surfaced at the class level, so no new tests were
+added (also consistent with holding code changes for the joint fix session).
+Deeper per-scenario coverage inside existing classes was not exhaustively
+audited and is noted as residual scope.
 
 ## 5. Fixes delivered (3 commits, each build + test verified)
 
@@ -170,11 +220,15 @@ the real fields/routes/permissions. Candidate defects raised there:
 
 ## 8. Not executed / untested scope (explicit)
 
-- Full `SIMF.Api.Tests` regression (heavy, LocalDB-bound) was not re-run in full
-  this session; the P1 slice was verified when it landed.
-- The full 190-file per-page E2E catalogue was not driven end-to-end.
-- Live browser/DOM E2E sweep, Lighthouse/performance certification, and
-  physical-device mobile testing were out of budget.
+- The JS console-error sweep and DOM horizontal-overflow check (two browser-only
+  checks) were blocked by the shared Chrome DevTools lock held by a concurrent
+  session; server-side render + asset-integrity were verified instead.
+- The Control Panel was not driven live (interactive TOTP auth); covered by 223
+  green component tests including the permission gates.
+- The full 190-file per-page E2E catalogue was not driven end-to-end (5 public
+  pages smoke-rendered; the rest are covered by the unit/component suites).
+- Lighthouse/performance certification and physical-device mobile testing were
+  out of scope.
 - Golden images were not re-baselined (policy: no `--update-goldens`).
 - Load/concurrency and penetration testing were not performed.
 
