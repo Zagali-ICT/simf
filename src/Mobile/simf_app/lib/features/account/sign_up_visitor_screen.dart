@@ -831,6 +831,12 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     label: l10n.jobTitleLabel,
                     controller: _jobTitle,
                     maxLength: 100,
+                    textDirection: TextDirection.ltr,
+                    // Latin letters + spaces only — mirror the English name
+                    // field so the English job title can never hold Arabic.
+                    inputFormatters: <TextInputFormatter>[
+                      FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z\s]')),
+                    ],
                     // D-723 — required (only the plate number stays optional).
                     validator: (String? v) => (v == null || v.trim().isEmpty)
                         ? l10n.jobTitleRequired
@@ -845,6 +851,11 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     controller: _jobTitleArabic,
                     maxLength: 100,
                     textDirection: TextDirection.rtl,
+                    // Arabic letters + spaces only — mirror the Arabic name
+                    // field so the Arabic job title can never hold Latin text.
+                    inputFormatters: <TextInputFormatter>[
+                      FilteringTextInputFormatter.allow(RegExp(r'[ء-ي\s]')),
+                    ],
                   ),
                   const SizedBox(height: SimfTokens.space4),
                   _buildNationalityField(l10n),
