@@ -43,7 +43,7 @@ class AccountEmailField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         SimfFieldLabel(label, color: SimfTokens.navy),
-        const SizedBox(height: 8),
+        const SizedBox(height: SimfTokens.space2),
         TextFormField(
           controller: controller,
           keyboardType: TextInputType.emailAddress,
@@ -102,7 +102,7 @@ class AccountPasswordField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         SimfFieldLabel(label, color: SimfTokens.navy),
-        const SizedBox(height: 8),
+        const SizedBox(height: SimfTokens.space2),
         TextFormField(
           controller: controller,
           obscureText: obscure,

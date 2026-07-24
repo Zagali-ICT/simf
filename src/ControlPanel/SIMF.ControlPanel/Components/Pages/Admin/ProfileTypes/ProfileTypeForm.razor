@@ -78,6 +78,17 @@
             @L["Admin.ProfileTypes.Field.ShowInApp"]
         </SimfCheckbox>
         <div class="simf-field__helper">@L["Admin.ProfileTypes.Field.ShowInAppHint"]</div>
+        @* D-760 (owner request) — "Meet People (same interests)" visibility.
+           Only on the Others (partner) form: unchecked hides ALL accounts of
+           this partner type from the networking directory + recommender,
+           regardless of each user's own opt-in. *@
+        @if (ShowPartnerDirectoryToggle)
+        {
+            <SimfCheckbox @bind-Value="_model.ShowInPartnerDirectory" Disabled="_busy">
+                @L["Admin.ProfileTypes.Field.ShowInMeetPeople"]
+            </SimfCheckbox>
+            <div class="simf-field__helper">@L["Admin.ProfileTypes.Field.ShowInMeetPeopleHint"]</div>
+        }
     </div>
     <div class="simf-form__actions">
         <SimfButton Loading="_busy" LoadingLabel="@L["Admin.ProfileTypes.Submitting"]">

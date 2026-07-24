@@ -185,7 +185,7 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
             ),
             Expanded(child: _buildBody(l10n)),
             _buildBottomActions(l10n),
-            const SizedBox(height: 24),
+            const SizedBox(height: SimfTokens.space6),
           ],
         ),
       ),
@@ -194,7 +194,7 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
 
   Widget _buildBody(AppL10n l10n) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: MaxWidthBody(
         maxWidth: 560,
         child: Form(
@@ -204,7 +204,7 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
             children: <Widget>[
               const SizedBox(height: 48),
               const Center(child: OtpMark(icon: Icons.lock_outline)),
-              const SizedBox(height: 24),
+              const SizedBox(height: SimfTokens.space6),
               Text(
                 _emailStep
                     ? l10n.badgeActivateEmailIntro
@@ -212,16 +212,19 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
                 textAlign: TextAlign.center,
                 style: SimfTokens.bodyBeige,
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: SimfTokens.space8),
               if (_emailStep) ..._emailStepFields(l10n) else ..._codeStepFields(l10n),
               if (_error != null) ...<Widget>[
-                const SizedBox(height: 12),
+                const SizedBox(height: SimfTokens.space3),
                 Text(
                   _error!,
-                  style: const TextStyle(color: SimfTokens.danger, fontSize: 12),
+                  style: const TextStyle(
+                    color: SimfTokens.danger,
+                    fontSize: SimfTokens.textSm,
+                  ),
                 ),
               ],
-              const SizedBox(height: 24),
+              const SizedBox(height: SimfTokens.space6),
             ],
           ),
         ),
@@ -230,8 +233,8 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
   }
 
   List<Widget> _emailStepFields(AppL10n l10n) => <Widget>[
-        SimfFieldLabel(l10n.emailLabelGeneric, color: Colors.white),
-        const SizedBox(height: 8),
+        SimfFieldLabel(l10n.emailLabelGeneric, color: SimfTokens.surface),
+        const SizedBox(height: SimfTokens.space2),
         TextFormField(
           controller: _email,
           keyboardType: TextInputType.emailAddress,
@@ -254,8 +257,8 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
       ];
 
   List<Widget> _codeStepFields(AppL10n l10n) => <Widget>[
-        SimfFieldLabel(l10n.otpLabel, color: Colors.white),
-        const SizedBox(height: 8),
+        SimfFieldLabel(l10n.otpLabel, color: SimfTokens.surface),
+        const SizedBox(height: SimfTokens.space2),
         TextFormField(
           controller: _code,
           keyboardType: TextInputType.number,
@@ -270,9 +273,9 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
           decoration: simfFieldDecoration(counterText: ''),
           validator: (value) => isBlank(value) ? l10n.requiredField : null,
         ),
-        const SizedBox(height: 16),
-        SimfFieldLabel(l10n.newPasswordLabel, color: Colors.white),
-        const SizedBox(height: 8),
+        const SizedBox(height: SimfTokens.space4),
+        SimfFieldLabel(l10n.newPasswordLabel, color: SimfTokens.surface),
+        const SizedBox(height: SimfTokens.space2),
         TextFormField(
           controller: _password,
           obscureText: _obscure,
@@ -297,9 +300,9 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
             return null;
           },
         ),
-        const SizedBox(height: 16),
-        SimfFieldLabel(l10n.confirmPasswordLabel, color: Colors.white),
-        const SizedBox(height: 8),
+        const SizedBox(height: SimfTokens.space4),
+        SimfFieldLabel(l10n.confirmPasswordLabel, color: SimfTokens.surface),
+        const SizedBox(height: SimfTokens.space2),
         TextFormField(
           controller: _confirm,
           obscureText: _obscure,
@@ -320,7 +323,7 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
 
   Widget _buildBottomActions(AppL10n l10n) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: MaxWidthBody(
         maxWidth: 560,
         child: _emailStep

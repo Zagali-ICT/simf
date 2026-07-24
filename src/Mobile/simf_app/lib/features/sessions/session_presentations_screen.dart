@@ -248,11 +248,7 @@ class _PresentationCard extends StatelessWidget {
                       Text(
                         item.localizedSessionTitle(isArabic),
                         textAlign: TextAlign.start,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w500,
-                          fontSize: SimfTokens.textMd, // 14
-                        ),
+                        style: SimfTokens.labelWhiteMedium,
                       ),
                       if (speaker != null) ...<Widget>[
                         const SizedBox(height: SimfTokens.space2),
@@ -261,10 +257,7 @@ class _PresentationCard extends StatelessWidget {
                           textAlign: TextAlign.start,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: SimfTokens.beigeBorder,
-                            fontSize: SimfTokens.textSm,
-                          ),
+                          style: SimfTokens.labelBeigeSm,
                         ),
                       ],
                     ],
@@ -285,10 +278,7 @@ class _PresentationCard extends StatelessWidget {
                       dayLabel,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: SimfTokens.beigeBorder,
-                        fontSize: SimfTokens.textSm,
-                      ),
+                      style: SimfTokens.labelBeigeSm,
                     ),
                   )
                 else
@@ -314,8 +304,8 @@ class _FileIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 32,
-      height: 32,
+      width: SimfTokens.requestIconBox,
+      height: SimfTokens.requestIconBox,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: SimfTokens.navy,
@@ -347,7 +337,7 @@ class _SessionSummryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = enabled ? Colors.white : SimfTokens.navyDisabledText;
+    final fg = enabled ? SimfTokens.surface : SimfTokens.navyDisabledText;
     final button = Material(
       color: enabled ? SimfTokens.accent : SimfTokens.navyDisabled,
       borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),

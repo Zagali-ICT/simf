@@ -1,16 +1,12 @@
 @* SIMF public "Partners & sponsors" page — Figma node 5866-40017. Built on the
    shared LandingShell chrome + the reusable LandingPageHero (no breadcrumb — the
-   Partners cluster is a single page, like the Programme-cluster heroes). The two
-   showcase bands REUSE the landing's shared ln-pband (government partners) +
-   ln-spon (sponsors carousel) markup, CSS and single-sourced content models
-   (Landing.PartnerLogos / Landing.Sponsors + the Landing.Partners.* /
-   Landing.Sponsors.* resx keys) so the dedicated page and the landing band never
-   drift. Bilingual AR-RTL / EN-LTR (the request culture drives <html dir/lang>).
-
-   Static content: sponsor / media-partner logos are not publicly servable (no
-   public logo-asset route + the public contract carries no "has asset" flag —
-   see web/partners.md §7), so, exactly like the landing, the bands render the
-   branded placeholder set until a public logo route exists. Serves "/partners". *@
+   Partners cluster is a single page, like the Programme-cluster heroes). The
+   government-partners band REUSEs the landing's static ln-pband model
+   (Landing.PartnerLogos); the sponsors band reuses the shared <SponsorsMarquee>,
+   which reads the LIVE roster from the backend (SponsorsFeed) — the same source
+   the landing band uses, so the dedicated page and the landing band never drift.
+   Bilingual AR-RTL / EN-LTR (the request culture drives <html dir/lang>).
+   Serves "/partners". *@
 @page "/partners"
 @layout LandingLayout
 @inject IStringLocalizer<Strings> L
@@ -46,37 +42,8 @@
         <div class="ln-pband__bar"><div class="ln-pband__rail"><span class="ln-pband__thumb"></span></div></div>
     </section>
 
-    @* ===== Sponsors ("قسم الرعاة") — reuses the landing's ln-spon carousel =====
-         The landing's "View all" CTA is intentionally omitted here: this dedicated
-         page IS the full sponsors listing, so a self-referential "View all" would
-         lead nowhere (see web/partners.md §7). *@
-    <section class="ln-spon" aria-label="@L["Landing.Sponsors.Title"]">
-        <div class="ln-spon__inner ln-reveal">
-            <div class="ln-spon__head">
-                <div class="ln-spon__titlerow">
-                    <h2 class="ln-spon__title">@L["Landing.Sponsors.Title"]</h2>
-                </div>
-                <p class="ln-spon__desc">@L["Landing.Sponsors.Desc"]</p>
-            </div>
-            <div class="ln-spon__carousel">
-                <button type="button" class="ln-spon__arrow" aria-label="@L["Landing.Sponsors.Prev"]"><img src="assets/figma/sponsors/icon-arrow-left.svg" alt="" /></button>
-                <div class="ln-spon__viewport">
-                    <div class="ln-spon__track">
-                        @foreach (var sp in Landing.Sponsors)
-                        {
-                            <div class="ln-scard2">
-                                <img class="ln-scard2__icon" src="assets/figma/sponsors/icon-external-link.svg" alt="" />
-                                <div class="ln-scard2__col">
-                                    <img class="ln-scard2__logo" src="@sp.Logo" alt="@sp.Tag.For(rtl)" />
-                                    <span class="ln-scard2__tag">@sp.Tag.For(rtl)</span>
-                                </div>
-                            </div>
-                        }
-                    </div>
-                </div>
-                <button type="button" class="ln-spon__arrow" aria-label="@L["Landing.Sponsors.Next"]"><img src="assets/figma/sponsors/icon-arrow-right.svg" alt="" /></button>
-            </div>
-        </div>
-    </section>
+    @* ===== Sponsors ("قسم الرعاة") — shared live-backend marquee =====
+         No "view all" CTA: this dedicated page IS the full sponsors listing. *@
+    <SponsorsMarquee Items="SponsorItems" />
 
 </LandingShell>

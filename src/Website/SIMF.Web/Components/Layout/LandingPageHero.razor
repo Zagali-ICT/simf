@@ -33,7 +33,7 @@
         }
         <div class="ln-pghero__pills">
             <span class="ln-pghero__pill"><span>@L["Landing.Hero.Venue"]</span><img src="assets/figma/secondnav/icon-location.svg" alt="" /></span>
-            <span class="ln-pghero__pill"><span>@L["Landing.Subnav.Date"]</span><img src="assets/figma/secondnav/icon-calendar.svg" alt="" /></span>
+            <span class="ln-pghero__pill"><span>@(string.IsNullOrWhiteSpace(DateText) ? L["Landing.Subnav.Date"].Value : DateText)</span><img src="assets/figma/secondnav/icon-calendar.svg" alt="" /></span>
         </div>
     </div>
 </section>
@@ -57,4 +57,8 @@
 
     // Path to the hero background photo (anchored to the inline-end side). Required.
     [Parameter, EditorRequired] public string ImageSrc { get; set; } = "";
+
+    // Optional override for the date pill (e.g. the CP-editable forum date range,
+    // D-755). Null/blank falls back to the static Landing.Subnav.Date resx label.
+    [Parameter] public string? DateText { get; set; }
 }

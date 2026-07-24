@@ -376,7 +376,11 @@ public sealed record AdminProfileTypeSummary(
     bool IsVisitor,
     // D-725 — whether the type is offered in the app sign-up picker.
     // false = CP-only (admin-assigned), e.g. Staff / Moderator.
-    bool IsAppRegisterable);
+    bool IsAppRegisterable,
+    // D-760 — whether accounts of this type appear in the "Meet People"
+    // networking surfaces (partner directory + recommender). Trailing-optional
+    // (append-only, wire-safe); defaults true. Only shown on the Others form.
+    bool ShowInPartnerDirectory = true);
 
 /// <summary>
 /// D-115 — body of <c>POST /api/v1/admin/profile-types</c>. Creates a
@@ -420,6 +424,11 @@ public sealed class AdminCreateProfileTypeRequest
     /// sign-up picker. Default true; set false for CP-only operational types
     /// (Staff, Moderator) that an admin assigns rather than a customer picks.</summary>
     public bool IsAppRegisterable { get; set; } = true;
+
+    /// <summary>D-760 (owner request) — whether this type's accounts appear in
+    /// the "Meet People (same interests)" networking surfaces. Default true.
+    /// Meaningful only for partner (Other) types.</summary>
+    public bool ShowInPartnerDirectory { get; set; } = true;
 }
 
 /// <summary>
@@ -444,6 +453,10 @@ public sealed class AdminUpdateProfileTypeRequest
     /// <summary>D-725 (owner item 1) — whether the type appears in the app
     /// sign-up picker. Default true; false = CP-only (Staff, Moderator).</summary>
     public bool IsAppRegisterable { get; set; } = true;
+
+    /// <summary>D-760 (owner request) — whether this type's accounts appear in
+    /// the "Meet People (same interests)" networking surfaces. Default true.</summary>
+    public bool ShowInPartnerDirectory { get; set; } = true;
 }
 
 /// <summary>

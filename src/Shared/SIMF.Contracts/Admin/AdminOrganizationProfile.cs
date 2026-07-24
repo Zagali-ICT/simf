@@ -38,6 +38,7 @@ public sealed class AdminUpdateOrganizationProfileRequest
     public string? ContactEmail { get; set; }
     public string? ContactWebsite { get; set; }
     public string? LiveStreamUrl { get; set; }
+    public string? BackgroundVideoUrl { get; set; }
 
     public string? Facebook { get; set; }
     public string? X { get; set; }

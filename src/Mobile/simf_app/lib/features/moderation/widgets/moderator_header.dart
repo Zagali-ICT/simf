@@ -21,13 +21,18 @@ class ModeratorDeskHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: SimfTokens.navyHeader,
-      padding: const EdgeInsets.fromLTRB(8, 4, 16, 16),
+      padding: const EdgeInsets.fromLTRB(
+        SimfTokens.space2,
+        SimfTokens.space1,
+        SimfTokens.space4,
+        SimfTokens.space4,
+      ),
       child: Row(
         textDirection: TextDirection.ltr,
         children: <Widget>[
           // Circular navy back button with a left chevron (Figma).
           Padding(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(SimfTokens.space2),
             child: Material(
               color: SimfTokens.navyDeep,
               shape: const CircleBorder(),
@@ -35,10 +40,10 @@ class ModeratorDeskHeader extends StatelessWidget {
                 customBorder: const CircleBorder(),
                 onTap: onBack,
                 child: const Padding(
-                  padding: EdgeInsets.all(6),
+                  padding: EdgeInsets.all(SimfTokens.gap6),
                   child: Icon(
                     Icons.chevron_left,
-                    color: Colors.white,
+                    color: SimfTokens.surface,
                     size: 26,
                   ),
                 ),
@@ -50,11 +55,7 @@ class ModeratorDeskHeader extends StatelessWidget {
               title,
               textAlign: TextAlign.center,
               textDirection: TextDirection.rtl,
-              style: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-              ),
+              style: SimfTokens.labelWhiteBoldHero,
             ),
           ),
           _RolePill(label: badgeLabel),
@@ -73,18 +74,14 @@ class _RolePill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       alignment: Alignment.center,
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(SimfTokens.space2),
       decoration: BoxDecoration(
         color: SimfTokens.accent,
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w700,
-          fontSize: SimfTokens.textTitle,
-        ),
+        style: SimfTokens.labelWhiteBoldTitle,
       ),
     );
   }

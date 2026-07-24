@@ -6,10 +6,10 @@
 | **Surface** | Website (public marketing site — `ln-` Bootstrap SSR) |
 | **Audience** | Anyone (public) |
 | **Auth** | None — anonymous |
-| **Status** | ✅ Real — bilingual, responsive; static (reuses the landing's partners + sponsors bands as single-sourced placeholder content, see §7) |
-| **Source** | [`Partners.razor`](../../../src/Website/SIMF.Web/Components/Pages/Partners.razor) · [`LandingPageHero.razor`](../../../src/Website/SIMF.Web/Components/Layout/LandingPageHero.razor) · [`landing.css`](../../../src/Website/SIMF.Web/wwwroot/css/landing.css) (reused `ln-pghero` / `ln-pband` / `ln-pcard` / `ln-spon` / `ln-scard2`) · [`landing.js`](../../../src/Website/SIMF.Web/wwwroot/js/landing.js) (reused `initSponsors` carousel) |
+| **Status** | ✅ Real — bilingual, responsive; static government-partners band + a **live-backend** sponsors marquee (shared `SponsorsMarquee`, see §7) |
+| **Source** | [`Partners.razor`](../../../src/Website/SIMF.Web/Components/Pages/Partners.razor) + [`Partners.razor.cs`](../../../src/Website/SIMF.Web/Components/Pages/Partners.razor.cs) · [`LandingPageHero.razor`](../../../src/Website/SIMF.Web/Components/Layout/LandingPageHero.razor) · [`SponsorsMarquee.razor`](../../../src/Website/SIMF.Web/Components/Layout/SponsorsMarquee.razor) + [`SponsorsFeed.cs`](../../../src/Website/SIMF.Web/Content/SponsorsFeed.cs) · [`landing.css`](../../../src/Website/SIMF.Web/wwwroot/css/landing.css) (reused `ln-pghero` / `ln-pband` / `ln-pcard` / `ln-spon` / `ln-scard2`) |
 | **Strings** | [`Strings.resx`](../../../src/Website/SIMF.Web/Resources/Strings.resx) / [`Strings.ar.resx`](../../../src/Website/SIMF.Web/Resources/Strings.ar.resx) (`Partners.*` for the hero; reused `Landing.Partners.*` / `Landing.Sponsors.*` for the two bands) |
-| **Data** | Single-sourced static — the government partners come from `Landing.PartnerLogos`; the sponsors from `Landing.Sponsors` (both `public static readonly` in [`Landing.razor.cs`](../../../src/Website/SIMF.Web/Components/Pages/Landing.razor.cs)). No API (see §7). |
+| **Data** | Government partners: single-sourced static `Landing.PartnerLogos` ([`Landing.razor.cs`](../../../src/Website/SIMF.Web/Components/Pages/Landing.razor.cs)). Sponsors: **live** from `GET /api/v1/app/sponsors` via `SponsorsFeed.LoadAsync` (`SimfPublicClient`), flattened highest-tier-first; an empty/unreachable roster hides the band. |
 | **Figma** | KSA Maritime Forum — Companies / Partners & Sponsors (Desktop AR), node `5866-40017` |
 | **E2E** | [`e2e/web-partners.md`](../../tests/e2e/web-partners.md) (`E2E-WPT-*`) |
 
@@ -81,39 +81,28 @@ elements exceed the viewport outside the two intentional scroll strips).
   sponsor carousel. Console clean (only a benign shared-chrome font-preload warning);
   no horizontal overflow; verified stacking at the narrow breakpoint.
 
-## 7. Follow-ups — content & deliberate deviations
-
-This page reuses the landing's two shipped bands, so it inherits their current
-**placeholder-data** state. Two deliberate deviations from the Figma frame, and one
-live-data follow-up:
+## 7. Follow-ups — deliberate deviations & live data
 
 1. **Deviation (a) — the sponsors "View all" CTA is omitted.** The Figma frame shows
    the landing's sponsors band verbatim, including the "عرض الكل / View all" button.
    That CTA is the landing's link to *this* page; on the full-listing page itself it
-   would be self-referential, so it is dropped. The landing keeps its button.
-2. **Deviation (b) — sponsor logos are branded placeholders.** The sponsor cards
-   render the shipped placeholder set (a repeated "Host"-tier logo) exactly as the
-   landing does. Sponsor / media-partner **logos are not publicly servable today**:
-   the public `PublicSponsor` contract (`SIMF.Contracts.Sponsors`) carries no
-   "has-logo-asset" flag, and [`SiteContentEndpoints.cs`](../../../src/Website/SIMF.Web/Endpoints/SiteContentEndpoints.cs)
-   notes the entity `LogoRelativePath` is not publicly servable (its `MapPartners`
-   uses a text placeholder for the same reason). Because it is the full listing (not
-   a teaser), the repeated placeholder set reads as several identical sponsors to a
-   sighted user and a screen reader — acceptable while it is clearly placeholder, but
-   see the wiring below.
-3. **Live-data wiring (deferred).** When a public sponsor-logo asset route exists
-   (a `HasLogoAsset` flag on `PublicSponsor` + a `/content/assets/SponsorLogo/{id}/image`
-   route mirroring the Speaker-photo proxy), bind this page's sponsors band live via
-   `SimfPublicClient.GetSponsorsAsync()` — render one tier group per section, each
-   card's tag = `TierName`, the external-link = `Url`. Until then it stays on the
-   single-sourced placeholder set. This is an additive backend change (honours D-157
-   + the append-only mobile wire contract) and needs the owner's call on the public
-   logo route.
+   would be self-referential, so it is dropped (`ViewAllHref` left null on the shared
+   `<SponsorsMarquee>`). The landing keeps its button (which points here).
+2. **Sponsors read live from the backend (was: STARTIME placeholder).** The sponsors
+   band now binds the live roster from `GET /api/v1/app/sponsors` via
+   `SponsorsFeed.LoadAsync` (`SimfPublicClient`), flattened highest-tier-first, and is
+   rendered by the shared `<SponsorsMarquee>` as name-wordmark cards with a bilingual
+   tier pill. An empty / unreachable roster hides the band (never a placeholder). This
+   replaced the old repeated "Host"-tier **STARTIME** placeholder set (owner ruling:
+   never ship the design-agency logo). Sponsor **logo images** are still text
+   wordmarks: the public `PublicSponsor` contract carries no "has-logo-asset" flag
+   yet, so when CP-uploaded `SponsorLogo` assets exist a follow-up can prefer the
+   `/content/assets/SponsorLogo/{id}/image` proxy (additive `HasLogoAsset` on
+   `PublicSponsor`, honours D-157 + the append-only mobile wire contract).
+3. **Shared DRY (done).** The sponsors band is now the shared `SponsorsMarquee`
+   component ([`Components/Layout`](../../../src/Website/SIMF.Web/Components/Layout/SponsorsMarquee.razor))
+   used by both the landing and this page, so the two no longer drift. The
+   government-partners band markup is still copied (a future `LandingPartnersBand`
+   component could fold it in — deferred DRY pass, [`about.md`](about.md) §7).
 
-Minor (shared DRY): the two bands' markup is still copied between `Landing.razor`
-and `Partners.razor` (they share CSS + JS + data, not a Razor component). Extracting
-`LandingPartnersBand` / `LandingSponsorsBand` shared components belongs in the
-deferred DRY pass ([`about.md`](about.md) §7) — it touches the shipped landing
-(anchor `id="partners"` + the carousel), so it is kept out of this page build.
-
-_Last reviewed:_ 2026-07-19 by Claude (Partners & sponsors page — `ln-` Bootstrap SSR, Figma 5866-40017).
+_Last reviewed:_ 2026-07-22 by Claude (Partners & sponsors — live-backend sponsors marquee, STARTIME removed).

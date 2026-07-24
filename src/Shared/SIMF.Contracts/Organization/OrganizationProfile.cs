@@ -31,6 +31,7 @@ public sealed record OrganizationProfileResponse(
     string? ContactEmail,
     string? ContactWebsite,
     string? LiveStreamUrl,
+    string? BackgroundVideoUrl,
     SocialLinks Social,
     string? LogoUrl,
     IReadOnlyList<OrganizationAboutItemDto> AboutItems,

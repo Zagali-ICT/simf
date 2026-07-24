@@ -15,7 +15,10 @@ public sealed record Bilingual(string Ar, string En)
 }
 
 // ---- Navigation ---------------------------------------------------------
-public sealed record NavLink(string LabelKey, string Href);
+// LabelKey is a resx key resolved through IStringLocalizer. Label carries literal
+// AR/EN text instead (for data-driven items such as the Archive edition list,
+// whose labels come from the API, not resx); when set it wins over LabelKey.
+public sealed record NavLink(string LabelKey, string Href, Bilingual? Label = null);
 
 // A menu with Links renders as a hover/focus dropdown; a menu with only a
 // Href (Links empty) renders as a plain top-level link.
@@ -50,20 +53,14 @@ public static class LandingChrome
             new("Landing.Nav.Programs.Visit", "/visit"),
         ]),
         new("Landing.Nav.Speakers", "Landing.Nav.Speakers", [], Href: "/speakers"),
-        new("Landing.Nav.Discover", "Landing.Nav.Discover",
-        [
-            new("Landing.Nav.Discover.About", "#"),
-            new("Landing.Nav.Discover.Invest", "#"),
-            new("Landing.Nav.Discover.Spirit", "#"),
-            new("Landing.Nav.Discover.Made", "#discover"),
-        ]),
-        new("Landing.Nav.Archive", "Landing.Nav.Archive",
-        [
-            new("Landing.Nav.Archive.All", "/archive"),
-            new("Landing.Nav.Archive.E1", "#"),
-            new("Landing.Nav.Archive.E2", "#"),
-            new("Landing.Nav.Archive.E3", "#"),
-        ]),
+        // "Discover Saudi Arabia" → the official Visit Saudi site, matching the
+        // Flutter app's single روح السعودية link (BuildConfig.visitSaudiUrl,
+        // default https://www.visitsaudi.com). A single external top-level link
+        // (opens in a new tab) — not a dropdown of dead in-page anchors.
+        new("Landing.Nav.Discover", "Landing.Nav.Discover", [], Href: "https://www.visitsaudi.com"),
+        // "Archive" → the real /archive page, which lists every past edition.
+        // A single top-level link (was a dropdown of dead "#" edition anchors).
+        new("Landing.Nav.Archive", "Landing.Nav.Archive", [], Href: "/archive"),
     ];
 
     // Search-panel suggestion chips.

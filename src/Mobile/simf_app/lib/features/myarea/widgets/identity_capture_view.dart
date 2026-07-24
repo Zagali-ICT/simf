@@ -83,7 +83,7 @@ class LiveCaptureView extends StatelessWidget {
                     promptText,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: SimfTokens.surface,
                       fontSize: 26,
                       fontWeight: FontWeight.bold,
                     ),
@@ -96,7 +96,7 @@ class LiveCaptureView extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 for (int i = 0; i < stepCount; i++) ...<Widget>[
-                  if (i > 0) const SizedBox(width: 8),
+                  if (i > 0) const SizedBox(width: SimfTokens.space2),
                   _dash(done: i <= stepIndex),
                 ],
               ],

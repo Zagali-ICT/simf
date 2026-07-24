@@ -49,7 +49,7 @@ class MyAreaIdentityCard extends StatelessWidget {
                 Text(
                   name,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: SimfTokens.surface,
                     fontWeight: FontWeight.w600,
                     fontSize: SimfTokens.textTitle,
                   ),

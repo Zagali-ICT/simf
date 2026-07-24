@@ -226,4 +226,40 @@ void main() {
 
     await tester.pumpWidget(const SizedBox());
   });
+
+  testWidgets(
+      'D-726 (owner): watching a live stream never shows the extend-session '
+      'overlay — the player keep-alive marks activity every 60s, always under '
+      'the 5-min idle limit', (tester) async {
+    // Token comfortably alive so the proactive-refresh path never fires; this
+    // isolates the idle path (the "extend session?" overlay) the owner asked about.
+    final auth = _FakeAuth(_t0.add(const Duration(hours: 1)));
+    final activity = SessionActivity(now: clock); // lastActivity = t0 (the t=0 mark)
+    await tester.pumpWidget(host(auth, activity));
+    await tester.pump(); // settle the MaterialApp first frame
+
+    // Simulate 10 minutes of PASSIVE watching (no taps/scrolls) — double the
+    // 5-min idle limit. Step the clock 15s at a time; the real LiveVideoPlayer
+    // keep-alive (D-726) marks activity every 60s, so idleFor climbs toward 60s
+    // then resets on each heartbeat and never reaches idleLimit. The overlay must
+    // NOT appear at ANY point during the watch.
+    const totalSteps = 40; // 40 x 15s = 600s = 10 min
+    for (var step = 1; step <= totalSteps; step++) {
+      final elapsedSeconds = 15 * step;
+      nowValue = _t0.add(Duration(seconds: elapsedSeconds));
+      if (elapsedSeconds % 60 == 0) {
+        activity.markActive(); // the live player's 60-second heartbeat
+      }
+      await tester.pump(const Duration(seconds: 1)); // one guard tick at this moment
+      expect(find.byType(SessionTimeoutOverlay), findsNothing,
+          reason: 'the extend-session overlay appeared at ${elapsedSeconds}s of watching');
+    }
+
+    // Never interrupted, never signed out across the whole watch.
+    expect(auth.signOutCalls, 0);
+    expect(auth.tryRefreshCalls, 0);
+    expect(find.byType(SessionTimeoutOverlay), findsNothing);
+
+    await tester.pumpWidget(const SizedBox());
+  });
 }

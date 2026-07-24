@@ -105,23 +105,40 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
   Future<void> _changeAvatar() async {
     final l10n = AppL10n.of(context);
     final messenger = ScaffoldMessenger.of(context);
+    // Capture the provider references BEFORE the async gap. The guided liveness
+    // takes several seconds, during which a token proactive-refresh can churn
+    // go_router and dispose THIS page's State. If the upload were gated on
+    // `mounted` after the capture (as it was), that disposal silently dropped
+    // the new avatar — it never reached the server. Reading the repo + bust
+    // up-front lets the upload finish regardless of this widget's lifecycle;
+    // only the on-screen feedback stays gated on `mounted`.
+    final repo = ref.read(myAreaRepositoryProvider);
+    final bust = ref.read(avatarBustProvider.notifier);
     final selfie = await context
         .pushNamed<CapturedSelfie>(RouteNames.identityVerification);
-    if (selfie == null || !mounted) {
+    if (selfie == null) {
       return;
     }
     try {
-      await ref.read(myAreaRepositoryProvider).uploadAvatar(
-            bytes: selfie.bytes,
-            filename: selfie.filename,
-          );
-      if (!mounted) {
-        return;
+      await repo.uploadAvatar(bytes: selfie.bytes, filename: selfie.filename);
+      bust.state++;
+      if (mounted) {
+        await _load();
       }
-      ref.read(avatarBustProvider.notifier).state++;
-      await _load();
-    } on ApiFailure {
-      messenger.showSnackBar(SnackBar(content: Text(l10n.avatarUploadFailed)));
+    } on ApiFailure catch (e) {
+      // Surface the server's actual (user-safe, bilingual) reason instead of a
+      // blanket string, so a failure is legible rather than silent.
+      if (mounted) {
+        final serverMsg = e.message.trim();
+        final text = serverMsg.isEmpty ? l10n.avatarUploadFailed : serverMsg;
+        messenger.showSnackBar(SnackBar(content: Text(text)));
+      }
+    } on Object {
+      // Any non-ApiFailure error (a raw transport error, etc.) still surfaces
+      // a toast rather than failing silently.
+      if (mounted) {
+        messenger.showSnackBar(SnackBar(content: Text(l10n.avatarUploadFailed)));
+      }
     }
   }
 

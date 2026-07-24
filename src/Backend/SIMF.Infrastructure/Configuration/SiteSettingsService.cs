@@ -24,6 +24,13 @@ internal sealed class SiteSettingsService(SimfAppDbContext db) : ISiteSettingsSe
         var p = await db.OrganizationProfile.AsNoTracking()
             .SingleOrDefaultAsync(x => x.Id == OrganizationProfile.SingletonId, cancellationToken);
 
+        // The session-rating prompt is gated by the CP RatingConfig "Session" type
+        // toggle; expose it so the app can suppress the after-watch prompt when it
+        // is off. Fail-open: enabled unless an explicit inactive "Session" row says
+        // otherwise (a missing type reads as enabled, matching the payload default).
+        var sessionRatingEnabled = !await db.RatingTypes
+            .AnyAsync(t => t.Code == "Session" && !t.IsActive, cancellationToken);
+
         static string Message(string? value, string fallback) =>
             string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
 
@@ -53,6 +60,8 @@ internal sealed class SiteSettingsService(SimfAppDbContext db) : ISiteSettingsSe
                 Snapchat: SocialUrl(p?.SnapchatUrl)),
             // Build #13 — the "Meet People Like You" partner-directory switch;
             // fail-open (true) when the singleton row is somehow absent.
-            PartnerDirectoryEnabled: p?.PartnerDirectoryEnabled ?? true);
+            PartnerDirectoryEnabled: p?.PartnerDirectoryEnabled ?? true,
+            // 2026-07-22 — the CP RatingConfig "Session" rating-type toggle.
+            SessionRatingEnabled: sessionRatingEnabled);
     }
 }

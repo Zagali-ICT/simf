@@ -40,8 +40,11 @@
                         @if (o.LogoMasked)
                         {
                             @* white-shipped mark recoloured navy via a mask; the asset comes
-                               from the record (--logo) so nothing is hardcoded in the CSS. *@
-                            <span class="ln-orgcard__logo ln-orgcard__logo--masked" style="--logo:url('@o.Logo')" role="img" aria-label="@o.Name.For(rtl)"></span>
+                               from the record (--logo) so nothing is hardcoded in the CSS.
+                               The leading slash is required: a url() inside a custom property
+                               resolves against the stylesheet (/css/…), not <base href>, so a
+                               relative path 404s on nested routes like /about/organizer. *@
+                            <span class="ln-orgcard__logo ln-orgcard__logo--masked" style="--logo:url('/@o.Logo')" role="img" aria-label="@o.Name.For(rtl)"></span>
                         }
                         else
                         {

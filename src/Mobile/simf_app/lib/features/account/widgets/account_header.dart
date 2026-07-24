@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_logo.dart';
 
 /// The auth screens' brand header: the [SimfLogo] beside the forum name,
@@ -16,14 +17,14 @@ class AccountHeader extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
         const SimfLogo(size: 44),
-        const SizedBox(width: 16),
+        const SizedBox(width: SimfTokens.space4),
         Flexible(
           child: Text(
             title,
             style: const TextStyle(
-              fontSize: 24,
+              fontSize: SimfTokens.text24,
               fontWeight: FontWeight.w500,
-              color: Colors.white,
+              color: SimfTokens.surface,
             ),
           ),
         ),

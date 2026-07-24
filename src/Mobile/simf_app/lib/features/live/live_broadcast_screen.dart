@@ -12,6 +12,7 @@ import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import '../../core/organization_profile/organization_profile.dart';
+import '../../core/site_settings/site_settings.dart';
 import '../sessions/data/rate_prompt_tracker.dart';
 import 'data/live_repository.dart';
 import 'widgets/live_content.dart';
@@ -168,7 +169,15 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
       final auth = ref.read(authControllerProvider);
       final isApprovedAttendee = auth is AuthStateSignedIn &&
           _isAttendeeRole(auth.session.user.effectiveAppRole);
-      _rateTracker = isApprovedAttendee && session.liveStreamUrl != null
+      // 2026-07-22 — respect the CP: no after-watch prompt when the "Session"
+      // rating type is deactivated in RatingConfig (siteSettings.sessionRatingEnabled).
+      // Fail-open (true) while the cached settings load / on error, matching the
+      // server, which also suppresses the notification when the type is off.
+      final sessionRatingEnabled =
+          ref.read(siteSettingsProvider).valueOrNull?.sessionRatingEnabled ?? true;
+      _rateTracker = isApprovedAttendee &&
+              session.liveStreamUrl != null &&
+              sessionRatingEnabled
           ? ref.read(sessionRatePromptTrackerProvider)
           : null;
       setState(() {
@@ -366,11 +375,7 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
                   session.localizedHall(isArabic),
                 ),
                 textAlign: TextAlign.start,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: SimfTokens.textLg,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: SimfTokens.labelWhiteMediumLg,
               ),
               const SizedBox(height: SimfTokens.space4),
               GoldBullet(
@@ -424,11 +429,7 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
                 Text(
                   l10n.liveUpcomingSessions,
                   textAlign: TextAlign.start,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: SimfTokens.textLg,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: SimfTokens.labelWhiteMediumLg,
                 ),
                 const SizedBox(height: SimfTokens.space4),
                 for (final upcoming in _upcoming) ...<Widget>[

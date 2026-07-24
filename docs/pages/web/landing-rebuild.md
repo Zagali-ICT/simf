@@ -48,6 +48,14 @@ gained `@page "/"` alongside its original `@page "/landing"`. See
 - **Hero** — the hero content is right-aligned (RTL) / start-aligned (EN) per Figma
   node `5328:23001`: title, subtitle, a description paragraph, and two info pills
   (venue + event dates). The pills reuse the sub-nav date string + secondnav icons.
+- **Hero background (D-756)** — the full-bleed hero background is config-driven from
+  `OrganizationProfile.BackgroundVideoUrl` via the cached `HeroMedia` service
+  (mirrors the D-755 `ForumDates` pattern) classified with the shared
+  `LiveStreamUrlPolicy`: a YouTube link renders a covering muted/loop/no-controls
+  `youtube-nocookie` `<iframe.ln-hero__video--yt>`; a direct MP4/HLS link renders
+  `<video.ln-hero__video src=…>`; an unset/unrecognised value keeps the bundled
+  `assets/hero-video.mp4` (zero regression). The report-only CSP `frame-src` permits
+  the YouTube host. Tests: `HeroMediaTests` (classification).
 
 ## 3. Bilingual model (AR RTL / EN LTR)
 

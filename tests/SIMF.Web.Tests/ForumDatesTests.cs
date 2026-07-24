@@ -86,6 +86,7 @@ public sealed class ForumDatesTests
             EventStartDate: start, EventEndDate: end, CurrentYear: 2026, Status: "Open",
             LocationText: null, LocationTextArabic: null, Latitude: null, Longitude: null,
             ContactPhone: null, ContactEmail: null, ContactWebsite: null, LiveStreamUrl: null,
+            BackgroundVideoUrl: null,
             Social: new SocialLinks(null, null, null, null, null, null, null),
             LogoUrl: null,
             AboutItems: Array.Empty<OrganizationAboutItemDto>(),

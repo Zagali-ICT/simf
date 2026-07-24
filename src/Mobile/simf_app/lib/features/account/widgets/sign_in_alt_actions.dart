@@ -44,11 +44,11 @@ class SignInAltActions extends StatelessWidget {
               child: Divider(color: SimfTokens.beigeBorder, height: 1),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
               child: Text(
                 l10n.orDividerLabel,
                 style: const TextStyle(
-                  fontSize: 12,
+                  fontSize: SimfTokens.textSm,
                   color: SimfTokens.greyText,
                 ),
               ),
@@ -58,7 +58,7 @@ class SignInAltActions extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: SimfTokens.space6),
         if (biometricAvailable) ...<Widget>[
           AuthAltButton(
             label: l10n.faceIdSignInButton,
@@ -69,7 +69,7 @@ class SignInAltActions extends StatelessWidget {
             ),
             onPressed: busy ? null : onBiometric,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: SimfTokens.space3),
         ],
         AuthAltButton(
           label: l10n.badgeSignInButton,
@@ -96,7 +96,7 @@ class SignInAltActions extends StatelessWidget {
                 // decoration painter), so the guest link rendered plain despite
                 // the underline being set. Grey #6C7278 matches frame 627:2390.
                 style: const TextStyle(
-                  fontSize: 12,
+                  fontSize: SimfTokens.textSm,
                   fontWeight: FontWeight.w700,
                   color: SimfTokens.greyText,
                   decoration: TextDecoration.underline,

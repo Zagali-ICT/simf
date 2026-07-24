@@ -7,6 +7,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/core/organization_profile/organization_profile.dart';
+import 'package:simf_app/core/site_settings/site_settings.dart';
 import 'package:simf_app/features/live/data/live_repository.dart';
 import 'package:simf_app/features/live/live_broadcast_screen.dart';
 import 'package:simf_app/features/live/widgets/live_badges.dart';
@@ -77,6 +78,13 @@ class _StubOrgProfile extends OrgProfileController {
   @override
   Future<void> warm() async {}
 }
+
+SiteSettings _settings({bool sessionRatingEnabled = true}) => SiteSettings(
+      registrationMessageAr: '',
+      registrationMessageEn: '',
+      social: const SiteSocialLinks(),
+      sessionRatingEnabled: sessionRatingEnabled,
+    );
 
 OrgProfile _orgProfile({String? liveStreamUrl}) => OrgProfile(
       name: 'The Forum',
@@ -167,6 +175,9 @@ Future<GoRouter> _pump(
         orgProfileProvider.overrideWith(() => _StubOrgProfile(profile)),
         authControllerProvider.overrideWith(() => auth ?? _SignedIn()),
         simfPrefsStorageProvider.overrideWithValue(prefs ?? FakePrefs()),
+        // Session rating ON by default (fail-open) — isolates the tests from the
+        // real site-settings client. The disabled case pre-warms its own container.
+        siteSettingsProvider.overrideWith((ref) => _settings()),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -611,6 +622,83 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
       expect(find.text('RATE s1 Session'), findsNothing);
+    });
+
+    testWidgets('2026-07-22 — the after-watch prompt is suppressed when the CP '
+        'disables session rating (siteSettings.sessionRatingEnabled=false)',
+        (tester) async {
+      tester.view.physicalSize = const Size(1200, 2600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final container = ProviderContainer(
+        overrides: <Override>[
+          liveRepositoryProvider.overrideWithValue(
+            _FakeLiveRepo(
+              session: _liveSession(
+                liveStreamUrl: 'https://live.example.sa/main.m3u8',
+              ),
+            ),
+          ),
+          orgProfileProvider.overrideWith(() => _StubOrgProfile(null)),
+          authControllerProvider.overrideWith(_SignedIn.new),
+          simfPrefsStorageProvider.overrideWithValue(FakePrefs()),
+          siteSettingsProvider
+              .overrideWith((ref) => _settings(sessionRatingEnabled: false)),
+        ],
+      );
+      addTearDown(container.dispose);
+      // Force the cached site-settings resolved BEFORE the screen's _load reads
+      // them, so the gate sees sessionRatingEnabled=false at capture time.
+      await container.read(siteSettingsProvider.future);
+
+      final router = GoRouter(
+        initialLocation: '/live',
+        routes: <RouteBase>[
+          GoRoute(
+            path: '/live',
+            builder: (_, __) => const LiveBroadcastScreen(sessionId: 's1'),
+          ),
+          GoRoute(
+            path: '/gone',
+            builder: (_, __) => const Scaffold(body: Text('GONE')),
+          ),
+          GoRoute(
+            path: '/rate',
+            name: RouteNames.rate,
+            builder: (_, state) => Scaffold(
+              body: Text('RATE ${state.uri.queryParameters['targetId']} '
+                  '${state.uri.queryParameters['code']}'),
+            ),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp.router(
+            routerConfig: router,
+            supportedLocales: AppL10n.supportedLocales,
+            localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+              ...AppL10n.localizationsDelegates,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+          ),
+        ),
+      );
+      for (var i = 0; i < 4; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+
+      // Leaving must NOT open the rate screen — the CP disabled session rating.
+      router.go('/gone');
+      await tester.pumpAndSettle();
+      expect(find.text('RATE s1 Session'), findsNothing);
+      expect(find.text('GONE'), findsOneWidget);
     });
 
     testWidgets('S-3 — a URL set but the session has NOT started (future) hides '

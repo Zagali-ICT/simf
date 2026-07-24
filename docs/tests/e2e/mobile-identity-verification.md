@@ -41,9 +41,9 @@ Scenario: The user passes the three liveness steps and sets the avatar
   And the prompt reads "ابتسم"
   When the user smiles (ML Kit smilingProbability ≥ 0.7)
   Then the forward selfie is captured and the prompt advances to "أدر رأسك يمينًا"
-  When the user turns right (headEulerAngleY ≥ +20°)
+  When the user turns their head to their physical RIGHT (normalised yaw ≥ +20°)
   Then the prompt advances to "أدر رأسك يسارًا"
-  When the user turns left (headEulerAngleY ≤ -20°)
+  When the user turns their head to their physical LEFT (normalised yaw ≤ -20°)
   Then the screen pops, the captured selfie uploads to POST /app/account/avatar
   And the My-Area dashboard reloads showing the new photo
   # Device-only — the AVD virtual camera cannot perform a real smile/turn.
@@ -72,6 +72,29 @@ Scenario: livenessStepSatisfied enforces the thresholds
   And turn-left passes only when headEulerAngleY ≤ -20°
 ```
 
+### E2E-MOBIDV-005 — Turn direction matches the prompt on every device (#12/#26)
+
+> The raw ML Kit `headEulerAngleY` sign for a physical turn depends on the
+> platform AND the front camera's sensor orientation, so it is normalised in
+> `livenessInvertYaw` before the ±20° gate: iOS never inverts; Android inverts
+> when `sensorOrientation >= 180` (the common front sensor 270, incl. the RSNF
+> tablet). A physical turn in the prompted direction always satisfies the step —
+> the prompt/arrow stay a pure function of the step and are never swapped
+> (supersedes the reverted D-684 / PR-103 prompt-swap).
+
+```gherkin
+Scenario: A physical RIGHT turn advances the turn-right step (both platforms)
+  Given the liveness challenge has reached "أدر رأسك يمينًا" (turn right)
+  When the user turns their head to their physical RIGHT
+  Then the turn-right step passes and the prompt advances to "أدر رأسك يسارًا"
+  # Regardless of raw sign: Android sensor-270 reads it negative and inverts;
+  # iOS reads it positive and does not — both normalise so physical RIGHT ≥ +20°.
+
+Scenario: livenessInvertYaw normalises the sign per platform + sensor (unit)
+  Then livenessInvertYaw(iOS, any sensorOrientation) is false
+  And livenessInvertYaw(Android, 270) is true and livenessInvertYaw(Android, 90) is false
+```
+
 ### E2E-MOBIDV-004 — Cancel / upload failure / RTL
 
 ```gherkin
@@ -80,10 +103,24 @@ Scenario: Cancelling mid-flow leaves the avatar unchanged
   When the user taps back before finishing
   Then no upload happens and the avatar is unchanged
 
-Scenario: Upload failure surfaces a toast
-  Given a selfie was captured/picked
+Scenario: Upload failure surfaces the server's reason
+  Given a selfie was captured
   When POST /app/account/avatar fails
-  Then the avatarUploadFailed toast shows and the avatar is unchanged
+  Then a toast shows the server's bilingual message (e.g. the 2 MB / MIME
+       reason), falling back to avatarUploadFailed when the server sent none,
+       and the avatar is unchanged
+
+Scenario: Upload survives a background token refresh mid-capture (D-758/D-759)
+  # The guided liveness takes several seconds; a token proactive-refresh in
+  # that window used to rebuild My-Area (go_router page-key churn, D-759) so the
+  # caller resumed on an unmounted State and the `!mounted` guard silently
+  # dropped the upload — the photo never reached the server.
+  Given the user is on منطقتي and taps their avatar
+  And a token proactive-refresh fires while the liveness challenge is in progress
+  When the user completes the challenge and the selfie is captured
+  Then POST /app/account/avatar is still sent and returns 200
+  And the new avatar is persisted and refetched on the (rebuilt) card
+  And no loading-spinner "reload flash" appears under the returning screen
 
 Scenario: RTL
   Given the app language is Arabic
@@ -92,4 +129,9 @@ Scenario: RTL
 
 ---
 
-_Last reviewed:_ `2026-07-06` by `SIMF Team`.
+_Last reviewed:_ `2026-07-22` by `Claude` (D-758/D-759 — the avatar upload now
+survives a background token-refresh page rebuild mid-capture, and the failure
+toast shows the server's real reason; added the two E2E-MOBIDV-004 scenarios).
+Prior same day: added E2E-MOBIDV-005 for the per-platform / per-sensor yaw-sign
+normalisation and clarified E2E-MOBIDV-001 that the ±20° gate is on the
+NORMALISED yaw. Prior: `2026-07-06` by `SIMF Team`.

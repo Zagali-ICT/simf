@@ -15,7 +15,8 @@ namespace SIMF.Infrastructure.Operations;
 /// minute it finds active sessions that have just ended (<c>EndUtc</c> within a
 /// recent back-fill window) and have not yet been prompted, then dispatches an
 /// in-app <see cref="NotificationKind.SessionRatingRequest"/> to every attendee
-/// with an active seat in that session. The notification's
+/// who checked in to the hall for that session (a <c>HallAttendance</c> row) —
+/// not everyone who merely booked a seat. The notification's
 /// <c>RelatedEntityType="Session"</c> + <c>RelatedEntityId</c> let the app
 /// deep-link to the session's rating screen.
 ///
@@ -40,6 +41,11 @@ internal sealed class SessionRatingPromptWorker(
     /// not all prompted at once; a session is prompted once, the first poll after
     /// it ends.</summary>
     internal static readonly TimeSpan BackfillWindow = TimeSpan.FromHours(6);
+
+    /// <summary>The CP rating-type <c>Code</c> whose active state (RatingConfig)
+    /// gates this prompt: deactivating the "Session" type in the CP silences the
+    /// end-of-session rating notification.</summary>
+    private const string SessionRatingTypeCode = "Session";
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -106,7 +112,7 @@ internal sealed class SessionRatingPromptWorker(
 
     /// <summary>
     /// The core scan, extracted for direct unit testing. Notifies every attendee
-    /// with an active seat in each just-ended session, then stamps
+    /// who checked in to the hall for each just-ended session, then stamps
     /// <c>RatingPromptSentUtc</c> so each session is prompted exactly once.
     /// Returns the number of sessions prompted. A single attendee's dispatch
     /// failure is logged and skipped — it never aborts the batch or blocks the
@@ -117,6 +123,17 @@ internal sealed class SessionRatingPromptWorker(
         DateTimeOffset now, TimeSpan backfillWindow, ILogger logger,
         CancellationToken cancellationToken)
     {
+        // Respect the CP: if an admin deactivated the "Session" rating type in
+        // RatingConfig, send no session prompt (the rate form already 404s for an
+        // inactive type, so a prompt would deep-link to an unavailable form). Not
+        // stamped, so re-enabling resumes prompts for sessions still in the window.
+        var sessionRatingEnabled = await db.RatingTypes
+            .AnyAsync(t => t.Code == SessionRatingTypeCode && t.IsActive, cancellationToken);
+        if (!sessionRatingEnabled)
+        {
+            return 0;
+        }
+
         var windowStart = now - backfillWindow;
         var due = await db.Sessions
             .Where(s => s.IsActive
@@ -131,11 +148,17 @@ internal sealed class SessionRatingPromptWorker(
 
         foreach (var session in due)
         {
-            var attendeeIds = await db.SeatReservations
-                .Where(r => r.SessionId == session.Id
-                    && r.ReleasedAt == null
-                    && r.ReservedForUserId != null)
-                .Select(r => r.ReservedForUserId!.Value)
+            // Audience = attendees who actually CHECKED IN to the hall for this
+            // session (a HallAttendance row), NOT everyone holding a seat booking.
+            // This mirrors the submit gate (RatingFormService.IsAttendedAsync,
+            // PerSession), so a prompted user can always submit, and it stops a
+            // booked-but-absent user being asked to rate a session they never
+            // attended. It also covers attendees who never scanned out — the
+            // HallAttendanceCloseoutWorker auto-closes their row without dispatching
+            // the departure prompt, but their check-in row already exists here.
+            var attendeeIds = await db.HallAttendances
+                .Where(a => a.SessionId == session.Id)
+                .Select(a => a.UserId)
                 .Distinct()
                 .ToListAsync(cancellationToken);
 

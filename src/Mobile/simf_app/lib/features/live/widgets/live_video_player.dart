@@ -192,7 +192,10 @@ class _YoutubeView extends StatelessWidget {
     // not overlaid on the video, so the player is just the rounded feed.
     return ClipRRect(
       borderRadius: BorderRadius.circular(SimfTokens.radius),
-      child: YoutubePlayer(controller: controller, aspectRatio: 16 / 9),
+      child: YoutubePlayer(
+        controller: controller,
+        aspectRatio: SimfTokens.videoAspectRatio,
+      ),
     );
   }
 }
@@ -208,7 +211,7 @@ class _Player extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ratio = controller.value.aspectRatio == 0
-        ? 16 / 9
+        ? SimfTokens.videoAspectRatio
         : controller.value.aspectRatio;
     // The LIVE badge + language chip live in the surface's top row (934:3612).
     return ClipRRect(
@@ -247,7 +250,7 @@ class _PlayerLoading extends StatelessWidget {
     // Frame 934:3595 — the resting/poster affordance: a 52px translucent-white
     // circle holding a 22px white play triangle (shown until the feed renders).
     return AspectRatio(
-      aspectRatio: 16 / 9,
+      aspectRatio: SimfTokens.videoAspectRatio,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: Colors.black,
@@ -262,7 +265,11 @@ class _PlayerLoading extends StatelessWidget {
               color: SimfTokens.playScrim,
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.play_arrow, size: 22, color: Colors.white),
+            child: const Icon(
+              Icons.play_arrow,
+              size: 22,
+              color: SimfTokens.surface,
+            ),
           ),
         ),
       ),
@@ -286,7 +293,7 @@ class _PlayerError extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AspectRatio(
-      aspectRatio: 16 / 9,
+      aspectRatio: SimfTokens.videoAspectRatio,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: Colors.black,
@@ -309,7 +316,7 @@ class _PlayerError extends StatelessWidget {
                 Text(
                   message,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: SimfTokens.beigeBorder),
+                  style: SimfTokens.hintBeige,
                 ),
                 const SizedBox(height: SimfTokens.space3),
                 FilledButton(onPressed: onRetry, child: Text(retryLabel)),

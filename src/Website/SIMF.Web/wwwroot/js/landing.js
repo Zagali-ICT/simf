@@ -5,15 +5,33 @@
  *   1. Page-loader fade-out on window load.
  *   2. Reveal-on-scroll for .ln-reveal blocks (IntersectionObserver).
  *   3. Search drop-panel toggle.
- *   4. Sponsors carousel: prev/next arrows scroll the (static) sponsor strip.
- *   5. Hero video paused while off-screen (saves decode CPU/battery).
+ *   5. Stat count-up: participation counters tick from 0 when scrolled in.
  *   6. Theme explorer: vertical tabs switch the visible theme panel.
+ *   7. Programme agenda: day strip + type filter.
+ * (The hero drift + sponsors marquee are pure CSS now — see landing.css.)
  */
 (function () {
   'use strict';
 
   var prefersReducedMotion = window.matchMedia
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* Bind-once guard. run() re-fires on every Blazor enhanced navigation (see the
+     enhancedload hook at the bottom), so this marks an element as wired: the shared
+     header (preserved across enhanced nav) is not wired twice, while swapped page
+     content (fresh elements with no mark) still gets wired each time. */
+  function firstInit(el, key) {
+    if (!el) { return false; }
+    // Mark via a JS property, NOT a data-* attribute. Blazor's enhanced-navigation
+    // DOM morph re-syncs a PRESERVED element's attributes back to the server-rendered
+    // state (which has no data-lnInit*), so a dataset flag would be stripped and
+    // run() would re-wire the shared header on every navigation — stacking duplicate
+    // listeners. A JS property survives the morph, so the bind-once guard holds.
+    var prop = '_lnInit' + key;
+    if (el[prop]) { return false; }
+    el[prop] = true;
+    return true;
+  }
 
   /* ---- 1. page loader ---------------------------------------------------- */
   function hideLoader() {
@@ -37,7 +55,7 @@
         if (e.isIntersecting) { e.target.classList.add('is-visible'); io.unobserve(e.target); }
       });
     }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
-    nodes.forEach(function (n) { io.observe(n); });
+    nodes.forEach(function (n) { if (firstInit(n, 'Reveal')) { io.observe(n); } });
   }
 
   /* ---- 3. search drop-panel toggle -------------------------------------- */
@@ -45,6 +63,7 @@
     var toggle = document.getElementById('ln-search-toggle');
     var panel = document.getElementById('ln-search-panel');
     if (!toggle || !panel) { return; }
+    if (!firstInit(toggle, 'Search')) { return; }
     var closeBtn = panel.querySelector('.ln-search__close');
     function setOpen(open) {
       panel.classList.toggle('is-open', open);
@@ -61,36 +80,52 @@
     });
   }
 
-  /* ---- 4. sponsors carousel: prev/next arrows scroll the strip ---------- */
-  function initSponsors() {
-    var vp = document.querySelector('.ln-spon__viewport');
-    var carousel = document.querySelector('.ln-spon__carousel');
-    if (!vp || !carousel) { return; }
-    var arrows = carousel.querySelectorAll('.ln-spon__arrow');
-    if (arrows.length < 2) { return; }
-    var step = 259; // one sponsor card (243px) + gap (16px)
-    // carousel is forced LTR (see landing.css): standard scrollLeft, so prev = -step (left/back), next = +step (right/advance).
-    arrows[0].addEventListener('click', function () { vp.scrollBy({ left: -step, behavior: 'smooth' }); });
-    arrows[1].addEventListener('click', function () { vp.scrollBy({ left: step, behavior: 'smooth' }); });
-  }
-
-  /* ---- 5. hero video: pause while off-screen ---------------------------- */
-  function initHeroVideo() {
-    var video = document.querySelector('.ln-hero__video');
-    if (!video || !('IntersectionObserver' in window)) { return; }
+  /* ---- 5. stat count-up: numbers tick from 0 when scrolled into view ---- */
+  function initCountUp() {
+    var nums = document.querySelectorAll('.ln-stat__num');
+    if (!nums.length) { return; }
+    // Reduced-motion / no-IO: leave the final value rendered as-is.
+    if (prefersReducedMotion || !('IntersectionObserver' in window)) { return; }
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (e) {
-        if (e.isIntersecting) { var p = video.play(); if (p && p.catch) { p.catch(function () {}); } }
-        else { video.pause(); }
+        if (!e.isIntersecting) { return; }
+        io.unobserve(e.target);
+        animateCount(e.target);
       });
-    }, { threshold: 0.05 });
-    io.observe(video);
+    }, { threshold: 0.6 });
+    nums.forEach(function (n) { if (firstInit(n, 'Count')) { io.observe(n); } });
+  }
+
+  // Tick el's numeric part from 0 to its target over ~1.3s, preserving any
+  // non-digit prefix/suffix ("+500" -> "+0".."+500"); restores the exact
+  // original text at the end so formatting is never altered.
+  function animateCount(el) {
+    var raw = el.textContent.trim();
+    var parts = raw.match(/^(\D*)([\d,]+)(.*)$/);
+    if (!parts) { return; }
+    var prefix = parts[1], suffix = parts[3];
+    var target = parseInt(parts[2].replace(/,/g, ''), 10);
+    if (!isFinite(target)) { return; }
+    var startTs = null, duration = 1300;
+    function step(ts) {
+      if (startTs === null) { startTs = ts; }
+      var p = Math.min((ts - startTs) / duration, 1);
+      var eased = 1 - Math.pow(1 - p, 3); // easeOutCubic
+      if (p < 1) {
+        el.textContent = prefix + Math.round(eased * target).toLocaleString('en-US') + suffix;
+        window.requestAnimationFrame(step);
+      } else {
+        el.textContent = raw; // restore the exact authored string
+      }
+    }
+    window.requestAnimationFrame(step);
   }
 
   /* ---- 6. theme explorer: vertical tabs switch the visible panel -------- */
   function initThemeTabs() {
     var ex = document.querySelector('.ln-themex');
     if (!ex) { return; }
+    if (!firstInit(ex, 'Tabs')) { return; }
     var tabs = ex.querySelectorAll('.ln-themex__tab');
     var panels = ex.querySelectorAll('.ln-themex__panel');
     if (!tabs.length || tabs.length !== panels.length) { return; }
@@ -113,6 +148,7 @@
   function initAgenda() {
     var root = document.querySelector('.ln-agenda');
     if (!root) { return; }
+    if (!firstInit(root, 'Agenda')) { return; }
     var dayPills = root.querySelectorAll('[data-agenda-day]');
     var dayPanels = root.querySelectorAll('[data-agenda-daypanel]');
     var typeTabs = root.querySelectorAll('[data-agenda-type]');
@@ -155,10 +191,157 @@
     root.classList.add('is-enhanced');
   }
 
-  function run() { initReveal(); initSearch(); initSponsors(); initHeroVideo(); initThemeTabs(); initAgenda(); }
+  /* ---- 8. floating chat assistant --------------------------------------- */
+  function initChatbot() {
+    var root = document.getElementById('ln-chat');
+    if (!root) { return; }
+    if (!firstInit(root, 'Chat')) { return; }
+    var launcher = document.getElementById('ln-chat-launcher');
+    var panel = document.getElementById('ln-chat-panel');
+    var closeBtn = document.getElementById('ln-chat-close');
+    var form = document.getElementById('ln-chat-form');
+    var input = document.getElementById('ln-chat-input');
+    var log = document.getElementById('ln-chat-log');
+    if (!launcher || !panel || !form || !input || !log) { return; }
+
+    function setOpen(open) {
+      panel.hidden = !open;
+      root.classList.toggle('is-open', open);
+      launcher.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open) { input.focus(); }
+    }
+    launcher.addEventListener('click', function () { setOpen(panel.hidden); });
+    if (closeBtn) { closeBtn.addEventListener('click', function () { setOpen(false); launcher.focus(); }); }
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !panel.hidden) { setOpen(false); launcher.focus(); }
+    });
+
+    function addMsg(text, who) {
+      var el = document.createElement('div');
+      el.className = 'ln-chat__msg ln-chat__msg--' + who;
+      el.textContent = text;
+      log.appendChild(el);
+      log.scrollTop = log.scrollHeight;
+      return el;
+    }
+    function unavailable() {
+      return document.documentElement.lang === 'ar'
+        ? 'تعذّر الوصول إلى المساعد الآن. حاول لاحقاً.'
+        : 'The assistant is unavailable right now. Please try again.';
+    }
+
+    var busy = false;
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var q = input.value.trim();
+      if (!q || busy) { return; }
+      addMsg(q, 'user');
+      input.value = '';
+      busy = true;
+      var typing = addMsg('…', 'ai');
+      typing.classList.add('ln-chat__msg--typing');
+      window.fetch('/chat/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: q })
+      }).then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (data) {
+          typing.remove();
+          addMsg((data && data.answer) || unavailable(), 'ai');
+        })
+        .catch(function () { typing.remove(); addMsg(unavailable(), 'ai'); })
+        .finally(function () { busy = false; input.focus(); });
+    });
+  }
+
+  /* ---- 9. nav mega-menu: dismiss on click ------------------------------- */
+  function initDropdowns() {
+    var dds = document.querySelectorAll('.ln-dd');
+    if (!dds.length) { return; }
+    dds.forEach(function (dd) {
+      if (!firstInit(dd, 'Dd')) { return; }
+      var toggle = dd.querySelector('.ln-nav__item');
+      // A pointer press must not latch the panel open via :focus-within (that
+      // leaves it stuck open until you click elsewhere). preventDefault on
+      // mousedown stops the click focusing the toggle; hover and keyboard focus
+      // still open the panel.
+      if (toggle) {
+        toggle.addEventListener('mousedown', function (e) { e.preventDefault(); });
+      }
+      // Clicking a menu item navigates — dismiss the panel (drop focus + a class
+      // that overrides :hover) so it does not linger open on the destination page.
+      dd.addEventListener('click', function (e) {
+        if (e.target.closest('.ln-dd__link')) {
+          dd.classList.add('is-dismissed');
+          if (document.activeElement && document.activeElement.blur) { document.activeElement.blur(); }
+        }
+      });
+      // Re-enable opening once the pointer leaves OR focus (re-)enters the menu.
+      // The focusin path matters for keyboard users: an item is a same-page anchor,
+      // so mouseleave may never fire — without this, tabbing back could not re-open
+      // the panel (is-dismissed would override :focus-within indefinitely).
+      dd.addEventListener('mouseleave', function () { dd.classList.remove('is-dismissed'); });
+      dd.addEventListener('focusin', function () { dd.classList.remove('is-dismissed'); });
+    });
+  }
+
+  function run() { initReveal(); initSearch(); initCountUp(); initThemeTabs(); initAgenda(); initChatbot(); initDropdowns(); }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', run);
   } else {
     run();
+  }
+
+  /* Blazor enhanced navigation swaps the page DOM WITHOUT a full reload, so
+     DOMContentLoaded never fires again. Without re-running, a navigated-to page
+     keeps its .ln-reveal blocks hidden (opacity:0) and its interactions unwired
+     until a manual reload. Re-run after every enhanced load; firstInit() keeps the
+     preserved shared header from being wired twice. */
+  // Scroll to the element named by location.hash. A full page load scrolls to a
+  // #fragment natively, but enhanced navigation (below) does NOT — a "/archive#ed-1"
+  // click from the nav would land at the page top. Because the target may render a
+  // frame late AND Blazor may reset scroll after enhancedload, re-assert the scroll
+  // across a few frames and STOP once it has landed (so it never fights the user).
+  function scrollToHash() {
+    if (!location.hash) { return; }
+    var id = decodeURIComponent(location.hash.slice(1));
+    var tries = 0;
+    (function settle() {
+      // bail if another navigation changed the hash under us
+      if (!location.hash || decodeURIComponent(location.hash.slice(1)) !== id) { return; }
+      var el = document.getElementById(id);
+      if (el) {
+        if (Math.abs(el.getBoundingClientRect().top) < 4) { return; } // landed — done
+        el.scrollIntoView();
+      }
+      if (++tries < 8) { window.setTimeout(settle, 50); }
+    })();
+  }
+
+  function onEnhancedLoad() {
+    // Enhanced nav also morphs a fresh #ln-loader (without is-gone) back into the
+    // DOM, and window 'load' never refires — so without this the splash covers the
+    // navigated-to page at z-index 99999 and blocks all interaction. Hide it
+    // instantly (no fade on a client-side nav), then re-wire the page interactions.
+    var loader = document.getElementById('ln-loader');
+    if (loader) { loader.style.transition = 'none'; loader.classList.add('is-gone'); }
+    run();
+    scrollToHash();
+  }
+
+  var enhancedHooked = false;
+  function hookEnhancedNav() {
+    if (enhancedHooked) { return true; }
+    if (window.Blazor && typeof window.Blazor.addEventListener === 'function') {
+      window.Blazor.addEventListener('enhancedload', onEnhancedLoad);
+      enhancedHooked = true;
+      return true;
+    }
+    return false;
+  }
+  // blazor.web.js may load after this script, so try now and again once it is up.
+  if (!hookEnhancedNav()) {
+    document.addEventListener('DOMContentLoaded', hookEnhancedNav);
+    window.addEventListener('load', hookEnhancedNav);
   }
 })();

@@ -57,7 +57,7 @@ class AccountRememberForgot extends StatelessWidget {
                 child: Text(
                   rememberLabel,
                   style: const TextStyle(
-                    fontSize: 12,
+                    fontSize: SimfTokens.textSm,
                     color: SimfTokens.greyText,
                   ),
                 ),
@@ -71,7 +71,7 @@ class AccountRememberForgot extends StatelessWidget {
             style: authLinkButtonStyle(SimfTokens.greyText),
             child: Text(
               forgotLabel,
-              style: const TextStyle(fontSize: 12),
+              style: const TextStyle(fontSize: SimfTokens.textSm),
             ),
           ),
         ),

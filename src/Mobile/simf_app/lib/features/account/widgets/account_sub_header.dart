@@ -36,7 +36,7 @@ class AccountSubHeader extends StatelessWidget {
       onPressed: busy ? null : onBack,
       icon: const Icon(
         Icons.arrow_back_ios_new,
-        color: Colors.white,
+        color: SimfTokens.surface,
         size: 20,
         textDirection: TextDirection.ltr,
       ),
@@ -49,7 +49,7 @@ class AccountSubHeader extends StatelessWidget {
           Align(
             alignment: Alignment.centerLeft,
             child: Padding(
-              padding: const EdgeInsets.only(left: 8),
+              padding: const EdgeInsets.only(left: SimfTokens.space2),
               child: circular
                   ? DecoratedBox(
                       decoration: const BoxDecoration(
@@ -64,8 +64,8 @@ class AccountSubHeader extends StatelessWidget {
           Text(
             title,
             style: const TextStyle(
-              color: Colors.white,
-              fontSize: 24,
+              color: SimfTokens.surface,
+              fontSize: SimfTokens.text24,
               fontWeight: FontWeight.w500,
             ),
           ),

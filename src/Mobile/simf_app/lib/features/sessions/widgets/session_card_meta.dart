@@ -32,10 +32,7 @@ class SessionIconLine extends StatelessWidget {
             text,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textSm,
-            ),
+            style: SimfTokens.labelBeigeSm,
           ),
         ),
       ],
@@ -67,8 +64,8 @@ class SessionMetaGroup extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         Container(
-          width: 24,
-          height: 24,
+          width: SimfTokens.metaIconBox,
+          height: SimfTokens.metaIconBox,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: SimfTokens.beigeBorder,
@@ -82,10 +79,7 @@ class SessionMetaGroup extends StatelessWidget {
             text,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textSm,
-            ),
+            style: SimfTokens.labelBeigeSm,
           ),
         ),
       ],

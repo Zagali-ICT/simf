@@ -8,10 +8,12 @@
 // specific claims (account_state, email, rejection_reason, …) it
 // needs via the Authorization property's SetClaims, because that's
 // exactly the input the page logic branches on.
+using System.Net;
 using Bunit;
 using Bunit.TestDoubles;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
+using SIMF.ApiClient;
 using SIMF.Web;
 using SIMF.Web.Content;
 
@@ -36,6 +38,17 @@ public abstract class WebComponentTestBase : TestContext
         Services.AddMemoryCache();
         Services.AddScoped<ForumDates>();
 
+        // The shared LandingHeader (rendered on every marketing page via LandingShell)
+        // now resolves the Archive editions dropdown via PublicEditions, so it must be
+        // resolvable in every page test. A default unavailable SimfPublicClient is
+        // registered so both providers fall back gracefully; a test that needs real
+        // data registers its own SimfPublicClient afterwards (last registration wins).
+        Services.AddSingleton(new SimfPublicClient(new HttpClient(new UnavailableHandler())
+        {
+            BaseAddress = new Uri("https://api.test/"),
+        }));
+        Services.AddScoped<PublicEditions>();
+
         // Authenticated by default (the account pages carry [Authorize]);
         // each test layers the specific claims it needs on top.
         Authorization = this.AddTestAuthorization();
@@ -47,6 +60,16 @@ public abstract class WebComponentTestBase : TestContext
     /// state-banner redirect routing.</summary>
     protected FakeNavigationManager Navigation =>
         Services.GetRequiredService<FakeNavigationManager>();
+
+    // The default public client for pages that do not stub their own: every request
+    // returns 503, so GetArchiveAsync / GetOrganizationProfileAsync yield null and the
+    // providers use their static fallbacks.
+    private sealed class UnavailableHandler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request, CancellationToken cancellationToken) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+    }
 
     private sealed class PassThroughStringLocalizer : IStringLocalizer<Strings>
     {

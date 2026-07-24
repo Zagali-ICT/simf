@@ -294,7 +294,9 @@ const Map<int, Set<AppRole>> _routeRoles = <int, Set<AppRole>>{
   109: _attendee, // Seat picker (D-485)
   110: _attendee, // Join-a-session hub (D-485)
   113: _attendee, // My sessions (D-710, restored — owner reversed the D-609 removal)
-  202: _attendee, // Session presentations (Wave 2)
+  // 202 (Session presentations — the "الجلسات" list) is PUBLIC (owner 2026-07-22):
+  // a guest opens it from the home "Sessions" tile, so it is intentionally NOT
+  // gated here. Its reads (`GET /app/presentations[/{id}/file]`) are AllowAnonymous.
   // (D-609: routes 115 My-meetings, 205 Saved-sessions removed — screens backed
   // up as `.bk`; 113 My-sessions restored by D-710.)
   // Exhibitor-only — lead capture (D-426).
@@ -603,15 +605,16 @@ Widget _auxScreenFor(BuildContext context, GoRouterState state, _Route r) {
   );
 }
 
-/// Incrementing counter so every page key is unique — Flutter 3.44.5's
-/// `_debugCheckDuplicatedPageKeys` builds a reservation set from existing
-/// overlay routes, and a static key (even a unique one) still collides when
-/// `router.refresh()` triggers `Navigator.didUpdateWidget`.
-var _pageKeyCounter = 0;
-
-/// A page key that is unique for the lifetime of the process.
-String _nextPageKey(String prefix) => '$prefix:${_pageKeyCounter++}';
-
+/// Page keys use go_router's stable [GoRouterState.pageKey] (unique per route
+/// match, stable across `router.refresh()`), so an auth-state refresh re-runs
+/// the redirect gate WITHOUT disposing and recreating every page. An earlier
+/// incrementing-counter key gave every page a new key on each refresh, so a
+/// token proactive-refresh churned all pages — silently dropping in-flight work
+/// on a PUSHED route (e.g. the avatar upload that resumes after the multi-second
+/// liveness, whose caller then read `!mounted`) and reloading screens under it.
+/// go_router disambiguates duplicate locations internally, so `pageKey` does not
+/// collide in Flutter's `_debugCheckDuplicatedPageKeys`.
+///
 /// Builds the go_router instance.
 ///
 /// The redirect logic implements the auth gate (SIMF-MAA-001 §8): a request
@@ -656,7 +659,7 @@ GoRouter buildRouter(Ref ref) {
         name: RouteNames.home,
         path: '/',
         pageBuilder: (context, state) => NoTransitionPage(
-          key: ValueKey(_nextPageKey('shell')),
+          key: state.pageKey,
           child: const SimfAppShell(),
         ),
       ),
@@ -667,7 +670,7 @@ GoRouter buildRouter(Ref ref) {
             name: r.name,
             path: r.path,
             pageBuilder: (context, state) => NoTransitionPage(
-              key: ValueKey(_nextPageKey('route:${r.name}')),
+              key: state.pageKey,
               child: _screenFor(context, state, r),
             ),
           ),
@@ -676,7 +679,7 @@ GoRouter buildRouter(Ref ref) {
           name: r.name,
           path: r.path,
           pageBuilder: (context, state) => NoTransitionPage(
-            key: ValueKey(_nextPageKey('aux:${r.name}')),
+            key: state.pageKey,
             child: _auxScreenFor(context, state, r),
           ),
         ),

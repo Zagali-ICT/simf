@@ -36,14 +36,14 @@ class NeedLoginState extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: SimfTokens.beigeBorder),
+              style: SimfTokens.hintBeige,
             ),
             const SizedBox(height: SimfTokens.space4),
             FilledButton(
               onPressed: onSignIn,
               style: FilledButton.styleFrom(
                 backgroundColor: SimfTokens.accent,
-                foregroundColor: Colors.white,
+                foregroundColor: SimfTokens.surface,
               ),
               child: Text(signInLabel),
             ),
@@ -124,12 +124,12 @@ class _TogglePill extends StatelessWidget {
       color: active ? SimfTokens.accent : SimfTokens.navyDeep,
       borderColor: active ? SimfTokens.accent : SimfTokens.beigeBorder,
       child: SizedBox(
-        height: 44,
+        height: SimfTokens.tapTarget,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             if (icon != null) ...<Widget>[
-              Icon(icon, size: 16, color: Colors.white),
+              Icon(icon, size: 16, color: SimfTokens.surface),
               const SizedBox(width: SimfTokens.space1),
             ],
             Flexible(
@@ -137,11 +137,7 @@ class _TogglePill extends StatelessWidget {
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: SimfTokens.textSm,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: SimfTokens.labelWhiteSemiboldSm,
               ),
             ),
           ],
@@ -186,7 +182,7 @@ class GoldBullet extends StatelessWidget {
         ),
         const SizedBox(width: SimfTokens.space2),
         Padding(
-          padding: const EdgeInsets.only(top: 6),
+          padding: const EdgeInsets.only(top: SimfTokens.gap6),
           child: Container(
             width: 5,
             height: 5,
@@ -218,10 +214,7 @@ class SignLanguageNote extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textSm,
-            ),
+            style: SimfTokens.labelBeigeSm,
           ),
         ),
       ],
@@ -257,18 +250,13 @@ class RegionNoticeCard extends StatelessWidget {
           children: <InlineSpan>[
             TextSpan(
               text: '$noticeLabel ',
-              style: const TextStyle(fontWeight: FontWeight.w700),
+              style: SimfTokens.emphasisBold,
             ),
             TextSpan(text: noticeBody),
           ],
         ),
         textAlign: TextAlign.start,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: SimfTokens.textMd,
-          fontWeight: FontWeight.w500,
-          height: 1.5,
-        ),
+        style: SimfTokens.bodyWhiteMediumTall,
       ),
     );
   }
@@ -285,7 +273,7 @@ class AskQuestionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 48,
+      height: SimfTokens.controlHeight,
       child: FilledButton.icon(
         onPressed: onTap,
         icon: const Icon(Icons.help_outline, size: 18),
@@ -295,14 +283,11 @@ class AskQuestionButton extends StatelessWidget {
         // recurring button-font bug, D-546/D-549).
         label: Text(
           label,
-          style: const TextStyle(
-            fontSize: SimfTokens.textLg,
-            fontWeight: FontWeight.w700,
-          ),
+          style: SimfTokens.titleBold,
         ),
         style: FilledButton.styleFrom(
           backgroundColor: SimfTokens.accent,
-          foregroundColor: Colors.white,
+          foregroundColor: SimfTokens.surface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
           ),
@@ -338,11 +323,7 @@ class UpcomingCard extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 // Frame 934:3626 — the upcoming-session title is 14px Bold.
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: SimfTokens.textMd,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: SimfTokens.labelWhiteBoldMd,
               ),
             ),
             const SizedBox(width: SimfTokens.space3),
@@ -369,7 +350,7 @@ class _TimeChip extends StatelessWidget {
             '${t.minute.toString().padLeft(2, '0')}';
     return Container(
       // Frame 934:3628 — a fixed 53-wide gold chip, p-4, radius-4.
-      width: 53,
+      width: SimfTokens.timeChipWidth,
       padding: const EdgeInsets.all(SimfTokens.space1),
       alignment: Alignment.center,
       decoration: BoxDecoration(
@@ -380,11 +361,7 @@ class _TimeChip extends StatelessWidget {
         label,
         textDirection: TextDirection.ltr,
         textAlign: TextAlign.center,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: SimfTokens.textMd,
-          fontWeight: FontWeight.w600,
-        ),
+        style: SimfTokens.labelWhiteSemibold,
       ),
     );
   }

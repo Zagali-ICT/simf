@@ -8,10 +8,12 @@ import 'presentation_models.dart';
 /// Data layer for the session-presentations screen — App "الجلسات"
 /// (Figma 1388:7621). Lists every active session (`GET /app/presentations`;
 /// D-704 — not only the sessions that have an uploaded deck) and fetches one
-/// file's bytes through the authenticated client (`GET /app/presentations/{id}/file`)
-/// so the bearer + self-signed-TLS handling is inherited (a bare URL open could not
-/// authenticate). Both require an **Approved** account. Throws [ApiFailure] on a
-/// wire error.
+/// file's bytes through the shared client (`GET /app/presentations/{id}/file`)
+/// so the self-signed-TLS handling (and the bearer, when signed in) is inherited
+/// (a bare URL open could not). Both are **ANONYMOUS** (owner 2026-07-22 — the
+/// Sessions list is public, opened from the home "Sessions" tile by a guest); the
+/// client simply omits the bearer when there is no session. Throws [ApiFailure]
+/// on a wire error.
 class PresentationRepository {
   PresentationRepository(this._client);
 

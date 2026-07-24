@@ -71,7 +71,11 @@
   --radius-full: 999px;
   --shadow-card: 0 2px 10px rgba(76, 78, 100, .12);
   /* layout */
-  --content-w: 1280px;
+  /* Content band cap. At the 1440 Figma artboard the section gutters (80px) bind,
+     so content is 1280 (pixel-identical to Figma). On wider screens the content
+     grows to fill viewport-minus-gutters up to this cap, so the side margins stay
+     ~80px instead of ballooning (they used to at the old 1280 cap). */
+  --content-w: 1760px;
   --section-gutter: 80px;
   --landing-font: 'Almarai', system-ui, 'Segoe UI', Tahoma, sans-serif;
 
@@ -105,8 +109,16 @@
 .landing h4,
 .landing p { margin: 0; }
 
-/* Each section caps its own content band at --content-w with margin-inline:auto
-   and pads to the clamped gutter (kept per-section, all token-driven). */
+/* ONE content-column system for every section, so all columns share the same
+   80px edge. The gutter is a clamped token (clamp(16px, 5.5vw, --section-gutter)).
+   Two placements exist, and both resolve the inner content to the SAME edge:
+     A) sections WITHOUT a full-bleed child put the gutter on the SECTION and the
+        inner caps at --content-w  -> content = min(content-w, vw - 2*gutter).
+     B) sections WITH a full-bleed child (hero bg, milestones cards, partners
+        marquee) keep section padding 0 so the child can bleed, and put the gutter
+        INSIDE the inner wrapper; that wrapper caps at (--content-w + 2*gutter) so
+        its content still resolves to min(content-w, vw - 2*gutter) — identical to A.
+   At the 1440 Figma artboard both give 1280 content / 80px gutters (pixel-identical). */
 
 /* reveal-on-scroll. Gated behind .ln-js (added by an inline head script) so
    that WITHOUT JavaScript nothing is ever hidden — every section renders at
@@ -181,6 +193,10 @@
   box-shadow: inset 0 -3px 0 var(--gold-active); }
 .ln-dd:hover > .ln-nav__item .ln-nav__chev,
 .ln-dd:focus-within > .ln-nav__item .ln-nav__chev { transform: rotate(180deg); }
+/* Dismiss-on-click: set by landing.js when a menu item is clicked so the panel
+   closes even while the pointer is still over it (else :hover keeps it open on the
+   navigated-to page). Cleared on mouseleave, so hovering re-opens it normally. */
+.ln-dd.is-dismissed > .ln-dd__panel { opacity: 0; visibility: hidden; }
 .ln-dd__title { font-size: 18px; font-weight: 800; line-height: 28px; color: var(--gold-active);
   text-align: start; padding-inline: 16px; margin: 0; }
 .ln-dd__list { display: flex; flex-direction: column; gap: 4px; }
@@ -242,8 +258,9 @@
 
 /* sub-nav strip (date / venue / weather) */
 .ln-subnav { background: var(--primary); border-bottom: 1px solid var(--navy); }
-/* cap at the Figma frame width (1440) so the distributed strip does not over-spread past the design on ultra-wide monitors */
-.ln-subnav__inner { display: flex; align-items: center; min-height: 64px; padding-inline: 32px; max-width: 1440px; margin-inline: auto; }
+/* Pattern B: share the page's 80px content edge (was a 1440 cap that left the
+   strip stranded ~200px in from the edge on wide monitors). */
+.ln-subnav__inner { display: flex; align-items: center; min-height: 64px; padding-inline: clamp(16px, 5.5vw, var(--section-gutter)); max-width: calc(var(--content-w) + 2 * var(--section-gutter)); margin-inline: auto; }
 .ln-subnav__info { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; min-width: 0; }
 .ln-subnav__item { display: inline-flex; align-items: center; gap: 12px; color: var(--white); font-size: 20px;
   line-height: 32px; white-space: nowrap; }
@@ -262,9 +279,15 @@
 }
 .ln-hero__video { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%;
   object-fit: cover; pointer-events: none; }
+/* D-756 — a YouTube embed can't object-fit (it is not a replaced element), so the
+   16:9 iframe is centred and over-sized to the larger of the band's width or height
+   and the excess is clipped by .ln-hero { overflow:hidden } — the same cover result. */
+.ln-hero__video--yt { position: absolute; z-index: 0; top: 50%; left: 50%;
+  transform: translate(-50%, -50%); width: 100vw; height: 56.25vw;
+  min-width: 177.78vh; min-height: 100vh; border: 0; pointer-events: none; }
 .ln-hero__overlay { position: absolute; inset: 0; z-index: 1; pointer-events: none;
   background: linear-gradient(180deg, rgba(0, 9, 32, .55) 0%, rgba(0, 9, 32, .12) 42%, rgba(0, 9, 32, .42) 100%); }
-.ln-hero__content { position: relative; z-index: 2; width: 100%; max-width: var(--content-w);
+.ln-hero__content { position: relative; z-index: 2; width: 100%; max-width: calc(var(--content-w) + 2 * var(--section-gutter));
   padding: 128px clamp(16px, 5.5vw, var(--section-gutter)) 40px; display: flex; flex-direction: column;
   align-items: flex-start; text-align: start; gap: 40px; color: var(--white); }
 .ln-hero__title { font-size: 60px; line-height: 72px; font-weight: 700; letter-spacing: -1.2px; }
@@ -297,15 +320,26 @@
 .ln-intro__title { font-size: 32px; font-weight: 800; line-height: 1.15; color: var(--white); }
 .ln-intro__sub { font-size: 16px; line-height: 24px; color: #bbc7d5; max-width: 720px; }
 .ln-intro__lead { font-size: 16px; line-height: 24px; color: var(--white); max-width: 720px; }
-/* static overflow row (matches the Figma mockup — no auto-scroll); horizontally scrollable, native scrollbar hidden, edges masked. */
-.ln-intro__strip { width: 100%; overflow-x: auto; scrollbar-width: none;
+/* Continuous marquee: two copies of the threat stats scroll -50% forever. Forced
+   LTR so the over-wide track anchors at its left edge; both edges masked; pauses
+   on hover. (Was a static manual-scroll row — the design wants it moving.) */
+.ln-intro__strip { width: 100%; overflow: hidden; direction: ltr;
   -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 95%, transparent 100%);
           mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 95%, transparent 100%); }
-.ln-intro__strip::-webkit-scrollbar { display: none; }
-.ln-marquee__track { display: flex; gap: 16px; width: max-content; }
-.ln-tstat { flex: 0 0 217px; width: 217px; height: 152px; background: rgba(36, 74, 119, .12);
-  border: 1px solid rgba(27, 56, 89, .5); padding: 16px; display: flex; flex-direction: column;
-  align-items: flex-start; gap: 24px; }
+.ln-marquee__track { display: flex; width: max-content;
+  animation: ln-marquee 60s linear infinite; }
+.ln-intro__strip:hover .ln-marquee__track { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .ln-marquee__track { animation: none; }
+  .ln-intro__strip { overflow-x: auto; scrollbar-width: none; }
+  .ln-intro__strip::-webkit-scrollbar { display: none; }
+}
+/* margin-inline-end (not track gap) so the two copies split exactly at -50% */
+.ln-tstat { flex: 0 0 217px; width: 217px; height: 152px; margin-inline-end: 16px;
+  background: rgba(36, 74, 119, .12); border: 1px solid rgba(27, 56, 89, .5); padding: 16px;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 24px;
+  transition: background-color .35s ease, border-color .35s ease; }
+.ln-tstat:hover { background: rgba(232, 192, 96, .12); border-color: var(--gold); }
 .ln-tstat__top { display: flex; align-items: center; gap: 8px; width: 100%; }
 .ln-tstat__val { font-size: 18px; font-weight: 800; line-height: 24px; color: var(--gold-active);
   text-align: start; flex: 1 1 auto; min-width: 0; }
@@ -356,13 +390,16 @@
 /* ===================== MILESTONES / NEWS TEASER ================== */
 .ln-miles { background: var(--bg-gray); padding: 64px 0 128px; display: flex; flex-direction: column;
   align-items: center; gap: 48px; }
-.ln-miles__head { width: 100%; max-width: var(--content-w); margin-inline: auto; padding-inline: clamp(16px, 5.5vw, 80px);
+.ln-miles__head { width: 100%; max-width: calc(var(--content-w) + 2 * var(--section-gutter)); margin-inline: auto; padding-inline: clamp(16px, 5.5vw, var(--section-gutter));
   display: flex; flex-direction: column; align-items: flex-start; gap: 24px; }
 .ln-miles__titlerow { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 24px; }
 .ln-miles__title { font-size: 32px; font-weight: 800; line-height: 1.2; color: var(--ink); text-align: start; }
 .ln-miles__desc { font-size: 16px; line-height: 24px; color: var(--ink); text-align: start; max-width: 964px; }
-.ln-miles__row { display: flex; width: 100%; max-width: 1440px; margin-inline: auto; justify-content: center; }
-.ln-mcard { flex: 0 0 360px; width: 360px; height: 369px; display: flex; flex-direction: column;
+/* Figma packs the milestone cards FULL-BLEED (x=0..1440, touching the frame
+   edges) while only the head is inset 80px — the one full-width card row on the
+   page. flex:1 fills the viewport edge-to-edge and adapts to the card count. */
+.ln-miles__row { display: flex; width: 100%; }
+.ln-mcard { flex: 1 1 0; min-width: 0; height: 369px; display: flex; flex-direction: column;
   border: 1px solid #e0e0e0; background: #fafafa; overflow: hidden; }
 .ln-mcard__img { flex: 0 0 259px; position: relative; background-size: cover; background-position: center;
   transition: flex-basis .45s ease; }
@@ -407,23 +444,54 @@
 @media (max-width: 720px) { .ln-hero2__block { width: 100%; } }
 
 /* ========================= THEMES (PILLARS) ===================== */
-.ln-themes { background: var(--navy); padding: 64px clamp(16px, 5.5vw, 80px) 128px; }
-.ln-themes__inner { max-width: var(--content-w); margin-inline: auto; display: flex;
+.ln-themes { position: relative; overflow: hidden; background: var(--navy); padding: 64px clamp(16px, 5.5vw, 80px) 128px; }
+/* Section backdrop: one maritime image per theme, revealed behind the whole
+   section when that theme's card is hovered (the Figma hover state). A dark
+   overlay keeps the non-active cards' white text legible over the image. */
+.ln-themes__bgs { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.ln-themes__bg { position: absolute; inset: 0; background-size: cover; background-position: center;
+  opacity: 0; transition: opacity .55s ease; }
+.ln-themes__bg:nth-child(1) { background-image: url('/assets/figma/sessions/session-card-1.jpg'); }
+.ln-themes__bg:nth-child(2) { background-image: url('/assets/figma/sessions/session-card-2.jpg'); }
+.ln-themes__bg:nth-child(3) { background-image: url('/assets/figma/sessions/session-card-3.jpg'); }
+.ln-themes__bg:nth-child(4) { background-image: url('/assets/figma/themes/theme-explorer.jpg'); }
+.ln-themes__bg:nth-child(5) { background-image: url('/assets/figma/hero/hero-bg.png'); }
+.ln-themes__bgs::after { content: ""; position: absolute; inset: 0; background: rgba(0, 22, 64, .66); }
+/* reveal the backdrop that matches the hovered card (nth card -> nth image) */
+.ln-themes:has(.ln-tcard:nth-child(1):hover) .ln-themes__bg:nth-child(1),
+.ln-themes:has(.ln-tcard:nth-child(2):hover) .ln-themes__bg:nth-child(2),
+.ln-themes:has(.ln-tcard:nth-child(3):hover) .ln-themes__bg:nth-child(3),
+.ln-themes:has(.ln-tcard:nth-child(4):hover) .ln-themes__bg:nth-child(4),
+.ln-themes:has(.ln-tcard:nth-child(5):hover) .ln-themes__bg:nth-child(5) { opacity: 1; }
+.ln-themes__inner { position: relative; z-index: 1; max-width: var(--content-w); margin-inline: auto; display: flex;
   flex-direction: column; align-items: center; gap: 32px; }
 .ln-themes__head { display: flex; flex-direction: column; align-items: center; gap: 24px; width: 100%; text-align: center; }
 .ln-themes__title { font-size: 32px; font-weight: 800; line-height: 1.2; color: var(--white); }
-.ln-themes__sub { font-size: 16px; line-height: 24px; color: var(--primary-light); max-width: 900px; }
+.ln-themes__sub { font-size: 16px; line-height: 24px; color: var(--primary-light); width: 100%; }
 .ln-themes__row { display: flex; width: 100%; }
-.ln-tcard { flex: 1 1 0; min-width: 0; min-height: 296px; padding: 24px; border: 1px solid var(--border-neutral);
+/* Hover state (Figma): the hovered card grows into a LIGHT panel with dark text
+   and a gold badge, while its theme's maritime backdrop lifts in behind the
+   section (.ln-themes__bg). Non-hovered cards stay dark over the dimmed image. */
+.ln-tcard { flex: 1 1 0; min-width: 0; min-height: 296px; padding: 24px;
+  border: 1px solid var(--border-neutral); background: transparent;
   display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 24px;
-  background: transparent; }
+  transition: flex-grow .55s cubic-bezier(.22, .61, .36, 1), background-color .45s ease, border-color .45s ease; }
 .ln-tcard:not(:first-child) { margin-inline-start: -1px; }
 .ln-tcard__topgrp { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; width: 100%; }
 .ln-tcard__badge { background: rgba(230, 242, 251, .12); border-radius: var(--radius-full); padding: 12px; display: inline-grid;
-  place-items: center; color: var(--white); }
+  place-items: center; color: var(--white); transition: background-color .35s ease, color .35s ease; }
 .ln-tcard__badge svg { width: 24px; height: 24px; display: block; }
-.ln-tcard__title { font-size: 18px; font-weight: 700; line-height: 24px; color: var(--white); text-align: start; }
-.ln-tcard__desc { font-size: 16px; line-height: 24px; color: var(--primary-light); text-align: start; }
+.ln-tcard__title { font-size: 18px; font-weight: 700; line-height: 24px; color: var(--white); text-align: start; transition: color .35s ease; }
+.ln-tcard__desc { font-size: 16px; line-height: 24px; color: var(--primary-light); text-align: start; transition: color .35s ease; }
+.ln-tcard:hover, .ln-tcard:focus-within { flex-grow: 2.2; background: rgba(233, 237, 241, .96); border-color: rgba(233, 237, 241, .96); }
+.ln-tcard:hover .ln-tcard__badge, .ln-tcard:focus-within .ln-tcard__badge { background: var(--gold); color: var(--navy); }
+.ln-tcard:hover .ln-tcard__title, .ln-tcard:focus-within .ln-tcard__title { color: var(--navy); }
+.ln-tcard:hover .ln-tcard__desc, .ln-tcard:focus-within .ln-tcard__desc { color: var(--ink); }
+@media (prefers-reduced-motion: reduce) {
+  .ln-tcard { transition: none; }
+  .ln-tcard:hover, .ln-tcard:focus-within { flex-grow: 1; }
+  .ln-themes__bg { transition: none; }
+}
 @media (max-width: 1000px) {
   .ln-themes__row { flex-wrap: wrap; }
   .ln-tcard { flex: 1 1 45%; margin-inline-start: 0; }
@@ -544,41 +612,62 @@
 
 /* ========================== PARTNERS BAND ======================= */
 .ln-pband { background: var(--bg-gray); padding-block: 40px; display: flex; flex-direction: column; gap: 32px; }
-.ln-pband__head { max-width: var(--content-w); margin-inline: auto; width: 100%; padding-inline: clamp(16px, 5.5vw, 80px); display: flex; flex-direction: column; align-items: flex-start; gap: 24px; }
+.ln-pband__head { max-width: calc(var(--content-w) + 2 * var(--section-gutter)); margin-inline: auto; width: 100%; padding-inline: clamp(16px, 5.5vw, var(--section-gutter)); display: flex; flex-direction: column; align-items: flex-start; gap: 24px; }
 .ln-pband__title { font-size: 32px; font-weight: 800; line-height: 1.2; color: var(--ink); text-align: start; }
 .ln-pband__desc { font-size: 16px; line-height: 24px; color: var(--ink); text-align: start; }
-.ln-pband__strip { overflow-x: auto; scrollbar-width: none; }
-.ln-pband__strip::-webkit-scrollbar { display: none; }
-/* Figma's partner strip is LTR-authored (first logo on the left); force LTR so the 4 logos keep that order on the RTL page. */
-.ln-pband__track { display: flex; width: max-content; direction: ltr; }
-.ln-pcard { flex: 0 0 360px; width: 360px; background: #fff; border: 1px solid #e0e0e0; display: flex; flex-direction: column; }
-.ln-pcard__logo { height: 238px; display: grid; place-items: center; padding: 32px; background: #fff; }
+/* Full-bleed auto-scroll marquee (Figma's over-wide partner strip). The track
+   (4 repeats of the 4 logos) scrolls -50% forever; forced LTR so the over-wide
+   track anchors at its left edge; pauses on hover. Reduced-motion falls back to
+   a manual scroll strip. */
+.ln-pband__strip { overflow: hidden; direction: ltr; }
+.ln-pband__track { display: flex; width: max-content; animation: ln-marquee 45s linear infinite; }
+.ln-pband__strip:hover .ln-pband__track { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .ln-pband__track { animation: none; }
+  .ln-pband__strip { overflow-x: auto; scrollbar-width: none; }
+  .ln-pband__strip::-webkit-scrollbar { display: none; }
+}
+.ln-pcard { flex: 0 0 360px; width: 360px; background: #fff; border: 1px solid #e0e0e0; display: flex; flex-direction: column;
+  transition: background-color .3s ease, border-color .3s ease; }
+.ln-pcard:hover { border-color: var(--primary-light); }
+.ln-pcard:hover .ln-pcard__logo, .ln-pcard:hover .ln-pcard__label { background: #e7e9f1; }
+.ln-pcard__logo { height: 238px; display: grid; place-items: center; padding: 32px; background: #fff; transition: background-color .3s ease; }
 .ln-pcard__logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
-.ln-pcard__label { min-height: 88px; background: #fafafa; border-top: 1px solid #e0e0e0; display: grid; place-items: center; padding: 13px; font-size: 22px; font-weight: 600; color: #212121; text-align: center; }
-.ln-pband__bar { max-width: var(--content-w); margin-inline: auto; width: 100%; padding: 16px clamp(16px, 5.5vw, 80px); }
+.ln-pcard__label { min-height: 88px; background: #fafafa; border-top: 1px solid #e0e0e0; display: grid; place-items: center; padding: 13px; font-size: 22px; font-weight: 600; color: #212121; text-align: center; transition: background-color .3s ease; }
+.ln-pband__bar { max-width: calc(var(--content-w) + 2 * var(--section-gutter)); margin-inline: auto; width: 100%; padding: 16px clamp(16px, 5.5vw, var(--section-gutter)); }
 .ln-pband__rail { height: 6px; background: rgba(0, 0, 0, .1); border-radius: 10px; position: relative; }
 .ln-pband__thumb { position: absolute; inset-inline-start: 0; top: 0; height: 6px; width: 200px; background: var(--gold); border-radius: 10px; }
 
-/* ====================== SPONSORS CAROUSEL ======================= */
+/* ====================== SPONSORS MARQUEE ======================= */
 .ln-spon { background: var(--bg-gray); padding: 40px clamp(16px, 5.5vw, 80px) 64px; }
 .ln-spon__inner { max-width: var(--content-w); margin-inline: auto; display: flex; flex-direction: column; gap: 32px; }
 .ln-spon__head { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; }
 .ln-spon__titlerow { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 24px; }
 .ln-spon__title { font-size: 30px; font-weight: 800; line-height: 38px; color: var(--ink); text-align: start; }
 .ln-spon__desc { font-size: 16px; line-height: 24px; color: var(--ink); text-align: start; max-width: 720px; }
-/* Figma's sponsor carousel is an LTR-authored component ("Ltr"); force LTR so scroll + arrow direction stay coherent on the RTL page (cards are identical placeholders, so order is invisible). */
-.ln-spon__carousel { display: flex; align-items: center; gap: 16px; direction: ltr; }
-.ln-spon__arrow { flex: 0 0 40px; width: 40px; height: 40px; background: #f3f4f6; border: 0; border-radius: var(--radius-sm); display: inline-grid; place-items: center; cursor: pointer; }
-.ln-spon__arrow img { height: 14px; width: auto; }
-.ln-spon__viewport { position: relative; flex: 1 1 0; min-width: 0; overflow-x: auto; scrollbar-width: none; }
-.ln-spon__viewport::-webkit-scrollbar { display: none; }
-.ln-spon__track { display: flex; width: max-content; }
-/* Figma's sponsor card is LTR auto-layout (external-link icon at the inline-start/left, logo+tag column on the right); force LTR so it does not mirror on the RTL page. */
-.ln-scard2 { flex: 0 0 auto; direction: ltr; display: flex; align-items: center; gap: 24px; width: 243px; height: 122px; padding: 16px; margin-inline-end: 16px; background: #fff; border: 1px solid var(--border-neutral); border-radius: 16px; }
-.ln-scard2__icon { width: 24px; height: 24px; flex: 0 0 24px; }
-.ln-scard2__col { flex: 1; height: 100%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between; }
-.ln-scard2__logo { height: 44px; width: auto; }
-.ln-scard2__tag { background: var(--gold-light); border: 1px solid #f8ebce; border-radius: var(--radius-sm); height: 24px; padding-inline: 8px; display: inline-flex; align-items: center; font-size: 12px; line-height: 18px; color: var(--ink-display); }
+/* The marquee viewport masks both edges; the track holds two copies of the
+   roster and translates -50% forever for a seamless continuous scroll. The
+   viewport is forced LTR so the over-wide track anchors at its left edge (an
+   RTL block would right-anchor it and translate-X would push it off-screen). */
+.ln-spon__marquee { overflow: hidden; direction: ltr;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 95%, transparent 100%);
+          mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 95%, transparent 100%); }
+.ln-spon__track { display: flex; width: max-content;
+  animation: ln-marquee 40s linear infinite; }
+.ln-spon__marquee:hover .ln-spon__track { animation-play-state: paused; }
+.ln-scard2 { flex: 0 0 auto; width: 243px; height: 122px; padding: 16px; margin-inline-end: 16px;
+  background: #fff; border: 1px solid var(--border-neutral); border-radius: 16px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; }
+.ln-scard2__name { font-size: 18px; font-weight: 800; line-height: 1.3; color: var(--ink-display); }
+.ln-scard2__tag { background: var(--gold-light); border: 1px solid #f8ebce; border-radius: var(--radius-sm);
+  padding: 2px 8px; font-size: 12px; line-height: 18px; color: var(--ink-display); }
+/* Two roster copies scroll -50% for the seamless loop (shared by the partners band). */
+@keyframes ln-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) {
+  .ln-spon__track { animation: none; }
+  .ln-spon__marquee { overflow-x: auto; scrollbar-width: none; }
+  .ln-spon__marquee::-webkit-scrollbar { display: none; }
+}
 
 /* ========================= NEWS & ARTICLES ====================== */
 .ln-news { background: var(--navy); padding: 64px clamp(16px, 5.5vw, 80px); }
@@ -714,8 +803,9 @@
 
 /* ============================================================= *
  *  SPEAKERS PAGE  (/speakers — Figma 5840-26779)                *
- *  Shared with the other ln- public pages: the event page-title *
- *  band (ln-pagehero) and the speaker card/grid (ln-spkcard).   *
+ *  The interior hero is the shared LandingPageHero (ln-pghero);  *
+ *  this block styles the speaker card/grid (ln-spkcard) + the    *
+ *  shared recolourable ln-ico glyph used by the card location.   *
  * ============================================================= */
 
 /* -- Recolorable line-icon --------------------------------------------- *
@@ -737,50 +827,6 @@
 .landing .ln-ico--calendar { -webkit-mask-image: url("/assets/figma/secondnav/icon-calendar.svg"); mask-image: url("/assets/figma/secondnav/icon-calendar.svg"); }
 .landing .ln-ico--clock    { -webkit-mask-image: url("/assets/figma/secondnav/icon-clock.svg");    mask-image: url("/assets/figma/secondnav/icon-clock.svg"); }
 .landing .ln-ico--pin      { -webkit-mask-image: url("/assets/figma/secondnav/icon-location.svg"); mask-image: url("/assets/figma/secondnav/icon-location.svg"); }
-
-/* -- Event page-title band: logo lockup + theme + date/time/venue -- */
-.landing .ln-pagehero { background: var(--white); }
-.landing .ln-pagehero__inner {
-  max-width: var(--content-w);
-  margin-inline: auto;
-  padding: 64px 80px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 64px;
-}
-.landing .ln-pagehero__info {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  text-align: start;
-  gap: 24px;
-  min-width: 0;
-}
-.landing .ln-pagehero__title {
-  margin: 0;
-  font-weight: 800;
-  font-size: 40px;
-  line-height: 1;
-  color: var(--navy);
-  text-align: start;
-  max-width: 536px;
-}
-/* the h1 is programmatically focused on nav (Routes.razor FocusOnNavigate);
-   it is tabindex=-1, never a keyboard stop, so suppress the focus ring */
-.landing .ln-pagehero__title:focus,
-.landing .ln-pagehero__title:focus-visible { box-shadow: none; outline: none; }
-.landing .ln-pagehero__meta {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-weight: 400;
-  font-size: 16px;
-  line-height: 24px;
-  color: var(--navy);
-}
-.landing .ln-pagehero__meta .ln-ico { width: 24px; height: 24px; background-color: var(--navy); }
-.landing .ln-pagehero__logo { width: 326px; height: 256px; object-fit: contain; flex-shrink: 0; }
 
 /* -- Speakers grid section -- */
 .landing .ln-spklist { background: var(--bg-gray); }
@@ -889,13 +935,9 @@
 }
 @media (max-width: 860px) {
   .landing .ln-spklist-grid { grid-template-columns: repeat(2, 1fr); }
-  .landing .ln-pagehero__inner { flex-direction: column-reverse; align-items: flex-start; gap: 40px; }
-  .landing .ln-pagehero__logo { width: 240px; height: auto; }
 }
 @media (max-width: 560px) {
   .landing .ln-spklist-grid { grid-template-columns: 1fr; }
-  .landing .ln-pagehero__inner { padding: 40px 20px; }
-  .landing .ln-pagehero__title { font-size: 28px; }
   .landing .ln-spklist__inner { padding: 64px 20px; }
   .landing .ln-spklist__title { font-size: 26px; }
 }
@@ -992,19 +1034,24 @@
 .landing .ln-sessthemes__title { margin: 0; font-weight: 800; font-size: 32px; color: var(--white); }
 .landing .ln-sessthemes__subtitle { margin: 8px 0 0; font-weight: 400; font-size: 18px; color: color-mix(in srgb, var(--white) 75%, transparent); }
 .landing .ln-sessthemes__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
-.landing .ln-tcard {
+/* SCOPED to the session-detail grid: this `.ln-tcard` is a DIFFERENT component
+   from the landing themes card (which also uses `.ln-tcard`). Left unscoped, the
+   `.landing .ln-tcard`/`__desc` rules out-specified the landing card and forced
+   its desc to 14px/near-white — scoping them here lets the landing card keep its
+   own Figma-correct 16px/#e9edf1 desc. */
+.landing .ln-sessthemes__grid .ln-tcard {
   display: flex; flex-direction: column; gap: 16px; align-items: flex-start;
   background: color-mix(in srgb, var(--primary) 50%, transparent);
   border: 1px solid var(--primary);
   border-radius: var(--radius-sm); padding: 24px; box-shadow: var(--shadow-card);
 }
-.landing .ln-tcard__icon {
+.landing .ln-sessthemes__grid .ln-tcard__icon {
   display: inline-flex; align-items: center; justify-content: center;
   width: 54px; height: 54px; border-radius: var(--radius-sm); background: var(--gold);
 }
-.landing .ln-tcard__icon .ln-ico { width: 24px; height: 24px; background-color: var(--gold-darker); }
-.landing .ln-tcard__name { margin: 0; font-weight: 700; font-size: 20px; line-height: 28px; color: var(--white); text-align: start; }
-.landing .ln-tcard__desc { margin: 0; font-weight: 400; font-size: 14px; line-height: 22px; color: var(--bg-gray); text-align: start; }
+.landing .ln-sessthemes__grid .ln-tcard__icon .ln-ico { width: 24px; height: 24px; background-color: var(--gold-darker); }
+.landing .ln-sessthemes__grid .ln-tcard__name { margin: 0; font-weight: 700; font-size: 20px; line-height: 28px; color: var(--white); text-align: start; }
+.landing .ln-sessthemes__grid .ln-tcard__desc { margin: 0; font-weight: 400; font-size: 14px; line-height: 22px; color: var(--bg-gray); text-align: start; }
 
 /* -- 5. Related sessions -- */
 .landing .ln-sessrelated { background: var(--bg-gray); }
@@ -1279,3 +1326,71 @@
 .ln-exhibit__scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .ln-exhibit__map { display: block; height: auto; width: 1232px; max-width: 100%; margin-inline: auto; }
 @media (max-width: 720px) { .ln-exhibit__map { max-width: none; width: 900px; } }
+
+/* ===================== FLOATING CHAT ASSISTANT ==================== */
+/* A lighthouse launcher (bottom inline-end) that opens a chat panel; wired by
+   initChatbot in landing.js, posting to the same-origin /chat/ask BFF proxy. */
+.ln-chat { position: fixed; z-index: 900; bottom: 24px; inset-inline-end: 24px;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
+
+.ln-chat__launcher { position: relative; width: 88px; height: 88px; padding: 0; border: 0;
+  border-radius: 50%; background: #e9edf1; color: var(--navy); cursor: pointer;
+  display: grid; place-items: center; box-shadow: 0 10px 30px rgba(0, 22, 64, .22);
+  transition: transform .2s ease, box-shadow .2s ease;
+  animation: ln-chat-bob 3.2s ease-in-out infinite; }
+.ln-chat__launcher:hover { transform: translateY(-3px) scale(1.04); box-shadow: 0 14px 36px rgba(0, 22, 64, .3); }
+.ln-chat__launcher:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+.ln-chat__lh { width: 40px; height: 40px; display: block; }
+.ln-chat__badge { position: absolute; top: 2px; inset-inline-end: 2px; width: 30px; height: 30px;
+  color: var(--gold); filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .18)); }
+.ln-chat__badge svg { width: 100%; height: 100%; display: block; }
+/* attention pulse ring + gentle bob; both stop while the panel is open */
+.ln-chat__launcher::after { content: ""; position: absolute; inset: 0; border-radius: 50%;
+  box-shadow: 0 0 0 0 rgba(232, 192, 96, .5); animation: ln-chat-pulse 2.6s ease-out infinite; }
+@keyframes ln-chat-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes ln-chat-pulse { 0% { box-shadow: 0 0 0 0 rgba(232, 192, 96, .5); }
+  70% { box-shadow: 0 0 0 16px rgba(232, 192, 96, 0); } 100% { box-shadow: 0 0 0 0 rgba(232, 192, 96, 0); } }
+.ln-chat.is-open .ln-chat__launcher, .ln-chat.is-open .ln-chat__launcher::after { animation: none; }
+
+.ln-chat__panel { width: min(372px, calc(100vw - 48px)); height: min(487px, calc(100vh - 150px));
+  background: var(--white); border: 1px solid var(--primary-light); border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(0, 22, 64, .28); display: flex; flex-direction: column;
+  overflow: hidden; animation: ln-chat-in .25s ease; }
+.ln-chat__panel[hidden] { display: none; }
+@keyframes ln-chat-in { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: none; } }
+.ln-chat__head { display: flex; align-items: center; gap: 10px; padding: 16px; background: var(--navy); color: var(--white); }
+.ln-chat__head-mark { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 50%;
+  background: rgba(230, 242, 251, .14); color: var(--white); display: grid; place-items: center; }
+.ln-chat__head-mark .ln-chat__lh { width: 22px; height: 22px; }
+.ln-chat__title { flex: 1; min-width: 0; font-size: 16px; font-weight: 700; text-align: start; }
+.ln-chat__close { border: 0; background: transparent; color: var(--white); cursor: pointer;
+  padding: 4px; display: grid; place-items: center; border-radius: 8px; }
+.ln-chat__close:hover { background: rgba(255, 255, 255, .12); }
+.ln-chat__close svg { width: 18px; height: 18px; }
+.ln-chat__log { flex: 1; min-height: 0; overflow-y: auto; padding: 16px; background: var(--bg-gray);
+  display: flex; flex-direction: column; gap: 12px; }
+.ln-chat__msg { max-width: 82%; padding: 10px 14px; border-radius: 14px; font-size: 14px;
+  line-height: 22px; white-space: pre-wrap; word-break: break-word; }
+.ln-chat__msg--ai { align-self: flex-start; background: var(--white); color: var(--ink);
+  border: 1px solid var(--primary-light); border-start-start-radius: 4px; }
+.ln-chat__msg--user { align-self: flex-end; background: var(--primary); color: var(--white); border-start-end-radius: 4px; }
+.ln-chat__msg--typing { color: var(--primary); font-style: italic; }
+.ln-chat__composer { display: flex; align-items: center; gap: 8px; padding: 12px;
+  border-top: 1px solid var(--primary-light); background: var(--white); }
+.ln-chat__input { flex: 1; min-width: 0; border: 1px solid var(--primary-light); border-radius: 999px;
+  padding: 10px 16px; font: inherit; font-size: 14px; color: var(--ink); background: var(--bg-gray); }
+.ln-chat__input:focus { outline: none; border-color: var(--primary); }
+.ln-chat__send { flex: 0 0 auto; width: 42px; height: 42px; border: 0; border-radius: 50%;
+  background: var(--primary); color: var(--white); cursor: pointer; display: grid; place-items: center; }
+.ln-chat__send:hover { background: var(--navy); }
+.ln-chat__send svg { width: 20px; height: 20px; }
+[dir="rtl"] .ln-chat__send svg { transform: scaleX(-1); }
+@media (max-width: 480px) {
+  .ln-chat { bottom: 16px; inset-inline-end: 16px; gap: 12px; }
+  .ln-chat__launcher { width: 72px; height: 72px; }
+  .ln-chat__panel { height: min(70vh, 487px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ln-chat__launcher, .ln-chat__launcher::after { animation: none; }
+  .ln-chat__panel { animation: none; }
+}

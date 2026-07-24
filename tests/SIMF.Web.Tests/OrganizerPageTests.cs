@@ -60,9 +60,12 @@ public sealed class OrganizerPageTests : WebComponentTestBase
         // MOD: a plain colour emblem <img>
         Assert.Contains("assets/figma/organizer/mod-emblem.svg", cut.Markup);
         // RSNF: the forum mark recoloured navy via the mask class (white-on-white fix),
-        // fed the asset through the --logo custom property (not hardcoded in CSS)
+        // fed the asset through the --logo custom property (not hardcoded in CSS).
+        // Regression: the url() MUST be ROOT-relative ('/assets/…'). A relative path in
+        // a custom property resolves against the stylesheet (/css/…), not <base href>,
+        // so it 404s and the RSNF mark renders blank on the nested /about/organizer route.
         var masked = cut.FindAll(".ln-orgcard__logo--masked");
         Assert.Single(masked);
-        Assert.Contains("--logo:url('assets/figma/nav/logo-fill.svg')", masked[0].GetAttribute("style"));
+        Assert.Contains("--logo:url('/assets/figma/nav/logo-fill.svg')", masked[0].GetAttribute("style"));
     }
 }

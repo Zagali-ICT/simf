@@ -53,15 +53,21 @@ The two cards sit side by side and stack to one column below 720px (card padding
 tightens). The hero block goes full-width below 720px. No horizontal overflow at
 1440 / 1024 / 768 / 390 (`scrollWidth == clientWidth` verified in both languages).
 
-## 6. Verification (2026-07-15)
+## 6. Verification (2026-07-22)
 
 - **Build** — `dotnet build -c Release` 0 warnings / 0 errors.
 - **Component tests** — `tests/SIMF.Web.Tests/OrganizerPageTests.cs` (3, green):
   single-`<h1>` + 3-level breadcrumb; the two cards with real MOD/RSNF content;
   the two logo treatments (colour `<img>` emblem vs the navy-masked forum mark).
-- **Live render** — visually verified against Figma at **AR@1440** and **EN@1440**
-  (correct RTL→LTR mirror). The MOD emblem renders in colour; the masked forum mark
-  renders navy and visible on the white card. Console clean; no horizontal overflow.
+  The masked-mark test now pins the **root-relative** `--logo` url as a regression
+  guard (see the fix below).
+- **Live render** — visually verified against Figma at **AR@1440** and **AR@390**
+  (mobile stacks to one column). The MOD emblem renders in colour; the masked forum
+  mark renders navy and visible on the white card. Console clean; no horizontal overflow.
+- **Fix (2026-07-22)** — the RSNF masked mark had been rendering **blank**: the
+  `--logo:url('assets/…')` custom property resolved against the stylesheet base
+  (`/css/assets/…` → 404), not `<base href>`, on the nested `/about/organizer`
+  route. Made the url **root-relative** (`/assets/…`) so the mask loads on any route.
 
 ## 7. Follow-ups — content flagged (this was a placeholder Figma frame)
 
@@ -78,4 +84,4 @@ forum's "MOD.RSNF" identity — **confirm the exact copy + logos with the client
 - **Copy** — the MOD patronage text is taken from the Figma; the RSNF description is
   authored from the patronage wording — confirm both with the client.
 
-_Last reviewed:_ 2026-07-15 by Claude (The organizer page — `ln-` Bootstrap SSR, Figma 5865-38003).
+_Last reviewed:_ 2026-07-22 by Claude (The organizer page — `ln-` Bootstrap SSR, Figma 5865-38003; RSNF masked-logo root-relative fix).

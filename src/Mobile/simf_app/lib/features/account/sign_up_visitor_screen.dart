@@ -738,7 +738,12 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     return Form(
       key: _formKey,
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        padding: const EdgeInsets.fromLTRB(
+          SimfTokens.space4,
+          0,
+          SimfTokens.space4,
+          SimfTokens.space6,
+        ),
         // §13.7 — form content caps at the 560 form width (MaxWidthBody), so it
         // fills a phone but doesn't stretch edge-to-edge on a tablet.
         child: MaxWidthBody(
@@ -749,7 +754,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
             color: SimfTokens.cardBeige,
             borderRadius: SimfTokens.borderRadiusSmall,
             child: Padding(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(SimfTokens.space6),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
@@ -760,7 +765,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                         child: Text(
                           l10n.createProfileTitle,
                           style: const TextStyle(
-                            fontSize: 24,
+                            fontSize: SimfTokens.text24,
                             fontWeight: FontWeight.w600,
                             color: SimfTokens.headlineInk,
                           ),
@@ -771,7 +776,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                       SignUpVisitorHeaderAvatar(bytes: _faceImageBytes),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: SimfTokens.space6),
                   // نوع التسجيل (Visitor / Other) — beige tabs (Figma 505:1075).
                   BeigeTabs(
                     options: <String>[
@@ -782,9 +787,9 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     onChanged: (index) =>
                         unawaited(_onTypeChanged(index == 0)),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: SimfTokens.space6),
                   _buildProfileTypeField(l10n),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: SimfTokens.space4),
                   SimfLabeledTextField(
                     label: l10n.arabicNameLabel,
                     controller: _arabicName,
@@ -796,7 +801,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     ],
                     validator: _validateArabicName,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: SimfTokens.space4),
                   SimfLabeledTextField(
                     label: l10n.englishNameLabel,
                     controller: _englishName,
@@ -808,17 +813,17 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     ],
                     validator: _validateEnglishName,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: SimfTokens.space4),
                   SimfFieldLabel(l10n.genderLabel),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: SimfTokens.space2),
                   GenderPillsField(
                     gender: _gender,
                     onChanged: (value) =>
                         setState(() => _gender = value),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: SimfTokens.space4),
                   _buildOrganisationField(l10n),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: SimfTokens.space4),
                   SimfLabeledTextField(
                     label: l10n.jobTitleLabel,
                     controller: _jobTitle,
@@ -828,7 +833,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                         ? l10n.jobTitleRequired
                         : null,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: SimfTokens.space4),
                   // Optional Arabic job title — the backend + CP already
                   // carry UserProfile.JobTitleArabic; captured here too
                   // (server validates only when present).
@@ -838,13 +843,13 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     maxLength: 100,
                     textDirection: TextDirection.rtl,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: SimfTokens.space4),
                   _buildNationalityField(l10n),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: SimfTokens.space4),
                   // D-373 — the Saudi switch is gone: the nationality pick
                   // drives national-ID vs iqama/passport (SA → national ID).
                   ..._buildDocumentFields(l10n),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: SimfTokens.space4),
                   MobileField(
                     saudi: _isSaudi,
                     controller:
@@ -853,7 +858,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                         ? _validateSaudiMobile
                         : _validateInternationalMobile,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: SimfTokens.space4),
                   DateOfBirthField(
                     displayValue: _dateOfBirth == null
                         ? '—'
@@ -861,28 +866,28 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     hasError: _triedSubmit && _dateOfBirth == null,
                     onTap: () => unawaited(_pickDateOfBirth()),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: SimfTokens.space4),
                   _buildPlaceOfBirthField(l10n),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: SimfTokens.space4),
                   // D-373 — the plate is the last input before the attach.
                   _buildPlateField(l10n),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: SimfTokens.space4),
                   _buildIdImageField(l10n),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: SimfTokens.space4),
                   _buildFacePhotoField(l10n),
                   // D-736 — "Show in Meet People Like You" visibility toggle,
                   // shown only for the "Other" tab (non-Visitor registrants).
                   if (!_isVisitorType) ...<Widget>[
-                    const SizedBox(height: 16),
+                    const SizedBox(height: SimfTokens.space4),
                     const Divider(height: 1, color: SimfTokens.beigeBorder),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: SimfTokens.space3),
                     CheckboxListTile(
                       value: _showInMeetLikeYou,
                       onChanged: (v) => setState(() => _showInMeetLikeYou = v ?? true),
                       title: Text(
                         l10n.showInMeetLikeYou,
                         style: const TextStyle(
-                          fontSize: 14,
+                          fontSize: SimfTokens.textMd,
                           color: SimfTokens.headlineInk,
                         ),
                       ),
@@ -891,7 +896,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                       controlAffinity: ListTileControlAffinity.leading,
                       activeColor: SimfTokens.accent,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: SimfTokens.space4),
                   ],
                   if (_saveError != null) ...<Widget>[
                     Text(
@@ -903,7 +908,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: SimfTokens.space3),
                   ],
                   TermsAndNextButtons(onNext: _next, busy: _saving),
                 ],
@@ -951,7 +956,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           SimfFieldLabel(l10n.profileTypeLabel),
-          const SizedBox(height: 8),
+          const SizedBox(height: SimfTokens.space2),
           InputDecorator(
             decoration: simfFieldDecoration(),
             child: Row(
@@ -964,12 +969,12 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     color: SimfTokens.accent,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: SimfTokens.space3),
                 Text(
                   l10n.loadingLabel,
                   style: const TextStyle(
                     color: SimfTokens.greyText,
-                    fontSize: 14,
+                    fontSize: SimfTokens.textMd,
                   ),
                 ),
               ],
@@ -983,7 +988,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           SimfFieldLabel(l10n.profileTypeLabel),
-          const SizedBox(height: 8),
+          const SizedBox(height: SimfTokens.space2),
           InputDecorator(
             decoration: simfFieldDecoration(),
             child: Row(
@@ -993,7 +998,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     l10n.lookupLoadError,
                     style: const TextStyle(
                       color: SimfTokens.danger,
-                      fontSize: 12,
+                      fontSize: SimfTokens.textSm,
                     ),
                   ),
                 ),
@@ -1021,7 +1026,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         SimfFieldLabel(l10n.profileTypeLabel),
-        const SizedBox(height: 8),
+        const SizedBox(height: SimfTokens.space2),
         DropdownButtonFormField<String>(
           key: const ValueKey<String>('profileTypeDropdown'),
           initialValue: _profileTypeId,
@@ -1102,7 +1107,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         SimfFieldLabel(l10n.nationalityLabel),
-        const SizedBox(height: 8),
+        const SizedBox(height: SimfTokens.space2),
         SimfPickerField(
           fieldKey: 'nationalityPicker',
           displayText: label,
@@ -1241,7 +1246,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     }
     return <Widget>[
       SimfFieldLabel(l10n.documentTypeLabel),
-      const SizedBox(height: 8),
+      const SizedBox(height: SimfTokens.space2),
       BeigeTabs(
         options: <String>[l10n.iqamaSegment, l10n.passportSegment],
         selectedIndex: _docType == _DocType.iqama ? 0 : 1,
@@ -1250,7 +1255,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
           _documentNumber.clear();
         }),
       ),
-      const SizedBox(height: 16),
+      const SizedBox(height: SimfTokens.space4),
       SimfLabeledTextField(
         label: l10n.documentNumberLabel,
         controller: _documentNumber,
@@ -1281,7 +1286,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         SimfFieldLabel(l10n.placeOfBirthLabel),
-        const SizedBox(height: 8),
+        const SizedBox(height: SimfTokens.space2),
         if (_isSaudi)
           SimfPickerField(
             fieldKey: 'birthRegionPicker',
@@ -1324,7 +1329,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         SimfFieldLabel(l10n.plateNumberLabel),
-        const SizedBox(height: 8),
+        const SizedBox(height: SimfTokens.space2),
         Row(
           textDirection: TextDirection.ltr,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1337,7 +1342,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                 position: 1,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: SimfTokens.space2),
             Expanded(
               child: _plateLetterField(
                 l10n,
@@ -1346,7 +1351,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                 position: 2,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: SimfTokens.space2),
             Expanded(
               child: _plateLetterField(
                 l10n,
@@ -1355,7 +1360,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                 position: 3,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: SimfTokens.space2),
             SizedBox(
               // Sized for exactly the 4 digits, so the three letter pickers
               // (Expanded) absorb the freed width and show the picked letter.
@@ -1543,7 +1548,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           SimfFieldLabel(l10n.organisationLabel),
-          const SizedBox(height: 8),
+          const SizedBox(height: SimfTokens.space2),
           InputDecorator(
             decoration: simfFieldDecoration(),
             child: Row(
@@ -1570,7 +1575,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         SimfFieldLabel(l10n.organisationLabel),
-        const SizedBox(height: 8),
+        const SizedBox(height: SimfTokens.space2),
         TextField(
           controller: _organisationSearch,
           style: simfInputStyle,
@@ -1586,12 +1591,12 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
           onChanged: _onOrganisationSearchChanged,
         ),
         if (_organisationSearch.text.trim().isNotEmpty) ...<Widget>[
-          const SizedBox(height: 8),
+          const SizedBox(height: SimfTokens.space2),
           // D-375 — fetch state first: spinner while searching, retry on
           // failure; "no matches" only describes a COMPLETED empty search.
           if (_organisationSearching)
             Padding(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(SimfTokens.space2),
               child: Row(
                 children: <Widget>[
                   const SizedBox(
@@ -1612,7 +1617,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
             )
           else if (_organisationSearchFailed)
             Padding(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(SimfTokens.space2),
               child: Row(
                 children: <Widget>[
                   Expanded(
@@ -1620,7 +1625,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                       l10n.lookupLoadError,
                       style: const TextStyle(
                         color: SimfTokens.danger,
-                        fontSize: 12,
+                        fontSize: SimfTokens.textSm,
                       ),
                     ),
                   ),
@@ -1639,7 +1644,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
             )
           else if (_organisationResults.isEmpty)
             Padding(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(SimfTokens.space2),
               child: Text(
                 l10n.organisationEmpty,
                 style: const TextStyle(color: SimfTokens.greyText),

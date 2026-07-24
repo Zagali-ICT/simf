@@ -229,7 +229,7 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
               padding: const EdgeInsets.symmetric(vertical: SimfTokens.space4),
               child: Text(
                 _filteredEmptyMessage(l10n),
-                style: const TextStyle(color: SimfTokens.beigeBorder),
+                style: SimfTokens.hintBeige,
               ),
             )
           else

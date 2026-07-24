@@ -40,7 +40,12 @@ class ModeratorFilterBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final filters = ModeratorQueueFilter.values;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+      padding: const EdgeInsets.fromLTRB(
+        SimfTokens.space6,
+        SimfTokens.space4,
+        SimfTokens.space6,
+        SimfTokens.space2,
+      ),
       child: Row(
         children: <Widget>[
           for (int i = 0; i < filters.length; i++) ...<Widget>[
@@ -79,14 +84,14 @@ class _Chip extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
       child: Container(
-        height: 58,
+        height: SimfTokens.moderatorFilterChipHeight,
         padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space2),
         decoration: BoxDecoration(
           color: active ? SimfTokens.accent : SimfTokens.navyDeep,
           borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
           border: Border.all(
             color: active ? SimfTokens.accent : SimfTokens.navyDisabledBorder,
-            width: 1.18,
+            width: SimfTokens.moderatorChipBorderWidth,
           ),
         ),
         child: Row(
@@ -98,7 +103,7 @@ class _Chip extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: active ? Colors.white : SimfTokens.beigeBorder,
+                  color: active ? SimfTokens.surface : SimfTokens.beigeBorder,
                   fontWeight: active ? FontWeight.w700 : FontWeight.w400,
                   fontSize: SimfTokens.textTitle,
                 ),
@@ -106,19 +111,21 @@ class _Chip extends StatelessWidget {
             ),
             const SizedBox(width: SimfTokens.space2),
             Container(
-              width: 28,
-              height: 28,
+              width: SimfTokens.moderatorCountBadgeSize,
+              height: SimfTokens.moderatorCountBadgeSize,
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: active
-                    ? SimfTokens.navy.withValues(alpha: 0.3)
+                    ? SimfTokens.navy.withValues(
+                        alpha: SimfTokens.moderatorCountBadgeActiveOpacity,
+                      )
                     : SimfTokens.navyDisabledBorder,
-                borderRadius: BorderRadius.circular(5),
+                borderRadius: BorderRadius.circular(SimfTokens.radius5),
               ),
               child: Text(
                 '$count',
                 style: TextStyle(
-                  color: active ? Colors.white : SimfTokens.accent,
+                  color: active ? SimfTokens.surface : SimfTokens.accent,
                   fontWeight: FontWeight.w700,
                   fontSize: SimfTokens.textMd,
                 ),

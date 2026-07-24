@@ -53,8 +53,7 @@ SessionDetail _detail({
       liveStreamUrl: liveStreamUrl,
     );
 
-// A session whose end time is in the past — the trigger for the one-time
-// after-view rate prompt.
+// A session whose end time is in the past (an ended session).
 SessionDetail _endedDetail() => SessionDetail(
       id: 's1',
       code: 'OP-1',
@@ -347,8 +346,9 @@ Future<void> _pump(
 }
 
 // A router with a home beneath the session detail (so a pop disposes the
-// screen) plus a /rate landing that echoes its query so the after-view prompt
-// is observable. Returns the router so the test can push / pop programmatically.
+// screen) plus a /rate landing that echoes its query, so a test can assert the
+// detail screen never navigates there. Returns the router so the test can push /
+// pop programmatically.
 Future<GoRouter> _pumpRatePrompt(
   WidgetTester tester, {
   required SessionDetailRepository repo,
@@ -589,8 +589,7 @@ void main() {
     testWidgets('#7 — a PAST (ended) session HIDES the ask card (the after-view '
         'is a recording, not a live broadcast)', (tester) async {
       // After EndUtc `_showAsk` returns false regardless of the viewer, so a
-      // guest proves it — and a guest never trips the approved-attendee
-      // after-view rate prompt.
+      // guest proves it.
       final ended = _detail(
         startUtc: DateTime.now().toUtc().subtract(const Duration(hours: 3)),
         endUtc: DateTime.now().toUtc().subtract(const Duration(hours: 2)),
@@ -1009,69 +1008,28 @@ void main() {
     });
   });
 
-  group('after-view rate prompt (one-time per session)', () {
-    testWidgets('an approved attendee leaving an ENDED session is prompted to '
-        'rate it exactly once', (tester) async {
-      final prefs = FakePrefs();
-      final router = await _pumpRatePrompt(
-        tester,
-        repo: _FakeDetailRepo(detail: _endedDetail()),
-        controller: _SignedInController(),
-        prefs: prefs,
-      );
-
-      // First view of the ended session.
-      router.push('/sessions/s1');
-      await tester.pumpAndSettle();
-      expect(find.text('Session detail'), findsOneWidget);
-
-      // Leaving it opens the dynamic rate screen for THIS session.
-      router.pop();
-      await tester.pumpAndSettle();
-      expect(find.text('RATE s1 Session'), findsOneWidget);
-
-      // Leave the rate screen.
-      router.pop();
-      await tester.pumpAndSettle();
-      expect(find.text('HOME'), findsOneWidget);
-
-      // Second view of the same ended session → it must NOT prompt again.
-      router.push('/sessions/s1');
-      await tester.pumpAndSettle();
-      router.pop();
-      await tester.pumpAndSettle();
-      expect(find.text('RATE s1 Session'), findsNothing);
-      expect(find.text('HOME'), findsOneWidget);
-    });
-
-    testWidgets('a guest leaving an ended session is NOT prompted',
+  // Owner 2026-07-22 — the session detail no longer opens the rate form when you
+  // leave an ended session (merely viewing a session is not attending it). Rate
+  // now comes only from watching the live stream (live_broadcast_screen) or the
+  // attendance-gated rate notification. This guards the removed after-view
+  // auto-prompt from regressing back in.
+  group('no rate prompt from the session detail', () {
+    testWidgets('an approved attendee leaving an ENDED session is NOT prompted '
+        'to rate (rate comes from watching / attendance, not from viewing)',
         (tester) async {
       final router = await _pumpRatePrompt(
         tester,
         repo: _FakeDetailRepo(detail: _endedDetail()),
-        controller: _GuestController(),
-        prefs: FakePrefs(),
-      );
-
-      router.push('/sessions/s1');
-      await tester.pumpAndSettle();
-      router.pop();
-      await tester.pumpAndSettle();
-      expect(find.text('RATE s1 Session'), findsNothing);
-      expect(find.text('HOME'), findsOneWidget);
-    });
-
-    testWidgets('an approved attendee leaving an UPCOMING (not-yet-ended) '
-        'session is NOT prompted', (tester) async {
-      final router = await _pumpRatePrompt(
-        tester,
-        repo: _FakeDetailRepo(detail: _detail()), // future endUtc
         controller: _SignedInController(),
         prefs: FakePrefs(),
       );
 
       router.push('/sessions/s1');
       await tester.pumpAndSettle();
+      expect(find.text('Session detail'), findsOneWidget);
+
+      // Leaving the detail must NOT open the rate screen — this is the exact
+      // case that used to auto-prompt off the sessions list/detail.
       router.pop();
       await tester.pumpAndSettle();
       expect(find.text('RATE s1 Session'), findsNothing);

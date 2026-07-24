@@ -37,7 +37,7 @@
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
 | **Auth setup** | An **Approved** visitor token (sign-up → verify-email → `SetAccountState(Approved)` → sign-in); App-DB rows seeded directly. **No literal secrets.** |
-| **Last reviewed** | 2026-07-22 (#21 — share-contact re-pointed to the QR screen; prev D-447 exact-parity to live frame 758:1283) |
+| **Last reviewed** | 2026-07-22 (forward-chevron LTR direction — E2E-MOB014-017, المزيد caret points to the inline end via SimfForwardChevron; #21 — share-contact re-pointed to the QR screen; prev D-447 exact-parity to live frame 758:1283) |
 
 ## Coverage matrix
 
@@ -60,6 +60,7 @@
 | E2E-MOB014-013 | **جدولي اليوم grouping (758:1283, D-447):** the schedule splits into a "جلسات" group then a "مقابلات" group, each under its gold sub-header; both empty → the no-items placeholder | i18n/visual | P1 | authored ✓ (screen — groups + RTL `dy` order: sessions above meetings) |
 | E2E-MOB014-014 | **Single share pill (#21 — was the 758:1305 two-pill order):** only the مشاركة جهة اتصال pill is rendered; the duplicate مشاركة ملفي pill was dropped (owner) | i18n | P2 | authored ✓ (screen — مشاركة جهة اتصال present, مشاركة ملفي absent) |
 | E2E-MOB014-015 | **Saved stat tiles → Coming soon (owner 2026-06-21):** the الإحصائيات tiles **مقابلات** and **جلسات محفوظة** still show their live counts but are now tappable; each opens the **ComingSoon** placeholder (saved meetings / saved sessions are not built yet) | happy | P2 | authored ✓ (widget — `KsaStatTile` fires `onTap`) |
+| E2E-MOB014-017 | The المزيد rows' forward "open" caret points to the inline end — right in LTR (English), left in RTL (Arabic) — via the shared SimfForwardChevron | i18n | P2 | authored ✓ (`test/app/widgets/simf_forward_chevron_test.dart`) |
 
 ## Scenarios
 

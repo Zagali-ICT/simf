@@ -211,6 +211,7 @@ class SimfTokens {
   static const double textXxl = 22; // exhibitor/sponsor name (Figma 1439:11894)
   static const double text24 = 24; // registration-status headline (Figma 1701:3803)
   static const double textHero = 28;
+  static const double text32 = 32; // staff register-visitor headline number
 
   // Named text styles — built incrementally per screen (§5.1). The font family
   // comes from the theme; these bundle only colour/size/weight/line-height so a
@@ -714,6 +715,148 @@ class SimfTokens {
     color: surface,
     fontSize: textLg,
     fontWeight: FontWeight.w700,
+    height: 1.3,
+  );
+
+  // ── #16 sweep — S4 sessions-wave features ──────────────────────────────
+  // questions (Figma 934:3668 / 942:3746) — the fixed tinted question box,
+  // the gold inline-span colour, the colourless submit label (rides the
+  // theme font + FilledButton foreground per D-546/D-549), and the tight
+  // numbered session-data line (leading 1.3, tighter than the 1.5 body).
+  static const double questionBoxHeight = 100; // tinted question textarea box
+  static const TextStyle textAccent = TextStyle(color: accent);
+  static const TextStyle labelSemiboldSm = TextStyle(
+    fontSize: textSm,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle bodyBeigeMedium13 = TextStyle(
+    color: beigeBorder,
+    fontSize: textMd,
+    fontWeight: FontWeight.w500,
+    height: 1.3,
+  );
+  // gates (Figma 758:4651+) — the gold QR-glyph tile box, the 2px emphasis
+  // border (shared with the moderator boxes), and the disabled / subtle-tint
+  // opacity stops on the setup + verdict cards.
+  static const double qrTileSize = 134; // setup gold QR-glyph tile box
+  // 2px emphasis border (gate tile, moderator boxes).
+  static const double borderThick = 2;
+  static const double opacityDisabled = 0.5; // disabled control (Opacity)
+  static const double opacityDisabledFill = 0.4; // disabled button fill alpha
+  static const double opacityDisabledText = 0.6; // disabled button text alpha
+  static const double fillOpacitySubtle = 0.08; // gold/verdict subtle tint fill
+  // moderation — the moderator desk (Figma 805:1876 / 1461:12565 / 1462:12236):
+  // filter-chip bar, navy header, question card + its three action buttons.
+  // radius5 is shared with the live AI-caption badge.
+  static const double radius5 = 5;
+  static const double moderatorFilterChipHeight = 58;
+  static const double moderatorChipBorderWidth = 1.18; // off-scale hairline
+  static const double moderatorCountBadgeSize = 28; // chip count-badge square
+  static const double moderatorCardTopBorderWidth = 8; // gold card top accent
+  static const double moderatorActionButtonHeight = 88;
+  static const double moderatorActionShadowBlur = 10;
+  static const double moderatorActionShadowOffsetY = 8;
+  static const double moderatorCountBadgeActiveOpacity = 0.3;
+  // 25% overlay — question-box inset fill + on-stage button shadow.
+  static const double moderatorScrimOpacity = 0.25;
+  static const double moderatorActionRestingFillOpacity = 0.1;
+  static const TextStyle labelWhiteBoldHero = TextStyle(
+    color: surface,
+    fontSize: textHero,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle labelWhiteExtraBoldHero = TextStyle(
+    color: surface,
+    fontSize: textHero,
+    fontWeight: FontWeight.w800,
+  );
+  static const TextStyle labelWhiteBoldHeroTall = TextStyle(
+    color: surface,
+    fontSize: textHero,
+    fontWeight: FontWeight.w700,
+    height: 1.5,
+  );
+  static const TextStyle labelWhiteBoldTitle = TextStyle(
+    color: surface,
+    fontSize: textTitle,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle labelBeigeSemibold24 = TextStyle(
+    color: beigeBorder,
+    fontSize: text24,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle labelGoldTitle = TextStyle(
+    color: accent,
+    fontSize: textTitle,
+  );
+  // live (Figma 934:3450+) — LIVE/language-chip pads, the 16:9 player band
+  // (5 uses), the fixed HH:mm time-chip + AI-caption badge boxes, and the two
+  // white body styles. bodyWhiteRegularSm is shared with the sessions timeline.
+  static const double gap5 = 5; // off-grid 5px micro-gap
+  static const double gap10 = 10; // off-grid 10px chip padding
+  static const double videoAspectRatio = 16 / 9; // live player band
+  static const double timeChipWidth = 53; // upcoming-session HH:mm chip
+  static const double aiBadgeSize = 20; // AI live-caption badge box
+  static const TextStyle bodyWhiteRegularSm = TextStyle(
+    color: surface,
+    fontSize: textSm,
+    fontWeight: FontWeight.w400,
+  );
+  static const TextStyle bodyWhiteMediumTall = TextStyle(
+    color: surface,
+    fontSize: textMd,
+    fontWeight: FontWeight.w500,
+    height: 1.5,
+  );
+  // sessions (Figma 758:5307+) — seat-map caps / legend swatches / row-label
+  // column / seat corner; the my-seat + header action chip; the day banner +
+  // calendar-strip cell; the meta icon box; type-tab; time rail; seat marker.
+  static const double actionChipHeight = 34; // my-seat + header action chip
+  static const double seatCapDefault = 20; // my-seat seat-square cap
+  static const double seatCapPicker = 26; // seat-picker seat-square cap
+  static const double seatSwatchSm = 14; // my-seat legend swatch
+  static const double seatSwatchLg = 16; // picker + available legend swatch
+  static const double seatRowLabelWidth = 12; // seat-map row-letter column
+  static const double radiusSeat = 3; // seat square / legend swatch corner
+  static const double seatMarkerInner = 20; // reservation seat-marker inner
+  static const double dayBannerHeight = 85; // programme day banner
+  static const double dayStripCellWidth = 52; // programme calendar-day cell
+  static const double metaIconBox = 24; // session-card meta icon box
+  static const double typeTabHeight = 41; // session type-tab cell
+  static const double timeRailMinHeight = 44; // timeline time-rail min height
+  static const double timeRailWidth = 48; // timeline time-rail column width
+  static const double opacityHalf = 0.5; // 50% (resting favourite heart)
+  static const double seatFillOpacity = 0.15; // reservation seat-marker fill
+  static const TextStyle labelBeigeSemiboldLg = TextStyle(
+    color: beigeBorder,
+    fontSize: textLg,
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle bodyGold = TextStyle(
+    color: accent,
+    fontSize: textMd,
+  );
+  static const TextStyle labelWhiteSemiboldLgTall = TextStyle(
+    color: surface,
+    fontSize: textLg,
+    fontWeight: FontWeight.w600,
+    height: 1.4,
+  );
+  static const TextStyle labelWhiteExtraboldLg = TextStyle(
+    color: surface,
+    fontSize: textLg,
+    fontWeight: FontWeight.w800,
+  );
+  static const TextStyle labelWhiteBlackLg = TextStyle(
+    color: surface,
+    fontSize: textLg,
+    fontWeight: FontWeight.w900,
+  );
+  static const TextStyle labelGoldMediumTall = TextStyle(
+    color: accent,
+    fontSize: textMd,
+    fontWeight: FontWeight.w500,
     height: 1.3,
   );
 }

@@ -1,29 +1,35 @@
 // Tests: bUnit coverage for the public Website /partners page
-// (Partners.razor — Figma 5866-40017). The page has NO API dependency: it renders
-// the shared LandingPageHero (no breadcrumb — Partners is a single-page cluster)
-// + the landing's two reused showcase bands from single-sourced static content
-// (Landing.PartnerLogos + Landing.Sponsors). The tests pin: the single <h1> hero
-// contract (Routes.razor focuses it) with no breadcrumb, the reused ln-pband
-// government-partner grid (4 cards), and the reused ln-spon sponsors carousel
-// (8 cards, arrows) WITHOUT the self-referential "View all" CTA (deviation (a),
-// web/partners.md §7).
+// (Partners.razor + Partners.razor.cs — Figma 5866-40017). The government-partners
+// band is static (Landing.PartnerLogos); the sponsors band reuses the shared
+// <SponsorsMarquee>, which reads the LIVE roster from the anonymous public API
+// (SponsorsFeed → SimfPublicClient). The tests pin: the single <h1> hero contract
+// (Routes.razor focuses it) with no breadcrumb, the reused ln-pband government
+// grid (4 cards), and the shared backend sponsors marquee (real sponsor cards,
+// no STARTIME) WITHOUT the self-referential "View all" CTA (deviation (a)).
 //
 // The page wraps its sections in the shared LandingShell, whose <HeadContent>
 // uses the @Assets fingerprint helper — so the test registers an (empty)
-// ResourceAssetCollection (its indexer returns the key unchanged). The
-// pass-through localizer from the base emits each resx key verbatim; the reused
-// Landing.PartnerLogos / Landing.Sponsors content is real AR/EN text, so with the
-// culture pinned to en-US the English strings are asserted directly.
+// ResourceAssetCollection. SimfPublicClient is sealed over HttpClient, so the
+// sponsors read (GET /api/v1/app/sponsors) is driven by a stub handler returning
+// a canned ApiResult envelope. Culture pinned to en-US so the EN strings assert.
 using System.Globalization;
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
 using Bunit;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
+using SIMF.ApiClient;
+using SIMF.Common;
+using SIMF.Contracts.Sponsors;
 using SIMF.Web.Components.Pages;
 
 namespace SIMF.Web.Tests;
 
 public sealed class PartnersPageTests : WebComponentTestBase
 {
+    private readonly StubPublicHandler _handler = new();
+
     public PartnersPageTests()
     {
         // Pin the culture: the reused Bilingual content resolves .For(rtl) off
@@ -33,11 +39,15 @@ public sealed class PartnersPageTests : WebComponentTestBase
         CultureInfo.CurrentCulture = english;
         CultureInfo.CurrentUICulture = english;
 
-        // /partners is static (no SimfPublicClient). The shared LandingShell
-        // resolves @Assets from a ResourceAssetCollection; an empty one returns
-        // each key unchanged.
+        // The shared LandingShell resolves @Assets from a ResourceAssetCollection;
+        // an empty one returns each key unchanged.
         JSInterop.Mode = JSRuntimeMode.Loose;
         Services.AddSingleton(new ResourceAssetCollection(Array.Empty<ResourceAsset>()));
+        // /partners reads its sponsors band live from the public API.
+        Services.AddSingleton(new SimfPublicClient(new HttpClient(_handler)
+        {
+            BaseAddress = new Uri("https://api.test/"),
+        }));
     }
 
     [Fact]
@@ -77,25 +87,64 @@ public sealed class PartnersPageTests : WebComponentTestBase
     }
 
     [Fact]
-    public void Reuses_the_landing_sponsors_carousel_without_a_view_all_cta()
+    public void Reuses_the_shared_backend_sponsors_marquee_without_a_view_all_cta()
     {
+        _handler.Sponsors = ApiResult<PublicSponsors>.Ok(new PublicSponsors(new[]
+        {
+            new PublicSponsorTierGroup(10, "Platinum", new[]
+            {
+                Sponsor("SAMI", "الشركة السعودية للصناعات العسكرية", 10, "Platinum"),
+            }),
+            new PublicSponsorTierGroup(20, "Gold", new[]
+            {
+                Sponsor("RSNF", "القوات البحرية الملكية السعودية", 20, "Gold"),
+            }),
+        }));
+
         var cut = RenderComponent<Partners>();
 
-        // one ln-spon carousel, reusing the landing's Sponsors.* keys
+        // one ln-spon band, reusing the landing's Sponsors.* keys
         Assert.Single(cut.FindAll(".ln-spon"));
         Assert.Contains("Landing.Sponsors.Title", cut.Markup);
 
-        // the sponsor cards come from the single-sourced Landing.Sponsors list;
-        // the tier tag is real content ("Host" under en-US)
-        Assert.Equal(8, cut.FindAll(".ln-scard2").Count);
-        Assert.Contains("Host", cut.Markup);
+        // real backend sponsors render (EN under en-US) as wordmark cards, each
+        // emitted twice for the marquee loop → 2 sponsors × 2 = 4 cards
+        Assert.Equal(4, cut.FindAll(".ln-scard2").Count);
+        Assert.Contains("SAMI", cut.Markup);
+        Assert.Contains("Platinum sponsor", cut.Markup);
+        // the STARTIME placeholder must never come back
+        Assert.DoesNotContain("Startime", cut.Markup, StringComparison.OrdinalIgnoreCase);
 
-        // prev/next carousel arrows render (landing.js scrolls them)
-        Assert.Equal(2, cut.FindAll(".ln-spon__arrow").Count);
-
-        // deviation (a), web/partners.md §7 — the landing's "View all" CTA is
-        // omitted here: this page IS the full listing, so a self-referential CTA
-        // would lead nowhere. Guard the omission against a future copy-paste.
+        // deviation (a): the dedicated listing omits the self-referential CTA
         Assert.Empty(cut.FindAll(".ln-spon .ln-btn--outline"));
+    }
+
+    private static PublicSponsor Sponsor(string en, string ar, int tier, string tierName) =>
+        new(Guid.NewGuid(), en, ar, tier, tierName, LogoRelativePath: null, Url: null, DisplayOrder: 0);
+
+    // Routes every request to the canned sponsors envelope, serialised with the
+    // web defaults SimfPublicClient reads. Defaults to a one-sponsor roster so the
+    // band renders for the hero / partners-band tests that don't set it.
+    private sealed class StubPublicHandler : HttpMessageHandler
+    {
+        private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
+
+        public ApiResult<PublicSponsors> Sponsors { get; set; } =
+            ApiResult<PublicSponsors>.Ok(new PublicSponsors(new[]
+            {
+                new PublicSponsorTierGroup(10, "Platinum", new[]
+                {
+                    new PublicSponsor(Guid.NewGuid(), "SAMI", "سامي", 10, "Platinum",
+                        LogoRelativePath: null, Url: null, DisplayOrder: 0),
+                }),
+            }));
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request, CancellationToken cancellationToken) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = JsonContent.Create(
+                    JsonSerializer.Deserialize<object>(JsonSerializer.Serialize(Sponsors, Web), Web)),
+            });
     }
 }

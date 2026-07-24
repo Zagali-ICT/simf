@@ -210,7 +210,7 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
               children: <Widget>[
                 SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
+                    horizontal: SimfTokens.space4,
                     vertical: 56,
                   ),
                   child: MaxWidthBody(
@@ -220,7 +220,7 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
                         AccountHeader(title: l10n.signInForumTitle),
-                        const SizedBox(height: 40),
+                        const SizedBox(height: SimfTokens.space10),
                         _buildCard(l10n),
                       ],
                     ),
@@ -255,12 +255,12 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
                 l10n.signUpTitle,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontSize: 24,
+                  fontSize: SimfTokens.text24,
                   fontWeight: FontWeight.w600,
                   color: SimfTokens.headlineInk,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: SimfTokens.space6),
               AccountEmailField(
                 controller: _email,
                 label: l10n.emailLabel,
@@ -271,7 +271,7 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
                   AutofillHints.email,
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: SimfTokens.space4),
               AccountPasswordField(
                 controller: _password,
                 label: l10n.passwordLabel,
@@ -281,7 +281,7 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
                 validator: _validatePassword,
                 autofillHints: const <String>[AutofillHints.newPassword],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: SimfTokens.space4),
               AccountPasswordField(
                 controller: _confirm,
                 label: l10n.confirmPasswordLabel,
@@ -293,7 +293,7 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
                 onSubmitted: (_) => unawaited(_submit()),
                 autofillHints: const <String>[AutofillHints.newPassword],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: SimfTokens.space4),
               AccountTermsCheckbox(
                 accepted: _acceptedTerms,
                 onChanged: _setAcceptedTerms,
@@ -302,22 +302,22 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
                 showError: _showTermsError,
               ),
               if (_error != null) ...<Widget>[
-                const SizedBox(height: 12),
+                const SizedBox(height: SimfTokens.space3),
                 Text(
                   _error!,
                   style: const TextStyle(
                     color: SimfTokens.danger,
-                    fontSize: 12,
+                    fontSize: SimfTokens.textSm,
                   ),
                 ),
               ],
-              const SizedBox(height: 24),
+              const SizedBox(height: SimfTokens.space6),
               AuthSubmitButton(
                 label: l10n.signUpButton,
                 busy: _busy,
                 onPressed: _busy ? null : () => unawaited(_submit()),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: SimfTokens.space2),
               AccountAuthPrompt(
                 question: l10n.haveAccountQuestion,
                 linkLabel: l10n.signInTitle,

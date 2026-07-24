@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../../app/localization/app_l10n.dart';
+import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
 import '../data/session_favourites.dart';
@@ -17,8 +18,8 @@ class FavouriteHeartButton extends ConsumerWidget {
     required this.sessionId,
     this.filledIcon,
     this.outlineIcon,
-    this.filledAsset = 'assets/icons/heart_filled.svg',
-    this.outlineAsset = 'assets/icons/heart_outline.svg',
+    this.filledAsset = AppAssets.heartFilled,
+    this.outlineAsset = AppAssets.heartOutline,
     super.key,
   });
 
@@ -43,7 +44,7 @@ class FavouriteHeartButton extends ConsumerWidget {
     return Material(
       color: isFavourite
           ? SimfTokens.accent
-          : SimfTokens.accent.withValues(alpha: 0.5),
+          : SimfTokens.accent.withValues(alpha: SimfTokens.opacityHalf),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
       ),
@@ -51,8 +52,8 @@ class FavouriteHeartButton extends ConsumerWidget {
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
         onTap: () => _toggle(context, ref),
         child: SizedBox(
-          width: 32,
-          height: 32,
+          width: SimfTokens.requestIconBox,
+          height: SimfTokens.requestIconBox,
           child: _glyph(isFavourite),
         ),
       ),
@@ -64,12 +65,12 @@ class FavouriteHeartButton extends ConsumerWidget {
   Widget _glyph(bool isFavourite) {
     final icon = isFavourite ? filledIcon : outlineIcon;
     if (icon != null) {
-      return Icon(icon, size: 16, color: Colors.white);
+      return Icon(icon, size: 16, color: SimfTokens.surface);
     }
     return SimfSvgIcon(
       isFavourite ? filledAsset : outlineAsset,
       size: 16,
-      color: Colors.white,
+      color: SimfTokens.surface,
     );
   }
 

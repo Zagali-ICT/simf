@@ -25,13 +25,13 @@ class GatePicker extends StatelessWidget {
       initialValue: gate.gateId,
       isExpanded: true,
       dropdownColor: SimfTokens.navyDeep,
-      icon: const Icon(Icons.keyboard_arrow_down, color: Colors.white),
+      icon: const Icon(Icons.keyboard_arrow_down, color: SimfTokens.surface),
       // Carry the brand font (FSAlbertArabic + Cairo) explicitly — a
       // DropdownButtonFormField's `style` does NOT inherit the theme font, so
       // the old hardcoded 'Inter' (superseded, D-454) or a bare style both
       // render Arabic gate names as tofu. Sourced from the theme constants.
       style: const TextStyle(
-        color: Colors.white,
+        color: SimfTokens.surface,
         fontFamily: SimfTheme.fontFamily,
         fontFamilyFallback: SimfTheme.fontFamilyFallback,
         fontSize: SimfTokens.textMd,
@@ -39,11 +39,16 @@ class GatePicker extends StatelessWidget {
       decoration: InputDecoration(
         filled: true,
         fillColor: SimfTokens.navyDeep,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: SimfTokens.space4,
+          vertical: SimfTokens.space2,
+        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-          borderSide: const BorderSide(color: SimfTokens.accent, width: 0.5),
+          borderSide: const BorderSide(
+            color: SimfTokens.accent,
+            width: SimfTokens.hairlineBold,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),

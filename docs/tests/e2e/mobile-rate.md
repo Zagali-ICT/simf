@@ -12,7 +12,7 @@
 | **Page** | [`Page_040`](../../App/Page_040/README.md) |
 | **Route** | `GET /api/v1/app/feedback/form` + `POST /api/v1/app/feedback/submit` · app screen #40 `/rate?code=&ratingTypeId=&targetId=` (auth-gated) |
 | **Auth setup** | An **approved Visitor** token (the page is login-only; route 40 is in the auth gate). |
-| **Last reviewed** | 2026-07-19 (owner attendance gate — rate only what you attended) |
+| **Last reviewed** | 2026-07-22 (clock-end prompt attendance-gated; no rate prompt off the sessions list/detail) |
 
 ## Wire contract (D-496)
 
@@ -38,7 +38,16 @@
   per user per (type, target)).
 - **App** entry: the More menu opens the App (global) rating; the end-of-session
   **notification** (`kind = SessionRatingRequest`, `relatedEntityId` = session id)
-  deep-links to `code=Session&targetId={id}`.
+  deep-links to `code=Session&targetId={id}`. **Owner 2026-07-22:** that
+  end-of-session notification is sent only to users who **checked in** to the hall
+  (a `HallAttendance` row for the session) — not to everyone who booked a seat —
+  matching the submit gate; and merely viewing a session's detail never opens the
+  rate form (rate comes only from watching the stream or this notification). The
+  prompt is CP-controllable: deactivating a rating type in RatingConfig silences its
+  prompt everywhere — the "Session" type gates the clock-end worker, the scan-out
+  prompt and (via `sessionRatingEnabled` on `GET /app/site-settings`) the app's
+  live after-watch prompt; the "Day" type gates the end-of-day prompt; and each of
+  "Event"/"Exhibition"/"App" gates its slot in the end-of-programme trio.
 - **Prompt codes (D-679):** the seeded system types `Day` (PerDay — one per
   programme day, `targetId` = `ProgrammeDay.Id`) and `Event` / `Exhibition`
   (global) back the `ProgrammeRatingPromptWorker` notifications, which deep-link to
@@ -71,6 +80,11 @@
 | E2E-MOB040-019 | **Per-session gate** — rating a session requires an in-hall check-in for **that** session (attendance at another session does not unlock it) → 403 then 200 once checked in | auth | P0 | authored ✓ (API `FeedbackRatingsTests.A_per_session_rating_requires_attendance_at_that_session`) |
 | E2E-MOB040-020 | **Form eligibility flag** — the form still loads for a non-attendee but carries `isEligible=false`; the app disables submit + shows an "attend to rate" note; `true` after attendance | happy | P1 | authored ✓ (API `The_form_reports_ineligible_before_attendance_and_eligible_after` + widget `an ineligible form shows the attend note + disables submit`) |
 | E2E-MOB040-021 | **Blended day/overall signal** — a Day / App / Event / Exhibition rating is unlocked by a venue-gate Check-In scan (not only an in-hall check-in), matching the rating-prompt audience | auth | P1 | authored ✓ (API `FeedbackRatingsTests.A_venue_gate_checkin_alone_unlocks_a_global_rating` + `DynamicRatingFormTests.Day_rating_is_unlocked_by_a_venue_gate_checkin_that_day`) |
+| E2E-MOB040-022 | **Clock-end prompt is attendance-gated (owner 2026-07-22)** — when a session ends, `SessionRatingPromptWorker` prompts only users with an in-hall `HallAttendance` for it; a user who booked a seat but never checked in gets **no** prompt (matching the submit gate) | auth | P0 | authored ✓ (API `SessionRatingPromptWorkerTests.Scan_prompts_attendees_of_a_just_ended_session_exactly_once` + `Scan_does_not_prompt_a_booked_but_absent_user`) |
+| E2E-MOB040-023 | **No rate prompt from the sessions list/detail (owner 2026-07-22)** — merely opening/leaving an ended session's detail no longer opens the rate form; rate comes only from watching the live stream or the attendance-gated notification | happy | P0 | authored ✓ (app `session_detail_screen_test` group `no rate prompt from the session detail`) |
+| E2E-MOB040-024 | **Rating prompt is CP-controllable (owner 2026-07-22)** — deactivating the "Session" rating type in RatingConfig silences BOTH session-rating-prompt producers (the clock-end worker and the hall scan-out) and does not stamp the session; re-activating resumes prompts | auth | P0 | authored ✓ (API `SessionRatingPromptWorkerTests.Scan_sends_nothing_when_the_Session_rating_type_is_deactivated_in_the_CP` + `HallAttendanceTests.Departure_fires_no_prompt_when_the_Session_rating_type_is_deactivated`) |
+| E2E-MOB040-025 | **Day & programme-end prompts are CP-controllable (owner 2026-07-22)** — deactivating the "Day" rating type silences the end-of-day prompt (not stamped → re-enabling resumes); deactivating "App" (or Event/Exhibition) drops just that one from the end-of-programme trio | auth | P0 | authored ✓ (API `ProgrammeRatingPromptWorkerTests.Day_scan_sends_nothing_when_the_Day_rating_type_is_deactivated_in_the_CP` + `Program_end_scan_skips_a_deactivated_overall_rating_type`) |
+| E2E-MOB040-026 | **Live after-watch prompt honours the CP toggle (owner 2026-07-22)** — the app reads `sessionRatingEnabled` on `GET /app/site-settings` (mirrors the "Session" type); when false, leaving the live stream does NOT open the rate form | auth | P1 | authored ✓ (API `SiteSettingsPublicTests.GET_reflects_the_CP_Session_rating_toggle_in_sessionRatingEnabled` + app `live_broadcast_screen_test` `the after-watch prompt is suppressed when the CP disables session rating`) |
 
 ## Scenarios
 
@@ -155,6 +169,36 @@ Scenario: A departure with no prior arrival prompts nothing (D-713)
   Given the visitor never arrived at the session's hall (no open row)
   When they POST /app/sessions/{id}/departure
   Then the call succeeds (no-op) and no rating prompt is created
+
+Scenario: The clock-end prompt is attendance-gated, not booking-based (owner 2026-07-22)
+  Given a session has ended, visitor A checked in to its hall (HallAttendance)
+  And visitor B only reserved a seat but never checked in
+  When the SessionRatingPromptWorker scans the ended session
+  Then visitor A gets exactly one SessionRatingRequest
+  And visitor B gets none (a booking is not attendance)
+  And the session is stamped RatingPromptSentUtc so it is not re-scanned
+
+Scenario: Viewing a session's detail never opens the rate form (owner 2026-07-22)
+  Given an approved visitor opens an ENDED session's detail without attending it
+  When they leave the detail screen
+  Then the rate form is NOT opened (rate comes only from watching the stream
+    or the attendance-gated notification — never off the sessions list/detail)
+
+Scenario: The CP can turn the session rating prompt off (owner 2026-07-22)
+  Given an admin deactivates the "Session" rating type on the CP RatingConfig page
+  When a session ends with checked-in attendees, or an attendee scans out
+  Then no SessionRatingRequest notification is sent by either producer
+  And the session is not stamped, so re-activating the type resumes prompts
+  And GET /app/site-settings returns sessionRatingEnabled=false, so the app's
+    live after-watch prompt is suppressed too
+
+Scenario: The CP controls the day and overall rating prompts (owner 2026-07-22)
+  Given an admin deactivates the "Day" rating type
+  When a programme day ends with checked-in attendees
+  Then no DayRatingRequest is sent and the day is not stamped (re-enabling resumes)
+  Given an admin deactivates only the "App" rating type
+  When the programme ends
+  Then the Event + Exhibition prompts still fire but the App prompt does not
 
 Scenario: The per-session rate form shows the watched-at header (D-713)
   Given the visitor opens /rate?code=Session&targetId={sessionId}

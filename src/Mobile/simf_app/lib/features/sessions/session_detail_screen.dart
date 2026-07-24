@@ -12,7 +12,6 @@ import '../../app/widgets/simf_bottom_nav.dart';
 import '../../app/widgets/simf_confirm_dialog.dart';
 import '../../app/widgets/simf_info_dialog.dart';
 import '../../app/widgets/simf_page_shell.dart';
-import 'data/rate_prompt_tracker.dart';
 import 'data/seat_map_models.dart';
 import 'data/seat_map_repository.dart';
 import 'data/session_calendar.dart';
@@ -42,6 +41,13 @@ import 'widgets/session_detail_header.dart';
 /// in `widgets/` (session_detail_body/header, session_header_card,
 /// session_text_sections, session_speaker_card, ask_host_card,
 /// session_reservation_card, session_booking_actions).
+///
+/// **Rating (owner 2026-07-22):** this screen no longer opens the rate form when
+/// you leave an ended session — merely viewing a session is not attending it. The
+/// rate prompt now comes only from actually watching the live stream
+/// (`live_broadcast_screen`) or from the attendance-gated rate notification after
+/// hall check-in/out (plus the day / programme-end prompts). This removes the
+/// prompt that used to appear off the sessions list/detail for non-attendees.
 class SessionDetailScreen extends ConsumerStatefulWidget {
   const SessionDetailScreen({required this.sessionId, super.key});
 
@@ -65,36 +71,10 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
   // absent.
   bool _seatMapError = false;
 
-  /// The router captured in [didChangeDependencies] — [dispose] runs after this
-  /// element has left the tree, so the after-view prompt pushes through the
-  /// app-scoped router object, not this widget's (gone) context.
-  GoRouter? _router;
-
-  /// The rate-prompt tracker, captured during [_load] (while the screen is
-  /// alive) ONLY when this view is actually eligible to prompt — a signed-in
-  /// approved attendee opening a session that has already ended. Staying null
-  /// for every other case means [dispose] never has to read a provider and the
-  /// common paths never touch prefs.
-  SessionRatePromptTracker? _rateTracker;
-
   @override
   void initState() {
     super.initState();
     unawaited(_load());
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // maybeOf (not of): a bare-MaterialApp host with no GoRouter leaves this
-    // null, and the after-view prompt simply no-ops instead of throwing.
-    _router = GoRouter.maybeOf(context);
-  }
-
-  @override
-  void dispose() {
-    _maybePromptRateAfterView();
-    super.dispose();
   }
 
   Future<void> _load() async {
@@ -116,26 +96,12 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
       if (!mounted) {
         return;
       }
-      // The one-time after-view rate prompt (see [_maybePromptRateAfterView])
-      // fires only for an approved attendee — a pending account presents as
-      // guest via effectiveAppRole, so it is excluded here just like the route
-      // role-gate excludes it from the /rate screen itself.
-      final isApprovedAttendee = auth is AuthStateSignedIn &&
-          _isAttendeeRole(auth.session.user.effectiveAppRole);
       // #18 — the Join affordance is shown to ANY approved signed-in account (the
       // seat map is fetched for all of them, not only visitor/exhibitor), so any
       // of them whose map FAILED deserves the retry. A pending account presents
       // as guest via effectiveAppRole, so it is (correctly) excluded.
       final isApprovedSignedIn = auth is AuthStateSignedIn &&
           auth.session.user.effectiveAppRole != AppRole.guest;
-      // Capture the tracker only when this view could prompt on leave (approved
-      // attendee + the session has already ended) — so the provider (and prefs)
-      // is never touched for guests or upcoming sessions, and dispose can reuse
-      // the captured reference instead of reading a provider from a dead element.
-      _rateTracker = isApprovedAttendee &&
-              detail.endUtc.isBefore(DateTime.now().toUtc())
-          ? ref.read(sessionRatePromptTrackerProvider)
-          : null;
       setState(() {
         _detail = detail;
         _seatMap = seatMap;
@@ -166,49 +132,6 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
       // 401 (no token) / 403 (not approved) / transport → no join section (L-3).
       return null;
     }
-  }
-
-  bool _isAttendeeRole(AppRole role) =>
-      role == AppRole.visitor || role == AppRole.exhibitor;
-
-  /// Owner: "every session after view must show rate session … one time per
-  /// customer." When an approved attendee leaves a session whose end time has
-  /// passed, and that session has not prompted before, open the dynamic rate
-  /// screen for it and remember it so it never prompts again.
-  ///
-  /// Runs from [dispose] — the reliable "left the screen" signal for every exit
-  /// path (the header back, the system back, a programmatic pop) — and pushes
-  /// through the captured [GoRouter] on the next frame, since this element is
-  /// already gone. Forward navigations (tapping a speaker / the live / summary
-  /// buttons) keep this screen alive, so they do not fire the prompt.
-  void _maybePromptRateAfterView() {
-    final detail = _detail;
-    final router = _router;
-    final tracker = _rateTracker;
-    if (detail == null || router == null || tracker == null) {
-      return;
-    }
-    // Re-check "ended" at leave time (the tracker is only non-null when it was
-    // already ended at load, so this is a belt-and-braces guard).
-    if (!detail.endUtc.isBefore(DateTime.now().toUtc())) {
-      return;
-    }
-    if (tracker.hasShown(detail.id)) {
-      return;
-    }
-    final sessionId = detail.id;
-    unawaited(tracker.markShown(sessionId));
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(
-        router.pushNamed(
-          RouteNames.rate,
-          queryParameters: <String, String>{
-            'code': 'Session',
-            'targetId': sessionId,
-          },
-        ),
-      );
-    });
   }
 
   /// D-485 — join this session. Open-seating → confirm + one-tap join; an

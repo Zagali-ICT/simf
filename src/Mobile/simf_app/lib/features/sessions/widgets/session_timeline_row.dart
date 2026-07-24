@@ -46,11 +46,7 @@ class SessionTimelineRow extends StatelessWidget {
             textAlign: TextAlign.start,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textSm,
-              height: 1.4,
-            ),
+            style: SimfTokens.bodyBeigeSm14,
           );
 
     return SimfCard(
@@ -97,12 +93,7 @@ class SessionTimelineRow extends StatelessWidget {
                             textAlign: TextAlign.start,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: SimfTokens.accent,
-                              fontSize: SimfTokens.textMd,
-                              fontWeight: FontWeight.w500,
-                              height: 1.3,
-                            ),
+                            style: SimfTokens.labelGoldMediumTall,
                           ),
                         ),
                         const SizedBox(width: SimfTokens.space2),
@@ -154,7 +145,7 @@ class _TimeRail extends StatelessWidget {
   /// no description/banner) it collapses to zero — the "line missing between from
   /// and to time" the owner reported. This floor (two ~15px time labels + a ~14px
   /// connector) keeps it drawn; taller rows let it stretch to fill.
-  static const double _minRailHeight = 44;
+  static const double _minRailHeight = SimfTokens.timeRailMinHeight;
 
   static String _hhmm(DateTime t) =>
       '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
@@ -168,7 +159,7 @@ class _TimeRail extends StatelessWidget {
     return ConstrainedBox(
       constraints: const BoxConstraints(minHeight: _minRailHeight),
       child: SizedBox(
-        width: 48,
+        width: SimfTokens.timeRailWidth,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
@@ -178,11 +169,7 @@ class _TimeRail extends StatelessWidget {
               maxLines: 1,
               softWrap: false,
               overflow: TextOverflow.visible,
-              style: const TextStyle(
-                color: SimfTokens.beigeBorder,
-                fontSize: SimfTokens.textSm,
-                fontWeight: FontWeight.w600,
-              ),
+              style: SimfTokens.labelBeigeSemiboldSm,
             ),
             const Expanded(
               // Figma 1310:3243/3244 — the in-rail "from → to" connector is a
@@ -200,11 +187,7 @@ class _TimeRail extends StatelessWidget {
               maxLines: 1,
               softWrap: false,
               overflow: TextOverflow.visible,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: SimfTokens.textSm,
-                fontWeight: FontWeight.w400,
-              ),
+              style: SimfTokens.bodyWhiteRegularSm,
             ),
           ],
         ),

@@ -39,7 +39,7 @@ class LookupSearchSheet extends StatefulWidget {
 
 class _LookupSearchSheetState extends State<LookupSearchSheet> {
   static const TextStyle _itemStyle = TextStyle(
-    fontSize: 14,
+    fontSize: SimfTokens.textMd,
     fontWeight: FontWeight.w500,
     color: SimfTokens.inputInk,
   );
@@ -65,7 +65,7 @@ class _LookupSearchSheetState extends State<LookupSearchSheet> {
           child: Column(
             children: <Widget>[
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                padding: const EdgeInsets.fromLTRB(SimfTokens.space4, SimfTokens.space4, SimfTokens.space4, SimfTokens.space2),
                 child: TextField(
                   key: widget.searchFieldKey,
                   autofocus: true,

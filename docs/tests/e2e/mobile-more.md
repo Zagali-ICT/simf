@@ -39,6 +39,7 @@
 | E2E-MOB041-007 | Tapping a gated destination (Notifications) while signed-out bounces to sign-in | edge | P1 | covered (router auth gate, destination #33) |
 | E2E-MOB041-008 | Signed-in shows the إعادة تعيين كلمة المرور row; guest hides it | auth | P1 | authored ✓ (screen `renders the three grouped sections…` + `guest hides…`) |
 | E2E-MOB041-009 | Tapping إعادة تعيين كلمة المرور opens the forgot-password flow | happy | P1 | authored ✓ (screen `signed-in tapping Reset password opens the forgot flow`) |
+| E2E-MOB041-010 | Each row's forward "open" caret points to the inline end — right in LTR (English), left in RTL (Arabic) — via the shared SimfForwardChevron | i18n | P2 | authored ✓ (`test/app/widgets/simf_forward_chevron_test.dart` — LTR flip / RTL no-flip) |
 
 ## Scenarios
 
@@ -85,4 +86,4 @@ ComingSoon routing covered by the router's fall-through for routes 200–203.
 
 ---
 
-_Last reviewed:_ `2026-07-10` by `SIMF Team` (D-736 — the version line reads the real installed version, no longer a literal).
+_Last reviewed:_ `2026-07-22` by `Claude` (forward-chevron LTR direction — E2E-MOB041-010, the row caret now points to the inline end via the shared SimfForwardChevron). Prior: `2026-07-10` by `SIMF Team` (D-736 — the version line reads the real installed version, no longer a literal).

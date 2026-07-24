@@ -3622,6 +3622,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("BackgroundVideoUrl")
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)");
+
                     b.Property<string>("Bio")
                         .HasMaxLength(4000)
                         .HasColumnType("nvarchar(4000)");
@@ -4106,6 +4110,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .IsRequired()
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
+
+                    b.Property<bool>("ShowInPartnerDirectory")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("datetimeoffset");

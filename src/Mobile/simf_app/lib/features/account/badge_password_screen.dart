@@ -128,7 +128,7 @@ class _BadgePasswordScreenState extends ConsumerState<BadgePasswordScreen> {
             ),
             Expanded(child: _buildBody(l10n)),
             _buildSubmit(l10n),
-            const SizedBox(height: 24),
+            const SizedBox(height: SimfTokens.space6),
           ],
         ),
       ),
@@ -139,7 +139,7 @@ class _BadgePasswordScreenState extends ConsumerState<BadgePasswordScreen> {
     final name = widget.displayName;
     final masked = widget.maskedEmail;
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: MaxWidthBody(
         maxWidth: 560,
         child: Form(
@@ -153,12 +153,12 @@ class _BadgePasswordScreenState extends ConsumerState<BadgePasswordScreen> {
                   l10n.badgeWelcomeName(name),
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
+                    color: SimfTokens.surface,
+                    fontSize: SimfTokens.textXxl,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: SimfTokens.space2),
               ],
               if (masked != null && masked.isNotEmpty) ...<Widget>[
                 Text(
@@ -167,11 +167,11 @@ class _BadgePasswordScreenState extends ConsumerState<BadgePasswordScreen> {
                   textDirection: TextDirection.ltr,
                   style: SimfTokens.bodyBeige,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: SimfTokens.space2),
               ],
-              const SizedBox(height: 24),
-              SimfFieldLabel(l10n.passwordLabel, color: Colors.white),
-              const SizedBox(height: 8),
+              const SizedBox(height: SimfTokens.space6),
+              SimfFieldLabel(l10n.passwordLabel, color: SimfTokens.surface),
+              const SizedBox(height: SimfTokens.space2),
               TextFormField(
                 controller: _password,
                 obscureText: _obscure,
@@ -193,7 +193,7 @@ class _BadgePasswordScreenState extends ConsumerState<BadgePasswordScreen> {
                 ),
                 validator: (value) => isBlank(value) ? l10n.requiredField : null,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: SimfTokens.space3),
               Align(
                 alignment: AlignmentDirectional.centerEnd,
                 child: TextButton(
@@ -204,13 +204,16 @@ class _BadgePasswordScreenState extends ConsumerState<BadgePasswordScreen> {
                 ),
               ),
               if (_error != null) ...<Widget>[
-                const SizedBox(height: 12),
+                const SizedBox(height: SimfTokens.space3),
                 Text(
                   _error!,
-                  style: const TextStyle(color: SimfTokens.danger, fontSize: 12),
+                  style: const TextStyle(
+                    color: SimfTokens.danger,
+                    fontSize: SimfTokens.textSm,
+                  ),
                 ),
               ],
-              const SizedBox(height: 24),
+              const SizedBox(height: SimfTokens.space6),
             ],
           ),
         ),
@@ -220,7 +223,7 @@ class _BadgePasswordScreenState extends ConsumerState<BadgePasswordScreen> {
 
   Widget _buildSubmit(AppL10n l10n) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: MaxWidthBody(
         maxWidth: 560,
         child: AuthSubmitButton(
