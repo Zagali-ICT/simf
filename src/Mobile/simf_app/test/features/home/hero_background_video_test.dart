@@ -1,25 +1,15 @@
-// D-756 — the hero background-video source gate. `HeroBackgroundVideo.isSupported`
-// decides whether the home hero mounts the video (over the banner-image strip) or
-// keeps the image fallback: a YouTube link with a valid id or a direct https
-// MP4/HLS stream is supported; a blank / cleartext-http / non-video URL is not.
+// D-756 / D-761 — the hero background-video source gate.
+// `HeroBackgroundVideo.isSupported` decides whether the home hero mounts the
+// video (over the banner-image strip) or keeps the image fallback: only a direct
+// https MP4/HLS stream is supported. A YouTube link is deliberately NOT supported
+// (it would need an Android WebView, which can't be clipped into the hero band —
+// D-761), so a YouTube URL falls back to the banner image. A blank /
+// cleartext-http / non-video URL is not supported.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/features/home/widgets/hero_background_video.dart';
 
 void main() {
   group('HeroBackgroundVideo.isSupported', () {
-    test('a YouTube link (watch / youtu.be / embed) is supported', () {
-      expect(
-        HeroBackgroundVideo.isSupported(
-          'https://www.youtube.com/watch?v=rmW5sJTp-Zo',
-        ),
-        isTrue,
-      );
-      expect(
-        HeroBackgroundVideo.isSupported('https://youtu.be/rmW5sJTp-Zo'),
-        isTrue,
-      );
-    });
-
     test('a direct https MP4/HLS stream is supported', () {
       expect(
         HeroBackgroundVideo.isSupported('https://cdn.example.com/hero.mp4'),
@@ -28,6 +18,22 @@ void main() {
       expect(
         HeroBackgroundVideo.isSupported('https://cdn.example.com/live.m3u8'),
         isTrue,
+      );
+    });
+
+    test('a YouTube link is NOT supported (falls back to the image band)', () {
+      // A YouTube embed needs an Android WebView that cannot be clipped into the
+      // short hero band (D-761), so a YouTube URL is excluded and the hero keeps
+      // its banner-image / discover-photo fallback.
+      expect(
+        HeroBackgroundVideo.isSupported(
+          'https://www.youtube.com/watch?v=rmW5sJTp-Zo',
+        ),
+        isFalse,
+      );
+      expect(
+        HeroBackgroundVideo.isSupported('https://youtu.be/rmW5sJTp-Zo'),
+        isFalse,
       );
     });
 
