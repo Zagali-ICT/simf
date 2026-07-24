@@ -468,16 +468,11 @@ void main() {
       expect(dir, TextDirection.rtl);
     });
 
-    // Build #13 — the "show me in Meet People Like You" opt-in is offered only
-    // to "Other"-type members (ProfileType.IsForVisitor == false).
-    testWidgets('a visitor-type profile does NOT see the Meet-People opt-in',
-        (tester) async {
-      // The default fake is a VIP (audience → isForVisitor true).
-      await _pumpEdit(tester, _FakeProfileRepository());
-      expect(find.byType(SimfCheckboxTile), findsNothing);
-    });
-
-    testWidgets('an "Other"-type profile sees the opt-in and can turn it off',
+    // The "show me in Meet People Like You" opt-in was removed from the app
+    // (owner 2026-07-24) — that visibility toggle now lives only in the Control
+    // Panel. The app must NOT render it, and a full profile re-POST (an
+    // interests-only edit) must round-trip the CP-set value untouched.
+    testWidgets('the Meet-People opt-in is gone; its CP value round-trips',
         (tester) async {
       final repo = _FakeProfileRepository()
         ..myProfile = const UserProfileResponse(
@@ -492,15 +487,13 @@ void main() {
           hasIdImage: true,
           hasAvatar: true,
           isForVisitor: false,
-          showInMeetLikeYou: true,
+          showInMeetLikeYou: false,
         );
       await _pumpEdit(tester, repo);
 
-      expect(find.byType(SimfCheckboxTile), findsOneWidget);
+      expect(find.byType(SimfCheckboxTile), findsNothing);
 
-      // Turn the opt-in OFF, then save — the new value must reach the upsert.
-      await tester.tap(find.byType(SimfCheckboxTile));
-      await tester.pumpAndSettle();
+      // Saving an interests-only change must preserve the CP-set visibility.
       await tester.tap(find.widgetWithText(FilledButton, 'Save'));
       await tester.pumpAndSettle();
 

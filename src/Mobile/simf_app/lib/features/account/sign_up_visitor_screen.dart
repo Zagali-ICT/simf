@@ -154,7 +154,10 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   bool _saving = false;
   String? _saveError;
 
-  /// D-736 — "Show in Meet People Like You" toggle. Defaults to true.
+  /// "Show in Meet People Like You" visibility. The in-app opt-in was removed
+  /// (owner 2026-07-24) — this now lives only in the CP; the value is loaded
+  /// from the profile and carried forward unchanged so the app never clobbers
+  /// the CP-set flag. Defaults to true for a brand-new "Other" registrant.
   bool _showInMeetLikeYou = true;
 
   @override
@@ -875,29 +878,6 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                   _buildIdImageField(l10n),
                   const SizedBox(height: SimfTokens.space4),
                   _buildFacePhotoField(l10n),
-                  // D-736 — "Show in Meet People Like You" visibility toggle,
-                  // shown only for the "Other" tab (non-Visitor registrants).
-                  if (!_isVisitorType) ...<Widget>[
-                    const SizedBox(height: SimfTokens.space4),
-                    const Divider(height: 1, color: SimfTokens.beigeBorder),
-                    const SizedBox(height: SimfTokens.space3),
-                    CheckboxListTile(
-                      value: _showInMeetLikeYou,
-                      onChanged: (v) => setState(() => _showInMeetLikeYou = v ?? true),
-                      title: Text(
-                        l10n.showInMeetLikeYou,
-                        style: const TextStyle(
-                          fontSize: SimfTokens.textMd,
-                          color: SimfTokens.headlineInk,
-                        ),
-                      ),
-                      contentPadding: EdgeInsets.zero,
-                      visualDensity: VisualDensity.compact,
-                      controlAffinity: ListTileControlAffinity.leading,
-                      activeColor: SimfTokens.accent,
-                    ),
-                    const SizedBox(height: SimfTokens.space4),
-                  ],
                   if (_saveError != null) ...<Widget>[
                     Text(
                       _saveError!,
