@@ -52,9 +52,10 @@ import 'widgets/live_player_surface.dart';
 /// anything else (HLS/MP4) via `video_player`. The player widget owns its own
 /// controller lifecycle, so swapping the active URL just rebuilds it.
 class LiveBroadcastScreen extends ConsumerStatefulWidget {
-  const LiveBroadcastScreen({this.sessionId, super.key});
+  const LiveBroadcastScreen({this.sessionId, this.liveUrl, super.key});
 
   final String? sessionId;
+  final String? liveUrl;
 
   @override
   ConsumerState<LiveBroadcastScreen> createState() =>
@@ -266,6 +267,21 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
       // D-495 — no session id → play the forum's main (global) live-stream link
       // from the Organization profile when the admin has configured one; else the
       // "pick a session" empty state.
+      // When a liveUrl param is provided (e.g. from the home LiveBanner tap), use
+      // it directly without hitting the API or the org profile.
+      final explicitUrl = widget.liveUrl?.trim();
+      if (explicitUrl != null && explicitUrl.isNotEmpty) {
+        return _content(
+          l10n,
+          LiveSession(
+            title: '',
+            titleArabic: '',
+            status: 1,
+            hasRecording: false,
+            liveStreamUrl: explicitUrl,
+          ),
+        );
+      }
       final profile = ref.watch(orgProfileProvider);
       final globalUrl = profile?.liveStreamUrl;
       if (profile != null && globalUrl != null && globalUrl.isNotEmpty) {
