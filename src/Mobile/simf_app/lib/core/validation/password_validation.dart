@@ -23,3 +23,34 @@ bool isValidPassword(String value) =>
     _upper.hasMatch(value) &&
     _digit.hasMatch(value) &&
     _special.hasMatch(value);
+
+/// Individual password-structure requirements.
+enum PasswordRequirement {
+  length,
+  lowercase,
+  uppercase,
+  digit,
+  special,
+}
+
+/// Returns the subset of [PasswordRequirement] values that [value] does NOT
+/// satisfy. An empty list means the password meets the full structural policy.
+List<PasswordRequirement> unmetPasswordRequirements(String value) {
+  final unmet = <PasswordRequirement>[];
+  if (value.length < 8 || value.length > 128) {
+    unmet.add(PasswordRequirement.length);
+  }
+  if (!_lower.hasMatch(value)) {
+    unmet.add(PasswordRequirement.lowercase);
+  }
+  if (!_upper.hasMatch(value)) {
+    unmet.add(PasswordRequirement.uppercase);
+  }
+  if (!_digit.hasMatch(value)) {
+    unmet.add(PasswordRequirement.digit);
+  }
+  if (!_special.hasMatch(value)) {
+    unmet.add(PasswordRequirement.special);
+  }
+  return unmet;
+}

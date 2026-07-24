@@ -46,6 +46,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   final TextEditingController _confirm = TextEditingController();
   bool _obscure = true;
   bool _busy = false;
+  bool _passwordTouched = false;
+  List<PasswordRequirement> _passwordUnmet = <PasswordRequirement>[];
   String? _error;
 
   @override
@@ -62,11 +64,60 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       _confirm.text.isNotEmpty &&
       !_busy;
 
+  void _onPasswordChanged(String value) {
+    setState(() {
+      _passwordTouched = true;
+      _passwordUnmet = unmetPasswordRequirements(value);
+    });
+  }
+
+  Widget _buildPasswordErrors(AppL10n l10n) {
+    if (!_passwordTouched || _passwordUnmet.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        const SizedBox(height: SimfTokens.space2),
+        for (final PasswordRequirement req in _passwordUnmet)
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(
+              _passwordRequirementMessage(req, l10n),
+              style: const TextStyle(
+                color: SimfTokens.danger,
+                fontSize: SimfTokens.textSm,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  String _passwordRequirementMessage(
+      PasswordRequirement req, AppL10n l10n) {
+    switch (req) {
+      case PasswordRequirement.length:
+        return l10n.passwordLength;
+      case PasswordRequirement.uppercase:
+        return l10n.passwordUppercase;
+      case PasswordRequirement.lowercase:
+        return l10n.passwordLowercase;
+      case PasswordRequirement.digit:
+        return l10n.passwordDigit;
+      case PasswordRequirement.special:
+        return l10n.passwordSpecial;
+    }
+  }
+
   Future<void> _submit() async {
     final l10n = AppL10n.of(context);
     // Client-side validation (required + password policy + confirm-match) gates
     // the round-trip; the inline errors render in the fields' own error border.
     if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    if (unmetPasswordRequirements(_password.text).isNotEmpty) {
       return;
     }
     setState(() {
@@ -191,17 +242,11 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                   obscure: _obscure,
                   onToggle: () => setState(() => _obscure = !_obscure),
                 ),
-                // Reset SETS a new password, so apply the policy here.
-                validator: (value) {
-                  if (isBlank(value)) {
-                    return l10n.requiredField;
-                  }
-                  return isValidPassword(value!)
-                      ? null
-                      : l10n.passwordPolicyError;
-                },
-                onChanged: (_) => setState(() {}),
+                validator: (value) =>
+                    isBlank(value) ? l10n.requiredField : null,
+                onChanged: _onPasswordChanged,
               ),
+              _buildPasswordErrors(l10n),
               const SizedBox(height: SimfTokens.space4),
               NaviFormField(
                 label: l10n.confirmPasswordLabel,

@@ -55,6 +55,8 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
   bool _busy = false;
   bool _codeSent = false;
   String? _maskedShown;
+  bool _passwordTouched = false;
+  List<PasswordRequirement> _passwordUnmet = <PasswordRequirement>[];
   String? _error;
 
   @override
@@ -124,6 +126,9 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
+    if (unmetPasswordRequirements(_password.text).isNotEmpty) {
+      return;
+    }
     setState(() {
       _busy = true;
       _error = null;
@@ -169,6 +174,52 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
       _password.text.isNotEmpty &&
       _confirm.text.isNotEmpty &&
       !_busy;
+
+  void _onPasswordChanged(String value) {
+    setState(() {
+      _passwordTouched = true;
+      _passwordUnmet = unmetPasswordRequirements(value);
+    });
+  }
+
+  Widget _buildPasswordErrors(AppL10n l10n) {
+    if (!_passwordTouched || _passwordUnmet.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        const SizedBox(height: SimfTokens.space2),
+        for (final PasswordRequirement req in _passwordUnmet)
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(
+              _passwordRequirementMessage(req, l10n),
+              style: const TextStyle(
+                color: SimfTokens.danger,
+                fontSize: SimfTokens.textSm,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  String _passwordRequirementMessage(
+      PasswordRequirement req, AppL10n l10n) {
+    switch (req) {
+      case PasswordRequirement.length:
+        return l10n.passwordLength;
+      case PasswordRequirement.uppercase:
+        return l10n.passwordUppercase;
+      case PasswordRequirement.lowercase:
+        return l10n.passwordLowercase;
+      case PasswordRequirement.digit:
+        return l10n.passwordDigit;
+      case PasswordRequirement.special:
+        return l10n.passwordSpecial;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -281,7 +332,7 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
           obscureText: _obscure,
           maxLength: 128,
           enabled: !_busy,
-          onChanged: (_) => setState(() {}),
+          onChanged: _onPasswordChanged,
           style: simfInputStyleOnNavy,
           decoration: simfFieldDecoration(
             counterText: '',
@@ -290,16 +341,10 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
               onToggle: () => setState(() => _obscure = !_obscure),
             ),
           ),
-          validator: (value) {
-            if (isBlank(value)) {
-              return l10n.requiredField;
-            }
-            if (!isValidPassword(value!)) {
-              return l10n.passwordPolicyError;
-            }
-            return null;
-          },
+          validator: (value) =>
+              isBlank(value) ? l10n.requiredField : null,
         ),
+        _buildPasswordErrors(l10n),
         const SizedBox(height: SimfTokens.space4),
         SimfFieldLabel(l10n.confirmPasswordLabel, color: SimfTokens.surface),
         const SizedBox(height: SimfTokens.space2),
