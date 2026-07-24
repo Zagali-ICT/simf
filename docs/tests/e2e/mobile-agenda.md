@@ -84,6 +84,7 @@
 | E2E-MOB016-018 | **Program tab label (D-750):** the bottom-nav program/agenda tab reads "الأجندة" / "Agenda" (`agendaTitle`) — the screen header "برنامج الملتقى" and the `sessionsTitle` "الجلسات" on other surfaces (home tile, etc.) are unchanged | i18n/visual | P1 | authored ✓ (`sessions_screen_test` RTL: active bottom-nav label = "الأجندة"; `simf_page_shell_test`: the "Agenda" tab navigates to /sessions; goldens re-locked) |
 | E2E-MOB016-016 | **Time-rail from→to connector (D-705):** every المواعيد row shows the vertical beige line between its start and end time — including a **collapsed/short row** (title only, no banner/description) where it previously collapsed to zero (Figma 1310:3243/3244) | visual | P1 | authored ✓ (golden `sessions_883-2308.png` — the connector renders on the featured AND the collapsed row) |
 | E2E-MOB016-017 | **State chips (owner 2026-07-14):** each timeline row shows a state chip derived from its phase + flags — `مباشر الآن` (live, red), `الملخص متاح` (a published summary, gold outline), `مسجّل` (recorded, gold); an upcoming session shows no chip | visual | P1 | authored ✓ (`session_state_chip_test.dart` unit + golden `session_state_chips.png`; shared `SessionStateChipRow`) |
+| E2E-MOB016-019 | **Header back chevron → Home (bug fix):** on the Agenda tab of the bottom-nav shell the header back chevron returns to the **Home** tab. Previously it was a dead no-op — an in-shell tab never leaves the shell's `/` location, so `backOrHome`'s `goNamed(home)` navigated to `/` while already there | nav | P1 | authored ✓ (`simf_page_shell_test` — `backOrHome on an in-shell tab (nothing to pop) switches the shell to the Home tab`) |
 
 ## Scenarios
 
@@ -311,9 +312,29 @@ Scenario: The active program tab reads الأجندة, not الجلسات
 "الأجندة"; `simf_page_shell_test.dart` — the "Agenda" tab navigates to /sessions;
 the 6 sessions-tab goldens re-locked to the new label.
 
+### E2E-MOB016-019 — Header back chevron returns to Home
+
+```gherkin
+Scenario: The back chevron on the Agenda tab returns to Home
+  Given the user is on the Agenda tab of the bottom-nav shell
+  When they tap the back chevron in the header
+  Then the shell switches to the Home tab
+```
+
+> The five bottom-nav tabs render inside `SimfAppShell`'s IndexedStack at the
+> shell's `/` location, so `context.canPop()` is false and the old
+> `goNamed(home)` was a no-op (navigating to `/` while already at `/`). The
+> shared `backOrHome` now switches the shell tab to Home when it can't pop.
+
+**Evidence:** `simf_page_shell_test.dart` — `backOrHome on an in-shell tab
+(nothing to pop) switches the shell to the Home tab`.
+
 ---
 
-_Last reviewed:_ `2026-07-22` by `Apexium` — **owner 2026-07-22: the agenda day
+_Last reviewed:_ `2026-07-24` by `SIMF Team` — **bug fix: the header back
+chevron on the in-shell Agenda tab was a dead no-op; the shared `backOrHome` now
+switches the shell to the Home tab when there is nothing to pop (E2E-MOB016-019).**
+_Prior:_ `2026-07-22` by `Apexium` — **owner 2026-07-22: the agenda day
 strip now orders the days by the ambient text direction — in Arabic (RTL) the
 earliest programme day sits on the right and the scroll leads from the right edge,
 overriding the earlier 883:2327 LTR pin; English stays left→right. Intro +

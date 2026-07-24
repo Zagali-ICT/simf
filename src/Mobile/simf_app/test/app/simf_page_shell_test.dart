@@ -7,6 +7,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/localization/locale_controller.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_app_shell.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
@@ -191,6 +192,35 @@ void main() {
 
       await tester.tap(find.byType(SimfCircledBackButton));
       expect(backs, 1);
+    });
+
+    testWidgets(
+        'backOrHome on an in-shell tab (nothing to pop) switches the shell to '
+        'the Home tab instead of a no-op goNamed(home)', (tester) async {
+      // Reproduces the bug scenario: Agenda / Badge / Profile render inside
+      // SimfAppShell at the shell's '/' location, so context.canPop() is false
+      // and a bare goNamed(home) navigates to '/' while already at '/' — a
+      // no-op that left the back chevron dead. backOrHome must switch the tab.
+      int? switchedTo;
+      await _pump(
+        tester,
+        SimfShellScope(
+          switchTab: (index) => switchedTo = index,
+          child: Builder(
+            builder: (context) => SimfPageShell(
+              title: 'Profile',
+              onBack: () => backOrHome(context),
+              tab: SimfTab.profile,
+              body: const Text('BODY'),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.byType(SimfCircledBackButton));
+      await tester.pumpAndSettle();
+
+      expect(switchedTo, tabIndex(SimfTab.home));
     });
 
     testWidgets('the action cluster (showHeaderActions:true) is the bell + menu '

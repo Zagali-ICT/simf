@@ -31,6 +31,7 @@
 | E2E-MOB032-002 | A pending account (null `qrId`) sees the "available after approval" state, no QR | edge | P1 | authored ✓ (screen `a null qrId shows the pending state, no QR`) |
 | E2E-MOB032-003 | A dashboard read failure → error + Retry that re-fetches | resilience | P0 | authored ✓ (screen `a load failure shows the error + retry, which re-fetches`) |
 | E2E-MOB032-004 | Arabic locale renders the Arabic name (RTL) alongside the QR | i18n | P2 | authored ✓ (screen `renders the Arabic name + hint in Arabic`) |
+| E2E-MOB032-005 | **Header back chevron → Home (bug fix):** on the Badge tab of the bottom-nav shell the header back chevron returns to the **Home** tab. Previously it was a dead no-op — an in-shell tab never leaves the shell's `/` location, so `backOrHome`'s `goNamed(home)` navigated to `/` while already there | nav | P1 | authored ✓ (`simf_page_shell_test` — `backOrHome on an in-shell tab (nothing to pop) switches the shell to the Home tab`) |
 
 ## Scenarios
 
@@ -88,6 +89,26 @@ verifying, confirm a badge shown on one device is decoded by the in-app scanner
 on another — not only by a phone's native camera. (The shared scanner also now
 decodes the **full frame**, so a QR filling the viewfinder still reads.)
 
+### E2E-MOB032-005 — Header back chevron returns to Home
+
+```gherkin
+Scenario: The back chevron on the Badge tab returns to Home
+  Given the user is on the Badge tab of the bottom-nav shell
+  When they tap the back chevron in the header
+  Then the shell switches to the Home tab
+```
+
+> The five bottom-nav tabs render inside `SimfAppShell`'s IndexedStack at the
+> shell's `/` location, so `context.canPop()` is false and the old
+> `goNamed(home)` was a no-op (navigating to `/` while already at `/`). The
+> shared `backOrHome` now switches the shell tab to Home when it can't pop.
+
+**Evidence:** `simf_page_shell_test.dart` — `backOrHome on an in-shell tab
+(nothing to pop) switches the shell to the Home tab`.
+
 ---
 
-_Last reviewed:_ `2026-07-11` by `SIMF Team`.
+_Last reviewed:_ `2026-07-24` by `SIMF Team` — **bug fix: the header back chevron
+on the in-shell Badge tab was a dead no-op; the shared `backOrHome` now switches the
+shell to the Home tab when there is nothing to pop (E2E-MOB032-005).** _Prior:_
+`2026-07-11` by `SIMF Team`.

@@ -15,6 +15,7 @@ import '../localization/locale_controller.dart';
 import '../route_names.dart';
 import '../theme/tokens.dart';
 import 'more_drawer.dart';
+import 'simf_app_shell.dart' show SimfShellScope, tabIndex;
 import 'simf_bottom_nav.dart';
 import 'simf_language_toggle.dart';
 import 'simf_logo.dart';
@@ -26,13 +27,25 @@ import 'simf_svg_icon.dart';
 /// state-surface building blocks every page composes. One widget per
 /// repeated frame element — pages never copy-paste shell markup.
 
-/// The standard back action: pop when possible, else land on home.
+/// The standard back action: pop a pushed route when possible; otherwise, if
+/// we are one of the in-shell bottom-nav tabs (Agenda / Badge / Profile), switch
+/// the shell back to the Home tab; else navigate home.
+///
+/// The in-shell tabs never leave the shell's `/` location, so `context.canPop()`
+/// is false and a bare `goNamed(home)` navigates to `/` while already at `/` —
+/// a no-op that leaves the back chevron dead. Switching the shell tab is what
+/// actually returns those tabs to Home (mirrors the bottom nav's `_shellOrGo`).
 void backOrHome(BuildContext context) {
   if (context.canPop()) {
     context.pop();
-  } else {
-    context.goNamed(RouteNames.home);
+    return;
   }
+  final shell = SimfShellScope.maybeOf(context);
+  if (shell != null) {
+    shell.switchTab(tabIndex(SimfTab.home));
+    return;
+  }
+  context.goNamed(RouteNames.home);
 }
 
 /// A standard AppBar leading back button for raw-`AppBar` screens. Always shows
