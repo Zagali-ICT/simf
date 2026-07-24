@@ -65,7 +65,7 @@ class AboutDetailsCard extends StatelessWidget {
                   child: Text(
                     value,
                     textDirection: _valueDirection(value),
-                    textAlign: TextAlign.start,
+                    textAlign: TextAlign.justify,
                     style: SimfTokens.labelBeigeSm,
                   ),
                 ),
