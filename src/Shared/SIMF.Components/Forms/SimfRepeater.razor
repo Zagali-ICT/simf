@@ -1,0 +1,73 @@
+@* D-762 — a reorderable list of cards for a long CRUD form: each item renders as
+   a bordered card with an index header (Up / Down / Remove) and a body slot
+   (RowTemplate); an empty list shows a dashed placeholder and a trailing "+ Add"
+   button always shows. Pairs with SimfFormSection; the visual styling lives in
+   simf-components.css (.simf-repeater*). *@
+@namespace SIMF.Components.Forms
+@typeparam TItem
+
+@if (Items.Count == 0)
+{
+    <p class="simf-repeater__empty">@EmptyText</p>
+}
+else
+{
+    <div class="simf-repeater">
+        @for (var i = 0; i < Items.Count; i++)
+        {
+            var index = i;
+            var item = Items[index];
+            <div class="simf-repeater__row" @key="item">
+                <div class="simf-repeater__row-head">
+                    <span class="simf-repeater__index">@IndexLabel @(index + 1)</span>
+                    <div class="simf-repeater__row-actions">
+                        <button type="button" class="simf-button simf-button--ghost"
+                                title="Move up" @onclick="() => OnMove.InvokeAsync((item, -1))"
+                                disabled="@(Disabled || index == 0)">Up</button>
+                        <button type="button" class="simf-button simf-button--ghost"
+                                title="Move down" @onclick="() => OnMove.InvokeAsync((item, 1))"
+                                disabled="@(Disabled || index == Items.Count - 1)">Down</button>
+                        <button type="button" class="simf-button simf-button--ghost"
+                                @onclick="() => OnRemove.InvokeAsync(item)" disabled="@Disabled">Remove</button>
+                    </div>
+                </div>
+                <div class="simf-repeater__row-body">
+                    @RowTemplate(item)
+                </div>
+            </div>
+        }
+    </div>
+}
+<div class="simf-form__actions">
+    <button type="button" class="simf-button simf-button--ghost"
+            @onclick="() => OnAdd.InvokeAsync()" disabled="@Disabled">@AddLabel</button>
+</div>
+
+@code {
+    /// <summary>The rows to render (bound to the caller's model list).</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<TItem> Items { get; set; } = default!;
+
+    /// <summary>The per-row body (the fields), given the item.</summary>
+    [Parameter, EditorRequired] public RenderFragment<TItem> RowTemplate { get; set; } = default!;
+
+    /// <summary>The word before the 1-based index in each row header (e.g. "Item").</summary>
+    [Parameter] public string? IndexLabel { get; set; }
+
+    /// <summary>The placeholder shown when the list is empty.</summary>
+    [Parameter] public string? EmptyText { get; set; }
+
+    /// <summary>The "+ Add" button label.</summary>
+    [Parameter] public string? AddLabel { get; set; }
+
+    /// <summary>Disables every control (e.g. while a save is in flight).</summary>
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Raised when the add button is tapped.</summary>
+    [Parameter] public EventCallback OnAdd { get; set; }
+
+    /// <summary>Raised with the row to remove.</summary>
+    [Parameter] public EventCallback<TItem> OnRemove { get; set; }
+
+    /// <summary>Raised with the row and a delta (-1 up / +1 down) to reorder.</summary>
+    [Parameter] public EventCallback<(TItem Item, int Delta)> OnMove { get; set; }
+}

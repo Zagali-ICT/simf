@@ -100,7 +100,9 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
 
     // The "details" list — driven by the profile's details when present.
     final detailRows = (profile != null && profile.details.isNotEmpty)
-        ? profile.details.map((d) => (d.nameFor(isAr), d.value)).toList()
+        ? profile.details
+            .map((d) => (d.nameFor(isAr), d.valueFor(isAr)))
+            .toList()
         : <(String, String)>[
             (l10n.aboutDetailYearLabel, l10n.aboutDetailYearValue),
             (l10n.aboutDetailDateLabel, l10n.aboutDetailDateValue),

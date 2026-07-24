@@ -2,6 +2,15 @@ import 'package:flutter/material.dart';
 
 import '../../../app/theme/tokens.dart';
 
+/// The detail value's script decides its direction: a value containing any
+/// Arabic-block character (U+0600..U+06FF) reads RTL, a language-neutral value
+/// (a year, a date range, a URL, an email) reads LTR so its digits/segments
+/// keep their natural order.
+TextDirection _valueDirection(String value) =>
+    value.codeUnits.any((c) => c >= 0x0600 && c <= 0x06FF)
+        ? TextDirection.rtl
+        : TextDirection.ltr;
+
 /// A titled navy-deep text card (الرسالة / الرؤية): the white heading over the
 /// beige body paragraph.
 class AboutTextCard extends StatelessWidget {
@@ -55,7 +64,7 @@ class AboutDetailsCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     value,
-                    textDirection: TextDirection.ltr,
+                    textDirection: _valueDirection(value),
                     textAlign: TextAlign.start,
                     style: SimfTokens.labelBeigeSm,
                   ),

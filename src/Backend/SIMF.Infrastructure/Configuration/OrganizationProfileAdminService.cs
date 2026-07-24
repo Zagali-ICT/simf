@@ -195,6 +195,7 @@ internal sealed class OrganizationProfileAdminService(
             row.Name = RequireText(item.Name, "detail name", 256);
             row.NameArabic = RequireText(item.NameArabic, "detail Arabic name", 256);
             row.Value = RequireText(item.Value, "detail value", 1024);
+            row.ValueArabic = Trim(item.ValueArabic, 1024);
             row.DisplayOrder = item.DisplayOrder;
         }
 

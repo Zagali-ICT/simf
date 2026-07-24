@@ -63,7 +63,15 @@ OrgProfile _orgProfile() => OrgProfile(
         ),
       ],
       details: const <OrgDetail>[
+        // A language-neutral value (a year) — no Arabic value; falls back.
         OrgDetail(name: 'Year', nameArabic: 'السنة', value: '2026'),
+        // A language-specific value — the Arabic reader sees the Arabic value.
+        OrgDetail(
+          name: 'Organiser',
+          nameArabic: 'الجهة المنظمة',
+          value: 'Royal Saudi Naval Forces',
+          valueArabic: 'القوات البحرية الملكية السعودية',
+        ),
       ],
     );
 
@@ -226,6 +234,25 @@ void main() {
       // The version card + its value.
       expect(find.text('System info'), findsOneWidget);
       expect(find.textContaining('1.0.0'), findsOneWidget);
+      // D-761 — English reader sees the English detail value.
+      expect(find.text('Royal Saudi Naval Forces'), findsOneWidget);
+      expect(find.text('القوات البحرية الملكية السعودية'), findsNothing);
+    });
+
+    testWidgets('D-761 — Arabic reader sees the Arabic detail value',
+        (tester) async {
+      await _pump(
+        tester,
+        _FakeContentRepo(status: 404),
+        locale: const Locale('ar'),
+        profile: _orgProfile(),
+      );
+
+      // A language-specific value switches to its Arabic reading …
+      expect(find.text('القوات البحرية الملكية السعودية'), findsOneWidget);
+      expect(find.text('Royal Saudi Naval Forces'), findsNothing);
+      // … while a language-neutral value (no valueArabic) falls back to Value.
+      expect(find.text('2026'), findsWidgets);
     });
   });
 }

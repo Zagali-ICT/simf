@@ -30,6 +30,8 @@
 | E2E-ORGP-007 | A save wire failure (5xx / network) → error toast, the form keeps the entered values | resilience | P1 | spec |
 | E2E-ORGP-008 | RTL render (Arabic) — sections/labels/button mirror; URL + GPS fields stay LTR; the bilingual about-items/details edit cleanly | i18n | P1 | spec |
 | E2E-ORGP-009 | Hero background video (D-756) — set the "Hero background video" field to a YouTube link → Save → success; `GET /app/organization-profile` returns `backgroundVideoUrl`; clearing it → the field returns null; a non-http(s) value → `400` | happy | P1 | authored ✓ (`OrganizationProfileTests` PUT save+reflect incl. `BackgroundVideoUrl`; URL-reject) |
+| E2E-ORGP-010 | Bilingual detail value (D-762) — a detail row's `Value (AR)` round-trips; a blank `Value (AR)` surfaces as null so the app shows `Value (EN)`; the app About screen shows the Arabic value in Arabic and the English value in English | i18n | P1 | authored ✓ (`OrganizationProfileTests` PUT round-trips `ValueArabic` + null-fallback; app `about_screen_test` per-language render) |
+| E2E-ORGP-011 | Repeating-list UX (D-762) — the about-items and details lists render as numbered cards; Up/Down reorder a row (persisted as `DisplayOrder`); Remove drops it; an empty list shows the placeholder | happy | P2 | spec |
 
 ## Scenarios
 
@@ -105,6 +107,27 @@ Scenario: A non-http(s) background video URL is rejected
   And nothing is persisted
 ```
 
+### E2E-ORGP-010 — Bilingual detail value round-trips + falls back (D-762)
+
+```gherkin
+Feature: CP Organization Profile — bilingual detail value
+Scenario: An admin gives a detail row an Arabic value and the app shows it per language
+  Given an admin with OrganizationProfile.Manage opens /admin/organization-profile
+  When they add a detail "Organiser" / "الجهة المنظمة" with Value (EN) "Royal Saudi Naval Forces"
+  And set its Value (AR) to "القوات البحرية الملكية السعودية"
+  And add a detail "Year" / "السنة" with Value (EN) "2026" and a blank Value (AR)
+  And tap Save
+  Then PUT /admin/organization-profile persists both rows and shows the success toast
+  And GET /app/organization-profile returns the Organiser row with valueArabic set
+  And returns the Year row with valueArabic = null (blank clears to null)
+  When an Arabic reader opens the app About screen
+  Then the Organiser detail shows "القوات البحرية الملكية السعودية"
+  And the Year detail falls back to "2026" (no Arabic value)
+  When an English reader opens the app About screen
+  Then the Organiser detail shows "Royal Saudi Naval Forces"
+```
+
 ---
 
-_Last reviewed:_ `2026-06-24` by `SIMF Team` — D-495 (new page).
+_Last reviewed:_ `2026-07-24` by `SIMF Team` — D-762 (bilingual detail value + repeating-list UX);
+D-495 (new page).

@@ -97,19 +97,30 @@ END
    The D-747 port of the org content seeded the About items but omitted these
    Details — this closes that gap.
    --------------------------------------------------------------------- */
-DECLARE @details TABLE (Ord int, Nm nvarchar(256), NmAr nvarchar(256), Val nvarchar(1024));
-INSERT INTO @details (Ord, Nm, NmAr, Val) VALUES
-(0, N'Organiser', N'الجهة المنظمة', N'Royal Saudi Naval Forces'),
-(1, N'Edition',   N'النسخة',        N'Fourth (2026)'),
-(2, N'Dates',     N'التواريخ',      N'23-25 November 2026');
+DECLARE @details TABLE (Ord int, Nm nvarchar(256), NmAr nvarchar(256), Val nvarchar(1024), ValAr nvarchar(1024));
+INSERT INTO @details (Ord, Nm, NmAr, Val, ValAr) VALUES
+(0, N'Organiser', N'الجهة المنظمة', N'Royal Saudi Naval Forces', N'القوات البحرية الملكية السعودية'),
+(1, N'Edition',   N'النسخة',        N'Fourth (2026)',            N'الرابعة (2026)'),
+(2, N'Dates',     N'التواريخ',      N'23-25 November 2026',      N'23-25 نوفمبر 2026');
 
 INSERT INTO dbo.OrganizationDetails
-    (Id, OrganizationProfileId, Name, NameArabic, Value, DisplayOrder, IsActive, CreatedAt, CreatedBy)
-SELECT NEWID(), @org, d.Nm, d.NmAr, d.Val, d.Ord, 1, @now, @sys
+    (Id, OrganizationProfileId, Name, NameArabic, Value, ValueArabic, DisplayOrder, IsActive, CreatedAt, CreatedBy)
+SELECT NEWID(), @org, d.Nm, d.NmAr, d.Val, d.ValAr, d.Ord, 1, @now, @sys
   FROM @details d
  WHERE NOT EXISTS (
      SELECT 1 FROM dbo.OrganizationDetails od
       WHERE od.OrganizationProfileId = @org AND od.Name = d.Nm);
+
+/* Backfill the Arabic value on an ALREADY-seeded row that predates the
+   ValueArabic column (D-762). Only when it is currently NULL and the English
+   Value still matches the seed, so a later admin edit is never clobbered. */
+UPDATE od
+   SET od.ValueArabic = d.ValAr
+  FROM dbo.OrganizationDetails od
+  JOIN @details d
+    ON d.Nm = od.Name AND d.Val = od.Value
+ WHERE od.OrganizationProfileId = @org
+   AND od.ValueArabic IS NULL;
 
 /* Correct an ALREADY-seeded Dates row (old 20-22 value) to the real programme
    dates (23-25 Nov 2026). Guarded to the EXACT old seed value, so a later admin

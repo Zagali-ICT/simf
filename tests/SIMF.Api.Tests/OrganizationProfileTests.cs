@@ -100,9 +100,19 @@ public sealed class OrganizationProfileTests : IClassFixture<SimfApiFactory>
                 ],
                 Details =
                 [
+                    // A bilingual value (organiser name) — round-trips ValueArabic.
                     new AdminOrganizationDetail
                     {
-                        Name = "Year", NameArabic = "السنة", Value = "2026", DisplayOrder = 0,
+                        Name = "Organiser", NameArabic = "الجهة المنظمة",
+                        Value = "Royal Saudi Naval Forces",
+                        ValueArabic = "القوات البحرية الملكية السعودية",
+                        DisplayOrder = 0,
+                    },
+                    // A language-neutral value (a year) — ValueArabic left blank →
+                    // surfaces as null so the app falls back to Value.
+                    new AdminOrganizationDetail
+                    {
+                        Name = "Year", NameArabic = "السنة", Value = "2026", DisplayOrder = 1,
                     },
                 ],
             },
@@ -115,7 +125,11 @@ public sealed class OrganizationProfileTests : IClassFixture<SimfApiFactory>
         Assert.Equal("https://youtu.be/rmW5sJTp-Zo", saved.BackgroundVideoUrl);
         Assert.Equal("https://facebook.com/simf", saved.Social.Facebook);
         Assert.Single(saved.AboutItems);
-        Assert.Single(saved.Details);
+        Assert.Equal(2, saved.Details.Count);
+        var organiser = saved.Details.Single(d => d.Name == "Organiser");
+        Assert.Equal("القوات البحرية الملكية السعودية", organiser.ValueArabic);
+        var year = saved.Details.Single(d => d.Name == "Year");
+        Assert.Null(year.ValueArabic);
     }
 
     [Fact]

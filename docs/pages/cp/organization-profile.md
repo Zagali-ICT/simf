@@ -32,7 +32,9 @@ are columns. Logo is `Asset`-backed (category `OrganizationLogo`).
 - **Live stream:** main home-page YouTube link.
 - **Hero background video (D-756):** a YouTube link (or a direct MP4/HLS link) played muted + looping behind the home hero on both the app and the website; blank falls back to the bundled hero media. Absolute http(s), max 1024.
 - **Social:** Facebook, X, Instagram, LinkedIn, YouTube, TikTok, Snapchat (each an absolute http(s) URL).
-- **About items** (repeating): title + text (bilingual). **Details** (repeating): name (bilingual) + value.
+- **About items** (repeating): title + text (bilingual). **Details** (repeating): name (bilingual) + value **(bilingual — `Value (EN)` + optional `Value (AR)`; D-762)**. A blank `Value (AR)` is stored as null and the app falls back to `Value (EN)` (for a language-neutral value like a year or a URL).
+
+The long field set is grouped into numbered `SimfFormSection` cards with a responsive two-column grid (bilingual pairs sit side by side). The About-items and Details lists render as `simf-repeater` cards — each row has an index, **Up / Down** reorder (persisted as `DisplayOrder`), and **Remove**; an empty list shows a placeholder. Bio and About-item text use multi-line `SimfTextarea` fields (D-762).
 
 ## 3. Data flow
 
@@ -74,4 +76,10 @@ audited. URLs are http(s)-sanitised on read (D-467); text renders as text (no HT
 
 ## Changelog
 
+- **2026-07-24 (D-762):** the Details value is now bilingual (`Value (EN)` + optional
+  `Value (AR)`, nullable, additive column `OrganizationDetails.ValueArabic`); the app
+  About screen shows the Arabic value in Arabic and falls back to `Value (EN)` when the
+  Arabic value is blank. The editor was rebuilt onto numbered `SimfFormSection` cards +
+  the `simf-repeater` list pattern (index, Up/Down reorder, Remove, empty-state) and
+  multi-line textareas for the long bilingual bodies.
 - **2026-06-24 (D-495):** new page.

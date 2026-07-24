@@ -205,18 +205,29 @@ class OrgDetail {
     required this.name,
     required this.nameArabic,
     required this.value,
+    this.valueArabic,
   });
 
   final String name;
   final String nameArabic;
   final String value;
 
+  /// The Arabic value; null/blank for a language-neutral value (a year, a URL),
+  /// in which case [valueFor] falls back to [value].
+  final String? valueArabic;
+
   String nameFor(bool isArabic) => isArabic ? nameArabic : name;
+
+  String valueFor(bool isArabic) {
+    final ar = valueArabic;
+    return isArabic && ar != null && ar.isNotEmpty ? ar : value;
+  }
 
   static OrgDetail fromJson(Map<String, dynamic> json) => OrgDetail(
         name: json['name'] as String? ?? '',
         nameArabic: json['nameArabic'] as String? ?? '',
         value: json['value'] as String? ?? '',
+        valueArabic: json['valueArabic'] as String?,
       );
 }
 

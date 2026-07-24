@@ -1200,6 +1200,42 @@
   .simf-form__grid { grid-template-columns: minmax(0, 1fr); }
 }
 
+/* Repeating list rows in a CRUD form (e.g. the Organization Profile about-items
+   and details lists) — a bordered card per row with an index label and reorder /
+   remove actions in its header, plus a dashed empty-state placeholder. */
+.simf-repeater { display: flex; flex-direction: column; gap: var(--space-4); }
+.simf-repeater__row {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background-color: var(--color-surface-sunken);
+  overflow: hidden;
+}
+.simf-repeater__row-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-block-end: 1px solid var(--color-border);
+}
+.simf-repeater__index {
+  font-weight: var(--font-weight-heading);
+  color: var(--color-text-muted);
+}
+.simf-repeater__row-actions {
+  margin-inline-start: auto;
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.simf-repeater__row-body { padding: var(--space-4); }
+.simf-repeater__empty {
+  padding: var(--space-5);
+  text-align: center;
+  color: var(--color-text-muted);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-card);
+}
+
 /* Identity section — the photo control sits beside the identity fields and
    wraps to its own row on a narrow viewport. */
 .simf-identity-row { display: flex; gap: var(--space-5); align-items: flex-start; flex-wrap: wrap; }
