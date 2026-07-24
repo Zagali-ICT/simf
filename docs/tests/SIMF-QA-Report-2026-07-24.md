@@ -146,6 +146,32 @@ added (also consistent with holding code changes for the joint fix session).
 Deeper per-scenario coverage inside existing classes was not exhaustively
 audited and is noted as residual scope.
 
+## 4C. Live Control Panel QA (interactive, real browser)
+
+The CP was launched live (http://localhost:5278 → QA API) and driven in a real
+browser as a signed-in Super Administrator (email + password + TOTP). This is
+functional QA, not unit tests.
+
+| Page | Actions | Result |
+|------|---------|--------|
+| /login | render, invalid-password rejected, TOTP challenge, verify | PASS (only `favicon.ico` 404 - cosmetic) |
+| / dashboard | render, seeded stats (59 sessions / 32 speakers / 10 sponsors / 8 attendees) | PASS, 0 console errors |
+| /admin/venue-map | list (SimfDataGrid, 10 nodes), Edit dialog, change X=375 / Y=812, Save | PASS - persisted "375, 812" |
+| /admin/organization-profile | enter DECIMAL Latitude=21.5433 / Longitude=39.1728 under Arabic culture, Save, RELOAD | **PASS - persisted exactly. The owner's CP number bug (P0 fix) is confirmed fixed on the live page under the exact `c=ar` culture that triggered it.** |
+| /admin/sponsors | Add → empty-name save (validation), create valid (EN+AR), verify in list, soft-delete (2-step confirm) | PASS - validation fired; create 10→11; delete → row "Inactive" (soft-delete) |
+| 53 CP routes (all nav sections) | server render with authenticated cookie | 53/53 HTTP 200, zero error markers |
+
+**Live-QA findings.**
+- QA-LIVE-001 (LOW, cosmetic): `GET /favicon.ico` → 404 on CP pages (no favicon served).
+- Operational note: the super-admin startup seed fails silently (logs an error, app keeps
+  running) if the configured temp password violates the password policy - leaving a CP
+  nobody can sign into. Consider fail-fast. (Not a code defect on this branch.)
+
+**Live-QA scope not covered (honest):** only 5 CP pages were driven interactively
+end-to-end; the other ~65 were covered by the 53-route server-render sweep + the 223
+component tests, not by hand-clicking every field/button. The **mobile app was not run
+live on a device/emulator** this session (covered by the 1068 green Flutter tests only).
+
 ## 5. Fixes delivered (3 commits, each build + test verified)
 
 ### P0 - `98917898` fix(cp): culture-invariant number parsing + clean-code batch
