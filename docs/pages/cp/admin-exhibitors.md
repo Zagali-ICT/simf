@@ -235,4 +235,12 @@ gained `ContactId` + `HasLogo`) — or a tinted initials tile (unlinked exhibito
 or contacts with no logo). Column key unchanged so server-side sort/filter is
 unaffected. E2E-EXH-025.
 
-_Last reviewed:_ 2026-07-14 by Claude (D-357 — exhibitor company-logo thumbnail in the list). Prior: 2026-06-10 by Claude (D-356 Phase 5).
+**2026-07-25 (D-764):** an exhibitor now owns its **own** logo
+(`AssetCategory.ExhibitorLogo`, owner = the exhibitor, independent of the linked
+Contact). `ExhibitorsAddEdit` (Edit mode) has a `<SimfImageUpload
+Category="ExhibitorLogo">` "Logo" field; the grid renders the exhibitor's own logo
+(`AdminExhibitorSummary.HasExhibitorLogo`) and the app exhibitor-detail screen shows
+it (`GET /app/assets/ExhibitorLogo/{id}/image`, CompanyLogo fallback). Works with no
+linked Contact. Gated by `Exhibitors.Edit`. E2E-EXH-025 / E2E-EXH-026.
+
+_Last reviewed:_ 2026-07-25 by Claude (D-764 — exhibitor's own logo upload + thumbnail). Prior: 2026-07-14 by Claude (D-357).

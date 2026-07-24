@@ -73,7 +73,12 @@ class ExhibitorDetailScreen extends ConsumerWidget {
       aboutHeader: l10n.exhibitorAboutHeader,
       websiteLabel: l10n.websiteLabel,
       logo: EntityLogoImage(
-        url: booth.exhibitorContactId == null
+        // The exhibitor's own ExhibitorLogo, falling back to the legacy Contact
+        // CompanyLogo (existing data) then to initials.
+        url: booth.exhibitorId == null
+            ? null
+            : '$baseUrl/app/assets/ExhibitorLogo/${booth.exhibitorId}/image',
+        fallbackUrl: booth.exhibitorContactId == null
             ? null
             : '$baseUrl/app/assets/CompanyLogo/${booth.exhibitorContactId}/image',
         initials: entityInitials(name),

@@ -43,10 +43,10 @@ class BoothCompanyHeader extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
-          // Frame 922:2560 — the 48×48 logo tile (real CompanyLogo, short-name
-          // fallback) at the inline-start (right).
+          // Frame 922:2560 — the 48×48 logo tile (the booth's own BoothLogo,
+          // short-name fallback) at the inline-start (right).
           _LogoTile(
-            contactId: booth.exhibitorContactId,
+            boothId: booth.id,
             baseUrl: baseUrl,
             fallback: name,
           ),
@@ -103,19 +103,18 @@ class _CountryFlagTile extends StatelessWidget {
   }
 }
 
-/// The square company-logo tile (frame node 922:2560): a 48×48 navy square with
-/// a beige hairline. P6 — D-440: renders the exhibitor's real CompanyLogo (the
-/// D-357 asset owned by [contactId]) clipped to fill, falling back to the
-/// company **short name** (centred, as the frame shows "SAMI") while it loads or
-/// when the exhibitor has no linked Contact / logo.
+/// The square booth-logo tile (frame node 922:2560): a 48×48 navy square with a
+/// beige hairline. Renders the booth's own BoothLogo (the D-357 asset owned by
+/// [boothId]) clipped to fill, falling back to the booth **short name** (centred,
+/// as the frame shows "SAMI") while it loads or when the booth has no logo.
 class _LogoTile extends StatelessWidget {
   const _LogoTile({
-    required this.contactId,
+    required this.boothId,
     required this.baseUrl,
     required this.fallback,
   });
 
-  final String? contactId;
+  final String boothId;
   final String baseUrl;
   final String fallback;
 
@@ -128,7 +127,7 @@ class _LogoTile extends StatelessWidget {
       textAlign: TextAlign.center,
       style: SimfTokens.labelWhiteSemibold,
     );
-    final id = contactId?.trim() ?? '';
+    final id = boothId.trim();
     return Container(
       // Frame 922:2560 — the logo tile is 48×48 ('Size/Square' token).
       width: 48,
@@ -147,9 +146,13 @@ class _LogoTile extends StatelessWidget {
       child: id.isEmpty
           ? fallbackText
           : Image.network(
-              '$baseUrl/app/assets/CompanyLogo/$id/image',
+              '$baseUrl/app/assets/BoothLogo/$id/image',
               width: 48,
               height: 48,
+              // Decode-cap to the tile size (§4): 48px at up to 2x DPR, so a
+              // full-res logo never decodes into this per-list-item thumbnail.
+              cacheWidth: 96,
+              cacheHeight: 96,
               fit: BoxFit.cover,
               gaplessPlayback: true,
               loadingBuilder: (context, child, progress) =>

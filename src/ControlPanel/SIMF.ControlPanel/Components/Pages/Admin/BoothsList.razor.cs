@@ -41,12 +41,12 @@ public partial class BoothsList
     private bool _isEdit;
     private bool _isDelete;
 
-    // The booth's exhibitor-company logo thumbnail URL — the resolved exhibitor's
-    // Contact CompanyLogo asset (a booth owns no logo itself), or null so
-    // SimfIdentityCell shows an initials tile (never a broken image).
+    // The booth's own logo thumbnail URL — the booth's BoothLogo asset (owner = the
+    // booth, the same logo the app renders), or null so SimfIdentityCell shows an
+    // initials tile (never a broken image).
     private static string? LogoImageUrl(AdminBoothSummary row) =>
-        row.HasLogo && row.ExhibitorContactId is not null
-            ? CpAssetUrls.AdminImage(nameof(AssetCategory.CompanyLogo), row.ExhibitorContactId.Value)
+        row.HasBoothLogo
+            ? CpAssetUrls.AdminImage(nameof(AssetCategory.BoothLogo), row.Id)
             : null;
     private AdminBoothDetail? _target;
     private CrudGridExcel? _excel;

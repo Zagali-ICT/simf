@@ -35,6 +35,10 @@ public static class AssetPermissionRegistry
                 new(PermissionCatalog.OrganizationProfile.View, PermissionCatalog.OrganizationProfile.Manage),
             [AssetCategory.Banner] =
                 new(PermissionCatalog.Banners.View, PermissionCatalog.Banners.Edit),
+            [AssetCategory.BoothLogo] =
+                new(PermissionCatalog.Booths.View, PermissionCatalog.Booths.Edit),
+            [AssetCategory.ExhibitorLogo] =
+                new(PermissionCatalog.Exhibitors.View, PermissionCatalog.Exhibitors.Edit),
         };
 
     /// <summary>The view + write permission codes for a category. Throws if the

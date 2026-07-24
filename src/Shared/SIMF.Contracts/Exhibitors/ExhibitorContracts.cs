@@ -23,7 +23,12 @@ public sealed record AdminExhibitorSummary(
     // thumbnail (else an initials tile). Appended trailing-optional (wire-safe);
     // unlinked exhibitors default null/false.
     Guid? ContactId = null,
-    bool HasLogo = false);
+    bool HasLogo = false,
+    // The exhibitor now owns its own ExhibitorLogo (owner = the exhibitor,
+    // independent of the linked Contact) — true when it has an active ExhibitorLogo
+    // asset, so the grid renders the exhibitor's own logo thumbnail. Appended
+    // trailing-optional (wire-safe).
+    bool HasExhibitorLogo = false);
 
 /// <summary>D-199 #3 — full admin detail for one exhibitor.</summary>
 public sealed record AdminExhibitorDetail(

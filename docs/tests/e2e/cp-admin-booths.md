@@ -574,24 +574,46 @@ Scenario: A bad / wrong-sheet upload is rejected and nothing is created
 
 ---
 
-### E2E-BTH-024 — the list shows the booth's exhibitor-company logo thumbnail (D-357)
+### E2E-BTH-024 — the list shows the booth's OWN logo thumbnail (D-357 / D-764)
 
 ```gherkin
-Scenario: the English-name column renders the exhibitor company's logo (two-hop)
+Scenario: the English-name column renders the booth's own logo
   Given an Administrator is on /admin/booths
-  And booth "A"'s exhibitor is linked to a Contact that has a CompanyLogo asset
-  And booth "B"'s exhibitor has no logo (or no linked contact)
+  And booth "A" has an uploaded BoothLogo (owner = the booth)
+  And booth "B" has no BoothLogo
   When the grid loads a page
-  Then A's name cell shows the exhibitor-company logo thumbnail beside the booth name
+  Then A's name cell shows the booth's own logo thumbnail beside the booth name
   And B's name cell shows a tinted initials tile (never a broken image)
-  And the thumbnail URL points at CompanyLogo/{ExhibitorContactId} (resolved two-hop)
+  And the thumbnail URL points at BoothLogo/{booth.Id} (the same asset the app shows)
 ```
 
 **Covered (lower layer):** `tests/SIMF.Api.Tests/AdminBoothsTests.cs` →
-`Booth_list_reports_HasLogo_from_the_exhibitor_companys_logo` seeds a
-Contact(+logo)→Exhibitor→Booth chain and asserts `HasLogo` + the resolved
-`ExhibitorContactId` on the list row. Confirm the render visually in the Chrome
-DevTools MCP smoke.
+`Booth_list_reports_HasLogo_from_the_exhibitor_companys_logo` still asserts the
+resolved `ExhibitorContactId`; the grid thumbnail now reads `HasBoothLogo` (the
+booth's own logo). Confirm the render visually in the Chrome DevTools MCP smoke.
+
+---
+
+### E2E-BTH-025 — an Administrator uploads a booth logo (D-764)
+
+```gherkin
+Scenario: upload a logo for a booth in the CP
+  Given an Administrator opens an existing booth in Edit
+  When they choose an image file in the "Logo" (Asset) field and upload it
+  Then POST /admin/assets/BoothLogo/{booth.Id}/image returns 200 (gated by Booths.Edit)
+  And the thumbnail refreshes to the uploaded image
+  And GET /app/assets/BoothLogo/{booth.Id}/image now streams the bytes to the app
+  And re-uploading replaces the previous logo (one active asset per booth)
+
+Scenario: a booth with no linked owner still gets its own logo
+  Given a booth with no linked exhibitor / contact
+  Then the logo upload still works (the owner is the booth itself, not a Contact)
+```
+
+**Covered (lower layer):** `tests/SIMF.Api.Tests/AssetEndpointsTests.cs` →
+`Upload_booth_logo_then_public_app_image_streams` (upload → anonymous serve) and
+`Booth_logo_serve_stops_after_the_booth_is_soft_deleted` (A9). The upload control is
+edit-only (`<SimfImageUpload Category="BoothLogo" OwnerId="@Initial.Id">`).
 
 ---
 

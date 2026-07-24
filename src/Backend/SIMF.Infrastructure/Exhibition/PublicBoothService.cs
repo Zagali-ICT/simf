@@ -149,6 +149,9 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
                 TierName = b.Exhibitor != null && b.Exhibitor.Tier != null
                     ? b.Exhibitor.Tier.ToString()
                     : null,
+                // The linked exhibitor's own id — the owner of the ExhibitorLogo the
+                // app renders on the exhibitor-detail screen (null when unlinked).
+                ExhibitorId = b.ExhibitorId,
             })
             .FirstOrDefaultAsync(cancellationToken);
 }

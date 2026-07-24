@@ -90,6 +90,13 @@ public sealed class PublicBoothDetail
     public int? Tier { get; set; }
     public string? TierName { get; set; }
     public string? Website { get; set; }
+
+    // Appended (append-only): the linked exhibitor's own id (Exhibitor.Id), the
+    // owner of the exhibitor's ExhibitorLogo asset. The app renders the exhibitor's
+    // own logo via GET /app/assets/ExhibitorLogo/{ExhibitorId}/image, falling back
+    // to the legacy CompanyLogo (via ExhibitorContactId) then initials. Null when
+    // the booth has no linked exhibitor.
+    public Guid? ExhibitorId { get; set; }
 }
 
 /// <summary>D-199 — admin grid row. B1 — D-222: the exhibitor is now the
@@ -107,10 +114,15 @@ public sealed class AdminBoothSummary
     public bool IsActive { get; set; }
 
     // D-357 — the booth's exhibitor company's Contact id + whether that contact has
-    // an active CompanyLogo asset, so the grid renders the booth's exhibitor-logo
-    // thumbnail (else an initials tile). A booth owns no logo of its own (D-222).
+    // an active CompanyLogo asset. Retained for the exhibitor-resolved detail;
+    // the grid thumbnail now uses the booth's own logo (see HasBoothLogo).
     public Guid? ExhibitorContactId { get; set; }
     public bool HasLogo { get; set; }
+
+    // A booth now owns its own BoothLogo (owner = the booth) — true when it has an
+    // active BoothLogo asset, so the grid renders the booth's own logo thumbnail
+    // (else an initials tile). The app renders this logo, not the exhibitor's.
+    public bool HasBoothLogo { get; set; }
 }
 
 /// <summary>D-199 — admin full detail (every column incl. map position).

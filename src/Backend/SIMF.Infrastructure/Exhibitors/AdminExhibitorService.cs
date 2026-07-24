@@ -97,6 +97,12 @@ internal sealed class AdminExhibitorService(
         var logoOwners = await assetService.WhichOwnersHaveActiveAssetAsync(
             AssetCategory.CompanyLogo, contactIds, cancellationToken);
 
+        // The exhibitor now also owns its own ExhibitorLogo (the app + the grid
+        // render this, not the linked Contact's) — one batched query over the
+        // page's exhibitor ids.
+        var exhibitorLogoOwners = await assetService.WhichOwnersHaveActiveAssetAsync(
+            AssetCategory.ExhibitorLogo, pageRows.Select(row => row.Id).ToList(), cancellationToken);
+
         var page = pageRows
             .Select(c => new AdminExhibitorSummary(
                 c.Id, c.Name, c.NameArabic,
@@ -104,7 +110,8 @@ internal sealed class AdminExhibitorService(
                 c.AccountCount,
                 c.IsActive, c.CreatedAt, c.Tier,
                 c.ContactId,
-                c.ContactId is not null && logoOwners.Contains(c.ContactId.Value)))
+                c.ContactId is not null && logoOwners.Contains(c.ContactId.Value),
+                exhibitorLogoOwners.Contains(c.Id)))
             .ToList();
 
         return GridPage<AdminExhibitorSummary>.Of(page, total,

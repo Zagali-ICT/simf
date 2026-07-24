@@ -114,6 +114,11 @@ internal sealed class AdminBoothService(
         var logoOwners = await assetService.WhichOwnersHaveActiveAssetAsync(
             AssetCategory.CompanyLogo, contactIds, cancellationToken);
 
+        // The booth now also owns its own BoothLogo (the app renders this, not the
+        // exhibitor's) — one batched query over the page's booth ids.
+        var boothLogoOwners = await assetService.WhichOwnersHaveActiveAssetAsync(
+            AssetCategory.BoothLogo, pageRows.Select(row => row.Id).ToList(), cancellationToken);
+
         var page = pageRows
             .Select(booth => new AdminBoothSummary
             {
@@ -128,6 +133,7 @@ internal sealed class AdminBoothService(
                 ExhibitorContactId = booth.ExhibitorContactId,
                 HasLogo = booth.ExhibitorContactId is not null
                     && logoOwners.Contains(booth.ExhibitorContactId.Value),
+                HasBoothLogo = boothLogoOwners.Contains(booth.Id),
             })
             .ToList();
 
