@@ -140,10 +140,18 @@ class AppL10n {
   String get signUpButton => _t('إنشاء حساب', 'Create account');
   String get invalidEmail => _t('بريد إلكتروني غير صالح', 'Invalid email');
   String get passwordPolicyError => _t(
-        'يجب أن تتكوّن كلمة المرور من ٨ إلى ١٢٨ حرفًا وتحتوي على حرف كبير وحرف '
-            'صغير ورقم ورمز خاص',
-        'Password must be 8–128 characters with an upper- and lower-case '
-            'letter, a digit and a special character',
+        'يجب أن تحقّق كلمة المرور الشروط التالية:\n'
+            '• من ٨ إلى ١٢٨ حرفًا\n'
+            '• حرف كبير واحد على الأقل\n'
+            '• حرف صغير واحد على الأقل\n'
+            '• رقم واحد على الأقل\n'
+            '• رمز خاص واحد على الأقل',
+        'Your password must meet all of the following:\n'
+            '• 8 to 128 characters\n'
+            '• at least one upper-case letter\n'
+            '• at least one lower-case letter\n'
+            '• at least one digit\n'
+            '• at least one special character',
       );
   String get signUpCheckEmail =>
       _t('تحقق من بريدك الإلكتروني', 'Check your email');

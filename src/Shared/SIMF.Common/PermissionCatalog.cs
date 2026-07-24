@@ -110,9 +110,14 @@ public static class PermissionCatalog
         /// type + count (visitors or delegates).</summary>
         public const string BulkGenerate = "Visitors.BulkGenerate";
 
-        /// <summary>D-758 (#10 Phase 2) — view the persisted bulk-badge batches and
-        /// re-email / revoke a batch as a unit.</summary>
+        /// <summary>D-758 (#10 Phase 2) — view the persisted bulk-badge batches.</summary>
         public const string ViewBatches = "Visitors.ViewBatches";
+
+        /// <summary>Security review (2026-07-24) — the destructive batch actions
+        /// (re-email the QR pack / revoke a batch = disable its accounts), split out
+        /// of <see cref="ViewBatches"/> so read-only batch visibility can be granted
+        /// without the power to re-email or revoke.</summary>
+        public const string ManageBatches = "Visitors.ManageBatches";
     }
 
     /// <summary>Cross-scope account operations that span both the audience
@@ -781,7 +786,8 @@ public static class PermissionCatalog
         new(Visitors.Import, "Visitors", "Import", "Import visitors", AdminOnly),
         new(Visitors.RegisterOnsite, "Visitors", "RegisterOnsite", "Walk-in register a visitor", AdminOnly),
         new(Visitors.BulkGenerate, "Visitors", "BulkGenerate", "Bulk-generate placeholder badges (visitors / delegates)", AdminOnly),
-        new(Visitors.ViewBatches, "Visitors", "ViewBatches", "View / re-email / revoke bulk-badge batches", AdminOnly),
+        new(Visitors.ViewBatches, "Visitors", "ViewBatches", "View bulk-badge batches", AdminOnly),
+        new(Visitors.ManageBatches, "Visitors", "ManageBatches", "Re-email / revoke bulk-badge batches", AdminOnly),
         new(Visitors.ExportVip, "Visitors", "ExportVip", "Export the VVIP/VIP welcome roster (Mawj)", AdminOnly),
 
         new(Accounts.ChangeType, "Accounts", "ChangeType", "Change an account's type (Visitor <-> Other)", AdminOnly),

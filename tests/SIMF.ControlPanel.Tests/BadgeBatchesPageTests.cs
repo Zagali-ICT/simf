@@ -17,11 +17,15 @@ public sealed class BadgeBatchesPageTests : CpComponentTestBase
 
     private IRenderedComponent<BadgeBatchesPage> RenderWithBatches()
     {
-        // Grant the ViewBatches policy so the AuthorizedAction-wrapped row actions
-        // (re-email / revoke, incl. their SimfIcons) actually render. The live check
-        // found an invalid icon name ("ban") only crashes the circuit once a populated
-        // row shows its actions — which the default (no-policy) auth context had hidden.
-        Authorization.SetPolicies(PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.ViewBatches));
+        // Grant ViewBatches (page load) + ManageBatches (the destructive row actions,
+        // split out of ViewBatches by the 2026-07-24 security review) so the
+        // AuthorizedAction-wrapped re-email / revoke actions (incl. their SimfIcons)
+        // actually render. The live check found an invalid icon name ("ban") only
+        // crashes the circuit once a populated row shows its actions — which the
+        // default (no-policy) auth context had hidden.
+        Authorization.SetPolicies(
+            PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.ViewBatches),
+            PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.ManageBatches));
         JSInterop.Mode = JSRuntimeMode.Loose;
         JSInterop.Setup<ApiResult<GridPage<AdminBadgeBatchSummary>>>(
                 "simfAccount.postJson",

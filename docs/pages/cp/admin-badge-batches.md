@@ -4,7 +4,7 @@
 |---|---|
 | **Route** | `/admin/visitors/badge-batches` |
 | **Component** | `Components/Pages/Admin/BadgeBatchesPage.razor` (+ `.razor.cs`) |
-| **Permission** | `Visitors.ViewBatches` (Administrator baseline) — gates the API, the page, and both row actions |
+| **Permission** | `Visitors.ViewBatches` (Administrator baseline) gates the page + the list API; `Visitors.ManageBatches` (Administrator baseline) gates the two destructive row actions (re-email / revoke) and their APIs — split out by the 2026-07-24 security review so read-only batch visibility can be granted without the power to re-email or revoke |
 | **Nav** | People → **Badge batches** (`Module.AdminBadgeBatches`) |
 | **Decision** | D-758 (#10 Phase 2) |
 | **E2E** | [`cp-admin-badge-batches.md`](../../tests/e2e/cp-admin-badge-batches.md) (E2E-BBT-001..009) |
@@ -48,7 +48,7 @@ FastEndpoints in `BadgeBatchEndpoints.cs` → `IAdminUserBulkService`
 | Generated | `CreatedAt` (Saudi time) |
 | Status | `IsActive` → Active / Revoked pill |
 
-Row actions (active batches only, gated `Visitors.ViewBatches`): **Re-email QR pack**
+Row actions (active batches only, gated `Visitors.ManageBatches`): **Re-email QR pack**
 (modal — edit the organiser address, Send) and **Revoke batch** (confirm modal).
 
 ## Edge cases
@@ -98,4 +98,4 @@ profile replaces the placeholder display name (D-609). Pinned by
 - **2026-07-22 (D-759, #10 Phase 3)** — the emailed pack (bulk-generate + re-email)
   now attaches a QuestPDF contact-sheet PDF beside the ZIP. Licence follow-up flagged.
 - **2026-07-22 (D-758, #10 Phase 2)** — page created. Persisted `BadgeBatch` +
-  `BadgeBatchId`, list / re-email / revoke, `Visitors.ViewBatches` permission.
+  `BadgeBatchId`, list (`Visitors.ViewBatches`), re-email / revoke (`Visitors.ManageBatches`).

@@ -66,10 +66,17 @@ Scenario: E2E-BBT-007 A revoked batch shows Revoked and drops its actions
   Then the batch row's Status is "Revoked"
   And the Re-email and Revoke actions are not shown on that row
 
-Scenario: E2E-BBT-008 The page and API require the ViewBatches permission
+Scenario: E2E-BBT-008 The page and list API require the ViewBatches permission
   Given an Administrator-role account WITHOUT "Visitors.ViewBatches"
   When it opens "/admin/visitors/badge-batches"
-  Then access is denied (the nav item is hidden and the API returns 403)
+  Then access is denied (the nav item is hidden and the list API returns 403)
+
+Scenario: E2E-BBT-010 View-only cannot re-email or revoke (ManageBatches gate)
+  Given an account WITH "Visitors.ViewBatches" but WITHOUT "Visitors.ManageBatches"
+  When it opens "/admin/visitors/badge-batches"
+  Then the batches list loads and each active row shows NO Re-email or Revoke action
+  And calling the re-email API returns 403
+  And calling the revoke API returns 403
 
 Scenario: E2E-BBT-009 The desk renders correctly in Arabic (RTL)
   Given the interface language is Arabic

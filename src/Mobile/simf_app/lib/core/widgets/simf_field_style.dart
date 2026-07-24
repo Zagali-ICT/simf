@@ -45,6 +45,10 @@ InputDecoration simfFieldDecoration({
     counterText: counterText,
     hintText: hintText,
     errorText: errorText,
+    // Let a field error wrap to its full text instead of clipping at one line
+    // (Flutter's default errorMaxLines == 1) — the password policy error is a
+    // multi-line checklist and every field error must show in full.
+    errorMaxLines: 8,
     prefixIcon: prefixIcon,
     suffixIcon: suffixIcon,
     isDense: true,

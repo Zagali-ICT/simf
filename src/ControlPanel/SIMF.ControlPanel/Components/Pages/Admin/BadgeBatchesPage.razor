@@ -97,12 +97,12 @@
                 @* Re-email + revoke only make sense for an active batch. *@
                 @if (context.IsActive)
                 {
-                    <AuthorizedAction Permission="@PermissionCatalog.Visitors.ViewBatches">
+                    <AuthorizedAction Permission="@PermissionCatalog.Visitors.ManageBatches">
                         <SimfToolbarButton Icon="mail" Title="@L["Admin.BadgeBatches.ReEmail"]"
                                            Disabled="_busy"
                                            OnClick="@(() => OpenReEmail(context))" />
                     </AuthorizedAction>
-                    <AuthorizedAction Permission="@PermissionCatalog.Visitors.ViewBatches">
+                    <AuthorizedAction Permission="@PermissionCatalog.Visitors.ManageBatches">
                         <SimfToolbarButton Icon="power" Title="@L["Admin.BadgeBatches.Revoke"]"
                                            Disabled="_busy"
                                            OnClick="@(() => OpenRevoke(context))" />

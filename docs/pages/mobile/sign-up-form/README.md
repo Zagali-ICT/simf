@@ -8,7 +8,7 @@
 | Figma node | `168:3454` (KSA-Project, file `PSXHhY0UVTAPSaIOf9uNKd`; D-370) |
 | Shell | Custom navy `Scaffold` — rotated sweep (168:3534) + shared `AuthTopControls` + `AuthBrandHeader` over the beige card |
 | Providers | `authControllerProvider` (`signUp`) · `localeControllerProvider` (globe toggle) |
-| Tests | `test/features/account/sign_up_form_screen_test.dart` (widget, 8 cases) · golden `test/golden/sign_up_form_golden_test.dart` (`goldens/sign_up_form_168-3454.png`) · E2E [`mobile-sign-up-form.md`](../../../tests/e2e/mobile-sign-up-form.md) |
+| Tests | `test/features/account/sign_up_form_screen_test.dart` (widget, 9 cases) · golden `test/golden/sign_up_form_golden_test.dart` (`goldens/sign_up_form_168-3454.png`) · E2E [`mobile-sign-up-form.md`](../../../tests/e2e/mobile-sign-up-form.md) |
 | Status | ✅ Real — D-370 (KSA frame 168:3454) → D-198/D-270 (enumeration-resistant; server re-validates confirm) → **clean-code frozen (D-551, 2026-06-30)** |
 | Legacy detail | `docs/App/Page_005/` — retained as the detailed historical spec |
 
@@ -48,6 +48,10 @@ Stack child (on top of the centred body).
 ## 5. Validation & edge cases
 - Email format, password policy, confirm-match — all inline
   (`AutovalidateMode.onUserInteraction`). The form blocks submit until valid.
+- The password-policy error renders as a **multi-line checklist** — one rule per
+  line (٨–١٢٨ حرفًا · حرف كبير · حرف صغير · رقم · رمز خاص) — and **every** field
+  error wraps in full via `errorMaxLines` on the shared `simfFieldDecoration`,
+  never clipped to a single line (2026-07-24).
 - **T&C acceptance is mandatory** (D-719): the submit is gated on the checkbox;
   an unchecked submit shows the terms error next to the box (alongside any field
   errors, not one gate at a time) and sends no request. Ticking the box — or
@@ -60,7 +64,7 @@ controls forced LTR so the chevron + globe sides match the frame under RTL. Bran
 font applied once in the theme (incl. the gold CTA).
 
 ## 7. Testing
-- **Widget** (`sign_up_form_screen_test.dart`, 8 cases): valid sign-up →
+- **Widget** (`sign_up_form_screen_test.dart`, 9 cases): valid sign-up →
   email-OTP + toast, the three validators, the duplicate-email 201 (no
   enumeration branch), `AuthFailure` inline error, back-fallback to sign-in, globe
   toggle.
@@ -84,6 +88,11 @@ font applied once in the theme (incl. the gold CTA).
       contract (D-219) unchanged
 
 ## 9. Changelog
+- **2026-07-24:** password-policy error now renders as a **multi-line checklist**
+  (one rule per line, ar+en) and the shared `simfFieldDecoration` gained
+  `errorMaxLines: 8` so **every** field error wraps in full instead of clipping at
+  a single line (owner report: the password error was being truncated). +1 widget
+  case + new `test/core/widgets/simf_field_style_test.dart`; no wire-contract change.
 - **2026-07-11 (D-742):** OS-autofill fix — the form is now an `AutofillGroup` with
   `newUsername`/`newPassword` hints and commits the FINAL submitted email/password
   via `TextInput.finishAutofillContext()` on a successful submit, so a corrected
