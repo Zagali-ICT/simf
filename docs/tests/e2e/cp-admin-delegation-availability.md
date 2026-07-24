@@ -10,14 +10,15 @@
 | **Last reviewed** | 2026-07-22 (bi-meeting rework — new page) |
 
 > **What this page does (grounded in `DelegationAvailabilityPage.razor(.cs)`, bi-meeting rework).**
-> The team defines an **invited country's delegation** availability windows (Start/End UTC
+> The team defines an **invited country's delegation** availability windows (Start/End in Saudi time
 > + slot length); the delegation-meeting flow chops each window into free slots an entitled
 > app user reads via `GET /app/countries/{id}/available-slots`. It is the delegation twin of
 > [`cp-admin-speaker-availability.md`](cp-admin-speaker-availability.md): a country `<select>`
 > (invited countries only), an add-window form (Start `Admin.DelegationAvailability.Start`
-> "Start (UTC)" / "البداية (UTC)"; End; slot minutes `Admin.DelegationAvailability.SlotMinutes`
+> "Start (Saudi time)" / "البداية (بتوقيت السعودية)"; End; slot minutes `Admin.DelegationAvailability.SlotMinutes`
 > "Slot length (minutes)" / "مدة الفترة (دقائق)"), and the selected country's window list with a
-> quiet trash **Delete** action. The page + delete are gated by `DelegationMeetings.Manage`
+> quiet trash **Delete** action. The window list renders each start/end on the Saudi wall clock in
+> 12-hour form (e.g. `2026-11-20 10:00 AM – 10:30 AM`). The page + delete are gated by `DelegationMeetings.Manage`
 > (page attribute, nav item, and the `<AuthorizedAction>` on Delete); the backend LIST endpoint
 > needs only `DelegationMeetings.View`. API:
 > `GET`/`POST /admin/countries/{countryId:int}/availability-windows`,
@@ -66,7 +67,7 @@ Background:
   And they are on /admin/delegation-availability with that country selected
 
 Scenario: Add a window and see its free slots
-  When they add a window 2026-11-20 10:00-11:00 UTC with 30-minute slots
+  When they add a window 2026-11-20 10:00-11:00 (Saudi time) with 30-minute slots
   Then POST /account/api/admin/countries/{id}/availability-windows returns 200
   And a green toast reads "Window added." / "تمت إضافة الفترة."
   And the window appears under "Windows" / "الفترات" (row shows "30 min slots" / "30 دقيقة لكل فترة")
@@ -178,7 +179,7 @@ Scenario: Arabic toggle mirrors the page + add form
   Then the page reloads with <html dir="rtl" lang="ar">
   And the title reads "أوقات إتاحة الوفود"
   And the country picker label reads "الوفد (الدولة)" with the empty option "اختر دولة مدعوّة…"
-  And the add-window heading reads "إضافة فترة إتاحة", the fields "البداية (UTC)" / "النهاية (UTC)" /
+  And the add-window heading reads "إضافة فترة إتاحة", the fields "البداية (بتوقيت السعودية)" / "النهاية (بتوقيت السعودية)" /
       "مدة الفترة (دقائق)", and the button "إضافة فترة"
   And the windows heading reads "الفترات" (empty state "لا توجد فترات إتاحة بعد.")
   And no element overflows horizontally (scrollWidth == clientWidth)
