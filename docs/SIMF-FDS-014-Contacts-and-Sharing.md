@@ -18,6 +18,7 @@
 | Version | Date | Author | Summary of change |
 |---------|------|--------|-------------------|
 | 0.1 | 2026-06-03 | Engineering & Architecture Team | First draft. Two-track scope/spec: (1) a shared, de-duplicated `Contact` directory the org-facing entities reference; (2) consent-by-action visitor-to-visitor contact sharing (dedicated share token + vCard). Owner decisions of 2026-06-03 folded in (§3). **No code.** |
+| 0.2 | 2026-07-25 | Engineering & Architecture Team | **Track 1 SUPERSEDED and REMOVED (D-766).** The shared `Contact` directory (built as D-260 / D-281 / D-283) is retired: every identity-card field is now inlined directly onto each org entity (`Exhibitor`, `Sponsor`, `Speaker`, `MediaPartner`, and the `Booth` officer). The `Contact` class/table, the five `ContactId` FKs, the `/admin/contacts` CP page + `ContactPicker`, and the `Contacts.*` permission were deleted. Track 2 (visitor sharing) is UNCHANGED. See the supersede note below. |
 
 ---
 
@@ -28,6 +29,22 @@
 > The D-110 freeze is currently lifted for **additive** `SIMF_App` work (D-219) but
 > **must be re-instated before the production publish / handover**; this feature is
 > additive-only and must land before then.
+
+> **SUPERSEDED (Track 1) - D-766, 2026-07-25.** Track 1 below (the shared,
+> de-duplicated `Contact` directory referenced through a nullable `ContactId` FK)
+> was BUILT (D-260 / D-281 / D-283) and has now been REMOVED. The owner judged the
+> shared-directory indirection more costly than the de-duplication it bought, so
+> every identity-card field (email, phones, website, the four social links, city,
+> country, latitude/longitude) is now stored DIRECTLY on each org entity:
+> `Exhibitor`, `Sponsor`, `Speaker`, `MediaPartner`, and the `Booth` officer
+> (Officer-prefixed columns). Deleted with it: the `Contact` class, the `Contacts`
+> table, its five `ContactId` FK columns, the `/admin/contacts` CP page, the
+> `ContactPicker` component, and the `Contacts.*` permission. The retired
+> `CompanyLogo` asset category is kept only to honour the append-only enum freeze
+> (it always 404s, gated by the Media Library); each entity keeps its own logo
+> asset. Migration `D766_InlineContactDirectory` (reset, no data copy). **Track 2
+> (visitor contact sharing) is UNCHANGED and remains live.** Sections 1-12 below
+> describe the original Track 1 design and are retained for history only.
 
 ## 1. Purpose
 

@@ -118,6 +118,7 @@ public static class FileServicePolicies
             [FileService.ProgrammeDayImage] = PublicImage(FileService.ProgrammeDayImage, FileOwnerEntityType.ProgrammeDay),
             [FileService.Banner] = PublicImage(FileService.Banner, FileOwnerEntityType.Banner),
             [FileService.BoothLogo] = PublicImage(FileService.BoothLogo, FileOwnerEntityType.Booth),
+            [FileService.ExhibitorLogo] = PublicImage(FileService.ExhibitorLogo, FileOwnerEntityType.Exhibitor),
         };
 
     private static FileServicePolicy PublicImage(FileService service, FileOwnerEntityType owner) =>

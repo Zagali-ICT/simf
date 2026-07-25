@@ -17,7 +17,6 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Networking;
-using SIMF.Domain.Contacts;
 using SIMF.Domain.Exhibition;
 using SIMF.Domain.Exhibitors;
 using SIMF.Domain.IdentityAccess;
@@ -146,34 +145,26 @@ public sealed class PartnerDirectoryServiceTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Company_that_is_both_a_sponsor_and_a_booth_is_deduped_to_the_sponsor()
     {
-        // Same company linked (by the shared Contact directory record, SIMF-FDS-014)
-        // to BOTH a Sponsor and a booth Exhibitor. Owner decision (2026-07-22): it
-        // must appear ONCE — as the Sponsor (kind=sponsor). Robust key = shared Contact.
+        // Same company registered BOTH as a Sponsor and as a booth Exhibitor. Owner
+        // decision (2026-07-22): it must appear ONCE — as the Sponsor (kind=sponsor).
+        // The shared Contact directory is gone (fields inlined); the sole de-dup key
+        // is now a case-insensitive, trimmed match of the sponsor display name against
+        // the booth exhibitor name, so both are seeded with the SAME name.
+        var companyName = $"PD Dual Co {Guid.NewGuid().ToString("N")[..8]}";
         Guid sponsorId;
         Guid boothId;
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
 
-            var contactId = Guid.NewGuid();
-            db.Contacts.Add(new Contact
-            {
-                Id = contactId,
-                Name = $"PD Dual Co {Guid.NewGuid().ToString("N")[..8]}",
-                NameArabic = "شركة",
-                IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
-            });
-
             var sponsor = new Sponsor
             {
                 Id = Guid.NewGuid(),
-                Name = "PD Dual Sponsor",
+                Name = companyName,
                 NameArabic = "راعٍ مزدوج",
                 Tier = SponsorTier.Gold,
                 DisplayOrder = 0,
                 IsActive = true,
-                ContactId = contactId,
                 CreatedAt = DateTimeOffset.UtcNow,
             };
             db.Sponsors.Add(sponsor);
@@ -182,10 +173,10 @@ public sealed class PartnerDirectoryServiceTests : IClassFixture<SimfApiFactory>
             db.Set<Exhibitor>().Add(new Exhibitor
             {
                 Id = exhibitorId,
-                Name = "PD Dual Exhibitor",
+                // Same English display name as the sponsor — collapses to the Sponsor.
+                Name = companyName,
                 NameArabic = "عارض مزدوج",
                 IsActive = true,
-                ContactId = contactId,
                 CreatedAt = DateTimeOffset.UtcNow,
             });
             var booth = new Booth
@@ -211,7 +202,7 @@ public sealed class PartnerDirectoryServiceTests : IClassFixture<SimfApiFactory>
         // The Sponsor row is present...
         Assert.Contains(body.Entries,
             e => e.Id == sponsorId && e.Kind == PartnerDirectoryKind.Sponsor);
-        // ...and the duplicate booth-company row is dropped (dedup by shared Contact).
+        // ...and the duplicate booth-company row is dropped (dedup by normalized name).
         Assert.DoesNotContain(body.Entries,
             e => e.Id == boothId && e.Kind == PartnerDirectoryKind.Booth);
     }

@@ -221,27 +221,28 @@ Scenario: A query that matches nothing shows the no-match state
 `KsaEmptyState(icon: search_off_outlined, message: l10n.boothsNoMatch)`
 (`لا توجد أجنحة مطابقة` / `No matching booths`); distinct from `boothsEmpty`.
 
-### E2E-MOB022-011 — Real company logo via D-357 (Figma 922:2793, D-440)
+### E2E-MOB022-011 — The booth's OWN logo via D-357 (Figma 922:2793, D-764)
 
 ```gherkin
-Feature: Booths — real company logo
+Feature: Booths — the booth's own logo
 
-Scenario: A booth whose exhibitor has a linked Contact shows the real logo
-  Given a booth whose exhibitorContactId is "c1"
+Scenario: A booth renders its own BoothLogo (owner = the booth)
+  Given any booth whose id is "b1"
   When the guest opens /booths
   Then the logo tile builds an Image.network for
-    {base}/app/assets/CompanyLogo/c1/image
-  And on a failed/absent load it falls back to the booth initials
+    {base}/app/assets/BoothLogo/b1/image
+  And it never uses the exhibitor's CompanyLogo (booth-only, D-764 owner choice)
+  And on a failed/absent load it falls back to the booth short-name initials
 
-Scenario: A booth with no linked exhibitor shows the initials (no network image)
-  Given a booth whose exhibitorContactId is null
-  Then the logo tile renders the booth initials and no network image
+Scenario: A booth with no uploaded logo shows the short-name initials
+  Given the booth "b1" has no active BoothLogo asset (the route 404s)
+  Then the logo tile renders the booth short-name text, not a company logo
 ```
 
-**Evidence:** `_LogoTile` builds the CompanyLogo URL only when `exhibitorContactId`
-is non-blank, else initials; the booth wire carries `exhibitorContactId` (resolved
-server-side `Booth.ExhibitorId → Exhibitor.ContactId`). Screen tests + API
-`Public_booth_carries_the_exhibitor_contact_id_for_the_logo`.
+**Evidence:** `_LogoTile` builds `BoothLogo/{booth.id}` (the booth owns its own logo
+per D-764; it no longer reads `exhibitorContactId`), else the errorBuilder shows the
+short-name. `booths_screen_test` (`wires its OWN BoothLogo route`, `falls back to the
+short-name initials`) + API `Upload_booth_logo_then_public_app_image_streams`.
 
 ---
 

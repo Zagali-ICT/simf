@@ -59,7 +59,19 @@ public sealed record AdminSpeakerDetail(
     bool IsActive,
     DateTimeOffset CreatedAt,
     DateTimeOffset? UpdatedAt,
-    Guid? ContactId);
+    // Contact identity-card fields inlined from the removed shared Contact
+    // directory (D-766). All optional; nationality reuses CountryId above
+    // (no second country slot). The service now populates all of these in
+    // ToDetail; the trailing defaults are kept so an ad-hoc caller can omit
+    // the block.
+    string? Email = null,
+    string? PhonePrimary = null,
+    string? PhoneSecondary = null,
+    string? InstagramUrl = null,
+    string? City = null,
+    string? CityArabic = null,
+    double? Latitude = null,
+    double? Longitude = null);
 
 public sealed class AdminCreateSpeakerRequest
 {
@@ -91,9 +103,16 @@ public sealed class AdminCreateSpeakerRequest
     public string? WebsiteUrl { get; set; }
     public int DisplayOrder { get; set; }
 
-    /// <summary>SIMF-FDS-014 (D-281) — optional link to a shared <c>Contact</c>
-    /// directory record. Must reference an existing active contact.</summary>
-    public Guid? ContactId { get; set; }
+    // Contact identity-card fields inlined from the removed shared Contact
+    // directory (D-766). All optional; nationality reuses CountryId above.
+    public string? Email { get; set; }
+    public string? PhonePrimary { get; set; }
+    public string? PhoneSecondary { get; set; }
+    public string? InstagramUrl { get; set; }
+    public string? City { get; set; }
+    public string? CityArabic { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
 }
 
 public sealed class AdminUpdateSpeakerRequest
@@ -121,9 +140,16 @@ public sealed class AdminUpdateSpeakerRequest
     public string? WebsiteUrl { get; set; }
     public int DisplayOrder { get; set; }
 
-    /// <summary>SIMF-FDS-014 (D-281) — optional link to a shared <c>Contact</c>
-    /// directory record. Must reference an existing active contact.</summary>
-    public Guid? ContactId { get; set; }
+    // Contact identity-card fields inlined from the removed shared Contact
+    // directory (D-766). All optional; nationality reuses CountryId above.
+    public string? Email { get; set; }
+    public string? PhonePrimary { get; set; }
+    public string? PhoneSecondary { get; set; }
+    public string? InstagramUrl { get; set; }
+    public string? City { get; set; }
+    public string? CityArabic { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
 
     public bool IsActive { get; set; } = true;
 }

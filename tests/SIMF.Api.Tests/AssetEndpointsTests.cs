@@ -17,6 +17,8 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Assets;
 using SIMF.Contracts.Authentication;
+using SIMF.Domain.Exhibition;
+using SIMF.Domain.Exhibitors;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Programme;
 using SIMF.Domain.PublicRelations;
@@ -65,6 +67,91 @@ public sealed class AssetEndpointsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(AssetKind.Image, row.Kind);
         Assert.Equal(AssetSourceType.Upload, row.SourceType);
         Assert.True(row.IsActive);
+    }
+
+    [Fact]
+    public async Task Upload_booth_logo_then_public_app_image_streams()
+    {
+        // A booth now owns its own BoothLogo (owner = the booth). Exercises the new
+        // AssetCategory.BoothLogo wiring end-to-end: gated by Booths.Edit (the
+        // Administrator wildcard satisfies it), owner-active check on the Booth.
+        var token = await CreateAdministratorAndSignInAsync();
+        var owner = Guid.NewGuid();
+        await SeedActiveBoothAsync(owner);
+
+        var upload = await UploadAsync("BoothLogo", owner, "Image", Png, "image/png", "b.png", token);
+        Assert.Equal(HttpStatusCode.OK, upload.StatusCode);
+
+        var img = await _client.GetAsync($"/api/v1/app/assets/BoothLogo/{owner}/image");
+        Assert.Equal(HttpStatusCode.OK, img.StatusCode);
+        Assert.NotEmpty(await img.Content.ReadAsByteArrayAsync());
+
+        var row = await FindByOwnerAsync(owner, token);
+        Assert.NotNull(row);
+        Assert.Equal(AssetCategory.BoothLogo, row!.Category);
+    }
+
+    [Fact]
+    public async Task Upload_exhibitor_logo_then_public_app_image_streams()
+    {
+        // An exhibitor now owns its own ExhibitorLogo (owner = the exhibitor,
+        // independent of the linked Contact's CompanyLogo). Exercises the new
+        // AssetCategory.ExhibitorLogo wiring end-to-end.
+        var token = await CreateAdministratorAndSignInAsync();
+        var owner = Guid.NewGuid();
+        await SeedActiveExhibitorAsync(owner);
+
+        var upload = await UploadAsync("ExhibitorLogo", owner, "Image", Png, "image/png", "e.png", token);
+        Assert.Equal(HttpStatusCode.OK, upload.StatusCode);
+
+        var img = await _client.GetAsync($"/api/v1/app/assets/ExhibitorLogo/{owner}/image");
+        Assert.Equal(HttpStatusCode.OK, img.StatusCode);
+        Assert.NotEmpty(await img.Content.ReadAsByteArrayAsync());
+
+        var row = await FindByOwnerAsync(owner, token);
+        Assert.NotNull(row);
+        Assert.Equal(AssetCategory.ExhibitorLogo, row!.Category);
+    }
+
+    [Fact]
+    public async Task Booth_logo_serve_stops_after_the_booth_is_soft_deleted()
+    {
+        // A9 (security) — a soft-deleted booth drops off every public list, so its
+        // deterministic BoothLogo serve URL must also 404.
+        var token = await CreateAdministratorAndSignInAsync();
+        var owner = Guid.NewGuid();
+        await SeedActiveBoothAsync(owner);
+        Assert.Equal(HttpStatusCode.OK,
+            (await UploadAsync("BoothLogo", owner, "Image", Png, "image/png", "b.png", token)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK,
+            (await _client.GetAsync($"/api/v1/app/assets/BoothLogo/{owner}/image")).StatusCode);
+
+        await DeactivateBoothAsync(owner);
+
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await _client.GetAsync($"/api/v1/app/assets/BoothLogo/{owner}/image")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Booth_logo_serve_stops_when_the_booths_exhibitor_is_soft_deleted()
+    {
+        // #16 — a booth whose linked exhibitor is soft-deleted is publicly hidden
+        // (PublicBoothService excludes it), so its BoothLogo serve must 404 too even
+        // though the booth row itself is still active.
+        var token = await CreateAdministratorAndSignInAsync();
+        var exhibitorId = Guid.NewGuid();
+        var boothId = Guid.NewGuid();
+        await SeedActiveExhibitorAsync(exhibitorId);
+        await SeedActiveBoothAsync(boothId, exhibitorId);
+        Assert.Equal(HttpStatusCode.OK,
+            (await UploadAsync("BoothLogo", boothId, "Image", Png, "image/png", "b.png", token)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK,
+            (await _client.GetAsync($"/api/v1/app/assets/BoothLogo/{boothId}/image")).StatusCode);
+
+        await DeactivateExhibitorAsync(exhibitorId);
+
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await _client.GetAsync($"/api/v1/app/assets/BoothLogo/{boothId}/image")).StatusCode);
     }
 
     [Fact]
@@ -360,6 +447,54 @@ public sealed class AssetEndpointsTests : IClassFixture<SimfApiFactory>
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var speaker = await db.Speakers.FirstAsync(x => x.Id == id);
         speaker.IsActive = false;
+        await db.SaveChangesAsync();
+    }
+
+    private async Task SeedActiveBoothAsync(Guid id, Guid? exhibitorId = null)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        db.Booths.Add(new Booth
+        {
+            Id = id,
+            Code = id.ToString("N")[..8].ToUpperInvariant(), // unique, within the 16-char cap
+            Name = "Serve Booth",
+            NameArabic = "الجناح",
+            ExhibitorId = exhibitorId,
+            IsActive = true,
+        });
+        await db.SaveChangesAsync();
+    }
+
+    private async Task DeactivateBoothAsync(Guid id)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var booth = await db.Booths.FirstAsync(x => x.Id == id);
+        booth.IsActive = false;
+        await db.SaveChangesAsync();
+    }
+
+    private async Task SeedActiveExhibitorAsync(Guid id)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        db.Exhibitors.Add(new Exhibitor
+        {
+            Id = id,
+            Name = "Serve Exhibitor",
+            NameArabic = "العارض",
+            IsActive = true,
+        });
+        await db.SaveChangesAsync();
+    }
+
+    private async Task DeactivateExhibitorAsync(Guid id)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var exhibitor = await db.Exhibitors.FirstAsync(x => x.Id == id);
+        exhibitor.IsActive = false;
         await db.SaveChangesAsync();
     }
 

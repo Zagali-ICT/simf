@@ -129,15 +129,48 @@
             <SimfTextField Label="@L["Admin.Speakers.Field.FacebookUrl"]"
                            MaxLength="256"
                            @bind-Value="_model.FacebookUrl" Disabled="_busy" />
-            @* SIMF-FDS-014 (D-283) — optional link to a shared Contact directory record. *@
-            <div class="simf-form__grid-item--full">
-                <ContactPicker Value="_contactId" ValueChanged="@(v => _contactId = v)" Disabled="_busy" />
-            </div>
+            <SimfTextField Label="@L["Admin.ContactField.Instagram"]"
+                           MaxLength="256"
+                           @bind-Value="_model.InstagramUrl" Disabled="_busy" />
         </div>
     </SimfFormSection>
 
-    @* Section 4 — Visibility & consent. *@
-    <SimfFormSection Number="4" Title="@L["Admin.Speakers.Section.Visibility"]"
+    @* Section 4 — Contact information (D-766: identity-card fields inlined from
+       the removed shared Contact directory). Nationality reuses the country
+       picker in Section 1. *@
+    <SimfFormSection Number="4" Title="@L["Admin.ContactField.Heading"]">
+        <div class="simf-form__grid">
+            <SimfTextField Label="@L["Admin.ContactField.Email"]"
+                           MaxLength="320"
+                           @bind-Value="_model.Email" Disabled="_busy" />
+            <SimfTextField Label="@L["Admin.ContactField.PhonePrimary"]"
+                           MaxLength="32"
+                           @bind-Value="_model.PhonePrimary" Disabled="_busy" />
+            <SimfTextField Label="@L["Admin.ContactField.PhoneSecondary"]"
+                           MaxLength="32"
+                           @bind-Value="_model.PhoneSecondary" Disabled="_busy" />
+            <SimfTextField Label="@L["Admin.ContactField.City"]"
+                           MaxLength="128"
+                           @bind-Value="_model.City" Disabled="_busy" />
+            <SimfTextField Label="@L["Admin.ContactField.CityArabic"]"
+                           MaxLength="128"
+                           @bind-Value="_model.CityArabic" Disabled="_busy" />
+            <SimfTextField Label="@L["Admin.ContactField.Latitude"]"
+                           Helper="@L["Admin.ContactField.LatLongHint"]"
+                           Value="@_latitudeInput"
+                           ValueChanged="@(v => _latitudeInput = v)"
+                           ValueExpression="@(() => _latitudeInput)"
+                           Disabled="_busy" />
+            <SimfTextField Label="@L["Admin.ContactField.Longitude"]"
+                           Value="@_longitudeInput"
+                           ValueChanged="@(v => _longitudeInput = v)"
+                           ValueExpression="@(() => _longitudeInput)"
+                           Disabled="_busy" />
+        </div>
+    </SimfFormSection>
+
+    @* Section 5 — Visibility & consent. *@
+    <SimfFormSection Number="5" Title="@L["Admin.Speakers.Section.Visibility"]"
                      Hint="@L["Admin.Speakers.Section.VisibilityHint"]">
         <div class="simf-form__fields">
             <SimfCheckbox @bind-Value="_model.AllowsMeetingRequests" Disabled="_busy">

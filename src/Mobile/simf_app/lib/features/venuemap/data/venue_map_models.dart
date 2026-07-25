@@ -126,8 +126,9 @@ class BoothSummary {
   final String? officerEmail;
 
   // P6 — D-440: the exhibitor's Contact id, the owner of the CompanyLogo asset.
-  // The card renders the real logo via {base}/app/assets/CompanyLogo/{this}/image
-  // (D-357), falling back to initials when null (no linked exhibitor / logo).
+  // D-764: the booth card no longer uses this (it renders the booth's own
+  // BoothLogo via booth.id); it stays on the wire and the exhibitor-detail screen
+  // still reads it (via BoothDetail) as the CompanyLogo fallback for its own logo.
   final String? exhibitorContactId;
 
   // D-456 — the exhibitor company's country (ISO 3166-1 numeric) for the corner
@@ -208,6 +209,7 @@ class BoothDetail {
     this.tier,
     this.tierName,
     this.website,
+    this.exhibitorId,
   });
 
   final String id;
@@ -242,6 +244,11 @@ class BoothDetail {
   final int? tier;
   final String? tierName;
   final String? website;
+
+  // The linked exhibitor's own id — the owner of the exhibitor's ExhibitorLogo
+  // asset (the app renders the exhibitor's own logo, falling back to the legacy
+  // CompanyLogo via [exhibitorContactId]). Null when the booth has no exhibitor.
+  final String? exhibitorId;
 
   String localizedName(bool isArabic) {
     final ar = nameArabic.trim();
@@ -288,6 +295,7 @@ class BoothDetail {
         tier: (json['tier'] as num?)?.toInt(),
         tierName: json['tierName'] as String?,
         website: json['website'] as String?,
+        exhibitorId: json['exhibitorId'] as String?,
       );
 }
 

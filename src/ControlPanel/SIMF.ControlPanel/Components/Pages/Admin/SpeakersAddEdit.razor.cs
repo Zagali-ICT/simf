@@ -19,7 +19,8 @@ public partial class SpeakersAddEdit
     private readonly Model _model = new();
     private string _displayOrderInput = "0";
     private string _countryIdInput = string.Empty;
-    private Guid? _contactId;
+    private string _latitudeInput = string.Empty;
+    private string _longitudeInput = string.Empty;
     private EditContext _editContext = default!;
     private bool _busy;
     private string? _error;
@@ -52,7 +53,14 @@ public partial class SpeakersAddEdit
             _model.LinkedInUrl = Initial.LinkedInUrl ?? string.Empty;
             _model.XUrl = Initial.XUrl ?? string.Empty;
             _model.WebsiteUrl = Initial.WebsiteUrl ?? string.Empty;
-            _contactId = Initial.ContactId;
+            _model.Email = Initial.Email ?? string.Empty;
+            _model.PhonePrimary = Initial.PhonePrimary ?? string.Empty;
+            _model.PhoneSecondary = Initial.PhoneSecondary ?? string.Empty;
+            _model.InstagramUrl = Initial.InstagramUrl ?? string.Empty;
+            _model.City = Initial.City ?? string.Empty;
+            _model.CityArabic = Initial.CityArabic ?? string.Empty;
+            _latitudeInput = Initial.Latitude?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
+            _longitudeInput = Initial.Longitude?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
             _model.IsActive = Initial.IsActive;
             _displayOrderInput = Initial.DisplayOrder.ToString();
         }
@@ -125,6 +133,26 @@ public partial class SpeakersAddEdit
             countryId = parsed;
         }
 
+        // Latitude/longitude are an all-or-nothing pair; the service enforces
+        // the real-world ranges and returns a bilingual 400 if out of bounds.
+        double? latitude = null, longitude = null;
+        var hasLat = !string.IsNullOrWhiteSpace(_latitudeInput);
+        var hasLong = !string.IsNullOrWhiteSpace(_longitudeInput);
+        if (hasLat != hasLong)
+        {
+            _error = L["Admin.ContactField.LatLongHint"]; return;
+        }
+        if (hasLat)
+        {
+            if (!double.TryParse(_latitudeInput, NumberStyles.Float, CultureInfo.InvariantCulture, out var lat)
+                || !double.TryParse(_longitudeInput, NumberStyles.Float, CultureInfo.InvariantCulture, out var lng))
+            {
+                _error = L["Admin.ContactField.LatLongInvalid"]; return;
+            }
+            latitude = lat;
+            longitude = lng;
+        }
+
         _busy = true;
         try
         {
@@ -155,7 +183,14 @@ public partial class SpeakersAddEdit
                         LinkedInUrl = NullIfBlank(_model.LinkedInUrl),
                         XUrl = NullIfBlank(_model.XUrl),
                         WebsiteUrl = NullIfBlank(_model.WebsiteUrl),
-                        ContactId = _contactId,
+                        Email = NullIfBlank(_model.Email),
+                        PhonePrimary = NullIfBlank(_model.PhonePrimary),
+                        PhoneSecondary = NullIfBlank(_model.PhoneSecondary),
+                        InstagramUrl = NullIfBlank(_model.InstagramUrl),
+                        City = NullIfBlank(_model.City),
+                        CityArabic = NullIfBlank(_model.CityArabic),
+                        Latitude = latitude,
+                        Longitude = longitude,
                         DisplayOrder = order,
                     });
             }
@@ -186,7 +221,14 @@ public partial class SpeakersAddEdit
                         LinkedInUrl = NullIfBlank(_model.LinkedInUrl),
                         XUrl = NullIfBlank(_model.XUrl),
                         WebsiteUrl = NullIfBlank(_model.WebsiteUrl),
-                        ContactId = _contactId,
+                        Email = NullIfBlank(_model.Email),
+                        PhonePrimary = NullIfBlank(_model.PhonePrimary),
+                        PhoneSecondary = NullIfBlank(_model.PhoneSecondary),
+                        InstagramUrl = NullIfBlank(_model.InstagramUrl),
+                        City = NullIfBlank(_model.City),
+                        CityArabic = NullIfBlank(_model.CityArabic),
+                        Latitude = latitude,
+                        Longitude = longitude,
                         DisplayOrder = order,
                         IsActive = _model.IsActive,
                     });
@@ -233,6 +275,12 @@ public partial class SpeakersAddEdit
         public string LinkedInUrl { get; set; } = string.Empty;
         public string XUrl { get; set; } = string.Empty;
         public string WebsiteUrl { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string PhonePrimary { get; set; } = string.Empty;
+        public string PhoneSecondary { get; set; } = string.Empty;
+        public string InstagramUrl { get; set; } = string.Empty;
+        public string City { get; set; } = string.Empty;
+        public string CityArabic { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
     }
 }

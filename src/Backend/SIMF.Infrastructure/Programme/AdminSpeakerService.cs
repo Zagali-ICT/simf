@@ -149,8 +149,11 @@ internal sealed class AdminSpeakerService(
         }
         ValidateSocialUrls(
             request.FacebookUrl, request.LinkedInUrl, request.XUrl, request.WebsiteUrl);
+        ValidateContactFields(
+            request.Email, request.PhonePrimary, request.PhoneSecondary,
+            request.InstagramUrl, request.City, request.CityArabic,
+            request.Latitude, request.Longitude);
         await EnsureCountryIsValidAsync(request.CountryId, cancellationToken);
-        await EnsureContactIsValidAsync(request.ContactId, cancellationToken);
 
         var clash = await dbContext.Speakers
             .AsNoTracking()
@@ -188,7 +191,14 @@ internal sealed class AdminSpeakerService(
             LinkedInUrl = NullIfBlank(request.LinkedInUrl),
             XUrl = NullIfBlank(request.XUrl),
             WebsiteUrl = NullIfBlank(request.WebsiteUrl),
-            ContactId = request.ContactId,
+            Email = NullIfBlank(request.Email),
+            PhonePrimary = NullIfBlank(request.PhonePrimary),
+            PhoneSecondary = NullIfBlank(request.PhoneSecondary),
+            InstagramUrl = NullIfBlank(request.InstagramUrl),
+            City = NullIfBlank(request.City),
+            CityArabic = NullIfBlank(request.CityArabic),
+            Latitude = request.Latitude,
+            Longitude = request.Longitude,
             DisplayOrder = request.DisplayOrder,
             IsActive = true,
             CreatedAt = now,
@@ -236,8 +246,11 @@ internal sealed class AdminSpeakerService(
         }
         ValidateSocialUrls(
             request.FacebookUrl, request.LinkedInUrl, request.XUrl, request.WebsiteUrl);
+        ValidateContactFields(
+            request.Email, request.PhonePrimary, request.PhoneSecondary,
+            request.InstagramUrl, request.City, request.CityArabic,
+            request.Latitude, request.Longitude);
         await EnsureCountryIsValidAsync(request.CountryId, cancellationToken);
-        await EnsureContactIsValidAsync(request.ContactId, cancellationToken);
 
         if (!string.Equals(speaker.Code, code, StringComparison.OrdinalIgnoreCase))
         {
@@ -274,7 +287,14 @@ internal sealed class AdminSpeakerService(
         speaker.LinkedInUrl = NullIfBlank(request.LinkedInUrl);
         speaker.XUrl = NullIfBlank(request.XUrl);
         speaker.WebsiteUrl = NullIfBlank(request.WebsiteUrl);
-        speaker.ContactId = request.ContactId;
+        speaker.Email = NullIfBlank(request.Email);
+        speaker.PhonePrimary = NullIfBlank(request.PhonePrimary);
+        speaker.PhoneSecondary = NullIfBlank(request.PhoneSecondary);
+        speaker.InstagramUrl = NullIfBlank(request.InstagramUrl);
+        speaker.City = NullIfBlank(request.City);
+        speaker.CityArabic = NullIfBlank(request.CityArabic);
+        speaker.Latitude = request.Latitude;
+        speaker.Longitude = request.Longitude;
         speaker.DisplayOrder = request.DisplayOrder;
         speaker.IsActive = request.IsActive;
         speaker.UpdatedAt = timeProvider.GetUtcNow();
@@ -367,6 +387,60 @@ internal sealed class AdminSpeakerService(
         }
     }
 
+    // D-766 — validates the identity-card fields inlined from the removed
+    // shared Contact directory. Lengths mirror the EF configuration; latitude
+    // and longitude are an all-or-nothing pair with real-world ranges.
+    private static void ValidateContactFields(
+        string? email, string? phonePrimary, string? phoneSecondary,
+        string? instagram, string? city, string? cityArabic,
+        double? latitude, double? longitude)
+    {
+        if (!string.IsNullOrWhiteSpace(email) && email.Length > 320)
+        {
+            throw Invalid("Email must be 320 characters or less.",
+                "يجب ألا يتجاوز البريد الإلكتروني 320 حرفاً.");
+        }
+        foreach (var phone in new[] { phonePrimary, phoneSecondary })
+        {
+            if (!string.IsNullOrWhiteSpace(phone) && phone.Length > 32)
+            {
+                throw Invalid("Phone numbers must be 32 characters or less.",
+                    "يجب ألا يتجاوز رقم الهاتف 32 حرفاً.");
+            }
+        }
+        if (!string.IsNullOrWhiteSpace(instagram) && instagram.Length > 256)
+        {
+            throw Invalid("Social URLs must be 256 characters or less.",
+                "يجب ألا يتجاوز رابط الشبكات الاجتماعية 256 حرفاً.");
+        }
+        foreach (var cityValue in new[] { city, cityArabic })
+        {
+            if (!string.IsNullOrWhiteSpace(cityValue) && cityValue.Length > 128)
+            {
+                throw Invalid("City must be 128 characters or less.",
+                    "يجب ألا تتجاوز المدينة 128 حرفاً.");
+            }
+        }
+        if (latitude is null != (longitude is null))
+        {
+            throw Invalid("Latitude and longitude must be provided together.",
+                "يجب إدخال خط العرض وخط الطول معاً.");
+        }
+        if (latitude is < -90 or > 90)
+        {
+            throw Invalid("Latitude must be between -90 and 90.",
+                "يجب أن يكون خط العرض بين -90 و 90.");
+        }
+        if (longitude is < -180 or > 180)
+        {
+            throw Invalid("Longitude must be between -180 and 180.",
+                "يجب أن يكون خط الطول بين -180 و 180.");
+        }
+    }
+
+    private static ApiException Invalid(string english, string arabic) =>
+        new(ErrorCodes.SpeakerInvalid, 400, english, arabic);
+
     private async Task EnsureCountryIsValidAsync(
         int? countryId, CancellationToken cancellationToken)
     {
@@ -380,25 +454,6 @@ internal sealed class AdminSpeakerService(
                 ErrorCodes.SpeakerInvalid, 400,
                 $"Country id '{countryId}' does not exist or is inactive.",
                 $"رقم البلد '{countryId}' غير موجود أو غير مفعّل.");
-        }
-    }
-
-    // SIMF-FDS-014 (D-281) — the optional shared-Contact link must point at an
-    // existing active Contact (mirrors EnsureCountryIsValidAsync). Clean 400
-    // instead of a DB FK-violation 500.
-    private async Task EnsureContactIsValidAsync(
-        Guid? contactId, CancellationToken cancellationToken)
-    {
-        if (contactId is null) { return; }
-        var exists = await dbContext.Contacts
-            .AsNoTracking()
-            .AnyAsync(contact => contact.Id == contactId.Value && contact.IsActive, cancellationToken);
-        if (!exists)
-        {
-            throw new ApiException(
-                ErrorCodes.SpeakerInvalid, 400,
-                $"Contact id '{contactId}' does not exist or is inactive.",
-                $"جهة الاتصال '{contactId}' غير موجودة أو غير مفعّلة.");
         }
     }
 
@@ -433,5 +488,7 @@ internal sealed class AdminSpeakerService(
             speaker.PhotoRelativePath,
             speaker.DisplayOrder, speaker.IsActive,
             speaker.CreatedAt, speaker.UpdatedAt,
-            speaker.ContactId);
+            speaker.Email, speaker.PhonePrimary, speaker.PhoneSecondary,
+            speaker.InstagramUrl, speaker.City, speaker.CityArabic,
+            speaker.Latitude, speaker.Longitude);
 }

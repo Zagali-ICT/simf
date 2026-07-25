@@ -73,19 +73,11 @@ internal sealed class PartnerDirectoryService(
                 s.Tagline, s.TaglineArabic, s.LogoRelativePath, null,
                 s.CountryId, s.CountryNameEn, s.CountryNameAr)));
 
-        // Sponsor / booth-company de-dup keys (owner decision 2026-07-22): a company
+        // Sponsor / booth-company de-dup key (owner decision 2026-07-22): a company
         // that is BOTH a Sponsor and a booth exhibitor must appear ONCE — as the
-        // Sponsor (kind=sponsor, routing to the sponsor detail page). Robust key
-        // first: the shared Contact directory record (SIMF-FDS-014) — a Sponsor and
-        // an Exhibitor that link the SAME Contact are the same company (read here as a
-        // minimal de-dup-only projection, mirroring the speaker de-dup below).
-        // Fallback for rows with no linked Contact: a case-insensitive, trimmed
-        // display-name match.
-        var sponsorContactIds = (await appDbContext.Sponsors.AsNoTracking()
-            .Where(s => s.IsActive && s.ContactId != null)
-            .Select(s => s.ContactId!.Value)
-            .ToListAsync(cancellationToken))
-            .ToHashSet();
+        // Sponsor (kind=sponsor, routing to the sponsor detail page). The sole key
+        // is a case-insensitive, trimmed display-name match over the sponsor names
+        // (the former shared-Contact key is gone with the Contact directory).
         var sponsorNameKeys = sponsors.Groups
             .SelectMany(g => g.Sponsors)
             .SelectMany(s => new[] { s.NameEn, s.NameAr })
@@ -95,22 +87,23 @@ internal sealed class PartnerDirectoryService(
 
         // 3) Booth companies — the same public booth list, keyed by booth id (the
         //    exhibitor-detail route takes a boothId). Company name from the linked
-        //    Exhibitor, sector as subtitle, logo via the exhibitor's Contact id
-        //    (CompanyLogo), country via Exhibitor → Contact. Tap → exhibitor detail.
-        //    A company already present as a Sponsor is dropped here (the Sponsor wins).
+        //    Exhibitor, sector as subtitle. The entry carries Id = boothId and the app
+        //    renders the booth logo (BoothLogo) from that, so LogoContactId now emits
+        //    null on the wire (append-only frozen field). Country via the booth
+        //    service. Tap → exhibitor detail. A company already present as a Sponsor
+        //    is dropped here (the Sponsor wins).
         var booths = await boothService.ListAsync(cancellationToken);
         foreach (var b in booths)
         {
             var duplicatesSponsor =
-                (b.ExhibitorContactId != null && sponsorContactIds.Contains(b.ExhibitorContactId.Value))
-                || sponsorNameKeys.Contains(NormalizeNameKey(b.ExhibitorName))
+                sponsorNameKeys.Contains(NormalizeNameKey(b.ExhibitorName))
                 || sponsorNameKeys.Contains(NormalizeNameKey(b.ExhibitorNameArabic));
             if (duplicatesSponsor) { continue; }
 
             entries.Add(new PartnerDirectoryEntry(
                 PartnerDirectoryKind.Booth, b.Id, b.ExhibitorName ?? string.Empty,
                 b.ExhibitorNameArabic ?? string.Empty, b.Sector, b.SectorArabic,
-                null, b.ExhibitorContactId, b.CountryId, b.CountryName, b.CountryNameArabic));
+                null, null, b.CountryId, b.CountryName, b.CountryNameArabic));
         }
 
         // 4) Opted-in "Other"-type accounts. Pool = Approved, non-Admin users
@@ -162,8 +155,8 @@ internal sealed class PartnerDirectoryService(
         return new PartnerDirectoryResponse(entries);
     }
 
-    /// <summary>Case-insensitive, trimmed name key for the sponsor / booth-company
-    /// fallback de-dup (used only when the two do not share a Contact record).</summary>
+    /// <summary>Case-insensitive, trimmed name key — the sole sponsor / booth-company
+    /// de-dup key now that the shared Contact directory is gone.</summary>
     private static string NormalizeNameKey(string? name) =>
         (name ?? string.Empty).Trim().ToLowerInvariant();
 }

@@ -118,11 +118,14 @@ internal sealed class AdminSponsorService(
     }
 
     public async Task<AdminSponsorDetail?> GetAsync(
-        Guid id, CancellationToken cancellationToken = default) =>
-        await appDbContext.Sponsors.AsNoTracking()
-            .Where(sponsor => sponsor.Id == id)
-            .Select(sponsor => ToDetail(sponsor))
-            .SingleOrDefaultAsync(cancellationToken);
+        Guid id, CancellationToken cancellationToken = default)
+    {
+        var sponsor = await appDbContext.Sponsors.AsNoTracking()
+            .SingleOrDefaultAsync(s => s.Id == id, cancellationToken);
+        if (sponsor is null) { return null; }
+        var (en, ar) = await ResolveCountryAsync(sponsor.CountryId, cancellationToken);
+        return ToDetail(sponsor, en, ar);
+    }
 
     public async Task<AdminSponsorDetail> CreateAsync(
         Guid actorUserId, AdminCreateSponsorRequest request,
@@ -131,7 +134,12 @@ internal sealed class AdminSponsorService(
         var (nameEn, nameAr, tier, logoRelativePath, url, displayOrder) =
             Validate(request.NameEn, request.NameAr, request.Tier,
                 request.LogoRelativePath, request.Url, request.DisplayOrder);
-        await EnsureContactIsValidAsync(request.ContactId, cancellationToken);
+        ValidateContactFields(
+            request.Email, request.PhonePrimary, request.PhoneSecondary,
+            request.FacebookUrl, request.XUrl, request.LinkedInUrl, request.InstagramUrl,
+            request.City, request.CityArabic,
+            request.Latitude, request.Longitude);
+        await EnsureCountryIsValidAsync(request.CountryId, cancellationToken);
 
         // Duplicate guard: an active sponsor with the same Arabic name in the
         // same tier is treated as a clash (matches the Country code-clash 409
@@ -158,11 +166,22 @@ internal sealed class AdminSponsorService(
             LogoRelativePath = logoRelativePath,
             Url = url,
             DisplayOrder = displayOrder,
-            ContactId = request.ContactId,
             Tagline = NormaliseTagline(request.Tagline),
             TaglineArabic = NormaliseTagline(request.TaglineArabic),
             About = NormaliseAbout(request.About),
             AboutArabic = NormaliseAbout(request.AboutArabic),
+            CountryId = request.CountryId,
+            Email = NullIfBlank(request.Email),
+            PhonePrimary = NullIfBlank(request.PhonePrimary),
+            PhoneSecondary = NullIfBlank(request.PhoneSecondary),
+            FacebookUrl = NullIfBlank(request.FacebookUrl),
+            XUrl = NullIfBlank(request.XUrl),
+            LinkedInUrl = NullIfBlank(request.LinkedInUrl),
+            InstagramUrl = NullIfBlank(request.InstagramUrl),
+            City = NullIfBlank(request.City),
+            CityArabic = NullIfBlank(request.CityArabic),
+            Latitude = request.Latitude,
+            Longitude = request.Longitude,
             IsActive = true,
             CreatedAt = now,
         };
@@ -178,7 +197,8 @@ internal sealed class AdminSponsorService(
             Detail = $"sponsorId={sponsor.Id}; tier={tier}; nameAr={nameAr}",
         }, cancellationToken);
 
-        return ToDetail(sponsor);
+        var (en, ar) = await ResolveCountryAsync(sponsor.CountryId, cancellationToken);
+        return ToDetail(sponsor, en, ar);
     }
 
     public async Task<AdminSponsorDetail> UpdateAsync(
@@ -188,7 +208,12 @@ internal sealed class AdminSponsorService(
         var (nameEn, nameAr, tier, logoRelativePath, url, displayOrder) =
             Validate(request.NameEn, request.NameAr, request.Tier,
                 request.LogoRelativePath, request.Url, request.DisplayOrder);
-        await EnsureContactIsValidAsync(request.ContactId, cancellationToken);
+        ValidateContactFields(
+            request.Email, request.PhonePrimary, request.PhoneSecondary,
+            request.FacebookUrl, request.XUrl, request.LinkedInUrl, request.InstagramUrl,
+            request.City, request.CityArabic,
+            request.Latitude, request.Longitude);
+        await EnsureCountryIsValidAsync(request.CountryId, cancellationToken);
 
         var sponsor = await appDbContext.Sponsors
             .SingleOrDefaultAsync(s => s.Id == id, cancellationToken)
@@ -221,11 +246,22 @@ internal sealed class AdminSponsorService(
         sponsor.LogoRelativePath = logoRelativePath;
         sponsor.Url = url;
         sponsor.DisplayOrder = displayOrder;
-        sponsor.ContactId = request.ContactId;
         sponsor.Tagline = NormaliseTagline(request.Tagline);
         sponsor.TaglineArabic = NormaliseTagline(request.TaglineArabic);
         sponsor.About = NormaliseAbout(request.About);
         sponsor.AboutArabic = NormaliseAbout(request.AboutArabic);
+        sponsor.CountryId = request.CountryId;
+        sponsor.Email = NullIfBlank(request.Email);
+        sponsor.PhonePrimary = NullIfBlank(request.PhonePrimary);
+        sponsor.PhoneSecondary = NullIfBlank(request.PhoneSecondary);
+        sponsor.FacebookUrl = NullIfBlank(request.FacebookUrl);
+        sponsor.XUrl = NullIfBlank(request.XUrl);
+        sponsor.LinkedInUrl = NullIfBlank(request.LinkedInUrl);
+        sponsor.InstagramUrl = NullIfBlank(request.InstagramUrl);
+        sponsor.City = NullIfBlank(request.City);
+        sponsor.CityArabic = NullIfBlank(request.CityArabic);
+        sponsor.Latitude = request.Latitude;
+        sponsor.Longitude = request.Longitude;
         sponsor.IsActive = request.IsActive;
         sponsor.UpdatedAt = timeProvider.GetUtcNow();
 
@@ -239,7 +275,8 @@ internal sealed class AdminSponsorService(
             Detail = $"sponsorId={sponsor.Id}; tier={tier}; active={sponsor.IsActive}",
         }, cancellationToken);
 
-        return ToDetail(sponsor);
+        var (en, ar) = await ResolveCountryAsync(sponsor.CountryId, cancellationToken);
+        return ToDetail(sponsor, en, ar);
     }
 
     public async Task DeactivateAsync(
@@ -323,24 +360,96 @@ internal sealed class AdminSponsorService(
         return (nameEn, nameAr, tier, logoRelativePath, url, displayOrderRaw);
     }
 
-    // SIMF-FDS-014 (D-281) — the optional shared-Contact link must point at an
-    // existing active Contact. Clean 400 instead of a DB FK-violation 500.
-    private async Task EnsureContactIsValidAsync(
-        Guid? contactId, CancellationToken cancellationToken)
+    // D-766 — validates the identity-card fields inlined from the removed
+    // shared Contact directory. Lengths mirror the EF configuration; latitude
+    // and longitude are an all-or-nothing pair with real-world ranges.
+    private static void ValidateContactFields(
+        string? email, string? phonePrimary, string? phoneSecondary,
+        string? facebook, string? x, string? linkedIn, string? instagram,
+        string? city, string? cityArabic,
+        double? latitude, double? longitude)
     {
-        if (contactId is null) { return; }
-        var exists = await appDbContext.Contacts
-            .AsNoTracking()
-            .AnyAsync(contact => contact.Id == contactId.Value && contact.IsActive, cancellationToken);
-        if (!exists)
+        if (!string.IsNullOrWhiteSpace(email) && email.Length > 320)
         {
-            throw new ApiException(ErrorCodes.SponsorInvalid, 400,
-                $"Contact id '{contactId}' does not exist or is inactive.",
-                $"جهة الاتصال '{contactId}' غير موجودة أو غير مفعّلة.");
+            throw Invalid("Email must be 320 characters or less.",
+                "يجب ألا يتجاوز البريد الإلكتروني 320 حرفاً.");
+        }
+        foreach (var phone in new[] { phonePrimary, phoneSecondary })
+        {
+            if (!string.IsNullOrWhiteSpace(phone) && phone.Length > 32)
+            {
+                throw Invalid("Phone numbers must be 32 characters or less.",
+                    "يجب ألا يتجاوز رقم الهاتف 32 حرفاً.");
+            }
+        }
+        foreach (var social in new[] { facebook, x, linkedIn, instagram })
+        {
+            if (!string.IsNullOrWhiteSpace(social) && social.Length > 256)
+            {
+                throw Invalid("Social URLs must be 256 characters or less.",
+                    "يجب ألا يتجاوز رابط الشبكات الاجتماعية 256 حرفاً.");
+            }
+        }
+        foreach (var cityValue in new[] { city, cityArabic })
+        {
+            if (!string.IsNullOrWhiteSpace(cityValue) && cityValue.Length > 128)
+            {
+                throw Invalid("City must be 128 characters or less.",
+                    "يجب ألا تتجاوز المدينة 128 حرفاً.");
+            }
+        }
+        if (latitude is null != (longitude is null))
+        {
+            throw Invalid("Latitude and longitude must be provided together.",
+                "يجب إدخال خط العرض وخط الطول معاً.");
+        }
+        if (latitude is < -90 or > 90)
+        {
+            throw Invalid("Latitude must be between -90 and 90.",
+                "يجب أن يكون خط العرض بين -90 و 90.");
+        }
+        if (longitude is < -180 or > 180)
+        {
+            throw Invalid("Longitude must be between -180 and 180.",
+                "يجب أن يكون خط الطول بين -180 و 180.");
         }
     }
 
-    private static AdminSponsorDetail ToDetail(Sponsor sponsor) =>
+    private static ApiException Invalid(string english, string arabic) =>
+        new(ErrorCodes.SponsorInvalid, 400, english, arabic);
+
+    private async Task EnsureCountryIsValidAsync(
+        int? countryId, CancellationToken cancellationToken)
+    {
+        if (countryId is null) { return; }
+        var exists = await appDbContext.Countries
+            .AsNoTracking()
+            .AnyAsync(country => country.Id == countryId.Value && country.IsActive, cancellationToken);
+        if (!exists)
+        {
+            throw new ApiException(ErrorCodes.SponsorInvalid, 400,
+                $"Country id '{countryId}' does not exist or is inactive.",
+                $"رقم البلد '{countryId}' غير موجود أو غير مفعّل.");
+        }
+    }
+
+    private async Task<(string? en, string? ar)> ResolveCountryAsync(
+        int? countryId, CancellationToken cancellationToken)
+    {
+        if (countryId is null) { return (null, null); }
+        var row = await appDbContext.Countries
+            .AsNoTracking()
+            .Where(country => country.Id == countryId.Value)
+            .Select(country => new { country.Name, country.NameArabic })
+            .SingleOrDefaultAsync(cancellationToken);
+        return (row?.Name, row?.NameArabic);
+    }
+
+    private static string? NullIfBlank(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private static AdminSponsorDetail ToDetail(
+        Sponsor sponsor, string? countryNameEn, string? countryNameAr) =>
         new(sponsor.Id,
             sponsor.Name,
             sponsor.NameArabic,
@@ -352,11 +461,24 @@ internal sealed class AdminSponsorService(
             sponsor.IsActive,
             sponsor.CreatedAt,
             sponsor.UpdatedAt,
-            sponsor.ContactId,
             sponsor.Tagline,
             sponsor.TaglineArabic,
             sponsor.About,
-            sponsor.AboutArabic);
+            sponsor.AboutArabic,
+            sponsor.CountryId,
+            countryNameEn,
+            countryNameAr,
+            sponsor.Email,
+            sponsor.PhonePrimary,
+            sponsor.PhoneSecondary,
+            sponsor.FacebookUrl,
+            sponsor.XUrl,
+            sponsor.LinkedInUrl,
+            sponsor.InstagramUrl,
+            sponsor.City,
+            sponsor.CityArabic,
+            sponsor.Latitude,
+            sponsor.Longitude);
 
     // D-432 — trim a tagline to null when blank; enforce the 256-char limit
     // (mirrors SponsorConfiguration.HasMaxLength + the CP MaxLength) so a direct

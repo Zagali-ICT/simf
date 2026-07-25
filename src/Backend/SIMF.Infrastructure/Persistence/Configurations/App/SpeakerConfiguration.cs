@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Domain.Common;
-using SIMF.Domain.Contacts;
 using SIMF.Domain.Profiles;
 using SIMF.Domain.Programme;
 
@@ -40,7 +39,17 @@ internal sealed class SpeakerConfiguration : IEntityTypeConfiguration<Speaker>
         builder.Property(speaker => speaker.FacebookUrl).HasMaxLength(256);
         builder.Property(speaker => speaker.LinkedInUrl).HasMaxLength(256);
         builder.Property(speaker => speaker.XUrl).HasMaxLength(256);
+        builder.Property(speaker => speaker.InstagramUrl).HasMaxLength(256);
         builder.Property(speaker => speaker.WebsiteUrl).HasMaxLength(256);
+
+        // Contact identity-card fields inlined from the removed shared Contact
+        // directory (supersedes SIMF-FDS-014 / D-260). Latitude/Longitude are
+        // double? and need no length. The Website slot is WebsiteUrl above.
+        builder.Property(speaker => speaker.Email).HasMaxLength(320);
+        builder.Property(speaker => speaker.PhonePrimary).HasMaxLength(32);
+        builder.Property(speaker => speaker.PhoneSecondary).HasMaxLength(32);
+        builder.Property(speaker => speaker.City).HasMaxLength(128);
+        builder.Property(speaker => speaker.CityArabic).HasMaxLength(128);
 
         builder.Property(speaker => speaker.PhotoRelativePath).HasMaxLength(256);
 
@@ -62,13 +71,6 @@ internal sealed class SpeakerConfiguration : IEntityTypeConfiguration<Speaker>
         builder.HasOne<UserProfile>()
             .WithMany()
             .HasForeignKey(speaker => speaker.UserProfileId)
-            .OnDelete(DeleteBehavior.Restrict);
-        // SIMF-FDS-014 — D-260: optional shared Contact link. Restrict (a Contact
-        // is soft-deleted, never hard-deleted under a referrer). HasForeignKey
-        // creates the FK index.
-        builder.HasOne<Contact>()
-            .WithMany()
-            .HasForeignKey(speaker => speaker.ContactId)
             .OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(speaker => new { speaker.IsActive, speaker.DisplayOrder });
     }

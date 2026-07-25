@@ -19,6 +19,14 @@ public partial class BoothsAddEdit
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
     private readonly Model _model = new();
+
+    // D-766 — booth-officer country + coordinate inputs kept as raw strings
+    // (parsed on submit), mirroring SpeakersAddEdit. Nationality is the officer's
+    // own country picker.
+    private string _officerCountryIdInput = string.Empty;
+    private string _officerLatitudeInput = string.Empty;
+    private string _officerLongitudeInput = string.Empty;
+
     private EditContext _editContext = default!;
     private bool _busy;
     private string? _error;
@@ -28,6 +36,11 @@ public partial class BoothsAddEdit
     // so a single Top=500 round-trip each is fine.
     private List<AdminExhibitorSummary> _exhibitors = new();
     private List<AdminHallSummary> _halls = new();
+
+    // Officer-country picker state — populated on first paint alongside the
+    // exhibitor + hall lookups.
+    private string[] _countryIds = Array.Empty<string>();
+    private Dictionary<string, AdminCountrySummary> _countriesById = new();
 
     protected override void OnInitialized()
     {
@@ -40,7 +53,18 @@ public partial class BoothsAddEdit
             _model.OfficerName = Initial.OfficerName ?? string.Empty;
             _model.OfficerPhone = Initial.OfficerPhone ?? string.Empty;
             _model.OfficerEmail = Initial.OfficerEmail ?? string.Empty;
-            _model.ContactId = Initial.ContactId;
+            _model.OfficerNameArabic = Initial.OfficerNameArabic ?? string.Empty;
+            _model.OfficerPhoneSecondary = Initial.OfficerPhoneSecondary ?? string.Empty;
+            _model.OfficerWebsite = Initial.OfficerWebsite ?? string.Empty;
+            _model.OfficerFacebookUrl = Initial.OfficerFacebookUrl ?? string.Empty;
+            _model.OfficerXUrl = Initial.OfficerXUrl ?? string.Empty;
+            _model.OfficerLinkedInUrl = Initial.OfficerLinkedInUrl ?? string.Empty;
+            _model.OfficerInstagramUrl = Initial.OfficerInstagramUrl ?? string.Empty;
+            _model.OfficerCity = Initial.OfficerCity ?? string.Empty;
+            _model.OfficerCityArabic = Initial.OfficerCityArabic ?? string.Empty;
+            _officerCountryIdInput = Initial.OfficerCountryId?.ToString() ?? string.Empty;
+            _officerLatitudeInput = Initial.OfficerLatitude?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
+            _officerLongitudeInput = Initial.OfficerLongitude?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
             _model.Sector = Initial.Sector ?? string.Empty;
             _model.SectorArabic = Initial.SectorArabic ?? string.Empty;
             _model.Description = Initial.Description ?? string.Empty;
@@ -57,6 +81,7 @@ public partial class BoothsAddEdit
     {
         await LoadExhibitorsAsync();
         await LoadHallsAsync();
+        await LoadCountriesAsync();
     }
 
     private async Task LoadExhibitorsAsync()
@@ -96,6 +121,41 @@ public partial class BoothsAddEdit
         }
     }
 
+    // D-766 — active countries for the officer nationality picker. Mirrors
+    // SpeakersAddEdit's loader. A failure leaves the picker empty (country is
+    // optional) rather than blocking the whole form.
+    private async Task LoadCountriesAsync()
+    {
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminCountrySummary>>>(
+                "simfAccount.postJson", "/account/api/admin/countries/list",
+                new GridQuery { Top = 500, Filters = new Dictionary<string, string> { ["isActive"] = "true" } });
+            if (env is { Success: true, Data: not null })
+            {
+                _countriesById = env.Data.Items.ToDictionary(c => c.Id.ToString(), c => c);
+                _countryIds = env.Data.Items
+                    .OrderBy(c => c.DisplayOrder)
+                    .ThenBy(c => c.Name)
+                    .Select(c => c.Id.ToString())
+                    .ToArray();
+            }
+        }
+        catch
+        {
+            // Picker stays empty; admin can still submit with no officer country.
+        }
+    }
+
+    private string CountryLabel(string id)
+    {
+        if (!_countriesById.TryGetValue(id, out var country)) return id;
+        var isArabic = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
+        return isArabic
+            ? $"{country.NameArabic} ({country.Code})"
+            : $"{country.Name} ({country.Code})";
+    }
+
     private async Task HandleSubmitAsync()
     {
         if (_busy) return;
@@ -108,6 +168,34 @@ public partial class BoothsAddEdit
             || string.IsNullOrWhiteSpace(_model.NameArabic))
         {
             _error = L["Admin.Booths.Required"]; return;
+        }
+
+        // D-766 — officer country comes from the controlled picker (only valid
+        // active ids or empty); the service re-validates it. Lat/long are an
+        // all-or-nothing pair; the service enforces the real-world ranges.
+        int? officerCountryId = null;
+        if (!string.IsNullOrWhiteSpace(_officerCountryIdInput)
+            && int.TryParse(_officerCountryIdInput, out var parsedCountry) && parsedCountry > 0)
+        {
+            officerCountryId = parsedCountry;
+        }
+
+        double? officerLatitude = null, officerLongitude = null;
+        var hasLat = !string.IsNullOrWhiteSpace(_officerLatitudeInput);
+        var hasLong = !string.IsNullOrWhiteSpace(_officerLongitudeInput);
+        if (hasLat != hasLong)
+        {
+            _error = L["Admin.ContactField.LatLongHint"]; return;
+        }
+        if (hasLat)
+        {
+            if (!double.TryParse(_officerLatitudeInput, NumberStyles.Float, CultureInfo.InvariantCulture, out var lat)
+                || !double.TryParse(_officerLongitudeInput, NumberStyles.Float, CultureInfo.InvariantCulture, out var lng))
+            {
+                _error = L["Admin.ContactField.LatLongInvalid"]; return;
+            }
+            officerLatitude = lat;
+            officerLongitude = lng;
         }
 
         _busy = true;
@@ -127,7 +215,18 @@ public partial class BoothsAddEdit
                         OfficerName = NullIfBlank(_model.OfficerName),
                         OfficerPhone = NullIfBlank(_model.OfficerPhone),
                         OfficerEmail = NullIfBlank(_model.OfficerEmail),
-                        ContactId = _model.ContactId,
+                        OfficerNameArabic = NullIfBlank(_model.OfficerNameArabic),
+                        OfficerPhoneSecondary = NullIfBlank(_model.OfficerPhoneSecondary),
+                        OfficerWebsite = NullIfBlank(_model.OfficerWebsite),
+                        OfficerFacebookUrl = NullIfBlank(_model.OfficerFacebookUrl),
+                        OfficerXUrl = NullIfBlank(_model.OfficerXUrl),
+                        OfficerLinkedInUrl = NullIfBlank(_model.OfficerLinkedInUrl),
+                        OfficerInstagramUrl = NullIfBlank(_model.OfficerInstagramUrl),
+                        OfficerCity = NullIfBlank(_model.OfficerCity),
+                        OfficerCityArabic = NullIfBlank(_model.OfficerCityArabic),
+                        OfficerLatitude = officerLatitude,
+                        OfficerLongitude = officerLongitude,
+                        OfficerCountryId = officerCountryId,
                         Sector = NullIfBlank(_model.Sector),
                         SectorArabic = NullIfBlank(_model.SectorArabic),
                         Description = NullIfBlank(_model.Description),
@@ -150,7 +249,18 @@ public partial class BoothsAddEdit
                         OfficerName = NullIfBlank(_model.OfficerName),
                         OfficerPhone = NullIfBlank(_model.OfficerPhone),
                         OfficerEmail = NullIfBlank(_model.OfficerEmail),
-                        ContactId = _model.ContactId,
+                        OfficerNameArabic = NullIfBlank(_model.OfficerNameArabic),
+                        OfficerPhoneSecondary = NullIfBlank(_model.OfficerPhoneSecondary),
+                        OfficerWebsite = NullIfBlank(_model.OfficerWebsite),
+                        OfficerFacebookUrl = NullIfBlank(_model.OfficerFacebookUrl),
+                        OfficerXUrl = NullIfBlank(_model.OfficerXUrl),
+                        OfficerLinkedInUrl = NullIfBlank(_model.OfficerLinkedInUrl),
+                        OfficerInstagramUrl = NullIfBlank(_model.OfficerInstagramUrl),
+                        OfficerCity = NullIfBlank(_model.OfficerCity),
+                        OfficerCityArabic = NullIfBlank(_model.OfficerCityArabic),
+                        OfficerLatitude = officerLatitude,
+                        OfficerLongitude = officerLongitude,
+                        OfficerCountryId = officerCountryId,
                         Sector = NullIfBlank(_model.Sector),
                         SectorArabic = NullIfBlank(_model.SectorArabic),
                         Description = NullIfBlank(_model.Description),
@@ -227,7 +337,15 @@ public partial class BoothsAddEdit
         public string OfficerName { get; set; } = string.Empty;
         public string OfficerPhone { get; set; } = string.Empty;
         public string OfficerEmail { get; set; } = string.Empty;
-        public Guid? ContactId { get; set; }
+        public string OfficerNameArabic { get; set; } = string.Empty;
+        public string OfficerPhoneSecondary { get; set; } = string.Empty;
+        public string OfficerWebsite { get; set; } = string.Empty;
+        public string OfficerFacebookUrl { get; set; } = string.Empty;
+        public string OfficerXUrl { get; set; } = string.Empty;
+        public string OfficerLinkedInUrl { get; set; } = string.Empty;
+        public string OfficerInstagramUrl { get; set; } = string.Empty;
+        public string OfficerCity { get; set; } = string.Empty;
+        public string OfficerCityArabic { get; set; } = string.Empty;
         public string Sector { get; set; } = string.Empty;
         public string SectorArabic { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;

@@ -51,10 +51,12 @@ const _samiWithCountry = BoothSummary(
   countryNameArabic: 'السعودية',
 );
 
-/// Every NetworkImage URL currently in the tree.
+/// Every NetworkImage URL currently in the tree (unwrapping the ResizeImage that
+/// the logo tile's cacheWidth/cacheHeight decode-cap wraps the provider in).
 Set<String> _networkImageUrls(WidgetTester tester) => tester
     .widgetList<Image>(find.byType(Image))
     .map((img) => img.image)
+    .map((provider) => provider is ResizeImage ? provider.imageProvider : provider)
     .whereType<NetworkImage>()
     .map((n) => n.url)
     .toSet();
@@ -213,26 +215,33 @@ void main() {
       expect(find.text('No booths'), findsOneWidget);
     });
 
-    testWidgets('P6 — a booth with a linked exhibitor wires the CompanyLogo route',
+    testWidgets('a booth wires its OWN BoothLogo route (booth id, not the exhibitor)',
         (tester) async {
       await _pump(
         tester,
         repo: _FakeRepo(booths: const <BoothSummary>[_samiWithLogo]),
       );
+      // The booth renders its own logo (owner = the booth), never the exhibitor's
+      // CompanyLogo — even when the exhibitor has a linked Contact.
       expect(
         _networkImageUrls(tester),
-        contains('http://test.local/api/v1/app/assets/CompanyLogo/c1/image'),
+        contains('http://test.local/api/v1/app/assets/BoothLogo/b1/image'),
+      );
+      expect(
+        _networkImageUrls(tester),
+        isNot(contains('http://test.local/api/v1/app/assets/CompanyLogo/c1/image')),
       );
     });
 
-    testWidgets('P6 — a booth with no linked exhibitor shows no logo image '
-        '(initials fallback)', (tester) async {
+    testWidgets('the booth logo tile falls back to the short-name initials '
+        'when no bytes load', (tester) async {
       await _pump(tester, repo: _FakeRepo(booths: const <BoothSummary>[_sami]));
-      // No exhibitorContactId → the logo tile renders initials, not a network image.
-      expect(_networkImageUrls(tester), isEmpty);
+      // The BoothLogo route 404s in tests → the tile shows the short-name text
+      // ('SAMI' renders in both the logo tile and the gold name).
+      expect(find.text('SAMI'), findsNWidgets(2));
     });
 
-    testWidgets('PAR-B3 — RTL: the company logo tile is at the inline start '
+    testWidgets('PAR-B3 — RTL: the booth logo tile is at the inline start '
         '(right) of the company name', (tester) async {
       await _pump(
         tester,

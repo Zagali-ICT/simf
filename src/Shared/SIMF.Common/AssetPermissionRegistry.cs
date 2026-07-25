@@ -19,8 +19,10 @@ public static class AssetPermissionRegistry
         {
             [AssetCategory.SpeakerPhoto] =
                 new(PermissionCatalog.Speakers.View, PermissionCatalog.Speakers.Edit),
+            // Retired category (D-766): the Contact owner table was removed; kept
+            // mapped for the append-only enum freeze; MediaLibrary-gated, serves always-404.
             [AssetCategory.CompanyLogo] =
-                new(PermissionCatalog.Contacts.View, PermissionCatalog.Contacts.Edit),
+                new(PermissionCatalog.MediaLibrary.View, PermissionCatalog.MediaLibrary.Manage),
             [AssetCategory.MediaPartnerLogo] =
                 new(PermissionCatalog.MediaPartners.View, PermissionCatalog.MediaPartners.Edit),
             [AssetCategory.SponsorLogo] =
@@ -35,6 +37,10 @@ public static class AssetPermissionRegistry
                 new(PermissionCatalog.OrganizationProfile.View, PermissionCatalog.OrganizationProfile.Manage),
             [AssetCategory.Banner] =
                 new(PermissionCatalog.Banners.View, PermissionCatalog.Banners.Edit),
+            [AssetCategory.BoothLogo] =
+                new(PermissionCatalog.Booths.View, PermissionCatalog.Booths.Edit),
+            [AssetCategory.ExhibitorLogo] =
+                new(PermissionCatalog.Exhibitors.View, PermissionCatalog.Exhibitors.Edit),
         };
 
     /// <summary>The view + write permission codes for a category. Throws if the

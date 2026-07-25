@@ -237,10 +237,6 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     // region picker. Seeded from SaudiRegions in every environment.
     public DbSet<Region> Regions => Set<Region>();
 
-    // SIMF-FDS-014 — D-260: shared, de-duplicated contact directory referenced by
-    // Company / Sponsor / MediaPartner / Speaker / Booth (nullable ContactId FK).
-    public DbSet<Contact> Contacts => Set<Contact>();
-
     // SIMF-FDS-014 — D-284 (Track 2): visitor-to-visitor contact sharing. Both
     // tables hold bare-Guid logical FKs to SimfUser.Id (Identity DB) — no DB FK.
     public DbSet<VisitorShareToken> VisitorShareTokens => Set<VisitorShareToken>();

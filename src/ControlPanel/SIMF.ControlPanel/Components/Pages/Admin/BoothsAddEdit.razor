@@ -3,7 +3,7 @@
    standard CRUD-form surface (IsEdit / Initial / OnSuccess / OnCancel). IsEdit
    =false runs Create (POST); IsEdit=true runs Edit (PUT against Initial) and
    shows the IsActive checkbox. Preserves the exhibitor + hall lookups, the
-   booth-officer fields, the optional shared-Contact link (SIMF-FDS-014 / D-283),
+   booth-officer fields,
    the 2D map position, and the same create/update request DTOs + JS calls the
    inline SimfModal form used. *@
 @inherits CrudAddEditFormBase<AdminBoothDetail>
@@ -66,8 +66,84 @@
                        ValueExpression="@(() => _model.OfficerEmail)"
                        MaxLength="320"
                        Disabled="_busy" />
-        @* SIMF-FDS-014 (D-283) — optional link to a shared Contact directory record (the booth officer). *@
-        <ContactPicker Value="_model.ContactId" ValueChanged="@(v => _model.ContactId = v)" Disabled="_busy" />
+        @* NEW inline booth-officer identity-card fields (D-766). Most labels reuse
+           the generic Admin.ContactField.* keys; the officer Arabic name uses the
+           officer-scoped Admin.Booths.Field.OfficerNameAr key; nationality is the
+           officer-country picker below. *@
+        <SimfTextField Label="@L["Admin.Booths.Field.OfficerNameAr"]"
+                       Value="@_model.OfficerNameArabic"
+                       ValueChanged="@(v => _model.OfficerNameArabic = v)"
+                       ValueExpression="@(() => _model.OfficerNameArabic)"
+                       MaxLength="256"
+                       Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.ContactField.PhoneSecondary"]"
+                       Value="@_model.OfficerPhoneSecondary"
+                       ValueChanged="@(v => _model.OfficerPhoneSecondary = v)"
+                       ValueExpression="@(() => _model.OfficerPhoneSecondary)"
+                       MaxLength="32"
+                       Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.ContactField.City"]"
+                       Value="@_model.OfficerCity"
+                       ValueChanged="@(v => _model.OfficerCity = v)"
+                       ValueExpression="@(() => _model.OfficerCity)"
+                       MaxLength="128"
+                       Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.ContactField.CityArabic"]"
+                       Value="@_model.OfficerCityArabic"
+                       ValueChanged="@(v => _model.OfficerCityArabic = v)"
+                       ValueExpression="@(() => _model.OfficerCityArabic)"
+                       MaxLength="128"
+                       Disabled="_busy" />
+        <SimfSelect TValue="string"
+                    Label="@L["Admin.ContactField.Country"]"
+                    Placeholder="@L["Admin.ContactField.CountryNone"]"
+                    Items="_countryIds"
+                    ValueFor="@(id => id)"
+                    LabelFor="@(id => CountryLabel(id))"
+                    Value="@_officerCountryIdInput"
+                    ValueChanged="@(v => _officerCountryIdInput = v ?? string.Empty)"
+                    Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.ContactField.Website"]"
+                       Value="@_model.OfficerWebsite"
+                       ValueChanged="@(v => _model.OfficerWebsite = v)"
+                       ValueExpression="@(() => _model.OfficerWebsite)"
+                       MaxLength="512"
+                       Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.ContactField.Facebook"]"
+                       Value="@_model.OfficerFacebookUrl"
+                       ValueChanged="@(v => _model.OfficerFacebookUrl = v)"
+                       ValueExpression="@(() => _model.OfficerFacebookUrl)"
+                       MaxLength="256"
+                       Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.ContactField.X"]"
+                       Value="@_model.OfficerXUrl"
+                       ValueChanged="@(v => _model.OfficerXUrl = v)"
+                       ValueExpression="@(() => _model.OfficerXUrl)"
+                       MaxLength="256"
+                       Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.ContactField.LinkedIn"]"
+                       Value="@_model.OfficerLinkedInUrl"
+                       ValueChanged="@(v => _model.OfficerLinkedInUrl = v)"
+                       ValueExpression="@(() => _model.OfficerLinkedInUrl)"
+                       MaxLength="256"
+                       Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.ContactField.Instagram"]"
+                       Value="@_model.OfficerInstagramUrl"
+                       ValueChanged="@(v => _model.OfficerInstagramUrl = v)"
+                       ValueExpression="@(() => _model.OfficerInstagramUrl)"
+                       MaxLength="256"
+                       Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.ContactField.Latitude"]"
+                       Helper="@L["Admin.ContactField.LatLongHint"]"
+                       Value="@_officerLatitudeInput"
+                       ValueChanged="@(v => _officerLatitudeInput = v)"
+                       ValueExpression="@(() => _officerLatitudeInput)"
+                       Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.ContactField.Longitude"]"
+                       Value="@_officerLongitudeInput"
+                       ValueChanged="@(v => _officerLongitudeInput = v)"
+                       ValueExpression="@(() => _officerLongitudeInput)"
+                       Disabled="_busy" />
         <SimfTextField Label="@L["Admin.Booths.Field.SectorEn"]"
                        Value="@_model.Sector"
                        ValueChanged="@(v => _model.Sector = v)"
@@ -128,6 +204,15 @@
                           Disabled="_busy">
                 @L["Admin.Booths.Field.IsActive"]
             </SimfCheckbox>
+        }
+        @* Booth logo via the unified media-asset pipeline (edit only; the row
+           must exist before bytes can be attached). Owner = the booth itself. *@
+        @if (IsEdit && Initial is not null)
+        {
+            <div class="simf-field">
+                <span class="simf-field__label">@L["Admin.Asset.Heading"]</span>
+                <SimfImageUpload Category="BoothLogo" OwnerId="@Initial.Id" Alt="@_model.Name" />
+            </div>
         }
     </div>
     <div class="simf-form__actions">

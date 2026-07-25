@@ -18,12 +18,10 @@ public sealed record AdminExhibitorSummary(
     // D-503 — carried so the grid Excel export can round-trip the tier (the grid
     // does not render it as a column). Optional; null = no tier.
     ExhibitorTier? Tier = null,
-    // D-357 — the linked Contact id + whether that contact has an active
-    // CompanyLogo asset, so the grid renders the exhibitor's company-logo
-    // thumbnail (else an initials tile). Appended trailing-optional (wire-safe);
-    // unlinked exhibitors default null/false.
-    Guid? ContactId = null,
-    bool HasLogo = false);
+    // The exhibitor owns its own ExhibitorLogo (owner = the exhibitor) — true when
+    // it has an active ExhibitorLogo asset, so the grid renders its logo thumbnail
+    // (else an initials tile). Appended trailing-optional (wire-safe).
+    bool HasExhibitorLogo = false);
 
 /// <summary>D-199 #3 — full admin detail for one exhibitor.</summary>
 public sealed record AdminExhibitorDetail(
@@ -36,9 +34,24 @@ public sealed record AdminExhibitorDetail(
     bool IsActive,
     DateTimeOffset CreatedAt,
     DateTimeOffset? UpdatedAt,
-    Guid? ContactId,
     // Wave 3 (Figma 1439:11881) — optional exhibitor tier; null renders no pill.
-    ExhibitorTier? Tier = null);
+    ExhibitorTier? Tier = null,
+    // Contact identity-card fields inlined from the removed shared Contact
+    // directory (D-766). All optional; the email + primary phone reuse the
+    // existing ContactEmail / ContactPhone above (no second slot). Trailing-
+    // optional so the wire contract stays append-only.
+    int? CountryId = null,
+    string? CountryNameEn = null,
+    string? CountryNameAr = null,
+    string? PhoneSecondary = null,
+    string? FacebookUrl = null,
+    string? XUrl = null,
+    string? LinkedInUrl = null,
+    string? InstagramUrl = null,
+    string? City = null,
+    string? CityArabic = null,
+    double? Latitude = null,
+    double? Longitude = null);
 
 /// <summary>
 /// D-199 #3 — body of <c>POST /api/v1/admin/exhibitors</c>. Creates the exhibitor
@@ -62,12 +75,41 @@ public sealed class CreateExhibitorRequest
     /// <summary>Optional website (≤512 chars).</summary>
     public string? Website { get; init; }
 
-    /// <summary>SIMF-FDS-014 (D-281) — optional link to a shared <c>Contact</c>
-    /// directory record. Must reference an existing active contact.</summary>
-    public Guid? ContactId { get; init; }
-
     /// <summary>Optional exhibitor tier (null = no tier).</summary>
     public ExhibitorTier? Tier { get; init; }
+
+    // Contact identity-card fields inlined from the removed shared Contact
+    // directory (D-766). All optional; the email + primary phone reuse the
+    // existing ContactEmail / ContactPhone above (no second slot).
+    /// <summary>Optional same-DB country FK (nationality).</summary>
+    public int? CountryId { get; init; }
+
+    /// <summary>Optional secondary contact phone (≤32 chars).</summary>
+    public string? PhoneSecondary { get; init; }
+
+    /// <summary>Optional Facebook profile URL (≤256 chars).</summary>
+    public string? FacebookUrl { get; init; }
+
+    /// <summary>Optional X (Twitter) profile URL (≤256 chars).</summary>
+    public string? XUrl { get; init; }
+
+    /// <summary>Optional LinkedIn profile URL (≤256 chars).</summary>
+    public string? LinkedInUrl { get; init; }
+
+    /// <summary>Optional Instagram profile URL (≤256 chars).</summary>
+    public string? InstagramUrl { get; init; }
+
+    /// <summary>Optional English city name (≤128 chars).</summary>
+    public string? City { get; init; }
+
+    /// <summary>Optional Arabic city name (≤128 chars).</summary>
+    public string? CityArabic { get; init; }
+
+    /// <summary>Optional map latitude.</summary>
+    public double? Latitude { get; init; }
+
+    /// <summary>Optional map longitude.</summary>
+    public double? Longitude { get; init; }
 }
 
 /// <summary>D-199 #3 — body of <c>PUT /api/v1/admin/exhibitors/{id}</c>.
@@ -89,12 +131,41 @@ public class UpdateExhibitorRequest
     /// <summary>Optional website (≤512 chars).</summary>
     public string? Website { get; init; }
 
-    /// <summary>SIMF-FDS-014 (D-281) — optional link to a shared <c>Contact</c>
-    /// directory record. Must reference an existing active contact.</summary>
-    public Guid? ContactId { get; init; }
-
     /// <summary>Optional exhibitor tier (null = no tier).</summary>
     public ExhibitorTier? Tier { get; init; }
+
+    // Contact identity-card fields inlined from the removed shared Contact
+    // directory (D-766). All optional; the email + primary phone reuse the
+    // existing ContactEmail / ContactPhone above (no second slot).
+    /// <summary>Optional same-DB country FK (nationality).</summary>
+    public int? CountryId { get; init; }
+
+    /// <summary>Optional secondary contact phone (≤32 chars).</summary>
+    public string? PhoneSecondary { get; init; }
+
+    /// <summary>Optional Facebook profile URL (≤256 chars).</summary>
+    public string? FacebookUrl { get; init; }
+
+    /// <summary>Optional X (Twitter) profile URL (≤256 chars).</summary>
+    public string? XUrl { get; init; }
+
+    /// <summary>Optional LinkedIn profile URL (≤256 chars).</summary>
+    public string? LinkedInUrl { get; init; }
+
+    /// <summary>Optional Instagram profile URL (≤256 chars).</summary>
+    public string? InstagramUrl { get; init; }
+
+    /// <summary>Optional English city name (≤128 chars).</summary>
+    public string? City { get; init; }
+
+    /// <summary>Optional Arabic city name (≤128 chars).</summary>
+    public string? CityArabic { get; init; }
+
+    /// <summary>Optional map latitude.</summary>
+    public double? Latitude { get; init; }
+
+    /// <summary>Optional map longitude.</summary>
+    public double? Longitude { get; init; }
 
     /// <summary>Soft-delete / restore flag.</summary>
     public bool IsActive { get; init; } = true;

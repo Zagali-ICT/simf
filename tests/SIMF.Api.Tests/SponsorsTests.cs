@@ -11,7 +11,6 @@ using SIMF.Contracts.Assets;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Sponsors;
 using SIMF.Domain.Common;
-using SIMF.Domain.Contacts;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Sponsors;
 using SIMF.Infrastructure.Persistence;
@@ -227,12 +226,12 @@ public sealed class SponsorsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Public_sponsor_detail_resolves_city_and_country_from_the_linked_contact()
+    public async Task Public_sponsor_detail_resolves_city_and_country_from_its_own_columns()
     {
-        // Wave 3 — the city + country on the sponsor detail come from the linked
-        // Contact (exercises the Contact-with-country resolve path).
+        // Wave 3 — the city + country on the sponsor detail come from the
+        // sponsor's own inlined columns (the shared Contact directory was
+        // removed) plus the Sponsor→Country join for the country name.
         const int countryId = 682; // SA
-        var contactId = Guid.NewGuid();
         var sponsorId = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
         string expectedCountryEn;
@@ -255,16 +254,6 @@ public sealed class SponsorsTests : IClassFixture<SimfApiFactory>
             expectedCountryEn = country.Name;
             expectedCountryAr = country.NameArabic;
 
-            db.Set<Contact>().Add(new Contact
-            {
-                Id = contactId,
-                NameArabic = "أرامكو المرتبطة",
-                City = "Dhahran",
-                CityArabic = "الظهران",
-                CountryId = countryId,
-                IsActive = true,
-                CreatedAt = now,
-            });
             db.Set<Sponsor>().Add(new Sponsor
             {
                 Id = sponsorId,
@@ -272,7 +261,9 @@ public sealed class SponsorsTests : IClassFixture<SimfApiFactory>
                 // Platinum-"أرامكو" sponsor in this class (the duplicate guard).
                 Name = "Aramco Linked", NameArabic = "أرامكو المرتبطة",
                 Tier = SponsorTier.Platinum,
-                ContactId = contactId,
+                City = "Dhahran",
+                CityArabic = "الظهران",
+                CountryId = countryId,
                 About = "A global energy company.",
                 IsActive = true,
                 CreatedAt = now,
@@ -290,14 +281,13 @@ public sealed class SponsorsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Public_sponsor_list_resolves_name_and_country_from_the_linked_active_contact()
+    public async Task Public_sponsor_list_surfaces_name_country_and_cluster_from_its_own_columns()
     {
         // A5 — the public list card sources its name / logo / website plus the
-        // extra contact cluster (phone / country) from the linked ACTIVE Contact,
-        // resolved through the Sponsor→Contact→Country nav in one query. This
-        // proves the coalesce prefers the contact over the sponsor's inline values.
+        // extra contact cluster (phone / country) from the sponsor's own inlined
+        // columns (the shared Contact directory was removed), resolving the
+        // country name through the Sponsor→Country join in one query.
         const int countryId = 826; // GB
-        var contactId = Guid.NewGuid();
         var sponsorId = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
         string expectedCountryEn;
@@ -320,18 +310,6 @@ public sealed class SponsorsTests : IClassFixture<SimfApiFactory>
             expectedCountryEn = country.Name;
             expectedCountryAr = country.NameArabic;
 
-            db.Set<Contact>().Add(new Contact
-            {
-                Id = contactId,
-                Name = "Contact-Sourced Name",
-                NameArabic = "الاسم من جهة الاتصال",
-                LogoRelativePath = "contacts/logo.png",
-                Website = "https://contact.example",
-                PhonePrimary = "+44 20 7946 0000",
-                CountryId = countryId,
-                IsActive = true,
-                CreatedAt = now,
-            });
             db.Set<Sponsor>().Add(new Sponsor
             {
                 Id = sponsorId,
@@ -339,7 +317,8 @@ public sealed class SponsorsTests : IClassFixture<SimfApiFactory>
                 Tier = SponsorTier.Bronze,
                 Url = "https://sponsor.example",
                 LogoRelativePath = "sponsors/inline.png",
-                ContactId = contactId,
+                PhonePrimary = "+44 20 7946 0000",
+                CountryId = countryId,
                 IsActive = true,
                 CreatedAt = now,
             });
@@ -350,85 +329,25 @@ public sealed class SponsorsTests : IClassFixture<SimfApiFactory>
             .Content.ReadFromJsonAsync<ApiResult<PublicSponsors>>())!.Data!;
         var card = body.Groups.SelectMany(g => g.Sponsors).Single(s => s.Id == sponsorId);
 
-        // Name / logo / website prefer the linked contact over the sponsor inline.
-        Assert.Equal("Contact-Sourced Name", card.NameEn);
-        Assert.Equal("الاسم من جهة الاتصال", card.NameAr);
-        Assert.Equal("contacts/logo.png", card.LogoRelativePath);
-        Assert.Equal("https://contact.example", card.Url);
-        // The extra contact cluster + country name come from the contact.
+        // Name / logo / website come from the sponsor's own inline columns.
+        Assert.Equal("Sponsor Inline Name", card.NameEn);
+        Assert.Equal("الاسم المضمّن للراعي", card.NameAr);
+        Assert.Equal("sponsors/inline.png", card.LogoRelativePath);
+        Assert.Equal("https://sponsor.example", card.Url);
+        // The extra contact cluster + country name come from the sponsor too.
         Assert.Equal("+44 20 7946 0000", card.PhonePrimary);
         Assert.Equal(countryId, card.CountryId);
         Assert.Equal(expectedCountryEn, card.CountryNameEn);
         Assert.Equal(expectedCountryAr, card.CountryNameAr);
     }
 
-    [Fact]
-    public async Task Public_sponsor_ignores_a_soft_deleted_linked_contact()
-    {
-        // A5 regression — a soft-deleted (IsActive == false) linked Contact must
-        // NOT be surfaced: the card falls back to the sponsor's own inline
-        // name / logo / url and exposes none of the contact cluster
-        // (phone / country). This pins the `sponsor.Contact.IsActive` guard that
-        // replaced the old `contact.IsActive` batch filter — the one behaviour the
-        // nav rewrite could have silently dropped on the public wire contract.
-        const int countryId = 250; // FR
-        var contactId = Guid.NewGuid();
-        var sponsorId = Guid.NewGuid();
-        var now = DateTimeOffset.UtcNow;
-
-        using (var scope = _factory.Services.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-            if (await db.Set<Country>().FindAsync(countryId) is null)
-            {
-                db.Add(new Country
-                {
-                    Id = countryId, Code = "FR",
-                    Name = "France", NameArabic = "فرنسا",
-                    IsActive = true, CreatedAt = now,
-                });
-            }
-            db.Set<Contact>().Add(new Contact
-            {
-                Id = contactId,
-                Name = "Hidden Contact",
-                NameArabic = "جهة اتصال مخفية",
-                LogoRelativePath = "contacts/hidden.png",
-                Website = "https://hidden.example",
-                PhonePrimary = "+33 1 00 00 00 00",
-                CountryId = countryId,
-                IsActive = false, // soft-deleted — must be ignored
-                CreatedAt = now,
-            });
-            db.Set<Sponsor>().Add(new Sponsor
-            {
-                Id = sponsorId,
-                Name = "Fallback Sponsor", NameArabic = "الراعي الاحتياطي",
-                Tier = SponsorTier.Bronze,
-                Url = "https://fallback.example",
-                LogoRelativePath = "sponsors/fallback.png",
-                ContactId = contactId,
-                IsActive = true,
-                CreatedAt = now,
-            });
-            await db.SaveChangesAsync();
-        }
-
-        var body = (await (await _client.GetAsync("/api/v1/app/sponsors"))
-            .Content.ReadFromJsonAsync<ApiResult<PublicSponsors>>())!.Data!;
-        var card = body.Groups.SelectMany(g => g.Sponsors).Single(s => s.Id == sponsorId);
-
-        // Falls back to the sponsor's own inline values.
-        Assert.Equal("Fallback Sponsor", card.NameEn);
-        Assert.Equal("الراعي الاحتياطي", card.NameAr);
-        Assert.Equal("sponsors/fallback.png", card.LogoRelativePath);
-        Assert.Equal("https://fallback.example", card.Url);
-        // None of the soft-deleted contact's cluster leaks through.
-        Assert.Null(card.PhonePrimary);
-        Assert.Null(card.CountryId);
-        Assert.Null(card.CountryNameEn);
-        Assert.Null(card.CountryNameAr);
-    }
+    // DELETED — `Public_sponsor_ignores_a_soft_deleted_linked_contact`: its whole
+    // point was the `sponsor.Contact.IsActive` guard / the "fall back to the
+    // sponsor's inline values when the linked Contact is soft-deleted" behaviour of
+    // the removed shared Contact directory. With Contact gone (no ContactId, no
+    // db.Contacts, no Sponsor→Contact nav), the sponsor's identity-card fields ARE
+    // its own inline columns — there is no linked contact to soft-delete or fall
+    // back from, so the behaviour this Fact pinned no longer exists.
 
     [Fact]
     public async Task Admin_update_preserves_the_tagline()

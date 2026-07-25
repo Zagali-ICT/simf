@@ -208,18 +208,6 @@ public static class PermissionCatalog
         public const string Delete = "Regions.Delete";
     }
 
-    /// <summary>SIMF-FDS-014 (D-261) — the shared, de-duplicated contact
-    /// directory (logo / name / phones / social / website / location / country)
-    /// referenced by Company / Sponsor / MediaPartner / Speaker / Booth. Edit
-    /// gates create / update / soft-delete.</summary>
-    public static class Contacts
-    {
-        public const string View = "Contacts.View";
-        public const string Edit = "Contacts.Edit";
-        public const string Export = "Contacts.Export";
-        public const string Import = "Contacts.Import";
-    }
-
     // ── Programme ────────────────────────────────────────────────────────
 
     /// <summary>B9b — D-226: dynamic session-category lookup (FDS-004 §5.4).</summary>
@@ -835,12 +823,6 @@ public static class PermissionCatalog
         new(Regions.Create, "Regions", "Create", "Create regions", AdminOnly),
         new(Regions.Edit, "Regions", "Edit", "Edit regions", AdminOnly),
         new(Regions.Delete, "Regions", "Delete", "Delete regions", AdminOnly),
-
-        // SIMF-FDS-014 — D-261: shared contact directory.
-        new(Contacts.View, "Contacts", "View", "View contacts", AdminOnly),
-        new(Contacts.Edit, "Contacts", "Edit", "Create / edit / delete contacts", AdminOnly),
-        new(Contacts.Export, "Contacts", "Export", "Export contacts", AdminOnly),
-        new(Contacts.Import, "Contacts", "Import", "Import contacts", AdminOnly),
 
         // Programme
         new(Themes.View, "Themes", "View", "View themes", AdminOnly),

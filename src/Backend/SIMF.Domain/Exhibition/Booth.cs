@@ -1,5 +1,4 @@
 using SIMF.Domain.Common;
-using SIMF.Domain.Contacts;
 using SIMF.Domain.Exhibitors;
 using SIMF.Domain.Programme;
 
@@ -59,16 +58,48 @@ public class Booth : BaseAuditEntity
     /// <summary>B1 — D-222: booth-officer email (≤ 320 chars). Optional.</summary>
     public string? OfficerEmail { get; set; }
 
-    /// <summary>SIMF-FDS-014 (D-260 / OI-1) — optional link to the shared
-    /// <c>Contact</c> directory record for the booth <b>officer</b> (a person,
-    /// distinct from the exhibitor, which is linked via
-    /// <see cref="ExhibitorId"/>). Null until linked; multiple entities may
-    /// reference the same Contact.</summary>
-    public Guid? ContactId { get; set; }
+    /// <summary>Arabic booth-officer name (≤ 256 chars). Optional. Prefixed
+    /// <c>Officer</c> because the bare <see cref="NameArabic"/> is the BOOTH's
+    /// own Arabic name; the officer is a distinct person.</summary>
+    public string? OfficerNameArabic { get; set; }
 
-    /// <summary>A5 — navigation for <see cref="ContactId"/> (same FK): the booth
-    /// officer's shared <c>Contact</c> record.</summary>
-    public Contact? OfficerContact { get; set; }
+    /// <summary>Booth-officer secondary phone (≤ 32 chars). Optional.</summary>
+    public string? OfficerPhoneSecondary { get; set; }
+
+    /// <summary>Booth-officer website URL (≤ 512 chars). Optional.</summary>
+    public string? OfficerWebsite { get; set; }
+
+    /// <summary>Booth-officer Facebook URL (≤ 256 chars). Optional.</summary>
+    public string? OfficerFacebookUrl { get; set; }
+
+    /// <summary>Booth-officer X (Twitter) URL (≤ 256 chars). Optional.</summary>
+    public string? OfficerXUrl { get; set; }
+
+    /// <summary>Booth-officer LinkedIn URL (≤ 256 chars). Optional.</summary>
+    public string? OfficerLinkedInUrl { get; set; }
+
+    /// <summary>Booth-officer Instagram URL (≤ 256 chars). Optional.</summary>
+    public string? OfficerInstagramUrl { get; set; }
+
+    /// <summary>Booth-officer city, English (≤ 128 chars). Optional.</summary>
+    public string? OfficerCity { get; set; }
+
+    /// <summary>Booth-officer city, Arabic (≤ 128 chars). Optional.</summary>
+    public string? OfficerCityArabic { get; set; }
+
+    /// <summary>Booth-officer map latitude. Optional.</summary>
+    public double? OfficerLatitude { get; set; }
+
+    /// <summary>Booth-officer map longitude. Optional.</summary>
+    public double? OfficerLongitude { get; set; }
+
+    /// <summary>Booth-officer country, an optional logical FK to
+    /// <c>Country.Id</c> (same App DB). Null until set.</summary>
+    public int? OfficerCountryId { get; set; }
+
+    /// <summary>A5 — navigation for <see cref="OfficerCountryId"/> (same FK):
+    /// the booth officer's country.</summary>
+    public Country? OfficerCountry { get; set; }
 
     /// <summary>English exhibitor / company name (≤ 256 chars). Legacy free-text
     /// fallback retained for the public wire contract (D-219) and pre-D-222

@@ -72,18 +72,29 @@ public class Speaker : BaseAuditEntity
     /// <summary>D-153 — optional X (formerly Twitter) profile URL.</summary>
     public string? XUrl { get; set; }
 
+    /// <summary>Optional Instagram profile URL. Inlined from the removed shared
+    /// <c>Contact</c> directory (its identity-card fields now live on each
+    /// entity); grouped with the other opted-in social URLs above.</summary>
+    public string? InstagramUrl { get; set; }
+
     /// <summary>D-544 — optional personal / organisation website URL the
     /// speaker has chosen to publish. Surfaced on the public profile under
     /// the same data-sharing consent gate as the social URLs.</summary>
     public string? WebsiteUrl { get; set; }
 
-    public string? PhotoRelativePath { get; set; }
+    // Contact identity-card fields inlined from the removed shared Contact
+    // directory (supersedes SIMF-FDS-014 / D-260). All nullable. Nationality
+    // (CountryId/Country) is NOT re-added here — the speaker's existing
+    // nationality FK above is reused as the country slot.
+    public string? Email { get; set; }
+    public string? PhonePrimary { get; set; }
+    public string? PhoneSecondary { get; set; }
+    public string? City { get; set; }
+    public string? CityArabic { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
 
-    /// <summary>SIMF-FDS-014 (D-260) — optional link to the shared <c>Contact</c>
-    /// directory record (logo / name / phones / social / website / location /
-    /// country). Null until linked; multiple entities may reference the same
-    /// Contact. The public projection prefers the Contact when set.</summary>
-    public Guid? ContactId { get; set; }
+    public string? PhotoRelativePath { get; set; }
 
     public int DisplayOrder { get; set; }
 }

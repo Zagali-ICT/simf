@@ -1677,12 +1677,6 @@ class AppL10n {
   String get meetPeopleError =>
       _t('تعذّر تحميل الدليل.', 'Could not load the directory.');
 
-  // D-736 — "Show me in Meet People Like You" visibility toggle (sign-up / settings).
-  String get showInMeetLikeYou => _t(
-        'هل يظهر علي قابل أشخاص مثلك',
-        'Show me in Meet People Like You',
-      );
-
   // Accessibility (Page 038; Figma 1116:16630 — client-local settings, no API).
   String get accessibilityTitle => _t('إمكانية الوصول', 'Accessibility');
   String get accessibilityIntro => _t(

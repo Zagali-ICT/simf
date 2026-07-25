@@ -61,4 +61,7 @@ public enum FileService
 
     /// <summary>Exhibition booth logo (owner = Booth.Id). Public read.</summary>
     BoothLogo = 15,
+
+    /// <summary>Exhibitor company logo (owner = Exhibitor.Id). Public read.</summary>
+    ExhibitorLogo = 16,
 }

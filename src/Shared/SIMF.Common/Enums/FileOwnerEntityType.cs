@@ -28,4 +28,5 @@ public enum FileOwnerEntityType
     OrganizationProfile = 12,
     Banner = 13,
     Booth = 14,
+    Exhibitor = 15,
 }

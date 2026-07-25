@@ -98,8 +98,17 @@ public sealed class UpdateSpeakerRequest
     public string? XUrl { get; set; }
     public string? WebsiteUrl { get; set; }
     public int DisplayOrder { get; set; }
-    public Guid? ContactId { get; set; }
     public bool IsActive { get; set; } = true;
+
+    // Contact identity-card fields inlined from the removed Contact directory (D-766).
+    public string? Email { get; set; }
+    public string? PhonePrimary { get; set; }
+    public string? PhoneSecondary { get; set; }
+    public string? InstagramUrl { get; set; }
+    public string? City { get; set; }
+    public string? CityArabic { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
 }
 
 public sealed class UpdateSpeakerEndpoint(IAdminSpeakerService service)
@@ -147,8 +156,15 @@ public sealed class UpdateSpeakerEndpoint(IAdminSpeakerService service)
                     XUrl = req.XUrl,
                     WebsiteUrl = req.WebsiteUrl,
                     DisplayOrder = req.DisplayOrder,
-                    ContactId = req.ContactId,
                     IsActive = req.IsActive,
+                    Email = req.Email,
+                    PhonePrimary = req.PhonePrimary,
+                    PhoneSecondary = req.PhoneSecondary,
+                    InstagramUrl = req.InstagramUrl,
+                    City = req.City,
+                    CityArabic = req.CityArabic,
+                    Latitude = req.Latitude,
+                    Longitude = req.Longitude,
                 }, ct)), ct);
     }
 }

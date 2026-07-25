@@ -15,8 +15,8 @@ import 'booth_officer_row.dart';
 /// name beside the square logo tile, over a gold hairline), the gold **code
 /// pill** beside the deep-navy **hall box**, the booth-officer row + email /
 /// phone contact boxes (D-432, shown only when the wire carries them), and a
-/// full-width gold **guide-me** CTA. P6 — D-440: the logo tile renders the
-/// exhibitor's real CompanyLogo (D-357), initials fallback.
+/// full-width gold **guide-me** CTA. The logo tile renders the booth's own
+/// BoothLogo (D-357), short-name initials fallback.
 class BoothCard extends StatelessWidget {
   const BoothCard({
     required this.booth,
