@@ -20,11 +20,11 @@ import 'widgets/meeting_action_row.dart';
 import 'widgets/meeting_card.dart';
 
 /// Bilateral meetings — اللقاءات الثنائية · route: [RouteNames.meetings]
-/// Purpose: a VIP-only page listing the user's **approved + upcoming** bilateral
-///   meetings (speaker + delegation), with a "طلب جديد" create action and a
-///   "السجل" link to the full requests history. Split from the requests-history
-///   page (owner 2026-07-11, D-745) which stays in My-Area.
-/// Data: [upcomingMeetingsProvider] (a filtered view of [myRequestsProvider] —
+/// Purpose: lists **all** the user's bilateral meeting requests (speaker +
+///   delegation), each carrying its status (pending / accepted / rejected /
+///   cancelled), above the two "request meeting" buttons and the "السجل" link to
+///   the full requests history (R9, D-767; was accepted+upcoming only, D-745).
+/// Data: [myMeetingRequestsProvider] (a filtered view of [myRequestsProvider] —
 ///   `GET /app/my-requests`), gated by [currentUserMeetingAccessProvider].
 /// Figma: 1408:9726 (اللقاءات الثنائية).
 /// Perf: non-lazy ListView over the (small) meetings subset; pull-to-refresh.
@@ -97,7 +97,7 @@ class _MeetingsScreenState extends ConsumerState<MeetingsScreen> {
   /// Pull-to-refresh — re-fetch the shared feed the meetings view derives from.
   Future<void> _refresh() async {
     ref.invalidate(myRequestsProvider);
-    await ref.read(upcomingMeetingsProvider.future);
+    await ref.read(myMeetingRequestsProvider.future);
   }
 
   @override
@@ -129,7 +129,7 @@ class _MeetingsScreenState extends ConsumerState<MeetingsScreen> {
       );
 
   Widget _meetingsBody(AppL10n l10n, MeetingAccess access) {
-    return ref.watch(upcomingMeetingsProvider).when(
+    return ref.watch(myMeetingRequestsProvider).when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (_, __) => SimfPullToRefresh(
             onRefresh: _refresh,
