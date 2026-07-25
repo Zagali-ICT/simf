@@ -22,10 +22,12 @@ import '../data/seat_map_models.dart';
 /// * [swatchSize] — the reserved/mine legend swatches (14 on My-Seat per the
 ///   frame, 16 on the picker); the available swatch is always 16.
 ///
-/// Each row is drawn at its own width: seats are sized to the widest row
-/// ([SessionSeatMap.maxSeatsPerRow]) so every square is identical, and a short
-/// row draws fewer seats centred under the stage with its label pinned start.
-class HallSeatMapCard extends StatelessWidget {
+/// Each row is drawn at its own width at a FIXED, readable seat size (never
+/// shrunk to fit): every square is identical and a short row draws fewer seats
+/// with its label pinned start. A hall wider than the card SCROLLS horizontally
+/// (drag left/right) so all seats stay legible; a hall that already fits is
+/// centred and does not scroll.
+class HallSeatMapCard extends StatefulWidget {
   const HallSeatMapCard({
     required this.map,
     required this.l10n,
@@ -45,16 +47,32 @@ class HallSeatMapCard extends StatelessWidget {
   final String? selectedRowLabel;
   final int? selectedSeatNumber;
   final bool busy;
+  // The fixed square size each seat is drawn at (my-seat 20 / picker 26). Seats
+  // are never shrunk below this to fit — a wide row scrolls instead.
   final double maxSeatSize;
   final Color availableBorderColor;
   final double swatchSize;
 
   @override
+  State<HallSeatMapCard> createState() => _HallSeatMapCardState();
+}
+
+class _HallSeatMapCardState extends State<HallSeatMapCard> {
+  // Owns the grid's horizontal scroll so a wide hall can be dragged left/right
+  // and the scrollbar can hint there are more seats off the card edge.
+  final ScrollController _hScroll = ScrollController();
+
+  @override
+  void dispose() {
+    _hScroll.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final map = widget.map;
+    final l10n = widget.l10n;
     final reserved = map.reservedKeys();
-    // Seats are sized to the WIDEST row so every square is identical; a short
-    // row simply draws fewer of them (centred by _SeatGridRow).
-    final columns = map.maxSeatsPerRow;
     return Container(
       padding: const EdgeInsets.all(SimfTokens.space4),
       decoration: BoxDecoration(
@@ -66,37 +84,61 @@ class HallSeatMapCard extends StatelessWidget {
           _StageBar(label: l10n.stageLabelBilingual),
           const SizedBox(height: SimfTokens.space6),
           // The hall plan keeps the stage at the top and seat columns in venue
-          // order — do not mirror the grid geometry in RTL (L-7). The seats are
-          // square and sized to the width (see _SeatGridRow), centred by this
-          // Column, so the full row is always visible — no horizontal scroll.
+          // order — do not mirror the grid geometry in RTL (L-7), so it is
+          // forced LTR. Seats are a fixed size (see _SeatGridRow): a hall that
+          // fits is centred under the stage; a wider hall overflows this width
+          // and the grid scrolls horizontally so every seat stays visible.
           Directionality(
             textDirection: TextDirection.ltr,
-            child: Column(
-              children: <Widget>[
-                for (final (index, row) in map.rowLabels.indexed) ...<Widget>[
-                  if (index > 0) const SizedBox(height: SimfTokens.space4),
-                  _SeatGridRow(
-                    rowLabel: row,
-                    columns: columns,
-                    seatCount: map.seatsInRow(index),
-                    reserved: reserved,
-                    map: map,
-                    l10n: l10n,
-                    maxSeatSize: maxSeatSize,
-                    availableBorderColor: availableBorderColor,
-                    selectedRowLabel: selectedRowLabel,
-                    selectedSeatNumber: selectedSeatNumber,
-                    onSeatTap: busy ? null : onSeatTap,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final grid = Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    for (final (index, row)
+                        in map.rowLabels.indexed) ...<Widget>[
+                      if (index > 0)
+                        const SizedBox(height: SimfTokens.space4),
+                      _SeatGridRow(
+                        rowLabel: row,
+                        seatCount: map.seatsInRow(index),
+                        seatSize: widget.maxSeatSize,
+                        reserved: reserved,
+                        map: map,
+                        l10n: l10n,
+                        availableBorderColor: widget.availableBorderColor,
+                        selectedRowLabel: widget.selectedRowLabel,
+                        selectedSeatNumber: widget.selectedSeatNumber,
+                        onSeatTap: widget.busy ? null : widget.onSeatTap,
+                      ),
+                    ],
+                    // Clears the horizontal scrollbar track from the last row.
+                    const SizedBox(height: SimfTokens.space3),
+                  ],
+                );
+                return Scrollbar(
+                  controller: _hScroll,
+                  thumbVisibility: true,
+                  child: SingleChildScrollView(
+                    controller: _hScroll,
+                    scrollDirection: Axis.horizontal,
+                    child: ConstrainedBox(
+                      // A narrow hall centres under the stage; a wide hall
+                      // exceeds this min width and the view scrolls left/right.
+                      constraints:
+                          BoxConstraints(minWidth: constraints.maxWidth),
+                      child: Center(child: grid),
+                    ),
                   ),
-                ],
-              ],
+                );
+              },
             ),
           ),
           const SizedBox(height: SimfTokens.space6),
           _Legend(
             l10n: l10n,
-            availableBorderColor: availableBorderColor,
-            swatchSize: swatchSize,
+            availableBorderColor: widget.availableBorderColor,
+            swatchSize: widget.swatchSize,
           ),
         ],
       ),
@@ -137,12 +179,11 @@ class _StageBar extends StatelessWidget {
 class _SeatGridRow extends StatelessWidget {
   const _SeatGridRow({
     required this.rowLabel,
-    required this.columns,
     required this.seatCount,
+    required this.seatSize,
     required this.reserved,
     required this.map,
     required this.l10n,
-    required this.maxSeatSize,
     required this.availableBorderColor,
     this.selectedRowLabel,
     this.selectedSeatNumber,
@@ -150,14 +191,14 @@ class _SeatGridRow extends StatelessWidget {
   });
 
   final String rowLabel;
-  // The widest row's count — the seat SIZE denominator so all rows match.
-  final int columns;
   // This row's own count — how many seats it actually draws.
   final int seatCount;
+  // The fixed square size every seat is drawn at (no shrink-to-fit); all rows
+  // share it so seats align column-for-column and a wide row scrolls off-edge.
+  final double seatSize;
   final Set<String> reserved;
   final SessionSeatMap map;
   final AppL10n l10n;
-  final double maxSeatSize;
   final Color availableBorderColor;
   final String? selectedRowLabel;
   final int? selectedSeatNumber;
@@ -191,12 +232,12 @@ class _SeatGridRow extends StatelessWidget {
     }
   }
 
-  Widget _seat(int seat, double size) {
+  Widget _seat(int seat) {
     final status = _statusFor(seat);
     final tappable = onSeatTap != null &&
         (status == _SeatStatus.available || status == _SeatStatus.selected);
     return _SeatBox(
-      size: size,
+      size: seatSize,
       seatNumber: seat,
       status: status,
       availableBorderColor: availableBorderColor,
@@ -207,49 +248,27 @@ class _SeatGridRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // `hasLayout` (the caller) already rejects an empty hall; localise that
-    // invariant here so the seat-size math below can never divide by zero.
-    assert(columns > 0, 'columns must be > 0 (guarded by hasLayout)');
-    // Seats are SQUARES (frame 902:1406). They shrink to fit a narrow (phone)
-    // width but never stretch into wide rectangles on a tablet: each is capped
-    // at [maxSeatSize] and sized to [columns] (the widest row) so every row's
-    // squares match. Frame 902:1402 = row letter (12px box) + 8px.
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        const labelWidth = SimfTokens.seatRowLabelWidth;
-        const seatGap = SimfTokens.gap6;
-        final seatsArea = constraints.maxWidth - labelWidth - SimfTokens.space2;
-        final fit = (seatsArea - seatGap * (columns - 1)) / columns;
-        final seat = fit.clamp(0.0, maxSeatSize);
-        return Row(
-          children: <Widget>[
-            // The row letter is pinned at the start so short rows stay aligned.
-            SizedBox(
-              width: labelWidth,
-              child: Text(
-                rowLabel,
-                textAlign: TextAlign.center,
-                style: SimfTokens.labelBeigeSm,
-              ),
-            ),
-            const SizedBox(width: SimfTokens.space2),
-            // Short rows draw fewer seats, centred in the shared seats area.
-            Expanded(
-              child: Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    for (var s = 1; s <= seatCount; s++) ...<Widget>[
-                      if (s > 1) const SizedBox(width: seatGap),
-                      _seat(s, seat),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+    // Seats are SQUARES (frame 902:1406) drawn at a fixed [seatSize] — never
+    // shrunk to fit — so every seat and its reserved / available state stays
+    // legible; a row wider than the card scrolls (see HallSeatMapCard). Frame
+    // 902:1402 = row letter (12px box) + 8px, pinned start so rows align.
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        SizedBox(
+          width: SimfTokens.seatRowLabelWidth,
+          child: Text(
+            rowLabel,
+            textAlign: TextAlign.center,
+            style: SimfTokens.labelBeigeSm,
+          ),
+        ),
+        const SizedBox(width: SimfTokens.space2),
+        for (var s = 1; s <= seatCount; s++) ...<Widget>[
+          if (s > 1) const SizedBox(width: SimfTokens.gap6),
+          _seat(s),
+        ],
+      ],
     );
   }
 }
