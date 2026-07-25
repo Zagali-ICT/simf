@@ -54,7 +54,7 @@
                 <SimfDataGridColumn TItem="AdminAiInvocationRow" Key="createdAt"
                                     Header="@L["Admin.AiInvocations.Col.Time"]"
                                     Sortable="true">
-                    <CellTemplate>@context.CreatedAt.FormatSaudi("yyyy-MM-dd hh:mm:ss tt")</CellTemplate>
+                    <CellTemplate>@context.CreatedAt.FormatSaudi("dd-MM-yyyy hh:mm:ss tt")</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminAiInvocationRow" Key="promptKey"
                                     Header="@L["Admin.AiInvocations.Col.PromptKey"]"

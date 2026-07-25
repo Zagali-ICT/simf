@@ -23,10 +23,10 @@ public static class SaudiTime
     public static readonly TimeSpan Offset = TimeSpan.FromHours(3);
 
     /// <summary>Default date+time render format (Saudi wall clock, 12-hour AM/PM).</summary>
-    public const string DateTimeFormat = "yyyy-MM-dd hh:mm tt";
+    public const string DateTimeFormat = "dd-MM-yyyy hh:mm tt";
 
     /// <summary>Default date-only render format.</summary>
-    public const string DateFormat = "yyyy-MM-dd";
+    public const string DateFormat = "dd-MM-yyyy";
 
     /// <summary>Time-only render format (Saudi wall clock, 12-hour AM/PM).</summary>
     public const string TimeFormat = "hh:mm tt";

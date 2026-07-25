@@ -1828,7 +1828,7 @@ class AppL10n {
   String get aboutAppTitle => _t('عن التطبيق', 'About the app');
   String get aboutAppInfoTitle => _t('معلومات التطبيق', 'App information');
   String get aboutAppReleaseDateLabel => _t('تاريخ الإصدار', 'Release date');
-  String get aboutAppReleaseDate => _t('2026-07-06', '2026-07-06');
+  String get aboutAppReleaseDate => _t('06-07-2026', '06-07-2026');
   String get aboutAppOrganizerLabel => _t('الجهة المنظمة', 'Organizer');
   String get aboutAppOrganizerValue =>
       _t('القوات البحرية الملكية السعودية', 'Royal Saudi Naval Forces');

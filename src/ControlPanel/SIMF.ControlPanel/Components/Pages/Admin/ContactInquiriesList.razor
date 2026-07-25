@@ -68,7 +68,7 @@
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminContactInquiryRow" Key="createdAt"
                                     Header="@L["Admin.ContactInquiries.Col.Received"]" Sortable="true">
-                    <CellTemplate>@context.CreatedAt.FormatSaudi("yyyy-MM-dd hh:mm tt")</CellTemplate>
+                    <CellTemplate>@context.CreatedAt.FormatSaudi("dd-MM-yyyy hh:mm tt")</CellTemplate>
                 </SimfDataGridColumn>
             </Columns>
             <RowActions>

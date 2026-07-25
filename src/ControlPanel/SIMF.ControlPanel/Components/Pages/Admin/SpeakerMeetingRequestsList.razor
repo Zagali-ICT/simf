@@ -90,13 +90,13 @@
                 <SimfDataGridColumn TItem="AdminSpeakerMeetingRequestRow" Key="createdAt"
                                     Header="@L["Admin.SpeakerMeetingRequests.Col.CreatedAt"]"
                                     Sortable="true">
-                    <CellTemplate>@context.CreatedAt.FormatSaudi("yyyy-MM-dd hh:mm tt")</CellTemplate>
+                    <CellTemplate>@context.CreatedAt.FormatSaudi("dd-MM-yyyy hh:mm tt")</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminSpeakerMeetingRequestRow" Key="respondedAt"
                                     Header="@L["Admin.SpeakerMeetingRequests.Col.RespondedAt"]"
                                     Sortable="true">
                     <CellTemplate>
-                        @(context.RespondedAt.FormatSaudi("yyyy-MM-dd hh:mm tt", "—"))
+                        @(context.RespondedAt.FormatSaudi("dd-MM-yyyy hh:mm tt", "—"))
                     </CellTemplate>
                 </SimfDataGridColumn>
             </Columns>

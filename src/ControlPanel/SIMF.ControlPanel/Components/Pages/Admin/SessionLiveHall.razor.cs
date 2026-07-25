@@ -169,7 +169,7 @@ public partial class SessionLiveHall
             : L["Admin.SessionLiveHall.OpenSeating"];
 
     private static string EnteredUtc(DateTimeOffset enterUtc) =>
-        enterUtc.FormatSaudi("yyyy-MM-dd hh:mm tt");
+        enterUtc.FormatSaudi("dd-MM-yyyy hh:mm tt");
 
     private string MethodLabel(AttendanceMethod method) => method switch
     {

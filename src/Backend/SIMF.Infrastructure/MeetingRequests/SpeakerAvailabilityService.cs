@@ -73,9 +73,9 @@ internal sealed class SpeakerAvailabilityService(
             {
                 throw new ApiException(ErrorCodes.ValidationFailed, 400,
                     $"Availability windows can only be set within the forum days "
-                        + $"({bounds.MinDate:yyyy-MM-dd} to {bounds.MaxDate:yyyy-MM-dd}).",
+                        + $"({bounds.MinDate:dd-MM-yyyy} to {bounds.MaxDate:dd-MM-yyyy}).",
                     $"لا يمكن تحديد فترات التوفّر إلا خلال أيام الملتقى "
-                        + $"({bounds.MinDate:yyyy-MM-dd} إلى {bounds.MaxDate:yyyy-MM-dd}).");
+                        + $"({bounds.MinDate:dd-MM-yyyy} إلى {bounds.MaxDate:dd-MM-yyyy}).");
             }
         }
 

@@ -24,8 +24,8 @@ public static class EventTime
     public static string Window(DateTimeOffset start, DateTimeOffset end) =>
         $"{Time(start)} – {Time(end)}";
 
-    // "yyyy-MM-dd hh:mm tt" date + 12-hour time in event-local time (e.g. a
+    // "dd-MM-yyyy hh:mm tt" date + 12-hour time in event-local time (e.g. a
     // notification timestamp), in the current culture.
     public static string DateTimeText(DateTimeOffset instant) =>
-        Local(instant).ToString("yyyy-MM-dd hh:mm tt", CultureInfo.CurrentUICulture);
+        Local(instant).ToString("dd-MM-yyyy hh:mm tt", CultureInfo.CurrentUICulture);
 }

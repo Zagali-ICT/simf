@@ -105,7 +105,7 @@
                 <SimfDataGridColumn TItem="AdminOperationLogSummary" Key="timestampUtc"
                                     Header="@L["Admin.OperationLog.Column.Timestamp"]"
                                     Sortable="true">
-                    <CellTemplate>@context.TimestampUtc.FormatSaudi("yyyy-MM-dd hh:mm:ss tt")</CellTemplate>
+                    <CellTemplate>@context.TimestampUtc.FormatSaudi("dd-MM-yyyy hh:mm:ss tt")</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminOperationLogSummary" Key="eventType"
                                     Header="@L["Admin.OperationLog.Column.EventType"]"
@@ -156,7 +156,7 @@
             {
                 <dl class="simf-dl">
                     <dt>@L["Admin.OperationLog.Column.Timestamp"]</dt>
-                    <dd>@_detailsDetail.TimestampUtc.FormatSaudi("yyyy-MM-dd hh:mm:ss tt")</dd>
+                    <dd>@_detailsDetail.TimestampUtc.FormatSaudi("dd-MM-yyyy hh:mm:ss tt")</dd>
                     <dt>@L["Admin.OperationLog.Column.EventType"]</dt>
                     <dd>@_detailsDetail.EventType</dd>
                     <dt>@L["Admin.OperationLog.Column.Outcome"]</dt>
