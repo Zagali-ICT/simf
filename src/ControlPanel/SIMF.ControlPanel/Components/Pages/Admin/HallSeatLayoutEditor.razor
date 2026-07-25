@@ -26,7 +26,7 @@
         }
         else
         {
-            <label class="simf-field">
+            <label class="simf-field simf-field--inline">
                 <span class="simf-field__label">@L["Admin.HallSeatLayouts.Pick"]</span>
                 <select class="simf-field__input" value="@(_selectedHallId?.ToString() ?? string.Empty)"
                         @onchange="OnHallChangedAsync" disabled="@_loading">
