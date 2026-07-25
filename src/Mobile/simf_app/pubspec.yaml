@@ -88,6 +88,17 @@ dependencies:
   pretty_dio_logger: ^1.4.0
   firebase_core: ^4.12.1
 
+# D-768 — vendored copy of video_player_android 2.12.0, patched so the hero
+# background video plays on Huawei/HiSilicon devices. Their hardware AVC decoder
+# (OMX.hisi.video.decoder.avc) fails to initialise even though format_supported=YES;
+# the patch builds ExoPlayer with DefaultRenderersFactory.setEnableDecoderFallback(true)
+# (falls back to the Android software AVC decoder) + forceDisableMediaCodecAsynchronousQueueing().
+# See third_party/video_player_android/android/.../TextureVideoPlayer.java +
+# PlatformViewVideoPlayer.java. Remove once the upstream plugin exposes these knobs.
+dependency_overrides:
+  video_player_android:
+    path: third_party/video_player_android
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
