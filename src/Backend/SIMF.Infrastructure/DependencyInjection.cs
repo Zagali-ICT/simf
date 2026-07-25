@@ -318,6 +318,13 @@ public static class DependencyInjection
             SIMF.Infrastructure.Configuration.OrganizationProfileReadService>();
         services.AddScoped<SIMF.Application.Configuration.Abstractions.IOrganizationProfileAdminService,
             SIMF.Infrastructure.Configuration.OrganizationProfileAdminService>();
+        // D-768 — the CP-uploaded hero background video, served from our own API
+        // (streamed store + public Range serve) so the Flutter home hero plays it on
+        // Android, where a clipped YouTube WebView cannot render into the band (D-761).
+        services.AddScoped<SIMF.Application.Configuration.Abstractions.IOrganizationHeroVideoService,
+            SIMF.Infrastructure.Configuration.OrganizationHeroVideoService>();
+        services.Configure<SIMF.Infrastructure.Configuration.OrganizationHeroVideoOptions>(
+            configuration.GetSection(SIMF.Infrastructure.Configuration.OrganizationHeroVideoOptions.SectionName));
         // P2.5 — D-230 (FR-605): 2D venue map (admin CRUD + public read).
         services.AddScoped<SIMF.Application.Venue.Abstractions.IVenueMapService,
             SIMF.Infrastructure.Venue.VenueMapService>();
