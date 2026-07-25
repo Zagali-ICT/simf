@@ -605,24 +605,15 @@ internal sealed class SpeakerMeetingRequestService(
 
     private static string HtmlEnc(string value) => System.Net.WebUtility.HtmlEncode(value);
 
-    // The speaker's contact email — the ContactId on Speaker is a bare Guid resolved
-    // on read (no nav). Shared by the accept-outcome email and the D-717 links email.
-    private async Task<string?> ResolveSpeakerContactEmailAsync(
-        Guid speakerId, CancellationToken cancellationToken)
-    {
-        var contactId = await appDbContext.Speakers.AsNoTracking()
+    // The speaker's contact email — now an inline column on Speaker (D-766 removed
+    // the shared Contact directory). Shared by the accept-outcome email and the
+    // D-717 links email.
+    private Task<string?> ResolveSpeakerContactEmailAsync(
+        Guid speakerId, CancellationToken cancellationToken) =>
+        appDbContext.Speakers.AsNoTracking()
             .Where(s => s.Id == speakerId)
-            .Select(s => s.ContactId)
+            .Select(s => s.Email)
             .SingleOrDefaultAsync(cancellationToken);
-        if (contactId is not { } id)
-        {
-            return null;
-        }
-        return await appDbContext.Contacts.AsNoTracking()
-            .Where(c => c.Id == id)
-            .Select(c => c.Email)
-            .SingleOrDefaultAsync(cancellationToken);
-    }
 
     // The fixed enqueue shape for a speaker-facing email (subjectUserId is Guid.Empty
     // — the speaker is not a SIMF account). Shared by the two speaker emails.
@@ -777,7 +768,7 @@ internal sealed class SpeakerMeetingRequestService(
         var accepted = req.Status == MeetingRequestStatus.Accepted;
         var speaker = await appDbContext.Speakers.AsNoTracking()
             .Where(s => s.Id == req.SpeakerId)
-            .Select(s => new { s.Name, s.ContactId })
+            .Select(s => new { s.Name, s.Email })
             .SingleOrDefaultAsync(cancellationToken);
         var speakerName = speaker?.Name ?? "the speaker";
 
@@ -799,12 +790,9 @@ internal sealed class SpeakerMeetingRequestService(
             SendEmail = false,
         }, logger, cancellationToken);
 
-        if (accepted && speaker?.ContactId is { } contactId)
+        if (accepted)
         {
-            var contactEmail = await appDbContext.Contacts.AsNoTracking()
-                .Where(c => c.Id == contactId)
-                .Select(c => c.Email)
-                .SingleOrDefaultAsync(cancellationToken);
+            var contactEmail = speaker?.Email;
             if (!string.IsNullOrWhiteSpace(contactEmail))
             {
                 var slot = req.SlotStartUtc is { } s

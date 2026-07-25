@@ -15,7 +15,6 @@ using SIMF.Contracts.Exhibitors;
 using SIMF.Contracts.Email;
 using SIMF.Contracts.Faq;
 using SIMF.Contracts.Organisations;
-using SIMF.Contracts.Contacts;
 using SIMF.Contracts.Feedback;
 using SIMF.Contracts.Logs;
 using SIMF.Contracts.Media;
@@ -2959,59 +2958,10 @@ public sealed class SimfAdminClient(HttpClient http)
             accessToken, cancellationToken);
     }
 
-    // -- SIMF-FDS-014 (D-281/C2) — shared Contact directory admin CRUD + picker
-    //    (SIMF.Contracts.Contacts) -------------------------------------------
-
-    public Task<ApiCallResult<GridPage<AdminContactSummary>>> ListContactsAsync(
-        GridQuery query, string accessToken,
-        CancellationToken cancellationToken = default) =>
-        SendAsync<GridPage<AdminContactSummary>>(
-            HttpMethod.Post, "contacts/list",
-            JsonContent.Create(query, options: JsonOptions),
-            accessToken, cancellationToken);
-
-    public Task<ApiCallResult<AdminContactDetail>> GetContactAsync(
-        Guid id, string accessToken,
-        CancellationToken cancellationToken = default) =>
-        SendAsync<AdminContactDetail>(
-            HttpMethod.Get, $"contacts/{id}", content: null,
-            accessToken, cancellationToken);
-
-    public Task<ApiCallResult<AdminContactDetail>> CreateContactAsync(
-        CreateContactRequest request, string accessToken,
-        CancellationToken cancellationToken = default) =>
-        SendAsync<AdminContactDetail>(
-            HttpMethod.Post, "contacts",
-            JsonContent.Create(request, options: JsonOptions),
-            accessToken, cancellationToken);
-
-    public Task<ApiCallResult<AdminContactDetail>> UpdateContactAsync(
-        Guid id, UpdateContactRequest request, string accessToken,
-        CancellationToken cancellationToken = default) =>
-        SendAsync<AdminContactDetail>(
-            HttpMethod.Put, $"contacts/{id}",
-            JsonContent.Create(request, options: JsonOptions),
-            accessToken, cancellationToken);
-
-    public Task<ApiCallResult<bool>> DeactivateContactAsync(
-        Guid id, string accessToken,
-        CancellationToken cancellationToken = default) =>
-        SendAsync<bool>(
-            HttpMethod.Delete, $"contacts/{id}", content: null,
-            accessToken, cancellationToken);
-
-    public Task<ApiCallResult<IReadOnlyList<ContactPickerItem>>> PickerContactsAsync(
-        string? search, string accessToken,
-        CancellationToken cancellationToken = default) =>
-        SendAsync<IReadOnlyList<ContactPickerItem>>(
-            HttpMethod.Get,
-            $"contacts/picker?search={Uri.EscapeDataString(search ?? string.Empty)}",
-            content: null, accessToken, cancellationToken);
-
-    // SIMF-FDS-014 (D-283/C2b) — single-row detail fetch so the Sponsor /
-    // MediaPartner edit modals can pre-load the linked ContactId for the picker
-    // (their backend GET endpoints already exist; only these client + BFF
-    // passthroughs were missing). Mirrors GetOrganisationAsync.
+    // single-row detail fetch so the Sponsor / MediaPartner edit modals can
+    // pre-load the row for editing (their backend GET endpoints already exist;
+    // only these client + BFF passthroughs were missing). Mirrors
+    // GetOrganisationAsync.
     public Task<ApiCallResult<AdminSponsorDetail>> GetSponsorAsync(
         Guid id, string accessToken,
         CancellationToken cancellationToken = default) =>

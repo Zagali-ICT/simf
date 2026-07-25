@@ -162,8 +162,6 @@ internal sealed class AssetService(
         {
             AssetCategory.SpeakerPhoto => dbContext.Speakers
                 .AnyAsync(x => x.Id == ownerId && x.IsActive, cancellationToken),
-            AssetCategory.CompanyLogo => dbContext.Contacts
-                .AnyAsync(x => x.Id == ownerId && x.IsActive, cancellationToken),
             AssetCategory.MediaPartnerLogo => dbContext.MediaPartners
                 .AnyAsync(x => x.Id == ownerId && x.IsActive, cancellationToken),
             AssetCategory.SponsorLogo => dbContext.Sponsors
@@ -361,12 +359,6 @@ internal sealed class AssetService(
                         .Where(x => ids.Contains(x.Id)).Select(x => new { x.Id, x.Name })
                         .ToListAsync(cancellationToken))
                         result[(AssetCategory.SpeakerPhoto, r.Id)] = r.Name;
-                    break;
-                case AssetCategory.CompanyLogo:
-                    foreach (var r in await dbContext.Contacts.AsNoTracking()
-                        .Where(x => ids.Contains(x.Id)).Select(x => new { x.Id, x.Name, x.NameArabic })
-                        .ToListAsync(cancellationToken))
-                        result[(AssetCategory.CompanyLogo, r.Id)] = r.Name ?? r.NameArabic;
                     break;
                 case AssetCategory.MediaPartnerLogo:
                     foreach (var r in await dbContext.MediaPartners.AsNoTracking()

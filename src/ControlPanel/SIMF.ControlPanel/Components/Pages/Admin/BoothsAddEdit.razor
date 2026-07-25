@@ -3,7 +3,7 @@
    standard CRUD-form surface (IsEdit / Initial / OnSuccess / OnCancel). IsEdit
    =false runs Create (POST); IsEdit=true runs Edit (PUT against Initial) and
    shows the IsActive checkbox. Preserves the exhibitor + hall lookups, the
-   booth-officer fields, the optional shared-Contact link (SIMF-FDS-014 / D-283),
+   booth-officer fields,
    the 2D map position, and the same create/update request DTOs + JS calls the
    inline SimfModal form used. *@
 @inherits CrudAddEditFormBase<AdminBoothDetail>
@@ -66,8 +66,6 @@
                        ValueExpression="@(() => _model.OfficerEmail)"
                        MaxLength="320"
                        Disabled="_busy" />
-        @* SIMF-FDS-014 (D-283) — optional link to a shared Contact directory record (the booth officer). *@
-        <ContactPicker Value="_model.ContactId" ValueChanged="@(v => _model.ContactId = v)" Disabled="_busy" />
         <SimfTextField Label="@L["Admin.Booths.Field.SectorEn"]"
                        Value="@_model.Sector"
                        ValueChanged="@(v => _model.Sector = v)"

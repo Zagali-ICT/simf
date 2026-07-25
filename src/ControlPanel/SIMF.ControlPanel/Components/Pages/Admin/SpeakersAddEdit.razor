@@ -129,10 +129,6 @@
             <SimfTextField Label="@L["Admin.Speakers.Field.FacebookUrl"]"
                            MaxLength="256"
                            @bind-Value="_model.FacebookUrl" Disabled="_busy" />
-            @* SIMF-FDS-014 (D-283) — optional link to a shared Contact directory record. *@
-            <div class="simf-form__grid-item--full">
-                <ContactPicker Value="_contactId" ValueChanged="@(v => _contactId = v)" Disabled="_busy" />
-            </div>
         </div>
     </SimfFormSection>
 

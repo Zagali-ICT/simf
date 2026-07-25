@@ -98,24 +98,11 @@ internal sealed class AdminBoothService(
                 booth.Sector,
                 booth.HallId,
                 booth.IsActive,
-                // Two-hop: the logo owner is the booth's exhibitor's linked Contact
-                // (a booth owns no logo of its own). LEFT-joined; null when the booth
-                // has no exhibitor, or the exhibitor no linked contact.
-                ExhibitorContactId = booth.Exhibitor != null ? booth.Exhibitor.ContactId : (Guid?)null,
             })
             .ToListAsync(cancellationToken);
 
-        // The grid renders the booth's exhibitor-company logo thumbnail only when the
-        // resolved Contact has an active CompanyLogo asset — one batched query over
-        // the resolved contact ids, no N+1. Everything else falls back to initials.
-        var contactIds = pageRows
-            .Where(row => row.ExhibitorContactId is not null)
-            .Select(row => row.ExhibitorContactId!.Value).Distinct().ToList();
-        var logoOwners = await assetService.WhichOwnersHaveActiveAssetAsync(
-            AssetCategory.CompanyLogo, contactIds, cancellationToken);
-
-        // The booth now also owns its own BoothLogo (the app renders this, not the
-        // exhibitor's) — one batched query over the page's booth ids.
+        // The booth owns its own BoothLogo (the app renders this) — one batched
+        // query over the page's booth ids, no N+1.
         var boothLogoOwners = await assetService.WhichOwnersHaveActiveAssetAsync(
             AssetCategory.BoothLogo, pageRows.Select(row => row.Id).ToList(), cancellationToken);
 
@@ -130,9 +117,10 @@ internal sealed class AdminBoothService(
                 Sector = booth.Sector,
                 HallId = booth.HallId,
                 IsActive = booth.IsActive,
-                ExhibitorContactId = booth.ExhibitorContactId,
-                HasLogo = booth.ExhibitorContactId is not null
-                    && logoOwners.Contains(booth.ExhibitorContactId.Value),
+                // Append-only frozen wire field; the shared Contact directory was
+                // removed, so it now always emits null (and no CompanyLogo lookup).
+                ExhibitorContactId = null,
+                HasLogo = false,
                 HasBoothLogo = boothLogoOwners.Contains(booth.Id),
             })
             .ToList();
@@ -144,15 +132,14 @@ internal sealed class AdminBoothService(
     public async Task<AdminBoothDetail?> GetAsync(
         Guid id, CancellationToken cancellationToken = default)
     {
-        // D-673 — pull the linked exhibitor + its Contact so the detail can
-        // surface the exhibitor-owned Website / City / Tier / logo owner (the
-        // fields the app booth detail shows). AsNoTracking → LEFT JOINs, single
-        // row. The create/update paths do not load these navigations, so their
-        // ToDetail echo leaves the resolved fields null (by design).
+        // D-673 — pull the linked exhibitor so the detail can surface the
+        // exhibitor-owned Website / City / Tier (the fields the app booth detail
+        // shows; City is now inlined on the Exhibitor). AsNoTracking → LEFT JOIN,
+        // single row. The create/update paths do not load this navigation, so
+        // their ToDetail echo leaves the resolved fields null (by design).
         var booth = await dbContext.Booths
             .AsNoTracking()
             .Include(row => row.Exhibitor)
-                .ThenInclude(exhibitor => exhibitor!.Contact)
             .SingleOrDefaultAsync(row => row.Id == id, cancellationToken);
         return booth is null ? null : ToDetail(booth);
     }
@@ -169,7 +156,6 @@ internal sealed class AdminBoothService(
             request.Description, request.DescriptionArabic);
         await EnsureHallIsValidAsync(request.HallId, cancellationToken);
         await EnsureExhibitorIsValidAsync(request.ExhibitorId, cancellationToken);
-        await EnsureContactIsValidAsync(request.ContactId, cancellationToken);
 
         var clash = await dbContext.Booths
             .AsNoTracking()
@@ -193,7 +179,6 @@ internal sealed class AdminBoothService(
             OfficerName = v.OfficerName,
             OfficerPhone = v.OfficerPhone,
             OfficerEmail = v.OfficerEmail,
-            ContactId = request.ContactId,
             Sector = v.Sector,
             SectorArabic = v.SectorArabic,
             Description = v.Description,
@@ -242,7 +227,6 @@ internal sealed class AdminBoothService(
             request.Description, request.DescriptionArabic);
         await EnsureHallIsValidAsync(request.HallId, cancellationToken);
         await EnsureExhibitorIsValidAsync(request.ExhibitorId, cancellationToken);
-        await EnsureContactIsValidAsync(request.ContactId, cancellationToken);
 
         if (!string.Equals(booth.Code, v.Code, StringComparison.OrdinalIgnoreCase))
         {
@@ -265,7 +249,6 @@ internal sealed class AdminBoothService(
         booth.OfficerName = v.OfficerName;
         booth.OfficerPhone = v.OfficerPhone;
         booth.OfficerEmail = v.OfficerEmail;
-        booth.ContactId = request.ContactId;
         booth.Sector = v.Sector;
         booth.SectorArabic = v.SectorArabic;
         booth.Description = v.Description;
@@ -451,24 +434,6 @@ internal sealed class AdminBoothService(
         }
     }
 
-    // SIMF-FDS-014 (D-281 / OI-1) — the optional booth-officer Contact link must
-    // point at an existing active Contact (mirrors EnsureExhibitorIsValidAsync).
-    private async Task EnsureContactIsValidAsync(
-        Guid? contactId, CancellationToken cancellationToken)
-    {
-        if (contactId is null) { return; }
-        var exists = await dbContext.Contacts
-            .AsNoTracking()
-            .AnyAsync(contact => contact.Id == contactId.Value && contact.IsActive, cancellationToken);
-        if (!exists)
-        {
-            throw new ApiException(
-                ErrorCodes.BoothInvalid, 400,
-                $"Contact id '{contactId}' does not exist or is inactive.",
-                $"جهة الاتصال '{contactId}' غير موجودة أو غير مفعّلة.");
-        }
-    }
-
     private static string? NullIfBlank(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
@@ -482,7 +447,6 @@ internal sealed class AdminBoothService(
         OfficerName = b.OfficerName,
         OfficerPhone = b.OfficerPhone,
         OfficerEmail = b.OfficerEmail,
-        ContactId = b.ContactId,
         Sector = b.Sector,
         SectorArabic = b.SectorArabic,
         Description = b.Description,
@@ -492,15 +456,16 @@ internal sealed class AdminBoothService(
         MapY = b.MapY,
         IsActive = b.IsActive,
         // D-673 — read-only exhibitor-resolved fields (mirrors PublicBoothService):
-        // Website + Tier from the linked Exhibitor, City/CityArabic from its
-        // Contact, ExhibitorContactId = the CompanyLogo owner (the booth logo).
-        // Null when the Exhibitor / Contact navigation was not loaded (create /
-        // update paths) or the booth has no linked exhibitor / Contact.
+        // Website + Tier from the linked Exhibitor, City/CityArabic now inlined on
+        // the Exhibitor. Null when the Exhibitor navigation was not loaded (create /
+        // update paths) or the booth has no linked exhibitor. ExhibitorContactId is
+        // an append-only frozen wire field that now always emits null (the shared
+        // Contact directory was removed).
         Website = b.Exhibitor?.Website,
-        City = b.Exhibitor?.Contact?.City,
-        CityArabic = b.Exhibitor?.Contact?.CityArabic,
+        City = b.Exhibitor?.City,
+        CityArabic = b.Exhibitor?.CityArabic,
         Tier = (int?)b.Exhibitor?.Tier,
         TierName = b.Exhibitor?.Tier?.ToString(),
-        ExhibitorContactId = b.Exhibitor?.ContactId,
+        ExhibitorContactId = null,
     };
 }

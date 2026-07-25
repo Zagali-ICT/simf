@@ -138,10 +138,6 @@ public sealed class AdminBoothDetail
     public string? OfficerName { get; set; }
     public string? OfficerPhone { get; set; }
     public string? OfficerEmail { get; set; }
-
-    /// <summary>SIMF-FDS-014 (D-281) — optional link to a shared <c>Contact</c>
-    /// directory record for the booth officer (a person).</summary>
-    public Guid? ContactId { get; set; }
     public string? Sector { get; set; }
     public string? SectorArabic { get; set; }
     public string? Description { get; set; }
@@ -178,10 +174,6 @@ public sealed class AdminCreateBoothRequest
     public string? OfficerName { get; set; }
     public string? OfficerPhone { get; set; }
     public string? OfficerEmail { get; set; }
-
-    /// <summary>SIMF-FDS-014 (D-281) — optional link to a shared <c>Contact</c>
-    /// directory record for the booth officer (a person).</summary>
-    public Guid? ContactId { get; set; }
     public string? Sector { get; set; }
     public string? SectorArabic { get; set; }
     public string? Description { get; set; }
@@ -202,10 +194,6 @@ public sealed class AdminUpdateBoothRequest
     public string? OfficerName { get; set; }
     public string? OfficerPhone { get; set; }
     public string? OfficerEmail { get; set; }
-
-    /// <summary>SIMF-FDS-014 (D-281) — optional link to a shared <c>Contact</c>
-    /// directory record for the booth officer (a person).</summary>
-    public Guid? ContactId { get; set; }
     public string? Sector { get; set; }
     public string? SectorArabic { get; set; }
     public string? Description { get; set; }

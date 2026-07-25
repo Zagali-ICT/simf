@@ -131,7 +131,6 @@ internal sealed class AdminSponsorService(
         var (nameEn, nameAr, tier, logoRelativePath, url, displayOrder) =
             Validate(request.NameEn, request.NameAr, request.Tier,
                 request.LogoRelativePath, request.Url, request.DisplayOrder);
-        await EnsureContactIsValidAsync(request.ContactId, cancellationToken);
 
         // Duplicate guard: an active sponsor with the same Arabic name in the
         // same tier is treated as a clash (matches the Country code-clash 409
@@ -158,7 +157,6 @@ internal sealed class AdminSponsorService(
             LogoRelativePath = logoRelativePath,
             Url = url,
             DisplayOrder = displayOrder,
-            ContactId = request.ContactId,
             Tagline = NormaliseTagline(request.Tagline),
             TaglineArabic = NormaliseTagline(request.TaglineArabic),
             About = NormaliseAbout(request.About),
@@ -188,7 +186,6 @@ internal sealed class AdminSponsorService(
         var (nameEn, nameAr, tier, logoRelativePath, url, displayOrder) =
             Validate(request.NameEn, request.NameAr, request.Tier,
                 request.LogoRelativePath, request.Url, request.DisplayOrder);
-        await EnsureContactIsValidAsync(request.ContactId, cancellationToken);
 
         var sponsor = await appDbContext.Sponsors
             .SingleOrDefaultAsync(s => s.Id == id, cancellationToken)
@@ -221,7 +218,6 @@ internal sealed class AdminSponsorService(
         sponsor.LogoRelativePath = logoRelativePath;
         sponsor.Url = url;
         sponsor.DisplayOrder = displayOrder;
-        sponsor.ContactId = request.ContactId;
         sponsor.Tagline = NormaliseTagline(request.Tagline);
         sponsor.TaglineArabic = NormaliseTagline(request.TaglineArabic);
         sponsor.About = NormaliseAbout(request.About);
@@ -323,23 +319,6 @@ internal sealed class AdminSponsorService(
         return (nameEn, nameAr, tier, logoRelativePath, url, displayOrderRaw);
     }
 
-    // SIMF-FDS-014 (D-281) — the optional shared-Contact link must point at an
-    // existing active Contact. Clean 400 instead of a DB FK-violation 500.
-    private async Task EnsureContactIsValidAsync(
-        Guid? contactId, CancellationToken cancellationToken)
-    {
-        if (contactId is null) { return; }
-        var exists = await appDbContext.Contacts
-            .AsNoTracking()
-            .AnyAsync(contact => contact.Id == contactId.Value && contact.IsActive, cancellationToken);
-        if (!exists)
-        {
-            throw new ApiException(ErrorCodes.SponsorInvalid, 400,
-                $"Contact id '{contactId}' does not exist or is inactive.",
-                $"جهة الاتصال '{contactId}' غير موجودة أو غير مفعّلة.");
-        }
-    }
-
     private static AdminSponsorDetail ToDetail(Sponsor sponsor) =>
         new(sponsor.Id,
             sponsor.Name,
@@ -352,7 +331,6 @@ internal sealed class AdminSponsorService(
             sponsor.IsActive,
             sponsor.CreatedAt,
             sponsor.UpdatedAt,
-            sponsor.ContactId,
             sponsor.Tagline,
             sponsor.TaglineArabic,
             sponsor.About,

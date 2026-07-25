@@ -19,7 +19,6 @@ public partial class SpeakersAddEdit
     private readonly Model _model = new();
     private string _displayOrderInput = "0";
     private string _countryIdInput = string.Empty;
-    private Guid? _contactId;
     private EditContext _editContext = default!;
     private bool _busy;
     private string? _error;
@@ -52,7 +51,6 @@ public partial class SpeakersAddEdit
             _model.LinkedInUrl = Initial.LinkedInUrl ?? string.Empty;
             _model.XUrl = Initial.XUrl ?? string.Empty;
             _model.WebsiteUrl = Initial.WebsiteUrl ?? string.Empty;
-            _contactId = Initial.ContactId;
             _model.IsActive = Initial.IsActive;
             _displayOrderInput = Initial.DisplayOrder.ToString();
         }
@@ -155,7 +153,6 @@ public partial class SpeakersAddEdit
                         LinkedInUrl = NullIfBlank(_model.LinkedInUrl),
                         XUrl = NullIfBlank(_model.XUrl),
                         WebsiteUrl = NullIfBlank(_model.WebsiteUrl),
-                        ContactId = _contactId,
                         DisplayOrder = order,
                     });
             }
@@ -186,7 +183,6 @@ public partial class SpeakersAddEdit
                         LinkedInUrl = NullIfBlank(_model.LinkedInUrl),
                         XUrl = NullIfBlank(_model.XUrl),
                         WebsiteUrl = NullIfBlank(_model.WebsiteUrl),
-                        ContactId = _contactId,
                         DisplayOrder = order,
                         IsActive = _model.IsActive,
                     });

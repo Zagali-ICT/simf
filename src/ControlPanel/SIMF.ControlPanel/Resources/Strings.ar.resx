@@ -3053,59 +3053,6 @@
   <data name="Grid.Import.Done" xml:space="preserve"><value>اكتمل الاستيراد.</value></data>
   <data name="Admin.AiPrompts.Active.Yes" xml:space="preserve"><value>مُفعّل</value></data>
   <data name="Admin.AiPrompts.Active.No" xml:space="preserve"><value>غير مُفعّل</value></data>
-  <!-- SIMF-FDS-014 (D-281/C2) — shared Contact directory -->
-  <data name="Module.Contacts" xml:space="preserve"><value>جهات الاتصال</value></data>
-  <data name="Admin.Contacts.Title" xml:space="preserve"><value>جهات الاتصال</value></data>
-  <data name="Admin.Contacts.Search" xml:space="preserve"><value>بحث</value></data>
-  <data name="Admin.Contacts.Search.Placeholder" xml:space="preserve"><value>ابحث بالاسم أو الهاتف أو البريد</value></data>
-  <data name="Admin.Contacts.Search.Apply" xml:space="preserve"><value>بحث</value></data>
-  <data name="Admin.Contacts.Loading" xml:space="preserve"><value>جارٍ تحميل جهات الاتصال…</value></data>
-  <data name="Admin.Contacts.None" xml:space="preserve"><value>لا توجد جهات اتصال بعد</value></data>
-  <data name="Admin.Contacts.LoadFailed" xml:space="preserve"><value>حدث خطأ ما. حاول مرة أخرى.</value></data>
-  <data name="Admin.Contacts.Required" xml:space="preserve"><value>الاسم بالعربية مطلوب.</value></data>
-  <data name="Admin.Contacts.Saved" xml:space="preserve"><value>تم حفظ جهة الاتصال.</value></data>
-  <data name="Admin.Contacts.Deleted" xml:space="preserve"><value>تم إلغاء تفعيل جهة الاتصال.</value></data>
-  <data name="Admin.Contacts.Col.NameAr" xml:space="preserve"><value>الاسم (عربي)</value></data>
-  <data name="Admin.Contacts.Col.NameEn" xml:space="preserve"><value>الاسم (إنجليزي)</value></data>
-  <data name="Admin.Contacts.Col.Phone" xml:space="preserve"><value>الهاتف</value></data>
-  <data name="Admin.Contacts.Col.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
-  <data name="Admin.Contacts.Col.Country" xml:space="preserve"><value>الدولة</value></data>
-  <data name="Admin.Contacts.Col.Active" xml:space="preserve"><value>الحالة</value></data>
-  <data name="Admin.Contacts.Add.Title" xml:space="preserve"><value>إضافة جهة اتصال</value></data>
-  <data name="Admin.Contacts.Edit.Title" xml:space="preserve"><value>تعديل جهة اتصال</value></data>
-  <data name="Admin.Contacts.Cancel" xml:space="preserve"><value>إلغاء</value></data>
-  <data name="Admin.Contacts.Save" xml:space="preserve"><value>حفظ</value></data>
-  <data name="Admin.Contacts.Delete.Confirm" xml:space="preserve"><value>إلغاء تفعيل جهة الاتصال هذه؟</value></data>
-  <data name="Admin.Contacts.Field.NameAr" xml:space="preserve"><value>الاسم (عربي)</value></data>
-  <data name="Admin.Contacts.Field.NameEn" xml:space="preserve"><value>الاسم (إنجليزي)</value></data>
-  <data name="Admin.Contacts.Field.LogoRelativePath" xml:space="preserve"><value>مسار الشعار</value></data>
-  <data name="Admin.Contacts.Field.LogoHint" xml:space="preserve"><value>مسار نسبي للأصل، مثل contacts/acme.png</value></data>
-  <data name="Admin.Contacts.Field.PhonePrimary" xml:space="preserve"><value>الهاتف الأساسي</value></data>
-  <data name="Admin.Contacts.Field.PhoneSecondary" xml:space="preserve"><value>الهاتف الثانوي</value></data>
-  <data name="Admin.Contacts.Field.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
-  <data name="Admin.Contacts.Field.Website" xml:space="preserve"><value>الموقع الإلكتروني</value></data>
-  <data name="Admin.Contacts.Field.FacebookUrl" xml:space="preserve"><value>رابط فيسبوك</value></data>
-  <data name="Admin.Contacts.Field.XUrl" xml:space="preserve"><value>رابط إكس (تويتر)</value></data>
-  <data name="Admin.Contacts.Field.LinkedInUrl" xml:space="preserve"><value>رابط لينكدإن</value></data>
-  <data name="Admin.Contacts.Field.InstagramUrl" xml:space="preserve"><value>رابط إنستغرام</value></data>
-  <data name="Admin.Contacts.Field.Country" xml:space="preserve"><value>الدولة</value></data>
-  <data name="Admin.Contacts.Field.CountryPlaceholder" xml:space="preserve"><value>اختر الدولة</value></data>
-  <data name="Admin.Contacts.Field.City" xml:space="preserve"><value>المدينة (إنجليزي)</value></data>
-  <data name="Admin.Contacts.Field.CityAr" xml:space="preserve"><value>المدينة (عربي)</value></data>
-  <data name="Admin.Contacts.Field.Latitude" xml:space="preserve"><value>خط العرض</value></data>
-  <data name="Admin.Contacts.Field.Longitude" xml:space="preserve"><value>خط الطول</value></data>
-  <data name="Admin.Contacts.Field.LatLongHint" xml:space="preserve"><value>موقع اختياري على الخريطة (أدخل كليهما أو اتركهما فارغين)</value></data>
-  <data name="Admin.Contacts.Field.LatLongPair" xml:space="preserve"><value>أدخل خط العرض وخط الطول معاً، أو اتركهما فارغين.</value></data>
-  <data name="Admin.Contacts.Field.LatLongInvalid" xml:space="preserve"><value>يجب أن يكون خط العرض بين -90 و90، وخط الطول بين -180 و180.</value></data>
-  <data name="Admin.Contacts.Field.IsActive" xml:space="preserve"><value>مُفعّل</value></data>
-  <data name="Admin.Contacts.Picker.Label" xml:space="preserve"><value>جهة الاتصال المرتبطة</value></data>
-  <data name="Admin.Contacts.Picker.Hint" xml:space="preserve"><value>اربط جهة اتصال موجودة من الدليل (اختياري)</value></data>
-  <data name="Admin.Contacts.Picker.Search" xml:space="preserve"><value>ابحث في جهات الاتصال</value></data>
-  <data name="Admin.Contacts.Picker.SearchApply" xml:space="preserve"><value>بحث</value></data>
-  <data name="Admin.Contacts.Picker.None" xml:space="preserve"><value>لا توجد جهات اتصال مطابقة</value></data>
-  <data name="Admin.Contacts.Picker.Clear" xml:space="preserve"><value>إزالة</value></data>
-  <data name="Admin.Contacts.Picker.Linked" xml:space="preserve"><value>مرتبطة بـ: {0}</value></data>
-  <data name="Admin.Contacts.Picker.NotLinked" xml:space="preserve"><value>لا توجد جهة اتصال مرتبطة</value></data>
   <data name="Admin.Themes.Delete.Title" xml:space="preserve"><value>تعطيل المحور</value></data>
   <data name="Admin.Themes.Delete.Message" xml:space="preserve"><value>تعطيل المحور "{0}"؟ سيُخفى من جدول الأعمال ومنتقي محرر الجلسة. يمكنك إعادة تفعيله لاحقاً بتعديله.</value></data>
   <data name="Admin.Halls.Delete.Title" xml:space="preserve"><value>إلغاء تفعيل القاعة</value></data>
@@ -3134,11 +3081,6 @@
   <data name="Admin.Configuration.Edit.Submit" xml:space="preserve"><value>حفظ التغييرات</value></data>
   <data name="Admin.Configuration.Edit.Submitting" xml:space="preserve"><value>جارٍ الحفظ…</value></data>
   <data name="Admin.Configuration.Fallback" xml:space="preserve"><value>حدث خطأ ما. يرجى المحاولة مرة أخرى.</value></data>
-  <data name="Admin.Contacts.Details.Title" xml:space="preserve"><value>تفاصيل جهة الاتصال</value></data>
-  <data name="Admin.Contacts.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
-  <data name="Admin.Contacts.Delete.Title" xml:space="preserve"><value>تعطيل جهة الاتصال</value></data>
-  <data name="Admin.Contacts.Delete.Message" xml:space="preserve"><value>هل تريد تعطيل "{0}"؟ لن تكون متاحة للربط من الرعاة أو العارضين أو الشركاء الإعلاميين أو المتحدثين أو الأجنحة.</value></data>
-  <data name="Admin.Contacts.Action.Deactivate" xml:space="preserve"><value>تعطيل</value></data>
   <data name="Admin.News.Details.Title" xml:space="preserve"><value>تفاصيل الخبر</value></data>
   <data name="Admin.News.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
   <data name="Admin.News.Delete.Title" xml:space="preserve"><value>حذف الخبر</value></data>

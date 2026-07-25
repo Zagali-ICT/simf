@@ -503,9 +503,6 @@ public static class DependencyInjection
         // (docs/migrations/2026/*.sql) so a fresh dev/test DB is not empty.
         // Production never invokes it — content is applied by hand there.
         services.AddScoped<SIMF.Infrastructure.Seeding.SqlContentSeeder>();
-        // SIMF-FDS-014 (D-261) — shared Contact directory admin CRUD.
-        services.AddScoped<SIMF.Application.Contacts.Abstractions.IAdminContactService,
-            SIMF.Infrastructure.Contacts.AdminContactService>();
         services.AddScoped<SIMF.Application.Sponsors.Abstractions.IPublicSponsorService,
             SIMF.Infrastructure.Sponsors.PublicSponsorService>();
         // D-499 (الوفود) — anonymous public delegations view (invited countries).

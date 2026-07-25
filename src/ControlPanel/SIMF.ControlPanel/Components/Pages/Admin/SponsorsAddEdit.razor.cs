@@ -48,7 +48,6 @@ public partial class SponsorsAddEdit
             _model.LogoRelativePath = Initial.LogoRelativePath ?? string.Empty;
             _model.Url = Initial.Url ?? string.Empty;
             _model.DisplayOrder = Initial.DisplayOrder;
-            _model.ContactId = Initial.ContactId;
             _model.Tagline = Initial.Tagline ?? string.Empty;
             _model.TaglineAr = Initial.TaglineArabic ?? string.Empty;
             _model.About = Initial.About ?? string.Empty;
@@ -84,7 +83,6 @@ public partial class SponsorsAddEdit
                         LogoRelativePath = NullIfBlank(_model.LogoRelativePath),
                         Url = NullIfBlank(_model.Url),
                         DisplayOrder = _model.DisplayOrder,
-                        ContactId = _model.ContactId,
                         Tagline = NullIfBlank(_model.Tagline),
                         TaglineArabic = NullIfBlank(_model.TaglineAr),
                         About = NullIfBlank(_model.About),
@@ -103,7 +101,6 @@ public partial class SponsorsAddEdit
                         LogoRelativePath = NullIfBlank(_model.LogoRelativePath),
                         Url = NullIfBlank(_model.Url),
                         DisplayOrder = _model.DisplayOrder,
-                        ContactId = _model.ContactId,
                         Tagline = NullIfBlank(_model.Tagline),
                         TaglineArabic = NullIfBlank(_model.TaglineAr),
                         About = NullIfBlank(_model.About),
@@ -154,7 +151,6 @@ public partial class SponsorsAddEdit
         public string About { get; set; } = string.Empty;
         public string AboutAr { get; set; } = string.Empty;
         public int DisplayOrder { get; set; }
-        public Guid? ContactId { get; set; }
         public bool IsActive { get; set; } = true;
     }
 }

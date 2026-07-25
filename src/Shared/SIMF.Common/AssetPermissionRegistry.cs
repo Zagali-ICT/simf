@@ -19,8 +19,10 @@ public static class AssetPermissionRegistry
         {
             [AssetCategory.SpeakerPhoto] =
                 new(PermissionCatalog.Speakers.View, PermissionCatalog.Speakers.Edit),
+            // Retired category (D-766): the Contact owner table was removed; kept
+            // mapped for the append-only enum freeze; MediaLibrary-gated, serves always-404.
             [AssetCategory.CompanyLogo] =
-                new(PermissionCatalog.Contacts.View, PermissionCatalog.Contacts.Edit),
+                new(PermissionCatalog.MediaLibrary.View, PermissionCatalog.MediaLibrary.Manage),
             [AssetCategory.MediaPartnerLogo] =
                 new(PermissionCatalog.MediaPartners.View, PermissionCatalog.MediaPartners.Edit),
             [AssetCategory.SponsorLogo] =

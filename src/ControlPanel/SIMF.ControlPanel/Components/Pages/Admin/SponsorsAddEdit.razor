@@ -72,9 +72,6 @@
                        ValueChanged="@(v => _model.LogoRelativePath = v)"
                        ValueExpression="@(() => _model.LogoRelativePath)"
                        Disabled="_busy" />
-        @* SIMF-FDS-014 (D-283) — optional link to a shared Contact directory record. *@
-        <ContactPicker Value="_model.ContactId"
-                       ValueChanged="@(v => _model.ContactId = v)" Disabled="_busy" />
         <label class="simf-field">
             <span class="simf-field__label">@L["Admin.Sponsors.Field.DisplayOrder"]</span>
             <input class="simf-field__input" type="number" min="0" max="99999"

@@ -37,7 +37,6 @@ public sealed record AdminSponsorDetail(
     bool IsActive,
     DateTimeOffset CreatedAt,
     DateTimeOffset? UpdatedAt,
-    Guid? ContactId,
     // D-432 — optional bilingual tagline (Figma 922:2824).
     string? Tagline = null,
     string? TaglineArabic = null,
@@ -55,10 +54,6 @@ public sealed class AdminCreateSponsorRequest
     public string? LogoRelativePath { get; set; }
     public string? Url { get; set; }
     public int DisplayOrder { get; set; }
-
-    /// <summary>SIMF-FDS-014 (D-281) — optional link to a shared <c>Contact</c>
-    /// directory record. Must reference an existing active contact.</summary>
-    public Guid? ContactId { get; set; }
 
     /// <summary>D-432 — optional bilingual tagline (≤256 chars each).</summary>
     public string? Tagline { get; set; }
@@ -81,10 +76,6 @@ public class AdminUpdateSponsorRequest
     public string? LogoRelativePath { get; set; }
     public string? Url { get; set; }
     public int DisplayOrder { get; set; }
-
-    /// <summary>SIMF-FDS-014 (D-281) — optional link to a shared <c>Contact</c>
-    /// directory record. Must reference an existing active contact.</summary>
-    public Guid? ContactId { get; set; }
 
     /// <summary>D-432 — optional bilingual tagline (≤256 chars each).</summary>
     public string? Tagline { get; set; }

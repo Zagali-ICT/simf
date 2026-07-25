@@ -27,9 +27,6 @@
         <SimfTextField Label="@L["Admin.MediaPartners.Field.Url"]"
                        MaxLength="512"
                        @bind-Value="_model.Url" Disabled="_busy" />
-        @* SIMF-FDS-014 (D-283) â€” optional link to a shared Contact directory record. *@
-        <ContactPicker Value="_model.ContactId"
-                       ValueChanged="@(v => _model.ContactId = v)" Disabled="_busy" />
         <SimfTextField Label="@L["Admin.MediaPartners.Field.DisplayOrder"]"
                        Type="number"
                        Value="@_displayOrderInput"

@@ -83,19 +83,9 @@ internal sealed class AdminExhibitorService(
                 c.ContactEmail, c.ContactPhone, c.Website,
                 AccountCount = appDbContext.Set<ExhibitorMembership>()
                     .Count(m => m.ExhibitorId == c.Id && m.IsActive),
-                c.IsActive, c.CreatedAt, c.Tier, c.ContactId,
+                c.IsActive, c.CreatedAt, c.Tier,
             })
             .ToListAsync(cancellationToken);
-
-        // The grid renders the exhibitor's company-logo thumbnail from the LINKED
-        // Contact's CompanyLogo asset (an exhibitor owns no logo of its own) — one
-        // batched query over the linked contact ids, no N+1. Unlinked exhibitors
-        // (ContactId null) or contacts with no logo fall back to an initials tile.
-        var contactIds = pageRows
-            .Where(row => row.ContactId is not null)
-            .Select(row => row.ContactId!.Value).Distinct().ToList();
-        var logoOwners = await assetService.WhichOwnersHaveActiveAssetAsync(
-            AssetCategory.CompanyLogo, contactIds, cancellationToken);
 
         // The exhibitor now also owns its own ExhibitorLogo (the app + the grid
         // render this, not the linked Contact's) — one batched query over the
@@ -109,8 +99,6 @@ internal sealed class AdminExhibitorService(
                 c.ContactEmail, c.ContactPhone, c.Website,
                 c.AccountCount,
                 c.IsActive, c.CreatedAt, c.Tier,
-                c.ContactId,
-                c.ContactId is not null && logoOwners.Contains(c.ContactId.Value),
                 exhibitorLogoOwners.Contains(c.Id)))
             .ToList();
 
@@ -126,7 +114,7 @@ internal sealed class AdminExhibitorService(
             .Select(c => new AdminExhibitorDetail(
                 c.Id, c.Name, c.NameArabic,
                 c.ContactEmail, c.ContactPhone, c.Website,
-                c.IsActive, c.CreatedAt, c.UpdatedAt, c.ContactId, c.Tier))
+                c.IsActive, c.CreatedAt, c.UpdatedAt, c.Tier))
             .SingleOrDefaultAsync(cancellationToken);
     }
 
@@ -136,7 +124,6 @@ internal sealed class AdminExhibitorService(
     {
         Validate(request.NameEn, request.NameAr, request.ContactEmail,
             request.ContactPhone, request.Website, request.Tier);
-        await EnsureContactIsValidAsync(request.ContactId, cancellationToken);
         var now = timeProvider.GetUtcNow();
         var exhibitor = new Exhibitor
         {
@@ -146,7 +133,6 @@ internal sealed class AdminExhibitorService(
             ContactEmail = NormaliseOptional(request.ContactEmail),
             ContactPhone = NormaliseOptional(request.ContactPhone),
             Website = NormaliseOptional(request.Website),
-            ContactId = request.ContactId,
             Tier = request.Tier,
             IsActive = true,
             CreatedAt = now,
@@ -171,7 +157,6 @@ internal sealed class AdminExhibitorService(
     {
         Validate(request.NameEn, request.NameAr, request.ContactEmail,
             request.ContactPhone, request.Website, request.Tier);
-        await EnsureContactIsValidAsync(request.ContactId, cancellationToken);
         var exhibitor = await appDbContext.Exhibitors
             .SingleOrDefaultAsync(c => c.Id == id, cancellationToken)
             ?? throw new ApiException(
@@ -184,7 +169,6 @@ internal sealed class AdminExhibitorService(
         exhibitor.ContactEmail = NormaliseOptional(request.ContactEmail);
         exhibitor.ContactPhone = NormaliseOptional(request.ContactPhone);
         exhibitor.Website = NormaliseOptional(request.Website);
-        exhibitor.ContactId = request.ContactId;
         exhibitor.Tier = request.Tier;
         exhibitor.IsActive = request.IsActive;
         exhibitor.UpdatedAt = timeProvider.GetUtcNow();
@@ -404,26 +388,6 @@ internal sealed class AdminExhibitorService(
                 ErrorCodes.ExhibitorInvalid, 400,
                 "Website must be 512 characters or fewer.",
                 "يجب ألا يتجاوز الموقع الإلكتروني 512 حرفاً.");
-        }
-    }
-
-    // SIMF-FDS-014 (D-281) — the optional shared-Contact link must point at an
-    // existing active Contact (mirrors EnsureExhibitorIsValidAsync on the booth
-    // service). Turns a bad/inactive FK into a clean 400 rather than a DB-level
-    // FK-violation 500.
-    private async Task EnsureContactIsValidAsync(
-        Guid? contactId, CancellationToken cancellationToken)
-    {
-        if (contactId is null) { return; }
-        var exists = await appDbContext.Contacts
-            .AsNoTracking()
-            .AnyAsync(contact => contact.Id == contactId.Value && contact.IsActive, cancellationToken);
-        if (!exists)
-        {
-            throw new ApiException(
-                ErrorCodes.ExhibitorInvalid, 400,
-                $"Contact id '{contactId}' does not exist or is inactive.",
-                $"جهة الاتصال '{contactId}' غير موجودة أو غير مفعّلة.");
         }
     }
 

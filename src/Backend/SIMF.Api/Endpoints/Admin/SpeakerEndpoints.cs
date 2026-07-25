@@ -98,7 +98,6 @@ public sealed class UpdateSpeakerRequest
     public string? XUrl { get; set; }
     public string? WebsiteUrl { get; set; }
     public int DisplayOrder { get; set; }
-    public Guid? ContactId { get; set; }
     public bool IsActive { get; set; } = true;
 }
 
@@ -147,7 +146,6 @@ public sealed class UpdateSpeakerEndpoint(IAdminSpeakerService service)
                     XUrl = req.XUrl,
                     WebsiteUrl = req.WebsiteUrl,
                     DisplayOrder = req.DisplayOrder,
-                    ContactId = req.ContactId,
                     IsActive = req.IsActive,
                 }, ct)), ct);
     }

@@ -3060,59 +3060,6 @@
   <data name="Grid.Import.Done" xml:space="preserve"><value>Import complete.</value></data>
   <data name="Admin.AiPrompts.Active.Yes" xml:space="preserve"><value>Active</value></data>
   <data name="Admin.AiPrompts.Active.No" xml:space="preserve"><value>Inactive</value></data>
-  <!-- SIMF-FDS-014 (D-281/C2) — shared Contact directory -->
-  <data name="Module.Contacts" xml:space="preserve"><value>Contacts</value></data>
-  <data name="Admin.Contacts.Title" xml:space="preserve"><value>Contacts</value></data>
-  <data name="Admin.Contacts.Search" xml:space="preserve"><value>Search</value></data>
-  <data name="Admin.Contacts.Search.Placeholder" xml:space="preserve"><value>Search by name, phone or email</value></data>
-  <data name="Admin.Contacts.Search.Apply" xml:space="preserve"><value>Search</value></data>
-  <data name="Admin.Contacts.Loading" xml:space="preserve"><value>Loading contacts…</value></data>
-  <data name="Admin.Contacts.None" xml:space="preserve"><value>No contacts yet</value></data>
-  <data name="Admin.Contacts.LoadFailed" xml:space="preserve"><value>Something went wrong. Please try again.</value></data>
-  <data name="Admin.Contacts.Required" xml:space="preserve"><value>The Arabic name is required.</value></data>
-  <data name="Admin.Contacts.Saved" xml:space="preserve"><value>Contact saved.</value></data>
-  <data name="Admin.Contacts.Deleted" xml:space="preserve"><value>Contact deactivated.</value></data>
-  <data name="Admin.Contacts.Col.NameAr" xml:space="preserve"><value>Name (Arabic)</value></data>
-  <data name="Admin.Contacts.Col.NameEn" xml:space="preserve"><value>Name (English)</value></data>
-  <data name="Admin.Contacts.Col.Phone" xml:space="preserve"><value>Phone</value></data>
-  <data name="Admin.Contacts.Col.Email" xml:space="preserve"><value>Email</value></data>
-  <data name="Admin.Contacts.Col.Country" xml:space="preserve"><value>Country</value></data>
-  <data name="Admin.Contacts.Col.Active" xml:space="preserve"><value>Status</value></data>
-  <data name="Admin.Contacts.Add.Title" xml:space="preserve"><value>Add contact</value></data>
-  <data name="Admin.Contacts.Edit.Title" xml:space="preserve"><value>Edit contact</value></data>
-  <data name="Admin.Contacts.Cancel" xml:space="preserve"><value>Cancel</value></data>
-  <data name="Admin.Contacts.Save" xml:space="preserve"><value>Save</value></data>
-  <data name="Admin.Contacts.Delete.Confirm" xml:space="preserve"><value>Deactivate this contact?</value></data>
-  <data name="Admin.Contacts.Field.NameAr" xml:space="preserve"><value>Name (Arabic)</value></data>
-  <data name="Admin.Contacts.Field.NameEn" xml:space="preserve"><value>Name (English)</value></data>
-  <data name="Admin.Contacts.Field.LogoRelativePath" xml:space="preserve"><value>Logo path</value></data>
-  <data name="Admin.Contacts.Field.LogoHint" xml:space="preserve"><value>Relative asset path, e.g. contacts/acme.png</value></data>
-  <data name="Admin.Contacts.Field.PhonePrimary" xml:space="preserve"><value>Primary phone</value></data>
-  <data name="Admin.Contacts.Field.PhoneSecondary" xml:space="preserve"><value>Secondary phone</value></data>
-  <data name="Admin.Contacts.Field.Email" xml:space="preserve"><value>Email</value></data>
-  <data name="Admin.Contacts.Field.Website" xml:space="preserve"><value>Website</value></data>
-  <data name="Admin.Contacts.Field.FacebookUrl" xml:space="preserve"><value>Facebook URL</value></data>
-  <data name="Admin.Contacts.Field.XUrl" xml:space="preserve"><value>X (Twitter) URL</value></data>
-  <data name="Admin.Contacts.Field.LinkedInUrl" xml:space="preserve"><value>LinkedIn URL</value></data>
-  <data name="Admin.Contacts.Field.InstagramUrl" xml:space="preserve"><value>Instagram URL</value></data>
-  <data name="Admin.Contacts.Field.Country" xml:space="preserve"><value>Country</value></data>
-  <data name="Admin.Contacts.Field.CountryPlaceholder" xml:space="preserve"><value>Select a country</value></data>
-  <data name="Admin.Contacts.Field.City" xml:space="preserve"><value>City (English)</value></data>
-  <data name="Admin.Contacts.Field.CityAr" xml:space="preserve"><value>City (Arabic)</value></data>
-  <data name="Admin.Contacts.Field.Latitude" xml:space="preserve"><value>Latitude</value></data>
-  <data name="Admin.Contacts.Field.Longitude" xml:space="preserve"><value>Longitude</value></data>
-  <data name="Admin.Contacts.Field.LatLongHint" xml:space="preserve"><value>Optional map location (set both, or leave both blank)</value></data>
-  <data name="Admin.Contacts.Field.LatLongPair" xml:space="preserve"><value>Set both latitude and longitude, or leave both blank.</value></data>
-  <data name="Admin.Contacts.Field.LatLongInvalid" xml:space="preserve"><value>Latitude must be between -90 and 90, longitude between -180 and 180.</value></data>
-  <data name="Admin.Contacts.Field.IsActive" xml:space="preserve"><value>Active</value></data>
-  <data name="Admin.Contacts.Picker.Label" xml:space="preserve"><value>Linked contact</value></data>
-  <data name="Admin.Contacts.Picker.Hint" xml:space="preserve"><value>Link an existing contact from the directory (optional)</value></data>
-  <data name="Admin.Contacts.Picker.Search" xml:space="preserve"><value>Search contacts</value></data>
-  <data name="Admin.Contacts.Picker.SearchApply" xml:space="preserve"><value>Find</value></data>
-  <data name="Admin.Contacts.Picker.None" xml:space="preserve"><value>No matching contacts</value></data>
-  <data name="Admin.Contacts.Picker.Clear" xml:space="preserve"><value>Clear</value></data>
-  <data name="Admin.Contacts.Picker.Linked" xml:space="preserve"><value>Linked: {0}</value></data>
-  <data name="Admin.Contacts.Picker.NotLinked" xml:space="preserve"><value>No contact linked</value></data>
   <data name="Admin.Themes.Delete.Title" xml:space="preserve"><value>Deactivate theme</value></data>
   <data name="Admin.Themes.Delete.Message" xml:space="preserve"><value>Deactivate the theme "{0}"? It will be hidden from the agenda and the Session editor picker. You can reactivate it later by editing it.</value></data>
   <data name="Admin.Halls.Delete.Title" xml:space="preserve"><value>Deactivate hall</value></data>
@@ -3141,11 +3088,6 @@
   <data name="Admin.Configuration.Edit.Submit" xml:space="preserve"><value>Save changes</value></data>
   <data name="Admin.Configuration.Edit.Submitting" xml:space="preserve"><value>Saving…</value></data>
   <data name="Admin.Configuration.Fallback" xml:space="preserve"><value>Something went wrong. Please try again.</value></data>
-  <data name="Admin.Contacts.Details.Title" xml:space="preserve"><value>Contact details</value></data>
-  <data name="Admin.Contacts.Details.Close" xml:space="preserve"><value>Close</value></data>
-  <data name="Admin.Contacts.Delete.Title" xml:space="preserve"><value>Deactivate contact</value></data>
-  <data name="Admin.Contacts.Delete.Message" xml:space="preserve"><value>Deactivate "{0}"? It will no longer be available to link from sponsors, exhibitors, media partners, speakers or booths.</value></data>
-  <data name="Admin.Contacts.Action.Deactivate" xml:space="preserve"><value>Deactivate</value></data>
   <data name="Admin.News.Details.Title" xml:space="preserve"><value>News article details</value></data>
   <data name="Admin.News.Details.Close" xml:space="preserve"><value>Close</value></data>
   <data name="Admin.News.Delete.Title" xml:space="preserve"><value>Delete news article</value></data>

@@ -47,7 +47,6 @@ public partial class ExhibitorsAddEdit
             _form.ContactEmail = Initial.ContactEmail ?? string.Empty;
             _form.ContactPhone = Initial.ContactPhone ?? string.Empty;
             _form.Website = Initial.Website ?? string.Empty;
-            _form.ContactId = Initial.ContactId;
             _form.Tier = Initial.Tier is null ? null : (int)Initial.Tier.Value;
             _form.IsActive = Initial.IsActive;
         }
@@ -83,7 +82,6 @@ public partial class ExhibitorsAddEdit
                         ContactEmail = NullIfBlank(_form.ContactEmail),
                         ContactPhone = NullIfBlank(_form.ContactPhone),
                         Website = NullIfBlank(_form.Website),
-                        ContactId = _form.ContactId,
                         Tier = _form.Tier is null ? null : (ExhibitorTier)_form.Tier.Value,
                     });
             }
@@ -99,7 +97,6 @@ public partial class ExhibitorsAddEdit
                         ContactEmail = NullIfBlank(_form.ContactEmail),
                         ContactPhone = NullIfBlank(_form.ContactPhone),
                         Website = NullIfBlank(_form.Website),
-                        ContactId = _form.ContactId,
                         Tier = _form.Tier is null ? null : (ExhibitorTier)_form.Tier.Value,
                         IsActive = _form.IsActive,
                     });
@@ -137,7 +134,6 @@ public partial class ExhibitorsAddEdit
         public string ContactEmail { get; set; } = string.Empty;
         public string ContactPhone { get; set; } = string.Empty;
         public string Website { get; set; } = string.Empty;
-        public Guid? ContactId { get; set; }
         public int? Tier { get; set; }
         public bool IsActive { get; set; } = true;
     }

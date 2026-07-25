@@ -17,7 +17,6 @@ using SIMF.Contracts.Email;
 using SIMF.Contracts.Faq;
 using SIMF.Contracts.Feedback;
 using SIMF.Contracts.Organisations;
-using SIMF.Contracts.Contacts;
 using SIMF.Contracts.Logs;
 using SIMF.Contracts.Media;
 using SIMF.Contracts.Programme;
@@ -775,9 +774,8 @@ internal static class AccountEndpoints
         MapGridExcel(group, "media-partners"); 
         MapGridExcel(group, "archive"); 
         MapGridExcel(group, "media"); 
-        MapGridExcel(group, "system-settings"); 
-        MapGridExcel(group, "contacts"); 
-        MapGridExcel(group, "news"); 
+        MapGridExcel(group, "system-settings");
+        MapGridExcel(group, "news");
         MapGridExcel(group, "ai/prompts");
         MapGridExcel(group, "sponsors");
         MapGridExcel(group, "exhibitors");
@@ -3030,54 +3028,8 @@ internal static class AccountEndpoints
             return Forward(await api.DeactivateOrganisationAsync(id, token));
         });
 
-        // SIMF-FDS-014 (D-281/C2) — shared Contact directory admin CRUD + picker
-        // passthroughs (backend /api/v1/admin/contacts/*; gated Contacts.View/Edit).
-        group.MapPost("/admin/contacts/list",
-            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
-        {
-            var token = await http.GetTokenAsync("access_token");
-            if (token is null) return Results.Unauthorized();
-            return Forward(await api.ListContactsAsync(body, token));
-        });
-        group.MapGet("/admin/contacts/picker",
-            async (string? search, HttpContext http, SimfAdminClient api) =>
-        {
-            var token = await http.GetTokenAsync("access_token");
-            if (token is null) return Results.Unauthorized();
-            return Forward(await api.PickerContactsAsync(search, token));
-        });
-        group.MapGet("/admin/contacts/{id:guid}",
-            async (Guid id, HttpContext http, SimfAdminClient api) =>
-        {
-            var token = await http.GetTokenAsync("access_token");
-            if (token is null) return Results.Unauthorized();
-            return Forward(await api.GetContactAsync(id, token));
-        });
-        group.MapPost("/admin/contacts",
-            async (CreateContactRequest body, HttpContext http, SimfAdminClient api) =>
-        {
-            var token = await http.GetTokenAsync("access_token");
-            if (token is null) return Results.Unauthorized();
-            return Forward(await api.CreateContactAsync(body, token));
-        });
-        group.MapPut("/admin/contacts/{id:guid}",
-            async (Guid id, UpdateContactRequest body, HttpContext http, SimfAdminClient api) =>
-        {
-            var token = await http.GetTokenAsync("access_token");
-            if (token is null) return Results.Unauthorized();
-            return Forward(await api.UpdateContactAsync(id, body, token));
-        });
-        group.MapDelete("/admin/contacts/{id:guid}",
-            async (Guid id, HttpContext http, SimfAdminClient api) =>
-        {
-            var token = await http.GetTokenAsync("access_token");
-            if (token is null) return Results.Unauthorized();
-            return Forward(await api.DeactivateContactAsync(id, token));
-        });
-
-        // SIMF-FDS-014 (D-283/C2b) — single-row GET passthroughs the Sponsor /
-        // MediaPartner edit modals use to pre-load the linked ContactId for the
-        // contact picker (the list/create/update/delete proxies already exist).
+        // single-row GET passthroughs the Sponsor / MediaPartner edit modals
+        // use to pre-load the row for editing.
         group.MapGet("/admin/sponsors/{id:guid}",
             async (Guid id, HttpContext http, SimfAdminClient api) =>
         {

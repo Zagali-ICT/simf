@@ -37,7 +37,6 @@ public partial class MediaPartnerAddEdit
             _model.NameArabic = Initial.NameArabic;
             _model.LogoRelativePath = Initial.LogoRelativePath ?? string.Empty;
             _model.Url = Initial.Url ?? string.Empty;
-            _model.ContactId = Initial.ContactId;
             _model.IsActive = Initial.IsActive;
             _displayOrderInput = Initial.DisplayOrder.ToString();
         }
@@ -71,8 +70,7 @@ public partial class MediaPartnerAddEdit
                         _model.NameArabic.Trim(),
                         NullIfBlank(_model.LogoRelativePath),
                         NullIfBlank(_model.Url),
-                        order,
-                        _model.ContactId));
+                        order));
             }
             else
             {
@@ -85,7 +83,6 @@ public partial class MediaPartnerAddEdit
                         LogoRelativePath = NullIfBlank(_model.LogoRelativePath),
                         Url = NullIfBlank(_model.Url),
                         DisplayOrder = order,
-                        ContactId = _model.ContactId,
                         IsActive = _model.IsActive,
                     });
             }
@@ -116,7 +113,6 @@ public partial class MediaPartnerAddEdit
         public string NameArabic { get; set; } = string.Empty;
         public string LogoRelativePath { get; set; } = string.Empty;
         public string Url { get; set; } = string.Empty;
-        public Guid? ContactId { get; set; }
         public bool IsActive { get; set; } = true;
     }
 }

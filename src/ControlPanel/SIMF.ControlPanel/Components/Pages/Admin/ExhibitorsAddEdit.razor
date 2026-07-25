@@ -58,8 +58,6 @@
             }
         </select>
     </label>
-    @* SIMF-FDS-014 (D-283) — optional link to a shared Contact directory record. *@
-    <ContactPicker Value="_form.ContactId" ValueChanged="@(v => _form.ContactId = v)" Disabled="_busy" />
     @if (IsEdit)
     {
         <SimfCheckbox Value="_form.IsActive"

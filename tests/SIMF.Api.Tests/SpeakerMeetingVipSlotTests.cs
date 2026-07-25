@@ -10,7 +10,6 @@ using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Programme;
 using SIMF.Domain.BusinessMeetings;
-using SIMF.Domain.Contacts;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Profiles;
 using SIMF.Domain.Programme;
@@ -301,22 +300,14 @@ public sealed class SpeakerMeetingVipSlotTests : IClassFixture<SimfApiFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var contact = new Contact
-        {
-            Id = Guid.NewGuid(),
-            NameArabic = "متحدّث",
-            Email = "speaker@simf.test",
-            IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
-        };
-        db.Contacts.Add(contact);
         var speaker = new Speaker
         {
             Id = Guid.NewGuid(),
             Code = "SPK-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Name = "Test Speaker", NameArabic = "متحدّث",
             AllowsMeetingRequests = true,
-            ContactId = contact.Id,
+            // Inline email (was a linked Contact) — the meeting-accept email path.
+            Email = "speaker@simf.test",
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };

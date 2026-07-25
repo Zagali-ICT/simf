@@ -40,7 +40,6 @@ public partial class BoothsAddEdit
             _model.OfficerName = Initial.OfficerName ?? string.Empty;
             _model.OfficerPhone = Initial.OfficerPhone ?? string.Empty;
             _model.OfficerEmail = Initial.OfficerEmail ?? string.Empty;
-            _model.ContactId = Initial.ContactId;
             _model.Sector = Initial.Sector ?? string.Empty;
             _model.SectorArabic = Initial.SectorArabic ?? string.Empty;
             _model.Description = Initial.Description ?? string.Empty;
@@ -127,7 +126,6 @@ public partial class BoothsAddEdit
                         OfficerName = NullIfBlank(_model.OfficerName),
                         OfficerPhone = NullIfBlank(_model.OfficerPhone),
                         OfficerEmail = NullIfBlank(_model.OfficerEmail),
-                        ContactId = _model.ContactId,
                         Sector = NullIfBlank(_model.Sector),
                         SectorArabic = NullIfBlank(_model.SectorArabic),
                         Description = NullIfBlank(_model.Description),
@@ -150,7 +148,6 @@ public partial class BoothsAddEdit
                         OfficerName = NullIfBlank(_model.OfficerName),
                         OfficerPhone = NullIfBlank(_model.OfficerPhone),
                         OfficerEmail = NullIfBlank(_model.OfficerEmail),
-                        ContactId = _model.ContactId,
                         Sector = NullIfBlank(_model.Sector),
                         SectorArabic = NullIfBlank(_model.SectorArabic),
                         Description = NullIfBlank(_model.Description),
@@ -227,7 +224,6 @@ public partial class BoothsAddEdit
         public string OfficerName { get; set; } = string.Empty;
         public string OfficerPhone { get; set; } = string.Empty;
         public string OfficerEmail { get; set; } = string.Empty;
-        public Guid? ContactId { get; set; }
         public string Sector { get; set; } = string.Empty;
         public string SectorArabic { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;

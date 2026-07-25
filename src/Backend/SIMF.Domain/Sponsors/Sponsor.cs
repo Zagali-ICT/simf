@@ -1,6 +1,5 @@
 using SIMF.Common.Enums;
 using SIMF.Domain.Common;
-using SIMF.Domain.Contacts;
 
 namespace SIMF.Domain.Sponsors;
 
@@ -57,14 +56,29 @@ public sealed class Sponsor: BaseAuditEntity
     public string? AboutArabic { get; set; }
 
 
-    /// <summary>SIMF-FDS-014 (D-260) — optional link to the shared <c>Contact</c>
-    /// directory record (logo / name / phones / social / website / location /
-    /// country). Null until linked; multiple entities may reference the same
-    /// Contact. The public projection prefers the Contact when set.</summary>
-    public Guid? ContactId { get; set; }
-    public Contact? Contact { get; set; }//Add FK
+    // Contact identity-card fields inlined from the removed shared Contact
+    // directory (supersedes SIMF-FDS-014 / D-260). All nullable. The Website
+    // slot is the existing Url above (never re-added); LogoRelativePath above is
+    // likewise the entity's own logo asset (not inlined). Latitude/Longitude are
+    // double? and need no length.
+    public string? Email { get; set; }
+    public string? PhonePrimary { get; set; }
+    public string? PhoneSecondary { get; set; }
+    public string? FacebookUrl { get; set; }
+    public string? XUrl { get; set; }
+    public string? LinkedInUrl { get; set; }
+    public string? InstagramUrl { get; set; }
+    public string? City { get; set; }
+    public string? CityArabic { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
 
+    /// <summary>ISO 3166-1 numeric country id — real same-DB FK to
+    /// <see cref="Common.Country"/> (App DB), OnDelete.Restrict. Inlined from
+    /// the removed shared Contact directory. Optional.</summary>
+    public int? CountryId { get; set; }
 
-
-    
+    /// <summary>Navigation for <see cref="CountryId"/> (same FK), so the public
+    /// projection reads the country name through one join.</summary>
+    public Country? Country { get; set; }
 }

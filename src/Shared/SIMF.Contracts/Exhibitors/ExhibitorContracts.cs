@@ -18,16 +18,9 @@ public sealed record AdminExhibitorSummary(
     // D-503 — carried so the grid Excel export can round-trip the tier (the grid
     // does not render it as a column). Optional; null = no tier.
     ExhibitorTier? Tier = null,
-    // D-357 — the linked Contact id + whether that contact has an active
-    // CompanyLogo asset, so the grid renders the exhibitor's company-logo
-    // thumbnail (else an initials tile). Appended trailing-optional (wire-safe);
-    // unlinked exhibitors default null/false.
-    Guid? ContactId = null,
-    bool HasLogo = false,
-    // The exhibitor now owns its own ExhibitorLogo (owner = the exhibitor,
-    // independent of the linked Contact) — true when it has an active ExhibitorLogo
-    // asset, so the grid renders the exhibitor's own logo thumbnail. Appended
-    // trailing-optional (wire-safe).
+    // The exhibitor owns its own ExhibitorLogo (owner = the exhibitor) — true when
+    // it has an active ExhibitorLogo asset, so the grid renders its logo thumbnail
+    // (else an initials tile). Appended trailing-optional (wire-safe).
     bool HasExhibitorLogo = false);
 
 /// <summary>D-199 #3 — full admin detail for one exhibitor.</summary>
@@ -41,7 +34,6 @@ public sealed record AdminExhibitorDetail(
     bool IsActive,
     DateTimeOffset CreatedAt,
     DateTimeOffset? UpdatedAt,
-    Guid? ContactId,
     // Wave 3 (Figma 1439:11881) — optional exhibitor tier; null renders no pill.
     ExhibitorTier? Tier = null);
 
@@ -67,10 +59,6 @@ public sealed class CreateExhibitorRequest
     /// <summary>Optional website (≤512 chars).</summary>
     public string? Website { get; init; }
 
-    /// <summary>SIMF-FDS-014 (D-281) — optional link to a shared <c>Contact</c>
-    /// directory record. Must reference an existing active contact.</summary>
-    public Guid? ContactId { get; init; }
-
     /// <summary>Optional exhibitor tier (null = no tier).</summary>
     public ExhibitorTier? Tier { get; init; }
 }
@@ -93,10 +81,6 @@ public class UpdateExhibitorRequest
 
     /// <summary>Optional website (≤512 chars).</summary>
     public string? Website { get; init; }
-
-    /// <summary>SIMF-FDS-014 (D-281) — optional link to a shared <c>Contact</c>
-    /// directory record. Must reference an existing active contact.</summary>
-    public Guid? ContactId { get; init; }
 
     /// <summary>Optional exhibitor tier (null = no tier).</summary>
     public ExhibitorTier? Tier { get; init; }
