@@ -98,6 +98,32 @@
                         <div class="simf-form__grid-item--full">
                             <SimfTextField Label="Hero background video (YouTube or MP4/HLS link)" MaxLength="1024" @bind-Value="_model.BackgroundVideoUrl" Disabled="_busy" />
                         </div>
+                        <div class="simf-form__grid-item--full">
+                            <label class="simf-field">
+                                <span class="simf-field__label">Or upload a video file — served from SIMF as an MP4, so it plays on Android (where a YouTube hero cannot render in the band)</span>
+                                <input type="file" id="@HeroVideoInputId" accept="video/mp4,video/webm,video/x-m4v"
+                                       class="simf-field__input" disabled="@(_busy || _videoBusy)" />
+                            </label>
+                            <div class="simf-form__actions">
+                                <AuthorizedAction Permission="@PermissionCatalog.OrganizationProfile.Manage">
+                                    <SimfButton Type="button" Variant="secondary" OnClick="UploadHeroVideoAsync"
+                                                Loading="_videoBusy" LoadingLabel="@L["Admin.OrganizationProfile.HeroVideoUploading"]"
+                                                Disabled="_busy">
+                                        @L["Admin.OrganizationProfile.HeroVideoUpload"]
+                                    </SimfButton>
+                                </AuthorizedAction>
+                                @if (HasUploadedHeroVideo)
+                                {
+                                    <AuthorizedAction Permission="@PermissionCatalog.OrganizationProfile.Manage">
+                                        <SimfButton Type="button" Variant="danger" OnClick="RemoveHeroVideoAsync"
+                                                    Disabled="@(_busy || _videoBusy)">
+                                            @L["Admin.OrganizationProfile.HeroVideoRemove"]
+                                        </SimfButton>
+                                    </AuthorizedAction>
+                                }
+                            </div>
+                            <p class="simf-field__hint">@L["Admin.OrganizationProfile.HeroVideoHint"]</p>
+                        </div>
                     </div>
                 </SimfFormSection>
 
@@ -158,7 +184,7 @@
 
                 <div class="simf-form__actions">
                     <AuthorizedAction Permission="@PermissionCatalog.OrganizationProfile.Manage">
-                        <SimfButton Loading="_busy" LoadingLabel="@L["Admin.OrganizationProfile.Saving"]">
+                        <SimfButton Loading="_busy" Disabled="_videoBusy" LoadingLabel="@L["Admin.OrganizationProfile.Saving"]">
                             @L["Admin.OrganizationProfile.Save"]
                         </SimfButton>
                     </AuthorizedAction>

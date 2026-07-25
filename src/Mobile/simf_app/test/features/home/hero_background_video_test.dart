@@ -1,4 +1,4 @@
-// D-756 / D-761 — the hero background-video source gate.
+// D-756 / D-761 / D-768 — the hero background-video source gate.
 // `HeroBackgroundVideo.isSupported` decides whether the home hero mounts the
 // video (over the banner-image strip) or keeps the image fallback: only a direct
 // https MP4/HLS stream is supported. A YouTube link is deliberately NOT supported
@@ -17,6 +17,18 @@ void main() {
       );
       expect(
         HeroBackgroundVideo.isSupported('https://cdn.example.com/live.m3u8'),
+        isTrue,
+      );
+    });
+
+    test('the SIMF-served hero-video URL (D-768) is supported', () {
+      // The CP uploads a video the API range-streams from its own .mp4 route; the
+      // hero must accept that absolute https URL so a moving hero plays on Android
+      // (where a YouTube hero cannot render in the clipped band).
+      expect(
+        HeroBackgroundVideo.isSupported(
+          'https://api.example.com/api/v1/app/organization/hero-video.mp4',
+        ),
         isTrue,
       );
     });

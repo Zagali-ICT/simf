@@ -1018,6 +1018,13 @@
   <data name="Admin.OrganizationProfile.Saved" xml:space="preserve"><value>تم الحفظ.</value></data>
   <data name="Admin.OrganizationProfile.SaveFailed" xml:space="preserve"><value>تعذّر حفظ الملف.</value></data>
   <data name="Admin.OrganizationProfile.LoadFailed" xml:space="preserve"><value>تعذّر تحميل الملف.</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoUpload" xml:space="preserve"><value>رفع فيديو</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoUploading" xml:space="preserve"><value>جارٍ الرفع…</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoRemove" xml:space="preserve"><value>إزالة الفيديو المرفوع</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoHint" xml:space="preserve"><value>MP4 أو M4V أو WebM، حتى 200 ميغابايت. الرفع يستبدل خلفية الواجهة أعلاه ويعمل على أندرويد. لاستخدام رابط يوتيوب أو رابط خارجي بدلاً من ذلك، ألصقه في الحقل أعلاه واترك هذا فارغاً.</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoUploaded" xml:space="preserve"><value>تم رفع فيديو الواجهة.</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoRemoved" xml:space="preserve"><value>تمت إزالة فيديو الواجهة.</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoFailed" xml:space="preserve"><value>تعذّر تحديث فيديو الواجهة.</value></data>
   <data name="Admin.SiteSettings.Title" xml:space="preserve"><value>إعدادات الموقع</value></data>
   <data name="Admin.SiteSettings.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
   <data name="Admin.SiteSettings.Section.Registration" xml:space="preserve"><value>رسالة التسجيل</value></data>
