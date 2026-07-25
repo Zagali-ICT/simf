@@ -72,11 +72,27 @@ class _HallSeatMapCardState extends State<HallSeatMapCard> {
     super.dispose();
   }
 
+  // The row-letter column widens to fit the longest label so multi-char rows
+  // (VVIP / VIP01 / A001) render on one line instead of wrapping; a single-
+  // letter hall keeps the Figma 12px column.
+  double _rowLabelWidth(List<String> rows) {
+    var longest = 1;
+    for (final label in rows) {
+      if (label.length > longest) {
+        longest = label.length;
+      }
+    }
+    return longest <= 1
+        ? SimfTokens.seatRowLabelWidth
+        : longest * SimfTokens.seatRowLabelCharWidth;
+  }
+
   @override
   Widget build(BuildContext context) {
     final map = widget.map;
     final l10n = widget.l10n;
     final reserved = map.reservedKeys();
+    final rowLabelWidth = _rowLabelWidth(map.rowLabels);
     return Container(
       padding: const EdgeInsets.all(SimfTokens.space4),
       decoration: BoxDecoration(
@@ -109,6 +125,7 @@ class _HallSeatMapCardState extends State<HallSeatMapCard> {
                         rowLabel: row,
                         seatCount: map.seatsInRow(index),
                         seatSize: widget.maxSeatSize,
+                        rowLabelWidth: rowLabelWidth,
                         reserved: reserved,
                         map: map,
                         l10n: l10n,
@@ -208,6 +225,7 @@ class _SeatGridRow extends StatelessWidget {
     required this.rowLabel,
     required this.seatCount,
     required this.seatSize,
+    required this.rowLabelWidth,
     required this.reserved,
     required this.map,
     required this.l10n,
@@ -223,6 +241,9 @@ class _SeatGridRow extends StatelessWidget {
   // The fixed square size every seat is drawn at (no shrink-to-fit); all rows
   // share it so seats align column-for-column and a wide row scrolls off-edge.
   final double seatSize;
+  // The shared row-letter column width (sized to the longest label so all rows
+  // align and multi-char labels do not wrap).
+  final double rowLabelWidth;
   final Set<String> reserved;
   final SessionSeatMap map;
   final AppL10n l10n;
@@ -283,7 +304,7 @@ class _SeatGridRow extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         SizedBox(
-          width: SimfTokens.seatRowLabelWidth,
+          width: rowLabelWidth,
           child: Text(
             rowLabel,
             textAlign: TextAlign.center,
