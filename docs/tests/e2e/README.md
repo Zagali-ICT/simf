@@ -61,7 +61,6 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/profile-types/other` | [`cp-admin-profile-types-other.md`](cp-admin-profile-types-other.md) | E2E-OPT-001..015 |
 | `/admin/organisations` | [`cp-admin-organisations.md`](cp-admin-organisations.md) | E2E-ORG-001..019 |
 | `/admin/regions` | [`cp-admin-regions.md`](cp-admin-regions.md) | E2E-REGION-001..016 |
-| `/admin/contacts` | [`cp-admin-contacts.md`](cp-admin-contacts.md) | E2E-CON-001..020 |
 | `/admin/countries` | [`cp-admin-countries.md`](cp-admin-countries.md) | E2E-CTY-001..020 |
 | `/admin/vips` | [`cp-admin-vips.md`](cp-admin-vips.md) | E2E-VIP-001..013 |
 | `/admin/invitations` | [`cp-admin-invitations.md`](cp-admin-invitations.md) | E2E-INV-001..018 |

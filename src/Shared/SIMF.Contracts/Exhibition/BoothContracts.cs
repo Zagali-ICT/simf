@@ -138,6 +138,24 @@ public sealed class AdminBoothDetail
     public string? OfficerName { get; set; }
     public string? OfficerPhone { get; set; }
     public string? OfficerEmail { get; set; }
+
+    // NEW inline booth-officer identity-card fields (D-766). All optional. The
+    // OfficerCountryName* pair is resolved from the Country lookup on read.
+    public string? OfficerNameArabic { get; set; }
+    public string? OfficerPhoneSecondary { get; set; }
+    public string? OfficerWebsite { get; set; }
+    public string? OfficerFacebookUrl { get; set; }
+    public string? OfficerXUrl { get; set; }
+    public string? OfficerLinkedInUrl { get; set; }
+    public string? OfficerInstagramUrl { get; set; }
+    public string? OfficerCity { get; set; }
+    public string? OfficerCityArabic { get; set; }
+    public double? OfficerLatitude { get; set; }
+    public double? OfficerLongitude { get; set; }
+    public int? OfficerCountryId { get; set; }
+    public string? OfficerCountryNameEn { get; set; }
+    public string? OfficerCountryNameAr { get; set; }
+
     public string? Sector { get; set; }
     public string? SectorArabic { get; set; }
     public string? Description { get; set; }
@@ -174,6 +192,22 @@ public sealed class AdminCreateBoothRequest
     public string? OfficerName { get; set; }
     public string? OfficerPhone { get; set; }
     public string? OfficerEmail { get; set; }
+
+    // NEW inline booth-officer identity-card fields (D-766). All optional; the
+    // officer's nationality is OfficerCountryId (a logical FK to Country.Id).
+    public string? OfficerNameArabic { get; set; }
+    public string? OfficerPhoneSecondary { get; set; }
+    public string? OfficerWebsite { get; set; }
+    public string? OfficerFacebookUrl { get; set; }
+    public string? OfficerXUrl { get; set; }
+    public string? OfficerLinkedInUrl { get; set; }
+    public string? OfficerInstagramUrl { get; set; }
+    public string? OfficerCity { get; set; }
+    public string? OfficerCityArabic { get; set; }
+    public double? OfficerLatitude { get; set; }
+    public double? OfficerLongitude { get; set; }
+    public int? OfficerCountryId { get; set; }
+
     public string? Sector { get; set; }
     public string? SectorArabic { get; set; }
     public string? Description { get; set; }
@@ -194,6 +228,22 @@ public sealed class AdminUpdateBoothRequest
     public string? OfficerName { get; set; }
     public string? OfficerPhone { get; set; }
     public string? OfficerEmail { get; set; }
+
+    // NEW inline booth-officer identity-card fields (D-766). All optional; the
+    // officer's nationality is OfficerCountryId (a logical FK to Country.Id).
+    public string? OfficerNameArabic { get; set; }
+    public string? OfficerPhoneSecondary { get; set; }
+    public string? OfficerWebsite { get; set; }
+    public string? OfficerFacebookUrl { get; set; }
+    public string? OfficerXUrl { get; set; }
+    public string? OfficerLinkedInUrl { get; set; }
+    public string? OfficerInstagramUrl { get; set; }
+    public string? OfficerCity { get; set; }
+    public string? OfficerCityArabic { get; set; }
+    public double? OfficerLatitude { get; set; }
+    public double? OfficerLongitude { get; set; }
+    public int? OfficerCountryId { get; set; }
+
     public string? Sector { get; set; }
     public string? SectorArabic { get; set; }
     public string? Description { get; set; }

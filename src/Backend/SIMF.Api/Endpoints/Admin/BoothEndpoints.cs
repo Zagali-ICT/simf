@@ -83,6 +83,21 @@ public sealed class UpdateBoothRequest
     public string? OfficerName { get; set; }
     public string? OfficerPhone { get; set; }
     public string? OfficerEmail { get; set; }
+
+    // NEW inline booth-officer identity-card fields (D-766). All optional.
+    public string? OfficerNameArabic { get; set; }
+    public string? OfficerPhoneSecondary { get; set; }
+    public string? OfficerWebsite { get; set; }
+    public string? OfficerFacebookUrl { get; set; }
+    public string? OfficerXUrl { get; set; }
+    public string? OfficerLinkedInUrl { get; set; }
+    public string? OfficerInstagramUrl { get; set; }
+    public string? OfficerCity { get; set; }
+    public string? OfficerCityArabic { get; set; }
+    public double? OfficerLatitude { get; set; }
+    public double? OfficerLongitude { get; set; }
+    public int? OfficerCountryId { get; set; }
+
     public string? Sector { get; set; }
     public string? SectorArabic { get; set; }
     public string? Description { get; set; }
@@ -123,6 +138,18 @@ public sealed class UpdateBoothEndpoint(IAdminBoothService service)
                     OfficerName = req.OfficerName,
                     OfficerPhone = req.OfficerPhone,
                     OfficerEmail = req.OfficerEmail,
+                    OfficerNameArabic = req.OfficerNameArabic,
+                    OfficerPhoneSecondary = req.OfficerPhoneSecondary,
+                    OfficerWebsite = req.OfficerWebsite,
+                    OfficerFacebookUrl = req.OfficerFacebookUrl,
+                    OfficerXUrl = req.OfficerXUrl,
+                    OfficerLinkedInUrl = req.OfficerLinkedInUrl,
+                    OfficerInstagramUrl = req.OfficerInstagramUrl,
+                    OfficerCity = req.OfficerCity,
+                    OfficerCityArabic = req.OfficerCityArabic,
+                    OfficerLatitude = req.OfficerLatitude,
+                    OfficerLongitude = req.OfficerLongitude,
+                    OfficerCountryId = req.OfficerCountryId,
                     Sector = req.Sector,
                     SectorArabic = req.SectorArabic,
                     Description = req.Description,

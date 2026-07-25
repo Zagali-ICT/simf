@@ -114,7 +114,13 @@ internal sealed class AdminExhibitorService(
             .Select(c => new AdminExhibitorDetail(
                 c.Id, c.Name, c.NameArabic,
                 c.ContactEmail, c.ContactPhone, c.Website,
-                c.IsActive, c.CreatedAt, c.UpdatedAt, c.Tier))
+                c.IsActive, c.CreatedAt, c.UpdatedAt, c.Tier,
+                c.CountryId,
+                c.Country != null ? c.Country.Name : null,
+                c.Country != null ? c.Country.NameArabic : null,
+                c.PhoneSecondary, c.FacebookUrl, c.XUrl, c.LinkedInUrl,
+                c.InstagramUrl, c.City, c.CityArabic,
+                c.Latitude, c.Longitude))
             .SingleOrDefaultAsync(cancellationToken);
     }
 
@@ -124,6 +130,11 @@ internal sealed class AdminExhibitorService(
     {
         Validate(request.NameEn, request.NameAr, request.ContactEmail,
             request.ContactPhone, request.Website, request.Tier);
+        ValidateContactFields(
+            request.PhoneSecondary, request.FacebookUrl, request.XUrl,
+            request.LinkedInUrl, request.InstagramUrl, request.City,
+            request.CityArabic, request.Latitude, request.Longitude);
+        await EnsureCountryIsValidAsync(request.CountryId, cancellationToken);
         var now = timeProvider.GetUtcNow();
         var exhibitor = new Exhibitor
         {
@@ -134,6 +145,16 @@ internal sealed class AdminExhibitorService(
             ContactPhone = NormaliseOptional(request.ContactPhone),
             Website = NormaliseOptional(request.Website),
             Tier = request.Tier,
+            CountryId = request.CountryId,
+            PhoneSecondary = NormaliseOptional(request.PhoneSecondary),
+            FacebookUrl = NormaliseOptional(request.FacebookUrl),
+            XUrl = NormaliseOptional(request.XUrl),
+            LinkedInUrl = NormaliseOptional(request.LinkedInUrl),
+            InstagramUrl = NormaliseOptional(request.InstagramUrl),
+            City = NormaliseOptional(request.City),
+            CityArabic = NormaliseOptional(request.CityArabic),
+            Latitude = request.Latitude,
+            Longitude = request.Longitude,
             IsActive = true,
             CreatedAt = now,
         };
@@ -157,6 +178,11 @@ internal sealed class AdminExhibitorService(
     {
         Validate(request.NameEn, request.NameAr, request.ContactEmail,
             request.ContactPhone, request.Website, request.Tier);
+        ValidateContactFields(
+            request.PhoneSecondary, request.FacebookUrl, request.XUrl,
+            request.LinkedInUrl, request.InstagramUrl, request.City,
+            request.CityArabic, request.Latitude, request.Longitude);
+        await EnsureCountryIsValidAsync(request.CountryId, cancellationToken);
         var exhibitor = await appDbContext.Exhibitors
             .SingleOrDefaultAsync(c => c.Id == id, cancellationToken)
             ?? throw new ApiException(
@@ -170,6 +196,16 @@ internal sealed class AdminExhibitorService(
         exhibitor.ContactPhone = NormaliseOptional(request.ContactPhone);
         exhibitor.Website = NormaliseOptional(request.Website);
         exhibitor.Tier = request.Tier;
+        exhibitor.CountryId = request.CountryId;
+        exhibitor.PhoneSecondary = NormaliseOptional(request.PhoneSecondary);
+        exhibitor.FacebookUrl = NormaliseOptional(request.FacebookUrl);
+        exhibitor.XUrl = NormaliseOptional(request.XUrl);
+        exhibitor.LinkedInUrl = NormaliseOptional(request.LinkedInUrl);
+        exhibitor.InstagramUrl = NormaliseOptional(request.InstagramUrl);
+        exhibitor.City = NormaliseOptional(request.City);
+        exhibitor.CityArabic = NormaliseOptional(request.CityArabic);
+        exhibitor.Latitude = request.Latitude;
+        exhibitor.Longitude = request.Longitude;
         exhibitor.IsActive = request.IsActive;
         exhibitor.UpdatedAt = timeProvider.GetUtcNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
@@ -388,6 +424,74 @@ internal sealed class AdminExhibitorService(
                 ErrorCodes.ExhibitorInvalid, 400,
                 "Website must be 512 characters or fewer.",
                 "يجب ألا يتجاوز الموقع الإلكتروني 512 حرفاً.");
+        }
+    }
+
+    // D-766 — validates the identity-card fields inlined from the removed shared
+    // Contact directory. The email + primary phone are covered by Validate (they
+    // reuse ContactEmail / ContactPhone); this covers the new inline set. Lengths
+    // mirror the EF configuration; latitude and longitude are an all-or-nothing
+    // pair with real-world ranges.
+    private static void ValidateContactFields(
+        string? phoneSecondary, string? facebook, string? x,
+        string? linkedIn, string? instagram, string? city, string? cityArabic,
+        double? latitude, double? longitude)
+    {
+        if (!string.IsNullOrWhiteSpace(phoneSecondary) && phoneSecondary.Length > 32)
+        {
+            throw Invalid("Phone numbers must be 32 characters or less.",
+                "يجب ألا يتجاوز رقم الهاتف 32 حرفاً.");
+        }
+        foreach (var url in new[] { facebook, x, linkedIn, instagram })
+        {
+            if (!string.IsNullOrWhiteSpace(url) && url.Length > 256)
+            {
+                throw Invalid("Social URLs must be 256 characters or less.",
+                    "يجب ألا يتجاوز رابط الشبكات الاجتماعية 256 حرفاً.");
+            }
+        }
+        foreach (var cityValue in new[] { city, cityArabic })
+        {
+            if (!string.IsNullOrWhiteSpace(cityValue) && cityValue.Length > 128)
+            {
+                throw Invalid("City must be 128 characters or less.",
+                    "يجب ألا تتجاوز المدينة 128 حرفاً.");
+            }
+        }
+        if (latitude is null != (longitude is null))
+        {
+            throw Invalid("Latitude and longitude must be provided together.",
+                "يجب إدخال خط العرض وخط الطول معاً.");
+        }
+        if (latitude is < -90 or > 90)
+        {
+            throw Invalid("Latitude must be between -90 and 90.",
+                "يجب أن يكون خط العرض بين -90 و 90.");
+        }
+        if (longitude is < -180 or > 180)
+        {
+            throw Invalid("Longitude must be between -180 and 180.",
+                "يجب أن يكون خط الطول بين -180 و 180.");
+        }
+    }
+
+    private static ApiException Invalid(string english, string arabic) =>
+        new(ErrorCodes.ExhibitorInvalid, 400, english, arabic);
+
+    // Same-DB country FK — validated against the live Country table (D-766).
+    private async Task EnsureCountryIsValidAsync(
+        int? countryId, CancellationToken cancellationToken)
+    {
+        if (countryId is null) { return; }
+        var exists = await appDbContext.Countries
+            .AsNoTracking()
+            .AnyAsync(country => country.Id == countryId.Value && country.IsActive, cancellationToken);
+        if (!exists)
+        {
+            throw new ApiException(
+                ErrorCodes.ExhibitorInvalid, 400,
+                $"Country id '{countryId}' does not exist or is inactive.",
+                $"رقم البلد '{countryId}' غير موجود أو غير مفعّل.");
         }
     }
 

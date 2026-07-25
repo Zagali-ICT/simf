@@ -75,6 +75,24 @@
   <data name="Admin.Edit.Save" xml:space="preserve"><value>حفظ التغييرات</value></data>
   <data name="Admin.Edit.Saving" xml:space="preserve"><value>جارٍ الحفظ…</value></data>
   <data name="Admin.Edit.Saved" xml:space="preserve"><value>تم تحديث الحساب.</value></data>
+  <data name="Admin.ContactField.Heading" xml:space="preserve"><value>معلومات الاتصال</value></data>
+  <data name="Admin.ContactField.City" xml:space="preserve"><value>المدينة</value></data>
+  <data name="Admin.ContactField.CityArabic" xml:space="preserve"><value>المدينة (بالعربية)</value></data>
+  <data name="Admin.ContactField.Country" xml:space="preserve"><value>الدولة</value></data>
+  <data name="Admin.ContactField.CountryNone" xml:space="preserve"><value>— بدون —</value></data>
+  <data name="Admin.ContactField.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
+  <data name="Admin.ContactField.PhonePrimary" xml:space="preserve"><value>الهاتف</value></data>
+  <data name="Admin.ContactField.PhoneSecondary" xml:space="preserve"><value>هاتف إضافي</value></data>
+  <data name="Admin.ContactField.Facebook" xml:space="preserve"><value>رابط فيسبوك</value></data>
+  <data name="Admin.ContactField.X" xml:space="preserve"><value>رابط إكس</value></data>
+  <data name="Admin.ContactField.LinkedIn" xml:space="preserve"><value>رابط لينكدإن</value></data>
+  <data name="Admin.ContactField.Instagram" xml:space="preserve"><value>رابط إنستغرام</value></data>
+  <data name="Admin.ContactField.Latitude" xml:space="preserve"><value>خط العرض</value></data>
+  <data name="Admin.ContactField.Longitude" xml:space="preserve"><value>خط الطول</value></data>
+  <data name="Admin.ContactField.LatLongHint" xml:space="preserve"><value>يجب إدخال خط العرض وخط الطول معاً.</value></data>
+  <data name="Admin.ContactField.LatLongInvalid" xml:space="preserve"><value>يجب أن يكون خط العرض وخط الطول أرقاماً عشرية صحيحة.</value></data>
+  <data name="Admin.ContactField.CountryInvalid" xml:space="preserve"><value>اختر دولة صحيحة من القائمة.</value></data>
+  <data name="Admin.ContactField.Website" xml:space="preserve"><value>رابط الموقع الإلكتروني</value></data>
   <data name="Admin.ChangeType.Heading" xml:space="preserve"><value>تغيير نوع الحساب</value></data>
   <data name="Admin.ChangeType.Note.VisitorToOther" xml:space="preserve"><value>تحويل هذا الزائر إلى حساب شريك (موظف، راعٍ، عارض، إعلام…). يتم تسجيل خروج الحساب وإعادة إصداره بالنوع الجديد.</value></data>
   <data name="Admin.ChangeType.Note.OtherToVisitor" xml:space="preserve"><value>تحويل هذا الحساب الشريك إلى زائر. يتم تسجيل خروج الحساب وإعادة إصداره بالنوع الجديد.</value></data>
@@ -2507,6 +2525,7 @@
   <data name="Admin.Booths.Field.Exhibitor" xml:space="preserve"><value>العارض</value></data>
   <data name="Admin.Booths.Field.ExhibitorNone" xml:space="preserve"><value>— بدون عارض —</value></data>
   <data name="Admin.Booths.Field.OfficerName" xml:space="preserve"><value>اسم مسؤول الجناح</value></data>
+  <data name="Admin.Booths.Field.OfficerNameAr" xml:space="preserve"><value>اسم مسؤول الجناح (بالعربية)</value></data>
   <data name="Admin.Booths.Field.OfficerPhone" xml:space="preserve"><value>هاتف مسؤول الجناح</value></data>
   <data name="Admin.Booths.Field.OfficerEmail" xml:space="preserve"><value>بريد مسؤول الجناح</value></data>
   <data name="Admin.Booths.Field.Website" xml:space="preserve"><value>موقع العارض</value></data>

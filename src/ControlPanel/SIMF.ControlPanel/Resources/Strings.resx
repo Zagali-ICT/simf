@@ -75,6 +75,24 @@
   <data name="Admin.Edit.Save" xml:space="preserve"><value>Save changes</value></data>
   <data name="Admin.Edit.Saving" xml:space="preserve"><value>Saving…</value></data>
   <data name="Admin.Edit.Saved" xml:space="preserve"><value>The account was updated.</value></data>
+  <data name="Admin.ContactField.Heading" xml:space="preserve"><value>Contact information</value></data>
+  <data name="Admin.ContactField.City" xml:space="preserve"><value>City</value></data>
+  <data name="Admin.ContactField.CityArabic" xml:space="preserve"><value>City (Arabic)</value></data>
+  <data name="Admin.ContactField.Country" xml:space="preserve"><value>Country</value></data>
+  <data name="Admin.ContactField.CountryNone" xml:space="preserve"><value>— none —</value></data>
+  <data name="Admin.ContactField.Email" xml:space="preserve"><value>Email</value></data>
+  <data name="Admin.ContactField.PhonePrimary" xml:space="preserve"><value>Phone</value></data>
+  <data name="Admin.ContactField.PhoneSecondary" xml:space="preserve"><value>Secondary phone</value></data>
+  <data name="Admin.ContactField.Facebook" xml:space="preserve"><value>Facebook URL</value></data>
+  <data name="Admin.ContactField.X" xml:space="preserve"><value>X (Twitter) URL</value></data>
+  <data name="Admin.ContactField.LinkedIn" xml:space="preserve"><value>LinkedIn URL</value></data>
+  <data name="Admin.ContactField.Instagram" xml:space="preserve"><value>Instagram URL</value></data>
+  <data name="Admin.ContactField.Latitude" xml:space="preserve"><value>Latitude</value></data>
+  <data name="Admin.ContactField.Longitude" xml:space="preserve"><value>Longitude</value></data>
+  <data name="Admin.ContactField.LatLongHint" xml:space="preserve"><value>Latitude and longitude must be provided together.</value></data>
+  <data name="Admin.ContactField.LatLongInvalid" xml:space="preserve"><value>Latitude and longitude must be valid decimal numbers.</value></data>
+  <data name="Admin.ContactField.CountryInvalid" xml:space="preserve"><value>Select a valid country from the list.</value></data>
+  <data name="Admin.ContactField.Website" xml:space="preserve"><value>Website URL</value></data>
   <data name="Admin.ChangeType.Heading" xml:space="preserve"><value>Change account type</value></data>
   <data name="Admin.ChangeType.Note.VisitorToOther" xml:space="preserve"><value>Convert this visitor into a partner account (staff, sponsor, exhibitor, media…). The account is signed out and re-issued under the new type.</value></data>
   <data name="Admin.ChangeType.Note.OtherToVisitor" xml:space="preserve"><value>Convert this partner account into a visitor. The account is signed out and re-issued under the new type.</value></data>
@@ -2514,6 +2532,7 @@
   <data name="Admin.Booths.Field.Exhibitor" xml:space="preserve"><value>Exhibitor</value></data>
   <data name="Admin.Booths.Field.ExhibitorNone" xml:space="preserve"><value>— No exhibitor —</value></data>
   <data name="Admin.Booths.Field.OfficerName" xml:space="preserve"><value>Booth officer name</value></data>
+  <data name="Admin.Booths.Field.OfficerNameAr" xml:space="preserve"><value>Booth officer name (Arabic)</value></data>
   <data name="Admin.Booths.Field.OfficerPhone" xml:space="preserve"><value>Booth officer phone</value></data>
   <data name="Admin.Booths.Field.OfficerEmail" xml:space="preserve"><value>Booth officer email</value></data>
   <data name="Admin.Booths.Field.Website" xml:space="preserve"><value>Exhibitor website</value></data>
