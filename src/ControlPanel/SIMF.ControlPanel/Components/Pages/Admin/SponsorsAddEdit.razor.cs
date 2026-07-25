@@ -34,9 +34,16 @@ public partial class SponsorsAddEdit
     ];
 
     private readonly Model _model = new();
+    private string _countryIdInput = string.Empty;
+    private string _latitudeInput = string.Empty;
+    private string _longitudeInput = string.Empty;
     private EditContext _editContext = default!;
     private bool _busy;
     private string? _error;
+
+    // Country picker state — populated lazily on first render.
+    private string[] _countryIds = Array.Empty<string>();
+    private Dictionary<string, AdminCountrySummary> _countriesById = new();
 
     protected override void OnInitialized()
     {
@@ -52,9 +59,55 @@ public partial class SponsorsAddEdit
             _model.TaglineAr = Initial.TaglineArabic ?? string.Empty;
             _model.About = Initial.About ?? string.Empty;
             _model.AboutAr = Initial.AboutArabic ?? string.Empty;
+            _countryIdInput = Initial.CountryId?.ToString() ?? string.Empty;
+            _model.Email = Initial.Email ?? string.Empty;
+            _model.PhonePrimary = Initial.PhonePrimary ?? string.Empty;
+            _model.PhoneSecondary = Initial.PhoneSecondary ?? string.Empty;
+            _model.FacebookUrl = Initial.FacebookUrl ?? string.Empty;
+            _model.XUrl = Initial.XUrl ?? string.Empty;
+            _model.LinkedInUrl = Initial.LinkedInUrl ?? string.Empty;
+            _model.InstagramUrl = Initial.InstagramUrl ?? string.Empty;
+            _model.City = Initial.City ?? string.Empty;
+            _model.CityArabic = Initial.CityArabic ?? string.Empty;
+            _latitudeInput = Initial.Latitude?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
+            _longitudeInput = Initial.Longitude?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
             _model.IsActive = Initial.IsActive;
         }
         _editContext = new EditContext(_model);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminCountrySummary>>>(
+                "simfAccount.postJson", "/account/api/admin/countries/list",
+                new GridQuery { Top = 500, Filters = new Dictionary<string, string> { ["isActive"] = "true" } });
+            if (envelope is { Success: true, Data: not null })
+            {
+                _countriesById = envelope.Data.Items.ToDictionary(c => c.Id.ToString(), c => c);
+                _countryIds = envelope.Data.Items
+                    .OrderBy(c => c.DisplayOrder)
+                    .ThenBy(c => c.Name)
+                    .Select(c => c.Id.ToString())
+                    .ToArray();
+                StateHasChanged();
+            }
+        }
+        catch
+        {
+            // Picker stays empty; admin can still submit with no country.
+        }
+    }
+
+    private string CountryLabel(string id)
+    {
+        if (!_countriesById.TryGetValue(id, out var country)) return id;
+        var isArabic = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
+        return isArabic
+            ? $"{country.NameArabic} ({country.Code})"
+            : $"{country.Name} ({country.Code})";
     }
 
     private async Task HandleSubmitAsync()
@@ -65,6 +118,35 @@ public partial class SponsorsAddEdit
         if (string.IsNullOrWhiteSpace(_model.NameEn) || string.IsNullOrWhiteSpace(_model.NameAr))
         {
             _error = L["Admin.Sponsors.NameRequired"]; return;
+        }
+
+        // The picker only ever supplies valid numeric ids; anything else is
+        // treated as "no country" and the service re-checks a real id.
+        int? countryId = null;
+        if (!string.IsNullOrWhiteSpace(_countryIdInput)
+            && int.TryParse(_countryIdInput, out var parsedCountry) && parsedCountry > 0)
+        {
+            countryId = parsedCountry;
+        }
+
+        // Latitude/longitude are an all-or-nothing pair; the service enforces
+        // the real-world ranges and returns a bilingual 400 if out of bounds.
+        double? latitude = null, longitude = null;
+        var hasLat = !string.IsNullOrWhiteSpace(_latitudeInput);
+        var hasLong = !string.IsNullOrWhiteSpace(_longitudeInput);
+        if (hasLat != hasLong)
+        {
+            _error = L["Admin.ContactField.LatLongHint"]; return;
+        }
+        if (hasLat)
+        {
+            if (!double.TryParse(_latitudeInput, NumberStyles.Float, CultureInfo.InvariantCulture, out var lat)
+                || !double.TryParse(_longitudeInput, NumberStyles.Float, CultureInfo.InvariantCulture, out var lng))
+            {
+                _error = L["Admin.ContactField.LatLongInvalid"]; return;
+            }
+            latitude = lat;
+            longitude = lng;
         }
 
         _busy = true;
@@ -87,6 +169,18 @@ public partial class SponsorsAddEdit
                         TaglineArabic = NullIfBlank(_model.TaglineAr),
                         About = NullIfBlank(_model.About),
                         AboutArabic = NullIfBlank(_model.AboutAr),
+                        CountryId = countryId,
+                        Email = NullIfBlank(_model.Email),
+                        PhonePrimary = NullIfBlank(_model.PhonePrimary),
+                        PhoneSecondary = NullIfBlank(_model.PhoneSecondary),
+                        FacebookUrl = NullIfBlank(_model.FacebookUrl),
+                        XUrl = NullIfBlank(_model.XUrl),
+                        LinkedInUrl = NullIfBlank(_model.LinkedInUrl),
+                        InstagramUrl = NullIfBlank(_model.InstagramUrl),
+                        City = NullIfBlank(_model.City),
+                        CityArabic = NullIfBlank(_model.CityArabic),
+                        Latitude = latitude,
+                        Longitude = longitude,
                     });
             }
             else
@@ -105,6 +199,18 @@ public partial class SponsorsAddEdit
                         TaglineArabic = NullIfBlank(_model.TaglineAr),
                         About = NullIfBlank(_model.About),
                         AboutArabic = NullIfBlank(_model.AboutAr),
+                        CountryId = countryId,
+                        Email = NullIfBlank(_model.Email),
+                        PhonePrimary = NullIfBlank(_model.PhonePrimary),
+                        PhoneSecondary = NullIfBlank(_model.PhoneSecondary),
+                        FacebookUrl = NullIfBlank(_model.FacebookUrl),
+                        XUrl = NullIfBlank(_model.XUrl),
+                        LinkedInUrl = NullIfBlank(_model.LinkedInUrl),
+                        InstagramUrl = NullIfBlank(_model.InstagramUrl),
+                        City = NullIfBlank(_model.City),
+                        CityArabic = NullIfBlank(_model.CityArabic),
+                        Latitude = latitude,
+                        Longitude = longitude,
                         IsActive = _model.IsActive,
                     });
             }
@@ -150,6 +256,15 @@ public partial class SponsorsAddEdit
         public string TaglineAr { get; set; } = string.Empty;
         public string About { get; set; } = string.Empty;
         public string AboutAr { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string PhonePrimary { get; set; } = string.Empty;
+        public string PhoneSecondary { get; set; } = string.Empty;
+        public string FacebookUrl { get; set; } = string.Empty;
+        public string XUrl { get; set; } = string.Empty;
+        public string LinkedInUrl { get; set; } = string.Empty;
+        public string InstagramUrl { get; set; } = string.Empty;
+        public string City { get; set; } = string.Empty;
+        public string CityArabic { get; set; } = string.Empty;
         public int DisplayOrder { get; set; }
         public bool IsActive { get; set; } = true;
     }

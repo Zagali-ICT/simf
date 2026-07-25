@@ -43,7 +43,8 @@ public sealed record AdminMediaPartnerSummary(
     bool HasLogo = false);
 
 /// <summary>D-199 — admin detail projection of a media partner.
-/// SIMF-FDS-014 (D-281): carries the optional shared-<c>Contact</c> link.</summary>
+/// D-766: the contact identity-card fields (phone / email / social / city /
+/// map location / country) are inlined onto the row (all optional).</summary>
 public sealed record AdminMediaPartnerDetail(
     Guid Id,
     string Name,
@@ -53,7 +54,22 @@ public sealed record AdminMediaPartnerDetail(
     int DisplayOrder,
     bool IsActive,
     DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt);
+    DateTimeOffset? UpdatedAt,
+    // D-766 — inlined contact identity-card fields (all optional).
+    string? Email = null,
+    string? PhonePrimary = null,
+    string? PhoneSecondary = null,
+    string? FacebookUrl = null,
+    string? XUrl = null,
+    string? LinkedInUrl = null,
+    string? InstagramUrl = null,
+    string? City = null,
+    string? CityArabic = null,
+    int? CountryId = null,
+    string? CountryNameEn = null,
+    string? CountryNameAr = null,
+    double? Latitude = null,
+    double? Longitude = null);
 
 /// <summary>D-199 — create payload (Id is server-assigned).</summary>
 public sealed record AdminCreateMediaPartnerRequest(
@@ -61,7 +77,20 @@ public sealed record AdminCreateMediaPartnerRequest(
     string NameArabic,
     string? LogoRelativePath,
     string? Url,
-    int DisplayOrder);
+    int DisplayOrder,
+    // D-766 — inlined contact identity-card fields (all optional).
+    string? Email = null,
+    string? PhonePrimary = null,
+    string? PhoneSecondary = null,
+    string? FacebookUrl = null,
+    string? XUrl = null,
+    string? LinkedInUrl = null,
+    string? InstagramUrl = null,
+    string? City = null,
+    string? CityArabic = null,
+    int? CountryId = null,
+    double? Latitude = null,
+    double? Longitude = null);
 
 /// <summary>D-199 — update payload (Id travels in the route).</summary>
 public sealed record AdminUpdateMediaPartnerRequest
@@ -73,4 +102,18 @@ public sealed record AdminUpdateMediaPartnerRequest
     public int DisplayOrder { get; set; }
 
     public bool IsActive { get; set; } = true;
+
+    // D-766 — inlined contact identity-card fields (all optional).
+    public string? Email { get; set; }
+    public string? PhonePrimary { get; set; }
+    public string? PhoneSecondary { get; set; }
+    public string? FacebookUrl { get; set; }
+    public string? XUrl { get; set; }
+    public string? LinkedInUrl { get; set; }
+    public string? InstagramUrl { get; set; }
+    public string? City { get; set; }
+    public string? CityArabic { get; set; }
+    public int? CountryId { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
 }

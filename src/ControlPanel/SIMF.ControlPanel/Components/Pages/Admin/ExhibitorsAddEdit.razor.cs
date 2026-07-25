@@ -35,8 +35,15 @@ public partial class ExhibitorsAddEdit
     ];
 
     private readonly FormModel _form = new();
+    private string _countryIdInput = string.Empty;
+    private string _latitudeInput = string.Empty;
+    private string _longitudeInput = string.Empty;
     private bool _busy;
     private string? _error;
+
+    // Country picker state — populated lazily on first render.
+    private string[] _countryIds = Array.Empty<string>();
+    private Dictionary<string, AdminCountrySummary> _countriesById = new();
 
     protected override void OnInitialized()
     {
@@ -48,8 +55,52 @@ public partial class ExhibitorsAddEdit
             _form.ContactPhone = Initial.ContactPhone ?? string.Empty;
             _form.Website = Initial.Website ?? string.Empty;
             _form.Tier = Initial.Tier is null ? null : (int)Initial.Tier.Value;
+            _countryIdInput = Initial.CountryId?.ToString() ?? string.Empty;
+            _form.PhoneSecondary = Initial.PhoneSecondary ?? string.Empty;
+            _form.FacebookUrl = Initial.FacebookUrl ?? string.Empty;
+            _form.XUrl = Initial.XUrl ?? string.Empty;
+            _form.LinkedInUrl = Initial.LinkedInUrl ?? string.Empty;
+            _form.InstagramUrl = Initial.InstagramUrl ?? string.Empty;
+            _form.City = Initial.City ?? string.Empty;
+            _form.CityArabic = Initial.CityArabic ?? string.Empty;
+            _latitudeInput = Initial.Latitude?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
+            _longitudeInput = Initial.Longitude?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
             _form.IsActive = Initial.IsActive;
         }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminCountrySummary>>>(
+                "simfAccount.postJson", "/account/api/admin/countries/list",
+                new GridQuery { Top = 500, Filters = new Dictionary<string, string> { ["isActive"] = "true" } });
+            if (envelope is { Success: true, Data: not null })
+            {
+                _countriesById = envelope.Data.Items.ToDictionary(c => c.Id.ToString(), c => c);
+                _countryIds = envelope.Data.Items
+                    .OrderBy(c => c.DisplayOrder)
+                    .ThenBy(c => c.Name)
+                    .Select(c => c.Id.ToString())
+                    .ToArray();
+                StateHasChanged();
+            }
+        }
+        catch
+        {
+            // Picker stays empty; admin can still submit with no country.
+        }
+    }
+
+    private string CountryLabel(string id)
+    {
+        if (!_countriesById.TryGetValue(id, out var country)) return id;
+        var isArabic = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
+        return isArabic
+            ? $"{country.NameArabic} ({country.Code})"
+            : $"{country.Name} ({country.Code})";
     }
 
     private async Task SaveAsync()
@@ -63,6 +114,37 @@ public partial class ExhibitorsAddEdit
         {
             _error = L["Admin.Exhibitors.NameRequired"];
             return;
+        }
+
+        // The picker only ever yields valid country ids; parse defensively and
+        // fall back to "no country" if it somehow does not.
+        int? countryId = null;
+        if (!string.IsNullOrWhiteSpace(_countryIdInput)
+            && int.TryParse(_countryIdInput, out var parsedCountry) && parsedCountry > 0)
+        {
+            countryId = parsedCountry;
+        }
+
+        // Latitude/longitude are an all-or-nothing pair; the service enforces
+        // the real-world ranges and returns a bilingual 400 if out of bounds.
+        double? latitude = null, longitude = null;
+        var hasLat = !string.IsNullOrWhiteSpace(_latitudeInput);
+        var hasLong = !string.IsNullOrWhiteSpace(_longitudeInput);
+        if (hasLat != hasLong)
+        {
+            _error = L["Admin.ContactField.LatLongHint"];
+            return;
+        }
+        if (hasLat)
+        {
+            if (!double.TryParse(_latitudeInput, NumberStyles.Float, CultureInfo.InvariantCulture, out var lat)
+                || !double.TryParse(_longitudeInput, NumberStyles.Float, CultureInfo.InvariantCulture, out var lng))
+            {
+                _error = L["Admin.ContactField.LatLongInvalid"];
+                return;
+            }
+            latitude = lat;
+            longitude = lng;
         }
 
         _busy = true;
@@ -83,6 +165,16 @@ public partial class ExhibitorsAddEdit
                         ContactPhone = NullIfBlank(_form.ContactPhone),
                         Website = NullIfBlank(_form.Website),
                         Tier = _form.Tier is null ? null : (ExhibitorTier)_form.Tier.Value,
+                        CountryId = countryId,
+                        PhoneSecondary = NullIfBlank(_form.PhoneSecondary),
+                        FacebookUrl = NullIfBlank(_form.FacebookUrl),
+                        XUrl = NullIfBlank(_form.XUrl),
+                        LinkedInUrl = NullIfBlank(_form.LinkedInUrl),
+                        InstagramUrl = NullIfBlank(_form.InstagramUrl),
+                        City = NullIfBlank(_form.City),
+                        CityArabic = NullIfBlank(_form.CityArabic),
+                        Latitude = latitude,
+                        Longitude = longitude,
                     });
             }
             else
@@ -98,6 +190,16 @@ public partial class ExhibitorsAddEdit
                         ContactPhone = NullIfBlank(_form.ContactPhone),
                         Website = NullIfBlank(_form.Website),
                         Tier = _form.Tier is null ? null : (ExhibitorTier)_form.Tier.Value,
+                        CountryId = countryId,
+                        PhoneSecondary = NullIfBlank(_form.PhoneSecondary),
+                        FacebookUrl = NullIfBlank(_form.FacebookUrl),
+                        XUrl = NullIfBlank(_form.XUrl),
+                        LinkedInUrl = NullIfBlank(_form.LinkedInUrl),
+                        InstagramUrl = NullIfBlank(_form.InstagramUrl),
+                        City = NullIfBlank(_form.City),
+                        CityArabic = NullIfBlank(_form.CityArabic),
+                        Latitude = latitude,
+                        Longitude = longitude,
                         IsActive = _form.IsActive,
                     });
             }
@@ -135,6 +237,13 @@ public partial class ExhibitorsAddEdit
         public string ContactPhone { get; set; } = string.Empty;
         public string Website { get; set; } = string.Empty;
         public int? Tier { get; set; }
+        public string PhoneSecondary { get; set; } = string.Empty;
+        public string FacebookUrl { get; set; } = string.Empty;
+        public string XUrl { get; set; } = string.Empty;
+        public string LinkedInUrl { get; set; } = string.Empty;
+        public string InstagramUrl { get; set; } = string.Empty;
+        public string City { get; set; } = string.Empty;
+        public string CityArabic { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
     }
 }

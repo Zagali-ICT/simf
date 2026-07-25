@@ -141,7 +141,10 @@ internal sealed class AdminBoothService(
             .AsNoTracking()
             .Include(row => row.Exhibitor)
             .SingleOrDefaultAsync(row => row.Id == id, cancellationToken);
-        return booth is null ? null : ToDetail(booth);
+        if (booth is null) { return null; }
+        var (officerCountryEn, officerCountryAr) =
+            await ResolveOfficerCountryAsync(booth.OfficerCountryId, cancellationToken);
+        return ToDetail(booth, officerCountryEn, officerCountryAr);
     }
 
     public async Task<AdminBoothDetail> CreateAsync(
@@ -154,8 +157,15 @@ internal sealed class AdminBoothService(
             request.OfficerName, request.OfficerPhone, request.OfficerEmail,
             request.Sector, request.SectorArabic,
             request.Description, request.DescriptionArabic);
+        ValidateContactFields(
+            request.OfficerNameArabic, request.OfficerPhoneSecondary,
+            request.OfficerWebsite, request.OfficerFacebookUrl, request.OfficerXUrl,
+            request.OfficerLinkedInUrl, request.OfficerInstagramUrl,
+            request.OfficerCity, request.OfficerCityArabic,
+            request.OfficerLatitude, request.OfficerLongitude);
         await EnsureHallIsValidAsync(request.HallId, cancellationToken);
         await EnsureExhibitorIsValidAsync(request.ExhibitorId, cancellationToken);
+        await EnsureOfficerCountryIsValidAsync(request.OfficerCountryId, cancellationToken);
 
         var clash = await dbContext.Booths
             .AsNoTracking()
@@ -179,6 +189,18 @@ internal sealed class AdminBoothService(
             OfficerName = v.OfficerName,
             OfficerPhone = v.OfficerPhone,
             OfficerEmail = v.OfficerEmail,
+            OfficerNameArabic = NullIfBlank(request.OfficerNameArabic),
+            OfficerPhoneSecondary = NullIfBlank(request.OfficerPhoneSecondary),
+            OfficerWebsite = NullIfBlank(request.OfficerWebsite),
+            OfficerFacebookUrl = NullIfBlank(request.OfficerFacebookUrl),
+            OfficerXUrl = NullIfBlank(request.OfficerXUrl),
+            OfficerLinkedInUrl = NullIfBlank(request.OfficerLinkedInUrl),
+            OfficerInstagramUrl = NullIfBlank(request.OfficerInstagramUrl),
+            OfficerCity = NullIfBlank(request.OfficerCity),
+            OfficerCityArabic = NullIfBlank(request.OfficerCityArabic),
+            OfficerLatitude = request.OfficerLatitude,
+            OfficerLongitude = request.OfficerLongitude,
+            OfficerCountryId = request.OfficerCountryId,
             Sector = v.Sector,
             SectorArabic = v.SectorArabic,
             Description = v.Description,
@@ -204,7 +226,9 @@ internal sealed class AdminBoothService(
             "Admin {ActorId} created Booth {Code} ({Id})",
             actorUserId, v.Code, booth.Id);
 
-        return ToDetail(booth);
+        var (officerCountryEn, officerCountryAr) =
+            await ResolveOfficerCountryAsync(booth.OfficerCountryId, cancellationToken);
+        return ToDetail(booth, officerCountryEn, officerCountryAr);
     }
 
     public async Task<AdminBoothDetail> UpdateAsync(
@@ -225,8 +249,15 @@ internal sealed class AdminBoothService(
             request.OfficerName, request.OfficerPhone, request.OfficerEmail,
             request.Sector, request.SectorArabic,
             request.Description, request.DescriptionArabic);
+        ValidateContactFields(
+            request.OfficerNameArabic, request.OfficerPhoneSecondary,
+            request.OfficerWebsite, request.OfficerFacebookUrl, request.OfficerXUrl,
+            request.OfficerLinkedInUrl, request.OfficerInstagramUrl,
+            request.OfficerCity, request.OfficerCityArabic,
+            request.OfficerLatitude, request.OfficerLongitude);
         await EnsureHallIsValidAsync(request.HallId, cancellationToken);
         await EnsureExhibitorIsValidAsync(request.ExhibitorId, cancellationToken);
+        await EnsureOfficerCountryIsValidAsync(request.OfficerCountryId, cancellationToken);
 
         if (!string.Equals(booth.Code, v.Code, StringComparison.OrdinalIgnoreCase))
         {
@@ -249,6 +280,18 @@ internal sealed class AdminBoothService(
         booth.OfficerName = v.OfficerName;
         booth.OfficerPhone = v.OfficerPhone;
         booth.OfficerEmail = v.OfficerEmail;
+        booth.OfficerNameArabic = NullIfBlank(request.OfficerNameArabic);
+        booth.OfficerPhoneSecondary = NullIfBlank(request.OfficerPhoneSecondary);
+        booth.OfficerWebsite = NullIfBlank(request.OfficerWebsite);
+        booth.OfficerFacebookUrl = NullIfBlank(request.OfficerFacebookUrl);
+        booth.OfficerXUrl = NullIfBlank(request.OfficerXUrl);
+        booth.OfficerLinkedInUrl = NullIfBlank(request.OfficerLinkedInUrl);
+        booth.OfficerInstagramUrl = NullIfBlank(request.OfficerInstagramUrl);
+        booth.OfficerCity = NullIfBlank(request.OfficerCity);
+        booth.OfficerCityArabic = NullIfBlank(request.OfficerCityArabic);
+        booth.OfficerLatitude = request.OfficerLatitude;
+        booth.OfficerLongitude = request.OfficerLongitude;
+        booth.OfficerCountryId = request.OfficerCountryId;
         booth.Sector = v.Sector;
         booth.SectorArabic = v.SectorArabic;
         booth.Description = v.Description;
@@ -268,7 +311,9 @@ internal sealed class AdminBoothService(
             Detail = $"id={booth.Id}; code={v.Code}; active={booth.IsActive}",
         }, cancellationToken);
 
-        return ToDetail(booth);
+        var (officerCountryEn, officerCountryAr) =
+            await ResolveOfficerCountryAsync(booth.OfficerCountryId, cancellationToken);
+        return ToDetail(booth, officerCountryEn, officerCountryAr);
     }
 
     public async Task DeactivateAsync(
@@ -398,6 +443,68 @@ internal sealed class AdminBoothService(
         return value;
     }
 
+    // D-766 — validates the NEW inline booth-officer identity-card fields (the
+    // shared Contact directory was removed). Lengths mirror the EF configuration;
+    // latitude and longitude are an all-or-nothing pair with real-world ranges.
+    // OfficerName / OfficerPhone / OfficerEmail are validated in
+    // ValidateAndNormalise above and are not re-checked here.
+    private static void ValidateContactFields(
+        string? nameArabic, string? phoneSecondary,
+        string? website, string? facebook, string? x, string? linkedIn,
+        string? instagram, string? city, string? cityArabic,
+        double? latitude, double? longitude)
+    {
+        if (!string.IsNullOrWhiteSpace(nameArabic) && nameArabic.Length > 256)
+        {
+            throw Invalid("Booth officer Arabic name must be 256 characters or fewer.",
+                "يجب ألا يتجاوز الاسم العربي لمسؤول الجناح 256 حرفاً.");
+        }
+        if (!string.IsNullOrWhiteSpace(phoneSecondary) && phoneSecondary.Length > 32)
+        {
+            throw Invalid("Phone numbers must be 32 characters or fewer.",
+                "يجب ألا يتجاوز رقم الهاتف 32 حرفاً.");
+        }
+        if (!string.IsNullOrWhiteSpace(website) && website.Length > 512)
+        {
+            throw Invalid("Website URL must be 512 characters or fewer.",
+                "يجب ألا يتجاوز رابط الموقع الإلكتروني 512 حرفاً.");
+        }
+        foreach (var url in new[] { facebook, x, linkedIn, instagram })
+        {
+            if (!string.IsNullOrWhiteSpace(url) && url.Length > 256)
+            {
+                throw Invalid("Social URLs must be 256 characters or fewer.",
+                    "يجب ألا يتجاوز رابط الشبكات الاجتماعية 256 حرفاً.");
+            }
+        }
+        foreach (var cityValue in new[] { city, cityArabic })
+        {
+            if (!string.IsNullOrWhiteSpace(cityValue) && cityValue.Length > 128)
+            {
+                throw Invalid("City must be 128 characters or fewer.",
+                    "يجب ألا تتجاوز المدينة 128 حرفاً.");
+            }
+        }
+        if (latitude is null != (longitude is null))
+        {
+            throw Invalid("Latitude and longitude must be provided together.",
+                "يجب إدخال خط العرض وخط الطول معاً.");
+        }
+        if (latitude is < -90 or > 90)
+        {
+            throw Invalid("Latitude must be between -90 and 90.",
+                "يجب أن يكون خط العرض بين -90 و 90.");
+        }
+        if (longitude is < -180 or > 180)
+        {
+            throw Invalid("Longitude must be between -180 and 180.",
+                "يجب أن يكون خط الطول بين -180 و 180.");
+        }
+    }
+
+    private static ApiException Invalid(string english, string arabic) =>
+        new(ErrorCodes.BoothInvalid, 400, english, arabic);
+
     private async Task EnsureHallIsValidAsync(
         Guid? hallId, CancellationToken cancellationToken)
     {
@@ -434,10 +541,41 @@ internal sealed class AdminBoothService(
         }
     }
 
+    // D-766 — the booth officer's country is a logical FK to the live Country
+    // table (same App context). Mirrors AdminSpeakerService.EnsureCountryIsValid.
+    private async Task EnsureOfficerCountryIsValidAsync(
+        int? countryId, CancellationToken cancellationToken)
+    {
+        if (countryId is null) { return; }
+        var exists = await dbContext.Countries
+            .AsNoTracking()
+            .AnyAsync(country => country.Id == countryId.Value && country.IsActive, cancellationToken);
+        if (!exists)
+        {
+            throw new ApiException(
+                ErrorCodes.BoothInvalid, 400,
+                $"Country id '{countryId}' does not exist or is inactive.",
+                $"رقم البلد '{countryId}' غير موجود أو غير مفعّل.");
+        }
+    }
+
+    private async Task<(string? en, string? ar)> ResolveOfficerCountryAsync(
+        int? countryId, CancellationToken cancellationToken)
+    {
+        if (countryId is null) { return (null, null); }
+        var row = await dbContext.Countries
+            .AsNoTracking()
+            .Where(country => country.Id == countryId.Value)
+            .Select(country => new { country.Name, country.NameArabic })
+            .SingleOrDefaultAsync(cancellationToken);
+        return (row?.Name, row?.NameArabic);
+    }
+
     private static string? NullIfBlank(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
-    private static AdminBoothDetail ToDetail(Booth b) => new()
+    private static AdminBoothDetail ToDetail(
+        Booth b, string? officerCountryNameEn, string? officerCountryNameAr) => new()
     {
         Id = b.Id,
         Code = b.Code,
@@ -447,6 +585,20 @@ internal sealed class AdminBoothService(
         OfficerName = b.OfficerName,
         OfficerPhone = b.OfficerPhone,
         OfficerEmail = b.OfficerEmail,
+        OfficerNameArabic = b.OfficerNameArabic,
+        OfficerPhoneSecondary = b.OfficerPhoneSecondary,
+        OfficerWebsite = b.OfficerWebsite,
+        OfficerFacebookUrl = b.OfficerFacebookUrl,
+        OfficerXUrl = b.OfficerXUrl,
+        OfficerLinkedInUrl = b.OfficerLinkedInUrl,
+        OfficerInstagramUrl = b.OfficerInstagramUrl,
+        OfficerCity = b.OfficerCity,
+        OfficerCityArabic = b.OfficerCityArabic,
+        OfficerLatitude = b.OfficerLatitude,
+        OfficerLongitude = b.OfficerLongitude,
+        OfficerCountryId = b.OfficerCountryId,
+        OfficerCountryNameEn = officerCountryNameEn,
+        OfficerCountryNameAr = officerCountryNameAr,
         Sector = b.Sector,
         SectorArabic = b.SectorArabic,
         Description = b.Description,

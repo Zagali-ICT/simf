@@ -35,7 +35,23 @@ public sealed record AdminExhibitorDetail(
     DateTimeOffset CreatedAt,
     DateTimeOffset? UpdatedAt,
     // Wave 3 (Figma 1439:11881) — optional exhibitor tier; null renders no pill.
-    ExhibitorTier? Tier = null);
+    ExhibitorTier? Tier = null,
+    // Contact identity-card fields inlined from the removed shared Contact
+    // directory (D-766). All optional; the email + primary phone reuse the
+    // existing ContactEmail / ContactPhone above (no second slot). Trailing-
+    // optional so the wire contract stays append-only.
+    int? CountryId = null,
+    string? CountryNameEn = null,
+    string? CountryNameAr = null,
+    string? PhoneSecondary = null,
+    string? FacebookUrl = null,
+    string? XUrl = null,
+    string? LinkedInUrl = null,
+    string? InstagramUrl = null,
+    string? City = null,
+    string? CityArabic = null,
+    double? Latitude = null,
+    double? Longitude = null);
 
 /// <summary>
 /// D-199 #3 — body of <c>POST /api/v1/admin/exhibitors</c>. Creates the exhibitor
@@ -61,6 +77,39 @@ public sealed class CreateExhibitorRequest
 
     /// <summary>Optional exhibitor tier (null = no tier).</summary>
     public ExhibitorTier? Tier { get; init; }
+
+    // Contact identity-card fields inlined from the removed shared Contact
+    // directory (D-766). All optional; the email + primary phone reuse the
+    // existing ContactEmail / ContactPhone above (no second slot).
+    /// <summary>Optional same-DB country FK (nationality).</summary>
+    public int? CountryId { get; init; }
+
+    /// <summary>Optional secondary contact phone (≤32 chars).</summary>
+    public string? PhoneSecondary { get; init; }
+
+    /// <summary>Optional Facebook profile URL (≤256 chars).</summary>
+    public string? FacebookUrl { get; init; }
+
+    /// <summary>Optional X (Twitter) profile URL (≤256 chars).</summary>
+    public string? XUrl { get; init; }
+
+    /// <summary>Optional LinkedIn profile URL (≤256 chars).</summary>
+    public string? LinkedInUrl { get; init; }
+
+    /// <summary>Optional Instagram profile URL (≤256 chars).</summary>
+    public string? InstagramUrl { get; init; }
+
+    /// <summary>Optional English city name (≤128 chars).</summary>
+    public string? City { get; init; }
+
+    /// <summary>Optional Arabic city name (≤128 chars).</summary>
+    public string? CityArabic { get; init; }
+
+    /// <summary>Optional map latitude.</summary>
+    public double? Latitude { get; init; }
+
+    /// <summary>Optional map longitude.</summary>
+    public double? Longitude { get; init; }
 }
 
 /// <summary>D-199 #3 — body of <c>PUT /api/v1/admin/exhibitors/{id}</c>.
@@ -84,6 +133,39 @@ public class UpdateExhibitorRequest
 
     /// <summary>Optional exhibitor tier (null = no tier).</summary>
     public ExhibitorTier? Tier { get; init; }
+
+    // Contact identity-card fields inlined from the removed shared Contact
+    // directory (D-766). All optional; the email + primary phone reuse the
+    // existing ContactEmail / ContactPhone above (no second slot).
+    /// <summary>Optional same-DB country FK (nationality).</summary>
+    public int? CountryId { get; init; }
+
+    /// <summary>Optional secondary contact phone (≤32 chars).</summary>
+    public string? PhoneSecondary { get; init; }
+
+    /// <summary>Optional Facebook profile URL (≤256 chars).</summary>
+    public string? FacebookUrl { get; init; }
+
+    /// <summary>Optional X (Twitter) profile URL (≤256 chars).</summary>
+    public string? XUrl { get; init; }
+
+    /// <summary>Optional LinkedIn profile URL (≤256 chars).</summary>
+    public string? LinkedInUrl { get; init; }
+
+    /// <summary>Optional Instagram profile URL (≤256 chars).</summary>
+    public string? InstagramUrl { get; init; }
+
+    /// <summary>Optional English city name (≤128 chars).</summary>
+    public string? City { get; init; }
+
+    /// <summary>Optional Arabic city name (≤128 chars).</summary>
+    public string? CityArabic { get; init; }
+
+    /// <summary>Optional map latitude.</summary>
+    public double? Latitude { get; init; }
+
+    /// <summary>Optional map longitude.</summary>
+    public double? Longitude { get; init; }
 
     /// <summary>Soft-delete / restore flag.</summary>
     public bool IsActive { get; init; } = true;
