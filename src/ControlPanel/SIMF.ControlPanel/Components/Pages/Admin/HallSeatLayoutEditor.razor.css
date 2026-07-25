@@ -1,0 +1,174 @@
+/* D-182 (CP UI for D-175 seat reservations) — visual polish for the hall
+   seat-layout editor: a capacity summary with a utilisation meter and a live
+   seat-map preview of the row × seats-per-row layout the admin is defining.
+   All colours / spacing / radii come from theme.tokens.css (no hardcoded
+   values), per the CSS rules; logical properties keep it correct under RTL. */
+
+/* ---- Capacity summary ------------------------------------------------- */
+
+.hsl-capacity {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    background: var(--color-surface-sunken);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.hsl-capacity--over {
+    background: var(--color-warning-surface);
+    border-color: var(--color-warning);
+}
+
+.hsl-capacity__stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-6);
+    margin: 0;
+}
+
+.hsl-capacity__stat {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.hsl-capacity__term {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+}
+
+.hsl-capacity__value {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text);
+    line-height: 1;
+}
+
+.hsl-capacity__formula {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+
+/* Native <progress> so the meter needs no inline width — styled per browser. */
+.hsl-capacity__meter {
+    inline-size: 100%;
+    block-size: 0.5rem;
+    appearance: none;
+    -webkit-appearance: none;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: var(--color-border);
+    overflow: hidden;
+}
+
+.hsl-capacity__meter::-webkit-progress-bar {
+    background: var(--color-border);
+    border-radius: var(--radius-sm);
+}
+
+.hsl-capacity__meter::-webkit-progress-value {
+    background: var(--color-success);
+    border-radius: var(--radius-sm);
+}
+
+.hsl-capacity__meter::-moz-progress-bar {
+    background: var(--color-success);
+    border-radius: var(--radius-sm);
+}
+
+.hsl-capacity--over .hsl-capacity__meter::-webkit-progress-value {
+    background: var(--color-warning);
+}
+
+.hsl-capacity--over .hsl-capacity__meter::-moz-progress-bar {
+    background: var(--color-warning);
+}
+
+.hsl-capacity__warning {
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text);
+}
+
+/* ---- Live seat-map preview ------------------------------------------- */
+
+.hsl-preview {
+    margin-block-start: var(--space-6);
+}
+
+.hsl-preview__title {
+    font-size: 1rem;
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text);
+    margin: 0 0 var(--space-3);
+}
+
+.hsl-preview__stage {
+    max-inline-size: 32rem;
+    margin: 0 auto var(--space-4);
+    padding: var(--space-1) var(--space-2);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
+    background: var(--color-surface-sunken);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+}
+
+/* Arabic is cursive — inter-letter spacing would pull joined glyphs apart. */
+[dir="rtl"] .hsl-preview__stage {
+    letter-spacing: normal;
+}
+
+.hsl-preview__grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    overflow-x: auto;
+    padding-block-end: var(--space-2);
+}
+
+.hsl-preview__row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    inline-size: max-content;
+}
+
+.hsl-preview__row-label {
+    flex: 0 0 2.5rem;
+    text-align: center;
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-muted);
+}
+
+.hsl-preview__seat {
+    flex: 0 0 auto;
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
+    background: var(--color-seat-free);
+    border: 1px solid var(--color-seat-free-border);
+    border-radius: var(--radius-sm);
+}
+
+.hsl-preview__empty {
+    margin: 0;
+    padding: var(--space-4);
+    text-align: center;
+    color: var(--color-text-muted);
+    background: var(--color-surface-sunken);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-md);
+}

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using SIMF.ApiClient;
 using SIMF.Contracts.Programme;
+using SIMF.Web.Content;
 
 namespace SIMF.Web.Components.Pages;
 
@@ -55,6 +56,6 @@ public partial class MeetingConfirm
 
     private string FormatSlot(MeetingActionPreview preview) =>
         preview.SlotStartUtc is { } start && preview.SlotEndUtc is { } end
-            ? $"{start.UtcDateTime:yyyy-MM-dd HH:mm}–{end.UtcDateTime:HH:mm} UTC"
+            ? $"{EventTime.DateTimeText(start)}–{EventTime.Time(end)}"
             : L["Meeting.Confirm.TBD"];
 }

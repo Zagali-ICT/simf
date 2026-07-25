@@ -102,11 +102,14 @@ IF NOT EXISTS (SELECT 1 FROM dbo.Booths WHERE Code = N'C-02')
         @hallId, 300, 140, @now, @sys, 1);
 
 /* ---------------------------------------------------------------------
-   1b) EXHIBITORS + CONTACTS  -> country flag on each booth
-   Each booth is linked to a curated Exhibitor, and each Exhibitor
-   carries a Contact whose CountryId drives the booth's country flag.
-   Idempotent: Contacts / Exhibitors are guarded on Name, and the booth
-   link is only written when Booths.ExhibitorId IS NULL.
+   1b) EXHIBITORS  -> country flag on each booth
+   Each booth is linked to a curated Exhibitor whose inline CountryId
+   drives the booth's country flag. D-766 removed the shared Contact
+   directory and inlined the identity-card fields (country / city /
+   website) directly onto the Exhibitor, so the exhibitor now carries
+   the country itself - no Contact row.
+   Idempotent: Exhibitors are guarded on Name, and the booth link is
+   only written when Booths.ExhibitorId IS NULL.
    --------------------------------------------------------------------- */
 DECLARE @ex TABLE (
     Code      nvarchar(16)  NOT NULL,
@@ -140,20 +143,11 @@ VALUES
         356, N'Mumbai', N'مومباي',
         N'https://port-logistics.example.com', 30);
 
--- One Contact per exhibitor (carries the country flag). Guard on Name.
-INSERT INTO dbo.Contacts (Id, Name, NameArabic, CountryId, City, CityArabic,
-    Website, IsActive, CreatedAt, CreatedBy)
+-- One Exhibitor per booth, with its country / city / website inline
+-- (D-766 - the Contact directory was removed). Guard on Name.
+INSERT INTO dbo.Exhibitors (Id, Name, NameArabic, CountryId, City, CityArabic,
+    Website, Tier, IsActive, CreatedAt, CreatedBy)
 SELECT NEWID(), e.ExName, e.ExNameAr, e.CountryId, e.City, e.CityAr,
-    e.Website, 1, @now, @sys
-  FROM @ex e
- WHERE NOT EXISTS (SELECT 1 FROM dbo.Contacts c WHERE c.Name = e.ExName);
-
--- One Exhibitor per booth, linked to the persisted Contact. Guard on Name.
-INSERT INTO dbo.Exhibitors (Id, Name, NameArabic, ContactId, Website, Tier,
-    IsActive, CreatedAt, CreatedBy)
-SELECT NEWID(), e.ExName, e.ExNameAr,
-    (SELECT TOP 1 c.Id FROM dbo.Contacts c
-      WHERE c.Name = e.ExName ORDER BY c.CreatedAt),
     e.Website, e.Tier, 1, @now, @sys
   FROM @ex e
  WHERE NOT EXISTS (SELECT 1 FROM dbo.Exhibitors x WHERE x.Name = e.ExName);
@@ -401,5 +395,4 @@ UNION ALL SELECT 'FaqGroups',         COUNT(*) FROM dbo.FaqGroups      WHERE IsA
 UNION ALL SELECT 'FaqEntries',        COUNT(*) FROM dbo.FaqEntries     WHERE IsActive = 1
 UNION ALL SELECT 'VenueMapNodes',     COUNT(*) FROM dbo.VenueMapNodes  WHERE IsActive = 1
 UNION ALL SELECT 'Exhibitors',        COUNT(*) FROM dbo.Exhibitors     WHERE IsActive = 1
-UNION ALL SELECT 'Contacts',          COUNT(*) FROM dbo.Contacts       WHERE IsActive = 1
 UNION ALL SELECT 'Delegate profiles', COUNT(*) FROM dbo.UserProfiles   WHERE IsDelegate = 1 AND IsActive = 1;

@@ -63,7 +63,7 @@
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminPendingUserSummary" Key="created"
                                     Header="@L["Admin.Pending.Column.Created"]">
-                    <CellTemplate>@context.CreatedAt.FormatSaudi("yyyy-MM-dd HH:mm")</CellTemplate>
+                    <CellTemplate>@context.CreatedAt.FormatSaudi("yyyy-MM-dd hh:mm tt")</CellTemplate>
                 </SimfDataGridColumn>
             </Columns>
             <RowActions Context="user">
@@ -185,7 +185,7 @@
                     <dt>@L["Admin.Pending.View.Field.ProfileType"]</dt>
                     <dd>@(_viewProfile.ProfileTypeName ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
                     <dt>@L["Admin.Pending.View.Field.Created"]</dt>
-                    <dd>@_viewProfile.CreatedAt.FormatSaudi("yyyy-MM-dd HH:mm")</dd>
+                    <dd>@_viewProfile.CreatedAt.FormatSaudi("yyyy-MM-dd hh:mm tt")</dd>
                 </dl>
 
                 @if (HasProfileForm(_viewProfile))

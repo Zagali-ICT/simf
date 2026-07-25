@@ -22,11 +22,14 @@ public static class SaudiTime
     /// <summary>Saudi Standard Time relative to UTC: +03:00, no DST.</summary>
     public static readonly TimeSpan Offset = TimeSpan.FromHours(3);
 
-    /// <summary>Default date+time render format (Saudi wall clock, 24h).</summary>
-    public const string DateTimeFormat = "yyyy-MM-dd HH:mm";
+    /// <summary>Default date+time render format (Saudi wall clock, 12-hour AM/PM).</summary>
+    public const string DateTimeFormat = "yyyy-MM-dd hh:mm tt";
 
     /// <summary>Default date-only render format.</summary>
     public const string DateFormat = "yyyy-MM-dd";
+
+    /// <summary>Time-only render format (Saudi wall clock, 12-hour AM/PM).</summary>
+    public const string TimeFormat = "hh:mm tt";
 
     /// <summary>
     /// Projects a stored instant onto the Saudi wall clock (+03:00). The returned
@@ -53,6 +56,23 @@ public static class SaudiTime
     /// </summary>
     public static string FormatSaudi(this DateTimeOffset? instant, string format = DateTimeFormat, string fallback = "") =>
         instant is { } value ? value.FormatSaudi(format) : fallback;
+
+    /// <summary>
+    /// Renders the Saudi wall-clock time-of-day (12-hour AM/PM). Defaults to the
+    /// invariant culture (Latin digits + "AM"/"PM", matching the Control Panel);
+    /// pass the current UI culture on the bilingual Website so Arabic renders its
+    /// localized digits and meridiem markers.
+    /// </summary>
+    public static string FormatSaudiTime(this DateTimeOffset instant, CultureInfo? culture = null) =>
+        instant.ToOffset(Offset).ToString(TimeFormat, culture ?? CultureInfo.InvariantCulture);
+
+    /// <summary>
+    /// Renders a Saudi wall-clock "start – end" time window (12-hour AM/PM); the
+    /// en-dash separator matches the public agenda. See <see cref="FormatSaudiTime"/>
+    /// for the culture rule.
+    /// </summary>
+    public static string FormatSaudiWindow(DateTimeOffset start, DateTimeOffset end, CultureInfo? culture = null) =>
+        $"{start.FormatSaudiTime(culture)} – {end.FormatSaudiTime(culture)}";
 
     /// <summary>
     /// Converts a naive Saudi wall-clock value (e.g. the text a CP admin typed into

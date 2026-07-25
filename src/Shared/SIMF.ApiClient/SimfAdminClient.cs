@@ -2169,6 +2169,30 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
+    /// <summary>D-768 — upload (replace) the hero background video. STREAMED (not a
+    /// byte[]) so a large video is not buffered whole in the CP — the caller's stream
+    /// forwards straight to the API. Gated by OrganizationProfile.Manage.</summary>
+    public Task<ApiCallResult<OrganizationProfileResponse>> UploadOrganizationHeroVideoAsync(
+        Stream content, string contentType, string fileName,
+        string accessToken, CancellationToken cancellationToken = default)
+    {
+        var multipart = new MultipartFormDataContent();
+        var fileContent = new StreamContent(content);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+        multipart.Add(fileContent, "file", fileName);
+        return SendAsync<OrganizationProfileResponse>(
+            HttpMethod.Post, "organization-profile/hero-video",
+            multipart, accessToken, cancellationToken);
+    }
+
+    /// <summary>D-768 — remove the uploaded hero background video (reverts the hero to
+    /// the banner image). Gated by OrganizationProfile.Manage.</summary>
+    public Task<ApiCallResult<OrganizationProfileResponse>> DeleteOrganizationHeroVideoAsync(
+        string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<OrganizationProfileResponse>(
+            HttpMethod.Delete, "organization-profile/hero-video", content: null,
+            accessToken, cancellationToken);
+
     private Task<ApiCallResult<T>> SendAsync<T>(
         HttpMethod method, string path, HttpContent? content,
         string accessToken, CancellationToken cancellationToken) =>

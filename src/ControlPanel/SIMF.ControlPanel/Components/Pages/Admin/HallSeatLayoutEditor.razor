@@ -75,20 +75,67 @@
                     </div>
                 }
 
-                <dl class="simf-dl">
-                    <dt>@L["Admin.HallSeatLayouts.HallCapacity"]</dt>
-                    <dd>@_snapshot.HallCapacity</dd>
-                    <dt>@L["Admin.HallSeatLayouts.TotalSeats"]</dt>
-                    <dd>@_totalSeats</dd>
-                </dl>
-
-                @if (_capacityExceeded || _anyOutOfRange)
-                {
-                    <SimfAlert Variant="warning">@L["Admin.HallSeatLayouts.CapacityExceeded"]</SimfAlert>
-                }
+                @* Capacity summary — Hall vs Layout (total seats) with a utilisation
+                   meter. The over-capacity / out-of-range notice is visual only; Save
+                   stays enabled so the server keeps ownership of the capacity rule. *@
+                <section class="hsl-capacity @((_isOverCapacity || _anyOutOfRange) ? "hsl-capacity--over" : null)">
+                    <dl class="hsl-capacity__stats">
+                        <div class="hsl-capacity__stat">
+                            <dt class="hsl-capacity__term">@L["Admin.HallSeatLayouts.HallCapacity"]</dt>
+                            <dd class="hsl-capacity__value">@_hallCapacity</dd>
+                        </div>
+                        <div class="hsl-capacity__stat">
+                            <dt class="hsl-capacity__term">@L["Admin.HallSeatLayouts.LayoutCapacity"]</dt>
+                            <dd class="hsl-capacity__value">@_totalSeats</dd>
+                        </div>
+                    </dl>
+                    <progress class="hsl-capacity__meter"
+                              aria-label="@L["Admin.HallSeatLayouts.LayoutCapacity"]"
+                              max="@(_hallCapacity > 0 ? _hallCapacity : 1)"
+                              value="@_totalSeats"></progress>
+                    @if (_isOverCapacity || _anyOutOfRange)
+                    {
+                        <p class="hsl-capacity__warning" role="alert">
+                            @L["Admin.HallSeatLayouts.CapacityExceeded"]
+                        </p>
+                    }
+                </section>
             </div>
+
+            @* Live seat-map preview — mirrors the seat picker visitors will see.
+               Every seat is "available" here; this page defines the map, it does
+               not show reservations (that is /admin/sessions/seat-plans). *@
+            <section class="hsl-preview">
+                <h2 class="hsl-preview__title">@L["Admin.HallSeatLayouts.Preview.Title"]</h2>
+                @if (_rows.Count > 0)
+                {
+                    <div class="hsl-preview__stage">@L["Admin.HallSeatLayouts.Preview.Front"]</div>
+                    @* Decorative confirmation of the layout — the capacity panel
+                       and the admin's own inputs already convey the numbers, so it
+                       is hidden from assistive tech to avoid a seat-by-seat readout.
+                       D-767: each row renders its OWN seat count. *@
+                    <div class="hsl-preview__grid" aria-hidden="true">
+                        @foreach (var row in _rows)
+                        {
+                            var seatsToRender = Math.Clamp(row.Count, 0, 80);
+                            <div class="hsl-preview__row">
+                                <span class="hsl-preview__row-label">@row.Label</span>
+                                @for (var seat = 1; seat <= seatsToRender; seat++)
+                                {
+                                    <span class="hsl-preview__seat">@seat</span>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="hsl-preview__empty">@L["Admin.HallSeatLayouts.Preview.Empty"]</p>
+                }
+            </section>
+
             <div class="simf-form__actions">
-                <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy" Disabled="_saveDisabled">
+                <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy">
                     @L["Admin.HallSeatLayouts.Save"]
                 </SimfButton>
             </div>

@@ -52,7 +52,7 @@ public partial class EmailTemplatesList
 
     private static string FormatUpdatedAt(DateTimeOffset? updatedAt) =>
         updatedAt is { } value
-            ? value.FormatSaudi("yyyy-MM-dd HH:mm")
+            ? value.FormatSaudi("yyyy-MM-dd hh:mm tt")
             : "—";
 
     private async Task LoadAsync()
