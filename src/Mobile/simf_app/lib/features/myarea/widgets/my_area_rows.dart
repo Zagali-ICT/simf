@@ -28,7 +28,7 @@ class MyAreaScheduleRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final time = _timeFormat.format(saudiOf(item.startUtc));
+    final time = _timeFormat.format(saudiOf(item.start));
     final hall = item.localizedHall(isArabic);
     return SimfCard(
       onTap: onTap,

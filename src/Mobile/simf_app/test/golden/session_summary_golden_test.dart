@@ -31,7 +31,7 @@ import 'golden_fonts.dart';
 SessionListItem _session({
   required String id,
   required String titleAr,
-  required DateTime startUtc,
+  required DateTime start,
   int durationMin = 60,
 }) =>
     SessionListItem.fromJson(<String, dynamic>{
@@ -42,8 +42,8 @@ SessionListItem _session({
       'hallId': 'h1',
       'hallName': 'King Fahd Hall',
       'hallNameArabic': 'قاعة الملك فهد',
-      'startUtc': startUtc.toIso8601String(),
-      'endUtc': startUtc.add(Duration(minutes: durationMin)).toIso8601String(),
+      'start': start.toIso8601String(),
+      'end': start.add(Duration(minutes: durationMin)).toIso8601String(),
       'speakers': <dynamic>[],
     });
 
@@ -54,27 +54,27 @@ final _sessions = <SessionListItem>[
   _session(
     id: 'sel',
     titleAr: 'أمن سلاسل إمداد الطاقة البحرية',
-    startUtc: DateTime.utc(2026, 6, 21, 6, 0),
+    start: DateTime.utc(2026, 6, 21, 6, 0),
   ),
   _session(
     id: 'a1',
     titleAr: 'الافتتاح والترحيب',
-    startUtc: DateTime.utc(2026, 6, 21, 6, 0),
+    start: DateTime.utc(2026, 6, 21, 6, 0),
   ),
   _session(
     id: 'a2',
     titleAr: 'حماية قاع البحار',
-    startUtc: DateTime.utc(2026, 6, 21, 8, 0),
+    start: DateTime.utc(2026, 6, 21, 8, 0),
   ),
   _session(
     id: 'a3',
     titleAr: 'الأمن السيبراني البحري',
-    startUtc: DateTime.utc(2026, 6, 21, 10, 30),
+    start: DateTime.utc(2026, 6, 21, 10, 30),
   ),
   _session(
     id: 'a4',
     titleAr: 'جلسة الختام والتوصيات',
-    startUtc: DateTime.utc(2026, 6, 21, 13, 0),
+    start: DateTime.utc(2026, 6, 21, 13, 0),
   ),
 ];
 

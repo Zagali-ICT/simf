@@ -73,11 +73,11 @@
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="WorkerStatus" Key="lastRun"
                                     Header="@L["Admin.ServicesMonitor.Col.LastRun"]">
-                    <CellTemplate>@Local(context.LastRunUtc)</CellTemplate>
+                    <CellTemplate>@Local(context.LastRun)</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="WorkerStatus" Key="lastSuccess"
                                     Header="@L["Admin.ServicesMonitor.Col.LastSuccess"]">
-                    <CellTemplate>@Local(context.LastSuccessUtc)</CellTemplate>
+                    <CellTemplate>@Local(context.LastSuccess)</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="WorkerStatus" Key="runs"
                                     Header="@L["Admin.ServicesMonitor.Col.Runs"]">

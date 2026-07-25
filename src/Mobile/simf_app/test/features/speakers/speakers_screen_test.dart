@@ -76,8 +76,8 @@ class _FakeSpeakersRepo implements SpeakersRepository {
     String speakerId, {
     required String requesterName,
     required String subject,
-    DateTime? slotStartUtc,
-    DateTime? slotEndUtc,
+    DateTime? slotStart,
+    DateTime? slotEnd,
   }) =>
       throw UnimplementedError();
 }

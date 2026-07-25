@@ -17,7 +17,7 @@ internal sealed class DelegationMeetingRequestConfiguration
         // D-611 (Wave B) — the proposed slot must end after it starts (both nullable).
         builder.ToTable("DelegationMeetingRequests", table => table.HasCheckConstraint(
             "CK_DelegationMeetingRequests_Slot",
-            "[SlotStartUtc] IS NULL OR [SlotEndUtc] IS NULL OR [SlotEndUtc] > [SlotStartUtc]"));
+            "[SlotStart] IS NULL OR [SlotEnd] IS NULL OR [SlotEnd] > [SlotStart]"));
         builder.HasKey(r => r.Id);
 
         builder.Property(r => r.Subject).HasMaxLength(1000).IsRequired();
@@ -57,8 +57,8 @@ internal sealed class DelegationMeetingRequestConfiguration
         // (`MeetingRequestStatuses.SlotHolding` = "not a released state"), the DB
         // backstop for the app-level free-slot re-check. NULLs collide in a SQL Server
         // unique index, so the NOT NULL guards exclude un-bound rows.
-        builder.HasIndex(r => new { r.HallId, r.SlotStartUtc })
+        builder.HasIndex(r => new { r.HallId, r.SlotStart })
             .IsUnique()
-            .HasFilter("[HallId] IS NOT NULL AND [SlotStartUtc] IS NOT NULL AND [Status] <> 0 AND [Status] <> 2 AND [Status] <> 3");
+            .HasFilter("[HallId] IS NOT NULL AND [SlotStart] IS NOT NULL AND [Status] <> 0 AND [Status] <> 2 AND [Status] <> 3");
     }
 }

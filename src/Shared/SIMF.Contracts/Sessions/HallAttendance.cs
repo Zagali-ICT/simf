@@ -18,8 +18,8 @@ public sealed class RecordArrivalRequest
 /// not yet left). Returned by the arrival, departure, and status endpoints.</summary>
 public sealed record HallAttendanceStatus(
     bool Arrived,
-    DateTimeOffset? EnterUtc,
-    DateTimeOffset? LeaveUtc,
+    DateTimeOffset? Enter,
+    DateTimeOffset? Leave,
     AttendanceMethod? Method);
 
 /// <summary>P5.1d — D-244: the operator's hall-door QR scan — the badge QR id to

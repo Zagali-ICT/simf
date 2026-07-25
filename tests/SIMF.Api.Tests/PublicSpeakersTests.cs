@@ -260,7 +260,7 @@ public sealed class PublicSpeakersTests : IClassFixture<SimfApiFactory>
 
     private async Task<AdminSessionDetail> CreateSessionAsync(
         string token, Guid hallId, Guid speakerId,
-        DateTimeOffset startUtc, DateTimeOffset endUtc)
+        DateTimeOffset start, DateTimeOffset end)
     {
         var create = await PostAuthAsync(
             "/api/v1/admin/sessions",
@@ -272,9 +272,9 @@ public sealed class PublicSpeakersTests : IClassFixture<SimfApiFactory>
                 Description = "Welcome address.",
                 DescriptionArabic = "كلمة ترحيبية.",
                 HallId = hallId,
-                StartUtc = startUtc,
+                Start = start,
                 Type = SessionType.Session,
-                EndUtc = endUtc,
+                End = end,
                 Speakers = new List<AdminSessionSpeakerEntry>
                 {
                     new(speakerId, "", "", 0),

@@ -139,7 +139,7 @@ class _DelegationMeetingRequestSheetState
   List<DateTime> get _daysWithSlots {
     final days = <DateTime>[];
     for (final slot in _slots) {
-      final local = slot.startUtc.toLocal();
+      final local = slot.start.toLocal();
       final day = DateTime(local.year, local.month, local.day);
       if (!days.contains(day)) {
         days.add(day);
@@ -150,7 +150,7 @@ class _DelegationMeetingRequestSheetState
 
   List<DelegationSlot> _slotsForDay(DateTime day) => <DelegationSlot>[
         for (final slot in _slots)
-          if (_isSameDay(slot.startUtc.toLocal(), day)) slot,
+          if (_isSameDay(slot.start.toLocal(), day)) slot,
       ];
 
   static bool _isSameDay(DateTime a, DateTime b) =>
@@ -179,8 +179,8 @@ class _DelegationMeetingRequestSheetState
       return;
     }
     // A slot is required only when the delegation actually offers slots.
-    DateTime? slotStartUtc;
-    DateTime? slotEndUtc;
+    DateTime? slotStart;
+    DateTime? slotEnd;
     if (_slots.isNotEmpty) {
       final slot = _selectedSlot;
       if (slot == null) {
@@ -188,8 +188,8 @@ class _DelegationMeetingRequestSheetState
             .showSnackBar(SnackBar(content: Text(l10n.meetingPickDateTime)));
         return;
       }
-      slotStartUtc = slot.startUtc;
-      slotEndUtc = slot.endUtc;
+      slotStart = slot.start;
+      slotEnd = slot.end;
     }
     setState(() => _submitting = true);
     final navigator = Navigator.of(context);
@@ -199,8 +199,8 @@ class _DelegationMeetingRequestSheetState
             targetCountryCode: target.countryCode,
             attendeeCount: attendees,
             subject: subject,
-            slotStartUtc: slotStartUtc,
-            slotEndUtc: slotEndUtc,
+            slotStart: slotStart,
+            slotEnd: slotEnd,
           );
       if (!mounted) {
         return;
@@ -533,7 +533,7 @@ class _DelegationMeetingRequestSheetState
             MeetingTimeChip(
               key: ValueKey<String>('delegation-time-$i'),
               label: _formatTime(
-                TimeOfDay.fromDateTime(slots[i].startUtc.toLocal()),
+                TimeOfDay.fromDateTime(slots[i].start.toLocal()),
                 isArabic,
               ),
               selected: _selectedSlot == slots[i],

@@ -121,7 +121,7 @@ public partial class ServicesMonitor : IDisposable
             ? string.Empty
             : string.Format(
                 L["Admin.ServicesMonitor.Refreshed"],
-                _data.GeneratedUtc.FormatSaudi("hh:mm:ss tt"));
+                _data.Generated.FormatSaudi("hh:mm:ss tt"));
 
     private string FormatSummary(int skip, int taken, int total) =>
         string.Format(L["Admin.ServicesMonitor.Summary"], total);

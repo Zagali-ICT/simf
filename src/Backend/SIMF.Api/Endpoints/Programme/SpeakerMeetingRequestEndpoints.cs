@@ -21,8 +21,8 @@ public sealed class SubmitSpeakerMeetingRequestRoute
 
     /// <summary>D-474 (#11) — the picked availability slot (VIP slot flow); null for
     /// a legacy topic-only request.</summary>
-    public DateTimeOffset? SlotStartUtc { get; set; }
-    public DateTimeOffset? SlotEndUtc { get; set; }
+    public DateTimeOffset? SlotStart { get; set; }
+    public DateTimeOffset? SlotEnd { get; set; }
 }
 
 public sealed class SubmitSpeakerMeetingRequestEndpoint(ISpeakerMeetingRequestService service)
@@ -48,8 +48,8 @@ public sealed class SubmitSpeakerMeetingRequestEndpoint(ISpeakerMeetingRequestSe
                 {
                     RequesterName = req.RequesterName,
                     Subject = req.Subject,
-                    SlotStartUtc = req.SlotStartUtc,
-                    SlotEndUtc = req.SlotEndUtc,
+                    SlotStart = req.SlotStart,
+                    SlotEnd = req.SlotEnd,
                 }, ct)), ct);
     }
 }

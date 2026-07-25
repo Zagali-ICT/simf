@@ -21,4 +21,4 @@ public sealed record AdminContactInquiryRow(
     bool IsHandled,
     Guid? SubmittedByUserId,
     DateTimeOffset CreatedAt,
-    DateTimeOffset? HandledAtUtc);
+    DateTimeOffset? HandledAt);

@@ -45,7 +45,7 @@ public sealed class SessionReminderWorkerTests : IClassFixture<SimfApiFactory>
             var idDb = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
 
             var session = await appDb.Sessions.SingleAsync(s => s.Id == sessionId);
-            Assert.NotNull(session.ReminderSentUtc);
+            Assert.NotNull(session.ReminderSent);
 
             var count = await idDb.Notifications.CountAsync(n =>
                 n.Kind == NotificationKind.SessionReminder
@@ -82,7 +82,7 @@ public sealed class SessionReminderWorkerTests : IClassFixture<SimfApiFactory>
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var session = await appDb.Sessions.SingleAsync(s => s.Id == sessionId);
         // The far-future session is left untouched.
-        Assert.Null(session.ReminderSentUtc);
+        Assert.Null(session.ReminderSent);
     }
 
     [Fact]
@@ -108,7 +108,7 @@ public sealed class SessionReminderWorkerTests : IClassFixture<SimfApiFactory>
 
         Assert.True(probe.Dispatched);
         Assert.True(probe.StampCommittedAtFirstDispatch,
-            "ReminderSentUtc must be committed before dispatch so a restart cannot resend.");
+            "ReminderSent must be committed before dispatch so a restart cannot resend.");
     }
 
     // -- Helpers ---------------------------------------------------------------
@@ -137,7 +137,7 @@ public sealed class SessionReminderWorkerTests : IClassFixture<SimfApiFactory>
             var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
             var session = await db.Sessions.AsNoTracking()
                 .SingleAsync(s => s.Id == sessionId, cancellationToken);
-            StampCommittedAtFirstDispatch = session.ReminderSentUtc != null;
+            StampCommittedAtFirstDispatch = session.ReminderSent != null;
         }
     }
 
@@ -169,7 +169,7 @@ public sealed class SessionReminderWorkerTests : IClassFixture<SimfApiFactory>
         return user.Id;
     }
 
-    private async Task<Guid> SeedSessionWithSeatAsync(DateTimeOffset startUtc, Guid visitorId)
+    private async Task<Guid> SeedSessionWithSeatAsync(DateTimeOffset start, Guid visitorId)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -191,8 +191,8 @@ public sealed class SessionReminderWorkerTests : IClassFixture<SimfApiFactory>
             Title = "Keynote",
             TitleArabic = "الكلمة الرئيسية",
             HallId = hall.Id,
-            StartUtc = startUtc,
-            EndUtc = startUtc.AddHours(1),
+            Start = start,
+            End = start.AddHours(1),
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };

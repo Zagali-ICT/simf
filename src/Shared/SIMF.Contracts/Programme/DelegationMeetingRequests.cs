@@ -15,8 +15,8 @@ public sealed class SubmitDelegationMeetingRequestRequest
     public string Subject { get; set; } = string.Empty;
 
     /// <summary>The proposed slot (optional; the team confirms it on accept).</summary>
-    public DateTimeOffset? SlotStartUtc { get; set; }
-    public DateTimeOffset? SlotEndUtc { get; set; }
+    public DateTimeOffset? SlotStart { get; set; }
+    public DateTimeOffset? SlotEnd { get; set; }
 }
 
 /// <summary>D-478 — the receipt after a successful submit.</summary>
@@ -34,7 +34,7 @@ public sealed record AdminDelegationMeetingRequestRow(
     int AttendeeCount,
     string Subject,
     MeetingRequestStatus Status,
-    DateTimeOffset? SlotStartUtc,
+    DateTimeOffset? SlotStart,
     string? ResponseNote,
     DateTimeOffset CreatedAt,
     DateTimeOffset? RespondedAt);
@@ -49,8 +49,8 @@ public sealed record AdminDelegationMeetingRequestDetail(
     int AttendeeCount,
     string Subject,
     MeetingRequestStatus Status,
-    DateTimeOffset? SlotStartUtc,
-    DateTimeOffset? SlotEndUtc,
+    DateTimeOffset? SlotStart,
+    DateTimeOffset? SlotEnd,
     string? ResponseNote,
     DateTimeOffset CreatedAt,
     DateTimeOffset? RespondedAt);
@@ -72,8 +72,8 @@ public class RespondToDelegationMeetingRequestRequest : RespondToRequest
 
     /// <summary>The picked hall slot start/end — required when <see cref="HallId"/> is
     /// set, must match a currently-free slot for that hall.</summary>
-    public DateTimeOffset? SlotStartUtc { get; set; }
-    public DateTimeOffset? SlotEndUtc { get; set; }
+    public DateTimeOffset? SlotStart { get; set; }
+    public DateTimeOffset? SlotEnd { get; set; }
 
     /// <summary>Bi-Meeting rework — Approve (false) vs Confirm (true). See the class
     /// summary. Append-only field (defaults false = Approve).</summary>

@@ -1,7 +1,7 @@
 // Bi-Meeting rework — tests for the 15-minute meeting-reminder scan. Exercises the
 // internal MeetingReminderWorker.RunReminderScanAsync directly (InternalsVisibleTo),
 // mirroring SessionReminderWorkerTests: the lead-window bound + the once-only
-// ReminderSentUtc dedup, for both the speaker and delegation meeting paths.
+// ReminderSent dedup, for both the speaker and delegation meeting paths.
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -45,7 +45,7 @@ public sealed class MeetingReminderWorkerTests : IClassFixture<SimfApiFactory>
             var idDb = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
 
             var req = await appDb.SpeakerMeetingRequests.SingleAsync(r => r.Id == requestId);
-            Assert.NotNull(req.ReminderSentUtc);
+            Assert.NotNull(req.ReminderSent);
 
             var count = await idDb.Notifications.CountAsync(n =>
                 n.Kind == NotificationKind.MeetingReminder
@@ -81,7 +81,7 @@ public sealed class MeetingReminderWorkerTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var req = await appDb.SpeakerMeetingRequests.SingleAsync(r => r.Id == requestId);
-        Assert.Null(req.ReminderSentUtc);
+        Assert.Null(req.ReminderSent);
     }
 
     [Fact]
@@ -102,7 +102,7 @@ public sealed class MeetingReminderWorkerTests : IClassFixture<SimfApiFactory>
         var idDb = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
 
         var req = await appDb.DelegationMeetingRequests.SingleAsync(r => r.Id == requestId);
-        Assert.NotNull(req.ReminderSentUtc);
+        Assert.NotNull(req.ReminderSent);
 
         // The requester is always a recipient (plus any eligible target-delegation member).
         var count = await idDb.Notifications.CountAsync(n =>
@@ -176,8 +176,8 @@ public sealed class MeetingReminderWorkerTests : IClassFixture<SimfApiFactory>
             RequestedByUserId = userId,
             RequesterName = "Reminder Requester",
             Subject = "Naval cooperation",
-            SlotStartUtc = slotStart,
-            SlotEndUtc = slotStart.AddMinutes(30),
+            SlotStart = slotStart,
+            SlotEnd = slotStart.AddMinutes(30),
             Status = MeetingRequestStatus.Accepted,
             CreatedAt = DateTimeOffset.UtcNow,
             RespondedAt = DateTimeOffset.UtcNow,
@@ -200,8 +200,8 @@ public sealed class MeetingReminderWorkerTests : IClassFixture<SimfApiFactory>
             TargetCountryId = targetCountryId,
             AttendeeCount = 5,
             Subject = "Delegation cooperation",
-            SlotStartUtc = slotStart,
-            SlotEndUtc = slotStart.AddMinutes(30),
+            SlotStart = slotStart,
+            SlotEnd = slotStart.AddMinutes(30),
             Status = MeetingRequestStatus.Accepted,
             CreatedAt = DateTimeOffset.UtcNow,
             RespondedAt = DateTimeOffset.UtcNow,

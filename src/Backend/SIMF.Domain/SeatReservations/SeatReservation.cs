@@ -82,5 +82,5 @@ public sealed class SeatReservation
     /// visitor-booking kinds (UserBooking / RandomAssignment / OpenSeating); NULL
     /// for an AdminReservedRow block (admin holds never expire). Existing rows and
     /// already-decided bookings carry NULL and are ignored by the expiry worker.</summary>
-    public DateTimeOffset? ExpiresUtc { get; set; }
+    public DateTimeOffset? Expires { get; set; }
 }

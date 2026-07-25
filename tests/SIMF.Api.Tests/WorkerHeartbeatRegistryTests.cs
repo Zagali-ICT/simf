@@ -48,7 +48,7 @@ public sealed class WorkerHeartbeatRegistryTests
         var worker = Only(registry.Snapshot());
         Assert.Equal(WorkerState.Healthy, worker.State);
         Assert.Equal(1L, worker.RunCount);
-        Assert.NotNull(worker.LastSuccessUtc);
+        Assert.NotNull(worker.LastSuccess);
     }
 
     [Fact]

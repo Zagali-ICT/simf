@@ -14,7 +14,7 @@ public interface IOperationsToggleService
         CancellationToken cancellationToken = default);
 
     /// <summary>Returns true when sign-up should be accepted right now —
-    /// IsOpen is true AND (no AutoCloseUtc OR AutoCloseUtc is in the
+    /// IsOpen is true AND (no AutoClose OR AutoClose is in the
     /// future). Called by the sign-up endpoint on every request.</summary>
     Task<bool> IsRegistrationOpenAsync(CancellationToken cancellationToken = default);
 

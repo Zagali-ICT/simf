@@ -55,7 +55,7 @@ public partial class MeetingConfirm
     }
 
     private string FormatSlot(MeetingActionPreview preview) =>
-        preview.SlotStartUtc is { } start && preview.SlotEndUtc is { } end
+        preview.SlotStart is { } start && preview.SlotEnd is { } end
             ? $"{EventTime.DateTimeText(start)}–{EventTime.Time(end)}"
             : L["Meeting.Confirm.TBD"];
 }

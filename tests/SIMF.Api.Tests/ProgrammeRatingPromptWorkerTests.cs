@@ -74,7 +74,7 @@ public sealed class ProgrammeRatingPromptWorkerTests : IClassFixture<SimfApiFact
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var day = await db.ProgrammeDays.SingleAsync(d => d.Id == dayId);
-        Assert.Null(day.RatingPromptSentUtc);
+        Assert.Null(day.RatingPromptSent);
     }
 
     [Fact]
@@ -168,7 +168,7 @@ public sealed class ProgrammeRatingPromptWorkerTests : IClassFixture<SimfApiFact
             using var scope = _factory.Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
             var day = await db.ProgrammeDays.SingleAsync(d => d.Id == dayId);
-            Assert.Null(day.RatingPromptSentUtc); // not stamped -> re-enabling resumes
+            Assert.Null(day.RatingPromptSent); // not stamped -> re-enabling resumes
         }
         finally
         {
@@ -268,7 +268,7 @@ public sealed class ProgrammeRatingPromptWorkerTests : IClassFixture<SimfApiFact
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var day = await db.ProgrammeDays.SingleAsync(d => d.Id == dayId);
-        Assert.NotNull(day.RatingPromptSentUtc);
+        Assert.NotNull(day.RatingPromptSent);
     }
 
     private async Task<bool> ProgramEndMarkerExistsAsync()
@@ -349,7 +349,7 @@ public sealed class ProgrammeRatingPromptWorkerTests : IClassFixture<SimfApiFact
             Direction = ScanDirection.CheckIn,
             Outcome = ScanOutcome.Allowed,
             ScannedByUserId = Guid.NewGuid(),
-            ScannedAtUtc = scanUtc,
+            ScannedAt = scanUtc,
         });
 
         await db.SaveChangesAsync();
@@ -374,7 +374,7 @@ public sealed class ProgrammeRatingPromptWorkerTests : IClassFixture<SimfApiFact
         return day.Id;
     }
 
-    private async Task<Guid> SeedDayWithSessionAsync(DateOnly date, DateTimeOffset startUtc, DateTimeOffset endUtc)
+    private async Task<Guid> SeedDayWithSessionAsync(DateOnly date, DateTimeOffset start, DateTimeOffset end)
     {
         var dayId = await SeedDayAsync(date);
         using var scope = _factory.Services.CreateScope();
@@ -397,8 +397,8 @@ public sealed class ProgrammeRatingPromptWorkerTests : IClassFixture<SimfApiFact
             Title = "Talk",
             TitleArabic = "جلسة",
             HallId = hall.Id,
-            StartUtc = startUtc,
-            EndUtc = endUtc,
+            Start = start,
+            End = end,
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         });

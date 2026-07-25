@@ -135,8 +135,8 @@ public sealed class SessionCategoriesTests : IClassFixture<SimfApiFactory>
                 HallId = hallId,
                 CategoryId = categoryId,
                 Type = SessionType.Event,
-                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
-                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                Start = DateTimeOffset.UtcNow.AddHours(1),
+                End = DateTimeOffset.UtcNow.AddHours(2),
             },
             token);
         Assert.Equal(HttpStatusCode.OK, ok.StatusCode);
@@ -153,8 +153,8 @@ public sealed class SessionCategoriesTests : IClassFixture<SimfApiFactory>
                 Title = "Bad category", TitleArabic = "تصنيف خاطئ",
                 HallId = hallId,
                 CategoryId = Guid.NewGuid(),
-                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
-                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                Start = DateTimeOffset.UtcNow.AddHours(1),
+                End = DateTimeOffset.UtcNow.AddHours(2),
             },
             token);
         Assert.Equal(HttpStatusCode.BadRequest, bad.StatusCode);

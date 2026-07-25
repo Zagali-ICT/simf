@@ -53,8 +53,8 @@ public sealed record MyAreaCounters(
 /// </summary>
 public sealed record MyAreaScheduleItem(
     string Kind,
-    DateTimeOffset StartUtc,
-    DateTimeOffset? EndUtc,
+    DateTimeOffset Start,
+    DateTimeOffset? End,
     string TitleEn,
     string TitleAr,
     string? HallNameEn,
@@ -72,8 +72,8 @@ public sealed record MyAreaScheduleItem(
 /// </summary>
 public sealed record MyAreaCalendarEvent(
     Guid Uid,
-    DateTimeOffset StartUtc,
-    DateTimeOffset? EndUtc,
+    DateTimeOffset Start,
+    DateTimeOffset? End,
     string Summary,
     string? Location);
 
@@ -84,7 +84,7 @@ public sealed record MyAreaCalendarEvent(
 /// per-user heart (<see cref="IsFavourite"/>) and whether the user actually
 /// arrived (<see cref="Attended"/>, derived from <c>HallAttendance</c> — no
 /// schema). The app partitions these into the four tabs client-side from the
-/// device clock: القادمة (upcoming = <see cref="StartUtc"/> in the future),
+/// device clock: القادمة (upcoming = <see cref="Start"/> in the future),
 /// حضرتها (<see cref="Attended"/>), فاتتني (ended &amp; not attended), and الأرشيف
 /// (recorded / published — <see cref="Status"/>). Read-only aggregate, own
 /// <c>sub</c>; no migration (D-249 pattern). <see cref="SessionFavourite"/>
@@ -104,8 +104,8 @@ public sealed record MyAreaSessionItem(
     Guid Id,
     string Title,
     string TitleArabic,
-    DateTimeOffset StartUtc,
-    DateTimeOffset EndUtc,
+    DateTimeOffset Start,
+    DateTimeOffset End,
     string? HallNameEn,
     string? HallNameAr,
     string? CategoryNameEn,

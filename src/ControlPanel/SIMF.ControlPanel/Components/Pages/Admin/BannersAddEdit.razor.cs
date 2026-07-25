@@ -37,16 +37,16 @@ public partial class BannersAddEdit
             _model.BodyAr = Initial.BodyArabic;
             _model.ImageUrl = Initial.ImageUrl ?? string.Empty;
             _model.LinkUrl = Initial.LinkUrl ?? string.Empty;
-            _model.StartUtc = Initial.StartUtc.ToSaudi().ToString("yyyy-MM-ddTHH:mm");
-            _model.EndUtc = Initial.EndUtc.ToSaudi().ToString("yyyy-MM-ddTHH:mm");
+            _model.Start = Initial.Start.ToSaudi().ToString("yyyy-MM-ddTHH:mm");
+            _model.End = Initial.End.ToSaudi().ToString("yyyy-MM-ddTHH:mm");
             _model.IsActive = Initial.IsActive;
             _displayOrderInput = Initial.DisplayOrder.ToString();
         }
         else
         {
             var now = DateTimeOffset.UtcNow.ToSaudi();
-            _model.StartUtc = now.ToString("yyyy-MM-ddTHH:mm");
-            _model.EndUtc = now.AddDays(1).ToString("yyyy-MM-ddTHH:mm");
+            _model.Start = now.ToString("yyyy-MM-ddTHH:mm");
+            _model.End = now.AddDays(1).ToString("yyyy-MM-ddTHH:mm");
         }
         _editContext = new EditContext(_model);
     }
@@ -61,8 +61,8 @@ public partial class BannersAddEdit
         {
             _error = L["Admin.Banners.Required"]; return;
         }
-        if (!DateTime.TryParse(_model.StartUtc, out var startParsed)
-            || !DateTime.TryParse(_model.EndUtc, out var endParsed))
+        if (!DateTime.TryParse(_model.Start, out var startParsed)
+            || !DateTime.TryParse(_model.End, out var endParsed))
         {
             _error = L["Admin.Banners.Required"]; return;
         }
@@ -71,8 +71,8 @@ public partial class BannersAddEdit
             order = 0;
         }
 
-        var startUtc = SaudiTime.FromSaudiWallClock(startParsed);
-        var endUtc = SaudiTime.FromSaudiWallClock(endParsed);
+        var start = SaudiTime.FromSaudiWallClock(startParsed);
+        var end = SaudiTime.FromSaudiWallClock(endParsed);
 
         _busy = true;
         try
@@ -90,8 +90,8 @@ public partial class BannersAddEdit
                         BodyArabic = _model.BodyAr.Trim(),
                         ImageUrl = NullIfBlank(_model.ImageUrl),
                         LinkUrl = NullIfBlank(_model.LinkUrl),
-                        StartUtc = startUtc,
-                        EndUtc = endUtc,
+                        Start = start,
+                        End = end,
                         DisplayOrder = order,
                     });
             }
@@ -107,8 +107,8 @@ public partial class BannersAddEdit
                         BodyArabic = _model.BodyAr.Trim(),
                         ImageUrl = NullIfBlank(_model.ImageUrl),
                         LinkUrl = NullIfBlank(_model.LinkUrl),
-                        StartUtc = startUtc,
-                        EndUtc = endUtc,
+                        Start = start,
+                        End = end,
                         DisplayOrder = order,
                         IsActive = _model.IsActive,
                     });
@@ -142,8 +142,8 @@ public partial class BannersAddEdit
         public string BodyAr { get; set; } = string.Empty;
         public string ImageUrl { get; set; } = string.Empty;
         public string LinkUrl { get; set; } = string.Empty;
-        public string StartUtc { get; set; } = string.Empty;
-        public string EndUtc { get; set; } = string.Empty;
+        public string Start { get; set; } = string.Empty;
+        public string End { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
     }
 }

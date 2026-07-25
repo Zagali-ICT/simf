@@ -77,7 +77,7 @@ class SessionSummary {
   }
 
   /// The published timestamp parsed to UTC, or null when missing / unparsable.
-  DateTime? get publishedAtUtc {
+  DateTime? get publishedAt {
     final raw = publishedAt;
     if (raw == null || raw.isEmpty) {
       return null;

@@ -152,8 +152,8 @@ public sealed class BookingLifecycleTests : IClassFixture<SimfApiFactory>
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Booking session", TitleArabic = "جلسة الحجز",
             HallId = hall.Id,
-            StartUtc = start,
-            EndUtc = end,
+            Start = start,
+            End = end,
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };

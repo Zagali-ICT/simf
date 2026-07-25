@@ -41,21 +41,21 @@ internal sealed class ProgrammeSessionService(
         {
             // A6c — half-open EVENT-LOCAL (+03:00) day window [dayStart, nextDayStart).
             // The app sends ProgrammeDay.Date (a Riyadh calendar date) as ?day=, and
-            // the day-grouped agenda (ListDaysAsync) buckets by StartUtc.ToOffset(+03:00),
+            // the day-grouped agenda (ListDaysAsync) buckets by Start.ToOffset(+03:00),
             // so this filter must use the SAME +03:00 boundary or the flat list would
             // disagree with the app's day strip at the UTC-midnight edge. Still a plain
-            // range on StartUtc (index-friendly; no EF date-component translation).
+            // range on Start (index-friendly; no EF date-component translation).
             var dayStart = new DateTimeOffset(d.Year, d.Month, d.Day, 0, 0, 0, EventOffset);
             var nextDayStart = dayStart.AddDays(1);
             rows = rows.Where(session =>
-                session.StartUtc >= dayStart && session.StartUtc < nextDayStart);
+                session.Start >= dayStart && session.Start < nextDayStart);
         }
 
         // Project the session header + its active themes (one APPLY), then
         // pick the primary pillar in memory. Avoids three correlated
         // sub-selects and keeps the EF translation simple.
         var projected = await rows
-            .OrderBy(session => session.StartUtc)
+            .OrderBy(session => session.Start)
             .ThenBy(session => session.Title)
             .Select(session => new
             {
@@ -66,8 +66,8 @@ internal sealed class ProgrammeSessionService(
                 session.HallId,
                 HallName = session.Hall!.Name,
                 HallNameArabic = session.Hall!.NameArabic,
-                session.StartUtc,
-                session.EndUtc,
+                session.Start,
+                session.End,
                 // P3.2 — D-231: broadcast lifecycle status.
                 session.Status,
                 // D-452 (Figma 883:2308): the session's type for the app's tabs.
@@ -173,8 +173,8 @@ internal sealed class ProgrammeSessionService(
                     row.HallId,
                     row.HallName,
                     row.HallNameArabic,
-                    row.StartUtc,
-                    row.EndUtc,
+                    row.Start,
+                    row.End,
                     primary?.Name,
                     primary?.NameArabic,
                     primary?.PageColor,
@@ -210,7 +210,7 @@ internal sealed class ProgrammeSessionService(
         // to its authored day. No per-day query (no N+1).
         var allSessions = (await ListAsync(null, cancellationToken)).Items;
         var byDate = allSessions
-            .GroupBy(s => DateOnly.FromDateTime(s.StartUtc.ToOffset(EventOffset).DateTime))
+            .GroupBy(s => DateOnly.FromDateTime(s.Start.ToOffset(EventOffset).DateTime))
             .ToDictionary(
                 g => g.Key,
                 g => (IReadOnlyList<PublicSessionListItem>)g.ToList());
@@ -297,8 +297,8 @@ internal sealed class ProgrammeSessionService(
                 HallName = session.Hall!.Name,
                 HallNameArabic = session.Hall!.NameArabic,
                 HallCapacity = (int?)session.Hall!.Capacity,
-                session.StartUtc,
-                session.EndUtc,
+                session.Start,
+                session.End,
                 session.CapacityOverride,
                 session.Status,
                 session.PublishedAt,
@@ -452,20 +452,20 @@ internal sealed class ProgrammeSessionService(
 
         // D-567 (Figma 889:2604) — the gold badge shows the session's 1-based
         // position within its day. A6c — match the agenda's day grouping exactly:
-        // a half-open EVENT-LOCAL (+03:00) window ordered by StartUtc (ProgrammeDay
+        // a half-open EVENT-LOCAL (+03:00) window ordered by Start (ProgrammeDay
         // is a Riyadh calendar day, and both ListDaysAsync and the ?day= list filter
         // bucket by the +03:00 date). Count the earlier active sessions in the same
         // event-local day; +1 is this session's ordinal.
-        var localDate = row.StartUtc.ToOffset(EventOffset).Date;
+        var localDate = row.Start.ToOffset(EventOffset).Date;
         var dayStart = new DateTimeOffset(localDate, EventOffset);
         var nextDayStart = dayStart.AddDays(1);
         var displayOrder = 1 + await dbContext.Sessions
             .AsNoTracking()
             .CountAsync(
                 sibling => sibling.IsActive
-                    && sibling.StartUtc >= dayStart
-                    && sibling.StartUtc < nextDayStart
-                    && sibling.StartUtc < row.StartUtc,
+                    && sibling.Start >= dayStart
+                    && sibling.Start < nextDayStart
+                    && sibling.Start < row.Start,
                 cancellationToken);
 
         return new PublicSessionDetail(
@@ -478,8 +478,8 @@ internal sealed class ProgrammeSessionService(
             row.HallId,
             row.HallName,
             row.HallNameArabic,
-            row.StartUtc,
-            row.EndUtc,
+            row.Start,
+            row.End,
             themes,
             speakers,
             seats,
@@ -605,7 +605,7 @@ internal sealed class ProgrammeSessionService(
         // active (soft-delete hides its summary too).
         // S-6 (owner) — a محضر is viewable only once the session has actually
         // STARTED (in-progress or finished); it stays hidden before the session
-        // begins. Keyed on the CLOCK (now >= StartUtc), never the manual Held flag,
+        // begins. Keyed on the CLOCK (now >= Start), never the manual Held flag,
         // because "logically you can't view a summary before the session starts".
         var now = timeProvider.GetUtcNow();
         return await dbContext.SessionSummaries
@@ -618,7 +618,7 @@ internal sealed class ProgrammeSessionService(
                 // gate existed (PublishedAt set, ApprovedAt null).
                 && summary.ApprovedAt != null
                 && summary.Session!.IsActive
-                && summary.Session!.StartUtc <= now)
+                && summary.Session!.Start <= now)
             .Select(summary => new PublicSessionSummary(
                 summary.SessionId,
                 summary.KeyPoints,

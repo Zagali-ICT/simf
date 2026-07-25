@@ -172,7 +172,7 @@ public sealed class AiHardeningTests : IClassFixture<SimfApiFactory>
         var auditRow = await db.OperationLog.AsNoTracking()
             .Where(e => e.EventType == "AiPrompt.Updated"
                 && e.Detail!.Contains(id.ToString()))
-            .OrderByDescending(e => e.TimestampUtc)
+            .OrderByDescending(e => e.Timestamp)
             .FirstAsync();
 
         Assert.NotNull(auditRow.Detail);
@@ -333,7 +333,7 @@ public sealed class AiHardeningTests : IClassFixture<SimfApiFactory>
         var auditRow = await db.OperationLog.AsNoTracking()
             .Where(e => e.EventType == "AiPrompt.Created"
                 && e.Detail!.Contains(key))
-            .OrderByDescending(e => e.TimestampUtc)
+            .OrderByDescending(e => e.Timestamp)
             .FirstAsync();
 
         var detail = JsonDocument.Parse(auditRow.Detail!);

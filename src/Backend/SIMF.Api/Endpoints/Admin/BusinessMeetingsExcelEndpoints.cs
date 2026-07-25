@@ -32,8 +32,8 @@ public sealed class ExportBusinessMeetingsEndpoint(IBusinessMeetingService servi
         new("Hall", row => row.HallName),
         new("Table", row => row.TableCode),
         new("Type", row => TypeText(row.MeetingType)),
-        new("Start", row => row.StartUtc),
-        new("End", row => row.EndUtc),
+        new("Start", row => row.Start),
+        new("End", row => row.End),
         new("Parties", row => row.ParticipantCount),
         new("Status", row => StatusText(row.Status)),
     ];

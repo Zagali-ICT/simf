@@ -308,7 +308,7 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
     {
         var admin = await CreateAdministratorAndSignInAsync();
         // A future session — it has not started yet.
-        var sessionId = await SeedSessionAsync(startUtc: DateTimeOffset.UtcNow.AddDays(1));
+        var sessionId = await SeedSessionAsync(start: DateTimeOffset.UtcNow.AddDays(1));
         await SaveAsync(sessionId, new SaveSessionSummaryRequest { FullTextArabic = "محضر." }, admin);
 
         var response = await PutAuthAsync(
@@ -323,7 +323,7 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
     {
         var admin = await CreateAdministratorAndSignInAsync();
         // A started session (past start).
-        var sessionId = await SeedSessionAsync(startUtc: DateTimeOffset.UtcNow.AddHours(-1));
+        var sessionId = await SeedSessionAsync(start: DateTimeOffset.UtcNow.AddHours(-1));
         await SaveAsync(sessionId, new SaveSessionSummaryRequest { FullTextArabic = "محضر." }, admin);
         await SubmitForReviewAndApproveAsync(sessionId, admin);
 
@@ -344,7 +344,7 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
         var admin = await CreateAdministratorAndSignInAsync();
         // A started session (the S-6 clock gate passes); the summary is saved but
         // never submitted for review or approved.
-        var sessionId = await SeedSessionAsync(startUtc: DateTimeOffset.UtcNow.AddHours(-1));
+        var sessionId = await SeedSessionAsync(start: DateTimeOffset.UtcNow.AddHours(-1));
         await SaveAsync(sessionId, new SaveSessionSummaryRequest { FullTextArabic = "محضر." }, admin);
 
         var response = await PutAuthAsync(
@@ -364,7 +364,7 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
     public async Task Editing_a_published_summary_takes_it_offline_until_reapproved()
     {
         var admin = await CreateAdministratorAndSignInAsync();
-        var sessionId = await SeedSessionAsync(startUtc: DateTimeOffset.UtcNow.AddHours(-1));
+        var sessionId = await SeedSessionAsync(start: DateTimeOffset.UtcNow.AddHours(-1));
         await SaveAsync(sessionId, new SaveSessionSummaryRequest { FullTextArabic = "محضر." }, admin);
         await SubmitForReviewAndApproveAsync(sessionId, admin);
         await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/publish", new { }, admin);
@@ -393,13 +393,13 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
         // Unpublish only retracts, so it is allowed regardless of the clock — even
         // after the session is rescheduled back into the future.
         var admin = await CreateAdministratorAndSignInAsync();
-        var sessionId = await SeedSessionAsync(startUtc: DateTimeOffset.UtcNow.AddHours(-1));
+        var sessionId = await SeedSessionAsync(start: DateTimeOffset.UtcNow.AddHours(-1));
         await SaveAsync(sessionId, new SaveSessionSummaryRequest { FullTextArabic = "محضر." }, admin);
         await SubmitForReviewAndApproveAsync(sessionId, admin);
         await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/publish", new { }, admin);
 
         // Reschedule the session into the future (it "hasn't started" again).
-        await SetSessionStartUtcDirectAsync(sessionId, DateTimeOffset.UtcNow.AddDays(1));
+        await SetSessionStartDirectAsync(sessionId, DateTimeOffset.UtcNow.AddDays(1));
 
         var response = await PutAuthAsync(
             $"/api/v1/admin/session-summaries/{sessionId}/unpublish", new { }, admin);
@@ -687,7 +687,7 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
 
     private async Task<Guid> SeedSessionAsync(
         string? liveCaptions = null, string? liveCaptionsArabic = null,
-        DateTimeOffset? startUtc = null)
+        DateTimeOffset? start = null)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -701,15 +701,15 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
         db.Halls.Add(hall);
         // S-6 — the publish gate is clock-based: default to a STARTED session (past
         // start) so publish is allowed; the "before start" tests pass a future start.
-        var start = startUtc ?? DateTimeOffset.UtcNow.AddMinutes(-90);
+        var startValue = start ?? DateTimeOffset.UtcNow.AddMinutes(-90);
         var session = new Session
         {
             Id = Guid.NewGuid(),
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Maritime Supply-Chain Security", TitleArabic = "أمن سلاسل الإمداد البحرية",
             HallId = hall.Id,
-            StartUtc = start,
-            EndUtc = start.AddHours(1),
+            Start = startValue,
+            End = startValue.AddHours(1),
             LiveCaptions = liveCaptions,
             LiveCaptionsArabic = liveCaptionsArabic,
             IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
@@ -719,13 +719,13 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
         return session.Id;
     }
 
-    private async Task SetSessionStartUtcDirectAsync(Guid sessionId, DateTimeOffset startUtc)
+    private async Task SetSessionStartDirectAsync(Guid sessionId, DateTimeOffset start)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var session = await db.Sessions.FindAsync(sessionId);
-        session!.StartUtc = startUtc;
-        session.EndUtc = startUtc.AddHours(1);
+        session!.Start = start;
+        session.End = start.AddHours(1);
         await db.SaveChangesAsync();
     }
 

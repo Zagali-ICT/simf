@@ -121,7 +121,7 @@ public sealed record ActiveBookingRow(
     Guid SessionId,
     string SessionTitle,
     string SessionTitleArabic,
-    DateTimeOffset SessionStartUtc,
+    DateTimeOffset SessionStart,
     // D-485: null for an OpenSeating join — the CP renders it as "general admission".
     string? RowLabel,
     int? SeatNumber,

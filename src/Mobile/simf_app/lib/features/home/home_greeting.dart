@@ -6,8 +6,8 @@ String homeGreeting(AppL10n l10n, DateTime now) =>
 
 /// The relative "time-ago" label for the latest-post card (the frame's
 /// "قبل ساعة"). Buckets: just-now → minutes → hours → days.
-String homePostTime(AppL10n l10n, DateTime publishedUtc, DateTime nowUtc) {
-  final diff = nowUtc.difference(publishedUtc);
+String homePostTime(AppL10n l10n, DateTime published, DateTime nowUtc) {
+  final diff = nowUtc.difference(published);
   if (diff.inMinutes < 1) {
     return l10n.postTimeJustNow;
   }

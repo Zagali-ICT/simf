@@ -57,7 +57,7 @@ public sealed class LogFileService : ILogFileService
                 {
                     FileName = info.Name,
                     SizeBytes = info.Length,
-                    LastModifiedUtc = info.LastWriteTimeUtc,
+                    LastModified = info.LastWriteTimeUtc,
                 })
                 .ToList();
 

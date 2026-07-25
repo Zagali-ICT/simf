@@ -28,7 +28,7 @@ import 'golden_fonts.dart';
 /// speaker·rank + hall meta row, and the gold المفضلة heart on the trailing edge
 /// (solid+filled when favourited, gold-50%+outline otherwise). RTL throughout.
 ///
-/// The default tab is القادمة (upcoming = startUtc after now), so the items use a
+/// The default tab is القادمة (upcoming = start after now), so the items use a
 /// far-future start — permanently "upcoming" regardless of the run date — while
 /// the card itself only renders the time-of-day (never the date), so the future
 /// year never shows. The favourites are seeded through the AsyncNotifier so two
@@ -49,8 +49,8 @@ MyAreaSessionItem _item({
       title: titleEn,
       titleArabic: titleAr,
       // Far future → always "upcoming"; only the time-of-day is rendered.
-      startUtc: DateTime.utc(2099, 6, 20, hourUtc, 0),
-      endUtc: DateTime.utc(2099, 6, 20, hourUtc + 1, 30),
+      start: DateTime.utc(2099, 6, 20, hourUtc, 0),
+      end: DateTime.utc(2099, 6, 20, hourUtc + 1, 30),
       status: SessionStatus.scheduled,
       attended: false,
       isFavourite: false,

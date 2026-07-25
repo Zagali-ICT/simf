@@ -1,4 +1,4 @@
-// G-2 — the close-out worker stamps LeaveUtc = Session.EndUtc on open
+// G-2 — the close-out worker stamps Leave = Session.End on open
 // HallAttendance rows whose session has ended (In-only hall-door gates never emit
 // a departure), and leaves rows of still-live sessions untouched.
 using Microsoft.EntityFrameworkCore;
@@ -36,7 +36,7 @@ public sealed class HallAttendanceCloseoutWorkerTests : IClassFixture<SimfApiFac
 
         Assert.Equal(1, closed);
         var reloaded = await db.HallAttendances.SingleAsync(a => a.Id == row.Id);
-        Assert.Equal(session.EndUtc, reloaded.LeaveUtc);
+        Assert.Equal(session.End, reloaded.Leave);
         Assert.NotNull(reloaded.UpdatedAt);
     }
 
@@ -55,7 +55,7 @@ public sealed class HallAttendanceCloseoutWorkerTests : IClassFixture<SimfApiFac
 
         Assert.Equal(0, closed);
         var reloaded = await db.HallAttendances.SingleAsync(a => a.Id == row.Id);
-        Assert.Null(reloaded.LeaveUtc);
+        Assert.Null(reloaded.Leave);
     }
 
     [Fact]
@@ -67,7 +67,7 @@ public sealed class HallAttendanceCloseoutWorkerTests : IClassFixture<SimfApiFac
 
         var (hall, session) = SeedSession(db, start: now.AddHours(-3), end: now.AddHours(-1));
         var row = SeedOpenAttendance(db, session, hall);
-        row.LeaveUtc = now.AddHours(-1); // already departed
+        row.Leave = now.AddHours(-1); // already departed
         await db.SaveChangesAsync();
 
         var closed = await HallAttendanceCloseoutWorker.CloseEndedSessionsAsync(db, now, default);
@@ -91,7 +91,7 @@ public sealed class HallAttendanceCloseoutWorkerTests : IClassFixture<SimfApiFac
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Closeout Session", TitleArabic = "جلسة الإغلاق",
             HallId = hall.Id,
-            StartUtc = start, EndUtc = end,
+            Start = start, End = end,
             IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
         };
         db.Sessions.Add(session);
@@ -108,7 +108,7 @@ public sealed class HallAttendanceCloseoutWorkerTests : IClassFixture<SimfApiFac
             HallId = hall.Id,
             UserId = Guid.NewGuid(),
             Method = AttendanceMethod.QrScan,
-            EnterUtc = session.StartUtc,
+            Enter = session.Start,
             CreatedAt = DateTimeOffset.UtcNow,
         };
         db.HallAttendances.Add(row);

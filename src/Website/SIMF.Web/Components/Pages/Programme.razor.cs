@@ -55,8 +55,8 @@ public partial class Programme
     private void BuildDays(IReadOnlyList<PublicSessionListItem> items)
     {
         var groups = items
-            .OrderBy(s => s.StartUtc)
-            .GroupBy(s => EventTime.Local(s.StartUtc).Date)
+            .OrderBy(s => s.Start)
+            .GroupBy(s => EventTime.Local(s.Start).Date)
             .OrderBy(g => g.Key)
             .ToList();
 
@@ -79,8 +79,8 @@ public partial class Programme
             .ToList();
     }
 
-    private static string Start(PublicSessionListItem session) => EventTime.Time(session.StartUtc);
-    private static string End(PublicSessionListItem session) => EventTime.Time(session.EndUtc);
+    private static string Start(PublicSessionListItem session) => EventTime.Time(session.Start);
+    private static string End(PublicSessionListItem session) => EventTime.Time(session.End);
 
     private static string Title(PublicSessionListItem session) =>
         Pick(session.Title, session.TitleArabic);

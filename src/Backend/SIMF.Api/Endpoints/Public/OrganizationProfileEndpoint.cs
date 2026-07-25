@@ -30,8 +30,8 @@ public sealed class GetOrganizationProfileEndpoint(IOrganizationProfileReadServi
         // before emitting Last-Modified, else a sub-second drift makes the next
         // request a needless cache miss. Emit Last-Modified on BOTH branches (incl.
         // the 304) so a cache that refreshes its validator from the 304 keeps it.
-        var lastModifiedSecond = snapshot.LastModifiedUtc.AddTicks(
-            -(snapshot.LastModifiedUtc.Ticks % TimeSpan.TicksPerSecond));
+        var lastModifiedSecond = snapshot.LastModified.AddTicks(
+            -(snapshot.LastModified.Ticks % TimeSpan.TicksPerSecond));
         HttpContext.Response.Headers.LastModified =
             lastModifiedSecond.UtcDateTime.ToString("R");
 

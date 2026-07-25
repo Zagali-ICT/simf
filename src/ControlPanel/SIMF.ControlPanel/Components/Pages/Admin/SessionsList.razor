@@ -86,15 +86,15 @@
                                         Header="@L["Admin.Sessions.Column.Hall"]">
                         <CellTemplate>@HallLabel(context)</CellTemplate>
                     </SimfDataGridColumn>
-                    <SimfDataGridColumn TItem="AdminSessionSummary" Key="startUtc"
-                                        Header="@L["Admin.Sessions.Column.StartUtc"]"
+                    <SimfDataGridColumn TItem="AdminSessionSummary" Key="start"
+                                        Header="@L["Admin.Sessions.Column.Start"]"
                                         Sortable="true">
-                        <CellTemplate>@context.StartUtc.FormatSaudi()</CellTemplate>
+                        <CellTemplate>@context.Start.FormatSaudi()</CellTemplate>
                     </SimfDataGridColumn>
-                    <SimfDataGridColumn TItem="AdminSessionSummary" Key="endUtc"
-                                        Header="@L["Admin.Sessions.Column.EndUtc"]"
+                    <SimfDataGridColumn TItem="AdminSessionSummary" Key="end"
+                                        Header="@L["Admin.Sessions.Column.End"]"
                                         Sortable="true">
-                        <CellTemplate>@context.EndUtc.FormatSaudi()</CellTemplate>
+                        <CellTemplate>@context.End.FormatSaudi()</CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminSessionSummary" Key="capacity"
                                         Header="@L["Admin.Sessions.Column.Capacity"]">

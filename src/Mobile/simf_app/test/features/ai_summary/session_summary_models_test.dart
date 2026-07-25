@@ -22,7 +22,7 @@ void main() {
       expect(summary.localizedSpeakers(true), 'د. ريف');
       expect(summary.localizedFullText(false), 'A long transcript summary.');
       expect(summary.generatedByAi, isTrue);
-      expect(summary.publishedAtUtc, DateTime.utc(2026, 11, 23, 7, 30));
+      expect(summary.publishedAt, DateTime.utc(2026, 11, 23, 7, 30));
     });
 
     test('defaults missing fields and an unparsable timestamp', () {
@@ -31,7 +31,7 @@ void main() {
       expect(summary.keyPoints, '');
       expect(summary.generatedByAi, isFalse);
       expect(summary.publishedAt, isNull);
-      expect(summary.publishedAtUtc, isNull);
+      expect(summary.publishedAt, isNull);
       expect(summary.keyPointsLines(false), isEmpty);
       // Item #35 — the two video URLs default to null (no players shown).
       expect(summary.recordingUrl, isNull);

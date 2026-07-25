@@ -70,13 +70,13 @@ final _upcoming = <UpcomingSession>[
     id: 'u1',
     title: 'General Authority for Defence Development',
     titleArabic: 'الهيئة العامة للتطوير الدفاعي',
-    startUtc: DateTime(2026, 11, 23, 11),
+    start: DateTime(2026, 11, 23, 11),
   ),
   UpcomingSession(
     id: 'u2',
     title: 'Securing International Waterways',
     titleArabic: 'تأمين الممرات المائية الدولية',
-    startUtc: DateTime(2026, 11, 23, 12),
+    start: DateTime(2026, 11, 23, 12),
   ),
 ];
 

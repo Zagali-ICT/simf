@@ -10,7 +10,7 @@ import '../../requests/data/requests_repository.dart';
 /// network call. The full, unfiltered log stays on the requests-history page.
 ///
 /// "Upcoming" = a meeting whose slot date has not passed; an approved meeting with
-/// no fixed slot yet (`eventDateUtc == null`) still counts as upcoming (not
+/// no fixed slot yet (`eventDate == null`) still counts as upcoming (not
 /// "done"). Past-dated meetings drop off automatically.
 final upcomingMeetingsProvider =
     FutureProvider.autoDispose<List<AppRequestItem>>((ref) async {
@@ -28,8 +28,8 @@ final upcomingMeetingsProvider =
         (item) =>
             item.isMeetingKind &&
             item.status == AppRequestStatus.accepted &&
-            (item.eventDateUtc == null ||
-                !item.eventDateUtc!.toLocal().isBefore(startOfToday)),
+            (item.eventDate == null ||
+                !item.eventDate!.toLocal().isBefore(startOfToday)),
       )
       .toList(growable: false);
 });

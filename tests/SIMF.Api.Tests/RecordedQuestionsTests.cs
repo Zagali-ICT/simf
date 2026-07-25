@@ -182,8 +182,8 @@ public sealed class RecordedQuestionsTests : IClassFixture<SimfApiFactory>
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Archive Session", TitleArabic = "جلسة الأرشيف",
             HallId = hall.Id,
-            StartUtc = DateTimeOffset.UtcNow.AddMinutes(-15),
-            EndUtc = DateTimeOffset.UtcNow.AddMinutes(45),
+            Start = DateTimeOffset.UtcNow.AddMinutes(-15),
+            End = DateTimeOffset.UtcNow.AddMinutes(45),
             // S-7 — the archive flow marks the session Recorded/Published, which now
             // requires an attached recording (the past start already clears the Held
             // clock guard); stamp a pointer so the publish transitions succeed.

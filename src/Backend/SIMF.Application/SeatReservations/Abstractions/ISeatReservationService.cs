@@ -70,7 +70,7 @@ public interface ISeatReservationService
 
     /// <summary>#6/#17 — the pre-start no-show sweep: release every active
     /// (Approved, still-held) visitor reservation whose no-show deadline
-    /// (<c>StartUtc − 3min</c>) has passed and whose holder never checked in, freeing
+    /// (<c>Start − 3min</c>) has passed and whose holder never checked in, freeing
     /// the seat for others. Returns the number released. Called once per minute by
     /// <c>ReservationNoShowReleaseWorker</c>.</summary>
     Task<int> ReleaseNoShowsAsync(

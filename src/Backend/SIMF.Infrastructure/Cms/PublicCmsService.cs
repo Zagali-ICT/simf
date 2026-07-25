@@ -60,11 +60,11 @@ internal sealed class PublicCmsService(
         var now = timeProvider.GetUtcNow();
         var rows = await appDbContext.Banners
             .AsNoTracking()
-            .Where(b => b.IsActive && b.StartUtc <= now && b.EndUtc >= now)
-            .OrderBy(b => b.DisplayOrder).ThenBy(b => b.StartUtc)
+            .Where(b => b.IsActive && b.Start <= now && b.End >= now)
+            .OrderBy(b => b.DisplayOrder).ThenBy(b => b.Start)
             .Select(b => new PublicBanner(
                 b.Id, b.Title, b.TitleArabic, b.Body, b.BodyArabic,
-                b.ImageUrl, b.LinkUrl, b.StartUtc, b.EndUtc, b.DisplayOrder))
+                b.ImageUrl, b.LinkUrl, b.Start, b.End, b.DisplayOrder))
             .ToListAsync(cancellationToken);
         return new PublicBanners(rows);
     }

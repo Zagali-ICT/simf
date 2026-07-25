@@ -162,7 +162,7 @@ public sealed class FeedbackRatingsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(sessionId, form.TargetId);
         Assert.Equal("Watched-At Session", form.TargetName);
         Assert.Equal("جلسة السياق", form.TargetNameArabic);
-        Assert.NotNull(form.TargetStartUtc);
+        Assert.NotNull(form.TargetStart);
     }
 
     [Fact]
@@ -333,8 +333,8 @@ public sealed class FeedbackRatingsTests : IClassFixture<SimfApiFactory>
             Title = "Watched-At Session",
             TitleArabic = "جلسة السياق",
             HallId = hall.Id,
-            StartUtc = DateTimeOffset.UtcNow.AddHours(-2),
-            EndUtc = DateTimeOffset.UtcNow.AddHours(-1),
+            Start = DateTimeOffset.UtcNow.AddHours(-2),
+            End = DateTimeOffset.UtcNow.AddHours(-1),
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };

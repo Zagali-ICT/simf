@@ -168,8 +168,8 @@ public partial class SessionLiveHall
             ? $"{attendee.RowLabel}{attendee.SeatNumber}"
             : L["Admin.SessionLiveHall.OpenSeating"];
 
-    private static string EnteredUtc(DateTimeOffset enterUtc) =>
-        enterUtc.FormatSaudi("dd-MM-yyyy hh:mm tt");
+    private static string Entered(DateTimeOffset enter) =>
+        enter.FormatSaudi("dd-MM-yyyy hh:mm tt");
 
     private string MethodLabel(AttendanceMethod method) => method switch
     {

@@ -15,12 +15,12 @@ public class RegistrationGate
 
     /// <summary>True while sign-up is accepted. Admins toggle via the
     /// admin endpoint; the background worker flips it to false when
-    /// <see cref="AutoCloseUtc"/> passes.</summary>
+    /// <see cref="AutoClose"/> passes.</summary>
     public bool IsOpen { get; set; } = true;
 
     /// <summary>Optional UTC moment after which the worker auto-closes
     /// the gate. Null means "no scheduled close".</summary>
-    public DateTimeOffset? AutoCloseUtc { get; set; }
+    public DateTimeOffset? AutoClose { get; set; }
 
     public DateTimeOffset LastChangedAt { get; set; }
 

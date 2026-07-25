@@ -21,7 +21,7 @@ internal sealed class ClosedXmlOperationLogExcelService : IOperationLogExcelServ
         using var workbook = new XLWorkbook();
         var sheet = workbook.Worksheets.Add(SheetName);
 
-        sheet.Cell(1, 1).Value = "TimestampUtc";
+        sheet.Cell(1, 1).Value = "Timestamp";
         sheet.Cell(1, 2).Value = "EventType";
         sheet.Cell(1, 3).Value = "Outcome";
         sheet.Cell(1, 4).Value = "SubjectEmail";
@@ -34,7 +34,7 @@ internal sealed class ClosedXmlOperationLogExcelService : IOperationLogExcelServ
         var row = 2;
         foreach (var entry in rows)
         {
-            sheet.Cell(row, 1).Value = entry.TimestampUtc.UtcDateTime.ToString("O");
+            sheet.Cell(row, 1).Value = entry.Timestamp.UtcDateTime.ToString("O");
             sheet.Cell(row, 2).Value = ClosedXmlUserExcelService.SanitiseForExcel(entry.EventType);
             sheet.Cell(row, 3).Value = ClosedXmlUserExcelService.SanitiseForExcel(entry.Outcome);
             sheet.Cell(row, 4).Value = ClosedXmlUserExcelService.SanitiseForExcel(entry.SubjectEmail);

@@ -46,8 +46,8 @@ void main() {
             'hallId': 'h1',
             'hallName': 'Main',
             'hallNameArabic': 'الرئيسية',
-            'startUtc': '2026-11-23T06:00:00Z',
-            'endUtc': '2026-11-23T07:00:00Z',
+            'start': '2026-11-23T06:00:00Z',
+            'end': '2026-11-23T07:00:00Z',
           },
         ],
       });
@@ -60,7 +60,7 @@ void main() {
       expect(d.websiteUrl, 'https://reef.example.sa'); // D-544
       expect(d.sessions, hasLength(1));
       expect(d.sessions.single.localizedTitle(true), 'حديث');
-      expect(d.sessions.single.startUtc.isUtc, isTrue);
+      expect(d.sessions.single.start.isUtc, isTrue);
     });
 
     test('gates + sessions default safely when absent', () {

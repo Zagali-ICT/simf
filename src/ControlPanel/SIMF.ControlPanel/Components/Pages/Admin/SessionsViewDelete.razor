@@ -28,10 +28,10 @@
         <dd>@(_target.DescriptionArabic ?? "—")</dd>
         <dt>@L["Admin.Sessions.Column.Hall"]</dt>
         <dd>@HallLabel(_target)</dd>
-        <dt>@L["Admin.Sessions.Column.StartUtc"]</dt>
-        <dd>@_target.StartUtc.FormatSaudi("dd-MM-yyyy hh:mm tt")</dd>
-        <dt>@L["Admin.Sessions.Column.EndUtc"]</dt>
-        <dd>@_target.EndUtc.FormatSaudi("dd-MM-yyyy hh:mm tt")</dd>
+        <dt>@L["Admin.Sessions.Column.Start"]</dt>
+        <dd>@_target.Start.FormatSaudi("dd-MM-yyyy hh:mm tt")</dd>
+        <dt>@L["Admin.Sessions.Column.End"]</dt>
+        <dd>@_target.End.FormatSaudi("dd-MM-yyyy hh:mm tt")</dd>
         <dt>@L["Admin.Sessions.Field.CapacityOverride"]</dt>
         <dd>@(_target.CapacityOverride?.ToString() ?? L["Admin.Sessions.Field.CapacityInherits"])</dd>
         <dt>@L["Admin.Sessions.Field.EffectiveCapacity"]</dt>

@@ -17,8 +17,8 @@ SessionListItem _session(
       hallId: 'h',
       hallName: 'H',
       hallNameArabic: 'ه',
-      startUtc: start,
-      endUtc: end,
+      start: start,
+      end: end,
       status: SessionStatus.scheduled,
       speakers: const <SessionSpeaker>[],
     );

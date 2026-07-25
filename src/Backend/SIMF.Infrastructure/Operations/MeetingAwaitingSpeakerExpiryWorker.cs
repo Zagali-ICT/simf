@@ -104,7 +104,7 @@ internal sealed class MeetingAwaitingSpeakerExpiryWorker(
         var stale = await db.SpeakerMeetingRequests
             .Where(r => r.Status == MeetingRequestStatus.AwaitingSpeaker
                 && !db.MeetingActionTokens.Any(t => t.SpeakerMeetingRequestId == r.Id
-                    && t.UsedAt == null && t.ExpiresUtc > now))
+                    && t.UsedAt == null && t.Expires > now))
             .ToListAsync(cancellationToken);
         if (stale.Count == 0)
         {
@@ -120,8 +120,8 @@ internal sealed class MeetingAwaitingSpeakerExpiryWorker(
             req.Status = MeetingRequestStatus.Pending;
             req.HallId = null;
             req.MeetingTableId = null;
-            req.SlotStartUtc = null;
-            req.SlotEndUtc = null;
+            req.SlotStart = null;
+            req.SlotEnd = null;
             req.AvailabilityWindowId = null;
             req.SpeakerDecisionAt = null;
             req.RespondedAt = null;

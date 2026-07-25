@@ -41,7 +41,7 @@ public partial class HallArrivalsConsole
         {
             var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminSessionSummary>>>(
                 "simfAccount.postJson", "/account/api/admin/sessions/list",
-                new GridQuery { Top = 200, Sort = "startUtc" });
+                new GridQuery { Top = 200, Sort = "start" });
             if (envelope is { Success: true, Data: not null })
             {
                 // X-3 — the operator can only record an arrival against a session
@@ -52,8 +52,8 @@ public partial class HallArrivalsConsole
                 var grace = TimeSpan.FromMinutes(15);
                 _sessions = envelope.Data.Items
                     .Where(s => s.IsActive
-                        && now >= s.StartUtc - grace
-                        && now <= s.EndUtc + grace)
+                        && now >= s.Start - grace
+                        && now <= s.End + grace)
                     .ToList();
             }
             else

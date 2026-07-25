@@ -19,4 +19,4 @@ public interface IOrganizationProfileReadService
 /// <c>Last-Modified</c> token, truncated to the second by the endpoint).</summary>
 public sealed record OrganizationProfileSnapshot(
     OrganizationProfileResponse Profile,
-    DateTimeOffset LastModifiedUtc);
+    DateTimeOffset LastModified);

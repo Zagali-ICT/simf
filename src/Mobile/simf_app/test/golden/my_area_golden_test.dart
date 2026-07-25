@@ -57,7 +57,7 @@ MyAreaDashboard _dashboard() => MyAreaDashboard(
       todaySchedule: <MyAreaScheduleItem>[
         MyAreaScheduleItem(
           kind: 'Session',
-          startUtc: DateTime(2026, 11, 23, 9),
+          start: DateTime(2026, 11, 23, 9),
           titleEn: 'Opening session',
           titleAr: 'الجلسة الافتتاحية',
           status: 'Approved',
@@ -66,7 +66,7 @@ MyAreaDashboard _dashboard() => MyAreaDashboard(
         ),
         MyAreaScheduleItem(
           kind: 'Meeting',
-          startUtc: DateTime(2026, 11, 23, 11),
+          start: DateTime(2026, 11, 23, 11),
           titleEn: 'Bilateral meeting',
           titleAr: 'لقاء ثنائي',
           status: 'Approved',

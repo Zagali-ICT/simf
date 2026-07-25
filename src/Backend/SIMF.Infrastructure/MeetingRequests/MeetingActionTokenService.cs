@@ -89,7 +89,7 @@ internal sealed class MeetingActionTokenService(
         return new MeetingActionPreview(
             token.Action, speaker?.Name ?? string.Empty, speaker?.NameArabic ?? string.Empty,
             request.RequesterName, request.Subject,
-            request.SlotStartUtc, request.SlotEndUtc, hallName);
+            request.SlotStart, request.SlotEnd, hallName);
     }
 
     public async Task<MeetingActionOutcome?> ApplyAsync(
@@ -161,7 +161,7 @@ internal sealed class MeetingActionTokenService(
 
         var token = await appDbContext.MeetingActionTokens.AsNoTracking()
             .SingleOrDefaultAsync(t => t.TokenHash == hash, cancellationToken);
-        if (token is null || token.UsedAt != null || token.ExpiresUtc <= now)
+        if (token is null || token.UsedAt != null || token.Expires <= now)
         {
             return null;
         }
@@ -213,7 +213,7 @@ internal sealed class MeetingActionTokenService(
             SpeakerMeetingRequestId = requestId,
             Action = action,
             TokenHash = MeetingActionTokenHasher.Hash(secret),
-            ExpiresUtc = expires,
+            Expires = expires,
             CreatedAt = now,
         };
 

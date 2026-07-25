@@ -9,7 +9,7 @@ namespace SIMF.Domain.BusinessMeetings;
 /// <see cref="MeetingActionType.Reject"/>); the speaker clicking a link is the
 /// final gate. Only the keyed-HMAC <see cref="TokenHash"/> of the high-entropy
 /// secret is persisted — the raw secret lives only in the emailed URL. A token is
-/// dead once <see cref="UsedAt"/> is set, once <see cref="ExpiresUtc"/> passes, or
+/// dead once <see cref="UsedAt"/> is set, once <see cref="Expires"/> passes, or
 /// once its request leaves <c>AwaitingSpeaker</c> (validated on redemption).
 /// </summary>
 public sealed class MeetingActionToken
@@ -30,7 +30,7 @@ public sealed class MeetingActionToken
     public string TokenHash { get; set; } = string.Empty;
 
     /// <summary>When the token expires (UTC) — 72h after mint (§15.7 / OI-I).</summary>
-    public DateTimeOffset ExpiresUtc { get; set; }
+    public DateTimeOffset Expires { get; set; }
 
     /// <summary>When the token was consumed (UTC); null while unused. Single-use.</summary>
     public DateTimeOffset? UsedAt { get; set; }

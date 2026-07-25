@@ -121,9 +121,9 @@ internal sealed class SpeakerMeetingRequestService(
         DateTimeOffset? slotStart = null;
         DateTimeOffset? slotEnd = null;
         Guid? availabilityWindowId = null;
-        if (request.SlotStartUtc is { } pickedStart)
+        if (request.SlotStart is { } pickedStart)
         {
-            if (request.SlotEndUtc is not { } pickedEnd || pickedEnd <= pickedStart)
+            if (request.SlotEnd is not { } pickedEnd || pickedEnd <= pickedStart)
             {
                 throw new ApiException(
                     ErrorCodes.SpeakerMeetingRequestInvalid, 400,
@@ -131,7 +131,7 @@ internal sealed class SpeakerMeetingRequestService(
                     "يلزم اختيار فترة اجتماع صحيحة (بداية ونهاية).");
             }
             var slots = await availability.GetAvailableSlotsAsync(speakerId, cancellationToken);
-            if (!slots.Any(s => s.StartUtc == pickedStart && s.EndUtc == pickedEnd))
+            if (!slots.Any(s => s.Start == pickedStart && s.End == pickedEnd))
             {
                 throw new ApiException(
                     ErrorCodes.SpeakerMeetingRequestInvalid, 409,
@@ -146,7 +146,7 @@ internal sealed class SpeakerMeetingRequestService(
             // The slot falls inside exactly one active window; resolve it by range.
             availabilityWindowId = await appDbContext.SpeakerAvailabilityWindows.AsNoTracking()
                 .Where(w => w.SpeakerId == speakerId && w.IsActive
-                    && w.StartUtc <= pickedStart && w.EndUtc >= pickedEnd)
+                    && w.Start <= pickedStart && w.End >= pickedEnd)
                 .Select(w => (Guid?)w.Id)
                 .FirstOrDefaultAsync(cancellationToken);
         }
@@ -159,8 +159,8 @@ internal sealed class SpeakerMeetingRequestService(
             RequestedByUserId = requesterUserId,
             RequesterName = name,
             Subject = subject,
-            SlotStartUtc = slotStart,
-            SlotEndUtc = slotEnd,
+            SlotStart = slotStart,
+            SlotEnd = slotEnd,
             AvailabilityWindowId = availabilityWindowId,
             Status = MeetingRequestStatus.Pending,
             CreatedAt = now,
@@ -366,7 +366,7 @@ internal sealed class SpeakerMeetingRequestService(
         // app-level overlap re-check (SpeakerHasOverlappingMeetingAsync) already blocks
         // the sequential case, but two concurrent accepts of overlapping-but-different-
         // start slots can each pass the check before either commits, and the frozen
-        // (SpeakerId, SlotStartUtc) filtered-unique index only catches an EQUAL-start
+        // (SpeakerId, SlotStart) filtered-unique index only catches an EQUAL-start
         // collision. Running the half-open range scan and the status flip in ONE
         // Serializable transaction makes the scan hold key-range locks, so a concurrent
         // overlapping accept cannot slip its write in between our check and our save —
@@ -388,7 +388,7 @@ internal sealed class SpeakerMeetingRequestService(
                     await BindHallSlotAsync(req, request, cancellationToken);
                 }
                 else if (request.Status == MeetingRequestStatus.Accepted
-                    && req.SlotStartUtc is { } slotStart && req.SlotEndUtc is { } slotEnd)
+                    && req.SlotStart is { } slotStart && req.SlotEnd is { } slotEnd)
                 {
                     // A1 — accepting a slot-bearing request must re-check the slot is
                     // still free among the speaker's LIVE meetings (Accepted OR
@@ -438,7 +438,7 @@ internal sealed class SpeakerMeetingRequestService(
         }
         catch (DbUpdateException)
         {
-            // D-716 — the (hall|speaker, SlotStartUtc) filtered-unique index is the
+            // D-716 — the (hall|speaker, SlotStart) filtered-unique index is the
             // equal-start backstop: a concurrent accept that won the index race after
             // both passed the app-level re-check surfaces here. It is non-transient, so
             // the execution strategy does not retry it; return the same clean 409 the
@@ -588,7 +588,7 @@ internal sealed class SpeakerMeetingRequestService(
             return;
         }
 
-        var slot = req.SlotStartUtc is { } s
+        var slot = req.SlotStart is { } s
             ? s.FormatSaudi()
             : "to be scheduled";
         var html =
@@ -641,7 +641,7 @@ internal sealed class SpeakerMeetingRequestService(
     // hall hosts meetings, the slot is still free, the speaker is not already
     // committed at that time, and the optional table belongs to the hall — then
     // writes the binding onto the request. The caller sets the status to
-    // AwaitingSpeaker. The DB filtered-unique index (HallId, SlotStartUtc) is the
+    // AwaitingSpeaker. The DB filtered-unique index (HallId, SlotStart) is the
     // race backstop.
     private async Task BindHallSlotAsync(
         SpeakerMeetingRequest req,
@@ -649,8 +649,8 @@ internal sealed class SpeakerMeetingRequestService(
         CancellationToken cancellationToken)
     {
         var hallId = request.HallId!.Value;
-        if (request.SlotStartUtc is not { } start
-            || request.SlotEndUtc is not { } end || end <= start)
+        if (request.SlotStart is not { } start
+            || request.SlotEnd is not { } end || end <= start)
         {
             throw new ApiException(
                 ErrorCodes.SpeakerMeetingRequestInvalid, 400,
@@ -678,7 +678,7 @@ internal sealed class SpeakerMeetingRequestService(
         // availability layer already excludes slots taken by a bound meeting
         // (D-716 taken-filter), so membership is the free check.
         var slots = await hallAvailability.GetAvailableSlotsAsync(hallId, cancellationToken);
-        if (!slots.Any(s => s.StartUtc == start && s.EndUtc == end))
+        if (!slots.Any(s => s.Start == start && s.End == end))
         {
             throw new ApiException(
                 ErrorCodes.SpeakerMeetingRequestInvalid, 409,
@@ -723,8 +723,8 @@ internal sealed class SpeakerMeetingRequestService(
         }
 
         req.HallId = hallId;
-        req.SlotStartUtc = start;
-        req.SlotEndUtc = end;
+        req.SlotStart = start;
+        req.SlotEnd = end;
     }
 
     // D-716 — does the speaker already hold a LIVE meeting (Accepted or
@@ -739,8 +739,8 @@ internal sealed class SpeakerMeetingRequestService(
             .AnyAsync(r => r.Id != excludeRequestId
                 && r.SpeakerId == speakerId
                 && MeetingRequestStatuses.SlotHolding.Contains(r.Status)
-                && r.SlotStartUtc != null && r.SlotEndUtc != null
-                && r.SlotStartUtc < end && start < r.SlotEndUtc, cancellationToken);
+                && r.SlotStart != null && r.SlotEnd != null
+                && r.SlotStart < end && start < r.SlotEnd, cancellationToken);
 
     // M-7 — does the REQUESTER already hold a LIVE meeting (Accepted, AwaitingSpeaker or Done)
     // overlapping [start, end) with any speaker — excluding this request? The speaker-side
@@ -753,8 +753,8 @@ internal sealed class SpeakerMeetingRequestService(
             .AnyAsync(r => r.Id != excludeRequestId
                 && r.RequestedByUserId == requesterUserId
                 && MeetingRequestStatuses.SlotHolding.Contains(r.Status)
-                && r.SlotStartUtc != null && r.SlotEndUtc != null
-                && r.SlotStartUtc < end && start < r.SlotEndUtc, cancellationToken);
+                && r.SlotStart != null && r.SlotEnd != null
+                && r.SlotStart < end && start < r.SlotEnd, cancellationToken);
 
     // Bi-Meeting rework — eligibility gate: the requester's per-user
     // UserProfile.AllowsSpeakerMeeting flag (admin-assigned), replacing the former
@@ -807,7 +807,7 @@ internal sealed class SpeakerMeetingRequestService(
                 .SingleOrDefaultAsync(cancellationToken);
             if (!string.IsNullOrWhiteSpace(contactEmail))
             {
-                var slot = req.SlotStartUtc is { } s
+                var slot = req.SlotStart is { } s
                     ? $" Proposed slot: {s.FormatSaudi()}."
                     : string.Empty;
                 var html =
@@ -862,7 +862,7 @@ internal sealed class SpeakerMeetingRequestService(
             req.RequestedByUserId, req.RequesterName, email,
             req.Subject, req.Status, req.ResponseNote,
             req.CreatedAt, req.RespondedAt,
-            req.SlotStartUtc, req.SlotEndUtc,
+            req.SlotStart, req.SlotEnd,
             req.HallId, hallName, req.MeetingTableId, tableCode);
     }
 }

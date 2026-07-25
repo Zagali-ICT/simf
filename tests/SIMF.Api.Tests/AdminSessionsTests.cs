@@ -48,8 +48,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 TitleArabic = "كلمة افتتاحية",
                 Type = SessionType.Event,
                 HallId = hall.Id,
-                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
-                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                Start = DateTimeOffset.UtcNow.AddHours(1),
+                End = DateTimeOffset.UtcNow.AddHours(2),
             },
             token);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -78,8 +78,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 TitleArabic = "حلقة الأمن السيبراني",
                 Type = SessionType.Event,
                 HallId = hall.Id,
-                StartUtc = DateTimeOffset.UtcNow.AddHours(3),
-                EndUtc = DateTimeOffset.UtcNow.AddHours(4),
+                Start = DateTimeOffset.UtcNow.AddHours(3),
+                End = DateTimeOffset.UtcNow.AddHours(4),
                 CapacityOverride = 200,
             },
             token);
@@ -101,8 +101,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Code = NewCode(),
                 Title = "X", TitleArabic = "س",
                 HallId = Guid.NewGuid(),
-                StartUtc = DateTimeOffset.UtcNow,
-                EndUtc = DateTimeOffset.UtcNow.AddHours(1),
+                Start = DateTimeOffset.UtcNow,
+                End = DateTimeOffset.UtcNow.AddHours(1),
             },
             token);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -124,8 +124,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Code = NewCode(),
                 Title = "Bad window", TitleArabic = "نافذة خاطئة",
                 HallId = hall.Id,
-                StartUtc = start,
-                EndUtc = start.AddMinutes(-30),
+                Start = start,
+                End = start.AddMinutes(-30),
             },
             token);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -146,8 +146,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Code = code, Title = "A", TitleArabic = "أ",
                 Type = SessionType.Event,
                 HallId = hall.Id,
-                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
-                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                Start = DateTimeOffset.UtcNow.AddHours(1),
+                End = DateTimeOffset.UtcNow.AddHours(2),
             },
             token);
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
@@ -159,8 +159,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Code = code, Title = "B", TitleArabic = "ب",
                 Type = SessionType.Event,
                 HallId = hall.Id,
-                StartUtc = DateTimeOffset.UtcNow.AddHours(3),
-                EndUtc = DateTimeOffset.UtcNow.AddHours(4),
+                Start = DateTimeOffset.UtcNow.AddHours(3),
+                End = DateTimeOffset.UtcNow.AddHours(4),
             },
             token);
         Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
@@ -184,8 +184,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Title = "Joint panel", TitleArabic = "حلقة مشتركة",
                 Type = SessionType.Session,
                 HallId = hall.Id,
-                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
-                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                Start = DateTimeOffset.UtcNow.AddHours(1),
+                End = DateTimeOffset.UtcNow.AddHours(2),
                 Speakers = new List<AdminSessionSpeakerEntry>
                 {
                     // B9 — D-225: speaker 0 is a plain speaker, speaker 1 is the host.
@@ -225,8 +225,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Code = NewCode(), Title = "Linked", TitleArabic = "مرتبطة",
                 Type = SessionType.Session,
                 HallId = hall.Id,
-                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
-                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                Start = DateTimeOffset.UtcNow.AddHours(1),
+                End = DateTimeOffset.UtcNow.AddHours(2),
                 Speakers = new List<AdminSessionSpeakerEntry>
                 {
                     new(speaker.Id, speaker.Name, speaker.NameArabic, 0),
@@ -244,8 +244,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Code = NewCode(), Title = "Other", TitleArabic = "أخرى",
                 Type = SessionType.Event,
                 HallId = hall.Id,
-                StartUtc = DateTimeOffset.UtcNow.AddHours(3),
-                EndUtc = DateTimeOffset.UtcNow.AddHours(4),
+                Start = DateTimeOffset.UtcNow.AddHours(3),
+                End = DateTimeOffset.UtcNow.AddHours(4),
             },
             token);
         Assert.Equal(HttpStatusCode.OK, other.StatusCode);
@@ -278,8 +278,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Code = NewCode(), Title = "Dx", TitleArabic = "د",
                 Type = SessionType.Event,
                 HallId = hall.Id,
-                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
-                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                Start = DateTimeOffset.UtcNow.AddHours(1),
+                End = DateTimeOffset.UtcNow.AddHours(2),
             },
             token);
         var detail = (await create.Content
@@ -307,8 +307,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             {
                 Code = NewCode(), Title = "F", TitleArabic = "ف",
                 HallId = hall.Id,
-                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
-                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                Start = DateTimeOffset.UtcNow.AddHours(1),
+                End = DateTimeOffset.UtcNow.AddHours(2),
             },
             tokens.AccessToken);
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
@@ -328,8 +328,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Code = NewCode(), Title = "Live", TitleArabic = "مباشر",
                 Type = SessionType.Event,
                 HallId = hall.Id,
-                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
-                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                Start = DateTimeOffset.UtcNow.AddHours(1),
+                End = DateTimeOffset.UtcNow.AddHours(2),
                 LiveStreamUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                 LiveSignLanguageUrl = "https://youtu.be/abc123XYZ_-",
                 // P5 — D-439: AI live-caption text round-trips on create too.
@@ -366,8 +366,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Code = NewCode(), Title = "Edit me", TitleArabic = "عدّلني",
                 Type = SessionType.Event,
                 HallId = hall.Id,
-                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
-                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                Start = DateTimeOffset.UtcNow.AddHours(1),
+                End = DateTimeOffset.UtcNow.AddHours(2),
             },
             token);
         Assert.Equal(HttpStatusCode.OK, create.StatusCode);
@@ -385,8 +385,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Title = created.Title,
                 TitleArabic = created.TitleArabic,
                 HallId = created.HallId,
-                StartUtc = created.StartUtc,
-                EndUtc = created.EndUtc,
+                Start = created.Start,
+                End = created.End,
                 IsActive = true,
                 Type = SessionType.Event,
                 LiveStreamUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
@@ -420,8 +420,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Code = NewCode(), Title = "Override me", TitleArabic = "تجاوزني",
                 Type = SessionType.Event,
                 HallId = hall.Id,
-                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
-                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                Start = DateTimeOffset.UtcNow.AddHours(1),
+                End = DateTimeOffset.UtcNow.AddHours(2),
                 SeatSelectionModeOverride = SeatSelectionMode.OpenSeating,
             },
             token);
@@ -439,8 +439,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Title = created.Title,
                 TitleArabic = created.TitleArabic,
                 HallId = created.HallId,
-                StartUtc = created.StartUtc,
-                EndUtc = created.EndUtc,
+                Start = created.Start,
+                End = created.End,
                 IsActive = true,
                 Type = SessionType.Event,
                 SeatSelectionModeOverride = null, // inherit the hall
@@ -468,8 +468,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             {
                 Code = NewCode(), Title = "Typed", TitleArabic = "مصنّف",
                 HallId = hall.Id,
-                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
-                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                Start = DateTimeOffset.UtcNow.AddHours(1),
+                End = DateTimeOffset.UtcNow.AddHours(2),
                 Type = SessionType.Workshop,
                 // #4 — a Workshop is not an Event, so it needs a speaker.
                 Speakers = new List<AdminSessionSpeakerEntry>
@@ -491,8 +491,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Title = "Typed (edited)",
                 TitleArabic = created.TitleArabic,
                 HallId = created.HallId,
-                StartUtc = created.StartUtc,
-                EndUtc = created.EndUtc,
+                Start = created.Start,
+                End = created.End,
                 IsActive = true,
                 Type = SessionType.Workshop, // the CP form re-sends the type
                 // #4 — keep the speaker so the non-Event update stays compliant.
@@ -521,8 +521,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Code = NewCode(), Title = "HLS", TitleArabic = "بث",
                 Type = SessionType.Event,
                 HallId = hall.Id,
-                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
-                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                Start = DateTimeOffset.UtcNow.AddHours(1),
+                End = DateTimeOffset.UtcNow.AddHours(2),
                 LiveStreamUrl = "https://live.example.sa/stream.m3u8",
             },
             token);
@@ -541,8 +541,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             {
                 Code = NewCode(), Title = "Bad", TitleArabic = "خطأ",
                 HallId = hall.Id,
-                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
-                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                Start = DateTimeOffset.UtcNow.AddHours(1),
+                End = DateTimeOffset.UtcNow.AddHours(2),
                 LiveStreamUrl = "https://vimeo.com/12345",
             },
             token);
@@ -564,8 +564,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             {
                 Code = NewCode(), Title = "NoId", TitleArabic = "بدون",
                 HallId = hall.Id,
-                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
-                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                Start = DateTimeOffset.UtcNow.AddHours(1),
+                End = DateTimeOffset.UtcNow.AddHours(2),
                 LiveStreamUrl = "https://www.youtube.com/@SIMFchannel",
             },
             token);
@@ -587,8 +587,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             {
                 Code = NewCode(), Title = "Cleartext", TitleArabic = "غير آمن",
                 HallId = hall.Id,
-                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
-                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                Start = DateTimeOffset.UtcNow.AddHours(1),
+                End = DateTimeOffset.UtcNow.AddHours(2),
                 LiveStreamUrl = "http://live.example.sa/stream.m3u8",
             },
             token);
@@ -677,8 +677,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
         var update = await PutAuthAsync(
             $"/api/v1/admin/sessions/{created.Id}",
             UpdateFrom(created,
-                startUtc: created.StartUtc.AddHours(2),
-                endUtc: created.EndUtc.AddHours(2)),
+                start: created.Start.AddHours(2),
+                end: created.End.AddHours(2)),
             token);
         Assert.Equal(HttpStatusCode.OK, update.StatusCode);
 
@@ -802,8 +802,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Title = "Expanded room", TitleArabic = "قاعة موسّعة",
                 Type = SessionType.Event,
                 HallId = hall.Id,
-                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
-                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                Start = DateTimeOffset.UtcNow.AddHours(1),
+                End = DateTimeOffset.UtcNow.AddHours(2),
                 CapacityOverride = 20,
             },
             token);
@@ -828,8 +828,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Title = created.Title,
                 TitleArabic = created.TitleArabic,
                 HallId = created.HallId,
-                StartUtc = created.StartUtc,
-                EndUtc = created.EndUtc,
+                Start = created.Start,
+                End = created.End,
                 CapacityOverride = null,
                 IsActive = created.IsActive,
                 Type = SessionType.Event,
@@ -855,8 +855,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Code = NewCode(),
                 Title = "Over-length abstract", TitleArabic = "ملخّص طويل",
                 HallId = hall.Id,
-                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
-                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                Start = DateTimeOffset.UtcNow.AddHours(1),
+                End = DateTimeOffset.UtcNow.AddHours(2),
                 Description = new string('x', 2049),
             },
             token);
@@ -992,8 +992,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Title = "Legacy edited title",
                 TitleArabic = legacy.TitleArabic,
                 HallId = legacy.HallId,
-                StartUtc = legacy.StartUtc,
-                EndUtc = legacy.EndUtc,
+                Start = legacy.Start,
+                End = legacy.End,
                 IsActive = true,
             },
             token);
@@ -1015,8 +1015,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             {
                 Code = NewCode(), Title = "No type", TitleArabic = "بدون نوع",
                 HallId = hall.Id,
-                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
-                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                Start = DateTimeOffset.UtcNow.AddHours(1),
+                End = DateTimeOffset.UtcNow.AddHours(2),
                 // Type omitted → null; the speaker rules out the #4 error so this
                 // isolates the #3 (required type) failure.
                 Speakers = new List<AdminSessionSpeakerEntry>
@@ -1042,8 +1042,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             {
                 Code = NewCode(), Title = "Speakerless", TitleArabic = "بلا متحدّث",
                 HallId = hall.Id,
-                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
-                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                Start = DateTimeOffset.UtcNow.AddHours(1),
+                End = DateTimeOffset.UtcNow.AddHours(2),
                 Type = SessionType.Session, // not an Event → needs a speaker
             },
             token);
@@ -1064,8 +1064,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             {
                 Code = NewCode(), Title = "Opening", TitleArabic = "افتتاح",
                 HallId = hall.Id,
-                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
-                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                Start = DateTimeOffset.UtcNow.AddHours(1),
+                End = DateTimeOffset.UtcNow.AddHours(2),
                 Type = SessionType.Event, // an Event may have no speaker
             },
             token);
@@ -1090,8 +1090,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Title = "Legacy edited title",
                 TitleArabic = legacy.TitleArabic,
                 HallId = legacy.HallId,
-                StartUtc = legacy.StartUtc,
-                EndUtc = legacy.EndUtc,
+                Start = legacy.Start,
+                End = legacy.End,
                 IsActive = true,
                 // Type still null and no speakers — grandfathered.
             },
@@ -1120,8 +1120,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Title = created.Title,
                 TitleArabic = created.TitleArabic,
                 HallId = created.HallId,
-                StartUtc = created.StartUtc,
-                EndUtc = created.EndUtc,
+                Start = created.Start,
+                End = created.End,
                 IsActive = true,
                 Type = null, // clearing the stored Event → rejected
             },
@@ -1145,8 +1145,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             {
                 Code = NewCode(), Title = "Has a speaker", TitleArabic = "لها متحدّث",
                 HallId = hall.Id,
-                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
-                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                Start = DateTimeOffset.UtcNow.AddHours(1),
+                End = DateTimeOffset.UtcNow.AddHours(2),
                 Type = SessionType.Session,
                 Speakers = new List<AdminSessionSpeakerEntry>
                 {
@@ -1166,8 +1166,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Title = created.Title,
                 TitleArabic = created.TitleArabic,
                 HallId = created.HallId,
-                StartUtc = created.StartUtc,
-                EndUtc = created.EndUtc,
+                Start = created.Start,
+                End = created.End,
                 IsActive = true,
                 Type = SessionType.Session,
                 Speakers = new List<AdminSessionSpeakerEntry>(), // stripped → rejected
@@ -1242,7 +1242,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
     }
 
     private Task<HttpResponseMessage> CreateAtAsync(
-        string token, Guid hallId, DateTimeOffset startUtc, DateTimeOffset endUtc) =>
+        string token, Guid hallId, DateTimeOffset start, DateTimeOffset end) =>
         PostAuthAsync(
             "/api/v1/admin/sessions",
             new AdminCreateSessionRequest
@@ -1254,8 +1254,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 // no speaker); tests that care about the type set it explicitly.
                 Type = SessionType.Event,
                 HallId = hallId,
-                StartUtc = startUtc,
-                EndUtc = endUtc,
+                Start = start,
+                End = end,
             },
             token);
 
@@ -1272,8 +1272,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
         AdminSessionDetail created,
         Guid? hallId = null,
         string? title = null,
-        DateTimeOffset? startUtc = null,
-        DateTimeOffset? endUtc = null,
+        DateTimeOffset? start = null,
+        DateTimeOffset? end = null,
         int? capacityOverride = null,
         bool? isActive = null) =>
         new()
@@ -1282,8 +1282,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             Title = title ?? created.Title,
             TitleArabic = created.TitleArabic,
             HallId = hallId ?? created.HallId,
-            StartUtc = startUtc ?? created.StartUtc,
-            EndUtc = endUtc ?? created.EndUtc,
+            Start = start ?? created.Start,
+            End = end ?? created.End,
             CapacityOverride = capacityOverride ?? created.CapacityOverride,
             IsActive = isActive ?? created.IsActive,
             // #3 — re-send the stored type so an unrelated edit does not trip the
@@ -1341,7 +1341,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             Code = NewCode(),
             Title = "Legacy A", TitleArabic = "قديمة أ",
             HallId = hallId,
-            StartUtc = start, EndUtc = start.AddHours(1),
+            Start = start, End = start.AddHours(1),
             IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
         };
         var second = new Session
@@ -1350,7 +1350,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             Code = NewCode(),
             Title = "Legacy B", TitleArabic = "قديمة ب",
             HallId = hallId,
-            StartUtc = start.AddMinutes(30), EndUtc = start.AddMinutes(90),
+            Start = start.AddMinutes(30), End = start.AddMinutes(90),
             IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
         };
         db.Sessions.AddRange(first, second);
@@ -1370,8 +1370,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             Code = NewCode(),
             Title = "Legacy", TitleArabic = "قديمة",
             HallId = hallId,
-            StartUtc = DateTimeOffset.UtcNow.AddHours(1),
-            EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+            Start = DateTimeOffset.UtcNow.AddHours(1),
+            End = DateTimeOffset.UtcNow.AddHours(2),
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };

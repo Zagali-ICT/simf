@@ -119,8 +119,8 @@ public sealed class MyAreaCalendarEndpoint(IMyAreaService service, TimeProvider 
             sb.Append("BEGIN:VEVENT\r\n");
             sb.Append("UID:").Append(e.Uid.ToString("N")).Append("@simf\r\n");
             sb.Append("DTSTAMP:").Append(dtstamp).Append("\r\n");
-            sb.Append("DTSTART:").Append(ToIcsUtc(e.StartUtc)).Append("\r\n");
-            if (e.EndUtc is { } end)
+            sb.Append("DTSTART:").Append(ToIcsUtc(e.Start)).Append("\r\n");
+            if (e.End is { } end)
             {
                 sb.Append("DTEND:").Append(ToIcsUtc(end)).Append("\r\n");
             }

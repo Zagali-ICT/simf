@@ -14,7 +14,7 @@ class PresentationItem {
     required this.sessionId,
     required this.sessionTitle,
     required this.sessionTitleArabic,
-    required this.sessionStartUtc,
+    required this.sessionStart,
     required this.speakerName,
     required this.speakerNameArabic,
     required this.fileName,
@@ -26,7 +26,7 @@ class PresentationItem {
   final String sessionId;
   final String sessionTitle;
   final String sessionTitleArabic;
-  final DateTime sessionStartUtc;
+  final DateTime sessionStart;
   final String speakerName;
   final String speakerNameArabic;
   final String fileName;
@@ -34,7 +34,7 @@ class PresentationItem {
   final int sizeBytes;
 
   /// The session's start on the Saudi event-local wall clock (wire value UTC).
-  DateTime get sessionStartLocal => saudiOf(sessionStartUtc);
+  DateTime get sessionStartLocal => saudiOf(sessionStart);
 
   String localizedSessionTitle(bool isArabic) =>
       _pickRequired(sessionTitleArabic, sessionTitle, isArabic);
@@ -48,7 +48,7 @@ class PresentationItem {
         sessionId: json['sessionId'] as String? ?? '',
         sessionTitle: json['sessionTitle'] as String? ?? '',
         sessionTitleArabic: json['sessionTitleArabic'] as String? ?? '',
-        sessionStartUtc: _parseUtc(json['sessionStartUtc']),
+        sessionStart: _parseUtc(json['sessionStart']),
         speakerName: json['speakerName'] as String? ?? '',
         speakerNameArabic: json['speakerNameArabic'] as String? ?? '',
         fileName: json['fileName'] as String? ?? '',

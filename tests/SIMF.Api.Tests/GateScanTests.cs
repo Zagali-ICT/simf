@@ -443,7 +443,7 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
             {
                 GateId = gate.Id,
                 ScannedByUserId = operatorId,
-                ScannedAtUtc = now,
+                ScannedAt = now,
                 Outcome = outcome,
                 Direction = ScanDirection.CheckIn,
                 DenialReasonCode = reason,

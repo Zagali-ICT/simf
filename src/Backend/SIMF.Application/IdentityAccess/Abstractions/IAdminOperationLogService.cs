@@ -9,7 +9,7 @@ namespace SIMF.Application.IdentityAccess.Abstractions;
 /// <c>IAuditLog</c> abstraction.
 ///
 /// <para>Path 2 — no schema change. Existing indexes
-/// (<c>IX_OperationLog_EventType_TimestampUtc</c>) carry the typical
+/// (<c>IX_OperationLog_EventType_Timestamp</c>) carry the typical
 /// "filter by event + sort by time desc" query.</para>
 /// </summary>
 public interface IAdminOperationLogService

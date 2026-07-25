@@ -35,8 +35,8 @@ SessionListItem _session(String id, String titleEn) =>
       'hallId': 'h1',
       'hallName': 'Main Hall',
       'hallNameArabic': 'القاعة الرئيسية',
-      'startUtc': '2026-11-23T07:30:00Z',
-      'endUtc': '2026-11-23T08:30:00Z',
+      'start': '2026-11-23T07:30:00Z',
+      'end': '2026-11-23T08:30:00Z',
       'speakers': <dynamic>[],
     });
 

@@ -43,7 +43,7 @@ internal sealed class StoredFileConfiguration : IEntityTypeConfiguration<StoredF
         builder.HasIndex(file => file.CreatedBy);
 
         // The retention secure-erase sweep enumerates live, time-limited rows.
-        builder.HasIndex(file => file.RetainUntilUtc)
-            .HasFilter("[IsActive] = 1 AND [RetainUntilUtc] IS NOT NULL");
+        builder.HasIndex(file => file.RetainUntil)
+            .HasFilter("[IsActive] = 1 AND [RetainUntil] IS NOT NULL");
     }
 }

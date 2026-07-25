@@ -32,7 +32,7 @@ public sealed class ExportBookingsEndpoint(ISeatReservationService service, IGri
     [
         new("SessionTitle", row => row.SessionTitle),
         new("SessionTitleArabic", row => row.SessionTitleArabic),
-        new("SessionStart", row => row.SessionStartUtc.UtcDateTime),
+        new("SessionStart", row => row.SessionStart.UtcDateTime),
         new("Row", row => row.RowLabel),
         new("Seat", row => row.SeatNumber),
         new("Kind", row => row.Kind.ToString()),

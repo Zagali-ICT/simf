@@ -171,7 +171,7 @@ internal sealed class AssetService(
             AssetCategory.Banner => dbContext.Banners
                 .AnyAsync(
                     x => x.Id == ownerId && x.IsActive
-                        && x.StartUtc <= now && x.EndUtc >= now,
+                        && x.Start <= now && x.End >= now,
                     cancellationToken),
             _ => Task.FromResult(false),
         };

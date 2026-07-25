@@ -18,7 +18,7 @@ namespace SIMF.Infrastructure.Operations;
 /// <item><b>End of each programme day</b> — once a day has ended, dispatch a
 /// <see cref="NotificationKind.DayRatingRequest"/> to every attendee who
 /// <b>checked in that day</b> (a Check-In gate scan). Dedup guard:
-/// <c>ProgrammeDay.RatingPromptSentUtc</c> (per-row, like the session worker).</item>
+/// <c>ProgrammeDay.RatingPromptSent</c> (per-row, like the session worker).</item>
 /// <item><b>End of the whole programme</b> — once the last day has ended,
 /// dispatch the overall <see cref="NotificationKind.EventRatingRequest"/>,
 /// <see cref="NotificationKind.ExhibitionRatingRequest"/> and
@@ -35,7 +35,7 @@ namespace SIMF.Infrastructure.Operations;
 ///
 /// <para>Day boundaries are event-local (UTC+3, the codebase
 /// <c>EventTimeZoneOffset</c> convention): a session belongs to the day whose
-/// local calendar date matches its <c>StartUtc</c>. A day "ends" at the latest
+/// local calendar date matches its <c>Start</c>. A day "ends" at the latest
 /// session end + <see cref="SessionGrace"/>, or (for a session-less day) at the
 /// next local midnight. The back-fill windows bound the first run after a deploy
 /// so an old day / programme is never blasted.</para>
@@ -69,7 +69,7 @@ internal sealed class ProgrammeRatingPromptWorker(
 
     /// <summary>The <see cref="SystemSetting"/> key holding the once-only marker
     /// for the end-of-programme trio.</summary>
-    internal const string ProgramEndSettingKey = "Notifications:ProgramEndRatingSentUtc";
+    internal const string ProgramEndSettingKey = "Notifications:ProgramEndRatingSent";
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -142,7 +142,7 @@ internal sealed class ProgrammeRatingPromptWorker(
     /// <summary>
     /// End-of-day scan, extracted for direct unit testing. For every active day
     /// that has ended within the back-fill window and not yet been prompted, it
-    /// claims the day — stamping <c>RatingPromptSentUtc</c> and committing it
+    /// claims the day — stamping <c>RatingPromptSent</c> and committing it
     /// BEFORE dispatch (even a zero-recipient day, so it is not re-scanned) —
     /// then notifies each attendee who checked in that day, so a restart mid-loop
     /// cannot re-send an already-processed day. Returns the number of days prompted.
@@ -160,7 +160,7 @@ internal sealed class ProgrammeRatingPromptWorker(
         }
 
         var days = await db.ProgrammeDays
-            .Where(d => d.IsActive && d.RatingPromptSentUtc == null)
+            .Where(d => d.IsActive && d.RatingPromptSent == null)
             .ToListAsync(cancellationToken);
         if (days.Count == 0)
         {
@@ -169,7 +169,7 @@ internal sealed class ProgrammeRatingPromptWorker(
 
         var sessions = await db.Sessions
             .Where(s => s.IsActive)
-            .Select(s => new SessionWindow(s.StartUtc, s.EndUtc))
+            .Select(s => new SessionWindow(s.Start, s.End))
             .ToListAsync(cancellationToken);
 
         var windowStart = now - backfillWindow;
@@ -177,7 +177,7 @@ internal sealed class ProgrammeRatingPromptWorker(
 
         foreach (var day in days)
         {
-            var dayEnd = DayEndUtc(day.Date, sessions);
+            var dayEnd = DayEnd(day.Date, sessions);
             if (dayEnd > now || dayEnd < windowStart)
             {
                 continue; // not ended yet, or too far in the past to back-fill
@@ -186,10 +186,10 @@ internal sealed class ProgrammeRatingPromptWorker(
             var recipientIds = await CheckedInUserIdsAsync(db, day.Date, cancellationToken);
 
             // Claim the day BEFORE dispatching (see the class remarks): stamp
-            // RatingPromptSentUtc and commit it so a restart mid-loop cannot
+            // RatingPromptSent and commit it so a restart mid-loop cannot
             // re-send an already-processed day. Even a zero-recipient day is
             // claimed so the worker stops re-scanning it.
-            day.RatingPromptSentUtc = now;
+            day.RatingPromptSent = now;
             await db.SaveChangesAsync(cancellationToken);
             prompted++;
 
@@ -248,10 +248,10 @@ internal sealed class ProgrammeRatingPromptWorker(
 
         var sessions = await db.Sessions
             .Where(s => s.IsActive)
-            .Select(s => new SessionWindow(s.StartUtc, s.EndUtc))
+            .Select(s => new SessionWindow(s.Start, s.End))
             .ToListAsync(cancellationToken);
 
-        var programEnd = DayEndUtc(lastDay.Date, sessions) + ProgramEndGrace;
+        var programEnd = DayEnd(lastDay.Date, sessions) + ProgramEndGrace;
         if (programEnd > now || now - programEnd > backfillWindow)
         {
             return false; // not ended yet, or too old to back-fill on first deploy
@@ -358,7 +358,7 @@ internal sealed class ProgrammeRatingPromptWorker(
         {
             var dayStart = new DateTimeOffset(d.ToDateTime(TimeOnly.MinValue), EventOffset);
             var dayEndBoundary = dayStart.AddDays(1);
-            scans = scans.Where(g => g.ScannedAtUtc >= dayStart && g.ScannedAtUtc < dayEndBoundary);
+            scans = scans.Where(g => g.ScannedAt >= dayStart && g.ScannedAt < dayEndBoundary);
         }
 
         var profileIds = await scans
@@ -380,18 +380,18 @@ internal sealed class ProgrammeRatingPromptWorker(
     /// <summary>When an event-local <paramref name="date"/> "ends": the latest end
     /// of its active sessions + <see cref="SessionGrace"/>, or the next local
     /// midnight if the day has no sessions.</summary>
-    internal static DateTimeOffset DayEndUtc(DateOnly date, IReadOnlyCollection<SessionWindow> sessions)
+    internal static DateTimeOffset DayEnd(DateOnly date, IReadOnlyCollection<SessionWindow> sessions)
     {
         var daySessions = sessions
-            .Where(s => DateOnly.FromDateTime(s.StartUtc.ToOffset(EventOffset).DateTime) == date)
+            .Where(s => DateOnly.FromDateTime(s.Start.ToOffset(EventOffset).DateTime) == date)
             .ToList();
         if (daySessions.Count > 0)
         {
-            return daySessions.Max(s => s.EndUtc) + SessionGrace;
+            return daySessions.Max(s => s.End) + SessionGrace;
         }
         return new DateTimeOffset(date.ToDateTime(TimeOnly.MinValue), EventOffset).AddDays(1);
     }
 
     /// <summary>A session's UTC start/end, projected for in-memory day bucketing.</summary>
-    internal readonly record struct SessionWindow(DateTimeOffset StartUtc, DateTimeOffset EndUtc);
+    internal readonly record struct SessionWindow(DateTimeOffset Start, DateTimeOffset End);
 }

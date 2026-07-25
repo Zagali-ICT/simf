@@ -82,7 +82,7 @@ public partial class HallAvailabilityPage
                 $"/account/api/admin/halls/{id}/availability-windows",
                 new CreateHallAvailabilityWindowRequest
                 {
-                    StartUtc = start, EndUtc = end, SlotMinutes = slot,
+                    Start = start, End = end, SlotMinutes = slot,
                 });
             if (envelope is { Success: true })
             {

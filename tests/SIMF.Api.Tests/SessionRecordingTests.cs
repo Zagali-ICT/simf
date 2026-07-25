@@ -308,8 +308,8 @@ public sealed class SessionRecordingTests : IClassFixture<SimfApiFactory>
                 Type = SessionType.Event,
                 // S-7 — a past start so the Held lifecycle guard passes (the
                 // recording-publish flow marks the session Held before Recorded).
-                StartUtc = DateTimeOffset.UtcNow.AddHours(-1),
-                EndUtc = DateTimeOffset.UtcNow.AddHours(1),
+                Start = DateTimeOffset.UtcNow.AddHours(-1),
+                End = DateTimeOffset.UtcNow.AddHours(1),
             },
             token);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);

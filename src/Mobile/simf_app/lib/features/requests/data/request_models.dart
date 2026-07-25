@@ -63,7 +63,7 @@ class AppRequestItem {
     required this.status,
     required this.createdAt,
     required this.canCancel,
-    this.eventDateUtc,
+    this.eventDate,
     this.subtitle,
     this.subtitleArabic,
     this.speakerId,
@@ -76,7 +76,7 @@ class AppRequestItem {
   final String title;
   final String titleArabic;
   final AppRequestStatus status;
-  final DateTime? eventDateUtc;
+  final DateTime? eventDate;
   final DateTime createdAt;
   final bool canCancel;
 
@@ -122,7 +122,7 @@ class AppRequestItem {
   }
 
   /// The date shown on the card — the session/meeting slot, else the submit date.
-  DateTime get displayDate => eventDateUtc ?? createdAt;
+  DateTime get displayDate => eventDate ?? createdAt;
 
   /// D-745 — the two bilateral-meeting kinds shown on the اللقاءات الثنائية page
   /// (speaker + delegation); the other kinds live only on the requests history.
@@ -131,7 +131,7 @@ class AppRequestItem {
       kind == AppRequestKind.delegationMeeting;
 
   static AppRequestItem fromJson(Map<String, dynamic> json) {
-    final eventRaw = json['eventDateUtc'] as String?;
+    final eventRaw = json['eventDate'] as String?;
     final createdRaw = json['createdAt'] as String?;
     return AppRequestItem(
       kind: AppRequestKind.fromIndex(json['kind'] as int?),
@@ -139,7 +139,7 @@ class AppRequestItem {
       title: json['title'] as String? ?? '',
       titleArabic: json['titleArabic'] as String? ?? '',
       status: AppRequestStatus.fromIndex(json['status'] as int?),
-      eventDateUtc:
+      eventDate:
           eventRaw == null ? null : DateTime.tryParse(eventRaw)?.toUtc(),
       createdAt:
           (createdRaw == null ? null : DateTime.tryParse(createdRaw)?.toUtc()) ??

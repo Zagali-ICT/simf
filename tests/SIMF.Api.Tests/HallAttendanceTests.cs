@@ -44,8 +44,8 @@ public sealed class HallAttendanceTests : IClassFixture<SimfApiFactory>
 
         var status = await ArriveAsync(sessionId, CenterLat, CenterLon, visitor);
         Assert.True(status.Arrived);
-        Assert.NotNull(status.EnterUtc);
-        Assert.Null(status.LeaveUtc);
+        Assert.NotNull(status.Enter);
+        Assert.Null(status.Leave);
         Assert.Equal(AttendanceMethod.Geofence, status.Method);
     }
 
@@ -81,7 +81,7 @@ public sealed class HallAttendanceTests : IClassFixture<SimfApiFactory>
 
         Assert.True(second.Arrived);
         // Same enter time — the second call returned the existing open row.
-        Assert.Equal(first.EnterUtc, second.EnterUtc);
+        Assert.Equal(first.Enter, second.Enter);
     }
 
     [Fact]
@@ -95,7 +95,7 @@ public sealed class HallAttendanceTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var status = (await response.Content.ReadFromJsonAsync<ApiResult<HallAttendanceStatus>>())!.Data!;
         Assert.False(status.Arrived);
-        Assert.NotNull(status.LeaveUtc);
+        Assert.NotNull(status.Leave);
     }
 
     [Fact]
@@ -229,7 +229,7 @@ public sealed class HallAttendanceTests : IClassFixture<SimfApiFactory>
 
         var first = await ArriveAsync(sessionId, CenterLat, CenterLon, visitor);
         var second = await ArriveAsync(sessionId, CenterLat, CenterLon, visitor);
-        Assert.Equal(first.EnterUtc, second.EnterUtc);
+        Assert.Equal(first.Enter, second.Enter);
     }
 
     // -- Helpers --------------------------------------------------------------
@@ -290,8 +290,8 @@ public sealed class HallAttendanceTests : IClassFixture<SimfApiFactory>
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Attendance Session", TitleArabic = "جلسة الحضور",
             HallId = hall.Id,
-            StartUtc = DateTimeOffset.UtcNow.AddMinutes(startOffsetMin),
-            EndUtc = DateTimeOffset.UtcNow.AddMinutes(endOffsetMin),
+            Start = DateTimeOffset.UtcNow.AddMinutes(startOffsetMin),
+            End = DateTimeOffset.UtcNow.AddMinutes(endOffsetMin),
             IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
         };
         db.Sessions.Add(session);

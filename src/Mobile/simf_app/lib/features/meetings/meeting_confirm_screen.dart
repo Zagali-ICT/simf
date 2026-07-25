@@ -152,10 +152,10 @@ class _MeetingConfirmScreenState extends ConsumerState<MeetingConfirmScreen> {
             style: SimfTokens.bodyGreyMd,
           ),
         ],
-        if (s.slotStartUtc != null) ...<Widget>[
+        if (s.slotStart != null) ...<Widget>[
           const SizedBox(height: SimfTokens.space2),
           Text(
-            _formatSlot(s.slotStartUtc!.toLocal(), isArabic),
+            _formatSlot(s.slotStart!.toLocal(), isArabic),
             textAlign: TextAlign.center,
             style: SimfTokens.bodyGreyMd,
           ),

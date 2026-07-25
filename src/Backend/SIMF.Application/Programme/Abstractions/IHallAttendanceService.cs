@@ -55,7 +55,7 @@ public interface IHallAttendanceService
 
     /// <summary>X-1 (chain design) — a hall-door gate scan feeds hall attendance.
     /// Resolves the session LIVE in <paramref name="hallId"/> right now (active,
-    /// within [StartUtc, EndUtc] ± the arrival grace, nearest/running-first);
+    /// within [Start, End] ± the arrival grace, nearest/running-first);
     /// when none is live it records nothing so an out-of-window scan never opens
     /// attendance (X-3).
     /// <para>When <paramref name="directionInferred"/> is true (a

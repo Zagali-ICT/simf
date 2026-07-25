@@ -16,28 +16,28 @@
 library;
 
 /// The broadcast time-phase of a session relative to "now", from its
-/// `startUtc`/`endUtc` window.
+/// `start`/`end` window.
 enum SessionPhase {
-  /// Before `StartUtc` — still to come. No summary, no live feed yet.
+  /// Before `Start` — still to come. No summary, no live feed yet.
   upcoming,
 
-  /// Now within `[StartUtc, EndUtc)` — happening (in the hall / streaming).
+  /// Now within `[Start, End)` — happening (in the hall / streaming).
   live,
 
-  /// At or after `EndUtc` — finished (may have a recording / summary).
+  /// At or after `End` — finished (may have a recording / summary).
   ended,
 }
 
-/// Classifies a session's [SessionPhase] from its `[startUtc, endUtc)` window
+/// Classifies a session's [SessionPhase] from its `[start, end)` window
 /// against [nowUtc] (all three UTC). Start-inclusive, end-exclusive: exactly at
 /// the start it is [SessionPhase.live], exactly at the end it is
 /// [SessionPhase.ended]. A zero-length or inverted window still resolves
 /// deterministically (before start → upcoming, else → ended).
-SessionPhase sessionPhase(DateTime startUtc, DateTime endUtc, DateTime nowUtc) {
-  if (nowUtc.isBefore(startUtc)) {
+SessionPhase sessionPhase(DateTime start, DateTime end, DateTime nowUtc) {
+  if (nowUtc.isBefore(start)) {
     return SessionPhase.upcoming;
   }
-  if (nowUtc.isBefore(endUtc)) {
+  if (nowUtc.isBefore(end)) {
     return SessionPhase.live;
   }
   return SessionPhase.ended;

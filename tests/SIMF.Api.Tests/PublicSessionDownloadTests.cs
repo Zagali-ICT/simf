@@ -115,7 +115,7 @@ public sealed class PublicSessionDownloadTests : IClassFixture<SimfApiFactory>
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Session", TitleArabic = "جلسة",
             HallId = hall.Id,
-            StartUtc = now, EndUtc = now.AddHours(1),
+            Start = now, End = now.AddHours(1),
             IsActive = true, CreatedAt = now,
         };
         app.Sessions.Add(session);

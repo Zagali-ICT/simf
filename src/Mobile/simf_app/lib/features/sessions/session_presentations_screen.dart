@@ -97,7 +97,7 @@ bool presentationSummaryReady(
 ) =>
     session != null
         ? session.hasPublishedSummary
-        : !nowUtc.isBefore(item.sessionStartUtc);
+        : !nowUtc.isBefore(item.sessionStart);
 
 class _Body extends StatelessWidget {
   const _Body({

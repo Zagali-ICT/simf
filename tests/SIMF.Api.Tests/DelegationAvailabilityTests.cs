@@ -39,7 +39,7 @@ public sealed class DelegationAvailabilityTests : IClassFixture<SimfApiFactory>
             $"/api/v1/admin/countries/{countryId}/availability-windows",
             new CreateDelegationAvailabilityWindowRequest
             {
-                StartUtc = start, EndUtc = start.AddMinutes(60), SlotMinutes = 30,
+                Start = start, End = start.AddMinutes(60), SlotMinutes = 30,
             }, admin);
         Assert.Equal(HttpStatusCode.OK, create.StatusCode);
 
@@ -48,8 +48,8 @@ public sealed class DelegationAvailabilityTests : IClassFixture<SimfApiFactory>
 
         var slots = await GetSlotsAsync(countryId, admin);
         Assert.Equal(2, slots.Count);
-        Assert.Equal(start, slots[0].StartUtc);
-        Assert.Equal(start.AddMinutes(30), slots[0].EndUtc);
+        Assert.Equal(start, slots[0].Start);
+        Assert.Equal(start.AddMinutes(30), slots[0].End);
     }
 
     [Fact]
@@ -63,7 +63,7 @@ public sealed class DelegationAvailabilityTests : IClassFixture<SimfApiFactory>
             $"/api/v1/admin/countries/{countryId}/availability-windows",
             new CreateDelegationAvailabilityWindowRequest
             {
-                StartUtc = start, EndUtc = start.AddMinutes(60), SlotMinutes = 30,
+                Start = start, End = start.AddMinutes(60), SlotMinutes = 30,
             }, admin);
 
         // A Done meeting still HOLDS its slot (SlotHolding) — assert the terminal state
@@ -80,8 +80,8 @@ public sealed class DelegationAvailabilityTests : IClassFixture<SimfApiFactory>
                 AttendeeCount = 2,
                 Subject = "Slot held",
                 Status = MeetingRequestStatus.Done,
-                SlotStartUtc = start,
-                SlotEndUtc = start.AddMinutes(30),
+                SlotStart = start,
+                SlotEnd = start.AddMinutes(30),
                 CreatedAt = DateTimeOffset.UtcNow,
             });
             await db.SaveChangesAsync();
@@ -89,7 +89,7 @@ public sealed class DelegationAvailabilityTests : IClassFixture<SimfApiFactory>
 
         var slots = await GetSlotsAsync(countryId, admin);
         Assert.Single(slots);
-        Assert.Equal(start.AddMinutes(30), slots[0].StartUtc); // only the 2nd slot remains
+        Assert.Equal(start.AddMinutes(30), slots[0].Start); // only the 2nd slot remains
     }
 
     [Fact]
@@ -104,7 +104,7 @@ public sealed class DelegationAvailabilityTests : IClassFixture<SimfApiFactory>
             $"/api/v1/admin/countries/{countryId}/availability-windows",
             new CreateDelegationAvailabilityWindowRequest
             {
-                StartUtc = start, EndUtc = start.AddMinutes(-10), SlotMinutes = 30,
+                Start = start, End = start.AddMinutes(-10), SlotMinutes = 30,
             }, admin);
         Assert.Equal(HttpStatusCode.BadRequest, bad.StatusCode);
 
@@ -114,7 +114,7 @@ public sealed class DelegationAvailabilityTests : IClassFixture<SimfApiFactory>
             $"/api/v1/admin/countries/{notInvited}/availability-windows",
             new CreateDelegationAvailabilityWindowRequest
             {
-                StartUtc = start, EndUtc = start.AddMinutes(60), SlotMinutes = 30,
+                Start = start, End = start.AddMinutes(60), SlotMinutes = 30,
             }, admin);
         Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
         var body = (await resp.Content.ReadFromJsonAsync<ApiResult<object>>())!;
@@ -131,7 +131,7 @@ public sealed class DelegationAvailabilityTests : IClassFixture<SimfApiFactory>
             $"/api/v1/admin/countries/{countryId}/availability-windows",
             new CreateDelegationAvailabilityWindowRequest
             {
-                StartUtc = start, EndUtc = start.AddMinutes(60), SlotMinutes = 30,
+                Start = start, End = start.AddMinutes(60), SlotMinutes = 30,
             }, admin);
         var window = (await create.Content
             .ReadFromJsonAsync<ApiResult<AdminDelegationAvailabilityWindow>>())!.Data!;
@@ -156,7 +156,7 @@ public sealed class DelegationAvailabilityTests : IClassFixture<SimfApiFactory>
             $"/api/v1/admin/countries/{countryId}/availability-windows",
             new CreateDelegationAvailabilityWindowRequest
             {
-                StartUtc = outside, EndUtc = outside.AddMinutes(60), SlotMinutes = 30,
+                Start = outside, End = outside.AddMinutes(60), SlotMinutes = 30,
             }, admin);
         Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
         var body = (await resp.Content.ReadFromJsonAsync<ApiResult<object>>())!;

@@ -37,8 +37,8 @@ public sealed class DelegationMeetingRequest
     public string Subject { get; set; } = string.Empty;
 
     /// <summary>The proposed slot (the team confirms it on accept). Optional.</summary>
-    public DateTimeOffset? SlotStartUtc { get; set; }
-    public DateTimeOffset? SlotEndUtc { get; set; }
+    public DateTimeOffset? SlotStart { get; set; }
+    public DateTimeOffset? SlotEnd { get; set; }
 
     /// <summary>Lifecycle state (unified machine — Bi-Meeting rework): Pending on
     /// create; AwaitingSpeaker = admin Approved + bound a hall slot, awaiting the other
@@ -53,7 +53,7 @@ public sealed class DelegationMeetingRequest
 
     /// <summary>Bi-Meeting rework — the hall the admin bound the meeting to on Approve.
     /// Real FK to <see cref="Hall"/> (SetNull). Null before approval; when set,
-    /// <see cref="SlotStartUtc"/>/<see cref="SlotEndUtc"/> hold the bound hall slot.</summary>
+    /// <see cref="SlotStart"/>/<see cref="SlotEnd"/> hold the bound hall slot.</summary>
     public Guid? HallId { get; set; }
     public Hall? Hall { get; set; }
 
@@ -76,8 +76,8 @@ public sealed class DelegationMeetingRequest
     public Guid? ConfirmedByUserId { get; set; }
 
     /// <summary>Bi-Meeting rework — once-only dedup stamp for the 15-minute reminder
-    /// worker (mirrors <c>Session.ReminderSentUtc</c>). Null until the reminder fires.</summary>
-    public DateTimeOffset? ReminderSentUtc { get; set; }
+    /// worker (mirrors <c>Session.ReminderSent</c>). Null until the reminder fires.</summary>
+    public DateTimeOffset? ReminderSent { get; set; }
 
     /// <summary>Bi-Meeting rework — when an operator checked the meeting in at the hall
     /// (flips it to <see cref="MeetingRequestStatus.Done"/>). Null until checked in.</summary>

@@ -33,8 +33,8 @@ SessionDetail _detail() => SessionDetail(
       hallId: 'h1',
       hallName: 'Main Hall',
       hallNameArabic: 'قاعة الملك فهد',
-      startUtc: DateTime.utc(2026, 6, 20, 6, 0),
-      endUtc: DateTime.utc(2026, 6, 20, 7, 0),
+      start: DateTime.utc(2026, 6, 20, 6, 0),
+      end: DateTime.utc(2026, 6, 20, 7, 0),
       speakers: const <SessionSpeaker>[],
       descriptionArabic:
           'منصة دولية جمعت قادة القوات البحرية والخبراء لمناقشة مستقبل الأمن '

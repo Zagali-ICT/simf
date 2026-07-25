@@ -76,7 +76,7 @@ public sealed record PublicSpeakerDetail(
 /// time window) — the speaker profile does not need the theme chip or the
 /// seat summary that the full agenda session detail
 /// (<see cref="PublicSessionDetail"/>) carries, so it is not coupled to
-/// that contract. Ordered by <see cref="StartUtc"/>. Times are UTC; the
+/// that contract. Ordered by <see cref="Start"/>. Times are UTC; the
 /// Flutter client renders local time per the device tz.</summary>
 public sealed record PublicSpeakerSession(
     Guid Id,
@@ -86,5 +86,5 @@ public sealed record PublicSpeakerSession(
     Guid HallId,
     string HallName,
     string HallNameArabic,
-    DateTimeOffset StartUtc,
-    DateTimeOffset EndUtc);
+    DateTimeOffset Start,
+    DateTimeOffset End);

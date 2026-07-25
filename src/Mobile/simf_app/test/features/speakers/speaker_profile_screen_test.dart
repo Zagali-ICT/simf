@@ -41,8 +41,8 @@ SpeakerDetail _detail({bool allowsMeeting = true, bool allowsData = true}) {
         titleArabic: 'حديث',
         hallName: 'Main Hall',
         hallNameArabic: 'الرئيسية',
-        startUtc: start,
-        endUtc: start.add(const Duration(hours: 1)),
+        start: start,
+        end: start.add(const Duration(hours: 1)),
       ),
     ],
   );
@@ -94,12 +94,12 @@ class _Guest extends AuthController {
 // round-trips regardless of the test machine's timezone).
 final List<SpeakerSlot> _profileSlots = <SpeakerSlot>[
   SpeakerSlot(
-    startUtc: DateTime(2026, 7, 10, 9).toUtc(),
-    endUtc: DateTime(2026, 7, 10, 9, 30).toUtc(),
+    start: DateTime(2026, 7, 10, 9).toUtc(),
+    end: DateTime(2026, 7, 10, 9, 30).toUtc(),
   ),
   SpeakerSlot(
-    startUtc: DateTime(2026, 7, 10, 10).toUtc(),
-    endUtc: DateTime(2026, 7, 10, 10, 30).toUtc(),
+    start: DateTime(2026, 7, 10, 10).toUtc(),
+    end: DateTime(2026, 7, 10, 10, 30).toUtc(),
   ),
 ];
 
@@ -136,11 +136,11 @@ class _FakeRepo implements SpeakersRepository {
     String speakerId, {
     required String requesterName,
     required String subject,
-    DateTime? slotStartUtc,
-    DateTime? slotEndUtc,
+    DateTime? slotStart,
+    DateTime? slotEnd,
   }) async {
     submits++;
-    lastSlotStart = slotStartUtc;
+    lastSlotStart = slotStart;
     lastRequesterName = requesterName;
   }
 }

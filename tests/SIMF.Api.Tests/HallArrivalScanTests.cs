@@ -121,13 +121,13 @@ public sealed class HallArrivalScanTests : IClassFixture<SimfApiFactory>
         var departure = await DepartAsync(sessionId, qrId, operatorToken);
         Assert.Equal(userId, departure.UserId);
         Assert.False(departure.Status.Arrived);
-        Assert.NotNull(departure.Status.LeaveUtc);
+        Assert.NotNull(departure.Status.Leave);
 
         // No open row remains — the seat map's confirmed state clears.
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var open = await db.HallAttendances
-            .CountAsync(a => a.SessionId == sessionId && a.UserId == userId && a.LeaveUtc == null);
+            .CountAsync(a => a.SessionId == sessionId && a.UserId == userId && a.Leave == null);
         Assert.Equal(0, open);
     }
 
@@ -209,8 +209,8 @@ public sealed class HallArrivalScanTests : IClassFixture<SimfApiFactory>
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Scan Session", TitleArabic = "جلسة المسح",
             HallId = hall.Id,
-            StartUtc = DateTimeOffset.UtcNow.AddMinutes(-15),
-            EndUtc = DateTimeOffset.UtcNow.AddMinutes(45),
+            Start = DateTimeOffset.UtcNow.AddMinutes(-15),
+            End = DateTimeOffset.UtcNow.AddMinutes(45),
             IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
         };
         db.Sessions.Add(session);

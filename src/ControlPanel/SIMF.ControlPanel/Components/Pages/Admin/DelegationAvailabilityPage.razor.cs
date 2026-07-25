@@ -129,7 +129,7 @@ public partial class DelegationAvailabilityPage
                 $"/account/api/admin/countries/{id}/availability-windows",
                 new CreateDelegationAvailabilityWindowRequest
                 {
-                    StartUtc = start, EndUtc = end, SlotMinutes = slot,
+                    Start = start, End = end, SlotMinutes = slot,
                 });
             if (envelope is { Success: true })
             {
