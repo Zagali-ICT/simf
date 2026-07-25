@@ -22,7 +22,7 @@
 >    shows the "no seat map" empty state instead.
 > 2. **In the hall now** — a table of everyone currently inside the hall (the open
 >    `HallAttendance` rows), each with their **name, organisation, profile type,
->    job title, seat, entry time (UTC) and method** (QR scan / geofence), ordered
+>    job title, seat, entry time (Saudi time) and method** (QR scan / geofence), ordered
 >    by arrival. Open-seating attendees show "General admission / دخول عام".
 >
 > A **Refresh** button re-pulls both panels. There is **no** create / edit / delete
@@ -119,7 +119,7 @@ Scenario: The seat map paints all four states distinctly
 Scenario: Everyone inside is listed with full profile + seat, ordered by entry
   Given three attendees are currently inside the hall, entering at 09:01, 09:03 and 09:05
   When the "In the hall now" table renders
-  Then it has columns Name, Organisation, Type, Job title, Seat, Entered (UTC), Method
+  Then it has columns Name, Organisation, Type, Job title, Seat, Entered (Saudi time), Method
   And rows appear in entry order (09:01 first)
   And each row shows the attendee's UserProfile name (Arabic when the Name field is blank),
       organisation name, profile-type name, job title, their held seat (e.g. "B3"), the
@@ -204,7 +204,7 @@ Scenario: Arabic toggle mirrors the live-hall view
   And the SimfBanner title reads "القاعة المباشرة"
   And the seat-map heading reads "خريطة المقاعد" and the present heading "داخل القاعة الآن"
   And the four legend labels read متاح / غير متاح / محجوز / تم التأكيد
-  And the present table headers read الاسم / الجهة / النوع / المسمى الوظيفي / المقعد / وقت الدخول (UTC) / الطريقة
+  And the present table headers read الاسم / الجهة / النوع / المسمى الوظيفي / المقعد / وقت الدخول (بتوقيت السعودية) / الطريقة
 ```
 
 ### E2E-SLH-011 — Open-seating attendee

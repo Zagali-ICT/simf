@@ -103,15 +103,15 @@ Scenario: Create, edit, view, deactivate one session
   When the administrator clicks "Add session"
   Then the Add modal opens titled "Add session"
   And it shows the fields: Code, Title (English), Title (Arabic), Description (English),
-      Description (Arabic), Hall, Category, Start (UTC), End (UTC), Capacity override,
+      Description (Arabic), Hall, Category, Start (Saudi time), End (Saudi time), Capacity override,
       Add speaker, Add theme
   When they fill Code="SES-001"
   And they fill Title (English)="Future of Naval Logistics"
   And they fill Title (Arabic)="مستقبل الإمداد البحري"
   And they fill Description (English)="A panel on supply-chain resilience."
   And they select Hall="Auditorium A (AUD-A)"
-  And they fill Start (UTC)="2026-11-10T09:00"
-  And they fill End (UTC)="2026-11-10T10:30"
+  And they fill Start (Saudi time)="2026-11-10T09:00"
+  And they fill End (Saudi time)="2026-11-10T10:30"
   And they leave Capacity override blank
   And they click "Create session"
   Then the BFF POSTs /account/api/admin/sessions and the API returns 200
@@ -126,12 +126,12 @@ Scenario: Create, edit, view, deactivate one session
   Then the GET /account/api/admin/sessions/{id} returns 200
   And the Edit modal opens titled "Edit session" with every field pre-filled
   And an additional "Active — show in the public agenda" checkbox is visible (ticked)
-  When they change End (UTC) to "2026-11-10T11:00"
+  When they change End (Saudi time) to "2026-11-10T11:00"
   And they click "Save changes"
   Then the PUT /account/api/admin/sessions/{id} returns 200
   And the modal closes
   And a green toast reads "Session \"Future of Naval Logistics\" was updated."
-  And the row's End (UTC) column reads "2026-11-10 11:00"
+  And the row's End (Saudi time) column reads "2026-11-10 11:00"
 
   When the administrator clicks the "Details" icon on that row
   Then a read-only modal opens titled "Session details"
@@ -267,7 +267,7 @@ Scenario: Filter, sort and page the sessions grid
   When the administrator types "Naval" into the grid filter (Title column is Filterable)
   Then the POST /account/api/admin/sessions/list body carries the title filter
   And only rows whose Title contains "Naval" render
-  When they click the "Start (UTC)" column header
+  When they click the "Start (Saudi time)" column header
   Then the list re-queries sorted by startUtc ascending
   When they click "Next"
   Then the pager advances and the summary reads "Showing 21–40 of {total}"
@@ -352,8 +352,8 @@ Scenario: Blank or too-short Code shows a bilingual error in the modal
 ```gherkin
 Scenario: End at or before Start shows a bilingual time-window error
   Given the Add modal is open with Code, Title, Hall all valid
-  When they set Start (UTC)="2026-11-10T10:00"
-  And they set End (UTC)="2026-11-10T09:00"
+  When they set Start (Saudi time)="2026-11-10T10:00"
+  And they set End (Saudi time)="2026-11-10T09:00"
   And they click "Create session"
   Then a SimfAlert error appears reading "End time must be after start time." / "يجب أن تكون نهاية الجلسة بعد بدايتها."
   And the modal stays open
