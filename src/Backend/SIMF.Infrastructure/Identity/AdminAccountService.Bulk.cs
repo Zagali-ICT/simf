@@ -1187,7 +1187,7 @@ internal sealed partial class AdminAccountService
         var tokens = new Dictionary<string, string>
         {
             ["Count"] = count.ToString(CultureInfo.InvariantCulture),
-            ["GeneratedAt"] = generatedAt.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture),
+            ["GeneratedAt"] = generatedAt.FormatSaudi(),
         };
         var cover = await emailTemplates.RenderAsync(
             EmailTemplateType.BulkBadgeDelivery, recipient, tokens, cancellationToken);

@@ -81,9 +81,9 @@ public partial class SpeakerMeetingRequestsList
     private string FormatSummary(int skip, int taken, int total) =>
         string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
 
-    // D-716 — a free hall slot as "2026-07-10 09:00–09:30 UTC".
+    // D-716 — a free hall slot as "2026-07-10 09:00 AM–09:30 AM" (Saudi time).
     private static string FormatSlot(HallAvailableSlot slot) =>
-        $"{slot.StartUtc.ToSaudi():yyyy-MM-dd HH:mm}–{slot.EndUtc.ToSaudi():HH:mm}";
+        $"{slot.StartUtc.ToSaudi():yyyy-MM-dd hh:mm tt}–{slot.EndUtc.ToSaudi():hh:mm tt}";
 
     private string FormatPage(int current, int total) =>
         string.Format(L["Grid.Page"], current, total);

@@ -29,9 +29,9 @@
         <dt>@L["Admin.Sessions.Column.Hall"]</dt>
         <dd>@HallLabel(_target)</dd>
         <dt>@L["Admin.Sessions.Column.StartUtc"]</dt>
-        <dd>@_target.StartUtc.FormatSaudi("yyyy-MM-dd HH:mm")</dd>
+        <dd>@_target.StartUtc.FormatSaudi("yyyy-MM-dd hh:mm tt")</dd>
         <dt>@L["Admin.Sessions.Column.EndUtc"]</dt>
-        <dd>@_target.EndUtc.FormatSaudi("yyyy-MM-dd HH:mm")</dd>
+        <dd>@_target.EndUtc.FormatSaudi("yyyy-MM-dd hh:mm tt")</dd>
         <dt>@L["Admin.Sessions.Field.CapacityOverride"]</dt>
         <dd>@(_target.CapacityOverride?.ToString() ?? L["Admin.Sessions.Field.CapacityInherits"])</dd>
         <dt>@L["Admin.Sessions.Field.EffectiveCapacity"]</dt>
@@ -67,7 +67,7 @@
         @if (_target.PublishedAt is { } published)
         {
             <dt>@L["Admin.Sessions.Lifecycle.PublishedAt"]</dt>
-            <dd>@published.FormatSaudi("yyyy-MM-dd HH:mm")</dd>
+            <dd>@published.FormatSaudi("yyyy-MM-dd hh:mm tt")</dd>
         }
         <dt>@L["Admin.Sessions.Recording.Label"]</dt>
         <dd>

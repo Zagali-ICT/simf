@@ -114,14 +114,14 @@ public partial class ServicesMonitor : IDisposable
     };
 
     private static string Local(DateTimeOffset? utc) =>
-        utc is { } value ? value.FormatSaudi("yyyy-MM-dd HH:mm:ss") : "-";
+        utc is { } value ? value.FormatSaudi("yyyy-MM-dd hh:mm:ss tt") : "-";
 
     private string RefreshedText() =>
         _data is null
             ? string.Empty
             : string.Format(
                 L["Admin.ServicesMonitor.Refreshed"],
-                _data.GeneratedUtc.FormatSaudi("HH:mm:ss"));
+                _data.GeneratedUtc.FormatSaudi("hh:mm:ss tt"));
 
     private string FormatSummary(int skip, int taken, int total) =>
         string.Format(L["Admin.ServicesMonitor.Summary"], total);
