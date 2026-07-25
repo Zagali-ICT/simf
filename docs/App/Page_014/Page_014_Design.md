@@ -44,8 +44,9 @@ As-built: `features/myarea/my_area_screen.dart` on the shared KSA shell
 | Schedule rows | `todaySchedule[]` → local-time(`startUtc`), `titleAr`/`titleEn` (falls back to `subject` when empty), `hallNameAr`/`hallNameEn`, `kind` |
 
 `identity.pageColor` and each item's `status`/`endUtc` are decoded but **not
-bound** in the KSA design — the accent is the token gold, and rows carry no
-status badge.
+bound** on *this* (My-Area) page — the accent is the token gold, and rows carry no
+status badge. (The Badge page #032 **does** tint its identity strip by
+`pageColor` — D-763.)
 
 ## Actions & navigation
 | Trigger | Behaviour |
@@ -78,6 +79,7 @@ empty). Times in device tz, 12-hour `hh:mm a`, LTR-pinned (as is the `#qrId`).
 ## Design notes
 - QR is **client-side** from `qrId`; no server image (rendered on the Badge page).
 - Tier name comes from the dashboard `identity` block (no extra call); `pageColor`
-  is carried but unused — the KSA design's accent is the token gold.
+  is carried but unused **on this page** — the accent is the token gold. (The Badge
+  page #032 tints its strip by `pageColor` — D-763.)
 - Stat tiles are display-only (frame 213:963's "الأرشيف" stat was not built — no API field).
 - The old mockup screen + its test are parked in `_legacy_mockup/`.

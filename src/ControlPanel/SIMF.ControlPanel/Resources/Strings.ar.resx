@@ -1902,6 +1902,46 @@
   <data name="Admin.Vips.Notify.Cancel" xml:space="preserve"><value>إلغاء</value></data>
   <data name="Admin.Vips.Notify.Sent" xml:space="preserve"><value>تم الإرسال إلى {0} ضيفاً ({1} بريداً إلكترونياً).</value></data>
   <data name="Admin.Vips.Notify.Failed" xml:space="preserve"><value>تعذّر إرسال الرسالة.</value></data>
+  <data name="Module.Announcements" xml:space="preserve"><value>الإعلانات</value></data>
+  <data name="Admin.Announcements.Title" xml:space="preserve"><value>الإعلانات</value></data>
+  <data name="Admin.Announcements.Compose" xml:space="preserve"><value>إنشاء إعلان</value></data>
+  <data name="Admin.Announcements.Target" xml:space="preserve"><value>الإرسال إلى</value></data>
+  <data name="Admin.Announcements.Target.Session" xml:space="preserve"><value>جلسة محددة</value></data>
+  <data name="Admin.Announcements.Target.Audience" xml:space="preserve"><value>جمهور عام</value></data>
+  <data name="Admin.Announcements.Session" xml:space="preserve"><value>الجلسة</value></data>
+  <data name="Admin.Announcements.Session.Placeholder" xml:space="preserve"><value>اختر جلسة…</value></data>
+  <data name="Admin.Announcements.Audience" xml:space="preserve"><value>الجمهور</value></data>
+  <data name="Admin.Announcements.Audience.ApprovedAppUsers" xml:space="preserve"><value>جميع مستخدمي التطبيق المعتمدين</value></data>
+  <data name="Admin.Announcements.Audience.EventAttendees" xml:space="preserve"><value>حضور الفعالية (لديهم حجز مقعد)</value></data>
+  <data name="Admin.Announcements.Audience.EveryoneIncludingPending" xml:space="preserve"><value>الجميع (بما في ذلك قيد الاعتماد)</value></data>
+  <data name="Admin.Announcements.Severity" xml:space="preserve"><value>الأهمية</value></data>
+  <data name="Admin.Announcements.Severity.Info" xml:space="preserve"><value>معلومة</value></data>
+  <data name="Admin.Announcements.Severity.Success" xml:space="preserve"><value>نجاح</value></data>
+  <data name="Admin.Announcements.Severity.Warning" xml:space="preserve"><value>تحذير</value></data>
+  <data name="Admin.Announcements.Severity.Error" xml:space="preserve"><value>حرِج</value></data>
+  <data name="Admin.Announcements.TitleField" xml:space="preserve"><value>العنوان (بالإنجليزية)</value></data>
+  <data name="Admin.Announcements.TitleArabicField" xml:space="preserve"><value>العنوان (بالعربية)</value></data>
+  <data name="Admin.Announcements.BodyField" xml:space="preserve"><value>الرسالة (بالإنجليزية)</value></data>
+  <data name="Admin.Announcements.BodyArabicField" xml:space="preserve"><value>الرسالة (بالعربية)</value></data>
+  <data name="Admin.Announcements.Recipients" xml:space="preserve"><value>سيصل هذا إلى {0} مستلماً.</value></data>
+  <data name="Admin.Announcements.RecipientsUnknown" xml:space="preserve"><value>اختر هدفاً لعرض عدد المستلمين.</value></data>
+  <data name="Admin.Announcements.Send" xml:space="preserve"><value>إرسال الإعلان</value></data>
+  <data name="Admin.Announcements.Sent" xml:space="preserve"><value>تم إدراج الإعلان: يُرسل إلى {0} مستلماً.</value></data>
+  <data name="Admin.Announcements.Failed" xml:space="preserve"><value>تعذّر إرسال الإعلان.</value></data>
+  <data name="Admin.Announcements.History" xml:space="preserve"><value>الإعلانات الأخيرة</value></data>
+  <data name="Admin.Announcements.Loading" xml:space="preserve"><value>جارٍ تحميل الإعلانات…</value></data>
+  <data name="Admin.Announcements.None" xml:space="preserve"><value>لم يُرسل أي إعلان بعد.</value></data>
+  <data name="Admin.Announcements.LoadFailed" xml:space="preserve"><value>تعذّر تحميل الإعلانات.</value></data>
+  <data name="Admin.Announcements.Status.Pending" xml:space="preserve"><value>قيد الانتظار</value></data>
+  <data name="Admin.Announcements.Status.Processing" xml:space="preserve"><value>قيد الإرسال</value></data>
+  <data name="Admin.Announcements.Status.Completed" xml:space="preserve"><value>تم الإرسال</value></data>
+  <data name="Admin.Announcements.Status.Failed" xml:space="preserve"><value>فشل</value></data>
+  <data name="Admin.Announcements.Col.When" xml:space="preserve"><value>الوقت</value></data>
+  <data name="Admin.Announcements.Col.Target" xml:space="preserve"><value>الهدف</value></data>
+  <data name="Admin.Announcements.Col.Message" xml:space="preserve"><value>الرسالة</value></data>
+  <data name="Admin.Announcements.Col.Status" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Admin.Announcements.Col.Recipients" xml:space="preserve"><value>المستلمون</value></data>
+  <data name="Admin.Announcements.Col.Emails" xml:space="preserve"><value>البريد</value></data>
   <data name="Module.SessionModerators" xml:space="preserve"><value>مشرفو الجلسات</value></data>
   <data name="Module.QuestionQueue" xml:space="preserve"><value>قائمة الأسئلة</value></data>
   <data name="Admin.QuestionQueue.Title" xml:space="preserve"><value>قائمة الأسئلة</value></data>

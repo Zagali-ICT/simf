@@ -383,6 +383,10 @@ public static class ErrorCodes
     public const string VipNotifyEmpty = "VIP_NOTIFY_EMPTY";
     public const string VipNotifyTooLarge = "VIP_NOTIFY_TOO_LARGE";
 
+    // Notification broadcasts (Control Panel "Announcements" desk).
+    public const string BroadcastInvalid = "BROADCAST_INVALID";
+    public const string BroadcastNotFound = "BROADCAST_NOT_FOUND";
+
     // Sessions (D-165, gap doc G3 — programme sessions tied to a Hall +
     // M-to-M Speakers + M-to-M Themes).
     public const string SessionInvalid = "SESSION_INVALID";

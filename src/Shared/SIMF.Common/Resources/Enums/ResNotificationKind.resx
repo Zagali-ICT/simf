@@ -36,4 +36,5 @@
   <data name="BadgeUpdateDecided" xml:space="preserve"><value>Your badge request was updated</value></data>
   <data name="MeetingRequested" xml:space="preserve"><value>You have a meeting request</value></data>
   <data name="MeetingReminder" xml:space="preserve"><value>Meeting starting soon</value></data>
+  <data name="AdminAnnouncement" xml:space="preserve"><value>Announcement from SIMF</value></data>
 </root>

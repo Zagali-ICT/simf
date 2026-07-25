@@ -40,6 +40,8 @@ public sealed class ThrowingEmailQueueApiFactory : SimfApiFactory
     {
         public void Enqueue(EmailMessage message) =>
             throw new InvalidOperationException("Test: enqueue is unavailable");
+
+        public int PendingCount => 0;
     }
 }
 
