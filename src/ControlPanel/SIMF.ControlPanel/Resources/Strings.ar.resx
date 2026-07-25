@@ -1890,6 +1890,10 @@
   <data name="Module.Announcements" xml:space="preserve"><value>الإعلانات</value></data>
   <data name="Admin.Announcements.Title" xml:space="preserve"><value>الإعلانات</value></data>
   <data name="Admin.Announcements.Compose" xml:space="preserve"><value>إنشاء إعلان</value></data>
+  <data name="Admin.Announcements.Section.Recipients" xml:space="preserve"><value>المستلمون</value></data>
+  <data name="Admin.Announcements.Section.RecipientsHint" xml:space="preserve"><value>اختر من يتلقّى هذا الإعلان.</value></data>
+  <data name="Admin.Announcements.Section.Message" xml:space="preserve"><value>الرسالة</value></data>
+  <data name="Admin.Announcements.Section.MessageHint" xml:space="preserve"><value>تُكتب بالإنجليزية والعربية، وتُرسل داخل التطبيق وبالبريد الإلكتروني.</value></data>
   <data name="Admin.Announcements.Target" xml:space="preserve"><value>الإرسال إلى</value></data>
   <data name="Admin.Announcements.Target.Session" xml:space="preserve"><value>جلسة محددة</value></data>
   <data name="Admin.Announcements.Target.Audience" xml:space="preserve"><value>جمهور عام</value></data>

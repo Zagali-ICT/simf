@@ -197,6 +197,16 @@ public partial class Announcements
         _ => status,
     };
 
+    // Maps a broadcast status to a SimfPill colour: queued = neutral, sending =
+    // accent, sent = green, failed = red.
+    private static string StatusPillVariant(string status) => status switch
+    {
+        "Processing" => "admin",
+        "Completed" => "on",
+        "Failed" => "danger",
+        _ => "neutral",
+    };
+
     private string TargetLabel(AdminBroadcastSummary row)
     {
         if (row.TargetMode == "Session")

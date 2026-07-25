@@ -20,69 +20,77 @@
     <div class="simf-surface">
         <h2 class="simf-section-title">@L["Admin.Announcements.Compose"]</h2>
 
-        <div class="simf-form__fields">
-            <SimfSelect TValue="string"
-                        Label="@L["Admin.Announcements.Target"]"
-                        Items="_targetModes"
-                        LabelFor="@TargetModeLabel"
-                        Value="@_targetMode"
-                        ValueChanged="OnTargetModeChangedAsync"
-                        Disabled="_busy" />
-
-            @if (_targetMode == "Session")
-            {
-                <SimfSelect TValue="AdminSessionSummary"
-                            Label="@L["Admin.Announcements.Session"]"
-                            Placeholder="@L["Admin.Announcements.Session.Placeholder"]"
-                            Items="_sessions"
-                            ValueFor="@(session => session.Id.ToString())"
-                            LabelFor="@SessionLabel"
-                            Value="@_selectedSession"
-                            ValueChanged="OnSessionChangedAsync"
-                            Disabled="_busy" />
-            }
-            else
-            {
+        <SimfFormSection Number="1" Title="@L["Admin.Announcements.Section.Recipients"]"
+                         Hint="@L["Admin.Announcements.Section.RecipientsHint"]">
+            <div class="simf-form__grid">
                 <SimfSelect TValue="string"
-                            Label="@L["Admin.Announcements.Audience"]"
-                            Items="_audienceScopes"
-                            LabelFor="@AudienceLabel"
-                            Value="@_audienceScope"
-                            ValueChanged="OnAudienceChangedAsync"
+                            Label="@L["Admin.Announcements.Target"]"
+                            Items="_targetModes"
+                            LabelFor="@TargetModeLabel"
+                            Value="@_targetMode"
+                            ValueChanged="OnTargetModeChangedAsync"
                             Disabled="_busy" />
-            }
 
-            <SimfSelect TValue="string"
-                        Label="@L["Admin.Announcements.Severity"]"
-                        Items="_severities"
-                        LabelFor="@SeverityLabel"
-                        Value="@_severity"
-                        ValueChanged="@(v => _severity = v ?? "Info")"
-                        Disabled="_busy" />
+                @if (_targetMode == "Session")
+                {
+                    <SimfSelect TValue="AdminSessionSummary"
+                                Label="@L["Admin.Announcements.Session"]"
+                                Placeholder="@L["Admin.Announcements.Session.Placeholder"]"
+                                Items="_sessions"
+                                ValueFor="@(session => session.Id.ToString())"
+                                LabelFor="@SessionLabel"
+                                Value="@_selectedSession"
+                                ValueChanged="OnSessionChangedAsync"
+                                Disabled="_busy" />
+                }
+                else
+                {
+                    <SimfSelect TValue="string"
+                                Label="@L["Admin.Announcements.Audience"]"
+                                Items="_audienceScopes"
+                                LabelFor="@AudienceLabel"
+                                Value="@_audienceScope"
+                                ValueChanged="OnAudienceChangedAsync"
+                                Disabled="_busy" />
+                }
 
-            <SimfTextField Label="@L["Admin.Announcements.TitleField"]"
-                           Value="@_title"
-                           ValueChanged="@(v => _title = v)"
-                           ValueExpression="@(() => _title)"
-                           Disabled="_busy" />
-            <SimfTextField Label="@L["Admin.Announcements.TitleArabicField"]"
-                           Value="@_titleArabic"
-                           ValueChanged="@(v => _titleArabic = v)"
-                           ValueExpression="@(() => _titleArabic)"
-                           Disabled="_busy" />
-            <SimfTextarea Label="@L["Admin.Announcements.BodyField"]"
-                          Rows="4" MaxLength="2000"
-                          Value="@_body"
-                          ValueChanged="@(v => _body = v)"
-                          Disabled="_busy" />
-            <SimfTextarea Label="@L["Admin.Announcements.BodyArabicField"]"
-                          Rows="4" MaxLength="2000"
-                          Value="@_bodyArabic"
-                          ValueChanged="@(v => _bodyArabic = v)"
-                          Disabled="_busy" />
-        </div>
+                <SimfSelect TValue="string"
+                            Label="@L["Admin.Announcements.Severity"]"
+                            Items="_severities"
+                            LabelFor="@SeverityLabel"
+                            Value="@_severity"
+                            ValueChanged="@(v => _severity = v ?? "Info")"
+                            Disabled="_busy" />
+            </div>
 
-        <SimfAlert Variant="info">@RecipientCountText()</SimfAlert>
+            <SimfAlert Variant="info">@RecipientCountText()</SimfAlert>
+        </SimfFormSection>
+
+        <SimfFormSection Number="2" Title="@L["Admin.Announcements.Section.Message"]"
+                         Hint="@L["Admin.Announcements.Section.MessageHint"]">
+            <div class="simf-form__grid">
+                <SimfTextField Label="@L["Admin.Announcements.TitleField"]"
+                               Value="@_title"
+                               ValueChanged="@(v => _title = v)"
+                               ValueExpression="@(() => _title)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Announcements.TitleArabicField"]"
+                               Value="@_titleArabic"
+                               ValueChanged="@(v => _titleArabic = v)"
+                               ValueExpression="@(() => _titleArabic)"
+                               Disabled="_busy" />
+                <SimfTextarea Label="@L["Admin.Announcements.BodyField"]"
+                              Rows="4" MaxLength="2000"
+                              Value="@_body"
+                              ValueChanged="@(v => _body = v)"
+                              Disabled="_busy" />
+                <SimfTextarea Label="@L["Admin.Announcements.BodyArabicField"]"
+                              Rows="4" MaxLength="2000"
+                              Value="@_bodyArabic"
+                              ValueChanged="@(v => _bodyArabic = v)"
+                              Disabled="_busy" />
+            </div>
+        </SimfFormSection>
 
         <div class="simf-form__actions">
             <SimfButton Type="button" OnClick="SubmitAsync" Loading="_busy">
@@ -122,7 +130,9 @@
                     <CellTemplate>@MessageLabel(context)</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminBroadcastSummary" Key="status" Header="@L["Admin.Announcements.Col.Status"]">
-                    <CellTemplate>@StatusLabel(context.Status)</CellTemplate>
+                    <CellTemplate>
+                        <SimfPill Variant="@StatusPillVariant(context.Status)">@StatusLabel(context.Status)</SimfPill>
+                    </CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminBroadcastSummary" Key="recipients" Header="@L["Admin.Announcements.Col.Recipients"]">
                     <CellTemplate>@context.TotalRecipients</CellTemplate>
