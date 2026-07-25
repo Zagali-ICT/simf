@@ -2211,6 +2211,11 @@
   <data name="Admin.HallSeatLayouts.LayoutCapacity" xml:space="preserve"><value>Layout capacity</value></data>
   <data name="Admin.HallSeatLayouts.Save" xml:space="preserve"><value>Save layout</value></data>
   <data name="Admin.HallSeatLayouts.Saved" xml:space="preserve"><value>Layout saved.</value></data>
+  <data name="Admin.HallSeatLayouts.RowsBySeats" xml:space="preserve"><value>{0} rows × {1} seats per row</value></data>
+  <data name="Admin.HallSeatLayouts.Capacity.Over" xml:space="preserve"><value>Layout capacity exceeds the hall capacity. Reduce the rows or seats per row before saving.</value></data>
+  <data name="Admin.HallSeatLayouts.Preview.Title" xml:space="preserve"><value>Layout preview</value></data>
+  <data name="Admin.HallSeatLayouts.Preview.Empty" xml:space="preserve"><value>Enter row labels and seats per row to preview the seat map.</value></data>
+  <data name="Admin.HallSeatLayouts.Preview.Front" xml:space="preserve"><value>Front / Stage</value></data>
   <data name="Admin.SessionSeatPlans.Title" xml:space="preserve"><value>Session seat plans</value></data>
   <data name="Admin.SessionSeatPlans.Legend.Free" xml:space="preserve"><value>Free</value></data>
   <data name="Admin.SessionSeatPlans.Legend.User" xml:space="preserve"><value>Reserved (attendee)</value></data>

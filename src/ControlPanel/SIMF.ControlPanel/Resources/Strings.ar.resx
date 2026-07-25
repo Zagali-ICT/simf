@@ -2204,6 +2204,11 @@
   <data name="Admin.HallSeatLayouts.LayoutCapacity" xml:space="preserve"><value>سعة المخطط</value></data>
   <data name="Admin.HallSeatLayouts.Save" xml:space="preserve"><value>حفظ المخطط</value></data>
   <data name="Admin.HallSeatLayouts.Saved" xml:space="preserve"><value>تم حفظ المخطط.</value></data>
+  <data name="Admin.HallSeatLayouts.RowsBySeats" xml:space="preserve"><value>{0} صفوف × {1} مقعداً لكل صف</value></data>
+  <data name="Admin.HallSeatLayouts.Capacity.Over" xml:space="preserve"><value>سعة المخطط تتجاوز سعة القاعة. قلّل عدد الصفوف أو المقاعد لكل صف قبل الحفظ.</value></data>
+  <data name="Admin.HallSeatLayouts.Preview.Title" xml:space="preserve"><value>معاينة المخطط</value></data>
+  <data name="Admin.HallSeatLayouts.Preview.Empty" xml:space="preserve"><value>أدخل رموز الصفوف وعدد المقاعد لكل صف لمعاينة مخطط المقاعد.</value></data>
+  <data name="Admin.HallSeatLayouts.Preview.Front" xml:space="preserve"><value>المقدمة / المنصة</value></data>
   <data name="Admin.SessionSeatPlans.Title" xml:space="preserve"><value>مخطط مقاعد الجلسات</value></data>
   <data name="Admin.SessionSeatPlans.Legend.Free" xml:space="preserve"><value>متاح</value></data>
   <data name="Admin.SessionSeatPlans.Legend.User" xml:space="preserve"><value>محجوز (زائر)</value></data>

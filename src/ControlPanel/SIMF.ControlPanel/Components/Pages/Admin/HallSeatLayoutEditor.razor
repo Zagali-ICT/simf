@@ -46,27 +46,84 @@
         else if (_selectedHallId is not null && _snapshot is not null)
         {
             <div class="simf-form__fields">
-                <label class="simf-field">
-                    <span class="simf-field__label">@L["Admin.HallSeatLayouts.Field.RowLabels"]</span>
-                    <input class="simf-field__input" type="text"
-                           value="@_rowLabelsCsv"
-                           @onchange="OnRowLabelsChanged"
-                           disabled="@_busy" />
-                </label>
-                <label class="simf-field">
-                    <span class="simf-field__label">@L["Admin.HallSeatLayouts.Field.SeatsPerRow"]</span>
-                    <input class="simf-field__input" type="number" min="1" max="80"
-                           value="@_seatsPerRow"
-                           @onchange="OnSeatsPerRowChanged"
-                           disabled="@_busy" />
-                </label>
-                <dl class="simf-dl">
-                    <dt>@L["Admin.HallSeatLayouts.HallCapacity"]</dt>
-                    <dd>@_snapshot.HallCapacity</dd>
-                    <dt>@L["Admin.HallSeatLayouts.LayoutCapacity"]</dt>
-                    <dd>@(_currentRowCount * _seatsPerRow)</dd>
-                </dl>
+                <div class="simf-form__grid">
+                    <label class="simf-field">
+                        <span class="simf-field__label">@L["Admin.HallSeatLayouts.Field.RowLabels"]</span>
+                        <input class="simf-field__input" type="text"
+                               value="@_rowLabelsCsv"
+                               @onchange="OnRowLabelsChanged"
+                               disabled="@_busy" />
+                    </label>
+                    <label class="simf-field">
+                        <span class="simf-field__label">@L["Admin.HallSeatLayouts.Field.SeatsPerRow"]</span>
+                        <input class="simf-field__input" type="number" min="1" max="80"
+                               value="@_seatsPerRow"
+                               @onchange="OnSeatsPerRowChanged"
+                               disabled="@_busy" />
+                    </label>
+                </div>
+
+                @* Capacity summary — Hall vs Layout with a utilisation meter.
+                   The over-capacity notice is visual only; Save stays enabled
+                   so the server keeps ownership of the capacity rule. *@
+                <section class="hsl-capacity @(_isOverCapacity ? "hsl-capacity--over" : null)">
+                    <dl class="hsl-capacity__stats">
+                        <div class="hsl-capacity__stat">
+                            <dt class="hsl-capacity__term">@L["Admin.HallSeatLayouts.HallCapacity"]</dt>
+                            <dd class="hsl-capacity__value">@_hallCapacity</dd>
+                        </div>
+                        <div class="hsl-capacity__stat">
+                            <dt class="hsl-capacity__term">@L["Admin.HallSeatLayouts.LayoutCapacity"]</dt>
+                            <dd class="hsl-capacity__value">@_layoutCapacity</dd>
+                        </div>
+                    </dl>
+                    <p class="hsl-capacity__formula">
+                        @(string.Format(L["Admin.HallSeatLayouts.RowsBySeats"], _currentRowCount, _seatsPerRow))
+                    </p>
+                    <progress class="hsl-capacity__meter"
+                              aria-label="@L["Admin.HallSeatLayouts.LayoutCapacity"]"
+                              max="@(_hallCapacity > 0 ? _hallCapacity : 1)"
+                              value="@_layoutCapacity"></progress>
+                    @if (_isOverCapacity)
+                    {
+                        <p class="hsl-capacity__warning" role="alert">
+                            @L["Admin.HallSeatLayouts.Capacity.Over"]
+                        </p>
+                    }
+                </section>
             </div>
+
+            @* Live seat-map preview — mirrors the seat picker visitors will see.
+               Every seat is "available" here; this page defines the map, it does
+               not show reservations (that is /admin/sessions/seat-plans). *@
+            <section class="hsl-preview">
+                <h2 class="hsl-preview__title">@L["Admin.HallSeatLayouts.Preview.Title"]</h2>
+                @if (_previewRowLabels.Count > 0 && _seatsPerRow > 0)
+                {
+                    var seatsToRender = Math.Clamp(_seatsPerRow, 0, 80);
+                    <div class="hsl-preview__stage">@L["Admin.HallSeatLayouts.Preview.Front"]</div>
+                    @* Decorative confirmation of the layout — the capacity panel
+                       and the admin's own inputs already convey the numbers, so it
+                       is hidden from assistive tech to avoid a seat-by-seat readout. *@
+                    <div class="hsl-preview__grid" aria-hidden="true">
+                        @foreach (var rowLabel in _previewRowLabels)
+                        {
+                            <div class="hsl-preview__row">
+                                <span class="hsl-preview__row-label">@rowLabel</span>
+                                @for (var seat = 1; seat <= seatsToRender; seat++)
+                                {
+                                    <span class="hsl-preview__seat">@seat</span>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="hsl-preview__empty">@L["Admin.HallSeatLayouts.Preview.Empty"]</p>
+                }
+            </section>
+
             <div class="simf-form__actions">
                 <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy">
                     @L["Admin.HallSeatLayouts.Save"]

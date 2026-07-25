@@ -498,6 +498,28 @@ internal sealed class SpeakerMeetingRequestService(
             // the double-opt-in Approve/Reject links (tokens already committed above).
             await meetingActionTokens.AuditMintedAsync(req.Id, cancellationToken);
             await EmailSpeakerConfirmationLinksAsync(req, links, cancellationToken);
+
+            // R3 (D-767) — the requester (sender) is also told, in-app AND by email, that
+            // their request was approved and is now awaiting the speaker's confirmation,
+            // so they are not left in the dark until the speaker acts on the link.
+            var approvedSpeakerName = await appDbContext.Speakers.AsNoTracking()
+                .Where(s => s.Id == req.SpeakerId).Select(s => s.Name)
+                .SingleOrDefaultAsync(cancellationToken) ?? "the speaker";
+            await notifications.TryDispatchAsync(new NotificationRequest
+            {
+                UserId = req.RequestedByUserId,
+                Kind = NotificationKind.MeetingScheduled,
+                Title = "Meeting request approved",
+                TitleArabic = "تمت الموافقة على طلب المقابلة",
+                Body = $"Your meeting request with {approvedSpeakerName} was approved and is "
+                    + "awaiting the speaker's confirmation.",
+                BodyArabic = $"تمت الموافقة على طلب مقابلتك مع {approvedSpeakerName} وهو "
+                    + "بانتظار تأكيد المتحدّث.",
+                Severity = NotificationSeverity.Info,
+                RelatedEntityType = nameof(SpeakerMeetingRequest),
+                RelatedEntityId = req.Id,
+                SendEmail = true,
+            }, logger, cancellationToken);
         }
         else
         {

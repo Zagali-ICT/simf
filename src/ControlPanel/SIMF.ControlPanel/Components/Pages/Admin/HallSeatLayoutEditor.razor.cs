@@ -32,10 +32,24 @@ public partial class HallSeatLayoutEditor
     private bool _busy;
     private Toast? _toast;
 
-    private int _currentRowCount =>
-        string.IsNullOrWhiteSpace(_rowLabelsCsv) ? 0
+    // The row labels the admin has typed, trimmed and with blanks dropped —
+    // the same parse the Save uses, shared so the live preview and the
+    // capacity readout can never disagree with what gets persisted.
+    private IReadOnlyList<string> _previewRowLabels =>
+        string.IsNullOrWhiteSpace(_rowLabelsCsv)
+            ? Array.Empty<string>()
             : _rowLabelsCsv.Split(',', StringSplitOptions.RemoveEmptyEntries
-                | StringSplitOptions.TrimEntries).Length;
+                | StringSplitOptions.TrimEntries);
+
+    private int _currentRowCount => _previewRowLabels.Count;
+
+    private int _layoutCapacity => _currentRowCount * _seatsPerRow;
+
+    private int _hallCapacity => _snapshot?.HallCapacity ?? 0;
+
+    // Visual-only warning — Save stays enabled so the server remains the single
+    // source of truth for the capacity rule (SEAT_CAPACITY_EXCEEDED).
+    private bool _isOverCapacity => _hallCapacity > 0 && _layoutCapacity > _hallCapacity;
 
     protected override async Task OnInitializedAsync()
     {
