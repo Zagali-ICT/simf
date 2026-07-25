@@ -1031,6 +1031,13 @@
   <data name="Admin.OrganizationProfile.Saved" xml:space="preserve"><value>Saved.</value></data>
   <data name="Admin.OrganizationProfile.SaveFailed" xml:space="preserve"><value>Could not save the profile.</value></data>
   <data name="Admin.OrganizationProfile.LoadFailed" xml:space="preserve"><value>Could not load the profile.</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoUpload" xml:space="preserve"><value>Upload video</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoUploading" xml:space="preserve"><value>Uploading…</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoRemove" xml:space="preserve"><value>Remove uploaded video</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoHint" xml:space="preserve"><value>MP4, M4V or WebM, up to 200 MB. Uploading replaces the hero background above and plays on Android. For a YouTube or external link instead, paste it in the field above and leave this empty.</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoUploaded" xml:space="preserve"><value>Hero video uploaded.</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoRemoved" xml:space="preserve"><value>Hero video removed.</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoFailed" xml:space="preserve"><value>Could not update the hero video.</value></data>
   <data name="Admin.SiteSettings.Title" xml:space="preserve"><value>Site Settings</value></data>
   <data name="Admin.SiteSettings.Loading" xml:space="preserve"><value>Loading…</value></data>
   <data name="Admin.SiteSettings.Section.Registration" xml:space="preserve"><value>Registration message</value></data>
@@ -2209,6 +2216,11 @@
   <data name="Admin.HallSeatLayouts.LayoutCapacity" xml:space="preserve"><value>Layout capacity</value></data>
   <data name="Admin.HallSeatLayouts.Save" xml:space="preserve"><value>Save layout</value></data>
   <data name="Admin.HallSeatLayouts.Saved" xml:space="preserve"><value>Layout saved.</value></data>
+  <data name="Admin.HallSeatLayouts.RowsBySeats" xml:space="preserve"><value>{0} rows × {1} seats per row</value></data>
+  <data name="Admin.HallSeatLayouts.Capacity.Over" xml:space="preserve"><value>Layout capacity exceeds the hall capacity. Reduce the rows or seats per row before saving.</value></data>
+  <data name="Admin.HallSeatLayouts.Preview.Title" xml:space="preserve"><value>Layout preview</value></data>
+  <data name="Admin.HallSeatLayouts.Preview.Empty" xml:space="preserve"><value>Enter row labels and seats per row to preview the seat map.</value></data>
+  <data name="Admin.HallSeatLayouts.Preview.Front" xml:space="preserve"><value>Front / Stage</value></data>
   <data name="Admin.SessionSeatPlans.Title" xml:space="preserve"><value>Session seat plans</value></data>
   <data name="Admin.SessionSeatPlans.Legend.Free" xml:space="preserve"><value>Free</value></data>
   <data name="Admin.SessionSeatPlans.Legend.User" xml:space="preserve"><value>Reserved (attendee)</value></data>

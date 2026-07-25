@@ -63,6 +63,7 @@ class _SessionSummaryListScreenState
             child: SimfFilterSearchField(
               hint: l10n.sessionSummarySearchHint,
               onChanged: (value) => setState(() => _query = value),
+              showFilterIcon: false,
             ),
           ),
           const SizedBox(height: SimfTokens.space3),

@@ -7,16 +7,21 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-07-25 |
 
 > **Page shape (read from `HallSeatLayoutEditor.razor`, D-182).** This is a
 > **single-hall editor**, not a CRUD grid. There is no Add / Edit / Details /
 > Delete modal. The whole page is: a hall **`<select>`** dropdown, and once a
 > hall is chosen, two inputs — **Row labels** (comma-separated text) and
-> **Seats per row** (number 1–80) — plus a read-only **Hall capacity** /
-> **Layout capacity** description list, and one **Save layout** button. All
-> validation is **server-side**; there is no client-side guard, so an invalid
-> input round-trips to the API and returns as an error toast.
+> **Seats per row** (number 1–80) — a **Capacity summary** panel (Hall
+> capacity + Layout capacity readouts, a "N rows × M seats per row" line, a
+> utilisation `<progress>` meter, and a non-blocking over-capacity warning),
+> a **live seat-map preview** (a "Front / Stage" bar over a `rows × seats`
+> grid of neutral seats, or a placeholder when empty), and one **Save layout**
+> button. All validation is **server-side**; there is no client-side guard, so
+> an invalid input round-trips to the API and returns as an error toast. The
+> capacity summary and preview are **display only** — the over-capacity notice
+> does **not** disable Save, so E2E-HSL-012 still round-trips to the API.
 >
 > **Permission gate:** view = `PermissionCatalog.SeatLayouts.View`
 > (`SeatLayouts.View`); save = `SeatLayouts.Edit` enforced on the API PUT.
@@ -51,6 +56,8 @@
 | E2E-HSL-014 | Server 500 on halls `/list` → bilingual fallback toast, no dropdown | resilience | P2 | _to author_ |
 | E2E-HSL-015 | RTL render — Arabic toggle mirrors banner, hint, fields and Save button | i18n | P1 | _to author_ |
 | E2E-HSL-016 | Orphan guard (H-2) — a layout change that would strand active reservations (dropped row or shrunk seats-per-row) is blocked with 409 SEAT_LAYOUT_HAS_RESERVATIONS; a change with no orphans (and released reservations) still saves | conflict | P1 | authored ✓ |
+| E2E-HSL-017 | Live seat-map preview — grid renders rows × seats, "Front / Stage" bar shown, placeholder when empty | happy | P2 | authored ✓ |
+| E2E-HSL-018 | Over-capacity is a non-blocking visual warning — panel + meter flag it, Save stays enabled and still round-trips (see E2E-HSL-012) | happy | P2 | authored ✓ |
 
 ## Scenarios
 
@@ -320,6 +327,52 @@ Scenario: A change with no orphans succeeds (released seats do not block)
 **Evidence captured:**
 - API integration tests: `SeatReservationsTests.Shrinking_a_layout_that_orphans_a_reservation_is_blocked`, `SeatReservationsTests.Shrinking_seats_per_row_below_a_booked_seat_is_blocked`, `SeatReservationsTests.Layout_change_with_no_orphans_succeeds`
 - CP toast/error map must include SEAT_LAYOUT_HAS_RESERVATIONS so the operator sees the bilingual message
+
+---
+
+### E2E-HSL-017 — Live seat-map preview
+
+```gherkin
+Scenario: The preview renders the row × seats grid the visitor picker will show
+  Given hall "H-01" (cap 120) is selected
+  And the "Layout preview" section shows the placeholder
+    "Enter row labels and seats per row to preview the seat map."
+  When the administrator sets Row labels = "A,B,C" and Seats per row = "6"
+  Then the preview shows a "Front / Stage" bar
+  And the preview grid renders 3 rows labelled A, B, C
+  And each row renders 6 neutral seats numbered 1..6
+  And the "3 rows × 6 seats per row" formula line is shown
+
+Scenario: Blank / trailing row entries are ignored in the preview
+  Given hall "H-01" is selected with Seats per row = "5"
+  When the administrator types Row labels = "A,B, ,C,"
+  Then the preview renders exactly 3 rows (A, B, C) — blank entries dropped
+```
+
+**Evidence captured:**
+- Screenshot: `docs/screenshots/cp-admin-halls-seat-layouts-preview.png` (Front/Stage bar + rows A,B,C of neutral seats)
+- The preview is display only — no API call fires while typing (fields use `@onchange`; the grid recomputes from the same trimmed parse the Save uses)
+
+### E2E-HSL-018 — Over-capacity is a non-blocking visual warning
+
+```gherkin
+Scenario: Exceeding hall capacity flags a warning but does not block Save
+  Given hall "H-03" (cap 50) is selected
+  When the administrator sets Row labels = "A,B,C,D,E,F" (6 rows) and Seats per row = "10"
+  Then the "Layout capacity" reads "60" and "Hall capacity" reads "50"
+  And the capacity panel switches to its over-capacity style (warning)
+  And the utilisation meter renders full in the warning colour
+  And a warning reads "Layout capacity exceeds the hall capacity. Reduce the
+    rows or seats per row before saving." / "سعة المخطط تتجاوز سعة القاعة. قلّل
+    عدد الصفوف أو المقاعد لكل صف قبل الحفظ."
+  And the "Save layout" button is still enabled
+  When they click "Save layout"
+  Then the PUT still fires and the API returns 400 SEAT_CAPACITY_EXCEEDED (per E2E-HSL-012)
+```
+
+**Evidence captured:**
+- Screenshot: `docs/screenshots/cp-admin-halls-seat-layouts-over-capacity.png` (warning panel + full meter + Save enabled)
+- Confirms the client warning is advisory only; the server (`SeatReservationService.SetLayoutAsync`) remains the source of truth for the capacity rule
 
 ---
 

@@ -77,7 +77,7 @@
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminBadgeBatchSummary" Key="createdAt"
                                     Header="@L["Admin.BadgeBatches.Col.CreatedAt"]">
-                    <CellTemplate>@context.CreatedAt.FormatSaudi("yyyy-MM-dd HH:mm")</CellTemplate>
+                    <CellTemplate>@context.CreatedAt.FormatSaudi("yyyy-MM-dd hh:mm tt")</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminBadgeBatchSummary" Key="status"
                                     Header="@L["Admin.BadgeBatches.Col.Status"]">

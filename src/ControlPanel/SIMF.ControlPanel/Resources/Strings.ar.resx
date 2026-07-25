@@ -1023,6 +1023,13 @@
   <data name="Admin.OrganizationProfile.Saved" xml:space="preserve"><value>تم الحفظ.</value></data>
   <data name="Admin.OrganizationProfile.SaveFailed" xml:space="preserve"><value>تعذّر حفظ الملف.</value></data>
   <data name="Admin.OrganizationProfile.LoadFailed" xml:space="preserve"><value>تعذّر تحميل الملف.</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoUpload" xml:space="preserve"><value>رفع فيديو</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoUploading" xml:space="preserve"><value>جارٍ الرفع…</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoRemove" xml:space="preserve"><value>إزالة الفيديو المرفوع</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoHint" xml:space="preserve"><value>MP4 أو M4V أو WebM، حتى 200 ميغابايت. الرفع يستبدل خلفية الواجهة أعلاه ويعمل على أندرويد. لاستخدام رابط يوتيوب أو رابط خارجي بدلاً من ذلك، ألصقه في الحقل أعلاه واترك هذا فارغاً.</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoUploaded" xml:space="preserve"><value>تم رفع فيديو الواجهة.</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoRemoved" xml:space="preserve"><value>تمت إزالة فيديو الواجهة.</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoFailed" xml:space="preserve"><value>تعذّر تحديث فيديو الواجهة.</value></data>
   <data name="Admin.SiteSettings.Title" xml:space="preserve"><value>إعدادات الموقع</value></data>
   <data name="Admin.SiteSettings.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
   <data name="Admin.SiteSettings.Section.Registration" xml:space="preserve"><value>رسالة التسجيل</value></data>
@@ -2202,6 +2209,11 @@
   <data name="Admin.HallSeatLayouts.LayoutCapacity" xml:space="preserve"><value>سعة المخطط</value></data>
   <data name="Admin.HallSeatLayouts.Save" xml:space="preserve"><value>حفظ المخطط</value></data>
   <data name="Admin.HallSeatLayouts.Saved" xml:space="preserve"><value>تم حفظ المخطط.</value></data>
+  <data name="Admin.HallSeatLayouts.RowsBySeats" xml:space="preserve"><value>{0} صفوف × {1} مقعداً لكل صف</value></data>
+  <data name="Admin.HallSeatLayouts.Capacity.Over" xml:space="preserve"><value>سعة المخطط تتجاوز سعة القاعة. قلّل عدد الصفوف أو المقاعد لكل صف قبل الحفظ.</value></data>
+  <data name="Admin.HallSeatLayouts.Preview.Title" xml:space="preserve"><value>معاينة المخطط</value></data>
+  <data name="Admin.HallSeatLayouts.Preview.Empty" xml:space="preserve"><value>أدخل رموز الصفوف وعدد المقاعد لكل صف لمعاينة مخطط المقاعد.</value></data>
+  <data name="Admin.HallSeatLayouts.Preview.Front" xml:space="preserve"><value>المقدمة / المنصة</value></data>
   <data name="Admin.SessionSeatPlans.Title" xml:space="preserve"><value>مخطط مقاعد الجلسات</value></data>
   <data name="Admin.SessionSeatPlans.Legend.Free" xml:space="preserve"><value>متاح</value></data>
   <data name="Admin.SessionSeatPlans.Legend.User" xml:space="preserve"><value>محجوز (زائر)</value></data>

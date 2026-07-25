@@ -23,6 +23,20 @@ public partial class OrganizationProfilePage
     private bool _busy;
     private string? _toastMessage;
     private string _toastVariant = "success";
+    private bool _videoBusy;
+
+    // D-768 — the hidden file input the hero-video upload reads, and the served
+    // route the upload points BackgroundVideoUrl at. HasUploadedHeroVideo shows the
+    // "Remove" affordance only when an uploaded video (not a pasted external /
+    // YouTube link) is the current hero source.
+    private const string HeroVideoInputId = "org-hero-video-input";
+    // Keep in sync with OrganizationHeroVideoRoutes.StreamRoute (the API assembly the
+    // CP does not reference). If the served route changes, the "Remove" affordance
+    // silently stops appearing until this matches.
+    private const string HeroVideoRouteSuffix = "/app/organization/hero-video.mp4";
+    private bool HasUploadedHeroVideo =>
+        (_model.BackgroundVideoUrl ?? string.Empty)
+            .EndsWith(HeroVideoRouteSuffix, StringComparison.OrdinalIgnoreCase);
 
     protected override async Task OnInitializedAsync()
     {
@@ -59,7 +73,7 @@ public partial class OrganizationProfilePage
         _model.SloganArabic = d.SloganArabic ?? string.Empty;
         _model.Bio = d.Bio ?? string.Empty;
         _model.BioArabic = d.BioArabic ?? string.Empty;
-        _model.CurrentYear = d.CurrentYear.ToString();
+        _model.CurrentYear = d.CurrentYear.ToString(CultureInfo.InvariantCulture);
         _model.Status = d.Status;
         _model.EventStartDate = DateString(d.EventStartDate);
         _model.EventEndDate = DateString(d.EventEndDate);
@@ -67,8 +81,8 @@ public partial class OrganizationProfilePage
         _model.SysVersion = d.SysVersion ?? string.Empty;
         _model.LocationText = d.LocationText ?? string.Empty;
         _model.LocationTextArabic = d.LocationTextArabic ?? string.Empty;
-        _model.Latitude = d.Latitude?.ToString() ?? string.Empty;
-        _model.Longitude = d.Longitude?.ToString() ?? string.Empty;
+        _model.Latitude = d.Latitude?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
+        _model.Longitude = d.Longitude?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
         _model.ContactPhone = d.ContactPhone ?? string.Empty;
         _model.ContactEmail = d.ContactEmail ?? string.Empty;
         _model.ContactWebsite = d.ContactWebsite ?? string.Empty;
@@ -130,7 +144,7 @@ public partial class OrganizationProfilePage
                 SloganArabic = _model.SloganArabic,
                 Bio = _model.Bio,
                 BioArabic = _model.BioArabic,
-                CurrentYear = int.TryParse(_model.CurrentYear, out var y) ? y : 0,
+                CurrentYear = int.TryParse(_model.CurrentYear, NumberStyles.Integer, CultureInfo.InvariantCulture, out var y) ? y : 0,
                 Status = _model.Status,
                 EventStartDate = ParseDate(_model.EventStartDate),
                 EventEndDate = ParseDate(_model.EventEndDate),
@@ -189,6 +203,66 @@ public partial class OrganizationProfilePage
         finally { _busy = false; }
     }
 
+    // D-768 — upload the picked hero video through the CP proxy (streamed to the
+    // API), then reload so the served BackgroundVideoUrl + the Remove affordance
+    // reflect the new state.
+    private async Task UploadHeroVideoAsync()
+    {
+        if (_busy || _videoBusy) { return; }
+        _videoBusy = true;
+        _toastMessage = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<OrganizationProfileResponse>>(
+                "simfAccount.uploadFile",
+                "/account/api/admin/organization-profile/hero-video", HeroVideoInputId);
+            ApplyHeroVideoResult(envelope, L["Admin.OrganizationProfile.HeroVideoUploaded"]);
+        }
+        catch (Exception)
+        {
+            _toastVariant = "error";
+            _toastMessage = L["Admin.OrganizationProfile.HeroVideoFailed"];
+        }
+        finally { _videoBusy = false; }
+    }
+
+    private async Task RemoveHeroVideoAsync()
+    {
+        if (_busy || _videoBusy) { return; }
+        _videoBusy = true;
+        _toastMessage = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<OrganizationProfileResponse>>(
+                "simfAccount.deleteJson", "/account/api/admin/organization-profile/hero-video");
+            ApplyHeroVideoResult(envelope, L["Admin.OrganizationProfile.HeroVideoRemoved"]);
+        }
+        catch (Exception)
+        {
+            _toastVariant = "error";
+            _toastMessage = L["Admin.OrganizationProfile.HeroVideoFailed"];
+        }
+        finally { _videoBusy = false; }
+    }
+
+    // Reload the form from the returned profile on success (so BackgroundVideoUrl +
+    // HasUploadedHeroVideo update), else surface the server error.
+    private void ApplyHeroVideoResult(ApiResult<OrganizationProfileResponse>? envelope, string successMessage)
+    {
+        if (envelope is { Success: true, Data: not null })
+        {
+            Load(envelope.Data);
+            _toastVariant = "success";
+            _toastMessage = successMessage;
+        }
+        else
+        {
+            _toastVariant = "error";
+            _toastMessage = envelope?.Error?.MessageForCurrentCulture()
+                ?? L["Admin.OrganizationProfile.HeroVideoFailed"];
+        }
+    }
+
     private static string DateString(DateTimeOffset? value) =>
         value?.ToString("yyyy-MM-dd") ?? string.Empty;
 
@@ -196,7 +270,7 @@ public partial class OrganizationProfilePage
         DateTimeOffset.TryParse(raw, out var d) ? d : null;
 
     private static decimal? ParseDecimal(string? raw) =>
-        decimal.TryParse(raw, out var v) ? v : null;
+        decimal.TryParse(raw, NumberStyles.Number, CultureInfo.InvariantCulture, out var v) ? v : null;
 
     private sealed class Model
     {

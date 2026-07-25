@@ -43,6 +43,8 @@ class SponsorLogo extends StatelessWidget {
     return Image.network(
       '$baseUrl/app/assets/SponsorLogo/$id/image',
       fit: BoxFit.cover,
+      width: double.infinity,
+      height: double.infinity,
       gaplessPlayback: true,
       loadingBuilder: (context, child, progress) =>
           progress == null ? child : fallback,

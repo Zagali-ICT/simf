@@ -87,7 +87,7 @@ public partial class ProgrammeTimeline
         _selectedDayKey = e.Value?.ToString() ?? string.Empty;
 
     private static string TimeWindow(AdminSessionSummary s) =>
-        $"{s.StartUtc.ToSaudi():HH:mm} – {s.EndUtc.ToSaudi():HH:mm}";
+        $"{s.StartUtc.ToSaudi():hh:mm tt} – {s.EndUtc.ToSaudi():hh:mm tt}";
 
     private static string SessionTitle(AdminSessionSummary s) =>
         IsArabic ? s.TitleArabic : s.Title;

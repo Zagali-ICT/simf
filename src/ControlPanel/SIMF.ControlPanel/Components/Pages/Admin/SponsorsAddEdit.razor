@@ -18,11 +18,13 @@
                        Value="@_model.NameEn"
                        ValueChanged="@(v => _model.NameEn = v)"
                        ValueExpression="@(() => _model.NameEn)"
+                       MaxLength="256"
                        Disabled="_busy" />
         <SimfTextField Label="@L["Admin.Sponsors.Field.NameAr"]"
                        Value="@_model.NameAr"
                        ValueChanged="@(v => _model.NameAr = v)"
                        ValueExpression="@(() => _model.NameAr)"
+                       MaxLength="256"
                        Disabled="_busy" />
         <label class="simf-field">
             <span class="simf-field__label">@L["Admin.Sponsors.Field.Tier"]</span>
@@ -40,6 +42,7 @@
                        Value="@_model.Url"
                        ValueChanged="@(v => _model.Url = v)"
                        ValueExpression="@(() => _model.Url)"
+                       MaxLength="512"
                        Disabled="_busy" />
         @* D-432 — optional bilingual tagline shown under the sponsor name. *@
         <SimfTextField Label="@L["Admin.Sponsors.Field.TaglineAr"]"
@@ -71,6 +74,7 @@
                        Value="@_model.LogoRelativePath"
                        ValueChanged="@(v => _model.LogoRelativePath = v)"
                        ValueExpression="@(() => _model.LogoRelativePath)"
+                       MaxLength="256"
                        Disabled="_busy" />
         <label class="simf-field">
             <span class="simf-field__label">@L["Admin.Sponsors.Field.DisplayOrder"]</span>

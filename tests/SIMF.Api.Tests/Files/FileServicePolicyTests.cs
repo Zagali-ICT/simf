@@ -78,7 +78,7 @@ public sealed class FileServicePolicyTests
     }
 
     [Fact]
-    public void Public_services_are_plaintext_images_anyone_can_read()
+    public void Public_services_are_plaintext_anyone_can_read()
     {
         foreach (var policy in FileServicePolicies.All)
         {
@@ -86,7 +86,16 @@ public sealed class FileServicePolicyTests
             {
                 Assert.False(policy.EncryptAtRest, $"{policy.Service} is public but encrypted.");
                 Assert.Equal(FileSensitivityTier.Public, policy.Tier);
-                Assert.Equal(new HashSet<FileType> { FileType.Image }, policy.AllowedTypes);
+
+                // Public services serve plaintext images, with ONE reviewed
+                // exception: the home/landing hero background video (D-768), a
+                // public MP4 range-served through its own dedicated .mp4 route.
+                // Pinning it here forces any future public video to be a deliberate
+                // decision, not an accident.
+                var expected = policy.Service == FileService.OrganizationHeroVideo
+                    ? new HashSet<FileType> { FileType.Video }
+                    : new HashSet<FileType> { FileType.Image };
+                Assert.Equal(expected, policy.AllowedTypes);
             }
         }
     }

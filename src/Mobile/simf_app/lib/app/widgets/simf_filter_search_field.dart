@@ -15,12 +15,16 @@ class SimfFilterSearchField extends StatelessWidget {
     required this.hint,
     required this.onChanged,
     this.controller,
+    this.showFilterIcon = true,
     super.key,
   });
 
   final String hint;
   final ValueChanged<String> onChanged;
   final TextEditingController? controller;
+
+  /// Shows the tune/filter glyph at the inline end (Figma 1426:10819).
+  final bool showFilterIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -64,23 +68,27 @@ class SimfFilterSearchField extends StatelessWidget {
               ),
             ),
           ),
-          Container(
-            width: 40,
-            // Fill the 48-high field so the divider is a full-height wall, not a
-            // short stub (a bare Row centres children on the cross axis).
-            height: double.infinity,
-            alignment: Alignment.center,
-            decoration: const BoxDecoration(
-              border: BorderDirectional(
-                start: BorderSide(
-                  color: SimfTokens.beigeBorder,
-                  width: SimfTokens.hairline,
+          if (showFilterIcon)
+            Container(
+              width: 40,
+              // Fill the 48-high field so the divider is a full-height wall, not a
+              // short stub (a bare Row centres children on the cross axis).
+              height: double.infinity,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                border: BorderDirectional(
+                  start: BorderSide(
+                    color: SimfTokens.beigeBorder,
+                    width: SimfTokens.hairline,
+                  ),
                 ),
               ),
+              child: const Icon(
+                Icons.tune,
+                color: SimfTokens.beigeBorder,
+                size: 16,
+              ),
             ),
-            child:
-                const Icon(Icons.tune, color: SimfTokens.beigeBorder, size: 16),
-          ),
         ],
       ),
     );

@@ -12,7 +12,7 @@
 |--|--|
 | **Page** | CP `/admin/organization-profile` (`OrganizationProfilePage.razor`) |
 | **Route** | `/admin/organization-profile` (nav item `Module.OrganizationProfile`) |
-| **APIs** | `GET /api/v1/admin/organization-profile` (prefill, `OrganizationProfile.View`); `PUT /api/v1/admin/organization-profile` — `AdminUpdateOrganizationProfileRequest` (full-document upsert, `OrganizationProfile.Manage`). Public read: `GET /api/v1/app/organization-profile` (anonymous, `Last-Modified`/`If-Modified-Since`→304). |
+| **APIs** | `GET /api/v1/admin/organization-profile` (prefill, `OrganizationProfile.View`); `PUT /api/v1/admin/organization-profile` — `AdminUpdateOrganizationProfileRequest` (full-document upsert, `OrganizationProfile.Manage`). Public read: `GET /api/v1/app/organization-profile` (anonymous, `Last-Modified`/`If-Modified-Since`→304). **Hero video (D-768):** `POST`/`DELETE /api/v1/admin/organization-profile/hero-video` (multipart `file`, `OrganizationProfile.Manage`); anonymous Range serve `GET /api/v1/app/organization/hero-video.mp4` (HTTP 206). |
 | **Surface** | Control Panel (Blazor) — Administrator |
 | **Auth setup** | A signed-in admin with `OrganizationProfile.Manage`. Use `Get-Totp` for 2FA — never a literal secret. |
 | **Last reviewed** | 2026-06-24 |
@@ -32,6 +32,9 @@
 | E2E-ORGP-009 | Hero background video (D-756) — set the "Hero background video" field to a YouTube link → Save → success; `GET /app/organization-profile` returns `backgroundVideoUrl`; clearing it → the field returns null; a non-http(s) value → `400` | happy | P1 | authored ✓ (`OrganizationProfileTests` PUT save+reflect incl. `BackgroundVideoUrl`; URL-reject) |
 | E2E-ORGP-010 | Bilingual detail value (D-762) — a detail row's `Value (AR)` round-trips; a blank `Value (AR)` surfaces as null so the app shows `Value (EN)`; the app About screen shows the Arabic value in Arabic and the English value in English | i18n | P1 | authored ✓ (`OrganizationProfileTests` PUT round-trips `ValueArabic` + null-fallback; app `about_screen_test` per-language render) |
 | E2E-ORGP-011 | Repeating-list UX (D-762) — the about-items and details lists render as numbered cards; Up/Down reorder a row (persisted as `DisplayOrder`); Remove drops it; an empty list shows the placeholder | happy | P2 | spec |
+| E2E-ORGP-012 | Hero video upload (D-768) — pick an mp4 → Upload → success toast; `backgroundVideoUrl` becomes the served `…/app/organization/hero-video.mp4` URL; the anonymous `GET …/hero-video.mp4` streams the bytes and honours a `Range` request (`206`); the app + website hero play it on Android | happy | P1 | authored ✓ (`OrganizationHeroVideoTests` upload→served-URL + anonymous stream + Range 206; app `hero_background_video_test` served-URL case) |
+| E2E-ORGP-013 | Hero video remove (D-768) — "Remove uploaded video" clears `backgroundVideoUrl` and the stream `GET …/hero-video.mp4` then returns `404`; a separately-pasted external/YouTube link is left intact | happy | P1 | authored ✓ (`OrganizationHeroVideoTests` remove→404 + URL cleared) |
+| E2E-ORGP-014 | Hero video validation + auth (D-768) — a non-video upload (e.g. `.html`) → `400 ORGANIZATION_PROFILE_INVALID`; a non-admin (no `OrganizationProfile.Manage`) upload → `403` | validation/auth | P1 | authored ✓ (`OrganizationHeroVideoTests` non-video 400 + non-admin 403) |
 
 ## Scenarios
 
@@ -127,7 +130,36 @@ Scenario: An admin gives a detail row an Arabic value and the app shows it per l
   Then the Organiser detail shows "Royal Saudi Naval Forces"
 ```
 
+### E2E-ORGP-012/013/014 — Self-hosted hero background video (D-768)
+
+```gherkin
+Feature: CP Organization Profile — self-hosted hero background video
+Scenario: An admin uploads a hero video and both clients play it
+  Given an admin with OrganizationProfile.Manage opens /admin/organization-profile
+  When they pick an .mp4 file in "Or upload a video file" and tap "Upload video"
+  Then POST /admin/organization-profile/hero-video streams it to the store and shows the success toast
+  And GET /app/organization-profile returns backgroundVideoUrl ending "/app/organization/hero-video.mp4"
+  And an anonymous GET of that URL returns 200 with the video bytes and X-Content-Type-Options: nosniff
+  And the same GET with "Range: bytes=0-3" returns 206 Partial Content
+  And the app home hero (video_player) and the website landing <video> play it muted + looping on Android
+
+Scenario: Removing the uploaded video reverts the hero and 404s the stream
+  Given a hero video is uploaded
+  When the admin taps "Remove uploaded video"
+  Then DELETE /admin/organization-profile/hero-video clears backgroundVideoUrl and shows the toast
+  And an anonymous GET of /app/organization/hero-video.mp4 returns 404
+  And the app hero shows the banner image and the website hero shows the bundled asset
+
+Scenario: A non-video upload or a non-admin caller is rejected
+  Given an admin editing the profile
+  When they upload a text/html file as the hero video
+  Then POST /admin/organization-profile/hero-video returns 400 ORGANIZATION_PROFILE_INVALID
+  Given a signed-in non-admin without OrganizationProfile.Manage
+  When they POST to /admin/organization-profile/hero-video
+  Then the API returns 403 Forbidden
+```
+
 ---
 
-_Last reviewed:_ `2026-07-24` by `SIMF Team` — D-762 (bilingual detail value + repeating-list UX);
-D-495 (new page).
+_Last reviewed:_ `2026-07-25` by `SIMF Team` — D-768 (self-hosted hero background video upload);
+D-762 (bilingual detail value + repeating-list UX); D-495 (new page).
