@@ -23,6 +23,17 @@ public partial class OrganizationProfilePage
     private bool _busy;
     private string? _toastMessage;
     private string _toastVariant = "success";
+    private bool _videoBusy;
+
+    // D-768 — the hidden file input the hero-video upload reads, and the served
+    // route the upload points BackgroundVideoUrl at. HasUploadedHeroVideo shows the
+    // "Remove" affordance only when an uploaded video (not a pasted external /
+    // YouTube link) is the current hero source.
+    private const string HeroVideoInputId = "org-hero-video-input";
+    private const string HeroVideoRouteSuffix = "/app/organization/hero-video.mp4";
+    private bool HasUploadedHeroVideo =>
+        (_model.BackgroundVideoUrl ?? string.Empty)
+            .EndsWith(HeroVideoRouteSuffix, StringComparison.OrdinalIgnoreCase);
 
     protected override async Task OnInitializedAsync()
     {
@@ -187,6 +198,66 @@ public partial class OrganizationProfilePage
             _toastMessage = L["Admin.OrganizationProfile.SaveFailed"];
         }
         finally { _busy = false; }
+    }
+
+    // D-768 — upload the picked hero video through the CP proxy (streamed to the
+    // API), then reload so the served BackgroundVideoUrl + the Remove affordance
+    // reflect the new state.
+    private async Task UploadHeroVideoAsync()
+    {
+        if (_busy || _videoBusy) { return; }
+        _videoBusy = true;
+        _toastMessage = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<OrganizationProfileResponse>>(
+                "simfAccount.uploadFile",
+                "/account/api/admin/organization-profile/hero-video", HeroVideoInputId);
+            ApplyHeroVideoResult(envelope, L["Admin.OrganizationProfile.HeroVideoUploaded"]);
+        }
+        catch (Exception)
+        {
+            _toastVariant = "error";
+            _toastMessage = L["Admin.OrganizationProfile.HeroVideoFailed"];
+        }
+        finally { _videoBusy = false; }
+    }
+
+    private async Task RemoveHeroVideoAsync()
+    {
+        if (_busy || _videoBusy) { return; }
+        _videoBusy = true;
+        _toastMessage = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<OrganizationProfileResponse>>(
+                "simfAccount.deleteJson", "/account/api/admin/organization-profile/hero-video");
+            ApplyHeroVideoResult(envelope, L["Admin.OrganizationProfile.HeroVideoRemoved"]);
+        }
+        catch (Exception)
+        {
+            _toastVariant = "error";
+            _toastMessage = L["Admin.OrganizationProfile.HeroVideoFailed"];
+        }
+        finally { _videoBusy = false; }
+    }
+
+    // Reload the form from the returned profile on success (so BackgroundVideoUrl +
+    // HasUploadedHeroVideo update), else surface the server error.
+    private void ApplyHeroVideoResult(ApiResult<OrganizationProfileResponse>? envelope, string successMessage)
+    {
+        if (envelope is { Success: true, Data: not null })
+        {
+            Load(envelope.Data);
+            _toastVariant = "success";
+            _toastMessage = successMessage;
+        }
+        else
+        {
+            _toastVariant = "error";
+            _toastMessage = envelope?.Error?.MessageForCurrentCulture()
+                ?? L["Admin.OrganizationProfile.HeroVideoFailed"];
+        }
     }
 
     private static string DateString(DateTimeOffset? value) =>
