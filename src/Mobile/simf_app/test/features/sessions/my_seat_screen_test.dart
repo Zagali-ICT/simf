@@ -187,6 +187,26 @@ void main() {
       expect(find.text('MAP'), findsOneWidget);
     });
 
+    testWidgets('renders a ragged variable-width grid (per-row counts)',
+        (tester) async {
+      const ragged = SessionSeatMap(
+        rowLabels: <String>['A', 'B'],
+        seatsPerRow: 10, // legacy fallback = max(counts)
+        seatCounts: <int>[4, 10],
+        reservedCells: <SeatCell>[],
+        activeReservedCount: 0,
+        hallCapacity: 14,
+        sessionTitle: 'Ragged hall',
+      );
+      await _pump(tester, repo: _FakeSeatRepo(map: ragged));
+
+      expect(find.text('Ragged hall'), findsOneWidget);
+      // Row B draws all 10 seats; seat number 10 is unique to it (row A has 4),
+      // so its numeral renders exactly once — proof of the per-row count.
+      expect(find.text('10'), findsOneWidget);
+      expect(find.text('Your seat'), findsOneWidget); // the legend still renders
+    });
+
     testWidgets('an unconfigured hall shows the unavailable state',
         (tester) async {
       final empty = SessionSeatMap.fromJson(<String, dynamic>{

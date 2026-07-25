@@ -2,12 +2,12 @@
 
 | | |
 |--|--|
-| **Page** | `cp/admin-sessions-seat-plans.md` _(reference doc not yet authored — page shape captured inline below from `SessionSeatPlan.razor`, D-182 / D-215)_ |
+| **Page** | [`cp/admin-sessions-seat-plans.md`](../../pages/cp/admin-sessions-seat-plans.md) _(authored D-767, 2026-07-25; page shape also captured inline below from `SessionSeatPlan.razor`, D-182 / D-215)_ |
 | **Route** | `/admin/sessions/seat-plans` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-07-18 (per-seat VIP reserve) |
+| **Last reviewed** | 2026-07-25 (D-767 ragged seat grid) |
 
 > **Page shape (read from `Components/Pages/Admin/SessionSeatPlan.razor`, D-182 + the P1.4/D-215 visual grid).**
 > This is **not** a CRUD grid. It is a **session picker + seat tool**:
@@ -83,6 +83,7 @@
 | E2E-SSP-013 | RTL / Arabic render mirrors the page + grid + legend | i18n | P1 | _to author_ |
 | E2E-SSP-014 | Legend + seat-tooltip resx keys missing → keys render literally (gap guard) | i18n | P2 | _to author_ |
 | E2E-SSP-015 | VIP seat — tap a free seat → reserved as an admin block; a visitor can't book it; out-of-bounds seat → 400 | happy | P1 | authored ✓ (API `Admin_can_reserve_a_single_seat_for_a_vip` + `Admin_reserve_seat_out_of_bounds_is_400`) |
+| E2E-SSP-016 | Ragged grid (D-767): a variable hall layout renders each row at its own `SeatCounts[i]` width; reserve-row / reserve-seat / release still work per-row; a short-row out-of-bounds seat -> 400 SEAT_OUT_OF_BOUNDS | happy | P1 | _to author_ (CP + service coded) |
 
 ## Scenarios
 
@@ -341,6 +342,48 @@ Scenario: Re-reserving the same seat, or an out-of-bounds seat, is refused
 
 ---
 
+### E2E-SSP-016 - Ragged seat grid renders each row at its own width (D-767)
+
+```gherkin
+Feature: Session seat plan on a variable (ragged) hall layout
+  As an Administrator with SeatPlans.Edit
+  I want the seat grid to draw each row at its own seat count
+  So that a 4-seat VIP row above 10/10 general rows is shown and managed correctly
+
+Background:
+  Given an active session whose hall has a RAGGED layout: rows "VIP,A,B" with seat counts 4,10,10
+  And an Administrator has signed in and landed on /admin/sessions/seat-plans
+
+Scenario: The visual grid paints each row at its own count
+  When the administrator selects that session
+  Then GET /account/api/admin/halls/{hallId}/seat-layout returns 200 with SeatCounts=[4,10,10]
+  And the visual seat grid renders row VIP with exactly 4 seat buttons (VIP1..VIP4), row A with 10, row B with 10
+  # outer @for over _layout.RowLabels.Count, inner bound = SeatsInRow(r) = SeatCounts[r] (falls back to SeatsPerRow)
+  And NO phantom seat button appears past a short row's count (VIP stops at VIP4)
+
+Scenario: Reserve-row, reserve-seat and release all work per-row on the ragged grid
+  When the administrator types "VIP" and clicks "Reserve row"
+  Then POST /account/api/admin/sessions/{sessionId}/seats/reserve-row {"rowLabel":"VIP"} returns 200
+  And exactly 4 seats (VIP1..VIP4) turn admin-reserved (seatgrid__seat--admin) and the summary reads "4 active reservation(s)"
+  When the administrator clicks the free seat "A7"
+  Then POST /account/api/admin/sessions/{sessionId}/seats/reserve-seat {"rowLabel":"A","seatNumber":7} returns 200 and A7 turns admin-reserved
+  When the administrator clicks the reserved seat "VIP2"
+  Then DELETE /account/api/admin/sessions/{sessionId}/seats/{reservationId} returns 200 and VIP2 returns to free
+
+Scenario: A short-row out-of-bounds seat is still guarded server-side
+  When a reserve-seat is forced for rowLabel "VIP", seatNumber 5 (beyond VIP's 4 seats)
+  Then the API returns HTTP 400 with ApiResult.Error.Code = "SEAT_OUT_OF_BOUNDS"
+  And the message reads "Seat number must be between 1 and 4." / "يجب أن يكون رقم المقعد بين 1 و 4."
+```
+
+**Evidence captured:**
+- Grounded in `SessionSeatPlan.razor` (outer `@for (var r = 0; r < _layout.RowLabels.Count; r++)`, inner `@for (var seat = 1; seat <= SeatsInRow(r); seat++)`) and `SessionSeatPlan.razor.cs` `SeatsInRow(rowIndex) => _layout.SeatCounts is { Count: > 0 } sc && rowIndex < sc.Count ? sc[rowIndex] : _layout.SeatsPerRow`.
+- Server bound: `SeatReservationService.ValidateSeatBounds` uses the per-row `ctx.SeatCounts[i]`, message "Seat number must be between 1 and {n}." (`ErrorCodes.SeatOutOfBounds`).
+- The same ragged index loop lands on the **live-hall** grid (`SessionSeatPlan` twin `SessionLiveHall.razor` + `.razor.cs` `SeatsInRow`), read-only against `SessionSeatMap`.
+- **API coverage:** the server-side short-row bound is backed by `SeatReservationsTests.Variable_layout_bounds_each_row_by_its_own_seat_count` (within the wider D-767 set of 10 new variable-layout facts, suite 44/44 passing); the Chrome DevTools MCP run remains the browser-level E2E for the CP ragged-grid UI.
+
+---
+
 ## Implementation notes
 
 - **Manual smoke as canonical source-of-truth today.** Until Playwright is
@@ -374,4 +417,7 @@ Scenario: Re-reserving the same seat, or an out-of-bounds seat, is refused
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-07-25 by Claude (D-767 - added E2E-SSP-016 for the ragged seat
+grid: each row drawn at its own SeatCounts[i] via the SeatsInRow index loop, reserve /
+release still per-row, short-row out-of-bounds still 400 SEAT_OUT_OF_BOUNDS; page
+reference doc authored). Prior: 2026-06-02 by Claude (E2E catalogue rebuild).

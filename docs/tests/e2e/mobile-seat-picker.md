@@ -41,6 +41,7 @@ always empty.
 | E2E-MOBPICK-008 | **Auto-pick on a FULL session (item 4)** — when `reserve-random` returns `409 SEAT_SESSION_FULL` (the session/hall capacity cap the CP enforces), the picker shows the specific **"No places remain"** message (not the generic failure) and stays usable | error | P0 | authored ✓ (widget — `randomSessionFull` → "No places remain" toast, picker still present) |
 | E2E-MOBPICK-009 | **Concurrent bookings never overbook (M-2)** — when several visitors race `reserve` / `reserve-random`, the server's post-insert backstop guarantees the active count never exceeds the declared capacity (CapacityOverride ?? Hall.Capacity); the losers get `409 SEAT_SESSION_FULL` | conflict | P1 | authored ✓ (API) |
 | E2E-MOBPICK-010 | **A stale pending hold auto-expires (M-6)** — a Pending seat hold the CP never decides is auto-released after its hold window, freeing the seat for others | happy | P2 | authored ✓ (API worker) |
+| E2E-MOBPICK-011 | **Ragged layout + seat numbers + tap->select->confirm (D-767):** the picker renders each row at its own `seatCounts[i]` width, each seat shows its number, tap SELECTS (no reserve yet) and shows the `seatPickerSelectedChip` chip, then "Confirm my seat" (`seatPickerConfirmCta`) reserves | happy | P1 | authored ✓ (widget `hall_seat_map_test.dart` + `seat_picker_screen_test.dart`; regenerated golden `seat_picker.png`) |
 
 ## Scenarios
 
@@ -115,6 +116,46 @@ Scenario: The expiry worker releases a hold the CP never decided
 - API integration tests: `PendingBookingExpiryWorkerTests.Expiry_scan_releases_only_past_pending_holds`, `SeatReservationsTests.Reserving_stamps_an_expiry_on_the_hold`
 - Reserve/random/join stamp `ExpiresUtc = CreatedAt + 24h`; an admin-reserved row never expires (ExpiresUtc null)
 
+### E2E-MOBPICK-011 - Ragged layout, seat numbers, tap->select->confirm (D-767)
+
+```gherkin
+Scenario: A ragged layout renders, seats show numbers, and a two-step confirm reserves
+  Given an approved visitor on the seat picker for an assigned-seat session
+  And the seat-map response carries rowLabels ["VIP","A","B"] and seatCounts [4,10,10]
+    (seatsPerRow = 10 = max(seatCounts), the append-only uniform fallback)
+  When the grid renders
+  Then row VIP draws 4 seats, row A 10, row B 10 (SessionSeatMap.seatsInRow(i))
+  And each seat cell shows its seat number (tokens seatNumberOnDark / seatNumberOnGold)
+  And reserved / your-seat cells show the a11y state icon (token seatStateIconSize) with a
+    Semantics label reusing legendReserved / legendMine + the seat id
+  When the visitor taps the available seat "A7"
+  Then the seat is SELECTED and highlighted, and NO reserve call fires yet
+  And a chip above the auto-pick button reads seatPickerSelectedChip("A", 7)
+    = "Selected: Row A . Seat 7" / "المقعد المختار: الصف A . مقعد 7"
+  When the visitor taps "Confirm my seat" (seatPickerConfirmCta = "Confirm my seat" / "تأكيد المقعد")
+  Then POST /app/sessions/{id}/seats/reserve fires with rowLabel="A", seatNumber=7
+  And on success the D-750 one-button alert shows (seatReservedAlertBody), then on OK the picker pops back
+```
+
+**Evidence captured:**
+- Wire/model grounded: `SessionSeatMap.SeatCounts` (contract) -> `seat_map_models.dart` `seatCounts` / `seatsInRow(i)` / `maxSeatsPerRow` / widened `hasLayout`; tokens `seatNumberSize` / `seatStateIconSize` / `seatNumberOnDark` / `seatNumberOnGold`; l10n `seatPickerSelectedChip(row, seat)` = "Selected: Row {row} . Seat {seat}" / "المقعد المختار: الصف {row} . مقعد {seat}" and `seatPickerConfirmCta` = "Confirm my seat" / "تأكيد المقعد".
+- **Implementation status (2026-07-25) - IMPLEMENTED (green).**
+  The wire (`seatCounts`), the model (`seatsInRow` / `maxSeatsPerRow`), the tokens and
+  the l10n above have landed AND the RENDER is wired: `hall_seat_map.dart` draws each
+  row at its own `seatsInRow(i)` width, every available cell shows its seat NUMBER
+  (`seatNumberOnDark` / `seatNumberOnGold`) and reserved / your-seat cells show the a11y
+  state icon with a Semantics label, and `seat_picker_screen.dart` is a two-step
+  tap->select->confirm (a `_selectedRow` / `_selectedSeat` selection + the
+  `seatPickerSelectedChip` chip + the "Confirm my seat" `seatPickerConfirmCta` CTA that
+  fires the reserve). Covered by the app widget tests `hall_seat_map_test.dart` +
+  `seat_picker_screen_test.dart` and the regenerated golden `seat_picker.png`. See
+  DECISIONS_LOG D-767.
+
 ---
 
-_Last reviewed:_ `2026-07-20` by `Apexium` (D-750 — a successful hold now shows the owner's one-button reserve-success alert `seatReservedAlertBody` (the 3-min pre-start check-in hold rule) instead of the "Reserved — pending approval" snackbar; the picker pops back only after OK. E2E-MOBPICK-002 reworded). Prior review `2026-07-19` by `Apexium` (reservation-only correction — reserve auto-confirms, no "pending approval" toast, no BookingConfirmed on reserve; confirmation is the hall-gate check-in; CP approval queue retained but dormant). Prior `2026-07-08` by `SIMF Team`.
+_Last reviewed:_ `2026-07-25` by `Claude` (D-767 - added E2E-MOBPICK-011 for the ragged
+layout + seat numbers + tap->select->confirm chip. Implemented and green: the
+wire/model/tokens/l10n landed AND `hall_seat_map.dart` render + `seat_picker_screen.dart`
+chip are wired, covered by `hall_seat_map_test.dart` + `seat_picker_screen_test.dart` and
+the regenerated golden `seat_picker.png`).
+Prior `2026-07-20` by `Apexium` (D-750 — a successful hold now shows the owner's one-button reserve-success alert `seatReservedAlertBody` (the 3-min pre-start check-in hold rule) instead of the "Reserved — pending approval" snackbar; the picker pops back only after OK. E2E-MOBPICK-002 reworded). Prior review `2026-07-19` by `Apexium` (reservation-only correction — reserve auto-confirms, no "pending approval" toast, no BookingConfirmed on reserve; confirmation is the hall-gate check-in; CP approval queue retained but dormant). Prior `2026-07-08` by `SIMF Team`.

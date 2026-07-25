@@ -23,13 +23,16 @@ import 'golden_fonts.dart';
 ///   flutter test --update-goldens test/golden/seat_picker_golden_test.dart
 ///
 /// Render expected: the session title + tap-a-seat hint, the shared hall card
-/// (gold المسرح·STAGE band; LTR grid — available seats GOLD-bordered as the
-/// tappable cue, reserved navy-filled, no gold "mine" cell since the caller
-/// holds nothing yet; 16px legend swatches), then the gold auto-pick CTA.
+/// (gold المسرح·STAGE band; LTR grid — a per-row VARIABLE layout so short rows
+/// draw fewer seats centred under the stage; available seats GOLD-bordered with
+/// their seat number, reserved navy-filled with the × icon, no gold "mine" cell
+/// since the caller holds nothing yet; 16px legend swatches), then the disabled
+/// Confirm CTA (nothing selected) and the gold auto-pick CTA.
 
 SessionSeatMap _map() => const SessionSeatMap(
       rowLabels: <String>['A', 'B', 'C', 'D', 'E', 'F'],
-      seatsPerRow: 10,
+      seatsPerRow: 10, // legacy fallback = max(counts)
+      seatCounts: <int>[4, 10, 8, 8, 6, 10],
       reservedCells: <SeatCell>[
         SeatCell(rowLabel: 'A', seatNumber: 2, kind: SeatReservationKind.userBooking),
         SeatCell(rowLabel: 'B', seatNumber: 5, kind: SeatReservationKind.userBooking),

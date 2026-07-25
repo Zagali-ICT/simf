@@ -2197,11 +2197,14 @@
   <data name="Admin.HallSeatLayouts.None" xml:space="preserve"><value>No halls available.</value></data>
   <data name="Admin.HallSeatLayouts.Loading" xml:space="preserve"><value>Loading…</value></data>
   <data name="Admin.HallSeatLayouts.LoadFailed" xml:space="preserve"><value>Could not load hall seat layouts.</value></data>
-  <data name="Admin.HallSeatLayouts.Hint" xml:space="preserve"><value>The layout drives the seat picker visitors see. Rows × seats-per-row must not exceed the hall capacity.</value></data>
+  <data name="Admin.HallSeatLayouts.Hint" xml:space="preserve"><value>The layout drives the seat picker visitors see. The total seats across all rows must not exceed the hall capacity.</value></data>
   <data name="Admin.HallSeatLayouts.Field.RowLabels" xml:space="preserve"><value>Row labels (comma-separated, 1–26 entries, e.g. A,B,C,VIP)</value></data>
   <data name="Admin.HallSeatLayouts.Field.SeatsPerRow" xml:space="preserve"><value>Seats per row (1–80)</value></data>
+  <data name="Admin.HallSeatLayouts.Field.RowSeats" xml:space="preserve"><value>Seats in each row (1–80)</value></data>
   <data name="Admin.HallSeatLayouts.HallCapacity" xml:space="preserve"><value>Hall capacity</value></data>
   <data name="Admin.HallSeatLayouts.LayoutCapacity" xml:space="preserve"><value>Layout capacity</value></data>
+  <data name="Admin.HallSeatLayouts.TotalSeats" xml:space="preserve"><value>Total seats</value></data>
+  <data name="Admin.HallSeatLayouts.CapacityExceeded" xml:space="preserve"><value>The total seats exceed the hall capacity, or a row is outside 1–80. Adjust the counts before saving.</value></data>
   <data name="Admin.HallSeatLayouts.Save" xml:space="preserve"><value>Save layout</value></data>
   <data name="Admin.HallSeatLayouts.Saved" xml:space="preserve"><value>Layout saved.</value></data>
   <data name="Admin.SessionSeatPlans.Title" xml:space="preserve"><value>Session seat plans</value></data>

@@ -25,7 +25,12 @@ public sealed record SessionSeatMap(
     // D-485 — appended (append-only wire): the session's EFFECTIVE seat-selection
     // mode (Session override ?? Hall default). The app branches the "Join" CTA on
     // this — AssignedSeat shows the seat picker, OpenSeating a one-tap join.
-    SeatSelectionMode Mode = SeatSelectionMode.AssignedSeat);
+    SeatSelectionMode Mode = SeatSelectionMode.AssignedSeat,
+    // D-767 — appended (append-only wire): optional per-row seat counts, PARALLEL to
+    // <see cref="RowLabels"/>, when the hall layout is ragged. Null (key omitted) for a
+    // uniform layout — old and new apps render every row at <see cref="SeatsPerRow"/>.
+    // When present, row i has SeatCounts[i] seats and SeatsPerRow carries max(SeatCounts).
+    IReadOnlyList<int>? SeatCounts = null);
 
 /// <summary>D-175 — one occupied seat in the grid. D-485: <see cref="RowLabel"/>
 /// and <see cref="SeatNumber"/> are null for an OpenSeating join. D-572 appends
@@ -77,23 +82,35 @@ public class AdminReserveSeatRequest
     public int SeatNumber { get; set; }
 }
 
-/// <summary>D-175 — admin layout edit. Writes
-/// <c>RowLabels.Count * SeatsPerRow</c> grid; rejected if the product
-/// exceeds <c>Hall.Capacity</c>. Open for inheritance per the
-/// D-168 / D-174 pattern.</summary>
+/// <summary>D-175 — admin layout edit. When <see cref="SeatCounts"/> is null/empty the
+/// grid is UNIFORM: it writes <c>RowLabels.Count * SeatsPerRow</c> seats and is rejected
+/// if that product exceeds <c>Hall.Capacity</c>. D-767: when <see cref="SeatCounts"/> is
+/// non-empty it is AUTHORITATIVE (a per-row override) — its length MUST equal the row
+/// count, each element is 1–80, and <c>sum(SeatCounts) &lt;= Hall.Capacity</c>; the stored
+/// <see cref="SeatsPerRow"/> then keeps <c>max(SeatCounts)</c> as the uniform fallback.
+/// Open for inheritance per the D-168 / D-174 pattern.</summary>
 public class SetHallSeatLayoutRequest
 {
     public IReadOnlyList<string> RowLabels { get; set; } = Array.Empty<string>();
     public int SeatsPerRow { get; set; }
+
+    /// <summary>D-767 — optional per-row seat counts, parallel to <see cref="RowLabels"/>.
+    /// Null/empty = uniform via <see cref="SeatsPerRow"/>. When non-empty its length must
+    /// equal the row count and each value is 1–80.</summary>
+    public IReadOnlyList<int>? SeatCounts { get; set; }
 }
 
-/// <summary>D-175 — admin layout read-back.</summary>
+/// <summary>D-175 — admin layout read-back. D-767 appends <see cref="SeatCounts"/>: the
+/// per-row seat counts when the layout is variable (null when uniform); the existing
+/// <see cref="LayoutCapacity"/> is reused and simply carries <c>sum(SeatCounts)</c> in
+/// the variable case.</summary>
 public sealed record HallSeatLayoutSnapshot(
     Guid HallId,
     IReadOnlyList<string> RowLabels,
     int SeatsPerRow,
     int LayoutCapacity,
-    int HallCapacity);
+    int HallCapacity,
+    IReadOnlyList<int>? SeatCounts = null);
 
 /// <summary>D-175 — what the user sees after a successful reservation.
 /// Returned by both self-pick and random-allocate. <see cref="Status"/>

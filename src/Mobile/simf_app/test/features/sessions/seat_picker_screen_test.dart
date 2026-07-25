@@ -19,6 +19,18 @@ SessionSeatMap _map() => const SessionSeatMap(
       sessionTitle: 'Opening',
     );
 
+// A ragged layout: row A has 4 seats, row B has 10 — used to prove the picker
+// draws no phantom seats on the short row.
+SessionSeatMap _variableMap() => const SessionSeatMap(
+      rowLabels: <String>['A', 'B'],
+      seatsPerRow: 10, // legacy fallback = max(counts)
+      seatCounts: <int>[4, 10],
+      reservedCells: <SeatCell>[],
+      activeReservedCount: 0,
+      hallCapacity: 14,
+      sessionTitle: 'Ragged',
+    );
+
 class _FakePickerRepo implements SeatMapRepository {
   _FakePickerRepo(
     this.map, {
@@ -147,11 +159,19 @@ void main() {
       );
     });
 
-    testWidgets('tapping an available seat reserves it, shows the D-750 alert, '
-        'then pops on OK', (tester) async {
+    testWidgets('tapping a seat SELECTS it (chip appears, no reserve); the '
+        'Confirm CTA commits it, shows the D-750 alert, then pops on OK',
+        (tester) async {
       final repo = await _pump(tester);
-      // A2 is available (only A1 is reserved). The seat carries a semantics label.
+      // A2 is available (only A1 is reserved). Tapping SELECTS — it does NOT
+      // reserve, and a confirmation chip appears.
       await tester.tap(find.bySemanticsLabel('A2'));
+      await tester.pumpAndSettle();
+      expect(repo.reservedRow, isNull);
+      expect(repo.reservedSeat, isNull);
+      expect(find.text('Selected: Row A · Seat 2'), findsOneWidget);
+      // Confirm commits the hold.
+      await tester.tap(find.widgetWithText(FilledButton, 'Confirm my seat'));
       await tester.pumpAndSettle();
       expect(repo.reservedRow, 'A');
       expect(repo.reservedSeat, 2);
@@ -160,12 +180,38 @@ void main() {
       // popped yet (it waits for the acknowledgement).
       expect(find.textContaining('Seat reserved successfully'), findsOneWidget);
       expect(find.text('Reserved — pending approval'), findsNothing);
-      expect(find.bySemanticsLabel('A2'), findsOneWidget);
       // OK dismisses the alert and pops back to the launching screen.
       await tester.tap(find.widgetWithText(FilledButton, 'OK'));
       await tester.pumpAndSettle();
       expect(find.textContaining('Seat reserved successfully'), findsNothing);
       expect(find.text('OPEN'), findsOneWidget);
+    });
+
+    testWidgets('the Confirm CTA is disabled until a seat is selected',
+        (tester) async {
+      final repo = await _pump(tester);
+      final confirm = tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, 'Confirm my seat'),
+      );
+      expect(confirm.onPressed, isNull); // disabled — nothing selected yet
+      expect(find.textContaining('Selected:'), findsNothing);
+      // Selecting enables it.
+      await tester.tap(find.bySemanticsLabel('A2'));
+      await tester.pumpAndSettle();
+      final enabled = tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, 'Confirm my seat'),
+      );
+      expect(enabled.onPressed, isNotNull);
+      expect(repo.reservedRow, isNull); // still not reserved (select only)
+    });
+
+    testWidgets('a variable-width layout draws no phantom seats on the short row',
+        (tester) async {
+      await _pump(tester, repo: _FakePickerRepo(_variableMap()));
+      // Row A has 4 seats, row B has 10 — A5 must not exist, B10 must.
+      expect(find.bySemanticsLabel('A4'), findsOneWidget);
+      expect(find.bySemanticsLabel('A5'), findsNothing);
+      expect(find.bySemanticsLabel('B10'), findsOneWidget);
     });
 
     testWidgets('the auto-pick CTA reserves a random seat', (tester) async {
@@ -175,10 +221,13 @@ void main() {
       expect(repo.randomCalls, 1);
     });
 
-    testWidgets('a reserve failure shows the error toast and keeps the picker '
-        'usable (busy resets, no pop)', (tester) async {
+    testWidgets('a reserve failure (after select + Confirm) shows the error '
+        'toast and keeps the picker usable (busy resets, no pop)',
+        (tester) async {
       await _pump(tester, repo: _FakePickerRepo(_map(), failReserve: true));
       await tester.tap(find.bySemanticsLabel('A2'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Confirm my seat'));
       await tester.pumpAndSettle();
       // The failure toast shows, and the grid is still here (the screen did not
       // pop and is not frozen — _busy was reset in the finally).

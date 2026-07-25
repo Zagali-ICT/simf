@@ -53,22 +53,42 @@
                            @onchange="OnRowLabelsChanged"
                            disabled="@_busy" />
                 </label>
-                <label class="simf-field">
-                    <span class="simf-field__label">@L["Admin.HallSeatLayouts.Field.SeatsPerRow"]</span>
-                    <input class="simf-field__input" type="number" min="1" max="80"
-                           value="@_seatsPerRow"
-                           @onchange="OnSeatsPerRowChanged"
-                           disabled="@_busy" />
-                </label>
+
+                @* D-767 — one seat-count input per parsed row (raw input, NOT
+                   SimfTextField: a SimfTextField without ValueExpression freezes the
+                   page, D-648). Renaming a label keeps that position's count. *@
+                @if (_rows.Count > 0)
+                {
+                    <div class="simf-form__fields">
+                        <span class="simf-field__label">@L["Admin.HallSeatLayouts.Field.RowSeats"]</span>
+                        @for (var i = 0; i < _rows.Count; i++)
+                        {
+                            var idx = i;
+                            <label class="simf-field simf-field--inline">
+                                <span class="simf-field__label">@_rows[idx].Label</span>
+                                <input class="simf-field__input" type="number" min="1" max="80"
+                                       value="@_rows[idx].Count"
+                                       @onchange="@(e => OnRowCountChanged(idx, e))"
+                                       disabled="@_busy" />
+                            </label>
+                        }
+                    </div>
+                }
+
                 <dl class="simf-dl">
                     <dt>@L["Admin.HallSeatLayouts.HallCapacity"]</dt>
                     <dd>@_snapshot.HallCapacity</dd>
-                    <dt>@L["Admin.HallSeatLayouts.LayoutCapacity"]</dt>
-                    <dd>@(_currentRowCount * _seatsPerRow)</dd>
+                    <dt>@L["Admin.HallSeatLayouts.TotalSeats"]</dt>
+                    <dd>@_totalSeats</dd>
                 </dl>
+
+                @if (_capacityExceeded || _anyOutOfRange)
+                {
+                    <SimfAlert Variant="warning">@L["Admin.HallSeatLayouts.CapacityExceeded"]</SimfAlert>
+                }
             </div>
             <div class="simf-form__actions">
-                <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy">
+                <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy" Disabled="_saveDisabled">
                     @L["Admin.HallSeatLayouts.Save"]
                 </SimfButton>
             </div>

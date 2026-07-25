@@ -67,11 +67,12 @@
             @if (_layout is not null && _layout.RowLabels.Count > 0)
             {
                 <div class="seatgrid">
-                    @foreach (var rowLabel in _layout.RowLabels)
+                    @for (var r = 0; r < _layout.RowLabels.Count; r++)
                     {
+                        var rowLabel = _layout.RowLabels[r];
                         <div class="seatgrid__row">
                             <span class="seatgrid__row-label">@rowLabel</span>
-                            @for (var seat = 1; seat <= _layout.SeatsPerRow; seat++)
+                            @for (var seat = 1; seat <= SeatsInRow(r); seat++)
                             {
                                 var cell = FindReservation(rowLabel, seat);
                                 var seatNumber = seat;

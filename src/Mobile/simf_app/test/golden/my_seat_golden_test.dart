@@ -22,16 +22,18 @@ import 'golden_fonts.dart';
 ///
 /// Frame parity expected: the "الجلسة" card (label, session title, the الصف
 /// gold-bordered chip at the inline-start/right + the مقعد beige chip), the
-/// hall card (gold المسرح·STAGE band, the LTR A–H seat grid — mine gold,
-/// reserved navy-filled, available beige-bordered, squares ≤20px — and the LTR
-/// محجوز·متاح·مقعدك legend), then the gold إرشادي إلى مقعدي + outlined
-/// مشاركة الموقع action row. The seat-occupancy PATTERN is fixture data (the
-/// frame's own scatter is a design fixture) — the chrome is the parity claim.
+/// hall card (gold المسرح·STAGE band, the LTR seat grid — a per-row VARIABLE
+/// layout so short rows draw fewer seats centred under the stage; mine gold with
+/// the ✓ icon, reserved navy-filled with the × icon, available beige-bordered
+/// with its seat number, squares ≤20px — and the LTR محجوز·متاح·مقعدك legend),
+/// then the gold إرشادي إلى مقعدي + outlined مشاركة الموقع action row. The
+/// seat-occupancy PATTERN is fixture data — the chrome is the parity claim.
 /// Rendered via the shared `HallSeatMapCard` (D-600).
 
 SessionSeatMap _map() => const SessionSeatMap(
       rowLabels: <String>['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
-      seatsPerRow: 12,
+      seatsPerRow: 12, // legacy fallback = max(counts)
+      seatCounts: <int>[10, 12, 11, 6, 8, 4, 9, 6],
       reservedCells: <SeatCell>[
         SeatCell(rowLabel: 'A', seatNumber: 1, kind: SeatReservationKind.userBooking),
         SeatCell(rowLabel: 'A', seatNumber: 5, kind: SeatReservationKind.userBooking),

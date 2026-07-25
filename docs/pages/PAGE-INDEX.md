@@ -62,11 +62,11 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | **Programme & sessions** | | | | |
 | `/admin/themes` | ✅ Real | Administrator | [cp/admin-themes.md](cp/admin-themes.md) | [e2e/cp-admin-themes.md](../tests/e2e/cp-admin-themes.md) |
 | `/admin/halls` | ✅ Real | Administrator | [cp/admin-halls.md](cp/admin-halls.md) | [e2e/cp-admin-halls.md](../tests/e2e/cp-admin-halls.md) |
-| `/admin/halls/seat-layouts` | ✅ Real | Administrator | — | [e2e/cp-admin-halls-seat-layouts.md](../tests/e2e/cp-admin-halls-seat-layouts.md) |
+| `/admin/halls/seat-layouts` | ✅ Real | Administrator | [cp/admin-halls-seat-layouts.md](cp/admin-halls-seat-layouts.md) | [e2e/cp-admin-halls-seat-layouts.md](../tests/e2e/cp-admin-halls-seat-layouts.md) |
 | `/admin/speakers` | ✅ Real (D-199) | Administrator | [cp/admin-speakers.md](cp/admin-speakers.md) | [e2e/cp-admin-speakers.md](../tests/e2e/cp-admin-speakers.md) |
 | `/admin/speaker-presentations` | ✅ Real (D-228) | Administrator  | [cp/admin-speaker-presentations.md](cp/admin-speaker-presentations.md) | [e2e/cp-admin-speaker-presentations.md](../tests/e2e/cp-admin-speaker-presentations.md) |
 | `/admin/sessions` | ✅ Real (D-199) | Administrator | [cp/admin-sessions.md](cp/admin-sessions.md) | [e2e/cp-admin-sessions.md](../tests/e2e/cp-admin-sessions.md) |
-| `/admin/sessions/seat-plans` | ✅ Real | Administrator | — | [e2e/cp-admin-sessions-seat-plans.md](../tests/e2e/cp-admin-sessions-seat-plans.md) |
+| `/admin/sessions/seat-plans` | ✅ Real | Administrator | [cp/admin-sessions-seat-plans.md](cp/admin-sessions-seat-plans.md) | [e2e/cp-admin-sessions-seat-plans.md](../tests/e2e/cp-admin-sessions-seat-plans.md) |
 | `/admin/session-categories` | ✅ Real (D-226) | Administrator  | [cp/admin-session-categories.md](cp/admin-session-categories.md) | [e2e/cp-admin-session-categories.md](../tests/e2e/cp-admin-session-categories.md) |
 | `/admin/programme-days` | ✅ Real (D-452) | Administrator  | [cp/admin-programme-days.md](cp/admin-programme-days.md) | [e2e/cp-admin-programme-days.md](../tests/e2e/cp-admin-programme-days.md) |
 | `/admin/session-moderators` | ✅ Real | Administrator  | [cp/admin-session-moderators.md](cp/admin-session-moderators.md) | [e2e/cp-admin-session-moderators.md](../tests/e2e/cp-admin-session-moderators.md) |

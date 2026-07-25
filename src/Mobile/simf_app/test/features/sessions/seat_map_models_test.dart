@@ -140,4 +140,82 @@ void main() {
       expect(empty.myCell, isNull);
     });
   });
+
+  group('SessionSeatMap per-row seat counts (Option A)', () {
+    test('parses seatCounts and reads each row at its own width', () {
+      final map = SessionSeatMap.fromJson(<String, dynamic>{
+        'rowLabels': <dynamic>['A', 'B', 'C', 'D'],
+        'seatsPerRow': 10, // legacy fallback = max(counts)
+        'seatCounts': <dynamic>[4, 10, 8, 8],
+        'reservedCells': <dynamic>[],
+        'activeReservedCount': 0,
+        'hallCapacity': 30,
+      });
+      expect(map.seatCounts, <int>[4, 10, 8, 8]);
+      expect(map.seatsInRow(0), 4);
+      expect(map.seatsInRow(1), 10);
+      expect(map.seatsInRow(2), 8);
+      expect(map.seatsInRow(3), 8);
+      expect(map.maxSeatsPerRow, 10);
+      expect(map.hasLayout, isTrue);
+    });
+
+    test('an absent seatCounts key stays uniform (back-compat)', () {
+      final map = SessionSeatMap.fromJson(<String, dynamic>{
+        'rowLabels': <dynamic>['A', 'B'],
+        'seatsPerRow': 3,
+        'reservedCells': <dynamic>[],
+        'activeReservedCount': 0,
+        'hallCapacity': 6,
+      });
+      expect(map.seatCounts, isEmpty);
+      expect(map.seatsInRow(0), 3);
+      expect(map.seatsInRow(1), 3);
+      expect(map.maxSeatsPerRow, 3);
+    });
+
+    test('a zero seatsPerRow still has a layout when counts are present', () {
+      final map = SessionSeatMap.fromJson(<String, dynamic>{
+        'rowLabels': <dynamic>['A', 'B'],
+        'seatsPerRow': 0,
+        'seatCounts': <dynamic>[4, 6],
+        'reservedCells': <dynamic>[],
+        'activeReservedCount': 0,
+        'hallCapacity': 10,
+      });
+      expect(map.hasLayout, isTrue);
+      expect(map.seatsInRow(0), 4);
+      expect(map.seatsInRow(1), 6);
+      expect(map.maxSeatsPerRow, 6);
+    });
+
+    test('a length-mismatched seatCounts falls back to the uniform width', () {
+      final map = SessionSeatMap.fromJson(<String, dynamic>{
+        'rowLabels': <dynamic>['A', 'B'],
+        'seatsPerRow': 5,
+        'seatCounts': <dynamic>[4, 6, 8], // 3 counts for 2 rows
+        'reservedCells': <dynamic>[],
+        'activeReservedCount': 0,
+        'hallCapacity': 10,
+      });
+      expect(map.seatsInRow(0), 5); // fell back to seatsPerRow
+      expect(map.seatsInRow(1), 5);
+      expect(map.maxSeatsPerRow, 5);
+    });
+
+    test('a length-mismatched seatCounts with a zero seatsPerRow reports no '
+        'layout (degraded response falls to the safe empty state, never a '
+        'zero-column grid)', () {
+      final map = SessionSeatMap.fromJson(<String, dynamic>{
+        'rowLabels': <dynamic>['A', 'B', 'C'],
+        'seatsPerRow': 0,
+        'seatCounts': <dynamic>[5, 3], // 2 counts for 3 rows (one dropped)
+        'reservedCells': <dynamic>[],
+        'activeReservedCount': 0,
+        'hallCapacity': 8,
+      });
+      expect(map.maxSeatsPerRow, 0);
+      expect(map.hasLayout, isFalse);
+    });
+  });
 }

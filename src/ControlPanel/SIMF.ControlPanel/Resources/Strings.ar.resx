@@ -2190,11 +2190,14 @@
   <data name="Admin.HallSeatLayouts.None" xml:space="preserve"><value>لا توجد قاعات متاحة.</value></data>
   <data name="Admin.HallSeatLayouts.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
   <data name="Admin.HallSeatLayouts.LoadFailed" xml:space="preserve"><value>تعذّر تحميل مخططات مقاعد القاعات.</value></data>
-  <data name="Admin.HallSeatLayouts.Hint" xml:space="preserve"><value>المخطط يحدّد منتقي المقاعد الذي يراه الزائر. عدد الصفوف × المقاعد لكل صف يجب ألا يتجاوز سعة القاعة.</value></data>
+  <data name="Admin.HallSeatLayouts.Hint" xml:space="preserve"><value>المخطط يحدّد منتقي المقاعد الذي يراه الزائر. إجمالي المقاعد في جميع الصفوف يجب ألا يتجاوز سعة القاعة.</value></data>
   <data name="Admin.HallSeatLayouts.Field.RowLabels" xml:space="preserve"><value>رموز الصفوف (مفصولة بفواصل، من 1 إلى 26 إدخالاً، مثال: A,B,C,VIP)</value></data>
   <data name="Admin.HallSeatLayouts.Field.SeatsPerRow" xml:space="preserve"><value>عدد المقاعد في كل صف (1–80)</value></data>
+  <data name="Admin.HallSeatLayouts.Field.RowSeats" xml:space="preserve"><value>المقاعد في كل صف (1–80)</value></data>
   <data name="Admin.HallSeatLayouts.HallCapacity" xml:space="preserve"><value>سعة القاعة</value></data>
   <data name="Admin.HallSeatLayouts.LayoutCapacity" xml:space="preserve"><value>سعة المخطط</value></data>
+  <data name="Admin.HallSeatLayouts.TotalSeats" xml:space="preserve"><value>إجمالي المقاعد</value></data>
+  <data name="Admin.HallSeatLayouts.CapacityExceeded" xml:space="preserve"><value>إجمالي المقاعد يتجاوز سعة القاعة، أو أحد الصفوف خارج النطاق 1–80. عدّل الأعداد قبل الحفظ.</value></data>
   <data name="Admin.HallSeatLayouts.Save" xml:space="preserve"><value>حفظ المخطط</value></data>
   <data name="Admin.HallSeatLayouts.Saved" xml:space="preserve"><value>تم حفظ المخطط.</value></data>
   <data name="Admin.SessionSeatPlans.Title" xml:space="preserve"><value>مخطط مقاعد الجلسات</value></data>
