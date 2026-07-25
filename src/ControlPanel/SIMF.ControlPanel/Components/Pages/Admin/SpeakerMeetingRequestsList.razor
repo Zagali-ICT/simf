@@ -64,27 +64,7 @@
                                     Header="@L["Admin.SpeakerMeetingRequests.Col.Status"]"
                                     Sortable="true" Filterable="true">
                     <CellTemplate>
-                        @switch (context.Status)
-                        {
-                            case MeetingRequestStatus.Pending:
-                                <SimfPill Variant="warn">@L["Admin.SpeakerMeetingRequests.Filter.Pending"]</SimfPill>
-                                break;
-                            case MeetingRequestStatus.Accepted:
-                                <SimfPill Variant="on">@L["Admin.SpeakerMeetingRequests.Filter.Accepted"]</SimfPill>
-                                break;
-                            case MeetingRequestStatus.Rejected:
-                                <SimfPill Variant="off">@L["Admin.SpeakerMeetingRequests.Filter.Rejected"]</SimfPill>
-                                break;
-                            case MeetingRequestStatus.AwaitingSpeaker:
-                                <SimfPill Variant="warn">@L["Admin.SpeakerMeetingRequests.Filter.AwaitingSpeaker"]</SimfPill>
-                                break;
-                            case MeetingRequestStatus.Cancelled:
-                                <SimfPill Variant="off">@L["Admin.SpeakerMeetingRequests.Filter.Cancelled"]</SimfPill>
-                                break;
-                            case MeetingRequestStatus.Done:
-                                <SimfPill Variant="on">@L["Admin.Meetings.Status.Done"]</SimfPill>
-                                break;
-                        }
+                        <MeetingStatusPill Status="context.Status" />
                     </CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminSpeakerMeetingRequestRow" Key="createdAt"
@@ -224,6 +204,7 @@
                               @onchange="OnRespondNoteChanged"
                               disabled="@_busy"></textarea>
                 </label>
+                <p class="simf-form__secondary">@L["Admin.Meetings.RespondHelp"]</p>
             </div>
         </ChildContent>
         <Footer>
