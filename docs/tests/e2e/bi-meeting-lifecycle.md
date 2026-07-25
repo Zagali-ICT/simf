@@ -182,10 +182,11 @@ Scenario Outline: every action emails both parties
 ```gherkin
 Scenario: delegation Approve emails an Approve link to each eligible target member
   When the admin Approves a delegation request
-  Then a MeetingActionToken is minted for the DelegationMeetingRequest (new nullable DelegationMeetingRequestId)
-  And each eligible EG member is emailed an Approve link to /meeting/confirm?token=...
-  When any one member opens the link and confirms
-  Then the request moves to Accepted (first click wins; a second link click -> neutral invalid) and all parties are emailed
+  Then a single-use DelegationMeetingActionToken is minted (new additive table, D-767 R4; the frozen speaker MeetingActionToken table is untouched)
+  And each eligible EG member is emailed a Confirm link to /meeting/confirm?token=... (the same public page + endpoints the speaker links use)
+  And the in-app "please confirm" card is still delivered (it deep-links to the tap-confirm)
+  When any one member opens the link and confirms (GET previews without consuming; POST confirms)
+  Then the request moves to Accepted (first click wins; a second link click OR the in-app tap -> neutral invalid) and the requester is emailed + notified
 
 Scenario: speaker Approve emails Approve/Reject links to the speaker (existing behavior, regression-locked)
   When the admin Approves a speaker request
