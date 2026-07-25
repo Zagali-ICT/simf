@@ -813,10 +813,10 @@ class SimfTokens {
   // column / seat corner; the my-seat + header action chip; the day banner +
   // calendar-strip cell; the meta icon box; type-tab; time rail; seat marker.
   static const double actionChipHeight = 34; // my-seat + header action chip
-  static const double seatCapDefault = 40; // my-seat seat-square cap
-  static const double seatCapPicker = 52; // seat-picker seat-square cap
-  static const double seatViewportMaxHeight =
-      340; // seat-map viewport height before the grid scrolls vertically
+  static const double seatCapDefault = 20; // my-seat seat-square cap
+  static const double seatCapPicker = 26; // seat-picker seat-square cap
+  static const double seatViewportRows =
+      8; // seat-map viewport = this many rows tall before it scrolls vertically
   static const double seatSwatchSm = 14; // my-seat legend swatch
   static const double seatSwatchLg = 16; // picker + available legend swatch
   static const double seatRowLabelWidth = 12; // seat-map row column (1 letter)
@@ -832,9 +832,8 @@ class SimfTokens {
   static const double timeRailWidth = 48; // timeline time-rail column width
   static const double opacityHalf = 0.5; // 50% (resting favourite heart)
   static const double seatFillOpacity = 0.15; // reservation seat-marker fill
-  static const double seatNumberSize = 18; // centred numeral inside a seat cell
-  static const double seatStateIconSize = 12; // reserved/your-seat LEGEND icon
-  static const double seatCellIconSize = 24; // reserved/your-seat in-cell icon
+  static const double seatNumberSize = 9; // centred numeral inside a seat cell
+  static const double seatStateIconSize = 12; // reserved / your-seat cell icon
   // Western-digit seat numeral (w600, height 1) centred in the square. OnDark =
   // light on the reserved/available dark cells; OnGold = navy on the gold
   // selected / "mine" cell.

@@ -142,10 +142,11 @@ class _HallSeatMapCardState extends State<HallSeatMapCard> {
                 // Cap the seat area's height so a tall hall scrolls vertically
                 // instead of pushing the legend / CTAs off the page; a short
                 // hall keeps its natural height (no empty band).
+                final viewportMaxHeight =
+                    (widget.maxSeatSize + SimfTokens.space4) *
+                        SimfTokens.seatViewportRows;
                 return ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    maxHeight: SimfTokens.seatViewportMaxHeight,
-                  ),
+                  constraints: BoxConstraints(maxHeight: viewportMaxHeight),
                   child: Scrollbar(
                     controller: _vScroll,
                     thumbVisibility: true,
@@ -356,7 +357,7 @@ class _SeatBox extends StatelessWidget {
         border = Border.all(color: SimfTokens.beigeBorder);
         glyph = const Icon(
           Icons.check,
-          size: SimfTokens.seatCellIconSize,
+          size: SimfTokens.seatStateIconSize,
           color: SimfTokens.navy,
         );
       case _SeatStatus.selected:
@@ -367,7 +368,7 @@ class _SeatBox extends StatelessWidget {
         fill = SimfTokens.navy;
         glyph = const Icon(
           Icons.close,
-          size: SimfTokens.seatCellIconSize,
+          size: SimfTokens.seatStateIconSize,
           color: SimfTokens.beigeBorder,
         );
       case _SeatStatus.available:
