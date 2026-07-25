@@ -1,3 +1,9 @@
 ﻿dependency_overrides:
   intl: 0.20.2
+  # D-768 — vendored video_player_android 2.12.0 patched so the hero video plays
+  # on Huawei/HiSilicon: setEnableDecoderFallback(true) drops to the software AVC
+  # decoder when the faulty hardware one fails to init (format_supported=YES), plus
+  # forceDisableMediaCodecAsynchronousQueueing(). See pubspec.yaml note for detail.
+  video_player_android:
+    path: third_party/video_player_android
 
