@@ -87,12 +87,12 @@
                         <CellTemplate>@HallLabel(context)</CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminSessionSummary" Key="start"
-                                        Header="@L["Admin.Sessions.Column.Start"]"
+                                        Header="@L["Admin.Sessions.Column.StartUtc"]"
                                         Sortable="true">
                         <CellTemplate>@context.Start.FormatSaudi()</CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminSessionSummary" Key="end"
-                                        Header="@L["Admin.Sessions.Column.End"]"
+                                        Header="@L["Admin.Sessions.Column.EndUtc"]"
                                         Sortable="true">
                         <CellTemplate>@context.End.FormatSaudi()</CellTemplate>
                     </SimfDataGridColumn>
