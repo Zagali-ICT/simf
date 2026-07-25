@@ -584,6 +584,12 @@ app.UseFastEndpoints(config =>
 {
     config.Endpoints.RoutePrefix = "api/v1";
 
+    // No user-facing UTC on the wire: every DateTimeOffset serializes in Saudi
+    // local time (+03:00, no DST). The instant is preserved; only its offset
+    // representation changes. Reads accept any ISO offset (storage unaffected).
+    config.Serializer.Options.Converters.Add(
+        new SIMF.Api.Serialization.SaudiDateTimeOffsetJsonConverter());
+
     // Field-validation failures use the standard ApiResult shape (API-001 §6-7).
     // Each FluentValidation rule attaches Arabic as its CustomState via the
     // .Bilingual(en, ar) extension (D-030 / myComment #14).
