@@ -69,6 +69,17 @@ public sealed class SponsorsMarqueeTests : WebComponentTestBase
         Assert.Empty(await SponsorsFeed.LoadAsync(api));
     }
 
+    [Fact]
+    public async Task LoadAsync_returns_empty_when_the_envelope_has_no_groups()
+    {
+        // A malformed / partial envelope can deserialize Groups to null despite the
+        // non-nullable contract; the feed must degrade to the empty band (its
+        // documented contract), not throw. Regression for DEF-003.
+        var api = Client(ApiResult<PublicSponsors>.Ok(new PublicSponsors(null!)));
+
+        Assert.Empty(await SponsorsFeed.LoadAsync(api));
+    }
+
     // ---- SponsorsMarquee component --------------------------------------
 
     [Fact]
