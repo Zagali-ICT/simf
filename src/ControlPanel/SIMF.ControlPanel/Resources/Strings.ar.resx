@@ -906,8 +906,14 @@
   <data name="Admin.Gates.Field.AllowedProfileTypes" xml:space="preserve"><value>أنواع الملفات المسموح بها</value></data>
   <data name="Admin.Gates.Field.AllowedProfileTypesHint" xml:space="preserve"><value>فارغة = جميع الأنواع مسموحة (بوابة عامة). اختر واحدة أو أكثر لتقييد البوابة.</value></data>
   <data name="Admin.Gates.Field.AssignedOperators" xml:space="preserve"><value>المشغلون المعيّنون</value></data>
-  <data name="Admin.Gates.Field.AssignedOperatorsHint" xml:space="preserve"><value>المشغلون الذين يمكنهم المسح في هذه البوابة. اضغط Ctrl/Cmd لتحديد متعدد.</value></data>
+  <data name="Admin.Gates.Field.AssignedOperatorsHint" xml:space="preserve"><value>المشغلون الذين يمكنهم المسح في هذه البوابة. حدّد كل مشغّل لتعيينه.</value></data>
   <data name="Admin.Gates.Field.IsActive" xml:space="preserve"><value>نشطة — متاحة للمسح</value></data>
+  <data name="Admin.Gates.Section.Identification" xml:space="preserve"><value>التعريف</value></data>
+  <data name="Admin.Gates.Section.Routing" xml:space="preserve"><value>الاتجاه والقاعة</value></data>
+  <data name="Admin.Gates.Section.Descriptions" xml:space="preserve"><value>الأوصاف</value></data>
+  <data name="Admin.Gates.Section.Access" xml:space="preserve"><value>الصلاحيات والمشغّلون</value></data>
+  <data name="Admin.Gates.Field.NoProfileTypes" xml:space="preserve"><value>لا توجد أنواع ملفات نشطة.</value></data>
+  <data name="Admin.Gates.Field.NoOperators" xml:space="preserve"><value>لا يوجد مشغّلون مرشحون.</value></data>
   <data name="Admin.Gates.DirectionMode.In" xml:space="preserve"><value>دخول فقط</value></data>
   <data name="Admin.Gates.DirectionMode.Out" xml:space="preserve"><value>خروج فقط</value></data>
   <data name="Admin.Gates.DirectionMode.Both" xml:space="preserve"><value>كلاهما (اتجاه مستنتج)</value></data>

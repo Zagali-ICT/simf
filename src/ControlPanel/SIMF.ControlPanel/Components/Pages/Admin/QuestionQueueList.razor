@@ -110,7 +110,7 @@
 
 @if (_escalateId is not null)
 {
-    <SimfModal Open="true" Title="@L["Admin.QuestionQueue.Escalate.Title"]"
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.QuestionQueue.Escalate.Title"]"
                OnClose="@(() => _escalateId = null)">
         <ChildContent>
             <SimfTextField Label="@L["Admin.QuestionQueue.Escalate.Role"]"

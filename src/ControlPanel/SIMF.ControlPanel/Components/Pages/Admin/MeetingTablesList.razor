@@ -134,6 +134,7 @@
 @if (_tableOpen)
 {
     <SimfModal Open="true"
+               RequireExplicitClose="true"
                Title="@(_isEditTable ? L["Admin.MeetingTables.EditTable.Title"] : L["Admin.MeetingTables.AddTable.Title"])"
                OnClose="@(() => _tableOpen = false)">
         <ChildContent>
@@ -173,7 +174,7 @@
 
 @if (_generateOpen)
 {
-    <SimfModal Open="true" Title="@L["Admin.MeetingTables.Generate.Title"]"
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.MeetingTables.Generate.Title"]"
                OnClose="@(() => _generateOpen = false)">
         <ChildContent>
             <div class="simf-form__fields">
@@ -224,7 +225,7 @@
 
 @if (_allocOpen)
 {
-    <SimfModal Open="true" Title="@L["Admin.MeetingTables.AddAllocation.Title"]"
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.MeetingTables.AddAllocation.Title"]"
                OnClose="@(() => _allocOpen = false)">
         <ChildContent>
             <div class="simf-form__fields">

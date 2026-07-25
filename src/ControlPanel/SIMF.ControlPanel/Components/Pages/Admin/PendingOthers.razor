@@ -103,6 +103,7 @@
 @if (_rejectTarget is not null)
 {
     <SimfModal Open="true"
+               RequireExplicitClose="true"
                Title="@L["Admin.Pending.Reject.Title"]"
                OnClose="@(() => _rejectTarget = null)">
         <ChildContent>
@@ -132,6 +133,7 @@
 @if (_bulkRejectSelected is not null)
 {
     <SimfModal Open="true"
+               RequireExplicitClose="true"
                Title="@L["Admin.Pending.BulkReject.Title"]"
                OnClose="@(() => _bulkRejectSelected = null)">
         <ChildContent>

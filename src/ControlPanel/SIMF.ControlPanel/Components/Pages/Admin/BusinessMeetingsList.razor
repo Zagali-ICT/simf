@@ -112,7 +112,7 @@
 
 @if (_scheduleOpen)
 {
-    <SimfModal Open="true" Title="@L["Admin.BusinessMeetings.Schedule.Title"]"
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.BusinessMeetings.Schedule.Title"]"
                OnClose="@(() => _scheduleOpen = false)">
         <ChildContent>
             <div class="simf-form__fields">
@@ -235,7 +235,7 @@
 
 @if (_cancelOpen && _cancelTarget is not null)
 {
-    <SimfModal Open="true" Title="@L["Admin.BusinessMeetings.Cancel.Title"]"
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.BusinessMeetings.Cancel.Title"]"
                OnClose="@(() => _cancelOpen = false)">
         <ChildContent>
             <div class="simf-form__fields">

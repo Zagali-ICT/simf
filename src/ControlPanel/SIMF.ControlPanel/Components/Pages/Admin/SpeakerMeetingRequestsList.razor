@@ -119,7 +119,7 @@
 
 @if (_respondOpen && _respondTarget is not null)
 {
-    <SimfModal Open="true" Title="@L["Admin.SpeakerMeetingRequests.Respond.Title"]"
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.SpeakerMeetingRequests.Respond.Title"]"
                OnClose="@(() => _respondOpen = false)">
         <ChildContent>
             <div class="simf-form__fields">
