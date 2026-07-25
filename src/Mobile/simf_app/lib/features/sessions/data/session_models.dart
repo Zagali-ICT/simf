@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../core/utils/saudi_time.dart';
 import 'session_lifecycle.dart';
 
 /// The session broadcast lifecycle — mirrors `SIMF.Common.Enums.SessionStatus`
@@ -225,15 +226,15 @@ class SessionListItem {
   /// a per-session `/summary` probe.
   final bool hasPublishedSummary;
 
-  /// The session's start in the device-local zone (the wire value is UTC).
-  DateTime get startLocal => startUtc.toLocal();
+  /// The session's start on the Saudi event-local wall clock (wire value UTC).
+  DateTime get startLocal => saudiOf(startUtc);
 
   /// The session's time-phase (upcoming / live / ended) against [nowUtc].
   SessionPhase phase(DateTime nowUtc) => sessionPhase(startUtc, endUtc, nowUtc);
 
-  /// The session's end in the device-local zone — drives the agenda time-rail's
-  /// bottom value (Figma 883:2308) and the summary card's duration (1072:13518).
-  DateTime get endLocal => endUtc.toLocal();
+  /// The session's end on the Saudi event-local wall clock — drives the agenda
+  /// time-rail's bottom value (Figma 883:2308) and the summary duration (1072:13518).
+  DateTime get endLocal => saudiOf(endUtc);
 
   /// The session length in whole minutes, floored at 0 — the summary card's
   /// duration label (Figma 1072:13518). Mirrors `MyAreaSessionItem.durationMinutes`.
@@ -426,8 +427,8 @@ class SessionDetail {
   /// API), in which case the badge falls back to the [code].
   final int displayOrder;
 
-  DateTime get startLocal => startUtc.toLocal();
-  DateTime get endLocal => endUtc.toLocal();
+  DateTime get startLocal => saudiOf(startUtc);
+  DateTime get endLocal => saudiOf(endUtc);
 
   String localizedTitle(bool isArabic) =>
       _pickRequired(titleArabic, title, isArabic);

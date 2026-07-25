@@ -876,7 +876,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                   DateOfBirthField(
                     displayValue: _dateOfBirth == null
                         ? '—'
-                        : _formatDate(_dateOfBirth!),
+                        : _formatDateDisplay(_dateOfBirth!),
                     hasError: _triedSubmit && _dateOfBirth == null,
                     onTap: () => unawaited(_pickDateOfBirth()),
                   ),
@@ -1678,6 +1678,16 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     final month = date.month.toString().padLeft(2, '0');
     final day = date.day.toString().padLeft(2, '0');
     return '$year-$month-$day';
+  }
+
+  /// The on-screen date-of-birth text in Saudi civil order `dd-MM-yyyy` (owner:
+  /// every displayed date uses dd-MM-yyyy). The API payload keeps the ISO
+  /// `yyyy-MM-dd` wire value via [_formatDate]; only the visible text differs.
+  static String _formatDateDisplay(DateTime date) {
+    final year = date.year.toString().padLeft(4, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '$day-$month-$year';
   }
 }
 

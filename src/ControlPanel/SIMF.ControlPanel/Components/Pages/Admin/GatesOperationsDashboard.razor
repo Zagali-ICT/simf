@@ -62,7 +62,7 @@
                                 <td>@NameOf(row)</td>
                                 <td>@(string.IsNullOrWhiteSpace(row.ProfileTypeName) ? "—" : row.ProfileTypeName)</td>
                                 <td>@row.LastCheckInGateCode</td>
-                                <td>@row.LastCheckInAtUtc.FormatSaudi("yyyy-MM-dd hh:mm:ss tt")</td>
+                                <td>@row.LastCheckInAtUtc.FormatSaudi("dd-MM-yyyy hh:mm:ss tt")</td>
                             </tr>
                         }
                     </tbody>

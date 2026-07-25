@@ -5,9 +5,8 @@ import '../../../app/theme/tokens.dart';
 import '../../../core/utils/weekday_names.dart';
 import '../../sessions/data/session_models.dart';
 
-/// 24h "HH:mm" for the session sub-line; 12h "hh:mm a" for the agenda rows
-/// (locale-data-free, pinned 'en' for Western digits as the frame shows).
-final DateFormat _time24 = DateFormat('HH:mm', 'en');
+/// 12h "hh:mm a" for the session sub-line + agenda rows (locale-data-free,
+/// pinned 'en' for Western digits as the frame shows).
 final DateFormat _agendaTime = DateFormat('hh:mm a', 'en');
 
 /// The "الجلسة" info card (frame 1072:14628): the white Medium label over the
@@ -34,7 +33,7 @@ class SummarySessionCard extends StatelessWidget {
     final hall = session.localizedHall(isArabic);
     final sub = <String>[
       gregorianWeekdayName(session.startLocal, isArabic),
-      _time24.format(session.startLocal),
+      _agendaTime.format(session.startLocal),
       durationLabel,
       if (hall != null && hall.trim().isNotEmpty) hall,
     ].join(' · ');

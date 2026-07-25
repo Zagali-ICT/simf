@@ -151,7 +151,7 @@
                 <SimfDataGridColumn TItem="AdminAttendeeSummary" Key="createdAt"
                                     Header="@L["Admin.Attendees.Column.CreatedAt"]"
                                     Sortable="true">
-                    <CellTemplate>@context.CreatedAt.FormatSaudi("yyyy-MM-dd")</CellTemplate>
+                    <CellTemplate>@context.CreatedAt.FormatSaudi("dd-MM-yyyy")</CellTemplate>
                 </SimfDataGridColumn>
             </Columns>
             <EmptyTemplate>

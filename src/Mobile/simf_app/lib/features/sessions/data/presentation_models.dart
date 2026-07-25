@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../core/utils/saudi_time.dart';
+
 /// One downloadable session presentation — App "عروض الجلسات" (Figma 1388:7621),
 /// mirroring `SIMF.Contracts.Programme.PublicPresentationItem`. Each card shows
 /// the session it belongs to (title bilingual + start, for the day tabs), the
@@ -31,8 +33,8 @@ class PresentationItem {
   final String contentType;
   final int sizeBytes;
 
-  /// The session's start in the device-local zone (the wire value is UTC).
-  DateTime get sessionStartLocal => sessionStartUtc.toLocal();
+  /// The session's start on the Saudi event-local wall clock (wire value UTC).
+  DateTime get sessionStartLocal => saudiOf(sessionStartUtc);
 
   String localizedSessionTitle(bool isArabic) =>
       _pickRequired(sessionTitleArabic, sessionTitle, isArabic);

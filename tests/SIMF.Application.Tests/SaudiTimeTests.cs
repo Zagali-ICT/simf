@@ -56,8 +56,8 @@ public class SaudiTimeTests
     {
         var utc = new DateTimeOffset(2026, 11, 20, 22, 30, 0, TimeSpan.Zero);
 
-        Assert.Equal("2026-11-21 01:30 AM", utc.FormatSaudi());
-        Assert.Equal("2026-11-21", utc.FormatSaudi(SaudiTime.DateFormat));
+        Assert.Equal("21-11-2026 01:30 AM", utc.FormatSaudi());
+        Assert.Equal("21-11-2026", utc.FormatSaudi(SaudiTime.DateFormat));
     }
 
     [Fact]
@@ -101,6 +101,6 @@ public class SaudiTimeTests
         var storedUtc = SaudiTime.FromSaudiWallClock(typed);
         var rendered = storedUtc.FormatSaudi();
 
-        Assert.Equal("2026-11-22 04:45 PM", rendered);
+        Assert.Equal("22-11-2026 04:45 PM", rendered);
     }
 }

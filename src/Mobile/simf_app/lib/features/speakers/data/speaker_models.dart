@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../../core/country_flag.dart';
+import '../../../core/utils/saudi_time.dart';
 
 /// One row in the public speakers list — mirrors
 /// `SIMF.Contracts.Programme.PublicSpeakerSummary` (`GET /app/speakers`). The
@@ -76,7 +77,7 @@ class SpeakerSession {
   final DateTime startUtc;
   final DateTime endUtc;
 
-  DateTime get startLocal => startUtc.toLocal();
+  DateTime get startLocal => saudiOf(startUtc);
 
   String localizedTitle(bool isArabic) => _pick(titleArabic, title, isArabic);
   String? localizedHall(bool isArabic) =>

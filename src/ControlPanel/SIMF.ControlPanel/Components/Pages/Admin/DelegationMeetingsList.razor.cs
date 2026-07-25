@@ -92,7 +92,7 @@ public partial class DelegationMeetingsList
 
     // A free hall slot as "2026-07-10 09:00–09:30".
     private static string FormatSlot(HallAvailableSlot slot) =>
-        $"{slot.StartUtc.ToSaudi():yyyy-MM-dd hh:mm tt}–{slot.EndUtc.ToSaudi():hh:mm tt}";
+        $"{slot.StartUtc.ToSaudi():dd-MM-yyyy hh:mm tt}–{slot.EndUtc.ToSaudi():hh:mm tt}";
 
     private async Task LoadAsync()
     {

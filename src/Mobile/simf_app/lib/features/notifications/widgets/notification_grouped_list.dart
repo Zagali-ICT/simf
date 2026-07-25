@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../core/utils/gregorian_month_names.dart';
+import '../../../core/utils/saudi_time.dart';
 import '../data/notification_models.dart';
 import 'notification_card.dart';
 
@@ -70,8 +71,8 @@ class NotificationGroupedList extends StatelessWidget {
     if (createdAt == null) {
       return '';
     }
-    final local = createdAt.toLocal();
-    final now = DateTime.now();
+    final local = saudiOf(createdAt);
+    final now = saudiNow();
     final today = DateTime(now.year, now.month, now.day);
     final d = DateTime(local.year, local.month, local.day);
     final diff = today.difference(d).inDays;

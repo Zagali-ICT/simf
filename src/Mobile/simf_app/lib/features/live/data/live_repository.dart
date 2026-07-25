@@ -36,8 +36,8 @@ class LiveSession {
       // PublicSessionDetail wire (the live slice just had not decoded them).
       hallName: _trimToNull(json['hallName'] as String?),
       hallNameArabic: _trimToNull(json['hallNameArabic'] as String?),
-      startUtc: DateTime.tryParse((json['startUtc'] as String?) ?? ''),
-      endUtc: DateTime.tryParse((json['endUtc'] as String?) ?? ''),
+      startUtc: DateTime.tryParse((json['startUtc'] as String?) ?? '')?.toUtc(),
+      endUtc: DateTime.tryParse((json['endUtc'] as String?) ?? '')?.toUtc(),
       speakers: (json['speakers'] as List? ?? const <dynamic>[])
           .whereType<Map<dynamic, dynamic>>()
           .map((e) => LiveSpeaker.fromJson(e.cast<String, dynamic>()))
@@ -149,7 +149,7 @@ class UpcomingSession {
         title: (json['title'] as String?) ?? '',
         titleArabic: (json['titleArabic'] as String?) ?? '',
         startUtc:
-            DateTime.tryParse((json['startUtc'] as String?) ?? '')?.toLocal(),
+            DateTime.tryParse((json['startUtc'] as String?) ?? '')?.toUtc(),
       );
 
   final String id;
@@ -206,7 +206,7 @@ class LiveRepository {
       decodeData: (data) {
         final items = (data is Map ? data['items'] : null) as List? ??
             const <dynamic>[];
-        final now = DateTime.now();
+        final now = DateTime.now().toUtc();
         final upcoming = items
             .whereType<Map<dynamic, dynamic>>()
             .map((e) => UpcomingSession.fromJson(e.cast<String, dynamic>()))

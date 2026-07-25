@@ -114,7 +114,7 @@ public partial class ServicesMonitor : IDisposable
     };
 
     private static string Local(DateTimeOffset? utc) =>
-        utc is { } value ? value.FormatSaudi("yyyy-MM-dd hh:mm:ss tt") : "-";
+        utc is { } value ? value.FormatSaudi("dd-MM-yyyy hh:mm:ss tt") : "-";
 
     private string RefreshedText() =>
         _data is null

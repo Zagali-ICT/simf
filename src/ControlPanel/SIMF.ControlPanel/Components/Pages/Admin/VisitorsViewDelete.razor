@@ -31,7 +31,7 @@ else if (_profile is not null)
         <dt>@L["Admin.Pending.View.Field.ProfileType"]</dt>
         <dd>@(_profile.ProfileTypeName ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
         <dt>@L["Admin.Pending.View.Field.Created"]</dt>
-        <dd>@_profile.CreatedAt.FormatSaudi("yyyy-MM-dd hh:mm tt")</dd>
+        <dd>@_profile.CreatedAt.FormatSaudi("dd-MM-yyyy hh:mm tt")</dd>
     </dl>
     <dl class="simf-dl">
         <dt>@L["Admin.Pending.View.Field.ArabicName"]</dt>
@@ -41,7 +41,7 @@ else if (_profile is not null)
         <dt>@L["Admin.Pending.View.Field.Nationality"]</dt>
         <dd>@(_profile.NationalityCode ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
         <dt>@L["Admin.Pending.View.Field.DateOfBirth"]</dt>
-        <dd>@(_profile.DateOfBirth?.ToString("yyyy-MM-dd") ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+        <dd>@(_profile.DateOfBirth?.ToString("dd-MM-yyyy") ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
         <dt>@L["Admin.Pending.View.Field.PlaceOfBirth"]</dt>
         <dd>@(_profile.PlaceOfBirth ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
         <dt>@L["Admin.Pending.View.Field.IdentityType"]</dt>

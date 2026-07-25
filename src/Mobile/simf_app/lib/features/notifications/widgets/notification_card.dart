@@ -3,6 +3,7 @@ import 'package:intl/intl.dart' hide TextDirection;
 
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_page_shell.dart';
+import '../../../core/utils/saudi_time.dart';
 import '../data/notification_models.dart';
 import 'notification_category_icon.dart';
 
@@ -31,7 +32,7 @@ class NotificationCard extends StatelessWidget {
     final unread = !item.isRead;
     final time = item.createdAt == null
         ? null
-        : _timeFormat.format(item.createdAt!.toLocal());
+        : _timeFormat.format(saudiOf(item.createdAt!));
     // Frame 758:2491 — "{time} · {day}" order.
     final stamp = time == null
         ? null

@@ -905,9 +905,9 @@ internal sealed class BusinessMeetingService(
             {
                 throw Invalid(ErrorCodes.HallAllocationInvalid,
                     $"Meetings can only be scheduled within the forum days "
-                        + $"({window.MinDate:yyyy-MM-dd} to {window.MaxDate:yyyy-MM-dd}).",
+                        + $"({window.MinDate:dd-MM-yyyy} to {window.MaxDate:dd-MM-yyyy}).",
                     $"لا يمكن جدولة الاجتماعات إلا خلال أيام الملتقى "
-                        + $"({window.MinDate:yyyy-MM-dd} إلى {window.MaxDate:yyyy-MM-dd}).");
+                        + $"({window.MinDate:dd-MM-yyyy} إلى {window.MaxDate:dd-MM-yyyy}).");
             }
         }
     }
