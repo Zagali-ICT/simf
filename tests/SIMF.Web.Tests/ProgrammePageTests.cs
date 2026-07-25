@@ -79,9 +79,9 @@ public sealed class ProgrammePageTests : WebComponentTestBase
             Assert.Contains("ln-agenda__card", cut.Markup);
             Assert.Contains("ln-agenda__spk", cut.Markup);
             // Event-local (+03:00) time via the shared EventTime helper: the
-            // fixture's 09:00–10:30 UTC renders as 12:00 – 13:30 Riyadh (the
-            // sr-only window). Pins the offset shift + the "HH:mm" formatting.
-            Assert.Contains("12:00 – 13:30", cut.Markup);
+            // fixture's 09:00–10:30 UTC renders as 12:00 PM – 01:30 PM Riyadh
+            // (the sr-only window). Pins the offset shift + the 12h formatting.
+            Assert.Contains("12:00 PM – 01:30 PM", cut.Markup);
         });
     }
 
