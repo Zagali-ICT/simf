@@ -1912,6 +1912,10 @@
   <data name="Module.Announcements" xml:space="preserve"><value>Announcements</value></data>
   <data name="Admin.Announcements.Title" xml:space="preserve"><value>Announcements</value></data>
   <data name="Admin.Announcements.Compose" xml:space="preserve"><value>Compose a broadcast</value></data>
+  <data name="Admin.Announcements.Section.Recipients" xml:space="preserve"><value>Recipients</value></data>
+  <data name="Admin.Announcements.Section.RecipientsHint" xml:space="preserve"><value>Choose who receives this announcement.</value></data>
+  <data name="Admin.Announcements.Section.Message" xml:space="preserve"><value>Message</value></data>
+  <data name="Admin.Announcements.Section.MessageHint" xml:space="preserve"><value>Written in English and Arabic, sent in-app and by email.</value></data>
   <data name="Admin.Announcements.Target" xml:space="preserve"><value>Send to</value></data>
   <data name="Admin.Announcements.Target.Session" xml:space="preserve"><value>A specific session</value></data>
   <data name="Admin.Announcements.Target.Audience" xml:space="preserve"><value>A broad audience</value></data>
