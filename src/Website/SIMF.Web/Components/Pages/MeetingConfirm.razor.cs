@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using SIMF.ApiClient;
+using SIMF.Common;
 using SIMF.Contracts.Programme;
 
 namespace SIMF.Web.Components.Pages;
@@ -53,8 +54,13 @@ public partial class MeetingConfirm
         finally { _submitting = false; }
     }
 
+    // R10 (D-767) — show the slot on the Saudi wall clock (AST = UTC+3, no DST) with the
+    // weekday, matching the D-765 relabel of the CP from UTC to Saudi time; the stored
+    // instants stay UTC. Invariant culture keeps the digits/format stable across AR/EN.
     private string FormatSlot(MeetingActionPreview preview) =>
         preview.SlotStartUtc is { } start && preview.SlotEndUtc is { } end
-            ? $"{start.UtcDateTime:yyyy-MM-dd HH:mm}–{end.UtcDateTime:HH:mm} UTC"
+            ? L["Meeting.Confirm.SlotSaudi",
+                start.FormatSaudi("ddd, yyyy-MM-dd hh:mm tt"),
+                end.FormatSaudi("hh:mm tt")]
             : L["Meeting.Confirm.TBD"];
 }

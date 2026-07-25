@@ -319,6 +319,7 @@
   <data name="Meeting.Confirm.When" xml:space="preserve"><value>When</value></data>
   <data name="Meeting.Confirm.Where" xml:space="preserve"><value>Where</value></data>
   <data name="Meeting.Confirm.TBD" xml:space="preserve"><value>To be scheduled</value></data>
+  <data name="Meeting.Confirm.SlotSaudi" xml:space="preserve"><value>{0} – {1} (Saudi time)</value></data>
   <data name="Meeting.Confirm.Approve" xml:space="preserve"><value>Approve the meeting</value></data>
   <data name="Meeting.Confirm.Reject" xml:space="preserve"><value>Decline the meeting</value></data>
   <data name="Meeting.Confirm.Submitting" xml:space="preserve"><value>Submitting…</value></data>
