@@ -174,6 +174,9 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     /// blocks). Released rows stay for audit.</summary>
     public DbSet<SeatReservation> SeatReservations => Set<SeatReservation>();
 
+    public DbSet<SIMF.Domain.Notifications.NotificationBroadcast> NotificationBroadcasts =>
+        Set<SIMF.Domain.Notifications.NotificationBroadcast>();
+
     /// <summary>D-176 (gap doc G12) — centralised AI prompt catalogue.
     /// Editable from the CP at runtime; one row per logical key.</summary>
     public DbSet<AiPrompt> AiPrompts => Set<AiPrompt>();

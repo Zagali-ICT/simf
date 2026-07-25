@@ -9,8 +9,10 @@
 The visitor's entry badge: on approval the My-Area dashboard
 (`GET /app/account/dashboard`, `RequireApprovedAccount`) supplies the identity and
 the QR encodes the opaque `qrId`. The gold-bordered white card holds the QR + the
-"امسح للدخول" hint + the gold identity strip (avatar, name, tier, the masked
-`ID · ••••` reference), with role-based actions below. Not-approved / pending /
+"امسح للدخول" hint + the identity strip (avatar, name, tier, the masked
+`ID · ••••` reference), with role-based actions below. The strip is **tinted by the
+profile type's colour** (`identity.pageColor` ← `ProfileType.PageColor`, gold
+fallback) so each tier's badge is distinct (D-763). Not-approved / pending /
 load-failure keep their respective states.
 
 ## Structure (post-decomposition)
@@ -18,7 +20,7 @@ load-failure keep their respective states.
 | File | Holds |
 |------|-------|
 | `badge_screen.dart` (158) | `BadgeScreen` + State — the approval-gated dashboard load, the loading / not-approved / error / pending / badge dispatch (`_buildBody`), and the top-level `maskedBadgeId` helper (kept here — the badge test unit-tests it). The badge case composes the card + actions. |
-| `widgets/badge_qr_card.dart` (`BadgeQrCard`) | The gold-bordered white card — the **standard square** QR (`QrImageView`, D-743; the round D-423 style was undecodable by the in-app ZXing scanner), the scan hint, and the gold identity strip (`SimfAvatar` + name + tier + `ID · {maskedId}`). |
+| `widgets/badge_qr_card.dart` (`BadgeQrCard`) | The gold-bordered white card — the **standard square** QR (`QrImageView`, D-743; the round D-423 style was undecodable by the in-app ZXing scanner), the scan hint, and the identity strip (`SimfAvatar` + name + tier + `ID · {maskedId}`) tinted by `identity.pageColor` via `parseHexColor` (`core/utils/hex_color.dart`), gold fallback + luminance-based ink (D-763). |
 | `widgets/badge_actions.dart` (`BadgeActions`) | The role-based actions (D-426) — a visitor's gold "امسح لإضافة شخص" (→ the fullscreen `ScanContactScreen`) + outlined "share my contact"; an exhibitor's "scan visitor" — with the shared `_actionButton` filled/outlined helper. |
 
 The off-states already used the shared `SimfEmptyState`/`SimfErrorState` (kept).
@@ -29,11 +31,10 @@ file ≤400 lines.
 ## L4 Figma parity
 
 No golden — the QR + the three-provider auth/dashboard/reference setup make a
-golden heavy, and this freeze is a **verbatim `_Badge` split** (no token/DRY
-change). The **10 badge widget tests** are the render baseline: they drive the QR
-(`find.byType(QrImageView)`), the identity strip (name/tier/`ID · •••• C123`), the
-role actions, and the not-approved / pending / error states — all pass unchanged,
-proving the split is behaviour-identical. (Same no-golden-verbatim call as
+golden heavy. The **12 badge widget tests** are the render baseline: they drive the
+QR (`find.byType(QrImageView)`), the identity strip (name/tier/`ID · •••• C123`),
+the **strip tint** (pageColor → server colour + gold fallback, D-763), the role
+actions, and the not-approved / pending / error states. (Same no-golden call as
 venue_map D-615 / session_moderate D-622.)
 
 ## Level-F
@@ -45,12 +46,14 @@ not-approved / pending states gate the QR. Reads `GET /app/account/dashboard` +
 
 ## Tests
 
-`test/features/badge/badge_screen_test.dart` (QR + identity render, `maskedBadgeId`
-unit test, Arabic name, not-approved, pending, error+retry, role actions). E2E:
-`docs/tests/e2e/mobile-badge.md`.
+`test/features/badge/badge_screen_test.dart` (QR + identity render, strip tint +
+gold fallback, `maskedBadgeId` unit test, Arabic name, not-approved, pending,
+error+retry, role actions) and `test/core/utils/hex_color_test.dart` (the
+`parseHexColor` parser). E2E: `docs/tests/e2e/mobile-badge.md`.
 
 ## Related decisions
 
+- **D-763** (identity strip tinted by the profile type's server colour `ProfileType.PageColor` via `identity.pageColor` + `parseHexColor`; gold fallback + luminance-based ink; supersedes the Page_014 "pageColor carried but unused" note).
 - **D-633** (this clean-code freeze — `_Badge` split into `BadgeQrCard` + `BadgeActions`; node inconsistency flagged).
 - **D-320** (screen built), **D-423** (circle QR — visual style superseded by D-743), **D-426** (role-based actions).
 - **D-743** (badge QR → standard **square** so the in-app `flutter_zxing` scanner can decode it; the round style read on a phone camera but not in-app. Same change fixed gate / exhibitor / contact scanners via the shared `SimfScannerBody` full-frame `cropPercent`).

@@ -7,8 +7,9 @@
 > (`MyAreaRepository.getDashboard()` + `MyAreaDashboard` — no duplicate model).
 > The **Flutter screen is built** and was **rebuilt to KSA Wave-2 frame
 > 221:769 "QR"** (D-378 batch): the gold-bordered white card (QR 230 +
-> "امسح للدخول" + the gold identity strip with avatar/name/tier and the
-> **masked `ID · •••• tail`**), plus the bordered **امسح لإضافة شخص** action
+> "امسح للدخول" + the identity strip with avatar/name/tier and the
+> **masked `ID · •••• tail`** — the strip is tinted by the profile type's colour,
+> gold fallback, D-763), plus the bordered **امسح لإضافة شخص** action
 > → the existing `/contacts/scan` (FDS-014). Widget-tested in
 > `src/Mobile/simf_app/test/features/badge/badge_screen_test.dart` (issued QR
 > card + strip + masked id, add-person → scanner, null-qrId pending state,
@@ -32,6 +33,7 @@
 | E2E-MOB032-003 | A dashboard read failure → error + Retry that re-fetches | resilience | P0 | authored ✓ (screen `a load failure shows the error + retry, which re-fetches`) |
 | E2E-MOB032-004 | Arabic locale renders the Arabic name (RTL) alongside the QR | i18n | P2 | authored ✓ (screen `renders the Arabic name + hint in Arabic`) |
 | E2E-MOB032-005 | **Header back chevron → Home (bug fix):** on the Badge tab of the bottom-nav shell the header back chevron returns to the **Home** tab. Previously it was a dead no-op — an in-shell tab never leaves the shell's `/` location, so `backOrHome`'s `goNamed(home)` navigated to `/` while already there | nav | P1 | authored ✓ (`simf_page_shell_test` — `backOrHome on an in-shell tab (nothing to pop) switches the shell to the Home tab`) |
+| E2E-MOB032-006 | **Strip tinted by profile-type colour (D-763):** the identity strip fill is the account's `identity.pageColor` (`ProfileType.PageColor`, e.g. VIP `#0E7490`); a null/invalid value falls back to the token gold | happy | P1 | authored ✓ (screen `the identity strip is tinted by the profile-type pageColor` + `... falls back to token gold with no pageColor`) |
 
 ## Scenarios
 
@@ -89,6 +91,32 @@ verifying, confirm a badge shown on one device is decoded by the in-app scanner
 on another — not only by a phone's native camera. (The shared scanner also now
 decodes the **full frame**, so a QR filling the viewfinder still reads.)
 
+### E2E-MOB032-006 — Strip tinted by the profile type's colour (D-763)
+
+```gherkin
+Scenario: A VIP visitor's badge strip uses the VIP colour
+  Given I am signed in with an Approved account whose profile type is VIP
+  And the dashboard identity carries pageColor "#0E7490"
+  When the badge screen renders the identity strip
+  Then the strip fill is #0E7490 (not the default gold)
+  And the name/tier/ID ink stays legible against it
+
+Scenario: A visitor with no profile-type colour falls back to gold
+  Given the dashboard identity carries no pageColor
+  When the badge screen renders the identity strip
+  Then the strip fill is the token gold (SimfTokens.accent)
+```
+
+> The colour is a server value (`ProfileType.PageColor`, canonical `#RRGGBB`),
+> parsed by `parseHexColor` (`core/utils/hex_color.dart`); an unset/invalid value
+> falls back to the token gold. Ink flips to a dark tone only on a genuinely pale
+> strip so the name never washes out. When verifying live, confirm each seeded
+> tier (Media amber, Sponsor purple, Exhibitor cyan, VVIP red, VIP teal) renders a
+> distinct strip on the badge.
+
+**Evidence:** screen tests `the identity strip is tinted by the profile-type
+pageColor`, `the identity strip falls back to token gold with no pageColor`.
+
 ### E2E-MOB032-005 — Header back chevron returns to Home
 
 ```gherkin
@@ -108,7 +136,8 @@ Scenario: The back chevron on the Badge tab returns to Home
 
 ---
 
-_Last reviewed:_ `2026-07-24` by `SIMF Team` — **bug fix: the header back chevron
-on the in-shell Badge tab was a dead no-op; the shared `backOrHome` now switches the
-shell to the Home tab when there is nothing to pop (E2E-MOB032-005).** _Prior:_
-`2026-07-11` by `SIMF Team`.
+_Last reviewed:_ `2026-07-24` by `SIMF Team` — **feature: the identity strip is now
+tinted by the profile type's server colour (`ProfileType.PageColor` → `pageColor`),
+gold fallback + luminance-based ink (E2E-MOB032-006, D-763).** _Prior:_ `2026-07-24`
+— bug fix: header back chevron on the in-shell Badge tab (E2E-MOB032-005); `2026-07-11`
+by `SIMF Team`.

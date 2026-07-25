@@ -56,6 +56,7 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/countries` | ✅ Real | Administrator  | [cp/admin-countries.md](cp/admin-countries.md) | [e2e/cp-admin-countries.md](../tests/e2e/cp-admin-countries.md) |
 | `/admin/vips` | ✅ Real | Administrator  | [cp/admin-vips.md](cp/admin-vips.md) | [e2e/cp-admin-vips.md](../tests/e2e/cp-admin-vips.md) |
 | `/admin/invitations` | ✅ Real | Administrator | [cp/admin-invitations.md](cp/admin-invitations.md) | [e2e/cp-admin-invitations.md](../tests/e2e/cp-admin-invitations.md) |
+| `/admin/announcements` | ✅ Real (D-132: admin broadcast desk — one bilingual message → in-app notification + email to a specific session's registered attendees or a broad audience; background-processed, with a history grid) | Administrator ("Public relations" nav group; `Announcements.Send` = compose/send, `Announcements.View` = history) | [cp/announcements.md](cp/announcements.md) | [e2e/cp-announcements.md](../tests/e2e/cp-announcements.md) |
 | `/admin/reset-2fa` | ✅ Real | Administrator | [cp/admin-reset-2fa.md](cp/admin-reset-2fa.md) | [e2e/cp-admin-reset-2fa.md](../tests/e2e/cp-admin-reset-2fa.md) |
 | `/admin/roles` | ✅ Real | Administrator | [cp/admin-roles.md](cp/admin-roles.md) | [e2e/cp-admin-roles.md](../tests/e2e/cp-admin-roles.md) |
 | `/admin/roles/{id}/permissions` | ✅ Real | Administrator | — | [e2e/cp-admin-roles-permissions.md](../tests/e2e/cp-admin-roles-permissions.md) |

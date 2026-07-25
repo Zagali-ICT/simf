@@ -1665,6 +1665,39 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
+    // -- Notification broadcasts (Control Panel "Announcements" desk) --------
+
+    public Task<ApiCallResult<AdminBroadcastResult>> CreateBroadcastAsync(
+        AdminCreateBroadcastRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminBroadcastResult>(
+            HttpMethod.Post, "notifications/broadcast",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminBroadcastEstimateResult>> EstimateBroadcastAsync(
+        AdminBroadcastEstimateRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminBroadcastEstimateResult>(
+            HttpMethod.Post, "notifications/broadcast/estimate",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<GridPage<AdminBroadcastSummary>>> ListBroadcastsAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminBroadcastSummary>>(
+            HttpMethod.Post, "notifications/broadcasts/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminBroadcastSummary>> GetBroadcastAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminBroadcastSummary>(
+            HttpMethod.Get, $"notifications/broadcasts/{id}", content: null,
+            accessToken, cancellationToken);
+
     // -- D-173 (gap doc G8) — Dynamic content CMS ---------------------------
 
     public Task<ApiCallResult<GridPage<AdminContentBlockSummary>>> ListContentBlocksAsync(

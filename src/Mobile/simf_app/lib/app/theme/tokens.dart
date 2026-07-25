@@ -815,9 +815,13 @@ class SimfTokens {
   static const double actionChipHeight = 34; // my-seat + header action chip
   static const double seatCapDefault = 20; // my-seat seat-square cap
   static const double seatCapPicker = 26; // seat-picker seat-square cap
+  static const double seatViewportRows =
+      8; // seat-map viewport = this many rows tall before it scrolls vertically
   static const double seatSwatchSm = 14; // my-seat legend swatch
   static const double seatSwatchLg = 16; // picker + available legend swatch
-  static const double seatRowLabelWidth = 12; // seat-map row-letter column
+  static const double seatRowLabelWidth = 12; // seat-map row column (1 letter)
+  static const double seatRowLabelCharWidth =
+      10; // row column grows this-per-char for multi-char labels (VVIP/A001)
   static const double radiusSeat = 3; // seat square / legend swatch corner
   static const double seatMarkerInner = 20; // reservation seat-marker inner
   static const double dayBannerHeight = 85; // programme day banner

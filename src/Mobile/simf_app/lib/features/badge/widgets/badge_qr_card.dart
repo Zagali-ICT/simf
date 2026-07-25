@@ -4,11 +4,14 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_page_shell.dart';
+import '../../../core/utils/hex_color.dart';
 import '../../myarea/data/myarea_models.dart';
 
 /// The issued badge card (frame node tree under 758:1469): the gold-bordered
-/// white card holding the QR, the "امسح للدخول" hint and the gold identity strip
-/// (avatar, name, tier line, the masked `ID · …` reference).
+/// white card holding the QR, the "امسح للدخول" hint and the identity strip
+/// (avatar, name, tier line, the masked `ID · …` reference). The strip is
+/// tinted by the profile type's colour (`identity.pageColor`), falling back to
+/// the token gold when the account has no type.
 class BadgeQrCard extends StatelessWidget {
   const BadgeQrCard({
     required this.l10n,
@@ -32,6 +35,21 @@ class BadgeQrCard extends StatelessWidget {
     final isArabic = l10n.isArabic;
     final name = identity.localizedName(isArabic);
     final tier = identity.localizedTier(isArabic);
+    // The identity strip is tinted by the profile type's colour (server value
+    // `ProfileType.PageColor`, surfaced as `identity.pageColor`) so each tier's
+    // badge is visually distinct; it falls back to the token gold when the
+    // account has no type or the value is unset/invalid.
+    final stripColor = parseHexColor(identity.pageColor) ?? SimfTokens.accent;
+    // Keep the white ink used on gold and on the whole seeded palette (all
+    // luminance ≤ ~0.45); only a genuinely pale admin-picked colour flips to a
+    // dark ink so the name never washes out. `copyWith(color: null)` keeps each
+    // style's own colour. (Promote to a shared inkOn helper at the 2nd
+    // pageColor-tinted surface — §7, extract on second use.)
+    final darkInk =
+        stripColor.computeLuminance() > 0.6 ? SimfTokens.navyDeep : null;
+    final nameStyle =
+        SimfTokens.labelWhiteSemiboldTitle.copyWith(color: darkInk);
+    final mutedStyle = SimfTokens.labelOnGoldMutedSm.copyWith(color: darkInk);
     return Container(
       padding: const EdgeInsets.all(SimfTokens.space4),
       decoration: BoxDecoration(
@@ -89,7 +107,7 @@ class BadgeQrCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(SimfTokens.space2),
             decoration: BoxDecoration(
-              color: SimfTokens.accent,
+              color: stripColor,
               borderRadius: BorderRadius.circular(SimfTokens.radius),
             ),
             child: Row(
@@ -107,23 +125,23 @@ class BadgeQrCard extends StatelessWidget {
                         name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        // Frame 758:1469 — 18px SemiBold white.
-                        style: SimfTokens.labelWhiteSemiboldTitle,
+                        // Frame 758:1469 — 18px SemiBold; ink adapts.
+                        style: nameStyle,
                       ),
                       if (tier != null) ...<Widget>[
                         const SizedBox(height: SimfTokens.space2),
                         Text(
                           tier,
-                          // Frame 758:1469 — 12px, muted #F0F0F0.
-                          style: SimfTokens.labelOnGoldMutedSm,
+                          // Frame 758:1469 — 12px muted; ink adapts.
+                          style: mutedStyle,
                         ),
                       ],
                       const SizedBox(height: SimfTokens.space2),
                       Text(
                         'ID · $maskedId',
                         textDirection: TextDirection.ltr,
-                        // Frame 758:1469 — 12px, muted #F0F0F0.
-                        style: SimfTokens.labelOnGoldMutedSm,
+                        // Frame 758:1469 — 12px muted; ink adapts to the strip.
+                        style: mutedStyle,
                       ),
                     ],
                   ),

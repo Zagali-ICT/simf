@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/features/badge/badge_screen.dart';
 import 'package:simf_app/features/myarea/data/myarea_models.dart';
 import 'package:simf_app/features/myarea/data/myarea_repository.dart';
@@ -37,18 +38,37 @@ class _AuthController extends AuthController {
   AuthState build() => AuthStateSignedIn(_session(status));
 }
 
-MyAreaDashboard _dashboard({String? qrId, bool isVisitor = true}) => MyAreaDashboard(
+MyAreaDashboard _dashboard({
+  String? qrId,
+  bool isVisitor = true,
+  String? pageColor,
+}) =>
+    MyAreaDashboard(
       identity: MyAreaIdentity(
         fullNameAr: 'رائد السالم',
         fullNameEn: 'Raed Al-Salem',
         qrId: qrId,
         tierNameEn: 'VIP',
         tierNameAr: 'VIP',
+        pageColor: pageColor,
         isVisitor: isVisitor,
       ),
       counters: const MyAreaCounters(bookedSessionsCount: 0, meetingsCount: 0),
       todaySchedule: const <MyAreaScheduleItem>[],
     );
+
+/// The fill of the identity strip — the nearest [Container] wrapping the name.
+Color? _stripColor(WidgetTester tester) {
+  final strip = tester.widget<Container>(
+    find
+        .ancestor(
+          of: find.text('Raed Al-Salem'),
+          matching: find.byType(Container),
+        )
+        .first,
+  );
+  return (strip.decoration! as BoxDecoration).color;
+}
 
 class _FakeMyAreaRepository implements MyAreaRepository {
   _FakeMyAreaRepository({this.dashboard, this.fail = false, this.status = 500});
@@ -163,6 +183,28 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       expect(find.text('Scan to add a contact'), findsOneWidget);
+    });
+
+    testWidgets('the identity strip is tinted by the profile-type pageColor',
+        (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeMyAreaRepository(
+          dashboard: _dashboard(qrId: 'ABC123', pageColor: '#0E7490'),
+        ),
+      );
+
+      expect(_stripColor(tester), const Color(0xFF0E7490));
+    });
+
+    testWidgets('the identity strip falls back to token gold with no pageColor',
+        (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeMyAreaRepository(dashboard: _dashboard(qrId: 'ABC123')),
+      );
+
+      expect(_stripColor(tester), SimfTokens.accent);
     });
 
     testWidgets('the add-person action opens the contact scanner',

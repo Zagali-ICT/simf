@@ -36,4 +36,5 @@
   <data name="BadgeUpdateDecided" xml:space="preserve"><value>تم تحديث طلب البادج</value></data>
   <data name="MeetingRequested" xml:space="preserve"><value>لديك طلب اجتماع</value></data>
   <data name="MeetingReminder" xml:space="preserve"><value>يبدأ الاجتماع قريباً</value></data>
+  <data name="AdminAnnouncement" xml:space="preserve"><value>إعلان من SIMF</value></data>
 </root>

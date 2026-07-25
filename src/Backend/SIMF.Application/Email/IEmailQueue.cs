@@ -8,4 +8,10 @@ namespace SIMF.Application.Email;
 public interface IEmailQueue
 {
     void Enqueue(EmailMessage message);
+
+    /// <summary>The number of messages currently buffered and not yet sent. A mass
+    /// broadcast reads this to pace its fan-out so it never overruns the bounded
+    /// queue (which drops overflow). Best-effort — the value can change the instant
+    /// after it is read.</summary>
+    int PendingCount { get; }
 }
