@@ -221,8 +221,8 @@ public sealed class SessionAttendanceTests : IClassFixture<SimfApiFactory>
             Code = code,
             Title = "Attendance Dashboard Session", TitleArabic = "جلسة لوحة الحضور",
             HallId = hall.Id,
-            StartUtc = now.AddMinutes(-15),
-            EndUtc = now.AddMinutes(45),
+            Start = now.AddMinutes(-15),
+            End = now.AddMinutes(45),
             IsActive = true, CreatedAt = now,
         };
         db.Sessions.Add(session);
@@ -237,7 +237,7 @@ public sealed class SessionAttendanceTests : IClassFixture<SimfApiFactory>
                     now.AddMinutes(-12), now.AddMinutes(-8)));
             }
             db.HallAttendances.Add(NewAttendance(session.Id, hall.Id, userId,
-                now.AddMinutes(-5), leaveUtc: null));
+                now.AddMinutes(-5), leave: null));
         }
 
         for (var i = 0; i < closedOnlyCount; i++)
@@ -252,7 +252,7 @@ public sealed class SessionAttendanceTests : IClassFixture<SimfApiFactory>
 
     private static HallAttendance NewAttendance(
         Guid sessionId, Guid hallId, Guid userId,
-        DateTimeOffset enterUtc, DateTimeOffset? leaveUtc) =>
+        DateTimeOffset enter, DateTimeOffset? leave) =>
         new()
         {
             Id = Guid.NewGuid(),
@@ -260,8 +260,8 @@ public sealed class SessionAttendanceTests : IClassFixture<SimfApiFactory>
             HallId = hallId,
             UserId = userId,
             Method = AttendanceMethod.Geofence,
-            EnterUtc = enterUtc,
-            LeaveUtc = leaveUtc,
+            Enter = enter,
+            Leave = leave,
             CreatedAt = DateTimeOffset.UtcNow,
         };
 
@@ -292,8 +292,8 @@ public sealed class SessionAttendanceTests : IClassFixture<SimfApiFactory>
             Code = "LIVE-" + Guid.NewGuid().ToString("N")[..8].ToUpperInvariant(),
             Title = "Live Hall Session", TitleArabic = "جلسة القاعة المباشرة",
             HallId = hall.Id,
-            StartUtc = now.AddMinutes(-15),
-            EndUtc = now.AddMinutes(45),
+            Start = now.AddMinutes(-15),
+            End = now.AddMinutes(45),
             IsActive = true, CreatedAt = now,
         };
         db.Sessions.Add(session);
@@ -324,7 +324,7 @@ public sealed class SessionAttendanceTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         db.HallAttendances.Add(NewAttendance(sessionId, hallId, userId,
-            DateTimeOffset.UtcNow.AddMinutes(-3), leaveUtc: null));
+            DateTimeOffset.UtcNow.AddMinutes(-3), leave: null));
         await db.SaveChangesAsync();
     }
 

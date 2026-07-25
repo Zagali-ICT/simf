@@ -6,7 +6,7 @@ namespace SIMF.Domain.Cms;
 /// D-173 (gap doc G8, PDF §1) — one time-windowed banner / announcement
 /// surfaced on the public Website and Flutter app. Editors set a
 /// start / end window; the public read endpoint serves only the rows
-/// where now ∈ [StartUtc, EndUtc] AND <see cref="IsActive"/>.
+/// where now ∈ [Start, End] AND <see cref="IsActive"/>.
 ///
 /// <para>Distinct from <see cref="ContentBlock"/> because banners
 /// have a lifecycle (announcement → live → ended) and an explicit
@@ -30,11 +30,11 @@ public sealed class Banner : BaseAuditEntity
     /// <see cref="ImageUrl"/>.</summary>
     public string? LinkUrl { get; set; }
 
-    public DateTimeOffset StartUtc { get; set; }
+    public DateTimeOffset Start { get; set; }
 
-    public DateTimeOffset EndUtc { get; set; }
+    public DateTimeOffset End { get; set; }
 
     /// <summary>Display order — 0 = top. Tie-broken by
-    /// <see cref="StartUtc"/>.</summary>
+    /// <see cref="Start"/>.</summary>
     public int DisplayOrder { get; set; }
 }

@@ -61,7 +61,7 @@ individual URL simply hides that one icon.
 | `title` / `titleArabic` | the session title (locale-picked) |
 | `hallId` | the hall identity |
 | `hallName` / `hallNameArabic` | the hall name (locale-picked) |
-| `startUtc`, `endUtc` | the session time window (rendered in the user's locale/timezone) |
+| `start`, `end` | the session time window (rendered in the user's locale/timezone) |
 
 Each row taps through to that session's detail. An empty `sessions[]` renders a
 "no sessions yet" state — the rest of the profile still shows.
@@ -74,7 +74,7 @@ The `طلب مقابلة` (request a meeting) button is shown **only when
    account is **prompted to sign in**; only an **approved Visitor** can submit.
 2. **Submit** — `POST /app/speakers/{speakerId}/meeting-requests` with body
    `SubmitSpeakerMeetingRequestRequest = { requesterName, subject }` (plus the
-   optional VIP `slotStartUtc`/`slotEndUtc`, D-474). The app form collects only
+   optional VIP `slotStart`/`slotEnd`, D-474). The app form collects only
    the **subject** (and the optional Available-time slot) — there is **no name
    field** (owner: "no need for name"); `requesterName` is the signed-in
    account's display name, sent automatically. The wire contract is unchanged.

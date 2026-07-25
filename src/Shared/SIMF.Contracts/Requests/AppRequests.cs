@@ -43,7 +43,7 @@ public sealed record AppRequestItem(
     MeetingRequestStatus Status,
     /// <summary>The date shown on the card — the session start / meeting slot;
     /// null falls back to <see cref="CreatedAt"/>.</summary>
-    DateTimeOffset? EventDateUtc,
+    DateTimeOffset? EventDate,
     DateTimeOffset CreatedAt,
     /// <summary>True when the signed-in user may cancel this request from the app
     /// (their own, still Pending, and a cancellable kind — speaker / document /

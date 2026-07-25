@@ -160,7 +160,7 @@ public sealed class DelegationMeetingActionTokenTests : IClassFixture<SimfApiFac
             TargetCountryId = target.Id,
             AttendeeCount = 3,
             Subject = "Naval cooperation",
-            HallId = hall.Id, SlotStartUtc = start, SlotEndUtc = start.AddMinutes(30),
+            HallId = hall.Id, SlotStart = start, SlotEnd = start.AddMinutes(30),
             Status = MeetingRequestStatus.AwaitingSpeaker,
             CreatedAt = DateTimeOffset.UtcNow, RespondedAt = DateTimeOffset.UtcNow,
         };

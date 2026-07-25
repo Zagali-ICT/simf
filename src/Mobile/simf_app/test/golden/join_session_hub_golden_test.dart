@@ -37,8 +37,8 @@ SessionListItem _item(String id, String titleAr, {required int hourLocal}) =>
       // LOCAL instants: the row renders TimeOfDay.fromDateTime(startLocal) —
       // a UTC fixture would bake the generating machine's timezone into the
       // PNG (same trap as the saved-sessions golden, D-599).
-      startUtc: DateTime(2026, 11, 23, hourLocal),
-      endUtc: DateTime(2026, 11, 23, hourLocal + 1),
+      start: DateTime(2026, 11, 23, hourLocal),
+      end: DateTime(2026, 11, 23, hourLocal + 1),
       status: SessionStatus.scheduled,
       speakers: const <SessionSpeaker>[],
     );

@@ -33,7 +33,7 @@ untouched; mobile wire contract append-only; App-DB additive migrations only (D-
    `NotificationKind.BookingRejected(42)` (kept, frozen — left unused); turns
    `PendingBookingExpiryWorker` into dead code; and changes shipped-app seat-card
    semantics (apps read `SessionSeatCell.Status` for the D-572 hint). 3 create paths
-   set `Status=Pending`+`ExpiresUtc` — all must flip (`ReserveAsync`,
+   set `Status=Pending`+`Expires` — all must flip (`ReserveAsync`,
    `JoinOpenSeatingAsync`, `PickRandomSeat`).
 3. **[FIX] The 4th seat state (تم التأكيد / checked-in) is NOT derivable from
    `Status`.** It needs a new appended `bool CheckedIn` on `SessionSeatCell`,
@@ -110,7 +110,7 @@ agenda-without-auth = still pending (excluded).
   get the full 4-state grid.
 - **DT-3 Retire, don't delete, `PendingBookingExpiryWorker`:** repurpose it into the
   T-3-minutes release worker (keep one worker) so there is no two-worker overlap; its
-  24h `ExpiresUtc` trigger is replaced by "session starts within 3 min AND holder has no
+  24h `Expires` trigger is replaced by "session starts within 3 min AND holder has no
   open `HallAttendance`."
 - **DT-4 Reminder vs release:** the T-30 reminder already fires for un-released holders.
   Accept the known interaction (a reminded holder who never arrives is released at T-3);
@@ -271,7 +271,7 @@ the release worker (W2-5) keys off it.**
     **Decisions (owner 2026-07-19):** map **Committee = scientific-team filter**, **per-session
     desk = moderator**. Deltas: (1) branch on `Phase` — **Live** skips AI + Committee and goes
     straight to the Moderator desk, which **gains accept/reject** (today push-only); (2) tighten
-    the live gate to an **open** `HallAttendance` (`LeaveUtc == null`) and apply it even to
+    the live gate to an **open** `HallAttendance` (`Leave == null`) and apply it even to
     geofence-less halls; (3) **Pre-Ask** runs AI-filter → Committee → desk (turn the AI filter
     on for pre-ask and make the AI dynamic prompt persist input+output per W3-14). Perms:
     `Questions.*` + `SessionModeration.Moderate` (exist). Risk: mostly logic; possibly one
@@ -287,7 +287,7 @@ the release worker (W2-5) keys off it.**
     `Session.LiveCaptions`, cap 2048); AI draft via the dynamic `session-summary` prompt →
     `SessionSummary.FullTextArabic`; a full **Draft → SubmitForReview → Approve → Publish**
     review workflow (D-472) already exists. **Gap:** `SetPublishedAsync` gates Publish only
-    on `now >= StartUtc` — it does **not** require `ApprovedAt`, so an unreviewed draft can
+    on `now >= Start` — it does **not** require `ApprovedAt`, so an unreviewed draft can
     reach the app. **Decision (owner 2026-07-19):** scientific edit + review is **mandatory
     before publish** — hard-gate `SetPublishedAsync` on `ApprovedAt != null`. Deltas: the
     hard-gate; preserve the pristine AI draft as a read-only snapshot distinct from the

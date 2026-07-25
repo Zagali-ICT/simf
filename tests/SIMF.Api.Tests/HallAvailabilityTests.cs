@@ -42,7 +42,7 @@ public sealed class HallAvailabilityTests : IClassFixture<SimfApiFactory>
             $"/api/v1/admin/halls/{hallId}/availability-windows",
             new CreateHallAvailabilityWindowRequest
             {
-                StartUtc = WindowStart, EndUtc = WindowStart.AddMinutes(60), SlotMinutes = 30,
+                Start = WindowStart, End = WindowStart.AddMinutes(60), SlotMinutes = 30,
             }, admin);
         Assert.Equal(HttpStatusCode.OK, create.StatusCode);
 
@@ -51,8 +51,8 @@ public sealed class HallAvailabilityTests : IClassFixture<SimfApiFactory>
 
         var slots = await GetSlotsAsync(hallId, admin);
         Assert.Equal(2, slots.Count);
-        Assert.Equal(WindowStart, slots[0].StartUtc);
-        Assert.Equal(WindowStart.AddMinutes(30), slots[0].EndUtc);
+        Assert.Equal(WindowStart, slots[0].Start);
+        Assert.Equal(WindowStart.AddMinutes(30), slots[0].End);
     }
 
     [Fact]
@@ -66,7 +66,7 @@ public sealed class HallAvailabilityTests : IClassFixture<SimfApiFactory>
             $"/api/v1/admin/halls/{hallId}/availability-windows",
             new CreateHallAvailabilityWindowRequest
             {
-                StartUtc = WindowStart, EndUtc = WindowStart.AddMinutes(-10), SlotMinutes = 30,
+                Start = WindowStart, End = WindowStart.AddMinutes(-10), SlotMinutes = 30,
             }, admin);
         Assert.Equal(HttpStatusCode.BadRequest, bad.StatusCode);
 
@@ -75,7 +75,7 @@ public sealed class HallAvailabilityTests : IClassFixture<SimfApiFactory>
             $"/api/v1/admin/halls/{Guid.NewGuid()}/availability-windows",
             new CreateHallAvailabilityWindowRequest
             {
-                StartUtc = WindowStart, EndUtc = WindowStart.AddMinutes(60), SlotMinutes = 30,
+                Start = WindowStart, End = WindowStart.AddMinutes(60), SlotMinutes = 30,
             }, admin);
         Assert.Equal(HttpStatusCode.NotFound, unknown.StatusCode);
     }
@@ -89,7 +89,7 @@ public sealed class HallAvailabilityTests : IClassFixture<SimfApiFactory>
             $"/api/v1/admin/halls/{hallId}/availability-windows",
             new CreateHallAvailabilityWindowRequest
             {
-                StartUtc = WindowStart, EndUtc = WindowStart.AddMinutes(60), SlotMinutes = 30,
+                Start = WindowStart, End = WindowStart.AddMinutes(60), SlotMinutes = 30,
             }, admin);
         var window = (await create.Content
             .ReadFromJsonAsync<ApiResult<AdminHallAvailabilityWindow>>())!.Data!;
@@ -114,18 +114,18 @@ public sealed class HallAvailabilityTests : IClassFixture<SimfApiFactory>
             $"/api/v1/admin/halls/{hallId}/availability-windows",
             new CreateHallAvailabilityWindowRequest
             {
-                StartUtc = WindowStart, EndUtc = WindowStart.AddMinutes(60), SlotMinutes = 30,
+                Start = WindowStart, End = WindowStart.AddMinutes(60), SlotMinutes = 30,
             }, admin);
         Assert.Equal(HttpStatusCode.OK, create.StatusCode);
 
         var before = await GetSlotsAsync(hallId, admin);
         Assert.Equal(2, before.Count);
 
-        await SeedBoundMeetingAsync(hallId, before[0].StartUtc, before[0].EndUtc);
+        await SeedBoundMeetingAsync(hallId, before[0].Start, before[0].End);
 
         var after = await GetSlotsAsync(hallId, admin);
         Assert.Single(after);
-        Assert.Equal(before[1].StartUtc, after[0].StartUtc);
+        Assert.Equal(before[1].Start, after[0].Start);
     }
 
     // -- helpers --------------------------------------------------------------
@@ -150,7 +150,7 @@ public sealed class HallAvailabilityTests : IClassFixture<SimfApiFactory>
             SpeakerId = speaker.Id,
             RequestedByUserId = Guid.NewGuid(),
             RequesterName = "Bound", Subject = "Bound meeting",
-            HallId = hallId, SlotStartUtc = start, SlotEndUtc = end,
+            HallId = hallId, SlotStart = start, SlotEnd = end,
             Status = MeetingRequestStatus.AwaitingSpeaker,
             CreatedAt = DateTimeOffset.UtcNow, RespondedAt = DateTimeOffset.UtcNow,
         });

@@ -10,7 +10,7 @@
 | **Required permissions** | `Bookings.View` (page + list), `Bookings.Export` (Excel export) — `PermissionCatalog.Bookings.*`. **`Bookings.Approve` / `Bookings.Reject` were retired** with the approval step. |
 | **Backend endpoints** | BFF `/account/api/admin/bookings/*` → API: `POST /admin/bookings/list` (`GridQuery`), `POST /admin/bookings/export` (`AdminGridExportRequest`). The approve/reject/bulk-approve endpoints were removed. |
 | **Source** | [`BookingsList.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/BookingsList.razor), [`SeatReservationEndpoints.cs`](../../../src/Backend/SIMF.Api/Endpoints/Sessions/SeatReservationEndpoints.cs), [`ExportBookingsEndpoint`](../../../src/Backend/SIMF.Api/Endpoints/Admin/BookingsExcelEndpoints.cs), [`SeatReservationService.cs`](../../../src/Backend/SIMF.Infrastructure/SeatReservations/SeatReservationService.cs), [`ReservationNoShowReleaseWorker.cs`](../../../src/Backend/SIMF.Infrastructure/Operations/ReservationNoShowReleaseWorker.cs), [`SeatReservations.cs`](../../../src/Shared/SIMF.Contracts/Sessions/SeatReservations.cs) |
-| **Backed by** | Existing `dbo.SeatReservations` (no new table). `ExpiresUtc` now carries the no-show deadline (`StartUtc − 3min`). |
+| **Backed by** | Existing `dbo.SeatReservations` (no new table). `Expires` now carries the no-show deadline (`Start − 3min`). |
 | **Tests** | [`docs/tests/e2e/cp-admin-bookings.md`](../../tests/e2e/cp-admin-bookings.md) |
 | **Last reviewed** | 2026-07-21 |
 
@@ -24,15 +24,15 @@ the seat is confirmed immediately. This page lets an admin **see** and **export*
 bookings — nothing more. It replaced the retired D-227 approval queue.
 
 **The no-show release (the real lifecycle).** A reserved seat is a **provisional hold**
-stamped with `ExpiresUtc = StartUtc − 3min`. The background
+stamped with `Expires = Start − 3min`. The background
 `ReservationNoShowReleaseWorker` calls `ISeatReservationService.ReleaseNoShowsAsync`
 once a minute: any active (`Status = Approved`, `ReleasedAt == null`,
 `ReservedForUserId != null`) hold past its deadline whose holder has **no**
 `HallAttendance` (never checked in) **and** that was **booked ahead** of the deadline
-(`CreatedAt < ExpiresUtc`) is released (`Status = Cancelled`, `ReleasedAt` stamped) so
+(`CreatedAt < Expires`) is released (`Status = Cancelled`, `ReleasedAt` stamped) so
 the seat can go to someone else, and the holder gets a `BookingReleased` notification.
 A walk-in who booked at/after the deadline is exempt; an admin row-block (null attendee,
-null `ExpiresUtc`) is never touched.
+null `Expires`) is never touched.
 
 This is **not** a CRUD grid and **not** a review queue — there is no Add / Edit /
 Details / Deactivate, no Approve / Reject / bulk-approve, and no import.
@@ -98,7 +98,7 @@ names in **one** Identity round-trip (no cross-DB JOIN, D-157). `Top` clamped 1�
   (`TryNotifyBookingReleasedAsync`, `noShow: true`) swallow-and-logs on failure (it
   writes to the Identity DbContext after the release is committed) — a notification
   failure never rolls back the release.
-- **Walk-ins are exempt** from the no-show release (`CreatedAt >= ExpiresUtc`), so a
+- **Walk-ins are exempt** from the no-show release (`CreatedAt >= Expires`), so a
   seat booked during/just before the session is not yanked from a present attendee.
 - **Attendee name may be blank** if the Identity lookup finds no `DisplayName`.
 - **Export ceiling.** The export endpoint sets `Top = 5000`, but the list service

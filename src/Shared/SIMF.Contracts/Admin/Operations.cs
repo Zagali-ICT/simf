@@ -4,7 +4,7 @@ namespace SIMF.Contracts.Admin;
 /// registration gate, returned by GET + admin endpoints.</summary>
 public sealed record RegistrationGateState(
     bool IsOpen,
-    DateTimeOffset? AutoCloseUtc,
+    DateTimeOffset? AutoClose,
     DateTimeOffset LastChangedAt,
     Guid? LastChangedByUserId);
 
@@ -13,7 +13,7 @@ public sealed record RegistrationGateState(
 public sealed class UpdateRegistrationGateRequest
 {
     public bool IsOpen { get; set; }
-    public DateTimeOffset? AutoCloseUtc { get; set; }
+    public DateTimeOffset? AutoClose { get; set; }
 }
 
 /// <summary>D-166 (gap doc G4, PDF §2.4) — current state of the archive

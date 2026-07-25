@@ -345,8 +345,8 @@ public partial class MeetingTablesList
         _busy = true;
         try
         {
-            _allocForm.StartUtc = start;
-            _allocForm.EndUtc = end;
+            _allocForm.Start = start;
+            _allocForm.End = end;
             var env = await JS.InvokeAsync<ApiResult<HallAllocationRow>>(
                 "simfAccount.postJson", $"/account/api/admin/halls/{hid}/hall-allocations", _allocForm);
             if (env is { Success: true })

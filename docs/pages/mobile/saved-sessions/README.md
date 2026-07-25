@@ -76,7 +76,7 @@ no saved session carries a category.
 |---------|-----------------|-------|
 | Title | `title` / `titleArabic` | localized |
 | Category · hall line | `categoryName(Arabic)` · `hallName(Arabic)` | beige meta line; omitted parts collapse |
-| Date · time line | `startUtc` (device-local) | "12 يناير 2026 · 08:00 PM" — bilingual month name + 12-hour time |
+| Date · time line | `start` (device-local) | "12 يناير 2026 · 08:00 PM" — bilingual month name + 12-hour time |
 | Bookmark | shared favourites set | filled bookmark; tapping un-saves (removes the card) |
 
 Tapping the card body opens the **session detail** (`/sessions/{id}`, route 17).
@@ -87,7 +87,7 @@ Tapping the card body opens the **session detail** (`/sessions/{id}`, route 17).
 User opens /saved-sessions (from the My-Area جلسات محفوظة counter)
   → screen watches aiSummarySessionsProvider (cached programme)
        + sessionFavouritesProvider (GET /app/sessions/favourites, approved-only)
-  → saved = programme.where(id ∈ favourites), sorted by startUtc
+  → saved = programme.where(id ∈ favourites), sorted by start
   → count row = saved.length; chips = distinct categories(saved)
   → filtered by the selected chip → cards
 

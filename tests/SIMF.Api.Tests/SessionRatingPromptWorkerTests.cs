@@ -46,7 +46,7 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
             var idDb = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
 
             var session = await appDb.Sessions.SingleAsync(s => s.Id == sessionId);
-            Assert.NotNull(session.RatingPromptSentUtc);
+            Assert.NotNull(session.RatingPromptSent);
 
             var count = await idDb.Notifications.CountAsync(n =>
                 n.Kind == NotificationKind.SessionRatingRequest
@@ -87,7 +87,7 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
         var idDb = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
 
         var session = await appDb.Sessions.SingleAsync(s => s.Id == sessionId);
-        Assert.NotNull(session.RatingPromptSentUtc);
+        Assert.NotNull(session.RatingPromptSent);
 
         var count = await idDb.Notifications.CountAsync(n =>
             n.Kind == NotificationKind.SessionRatingRequest
@@ -116,7 +116,7 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
 
         // Stamped (so it stops scanning) but no prompt sent to the absent booker.
         var session = await appDb.Sessions.SingleAsync(s => s.Id == sessionId);
-        Assert.NotNull(session.RatingPromptSentUtc);
+        Assert.NotNull(session.RatingPromptSent);
 
         var count = await idDb.Notifications.CountAsync(n =>
             n.Kind == NotificationKind.SessionRatingRequest
@@ -138,7 +138,7 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var session = await appDb.Sessions.SingleAsync(s => s.Id == sessionId);
-        Assert.Null(session.RatingPromptSentUtc);
+        Assert.Null(session.RatingPromptSent);
     }
 
     [Fact]
@@ -154,7 +154,7 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var session = await appDb.Sessions.SingleAsync(s => s.Id == sessionId);
-        Assert.Null(session.RatingPromptSentUtc);
+        Assert.Null(session.RatingPromptSent);
     }
 
     [Fact]
@@ -179,7 +179,7 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
 
             // Not stamped, so re-enabling the type resumes prompting this session.
             var session = await appDb.Sessions.SingleAsync(s => s.Id == sessionId);
-            Assert.Null(session.RatingPromptSentUtc);
+            Assert.Null(session.RatingPromptSent);
 
             var count = await idDb.Notifications.CountAsync(n =>
                 n.Kind == NotificationKind.SessionRatingRequest
@@ -256,11 +256,11 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
 
     // Seeds a just-/long-ended session plus a HallAttendance (hall check-in) for
     // the visitor — the attendance the rating prompt is now gated on.
-    private async Task<Guid> SeedEndedSessionWithAttendanceAsync(DateTimeOffset endUtc, Guid visitorId)
+    private async Task<Guid> SeedEndedSessionWithAttendanceAsync(DateTimeOffset end, Guid visitorId)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var (hall, session) = BuildEndedSession(endUtc);
+        var (hall, session) = BuildEndedSession(end);
         db.Halls.Add(hall);
         db.Sessions.Add(session);
         db.HallAttendances.Add(new HallAttendance
@@ -270,7 +270,7 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
             HallId = hall.Id,
             UserId = visitorId,
             Method = AttendanceMethod.QrScan,
-            EnterUtc = session.StartUtc,
+            Enter = session.Start,
             CreatedAt = DateTimeOffset.UtcNow,
         });
         await db.SaveChangesAsync();
@@ -279,11 +279,11 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
 
     // Seeds a just-ended session with only a SEAT BOOKING (no hall check-in) for
     // the visitor — the "booked but absent" case that must NOT be prompted.
-    private async Task<Guid> SeedEndedSessionWithBookingOnlyAsync(DateTimeOffset endUtc, Guid visitorId)
+    private async Task<Guid> SeedEndedSessionWithBookingOnlyAsync(DateTimeOffset end, Guid visitorId)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var (hall, session) = BuildEndedSession(endUtc);
+        var (hall, session) = BuildEndedSession(end);
         db.Halls.Add(hall);
         db.Sessions.Add(session);
         db.SeatReservations.Add(new SeatReservation
@@ -301,7 +301,7 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
         return session.Id;
     }
 
-    private static (Hall Hall, Session Session) BuildEndedSession(DateTimeOffset endUtc)
+    private static (Hall Hall, Session Session) BuildEndedSession(DateTimeOffset end)
     {
         var hall = new Hall
         {
@@ -320,8 +320,8 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
             Title = "Keynote",
             TitleArabic = "الكلمة الرئيسية",
             HallId = hall.Id,
-            StartUtc = endUtc.AddHours(-1),
-            EndUtc = endUtc,
+            Start = end.AddHours(-1),
+            End = end,
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };

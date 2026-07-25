@@ -38,25 +38,25 @@ internal sealed class GateScanConfiguration : IEntityTypeConfiguration<GateScan>
         builder.Property(scan => scan.UserAgent).HasMaxLength(512);
         builder.Property(scan => scan.IdempotencyKey).HasMaxLength(64);
 
-        builder.HasIndex(scan => new { scan.GateId, scan.ScannedAtUtc })
+        builder.HasIndex(scan => new { scan.GateId, scan.ScannedAt })
             .HasDatabaseName("IX_GateScan_Gate_ScannedAt")
             .IsDescending(false, true);
 
-        builder.HasIndex(scan => new { scan.UserProfileId, scan.ScannedAtUtc })
+        builder.HasIndex(scan => new { scan.UserProfileId, scan.ScannedAt })
             .HasDatabaseName("IX_GateScan_UserProfile_ScannedAt")
             .IsDescending(false, true);
 
-        builder.HasIndex(scan => new { scan.UserProfileId, scan.ScannedAtUtc })
+        builder.HasIndex(scan => new { scan.UserProfileId, scan.ScannedAt })
             .HasDatabaseName("IX_GateScan_UserProfile_LastAllowed")
             .IsDescending(false, true)
             .HasFilter("[Outcome] = 0 AND [UserProfileId] IS NOT NULL");
 
-        builder.HasIndex(scan => new { scan.GateId, scan.UserProfileId, scan.ScannedAtUtc })
+        builder.HasIndex(scan => new { scan.GateId, scan.UserProfileId, scan.ScannedAt })
             .HasDatabaseName("IX_GateScan_Gate_UserProfile_5sWindow")
             .IsDescending(false, false, true)
             .HasFilter("[UserProfileId] IS NOT NULL");
 
-        builder.HasIndex(scan => new { scan.ScannedByUserId, scan.ScannedAtUtc })
+        builder.HasIndex(scan => new { scan.ScannedByUserId, scan.ScannedAt })
             .HasDatabaseName("IX_GateScan_ScannedBy_ScannedAt")
             .IsDescending(false, true);
 

@@ -164,7 +164,7 @@ internal sealed class BusinessMeetingService(
         var hasScheduled = await appDbContext.BusinessMeetings.AsNoTracking()
             .AnyAsync(m => m.MeetingTableId == tableId
                 && m.Status == BusinessMeetingStatus.Confirmed
-                && m.EndUtc > now, cancellationToken);
+                && m.End > now, cancellationToken);
         if (hasScheduled)
         {
             throw new ApiException(
@@ -297,11 +297,11 @@ internal sealed class BusinessMeetingService(
             .Where(a => a.HallId == hallId && a.ReleasedAt == null);
         var total = await baseQuery.CountAsync(cancellationToken);
         var rows = await baseQuery
-            .OrderByDescending(a => a.StartUtc)
+            .OrderByDescending(a => a.Start)
             .Skip(skip).Take(top)
             .Select(a => new HallAllocationRow(
                 a.Id, a.HallId, a.Purpose, a.Mode, a.UnitCount, a.RowColumnSpec,
-                a.StartUtc, a.EndUtc, a.Notes))
+                a.Start, a.End, a.Notes))
             .ToListAsync(cancellationToken);
         return GridPage<HallAllocationRow>.Of(rows, total, skip, top);
     }
@@ -314,7 +314,7 @@ internal sealed class BusinessMeetingService(
             .SingleOrDefaultAsync(h => h.Id == hallId && h.IsActive, cancellationToken)
             ?? throw NotFound(ErrorCodes.HallNotFound, "Hall not found.", "لم يتم العثور على القاعة.");
 
-        await ValidateSlotAsync(request.StartUtc, request.EndUtc, cancellationToken);
+        await ValidateSlotAsync(request.Start, request.End, cancellationToken);
         if (request.Mode == HallAllocationMode.RandomByCount && request.UnitCount is not > 0)
         {
             throw Invalid(ErrorCodes.HallAllocationInvalid,
@@ -332,7 +332,7 @@ internal sealed class BusinessMeetingService(
         // any active allocation in the hall whose window overlaps this one.
         var overlaps = await appDbContext.HallAllocations.AsNoTracking()
             .Where(a => a.HallId == hallId && a.ReleasedAt == null)
-            .AnyAsync(a => a.StartUtc < request.EndUtc && request.StartUtc < a.EndUtc,
+            .AnyAsync(a => a.Start < request.End && request.Start < a.End,
                 cancellationToken);
         if (overlaps)
         {
@@ -351,8 +351,8 @@ internal sealed class BusinessMeetingService(
             UnitCount = request.Mode == HallAllocationMode.RandomByCount ? request.UnitCount : null,
             RowColumnSpec = request.Mode == HallAllocationMode.RowColumn
                 ? Trim(request.RowColumnSpec) : null,
-            StartUtc = request.StartUtc,
-            EndUtc = request.EndUtc,
+            Start = request.Start,
+            End = request.End,
             CreatedByUserId = actorUserId,
             Notes = Trim(request.Notes),
             CreatedAt = timeProvider.GetUtcNow(),
@@ -366,13 +366,13 @@ internal sealed class BusinessMeetingService(
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
             Detail = $"allocationId={allocation.Id}; hallId={hallId}; purpose={request.Purpose}; "
-                + $"mode={request.Mode}; from={request.StartUtc:o}; to={request.EndUtc:o}",
+                + $"mode={request.Mode}; from={request.Start:o}; to={request.End:o}",
         }, cancellationToken);
 
         return new HallAllocationRow(
             allocation.Id, allocation.HallId, allocation.Purpose, allocation.Mode,
-            allocation.UnitCount, allocation.RowColumnSpec, allocation.StartUtc,
-            allocation.EndUtc, allocation.Notes);
+            allocation.UnitCount, allocation.RowColumnSpec, allocation.Start,
+            allocation.End, allocation.Notes);
     }
 
     public async Task ReleaseAllocationAsync(
@@ -436,18 +436,18 @@ internal sealed class BusinessMeetingService(
         // CP grid sortable columns (D-255). Default: most recent start first.
         q = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
-            ("hall", false) => q.OrderBy(m => m.MeetingTable!.Hall!.NameArabic).ThenByDescending(m => m.StartUtc),
-            ("hall", true) => q.OrderByDescending(m => m.MeetingTable!.Hall!.NameArabic).ThenByDescending(m => m.StartUtc),
-            ("table", false) => q.OrderBy(m => m.MeetingTable!.Code).ThenByDescending(m => m.StartUtc),
-            ("table", true) => q.OrderByDescending(m => m.MeetingTable!.Code).ThenByDescending(m => m.StartUtc),
-            ("type", false) => q.OrderBy(m => m.MeetingType).ThenByDescending(m => m.StartUtc),
-            ("type", true) => q.OrderByDescending(m => m.MeetingType).ThenByDescending(m => m.StartUtc),
-            ("start", false) => q.OrderBy(m => m.StartUtc),
-            ("end", false) => q.OrderBy(m => m.EndUtc),
-            ("end", true) => q.OrderByDescending(m => m.EndUtc),
-            ("status", false) => q.OrderBy(m => m.Status).ThenByDescending(m => m.StartUtc),
-            ("status", true) => q.OrderByDescending(m => m.Status).ThenByDescending(m => m.StartUtc),
-            _ => q.OrderByDescending(m => m.StartUtc),
+            ("hall", false) => q.OrderBy(m => m.MeetingTable!.Hall!.NameArabic).ThenByDescending(m => m.Start),
+            ("hall", true) => q.OrderByDescending(m => m.MeetingTable!.Hall!.NameArabic).ThenByDescending(m => m.Start),
+            ("table", false) => q.OrderBy(m => m.MeetingTable!.Code).ThenByDescending(m => m.Start),
+            ("table", true) => q.OrderByDescending(m => m.MeetingTable!.Code).ThenByDescending(m => m.Start),
+            ("type", false) => q.OrderBy(m => m.MeetingType).ThenByDescending(m => m.Start),
+            ("type", true) => q.OrderByDescending(m => m.MeetingType).ThenByDescending(m => m.Start),
+            ("start", false) => q.OrderBy(m => m.Start),
+            ("end", false) => q.OrderBy(m => m.End),
+            ("end", true) => q.OrderByDescending(m => m.End),
+            ("status", false) => q.OrderBy(m => m.Status).ThenByDescending(m => m.Start),
+            ("status", true) => q.OrderByDescending(m => m.Status).ThenByDescending(m => m.Start),
+            _ => q.OrderByDescending(m => m.Start),
         };
 
         var total = await q.CountAsync(cancellationToken);
@@ -455,7 +455,7 @@ internal sealed class BusinessMeetingService(
             .Select(m => new BusinessMeetingRow(
                 m.Id, m.MeetingTableId, m.MeetingTable!.Code,
                 m.MeetingTable.HallId, m.MeetingTable.Hall!.NameArabic,
-                m.MeetingType, m.StartUtc, m.EndUtc, m.Status,
+                m.MeetingType, m.Start, m.End, m.Status,
                 m.Participants.Count))
             .ToListAsync(cancellationToken);
 
@@ -483,7 +483,7 @@ internal sealed class BusinessMeetingService(
 
         return new BusinessMeetingDetail(
             meeting.Id, meeting.MeetingTableId, table.Code, table.HallId, hall.NameArabic,
-            meeting.MeetingType, meeting.StartUtc, meeting.EndUtc, meeting.Status,
+            meeting.MeetingType, meeting.Start, meeting.End, meeting.Status,
             meeting.Notes, meeting.CancellationReason, meeting.CreatedAt,
             meeting.CancelledAt, participants);
     }
@@ -492,7 +492,7 @@ internal sealed class BusinessMeetingService(
         Guid actorUserId, ScheduleMeetingRequest request,
         CancellationToken cancellationToken = default)
     {
-        await ValidateSlotAsync(request.StartUtc, request.EndUtc, cancellationToken);
+        await ValidateSlotAsync(request.Start, request.End, cancellationToken);
 
         var table = await appDbContext.MeetingTables.AsNoTracking()
             .SingleOrDefaultAsync(t => t.Id == request.MeetingTableId && t.IsActive, cancellationToken)
@@ -528,8 +528,8 @@ internal sealed class BusinessMeetingService(
             Id = Guid.NewGuid(),
             MeetingTableId = table.Id,
             MeetingType = request.MeetingType,
-            StartUtc = request.StartUtc,
-            EndUtc = request.EndUtc,
+            Start = request.Start,
+            End = request.End,
             Status = BusinessMeetingStatus.Confirmed,
             Notes = Trim(request.Notes),
             ScheduledByUserId = actorUserId,
@@ -565,7 +565,7 @@ internal sealed class BusinessMeetingService(
             var tableClash = await appDbContext.BusinessMeetings.AsNoTracking()
                 .Where(m => m.MeetingTableId == table.Id
                     && m.Status == BusinessMeetingStatus.Confirmed)
-                .AnyAsync(m => m.StartUtc < request.EndUtc && request.StartUtc < m.EndUtc,
+                .AnyAsync(m => m.Start < request.End && request.Start < m.End,
                     cancellationToken);
             if (tableClash)
             {
@@ -583,7 +583,7 @@ internal sealed class BusinessMeetingService(
                     && a.ReleasedAt == null
                     && a.Mode == HallAllocationMode.Whole
                     && a.Purpose != HallPurpose.Meeting)
-                .AnyAsync(a => a.StartUtc < request.EndUtc && request.StartUtc < a.EndUtc,
+                .AnyAsync(a => a.Start < request.End && request.Start < a.End,
                     cancellationToken);
             if (hallReserved)
             {
@@ -600,7 +600,7 @@ internal sealed class BusinessMeetingService(
                 .Join(appDbContext.BusinessMeetings.AsNoTracking()
                         .Where(m => m.Status == BusinessMeetingStatus.Confirmed),
                     p => p.BusinessMeetingId, m => m.Id, (p, m) => m)
-                .AnyAsync(m => m.StartUtc < request.EndUtc && request.StartUtc < m.EndUtc,
+                .AnyAsync(m => m.Start < request.End && request.Start < m.End,
                     cancellationToken);
             if (partyClash)
             {
@@ -621,14 +621,14 @@ internal sealed class BusinessMeetingService(
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
             Detail = $"meetingId={meeting.Id}; tableId={table.Id}; type={request.MeetingType}; "
-                + $"participants={parties.Count}; from={request.StartUtc:o}; to={request.EndUtc:o}",
+                + $"participants={parties.Count}; from={request.Start:o}; to={request.End:o}",
         }, cancellationToken);
 
         await NotifyParticipantsAsync(meeting, NotificationKind.MeetingScheduled,
             "A meeting was scheduled for you", "تم تحديد موعد اجتماع لك", cancellationToken);
 
         return new BusinessMeetingScheduled(
-            meeting.Id, meeting.Status, meeting.StartUtc, meeting.EndUtc);
+            meeting.Id, meeting.Status, meeting.Start, meeting.End);
     }
 
     public async Task CancelMeetingAsync(
@@ -794,8 +794,8 @@ internal sealed class BusinessMeetingService(
                     Kind = kind,
                     Title = title,
                     TitleArabic = titleArabic,
-                    Body = $"Table meeting on {meeting.StartUtc.FormatSaudi()}.",
-                    BodyArabic = $"اجتماع طاولة بتاريخ {meeting.StartUtc.FormatSaudi()}.",
+                    Body = $"Table meeting on {meeting.Start.FormatSaudi()}.",
+                    BodyArabic = $"اجتماع طاولة بتاريخ {meeting.Start.FormatSaudi()}.",
                     Severity = severity,
                     RelatedEntityType = "BusinessMeeting",
                     RelatedEntityId = meeting.Id,

@@ -315,7 +315,7 @@ public static class ErrorCodes
     public const string BookingRejectionReasonRequired = "BOOKING_REJECTION_REASON_REQUIRED";
     public const string BookingSessionStarted = "BOOKING_SESSION_STARTED";
     // #20 (Round-1 held, option C) — a create-booking attempt on a session that has
-    // already ENDED (now >= Session.EndUtc). A started-but-live session stays bookable.
+    // already ENDED (now >= Session.End). A started-but-live session stays bookable.
     public const string BookingSessionEnded = "BOOKING_SESSION_ENDED";
 
     // Flexible hall config + B2B/B2C business meetings (SIMF-FDS-013 / D-248).

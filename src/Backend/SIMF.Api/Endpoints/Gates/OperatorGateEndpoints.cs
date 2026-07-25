@@ -35,7 +35,7 @@ public sealed class PostScanRequest
 {
     public Guid GateId { get; set; }
     public string Qr { get; set; } = string.Empty;
-    public DateTimeOffset? ClientScannedAtUtc { get; set; }
+    public DateTimeOffset? ClientScannedAt { get; set; }
     public string? IdempotencyKey { get; set; }
     public SIMF.Common.Enums.ScanSource Source { get; set; }
         = SIMF.Common.Enums.ScanSource.MobileApp;
@@ -75,7 +75,7 @@ public sealed class PostScanEndpoint(IGateOperatorService service)
             Request = new GateScanRequest
             {
                 Qr = req.Qr,
-                ClientScannedAtUtc = req.ClientScannedAtUtc,
+                ClientScannedAt = req.ClientScannedAt,
                 IdempotencyKey = req.IdempotencyKey,
                 Source = req.Source,
                 RequestedDirection = req.Direction,
@@ -133,8 +133,8 @@ public sealed class PostGateVisitorsListRequest
     public int PageSize { get; set; }
     public SIMF.Common.Enums.ScanDirection? Direction { get; set; }
     public SIMF.Common.Enums.ScanOutcome? Outcome { get; set; }
-    public DateTimeOffset? SinceUtc { get; set; }
-    public DateTimeOffset? UntilUtc { get; set; }
+    public DateTimeOffset? Since { get; set; }
+    public DateTimeOffset? Until { get; set; }
 }
 
 public sealed class PostGateVisitorsListEndpoint(IGateOperatorService service)
@@ -162,8 +162,8 @@ public sealed class PostGateVisitorsListEndpoint(IGateOperatorService service)
             PageSize = req.PageSize,
             Direction = req.Direction,
             Outcome = req.Outcome,
-            SinceUtc = req.SinceUtc,
-            UntilUtc = req.UntilUtc,
+            Since = req.Since,
+            Until = req.Until,
         };
         var result = await service.ListGateVisitorsAsync(
             operatorId, req.GateId, serviceRequest, ct);

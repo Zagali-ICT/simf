@@ -55,7 +55,7 @@ Each `POST` with `GridQuery { Top = 500, Filters: { isActive = "true" } }`:
 {
   "id": "guid", "code": "string", "title": "string", "titleArabic": "string",
   "hallId": "guid", "hallName": "string", "hallNameArabic": "string",
-  "startUtc": "DateTimeOffset", "endUtc": "DateTimeOffset",
+  "start": "DateTimeOffset", "end": "DateTimeOffset",
   "capacity": 0,                 // effective capacity (override ?? hall)
   "isActive": true,
   "createdAt": "DateTimeOffset",
@@ -71,7 +71,7 @@ Each `POST` with `GridQuery { Top = 500, Filters: { isActive = "true" } }`:
   "description": null, "descriptionArabic": null,         // string?
   "hallId": "guid", "hallName": "string", "hallNameArabic": "string",
   "hallCapacity": 0,
-  "startUtc": "DateTimeOffset", "endUtc": "DateTimeOffset",
+  "start": "DateTimeOffset", "end": "DateTimeOffset",
   "capacityOverride": null,      // int? — null = inherit hall
   "effectiveCapacity": 0,        // CapacityOverride ?? HallCapacity
   "isActive": true,
@@ -92,7 +92,7 @@ Each `POST` with `GridQuery { Top = 500, Filters: { isActive = "true" } }`:
 
 ### `AdminCreateSessionRequest` (A3) / `AdminUpdateSessionRequest` (A4)
 Create body: `Code`, `Title`, `TitleArabic`, `Description?`, `DescriptionArabic?`,
-`HallId`, `StartUtc`, `EndUtc`, `CapacityOverride?`, `CategoryId?`,
+`HallId`, `Start`, `End`, `CapacityOverride?`, `CategoryId?`,
 `Speakers` (`AdminSessionSpeakerEntry[]`), `ThemeIds` (`Guid[]`),
 `LiveStreamUrl?`, `LiveSignLanguageUrl?`. Update adds `IsActive`. (The API's
 `UpdateSessionEndpoint` binds a wire `UpdateSessionRequest` carrying `Id` from the
@@ -142,12 +142,12 @@ read (scoped to this request only). The content-type is resolved from the file
 
 ### Excel (A9 export / A10 import, `SessionsExcelEndpoints`)
 - **Export** sheet `"Sessions"`, file prefix `simf-sessions`, columns:
-  `Code | Title | TitleArabic | Hall | Category | StartUtc | EndUtc | Capacity | Status | IsActive`.
+  `Code | Title | TitleArabic | Hall | Category | Start | End | Capacity | Status | IsActive`.
   Hall → its **code**, Category → its **English name**, Start/End → ISO-8601 UTC
   (`yyyy-MM-ddTHH:mm:ss'Z'`), Status → enum **name**. Speaker roster + theme set
   are **omitted** (M-to-M).
 - **Import** is **insert-only**; row key = `Code`; required headers
-  `Code, Title, TitleArabic, Hall, StartUtc, EndUtc`. An optional **`Speakers`**
+  `Code, Title, TitleArabic, Hall, Start, End`. An optional **`Speakers`**
   column holds comma-separated speaker **codes** (resolved case-insensitive,
   active-only; position sets the display order, role defaults to Speaker) so an
   imported non-Event row can meet the #4 min-1-speaker rule. Hall resolves from its
@@ -168,14 +168,14 @@ read (scoped to this request only). The content-type is resolved from the file
 
 `PublicSessions = { items: PublicSessionListItem[] }`. Each
 `PublicSessionListItem` carries: `id`, `code`, `title`, `titleArabic`, `hallId`,
-`hallName`, `hallNameArabic`, `startUtc`, `endUtc`, `primaryThemeName(+Arabic)`,
+`hallName`, `hallNameArabic`, `start`, `end`, `primaryThemeName(+Arabic)`,
 `primaryThemeColor`, `categoryId/categoryName/categoryNameArabic` (the "is main
 session / type" tag, D-226), `status` (int), `description(+Arabic)` and the ordered
 `speakers[]` (`PublicSessionSpeaker` — incl. D-271 `countryId`, `countryNameEn/Ar`,
 `photoRelativePath`). The app fetches the list **once** and caches it. These app
 reads are **append-only** (D-219) — the CP writes the rows, the app reads them.
 
-> **Field mapping CP → app.** `Session.StartUtc/EndUtc` → agenda time chip;
+> **Field mapping CP → app.** `Session.Start/End` → agenda time chip;
 > `Code`/`Title`/`TitleArabic`/`Description*` → row + detail; `Hall*` → hall line;
 > `Category*` → the "type" tag; `Status` → optional Recorded/Published badge;
 > `Speakers` (order + role) → the speaker cards. Live URLs feed the app's live

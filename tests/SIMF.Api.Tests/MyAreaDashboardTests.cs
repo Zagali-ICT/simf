@@ -101,7 +101,7 @@ public sealed class MyAreaDashboardTests : IClassFixture<SimfApiFactory>
                 Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
                 Title = "Plenary", TitleArabic = "الجلسة العامة",
                 HallId = hall.Id,
-                StartUtc = now, EndUtc = now.AddHours(1),
+                Start = now, End = now.AddHours(1),
                 IsActive = true, CreatedAt = now,
             };
             app.Sessions.Add(session);
@@ -204,7 +204,7 @@ public sealed class MyAreaDashboardTests : IClassFixture<SimfApiFactory>
                 Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
                 Title = "Booked Talk", TitleArabic = "جلسة محجوزة",
                 HallId = hall.Id,
-                StartUtc = now, EndUtc = now.AddHours(1),
+                Start = now, End = now.AddHours(1),
                 IsActive = true, CreatedAt = now,
             };
             app.Sessions.Add(session);
@@ -227,7 +227,7 @@ public sealed class MyAreaDashboardTests : IClassFixture<SimfApiFactory>
                 HallId = hall.Id,
                 UserId = userId,
                 Method = AttendanceMethod.QrScan,
-                EnterUtc = now,
+                Enter = now,
                 CreatedAt = now,
             });
             app.SessionFavourites.Add(new SessionFavourite
@@ -338,7 +338,7 @@ public sealed class MyAreaDashboardTests : IClassFixture<SimfApiFactory>
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Keynote", TitleArabic = "الكلمة الرئيسية",
             HallId = hall.Id,
-            StartUtc = now, EndUtc = now.AddHours(1),
+            Start = now, End = now.AddHours(1),
             IsActive = true, CreatedAt = now,
         };
         app.Sessions.Add(session);
@@ -410,7 +410,7 @@ public sealed class MyAreaDashboardTests : IClassFixture<SimfApiFactory>
             Id = Guid.NewGuid(),
             MeetingTableId = table.Id,
             MeetingType = BusinessMeetingType.B2C,
-            StartUtc = now, EndUtc = now.AddMinutes(30),
+            Start = now, End = now.AddMinutes(30),
             Status = BusinessMeetingStatus.Confirmed,
             Notes = "Partnership discussion",
             ScheduledByUserId = userId,

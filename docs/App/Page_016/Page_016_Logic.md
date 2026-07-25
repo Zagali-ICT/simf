@@ -33,7 +33,7 @@ hidden.
 regardless of broadcast `Status`. "Full programme" = all active sessions; a
 soft-deleted session never appears. The two pills are pure client filters:
 - **الأجندة القادمة / Upcoming** (the **default** view) keeps sessions with
-  `startUtc >= now` (UTC compare — the code drops `startUtc.isBefore(nowUtc)`).
+  `start >= now` (UTC compare — the code drops `start.isBefore(nowUtc)`).
 - **أجندة الفعالية / Event agenda** ("forum") shows the whole cached
   programme, past sessions included.
 
@@ -52,7 +52,7 @@ Each `PublicSessionListItem` carries — mapping to the owner's list:
 
 | Owner field | Contract field(s) | Source |
 |-------------|-------------------|--------|
-| Date | `StartUtc`, `EndUtc` (UTC; app renders device-local) | `Session.StartUtc/EndUtc` |
+| Date | `Start`, `End` (UTC; app renders device-local) | `Session.Start/End` |
 | Code | `Code` | `Session.Code` |
 | Title | `Title`, `TitleArabic` | `Session.Title/TitleArabic` |
 | Body | `Description`, `DescriptionArabic` *(added D-252)* | `Session.Description/DescriptionArabic` |
@@ -82,7 +82,7 @@ category fields are null. The category renders on the **detail** (Page_017) —
 the KSA list row carries no type chip.
 
 ## L-5 Ordering + row numbering
-The list is ordered by `StartUtc` then `Title` (server-side); the client
+The list is ordered by `Start` then `Title` (server-side); the client
 filters preserve that order. Each rendered row is numbered with a
 **zero-padded 1-based index over the filtered list** (`01`, `02`, … — a pure
 client sequence, not `Code`). **There is no active/next-session marker** —

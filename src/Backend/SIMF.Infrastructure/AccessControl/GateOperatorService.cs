@@ -157,8 +157,8 @@ internal sealed class GateOperatorService(
             .Where(s => s.GateId == context.GateId
                      && s.UserProfileId == resolution.UserProfileId
                      && s.Outcome == ScanOutcome.Allowed)
-            .OrderByDescending(s => s.ScannedAtUtc)
-            .Select(s => new { s.Id, s.Direction, s.ScannedAtUtc })
+            .OrderByDescending(s => s.ScannedAt)
+            .Select(s => new { s.Id, s.Direction, s.ScannedAt })
             .FirstOrDefaultAsync(cancellationToken);
         // D-509 — on a Both-mode gate the operator can deliberately switch
         // دخول/خروج and re-scan the same badge within the window (e.g. a quick
@@ -171,12 +171,12 @@ internal sealed class GateOperatorService(
             && requestedDirection is { } requested
             && lastAllowed is not null
             && requested != lastAllowed.Direction;
-        if (lastAllowed is not null && lastAllowed.ScannedAtUtc >= windowCutoff
+        if (lastAllowed is not null && lastAllowed.ScannedAt >= windowCutoff
             && !isDeliberateDirectionSwitch)
         {
             var replay = new GateScanResponse(
                 lastAllowed.Id, ScanOutcome.Allowed,
-                lastAllowed.Direction, lastAllowed.ScannedAtUtc,
+                lastAllowed.Direction, lastAllowed.ScannedAt,
                 denialCtx.ToProfile(), null, null);
             return new GateScanResult(GateScanResultKind.Recorded, replay, false, null);
         }
@@ -209,18 +209,18 @@ internal sealed class GateOperatorService(
 
         var query = appDbContext.GateScans.AsNoTracking()
             .Where(s => s.ScannedByUserId == operatorUserId
-                     && s.ScannedAtUtc >= fromUtc && s.ScannedAtUtc <= toUtc);
+                     && s.ScannedAt >= fromUtc && s.ScannedAt <= toUtc);
         if (gateId is { } gid) { query = query.Where(s => s.GateId == gid); }
 
         // The Rows DISPLAY grid stays capped at the 500 most-recent scans (bounds
         // the wire payload); the Totals + DenialBreakdown below are computed over
         // the FULL day server-side, not from this capped list (A8).
         var rows = await query
-            .OrderByDescending(s => s.ScannedAtUtc)
+            .OrderByDescending(s => s.ScannedAt)
             .Take(500)
             .Select(s => new
             {
-                s.Id, s.ScannedAtUtc, s.Outcome, s.Direction,
+                s.Id, s.ScannedAt, s.Outcome, s.Direction,
                 s.UserProfileId, s.DenialReasonCode,
             })
             .ToListAsync(cancellationToken);
@@ -258,7 +258,7 @@ internal sealed class GateOperatorService(
             .ToList();
 
         var rowDtos = rows.Select(r => new OperatorScanRow(
-            r.Id, r.ScannedAtUtc, r.Outcome, r.Direction,
+            r.Id, r.ScannedAt, r.Outcome, r.Direction,
             r.UserProfileId is { } pid && displayNames.TryGetValue(pid, out var name) ? name : null,
             r.DenialReasonCode)).ToList();
 
@@ -301,20 +301,20 @@ internal sealed class GateOperatorService(
         {
             query = query.Where(s => s.Direction == dir);
         }
-        if (request.SinceUtc is { } since)
+        if (request.Since is { } since)
         {
-            query = query.Where(s => s.ScannedAtUtc >= since);
+            query = query.Where(s => s.ScannedAt >= since);
         }
-        if (request.UntilUtc is { } until)
+        if (request.Until is { } until)
         {
-            query = query.Where(s => s.ScannedAtUtc < until);
+            query = query.Where(s => s.ScannedAt < until);
         }
 
         var items = await query
             .OrderBy(s => s.Id)
             .Take(pageSize)
             .Select(s => new GateVisitorListItem(
-                s.Id, s.ScannedAtUtc, s.Direction, s.Outcome,
+                s.Id, s.ScannedAt, s.Direction, s.Outcome,
                 s.UserProfileId, s.QrIdAtScan,
                 // D-158 snapshot columns — no cross-DB JOIN.
                 s.ScannedDisplayName, s.ScannedProfileTypeName,
@@ -366,8 +366,8 @@ internal sealed class GateOperatorService(
     private GateScanResult Routing(GateScanResultKind kind, string code) =>
         new(kind, EmptyResponse(timeProvider.GetUtcNow()), false, code);
 
-    private static GateScanResponse EmptyResponse(DateTimeOffset scannedAtUtc) =>
-        new(0, ScanOutcome.Denied, ScanDirection.CheckIn, scannedAtUtc, null, null, null);
+    private static GateScanResponse EmptyResponse(DateTimeOffset scannedAt) =>
+        new(0, ScanOutcome.Denied, ScanDirection.CheckIn, scannedAt, null, null, null);
 
     /// <summary>D-509 — resolves the direction a scan records. A fixed In / Out
     /// gate always records its configured direction. A <c>Both</c> gate honours
@@ -606,15 +606,15 @@ internal sealed class GateOperatorService(
                      && s.Outcome == ScanOutcome.Denied
                      && s.QrIdAtScan == qrIdAtScan
                      && s.DenialReasonCode == reason
-                     && s.ScannedAtUtc >= denialWindowCutoff)
-            .OrderByDescending(s => s.ScannedAtUtc)
-            .Select(s => new { s.Id, s.Direction, s.ScannedAtUtc })
+                     && s.ScannedAt >= denialWindowCutoff)
+            .OrderByDescending(s => s.ScannedAt)
+            .Select(s => new { s.Id, s.Direction, s.ScannedAt })
             .FirstOrDefaultAsync(cancellationToken);
         if (priorDenial is not null)
         {
             var absorbed = new GateScanResponse(
                 priorDenial.Id, ScanOutcome.Denied, priorDenial.Direction,
-                priorDenial.ScannedAtUtc, denialCtx.ToProfile(),
+                priorDenial.ScannedAt, denialCtx.ToProfile(),
                 reason, MessageFor(reason, context.AcceptLanguage));
             return new GateScanResult(GateScanResultKind.Recorded, absorbed, false, null);
         }
@@ -682,8 +682,8 @@ internal sealed class GateOperatorService(
             Direction = direction,
             Outcome = outcome,
             DenialReasonCode = denialReason,
-            ScannedAtUtc = now,
-            ClientScannedAtUtc = context.Request.ClientScannedAtUtc,
+            ScannedAt = now,
+            ClientScannedAt = context.Request.ClientScannedAt,
             ScannedByUserId = context.OperatorUserId,
             Source = context.Request.Source,
             CorrelationId = context.CorrelationId,
@@ -736,7 +736,7 @@ internal sealed class GateOperatorService(
         string? message = scan.DenialReasonCode is { } reason
             ? MessageFor(reason, acceptLanguage) : null;
         return new GateScanResponse(
-            scan.Id, scan.Outcome, scan.Direction, scan.ScannedAtUtc,
+            scan.Id, scan.Outcome, scan.Direction, scan.ScannedAt,
             profile, scan.DenialReasonCode, message);
     }
 

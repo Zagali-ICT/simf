@@ -31,7 +31,7 @@ internal sealed class HallAttendanceService(
     TimeProvider timeProvider,
     ILogger<HallAttendanceService> logger) : IHallAttendanceService
 {
-    // X-3 — how far outside a session's [StartUtc, EndUtc] window an arrival is
+    // X-3 — how far outside a session's [Start, End] window an arrival is
     // still accepted (early arrivals + a brief post-end tail). Mirrors the CP
     // Hall-Arrivals console's live-session picker filter.
     private static readonly TimeSpan ArrivalGrace = TimeSpan.FromMinutes(15);
@@ -53,8 +53,8 @@ internal sealed class HallAttendanceService(
             .Select(s => new
             {
                 s.Id,
-                s.StartUtc,
-                s.EndUtc,
+                s.Start,
+                s.End,
                 s.HallId,
                 s.Hall!.GeofenceCenterLat,
                 s.Hall!.GeofenceCenterLon,
@@ -68,7 +68,7 @@ internal sealed class HallAttendanceService(
         // X-3 — arrival is only valid while the session is live (its time window,
         // ± a short grace); a stale or future sessionId must not open an
         // attendance row (single-source attendance, FDS-003 §5.4).
-        EnsureSessionLiveNow(session.StartUtc, session.EndUtc);
+        EnsureSessionLiveNow(session.Start, session.End);
 
         if (session.GeofenceCenterLat is not { } centerLat
             || session.GeofenceCenterLon is not { } centerLon
@@ -130,14 +130,14 @@ internal sealed class HallAttendanceService(
         var session = await appDbContext.Sessions
             .AsNoTracking()
             .Where(s => s.Id == sessionId && s.IsActive)
-            .Select(s => new { s.Id, s.StartUtc, s.EndUtc, s.HallId })
+            .Select(s => new { s.Id, s.Start, s.End, s.HallId })
             .SingleOrDefaultAsync(cancellationToken)
             ?? throw new ApiException(ErrorCodes.SessionNotFound, 404,
                 "The session was not found.",
                 "لم يتم العثور على الجلسة.");
 
         // X-3 — bind the operator door scan to the session's live window (± grace).
-        EnsureSessionLiveNow(session.StartUtc, session.EndUtc);
+        EnsureSessionLiveNow(session.Start, session.End);
 
         // No geofence check — the operator is physically at the door. Merges
         // with any existing open row (e.g. a prior geofence arrival).
@@ -211,16 +211,16 @@ internal sealed class HallAttendanceService(
         // set is tiny; the in-memory ordering prefers the currently-running
         // session over a grace-margin neighbour, then the nearest start (a
         // defensive tie-break).
-        var latestStart = now + ArrivalGrace;   // s.StartUtc - grace <= now
-        var earliestEnd = now - ArrivalGrace;    // now < s.EndUtc + grace
+        var latestStart = now + ArrivalGrace;   // s.Start - grace <= now
+        var earliestEnd = now - ArrivalGrace;    // now < s.End + grace
         var sessionId = (await appDbContext.Sessions
                 .AsNoTracking()
                 .Where(s => s.IsActive && s.HallId == hallId
-                    && s.StartUtc <= latestStart && earliestEnd < s.EndUtc)
-                .Select(s => new { s.Id, s.StartUtc, s.EndUtc })
+                    && s.Start <= latestStart && earliestEnd < s.End)
+                .Select(s => new { s.Id, s.Start, s.End })
                 .ToListAsync(cancellationToken))
-            .OrderBy(s => now >= s.StartUtc && now < s.EndUtc ? 0 : 1)
-            .ThenBy(s => (s.StartUtc - now).Duration())
+            .OrderBy(s => now >= s.Start && now < s.End ? 0 : 1)
+            .ThenBy(s => (s.Start - now).Duration())
             .Select(s => (Guid?)s.Id)
             .FirstOrDefault();
         if (sessionId is not { } liveSessionId)
@@ -321,7 +321,7 @@ internal sealed class HallAttendanceService(
             HallId = hallId,
             UserId = userId,
             Method = method,
-            EnterUtc = now,
+            Enter = now,
             CreatedAt = now,
         };
         appDbContext.HallAttendances.Add(row);
@@ -358,7 +358,7 @@ internal sealed class HallAttendanceService(
         if (cap <= 0) { return (0, 0, false); }
 
         var present = await appDbContext.HallAttendances
-            .Where(a => a.SessionId == sessionId && a.LeaveUtc == null)
+            .Where(a => a.SessionId == sessionId && a.Leave == null)
             .CountAsync(cancellationToken);
         return (present, cap, present >= cap);
     }
@@ -366,10 +366,10 @@ internal sealed class HallAttendanceService(
     /// <summary>X-3 — throws when now is outside the session's live window
     /// (± <see cref="ArrivalGrace"/>). Keeps arrival bound to a session that is
     /// actually running, so a stale or future sessionId cannot open a row.</summary>
-    private void EnsureSessionLiveNow(DateTimeOffset startUtc, DateTimeOffset endUtc)
+    private void EnsureSessionLiveNow(DateTimeOffset start, DateTimeOffset end)
     {
         var now = timeProvider.GetUtcNow();
-        if (now < startUtc - ArrivalGrace || now > endUtc + ArrivalGrace)
+        if (now < start - ArrivalGrace || now > end + ArrivalGrace)
         {
             throw new ApiException(ErrorCodes.SessionNotLive, 409,
                 "This session is not open for arrivals right now.",
@@ -400,7 +400,7 @@ internal sealed class HallAttendanceService(
         }
 
         var now = timeProvider.GetUtcNow();
-        open.LeaveUtc = now;
+        open.Leave = now;
         open.UpdatedAt = now;
         await appDbContext.SaveChangesAsync(cancellationToken);
 
@@ -477,8 +477,8 @@ internal sealed class HallAttendanceService(
         var row = await appDbContext.HallAttendances
             .AsNoTracking()
             .Where(a => a.SessionId == sessionId && a.UserId == userId)
-            .OrderBy(a => a.LeaveUtc == null ? 0 : 1)
-            .ThenByDescending(a => a.EnterUtc)
+            .OrderBy(a => a.Leave == null ? 0 : 1)
+            .ThenByDescending(a => a.Enter)
             .FirstOrDefaultAsync(cancellationToken);
         return ToStatus(row);
     }
@@ -487,13 +487,13 @@ internal sealed class HallAttendanceService(
         Guid userId, Guid sessionId, CancellationToken cancellationToken) =>
         appDbContext.HallAttendances
             .SingleOrDefaultAsync(
-                a => a.SessionId == sessionId && a.UserId == userId && a.LeaveUtc == null,
+                a => a.SessionId == sessionId && a.UserId == userId && a.Leave == null,
                 cancellationToken);
 
     private static HallAttendanceStatus ToStatus(HallAttendance? row) =>
         row is null
             ? new HallAttendanceStatus(false, null, null, null)
-            : new HallAttendanceStatus(row.LeaveUtc is null, row.EnterUtc, row.LeaveUtc, row.Method);
+            : new HallAttendanceStatus(row.Leave is null, row.Enter, row.Leave, row.Method);
 
     /// <summary>Great-circle distance in metres between two WGS-84 points.</summary>
     private static double HaversineMeters(double lat1, double lon1, double lat2, double lon2)

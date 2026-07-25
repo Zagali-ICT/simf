@@ -47,14 +47,14 @@ internal sealed class AdminSessionSummaryService(
         var rows = await appDbContext.Sessions
             .AsNoTracking()
             .Where(session => session.IsActive)
-            .OrderByDescending(session => session.StartUtc)
+            .OrderByDescending(session => session.Start)
             .Select(session => new
             {
                 session.Id,
                 session.Code,
                 session.Title,
                 session.TitleArabic,
-                session.StartUtc,
+                session.Start,
                 Summary = appDbContext.SessionSummaries
                     .Where(s => s.SessionId == session.Id && s.IsActive)
                     .Select(s => new
@@ -74,7 +74,7 @@ internal sealed class AdminSessionSummaryService(
             row.Code,
             row.Title,
             row.TitleArabic,
-            row.StartUtc,
+            row.Start,
             HasSummary: row.Summary is not null,
             GeneratedByAi: row.Summary?.AiModel is not null,
             IsPublished: row.Summary?.PublishedAt is not null,
@@ -274,10 +274,10 @@ internal sealed class AdminSessionSummaryService(
 
         var now = timeProvider.GetUtcNow();
         // S-6 (owner) — a محضر may only be PUBLISHED once the session has actually
-        // STARTED (now >= StartUtc). Publishing minutes for a not-yet-started
+        // STARTED (now >= Start). Publishing minutes for a not-yet-started
         // session would surface a summary for a talk that has not happened. Keyed
         // on the CLOCK, never the manual Held flag. Unpublish is always allowed.
-        if (publish && now < session.StartUtc)
+        if (publish && now < session.Start)
         {
             throw new ApiException(
                 ErrorCodes.SessionSummaryInvalid, 400,

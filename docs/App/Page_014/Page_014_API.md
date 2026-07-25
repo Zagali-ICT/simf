@@ -45,8 +45,8 @@ schedule rules are in [Page_014_Logic.md](Page_014_Logic.md).
   "todaySchedule": [          // merged, time-ordered, today only (event TZ = AST/UTC+3) — L-4
     {
       "kind": "Session",      // "Session" | "Meeting"
-      "startUtc": "2026-09-13T08:00:00Z",
-      "endUtc":   "2026-09-13T09:00:00Z", // null only if the source carries no end
+      "start": "2026-09-13T08:00:00Z",
+      "end":   "2026-09-13T09:00:00Z", // null only if the source carries no end
       "titleEn": "string",    // session title; empty for a business meeting
       "titleAr": "string",
       "hallNameEn": "string?",// Session.Hall.Name / MeetingTable.Hall.Name

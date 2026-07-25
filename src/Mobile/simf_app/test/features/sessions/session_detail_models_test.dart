@@ -12,8 +12,8 @@ void main() {
         'hallId': 'h1',
         'hallName': 'Main Hall',
         'hallNameArabic': 'القاعة الرئيسية',
-        'startUtc': '2026-11-23T06:00:00Z',
-        'endUtc': '2026-11-23T07:30:00Z',
+        'start': '2026-11-23T06:00:00Z',
+        'end': '2026-11-23T07:30:00Z',
         'description': 'Welcome',
         'descriptionArabic': 'أهلاً',
         'categoryName': 'Main Session',
@@ -43,7 +43,7 @@ void main() {
       expect(detail.liveStreamUrl, 'https://youtu.be/abcdefghijk');
       expect(detail.hasLiveStream, isTrue);
       expect(detail.displayOrder, 2); // D-567
-      expect(detail.startUtc.isUtc, isTrue);
+      expect(detail.start.isUtc, isTrue);
 
       expect(detail.speakers, hasLength(1));
       final speaker = detail.speakers.single;
@@ -58,8 +58,8 @@ void main() {
         'id': 's2',
         'code': 'X',
         'title': 'Bare',
-        'startUtc': '2026-11-23T06:00:00Z',
-        'endUtc': '2026-11-23T07:00:00Z',
+        'start': '2026-11-23T06:00:00Z',
+        'end': '2026-11-23T07:00:00Z',
       });
       expect(detail.localizedDescription(false), isNull);
       expect(detail.localizedCategory(false), isNull);

@@ -140,7 +140,7 @@ public sealed class AdminResetTwoFactorTests : IClassFixture<SimfApiFactory>
         var row = await app.OperationLog
             .Where(entry => entry.EventType == "Admin.TwoFactorReset"
                 && entry.SubjectUserId == targetUserId)
-            .OrderByDescending(entry => entry.TimestampUtc)
+            .OrderByDescending(entry => entry.Timestamp)
             .FirstAsync();
         Assert.Equal(targetEmail, row.SubjectEmail);
         Assert.NotNull(row.ActorUserId);

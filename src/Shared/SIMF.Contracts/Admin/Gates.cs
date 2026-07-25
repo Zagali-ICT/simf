@@ -98,7 +98,7 @@ public sealed record AdminGateScanRow(
     ScanDirection Direction,
     ScanOutcome Outcome,
     DenialReasonCode? DenialReasonCode,
-    DateTimeOffset ScannedAtUtc,
+    DateTimeOffset ScannedAt,
     Guid ScannedByUserId,
     ScanSource Source);
 
@@ -111,6 +111,6 @@ public sealed record AdminCurrentlyInsideRow(
     Guid? ProfileTypeId,
     string? ProfileTypeName,
     string? ProfileTypePageColor,
-    DateTimeOffset LastCheckInAtUtc,
+    DateTimeOffset LastCheckInAt,
     Guid LastCheckInGateId,
     string LastCheckInGateCode);

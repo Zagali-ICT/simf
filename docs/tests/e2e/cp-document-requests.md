@@ -78,7 +78,7 @@ Background:
 Scenario: Accept a pending document request
   Given the grid is showing rows of every status (no filter applied)
   Then POST /account/api/admin/document-requests/list fires with Skip=0
-  And each row shows the columns: Requester, Document type, Status, Submitted (UTC), and a quiet Actions column
+  And each row shows the columns: Requester, Document type, Status, Submitted (Saudi time), and a quiet Actions column
   And the Pending row shows the amber "Pending" pill
 
   When the administrator clicks the row's Respond (reply ↩ icon) action on the first Pending row

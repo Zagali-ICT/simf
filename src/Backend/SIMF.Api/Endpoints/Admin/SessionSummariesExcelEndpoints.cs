@@ -32,7 +32,7 @@ public sealed class ExportSessionSummariesEndpoint(
         new("SessionCode", row => row.SessionCode),
         new("SessionTitle", row => row.SessionTitle),
         new("SessionTitleArabic", row => row.SessionTitleArabic),
-        new("SessionStartUtc", row => row.SessionStartUtc),
+        new("SessionStart", row => row.SessionStart),
         new("Status", row => StatusText(row)),
         new("Source", row => SourceText(row)),
         new("PublishedAt", row => row.PublishedAt),

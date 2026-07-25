@@ -487,7 +487,7 @@ plus **Add session**, **Import**, and **Export**.
      agenda type tabs; `— No type —` leaves it untyped.
    - **Seat selection (override)** — `— Inherit from hall —` (default),
      `Assigned seat`, or `Open seating (general admission)`.
-   - **Start (UTC)** ✱ + **End (UTC)** ✱ — **enter UTC**, not local time.
+   - **Start (Saudi time)** ✱ + **End (Saudi time)** ✱ — **enter Saudi local time**.
      End must be after Start.
    - **Capacity override** — blank inherits the hall's seat count; set a
      value only when the room is reconfigured for this session.

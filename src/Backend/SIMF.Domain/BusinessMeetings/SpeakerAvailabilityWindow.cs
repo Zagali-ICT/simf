@@ -20,10 +20,10 @@ public sealed class SpeakerAvailabilityWindow
     public Speaker? Speaker { get; set; }
 
     /// <summary>Window start (UTC).</summary>
-    public DateTimeOffset StartUtc { get; set; }
+    public DateTimeOffset Start { get; set; }
 
-    /// <summary>Window end (UTC). Must be after <see cref="StartUtc"/>.</summary>
-    public DateTimeOffset EndUtc { get; set; }
+    /// <summary>Window end (UTC). Must be after <see cref="Start"/>.</summary>
+    public DateTimeOffset End { get; set; }
 
     /// <summary>Slot length in minutes (e.g. 30). The window is divided into
     /// back-to-back slots of this length; a trailing remainder shorter than one

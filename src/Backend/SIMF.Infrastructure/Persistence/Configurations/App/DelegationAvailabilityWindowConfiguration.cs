@@ -8,7 +8,7 @@ namespace SIMF.Infrastructure.Persistence.Configurations.App;
 /// <summary>Bi-Meeting rework — DelegationAvailabilityWindow EF config, mirroring
 /// <see cref="SpeakerAvailabilityWindowConfiguration"/>. Real FK to the Country
 /// lookup with Restrict (a country in use cannot be removed). Indexed by
-/// (CountryId, IsActive, StartUtc) for the slot-derivation read; one ACTIVE window
+/// (CountryId, IsActive, Start) for the slot-derivation read; one ACTIVE window
 /// per (country, start).</summary>
 internal sealed class DelegationAvailabilityWindowConfiguration
     : IEntityTypeConfiguration<DelegationAvailabilityWindow>
@@ -16,7 +16,7 @@ internal sealed class DelegationAvailabilityWindowConfiguration
     public void Configure(EntityTypeBuilder<DelegationAvailabilityWindow> builder)
     {
         builder.ToTable("DelegationAvailabilityWindows", table => table.HasCheckConstraint(
-            "CK_DelegationAvailabilityWindows_TimeWindow", "[EndUtc] > [StartUtc]"));
+            "CK_DelegationAvailabilityWindows_TimeWindow", "[End] > [Start]"));
         builder.HasKey(w => w.Id);
 
         builder.HasOne(w => w.Country)
@@ -24,11 +24,11 @@ internal sealed class DelegationAvailabilityWindowConfiguration
             .HasForeignKey(w => w.CountryId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasIndex(w => new { w.CountryId, w.IsActive, w.StartUtc });
+        builder.HasIndex(w => new { w.CountryId, w.IsActive, w.Start });
 
         // One ACTIVE window per (country, start): backstop for the "no duplicate
         // window" invariant (mirrors the speaker window index).
-        builder.HasIndex(w => new { w.CountryId, w.StartUtc })
+        builder.HasIndex(w => new { w.CountryId, w.Start })
             .IsUnique()
             .HasFilter("[IsActive] = 1");
     }

@@ -50,8 +50,8 @@ all unchanged.
   "hallId":        "guid",
   "hallName":      "string",
   "hallNameArabic":"string",
-  "startUtc":      "2026-11-03T06:00:00Z",
-  "endUtc":        "2026-11-03T07:00:00Z",
+  "start":      "2026-11-03T06:00:00Z",
+  "end":        "2026-11-03T07:00:00Z",
   "primaryThemeName":      "string?",   // theme chip
   "primaryThemeNameArabic":"string?",
   "primaryThemeColor":     "string?",

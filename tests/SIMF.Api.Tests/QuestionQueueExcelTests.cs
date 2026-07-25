@@ -89,8 +89,8 @@ public sealed class QuestionQueueExcelTests : IClassFixture<SimfApiFactory>
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Questions Export Session", TitleArabic = "جلسة تصدير الأسئلة",
             HallId = hall.Id,
-            StartUtc = DateTimeOffset.UtcNow.AddMinutes(-15),
-            EndUtc = DateTimeOffset.UtcNow.AddMinutes(45),
+            Start = DateTimeOffset.UtcNow.AddMinutes(-15),
+            End = DateTimeOffset.UtcNow.AddMinutes(45),
             IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
         };
         db.Sessions.Add(session);

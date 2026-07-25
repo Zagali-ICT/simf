@@ -6,7 +6,7 @@ namespace SIMF.Contracts.Programme;
 /// public agenda list. Bilingual title; the hosting hall is projected
 /// EN + AR so the app does not need a second fetch; the primary theme
 /// (first by the session's theme order) drives the "Hall · Kind" line
-/// and the agenda colour chip. <see cref="StartUtc"/>/<see cref="EndUtc"/>
+/// and the agenda colour chip. <see cref="Start"/>/<see cref="End"/>
 /// are UTC — the Flutter agenda renders local time per the device tz.
 /// Served by <c>GET /api/v1/app/programme/sessions</c>.</summary>
 public sealed record PublicSessionListItem(
@@ -17,8 +17,8 @@ public sealed record PublicSessionListItem(
     Guid HallId,
     string HallName,
     string HallNameArabic,
-    DateTimeOffset StartUtc,
-    DateTimeOffset EndUtc,
+    DateTimeOffset Start,
+    DateTimeOffset End,
     string? PrimaryThemeName,
     string? PrimaryThemeNameArabic,
     string? PrimaryThemeColor,
@@ -82,8 +82,8 @@ public sealed record PublicSessionDetail(
     Guid HallId,
     string HallName,
     string HallNameArabic,
-    DateTimeOffset StartUtc,
-    DateTimeOffset EndUtc,
+    DateTimeOffset Start,
+    DateTimeOffset End,
     IReadOnlyList<PublicSessionTheme> Themes,
     IReadOnlyList<PublicSessionSpeaker> Speakers,
     PublicSessionSeatSummary Seats,
@@ -117,7 +117,7 @@ public sealed record PublicSessionDetail(
     string? LiveCaptions = null,
     string? LiveCaptionsArabic = null,
     // D-567 (Figma 889:2604 gold index badge): the session's 1-based position
-    // within its day (sessions ordered by StartUtc), e.g. 2 → the badge shows
+    // within its day (sessions ordered by Start), e.g. 2 → the badge shows
     // "02". Computed by the service; 0 = unknown (an older API → the app falls
     // back to the code on the badge). Appended (append-only, D-219).
     int DisplayOrder = 0,
@@ -289,7 +289,7 @@ public sealed record PublicPresentationItem(
     Guid SessionId,
     string SessionTitle,
     string SessionTitleArabic,
-    DateTimeOffset SessionStartUtc,
+    DateTimeOffset SessionStart,
     string SpeakerName,
     string SpeakerNameArabic,
     string FileName,

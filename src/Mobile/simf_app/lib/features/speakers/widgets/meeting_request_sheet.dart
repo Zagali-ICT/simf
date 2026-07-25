@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../../core/utils/saudi_time.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -152,7 +153,7 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
   List<DateTime> get _daysWithSlots {
     final days = <DateTime>[];
     for (final slot in _slots) {
-      final local = slot.startUtc.toLocal();
+      final local = saudiOf(slot.start);
       final day = DateTime(local.year, local.month, local.day);
       if (!days.contains(day)) {
         days.add(day);
@@ -164,7 +165,7 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
   /// The slots on a given local day, in the endpoint's (chronological) order.
   List<SpeakerSlot> _slotsForDay(DateTime day) => <SpeakerSlot>[
         for (final slot in _slots)
-          if (_isSameDay(slot.startUtc.toLocal(), day)) slot,
+          if (_isSameDay(saudiOf(slot.start), day)) slot,
       ];
 
   static bool _isSameDay(DateTime a, DateTime b) =>
@@ -194,16 +195,16 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
     }
     // A slot is required only when the speaker actually offers slots; with no
     // slots the request goes subject-only and the team arranges a time.
-    DateTime? slotStartUtc;
-    DateTime? slotEndUtc;
+    DateTime? slotStart;
+    DateTime? slotEnd;
     if (_slots.isNotEmpty) {
       final slot = _selectedSlot;
       if (slot == null) {
         setState(() => _error = l10n.meetingPickDateTime);
         return;
       }
-      slotStartUtc = slot.startUtc;
-      slotEndUtc = slot.endUtc;
+      slotStart = slot.start;
+      slotEnd = slot.end;
     }
     // R0 — clear the inline error and submit. Feedback stays inside the sheet.
     setState(() {
@@ -217,8 +218,8 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
             speakerId,
             requesterName: name,
             subject: subject,
-            slotStartUtc: slotStartUtc,
-            slotEndUtc: slotEndUtc,
+            slotStart: slotStart,
+            slotEnd: slotEnd,
           );
       if (!mounted) {
         return;
@@ -572,7 +573,7 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
             MeetingTimeChip(
               key: ValueKey<String>('meeting-time-$i'),
               label: _formatTime(
-                TimeOfDay.fromDateTime(slots[i].startUtc.toLocal()),
+                TimeOfDay.fromDateTime(saudiOf(slots[i].start)),
                 isArabic,
               ),
               selected: _selectedSlot == slots[i],

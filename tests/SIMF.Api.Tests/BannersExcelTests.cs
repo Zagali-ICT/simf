@@ -228,10 +228,10 @@ public sealed class BannersExcelTests : IClassFixture<SimfApiFactory>
     private static byte[] BuildBannersWorkbook(
         string sheetName,
         params (string Title, string TitleArabic, string Body, string BodyArabic,
-            DateTimeOffset StartUtc, DateTimeOffset EndUtc, int DisplayOrder)[] rows) =>
+            DateTimeOffset Start, DateTimeOffset End, int DisplayOrder)[] rows) =>
         BuildBannersWorkbook(sheetName,
             rows.Select(r => (r.Title, r.TitleArabic, r.Body, r.BodyArabic,
-                (string?)null, (string?)null, r.StartUtc, r.EndUtc, r.DisplayOrder)).ToArray());
+                (string?)null, (string?)null, r.Start, r.End, r.DisplayOrder)).ToArray());
 
     // D-506 — overload that also writes the optional ImageUrl + LinkUrl columns
     // so the import round-trip test can carry them.
@@ -239,7 +239,7 @@ public sealed class BannersExcelTests : IClassFixture<SimfApiFactory>
         string sheetName,
         params (string Title, string TitleArabic, string Body, string BodyArabic,
             string? ImageUrl, string? LinkUrl,
-            DateTimeOffset StartUtc, DateTimeOffset EndUtc, int DisplayOrder)[] rows)
+            DateTimeOffset Start, DateTimeOffset End, int DisplayOrder)[] rows)
     {
         using var workbook = new XLWorkbook();
         var sheet = workbook.Worksheets.Add(sheetName);
@@ -249,8 +249,8 @@ public sealed class BannersExcelTests : IClassFixture<SimfApiFactory>
         sheet.Cell(1, 4).Value = "BodyArabic";
         sheet.Cell(1, 5).Value = "ImageUrl";
         sheet.Cell(1, 6).Value = "LinkUrl";
-        sheet.Cell(1, 7).Value = "StartUtc";
-        sheet.Cell(1, 8).Value = "EndUtc";
+        sheet.Cell(1, 7).Value = "Start";
+        sheet.Cell(1, 8).Value = "End";
         sheet.Cell(1, 9).Value = "DisplayOrder";
         for (var i = 0; i < rows.Length; i++)
         {
@@ -260,8 +260,8 @@ public sealed class BannersExcelTests : IClassFixture<SimfApiFactory>
             sheet.Cell(i + 2, 4).Value = rows[i].BodyArabic;
             sheet.Cell(i + 2, 5).Value = rows[i].ImageUrl ?? string.Empty;
             sheet.Cell(i + 2, 6).Value = rows[i].LinkUrl ?? string.Empty;
-            sheet.Cell(i + 2, 7).Value = rows[i].StartUtc.UtcDateTime.ToString("O");
-            sheet.Cell(i + 2, 8).Value = rows[i].EndUtc.UtcDateTime.ToString("O");
+            sheet.Cell(i + 2, 7).Value = rows[i].Start.UtcDateTime.ToString("O");
+            sheet.Cell(i + 2, 8).Value = rows[i].End.UtcDateTime.ToString("O");
             sheet.Cell(i + 2, 9).Value = rows[i].DisplayOrder;
         }
         using var stream = new MemoryStream();
@@ -280,8 +280,8 @@ public sealed class BannersExcelTests : IClassFixture<SimfApiFactory>
                 TitleArabic = "بانر",
                 Body = "Body",
                 BodyArabic = "نص",
-                StartUtc = start,
-                EndUtc = start.AddDays(7),
+                Start = start,
+                End = start.AddDays(7),
                 DisplayOrder = 0,
             },
             token);

@@ -177,8 +177,8 @@ public sealed class ProgrammeDaysTests : IClassFixture<SimfApiFactory>
                 {
                     new(speakerId, "", "", 0),
                 },
-                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
-                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                Start = DateTimeOffset.UtcNow.AddHours(1),
+                End = DateTimeOffset.UtcNow.AddHours(2),
             },
             token);
         Assert.Equal(HttpStatusCode.OK, create.StatusCode);
@@ -221,8 +221,8 @@ public sealed class ProgrammeDaysTests : IClassFixture<SimfApiFactory>
                 {
                     new(speakerId, "", "", 0),
                 },
-                StartUtc = start,
-                EndUtc = start.AddHours(1),
+                Start = start,
+                End = start.AddHours(1),
             },
             token);
         var session = (await sessionCreate.Content

@@ -319,11 +319,11 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
     // S-3 — "live" is the session being INSIDE its scheduled window, not merely
     // "a feed URL is present" (an admin may set the URL before start or leave it
     // after end). This drives the LIVE badge so it never lies before start /
-    // after end (the backend closes questions at EndUtc). When the window is
+    // after end (the backend closes questions at End). When the window is
     // unknown — the global main-live synthetic (no id) has no start/end — fall
     // back to "a feed is present" so the always-on forum stream still reads live.
-    final start = session.startUtc;
-    final end = session.endUtc;
+    final start = session.start;
+    final end = session.end;
     final nowUtc = DateTime.now().toUtc();
     final isLive = (start != null && end != null)
         ? !nowUtc.isBefore(start) && nowUtc.isBefore(end)

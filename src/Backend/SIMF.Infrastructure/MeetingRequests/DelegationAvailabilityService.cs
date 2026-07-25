@@ -52,8 +52,8 @@ internal sealed class DelegationAvailabilityService(
                 $"Slot length must be between {MinSlotMinutes} and {MaxSlotMinutes} minutes.",
                 $"يجب أن تتراوح مدة الفترة بين {MinSlotMinutes} و {MaxSlotMinutes} دقيقة.");
         }
-        if (request.EndUtc <= request.StartUtc
-            || (request.EndUtc - request.StartUtc).TotalMinutes < request.SlotMinutes)
+        if (request.End <= request.Start
+            || (request.End - request.Start).TotalMinutes < request.SlotMinutes)
         {
             throw new ApiException(ErrorCodes.ValidationFailed, 400,
                 "The window must end after it starts and fit at least one slot.",
@@ -65,8 +65,8 @@ internal sealed class DelegationAvailabilityService(
         var forum = await forumWindow.GetForumDaysAsync(cancellationToken);
         if (forum is { } bounds)
         {
-            var startDate = DateOnly.FromDateTime(request.StartUtc.ToOffset(EventOffset).DateTime);
-            var endDate = DateOnly.FromDateTime(request.EndUtc.ToOffset(EventOffset).DateTime);
+            var startDate = DateOnly.FromDateTime(request.Start.ToOffset(EventOffset).DateTime);
+            var endDate = DateOnly.FromDateTime(request.End.ToOffset(EventOffset).DateTime);
             if (startDate < bounds.MinDate || endDate > bounds.MaxDate)
             {
                 throw new ApiException(ErrorCodes.ValidationFailed, 400,
@@ -82,8 +82,8 @@ internal sealed class DelegationAvailabilityService(
         {
             Id = Guid.NewGuid(),
             CountryId = countryId,
-            StartUtc = request.StartUtc,
-            EndUtc = request.EndUtc,
+            Start = request.Start,
+            End = request.End,
             SlotMinutes = request.SlotMinutes,
             IsActive = true,
             CreatedAt = now,
@@ -111,9 +111,9 @@ internal sealed class DelegationAvailabilityService(
         int countryId, CancellationToken cancellationToken = default) =>
         await appDbContext.DelegationAvailabilityWindows.AsNoTracking()
             .Where(w => w.CountryId == countryId && w.IsActive)
-            .OrderBy(w => w.StartUtc)
+            .OrderBy(w => w.Start)
             .Select(w => new AdminDelegationAvailabilityWindow(
-                w.Id, w.CountryId, w.StartUtc, w.EndUtc, w.SlotMinutes, w.IsActive, w.CreatedAt))
+                w.Id, w.CountryId, w.Start, w.End, w.SlotMinutes, w.IsActive, w.CreatedAt))
             .ToListAsync(cancellationToken);
 
     public async Task DeleteWindowAsync(
@@ -141,8 +141,8 @@ internal sealed class DelegationAvailabilityService(
     {
         var now = timeProvider.GetUtcNow();
         var windows = await appDbContext.DelegationAvailabilityWindows.AsNoTracking()
-            .Where(w => w.CountryId == countryId && w.IsActive && w.EndUtc > now)
-            .OrderBy(w => w.StartUtc)
+            .Where(w => w.CountryId == countryId && w.IsActive && w.End > now)
+            .OrderBy(w => w.Start)
             .ToListAsync(cancellationToken);
         if (windows.Count == 0)
         {
@@ -156,16 +156,16 @@ internal sealed class DelegationAvailabilityService(
         var taken = await appDbContext.DelegationMeetingRequests.AsNoTracking()
             .Where(r => (r.RequestingCountryId == countryId || r.TargetCountryId == countryId)
                 && MeetingRequestStatuses.SlotHolding.Contains(r.Status)
-                && r.SlotStartUtc != null && r.SlotEndUtc != null)
-            .Select(r => new { Start = r.SlotStartUtc!.Value, End = r.SlotEndUtc!.Value })
+                && r.SlotStart != null && r.SlotEnd != null)
+            .Select(r => new { Start = r.SlotStart!.Value, End = r.SlotEnd!.Value })
             .ToListAsync(cancellationToken);
 
         var slots = new List<DelegationAvailableSlot>();
         foreach (var w in windows)
         {
             var length = TimeSpan.FromMinutes(w.SlotMinutes);
-            var slotStart = w.StartUtc;
-            while (slotStart + length <= w.EndUtc)
+            var slotStart = w.Start;
+            while (slotStart + length <= w.End)
             {
                 var slotEnd = slotStart + length;
                 var isPast = slotStart < now;
@@ -181,5 +181,5 @@ internal sealed class DelegationAvailabilityService(
     }
 
     private static AdminDelegationAvailabilityWindow ToDto(DelegationAvailabilityWindow w) =>
-        new(w.Id, w.CountryId, w.StartUtc, w.EndUtc, w.SlotMinutes, w.IsActive, w.CreatedAt);
+        new(w.Id, w.CountryId, w.Start, w.End, w.SlotMinutes, w.IsActive, w.CreatedAt);
 }

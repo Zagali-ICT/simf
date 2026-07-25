@@ -179,7 +179,7 @@ internal sealed class AssetService(
             AssetCategory.Banner => dbContext.Banners
                 .AnyAsync(
                     x => x.Id == ownerId && x.IsActive
-                        && x.StartUtc <= now && x.EndUtc >= now,
+                        && x.Start <= now && x.End >= now,
                     cancellationToken),
             // #16 — a booth is publicly hidden when its linked exhibitor is
             // soft-deleted (PublicBoothService mirrors this), so its logo must 404 too.

@@ -148,8 +148,8 @@ public sealed class RatingKpiTests : IClassFixture<SimfApiFactory>
             Title = "Keynote",
             TitleArabic = "الكلمة الرئيسية",
             HallId = hall.Id,
-            StartUtc = DateTimeOffset.UtcNow.AddHours(-1),
-            EndUtc = DateTimeOffset.UtcNow.AddHours(1),
+            Start = DateTimeOffset.UtcNow.AddHours(-1),
+            End = DateTimeOffset.UtcNow.AddHours(1),
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };

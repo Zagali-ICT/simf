@@ -8,7 +8,7 @@ namespace SIMF.Domain.Programme;
 /// time. Recorded by a GPS geofence crossing (<see cref="AttendanceMethod.Geofence"/>,
 /// the attendee's own device) or a QR scan at the hall door
 /// (<see cref="AttendanceMethod.QrScan"/>, an operator). There is at most one
-/// <b>open</b> row (LeaveUtc null) per attendee per session — a door scan and a
+/// <b>open</b> row (Leave null) per attendee per session — a door scan and a
 /// geofence crossing for the same session update the one row rather than
 /// creating two (enforced by a filtered unique index).
 ///
@@ -38,11 +38,11 @@ public sealed class HallAttendance
     public AttendanceMethod Method { get; set; }
 
     /// <summary>When the attendee entered (UTC).</summary>
-    public DateTimeOffset EnterUtc { get; set; }
+    public DateTimeOffset Enter { get; set; }
 
     /// <summary>When the attendee left — set on departure or at session end.
     /// Null while the attendee is still considered present (the open row).</summary>
-    public DateTimeOffset? LeaveUtc { get; set; }
+    public DateTimeOffset? Leave { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? UpdatedAt { get; set; }

@@ -92,7 +92,7 @@ public partial class DelegationMeetingsList
 
     // A free hall slot as "2026-07-10 09:00–09:30".
     private static string FormatSlot(HallAvailableSlot slot) =>
-        $"{slot.StartUtc.ToSaudi():dd-MM-yyyy hh:mm tt}–{slot.EndUtc.ToSaudi():hh:mm tt}";
+        $"{slot.Start.ToSaudi():dd-MM-yyyy hh:mm tt}–{slot.End.ToSaudi():hh:mm tt}";
 
     private async Task LoadAsync()
     {
@@ -125,7 +125,7 @@ public partial class DelegationMeetingsList
             row.Id, row.RequestingCountry, row.TargetCountry,
             row.RequestedByUserId, RequesterEmail: null,
             row.AttendeeCount, row.Subject, row.Status,
-            row.SlotStartUtc, SlotEndUtc: null, row.ResponseNote,
+            row.SlotStart, SlotEnd: null, row.ResponseNote,
             row.CreatedAt, row.RespondedAt);
         _respondNote = string.Empty;
         _bindHallId = null;
@@ -306,8 +306,8 @@ public partial class DelegationMeetingsList
                 var slot = _hallSlots[_bindSlotIndex];
                 body.HallId = _bindHallId;
                 body.MeetingTableId = _bindTableId;
-                body.SlotStartUtc = slot.StartUtc;
-                body.SlotEndUtc = slot.EndUtc;
+                body.SlotStart = slot.Start;
+                body.SlotEnd = slot.End;
             }
             var env = await JS.InvokeAsync<ApiResult<AdminDelegationMeetingRequestDetail>>(
                 "simfAccount.putJson",

@@ -104,8 +104,8 @@ class MyAreaCounters {
 class MyAreaScheduleItem {
   const MyAreaScheduleItem({
     required this.kind,
-    required this.startUtc,
-    this.endUtc,
+    required this.start,
+    this.end,
     required this.titleEn,
     required this.titleAr,
     this.hallNameEn,
@@ -117,8 +117,8 @@ class MyAreaScheduleItem {
   });
 
   final String kind;
-  final DateTime startUtc;
-  final DateTime? endUtc;
+  final DateTime start;
+  final DateTime? end;
   final String titleEn;
   final String titleAr;
   final String? hallNameEn;
@@ -152,9 +152,9 @@ class MyAreaScheduleItem {
   static MyAreaScheduleItem fromJson(Map<String, dynamic> json) =>
       MyAreaScheduleItem(
         kind: json['kind'] as String? ?? '',
-        startUtc: DateTime.tryParse(json['startUtc'] as String? ?? '')?.toUtc() ??
+        start: DateTime.tryParse(json['start'] as String? ?? '')?.toUtc() ??
             DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
-        endUtc: DateTime.tryParse(json['endUtc'] as String? ?? '')?.toUtc(),
+        end: DateTime.tryParse(json['end'] as String? ?? '')?.toUtc(),
         titleEn: json['titleEn'] as String? ?? '',
         titleAr: json['titleAr'] as String? ?? '',
         hallNameEn: json['hallNameEn'] as String?,

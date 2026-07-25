@@ -89,10 +89,10 @@ Scenario: Toggling a favourite round-trips per user
   Then it is no longer in their favourites
 
 Scenario: A published summary is viewable only once the session has started (S-6 owner)
-  Given a FUTURE session (StartUtc ahead of now) with a published summary
+  Given a FUTURE session (Start ahead of now) with a published summary
   Then GET /app/programme/sessions/{id}/summary returns 404 — you cannot view a
     summary before the session begins
-  Given a STARTED session (StartUtc in the past) with a published summary
+  Given a STARTED session (Start in the past) with a published summary
   Then the same read returns the summary (200) — gated on the clock, not Session.Status
 
 Scenario: The list is only summarised sessions (owner 2026-07-14)

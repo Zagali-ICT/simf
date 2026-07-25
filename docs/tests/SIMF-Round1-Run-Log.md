@@ -45,7 +45,7 @@ Scenario: create a new programme session from `/admin/sessions` → "Add session
   End `2026-11-23 11:00 UTC`, capacity left blank (inherit).
 - UI result: live-region toast **`Session "Round-1 Test Session" was created`**; grid went 5 → **6 of 6**,
   new row shows Main Hall / cap **500** (inherited) / Active / Scheduled. Console 0 errors.
-- DB verified (`SIMF_App.Sessions`): row present — `Type=1`, `StartUtc/EndUtc` exact,
+- DB verified (`SIMF_App.Sessions`): row present — `Type=1`, `Start/End` exact,
   `CapacityOverride=NULL` (inherit confirmed), `Status=0` (Scheduled), `IsActive=1`,
   **`CreatedBy` = super-admin user id** (AuditStamping interceptor working).
 - Note: two `<input type=datetime-local>` fields needed value-set + `input`/`change` dispatch to
@@ -166,7 +166,7 @@ Result: **31 raw -> 29 CONFIRMED, 2 refuted** as false positives.
 | 19 | sessions-programme-halls | Session Description/live-caption/live-URL fields have EF max-lengths but no server-side length validation -> HTTP 500 on over-length input | `AdminSessionService.cs:133` | validation |
 | 20 | bookings-reservations | Booking creation has no session-timing guard, so a visitor can create an un-cancellable hold on a session that has already started or ended | `SeatReservationService.cs:112` | validation |
 | 21 | bookings-reservations | Post-insert capacity backstop can spuriously reject BOTH racers, leaving a free place unfilled | `SeatReservationService.cs:1109` | correctness |
-| 22 | speaker-meetings | Speaker double-book DB backstop is keyed on SlotStartUtc only, so overlapping windows with different slot starts are not protected under concurrent accept | `SpeakerMeetingRequestConfiguration.cs:68` | correctness |
+| 22 | speaker-meetings | Speaker double-book DB backstop is keyed on SlotStart only, so overlapping windows with different slot starts are not protected under concurrent accept | `SpeakerMeetingRequestConfiguration.cs:68` | correctness |
 | 23 | ratings-reminders-notif | Notification endpoints omit the RequireApprovedAccount policy the spec mandates - authorization relies solely on a manual sub-claim check that a non-approved (Guest/Pending) account passes | `NotificationEndpoints.cs:19` | permission |
 | 24 | gates-arrivals-attendance | A Both-mode hall-door gate scan marks a still-present attendee as departed when their attendance row was opened by another channel, under-counting live presence | `HallAttendanceService.cs:200` | data-integrity |
 | 25 | exhibition-venue | Venue-map node Kind is never validated as a defined enum value (out-of-range Kind persists and reaches the public map) | `VenueMapService.cs:241` | validation |
@@ -200,7 +200,7 @@ fail-closed / additive, reuses existing `ErrorCodes` + bilingual messages, match
 |---------|------|--------|
 | #7 - session update capacity-shrink guard bypassed when CapacityOverri | `AdminSessionService.cs` | In UpdateAsync the oversell guard now runs for every same-hall/same-time edit: it computes effectiveCapacity = request.CapacityOverride ?? hall.Capaci |
 | #19 - session Description/live-caption/live-URL have EF max-lengths bu | `AdminSessionService.cs` | Added a service-level ValidateTextLengths helper (with an EnsureMaxLength sub-helper) called in both CreateAsync and UpdateAsync right after ValidateL |
-| #20 - booking creation has no session-timing guard | `SeatReservationService.cs` | Added a create-time guard EnsureSessionOpenForBooking(DateTimeOffset startUtc) that throws ErrorCodes.BookingSessionStarted (409, bilingual, reusing t |
+| #20 - booking creation has no session-timing guard | `SeatReservationService.cs` | Added a create-time guard EnsureSessionOpenForBooking(DateTimeOffset start) that throws ErrorCodes.BookingSessionStarted (409, bilingual, reusing t |
 | #21 - post-insert capacity backstop can spuriously reject BOTH racers, | `SeatReservationService.cs` | Replaced the racy `if (active > effectiveCap) { remove; throw; }` in EnforceCapacityAfterInsertAsync with a deterministic rank-based reject: early-ret |
 | #8 - Speaker availability offers slots already held by an AwaitingSpea | `SpeakerAvailabilityService.cs` | GetAvailableSlotsAsync taken-filter changed from r.Status == MeetingRequestStatus.Accepted to MeetingRequestStatuses.SlotHolding.Contains(r.Status) (A |
 | #9 - Admin ResponseNote over 2000 chars surfaces a false 409; Response | `SpeakerMeetingRequestService.cs` | RespondAsync now guards (request.ResponseNote ?? "").Trim().Length > 2000 (== EF HasMaxLength(2000)) and throws ApiException(SpeakerMeetingRequestInva |
@@ -209,7 +209,7 @@ fail-closed / additive, reuses existing `ErrorCodes` + bilingual messages, match
 | #15 - Idempotency-key reuse / concurrent same-key retry hits the GateS | `GateOperatorService.cs` | Extracted TrySaveScanAsync (shared by RecordAllowedAsync and RecordDenialAsync) that wraps SaveChangesAsync; on a DbUpdateException violating UX_GateS |
 | #24 - Both-mode hall-door scan marks a still-present attendee as depar | `HallAttendanceService.cs` | Scoped the Both-mode directionInferred 'open row -> departure' branch to skip rows opened by the GPS geofence: the departure now fires only when open. |
 | #23 - Notification endpoints omit the RequireApprovedAccount policy th | `NotificationEndpoints.cs` | Added Policies(nameof(AuthorizationPolicies.RequireApprovedAccount)) to all 5 endpoints (list, unread-count, {id}/read, read-all, DELETE {id}) plus 'u |
-| #12 - SessionReminderWorker can re-send 'session starting soon' remind | `SessionReminderWorker.cs` | In RunReminderScanAsync, claim each session (set ReminderSentUtc then SaveChangesAsync) BEFORE dispatching that session's attendee batch, instead of a |
+| #12 - SessionReminderWorker can re-send 'session starting soon' remind | `SessionReminderWorker.cs` | In RunReminderScanAsync, claim each session (set ReminderSent then SaveChangesAsync) BEFORE dispatching that session's attendee batch, instead of a |
 | #13 - ProgrammeRatingPromptWorker end-of-programme trio | `ProgrammeRatingPromptWorker.cs` | RunProgramEndScanAsync now writes+commits the once-only ProgramEndSettingKey SystemSetting marker BEFORE the trio dispatch loop (was after). RunDayPro |
 | #16 - Deactivating an exhibitor leaves its live data publicly visible  | `PublicBoothService.cs` | Added `&& (b.Exhibitor == null // b.Exhibitor.IsActive)` to the Where filter in both ListAsync (line 25) and GetAsync (line 87) so a soft-deleted exhi |
 | #25 - Venue-map node Kind never validated as a defined enum | `VenueMapService.cs` | Added `if (!Enum.IsDefined(kind)) throw ApiException(ErrorCodes.VenueMapNodeInvalid, 400, en, ar)` at the top of EnsureKindMatchesReferences (called b |

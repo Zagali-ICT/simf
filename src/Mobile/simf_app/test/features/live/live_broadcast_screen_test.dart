@@ -23,8 +23,8 @@ LiveSession _liveSession({
   int status = 0,
   String? liveCaptions,
   String? liveCaptionsArabic,
-  DateTime? startUtc,
-  DateTime? endUtc,
+  DateTime? start,
+  DateTime? end,
 }) =>
     LiveSession(
       title: 'Opening',
@@ -35,8 +35,8 @@ LiveSession _liveSession({
       liveSignLanguageUrl: liveSignLanguageUrl,
       liveCaptions: liveCaptions,
       liveCaptionsArabic: liveCaptionsArabic,
-      startUtc: startUtc,
-      endUtc: endUtc,
+      start: start,
+      end: end,
     );
 
 class _FakeLiveRepo implements LiveRepository {
@@ -463,7 +463,7 @@ void main() {
               id: 's2',
               title: 'Next talk',
               titleArabic: 'الجلسة التالية',
-              startUtc: DateTime(2030, 1, 1, 11),
+              start: DateTime(2030, 1, 1, 11),
             ),
           ],
         ),
@@ -709,8 +709,8 @@ void main() {
         repo: _FakeLiveRepo(
           session: _liveSession(
             liveStreamUrl: 'https://live.example.sa/main.m3u8',
-            startUtc: now.add(const Duration(hours: 1)),
-            endUtc: now.add(const Duration(hours: 2)),
+            start: now.add(const Duration(hours: 1)),
+            end: now.add(const Duration(hours: 2)),
           ),
         ),
         sessionId: 's1',
@@ -732,8 +732,8 @@ void main() {
         repo: _FakeLiveRepo(
           session: _liveSession(
             liveStreamUrl: 'https://live.example.sa/main.m3u8',
-            startUtc: now.subtract(const Duration(hours: 1)),
-            endUtc: now.add(const Duration(hours: 1)),
+            start: now.subtract(const Duration(hours: 1)),
+            end: now.add(const Duration(hours: 1)),
           ),
         ),
         sessionId: 's1',
@@ -754,8 +754,8 @@ void main() {
         repo: _FakeLiveRepo(
           session: _liveSession(
             liveStreamUrl: 'https://live.example.sa/main.m3u8',
-            startUtc: now.subtract(const Duration(hours: 3)),
-            endUtc: now.subtract(const Duration(hours: 2)),
+            start: now.subtract(const Duration(hours: 3)),
+            end: now.subtract(const Duration(hours: 2)),
           ),
         ),
         sessionId: 's1',

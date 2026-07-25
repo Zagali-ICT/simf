@@ -28,16 +28,16 @@ import 'golden_fonts.dart';
 // UTC so the sheet's toLocal() round-trips to the same day/time deterministically.
 final List<SpeakerSlot> _goldenSlots = <SpeakerSlot>[
   SpeakerSlot(
-    startUtc: DateTime(2026, 11, 20, 9).toUtc(),
-    endUtc: DateTime(2026, 11, 20, 9, 30).toUtc(),
+    start: DateTime(2026, 11, 20, 9).toUtc(),
+    end: DateTime(2026, 11, 20, 9, 30).toUtc(),
   ),
   SpeakerSlot(
-    startUtc: DateTime(2026, 11, 20, 10).toUtc(),
-    endUtc: DateTime(2026, 11, 20, 10, 30).toUtc(),
+    start: DateTime(2026, 11, 20, 10).toUtc(),
+    end: DateTime(2026, 11, 20, 10, 30).toUtc(),
   ),
   SpeakerSlot(
-    startUtc: DateTime(2026, 11, 21, 9).toUtc(),
-    endUtc: DateTime(2026, 11, 21, 9, 30).toUtc(),
+    start: DateTime(2026, 11, 21, 9).toUtc(),
+    end: DateTime(2026, 11, 21, 9, 30).toUtc(),
   ),
 ];
 
@@ -59,8 +59,8 @@ class _FakeRepo implements SpeakersRepository {
     String speakerId, {
     required String requesterName,
     required String subject,
-    DateTime? slotStartUtc,
-    DateTime? slotEndUtc,
+    DateTime? slotStart,
+    DateTime? slotEnd,
   }) async {}
 }
 

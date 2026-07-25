@@ -327,8 +327,8 @@ public sealed class NotificationBroadcastTests : IClassFixture<SimfApiFactory>
             Title = "Panel",
             TitleArabic = "جلسة",
             HallId = hall.Id,
-            StartUtc = DateTimeOffset.UtcNow.AddHours(2),
-            EndUtc = DateTimeOffset.UtcNow.AddHours(3),
+            Start = DateTimeOffset.UtcNow.AddHours(2),
+            End = DateTimeOffset.UtcNow.AddHours(3),
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };

@@ -125,7 +125,7 @@ internal sealed class PublicSpeakerService(SimfAppDbContext dbContext)
         var sessions = await dbContext.SessionSpeakers
             .AsNoTracking()
             .Where(link => link.SpeakerId == id && link.Session!.IsActive)
-            .OrderBy(link => link.Session!.StartUtc)
+            .OrderBy(link => link.Session!.Start)
             .ThenBy(link => link.Session!.Title)
             .Select(link => new PublicSpeakerSession(
                 link.Session!.Id,
@@ -135,8 +135,8 @@ internal sealed class PublicSpeakerService(SimfAppDbContext dbContext)
                 link.Session!.HallId,
                 link.Session!.Hall!.Name,
                 link.Session!.Hall!.NameArabic,
-                link.Session!.StartUtc,
-                link.Session!.EndUtc))
+                link.Session!.Start,
+                link.Session!.End))
             .ToListAsync(cancellationToken);
 
         // Privacy: social URLs are only published when the speaker has

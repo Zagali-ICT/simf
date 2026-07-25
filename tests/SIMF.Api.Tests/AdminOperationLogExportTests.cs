@@ -52,7 +52,7 @@ public sealed class AdminOperationLogExportTests : IClassFixture<SimfApiFactory>
         var bytes = await response.Content.ReadAsByteArrayAsync();
         using var workbook = new XLWorkbook(new MemoryStream(bytes));
         var sheet = workbook.Worksheet("OperationLog");
-        Assert.Equal("TimestampUtc", sheet.Cell(1, 1).GetString());
+        Assert.Equal("Timestamp", sheet.Cell(1, 1).GetString());
         Assert.Equal("EventType", sheet.Cell(1, 2).GetString());
         // Header + at least one data row.
         Assert.True(sheet.LastRowUsed()!.RowNumber() >= 2);

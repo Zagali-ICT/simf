@@ -495,8 +495,8 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
             Title = "Live Session",
             TitleArabic = "جلسة مباشرة",
             HallId = hall.Id,
-            StartUtc = DateTimeOffset.UtcNow.AddMinutes(-15),
-            EndUtc = DateTimeOffset.UtcNow.AddMinutes(45),
+            Start = DateTimeOffset.UtcNow.AddMinutes(-15),
+            End = DateTimeOffset.UtcNow.AddMinutes(45),
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };
@@ -526,8 +526,8 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
             Title = "Tomorrow's Session",
             TitleArabic = "جلسة غد",
             HallId = hall.Id,
-            StartUtc = DateTimeOffset.UtcNow.AddDays(1),
-            EndUtc = DateTimeOffset.UtcNow.AddDays(1).AddHours(1),
+            Start = DateTimeOffset.UtcNow.AddDays(1),
+            End = DateTimeOffset.UtcNow.AddDays(1).AddHours(1),
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };
@@ -539,7 +539,7 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
     // §7 — seed an active session over an explicit time window (no geofence, so
     // the question gate falls back to the IsAtVenue self-assert).
     private async Task<Session> SeedSessionWindowAsync(
-        DateTimeOffset startUtc, DateTimeOffset endUtc)
+        DateTimeOffset start, DateTimeOffset end)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -559,8 +559,8 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Window Session", TitleArabic = "جلسة زمنية",
             HallId = hall.Id,
-            StartUtc = startUtc,
-            EndUtc = endUtc,
+            Start = start,
+            End = end,
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };

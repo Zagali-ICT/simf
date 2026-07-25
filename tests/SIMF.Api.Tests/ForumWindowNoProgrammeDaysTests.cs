@@ -57,8 +57,8 @@ public sealed class ForumWindowNoProgrammeDaysTests : IClassFixture<SimfApiFacto
             {
                 MeetingTableId = tableId,
                 MeetingType = BusinessMeetingType.B2B,
-                StartUtc = start,
-                EndUtc = start.AddHours(1),
+                Start = start,
+                End = start.AddHours(1),
                 Participants =
                 [
                     new() { Kind = MeetingPartyKind.Company, CompanyId = await SeedCompanyAsync() },

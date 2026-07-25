@@ -17,7 +17,7 @@
 > 1. `await Api.GetProgrammeSessionsAsync()`. A `null` result (failed envelope /
 >    unreachable) sets `_error` and renders a single `ln-agenda__msg` (`role="alert"`).
 > 2. otherwise `BuildDays(...)` groups `Items` by the **event-local (+03:00 Riyadh)
->    date** of `StartUtc` (`EventTime.Local(StartUtc).Date`), ordered by day then
+>    date** of `Start` (`EventTime.Local(Start).Date`), ordered by day then
 >    start time; `_types` = the distinct non-null `SessionType`s. Zero days renders
 >    the empty state.
 > 3. `await Api.GetSpeakersAsync()` is **best-effort**: a `null` result just leaves
@@ -118,7 +118,7 @@ Scenario: Sessions group by the event-local (+03:00) date and sort by start
   When the browser opens /programme
   Then two ln-agenda__day panels render (data-agenda-daypanel "0" then "1"), ascending
   And day 0 lists "Opening" (09:00 – 10:00) before "Afternoon" (14:00 – ...)
-  And the grouping key is EventTime.Local(StartUtc).Date (+03:00), not the server-local or UTC date
+  And the grouping key is EventTime.Local(Start).Date (+03:00), not the server-local or UTC date
 ```
 
 ### E2E-WPG-003 — Day strip switches the day (JS)

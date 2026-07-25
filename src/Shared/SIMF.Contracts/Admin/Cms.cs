@@ -25,8 +25,8 @@ public sealed record AdminBannerSummary(
     Guid Id,
     string Title,
     string TitleArabic,
-    DateTimeOffset StartUtc,
-    DateTimeOffset EndUtc,
+    DateTimeOffset Start,
+    DateTimeOffset End,
     int DisplayOrder,
     bool IsActive,
     DateTimeOffset CreatedAt,
@@ -46,8 +46,8 @@ public sealed record AdminBannerDetail(
     string BodyArabic,
     string? ImageUrl,
     string? LinkUrl,
-    DateTimeOffset StartUtc,
-    DateTimeOffset EndUtc,
+    DateTimeOffset Start,
+    DateTimeOffset End,
     int DisplayOrder,
     bool IsActive,
     DateTimeOffset CreatedAt,
@@ -61,8 +61,8 @@ public sealed class CreateBannerRequest
     public string BodyArabic { get; set; } = string.Empty;
     public string? ImageUrl { get; set; }
     public string? LinkUrl { get; set; }
-    public DateTimeOffset StartUtc { get; set; }
-    public DateTimeOffset EndUtc { get; set; }
+    public DateTimeOffset Start { get; set; }
+    public DateTimeOffset End { get; set; }
     public int DisplayOrder { get; set; }
 }
 
@@ -76,8 +76,8 @@ public class UpdateBannerRequest
     public string BodyArabic { get; set; } = string.Empty;
     public string? ImageUrl { get; set; }
     public string? LinkUrl { get; set; }
-    public DateTimeOffset StartUtc { get; set; }
-    public DateTimeOffset EndUtc { get; set; }
+    public DateTimeOffset Start { get; set; }
+    public DateTimeOffset End { get; set; }
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; } = true;
 }

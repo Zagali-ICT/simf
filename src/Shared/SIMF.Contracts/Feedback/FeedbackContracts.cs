@@ -64,7 +64,7 @@ public sealed record RatingFormView(
     // wire, D-219) so the shipped app decodes unchanged.
     string? TargetName = null,
     string? TargetNameArabic = null,
-    DateTimeOffset? TargetStartUtc = null,
+    DateTimeOffset? TargetStart = null,
     // Owner 2026-07-19 — false when the caller has not attended what this type rates,
     // so the app disables submit and shows an "attend to rate" note. The hard gate is
     // still on POST /feedback/submit (403 RATING_NOT_ATTENDED). Appended (append-only

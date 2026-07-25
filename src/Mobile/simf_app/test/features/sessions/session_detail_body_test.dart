@@ -8,8 +8,8 @@ import 'package:simf_app/features/sessions/widgets/ask_host_card.dart';
 import 'package:simf_app/features/sessions/widgets/session_detail_body.dart';
 
 SessionDetail _detail({
-  required DateTime startUtc,
-  required DateTime endUtc,
+  required DateTime start,
+  required DateTime end,
   String? liveStreamUrl,
 }) =>
     SessionDetail(
@@ -20,8 +20,8 @@ SessionDetail _detail({
       hallId: 'h1',
       hallName: 'Main Hall',
       hallNameArabic: 'القاعة الرئيسية',
-      startUtc: startUtc,
-      endUtc: endUtc,
+      start: start,
+      end: end,
       speakers: const <SessionSpeaker>[],
       description: 'Welcome address',
       liveStreamUrl: liveStreamUrl,
@@ -93,8 +93,8 @@ void main() {
       await _pumpBody(
         tester,
         detail: _detail(
-          startUtc: now.add(const Duration(hours: 1)),
-          endUtc: now.add(const Duration(hours: 2)),
+          start: now.add(const Duration(hours: 1)),
+          end: now.add(const Duration(hours: 2)),
         ),
         seatMap: _seatMap(),
       );
@@ -108,8 +108,8 @@ void main() {
       await _pumpBody(
         tester,
         detail: _detail(
-          startUtc: now.subtract(const Duration(hours: 1)),
-          endUtc: now.add(const Duration(hours: 1)),
+          start: now.subtract(const Duration(hours: 1)),
+          end: now.add(const Duration(hours: 1)),
         ),
         seatMap: _seatMap(),
       );
@@ -125,8 +125,8 @@ void main() {
       await _pumpBody(
         tester,
         detail: _detail(
-          startUtc: now.subtract(const Duration(hours: 1)),
-          endUtc: now.add(const Duration(hours: 1)),
+          start: now.subtract(const Duration(hours: 1)),
+          end: now.add(const Duration(hours: 1)),
           liveStreamUrl: 'https://live.example.sa/main.m3u8',
         ),
         seatMap: _seatMap(),
@@ -140,8 +140,8 @@ void main() {
       await _pumpBody(
         tester,
         detail: _detail(
-          startUtc: now.subtract(const Duration(hours: 3)),
-          endUtc: now.subtract(const Duration(hours: 2)),
+          start: now.subtract(const Duration(hours: 3)),
+          end: now.subtract(const Duration(hours: 2)),
         ),
         seatMap: _seatMap(),
       );
@@ -154,8 +154,8 @@ void main() {
       await _pumpBody(
         tester,
         detail: _detail(
-          startUtc: now.add(const Duration(hours: 1)),
-          endUtc: now.add(const Duration(hours: 2)),
+          start: now.add(const Duration(hours: 1)),
+          end: now.add(const Duration(hours: 2)),
         ),
         seatMap: null,
       );
@@ -175,8 +175,8 @@ void main() {
       await _pumpBody(
         tester,
         detail: _detail(
-          startUtc: now.add(const Duration(hours: 1)),
-          endUtc: now.add(const Duration(hours: 2)),
+          start: now.add(const Duration(hours: 1)),
+          end: now.add(const Duration(hours: 2)),
         ),
         seatMap: null,
         seatMapError: true,
@@ -205,8 +205,8 @@ void main() {
       await _pumpBody(
         tester,
         detail: _detail(
-          startUtc: now.subtract(const Duration(hours: 3)),
-          endUtc: now.subtract(const Duration(hours: 2)),
+          start: now.subtract(const Duration(hours: 3)),
+          end: now.subtract(const Duration(hours: 2)),
         ),
         seatMap: null,
         seatMapError: true,
@@ -227,8 +227,8 @@ void main() {
       await _pumpBody(
         tester,
         detail: _detail(
-          startUtc: now.add(const Duration(hours: 1)),
-          endUtc: now.add(const Duration(hours: 2)),
+          start: now.add(const Duration(hours: 1)),
+          end: now.add(const Duration(hours: 2)),
         ),
         seatMap: _seatMap(),
         onSessionSummary: () => tapped = true,
@@ -245,8 +245,8 @@ void main() {
       await _pumpBody(
         tester,
         detail: _detail(
-          startUtc: now.subtract(const Duration(hours: 3)),
-          endUtc: now.subtract(const Duration(hours: 2)),
+          start: now.subtract(const Duration(hours: 3)),
+          end: now.subtract(const Duration(hours: 2)),
         ),
         seatMap: _seatMap(),
         onSessionSummary: () => tapped = true,
@@ -263,8 +263,8 @@ void main() {
       await _pumpBody(
         tester,
         detail: _detail(
-          startUtc: now.subtract(const Duration(hours: 1)),
-          endUtc: now.add(const Duration(hours: 1)),
+          start: now.subtract(const Duration(hours: 1)),
+          end: now.add(const Duration(hours: 1)),
           liveStreamUrl: 'https://live.example.sa/main.m3u8',
         ),
         seatMap: _seatMap(),
@@ -282,8 +282,8 @@ void main() {
       await _pumpBody(
         tester,
         detail: _detail(
-          startUtc: now.add(const Duration(hours: 1)),
-          endUtc: now.add(const Duration(hours: 2)),
+          start: now.add(const Duration(hours: 1)),
+          end: now.add(const Duration(hours: 2)),
           liveStreamUrl: 'https://live.example.sa/main.m3u8',
         ),
         seatMap: _seatMap(),

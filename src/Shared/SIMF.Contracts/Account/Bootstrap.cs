@@ -16,4 +16,4 @@ namespace SIMF.Contracts.Account;
 public sealed record AppBootstrap(
     CurrentUserResponse User,
     int UnreadNotificationCount,
-    DateTimeOffset ServerTimeUtc);
+    DateTimeOffset ServerTime);

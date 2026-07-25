@@ -139,7 +139,7 @@ public partial class SpeakerAvailabilityPage
                 $"/account/api/admin/speakers/{id}/availability-windows",
                 new CreateSpeakerAvailabilityWindowRequest
                 {
-                    StartUtc = start, EndUtc = end, SlotMinutes = slot,
+                    Start = start, End = end, SlotMinutes = slot,
                 });
             if (envelope is { Success: true })
             {

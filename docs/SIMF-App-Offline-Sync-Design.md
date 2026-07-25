@@ -83,7 +83,7 @@ Grounded inventory — the design builds on these, it does not reinvent them.
 
 - **No local database.** Only `shared_preferences` + `flutter_secure_storage`; no
   `sqflite`/`drift`/`hive`/`isar`. Per-row upsert/delete merge is not possible today.
-- **No per-row change token on the wire.** DTOs expose `publishedAt` / `startUtc` /
+- **No per-row change token on the wire.** DTOs expose `publishedAt` / `start` /
   `createdAt` (schedule/editorial times), not the audit `UpdatedAt`. Only
   `PublicContentBlock.LastUpdatedAt` (`Contracts/Cms/ContentBlocks.cs:9`) is a true
   row-modified stamp on the wire.

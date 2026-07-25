@@ -66,7 +66,7 @@ The CP page curates the programme the **app** reads:
 - **[App Page 016](../../App/Page_016/README.md)** — الأجندة · Sessions (agenda).
   It fetches the **whole active programme once** via `GET /api/v1/app/programme/sessions`
   (`PublicSessions`) and caches it, then filters client-side. Each row the agenda
-  shows maps to one `Session` curated here: time (`StartUtc`/`EndUtc`), `Code`,
+  shows maps to one `Session` curated here: time (`Start`/`End`), `Code`,
   bilingual title/description, `Hall*`, the `Category*` "type" tag, lifecycle
   `Status`, and the ordered `speakers[]` cards. See [App Page 016 API](../../App/Page_016/Page_016_API.md) E1/E2.
 - **[App Page 013](../../App/Page_013/README.md)** — الرئيسية · Home (router screen).

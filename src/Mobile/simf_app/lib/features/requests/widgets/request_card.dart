@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import '../../../core/utils/saudi_time.dart';
 
 import 'package:flutter/material.dart';
 
@@ -116,7 +117,7 @@ class _RequestCardState extends State<RequestCard> {
   /// The card date line — "07:45 AM · اليوم" when the request's date is today,
   /// else the absolute date "12 يناير 2026" (Figma 1408:9782).
   String _dateLine(AppL10n l10n) {
-    final date = widget.item.displayDate.toLocal();
+    final date = saudiOf(widget.item.displayDate);
     final now = DateTime.now();
     final isToday =
         date.year == now.year && date.month == now.month && date.day == now.day;

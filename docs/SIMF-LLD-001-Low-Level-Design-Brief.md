@@ -343,7 +343,7 @@ requires the key in production.
 |--------|--------------------|---------|
 | `DormantAccountSweepService` | `SIMF.Api/HostedServices/` | Daily disable of dormant accounts (`IdentityLifecycle:DormantAccountDisableDays`; no-op if unset) |
 | `RegistrationGateAutoCloseWorker` | Infrastructure | Auto-close sign-up at the scheduled time (D-166) |
-| `SessionReminderWorker` | Infrastructure | "Session starting soon" reminders (D-217), dedup via `Session.ReminderSentUtc` |
+| `SessionReminderWorker` | Infrastructure | "Session starting soon" reminders (D-217), dedup via `Session.ReminderSent` |
 | `EmailBackgroundService` | `SIMF.Infrastructure/Email/` | Drains `EmailQueue`; sends via `SmtpEmailSender` (MailKit) |
 
 ### 6.3 Representative endpoint catalogue
@@ -418,8 +418,8 @@ Configurations are applied via `ApplyConfigurationsFromAssembly` from
 
 **Programme:** `Theme`, `Hall` (capacity, `SeatSelectionMode`, geofence cols), `Speaker`
 (`AllowsMeetingRequests`, social, `ContactId`), `SpeakerPresentation`, `ProgrammeDay`, `Session`
-(`Code`, `HallId`, `CategoryId?`, `Type?`, `StartUtc/EndUtc`, `Status`, recording cols,
-`LiveStreamUrl`, `LiveSignLanguageUrl`, `LiveCaptions(Arabic)`, `ReminderSentUtc`), `SessionSpeaker`
+(`Code`, `HallId`, `CategoryId?`, `Type?`, `Start/End`, `Status`, recording cols,
+`LiveStreamUrl`, `LiveSignLanguageUrl`, `LiveCaptions(Arabic)`, `ReminderSent`), `SessionSpeaker`
 (composite, `Role`), `SessionTheme` (composite), `SessionCategory`, `SessionSummary`
 (`ReviewApproved?`), `HallAttendance`.
 

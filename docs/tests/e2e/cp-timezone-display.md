@@ -38,7 +38,7 @@ Feature: Saudi-local display of stored UTC times
 
 Background:
   Given an Administrator is signed in
-  And a Session exists with StartUtc = 2026-11-20T09:00:00Z and EndUtc = 2026-11-20T10:00:00Z
+  And a Session exists with Start = 2026-11-20T09:00:00Z and End = 2026-11-20T10:00:00Z
 
 Scenario: Sessions list shows the Saudi wall clock, not raw UTC
   When the administrator opens /admin/sessions
@@ -50,7 +50,7 @@ Scenario: Sessions list shows the Saudi wall clock, not raw UTC
 **Evidence captured:**
 - Screenshot: `docs/screenshots/tz-sessions-list.png`
 - Console errors: 0 expected; Network failures: 0 expected
-- Cross-check: the persisted `Session.StartUtc` is still `09:00:00Z` (display-only change).
+- Cross-check: the persisted `Session.Start` is still `09:00:00Z` (display-only change).
 
 ### E2E-TZ-002 — Near-midnight UTC lands on the correct local calendar day
 
@@ -84,11 +84,11 @@ Scenario: The 2026-07-21 residue sweep converts the pages added after the first 
 
 ```gherkin
 Scenario: Editing a session start in Saudi local persists the correct UTC
-  Given a Session with StartUtc = 2026-11-20T09:00:00Z
+  Given a Session with Start = 2026-11-20T09:00:00Z
   When the administrator opens the Sessions edit form
   Then the "start" datetime-local input shows "2026-11-20T12:00" (Saudi wall clock)
   When the administrator changes it to "2026-11-20T14:30" and saves
-  Then Session.StartUtc is persisted as 2026-11-20T11:30:00Z
+  Then Session.Start is persisted as 2026-11-20T11:30:00Z
   And re-opening the list shows the start as "2026-11-20 14:30"
 ```
 
@@ -100,7 +100,7 @@ Operations/SpeakerAvailability add-edit).
 
 ```gherkin
 Scenario: One session, identical wall-clock time on CP and app
-  Given a Session with StartUtc = 2026-11-20T09:00:00Z
+  Given a Session with Start = 2026-11-20T09:00:00Z
   When the administrator reads it on /admin/sessions (CP)
   And a signed-in visitor opens the same session detail in the app
   Then both show the start as 12:00 (Saudi), regardless of the app device's own timezone

@@ -93,7 +93,7 @@ A row of chips, each carrying its count, that filter the feed:
 |---------|-----------------|-------|
 | Title | `title` / `titleArabic` | localized; expandable card |
 | Status pill | `status` | `MeetingRequestStatus` — Pending / Accepted / Rejected / Cancelled |
-| Date | `eventDateUtc` (else `createdAt`) | the event/slot date when present, else the submitted time |
+| Date | `eventDate` (else `createdAt`) | the event/slot date when present, else the submitted time |
 | Cancel | `canCancel` | shown **only** for the user's own **pending** speaker / document / badge requests; confirm dialog → `POST /app/my-requests/cancel` |
 
 The five kinds (`AppRequestItem.kind`): `SpeakerMeeting`, `DelegationMeeting`
@@ -134,7 +134,7 @@ Cancel (confirm) → POST /app/my-requests/cancel { kind, id } → 200 → card 
 | New badge request | `POST /api/v1/app/badge-requests` | `{ requestedJobTitle, note? }` | `ApiResult<…>` |
 | Cancel | `POST /api/v1/app/my-requests/cancel` | `{ kind, id }` | `ApiResult<…>` |
 
-`AppRequestItem { kind, id, title, titleArabic, status, eventDateUtc?, createdAt,
+`AppRequestItem { kind, id, title, titleArabic, status, eventDate?, createdAt,
 canCancel }`.
 
 ## 7. States (loading / error / empty)

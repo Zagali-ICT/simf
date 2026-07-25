@@ -18,8 +18,8 @@ SessionListItem _item(String id, String title) => SessionListItem(
       hallId: 'h1',
       hallName: 'Main Hall',
       hallNameArabic: 'القاعة',
-      startUtc: DateTime.utc(2026, 11, 23, 6),
-      endUtc: DateTime.utc(2026, 11, 23, 7),
+      start: DateTime.utc(2026, 11, 23, 6),
+      end: DateTime.utc(2026, 11, 23, 7),
       status: SessionStatus.scheduled,
       speakers: const <SessionSpeaker>[],
     );

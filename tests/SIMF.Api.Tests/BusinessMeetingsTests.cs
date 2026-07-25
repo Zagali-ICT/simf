@@ -63,8 +63,8 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
             {
                 MeetingTableId = tableId,
                 MeetingType = BusinessMeetingType.B2B,
-                StartUtc = start,
-                EndUtc = start.AddHours(1),
+                Start = start,
+                End = start.AddHours(1),
                 Participants =
                 [
                     new() { Kind = MeetingPartyKind.Company, CompanyId = a },
@@ -100,8 +100,8 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
             {
                 MeetingTableId = tableId,
                 MeetingType = BusinessMeetingType.G2B,
-                StartUtc = start,
-                EndUtc = start.AddHours(1),
+                Start = start,
+                End = start.AddHours(1),
                 Participants =
                 [
                     new() { Kind = MeetingPartyKind.Company, CompanyId = a },
@@ -133,8 +133,8 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
             {
                 MeetingTableId = tableId,
                 MeetingType = BusinessMeetingType.B2B,
-                StartUtc = start,
-                EndUtc = start.AddHours(1),
+                Start = start,
+                End = start.AddHours(1),
                 Participants = [new() { Kind = MeetingPartyKind.Company, CompanyId = company }],
             }, token);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -160,8 +160,8 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
             {
                 MeetingTableId = tableId,
                 MeetingType = BusinessMeetingType.B2B,
-                StartUtc = start,
-                EndUtc = start.AddHours(1),
+                Start = start,
+                End = start.AddHours(1),
                 Notes = new string('n', 1025), // EF BusinessMeeting.Notes max = 1024
                 Participants =
                 [
@@ -202,8 +202,8 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
             {
                 Purpose = HallPurpose.Meeting,
                 Mode = HallAllocationMode.Whole,
-                StartUtc = start,
-                EndUtc = start.AddHours(1),
+                Start = start,
+                End = start.AddHours(1),
                 Notes = new string('n', 513), // EF HallAllocation.Notes max = 512
             }, token);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -282,8 +282,8 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
             {
                 MeetingTableId = tableId,
                 MeetingType = BusinessMeetingType.B2B,
-                StartUtc = start,
-                EndUtc = start.AddHours(1),
+                Start = start,
+                End = start.AddHours(1),
                 Participants =
                 [
                     new() { Kind = MeetingPartyKind.Company, CompanyId = await SeedCompanyAsync() },
@@ -312,8 +312,8 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
             {
                 MeetingTableId = tableId,
                 MeetingType = BusinessMeetingType.B2C,
-                StartUtc = start,
-                EndUtc = start.AddHours(1),
+                Start = start,
+                End = start.AddHours(1),
                 Participants =
                 [
                     new() { Kind = MeetingPartyKind.Company, CompanyId = company },
@@ -395,8 +395,8 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
             {
                 Purpose = HallPurpose.Meeting,
                 Mode = HallAllocationMode.Whole,
-                StartUtc = start,
-                EndUtc = start.AddHours(2),
+                Start = start,
+                End = start.AddHours(2),
             }, token);
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
 
@@ -406,8 +406,8 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
             {
                 Purpose = HallPurpose.Session,
                 Mode = HallAllocationMode.Whole,
-                StartUtc = start.AddHours(1),
-                EndUtc = start.AddHours(3),
+                Start = start.AddHours(1),
+                End = start.AddHours(3),
             }, token);
         Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
         var body = (await second.Content.ReadFromJsonAsync<ApiResult<object>>())!;
@@ -425,8 +425,8 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
             {
                 MeetingTableId = Guid.NewGuid(),
                 MeetingType = BusinessMeetingType.B2B,
-                StartUtc = start,
-                EndUtc = start.AddHours(1),
+                Start = start,
+                End = start.AddHours(1),
                 Participants =
                 [
                     new() { Kind = MeetingPartyKind.Company, CompanyId = Guid.NewGuid() },
@@ -514,8 +514,8 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
             {
                 MeetingTableId = tableId,
                 MeetingType = BusinessMeetingType.B2B,
-                StartUtc = start,
-                EndUtc = start.AddHours(1),
+                Start = start,
+                End = start.AddHours(1),
                 Participants =
                 [
                     new() { Kind = MeetingPartyKind.Company, CompanyId = await SeedCompanyAsync() },
@@ -540,8 +540,8 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
             {
                 MeetingTableId = tableId,
                 MeetingType = BusinessMeetingType.B2C,
-                StartUtc = start,
-                EndUtc = start.AddHours(1),
+                Start = start,
+                End = start.AddHours(1),
                 Participants =
                 [
                     new() { Kind = MeetingPartyKind.Company, CompanyId = await SeedCompanyAsync() },
@@ -568,8 +568,8 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
             {
                 MeetingTableId = tableId,
                 MeetingType = BusinessMeetingType.B2C,
-                StartUtc = start,
-                EndUtc = start.AddHours(1),
+                Start = start,
+                End = start.AddHours(1),
                 Participants =
                 [
                     new() { Kind = MeetingPartyKind.Company, CompanyId = await SeedCompanyAsync() },
@@ -595,8 +595,8 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
             {
                 MeetingTableId = tableId,
                 MeetingType = BusinessMeetingType.B2B,
-                StartUtc = start,
-                EndUtc = start.AddHours(1),
+                Start = start,
+                End = start.AddHours(1),
                 Participants =
                 [
                     new() { Kind = MeetingPartyKind.Company, CompanyId = company },
@@ -621,8 +621,8 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
             {
                 MeetingTableId = tableId,
                 MeetingType = BusinessMeetingType.B2B,
-                StartUtc = start,
-                EndUtc = start.AddHours(1),
+                Start = start,
+                End = start.AddHours(1),
                 Participants =
                 [
                     new() { Kind = MeetingPartyKind.Company, CompanyId = await SeedCompanyAsync() },
@@ -642,8 +642,8 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
             {
                 MeetingTableId = Guid.NewGuid(),
                 MeetingType = BusinessMeetingType.B2B,
-                StartUtc = start,
-                EndUtc = start.AddHours(1),
+                Start = start,
+                End = start.AddHours(1),
                 Participants =
                 [
                     new() { Kind = MeetingPartyKind.Company, CompanyId = await SeedCompanyAsync() },
@@ -678,8 +678,8 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
             {
                 Purpose = HallPurpose.Session,
                 Mode = HallAllocationMode.Whole,
-                StartUtc = start,
-                EndUtc = start.AddHours(3),
+                Start = start,
+                End = start.AddHours(3),
             }, token);
         Assert.Equal(HttpStatusCode.OK, alloc.StatusCode);
 
@@ -845,17 +845,17 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
 
         var badSlot = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/hall-allocations",
             new CreateHallAllocationRequest
-            { Purpose = HallPurpose.Meeting, Mode = HallAllocationMode.Whole, StartUtc = start, EndUtc = start }, token);
+            { Purpose = HallPurpose.Meeting, Mode = HallAllocationMode.Whole, Start = start, End = start }, token);
         Assert.Equal(HttpStatusCode.BadRequest, badSlot.StatusCode);
 
         var noCount = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/hall-allocations",
             new CreateHallAllocationRequest
-            { Purpose = HallPurpose.Meeting, Mode = HallAllocationMode.RandomByCount, StartUtc = start, EndUtc = start.AddHours(1) }, token);
+            { Purpose = HallPurpose.Meeting, Mode = HallAllocationMode.RandomByCount, Start = start, End = start.AddHours(1) }, token);
         Assert.Equal(HttpStatusCode.BadRequest, noCount.StatusCode);
 
         var unknownHall = await PostAuthAsync($"/api/v1/admin/halls/{Guid.NewGuid()}/hall-allocations",
             new CreateHallAllocationRequest
-            { Purpose = HallPurpose.Meeting, Mode = HallAllocationMode.Whole, StartUtc = start, EndUtc = start.AddHours(1) }, token);
+            { Purpose = HallPurpose.Meeting, Mode = HallAllocationMode.Whole, Start = start, End = start.AddHours(1) }, token);
         Assert.Equal(HttpStatusCode.NotFound, unknownHall.StatusCode);
     }
 
@@ -867,7 +867,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         var start = EventStart.AddHours(20);
         var create = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/hall-allocations",
             new CreateHallAllocationRequest
-            { Purpose = HallPurpose.Meeting, Mode = HallAllocationMode.Whole, StartUtc = start, EndUtc = start.AddHours(2) }, token);
+            { Purpose = HallPurpose.Meeting, Mode = HallAllocationMode.Whole, Start = start, End = start.AddHours(2) }, token);
         var allocId = (await create.Content.ReadFromJsonAsync<ApiResult<HallAllocationRow>>())!.Data!.Id;
 
         var rel = await DeleteAuthAsync($"/api/v1/admin/hall-allocations/{allocId}", token);
@@ -900,8 +900,8 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
             {
                 MeetingTableId = tableId,
                 MeetingType = BusinessMeetingType.B2B,
-                StartUtc = start,
-                EndUtc = start.AddHours(1),
+                Start = start,
+                End = start.AddHours(1),
                 Participants =
                 [
                     new() { Kind = MeetingPartyKind.Company, CompanyId = await SeedCompanyAsync() },
@@ -928,8 +928,8 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
             {
                 Purpose = HallPurpose.Meeting,
                 Mode = HallAllocationMode.Whole,
-                StartUtc = start,
-                EndUtc = start.AddHours(1),
+                Start = start,
+                End = start.AddHours(1),
             }, token);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
@@ -982,8 +982,8 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
             {
                 MeetingTableId = tableId,
                 MeetingType = BusinessMeetingType.B2B,
-                StartUtc = start,
-                EndUtc = end,
+                Start = start,
+                End = end,
                 Participants =
                 [
                     new() { Kind = MeetingPartyKind.Company, CompanyId = companyA },

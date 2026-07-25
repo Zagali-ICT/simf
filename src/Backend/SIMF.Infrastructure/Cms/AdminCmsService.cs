@@ -227,26 +227,26 @@ internal sealed class AdminCmsService(
             }
         }
 
-        // CP grid sortable columns (D-256). Default: DisplayOrder, then StartUtc.
+        // CP grid sortable columns (D-256). Default: DisplayOrder, then Start.
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
             ("title", false) => rows.OrderBy(b => b.Title),
             ("title", true) => rows.OrderByDescending(b => b.Title),
-            ("startutc", false) => rows.OrderBy(b => b.StartUtc),
-            ("startutc", true) => rows.OrderByDescending(b => b.StartUtc),
-            ("endutc", false) => rows.OrderBy(b => b.EndUtc),
-            ("endutc", true) => rows.OrderByDescending(b => b.EndUtc),
-            ("displayorder", true) => rows.OrderByDescending(b => b.DisplayOrder).ThenBy(b => b.StartUtc),
+            ("startutc", false) => rows.OrderBy(b => b.Start),
+            ("startutc", true) => rows.OrderByDescending(b => b.Start),
+            ("endutc", false) => rows.OrderBy(b => b.End),
+            ("endutc", true) => rows.OrderByDescending(b => b.End),
+            ("displayorder", true) => rows.OrderByDescending(b => b.DisplayOrder).ThenBy(b => b.Start),
             ("isactive", false) => rows.OrderBy(b => b.IsActive),
             ("isactive", true) => rows.OrderByDescending(b => b.IsActive),
-            _ => rows.OrderBy(b => b.DisplayOrder).ThenBy(b => b.StartUtc),
+            _ => rows.OrderBy(b => b.DisplayOrder).ThenBy(b => b.Start),
         };
         var total = await rows.CountAsync(cancellationToken);
         var page = await rows
             .Skip(skip).Take(top)
             .Select(b => new AdminBannerSummary(
                 b.Id, b.Title, b.TitleArabic,
-                b.StartUtc, b.EndUtc, b.DisplayOrder, b.IsActive, b.CreatedAt,
+                b.Start, b.End, b.DisplayOrder, b.IsActive, b.CreatedAt,
                 // D-506 — round-trip body + image/link through the grid Excel export.
                 b.Body, b.BodyArabic, b.ImageUrl, b.LinkUrl))
             .ToListAsync(cancellationToken);
@@ -270,7 +270,7 @@ internal sealed class AdminCmsService(
         CancellationToken cancellationToken = default)
     {
         ValidateBanner(request.Title, request.TitleArabic,
-            request.Body, request.BodyArabic, request.StartUtc, request.EndUtc,
+            request.Body, request.BodyArabic, request.Start, request.End,
             request.DisplayOrder);
 
         var now = timeProvider.GetUtcNow();
@@ -283,8 +283,8 @@ internal sealed class AdminCmsService(
             BodyArabic = request.BodyArabic.Trim(),
             ImageUrl = NullIfBlank(request.ImageUrl),
             LinkUrl = NullIfBlank(request.LinkUrl),
-            StartUtc = request.StartUtc,
-            EndUtc = request.EndUtc,
+            Start = request.Start,
+            End = request.End,
             DisplayOrder = request.DisplayOrder,
             IsActive = true,
             CreatedAt = now,
@@ -308,7 +308,7 @@ internal sealed class AdminCmsService(
         CancellationToken cancellationToken = default)
     {
         ValidateBanner(request.Title, request.TitleArabic,
-            request.Body, request.BodyArabic, request.StartUtc, request.EndUtc,
+            request.Body, request.BodyArabic, request.Start, request.End,
             request.DisplayOrder);
 
         var banner = await appDbContext.Banners
@@ -324,8 +324,8 @@ internal sealed class AdminCmsService(
         banner.BodyArabic = request.BodyArabic.Trim();
         banner.ImageUrl = NullIfBlank(request.ImageUrl);
         banner.LinkUrl = NullIfBlank(request.LinkUrl);
-        banner.StartUtc = request.StartUtc;
-        banner.EndUtc = request.EndUtc;
+        banner.Start = request.Start;
+        banner.End = request.End;
         banner.DisplayOrder = request.DisplayOrder;
         banner.IsActive = request.IsActive;
         banner.UpdatedAt = timeProvider.GetUtcNow();
@@ -379,7 +379,7 @@ internal sealed class AdminCmsService(
 
     private static void ValidateBanner(
         string title, string titleArabic, string body, string bodyArabic,
-        DateTimeOffset startUtc, DateTimeOffset endUtc, int displayOrder)
+        DateTimeOffset start, DateTimeOffset end, int displayOrder)
     {
         if (string.IsNullOrWhiteSpace(title) || title.Length > 256
             || string.IsNullOrWhiteSpace(titleArabic) || titleArabic.Length > 256)
@@ -397,7 +397,7 @@ internal sealed class AdminCmsService(
                 "Banner body (EN + AR) must be between 1 and 2000 characters.",
                 "يجب أن يتراوح طول النص (إنجليزي + عربي) بين 1 و 2000 حرف.");
         }
-        if (endUtc <= startUtc)
+        if (end <= start)
         {
             throw new ApiException(
                 ErrorCodes.BannerInvalidTimeWindow, 400,
@@ -415,6 +415,6 @@ internal sealed class AdminCmsService(
 
     private static AdminBannerDetail ToBannerDetail(Banner banner) =>
         new(banner.Id, banner.Title, banner.TitleArabic, banner.Body, banner.BodyArabic,
-            banner.ImageUrl, banner.LinkUrl, banner.StartUtc, banner.EndUtc,
+            banner.ImageUrl, banner.LinkUrl, banner.Start, banner.End,
             banner.DisplayOrder, banner.IsActive, banner.CreatedAt, banner.UpdatedAt);
 }

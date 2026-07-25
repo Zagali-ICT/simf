@@ -4,7 +4,7 @@ namespace SIMF.Contracts.Admin;
 /// read-only over the existing <c>OperationLogEntry</c> table).</summary>
 public sealed record AdminOperationLogSummary(
     Guid Id,
-    DateTimeOffset TimestampUtc,
+    DateTimeOffset Timestamp,
     string EventType,
     string Outcome,
     string? SubjectEmail,
@@ -17,7 +17,7 @@ public sealed record AdminOperationLogSummary(
 /// full row including UserAgent + Detail.</summary>
 public sealed record AdminOperationLogDetail(
     Guid Id,
-    DateTimeOffset TimestampUtc,
+    DateTimeOffset Timestamp,
     string EventType,
     string Outcome,
     string? SubjectEmail,

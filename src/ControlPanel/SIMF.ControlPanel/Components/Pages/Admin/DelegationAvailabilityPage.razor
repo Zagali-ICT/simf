@@ -65,8 +65,8 @@
                     @foreach (var w in _windows)
                     {
                         <li>
-                            @w.StartUtc.FormatSaudi("dd-MM-yyyy hh:mm tt")
-                            – @w.EndUtc.FormatSaudi("hh:mm tt")
+                            @w.Start.FormatSaudi("dd-MM-yyyy hh:mm tt")
+                            – @w.End.FormatSaudi("hh:mm tt")
                             · @w.SlotMinutes @L["Admin.DelegationAvailability.Min"]
                             <AuthorizedAction Permission="@PermissionCatalog.DelegationMeetings.Manage">
                                 <SimfToolbarButton Icon="trash" Title="@L["Grid.Delete"]"

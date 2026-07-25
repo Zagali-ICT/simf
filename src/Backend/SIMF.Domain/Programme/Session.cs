@@ -65,11 +65,11 @@ public class Session : BaseAuditEntity
 
     /// <summary>Session start (UTC). The Flutter agenda renders local-
     /// time per the user's tz.</summary>
-    public DateTimeOffset StartUtc { get; set; }
+    public DateTimeOffset Start { get; set; }
 
-    /// <summary>Session end (UTC). Must be > <see cref="StartUtc"/>;
+    /// <summary>Session end (UTC). Must be > <see cref="Start"/>;
     /// validated at the service layer.</summary>
-    public DateTimeOffset EndUtc { get; set; }
+    public DateTimeOffset End { get; set; }
 
     /// <summary>D-165 (PDF §2.9) — optional per-session override of the
     /// parent <see cref="Hall"/>'s <c>SeatCount</c>. Null means "use
@@ -87,13 +87,13 @@ public class Session : BaseAuditEntity
     /// worker once it has dispatched the "starting soon" notifications for
     /// this session. The null check is the worker's dedup guard: a session
     /// is reminded exactly once. Null until reminded (the normal state).</summary>
-    public DateTimeOffset? ReminderSentUtc { get; set; }
+    public DateTimeOffset? ReminderSent { get; set; }
 
     /// <summary>Set by the end-of-session rating-prompt worker once it has
     /// dispatched the "please rate this session" notifications. The null check is
     /// the worker's dedup guard: a session is prompted exactly once. Null until
     /// prompted (the normal state).</summary>
-    public DateTimeOffset? RatingPromptSentUtc { get; set; }
+    public DateTimeOffset? RatingPromptSent { get; set; }
 
     /// <summary>P3.2 — D-231 (Completion Programme §5.2, Option A): the
     /// broadcast lifecycle. The Scientific Committee drives the transitions

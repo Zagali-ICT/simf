@@ -74,9 +74,9 @@ cancellation, not booking"*). My audit fix blocked it → reverted as a behaviou
 **Decision needed** — should booking a started or ended session be allowed?
 
 **Options**
-- A — block once **started** (`now ≥ StartUtc`). Strictest; disallows live walk-in booking.
+- A — block once **started** (`now ≥ Start`). Strictest; disallows live walk-in booking.
 - B — allow booking any time (status quo). The "un-cancellable hold" is harmless (seat still valid).
-- **C (recommended)** — block only **ended** sessions (`now ≥ EndUtc`); a walk-in may still book a
+- **C (recommended)** — block only **ended** sessions (`now ≥ End`); a walk-in may still book a
   live, in-progress session but not a finished one.
 
 **Recommendation** — **C** (matches the likely intent). Then update the cancel test to reserve
@@ -114,14 +114,14 @@ My deterministic rank rewrite **oversold** (3 through a capacity-2 session) → 
 **Defect** — the app-level overlap guard exists (`SpeakerHasOverlappingMeetingAsync`, half-open
 interval, both accept paths → 409) and already blocks the *sequential* case (a regression test was
 added). The residual is a **concurrent TOCTOU**: two accepts checked before either commits; the DB
-backstop unique index is keyed on `SlotStartUtc` only, so overlapping-but-different-start slots slip through.
+backstop unique index is keyed on `SlotStart` only, so overlapping-but-different-start slots slip through.
 
 **Decision needed** — close the concurrent race.
 
 **Options**
 - **A (recommended)** — wrap the accept path's overlap-check + status flip in a **serializable
   transaction** (same pattern as #21-A). No schema change → within the freeze.
-- B — an overlap-aware DB constraint (exclusion on `[SpeakerId, [SlotStartUtc,SlotEndUtc)]`) — SQL
+- B — an overlap-aware DB constraint (exclusion on `[SpeakerId, [SlotStart,SlotEnd)]`) — SQL
   Server has no native exclusion constraint; needs a trigger or a redesigned key → **frozen-schema** + complex.
 
 **Recommendation** — **A**. Shares the serializable-txn helper with #21.

@@ -40,13 +40,13 @@ import 'golden_fonts.dart';
 ///
 /// The provider wiring + fakes mirror the proven widget test
 /// (test/features/sessions/session_detail_screen_test.dart). Rendered values
-/// derive from fixed data; the meta clock/day come from `startUtc.toLocal()`, so
+/// derive from fixed data; the meta clock/day come from `start.toLocal()`, so
 /// they are fixed per host timezone — regenerate on the same host as the other
 /// goldens (the maintainer's UTC+3 box), as with every golden here.
 ///
 /// D-714 (item 12, GAP-2) — the one time-derived value on the display path: the
 /// ask card reads the pre-session label ("اطرح سؤالاً قبل الجلسة") while the
-/// session is upcoming (`now < startUtc`, the case here — an event in Nov 2026)
+/// session is upcoming (`now < start`, the case here — an event in Nov 2026)
 /// and reverts to "اسأل المحاور" once it has started. This golden therefore
 /// captures the pre-session state; regenerate it before the event date.
 ///
@@ -69,8 +69,8 @@ SessionDetail _detail() => SessionDetail(
       hallId: 'h1',
       hallName: 'Main Hall',
       hallNameArabic: 'القاعة الرئيسية',
-      startUtc: DateTime.utc(2026, 11, 23, 6),
-      endUtc: DateTime.utc(2026, 11, 23, 7, 30),
+      start: DateTime.utc(2026, 11, 23, 6),
+      end: DateTime.utc(2026, 11, 23, 7, 30),
       speakers: <SessionSpeaker>[
         const SessionSpeaker(
           id: 'sp1',

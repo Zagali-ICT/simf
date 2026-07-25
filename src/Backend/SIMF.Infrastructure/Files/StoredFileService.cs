@@ -81,7 +81,7 @@ internal sealed class StoredFileService(
             SizeBytes = command.Content.LongLength,
             Sha256 = sha256,
             IsDeletable = policy.DeletableDefault,
-            RetainUntilUtc = policy.Retention is { } retention ? now.Add(retention) : null,
+            RetainUntil = policy.Retention is { } retention ? now.Add(retention) : null,
             // P2 (D-568 hardening) — the owner FAMILY is authoritative from the
             // policy, never the client, so a caller can't over-post a mismatched
             // owner type. Only the owner id rides the request (server-derived for
@@ -155,7 +155,7 @@ internal sealed class StoredFileService(
             SizeBytes = write.SizeBytes,
             Sha256 = write.Sha256,
             IsDeletable = policy.DeletableDefault,
-            RetainUntilUtc = policy.Retention is { } retention ? now.Add(retention) : null,
+            RetainUntil = policy.Retention is { } retention ? now.Add(retention) : null,
             OwnerEntityType = policy.OwnerEntityType,
             OwnerEntityId = ownerEntityId,
             CreatedBy = actorUserId,
@@ -396,7 +396,7 @@ internal sealed class StoredFileService(
         var file = await dbContext.StoredFiles
             .FirstOrDefaultAsync(f => f.Id == id, cancellationToken)
             ?? throw NotFound();
-        if (file.SecureDestroyedUtc is not null) { return; } // idempotent
+        if (file.SecureDestroyed is not null) { return; } // idempotent
 
         // P7 — PDPL right-to-erasure. Securely destroy the bytes (crypto-shred the
         // wrapped DEK for an encrypted file, overwrite the header for a plaintext

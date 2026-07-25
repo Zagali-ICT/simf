@@ -114,7 +114,7 @@ public sealed class SessionSummaryTests : IClassFixture<SimfApiFactory>
     {
         var sessionId = await SeedSummaryAsync(
             published: true, sessionActive: true, summaryActive: true, aiModel: "echo",
-            startUtc: DateTimeOffset.UtcNow.AddDays(1));
+            start: DateTimeOffset.UtcNow.AddDays(1));
 
         var response = await _client.GetAsync($"/api/v1/app/programme/sessions/{sessionId}/summary");
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
@@ -125,7 +125,7 @@ public sealed class SessionSummaryTests : IClassFixture<SimfApiFactory>
     {
         var sessionId = await SeedSummaryAsync(
             published: true, sessionActive: true, summaryActive: true, aiModel: "echo",
-            startUtc: DateTimeOffset.UtcNow.AddHours(-1));
+            start: DateTimeOffset.UtcNow.AddHours(-1));
 
         var response = await _client.GetAsync($"/api/v1/app/programme/sessions/{sessionId}/summary");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -201,11 +201,11 @@ public sealed class SessionSummaryTests : IClassFixture<SimfApiFactory>
 
     private async Task<Guid> SeedSummaryAsync(
         bool published, bool sessionActive, bool summaryActive, string? aiModel,
-        DateTimeOffset? startUtc = null, bool approved = true)
+        DateTimeOffset? start = null, bool approved = true)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var session = NewSession(sessionActive, startUtc);
+        var session = NewSession(sessionActive, start);
         db.Halls.Add(NewHallFor(session));
         db.Sessions.Add(session);
         // Owner 2026-07-19 — the public read requires team approval, and the D-611
@@ -243,19 +243,19 @@ public sealed class SessionSummaryTests : IClassFixture<SimfApiFactory>
         return session.Id;
     }
 
-    private static Session NewSession(bool active, DateTimeOffset? startUtc = null)
+    private static Session NewSession(bool active, DateTimeOffset? start = null)
     {
-        // S-6 — the public summary read gates on the CLOCK (StartUtc <= now), so the
+        // S-6 — the public summary read gates on the CLOCK (Start <= now), so the
         // published-read tests seed a STARTED session (past start) by default.
-        var start = startUtc ?? DateTimeOffset.UtcNow.AddMinutes(-90);
+        var startValue = start ?? DateTimeOffset.UtcNow.AddMinutes(-90);
         return new Session
         {
             Id = Guid.NewGuid(),
             Code = "SUM-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Summary Session", TitleArabic = "جلسة الملخص",
             HallId = Guid.Empty, // set by NewHallFor
-            StartUtc = start,
-            EndUtc = start.AddHours(1),
+            Start = startValue,
+            End = startValue.AddHours(1),
             IsActive = active, CreatedAt = DateTimeOffset.UtcNow,
         };
     }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../../core/utils/saudi_time.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -143,7 +144,7 @@ class _DelegationMeetingRequestSheetState
   List<DateTime> get _daysWithSlots {
     final days = <DateTime>[];
     for (final slot in _slots) {
-      final local = slot.startUtc.toLocal();
+      final local = saudiOf(slot.start);
       final day = DateTime(local.year, local.month, local.day);
       if (!days.contains(day)) {
         days.add(day);
@@ -154,7 +155,7 @@ class _DelegationMeetingRequestSheetState
 
   List<DelegationSlot> _slotsForDay(DateTime day) => <DelegationSlot>[
         for (final slot in _slots)
-          if (_isSameDay(slot.startUtc.toLocal(), day)) slot,
+          if (_isSameDay(saudiOf(slot.start), day)) slot,
       ];
 
   static bool _isSameDay(DateTime a, DateTime b) =>
@@ -178,16 +179,16 @@ class _DelegationMeetingRequestSheetState
       return;
     }
     // A slot is required only when the delegation actually offers slots.
-    DateTime? slotStartUtc;
-    DateTime? slotEndUtc;
+    DateTime? slotStart;
+    DateTime? slotEnd;
     if (_slots.isNotEmpty) {
       final slot = _selectedSlot;
       if (slot == null) {
         setState(() => _error = l10n.meetingPickDateTime);
         return;
       }
-      slotStartUtc = slot.startUtc;
-      slotEndUtc = slot.endUtc;
+      slotStart = slot.start;
+      slotEnd = slot.end;
     }
     // R0 — clear the inline error and submit. Feedback stays inside the sheet.
     setState(() {
@@ -201,8 +202,8 @@ class _DelegationMeetingRequestSheetState
             targetCountryCode: target.countryCode,
             attendeeCount: attendees,
             subject: subject,
-            slotStartUtc: slotStartUtc,
-            slotEndUtc: slotEndUtc,
+            slotStart: slotStart,
+            slotEnd: slotEnd,
           );
       if (!mounted) {
         return;
@@ -543,7 +544,7 @@ class _DelegationMeetingRequestSheetState
             MeetingTimeChip(
               key: ValueKey<String>('delegation-time-$i'),
               label: _formatTime(
-                TimeOfDay.fromDateTime(slots[i].startUtc.toLocal()),
+                TimeOfDay.fromDateTime(saudiOf(slots[i].start)),
                 isArabic,
               ),
               selected: _selectedSlot == slots[i],

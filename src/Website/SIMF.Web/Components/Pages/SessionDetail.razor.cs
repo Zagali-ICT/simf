@@ -35,7 +35,7 @@ public partial class SessionDetail
         var agenda = await Api.GetProgrammeSessionsAsync();
         Related = (agenda?.Items ?? [])
             .Where(item => item.Id != Id)
-            .OrderBy(item => item.StartUtc)
+            .OrderBy(item => item.Start)
             .Take(3)
             .ToList();
     }
@@ -46,19 +46,19 @@ public partial class SessionDetail
     private string? Category(PublicSessionDetail s) => PickOrNull(s.CategoryName, s.CategoryNameArabic);
 
     private static string TimeRange(PublicSessionDetail s) =>
-        EventTime.Window(s.StartUtc, s.EndUtc);
+        EventTime.Window(s.Start, s.End);
 
     private static string DateLabel(PublicSessionDetail s) =>
-        EventTime.Local(s.StartUtc).ToString("dddd d MMMM yyyy", CultureInfo.CurrentUICulture);
+        EventTime.Local(s.Start).ToString("dddd d MMMM yyyy", CultureInfo.CurrentUICulture);
 
     private static string WeekdayLabel(PublicSessionDetail s) =>
-        EventTime.Local(s.StartUtc).ToString("dddd", CultureInfo.CurrentUICulture);
+        EventTime.Local(s.Start).ToString("dddd", CultureInfo.CurrentUICulture);
 
     // Related-strip card helpers (agenda list items).
     private static string RelatedTitle(PublicSessionListItem s) => Pick(s.Title, s.TitleArabic);
     private static string RelatedHall(PublicSessionListItem s) => Pick(s.HallName, s.HallNameArabic);
     private static string RelatedTime(PublicSessionListItem s) =>
-        EventTime.Window(s.StartUtc, s.EndUtc);
+        EventTime.Window(s.Start, s.End);
 
     // Speaker-card helpers (reuse the ln-spkcard family from the Speakers page).
     private static string SpeakerName(PublicSessionSpeaker s) => Pick(s.Name, s.NameArabic);

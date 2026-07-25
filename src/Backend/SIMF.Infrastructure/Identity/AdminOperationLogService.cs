@@ -32,7 +32,7 @@ internal sealed class AdminOperationLogService(
     private static readonly Expression<Func<OperationLogEntry, AdminOperationLogSummary>> ToSummary =
         row => new AdminOperationLogSummary(
             row.Id,
-            row.TimestampUtc,
+            row.Timestamp,
             row.EventType,
             row.Outcome.ToString(),
             row.SubjectEmail,
@@ -89,7 +89,7 @@ internal sealed class AdminOperationLogService(
             .Where(row => row.Id == id)
             .Select(row => new AdminOperationLogDetail(
                 row.Id,
-                row.TimestampUtc,
+                row.Timestamp,
                 row.EventType,
                 row.Outcome.ToString(),
                 row.SubjectEmail,
@@ -145,12 +145,12 @@ internal sealed class AdminOperationLogService(
         if (query.Filters.TryGetValue("from", out var fromRaw)
             && DateTimeOffset.TryParse(fromRaw, out var from))
         {
-            rows = rows.Where(row => row.TimestampUtc >= from);
+            rows = rows.Where(row => row.Timestamp >= from);
         }
         if (query.Filters.TryGetValue("to", out var toRaw)
             && DateTimeOffset.TryParse(toRaw, out var to))
         {
-            rows = rows.Where(row => row.TimestampUtc <= to);
+            rows = rows.Where(row => row.Timestamp <= to);
         }
         return rows;
     }
@@ -162,18 +162,18 @@ internal sealed class AdminOperationLogService(
         (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
             ("eventtype", true) => rows.OrderByDescending(row => row.EventType)
-                                       .ThenByDescending(row => row.TimestampUtc),
+                                       .ThenByDescending(row => row.Timestamp),
             ("eventtype", false) => rows.OrderBy(row => row.EventType)
-                                        .ThenByDescending(row => row.TimestampUtc),
+                                        .ThenByDescending(row => row.Timestamp),
             ("outcome", true) => rows.OrderByDescending(row => row.Outcome)
-                                     .ThenByDescending(row => row.TimestampUtc),
+                                     .ThenByDescending(row => row.Timestamp),
             ("outcome", false) => rows.OrderBy(row => row.Outcome)
-                                      .ThenByDescending(row => row.TimestampUtc),
+                                      .ThenByDescending(row => row.Timestamp),
             ("sourceip", true) => rows.OrderByDescending(row => row.SourceIp)
-                                      .ThenByDescending(row => row.TimestampUtc),
+                                      .ThenByDescending(row => row.Timestamp),
             ("sourceip", false) => rows.OrderBy(row => row.SourceIp)
-                                       .ThenByDescending(row => row.TimestampUtc),
-            ("timestamputc", false) => rows.OrderBy(row => row.TimestampUtc),
-            _ => rows.OrderByDescending(row => row.TimestampUtc),
+                                       .ThenByDescending(row => row.Timestamp),
+            ("timestamputc", false) => rows.OrderBy(row => row.Timestamp),
+            _ => rows.OrderByDescending(row => row.Timestamp),
         };
 }

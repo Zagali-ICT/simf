@@ -268,7 +268,7 @@ Scenario: Filter, sort and page the sessions grid
   Then the POST /account/api/admin/sessions/list body carries the title filter
   And only rows whose Title contains "Naval" render
   When they click the "Start (Saudi time)" column header
-  Then the list re-queries sorted by startUtc ascending
+  Then the list re-queries sorted by start ascending
   When they click "Next"
   Then the pager advances and the summary reads "Showing 21–40 of {total}"
 ```
@@ -549,12 +549,12 @@ Scenario: Export the sessions grid to an XLSX workbook
       with an empty Ids list and the current Query (whole filtered grid, capped at 5000 rows)
   And the browser saves a file named simf-sessions-{timestamp}.xlsx
   And the workbook's "Sessions" sheet header row reads
-      Code | Title | TitleArabic | Hall | Category | StartUtc | EndUtc | Capacity | Status | IsActive
+      Code | Title | TitleArabic | Hall | Category | Start | End | Capacity | Status | IsActive
       | Type | SeatSelectionModeOverride | Description | DescriptionArabic
       | LiveStreamUrl | LiveSignLanguageUrl | LiveCaptions | LiveCaptionsArabic
       (the last eight appended by D-506 so they round-trip through import; blank when unset)
   And the Hall cell holds the hall *code*, the Category cell the category English name,
-      and StartUtc/EndUtc are ISO-8601 UTC strings (e.g. 2026-11-10T09:00:00Z)
+      and Start/End are ISO-8601 UTC strings (e.g. 2026-11-10T09:00:00Z)
   And Type / SeatSelectionModeOverride are written by their display name (Workshop/Session/Event,
       AssignedSeat/OpenSeating)
   And the speaker roster and theme set are NOT exported (M-to-M, omitted by design)
@@ -570,8 +570,8 @@ Scenario: Import sessions from a workbook and see the per-row outcome
   And one active Hall with code "AUD-A" exists
   When they click the toolbar "Import" action (the file picker "sessions-import-input", accept=".xlsx", opens)
   And they choose an .xlsx whose "Sessions" sheet has the required headers
-      Code | Title | TitleArabic | Hall | StartUtc | EndUtc
-      plus a Type column, with two new rows (Hall="AUD-A", valid ISO StartUtc < EndUtc,
+      Code | Title | TitleArabic | Hall | Start | End
+      plus a Type column, with two new rows (Hall="AUD-A", valid ISO Start < End,
       Type="Event" — a non-Event row would also need a Speakers cell, see SES-046)
   Then a POST /account/api/admin/sessions/import fires as multipart form data
   And the import-result modal shows "2 created, 0 updated, 0 skipped." (import is insert-only)
@@ -579,7 +579,7 @@ Scenario: Import sessions from a workbook and see the per-row outcome
   When they import a workbook where one row has a Hall code that no active hall matches
   Then that row appears in the per-row error list reading "No active hall with code '…' was found."
       and the others still import (one bad row never aborts the batch)
-  When they import a row whose EndUtc is at/before StartUtc
+  When they import a row whose End is at/before Start
   Then that row errors with "The end time must be after the start time."
 ```
 
@@ -595,7 +595,7 @@ Scenario: A bad upload is rejected without creating anything
   When they import a file larger than 5 MB
   Then the API returns HTTP 413 "The Excel file is too large. The maximum is 5 MB."
   When they import a workbook whose sheet is not named "Sessions"
-      (or is missing a required header from Code/Title/TitleArabic/Hall/StartUtc/EndUtc)
+      (or is missing a required header from Code/Title/TitleArabic/Hall/Start/End)
   Then the parse rejects it with a bilingual error and nothing is created
 ```
 

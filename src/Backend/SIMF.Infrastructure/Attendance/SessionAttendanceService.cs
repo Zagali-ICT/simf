@@ -12,7 +12,7 @@ namespace SIMF.Infrastructure.Attendance;
 /// existing <c>HallAttendance</c> arrival records (D-241). Pure reads: every
 /// query is <c>AsNoTracking</c> and nothing is written, so there is no schema
 /// change and no migration. The live-now count rides the
-/// <c>(HallId, LeaveUtc)</c> index and the per-session counts ride
+/// <c>(HallId, Leave)</c> index and the per-session counts ride
 /// <c>(SessionId, UserId)</c> (both on <c>HallAttendanceConfiguration</c>).
 ///
 /// <para>All data is in the App database; <c>UserId</c> is counted as an opaque
@@ -29,7 +29,7 @@ internal sealed class SessionAttendanceService(
     {
         // Live now = distinct people currently inside a hall (an OPEN row).
         var liveAttendeesNow = await appDbContext.HallAttendances.AsNoTracking()
-            .Where(a => a.LeaveUtc == null)
+            .Where(a => a.Leave == null)
             .Select(a => a.UserId)
             .Distinct()
             .CountAsync(cancellationToken);
@@ -91,8 +91,8 @@ internal sealed class SessionAttendanceService(
             ("code", false) => sessions.OrderBy(session => session.Code),
             ("title", true) => sessions.OrderByDescending(session => session.Title),
             ("title", false) => sessions.OrderBy(session => session.Title),
-            ("startutc", true) => sessions.OrderByDescending(session => session.StartUtc),
-            _ => sessions.OrderBy(session => session.StartUtc),
+            ("startutc", true) => sessions.OrderByDescending(session => session.Start),
+            _ => sessions.OrderBy(session => session.Start),
         };
 
         var total = await sessions.CountAsync(cancellationToken);
@@ -106,8 +106,8 @@ internal sealed class SessionAttendanceService(
                 session.TitleArabic,
                 HallName = session.Hall!.Name,
                 HallNameArabic = session.Hall!.NameArabic,
-                session.StartUtc,
-                session.EndUtc,
+                session.Start,
+                session.End,
             })
             .ToListAsync(cancellationToken);
 
@@ -128,7 +128,7 @@ internal sealed class SessionAttendanceService(
 
         // Live-now per session for the page (open rows only).
         var liveRows = await appDbContext.HallAttendances.AsNoTracking()
-            .Where(a => ids.Contains(a.SessionId) && a.LeaveUtc == null)
+            .Where(a => ids.Contains(a.SessionId) && a.Leave == null)
             .GroupBy(a => a.SessionId)
             .Select(g => new { SessionId = g.Key, Count = g.Count() })
             .ToListAsync(cancellationToken);
@@ -141,8 +141,8 @@ internal sealed class SessionAttendanceService(
             session.TitleArabic,
             session.HallName,
             session.HallNameArabic,
-            session.StartUtc,
-            session.EndUtc,
+            session.Start,
+            session.End,
             totalBySession.GetValueOrDefault(session.Id),
             liveBySession.GetValueOrDefault(session.Id))).ToList();
 
@@ -155,8 +155,8 @@ internal sealed class SessionAttendanceService(
     {
         // Everyone currently inside this session's hall — the open attendance rows.
         var present = await appDbContext.HallAttendances.AsNoTracking()
-            .Where(a => a.SessionId == sessionId && a.LeaveUtc == null)
-            .Select(a => new { a.UserId, a.EnterUtc, a.Method })
+            .Where(a => a.SessionId == sessionId && a.Leave == null)
+            .Select(a => new { a.UserId, a.Enter, a.Method })
             .ToListAsync(cancellationToken);
         if (present.Count == 0)
         {
@@ -193,7 +193,7 @@ internal sealed class SessionAttendanceService(
             .ToDictionary(g => g.Key, g => g.First());
 
         return present
-            .OrderBy(a => a.EnterUtc)
+            .OrderBy(a => a.Enter)
             .Select(a =>
             {
                 var profile = profileByUser.GetValueOrDefault(a.UserId);
@@ -207,7 +207,7 @@ internal sealed class SessionAttendanceService(
                     profile?.JobTitle,
                     seat?.RowLabel,
                     seat?.SeatNumber,
-                    a.EnterUtc,
+                    a.Enter,
                     a.Method);
             })
             .ToList();

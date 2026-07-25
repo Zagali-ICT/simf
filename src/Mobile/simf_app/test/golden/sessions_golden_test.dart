@@ -48,7 +48,7 @@ SessionListItem _session({
   required String titleAr,
   required String titleEn,
   required String descAr,
-  required DateTime startUtc,
+  required DateTime start,
   required SessionType type,
 }) =>
     SessionListItem(
@@ -59,8 +59,8 @@ SessionListItem _session({
       hallId: 'h1',
       hallName: 'Main Hall',
       hallNameArabic: 'القاعة الرئيسية',
-      startUtc: startUtc,
-      endUtc: startUtc.add(const Duration(hours: 1, minutes: 30)),
+      start: start,
+      end: start.add(const Duration(hours: 1, minutes: 30)),
       status: SessionStatus.scheduled,
       speakers: const <SessionSpeaker>[],
       type: type,
@@ -83,7 +83,7 @@ final _days = <ProgrammeDay>[
         titleEn: 'The Future of Maritime Security',
         descAr:
             'نظرة معمّقة على مستقبل الأمن البحري والتحديات الإقليمية والدولية وأثرها على الممرات الملاحية.',
-        startUtc: DateTime.utc(2026, 6, 20, 5, 0),
+        start: DateTime.utc(2026, 6, 20, 5, 0),
         type: SessionType.workshop,
       ),
       _session(
@@ -92,7 +92,7 @@ final _days = <ProgrammeDay>[
         titleAr: 'الاستراتيجيات الدفاعية الحديثة',
         titleEn: 'Modern Defence Strategies',
         descAr: 'استعراض أحدث المنظومات الدفاعية والشراكات الاستراتيجية في المنطقة.',
-        startUtc: DateTime.utc(2026, 6, 20, 7, 30),
+        start: DateTime.utc(2026, 6, 20, 7, 30),
         type: SessionType.session,
       ),
     ],
@@ -111,7 +111,7 @@ final _days = <ProgrammeDay>[
         titleAr: 'حفل الافتتاح',
         titleEn: 'Opening Ceremony',
         descAr: 'حفل افتتاح الملتقى البحري السعودي الدولي وكلمات الرعاة.',
-        startUtc: DateTime.utc(2026, 6, 21, 6, 0),
+        start: DateTime.utc(2026, 6, 21, 6, 0),
         type: SessionType.event,
       ),
     ],

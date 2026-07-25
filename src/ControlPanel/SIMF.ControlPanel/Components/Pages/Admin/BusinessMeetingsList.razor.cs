@@ -264,8 +264,8 @@ public partial class BusinessMeetingsList
         _toast = null;
         try
         {
-            _form.StartUtc = start;
-            _form.EndUtc = end;
+            _form.Start = start;
+            _form.End = end;
             _form.Participants = _participants.Select(p => new ScheduleMeetingParticipant
             {
                 Kind = p.Kind,

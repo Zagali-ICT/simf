@@ -55,14 +55,14 @@ screen 18's grid. The app caches the seat map across the 17 → 18 hop.
 Per the Screen Guide both CTAs are **system / on-device** actions:
 - **`أضف إلى تقويمي` (add to calendar)** — "→ device calendar (system action)".
   The app builds a single calendar event from the cached session
-  (title = `Title|TitleArabic`, start = `StartUtc`, end = `EndUtc`,
+  (title = `Title|TitleArabic`, start = `Start`, end = `End`,
   location = the hall name) and hands it to the OS add-event intent. **No server
   call** — all fields are already cached, so it works offline. (Contrast Page_014,
   whose `.ics` aggregates **many** server-side sources and therefore needs a
   server build.)
 - **`تذكير` (reminder)** — "→ schedules a local push notification before the
   session starts". A **local notification** scheduled on-device at
-  `StartUtc − lead-time`. **No server call.** (This is independent of the
+  `Start − lead-time`. **No server call.** (This is independent of the
   server-side automated session-reminder worker, D-217, which is a separate
   back-office concern.)
 
@@ -118,8 +118,8 @@ here so the contract is discoverable from one place:
   (`POST /api/v1/app/sessions/{id}/questions`, `RequireApprovedAccount`) is gated
   by **three** rules: (1) **arrival** at the hall (when the hall has a geofence the
   attendee needs a `HallAttendance` arrival record, else the `IsAtVenue`
-  self-assert — D-242), (2) the window **opens 5 minutes before** `StartUtc`
-  (`PreStartWindow = 5 min`), and (3) it **closes at** `EndUtc`
+  self-assert — D-242), (2) the window **opens 5 minutes before** `Start`
+  (`PreStartWindow = 5 min`), and (3) it **closes at** `End`
   (`PostEndWindow = 0`). Outside the window the API returns **400
   `SESSION_NOT_LIVE_FOR_QUESTIONS`**. Full contract: **screen 26** (Q&A), tests in
   `SessionQuestionsTests`. Screen 17 only deep-links into it.

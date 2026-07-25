@@ -13,8 +13,8 @@ namespace SIMF.Infrastructure.Operations;
 /// departure. A hall-door gate in In-only mode (or an attendee who simply never
 /// scanned out) leaves an open <c>HallAttendance</c> row; without a sweep the
 /// session's attendance count only ever grows. Once per minute this closes every
-/// open row (LeaveUtc null) whose session has ended, stamping
-/// <c>LeaveUtc = Session.EndUtc</c> so attendance reflects the true window.
+/// open row (Leave null) whose session has ended, stamping
+/// <c>Leave = Session.End</c> so attendance reflects the true window.
 /// Mirrors <c>SessionRatingPromptWorker</c>'s poll/startup/error shape.
 /// </summary>
 internal sealed class HallAttendanceCloseoutWorker(
@@ -82,19 +82,19 @@ internal sealed class HallAttendanceCloseoutWorker(
     }
 
     /// <summary>Closes every open attendance row whose session has ended, setting
-    /// LeaveUtc to the session's EndUtc. Extracted for direct unit testing.</summary>
+    /// Leave to the session's End. Extracted for direct unit testing.</summary>
     internal static async Task<int> CloseEndedSessionsAsync(
         SimfAppDbContext db, DateTimeOffset now, CancellationToken cancellationToken)
     {
         var open = await db.HallAttendances
-            .Where(a => a.LeaveUtc == null && a.Session!.EndUtc <= now)
-            .Select(a => new { Row = a, a.Session!.EndUtc })
+            .Where(a => a.Leave == null && a.Session!.End <= now)
+            .Select(a => new { Row = a, a.Session!.End })
             .ToListAsync(cancellationToken);
         if (open.Count == 0) { return 0; }
 
         foreach (var item in open)
         {
-            item.Row.LeaveUtc = item.EndUtc;
+            item.Row.Leave = item.End;
             item.Row.UpdatedAt = now;
         }
         await db.SaveChangesAsync(cancellationToken);

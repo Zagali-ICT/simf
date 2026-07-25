@@ -40,7 +40,7 @@ public enum FileAccessClass
 /// <param name="OwnerEntityType">The polymorphic owner family.</param>
 /// <param name="OwnerRequired">When true, an upload MUST carry a (server-derived)
 /// owner id and the download owner-check can never silently fall through to admin.</param>
-/// <param name="Retention">Retention period from which RetainUntilUtc is computed;
+/// <param name="Retention">Retention period from which RetainUntil is computed;
 /// null = indefinite. (The concrete schedule is open owner decision D-568 #7.)</param>
 /// <param name="DeletableDefault">Default for StoredFile.IsDeletable.</param>
 public sealed record FileServicePolicy(

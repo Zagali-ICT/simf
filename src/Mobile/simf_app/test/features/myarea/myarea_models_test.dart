@@ -21,8 +21,8 @@ void main() {
         'todaySchedule': <dynamic>[
           <String, dynamic>{
             'kind': 'Session',
-            'startUtc': '2026-09-13T08:00:00Z',
-            'endUtc': '2026-09-13T09:00:00Z',
+            'start': '2026-09-13T08:00:00Z',
+            'end': '2026-09-13T09:00:00Z',
             'titleEn': 'Opening',
             'titleAr': 'الافتتاح',
             'hallNameEn': 'Hall A',
@@ -34,8 +34,8 @@ void main() {
           },
           <String, dynamic>{
             'kind': 'Meeting',
-            'startUtc': '2026-09-13T10:30:00Z',
-            'endUtc': null,
+            'start': '2026-09-13T10:30:00Z',
+            'end': null,
             'titleEn': '',
             'titleAr': '',
             'hallNameEn': null,
@@ -68,7 +68,7 @@ void main() {
       expect(meeting.isSession, isFalse);
       // A business meeting carries no title → falls back to its subject.
       expect(meeting.localizedTitle(false), 'Intro chat');
-      expect(meeting.endUtc, isNull);
+      expect(meeting.end, isNull);
     });
 
     test('degrades gracefully on empty / missing fields', () {

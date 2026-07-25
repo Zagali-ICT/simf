@@ -196,7 +196,7 @@ class _MySessionCard extends StatelessWidget {
     final hasMeta = speaker != null || (hall != null && hall.isNotEmpty);
     // Owner 2026-07-14 — the same state chips as the agenda (my-sessions carries
     // no summary flag, so only live-now / recorded show here).
-    final phase = sessionPhase(item.startUtc, item.endUtc, DateTime.now().toUtc());
+    final phase = sessionPhase(item.start, item.end, DateTime.now().toUtc());
     final stateChips = sessionStateChips(
       phase: phase,
       hasPublishedSummary: false,

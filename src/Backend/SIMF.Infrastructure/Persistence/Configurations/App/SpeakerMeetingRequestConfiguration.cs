@@ -18,7 +18,7 @@ internal sealed class SpeakerMeetingRequestConfiguration
         // request) are allowed to pass.
         builder.ToTable("SpeakerMeetingRequests", table => table.HasCheckConstraint(
             "CK_SpeakerMeetingRequests_Slot",
-            "[SlotStartUtc] IS NULL OR [SlotEndUtc] IS NULL OR [SlotEndUtc] > [SlotStartUtc]"));
+            "[SlotStart] IS NULL OR [SlotEnd] IS NULL OR [SlotEnd] > [SlotStart]"));
         builder.HasKey(r => r.Id);
 
         builder.Property(r => r.RequesterName).HasMaxLength(128).IsRequired();
@@ -59,23 +59,23 @@ internal sealed class SpeakerMeetingRequestConfiguration
         // widened this from Accepted-only to the slot-holding set
         // (`MeetingRequestStatuses.SlotHolding` = Accepted + AwaitingSpeaker + Done): a
         // hall-bound request in AwaitingSpeaker writes the hall slot into
-        // SlotStartUtc and so occupies the speaker's calendar — it must be the DB
+        // SlotStart and so occupies the speaker's calendar — it must be the DB
         // backstop for the speaker double-booking re-check, symmetric with the hall
         // index below. Status is int; SQL Server filtered indexes forbid OR, so the
         // live set is "not a released state" (not Pending=0 / Rejected=2 /
         // Cancelled=3). The NOT NULL guard excludes legacy topic-only requests
         // (NULLs collide in a SQL Server unique index).
-        builder.HasIndex(r => new { r.SpeakerId, r.SlotStartUtc })
+        builder.HasIndex(r => new { r.SpeakerId, r.SlotStart })
             .IsUnique()
-            .HasFilter("[SlotStartUtc] IS NOT NULL AND [Status] <> 0 AND [Status] <> 2 AND [Status] <> 3");
+            .HasFilter("[SlotStart] IS NOT NULL AND [Status] <> 0 AND [Status] <> 2 AND [Status] <> 3");
 
         // D-716 (item 7, GAP-2) — at most one live meeting per (hall, slot): a hall
         // slot cannot be double-booked across speakers. Same slot-holding live set
         // as the speaker index above (`MeetingRequestStatuses.SlotHolding`). The DB
         // backstop for the app-level free-slot re-check in
         // SpeakerMeetingRequestService.
-        builder.HasIndex(r => new { r.HallId, r.SlotStartUtc })
+        builder.HasIndex(r => new { r.HallId, r.SlotStart })
             .IsUnique()
-            .HasFilter("[HallId] IS NOT NULL AND [SlotStartUtc] IS NOT NULL AND [Status] <> 0 AND [Status] <> 2 AND [Status] <> 3");
+            .HasFilter("[HallId] IS NOT NULL AND [SlotStart] IS NOT NULL AND [Status] <> 0 AND [Status] <> 2 AND [Status] <> 3");
     }
 }

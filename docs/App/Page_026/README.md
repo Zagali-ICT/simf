@@ -61,8 +61,8 @@ the question open/close window).
 
 Submitting is gated by **three** rules: (1) **arrival at the hall** (a geofenced
 hall needs a `HallAttendance` arrival record, else the `IsAtVenue` self-assert),
-(2) the window **opens 5 minutes before** `StartUtc`, and (3) it **closes at**
-`EndUtc`. Outside that window the submit returns `400 SESSION_NOT_LIVE_FOR_QUESTIONS`.
+(2) the window **opens 5 minutes before** `Start`, and (3) it **closes at**
+`End`. Outside that window the submit returns `400 SESSION_NOT_LIVE_FOR_QUESTIONS`.
 See [Page_026_Logic.md](Page_026_Logic.md) and [Page_026_API.md](Page_026_API.md).
 
 ## Related pages

@@ -33,7 +33,7 @@ internal sealed class MyRequestsService(
             .Join(appDbContext.Speakers, r => r.SpeakerId, s => s.Id, (r, s) => new
             {
                 r.Id, SpeakerId = s.Id, s.Name, s.NameArabic, s.Rank, s.RankArabic, s.CountryId,
-                r.Status, r.SlotStartUtc, r.CreatedAt, r.ResponseNote,
+                r.Status, r.SlotStart, r.CreatedAt, r.ResponseNote,
             })
             .ToListAsync(cancellationToken);
 
@@ -45,7 +45,7 @@ internal sealed class MyRequestsService(
                 Name = r.TargetCountry!.Name,
                 NameArabic = r.TargetCountry!.NameArabic,
                 r.TargetCountryId,
-                r.Status, r.SlotStartUtc, r.CreatedAt,
+                r.Status, r.SlotStart, r.CreatedAt,
             })
             .ToListAsync(cancellationToken);
 
@@ -61,7 +61,7 @@ internal sealed class MyRequestsService(
             {
                 x.r.Id, x.s.Title, x.s.TitleArabic,
                 HallName = h.Name, HallNameArabic = h.NameArabic,
-                x.s.StartUtc, x.r.Status, x.r.CreatedAt,
+                x.s.Start, x.r.Status, x.r.CreatedAt,
             })
             .ToListAsync(cancellationToken);
 
@@ -80,7 +80,7 @@ internal sealed class MyRequestsService(
 
         items.AddRange(speaker.Select(r => new AppRequestItem(
             AppRequestKind.SpeakerMeeting, r.Id, r.Name, r.NameArabic,
-            ToRequesterDisplayStatus(r.Status), r.SlotStartUtc, r.CreatedAt,
+            ToRequesterDisplayStatus(r.Status), r.SlotStart, r.CreatedAt,
             // R-1 — an AwaitingSpeaker request (admin accepted + bound a hall, speaker not
             // yet confirmed) is still "under review" to the requester, so let them withdraw
             // it; cancelling frees the held slot and voids the speaker's confirmation tokens.
@@ -93,27 +93,27 @@ internal sealed class MyRequestsService(
             AppRequestKind.DelegationMeeting, r.Id, r.Name, r.NameArabic,
             // Same fold as the speaker projection so the unified state machine's admin-only
             // states (AwaitingSpeaker / Done) never leak past the shipped wire contract (0–3).
-            ToRequesterDisplayStatus(r.Status), r.SlotStartUtc, r.CreatedAt, CanCancel: false,
+            ToRequesterDisplayStatus(r.Status), r.SlotStart, r.CreatedAt, CanCancel: false,
             CountryId: r.TargetCountryId)));
 
         items.AddRange(bookings.Select(r => new AppRequestItem(
             AppRequestKind.SessionAttendance, r.Id,
             $"{r.Title} · {r.HallName}", $"{r.TitleArabic} · {r.HallNameArabic}",
-            ToDisplayStatus(r.Status), r.StartUtc, r.CreatedAt, CanCancel: false)));
+            ToDisplayStatus(r.Status), r.Start, r.CreatedAt, CanCancel: false)));
 
         items.AddRange(documents.Select(r =>
         {
             var (en, ar) = DocumentTypeLabel(r.DocumentType);
             return new AppRequestItem(
                 AppRequestKind.ParticipationDocument, r.Id, en, ar,
-                r.Status, EventDateUtc: null, r.CreatedAt,
+                r.Status, EventDate: null, r.CreatedAt,
                 r.Status == MeetingRequestStatus.Pending,
                 ResponseNote: r.ResponseNote);
         }));
 
         items.AddRange(badges.Select(r => new AppRequestItem(
             AppRequestKind.BadgeUpdate, r.Id, r.RequestedJobTitle, r.RequestedJobTitle,
-            r.Status, EventDateUtc: null, r.CreatedAt,
+            r.Status, EventDate: null, r.CreatedAt,
             r.Status == MeetingRequestStatus.Pending,
             ResponseNote: r.ResponseNote)));
 

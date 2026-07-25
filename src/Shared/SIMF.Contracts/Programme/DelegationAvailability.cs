@@ -6,8 +6,8 @@ namespace SIMF.Contracts.Programme;
 public sealed record AdminDelegationAvailabilityWindow(
     Guid Id,
     int CountryId,
-    DateTimeOffset StartUtc,
-    DateTimeOffset EndUtc,
+    DateTimeOffset Start,
+    DateTimeOffset End,
     int SlotMinutes,
     bool IsActive,
     DateTimeOffset CreatedAt);
@@ -15,13 +15,13 @@ public sealed record AdminDelegationAvailabilityWindow(
 /// <summary>Bi-Meeting rework — create a delegation availability window.</summary>
 public sealed class CreateDelegationAvailabilityWindowRequest
 {
-    public DateTimeOffset StartUtc { get; set; }
-    public DateTimeOffset EndUtc { get; set; }
+    public DateTimeOffset Start { get; set; }
+    public DateTimeOffset End { get; set; }
     public int SlotMinutes { get; set; } = 30;
 }
 
 /// <summary>Bi-Meeting rework — one bookable slot derived from a delegation's
 /// windows: a fixed-length time range not yet taken by a live delegation meeting.</summary>
 public sealed record DelegationAvailableSlot(
-    DateTimeOffset StartUtc,
-    DateTimeOffset EndUtc);
+    DateTimeOffset Start,
+    DateTimeOffset End);

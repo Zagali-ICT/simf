@@ -115,7 +115,7 @@ cached, then filtered client-side (App Page 016 L-1). The public projection
 
 | `Session` field (CP) | Public field (app) | App use |
 |----------------------|--------------------|---------|
-| `StartUtc` / `EndUtc` | `startUtc` / `endUtc` | agenda time chip (rendered device-local) |
+| `Start` / `End` | `start` / `end` | agenda time chip (rendered device-local) |
 | `Code` | `code` | row code |
 | `Title` / `TitleArabic` | `title` / `titleArabic` | row + detail title |
 | `Description*` | `description*` | detail abstract |

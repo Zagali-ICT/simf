@@ -58,10 +58,10 @@ internal sealed class DelegationMeetingRequestService(
         // be persisted silently.
         DateTimeOffset? slotStart = null;
         DateTimeOffset? slotEnd = null;
-        if (request.SlotStartUtc is not null || request.SlotEndUtc is not null)
+        if (request.SlotStart is not null || request.SlotEnd is not null)
         {
-            if (request.SlotStartUtc is not { } pickedStart
-                || request.SlotEndUtc is not { } pickedEnd
+            if (request.SlotStart is not { } pickedStart
+                || request.SlotEnd is not { } pickedEnd
                 || pickedEnd <= pickedStart)
             {
                 throw new ApiException(ErrorCodes.DelegationMeetingRequestInvalid, 400,
@@ -131,8 +131,8 @@ internal sealed class DelegationMeetingRequestService(
         {
             openRequest.AttendeeCount = request.AttendeeCount;
             openRequest.Subject = subject;
-            openRequest.SlotStartUtc = slotStart;
-            openRequest.SlotEndUtc = slotEnd;
+            openRequest.SlotStart = slotStart;
+            openRequest.SlotEnd = slotEnd;
             await appDbContext.SaveChangesAsync(cancellationToken);
 
             await auditLog.WriteAsync(new AuditEntry
@@ -156,8 +156,8 @@ internal sealed class DelegationMeetingRequestService(
             TargetCountryId = targetCountry.Id,
             AttendeeCount = request.AttendeeCount,
             Subject = subject,
-            SlotStartUtc = slotStart,
-            SlotEndUtc = slotEnd,
+            SlotStart = slotStart,
+            SlotEnd = slotEnd,
             Status = MeetingRequestStatus.Pending,
             CreatedAt = now,
         };
@@ -205,7 +205,7 @@ internal sealed class DelegationMeetingRequestService(
                 r.AttendeeCount,
                 r.Subject,
                 r.Status,
-                r.SlotStartUtc,
+                r.SlotStart,
                 r.ResponseNote,
                 r.CreatedAt,
                 r.RespondedAt))
@@ -265,7 +265,7 @@ internal sealed class DelegationMeetingRequestService(
         // bindHall would 409 that finalise-after-approve path, since a null HallId would
         // be read as a plain accept whose only legal source state is Pending. A legacy
         // accept without a hall keeps the requester-proposed-slot behaviour. This is
-        // admin-brokered + low-concurrency; the DB (HallId, SlotStartUtc) filtered-unique
+        // admin-brokered + low-concurrency; the DB (HallId, SlotStart) filtered-unique
         // index is the equal-start hall double-book backstop.
         var cancel = request.Status == MeetingRequestStatus.Rejected;
         var bindHall = request.Status == MeetingRequestStatus.Accepted && request.HallId is not null;
@@ -315,7 +315,7 @@ internal sealed class DelegationMeetingRequestService(
                 await BindDelegationHallSlotAsync(req, request, now, cancellationToken);
             }
             else if (req.Status == MeetingRequestStatus.Pending
-                && req.SlotStartUtc is { } sStart && req.SlotEndUtc is { } sEnd)
+                && req.SlotStart is { } sStart && req.SlotEnd is { } sEnd)
             {
                 // Legacy accept-without-hall from PENDING — honour the requester-proposed
                 // slot with the past + cross-country overlap guard. This guard must NOT run
@@ -613,8 +613,8 @@ internal sealed class DelegationMeetingRequestService(
         {
             return;
         }
-        var slot = req.SlotStartUtc is { } s
-            ? $"{s:yyyy-MM-dd HH:mm} UTC"
+        var slot = req.SlotStart is { } s
+            ? s.FormatSaudi()
             : "to be scheduled";
         var html =
             $"<p>Your delegation has a meeting request from <strong>{HtmlEnc(requestingCountry)}</strong>.</p>"
@@ -636,7 +636,7 @@ internal sealed class DelegationMeetingRequestService(
     // mirroring SpeakerMeetingRequestService.BindHallSlotAsync. Validates the hall
     // hosts meetings, the picked slot is currently free (hall availability already
     // subtracts bound meetings), neither delegation overlaps, and the optional table
-    // belongs to the hall. The (HallId, SlotStartUtc) filtered-unique index is the race
+    // belongs to the hall. The (HallId, SlotStart) filtered-unique index is the race
     // backstop.
     private async Task BindDelegationHallSlotAsync(
         DelegationMeetingRequest req,
@@ -645,8 +645,8 @@ internal sealed class DelegationMeetingRequestService(
         CancellationToken cancellationToken)
     {
         var hallId = request.HallId!.Value;
-        if (request.SlotStartUtc is not { } start
-            || request.SlotEndUtc is not { } end || end <= start)
+        if (request.SlotStart is not { } start
+            || request.SlotEnd is not { } end || end <= start)
         {
             throw new ApiException(ErrorCodes.DelegationMeetingRequestInvalid, 400,
                 "A valid hall slot (start and end) is required to bind a hall.",
@@ -672,7 +672,7 @@ internal sealed class DelegationMeetingRequestService(
         }
 
         var slots = await hallAvailability.GetAvailableSlotsAsync(hallId, cancellationToken);
-        if (!slots.Any(s => s.StartUtc == start && s.EndUtc == end))
+        if (!slots.Any(s => s.Start == start && s.End == end))
         {
             throw new ApiException(ErrorCodes.DelegationMeetingRequestInvalid, 409,
                 "That hall slot is no longer available.",
@@ -694,8 +694,8 @@ internal sealed class DelegationMeetingRequestService(
             req.MeetingTableId = tableId;
         }
         req.HallId = hallId;
-        req.SlotStartUtc = start;
-        req.SlotEndUtc = end;
+        req.SlotStart = start;
+        req.SlotEnd = end;
     }
 
     // Neither delegation (as requester OR target) may already hold a LIVE meeting
@@ -712,10 +712,10 @@ internal sealed class DelegationMeetingRequestService(
         var overlaps = await appDbContext.DelegationMeetingRequests.AsNoTracking()
             .Where(r => r.Id != reqId
                 && MeetingRequestStatuses.SlotHolding.Contains(r.Status)
-                && r.SlotStartUtc != null && r.SlotEndUtc != null
+                && r.SlotStart != null && r.SlotEnd != null
                 && (r.RequestingCountryId == homeCountryId || r.TargetCountryId == homeCountryId
                     || r.RequestingCountryId == targetCountryId || r.TargetCountryId == targetCountryId))
-            .AnyAsync(r => r.SlotStartUtc < end && start < r.SlotEndUtc, cancellationToken);
+            .AnyAsync(r => r.SlotStart < end && start < r.SlotEnd, cancellationToken);
         if (overlaps)
         {
             throw new ApiException(ErrorCodes.DelegationMeetingRequestInvalid, 409,
@@ -732,7 +732,7 @@ internal sealed class DelegationMeetingRequestService(
             .Select(x => new
             {
                 x.Id, x.RequestedByUserId, x.AttendeeCount, x.Subject, x.Status,
-                x.SlotStartUtc, x.SlotEndUtc, x.ResponseNote, x.CreatedAt, x.RespondedAt,
+                x.SlotStart, x.SlotEnd, x.ResponseNote, x.CreatedAt, x.RespondedAt,
                 RequestingCountry = x.RequestingCountry!.Name,
                 TargetCountry = x.TargetCountry!.Name,
             })
@@ -746,7 +746,7 @@ internal sealed class DelegationMeetingRequestService(
 
         return new AdminDelegationMeetingRequestDetail(
             r.Id, r.RequestingCountry, r.TargetCountry, r.RequestedByUserId, email,
-            r.AttendeeCount, r.Subject, r.Status, r.SlotStartUtc, r.SlotEndUtc,
+            r.AttendeeCount, r.Subject, r.Status, r.SlotStart, r.SlotEnd,
             r.ResponseNote, r.CreatedAt, r.RespondedAt);
     }
 }

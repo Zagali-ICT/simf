@@ -40,8 +40,8 @@ public sealed class SpeakerMeetingRequest
     /// availability windows. Null for a legacy topic-only request (D-269); set
     /// for a VIP slot request. The pair is validated to fall inside an active
     /// window and to be free at submit time.</summary>
-    public DateTimeOffset? SlotStartUtc { get; set; }
-    public DateTimeOffset? SlotEndUtc { get; set; }
+    public DateTimeOffset? SlotStart { get; set; }
+    public DateTimeOffset? SlotEnd { get; set; }
 
     /// <summary>D-611 (Wave B) — the <see cref="SpeakerAvailabilityWindow"/> the
     /// picked slot belongs to, now persisted as a real FK (OnDelete SetNull)
@@ -58,7 +58,7 @@ public sealed class SpeakerMeetingRequest
     /// meeting to on Accept. Real FK to <see cref="Hall"/> on the App DB (SetNull —
     /// a deleted hall clears the binding rather than blocking). Null for a legacy
     /// accept-without-hall (the meeting is confirmed but not placed in a hall). When
-    /// set, <see cref="SlotStartUtc"/>/<see cref="SlotEndUtc"/> hold the bound hall
+    /// set, <see cref="SlotStart"/>/<see cref="SlotEnd"/> hold the bound hall
     /// slot (Option A — the hall slot is the meeting time of record).</summary>
     public Guid? HallId { get; set; }
 
@@ -76,8 +76,8 @@ public sealed class SpeakerMeetingRequest
     public string? ResponseNote { get; set; }
 
     /// <summary>Bi-Meeting rework — once-only dedup stamp for the 15-minute reminder
-    /// worker (mirrors <c>Session.ReminderSentUtc</c>). Null until the reminder fires.</summary>
-    public DateTimeOffset? ReminderSentUtc { get; set; }
+    /// worker (mirrors <c>Session.ReminderSent</c>). Null until the reminder fires.</summary>
+    public DateTimeOffset? ReminderSent { get; set; }
 
     /// <summary>Bi-Meeting rework — when an operator checked the meeting in at the hall
     /// (flips it to <see cref="MeetingRequestStatus.Done"/>). Null until checked in.</summary>

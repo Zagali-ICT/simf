@@ -54,18 +54,18 @@ class SpeakersRepository {
     String speakerId, {
     required String requesterName,
     required String subject,
-    DateTime? slotStartUtc,
-    DateTime? slotEndUtc,
+    DateTime? slotStart,
+    DateTime? slotEnd,
   }) {
     return _client.post<bool>(
       '/app/speakers/$speakerId/meeting-requests',
       body: <String, dynamic>{
         'requesterName': requesterName,
         'subject': subject,
-        if (slotStartUtc != null)
-          'slotStartUtc': slotStartUtc.toUtc().toIso8601String(),
-        if (slotEndUtc != null)
-          'slotEndUtc': slotEndUtc.toUtc().toIso8601String(),
+        if (slotStart != null)
+          'slotStart': slotStart.toUtc().toIso8601String(),
+        if (slotEnd != null)
+          'slotEnd': slotEnd.toUtc().toIso8601String(),
       },
       decodeData: (_) => true,
     );
@@ -74,15 +74,15 @@ class SpeakersRepository {
 
 /// D-474 (#11) — one bookable meeting slot offered by a speaker.
 class SpeakerSlot {
-  const SpeakerSlot({required this.startUtc, required this.endUtc});
+  const SpeakerSlot({required this.start, required this.end});
 
   factory SpeakerSlot.fromJson(Map<String, dynamic> json) => SpeakerSlot(
-        startUtc: DateTime.parse(json['startUtc'] as String).toUtc(),
-        endUtc: DateTime.parse(json['endUtc'] as String).toUtc(),
+        start: DateTime.parse(json['start'] as String).toUtc(),
+        end: DateTime.parse(json['end'] as String).toUtc(),
       );
 
-  final DateTime startUtc;
-  final DateTime endUtc;
+  final DateTime start;
+  final DateTime end;
 }
 
 final speakersRepositoryProvider = Provider<SpeakersRepository>((ref) {

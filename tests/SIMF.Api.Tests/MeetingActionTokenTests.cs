@@ -180,7 +180,7 @@ public sealed class MeetingActionTokenTests : IClassFixture<SimfApiFactory>
                 .ToListAsync();
             foreach (var t in tokens)
             {
-                t.ExpiresUtc = new DateTimeOffset(2020, 1, 1, 0, 0, 0, TimeSpan.Zero);
+                t.Expires = new DateTimeOffset(2020, 1, 1, 0, 0, 0, TimeSpan.Zero);
             }
             await db.SaveChangesAsync();
         }
@@ -254,7 +254,7 @@ public sealed class MeetingActionTokenTests : IClassFixture<SimfApiFactory>
             SpeakerId = speaker.Id,
             RequestedByUserId = Guid.NewGuid(),
             RequesterName = "Capt. Visitor", Subject = "Naval cooperation",
-            HallId = hall.Id, SlotStartUtc = start, SlotEndUtc = start.AddMinutes(30),
+            HallId = hall.Id, SlotStart = start, SlotEnd = start.AddMinutes(30),
             Status = MeetingRequestStatus.AwaitingSpeaker,
             CreatedAt = DateTimeOffset.UtcNow, RespondedAt = DateTimeOffset.UtcNow,
         };

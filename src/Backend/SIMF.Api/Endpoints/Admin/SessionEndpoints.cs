@@ -86,8 +86,8 @@ public sealed class UpdateSessionRequest
     public string? DescriptionArabic { get; set; }
     public Guid HallId { get; set; }
     public Guid? CategoryId { get; set; }
-    public DateTimeOffset StartUtc { get; set; }
-    public DateTimeOffset EndUtc { get; set; }
+    public DateTimeOffset Start { get; set; }
+    public DateTimeOffset End { get; set; }
     public int? CapacityOverride { get; set; }
     public IList<AdminSessionSpeakerEntry> Speakers { get; set; }
         = new List<AdminSessionSpeakerEntry>();
@@ -148,8 +148,8 @@ public sealed class UpdateSessionEndpoint(IAdminSessionService service)
                     DescriptionArabic = req.DescriptionArabic,
                     HallId = req.HallId,
                     CategoryId = req.CategoryId,
-                    StartUtc = req.StartUtc,
-                    EndUtc = req.EndUtc,
+                    Start = req.Start,
+                    End = req.End,
                     CapacityOverride = req.CapacityOverride,
                     Speakers = req.Speakers,
                     ThemeIds = req.ThemeIds,

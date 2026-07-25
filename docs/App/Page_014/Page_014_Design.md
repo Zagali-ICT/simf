@@ -41,9 +41,9 @@ As-built: `features/myarea/my_area_screen.dart` on the shared KSA shell
 | "مسجّل في N جلسات" | `counters.bookedSessionsCount` |
 | Tile — جلسات محفوظة | `counters.bookedSessionsCount` |
 | Tile — مقابلات مؤكدة | `counters.meetingsCount` |
-| Schedule rows | `todaySchedule[]` → local-time(`startUtc`), `titleAr`/`titleEn` (falls back to `subject` when empty), `hallNameAr`/`hallNameEn`, `kind` |
+| Schedule rows | `todaySchedule[]` → local-time(`start`), `titleAr`/`titleEn` (falls back to `subject` when empty), `hallNameAr`/`hallNameEn`, `kind` |
 
-`identity.pageColor` and each item's `status`/`endUtc` are decoded but **not
+`identity.pageColor` and each item's `status`/`end` are decoded but **not
 bound** on *this* (My-Area) page — the accent is the token gold, and rows carry no
 status badge. (The Badge page #032 **does** tint its identity strip by
 `pageColor` — D-763.)

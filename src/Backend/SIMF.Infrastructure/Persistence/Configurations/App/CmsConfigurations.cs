@@ -31,7 +31,7 @@ internal sealed class BannerConfiguration : IEntityTypeConfiguration<Banner>
     {
         // D-611 (Wave B) — a banner display window must end after it starts.
         builder.ToTable("Banners", table => table.HasCheckConstraint(
-            "CK_Banners_TimeWindow", "[EndUtc] > [StartUtc]"));
+            "CK_Banners_TimeWindow", "[End] > [Start]"));
         builder.HasKey(b => b.Id);
 
         builder.Property(b => b.Title).HasMaxLength(256).IsRequired();
@@ -41,6 +41,6 @@ internal sealed class BannerConfiguration : IEntityTypeConfiguration<Banner>
         builder.Property(b => b.ImageUrl).HasMaxLength(1024);
         builder.Property(b => b.LinkUrl).HasMaxLength(1024);
 
-        builder.HasIndex(b => new { b.IsActive, b.StartUtc, b.EndUtc, b.DisplayOrder });
+        builder.HasIndex(b => new { b.IsActive, b.Start, b.End, b.DisplayOrder });
     }
 }

@@ -96,7 +96,7 @@ Scenario: An empty question is blocked client-side
 
 Scenario: The session is over (#7 — phase-based window)
   # A FUTURE session (before start) is now OPEN to any approved user with no
-  # venue gate; a LIVE session is venue-gated; only a session past its EndUtc
+  # venue gate; a LIVE session is venue-gated; only a session past its End
   # returns SESSION_NOT_LIVE_FOR_QUESTIONS (the after-view is a recording).
   Given the submit returns 400 SESSION_NOT_LIVE_FOR_QUESTIONS
   When the attendee submits a question
@@ -267,7 +267,7 @@ LIVE gate (geofenced hall requires a real `HallAttendance` arrival, non-geofence
 hall accepts remote Q&A); E2E-MOB026-013.** _Prior:_ `2026-07-10` by `SIMF Team` — **#7 (D-733): the server question
 window is now phase-based — a FUTURE session (before start) accepts questions from
 any approved user with NO venue gate; a LIVE session keeps the check-in/venue
-gate; a session past its EndUtc is closed (`SESSION_NOT_LIVE_FOR_QUESTIONS`). The
+gate; a session past its End is closed (`SESSION_NOT_LIVE_FOR_QUESTIONS`). The
 composer screen is unchanged (still maps the 400/404 to the not-open toast); the
 ask ENTRY visibility is gated on the session-detail (future-only) and
 live-broadcast (live-only) screens — see `mobile-session-detail.md` /

@@ -26,7 +26,7 @@ public partial class AttendanceDashboard
     private record Toast(string Variant, string Message);
 
     private SessionAttendanceSummary? _summary;
-    private GridQuery _query = new() { Top = 20, Sort = "startUtc" };
+    private GridQuery _query = new() { Top = 20, Sort = "start" };
     private GridPage<SessionAttendanceRow> _page = new();
     private bool _loading;
     private Toast? _toast;

@@ -125,7 +125,7 @@ Background:
 Scenario: Accept a pending speaker meeting request
   Given the grid is showing rows of every status (no filter applied)
   Then POST /account/api/admin/speaker-meeting-requests/list fires with Skip=0
-  And each row shows the columns: Speaker (name), Requester, Subject, Status, Submitted (UTC), and a quiet Actions column
+  And each row shows the columns: Speaker (name), Requester, Subject, Status, Submitted (Saudi time), and a quiet Actions column
   And the Pending row shows the amber "Pending" pill
   And the summary line reads "Showing 1–{n} of {total}"
 
@@ -412,10 +412,10 @@ Background:
 
 Scenario: E2E-SMR-016 — Accept with a hall + slot → AwaitingSpeaker
   When they Respond → Accept, pick the Meeting hall, pick its first free slot, and Send
-  Then PUT /admin/speaker-meeting-requests/{id}/respond carries HallId + SlotStartUtc/SlotEndUtc
+  Then PUT /admin/speaker-meeting-requests/{id}/respond carries HallId + SlotStart/SlotEnd
   And the API returns HTTP 200
   And the request status is AwaitingSpeaker (the grid shows the amber "Awaiting speaker" pill)
-  And the detail carries the bound HallId + SlotStartUtc/SlotEndUtc
+  And the detail carries the bound HallId + SlotStart/SlotEnd
   # D-717 (Slice C): accept-with-hall now emails the SPEAKER Approve/Reject links
   # (single-use tokens) — see web-meeting-confirm.md. The requester "confirmed" /
   # "declined" notification fires only when the speaker acts, not here.
@@ -448,7 +448,7 @@ Scenario: The 72h confirmation links expired and the speaker never clicked
   Given request R is AwaitingSpeaker (accepted + bound to a hall slot)
   And its Approve/Reject double-opt-in tokens have all expired or been consumed
   When the MeetingAwaitingSpeakerExpiryWorker runs its hourly scan
-  Then R is reverted to Pending, its HallId/MeetingTableId/SlotStartUtc/SlotEndUtc/
+  Then R is reverted to Pending, its HallId/MeetingTableId/SlotStart/SlotEnd/
     AvailabilityWindowId/ResponseNote are cleared, and a SpeakerMeetingRequest.Reverted
     audit row is written
   And the freed hall slot returns to GET /admin/halls/{id}/available-slots
@@ -528,7 +528,7 @@ Scenario: Decline requires a justification
 
 Scenario: Approve vs Confirm carry VerbalConfirmed false/true
   When they pick a hall + a free slot and click Approve
-  Then PUT .../respond fires with Status=Accepted, VerbalConfirmed=false, HallId + SlotStartUtc/EndUtc
+  Then PUT .../respond fires with Status=Accepted, VerbalConfirmed=false, HallId + SlotStart/End
   # Approve keeps the speaker double-opt-in (→ AwaitingSpeaker; the speaker still confirms by email — E2E-SMR-016).
   When instead they click Confirm (the admin has verbal confirmation)
   Then PUT .../respond fires with Status=Accepted, VerbalConfirmed=true and the meeting is booked directly

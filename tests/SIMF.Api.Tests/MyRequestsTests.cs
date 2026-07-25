@@ -275,8 +275,8 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
             RequestedByUserId = userId,
             RequesterName = "Requester", Subject = "Topic",
             Status = status,
-            SlotStartUtc = slotStart,
-            SlotEndUtc = slotStart?.AddMinutes(30),
+            SlotStart = slotStart,
+            SlotEnd = slotStart?.AddMinutes(30),
             CreatedAt = DateTimeOffset.UtcNow,
         };
         db.SpeakerMeetingRequests.Add(req);
@@ -397,8 +397,8 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
             Title = "Vision 2030 session",
             TitleArabic = "جلسة رؤية 2030",
             HallId = hall.Id,
-            StartUtc = DateTimeOffset.UtcNow.AddDays(1),
-            EndUtc = DateTimeOffset.UtcNow.AddDays(1).AddHours(1),
+            Start = DateTimeOffset.UtcNow.AddDays(1),
+            End = DateTimeOffset.UtcNow.AddDays(1).AddHours(1),
             CreatedAt = DateTimeOffset.UtcNow,
         };
         db.Sessions.Add(session);

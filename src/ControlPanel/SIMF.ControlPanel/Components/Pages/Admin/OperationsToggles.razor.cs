@@ -46,7 +46,7 @@ public partial class OperationsToggles
             {
                 _gate = gateEnv.Data;
                 _gateIsOpen = _gate.IsOpen;
-                _gateAutoCloseInput = _gate.AutoCloseUtc?.ToSaudi()
+                _gateAutoCloseInput = _gate.AutoClose?.ToSaudi()
                     .ToString("yyyy-MM-ddTHH:mm") ?? string.Empty;
             }
 
@@ -86,7 +86,7 @@ public partial class OperationsToggles
                 new UpdateRegistrationGateRequest
                 {
                     IsOpen = _gateIsOpen,
-                    AutoCloseUtc = autoClose,
+                    AutoClose = autoClose,
                 });
             if (env is { Success: true, Data: not null })
             {

@@ -11,7 +11,7 @@ public sealed record AdminSessionSummaryRow(
     string SessionCode,
     string SessionTitle,
     string SessionTitleArabic,
-    DateTimeOffset SessionStartUtc,
+    DateTimeOffset SessionStart,
     bool HasSummary,
     bool GeneratedByAi,
     bool IsPublished,
