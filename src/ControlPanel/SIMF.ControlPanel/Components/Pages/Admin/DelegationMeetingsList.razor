@@ -89,7 +89,7 @@
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminDelegationMeetingRequestRow" Key="createdAt"
                                     Header="@L["Admin.DelegationMeetings.Col.CreatedAt"]" Sortable="true">
-                    <CellTemplate>@context.CreatedAt.FormatSaudi("yyyy-MM-dd HH:mm")</CellTemplate>
+                    <CellTemplate>@context.CreatedAt.FormatSaudi("yyyy-MM-dd hh:mm tt")</CellTemplate>
                 </SimfDataGridColumn>
             </Columns>
             <RowActions>
@@ -216,7 +216,7 @@
                 {
                     <dl class="simf-dl">
                         <dt>@L["Admin.Meetings.Bind.Slot"]</dt>
-                        <dd>@awaitStart.FormatSaudi("yyyy-MM-dd HH:mm")</dd>
+                        <dd>@awaitStart.FormatSaudi("yyyy-MM-dd hh:mm tt")</dd>
                     </dl>
                 }
                 <label class="simf-field">

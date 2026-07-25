@@ -31,7 +31,7 @@ else if (_profile is not null)
         <dt>@L["Admin.Pending.View.Field.ProfileType"]</dt>
         <dd>@(_profile.ProfileTypeName ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
         <dt>@L["Admin.Pending.View.Field.Created"]</dt>
-        <dd>@_profile.CreatedAt.FormatSaudi("yyyy-MM-dd HH:mm")</dd>
+        <dd>@_profile.CreatedAt.FormatSaudi("yyyy-MM-dd hh:mm tt")</dd>
     </dl>
     <dl class="simf-dl">
         <dt>@L["Admin.Pending.View.Field.ArabicName"]</dt>

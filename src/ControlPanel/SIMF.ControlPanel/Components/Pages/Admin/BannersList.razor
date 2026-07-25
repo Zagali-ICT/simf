@@ -70,12 +70,12 @@
                     <SimfDataGridColumn TItem="AdminBannerSummary" Key="startUtc"
                                         Header="@L["Admin.Banners.Col.StartUtc"]"
                                         Sortable="true">
-                        <CellTemplate>@context.StartUtc.FormatSaudi("yyyy-MM-dd HH:mm")</CellTemplate>
+                        <CellTemplate>@context.StartUtc.FormatSaudi("yyyy-MM-dd hh:mm tt")</CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminBannerSummary" Key="endUtc"
                                         Header="@L["Admin.Banners.Col.EndUtc"]"
                                         Sortable="true">
-                        <CellTemplate>@context.EndUtc.FormatSaudi("yyyy-MM-dd HH:mm")</CellTemplate>
+                        <CellTemplate>@context.EndUtc.FormatSaudi("yyyy-MM-dd hh:mm tt")</CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminBannerSummary" Key="displayOrder"
                                         Header="@L["Admin.Banners.Col.DisplayOrder"]"
