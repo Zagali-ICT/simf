@@ -67,7 +67,7 @@
                             <AuthorizedAction Permission="@PermissionCatalog.SpeakerMeetingRequests.Manage">
                                 <SimfToolbarButton Icon="trash" Title="@L["Grid.Delete"]"
                                                    Disabled="_busy"
-                                                   OnClick="@(() => DeleteWindowAsync(w.Id))" />
+                                                   OnClick="@(() => ConfirmDelete(w.Id))" />
                             </AuthorizedAction>
                         </li>
                     }
@@ -76,3 +76,9 @@
         }
     </div>
 </div>
+
+@* R10 (D-767) — must-decide guard for the destructive availability-window delete. *@
+<SimfConfirm Open="_confirmOpen" Title="@L["Grid.Delete"]"
+             Message="@L["Admin.Availability.DeleteConfirmMsg"]"
+             ConfirmLabel="@L["Grid.Delete"]" CancelLabel="@L["Admin.Meetings.Close"]"
+             Danger="true" Busy="_busy" OnConfirm="RunDeleteAsync" OnCancel="CancelConfirm" />

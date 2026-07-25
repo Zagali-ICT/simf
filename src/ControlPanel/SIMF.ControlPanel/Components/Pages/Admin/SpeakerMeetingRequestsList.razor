@@ -96,7 +96,7 @@
                 {
                     <AuthorizedAction Permission="@PermissionCatalog.SpeakerMeetingRequests.Manage">
                         <SimfToolbarButton Icon="send" Title="@L["Admin.SpeakerMeetingRequests.Resend"]"
-                                           OnClick="@(() => OnResendAsync(context))" />
+                                           OnClick="@(() => ConfirmResend(context))" />
                     </AuthorizedAction>
                 }
                 @* Bi-Meeting rework — a confirmed (Accepted) meeting can be checked in
@@ -106,7 +106,7 @@
                     <AuthorizedAction Permission="@PermissionCatalog.SpeakerMeetingRequests.Manage">
                         <SimfToolbarButton Icon="log-in" Title="@L["Admin.Meetings.CheckIn"]"
                                            Disabled="_busy"
-                                           OnClick="@(() => OnCheckInAsync(context))" />
+                                           OnClick="@(() => ConfirmCheckIn(context))" />
                     </AuthorizedAction>
                 }
             </RowActions>
@@ -225,3 +225,8 @@
         </Footer>
     </SimfModal>
 }
+
+@* R10 (D-767) — must-decide guard for the one-click Check-in / Resend row actions. *@
+<SimfConfirm Open="_confirmOpen" Title="@_confirmTitle" Message="@_confirmMessage"
+             ConfirmLabel="@_confirmLabel" CancelLabel="@L["Admin.Meetings.Close"]"
+             Busy="_busy" OnConfirm="RunConfirmAsync" OnCancel="CancelConfirm" />
