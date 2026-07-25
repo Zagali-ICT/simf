@@ -83,7 +83,7 @@
 
 @if (_addOpen)
 {
-    <SimfModal Open="true" Title="@L["Admin.SessionModerators.Add.Title"]"
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.SessionModerators.Add.Title"]"
                OnClose="@(() => _addOpen = false)">
         <ChildContent>
             <div class="simf-form__fields">

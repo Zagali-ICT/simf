@@ -138,7 +138,7 @@
 
 @if (_bulkDeleteOpen)
 {
-    <SimfModal Open="true" Title="@L["Admin.Visitors.BulkDelete.Title"]" OnClose="@(() => _bulkDeleteOpen = false)">
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.Visitors.BulkDelete.Title"]" OnClose="@(() => _bulkDeleteOpen = false)">
         <ChildContent>
             <p>@string.Format(L["Admin.Visitors.BulkDelete.Confirm"], _bulkDeleteTargets.Count)</p>
             <SimfTextarea Label="@L["Admin.Users.BulkDelete.Reason"]"
@@ -163,7 +163,7 @@
 
 @if (_duplicateOpen)
 {
-    <SimfModal Open="true" Title="@L["Admin.Visitors.Duplicate.Title"]" OnClose="@(() => _duplicateOpen = false)">
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.Visitors.Duplicate.Title"]" OnClose="@(() => _duplicateOpen = false)">
         <ChildContent>
             <p>@string.Format(L["Admin.Users.Duplicate.Confirm"], _duplicateSource?.Email)</p>
             <SimfTextField Label="@L["Admin.Users.Duplicate.NewEmail"]"
@@ -192,7 +192,7 @@
    Generate button + confirm popup; the dialog title covers the header). *@
 @if (_bulkAddOpen)
 {
-    <SimfModal Open="true" Title="@L["Admin.Delegates.Bulk.Title"]"
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.Delegates.Bulk.Title"]"
                OnClose="@(() => _bulkAddOpen = false)">
         <ChildContent>
             <BulkBadgeGenerator ShowHeader="false" />

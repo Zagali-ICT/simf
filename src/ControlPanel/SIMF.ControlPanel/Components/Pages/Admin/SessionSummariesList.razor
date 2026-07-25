@@ -137,7 +137,7 @@
 
 @if (_edit is not null)
 {
-    <SimfModal Open="true" Title="@_editTitle" OnClose="CloseEditor">
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@_editTitle" OnClose="CloseEditor">
         <ChildContent>
             @if (_editAiModel is not null)
             {

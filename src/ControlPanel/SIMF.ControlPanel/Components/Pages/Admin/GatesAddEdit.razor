@@ -1,8 +1,11 @@
-@* D-353 â€” reusable Gate Add/Edit form, hosted by CrudShell (popup or full
+@* D-353 — reusable Gate Add/Edit form, hosted by CrudShell (popup or full
    page) from GatesList. Inherits CrudAddEditFormBase so it exposes the standard
    CRUD-form surface (IsEdit / Initial / OnSuccess / OnCancel). Branches Create
    vs Update on IsEdit (POST when !IsEdit, PUT against Initial!.Id when IsEdit).
-   Supersedes GateForm.razor (D-148), which keyed off Initial==null. *@
+   Supersedes GateForm.razor (D-148), which keyed off Initial==null.
+   The fields are grouped into labelled sections and the allowed-profile-types /
+   assigned-operators pickers are checkbox lists (clearer than a native
+   <select multiple>); the posted request is unchanged. *@
 @inherits CrudAddEditFormBase<AdminGateDetail>
 
 @if (_error is not null)
@@ -12,81 +15,113 @@
 
 <EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
     <div class="simf-form__fields">
-        <SimfTextField Label="@L["Admin.Gates.Field.Code"]"
-                       Helper="@L["Admin.Gates.Field.CodeHint"]"
-                       MaxLength="16"
-                       @bind-Value="_model.Code" Disabled="_busy" />
-        <SimfTextField Label="@L["Admin.Gates.Field.Name"]"
-                       Helper="@L["Admin.Gates.Field.NameHint"]"
-                       MaxLength="128"
-                       @bind-Value="_model.Name" Disabled="_busy" />
-        <SimfTextField Label="@L["Admin.Gates.Field.NameArabic"]"
-                       Helper="@L["Admin.Gates.Field.NameArabicHint"]"
-                       MaxLength="128"
-                       @bind-Value="_model.NameArabic" Disabled="_busy" />
+        <section class="gate-form__section">
+            <h3 class="gate-form__section-title">@L["Admin.Gates.Section.Identification"]</h3>
+            <SimfTextField Label="@L["Admin.Gates.Field.Code"]"
+                           Helper="@L["Admin.Gates.Field.CodeHint"]"
+                           MaxLength="16"
+                           @bind-Value="_model.Code" Disabled="_busy" />
+            <div class="simf-form__grid">
+                <SimfTextField Label="@L["Admin.Gates.Field.Name"]"
+                               Helper="@L["Admin.Gates.Field.NameHint"]"
+                               MaxLength="128"
+                               @bind-Value="_model.Name" Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Gates.Field.NameArabic"]"
+                               Helper="@L["Admin.Gates.Field.NameArabicHint"]"
+                               MaxLength="128"
+                               @bind-Value="_model.NameArabic" Disabled="_busy" />
+            </div>
+        </section>
 
-        <label class="simf-field">
-            <span class="simf-field__label">@L["Admin.Gates.Field.DirectionMode"]</span>
-            <select class="simf-select" @bind="_model.DirectionMode" disabled="@_busy">
-                <option value="@DirectionMode.In">@L["Admin.Gates.DirectionMode.In"]</option>
-                <option value="@DirectionMode.Out">@L["Admin.Gates.DirectionMode.Out"]</option>
-                <option value="@DirectionMode.Both">@L["Admin.Gates.DirectionMode.Both"]</option>
-            </select>
-            <span class="simf-field__helper">@L["Admin.Gates.Field.DirectionModeHint"]</span>
-        </label>
+        <section class="gate-form__section">
+            <h3 class="gate-form__section-title">@L["Admin.Gates.Section.Routing"]</h3>
+            <div class="simf-form__grid">
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.Gates.Field.DirectionMode"]</span>
+                    <select class="simf-select" @bind="_model.DirectionMode" disabled="@_busy">
+                        <option value="@DirectionMode.In">@L["Admin.Gates.DirectionMode.In"]</option>
+                        <option value="@DirectionMode.Out">@L["Admin.Gates.DirectionMode.Out"]</option>
+                        <option value="@DirectionMode.Both">@L["Admin.Gates.DirectionMode.Both"]</option>
+                    </select>
+                    <span class="simf-field__helper">@L["Admin.Gates.Field.DirectionModeHint"]</span>
+                </label>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.Gates.Field.Hall"]</span>
+                    <select class="simf-select" @onchange="OnHallChanged" disabled="@_busy">
+                        <option value="" selected="@(_model.HallId is null)">@L["Admin.Gates.Field.HallNone"]</option>
+                        @foreach (var h in _halls)
+                        {
+                            <option value="@h.Id" selected="@(_model.HallId == h.Id)">@h.Name</option>
+                        }
+                    </select>
+                    <span class="simf-field__helper">@L["Admin.Gates.Field.HallHint"]</span>
+                </label>
+            </div>
+        </section>
 
-        <label class="simf-field">
-            <span class="simf-field__label">@L["Admin.Gates.Field.Hall"]</span>
-            <select class="simf-select" @onchange="OnHallChanged" disabled="@_busy">
-                <option value="" selected="@(_model.HallId is null)">@L["Admin.Gates.Field.HallNone"]</option>
-                @foreach (var h in _halls)
-                {
-                    <option value="@h.Id" selected="@(_model.HallId == h.Id)">@h.Name</option>
-                }
-            </select>
-            <span class="simf-field__helper">@L["Admin.Gates.Field.HallHint"]</span>
-        </label>
+        <section class="gate-form__section">
+            <h3 class="gate-form__section-title">@L["Admin.Gates.Section.Descriptions"]</h3>
+            <div class="simf-form__grid">
+                <SimfTextarea Label="@L["Admin.Gates.Field.Description"]"
+                              Helper="@L["Admin.Gates.Field.DescriptionHint"]"
+                              Rows="2" MaxLength="1024"
+                              Value="@_model.Description"
+                              ValueChanged="@(v => _model.Description = v)" />
+                <SimfTextarea Label="@L["Admin.Gates.Field.DescriptionArabic"]"
+                              Helper="@L["Admin.Gates.Field.DescriptionArabicHint"]"
+                              Rows="2" MaxLength="1024"
+                              Value="@_model.DescriptionArabic"
+                              ValueChanged="@(v => _model.DescriptionArabic = v)" />
+            </div>
+        </section>
 
-        <SimfTextarea Label="@L["Admin.Gates.Field.Description"]"
-                      Helper="@L["Admin.Gates.Field.DescriptionHint"]"
-                      Rows="2" MaxLength="1024"
-                      Value="@_model.Description"
-                      ValueChanged="@(v => _model.Description = v)" />
-        <SimfTextarea Label="@L["Admin.Gates.Field.DescriptionArabic"]"
-                      Helper="@L["Admin.Gates.Field.DescriptionArabicHint"]"
-                      Rows="2" MaxLength="1024"
-                      Value="@_model.DescriptionArabic"
-                      ValueChanged="@(v => _model.DescriptionArabic = v)" />
-
-        <label class="simf-field">
-            <span class="simf-field__label">@L["Admin.Gates.Field.AllowedProfileTypes"]</span>
-            <select class="simf-select" multiple size="6"
-                    @onchange="OnAllowedChanged" disabled="@_busy">
-                @foreach (var pt in _profileTypes)
-                {
-                    <option value="@pt.Id"
-                            selected="@_model.AllowedProfileTypeIds.Contains(pt.Id)">
-                        @pt.Name
-                    </option>
-                }
-            </select>
-            <span class="simf-field__helper">@L["Admin.Gates.Field.AllowedProfileTypesHint"]</span>
-        </label>
-
-        <label class="simf-field">
-            <span class="simf-field__label">@L["Admin.Gates.Field.AssignedOperators"]</span>
-            <select class="simf-select" multiple size="6"
-                    @onchange="OnOperatorsChanged" disabled="@_busy">
-                @foreach (var op in _operators)
-                {
-                    <option value="@op.Id"
-                            selected="@_model.AssignedOperatorUserIds.Contains(op.Id)">
-                        @op.Email â€” @op.DisplayName
-                    </option>
-                }
-            </select>
-            <span class="simf-field__helper">@L["Admin.Gates.Field.AssignedOperatorsHint"]</span>
-        </label>
+        <section class="gate-form__section">
+            <h3 class="gate-form__section-title">@L["Admin.Gates.Section.Access"]</h3>
+            <div class="simf-form__grid">
+                <div class="simf-field">
+                    <span class="simf-field__label">@L["Admin.Gates.Field.AllowedProfileTypes"]</span>
+                    <div class="gate-form__checklist">
+                        @if (_profileTypes.Count == 0)
+                        {
+                            <p class="gate-form__checklist-empty">@L["Admin.Gates.Field.NoProfileTypes"]</p>
+                        }
+                        else
+                        {
+                            @foreach (var pt in _profileTypes)
+                            {
+                                <SimfCheckbox Value="_model.AllowedProfileTypeIds.Contains(pt.Id)"
+                                              ValueChanged="@(v => ToggleAllowed(pt.Id, v))"
+                                              Disabled="_busy">
+                                    @pt.Name
+                                </SimfCheckbox>
+                            }
+                        }
+                    </div>
+                    <span class="simf-field__helper">@L["Admin.Gates.Field.AllowedProfileTypesHint"]</span>
+                </div>
+                <div class="simf-field">
+                    <span class="simf-field__label">@L["Admin.Gates.Field.AssignedOperators"]</span>
+                    <div class="gate-form__checklist">
+                        @if (_operators.Count == 0)
+                        {
+                            <p class="gate-form__checklist-empty">@L["Admin.Gates.Field.NoOperators"]</p>
+                        }
+                        else
+                        {
+                            @foreach (var op in _operators)
+                            {
+                                <SimfCheckbox Value="_model.AssignedOperatorUserIds.Contains(op.Id)"
+                                              ValueChanged="@(v => ToggleOperator(op.Id, v))"
+                                              Disabled="_busy">
+                                    @op.Email — @op.DisplayName
+                                </SimfCheckbox>
+                            }
+                        }
+                    </div>
+                    <span class="simf-field__helper">@L["Admin.Gates.Field.AssignedOperatorsHint"]</span>
+                </div>
+            </div>
+        </section>
 
         @if (IsEdit)
         {

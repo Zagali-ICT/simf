@@ -903,8 +903,14 @@
   <data name="Admin.Gates.Field.AllowedProfileTypes" xml:space="preserve"><value>Allowed profile types</value></data>
   <data name="Admin.Gates.Field.AllowedProfileTypesHint" xml:space="preserve"><value>Empty = all profile types allowed (general gate). Pick one or more to restrict the gate.</value></data>
   <data name="Admin.Gates.Field.AssignedOperators" xml:space="preserve"><value>Assigned operators</value></data>
-  <data name="Admin.Gates.Field.AssignedOperatorsHint" xml:space="preserve"><value>Operators who can scan at this gate. Hold Ctrl/Cmd to multi-select.</value></data>
+  <data name="Admin.Gates.Field.AssignedOperatorsHint" xml:space="preserve"><value>Operators who can scan at this gate. Tick each operator to assign them.</value></data>
   <data name="Admin.Gates.Field.IsActive" xml:space="preserve"><value>Active — available for scanning</value></data>
+  <data name="Admin.Gates.Section.Identification" xml:space="preserve"><value>Identification</value></data>
+  <data name="Admin.Gates.Section.Routing" xml:space="preserve"><value>Direction &amp; hall</value></data>
+  <data name="Admin.Gates.Section.Descriptions" xml:space="preserve"><value>Descriptions</value></data>
+  <data name="Admin.Gates.Section.Access" xml:space="preserve"><value>Access &amp; operators</value></data>
+  <data name="Admin.Gates.Field.NoProfileTypes" xml:space="preserve"><value>No active profile types.</value></data>
+  <data name="Admin.Gates.Field.NoOperators" xml:space="preserve"><value>No candidate operators.</value></data>
   <data name="Admin.Gates.DirectionMode.In" xml:space="preserve"><value>In (check-in only)</value></data>
   <data name="Admin.Gates.DirectionMode.Out" xml:space="preserve"><value>Out (check-out only)</value></data>
   <data name="Admin.Gates.DirectionMode.Both" xml:space="preserve"><value>Both (inferred direction)</value></data>

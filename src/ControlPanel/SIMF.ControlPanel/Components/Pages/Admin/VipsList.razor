@@ -74,7 +74,7 @@
 
 @if (_notifyOpen)
 {
-    <SimfModal Open="true" Title="@L["Admin.Vips.Notify.Title"]"
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.Vips.Notify.Title"]"
                OnClose="@(() => _notifyOpen = false)">
         <ChildContent>
             <div class="simf-form__fields">

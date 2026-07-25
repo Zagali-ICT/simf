@@ -1,0 +1,44 @@
+/* D-353 — Gate Add/Edit form polish: labelled sections + scrollable checkbox
+   lists for the allowed-profile-types / assigned-operators pickers (clearer
+   than a native <select multiple>). All colours / spacing / radii come from
+   theme.tokens.css; logical properties keep it correct under RTL. */
+
+.gate-form__section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.gate-form__section-title {
+    margin: 0;
+    padding-block-end: var(--space-2);
+    border-block-end: 1px solid var(--color-border);
+    font-size: 0.8rem;
+    font-weight: var(--font-weight-bold);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-muted);
+}
+
+/* Arabic is cursive — inter-letter spacing would pull joined glyphs apart. */
+[dir="rtl"] .gate-form__section-title {
+    letter-spacing: normal;
+}
+
+.gate-form__checklist {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    max-block-size: 12rem;
+    overflow-y: auto;
+    padding: var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-field);
+    background: var(--color-surface);
+}
+
+.gate-form__checklist-empty {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}

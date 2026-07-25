@@ -84,7 +84,7 @@ else
    via the shared account edit form, keyed by the account id. *@
 @if (_editOpen)
 {
-    <SimfModal Open="true" Title="@L["Admin.Vips.Edit.Title"]"
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.Vips.Edit.Title"]"
                OnClose="@(() => _editOpen = false)">
         <ChildContent>
             <EditAccountForm AccountId="_editUserId" Scope="visitors" IsVisitorScope="true"

@@ -51,7 +51,7 @@
    flagged for change comes back with a single-use ticket instead of a session;
    the operator sets a new password here (current password not re-asked — the
    ticket already proves it) and then signs in normally. *@
-<SimfModal Open="_mustChangePassword" Title="@L["Auth.ChangePassword.Title"]"
+<SimfModal Open="_mustChangePassword" RequireExplicitClose="true" Title="@L["Auth.ChangePassword.Title"]"
            CloseLabel="@L["Auth.ChangePassword.Close"]" OnClose="CloseChangePassword">
     <p class="simf-form__helper">@L["Auth.ChangePassword.Intro"]</p>
     <ChangePasswordCard ShowCurrentField="false" Block="true" Busy="_changeBusy"

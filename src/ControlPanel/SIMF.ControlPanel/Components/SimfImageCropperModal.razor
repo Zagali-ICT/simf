@@ -14,7 +14,7 @@
 
 @if (Open)
 {
-    <SimfModal Open="true" Title="@(Title ?? L["Crop.Title"])" OnClose="OnCancelInternal">
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@(Title ?? L["Crop.Title"])" OnClose="OnCancelInternal">
         <ChildContent>
             <div class="simf-cropper">
                 <CropperComponent @ref="_cropper"
