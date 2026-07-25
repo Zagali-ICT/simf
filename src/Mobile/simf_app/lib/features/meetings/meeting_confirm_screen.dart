@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../core/utils/saudi_time.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -155,7 +156,7 @@ class _MeetingConfirmScreenState extends ConsumerState<MeetingConfirmScreen> {
         if (s.slotStart != null) ...<Widget>[
           const SizedBox(height: SimfTokens.space2),
           Text(
-            _formatSlot(s.slotStart!.toLocal(), isArabic),
+            _formatSlot(saudiOf(s.slotStart!), isArabic),
             textAlign: TextAlign.center,
             style: SimfTokens.bodyGreyMd,
           ),

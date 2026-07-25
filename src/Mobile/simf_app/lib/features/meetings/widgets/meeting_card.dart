@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import '../../../core/utils/saudi_time.dart';
 
 import 'package:flutter/material.dart';
 
@@ -203,7 +204,7 @@ class MeetingCard extends StatelessWidget {
   /// "07:45 AM · اليوم" when the meeting is today, else the absolute date (the
   /// same format the requests card uses, Figma 1408:9782).
   String _dateLine() {
-    final date = item.displayDate.toLocal();
+    final date = saudiOf(item.displayDate);
     final now = DateTime.now();
     final isToday =
         date.year == now.year && date.month == now.month && date.day == now.day;

@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../core/utils/saudi_time.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -343,7 +344,7 @@ class _RateScreenState extends ConsumerState<RateScreen> {
     if (start == null) {
       return '';
     }
-    final local = start.toLocal();
+    final local = saudiOf(start);
     final hh = local.hour.toString().padLeft(2, '0');
     final mm = local.minute.toString().padLeft(2, '0');
     return '${local.day.toString().padLeft(2, '0')} '

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/utils/saudi_time.dart';
 
 import '../../requests/data/request_models.dart';
 import '../../requests/data/requests_repository.dart';
@@ -29,7 +30,7 @@ final upcomingMeetingsProvider =
             item.isMeetingKind &&
             item.status == AppRequestStatus.accepted &&
             (item.eventDate == null ||
-                !item.eventDate!.toLocal().isBefore(startOfToday)),
+                !saudiOf(item.eventDate!).isBefore(startOfToday)),
       )
       .toList(growable: false);
 });
