@@ -72,10 +72,14 @@ internal sealed class DelegationMeetingRequestService(
             slotEnd = pickedEnd;
         }
 
-        // Bi-Meeting rework — the requester must hold the per-user
-        // AllowsDelegationMeeting flag (admin-assigned; replaces the former IsDelegate
-        // requester-gate). Their nationality is the requesting country; it must still
-        // be an invited delegation (Country.IsInvited, checked below).
+        // Bi-Meeting rework + D-768 (owner) — the per-user AllowsDelegationMeeting flag
+        // (admin-assigned) is the SOLE authorization to request. The requester's
+        // nationality is recorded as the requesting country and must be set + active, but
+        // it NO LONGER has to be an invited delegation: the host/owner side (KSA is the
+        // OWNER of the forum, not a visiting delegation, so it is deliberately not flagged
+        // Country.IsInvited) must still be able to request meetings WITH the invited
+        // delegations. The TARGET still must be an invited delegation (checked below), and
+        // you still cannot request a meeting with your own country.
         var profile = await appDbContext.UserProfiles.AsNoTracking()
             .Where(p => p.UserId == requesterUserId)
             .Select(p => new { p.AllowsDelegationMeeting, p.NationalityId })
@@ -88,13 +92,13 @@ internal sealed class DelegationMeetingRequestService(
         }
         var requestingCountry = await appDbContext.Countries.AsNoTracking()
             .Where(c => c.Id == profile.NationalityId && c.IsActive)
-            .Select(c => new { c.Id, c.IsInvited })
+            .Select(c => new { c.Id })
             .SingleOrDefaultAsync(cancellationToken);
-        if (requestingCountry is null || !requestingCountry.IsInvited)
+        if (requestingCountry is null)
         {
             throw new ApiException(ErrorCodes.DelegateCountryNotInvited, 400,
-                "Your country is not an invited delegation.",
-                "دولتك ليست من الوفود المدعوّة.");
+                "Your account has no active nationality set.",
+                "لا توجد جنسية مفعّلة على حسابك.");
         }
 
         var targetCode = (request.TargetCountryCode ?? string.Empty).Trim().ToUpperInvariant();

@@ -100,6 +100,31 @@ public sealed class DelegationMeetingRequestsTests : IClassFixture<SimfApiFactor
     }
 
     [Fact]
+    public async Task A_requester_from_the_non_invited_owner_country_can_still_request()
+    {
+        // D-768 (owner) — the host/owner country (e.g. KSA) is deliberately NOT an invited
+        // delegation, yet its flagged visitors must still be able to request a meeting WITH
+        // an invited delegation. The requester's nationality only has to be set + active now;
+        // the TARGET still must be invited (that rule is unchanged).
+        var ownerId = await EnsureCountryAsync("BH", 48, invited: false);   // owner/host, NOT invited
+        await EnsureCountryAsync("EG", 818, invited: true);                 // an invited target
+        var (requester, _) = await CreateDelegateAsync(ownerId, isDelegate: true);
+
+        var response = await PostAuthAsync(
+            "/api/v1/app/delegation-meeting-requests",
+            new SubmitDelegationMeetingRequestRequest
+            {
+                TargetCountryCode = "EG", AttendeeCount = 3, Subject = "Owner requests a meeting",
+            },
+            requester);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<DelegationMeetingRequestSubmitted>>())!;
+        Assert.True(body.Success);
+    }
+
+    [Fact]
     public async Task Accepting_a_request_notifies_the_requester()
     {
         var homeId = await EnsureCountryAsync("SA", 682, invited: true);
