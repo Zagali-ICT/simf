@@ -365,6 +365,10 @@ public static class DependencyInjection
         // G-2 (chain reconciliation) — closes open hall-attendance rows whose
         // session has ended (In-only hall-door gates never emit a departure).
         services.AddHostedService<SIMF.Infrastructure.Operations.HallAttendanceCloseoutWorker>();
+        // Control Panel "Announcements" desk — fans out manual admin notification
+        // broadcasts (in-app row + email per recipient) to a session's attendees or
+        // a broad audience, paced against the bounded email queue.
+        services.AddHostedService<SIMF.Infrastructure.Operations.NotificationBroadcastWorker>();
         // D-168 (gap doc G5) — public-relations team: invitation CRUD +
         // VIP list + bulk-notify dispatcher (PDF §2.7.3).
         services.AddScoped<SIMF.Application.PublicRelations.Abstractions.IAdminInvitationService,
@@ -681,6 +685,8 @@ public static class DependencyInjection
         services.AddScoped<IInterestService, InterestService>();
         services.AddScoped<INotificationDispatcher, NotificationDispatcher>();
         services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<INotificationBroadcastService,
+            SIMF.Infrastructure.Notifications.NotificationBroadcastService>();
         services.AddSingleton<IUserExcelService, ClosedXmlUserExcelService>();
         // P1.6 — export-only workbook builders for the read-only admin grids.
         services.AddSingleton<IOperationLogExcelService, ClosedXmlOperationLogExcelService>();

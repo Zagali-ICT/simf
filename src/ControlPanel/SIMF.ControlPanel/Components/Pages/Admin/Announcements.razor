@@ -1,0 +1,139 @@
+@* D-132 — the admin broadcast-Notifications desk (admin -> audience). Composes a
+   free-text bilingual message and sends it as an in-app notification + email to a
+   specific session's registered attendees or to a broad audience. Delivery is
+   background-processed; the history grid shows past broadcasts + their status. *@
+@page "/admin/announcements"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Announcements.View)]
+
+<PageTitle>@L["Admin.Announcements.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Announcements.Title"]" />
+
+<div class="simf-page-wide">
+    @if (_toast is not null)
+    {
+        <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+    }
+
+    <AuthorizedAction Permission="@PermissionCatalog.Announcements.Send">
+    <div class="simf-surface">
+        <h2 class="simf-section-title">@L["Admin.Announcements.Compose"]</h2>
+
+        <div class="simf-form__fields">
+            <SimfSelect TValue="string"
+                        Label="@L["Admin.Announcements.Target"]"
+                        Items="_targetModes"
+                        LabelFor="@TargetModeLabel"
+                        Value="@_targetMode"
+                        ValueChanged="OnTargetModeChangedAsync"
+                        Disabled="_busy" />
+
+            @if (_targetMode == "Session")
+            {
+                <SimfSelect TValue="AdminSessionSummary"
+                            Label="@L["Admin.Announcements.Session"]"
+                            Placeholder="@L["Admin.Announcements.Session.Placeholder"]"
+                            Items="_sessions"
+                            ValueFor="@(session => session.Id.ToString())"
+                            LabelFor="@SessionLabel"
+                            Value="@_selectedSession"
+                            ValueChanged="OnSessionChangedAsync"
+                            Disabled="_busy" />
+            }
+            else
+            {
+                <SimfSelect TValue="string"
+                            Label="@L["Admin.Announcements.Audience"]"
+                            Items="_audienceScopes"
+                            LabelFor="@AudienceLabel"
+                            Value="@_audienceScope"
+                            ValueChanged="OnAudienceChangedAsync"
+                            Disabled="_busy" />
+            }
+
+            <SimfSelect TValue="string"
+                        Label="@L["Admin.Announcements.Severity"]"
+                        Items="_severities"
+                        LabelFor="@SeverityLabel"
+                        Value="@_severity"
+                        ValueChanged="@(v => _severity = v ?? "Info")"
+                        Disabled="_busy" />
+
+            <SimfTextField Label="@L["Admin.Announcements.TitleField"]"
+                           Value="@_title"
+                           ValueChanged="@(v => _title = v)"
+                           ValueExpression="@(() => _title)"
+                           Disabled="_busy" />
+            <SimfTextField Label="@L["Admin.Announcements.TitleArabicField"]"
+                           Value="@_titleArabic"
+                           ValueChanged="@(v => _titleArabic = v)"
+                           ValueExpression="@(() => _titleArabic)"
+                           Disabled="_busy" />
+            <SimfTextarea Label="@L["Admin.Announcements.BodyField"]"
+                          Rows="4" MaxLength="2000"
+                          Value="@_body"
+                          ValueChanged="@(v => _body = v)"
+                          Disabled="_busy" />
+            <SimfTextarea Label="@L["Admin.Announcements.BodyArabicField"]"
+                          Rows="4" MaxLength="2000"
+                          Value="@_bodyArabic"
+                          ValueChanged="@(v => _bodyArabic = v)"
+                          Disabled="_busy" />
+        </div>
+
+        <SimfAlert Variant="info">@RecipientCountText()</SimfAlert>
+
+        <div class="simf-form__actions">
+            <SimfButton Type="button" OnClick="SubmitAsync" Loading="_busy">
+                @L["Admin.Announcements.Send"]
+            </SimfButton>
+        </div>
+    </div>
+    </AuthorizedAction>
+
+    <div class="simf-surface">
+        <h2 class="simf-section-title">@L["Admin.Announcements.History"]</h2>
+
+        <SimfDataGrid TItem="AdminBroadcastSummary"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Caption="@L["Admin.Announcements.History"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.Announcements.Loading"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminBroadcastSummary" Key="when" Header="@L["Admin.Announcements.Col.When"]">
+                    <CellTemplate>@FormatWhen(context.CreatedAt)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminBroadcastSummary" Key="target" Header="@L["Admin.Announcements.Col.Target"]">
+                    <CellTemplate>@TargetLabel(context)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminBroadcastSummary" Key="message" Header="@L["Admin.Announcements.Col.Message"]">
+                    <CellTemplate>@MessageLabel(context)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminBroadcastSummary" Key="status" Header="@L["Admin.Announcements.Col.Status"]">
+                    <CellTemplate>@StatusLabel(context.Status)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminBroadcastSummary" Key="recipients" Header="@L["Admin.Announcements.Col.Recipients"]">
+                    <CellTemplate>@context.TotalRecipients</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminBroadcastSummary" Key="emails" Header="@L["Admin.Announcements.Col.Emails"]">
+                    <CellTemplate>@context.EmailsEnqueued</CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.Announcements.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
+    </div>
+</div>

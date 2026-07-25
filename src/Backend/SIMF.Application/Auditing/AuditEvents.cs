@@ -396,6 +396,10 @@ public static class AuditEvents
     public const string InvitationDeactivated = "Invitation.Deactivated";
     public const string VipNotificationSent = "Vip.NotificationSent";
 
+    // Notification broadcasts (Control Panel "Announcements" desk).
+    public const string BroadcastQueued = "Notification.BroadcastQueued";
+    public const string BroadcastSent = "Notification.BroadcastSent";
+
     // Operations toggles (D-166, gap doc G4 — registration gate +
     // archive visibility singletons)
     public const string RegistrationGateUpdated = "RegistrationGate.Updated";

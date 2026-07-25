@@ -1894,6 +1894,46 @@
   <data name="Admin.Vips.Notify.Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Admin.Vips.Notify.Sent" xml:space="preserve"><value>Sent to {0} VIPs ({1} emails enqueued).</value></data>
   <data name="Admin.Vips.Notify.Failed" xml:space="preserve"><value>The broadcast could not be sent.</value></data>
+  <data name="Module.Announcements" xml:space="preserve"><value>Announcements</value></data>
+  <data name="Admin.Announcements.Title" xml:space="preserve"><value>Announcements</value></data>
+  <data name="Admin.Announcements.Compose" xml:space="preserve"><value>Compose a broadcast</value></data>
+  <data name="Admin.Announcements.Target" xml:space="preserve"><value>Send to</value></data>
+  <data name="Admin.Announcements.Target.Session" xml:space="preserve"><value>A specific session</value></data>
+  <data name="Admin.Announcements.Target.Audience" xml:space="preserve"><value>A broad audience</value></data>
+  <data name="Admin.Announcements.Session" xml:space="preserve"><value>Session</value></data>
+  <data name="Admin.Announcements.Session.Placeholder" xml:space="preserve"><value>Choose a session…</value></data>
+  <data name="Admin.Announcements.Audience" xml:space="preserve"><value>Audience</value></data>
+  <data name="Admin.Announcements.Audience.ApprovedAppUsers" xml:space="preserve"><value>All approved app users</value></data>
+  <data name="Admin.Announcements.Audience.EventAttendees" xml:space="preserve"><value>Event attendees (booked a seat)</value></data>
+  <data name="Admin.Announcements.Audience.EveryoneIncludingPending" xml:space="preserve"><value>Everyone (including pending)</value></data>
+  <data name="Admin.Announcements.Severity" xml:space="preserve"><value>Importance</value></data>
+  <data name="Admin.Announcements.Severity.Info" xml:space="preserve"><value>Info</value></data>
+  <data name="Admin.Announcements.Severity.Success" xml:space="preserve"><value>Success</value></data>
+  <data name="Admin.Announcements.Severity.Warning" xml:space="preserve"><value>Warning</value></data>
+  <data name="Admin.Announcements.Severity.Error" xml:space="preserve"><value>Critical</value></data>
+  <data name="Admin.Announcements.TitleField" xml:space="preserve"><value>Title (English)</value></data>
+  <data name="Admin.Announcements.TitleArabicField" xml:space="preserve"><value>Title (Arabic)</value></data>
+  <data name="Admin.Announcements.BodyField" xml:space="preserve"><value>Message (English)</value></data>
+  <data name="Admin.Announcements.BodyArabicField" xml:space="preserve"><value>Message (Arabic)</value></data>
+  <data name="Admin.Announcements.Recipients" xml:space="preserve"><value>This will reach {0} recipient(s).</value></data>
+  <data name="Admin.Announcements.RecipientsUnknown" xml:space="preserve"><value>Choose a target to see how many recipients it reaches.</value></data>
+  <data name="Admin.Announcements.Send" xml:space="preserve"><value>Send broadcast</value></data>
+  <data name="Admin.Announcements.Sent" xml:space="preserve"><value>Broadcast queued: delivering to {0} recipient(s).</value></data>
+  <data name="Admin.Announcements.Failed" xml:space="preserve"><value>The broadcast could not be sent.</value></data>
+  <data name="Admin.Announcements.History" xml:space="preserve"><value>Recent broadcasts</value></data>
+  <data name="Admin.Announcements.Loading" xml:space="preserve"><value>Loading broadcasts…</value></data>
+  <data name="Admin.Announcements.None" xml:space="preserve"><value>No broadcasts sent yet.</value></data>
+  <data name="Admin.Announcements.LoadFailed" xml:space="preserve"><value>The broadcasts could not be loaded.</value></data>
+  <data name="Admin.Announcements.Status.Pending" xml:space="preserve"><value>Queued</value></data>
+  <data name="Admin.Announcements.Status.Processing" xml:space="preserve"><value>Sending</value></data>
+  <data name="Admin.Announcements.Status.Completed" xml:space="preserve"><value>Sent</value></data>
+  <data name="Admin.Announcements.Status.Failed" xml:space="preserve"><value>Failed</value></data>
+  <data name="Admin.Announcements.Col.When" xml:space="preserve"><value>When</value></data>
+  <data name="Admin.Announcements.Col.Target" xml:space="preserve"><value>Target</value></data>
+  <data name="Admin.Announcements.Col.Message" xml:space="preserve"><value>Message</value></data>
+  <data name="Admin.Announcements.Col.Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Admin.Announcements.Col.Recipients" xml:space="preserve"><value>Recipients</value></data>
+  <data name="Admin.Announcements.Col.Emails" xml:space="preserve"><value>Emails</value></data>
   <data name="Module.SessionModerators" xml:space="preserve"><value>Session moderators</value></data>
   <data name="Module.QuestionQueue" xml:space="preserve"><value>Question queue</value></data>
   <data name="Admin.QuestionQueue.Title" xml:space="preserve"><value>Question queue</value></data>

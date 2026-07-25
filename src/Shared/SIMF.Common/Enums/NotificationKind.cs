@@ -185,4 +185,14 @@ public enum NotificationKind
     /// the frozen-enum rule); persisted by NAME so no schema/data change.</summary>
     [Display(Description = nameof(ResNotificationKind.MeetingReminder), ResourceType = typeof(ResNotificationKind))]
     MeetingReminder = 55,
+
+    /// <summary>Manual admin broadcast from the Control Panel "Announcements" desk —
+    /// a free-text bilingual message sent to a specific session's registered
+    /// attendees or to a broad audience (e.g. session cancelled / hall changed /
+    /// rescheduled). Sent as an in-app row + a queued email. When session-scoped,
+    /// <c>RelatedEntityType="Session"</c> + <c>RelatedEntityId</c> carry the session
+    /// id. Additive value (append-only, the frozen-enum rule); persisted by NAME so
+    /// no schema/data change.</summary>
+    [Display(Description = nameof(ResNotificationKind.AdminAnnouncement), ResourceType = typeof(ResNotificationKind))]
+    AdminAnnouncement = 56,
 }

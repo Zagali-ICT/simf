@@ -44,7 +44,10 @@ public static class NotificationKindCatalog
         // not event-flow items; they belong with the account section (there is no
         // separate Requests chip), matching the app's default grouping.
         NotificationKind.ParticipationDocumentDecided or
-        NotificationKind.BadgeUpdateDecided => Groups.Account,
+        NotificationKind.BadgeUpdateDecided or
+        // Manual admin broadcast — the default group for an audience-wide announcement.
+        // A session-scoped broadcast overrides Group to Sessions at dispatch time.
+        NotificationKind.AdminAnnouncement => Groups.Account,
 
         NotificationKind.InvitationReceived or
         NotificationKind.VipBroadcast => Groups.Vip,

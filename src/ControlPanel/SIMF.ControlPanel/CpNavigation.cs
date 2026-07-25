@@ -200,8 +200,8 @@ public static class CpNavigation
             // D-199 — past-editions / archive admin CRUD (Mockup screen 24).
             new("Module.PreviousEditions", "/admin/archive", RequiredPermission: PermissionCatalog.Archive.View, Icon: "archive"),
         ]),
-        // D-132 — the broadcast-Notifications module (admin → audience) is not
-        // built yet; the operator notification inbox lives at
+        // D-132 — the broadcast-Notifications module (admin → audience) is the
+        // Announcements desk below; the operator notification inbox lives at
         // /account/notifications (via the bell), not the nav.
         new("Nav.PublicRelations",
         [
@@ -209,6 +209,9 @@ public static class CpNavigation
             // VIP list + bulk-notify (PDF §2.7.3).
             new("Module.Invitations", "/admin/invitations", RequiredPermission: PermissionCatalog.Invitations.View, Icon: "mail"),
             new("Module.Vips", "/admin/vips", RequiredPermission: PermissionCatalog.Vips.View, Icon: "crown"),
+            // D-132 — admin broadcast desk: notify a session's registered attendees
+            // or a broad audience (in-app + email), background-processed.
+            new("Module.Announcements", "/admin/announcements", RequiredPermission: PermissionCatalog.Announcements.Send, Icon: "send"),
             // Contact-us inbox (Figma 1388:7567) — triage app-submitted inquiries.
             new("Module.ContactInquiries", "/admin/contact-inquiries", RequiredPermission: PermissionCatalog.ContactInquiries.View, Icon: "inbox"),
         ]),

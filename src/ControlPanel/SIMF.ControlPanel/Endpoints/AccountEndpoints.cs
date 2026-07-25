@@ -1741,6 +1741,36 @@ internal static class AccountEndpoints
             return Forward(await api.NotifyVipsAsync(body, token));
         });
 
+        // Notification broadcasts (Control Panel "Announcements" desk).
+        group.MapPost("/admin/notifications/broadcast",
+            async (AdminCreateBroadcastRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateBroadcastAsync(body, token));
+        });
+        group.MapPost("/admin/notifications/broadcast/estimate",
+            async (AdminBroadcastEstimateRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.EstimateBroadcastAsync(body, token));
+        });
+        group.MapPost("/admin/notifications/broadcasts/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListBroadcastsAsync(body, token));
+        });
+        group.MapGet("/admin/notifications/broadcasts/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetBroadcastAsync(id, token));
+        });
+
         // D-173 (gap doc G8) — Dynamic content CMS BFF passthroughs.
         group.MapPost("/admin/content-blocks/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
