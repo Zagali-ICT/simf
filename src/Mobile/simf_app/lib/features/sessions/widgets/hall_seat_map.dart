@@ -59,12 +59,16 @@ class HallSeatMapCard extends StatefulWidget {
 
 class _HallSeatMapCardState extends State<HallSeatMapCard> {
   // Owns the grid's horizontal scroll so a wide hall can be dragged left/right
-  // and the scrollbar can hint there are more seats off the card edge.
+  // and the scrollbars hint there are more seats off the card edges. Two
+  // controllers so the grid pans on BOTH axes inside a bounded viewport:
+  // _hScroll (left/right seats), _vScroll (up/down rows).
   final ScrollController _hScroll = ScrollController();
+  final ScrollController _vScroll = ScrollController();
 
   @override
   void dispose() {
     _hScroll.dispose();
+    _vScroll.dispose();
     super.dispose();
   }
 
@@ -85,9 +89,11 @@ class _HallSeatMapCardState extends State<HallSeatMapCard> {
           const SizedBox(height: SimfTokens.space6),
           // The hall plan keeps the stage at the top and seat columns in venue
           // order — do not mirror the grid geometry in RTL (L-7), so it is
-          // forced LTR. Seats are a fixed size (see _SeatGridRow): a hall that
-          // fits is centred under the stage; a wider hall overflows this width
-          // and the grid scrolls horizontally so every seat stays visible.
+          // forced LTR. Seats are a FIXED size (see _SeatGridRow) inside a
+          // bounded viewport that pans on BOTH axes: the grid scrolls left/right
+          // when wider than the card and up/down when taller than the viewport,
+          // each with its own scrollbar (scoped by axis). A hall that fits
+          // shows fully — centred horizontally — and does not scroll.
           Directionality(
             textDirection: TextDirection.ltr,
             child: LayoutBuilder(
@@ -116,18 +122,39 @@ class _HallSeatMapCardState extends State<HallSeatMapCard> {
                     const SizedBox(height: SimfTokens.space3),
                   ],
                 );
-                return Scrollbar(
-                  controller: _hScroll,
-                  thumbVisibility: true,
-                  child: SingleChildScrollView(
-                    controller: _hScroll,
-                    scrollDirection: Axis.horizontal,
-                    child: ConstrainedBox(
-                      // A narrow hall centres under the stage; a wide hall
-                      // exceeds this min width and the view scrolls left/right.
-                      constraints:
-                          BoxConstraints(minWidth: constraints.maxWidth),
-                      child: Center(child: grid),
+                // Cap the seat area's height so a tall hall scrolls vertically
+                // instead of pushing the legend / CTAs off the page; a short
+                // hall keeps its natural height (no empty band).
+                final viewportMaxHeight =
+                    (widget.maxSeatSize + SimfTokens.space4) *
+                        SimfTokens.seatViewportRows;
+                return ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: viewportMaxHeight),
+                  child: Scrollbar(
+                    controller: _vScroll,
+                    thumbVisibility: true,
+                    notificationPredicate: (notif) =>
+                        notif.metrics.axis == Axis.vertical,
+                    child: SingleChildScrollView(
+                      controller: _vScroll,
+                      child: Scrollbar(
+                        controller: _hScroll,
+                        thumbVisibility: true,
+                        notificationPredicate: (notif) =>
+                            notif.metrics.axis == Axis.horizontal,
+                        child: SingleChildScrollView(
+                          controller: _hScroll,
+                          scrollDirection: Axis.horizontal,
+                          child: ConstrainedBox(
+                            // A narrow hall centres under the stage; a wider
+                            // hall exceeds this and scrolls left/right.
+                            constraints: BoxConstraints(
+                              minWidth: constraints.maxWidth,
+                            ),
+                            child: Center(child: grid),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 );

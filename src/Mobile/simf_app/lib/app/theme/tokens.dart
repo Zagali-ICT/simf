@@ -815,6 +815,8 @@ class SimfTokens {
   static const double actionChipHeight = 34; // my-seat + header action chip
   static const double seatCapDefault = 20; // my-seat seat-square cap
   static const double seatCapPicker = 26; // seat-picker seat-square cap
+  static const double seatViewportRows =
+      8; // seat-map viewport = this many rows tall before it scrolls vertically
   static const double seatSwatchSm = 14; // my-seat legend swatch
   static const double seatSwatchLg = 16; // picker + available legend swatch
   static const double seatRowLabelWidth = 12; // seat-map row-letter column
