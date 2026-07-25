@@ -44,14 +44,14 @@ public partial class HallSeatLayoutEditor
     private bool _busy;
     private Toast? _toast;
 
-    // -- Live per-row validation (mirrors the service triple-lock) ---------------
+    // -- Per-row seat model (D-767) + the capacity readout the meter/preview use.
+    // _totalSeats is the layout capacity (the sum of the per-row seat counts).
     private int _totalSeats => _rows.Sum(r => r.Count);
+    private int _hallCapacity => _snapshot?.HallCapacity ?? 0;
     private bool _anyOutOfRange => _rows.Any(r => r.Count < 1 || r.Count > 80);
-    private bool _capacityExceeded =>
-        _snapshot is not null && _totalSeats > _snapshot.HallCapacity;
-    // Save is blocked while any per-row count is out of 1..80 or the sum overflows
-    // the hall capacity; _busy is handled separately by the button's Loading state.
-    private bool _saveDisabled => _anyOutOfRange || _capacityExceeded;
+    // Visual-only warning — Save stays enabled so the server remains the single
+    // source of truth for the capacity rule (SEAT_CAPACITY_EXCEEDED).
+    private bool _isOverCapacity => _hallCapacity > 0 && _totalSeats > _hallCapacity;
 
     private static string[] ParseLabels(string csv) =>
         (csv ?? string.Empty).Split(',',
@@ -162,13 +162,13 @@ public partial class HallSeatLayoutEditor
     {
         if (index < 0 || index >= _rows.Count) return;
         // Store the raw value (do NOT clamp) so an out-of-range entry surfaces the
-        // warning and disables Save, mirroring the server-side 1..80 check.
+        // warning, mirroring the server-side 1..80 check (Save stays enabled).
         _rows[index].Count = int.TryParse(e.Value?.ToString(), out var n) ? n : 0;
     }
 
     private async Task SaveAsync()
     {
-        if (_selectedHallId is null || _busy || _saveDisabled) return;
+        if (_selectedHallId is null || _busy) return;
         _busy = true;
         _toast = null;
         try

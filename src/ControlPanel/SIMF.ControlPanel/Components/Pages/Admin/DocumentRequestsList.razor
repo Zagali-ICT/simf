@@ -81,14 +81,14 @@
                 <SimfDataGridColumn TItem="AdminParticipationDocumentRequestRow" Key="createdAt"
                                     Header="@L["Admin.DocumentRequests.Col.CreatedAt"]"
                                     Sortable="true">
-                    <CellTemplate>@context.CreatedAt.FormatSaudi("yyyy-MM-dd HH:mm")</CellTemplate>
+                    <CellTemplate>@context.CreatedAt.FormatSaudi("dd-MM-yyyy hh:mm tt")</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminParticipationDocumentRequestRow" Key="respondedAt"
                                     Header="@L["Admin.DocumentRequests.Col.RespondedAt"]"
                                     Sortable="true">
                     <CellTemplate>
                         @(context.RespondedAt is null ? "—"
-                            : context.RespondedAt.Value.FormatSaudi("yyyy-MM-dd HH:mm"))
+                            : context.RespondedAt.Value.FormatSaudi("dd-MM-yyyy hh:mm tt"))
                     </CellTemplate>
                 </SimfDataGridColumn>
             </Columns>
@@ -110,7 +110,7 @@
 
 @if (_respondOpen && _respondTarget is not null)
 {
-    <SimfModal Open="true" Title="@L["Admin.DocumentRequests.Respond.Title"]"
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.DocumentRequests.Respond.Title"]"
                OnClose="@(() => _respondOpen = false)">
         <ChildContent>
             <div class="simf-form__fields">

@@ -238,10 +238,10 @@ public partial class SessionSummariesList
         : L["Admin.SessionSummaries.Source.Manual"];
 
     // Slice D — the pristine AI-draft panel label, with the capture time rendered
-    // on the Saudi wall clock (the CP's yyyy-MM-dd HH:mm convention) when one is recorded.
+    // on the Saudi wall clock (the CP's 12-hour convention) when one is recorded.
     private string AiDraftLabel =>
         _editAiDraftGeneratedAt is { } at
-            ? $"{L["Admin.SessionSummaries.Field.AiDraft"]} · {at.FormatSaudi("yyyy-MM-dd HH:mm")}"
+            ? $"{L["Admin.SessionSummaries.Field.AiDraft"]} · {at.FormatSaudi("dd-MM-yyyy hh:mm tt")}"
             : L["Admin.SessionSummaries.Field.AiDraft"];
 
     // D-472 (#9) — the team review/approval workflow actions. Each forwards a PUT

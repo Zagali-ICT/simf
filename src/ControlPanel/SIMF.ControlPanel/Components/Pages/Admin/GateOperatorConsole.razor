@@ -91,7 +91,7 @@
                             @foreach (var row in _report.Rows.Take(50))
                             {
                                 <tr>
-                                    <td>@row.ScannedAtUtc.ToString("HH:mm:ss")</td>
+                                    <td>@row.ScannedAt.FormatSaudi("hh:mm:ss tt")</td>
                                     <td>@row.Outcome</td>
                                     <td>@row.Direction</td>
                                     <td>@(row.VisitorDisplayName ?? "—")</td>

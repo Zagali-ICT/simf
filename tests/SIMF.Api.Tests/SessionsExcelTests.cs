@@ -158,9 +158,9 @@ public sealed class SessionsExcelTests : IClassFixture<SimfApiFactory>
                 Title = $"Export Fields {code}",
                 TitleArabic = $"تصدير {code}",
                 HallId = hallId,
-                StartUtc = DateTimeOffset.Parse(
+                Start = DateTimeOffset.Parse(
                     "2026-01-30T09:00:00Z", CultureInfo.InvariantCulture),
-                EndUtc = DateTimeOffset.Parse(
+                End = DateTimeOffset.Parse(
                     "2026-01-30T10:00:00Z", CultureInfo.InvariantCulture),
                 Description = "An opening keynote.",
                 DescriptionArabic = "كلمة افتتاحية.",
@@ -219,8 +219,8 @@ public sealed class SessionsExcelTests : IClassFixture<SimfApiFactory>
         sheet.Cell(1, 2).Value = "Title";
         sheet.Cell(1, 3).Value = "TitleArabic";
         sheet.Cell(1, 4).Value = "Hall";
-        sheet.Cell(1, 5).Value = "StartUtc";
-        sheet.Cell(1, 6).Value = "EndUtc";
+        sheet.Cell(1, 5).Value = "Start";
+        sheet.Cell(1, 6).Value = "End";
         sheet.Cell(1, 7).Value = "Type";
         sheet.Cell(1, 8).Value = "SeatSelectionModeOverride";
         sheet.Cell(1, 9).Value = "Description";
@@ -391,7 +391,7 @@ public sealed class SessionsExcelTests : IClassFixture<SimfApiFactory>
     private static byte[] BuildSessionsWorkbook(
         string sheetName,
         params (string Code, string Title, string TitleArabic, string Hall,
-            string StartUtc, string EndUtc)[] rows)
+            string Start, string End)[] rows)
     {
         using var workbook = new XLWorkbook();
         var sheet = workbook.Worksheets.Add(sheetName);
@@ -399,8 +399,8 @@ public sealed class SessionsExcelTests : IClassFixture<SimfApiFactory>
         sheet.Cell(1, 2).Value = "Title";
         sheet.Cell(1, 3).Value = "TitleArabic";
         sheet.Cell(1, 4).Value = "Hall";
-        sheet.Cell(1, 5).Value = "StartUtc";
-        sheet.Cell(1, 6).Value = "EndUtc";
+        sheet.Cell(1, 5).Value = "Start";
+        sheet.Cell(1, 6).Value = "End";
         sheet.Cell(1, 7).Value = "Type";
         for (var i = 0; i < rows.Length; i++)
         {
@@ -408,8 +408,8 @@ public sealed class SessionsExcelTests : IClassFixture<SimfApiFactory>
             sheet.Cell(i + 2, 2).Value = rows[i].Title;
             sheet.Cell(i + 2, 3).Value = rows[i].TitleArabic;
             sheet.Cell(i + 2, 4).Value = rows[i].Hall;
-            sheet.Cell(i + 2, 5).Value = rows[i].StartUtc;
-            sheet.Cell(i + 2, 6).Value = rows[i].EndUtc;
+            sheet.Cell(i + 2, 5).Value = rows[i].Start;
+            sheet.Cell(i + 2, 6).Value = rows[i].End;
             // #3 — every generated row is an Event so the shared builder stays valid
             // under the required-type rule (an Event needs no speaker).
             sheet.Cell(i + 2, 7).Value = "Event";
@@ -431,8 +431,8 @@ public sealed class SessionsExcelTests : IClassFixture<SimfApiFactory>
         sheet.Cell(1, 2).Value = "Title";
         sheet.Cell(1, 3).Value = "TitleArabic";
         sheet.Cell(1, 4).Value = "Hall";
-        sheet.Cell(1, 5).Value = "StartUtc";
-        sheet.Cell(1, 6).Value = "EndUtc";
+        sheet.Cell(1, 5).Value = "Start";
+        sheet.Cell(1, 6).Value = "End";
         sheet.Cell(1, 7).Value = "Type";
         sheet.Cell(1, 8).Value = "Speakers";
         sheet.Cell(2, 1).Value = code;
@@ -512,10 +512,10 @@ public sealed class SessionsExcelTests : IClassFixture<SimfApiFactory>
                 HallId = hallId,
                 // #3 — an Event stays valid under the required-type rule with no speaker.
                 Type = SessionType.Event,
-                StartUtc = DateTimeOffset.Parse(
+                Start = DateTimeOffset.Parse(
                     "2026-01-30T09:00:00Z", CultureInfo.InvariantCulture)
                     .AddHours(startHourOffset),
-                EndUtc = DateTimeOffset.Parse(
+                End = DateTimeOffset.Parse(
                     "2026-01-30T10:00:00Z", CultureInfo.InvariantCulture)
                     .AddHours(startHourOffset),
             },

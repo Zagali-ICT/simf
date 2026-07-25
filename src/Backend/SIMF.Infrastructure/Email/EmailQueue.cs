@@ -20,6 +20,11 @@ public sealed class EmailQueue(ILogger<EmailQueue> logger) : IEmailQueue
     /// <summary>The read side of the queue, drained by the background sender.</summary>
     public ChannelReader<EmailMessage> Reader => _channel.Reader;
 
+    /// <summary>The messages currently buffered (bounded channels expose a live
+    /// count). Used by the broadcast worker to pace its fan-out under
+    /// <see cref="Capacity"/>.</summary>
+    public int PendingCount => _channel.Reader.Count;
+
     public void Enqueue(EmailMessage message)
     {
         if (!_channel.Writer.TryWrite(message))

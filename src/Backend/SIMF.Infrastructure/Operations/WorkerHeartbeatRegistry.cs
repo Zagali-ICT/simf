@@ -36,18 +36,18 @@ internal sealed class WorkerHeartbeatRegistry(TimeProvider timeProvider) : IWork
             workerName,
             _ => new Beat(workerName, TimeSpan.Zero, now)
             {
-                LastRunUtc = now,
-                LastSuccessUtc = now,
+                LastRun = now,
+                LastSuccess = now,
                 RunCount = 1,
             },
             (_, e) => e with
             {
-                LastRunUtc = now,
-                LastSuccessUtc = now,
+                LastRun = now,
+                LastSuccess = now,
                 // A successful tick clears any prior fault (contract: LastError is
                 // null once a later success clears it).
                 LastError = null,
-                LastFailureUtc = null,
+                LastFailure = null,
                 RunCount = e.RunCount + 1,
             });
     }
@@ -59,16 +59,16 @@ internal sealed class WorkerHeartbeatRegistry(TimeProvider timeProvider) : IWork
             workerName,
             _ => new Beat(workerName, TimeSpan.Zero, now)
             {
-                LastRunUtc = now,
-                LastFailureUtc = now,
+                LastRun = now,
+                LastFailure = now,
                 LastError = error,
                 RunCount = 1,
                 FailureCount = 1,
             },
             (_, e) => e with
             {
-                LastRunUtc = now,
-                LastFailureUtc = now,
+                LastRun = now,
+                LastFailure = now,
                 LastError = error,
                 RunCount = e.RunCount + 1,
                 FailureCount = e.FailureCount + 1,
@@ -86,7 +86,7 @@ internal sealed class WorkerHeartbeatRegistry(TimeProvider timeProvider) : IWork
         return new WorkerStatusListResponse
         {
             Workers = workers,
-            GeneratedUtc = now,
+            Generated = now,
             HealthyCount = workers.Count(w => w.State is WorkerState.Healthy or WorkerState.Starting),
             StaleCount = workers.Count(w => w.State == WorkerState.Stale),
             FaultedCount = workers.Count(w => w.State == WorkerState.Faulted),
@@ -99,9 +99,9 @@ internal sealed class WorkerHeartbeatRegistry(TimeProvider timeProvider) : IWork
             Name = name,
             Description = b.Description,
             State = DeriveState(b, now),
-            LastRunUtc = b.LastRunUtc,
-            LastSuccessUtc = b.LastSuccessUtc,
-            LastFailureUtc = b.LastFailureUtc,
+            LastRun = b.LastRun,
+            LastSuccess = b.LastSuccess,
+            LastFailure = b.LastFailure,
             LastError = b.LastError,
             RunCount = b.RunCount,
             FailureCount = b.FailureCount,
@@ -111,8 +111,8 @@ internal sealed class WorkerHeartbeatRegistry(TimeProvider timeProvider) : IWork
     private static WorkerState DeriveState(Beat b, DateTimeOffset now)
     {
         // Most recent outcome was a failure: surface it until a later success clears it.
-        if (b.LastFailureUtc is { } failedAt
-            && (b.LastSuccessUtc is null || failedAt > b.LastSuccessUtc))
+        if (b.LastFailure is { } failedAt
+            && (b.LastSuccess is null || failedAt > b.LastSuccess))
         {
             return WorkerState.Faulted;
         }
@@ -126,7 +126,7 @@ internal sealed class WorkerHeartbeatRegistry(TimeProvider timeProvider) : IWork
 
         var staleAfter = b.ExpectedInterval + b.ExpectedInterval + Grace;
 
-        if (b.LastSuccessUtc is { } okAt)
+        if (b.LastSuccess is { } okAt)
         {
             return now - okAt <= staleAfter ? WorkerState.Healthy : WorkerState.Stale;
         }
@@ -140,9 +140,9 @@ internal sealed class WorkerHeartbeatRegistry(TimeProvider timeProvider) : IWork
 
     private sealed record Beat(string Description, TimeSpan ExpectedInterval, DateTimeOffset RegisteredUtc)
     {
-        public DateTimeOffset? LastRunUtc { get; init; }
-        public DateTimeOffset? LastSuccessUtc { get; init; }
-        public DateTimeOffset? LastFailureUtc { get; init; }
+        public DateTimeOffset? LastRun { get; init; }
+        public DateTimeOffset? LastSuccess { get; init; }
+        public DateTimeOffset? LastFailure { get; init; }
         public string? LastError { get; init; }
         public long RunCount { get; init; }
         public long FailureCount { get; init; }

@@ -4,7 +4,7 @@
    =false runs Create (POST); IsEdit=true runs Edit (PUT against Initial) and
    shows the IsActive checkbox. Extracted verbatim from the former inline
    SessionForm: the Hall + Category pickers, the reorderable Speaker roster (with
-   the speaker/host role, D-225), the Theme multi-picker, the StartUtc/EndUtc
+   the speaker/host role, D-225), the Theme multi-picker, the Start/End
    window, the live-feed URLs (§8 / D-349) and the same create/update request
    DTOs + JS calls the inline SimfModal form used. *@
 @inherits CrudAddEditFormBase<AdminSessionDetail>
@@ -130,13 +130,13 @@
                     ValueChanged="@(v => _seatModeInput = v ?? string.Empty)"
                     Disabled="_busy" />
 
-        <SimfTextField Label="@L["Admin.Sessions.Field.StartUtc"]"
+        <SimfTextField Label="@L["Admin.Sessions.Field.Start"]"
                        Type="datetime-local"
                        Value="@_startInput"
                        ValueChanged="@(v => _startInput = v)"
                        ValueExpression="@(() => _startInput)"
                        Disabled="_busy" />
-        <SimfTextField Label="@L["Admin.Sessions.Field.EndUtc"]"
+        <SimfTextField Label="@L["Admin.Sessions.Field.End"]"
                        Type="datetime-local"
                        Value="@_endInput"
                        ValueChanged="@(v => _endInput = v)"

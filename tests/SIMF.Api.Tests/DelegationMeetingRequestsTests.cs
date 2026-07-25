@@ -100,6 +100,31 @@ public sealed class DelegationMeetingRequestsTests : IClassFixture<SimfApiFactor
     }
 
     [Fact]
+    public async Task A_requester_from_the_non_invited_owner_country_can_still_request()
+    {
+        // D-768 (owner) — the host/owner country (e.g. KSA) is deliberately NOT an invited
+        // delegation, yet its flagged visitors must still be able to request a meeting WITH
+        // an invited delegation. The requester's nationality only has to be set + active now;
+        // the TARGET still must be invited (that rule is unchanged).
+        var ownerId = await EnsureCountryAsync("BH", 48, invited: false);   // owner/host, NOT invited
+        await EnsureCountryAsync("EG", 818, invited: true);                 // an invited target
+        var (requester, _) = await CreateDelegateAsync(ownerId, isDelegate: true);
+
+        var response = await PostAuthAsync(
+            "/api/v1/app/delegation-meeting-requests",
+            new SubmitDelegationMeetingRequestRequest
+            {
+                TargetCountryCode = "EG", AttendeeCount = 3, Subject = "Owner requests a meeting",
+            },
+            requester);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<DelegationMeetingRequestSubmitted>>())!;
+        Assert.True(body.Success);
+    }
+
+    [Fact]
     public async Task Accepting_a_request_notifies_the_requester()
     {
         var homeId = await EnsureCountryAsync("SA", 682, invited: true);
@@ -157,9 +182,10 @@ public sealed class DelegationMeetingRequestsTests : IClassFixture<SimfApiFactor
     }
 
     [Fact]
-    public async Task A_second_pending_request_for_the_same_target_is_rejected()
+    public async Task A_second_pending_request_for_the_same_target_moves_the_existing_one()
     {
-        // A1 — one open request per (requester, target delegation).
+        // R8 (D-767) — one open request per (requester, target delegation); a repeat
+        // submission MOVES (updates) the existing Pending request instead of a 409.
         var homeId = await EnsureCountryAsync("SA", 682, invited: true);
         await EnsureCountryAsync("EG", 818, invited: true);
         var (delegate1, _) = await CreateDelegateAsync(homeId, isDelegate: true);
@@ -172,17 +198,22 @@ public sealed class DelegationMeetingRequestsTests : IClassFixture<SimfApiFactor
             },
             delegate1);
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        var firstBody = (await first.Content
+            .ReadFromJsonAsync<ApiResult<DelegationMeetingRequestSubmitted>>())!;
 
         var second = await PostAuthAsync(
             "/api/v1/app/delegation-meeting-requests",
             new SubmitDelegationMeetingRequestRequest
             {
-                TargetCountryCode = "EG", AttendeeCount = 5, Subject = "Second",
+                TargetCountryCode = "EG", AttendeeCount = 8, Subject = "Second",
             },
             delegate1);
-        Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
-        var body = (await second.Content.ReadFromJsonAsync<ApiResult<object>>())!;
-        Assert.Equal(ErrorCodes.AppRequestDuplicatePending, body.Error!.Code);
+        Assert.Equal(HttpStatusCode.OK, second.StatusCode);
+        var secondBody = (await second.Content
+            .ReadFromJsonAsync<ApiResult<DelegationMeetingRequestSubmitted>>())!;
+
+        // Same row (moved in place), not a duplicate.
+        Assert.Equal(firstBody.Data!.Id, secondBody.Data!.Id);
     }
 
     [Fact]
@@ -232,7 +263,7 @@ public sealed class DelegationMeetingRequestsTests : IClassFixture<SimfApiFactor
             new SubmitDelegationMeetingRequestRequest
             {
                 TargetCountryCode = "EG", AttendeeCount = 5, Subject = "Topic",
-                SlotStartUtc = new DateTimeOffset(2030, 2, 1, 9, 0, 0, TimeSpan.Zero),
+                SlotStart = new DateTimeOffset(2030, 2, 1, 9, 0, 0, TimeSpan.Zero),
             },
             delegate1);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -291,7 +322,7 @@ public sealed class DelegationMeetingRequestsTests : IClassFixture<SimfApiFactor
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var req = await db.DelegationMeetingRequests.SingleAsync(r => r.Id == requestId);
         Assert.Equal(MeetingRequestStatus.Accepted, req.Status);
-        Assert.Equal(slotStart, req.SlotStartUtc);
+        Assert.Equal(slotStart, req.SlotStart);
     }
 
     [Fact]
@@ -374,8 +405,8 @@ public sealed class DelegationMeetingRequestsTests : IClassFixture<SimfApiFactor
             var db = seed.ServiceProvider.GetRequiredService<SimfAppDbContext>();
             var req = await db.DelegationMeetingRequests.SingleAsync(r => r.Id == requestId);
             req.Status = MeetingRequestStatus.AwaitingSpeaker;
-            req.SlotStartUtc = boundStart;
-            req.SlotEndUtc = boundStart.AddHours(1);
+            req.SlotStart = boundStart;
+            req.SlotEnd = boundStart.AddHours(1);
             await db.SaveChangesAsync();
         }
 
@@ -394,7 +425,7 @@ public sealed class DelegationMeetingRequestsTests : IClassFixture<SimfApiFactor
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var confirmed = await appDb.DelegationMeetingRequests.SingleAsync(r => r.Id == requestId);
         Assert.Equal(MeetingRequestStatus.Accepted, confirmed.Status);
-        Assert.Equal(boundStart, confirmed.SlotStartUtc);
+        Assert.Equal(boundStart, confirmed.SlotStart);
         Assert.NotNull(confirmed.ConfirmedAt);
         Assert.NotNull(confirmed.ConfirmedByUserId);
     }
@@ -422,8 +453,8 @@ public sealed class DelegationMeetingRequestsTests : IClassFixture<SimfApiFactor
             var db = seed.ServiceProvider.GetRequiredService<SimfAppDbContext>();
             var req = await db.DelegationMeetingRequests.SingleAsync(r => r.Id == requestId);
             req.Status = MeetingRequestStatus.AwaitingSpeaker;
-            req.SlotStartUtc = pastStart;
-            req.SlotEndUtc = pastStart.AddHours(1);
+            req.SlotStart = pastStart;
+            req.SlotEnd = pastStart.AddHours(1);
             await db.SaveChangesAsync();
         }
 
@@ -469,8 +500,8 @@ public sealed class DelegationMeetingRequestsTests : IClassFixture<SimfApiFactor
             var db = seed.ServiceProvider.GetRequiredService<SimfAppDbContext>();
             var req = await db.DelegationMeetingRequests.SingleAsync(r => r.Id == requestId);
             req.Status = MeetingRequestStatus.AwaitingSpeaker;
-            req.SlotStartUtc = slotStart;
-            req.SlotEndUtc = slotStart.AddHours(1);
+            req.SlotStart = slotStart;
+            req.SlotEnd = slotStart.AddHours(1);
             await db.SaveChangesAsync();
         }
 
@@ -495,8 +526,8 @@ public sealed class DelegationMeetingRequestsTests : IClassFixture<SimfApiFactor
                 TargetCountryCode = targetCode,
                 AttendeeCount = 5,
                 Subject = "Slotted meeting",
-                SlotStartUtc = slotStart,
-                SlotEndUtc = slotEnd,
+                SlotStart = slotStart,
+                SlotEnd = slotEnd,
             },
             delegateToken);
         Assert.Equal(HttpStatusCode.OK, submit.StatusCode);

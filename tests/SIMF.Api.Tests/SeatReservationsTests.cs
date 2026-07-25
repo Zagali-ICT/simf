@@ -680,9 +680,9 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Reserving_stamps_the_no_show_deadline_on_the_hold()
     {
-        // #6/#17 — a visitor seat pick is stamped with ExpiresUtc = the session's
-        // StartUtc − 3min (the no-show release deadline); an admin-reserved row seat
-        // never expires (ExpiresUtc null).
+        // #6/#17 — a visitor seat pick is stamped with Expires = the session's
+        // Start − 3min (the no-show release deadline); an admin-reserved row seat
+        // never expires (Expires null).
         var (session, _) = await SeedSessionWithLayoutAsync(new[] { "A" }, seatsPerRow: 5);
         var visitor = await SignInApprovedVisitorAsync();
         var pick = await PostAuthAsync(
@@ -701,17 +701,17 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var mine = await db.SeatReservations.SingleAsync(r => r.Id == reservationId);
-        Assert.NotNull(mine.ExpiresUtc);
-        var expected = session.StartUtc - SeatReservationService.NoShowReleaseGrace;
+        Assert.NotNull(mine.Expires);
+        var expected = session.Start - SeatReservationService.NoShowReleaseGrace;
         Assert.True(
-            (mine.ExpiresUtc!.Value - expected).Duration() < TimeSpan.FromSeconds(1),
-            $"no-show deadline {mine.ExpiresUtc} not ~ {expected}");
+            (mine.Expires!.Value - expected).Duration() < TimeSpan.FromSeconds(1),
+            $"no-show deadline {mine.Expires} not ~ {expected}");
 
         var adminSeat = await db.SeatReservations
             .Where(r => r.SessionId == session.Id
                 && r.Kind == SeatReservationKind.AdminReservedRow)
             .FirstAsync();
-        Assert.Null(adminSeat.ExpiresUtc);
+        Assert.Null(adminSeat.Expires);
     }
 
     // -- H-2: a layout change may not orphan active reservations ---------------
@@ -1109,8 +1109,8 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
             CapacityOverride = capacityOverride,
             // P2.2 — D-227: a FUTURE window so bookings can be cancelled before
             // the session starts (the new cancel-before-start guard, FR-504).
-            StartUtc = DateTimeOffset.UtcNow.AddHours(1),
-            EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+            Start = DateTimeOffset.UtcNow.AddHours(1),
+            End = DateTimeOffset.UtcNow.AddHours(2),
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };
@@ -1161,8 +1161,8 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
             HallId = hall.Id,
             SeatSelectionModeOverride = sessionModeOverride,
             CapacityOverride = capacityOverride,
-            StartUtc = DateTimeOffset.UtcNow.AddHours(1),
-            EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+            Start = DateTimeOffset.UtcNow.AddHours(1),
+            End = DateTimeOffset.UtcNow.AddHours(2),
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };
@@ -1194,8 +1194,8 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Live", TitleArabic = "مباشر",
             HallId = hall.Id,
-            StartUtc = DateTimeOffset.UtcNow.AddHours(1),
-            EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+            Start = DateTimeOffset.UtcNow.AddHours(1),
+            End = DateTimeOffset.UtcNow.AddHours(2),
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };
@@ -1227,8 +1227,8 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Live", TitleArabic = "مباشر",
             HallId = hall.Id,
-            StartUtc = DateTimeOffset.UtcNow.AddHours(1),
-            EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+            Start = DateTimeOffset.UtcNow.AddHours(1),
+            End = DateTimeOffset.UtcNow.AddHours(2),
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };

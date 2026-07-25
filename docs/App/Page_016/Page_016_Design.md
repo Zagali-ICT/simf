@@ -64,7 +64,7 @@ Last updated: 2026-06-13 — KSA Wave-2 redesign (D-378).
   `GET /app/programme/sessions` fetch in `initState`). The search / pills /
   day strip mutate a **client-side filtered view** of the cache
   (`filterSessions`) — no refetch.
-- Row: `time = startUtc` rendered device-local (`startLocal`, `hh:mm` + `a`),
+- Row: `time = start` rendered device-local (`startLocal`, `hh:mm` + `a`),
   `index` = the 1-based position in the **filtered** list (zero-padded),
   `title = localizedTitle` (AR/EN with cross-language fallback),
   `description = localizedDescription`.

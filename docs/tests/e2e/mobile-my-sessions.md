@@ -43,7 +43,7 @@
   the المفضلة heart (gold = favourited) on the trailing edge. Tapping a card opens
   the session detail; tapping the heart toggles the favourite (optimistic; reverts
   + toasts on a server error).
-- **Tab rules** (client-side, device clock): القادمة = `startUtc` in the future;
+- **Tab rules** (client-side, device clock): القادمة = `start` in the future;
   حضرتها = `attended`; فاتتني = ended & not attended; الأرشيف = Recorded/Published.
 - **States**: spinner while loading; retry surface on a wire error; an empty
   message (`No sessions in this list.`) per tab.

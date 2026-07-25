@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../../core/country_flag.dart';
+import '../../../core/utils/saudi_time.dart';
 
 /// One row in the public speakers list — mirrors
 /// `SIMF.Contracts.Programme.PublicSpeakerSummary` (`GET /app/speakers`). The
@@ -63,8 +64,8 @@ class SpeakerSession {
     required this.titleArabic,
     required this.hallName,
     required this.hallNameArabic,
-    required this.startUtc,
-    required this.endUtc,
+    required this.start,
+    required this.end,
   });
 
   final String id;
@@ -73,10 +74,10 @@ class SpeakerSession {
   final String titleArabic;
   final String hallName;
   final String hallNameArabic;
-  final DateTime startUtc;
-  final DateTime endUtc;
+  final DateTime start;
+  final DateTime end;
 
-  DateTime get startLocal => startUtc.toLocal();
+  DateTime get startLocal => saudiOf(start);
 
   String localizedTitle(bool isArabic) => _pick(titleArabic, title, isArabic);
   String? localizedHall(bool isArabic) =>
@@ -89,8 +90,8 @@ class SpeakerSession {
         titleArabic: json['titleArabic'] as String? ?? '',
         hallName: json['hallName'] as String? ?? '',
         hallNameArabic: json['hallNameArabic'] as String? ?? '',
-        startUtc: _utc(json['startUtc']),
-        endUtc: _utc(json['endUtc']),
+        start: _utc(json['start']),
+        end: _utc(json['end']),
       );
 }
 

@@ -77,7 +77,7 @@
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminBadgeBatchSummary" Key="createdAt"
                                     Header="@L["Admin.BadgeBatches.Col.CreatedAt"]">
-                    <CellTemplate>@context.CreatedAt.FormatSaudi("yyyy-MM-dd HH:mm")</CellTemplate>
+                    <CellTemplate>@context.CreatedAt.FormatSaudi("dd-MM-yyyy hh:mm tt")</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminBadgeBatchSummary" Key="status"
                                     Header="@L["Admin.BadgeBatches.Col.Status"]">
@@ -118,7 +118,7 @@
 
 @if (_reEmailTarget is not null)
 {
-    <SimfModal Open="true" Title="@L["Admin.BadgeBatches.ReEmail.Title"]"
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.BadgeBatches.ReEmail.Title"]"
                OnClose="@(() => _reEmailTarget = null)">
         <ChildContent>
             <div class="simf-form__fields">
@@ -150,7 +150,7 @@
 
 @if (_revokeTarget is not null)
 {
-    <SimfModal Open="true" Title="@L["Admin.BadgeBatches.Revoke.Title"]"
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.BadgeBatches.Revoke.Title"]"
                OnClose="@(() => _revokeTarget = null)">
         <ChildContent>
             <p>@string.Format(L["Admin.BadgeBatches.Revoke.Body"], _revokeTarget.TotalCount, _revokeTarget.CountsSummary)</p>

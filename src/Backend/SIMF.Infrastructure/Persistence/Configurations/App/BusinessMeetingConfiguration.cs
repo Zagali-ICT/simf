@@ -14,13 +14,13 @@ internal sealed class BusinessMeetingConfiguration : IEntityTypeConfiguration<Bu
     {
         // D-611 (Wave B) — a meeting must end after it starts.
         builder.ToTable("BusinessMeetings", table => table.HasCheckConstraint(
-            "CK_BusinessMeetings_TimeWindow", "[EndUtc] > [StartUtc]"));
+            "CK_BusinessMeetings_TimeWindow", "[End] > [Start]"));
         builder.HasKey(m => m.Id);
 
         builder.Property(m => m.Notes).HasMaxLength(1024);
         builder.Property(m => m.CancellationReason).HasMaxLength(512);
-        builder.Property(m => m.StartUtc).IsRequired();
-        builder.Property(m => m.EndUtc).IsRequired();
+        builder.Property(m => m.Start).IsRequired();
+        builder.Property(m => m.End).IsRequired();
 
         builder.HasOne(m => m.MeetingTable)
             .WithMany()
@@ -34,6 +34,6 @@ internal sealed class BusinessMeetingConfiguration : IEntityTypeConfiguration<Bu
 
         // Per-table overlap lookups (Confirmed rows in a table) + the CP list.
         builder.HasIndex(m => new { m.MeetingTableId, m.Status });
-        builder.HasIndex(m => new { m.Status, m.StartUtc });
+        builder.HasIndex(m => new { m.Status, m.Start });
     }
 }

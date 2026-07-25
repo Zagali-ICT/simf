@@ -711,6 +711,15 @@ public static class PermissionCatalog
         public const string Export = "Vips.Export";
     }
 
+    /// <summary>Control Panel "Announcements" desk — compose + send a manual
+    /// notification broadcast (in-app + email) to a specific session's attendees or
+    /// a broad audience, and view the send history.</summary>
+    public static class Announcements
+    {
+        public const string Send = "Announcements.Send";
+        public const string View = "Announcements.View";
+    }
+
     // These baseline-role lists MUST be declared before `All`: static field
     // initializers run in textual order, and `BuildAll()` reads them — declaring
     // them after `All` would capture their null defaults (seeding every entry
@@ -1098,6 +1107,11 @@ public static class PermissionCatalog
         new(Vips.View, "Vips", "View", "View the VIP list", PublicRelations),
         new(Vips.Notify, "Vips", "Notify", "Notify VIPs", PublicRelations),
         new(Vips.Export, "Vips", "Export", "Export the VIP list", PublicRelations),
+
+        // Announcements desk — mass-notify is a high-privilege power, so it is
+        // AdminOnly (Administrator via the "*" wildcard); grant to a comms role later.
+        new(Announcements.Send, "Announcements", "Send", "Send notification broadcasts", AdminOnly),
+        new(Announcements.View, "Announcements", "View", "View broadcast send history", AdminOnly),
     ];
 
     // ── App operational permissions by MobileAppRole (D-563) ──────────────

@@ -17,7 +17,7 @@ public sealed record OperatorGateAssignment(
 public sealed class GateScanRequest
 {
     public string Qr { get; set; } = string.Empty;
-    public DateTimeOffset? ClientScannedAtUtc { get; set; }
+    public DateTimeOffset? ClientScannedAt { get; set; }
     public string? IdempotencyKey { get; set; }
     public ScanSource Source { get; set; } = ScanSource.MobileApp;
 
@@ -36,7 +36,7 @@ public sealed record GateScanResponse(
     long ScanId,
     ScanOutcome Outcome,
     ScanDirection Direction,
-    DateTimeOffset ScannedAtUtc,
+    DateTimeOffset ScannedAt,
     GateScanUserProfile? UserProfile,
     DenialReasonCode? DenialReasonCode,
     string? DenialMessage);
@@ -56,7 +56,7 @@ public sealed record OperatorDenialBucket(string Code, int Count);
 /// <summary>One row in the operator daily-report grid.</summary>
 public sealed record OperatorScanRow(
     long ScanId,
-    DateTimeOffset ScannedAtUtc,
+    DateTimeOffset ScannedAt,
     ScanOutcome Outcome,
     ScanDirection Direction,
     string? VisitorDisplayName,
@@ -99,10 +99,10 @@ public sealed class GateVisitorsListRequest
     public ScanOutcome? Outcome { get; set; }
 
     /// <summary>Optional ISO-8601 UTC lower bound (inclusive).</summary>
-    public DateTimeOffset? SinceUtc { get; set; }
+    public DateTimeOffset? Since { get; set; }
 
     /// <summary>Optional ISO-8601 UTC upper bound (exclusive).</summary>
-    public DateTimeOffset? UntilUtc { get; set; }
+    public DateTimeOffset? Until { get; set; }
 }
 
 /// <summary>D-160 — one item in <see cref="GateVisitorsListResponse"/>.
@@ -113,7 +113,7 @@ public sealed class GateVisitorsListRequest
 /// detail endpoint when an operator taps a row.</summary>
 public sealed record GateVisitorListItem(
     long ScanId,
-    DateTimeOffset ScannedAtUtc,
+    DateTimeOffset ScannedAt,
     ScanDirection Direction,
     ScanOutcome Outcome,
     Guid? UserProfileId,
@@ -124,10 +124,10 @@ public sealed record GateVisitorListItem(
 
 /// <summary>D-160 — response body for
 /// `POST /api/v1/gates/{gateId}/visitors/list`. The cursor is opaque
-/// to the client. <see cref="AsOfUtc"/> is the server clock at query
+/// to the client. <see cref="AsOf"/> is the server clock at query
 /// time — staff apps use it to detect clock skew and to display "last
 /// refreshed N seconds ago" without inferring from item timestamps.</summary>
 public sealed record GateVisitorsListResponse(
     IReadOnlyList<GateVisitorListItem> Items,
     string? NextCursor,
-    DateTimeOffset AsOfUtc);
+    DateTimeOffset AsOf);

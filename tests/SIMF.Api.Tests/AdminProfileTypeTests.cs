@@ -511,7 +511,7 @@ public sealed class AdminProfileTypeTests : IClassFixture<SimfApiFactory>
             .Where(e => e.EventType == "ProfileType.Updated"
                 && e.Detail != null
                 && e.Detail.Contains(before.Id.ToString()))
-            .OrderByDescending(e => e.TimestampUtc)
+            .OrderByDescending(e => e.Timestamp)
             .FirstOrDefaultAsync();
         Assert.NotNull(auditRow);
         Assert.NotNull(auditRow!.Detail);

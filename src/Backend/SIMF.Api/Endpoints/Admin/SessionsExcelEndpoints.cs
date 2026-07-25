@@ -18,7 +18,7 @@ namespace SIMF.Api.Endpoints.Admin;
 /// <see cref="IAdminSessionService.ListAllAsync"/> the list endpoint calls).
 /// <para>The two foreign keys are exported by a human-readable natural key so the
 /// workbook round-trips back through import: the Hall as its code and the optional
-/// Category as its English name. The <c>StartUtc</c> / <c>EndUtc</c> window writes
+/// Category as its English name. The <c>Start</c> / <c>End</c> window writes
 /// a round-trip-safe ISO-8601 UTC string, the lifecycle <c>Status</c> writes its
 /// enum name. The hall/category maps are built once per request inside
 /// <see cref="ListAsync"/> (the base reads <see cref="Columns"/> straight after),
@@ -56,8 +56,8 @@ public sealed class ExportSessionsEndpoint(
         new("Hall", row => _hallCodes.TryGetValue(row.HallId, out var code) ? code : string.Empty),
         new("Category", row => row.CategoryId is { } id
             && _categoryNames.TryGetValue(id, out var name) ? name : string.Empty),
-        new("StartUtc", row => row.StartUtc.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ss'Z'", CultureInfo.InvariantCulture)),
-        new("EndUtc", row => row.EndUtc.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ss'Z'", CultureInfo.InvariantCulture)),
+        new("Start", row => row.Start.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ss'Z'", CultureInfo.InvariantCulture)),
+        new("End", row => row.End.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ss'Z'", CultureInfo.InvariantCulture)),
         new("Capacity", row => row.Capacity),
         new("Status", row => row.Status.ToString()),
         new("IsActive", row => row.IsActive),
@@ -143,7 +143,7 @@ public sealed class ImportSessionsEndpoint(
     protected override string Permission => PermissionCatalog.Sessions.Import;
     protected override string SheetName => "Sessions";
     protected override IReadOnlyList<string> RequiredHeaders =>
-        ["Code", "Title", "TitleArabic", "Hall", "StartUtc", "EndUtc"];
+        ["Code", "Title", "TitleArabic", "Hall", "Start", "End"];
 
     protected override string? RowKey(GridImportRow row) =>
         row.Cells.TryGetValue("Code", out var code) ? code : null;
@@ -180,8 +180,8 @@ public sealed class ImportSessionsEndpoint(
         var categoryId = await ResolveCategoryAsync(
             row.Cells.GetValueOrDefault("Category", string.Empty), ct);
 
-        var start = ParseUtc(row.Cells.GetValueOrDefault("StartUtc", string.Empty), "StartUtc");
-        var end = ParseUtc(row.Cells.GetValueOrDefault("EndUtc", string.Empty), "EndUtc");
+        var start = ParseUtc(row.Cells.GetValueOrDefault("Start", string.Empty), "Start");
+        var end = ParseUtc(row.Cells.GetValueOrDefault("End", string.Empty), "End");
         if (end <= start)
         {
             throw new DataValidationException(
@@ -210,8 +210,8 @@ public sealed class ImportSessionsEndpoint(
             TitleArabic = titleArabic.Trim(),
             HallId = hallId,
             CategoryId = categoryId,
-            StartUtc = start,
-            EndUtc = end,
+            Start = start,
+            End = end,
             CapacityOverride = capacityOverride,
             // #4 — optional Speakers column (comma-separated speaker codes) so a
             // bulk-imported non-Event session can satisfy the min-1-speaker rule.

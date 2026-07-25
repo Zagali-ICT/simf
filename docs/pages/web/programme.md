@@ -31,7 +31,7 @@ the canonical live schedule that `/programme/sessions` and the Session-Detail
   Shared chrome via `LandingShell`; the hero is the reusable `LandingPageHero`
   (no breadcrumb) and carries the page's single `<h1>`.
 - **Day grouping (event-local)** - `BuildDays` groups the sessions by the
-  **event-local (+03:00 Riyadh) date** of `StartUtc` (`EventTime.Local(...).Date`,
+  **event-local (+03:00 Riyadh) date** of `Start` (`EventTime.Local(...).Date`,
   shared with Session Detail), ordered by day then start time. Each day gets a
   stable index id (the day strip + JS target it), the localized weekday + date
   number the pill shows, and its ordered sessions.

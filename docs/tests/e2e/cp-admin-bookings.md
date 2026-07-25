@@ -19,7 +19,7 @@
 > row-blocks never appear here (they carry a null attendee).
 >
 > **No-show release (the real lifecycle).** A reserved seat is a **provisional hold**
-> stamped with `ExpiresUtc = StartUtc − 3min`. The background
+> stamped with `Expires = Start − 3min`. The background
 > `ReservationNoShowReleaseWorker` runs once a minute and calls
 > `ISeatReservationService.ReleaseNoShowsAsync`: any active hold past that deadline
 > whose holder **never checked in** (no `HallAttendance` for the session) and that was
@@ -100,10 +100,10 @@ Feature: No-show seat release (#6/#17)
 
 Background:
   Given an approved visitor holds a confirmed seat A1 for a session, booked well ahead
-  And the reservation's ExpiresUtc = the session's StartUtc − 3 minutes
+  And the reservation's Expires = the session's Start − 3 minutes
 
 Scenario: An un-checked-in hold past its deadline is released and the holder notified
-  Given the current time is at or after the reservation's ExpiresUtc
+  Given the current time is at or after the reservation's Expires
   And the holder has NO HallAttendance (check-in) for that session
   When ReservationNoShowReleaseWorker runs its minute tick
     (ISeatReservationService.ReleaseNoShowsAsync)
@@ -114,8 +114,8 @@ Scenario: An un-checked-in hold past its deadline is released and the holder not
 Scenario: A checked-in holder, a future deadline, a walk-in and an admin block are all kept
   Given a second holder past the deadline HAS checked in (a HallAttendance row exists)
   And a third hold's deadline is still in the future
-  And a fourth hold was booked AT/AFTER the deadline (a walk-in — CreatedAt >= ExpiresUtc)
-  And an AdminReservedRow block (no attendee, no ExpiresUtc) exists
+  And a fourth hold was booked AT/AFTER the deadline (a walk-in — CreatedAt >= Expires)
+  And an AdminReservedRow block (no attendee, no Expires) exists
   When the worker runs
   Then none of those four are released — only the un-checked-in, booked-ahead no-show is
 ```

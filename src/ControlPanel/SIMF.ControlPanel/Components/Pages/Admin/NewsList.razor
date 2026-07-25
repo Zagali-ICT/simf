@@ -92,7 +92,7 @@
                     <SimfDataGridColumn TItem="AdminNewsSummary" Key="publishedat"
                                         Header="@L["Admin.News.Col.PublishedAt"]"
                                         Sortable="true">
-                        <CellTemplate>@context.PublishedAt.ToString("yyyy-MM-dd")</CellTemplate>
+                        <CellTemplate>@context.PublishedAt.ToString("dd-MM-yyyy")</CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminNewsSummary" Key="displayorder"
                                         Header="@L["Admin.News.Col.DisplayOrder"]"

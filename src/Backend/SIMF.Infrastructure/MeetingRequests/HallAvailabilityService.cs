@@ -43,8 +43,8 @@ internal sealed class HallAvailabilityService(
                 $"Slot length must be between {MinSlotMinutes} and {MaxSlotMinutes} minutes.",
                 $"يجب أن تتراوح مدة الفترة بين {MinSlotMinutes} و {MaxSlotMinutes} دقيقة.");
         }
-        if (request.EndUtc <= request.StartUtc
-            || (request.EndUtc - request.StartUtc).TotalMinutes < request.SlotMinutes)
+        if (request.End <= request.Start
+            || (request.End - request.Start).TotalMinutes < request.SlotMinutes)
         {
             throw new ApiException(ErrorCodes.ValidationFailed, 400,
                 "The window must end after it starts and fit at least one slot.",
@@ -56,8 +56,8 @@ internal sealed class HallAvailabilityService(
         {
             Id = Guid.NewGuid(),
             HallId = hallId,
-            StartUtc = request.StartUtc,
-            EndUtc = request.EndUtc,
+            Start = request.Start,
+            End = request.End,
             SlotMinutes = request.SlotMinutes,
             IsActive = true,
             CreatedAt = now,
@@ -85,9 +85,9 @@ internal sealed class HallAvailabilityService(
         Guid hallId, CancellationToken cancellationToken = default) =>
         await appDbContext.HallAvailabilityWindows.AsNoTracking()
             .Where(w => w.HallId == hallId && w.IsActive)
-            .OrderBy(w => w.StartUtc)
+            .OrderBy(w => w.Start)
             .Select(w => new AdminHallAvailabilityWindow(
-                w.Id, w.HallId, w.StartUtc, w.EndUtc, w.SlotMinutes, w.IsActive, w.CreatedAt))
+                w.Id, w.HallId, w.Start, w.End, w.SlotMinutes, w.IsActive, w.CreatedAt))
             .ToListAsync(cancellationToken);
 
     public async Task DeleteWindowAsync(
@@ -115,8 +115,8 @@ internal sealed class HallAvailabilityService(
     {
         var now = timeProvider.GetUtcNow();
         var windows = await appDbContext.HallAvailabilityWindows.AsNoTracking()
-            .Where(w => w.HallId == hallId && w.IsActive && w.EndUtc > now)
-            .OrderBy(w => w.StartUtc)
+            .Where(w => w.HallId == hallId && w.IsActive && w.End > now)
+            .OrderBy(w => w.Start)
             .ToListAsync(cancellationToken);
         if (windows.Count == 0)
         {
@@ -132,8 +132,8 @@ internal sealed class HallAvailabilityService(
         var busy = await appDbContext.SpeakerMeetingRequests.AsNoTracking()
             .Where(r => r.HallId == hallId
                 && MeetingRequestStatuses.SlotHolding.Contains(r.Status)
-                && r.SlotStartUtc != null && r.SlotEndUtc != null)
-            .Select(r => new { Start = r.SlotStartUtc!.Value, End = r.SlotEndUtc!.Value })
+                && r.SlotStart != null && r.SlotEnd != null)
+            .Select(r => new { Start = r.SlotStart!.Value, End = r.SlotEnd!.Value })
             .ToListAsync(cancellationToken);
 
         // Bi-Meeting rework — a DELEGATION meeting bound to this hall occupies the slot
@@ -143,8 +143,8 @@ internal sealed class HallAvailabilityService(
         var delegationBusy = await appDbContext.DelegationMeetingRequests.AsNoTracking()
             .Where(r => r.HallId == hallId
                 && MeetingRequestStatuses.SlotHolding.Contains(r.Status)
-                && r.SlotStartUtc != null && r.SlotEndUtc != null)
-            .Select(r => new { Start = r.SlotStartUtc!.Value, End = r.SlotEndUtc!.Value })
+                && r.SlotStart != null && r.SlotEnd != null)
+            .Select(r => new { Start = r.SlotStart!.Value, End = r.SlotEnd!.Value })
             .ToListAsync(cancellationToken);
         busy.AddRange(delegationBusy);
 
@@ -152,8 +152,8 @@ internal sealed class HallAvailabilityService(
         foreach (var w in windows)
         {
             var length = TimeSpan.FromMinutes(w.SlotMinutes);
-            var slotStart = w.StartUtc;
-            while (slotStart + length <= w.EndUtc)
+            var slotStart = w.Start;
+            while (slotStart + length <= w.End)
             {
                 var slotEnd = slotStart + length;
                 if (slotStart >= now
@@ -168,5 +168,5 @@ internal sealed class HallAvailabilityService(
     }
 
     private static AdminHallAvailabilityWindow ToDto(HallAvailabilityWindow w) =>
-        new(w.Id, w.HallId, w.StartUtc, w.EndUtc, w.SlotMinutes, w.IsActive, w.CreatedAt);
+        new(w.Id, w.HallId, w.Start, w.End, w.SlotMinutes, w.IsActive, w.CreatedAt);
 }

@@ -27,8 +27,8 @@ public sealed record PublicBanner(
     string BodyArabic,
     string? ImageUrl,
     string? LinkUrl,
-    DateTimeOffset StartUtc,
-    DateTimeOffset EndUtc,
+    DateTimeOffset Start,
+    DateTimeOffset End,
     int DisplayOrder);
 
 /// <summary>D-173 — list-of-banners response.</summary>

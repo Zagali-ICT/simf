@@ -42,8 +42,8 @@ internal sealed class MyAreaService(
 
         var (todayStart, todayEnd) = TodayWindow();
         var today = items
-            .Where(i => i.StartUtc >= todayStart && i.StartUtc < todayEnd)
-            .OrderBy(i => i.StartUtc)
+            .Where(i => i.Start >= todayStart && i.Start < todayEnd)
+            .OrderBy(i => i.Start)
             .ToList();
 
         return new MyAreaDashboard(identity, counters, today);
@@ -55,11 +55,11 @@ internal sealed class MyAreaService(
     {
         var items = await LoadScheduleAsync(userId, cancellationToken);
         return items
-            .OrderBy(i => i.StartUtc)
+            .OrderBy(i => i.Start)
             .Select(i => new MyAreaCalendarEvent(
                 i.MeetingId ?? i.SessionId ?? Guid.Empty,
-                i.StartUtc,
-                i.EndUtc,
+                i.Start,
+                i.End,
                 // Sessions are titled; meetings carry their subject (fall back to
                 // the parent session title for a speaker meeting with no subject).
                 i.Kind == KindSession || string.IsNullOrWhiteSpace(i.Subject)
@@ -109,8 +109,8 @@ internal sealed class MyAreaService(
                 r.SessionId,
                 r.Session!.Title,
                 r.Session.TitleArabic,
-                r.Session.StartUtc,
-                r.Session.EndUtc,
+                r.Session.Start,
+                r.Session.End,
                 r.Session.Status,
                 HallEn = r.Session.Hall!.Name,
                 HallAr = r.Session.Hall.NameArabic,
@@ -144,13 +144,13 @@ internal sealed class MyAreaService(
         var items = rows
             .GroupBy(r => r.SessionId)
             .Select(g => g.First())
-            .OrderBy(r => r.StartUtc)
+            .OrderBy(r => r.Start)
             .Select(r => new MyAreaSessionItem(
                 r.SessionId,
                 r.Title,
                 r.TitleArabic,
-                r.StartUtc,
-                r.EndUtc,
+                r.Start,
+                r.End,
                 r.HallEn,
                 r.HallAr,
                 r.CategoryEn,
@@ -220,8 +220,8 @@ internal sealed class MyAreaService(
                 && r.Session!.IsActive)
             .Select(r => new
             {
-                r.Session!.StartUtc,
-                r.Session.EndUtc,
+                r.Session!.Start,
+                r.Session.End,
                 r.Session.Title,
                 r.Session.TitleArabic,
                 HallEn = r.Session.Hall!.Name,
@@ -237,8 +237,8 @@ internal sealed class MyAreaService(
                 && p.BusinessMeeting!.Status == BusinessMeetingStatus.Confirmed)
             .Select(p => new
             {
-                p.BusinessMeeting!.StartUtc,
-                p.BusinessMeeting.EndUtc,
+                p.BusinessMeeting!.Start,
+                p.BusinessMeeting.End,
                 HallEn = p.BusinessMeeting.MeetingTable!.Hall!.Name,
                 HallAr = p.BusinessMeeting.MeetingTable.Hall.NameArabic,
                 p.BusinessMeeting.Notes,
@@ -250,11 +250,11 @@ internal sealed class MyAreaService(
             sessions.Count + businessMeetings.Count);
 
         items.AddRange(sessions.Select(s => new MyAreaScheduleItem(
-            KindSession, s.StartUtc, s.EndUtc, s.Title, s.TitleArabic,
+            KindSession, s.Start, s.End, s.Title, s.TitleArabic,
             s.HallEn, s.HallAr, null, s.Status.ToString(), s.SessionId, null)));
 
         items.AddRange(businessMeetings.Select(b => new MyAreaScheduleItem(
-            KindMeeting, b.StartUtc, b.EndUtc, string.Empty, string.Empty,
+            KindMeeting, b.Start, b.End, string.Empty, string.Empty,
             b.HallEn, b.HallAr, b.Notes, nameof(BusinessMeetingStatus.Confirmed),
             null, b.BusinessMeetingId)));
 

@@ -129,7 +129,7 @@
 
 @if (_bulkDeleteOpen)
 {
-    <SimfModal Open="true" Title="@L["Admin.Others.BulkDelete.Title"]" OnClose="@(() => _bulkDeleteOpen = false)">
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.Others.BulkDelete.Title"]" OnClose="@(() => _bulkDeleteOpen = false)">
         <ChildContent>
             <p>@string.Format(L["Admin.Others.BulkDelete.Confirm"], _bulkDeleteTargets.Count)</p>
             <SimfTextarea Label="@L["Admin.Users.BulkDelete.Reason"]"
@@ -154,7 +154,7 @@
 
 @if (_duplicateOpen)
 {
-    <SimfModal Open="true" Title="@L["Admin.Others.Duplicate.Title"]" OnClose="@(() => _duplicateOpen = false)">
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.Others.Duplicate.Title"]" OnClose="@(() => _duplicateOpen = false)">
         <ChildContent>
             <p>@string.Format(L["Admin.Users.Duplicate.Confirm"], _duplicateSource?.Email)</p>
             <SimfTextField Label="@L["Admin.Users.Duplicate.NewEmail"]"

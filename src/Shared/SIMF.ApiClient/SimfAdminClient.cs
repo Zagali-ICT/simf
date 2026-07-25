@@ -1665,6 +1665,39 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
+    // -- Notification broadcasts (Control Panel "Announcements" desk) --------
+
+    public Task<ApiCallResult<AdminBroadcastResult>> CreateBroadcastAsync(
+        AdminCreateBroadcastRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminBroadcastResult>(
+            HttpMethod.Post, "notifications/broadcast",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminBroadcastEstimateResult>> EstimateBroadcastAsync(
+        AdminBroadcastEstimateRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminBroadcastEstimateResult>(
+            HttpMethod.Post, "notifications/broadcast/estimate",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<GridPage<AdminBroadcastSummary>>> ListBroadcastsAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminBroadcastSummary>>(
+            HttpMethod.Post, "notifications/broadcasts/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminBroadcastSummary>> GetBroadcastAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminBroadcastSummary>(
+            HttpMethod.Get, $"notifications/broadcasts/{id}", content: null,
+            accessToken, cancellationToken);
+
     // -- D-173 (gap doc G8) — Dynamic content CMS ---------------------------
 
     public Task<ApiCallResult<GridPage<AdminContentBlockSummary>>> ListContentBlocksAsync(
@@ -2167,6 +2200,30 @@ public sealed class SimfAdminClient(HttpClient http)
         SendAsync<OrganizationProfileResponse>(
             HttpMethod.Put, "organization-profile",
             JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>D-768 — upload (replace) the hero background video. STREAMED (not a
+    /// byte[]) so a large video is not buffered whole in the CP — the caller's stream
+    /// forwards straight to the API. Gated by OrganizationProfile.Manage.</summary>
+    public Task<ApiCallResult<OrganizationProfileResponse>> UploadOrganizationHeroVideoAsync(
+        Stream content, string contentType, string fileName,
+        string accessToken, CancellationToken cancellationToken = default)
+    {
+        var multipart = new MultipartFormDataContent();
+        var fileContent = new StreamContent(content);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+        multipart.Add(fileContent, "file", fileName);
+        return SendAsync<OrganizationProfileResponse>(
+            HttpMethod.Post, "organization-profile/hero-video",
+            multipart, accessToken, cancellationToken);
+    }
+
+    /// <summary>D-768 — remove the uploaded hero background video (reverts the hero to
+    /// the banner image). Gated by OrganizationProfile.Manage.</summary>
+    public Task<ApiCallResult<OrganizationProfileResponse>> DeleteOrganizationHeroVideoAsync(
+        string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<OrganizationProfileResponse>(
+            HttpMethod.Delete, "organization-profile/hero-video", content: null,
             accessToken, cancellationToken);
 
     private Task<ApiCallResult<T>> SendAsync<T>(

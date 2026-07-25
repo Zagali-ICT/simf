@@ -215,21 +215,31 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task A_second_pending_request_for_the_same_speaker_is_rejected()
+    public async Task A_second_pending_request_for_the_same_speaker_moves_the_existing_one()
     {
-        // A1 — one open request per (requester, speaker): the second submit while a
-        // Pending one exists is a 409 duplicate.
+        // R8 (D-767) — one open request per (requester, speaker); a repeat submit while a
+        // Pending one exists MOVES (updates) it instead of a 409 duplicate.
         var speaker = await SeedSpeakerAsync(allowsMeetings: true);
         var visitor = await SignInApprovedVisitorAsync();
-        await SubmitAsync(speaker.Id, "Visitor", "First topic", visitor);
+
+        var first = await PostAuthAsync(
+            $"/api/v1/app/speakers/{speaker.Id}/meeting-requests",
+            new SubmitSpeakerMeetingRequestRequest { RequesterName = "Visitor", Subject = "First topic" },
+            visitor);
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        var firstBody = (await first.Content
+            .ReadFromJsonAsync<ApiResult<SpeakerMeetingRequestSubmitted>>())!;
 
         var second = await PostAuthAsync(
             $"/api/v1/app/speakers/{speaker.Id}/meeting-requests",
             new SubmitSpeakerMeetingRequestRequest { RequesterName = "Visitor", Subject = "Second topic" },
             visitor);
-        Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
-        var body = (await second.Content.ReadFromJsonAsync<ApiResult<object>>())!;
-        Assert.Equal(ErrorCodes.AppRequestDuplicatePending, body.Error!.Code);
+        Assert.Equal(HttpStatusCode.OK, second.StatusCode);
+        var secondBody = (await second.Content
+            .ReadFromJsonAsync<ApiResult<SpeakerMeetingRequestSubmitted>>())!;
+
+        // Same row (moved in place), not a duplicate.
+        Assert.Equal(firstBody.Data!.Id, secondBody.Data!.Id);
     }
 
     [Fact]
@@ -313,7 +323,7 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
         var recorded = await db.OperationLog
             .Where(e => e.EventType == "Admin.SpeakerMeetingRequestsListed"
                         && e.ActorUserId == adminId)
-            .OrderByDescending(e => e.TimestampUtc)
+            .OrderByDescending(e => e.Timestamp)
             .FirstOrDefaultAsync();
         Assert.NotNull(recorded);
         Assert.Equal(AuditOutcome.Success, recorded!.Outcome);
@@ -340,16 +350,16 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
             {
                 Status = MeetingRequestStatus.Accepted,
                 HallId = hallId,
-                SlotStartUtc = slot.StartUtc,
-                SlotEndUtc = slot.EndUtc,
+                SlotStart = slot.Start,
+                SlotEnd = slot.End,
             }, admin);
         Assert.Equal(HttpStatusCode.OK, respond.StatusCode);
         var detail = (await respond.Content
             .ReadFromJsonAsync<ApiResult<AdminSpeakerMeetingRequestDetail>>())!.Data!;
         Assert.Equal(MeetingRequestStatus.AwaitingSpeaker, detail.Status);
         Assert.Equal(hallId, detail.HallId);
-        Assert.Equal(slot.StartUtc, detail.SlotStartUtc);
-        Assert.Equal(slot.EndUtc, detail.SlotEndUtc);
+        Assert.Equal(slot.Start, detail.SlotStart);
+        Assert.Equal(slot.End, detail.SlotEnd);
     }
 
     [Fact]
@@ -391,7 +401,7 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
             new RespondToSpeakerMeetingRequestRequest
             {
                 Status = MeetingRequestStatus.Accepted,
-                HallId = hallId, SlotStartUtc = slot.StartUtc, SlotEndUtc = slot.EndUtc,
+                HallId = hallId, SlotStart = slot.Start, SlotEnd = slot.End,
             }, admin);
         Assert.Equal(HttpStatusCode.OK, bind1.StatusCode);
 
@@ -403,7 +413,7 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
             new RespondToSpeakerMeetingRequestRequest
             {
                 Status = MeetingRequestStatus.Accepted,
-                HallId = hallId, SlotStartUtc = slot.StartUtc, SlotEndUtc = slot.EndUtc,
+                HallId = hallId, SlotStart = slot.Start, SlotEnd = slot.End,
             }, admin);
         Assert.Equal(HttpStatusCode.Conflict, bind2.StatusCode);
         var body = (await bind2.Content.ReadFromJsonAsync<ApiResult<object>>())!;
@@ -415,7 +425,7 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
     {
         // D-716 regression — the legacy accept-WITHOUT-hall re-check must see a
         // hall-bound AwaitingSpeaker meeting for the same speaker (it occupies the
-        // speaker's calendar via the same SlotStartUtc/EndUtc columns), not only
+        // speaker's calendar via the same SlotStart/End columns), not only
         // Accepted rows. Before the fix this accept slipped through and double-booked
         // the speaker.
         var speaker = await SeedSpeakerAsync(allowsMeetings: true);
@@ -445,7 +455,7 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
     {
         // R-1 FIX #22 regression — the speaker double-book re-check must reject an
         // overlap even when the two slots START at DIFFERENT times. The frozen
-        // (SpeakerId, SlotStartUtc) unique index can only catch an equal-start
+        // (SpeakerId, SlotStart) unique index can only catch an equal-start
         // collision, so for two staggered overlapping windows (e.g. 10:00-11:00 vs
         // 10:30-11:30) the half-open interval re-check in the accept path
         // (SpeakerHasOverlappingMeetingAsync) is the sole backstop. Both rows carry
@@ -461,7 +471,7 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
             speaker.Id, MeetingRequestStatus.Accepted,
             baseStart, baseStart.AddHours(1));
         // R2 is a Pending request for a DIFFERENT start (10:30-11:30) that overlaps
-        // R1 by 30 minutes — different SlotStartUtc, so the DB index cannot catch it.
+        // R1 by 30 minutes — different SlotStart, so the DB index cannot catch it.
         var r2 = await SeedSpeakerRequestAsync(
             speaker.Id, MeetingRequestStatus.Pending,
             baseStart.AddMinutes(30), baseStart.AddMinutes(90));
@@ -482,7 +492,7 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
         // speaker whose slots OVERLAP but START at DIFFERENT times (10:00-11:00 vs
         // 10:30-11:30) are accepted at the same instant. The sequential re-check cannot
         // catch this (both rows are still Pending when each check runs) and the frozen
-        // (SpeakerId, SlotStartUtc) unique index cannot catch a different-start overlap,
+        // (SpeakerId, SlotStart) unique index cannot catch a different-start overlap,
         // so the Serializable accept transaction is the sole arbiter: exactly one accept
         // must commit (200) and the other must lose the race (409). Before the fix both
         // slipped through and double-booked the speaker (two 200s).
@@ -546,7 +556,7 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
             new RespondToSpeakerMeetingRequestRequest
             {
                 Status = MeetingRequestStatus.Accepted,
-                HallId = hallId, SlotStartUtc = slot.StartUtc, SlotEndUtc = slot.EndUtc,
+                HallId = hallId, SlotStart = slot.Start, SlotEnd = slot.End,
             }, admin);
         Assert.Equal(HttpStatusCode.OK, bind.StatusCode);
 
@@ -563,7 +573,7 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
             .ToListAsync();
         // The original pair is invalidated (UsedAt stamped); a fresh unused pair minted.
         Assert.Equal(4, tokens.Count);
-        Assert.Equal(2, tokens.Count(t => t.UsedAt == null && t.ExpiresUtc > now));
+        Assert.Equal(2, tokens.Count(t => t.UsedAt == null && t.Expires > now));
         Assert.Equal(2, tokens.Count(t => t.UsedAt != null));
 
         var req = await db.SpeakerMeetingRequests.SingleAsync(r => r.Id == created.Id);
@@ -640,7 +650,7 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
 
         // The requester already holds an Accepted meeting with speaker1 on the same slot.
         await SeedSpeakerRequestForUserAsync(
-            speaker1.Id, requesterId, MeetingRequestStatus.Accepted, slot.StartUtc, slot.EndUtc);
+            speaker1.Id, requesterId, MeetingRequestStatus.Accepted, slot.Start, slot.End);
         // A second Pending request with speaker2 — accepted WITH the same hall slot.
         var second = await SeedSpeakerRequestForUserAsync(
             speaker2.Id, requesterId, MeetingRequestStatus.Pending, null, null);
@@ -650,7 +660,7 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
             new RespondToSpeakerMeetingRequestRequest
             {
                 Status = MeetingRequestStatus.Accepted,
-                HallId = hallId, SlotStartUtc = slot.StartUtc, SlotEndUtc = slot.EndUtc,
+                HallId = hallId, SlotStart = slot.Start, SlotEnd = slot.End,
             }, admin);
         Assert.Equal(HttpStatusCode.Conflict, respond.StatusCode);
         var body = (await respond.Content.ReadFromJsonAsync<ApiResult<object>>())!;
@@ -743,7 +753,7 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
             SpeakerId = speakerId,
             RequestedByUserId = requesterUserId,
             RequesterName = "Seed", Subject = "Seed",
-            SlotStartUtc = slotStart, SlotEndUtc = slotEnd,
+            SlotStart = slotStart, SlotEnd = slotEnd,
             Status = status,
             CreatedAt = DateTimeOffset.UtcNow,
             RespondedAt = status == MeetingRequestStatus.Pending ? null : DateTimeOffset.UtcNow,
@@ -767,7 +777,7 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
             SpeakerId = speakerId,
             RequestedByUserId = Guid.NewGuid(),
             RequesterName = "Seed", Subject = "Seed",
-            SlotStartUtc = slotStart, SlotEndUtc = slotEnd,
+            SlotStart = slotStart, SlotEnd = slotEnd,
             Status = status,
             CreatedAt = DateTimeOffset.UtcNow,
             RespondedAt = status == MeetingRequestStatus.Pending ? null : DateTimeOffset.UtcNow,
@@ -805,7 +815,7 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
             $"/api/v1/admin/halls/{hallId}/availability-windows",
             new CreateHallAvailabilityWindowRequest
             {
-                StartUtc = HallWindowStart, EndUtc = HallWindowStart.AddMinutes(60), SlotMinutes = 30,
+                Start = HallWindowStart, End = HallWindowStart.AddMinutes(60), SlotMinutes = 30,
             }, admin);
         Assert.Equal(HttpStatusCode.OK, create.StatusCode);
         var slots = await GetAuthAsync(

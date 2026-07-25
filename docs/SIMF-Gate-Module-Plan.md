@@ -64,7 +64,7 @@ The decisions below are final for this increment. Reopening any of them is a cha
 | L-7 | `GateScan` primary key is `bigint IDENTITY`. All other Gate-module tables keep the SIMF Guid-PK convention. Justification: GateScan is the highest-insert table (~4M rows/day peak) and random-Guid clustering causes 30–80% fragmentation. |
 | L-8 | Scan responses are always HTTP 200 when a scan is recorded (allowed or denied). 4xx is reserved for malformed / unauthorised / not-found / rate-limited / idempotency-key-conflict cases. |
 | L-9 | `Idempotency-Key` header (UUID/ULID, ≤64 chars) is part of the scan contract from day one. Server stores `(key → original response)` in `ScanIdempotency` for 24h. Same key + same payload → original response + `X-Idempotent-Replay: true`. Same key + different payload → `409 IDEMPOTENCY_KEY_CONFLICT`. |
-| L-10 | Server clock only for `ScannedAtUtc`. A device may pass `clientScannedAtUtc` for offline-replay scenarios; it is stored separately and explicitly marked client-asserted. |
+| L-10 | Server clock only for `ScannedAt`. A device may pass `clientScannedAt` for offline-replay scenarios; it is stored separately and explicitly marked client-asserted. |
 | L-11 | A new `GateOperator` SimfRole is seeded into the existing Identity database. No Identity-context migration. Permissions: `Gates.Operate`, `Gates.ViewOwnReports`. |
 | L-12 | Operator-to-gate is a many-to-many assignment (`GateAssignment`), not a single FK on `SimfUser`. |
 | L-13 | Operator with one active assignment auto-selects the gate. Operator with multiple active assignments picks once per session ("Switch gate" link to change). Administrators always get the free picker. |
@@ -90,7 +90,7 @@ The decisions below are final for this increment. Reopening any of them is a cha
 A 5-reviewer panel (architecture, backend, security, database, technical writer) reviewed the original simplified plan. The convergent findings are reflected in §3. The split votes and the position taken are recorded as L-7 (GateScan PK), L-28 (sync reports), L-25 (rowversion only on Gate), L-22 (Simulator dev-only).
 
 Findings not adopted in this increment (with rationale):
-- **Materialised `VisitorPresence` table** (DB reviewer) — the filtered index `(UserProfileId, ScannedAtUtc DESC) WHERE Outcome = Allowed` is expected to be sufficient at SIMF scale. Re-evaluate if "currently inside" reads slow under live load.
+- **Materialised `VisitorPresence` table** (DB reviewer) — the filtered index `(UserProfileId, ScannedAt DESC) WHERE Outcome = Allowed` is expected to be sufficient at SIMF scale. Re-evaluate if "currently inside" reads slow under live load.
 - **Restricted DB role split** (DB reviewer) — deployment-time concern, deferred to SIMF-OPS-001.
 - **Per-operator anomaly dashboard** (Security) — beyond the failure-rate circuit, anomaly detection waits for post-event review.
 - **Async XLSX job** (Backend) — see L-28.
@@ -104,17 +104,17 @@ Findings not adopted in this increment (with rationale):
 | `Gate` | `Id` (Guid PK), `Code` (string, unique), `NameEn`, `NameAr`, `DirectionMode` (enum int: 0=In, 1=Out, 2=Both), `IsActive` (bit), `RowVersion` (rowversion), `CreatedAt`, `CreatedBy`, `UpdatedAt`, `UpdatedBy` | One row per physical gate. |
 | `GateProfileTypeAllow` | `GateId` (FK Guid), `ProfileTypeId` (Guid, cross-context logical FK) — composite PK | Empty list = all profile types allowed. |
 | `GateAssignment` | `GateId` (FK Guid), `UserId` (Guid, cross-context logical FK to `AspNetUsers`) — composite PK, `IsActive` (bit), audit cols | Operator-to-gate; supports rotation. |
-| `GateScan` | `Id` (`bigint IDENTITY` PK), `GateId` (FK), `UserProfileId` (Guid, nullable, cross-context logical FK), `QrIdAtScan` (string, 12 chars), `Direction` (enum int), `Outcome` (enum int), `DenialReasonCode` (enum int, nullable), `ScannedAtUtc` (DateTimeOffset), `ClientScannedAtUtc` (DateTimeOffset, nullable), `ScannedByUserId` (Guid, cross-context logical FK), `Source` (enum int), `CorrelationId` (string, ≤64, nullable), `IdempotencyKey` (string, ≤64, nullable), `IpAddress` (string, ≤45, nullable), `UserAgent` (string, ≤512, nullable) | Append-only. INSTEAD-OF UPDATE/DELETE trigger refuses mutation. Opts out of RowAudit. |
+| `GateScan` | `Id` (`bigint IDENTITY` PK), `GateId` (FK), `UserProfileId` (Guid, nullable, cross-context logical FK), `QrIdAtScan` (string, 12 chars), `Direction` (enum int), `Outcome` (enum int), `DenialReasonCode` (enum int, nullable), `ScannedAt` (DateTimeOffset), `ClientScannedAt` (DateTimeOffset, nullable), `ScannedByUserId` (Guid, cross-context logical FK), `Source` (enum int), `CorrelationId` (string, ≤64, nullable), `IdempotencyKey` (string, ≤64, nullable), `IpAddress` (string, ≤45, nullable), `UserAgent` (string, ≤512, nullable) | Append-only. INSTEAD-OF UPDATE/DELETE trigger refuses mutation. Opts out of RowAudit. |
 | `ScanIdempotency` | `Key` (string, ≤64, PK), `OperatorUserId` (Guid), `GateId` (FK), `RequestHash` (varbinary(32)), `ResponseBlob` (varbinary(max)), `ExpiresAt` (DateTimeOffset) | 24h TTL; daily cleanup job. |
 
 ### 5.2 Indexes on `GateScan` (final)
 
 ```
 PK CLUSTERED (Id)                                                                -- bigint IDENTITY
-NCI (GateId, UserProfileId, Direction, ScannedAtUtc DESC) INCLUDE (Outcome)      -- duplicate-absorption seek
-NCI (GateId, UserProfileId, ScannedAtUtc DESC) INCLUDE (Direction, Outcome)      -- Both-mode direction inference
-NCI (UserProfileId, ScannedAtUtc DESC) INCLUDE (GateId, Direction, Outcome)      -- per-visitor report
-FILTERED NCI (UserProfileId, ScannedAtUtc DESC) WHERE Outcome = 0 /*Allowed*/    -- "currently inside"
+NCI (GateId, UserProfileId, Direction, ScannedAt DESC) INCLUDE (Outcome)      -- duplicate-absorption seek
+NCI (GateId, UserProfileId, ScannedAt DESC) INCLUDE (Direction, Outcome)      -- Both-mode direction inference
+NCI (UserProfileId, ScannedAt DESC) INCLUDE (GateId, Direction, Outcome)      -- per-visitor report
+FILTERED NCI (UserProfileId, ScannedAt DESC) WHERE Outcome = 0 /*Allowed*/    -- "currently inside"
 UNIQUE FILTERED NCI (IdempotencyKey) WHERE IdempotencyKey IS NOT NULL            -- idempotency replay
 Fill factor 90 on every NCI
 ```
@@ -149,7 +149,7 @@ Fill factor 90 on every NCI
 | Method | Path | Purpose |
 |--------|------|---------|
 | GET | `/gates/my-assignments` | The caller's active gate assignments. |
-| POST | `/gates/{gateId}/scans` | Record a scan. Body: `{ qrId, direction?, idempotencyKey?, clientScannedAtUtc?, source? }`. Header `Idempotency-Key` accepted (wins over body). |
+| POST | `/gates/{gateId}/scans` | Record a scan. Body: `{ qrId, direction?, idempotencyKey?, clientScannedAt?, source? }`. Header `Idempotency-Key` accepted (wins over body). |
 | GET | `/gates/my-reports/today` | "My gate today" — operator-scoped report (admins also accepted, scoped to their own user id). |
 
 All endpoints inherit SIMF-API-001 conventions: `ApiResult<T>` envelope, bilingual error messages via `Accept-Language`, standard headers (`X-App-Key`, `X-Device-Type`, `Authorization`, `X-Anti-Forgery` for state-changing requests on CP cookie surfaces).
@@ -172,7 +172,7 @@ Every `POST /gates/{gateId}/scans` runs these steps in this order. The first den
     - `In` / `Out` mode: caller's requested direction must match. If not → scan-recorded denial `DIRECTION_INVALID_FOR_MODE`.
 11. **Profile-type allow-list**: load allow-rows for this gate, filter by `ProfileType.IsActive`. If the unfiltered list is empty → pass. If non-empty and the filtered list does not contain the visitor's `ProfileTypeId` (including the case where filtering produced an empty list) → scan-recorded denial `PROFILE_TYPE_NOT_ALLOWED`.
 12. **Duplicate absorption**: 5s window on `(GateId, UserProfileId)` (without Direction, to handle `Both`-mode races). If a prior allowed scan is within the window, return its scan id without inserting.
-13. **INSERT** `GateScan` (with IP / UA / CorrelationId / IdempotencyKey / ClientScannedAtUtc if provided). On a denial outcome, also INSERT an `OperationLog` row (`EventType = GateScanDenied`, `DenialReasonCode`, `CorrelationId`).
+13. **INSERT** `GateScan` (with IP / UA / CorrelationId / IdempotencyKey / ClientScannedAt if provided). On a denial outcome, also INSERT an `OperationLog` row (`EventType = GateScanDenied`, `DenialReasonCode`, `CorrelationId`).
 
 *(Future plug-in point 9.5)* — **Time-window check** (next increment). If the gate has any active time windows, "now" must fall within at least one. Empty list = always open.
 
@@ -239,16 +239,16 @@ The engine plugs the check in at step 9.5 (post profile-type, pre duplicate-abso
 ### 11.4 Offline scan queueing
 
 The API contract supports offline operation from day one even though no offline client exists yet:
-- `clientScannedAtUtc` accepted on the request (server stores it separately from `ScannedAtUtc`).
+- `clientScannedAt` accepted on the request (server stores it separately from `ScannedAt`).
 - `idempotencyKey` accepted (the device generates one per logical scan and re-uses it on retry).
-- `source` accepted (the device sends `MobileApp`; the server clock-stamps `ScannedAtUtc` on receive).
+- `source` accepted (the device sends `MobileApp`; the server clock-stamps `ScannedAt` on receive).
 
 Device-side queue behaviour (to be built with the Flutter app):
 - Online: post immediately.
-- Offline: write to a local SQLite queue (one row per scan) with `clientScannedAtUtc` and `idempotencyKey`. Run a permissive local constraint check (active gate config cached on the device, last-known profile types). Show the operator a yellow "Offline" badge.
+- Offline: write to a local SQLite queue (one row per scan) with `clientScannedAt` and `idempotencyKey`. Run a permissive local constraint check (active gate config cached on the device, last-known profile types). Show the operator a yellow "Offline" badge.
 - Network resumes: drain the queue oldest-first, posting each scan with the same `idempotencyKey`. If the server returns a different outcome than the local check (a "late denial"), display a yellow alert so the operator can act.
 
-Trust model: client clock is recorded but never authoritative. `ScannedAtUtc` is always server time. Idempotency makes drained queues replay-safe.
+Trust model: client clock is recorded but never authoritative. `ScannedAt` is always server time. Idempotency makes drained queues replay-safe.
 
 ### 11.5 Device identity (kiosks / turnstiles)
 

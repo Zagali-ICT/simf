@@ -310,7 +310,7 @@ Moderator desk` (D-212):
 | **Stage 3 — per-session Moderator desk** | app desk `GET /app/sessions/{id}/questions/moderate` + hide/push/reorder (`SessionQuestionEndpoints.cs:100/132/164/196`), gated by `SessionModeratorAuth` = Administrator **or** a `SessionModerator` grant | **Built** (D-169). Distinct from `MobileAppRole.Moderator` (per `SessionQuestion.cs:19-23`). |
 | **Moderator-only home** (mode A entry) | `home_screen.dart:66` → `AppRole.moderator` gets `ModeratorHome` (`operational_homes.dart:52-70`, → sessions list → detail → Q&A desk); route #104 = `{moderator}` **exclusive** | **Built** (D-519) — the "home menu filtered by moderator only" is already satisfied. |
 | **Attendee ask screen** | `send_question_screen.dart` / `send_question_content.dart`; the session-detail `ask_host_card.dart` (Speaker vs Host recipient, `SessionQuestionRecipient`) | **Built.** Serves both phases (the phase is backend-derived). |
-| **Question window + arrival gate** | open **5 min before** `StartUtc`, **close at** `EndUtc` (D-271); submission gated on hall-arrival (`HallAttendance`, D-242 geofence + `IsAtVenue` fallback) | **Built.** |
+| **Question window + arrival gate** | open **5 min before** `Start`, **close at** `End` (D-271); submission gated on hall-arrival (`HallAttendance`, D-242 geofence + `IsAtVenue` fallback) | **Built.** |
 | **Page docs** | `Page_026` (questions), `Page_025` (live) authored (D-271) | **Built.** |
 
 ### B.3 Mapping the owner's two modes onto the built pipeline
@@ -318,7 +318,7 @@ Moderator desk` (D-212):
 | Owner's mode | Built reality |
 |--------------|---------------|
 | **(A) live in-hall, moderator-only home** | The attendee asks from the live/session screen (Phase=`Live`, arrival-gated); the **moderator** runs the desk from the moderator-only home (`ModeratorHome`). Already built. |
-| **(B) pre-question, AI+team+moderator** | The **same** ask screen submitted **before** `StartUtc` → Phase=`Pre`; it flows through the identical 3-stage pipeline (AI→Committee→Moderator). Already built — the phase is derived, so there is no separate "pre-question" screen today. |
+| **(B) pre-question, AI+team+moderator** | The **same** ask screen submitted **before** `Start` → Phase=`Pre`; it flows through the identical 3-stage pipeline (AI→Committee→Moderator). Already built — the phase is derived, so there is no separate "pre-question" screen today. |
 
 ### B.4 Deltas — ✅ BUILT (D-714)
 
@@ -330,7 +330,7 @@ Moderator desk` (D-212):
   offline via a fake `IAiService` (`QuestionAiFilterTests`).
 - **GAP-2 (Mode-B reachability) ✅.** The session-detail ask card now reads the
   distinct pre-session label ("اطرح سؤالاً قبل الجلسة") while the session is upcoming
-  (`now < startUtc`) and "اسأل المحاور" once live, so the two modes are visibly
+  (`now < start`) and "اسأل المحاور" once live, so the two modes are visibly
   separate; the phase + window stay backend-derived (D-271). App-only.
 - **GAP-3 (verify not-broken).** The owner reported "ask speaker not working." Every
   layer above is built, so the likely causes are an **older build** (cf. D-702 item
@@ -374,7 +374,7 @@ flipped from DRAFT to built with an As-built note.
 > the built code — a `Gate` is **venue-level and sessionless** (`GateOperatorService`
 > writes only a `GateScan`), and `SessionAttendance` is a read-only CP aggregate
 > over `HallAttendance`, not an entity. The real per-session "leave" signal is
-> `HallAttendanceService.RecordDepartureAsync` (closes `HallAttendance.LeaveUtc`
+> `HallAttendanceService.RecordDepartureAsync` (closes `HallAttendance.Leave`
 > for a known (session,user)). Owner (2026-07-09) chose the **hall-departure
 > hook**: departure now fires a `SessionRatingRequest` for that exact session,
 > deduped one-per-(user,session) via `NotificationRequest.DeduplicateByRelatedEntity`
@@ -418,12 +418,12 @@ flipped from DRAFT to built with an As-built note.
 | **Seeded rating types** | `App`, `Session` (PerSession), `Day` (PerDay), `Event` + `Exhibition` (Global) — `RatingSeeder`; resolved by `RatingFormService.ResolveTargetAsync` | **Built** (D-679). |
 | **Dynamic rating page** | app `/rate?code={code}&targetId={id}` — code-agnostic; proven for Event/Exhibition/Day | **Built** (D-680). |
 | **Notification + deep-link** | kinds `DayRatingRequest`/`EventRatingRequest`/`AppRatingRequest`/`ExhibitionRatingRequest` (46-49) + `SessionRatingRequest`; `clickUrl` → `/rate?code=…` | **Built** (D-677/D-678). |
-| **Trigger — end-of-day (per checked-in attendee)** | `ProgrammeRatingPromptWorker` end-of-day scan → `DayRatingRequest` to everyone with a Check-In gate scan that event-local day; per-day dedup (`ProgrammeDay.RatingPromptSentUtc`) | **Built** (D-679). |
+| **Trigger — end-of-day (per checked-in attendee)** | `ProgrammeRatingPromptWorker` end-of-day scan → `DayRatingRequest` to everyone with a Check-In gate scan that event-local day; per-day dedup (`ProgrammeDay.RatingPromptSent`) | **Built** (D-679). |
 | **Trigger — end-of-programme (Event+Exhibition+App)** | `ProgrammeRatingPromptWorker` end-of-programme trio to every ever-checked-in attendee; once-only marker (`SystemSettings` `ProgramEndRatingSentUtc`) | **Built** (D-679). |
-| **Trigger — end-of-session (clock)** | `SessionRatingPromptWorker` — sessions whose `EndUtc` is within a 6h back-fill → `SessionRatingRequest` to every attendee with an active seat; dedup `Session.RatingPromptSentUtc` | **Built.** |
+| **Trigger — end-of-session (clock)** | `SessionRatingPromptWorker` — sessions whose `End` is within a 6h back-fill → `SessionRatingRequest` to every attendee with an active seat; dedup `Session.RatingPromptSent` | **Built.** |
 | **Trigger — session view-leave (app)** | `SessionRatePromptTracker` — `session_detail_screen` fires `/rate?code=Session&targetId={id}` once per session on a real leave, only for an approved attendee of an **ended** session | **Built** (D-690). |
 | **Venue gate scan (In/Out)** | `GateScan.Direction` (`ScanDirection`), `Gate.DirectionMode{In,Out,Both}` — a `Gate` is a **venue-level** access point with **no hall/session link** (`GateOperatorService` writes only a `GateScan`). | **Built** — but sessionless, so it is **not** the rate-on-checkout hook (corrected from the DRAFT). |
-| **Hall/session attendance close** | `HallAttendanceService.RecordDepartureAsync` sets `HallAttendance.LeaveUtc` for a known (session,user), via `POST /app/sessions/{id}/departure`; `SessionAttendance` is the read-only CP aggregate over these rows. | **Built** — this is the real per-session "leave" signal → **GAP-A** now hooks it (D-713). |
+| **Hall/session attendance close** | `HallAttendanceService.RecordDepartureAsync` sets `HallAttendance.Leave` for a known (session,user), via `POST /app/sessions/{id}/departure`; `SessionAttendance` is the read-only CP aggregate over these rows. | **Built** — this is the real per-session "leave" signal → **GAP-A** now hooks it (D-713). |
 | **Live / YouTube screen** | `live_broadcast_screen.dart` (`youtube_player_iframe`, D-349) | **Built + rate trigger on leave (D-712 GAP-B).** |
 
 ### C.3 The owner's 4 triggers → built reality
@@ -438,7 +438,7 @@ flipped from DRAFT to built with an As-built note.
 ### C.4 Deltas (the new work) — ✅ ALL BUILT
 
 - **GAP-A — rate-on-hall-departure ✅ (D-713).** When an attendee's departure
-  closes their `HallAttendance` (`RecordDepartureAsync` sets `LeaveUtc`),
+  closes their `HallAttendance` (`RecordDepartureAsync` sets `Leave`),
   `HallAttendanceService` fires the **session rating** for that exact (session,user)
   — an in-app `SessionRatingRequest` deep-linking to `/rate?code=Session&targetId={id}`.
   **OI-C1 dissolved:** the departure already carries the exact `sessionId`, so no
@@ -458,7 +458,7 @@ flipped from DRAFT to built with an As-built note.
 - **"Watched at" header ✅ (D-713).** The rating screen shows a per-session context
   chip — "شاهدت «{session}» · {date}" (`rate_screen._WatchedHeader` + `rateWatchedAt`).
   **OI-C3:** the per-rating header (not a watch-history list). Sourced from 3
-  **appended** `RatingFormView` fields (`TargetName`/`TargetNameArabic`/`TargetStartUtc`,
+  **appended** `RatingFormView` fields (`TargetName`/`TargetNameArabic`/`TargetStart`,
   the session's own title + start), so no per-user watch timestamp is plumbed.
 
 ### C.5 Open items — OWNER DECISIONS

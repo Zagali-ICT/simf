@@ -30,14 +30,14 @@ internal sealed class PublicSpeakerPresentationService(
         // session (its id keeps the file download working where one exists).
         var rows = await db.Sessions.AsNoTracking()
             .Where(s => s.IsActive)
-            .OrderBy(s => s.StartUtc)
+            .OrderBy(s => s.Start)
             .ThenBy(s => s.Title)
             .Select(s => new
             {
                 s.Id,
                 s.Title,
                 s.TitleArabic,
-                s.StartUtc,
+                s.Start,
                 Speaker = s.Speakers
                     .OrderBy(ss => ss.DisplayOrder)
                     .Select(ss => new { ss.Speaker!.Name, ss.Speaker.NameArabic })
@@ -56,7 +56,7 @@ internal sealed class PublicSpeakerPresentationService(
                 r.Id,
                 r.Title,
                 r.TitleArabic,
-                r.StartUtc,
+                r.Start,
                 r.Speaker?.Name ?? string.Empty,
                 r.Speaker?.NameArabic ?? string.Empty,
                 r.Presentation?.FileName ?? string.Empty,

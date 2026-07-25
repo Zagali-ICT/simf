@@ -56,8 +56,19 @@ public class SaudiTimeTests
     {
         var utc = new DateTimeOffset(2026, 11, 20, 22, 30, 0, TimeSpan.Zero);
 
-        Assert.Equal("2026-11-21 01:30", utc.FormatSaudi());
-        Assert.Equal("2026-11-21", utc.FormatSaudi(SaudiTime.DateFormat));
+        Assert.Equal("21-11-2026 01:30 AM", utc.FormatSaudi());
+        Assert.Equal("21-11-2026", utc.FormatSaudi(SaudiTime.DateFormat));
+    }
+
+    [Fact]
+    public void FormatSaudiTime_renders_saudi_twelve_hour_am_pm()
+    {
+        var morning = new DateTimeOffset(2026, 11, 20, 22, 30, 0, TimeSpan.Zero);   // 01:30 AST
+        var afternoon = new DateTimeOffset(2026, 11, 22, 13, 45, 0, TimeSpan.Zero); // 04:45 PM AST
+
+        Assert.Equal("01:30 AM", morning.FormatSaudiTime());
+        Assert.Equal("04:45 PM", afternoon.FormatSaudiTime());
+        Assert.Equal("01:30 AM – 04:45 PM", SaudiTime.FormatSaudiWindow(morning, afternoon));
     }
 
     [Fact]
@@ -90,6 +101,6 @@ public class SaudiTimeTests
         var storedUtc = SaudiTime.FromSaudiWallClock(typed);
         var rendered = storedUtc.FormatSaudi();
 
-        Assert.Equal("2026-11-22 16:45", rendered);
+        Assert.Equal("22-11-2026 04:45 PM", rendered);
     }
 }

@@ -17,7 +17,7 @@ internal sealed class RegistrationGateConfiguration
         {
             Id = RegistrationGate.SingletonId,
             IsOpen = true,
-            AutoCloseUtc = null,
+            AutoClose = null,
             LastChangedAt = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
             LastChangedByUserId = null,
         });

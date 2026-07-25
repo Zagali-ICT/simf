@@ -13,11 +13,11 @@ namespace SIMF.Infrastructure.Operations;
 /// <summary>
 /// P1.7 (D-217) — background worker that fires the "session starting soon"
 /// reminder. Once per minute it finds active sessions whose
-/// <c>StartUtc</c> falls inside the lead window and that have not yet been
+/// <c>Start</c> falls inside the lead window and that have not yet been
 /// reminded, then dispatches an in-app <see cref="NotificationKind.SessionReminder"/>
 /// to every attendee with an active seat in that session.
 ///
-/// <para>Dedup: <c>Session.ReminderSentUtc</c> is the once-only guard
+/// <para>Dedup: <c>Session.ReminderSent</c> is the once-only guard
 /// (D-217 freeze-lift). A session is stamped and committed BEFORE its batch
 /// is dispatched, so a restart mid-tick cannot resend (unlike an in-memory
 /// set, or a stamp saved only after the whole loop). The notification rows
@@ -39,7 +39,7 @@ internal sealed class SessionReminderWorker(
     // the worker hits the DB — mirrors RegistrationGateAutoCloseWorker.
     private static readonly TimeSpan StartupDelay = TimeSpan.FromMinutes(1);
 
-    /// <summary>How far ahead of <c>StartUtc</c> the reminder fires. A session
+    /// <summary>How far ahead of <c>Start</c> the reminder fires. A session
     /// is reminded once, the first poll after it enters this window.</summary>
     internal static readonly TimeSpan ReminderLeadTime = TimeSpan.FromMinutes(30);
 
@@ -109,7 +109,7 @@ internal sealed class SessionReminderWorker(
 
     /// <summary>
     /// The core scan, extracted for direct unit testing. For each due session
-    /// it claims the session — stamping <c>ReminderSentUtc</c> and committing
+    /// it claims the session — stamping <c>ReminderSent</c> and committing
     /// it BEFORE dispatch — then notifies every attendee with an active seat,
     /// so a restart mid-tick can never re-send. Returns the number of sessions
     /// reminded. A single attendee's dispatch failure is logged and skipped —
@@ -123,9 +123,9 @@ internal sealed class SessionReminderWorker(
         var windowEnd = now + leadTime;
         var due = await db.Sessions
             .Where(s => s.IsActive
-                && s.ReminderSentUtc == null
-                && s.StartUtc > now
-                && s.StartUtc <= windowEnd)
+                && s.ReminderSent == null
+                && s.Start > now
+                && s.Start <= windowEnd)
             .ToListAsync(cancellationToken);
         if (due.Count == 0)
         {
@@ -142,13 +142,13 @@ internal sealed class SessionReminderWorker(
                 .Distinct()
                 .ToListAsync(cancellationToken);
 
-            // Claim the session BEFORE dispatching: stamp ReminderSentUtc and
+            // Claim the session BEFORE dispatching: stamp ReminderSent and
             // commit it so a restart mid-batch (or a second worker instance)
             // cannot re-send this session's reminder. The notification writes
             // land on SIMF_Identity and cannot share a transaction with this
             // SIMF_App stamp (D-157). A zero-attendee session is still claimed
             // so the worker stops re-scanning it every minute until it starts.
-            session.ReminderSentUtc = now;
+            session.ReminderSent = now;
             await db.SaveChangesAsync(cancellationToken);
 
             foreach (var userId in attendeeIds)

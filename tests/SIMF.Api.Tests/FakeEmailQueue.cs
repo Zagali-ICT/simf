@@ -17,4 +17,9 @@ public sealed class FakeEmailQueue : IEmailQueue
     public IReadOnlyCollection<EmailMessage> Messages => _messages;
 
     public void Enqueue(EmailMessage message) => _messages.Enqueue(message);
+
+    /// <summary>The fake records synchronously, so nothing is ever buffered awaiting
+    /// send — always 0, matching the real queue's "not yet sent" semantic. Keeps the
+    /// broadcast worker's pacing check from ever tripping in tests.</summary>
+    public int PendingCount => 0;
 }

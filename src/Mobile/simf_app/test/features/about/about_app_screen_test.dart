@@ -115,7 +115,7 @@ void main() {
       expect(find.text('About the app'), findsWidgets); // header title
       // D-736 — the REAL installed version (provider-fed), no more literal.
       expect(find.text('1.0.0'), findsOneWidget);
-      expect(find.text('2026-07-06'), findsOneWidget);
+      expect(find.text('06-07-2026'), findsOneWidget);
       expect(find.text('Royal Saudi Naval Forces'), findsOneWidget);
       expect(find.text('Check for updates'), findsOneWidget);
       expect(find.text('Contact us'), findsOneWidget);

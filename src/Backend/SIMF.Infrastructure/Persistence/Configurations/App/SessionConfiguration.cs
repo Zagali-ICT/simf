@@ -13,7 +13,7 @@ internal sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
     {
         // D-611 (Wave B) — a session must end after it starts.
         builder.ToTable("Sessions", table => table.HasCheckConstraint(
-            "CK_Sessions_TimeWindow", "[EndUtc] > [StartUtc]"));
+            "CK_Sessions_TimeWindow", "[End] > [Start]"));
         builder.HasKey(s => s.Id);
 
         builder.Property(s => s.Code).HasMaxLength(16).IsRequired();
@@ -60,8 +60,8 @@ internal sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
             .OnDelete(DeleteBehavior.Restrict);
 
         // Two query indexes the agenda screen + the operator views ride.
-        builder.HasIndex(s => new { s.IsActive, s.StartUtc });
-        builder.HasIndex(s => new { s.HallId, s.StartUtc });
+        builder.HasIndex(s => new { s.IsActive, s.Start });
+        builder.HasIndex(s => new { s.HallId, s.Start });
 
         // P3.2 — D-231: the Committee's lifecycle queue lists sessions by
         // status (e.g. the Recorded ones awaiting publish), most-recent first.
@@ -69,7 +69,7 @@ internal sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
         // the service always writes an explicit value (avoids the EF "0 looks
         // unset" default-backfill trap), and the migration backfills existing
         // rows to Scheduled (0).
-        builder.HasIndex(s => new { s.Status, s.StartUtc });
+        builder.HasIndex(s => new { s.Status, s.Start });
     }
 }
 

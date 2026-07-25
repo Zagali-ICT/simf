@@ -63,13 +63,13 @@ public sealed class WaveBConstraintTests : IClassFixture<SimfApiFactory>
 
         var start = DateTimeOffset.UtcNow;
 
-        // EndUtc <= StartUtc violates CK_SpeakerAvailabilityWindows_TimeWindow.
+        // End <= Start violates CK_SpeakerAvailabilityWindows_TimeWindow.
         await Assert.ThrowsAsync<DbUpdateException>(() => AddAndSaveAsync(new SpeakerAvailabilityWindow
         {
             Id = Guid.NewGuid(),
             SpeakerId = speakerId,
-            StartUtc = start,
-            EndUtc = start, // zero-length → rejected ([EndUtc] > [StartUtc])
+            Start = start,
+            End = start, // zero-length → rejected ([End] > [Start])
             IsActive = true,
         }));
     }

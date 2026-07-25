@@ -318,6 +318,13 @@ public static class DependencyInjection
             SIMF.Infrastructure.Configuration.OrganizationProfileReadService>();
         services.AddScoped<SIMF.Application.Configuration.Abstractions.IOrganizationProfileAdminService,
             SIMF.Infrastructure.Configuration.OrganizationProfileAdminService>();
+        // D-768 — the CP-uploaded hero background video, served from our own API
+        // (streamed store + public Range serve) so the Flutter home hero plays it on
+        // Android, where a clipped YouTube WebView cannot render into the band (D-761).
+        services.AddScoped<SIMF.Application.Configuration.Abstractions.IOrganizationHeroVideoService,
+            SIMF.Infrastructure.Configuration.OrganizationHeroVideoService>();
+        services.Configure<SIMF.Infrastructure.Configuration.OrganizationHeroVideoOptions>(
+            configuration.GetSection(SIMF.Infrastructure.Configuration.OrganizationHeroVideoOptions.SectionName));
         // P2.5 — D-230 (FR-605): 2D venue map (admin CRUD + public read).
         services.AddScoped<SIMF.Application.Venue.Abstractions.IVenueMapService,
             SIMF.Infrastructure.Venue.VenueMapService>();
@@ -365,6 +372,10 @@ public static class DependencyInjection
         // G-2 (chain reconciliation) — closes open hall-attendance rows whose
         // session has ended (In-only hall-door gates never emit a departure).
         services.AddHostedService<SIMF.Infrastructure.Operations.HallAttendanceCloseoutWorker>();
+        // Control Panel "Announcements" desk — fans out manual admin notification
+        // broadcasts (in-app row + email per recipient) to a session's attendees or
+        // a broad audience, paced against the bounded email queue.
+        services.AddHostedService<SIMF.Infrastructure.Operations.NotificationBroadcastWorker>();
         // D-168 (gap doc G5) — public-relations team: invitation CRUD +
         // VIP list + bulk-notify dispatcher (PDF §2.7.3).
         services.AddScoped<SIMF.Application.PublicRelations.Abstractions.IAdminInvitationService,
@@ -681,6 +692,8 @@ public static class DependencyInjection
         services.AddScoped<IInterestService, InterestService>();
         services.AddScoped<INotificationDispatcher, NotificationDispatcher>();
         services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<INotificationBroadcastService,
+            SIMF.Infrastructure.Notifications.NotificationBroadcastService>();
         services.AddSingleton<IUserExcelService, ClosedXmlUserExcelService>();
         // P1.6 — export-only workbook builders for the read-only admin grids.
         services.AddSingleton<IOperationLogExcelService, ClosedXmlOperationLogExcelService>();

@@ -62,7 +62,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         // the App UserProfile id.
         Assert.Equal(attendeeUserId, row.UserId);
         Assert.Equal(AttendanceMethod.QrScan, row.Method);
-        Assert.Null(row.LeaveUtc);
+        Assert.Null(row.Leave);
     }
 
     [Fact]
@@ -101,7 +101,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var row = await db.HallAttendances
             .SingleAsync(a => a.SessionId == sessionId && a.UserId == attendeeUserId);
-        Assert.NotNull(row.LeaveUtc);
+        Assert.NotNull(row.Leave);
     }
 
     [Fact]
@@ -140,7 +140,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var row = await db.HallAttendances.SingleAsync(a => a.SessionId == sessionId);
         Assert.Equal(attendeeUserId, row.UserId);
-        Assert.Null(row.LeaveUtc);
+        Assert.Null(row.Leave);
     }
 
     [Fact]
@@ -180,19 +180,19 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         await attendance.RecordGateDoorScanAsync(
             attendeeUserId, hallId, ScanDirection.CheckIn, directionInferred: true, operatorId);
         Assert.Equal(1, await db.HallAttendances.CountAsync(
-            a => a.SessionId == sessionId && a.LeaveUtc == null));
+            a => a.SessionId == sessionId && a.Leave == null));
 
         // 2nd scan (inferred, SAME direction) — open row exists → closes it.
         await attendance.RecordGateDoorScanAsync(
             attendeeUserId, hallId, ScanDirection.CheckIn, directionInferred: true, operatorId);
         Assert.Equal(0, await db.HallAttendances.CountAsync(
-            a => a.SessionId == sessionId && a.LeaveUtc == null));
+            a => a.SessionId == sessionId && a.Leave == null));
 
         // 3rd scan (inferred) — no open row again → opens a fresh one.
         await attendance.RecordGateDoorScanAsync(
             attendeeUserId, hallId, ScanDirection.CheckIn, directionInferred: true, operatorId);
         Assert.Equal(1, await db.HallAttendances.CountAsync(
-            a => a.SessionId == sessionId && a.LeaveUtc == null));
+            a => a.SessionId == sessionId && a.Leave == null));
         Assert.Equal(2, await db.HallAttendances.CountAsync(a => a.SessionId == sessionId));
     }
 
@@ -216,7 +216,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         await attendance.RecordGeofenceArrivalAsync(
             attendeeUserId, sessionId, CenterLat, CenterLon);
         Assert.Equal(1, await db.HallAttendances.CountAsync(
-            a => a.SessionId == sessionId && a.LeaveUtc == null));
+            a => a.SessionId == sessionId && a.Leave == null));
 
         // First Both-mode turnstile pass for the same attendee — must merge, not depart.
         await attendance.RecordGateDoorScanAsync(
@@ -224,7 +224,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
 
         // Still present: the single open row remains open (merged), not closed.
         var row = await db.HallAttendances.SingleAsync(a => a.SessionId == sessionId);
-        Assert.Null(row.LeaveUtc);
+        Assert.Null(row.Leave);
         Assert.Equal(AttendanceMethod.Geofence, row.Method);
     }
 
@@ -249,7 +249,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
 
         Assert.Equal(1, await db.HallAttendances.CountAsync(a => a.SessionId == sessionId));
         var row = await db.HallAttendances.SingleAsync(a => a.SessionId == sessionId);
-        Assert.Null(row.LeaveUtc);
+        Assert.Null(row.Leave);
     }
 
     [Fact]
@@ -272,7 +272,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         await attendance.RecordGateDoorScanAsync(
             first, hallId, ScanDirection.CheckIn, directionInferred: true, operatorId);
         Assert.Equal(1, await db.HallAttendances.CountAsync(
-            a => a.SessionId == sessionId && a.LeaveUtc == null));
+            a => a.SessionId == sessionId && a.Leave == null));
 
         // Enforced path (geofence) — hard 409 at capacity (unchanged).
         var ex = await Assert.ThrowsAsync<ApiException>(() =>
@@ -283,7 +283,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         await attendance.RecordGateDoorScanAsync(
             second, hallId, ScanDirection.CheckIn, directionInferred: true, operatorId);
         Assert.Equal(2, await db.HallAttendances.CountAsync(
-            a => a.SessionId == sessionId && a.LeaveUtc == null));
+            a => a.SessionId == sessionId && a.Leave == null));
     }
 
     // -- Helpers --------------------------------------------------------------
@@ -342,8 +342,8 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Chain Session", TitleArabic = "جلسة السلسلة",
             HallId = hall.Id,
-            StartUtc = DateTimeOffset.UtcNow.AddMinutes(startOffsetMin),
-            EndUtc = DateTimeOffset.UtcNow.AddMinutes(endOffsetMin),
+            Start = DateTimeOffset.UtcNow.AddMinutes(startOffsetMin),
+            End = DateTimeOffset.UtcNow.AddMinutes(endOffsetMin),
             IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
         };
         db.Sessions.Add(session);

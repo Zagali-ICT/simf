@@ -120,7 +120,7 @@ only — exclude from the regression pass.
 
 ## 6. Request bi-meeting + CP approve on available slot  `BUG`
 **Current state**
-- App sheet submits `POST /app/speakers/{id}/meeting-requests` with `slotStartUtc/EndUtc`
+- App sheet submits `POST /app/speakers/{id}/meeting-requests` with `slotStart/End`
   (`speakers_repository.dart:53-72`), but the day/time are **hard-coded client-side** — next 7 days
   + 9 hourly chips (`meeting_request_sheet.dart:67-96`); `getAvailableSlots`
   (`GET /app/speakers/{id}/available-slots`) **exists but is unused** (`speakers_repository.dart:39-47`).
@@ -194,7 +194,7 @@ fired by the matching time/event.
 **Current state** — `RatingResponse` stores `TargetId` (= `Session.Id` for a session-scoped type),
 `OverallStars`, answers, comment, inherited `CreatedAt` (submitted-at) — `RatingResponse.cs:27-49`.
 One trigger exists: `SessionRatingPromptWorker` fires a "rate this session" notification off
-`Session.RatingPromptSentUtc`. No daily / end-of-event / gate-checkout / live-close triggers; no
+`Session.RatingPromptSent`. No daily / end-of-event / gate-checkout / live-close triggers; no
 per-date grouping; the rate UI shows nothing about when/what was watched
 (`rate_screen.dart`, `rating_models.dart:71-100`).
 

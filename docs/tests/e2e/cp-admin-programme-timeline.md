@@ -13,7 +13,7 @@
 > **no create / edit / delete** here (that grid lives at `/admin/sessions`). The page
 > reads the existing BFF route `POST /account/api/admin/sessions/list` once with
 > `GridQuery { Top = 500 }`, then groups the returned `AdminSessionSummary` items by the
-> **local calendar day** of `StartUtc.LocalDateTime`, days ascending, sessions within a
+> **local calendar day** of `Start.LocalDateTime`, days ascending, sessions within a
 > day ascending by start time. Every scenario below is grounded in the real elements of
 > `ProgrammeTimeline.razor`: the two `SimfStatCard`s (Days / Sessions), the day-filter
 > `<select>`, the per-day `<h2>` heading + `simf-table` (columns Time / Code / Session /
@@ -110,7 +110,7 @@ Scenario: The day filter narrows to one day and restores all days
 
 ```gherkin
 Scenario: Days sort ascending and rows sort ascending by start within a day
-  Given sessions exist with these StartUtc local times:
+  Given sessions exist with these Start local times:
     | code   | local start day | local start time |
     | OPN-01 | 2025-12-08      | 09:00            |
     | KEY-01 | 2025-12-08      | 10:30            |
@@ -127,10 +127,10 @@ Scenario: Days sort ascending and rows sort ascending by start within a day
 
 ```gherkin
 Scenario: Time window formats as HH:mm – HH:mm and the count line pluralises
-  Given a session OPN-01 with StartUtc local 09:00 and EndUtc local 10:15
+  Given a session OPN-01 with Start local 09:00 and End local 10:15
   When the timeline renders
   Then the OPN-01 row Time cell reads "09:00 – 10:15"
-  And the times reflect the operator's local wall clock (StartUtc.LocalDateTime projection)
+  And the times reflect the operator's local wall clock (Start.LocalDateTime projection)
   And a day with 1 session shows "1 session(s) on this day"
   And a day with 4 sessions shows "4 session(s) on this day"
 ```

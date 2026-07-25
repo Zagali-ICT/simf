@@ -251,8 +251,8 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
                 DescriptionArabic = "جلسة بعدة متحدثين.",
                 HallId = hallId,
                 Type = SessionType.Session,
-                StartUtc = start,
-                EndUtc = start.AddHours(1),
+                Start = start,
+                End = start.AddHours(1),
                 Speakers = new List<AdminSessionSpeakerEntry>
                 {
                     new(speaker1, "", "", 0),
@@ -352,13 +352,13 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
         // Treat this date as the KSA calendar day; 01:00 KSA on it is 22:00 UTC on
         // the prior date.
         var ksaDay = DateTimeOffset.UtcNow.AddDays(30).Date;
-        var startUtc = new DateTimeOffset(ksaDay, TimeSpan.FromHours(3)).AddHours(1);
+        var start = new DateTimeOffset(ksaDay, TimeSpan.FromHours(3)).AddHours(1);
 
         var created = await CreateSessionAsync(admin, hallId, speakerId,
-            Array.Empty<Guid>(), startUtc, startUtc.AddHours(1));
+            Array.Empty<Guid>(), start, start.AddHours(1));
 
         var ksaDateStr = ksaDay.ToString("yyyy-MM-dd");
-        var priorUtcDateStr = startUtc.UtcDateTime.Date.ToString("yyyy-MM-dd");
+        var priorUtcDateStr = start.UtcDateTime.Date.ToString("yyyy-MM-dd");
         Assert.NotEqual(ksaDateStr, priorUtcDateStr); // the instant straddles midnight
 
         var underKsaDay = (await (await _client.GetAsync(
@@ -504,7 +504,7 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
 
     private async Task<AdminSessionDetail> CreateSessionAsync(
         string token, Guid hallId, Guid speakerId, IReadOnlyList<Guid> themeIds,
-        DateTimeOffset startUtc, DateTimeOffset endUtc, int? capacityOverride = null)
+        DateTimeOffset start, DateTimeOffset end, int? capacityOverride = null)
     {
         var create = await PostAuthAsync("/api/v1/admin/sessions",
             new AdminCreateSessionRequest
@@ -515,9 +515,9 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
                 Description = "Welcome address.",
                 DescriptionArabic = "كلمة ترحيبية.",
                 HallId = hallId,
-                StartUtc = startUtc,
+                Start = start,
                 Type = SessionType.Session,
-                EndUtc = endUtc,
+                End = end,
                 CapacityOverride = capacityOverride,
                 Speakers = new List<AdminSessionSpeakerEntry>
                 {

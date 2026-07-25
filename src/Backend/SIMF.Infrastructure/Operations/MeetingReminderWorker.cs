@@ -15,8 +15,8 @@ namespace SIMF.Infrastructure.Operations;
 /// reminder 15 minutes before a CONFIRMED (<see cref="MeetingRequestStatus.Accepted"/>)
 /// bilateral meeting (speaker or delegation) with a bound slot. Mirrors
 /// <see cref="SessionReminderWorker"/>: once per minute it finds confirmed meetings whose
-/// <c>SlotStartUtc</c> falls inside the lead window and that have not yet been reminded,
-/// stamps <c>ReminderSentUtc</c> and commits it BEFORE dispatching (at-most-once dedup,
+/// <c>SlotStart</c> falls inside the lead window and that have not yet been reminded,
+/// stamps <c>ReminderSent</c> and commits it BEFORE dispatching (at-most-once dedup,
 /// per D-157 the notification rows land on SIMF_Identity and cannot share a transaction
 /// with this SIMF_App stamp), then dispatches an in-app + email
 /// <see cref="NotificationKind.MeetingReminder"/> to the parties.
@@ -30,7 +30,7 @@ internal sealed class MeetingReminderWorker(
     private static readonly TimeSpan PollInterval = TimeSpan.FromMinutes(1);
     private static readonly TimeSpan StartupDelay = TimeSpan.FromMinutes(1);
 
-    /// <summary>How far ahead of <c>SlotStartUtc</c> the reminder fires (owner: 15 min).</summary>
+    /// <summary>How far ahead of <c>SlotStart</c> the reminder fires (owner: 15 min).</summary>
     internal static readonly TimeSpan ReminderLeadTime = TimeSpan.FromMinutes(15);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -97,7 +97,7 @@ internal sealed class MeetingReminderWorker(
     }
 
     /// <summary>The core scan, extracted for direct unit testing. Claims each due meeting
-    /// (stamp + commit ReminderSentUtc) BEFORE dispatch, then notifies the parties. Returns
+    /// (stamp + commit ReminderSent) BEFORE dispatch, then notifies the parties. Returns
     /// the number of meetings reminded.</summary>
     internal static async Task<int> RunReminderScanAsync(
         SimfAppDbContext db, INotificationDispatcher notifications,
@@ -110,22 +110,22 @@ internal sealed class MeetingReminderWorker(
         // Speaker meetings — confirmed, slot inside the lead window, not yet reminded.
         var speakerDue = await db.SpeakerMeetingRequests.AsNoTracking()
             .Where(r => r.Status == MeetingRequestStatus.Accepted
-                && r.ReminderSentUtc == null
-                && r.SlotStartUtc != null
-                && r.SlotStartUtc > now && r.SlotStartUtc <= windowEnd)
+                && r.ReminderSent == null
+                && r.SlotStart != null
+                && r.SlotStart > now && r.SlotStart <= windowEnd)
             .ToListAsync(cancellationToken);
         foreach (var req in speakerDue)
         {
             // Claim conditionally so a meeting cancelled / checked-in AFTER the batch load
-            // is not reminded: stamp ReminderSentUtc only while the row is still Accepted +
+            // is not reminded: stamp ReminderSent only while the row is still Accepted +
             // unreminded, and dispatch only when this claim actually won (affected == 1) —
             // at-most-once, no stale "starts soon" for a now-cancelled meeting. Mirrors the
             // conditional-update claim in ConfirmByOtherPartyAsync / MeetingActionToken.
             var claimed = await db.SpeakerMeetingRequests
                 .Where(r => r.Id == req.Id
                     && r.Status == MeetingRequestStatus.Accepted
-                    && r.ReminderSentUtc == null)
-                .ExecuteUpdateAsync(s => s.SetProperty(r => r.ReminderSentUtc, now), cancellationToken);
+                    && r.ReminderSent == null)
+                .ExecuteUpdateAsync(s => s.SetProperty(r => r.ReminderSent, now), cancellationToken);
             if (claimed == 0) { continue; }
             await DispatchAsync(notifications, req.RequestedByUserId, req.Subject, req.Id,
                 "SpeakerMeetingRequest", logger, cancellationToken);
@@ -135,9 +135,9 @@ internal sealed class MeetingReminderWorker(
         // Delegation meetings — confirmed, slot inside the lead window, not yet reminded.
         var delegationDue = await db.DelegationMeetingRequests.AsNoTracking()
             .Where(r => r.Status == MeetingRequestStatus.Accepted
-                && r.ReminderSentUtc == null
-                && r.SlotStartUtc != null
-                && r.SlotStartUtc > now && r.SlotStartUtc <= windowEnd)
+                && r.ReminderSent == null
+                && r.SlotStart != null
+                && r.SlotStart > now && r.SlotStart <= windowEnd)
             .ToListAsync(cancellationToken);
         foreach (var req in delegationDue)
         {
@@ -145,8 +145,8 @@ internal sealed class MeetingReminderWorker(
             var claimed = await db.DelegationMeetingRequests
                 .Where(r => r.Id == req.Id
                     && r.Status == MeetingRequestStatus.Accepted
-                    && r.ReminderSentUtc == null)
-                .ExecuteUpdateAsync(s => s.SetProperty(r => r.ReminderSentUtc, now), cancellationToken);
+                    && r.ReminderSent == null)
+                .ExecuteUpdateAsync(s => s.SetProperty(r => r.ReminderSent, now), cancellationToken);
             if (claimed == 0) { continue; }
 
             // Both parties: the requester + every eligible member of the target delegation.

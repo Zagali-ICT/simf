@@ -53,7 +53,7 @@
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="NotificationDto" Key="createdAt"
                                     Header="@L["Account.Notifications.Column.CreatedAt"]">
-                    <CellTemplate>@context.CreatedAt.LocalDateTime.ToString("yyyy-MM-dd HH:mm")</CellTemplate>
+                    <CellTemplate>@EventTime.DateTimeText(context.CreatedAt)</CellTemplate>
                 </SimfDataGridColumn>
             </Columns>
         </SimfDataGrid>

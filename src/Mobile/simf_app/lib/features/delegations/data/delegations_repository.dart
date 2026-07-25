@@ -41,8 +41,8 @@ class DelegationsRepository {
     required String targetCountryCode,
     required int attendeeCount,
     required String subject,
-    DateTime? slotStartUtc,
-    DateTime? slotEndUtc,
+    DateTime? slotStart,
+    DateTime? slotEnd,
   }) {
     return _client.post<bool>(
       '/app/delegation-meeting-requests',
@@ -50,10 +50,10 @@ class DelegationsRepository {
         'targetCountryCode': targetCountryCode,
         'attendeeCount': attendeeCount,
         'subject': subject,
-        if (slotStartUtc != null)
-          'slotStartUtc': slotStartUtc.toUtc().toIso8601String(),
-        if (slotEndUtc != null)
-          'slotEndUtc': slotEndUtc.toUtc().toIso8601String(),
+        if (slotStart != null)
+          'slotStart': slotStart.toUtc().toIso8601String(),
+        if (slotEnd != null)
+          'slotEnd': slotEnd.toUtc().toIso8601String(),
       },
       decodeData: (_) => true,
     );
@@ -78,15 +78,15 @@ class DelegationsRepository {
 /// Bi-Meeting rework — one bookable meeting slot offered by a delegation
 /// (parity with `SpeakerSlot`).
 class DelegationSlot {
-  const DelegationSlot({required this.startUtc, required this.endUtc});
+  const DelegationSlot({required this.start, required this.end});
 
   factory DelegationSlot.fromJson(Map<String, dynamic> json) => DelegationSlot(
-        startUtc: DateTime.parse(json['startUtc'] as String).toUtc(),
-        endUtc: DateTime.parse(json['endUtc'] as String).toUtc(),
+        start: DateTime.parse(json['start'] as String).toUtc(),
+        end: DateTime.parse(json['end'] as String).toUtc(),
       );
 
-  final DateTime startUtc;
-  final DateTime endUtc;
+  final DateTime start;
+  final DateTime end;
 }
 
 /// Bi-Meeting rework — the delegation-meeting summary returned by the confirm
@@ -96,7 +96,7 @@ class DelegationMeetingSummary {
     required this.requestingCountry,
     required this.targetCountry,
     required this.subject,
-    this.slotStartUtc,
+    this.slotStart,
   });
 
   factory DelegationMeetingSummary.fromJson(Map<String, dynamic> json) =>
@@ -104,15 +104,15 @@ class DelegationMeetingSummary {
         requestingCountry: (json['requestingCountry'] as String?) ?? '',
         targetCountry: (json['targetCountry'] as String?) ?? '',
         subject: (json['subject'] as String?) ?? '',
-        slotStartUtc: json['slotStartUtc'] == null
+        slotStart: json['slotStart'] == null
             ? null
-            : DateTime.tryParse(json['slotStartUtc'] as String)?.toUtc(),
+            : DateTime.tryParse(json['slotStart'] as String)?.toUtc(),
       );
 
   final String requestingCountry;
   final String targetCountry;
   final String subject;
-  final DateTime? slotStartUtc;
+  final DateTime? slotStart;
 }
 
 final delegationsRepositoryProvider = Provider<DelegationsRepository>((ref) {

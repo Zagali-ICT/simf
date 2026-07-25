@@ -74,9 +74,9 @@ internal sealed class AdminSessionService(
             ("code", false) => rows.OrderBy(session => session.Code),
             ("title", true) => rows.OrderByDescending(session => session.Title),
             ("title", false) => rows.OrderBy(session => session.Title),
-            ("endutc", true) => rows.OrderByDescending(session => session.EndUtc),
-            ("endutc", false) => rows.OrderBy(session => session.EndUtc),
-            _ => rows.OrderBy(session => session.StartUtc),
+            ("endutc", true) => rows.OrderByDescending(session => session.End),
+            ("endutc", false) => rows.OrderBy(session => session.End),
+            _ => rows.OrderBy(session => session.Start),
         };
 
         var total = await rows.CountAsync(cancellationToken);
@@ -91,8 +91,8 @@ internal sealed class AdminSessionService(
                 session.HallId,
                 session.Hall!.Name,
                 session.Hall!.NameArabic,
-                session.StartUtc,
-                session.EndUtc,
+                session.Start,
+                session.End,
                 session.CapacityOverride ?? session.Hall!.Capacity,
                 session.IsActive,
                 session.CreatedAt,
@@ -133,7 +133,7 @@ internal sealed class AdminSessionService(
     {
         var (code, title, titleArabic) = ValidateAndNormalise(
             request.Code, request.Title, request.TitleArabic);
-        ValidateTimeWindow(request.StartUtc, request.EndUtc);
+        ValidateTimeWindow(request.Start, request.End);
         ValidateCapacity(request.CapacityOverride);
         ValidateLiveUrls(request.LiveStreamUrl, request.LiveSignLanguageUrl);
         ValidateTextLengths(
@@ -167,7 +167,7 @@ internal sealed class AdminSessionService(
 
         // S-2 — reject a new session that overlaps another in the same hall.
         await EnsureNoHallTimeOverlapAsync(
-            hall.Id, request.StartUtc, request.EndUtc, Guid.Empty, cancellationToken);
+            hall.Id, request.Start, request.End, Guid.Empty, cancellationToken);
 
         var clash = await dbContext.Sessions
             .AsNoTracking()
@@ -198,8 +198,8 @@ internal sealed class AdminSessionService(
             Type = request.Type,
             // D-485 — optional per-session seat-selection-mode override.
             SeatSelectionModeOverride = request.SeatSelectionModeOverride,
-            StartUtc = request.StartUtc,
-            EndUtc = request.EndUtc,
+            Start = request.Start,
+            End = request.End,
             CapacityOverride = request.CapacityOverride,
             // §8 — live broadcast stream URLs (manual stub provider).
             LiveStreamUrl = NullIfBlank(request.LiveStreamUrl),
@@ -281,7 +281,7 @@ internal sealed class AdminSessionService(
 
         var (code, title, titleArabic) = ValidateAndNormalise(
             request.Code, request.Title, request.TitleArabic);
-        ValidateTimeWindow(request.StartUtc, request.EndUtc);
+        ValidateTimeWindow(request.Start, request.End);
         ValidateCapacity(request.CapacityOverride);
         ValidateLiveUrls(request.LiveStreamUrl, request.LiveSignLanguageUrl);
         ValidateTextLengths(
@@ -321,8 +321,8 @@ internal sealed class AdminSessionService(
         // S-1 (owner default) — capture whether the hall or the time window is
         // changing BEFORE the fields are overwritten; either invalidates held seats.
         var hallChanged = session.HallId != hall.Id;
-        var timeChanged = session.StartUtc != request.StartUtc
-            || session.EndUtc != request.EndUtc;
+        var timeChanged = session.Start != request.Start
+            || session.End != request.End;
 
         // S-1 — soft-deleting via update (IsActive true -> false) must not orphan
         // active visitor bookings (same rule as DeactivateAsync).
@@ -388,7 +388,7 @@ internal sealed class AdminSessionService(
         if (hallChanged || timeChanged)
         {
             await EnsureNoHallTimeOverlapAsync(
-                hall.Id, request.StartUtc, request.EndUtc, id, cancellationToken);
+                hall.Id, request.Start, request.End, id, cancellationToken);
         }
 
         session.Code = code;
@@ -403,8 +403,8 @@ internal sealed class AdminSessionService(
         session.CategoryId = request.CategoryId;
         session.Type = request.Type; // D-452
         session.SeatSelectionModeOverride = request.SeatSelectionModeOverride; // D-485
-        session.StartUtc = request.StartUtc;
-        session.EndUtc = request.EndUtc;
+        session.Start = request.Start;
+        session.End = request.End;
         session.CapacityOverride = request.CapacityOverride;
         // §8 — live broadcast stream URLs (manual stub provider).
         session.LiveStreamUrl = NullIfBlank(request.LiveStreamUrl);
@@ -732,7 +732,7 @@ internal sealed class AdminSessionService(
     private static void ValidateStatusGuards(
         Session session, SessionStatus target, DateTimeOffset now)
     {
-        if (target == SessionStatus.Held && now < session.StartUtc)
+        if (target == SessionStatus.Held && now < session.Start)
         {
             throw new ApiException(
                 ErrorCodes.SessionStatusGuardFailed, 400,
@@ -839,7 +839,7 @@ internal sealed class AdminSessionService(
     // times. Half-open overlap: existing.Start < newEnd AND newStart < existing.End.
     // Excludes the session being updated (excludeSessionId) and soft-deleted rows.
     private async Task EnsureNoHallTimeOverlapAsync(
-        Guid hallId, DateTimeOffset startUtc, DateTimeOffset endUtc,
+        Guid hallId, DateTimeOffset start, DateTimeOffset end,
         Guid excludeSessionId, CancellationToken cancellationToken)
     {
         var overlaps = await dbContext.Sessions
@@ -848,8 +848,8 @@ internal sealed class AdminSessionService(
                 other.IsActive
                 && other.HallId == hallId
                 && other.Id != excludeSessionId
-                && other.StartUtc < endUtc
-                && startUtc < other.EndUtc,
+                && other.Start < end
+                && start < other.End,
                 cancellationToken);
         if (overlaps)
         {
@@ -1103,8 +1103,8 @@ internal sealed class AdminSessionService(
             session.Hall?.Name ?? string.Empty,
             session.Hall?.NameArabic ?? string.Empty,
             hallSeats,
-            session.StartUtc,
-            session.EndUtc,
+            session.Start,
+            session.End,
             session.CapacityOverride,
             effective,
             session.IsActive,

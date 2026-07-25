@@ -16,8 +16,8 @@ namespace SIMF.Infrastructure.SessionQuestions;
 /// D-169 (gap doc G6, PDF §2.7.2 + §2.10) — public submission service.
 /// #7 (owner) — the acceptance window is **phase-based**: a FUTURE session
 /// (before start) takes questions from any approved user with **no** venue gate
-/// (asking ahead of time); once **LIVE** (<c>now &gt;= StartUtc</c>) the attendee
-/// must be at the hall; after <c>EndUtc</c> the session is done (a recording, not
+/// (asking ahead of time); once **LIVE** (<c>now &gt;= Start</c>) the attendee
+/// must be at the hall; after <c>End</c> the session is done (a recording, not
 /// a live broadcast) and no question is taken. P5.1 — D-242 (FR-704) is the LIVE
 /// venue gate: when the session's hall has a geofence (D-240) the attendee must
 /// have a <c>HallAttendance</c> arrival record (D-241). S-5 — when the hall has
@@ -33,7 +33,7 @@ internal sealed class SessionQuestionService(
     ILogger<SessionQuestionService> logger) : ISessionQuestionService
 {
     /// <summary>#7 (owner) — questions CLOSE at the end of the session: zero
-    /// grace after <c>EndUtc</c>. After that the session view is a recording /
+    /// grace after <c>End</c>. After that the session view is a recording /
     /// archive, not a live broadcast, so no asking once the session is done.
     /// There is deliberately **no** lower bound now: a FUTURE (active,
     /// not-yet-ended) session accepts questions from any approved user — see the
@@ -60,7 +60,7 @@ internal sealed class SessionQuestionService(
             .Where(s => s.Id == sessionId)
             .Select(s => new
             {
-                s.Id, s.IsActive, s.StartUtc, s.EndUtc, s.Code,
+                s.Id, s.IsActive, s.Start, s.End, s.Code,
                 // P5.1 — D-242 (FR-704): does this session's hall have a geofence
                 // (D-240)? If so, hall arrival is the authoritative gate; if not,
                 // we fall back to the D-171 self-assert toggle.
@@ -85,7 +85,7 @@ internal sealed class SessionQuestionService(
         // approved user (asking ahead of time); questions only CLOSE once the
         // session is over. No lower bound — the whole pre-start slice is open.
         // The venue (check-in) gate below then applies only once the session is LIVE.
-        if (now > session.EndUtc + PostEndWindow)
+        if (now > session.End + PostEndWindow)
         {
             throw new ApiException(
                 ErrorCodes.SessionNotLiveForQuestions, 400,
@@ -99,7 +99,7 @@ internal sealed class SessionQuestionService(
         // remote Q&A works, the client self-assert is not trusted). The session-end
         // close is the time-window check above (FR-704).
         //
-        // Intentionally NO `LeaveUtc == null` filter: FDS-007 FR-704 gates on
+        // Intentionally NO `Leave == null` filter: FDS-007 FR-704 gates on
         // "has a HallAttendance enter record for the session" — i.e. arrived at
         // any point this session, not "currently inside". A visitor who briefly
         // stepped out (closing their row) keeps the right to ask within the
@@ -107,7 +107,7 @@ internal sealed class SessionQuestionService(
         // the gate. (This is a deliberate divergence from the present-tense
         // `HallAttendanceStatus.Arrived`, which reports current presence.)
         // S-5 (owner) — the LIVE venue gate is REAL hall arrival, never a client
-        // self-assert. It applies only once the session is LIVE (now >= StartUtc);
+        // self-assert. It applies only once the session is LIVE (now >= Start);
         // before start any approved user may ask (the `!isLive` short-circuit
         // skips the arrival query). When the hall has an arrival mechanism (a
         // geofence [D-240]; a hall-door gate feeds the SAME HallAttendance record)
@@ -116,7 +116,7 @@ internal sealed class SessionQuestionService(
         // owner — remote Q&A still works and the question is accepted (the earlier
         // `request.IsAtVenue` self-assert was hardcoded `true` by the app and gated
         // nothing; it is no longer trusted).
-        var isLive = now >= session.StartUtc;
+        var isLive = now >= session.Start;
         var atVenue = !isLive
             || !session.HasGeofence
             || await appDbContext.HallAttendances.AnyAsync(

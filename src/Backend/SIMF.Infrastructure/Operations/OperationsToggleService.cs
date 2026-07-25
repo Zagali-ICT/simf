@@ -36,7 +36,7 @@ internal sealed class OperationsToggleService(
             .SingleOrDefaultAsync(g => g.Id == RegistrationGate.SingletonId, cancellationToken);
         if (row is null) { return true; } // fail-open if seeding lost the row
         if (!row.IsOpen) { return false; }
-        if (row.AutoCloseUtc is { } closeAt && closeAt <= timeProvider.GetUtcNow())
+        if (row.AutoClose is { } closeAt && closeAt <= timeProvider.GetUtcNow())
         {
             return false;
         }
@@ -51,10 +51,10 @@ internal sealed class OperationsToggleService(
         var row = await LoadRegistrationGateAsync(cancellationToken);
         var now = timeProvider.GetUtcNow();
         var changed = row.IsOpen != request.IsOpen
-            || row.AutoCloseUtc != request.AutoCloseUtc;
+            || row.AutoClose != request.AutoClose;
 
         row.IsOpen = request.IsOpen;
-        row.AutoCloseUtc = request.AutoCloseUtc;
+        row.AutoClose = request.AutoClose;
         if (changed)
         {
             row.LastChangedAt = now;
@@ -65,11 +65,11 @@ internal sealed class OperationsToggleService(
                 EventType = AuditEvents.RegistrationGateUpdated,
                 Outcome = AuditOutcome.Success,
                 ActorUserId = actorUserId,
-                Detail = $"isOpen={row.IsOpen}; autoCloseUtc={row.AutoCloseUtc?.ToString("O") ?? "null"}",
+                Detail = $"isOpen={row.IsOpen}; autoClose={row.AutoClose?.ToString("O") ?? "null"}",
             }, cancellationToken);
             logger.LogInformation(
-                "RegistrationGate updated by {ActorId}: IsOpen={IsOpen}, AutoCloseUtc={AutoCloseUtc}",
-                actorUserId, row.IsOpen, row.AutoCloseUtc);
+                "RegistrationGate updated by {ActorId}: IsOpen={IsOpen}, AutoClose={AutoClose}",
+                actorUserId, row.IsOpen, row.AutoClose);
         }
         return ToState(row);
     }
@@ -118,7 +118,7 @@ internal sealed class OperationsToggleService(
             {
                 Id = RegistrationGate.SingletonId,
                 IsOpen = true,
-                AutoCloseUtc = null,
+                AutoClose = null,
                 LastChangedAt = timeProvider.GetUtcNow(),
                 LastChangedByUserId = null,
             };
@@ -148,7 +148,7 @@ internal sealed class OperationsToggleService(
     }
 
     private static RegistrationGateState ToState(RegistrationGate row) =>
-        new(row.IsOpen, row.AutoCloseUtc, row.LastChangedAt, row.LastChangedByUserId);
+        new(row.IsOpen, row.AutoClose, row.LastChangedAt, row.LastChangedByUserId);
 
     private static ArchiveVisibilityState ToState(ArchiveVisibility row) =>
         new(row.IsVisible, row.LastChangedAt, row.LastChangedByUserId);

@@ -46,7 +46,7 @@ public sealed class SpeakerAvailabilityTests : IClassFixture<SimfApiFactory>
             $"/api/v1/admin/speakers/{speakerId}/availability-windows",
             new CreateSpeakerAvailabilityWindowRequest
             {
-                StartUtc = WindowStart, EndUtc = WindowStart.AddMinutes(60), SlotMinutes = 30,
+                Start = WindowStart, End = WindowStart.AddMinutes(60), SlotMinutes = 30,
             }, admin);
         Assert.Equal(HttpStatusCode.OK, create.StatusCode);
 
@@ -55,8 +55,8 @@ public sealed class SpeakerAvailabilityTests : IClassFixture<SimfApiFactory>
 
         var slots = await GetSlotsAsync(speakerId, admin);
         Assert.Equal(2, slots.Count);
-        Assert.Equal(WindowStart, slots[0].StartUtc);
-        Assert.Equal(WindowStart.AddMinutes(30), slots[0].EndUtc);
+        Assert.Equal(WindowStart, slots[0].Start);
+        Assert.Equal(WindowStart.AddMinutes(30), slots[0].End);
     }
 
     [Fact]
@@ -68,7 +68,7 @@ public sealed class SpeakerAvailabilityTests : IClassFixture<SimfApiFactory>
             $"/api/v1/admin/speakers/{speakerId}/availability-windows",
             new CreateSpeakerAvailabilityWindowRequest
             {
-                StartUtc = WindowStart, EndUtc = WindowStart.AddMinutes(60), SlotMinutes = 30,
+                Start = WindowStart, End = WindowStart.AddMinutes(60), SlotMinutes = 30,
             }, admin);
 
         // Mark the first slot as taken by an accepted meeting.
@@ -83,8 +83,8 @@ public sealed class SpeakerAvailabilityTests : IClassFixture<SimfApiFactory>
                 RequesterName = "VIP",
                 Subject = "Slot taken",
                 Status = MeetingRequestStatus.Accepted,
-                SlotStartUtc = WindowStart,
-                SlotEndUtc = WindowStart.AddMinutes(30),
+                SlotStart = WindowStart,
+                SlotEnd = WindowStart.AddMinutes(30),
                 CreatedAt = DateTimeOffset.UtcNow,
             });
             await db.SaveChangesAsync();
@@ -92,7 +92,7 @@ public sealed class SpeakerAvailabilityTests : IClassFixture<SimfApiFactory>
 
         var slots = await GetSlotsAsync(speakerId, admin);
         Assert.Single(slots);
-        Assert.Equal(WindowStart.AddMinutes(30), slots[0].StartUtc); // only the 2nd slot remains
+        Assert.Equal(WindowStart.AddMinutes(30), slots[0].Start); // only the 2nd slot remains
     }
 
     [Fact]
@@ -108,7 +108,7 @@ public sealed class SpeakerAvailabilityTests : IClassFixture<SimfApiFactory>
             $"/api/v1/admin/speakers/{speakerId}/availability-windows",
             new CreateSpeakerAvailabilityWindowRequest
             {
-                StartUtc = WindowStart, EndUtc = WindowStart.AddMinutes(60), SlotMinutes = 30,
+                Start = WindowStart, End = WindowStart.AddMinutes(60), SlotMinutes = 30,
             }, admin);
 
         // Mark the first slot as held by an AwaitingSpeaker (hall-bound) meeting.
@@ -123,8 +123,8 @@ public sealed class SpeakerAvailabilityTests : IClassFixture<SimfApiFactory>
                 RequesterName = "VIP",
                 Subject = "Slot held pending speaker confirmation",
                 Status = MeetingRequestStatus.AwaitingSpeaker,
-                SlotStartUtc = WindowStart,
-                SlotEndUtc = WindowStart.AddMinutes(30),
+                SlotStart = WindowStart,
+                SlotEnd = WindowStart.AddMinutes(30),
                 CreatedAt = DateTimeOffset.UtcNow,
             });
             await db.SaveChangesAsync();
@@ -132,7 +132,7 @@ public sealed class SpeakerAvailabilityTests : IClassFixture<SimfApiFactory>
 
         var slots = await GetSlotsAsync(speakerId, admin);
         Assert.Single(slots);
-        Assert.Equal(WindowStart.AddMinutes(30), slots[0].StartUtc); // only the 2nd slot remains
+        Assert.Equal(WindowStart.AddMinutes(30), slots[0].Start); // only the 2nd slot remains
     }
 
     [Fact]
@@ -146,7 +146,7 @@ public sealed class SpeakerAvailabilityTests : IClassFixture<SimfApiFactory>
             $"/api/v1/admin/speakers/{speakerId}/availability-windows",
             new CreateSpeakerAvailabilityWindowRequest
             {
-                StartUtc = WindowStart, EndUtc = WindowStart.AddMinutes(-10), SlotMinutes = 30,
+                Start = WindowStart, End = WindowStart.AddMinutes(-10), SlotMinutes = 30,
             }, admin);
         Assert.Equal(HttpStatusCode.BadRequest, bad.StatusCode);
 
@@ -155,7 +155,7 @@ public sealed class SpeakerAvailabilityTests : IClassFixture<SimfApiFactory>
             $"/api/v1/admin/speakers/{Guid.NewGuid()}/availability-windows",
             new CreateSpeakerAvailabilityWindowRequest
             {
-                StartUtc = WindowStart, EndUtc = WindowStart.AddMinutes(60), SlotMinutes = 30,
+                Start = WindowStart, End = WindowStart.AddMinutes(60), SlotMinutes = 30,
             }, admin);
         Assert.Equal(HttpStatusCode.NotFound, unknown.StatusCode);
     }
@@ -169,7 +169,7 @@ public sealed class SpeakerAvailabilityTests : IClassFixture<SimfApiFactory>
             $"/api/v1/admin/speakers/{speakerId}/availability-windows",
             new CreateSpeakerAvailabilityWindowRequest
             {
-                StartUtc = WindowStart, EndUtc = WindowStart.AddMinutes(60), SlotMinutes = 30,
+                Start = WindowStart, End = WindowStart.AddMinutes(60), SlotMinutes = 30,
             }, admin);
         var window = (await create.Content
             .ReadFromJsonAsync<ApiResult<AdminSpeakerAvailabilityWindow>>())!.Data!;
@@ -196,7 +196,7 @@ public sealed class SpeakerAvailabilityTests : IClassFixture<SimfApiFactory>
             $"/api/v1/admin/speakers/{speakerId}/availability-windows",
             new CreateSpeakerAvailabilityWindowRequest
             {
-                StartUtc = outside, EndUtc = outside.AddMinutes(60), SlotMinutes = 30,
+                Start = outside, End = outside.AddMinutes(60), SlotMinutes = 30,
             }, admin);
         Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
         var body = (await resp.Content.ReadFromJsonAsync<ApiResult<object>>())!;

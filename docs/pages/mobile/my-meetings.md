@@ -81,7 +81,7 @@ A 16px white line above the list; N is the count of currently-shown meetings.
 | Initial avatar | first letter of the counterpart name | 38px gold square, white initial |
 | Name | `title` / `titleArabic` | the speaker name (speaker meeting) or target-country name (delegation meeting), Bold 15 |
 | Secondary line | `subtitle` → else `kind` | **speaker meeting:** the speaker's **rank** (`subtitle`, D-590 — e.g. "باحث بيئي", the same descriptor the speaker profile shows); if the speaker has no rank, falls back to the meeting-type "طلب لقاء مع متحدث". **delegation meeting:** always the meeting-type "طلب اجتماع وفد" (no rank). |
-| Date line | `eventDateUtc` (device-local) | clock glyph + "12 يناير – 10:30 PM" (bilingual month name + 12-hour time, pinned LTR) |
+| Date line | `eventDate` (device-local) | clock glyph + "12 يناير – 10:30 PM" (bilingual month name + 12-hour time, pinned LTR) |
 | Status badge | `status` | neutral beige badge: accepted → "مؤكدة", pending → "قيد الانتظار", rejected → "مرفوضة" |
 
 The card is read-only (no tap navigation, matching the frame).

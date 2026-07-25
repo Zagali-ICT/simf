@@ -51,7 +51,7 @@ MyAreaDashboard _dashboard({List<MyAreaScheduleItem>? schedule}) =>
           <MyAreaScheduleItem>[
             MyAreaScheduleItem(
               kind: 'Session',
-              startUtc: DateTime.utc(2026, 9, 13, 8),
+              start: DateTime.utc(2026, 9, 13, 8),
               titleEn: 'Opening',
               titleAr: 'الافتتاح',
               status: 'Approved',
@@ -265,7 +265,7 @@ void main() {
             schedule: <MyAreaScheduleItem>[
               MyAreaScheduleItem(
                 kind: 'Session',
-                startUtc: DateTime.utc(2026, 9, 13, 8),
+                start: DateTime.utc(2026, 9, 13, 8),
                 titleEn: 'Opening',
                 titleAr: 'الافتتاح',
                 status: 'Approved',
@@ -273,7 +273,7 @@ void main() {
               ),
               MyAreaScheduleItem(
                 kind: 'Meeting',
-                startUtc: DateTime.utc(2026, 9, 13, 10),
+                start: DateTime.utc(2026, 9, 13, 10),
                 titleEn: 'Dr Ibrahim',
                 titleAr: 'مقابلة د. ابراهيم',
                 status: 'Approved',

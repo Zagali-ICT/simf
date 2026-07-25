@@ -33,13 +33,13 @@ public sealed record WorkerStatus
     public required WorkerState State { get; init; }
 
     /// <summary>When the worker last completed a tick (success or failure).</summary>
-    public DateTimeOffset? LastRunUtc { get; init; }
+    public DateTimeOffset? LastRun { get; init; }
 
     /// <summary>When the worker last completed a tick without throwing.</summary>
-    public DateTimeOffset? LastSuccessUtc { get; init; }
+    public DateTimeOffset? LastSuccess { get; init; }
 
     /// <summary>When the worker's last failing tick threw.</summary>
-    public DateTimeOffset? LastFailureUtc { get; init; }
+    public DateTimeOffset? LastFailure { get; init; }
 
     /// <summary>The message of the most recent failing tick, if the worker is
     /// currently faulted; null once a later success clears it.</summary>
@@ -60,7 +60,7 @@ public sealed record WorkerStatus
 public sealed record WorkerStatusListResponse
 {
     public required IReadOnlyList<WorkerStatus> Workers { get; init; }
-    public required DateTimeOffset GeneratedUtc { get; init; }
+    public required DateTimeOffset Generated { get; init; }
 
     /// <summary>Workers that are Healthy or Starting (i.e. up).</summary>
     public required int HealthyCount { get; init; }

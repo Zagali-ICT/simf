@@ -165,8 +165,8 @@ public sealed class GateVisitorsListTests : IClassFixture<SimfApiFactory>
         public int PageSize { get; set; }
         public ScanDirection? Direction { get; set; }
         public ScanOutcome? Outcome { get; set; }
-        public DateTimeOffset? SinceUtc { get; set; }
-        public DateTimeOffset? UntilUtc { get; set; }
+        public DateTimeOffset? Since { get; set; }
+        public DateTimeOffset? Until { get; set; }
     }
 
     private async Task<HttpResponseMessage> PostListAsync(

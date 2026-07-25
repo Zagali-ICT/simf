@@ -174,6 +174,9 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     /// blocks). Released rows stay for audit.</summary>
     public DbSet<SeatReservation> SeatReservations => Set<SeatReservation>();
 
+    public DbSet<SIMF.Domain.Notifications.NotificationBroadcast> NotificationBroadcasts =>
+        Set<SIMF.Domain.Notifications.NotificationBroadcast>();
+
     /// <summary>D-176 (gap doc G12) — centralised AI prompt catalogue.
     /// Editable from the CP at runtime; one row per logical key.</summary>
     public DbSet<AiPrompt> AiPrompts => Set<AiPrompt>();
@@ -278,6 +281,11 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     // D-717 (item 7, FDS-013 §15.7 GAP-3) — single-use speaker double-opt-in
     // action-link tokens (Approve / Reject).
     public DbSet<MeetingActionToken> MeetingActionTokens => Set<MeetingActionToken>();
+
+    // R4 (bi-meeting rules, D-767) — single-use delegation confirm tokens behind the
+    // "please confirm" email link sent to target-delegation members on Approve.
+    public DbSet<DelegationMeetingActionToken> DelegationMeetingActionTokens =>
+        Set<DelegationMeetingActionToken>();
 
     // D-568 — the single, unified file store: ONE table for every uploaded or
     // linked file (avatar, ID document, VIP photo, media gallery, speaker photo /

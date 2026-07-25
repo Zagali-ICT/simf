@@ -38,10 +38,10 @@ public sealed class HallAllocation
     public string? RowColumnSpec { get; set; }
 
     /// <summary>Slot start (inclusive, UTC).</summary>
-    public DateTimeOffset StartUtc { get; set; }
+    public DateTimeOffset Start { get; set; }
 
-    /// <summary>Slot end (exclusive, UTC). Must be after <see cref="StartUtc"/>.</summary>
-    public DateTimeOffset EndUtc { get; set; }
+    /// <summary>Slot end (exclusive, UTC). Must be after <see cref="Start"/>.</summary>
+    public DateTimeOffset End { get; set; }
 
     /// <summary>The admin who created the allocation — logical FK to
     /// <c>SimfUser.Id</c> on the Identity DB (bare Guid, no navigation).</summary>

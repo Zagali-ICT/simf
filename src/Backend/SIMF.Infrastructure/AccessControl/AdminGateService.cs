@@ -306,13 +306,13 @@ internal sealed class AdminGateService(
 
         var query = appDbContext.GateScans.AsNoTracking().AsQueryable();
 
-        if (filter.FromUtc is { } from) { query = query.Where(s => s.ScannedAtUtc >= from); }
-        if (filter.ToUtc is { } to) { query = query.Where(s => s.ScannedAtUtc <= to); }
+        if (filter.FromUtc is { } from) { query = query.Where(s => s.ScannedAt >= from); }
+        if (filter.ToUtc is { } to) { query = query.Where(s => s.ScannedAt <= to); }
         if (filter.GateId is { } gateId) { query = query.Where(s => s.GateId == gateId); }
         if (filter.Outcome is { } outcome) { query = query.Where(s => s.Outcome == outcome); }
 
         var raw = await query
-            .OrderByDescending(s => s.ScannedAtUtc)
+            .OrderByDescending(s => s.ScannedAt)
             .Skip(skip).Take(top)
             .Join(appDbContext.Gates.AsNoTracking(),
                 scan => scan.GateId, gate => gate.Id,
@@ -352,7 +352,7 @@ internal sealed class AdminGateService(
                 r.scan.UserProfileId is { } pid && displayNames.TryGetValue(pid, out var name)
                     ? name : null,
                 r.scan.QrIdAtScan, r.scan.Direction, r.scan.Outcome,
-                r.scan.DenialReasonCode, r.scan.ScannedAtUtc,
+                r.scan.DenialReasonCode, r.scan.ScannedAt,
                 r.scan.ScannedByUserId, r.scan.Source))
             .ToList();
     }
@@ -373,10 +373,10 @@ internal sealed class AdminGateService(
             .Select(g => new
             {
                 UserProfileId = g.Key,
-                Last = g.OrderByDescending(s => s.ScannedAtUtc).First(),
+                Last = g.OrderByDescending(s => s.ScannedAt).First(),
             })
             .Where(x => x.Last.Direction == ScanDirection.CheckIn
-                && x.Last.ScannedAtUtc >= presenceCutoff)
+                && x.Last.ScannedAt >= presenceCutoff)
             .ToListAsync(cancellationToken);
 
         if (latest.Count == 0) { return Array.Empty<AdminCurrentlyInsideRow>(); }
@@ -428,11 +428,11 @@ internal sealed class AdminGateService(
                     profile.ProfileTypeId,
                     profile.ProfileType?.Name,
                     profile.ProfileType?.PageColor,
-                    x.Last.ScannedAtUtc,
+                    x.Last.ScannedAt,
                     x.Last.GateId,
                     gateCodes.TryGetValue(x.Last.GateId, out var code) ? code : string.Empty);
             })
-            .OrderByDescending(row => row.LastCheckInAtUtc)
+            .OrderByDescending(row => row.LastCheckInAt)
             .ToList();
     }
 
@@ -459,7 +459,7 @@ internal sealed class AdminGateService(
             var row = rows[rowIndex];
             var rIdx = rowIndex + 2;
             sheet.Cell(rIdx, 1).Value = row.ScanId;
-            sheet.Cell(rIdx, 2).Value = row.ScannedAtUtc.UtcDateTime.ToString("u",
+            sheet.Cell(rIdx, 2).Value = row.ScannedAt.UtcDateTime.ToString("u",
                 CultureInfo.InvariantCulture);
             sheet.Cell(rIdx, 3).Value = row.GateCode;
             sheet.Cell(rIdx, 4).Value = row.VisitorDisplayName ?? string.Empty;

@@ -58,7 +58,7 @@
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminPendingUserSummary" Key="created"
                                     Header="@L["Admin.Pending.Column.Created"]">
-                    <CellTemplate>@context.CreatedAt.FormatSaudi("yyyy-MM-dd HH:mm")</CellTemplate>
+                    <CellTemplate>@context.CreatedAt.FormatSaudi("dd-MM-yyyy hh:mm tt")</CellTemplate>
                 </SimfDataGridColumn>
             </Columns>
             <RowActions Context="user">
@@ -83,6 +83,7 @@
 @if (_rejectTarget is not null)
 {
     <SimfModal Open="true"
+               RequireExplicitClose="true"
                Title="@L["Admin.Pending.Reject.Title"]"
                OnClose="@(() => _rejectTarget = null)">
         <ChildContent>
@@ -112,6 +113,7 @@
 @if (_bulkRejectSelected is not null)
 {
     <SimfModal Open="true"
+               RequireExplicitClose="true"
                Title="@L["Admin.Pending.BulkReject.Title"]"
                OnClose="@(() => _bulkRejectSelected = null)">
         <ChildContent>

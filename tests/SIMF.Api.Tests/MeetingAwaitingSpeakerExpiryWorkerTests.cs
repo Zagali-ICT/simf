@@ -30,7 +30,7 @@ public sealed class MeetingAwaitingSpeakerExpiryWorkerTests : IClassFixture<Simf
         var now = DateTimeOffset.UtcNow;
         // A hall-bound AwaitingSpeaker request whose only token pair has expired.
         var requestId = await SeedBoundAwaitingRequestAsync(
-            slotStart: now.AddDays(3), tokenExpiresUtc: now.AddHours(-1), tokenUsed: false);
+            slotStart: now.AddDays(3), tokenExpires: now.AddHours(-1), tokenUsed: false);
 
         var reverted = await RunScanAsync(now);
         Assert.Equal(1, reverted);
@@ -41,8 +41,8 @@ public sealed class MeetingAwaitingSpeakerExpiryWorkerTests : IClassFixture<Simf
         Assert.Equal(MeetingRequestStatus.Pending, req.Status);
         Assert.Null(req.HallId);
         Assert.Null(req.MeetingTableId);
-        Assert.Null(req.SlotStartUtc);
-        Assert.Null(req.SlotEndUtc);
+        Assert.Null(req.SlotStart);
+        Assert.Null(req.SlotEnd);
         Assert.Null(req.AvailabilityWindowId);
         Assert.Null(req.RespondedAt);
         Assert.Null(req.RespondedByUserId);
@@ -61,7 +61,7 @@ public sealed class MeetingAwaitingSpeakerExpiryWorkerTests : IClassFixture<Simf
         var now = DateTimeOffset.UtcNow;
         // The token pair is still live (unused + 48h left).
         var requestId = await SeedBoundAwaitingRequestAsync(
-            slotStart: now.AddDays(3), tokenExpiresUtc: now.AddHours(48), tokenUsed: false);
+            slotStart: now.AddDays(3), tokenExpires: now.AddHours(48), tokenUsed: false);
 
         var reverted = await RunScanAsync(now);
         Assert.Equal(0, reverted);
@@ -70,7 +70,7 @@ public sealed class MeetingAwaitingSpeakerExpiryWorkerTests : IClassFixture<Simf
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var req = await db.SpeakerMeetingRequests.SingleAsync(r => r.Id == requestId);
         Assert.Equal(MeetingRequestStatus.AwaitingSpeaker, req.Status);
-        Assert.NotNull(req.SlotStartUtc);
+        Assert.NotNull(req.SlotStart);
     }
 
     [Fact]
@@ -105,7 +105,7 @@ public sealed class MeetingAwaitingSpeakerExpiryWorkerTests : IClassFixture<Simf
     // Seeds a fully hall-bound AwaitingSpeaker request (hall + table + slot + window)
     // plus one Approve token with the given expiry/used state.
     private async Task<Guid> SeedBoundAwaitingRequestAsync(
-        DateTimeOffset slotStart, DateTimeOffset tokenExpiresUtc, bool tokenUsed)
+        DateTimeOffset slotStart, DateTimeOffset tokenExpires, bool tokenUsed)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -145,8 +145,8 @@ public sealed class MeetingAwaitingSpeakerExpiryWorkerTests : IClassFixture<Simf
         {
             Id = Guid.NewGuid(),
             SpeakerId = speaker.Id,
-            StartUtc = slotStart,
-            EndUtc = slotStart.AddHours(2),
+            Start = slotStart,
+            End = slotStart.AddHours(2),
             SlotMinutes = 30, IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };
@@ -161,8 +161,8 @@ public sealed class MeetingAwaitingSpeakerExpiryWorkerTests : IClassFixture<Simf
             Status = MeetingRequestStatus.AwaitingSpeaker,
             HallId = hall.Id,
             MeetingTableId = table.Id,
-            SlotStartUtc = slotStart,
-            SlotEndUtc = slotStart.AddMinutes(30),
+            SlotStart = slotStart,
+            SlotEnd = slotStart.AddMinutes(30),
             AvailabilityWindowId = window.Id,
             RespondedAt = DateTimeOffset.UtcNow,
             RespondedByUserId = Guid.NewGuid(),
@@ -177,7 +177,7 @@ public sealed class MeetingAwaitingSpeakerExpiryWorkerTests : IClassFixture<Simf
             SpeakerMeetingRequestId = req.Id,
             Action = MeetingActionType.Approve,
             TokenHash = "hash-" + Guid.NewGuid().ToString("N"),
-            ExpiresUtc = tokenExpiresUtc,
+            Expires = tokenExpires,
             UsedAt = tokenUsed ? DateTimeOffset.UtcNow : null,
             CreatedAt = DateTimeOffset.UtcNow,
         });
@@ -208,8 +208,8 @@ public sealed class MeetingAwaitingSpeakerExpiryWorkerTests : IClassFixture<Simf
             RequestedByUserId = Guid.NewGuid(),
             RequesterName = "Requester", Subject = "Topic",
             Status = status,
-            SlotStartUtc = slotStart,
-            SlotEndUtc = slotStart?.AddMinutes(30),
+            SlotStart = slotStart,
+            SlotEnd = slotStart?.AddMinutes(30),
             RespondedAt = DateTimeOffset.UtcNow,
             CreatedAt = DateTimeOffset.UtcNow,
         };

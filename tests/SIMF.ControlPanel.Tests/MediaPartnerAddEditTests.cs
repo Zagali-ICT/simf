@@ -13,7 +13,7 @@ public sealed class MediaPartnerAddEditTests : CpComponentTestBase
     private static AdminMediaPartnerDetail Detail() => new(
         Guid.NewGuid(), "Maritime Times", "Ø£ÙˆÙ‚Ø§Øª Ø¨Ø­Ø±ÙŠØ©",
         "media/partners/mt.png", "https://example.com", 3,
-        IsActive: true, DateTimeOffset.UnixEpoch, UpdatedAt: null, ContactId: null);
+        IsActive: true, DateTimeOffset.UnixEpoch, UpdatedAt: null);
 
     [Fact]
     public void Add_mode_hides_the_Active_checkbox()

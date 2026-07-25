@@ -14,16 +14,16 @@ import 'package:simf_app/features/speakers/widgets/meeting_slot_pickers.dart';
 // the same day/time regardless of the test machine's timezone.
 final List<SpeakerSlot> _twoDaySlots = <SpeakerSlot>[
   SpeakerSlot(
-    startUtc: DateTime(2026, 7, 10, 9).toUtc(),
-    endUtc: DateTime(2026, 7, 10, 9, 30).toUtc(),
+    start: DateTime(2026, 7, 10, 9).toUtc(),
+    end: DateTime(2026, 7, 10, 9, 30).toUtc(),
   ),
   SpeakerSlot(
-    startUtc: DateTime(2026, 7, 10, 10).toUtc(),
-    endUtc: DateTime(2026, 7, 10, 10, 30).toUtc(),
+    start: DateTime(2026, 7, 10, 10).toUtc(),
+    end: DateTime(2026, 7, 10, 10, 30).toUtc(),
   ),
   SpeakerSlot(
-    startUtc: DateTime(2026, 7, 11, 9).toUtc(),
-    endUtc: DateTime(2026, 7, 11, 9, 30).toUtc(),
+    start: DateTime(2026, 7, 11, 9).toUtc(),
+    end: DateTime(2026, 7, 11, 9, 30).toUtc(),
   ),
 ];
 
@@ -40,8 +40,8 @@ class _FakeRepo implements SpeakersRepository {
   int submitCalls = 0;
   String? lastSpeakerId;
   String? lastSubject;
-  DateTime? lastSlotStartUtc;
-  DateTime? lastSlotEndUtc;
+  DateTime? lastSlotStart;
+  DateTime? lastSlotEnd;
 
   @override
   Future<List<SpeakerSummary>> getSpeakers() async => const <SpeakerSummary>[
@@ -73,8 +73,8 @@ class _FakeRepo implements SpeakersRepository {
     String speakerId, {
     required String requesterName,
     required String subject,
-    DateTime? slotStartUtc,
-    DateTime? slotEndUtc,
+    DateTime? slotStart,
+    DateTime? slotEnd,
   }) async {
     if (failSubmitStatus != null) {
       throw ApiFailure(
@@ -86,8 +86,8 @@ class _FakeRepo implements SpeakersRepository {
     submitCalls++;
     lastSpeakerId = speakerId;
     lastSubject = subject;
-    lastSlotStartUtc = slotStartUtc;
-    lastSlotEndUtc = slotEndUtc;
+    lastSlotStart = slotStart;
+    lastSlotEnd = slotEnd;
   }
 }
 
@@ -242,8 +242,8 @@ void main() {
       expect(repo.submitCalls, 1);
       expect(repo.lastSubject, 'Naval cooperation');
       // No slot picked (none offered) → the request carries no slot.
-      expect(repo.lastSlotStartUtc, isNull);
-      expect(repo.lastSlotEndUtc, isNull);
+      expect(repo.lastSlotStart, isNull);
+      expect(repo.lastSlotEnd, isNull);
     });
 
     testWidgets("submitting a picked real slot sends that slot's start + end",
@@ -265,8 +265,8 @@ void main() {
       expect(repo.submitCalls, 1);
       expect(repo.lastSubject, 'Naval cooperation');
       // The second slot on the 10th (10:00 local) was sent verbatim.
-      expect(repo.lastSlotStartUtc, DateTime(2026, 7, 10, 10).toUtc());
-      expect(repo.lastSlotEndUtc, DateTime(2026, 7, 10, 10, 30).toUtc());
+      expect(repo.lastSlotStart, DateTime(2026, 7, 10, 10).toUtc());
+      expect(repo.lastSlotEnd, DateTime(2026, 7, 10, 10, 30).toUtc());
     });
 
     testWidgets('bilateral flow — picking a speaker loads ITS slots and the '
@@ -292,7 +292,7 @@ void main() {
 
       expect(repo.submitCalls, 1);
       expect(repo.lastSpeakerId, 's1');
-      expect(repo.lastSlotStartUtc, DateTime(2026, 7, 10, 9).toUtc());
+      expect(repo.lastSlotStart, DateTime(2026, 7, 10, 9).toUtc());
     });
 
     testWidgets('a 403 on submit surfaces the VIP-only message', (tester) async {

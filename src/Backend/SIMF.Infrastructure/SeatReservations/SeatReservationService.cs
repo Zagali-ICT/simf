@@ -30,7 +30,7 @@ internal sealed class SeatReservationService(
     /// <summary>#6/#17 (owner 2026-07-20) — how long before a session starts an
     /// un-checked-in seat reservation is auto-released so the seat can go to
     /// someone else ("cancelled if you don't check in 3 minutes before start").
-    /// A reservation's <c>ExpiresUtc</c> is stamped at <c>StartUtc - NoShowReleaseGrace</c>;
+    /// A reservation's <c>Expires</c> is stamped at <c>Start - NoShowReleaseGrace</c>;
     /// the no-show release scan reads it. Defined here (not on the worker) so the
     /// stamp written at creation and the scan that reads it share one source.</summary>
     internal static readonly TimeSpan NoShowReleaseGrace = TimeSpan.FromMinutes(3);
@@ -58,7 +58,7 @@ internal sealed class SeatReservationService(
         // holder has an OPEN HallAttendance row for this session (scanned in at the
         // hall gate). One query for the whole session, matched by holder id.
         var checkedInUserIds = (await appDbContext.HallAttendances.AsNoTracking()
-            .Where(a => a.SessionId == sessionId && a.LeaveUtc == null)
+            .Where(a => a.SessionId == sessionId && a.Leave == null)
             .Select(a => a.UserId)
             .ToListAsync(cancellationToken))
             .ToHashSet();
@@ -134,7 +134,7 @@ internal sealed class SeatReservationService(
         var seat = request.SeatNumber;
         var ctx = await BuildContextAsync(sessionId, cancellationToken);
         EnsureSeatPickAllowed(ctx);
-        EnsureSessionNotEnded(ctx.EndUtc);
+        EnsureSessionNotEnded(ctx.End);
         ValidateSeatBounds(ctx, row, seat);
         await EnsureSessionHasCapacityAsync(ctx, cancellationToken);
 
@@ -148,7 +148,7 @@ internal sealed class SeatReservationService(
         }
 
         await EnsureNoOverlapAsync(
-            sessionId, actorUserId, ctx.StartUtc, ctx.EndUtc, cancellationToken);
+            sessionId, actorUserId, ctx.Start, ctx.End, cancellationToken);
 
         var clash = await appDbContext.SeatReservations.AsNoTracking()
             .Where(r => r.SessionId == sessionId
@@ -182,7 +182,7 @@ internal sealed class SeatReservationService(
             Status = BookingStatus.Approved,
             // #6/#17 — the no-show release deadline: 3 minutes before the session
             // starts. If the holder has not checked in by then the seat is freed.
-            ExpiresUtc = ctx.StartUtc - NoShowReleaseGrace,
+            Expires = ctx.Start - NoShowReleaseGrace,
         };
         await PersistWithUniquenessGuardAsync(reservation, cancellationToken);
         // M-2 — hard capacity backstop against a concurrent booking that raced the
@@ -214,7 +214,7 @@ internal sealed class SeatReservationService(
     {
         var ctx = await BuildContextAsync(sessionId, cancellationToken);
         EnsureSeatPickAllowed(ctx);
-        EnsureSessionNotEnded(ctx.EndUtc);
+        EnsureSessionNotEnded(ctx.End);
 
         var existing = await GetMyActiveAsync(sessionId, actorUserId, cancellationToken);
         if (existing is not null)
@@ -226,7 +226,7 @@ internal sealed class SeatReservationService(
         }
 
         await EnsureNoOverlapAsync(
-            sessionId, actorUserId, ctx.StartUtc, ctx.EndUtc, cancellationToken);
+            sessionId, actorUserId, ctx.Start, ctx.End, cancellationToken);
 
         // M-2 / #21 — the capacity COUNT, the free-seat pick and the INSERT run in
         // ONE Serializable transaction so concurrent reserve-random can neither
@@ -282,7 +282,7 @@ internal sealed class SeatReservationService(
                 "تتطلب هذه الجلسة اختيار مقعد محدد.");
         }
 
-        EnsureSessionNotEnded(session.EndUtc);
+        EnsureSessionNotEnded(session.End);
 
         var existing = await GetMyActiveAsync(sessionId, actorUserId, cancellationToken);
         if (existing is not null)
@@ -294,7 +294,7 @@ internal sealed class SeatReservationService(
         }
 
         await EnsureNoOverlapAsync(
-            sessionId, actorUserId, session.StartUtc, session.EndUtc, cancellationToken);
+            sessionId, actorUserId, session.Start, session.End, cancellationToken);
 
         // M-1 / #21 — open-seating capacity = the session override, else the hall
         // capacity (no seat layout bounds it), and there is NO per-seat DB backstop.
@@ -320,7 +320,7 @@ internal sealed class SeatReservationService(
                 // step; the hold stays provisional until hall check-in.
                 Status = BookingStatus.Approved,
                 // #6/#17 — the no-show release deadline: 3 minutes before start.
-                ExpiresUtc = session.StartUtc - NoShowReleaseGrace,
+                Expires = session.Start - NoShowReleaseGrace,
             }),
             cancellationToken);
 
@@ -356,11 +356,11 @@ internal sealed class SeatReservationService(
 
         // P2.2 — D-227 (FDS-005 §5.3, FR-504): a booking can only be cancelled
         // BEFORE the session starts.
-        var startUtc = await appDbContext.Sessions.AsNoTracking()
+        var sessionStart = await appDbContext.Sessions.AsNoTracking()
             .Where(s => s.Id == sessionId)
-            .Select(s => (DateTimeOffset?)s.StartUtc)
+            .Select(s => (DateTimeOffset?)s.Start)
             .SingleOrDefaultAsync(cancellationToken);
-        if (startUtc is { } start && timeProvider.GetUtcNow() >= start)
+        if (sessionStart is { } start && timeProvider.GetUtcNow() >= start)
         {
             throw new ApiException(
                 ErrorCodes.BookingSessionStarted, 409,
@@ -742,7 +742,7 @@ internal sealed class SeatReservationService(
                 r => r.SessionId, s => s.Id,
                 (r, s) => new
                 {
-                    r.Id, r.SessionId, s.Title, s.TitleArabic, s.StartUtc,
+                    r.Id, r.SessionId, s.Title, s.TitleArabic, s.Start,
                     r.RowLabel, r.SeatNumber, r.Kind, r.ReservedForUserId, r.CreatedAt,
                 });
 
@@ -767,8 +767,8 @@ internal sealed class SeatReservationService(
         {
             ("session", false) => joined.OrderBy(x => x.Title),
             ("session", true) => joined.OrderByDescending(x => x.Title),
-            ("start", false) => joined.OrderBy(x => x.StartUtc),
-            ("start", true) => joined.OrderByDescending(x => x.StartUtc),
+            ("start", false) => joined.OrderBy(x => x.Start),
+            ("start", true) => joined.OrderByDescending(x => x.Start),
             ("seat", false) => joined.OrderBy(x => x.RowLabel).ThenBy(x => x.SeatNumber),
             ("seat", true) => joined.OrderByDescending(x => x.RowLabel).ThenByDescending(x => x.SeatNumber),
             ("bookedat", false) => joined.OrderBy(x => x.CreatedAt),
@@ -803,7 +803,7 @@ internal sealed class SeatReservationService(
                 attendeeName = dn ?? string.Empty;
             }
             return new ActiveBookingRow(
-                r.Id, r.SessionId, r.Title, r.TitleArabic, r.StartUtc,
+                r.Id, r.SessionId, r.Title, r.TitleArabic, r.Start,
                 r.RowLabel, r.SeatNumber, r.Kind, r.ReservedForUserId,
                 attendeeName, r.CreatedAt);
         }).ToList();
@@ -814,10 +814,10 @@ internal sealed class SeatReservationService(
 
     /// <summary>#6/#17 (owner 2026-07-20, FR-503/903) — the no-show release: free
     /// every ACTIVE (Approved, still-held) visitor seat reservation whose no-show
-    /// deadline (<c>ExpiresUtc</c> = the session's <c>StartUtc − 3min</c>) has passed
+    /// deadline (<c>Expires</c> = the session's <c>Start − 3min</c>) has passed
     /// <b>and whose holder never checked in</b> (no <c>HallAttendance</c> for that
     /// session — arrival by gate scan or geofence). A walk-in who booked at or after
-    /// the deadline (<c>CreatedAt &gt;= ExpiresUtc</c>) is exempt — they are present,
+    /// the deadline (<c>CreatedAt &gt;= Expires</c>) is exempt — they are present,
     /// not a no-show. Each freed holder is notified (<see cref="NotificationKind.BookingReleased"/>).
     /// Admin blocks (null holder) are never touched. Returns the number released.
     /// Called once per minute by <c>ReservationNoShowReleaseWorker</c>; extracted so
@@ -829,9 +829,9 @@ internal sealed class SeatReservationService(
             .Where(r => r.Status == BookingStatus.Approved
                 && r.ReleasedAt == null
                 && r.ReservedForUserId != null
-                && r.ExpiresUtc != null
-                && r.ExpiresUtc <= now
-                && r.CreatedAt < r.ExpiresUtc)
+                && r.Expires != null
+                && r.Expires <= now
+                && r.CreatedAt < r.Expires)
             .ToListAsync(cancellationToken);
         if (due.Count == 0)
         {
@@ -901,7 +901,7 @@ internal sealed class SeatReservationService(
 
     private async Task EnsureNoOverlapAsync(
         Guid sessionId, Guid actorUserId,
-        DateTimeOffset startUtc, DateTimeOffset endUtc,
+        DateTimeOffset start, DateTimeOffset end,
         CancellationToken cancellationToken)
     {
         // FR-502: the attendee must not already hold a (Pending or Approved)
@@ -913,8 +913,8 @@ internal sealed class SeatReservationService(
                 && r.ReleasedAt == null
                 && r.SessionId != sessionId)
             .Join(appDbContext.Sessions.AsNoTracking(),
-                r => r.SessionId, s => s.Id, (r, s) => new { s.StartUtc, s.EndUtc })
-            .AnyAsync(x => x.StartUtc < endUtc && startUtc < x.EndUtc,
+                r => r.SessionId, s => s.Id, (r, s) => new { s.Start, s.End })
+            .AnyAsync(x => x.Start < end && start < x.End,
                 cancellationToken);
         if (overlaps)
         {
@@ -943,7 +943,7 @@ internal sealed class SeatReservationService(
         return new SessionContext(
             session.Id, session.HallId, session.CapacityOverride,
             hall.Capacity, layout, rowLabels,
-            session.Title, session.TitleArabic, session.StartUtc, session.EndUtc,
+            session.Title, session.TitleArabic, session.Start, session.End,
             effectiveMode, ExpandSeatCounts(layout, rowLabels));
     }
 
@@ -954,7 +954,7 @@ internal sealed class SeatReservationService(
             .Where(s => s.Id == sessionId && s.IsActive)
             .Select(s => new SessionSnapshot(
                 s.Id, s.HallId, s.CapacityOverride, s.Title, s.TitleArabic,
-                s.StartUtc, s.EndUtc, s.SeatSelectionModeOverride))
+                s.Start, s.End, s.SeatSelectionModeOverride))
             .SingleOrDefaultAsync(cancellationToken)
             ?? throw new ApiException(
                 ErrorCodes.SessionNotFound, 404,
@@ -1122,11 +1122,11 @@ internal sealed class SeatReservationService(
     /// <summary>#20 (Round-1 held item, option C) — a booking may still be created on
     /// a live, in-progress session (a walk-in can join), but NOT on one that has
     /// already ENDED: an ended session's seat can never be attended, so the hold would
-    /// be dead, un-cancellable weight. Blocks at or after <paramref name="endUtc"/>;
+    /// be dead, un-cancellable weight. Blocks at or after <paramref name="end"/>;
     /// a merely-started (not yet ended) session stays bookable.</summary>
-    private void EnsureSessionNotEnded(DateTimeOffset endUtc)
+    private void EnsureSessionNotEnded(DateTimeOffset end)
     {
-        if (timeProvider.GetUtcNow() >= endUtc)
+        if (timeProvider.GetUtcNow() >= end)
         {
             throw new ApiException(
                 ErrorCodes.BookingSessionEnded, 409,
@@ -1282,7 +1282,7 @@ internal sealed class SeatReservationService(
                     // 2026-07-18 (reservation-only) — confirmed on create, no approval.
                     Status = BookingStatus.Approved,
                     // #6/#17 — the no-show release deadline: 3 minutes before start.
-                    ExpiresUtc = ctx.StartUtc - NoShowReleaseGrace,
+                    Expires = ctx.Start - NoShowReleaseGrace,
                 };
             }
         }
@@ -1379,13 +1379,13 @@ internal sealed class SeatReservationService(
 
     private sealed record SessionSnapshot(
         Guid Id, Guid HallId, int? CapacityOverride, string Title, string TitleArabic,
-        DateTimeOffset StartUtc, DateTimeOffset EndUtc,
+        DateTimeOffset Start, DateTimeOffset End,
         SeatSelectionMode? SeatSelectionModeOverride);
     private sealed record SessionContext(
         Guid SessionId, Guid HallId, int? CapacityOverride, int HallCapacity,
         HallSeatLayout Layout, IReadOnlyList<string> RowLabels,
         string SessionTitle, string SessionTitleArabic,
-        DateTimeOffset StartUtc, DateTimeOffset EndUtc,
+        DateTimeOffset Start, DateTimeOffset End,
         SeatSelectionMode EffectiveMode,
         // D-767 — the expanded per-row seat counts (one per RowLabels entry; a repeat of
         // SeatsPerRow when the layout is uniform). Every per-seat bound/capacity/random-

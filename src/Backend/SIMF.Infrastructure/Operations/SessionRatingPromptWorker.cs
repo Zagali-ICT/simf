@@ -12,7 +12,7 @@ namespace SIMF.Infrastructure.Operations;
 
 /// <summary>
 /// Background worker that fires the "please rate this session" prompt. Once per
-/// minute it finds active sessions that have just ended (<c>EndUtc</c> within a
+/// minute it finds active sessions that have just ended (<c>End</c> within a
 /// recent back-fill window) and have not yet been prompted, then dispatches an
 /// in-app <see cref="NotificationKind.SessionRatingRequest"/> to every attendee
 /// who checked in to the hall for that session (a <c>HallAttendance</c> row) —
@@ -20,7 +20,7 @@ namespace SIMF.Infrastructure.Operations;
 /// <c>RelatedEntityType="Session"</c> + <c>RelatedEntityId</c> let the app
 /// deep-link to the session's rating screen.
 ///
-/// <para>Dedup: <c>Session.RatingPromptSentUtc</c> is the once-only guard. A
+/// <para>Dedup: <c>Session.RatingPromptSent</c> is the once-only guard. A
 /// session is stamped after its batch is dispatched, so a restart cannot resend.
 /// The back-fill window also bounds the first run after deploy so it never blasts
 /// every historical session.</para>
@@ -113,7 +113,7 @@ internal sealed class SessionRatingPromptWorker(
     /// <summary>
     /// The core scan, extracted for direct unit testing. Notifies every attendee
     /// who checked in to the hall for each just-ended session, then stamps
-    /// <c>RatingPromptSentUtc</c> so each session is prompted exactly once.
+    /// <c>RatingPromptSent</c> so each session is prompted exactly once.
     /// Returns the number of sessions prompted. A single attendee's dispatch
     /// failure is logged and skipped — it never aborts the batch or blocks the
     /// dedup stamp.
@@ -137,9 +137,9 @@ internal sealed class SessionRatingPromptWorker(
         var windowStart = now - backfillWindow;
         var due = await db.Sessions
             .Where(s => s.IsActive
-                && s.RatingPromptSentUtc == null
-                && s.EndUtc <= now
-                && s.EndUtc >= windowStart)
+                && s.RatingPromptSent == null
+                && s.End <= now
+                && s.End >= windowStart)
             .ToListAsync(cancellationToken);
         if (due.Count == 0)
         {
@@ -194,7 +194,7 @@ internal sealed class SessionRatingPromptWorker(
             }
 
             // Stamp even a zero-attendee session so the worker stops re-scanning it.
-            session.RatingPromptSentUtc = now;
+            session.RatingPromptSent = now;
         }
 
         await db.SaveChangesAsync(cancellationToken);

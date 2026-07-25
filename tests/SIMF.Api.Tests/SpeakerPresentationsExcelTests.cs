@@ -123,8 +123,8 @@ public sealed class SpeakerPresentationsExcelTests : IClassFixture<SimfApiFactor
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Keynote", TitleArabic = "كلمة",
             HallId = hall.Id,
-            StartUtc = DateTimeOffset.UtcNow.AddHours(1),
-            EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+            Start = DateTimeOffset.UtcNow.AddHours(1),
+            End = DateTimeOffset.UtcNow.AddHours(2),
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };

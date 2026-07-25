@@ -34,7 +34,7 @@ internal sealed class AssistanceContextBuilder(
             "## Programme sessions (title EN / AR · start-end UTC · hall)",
             agenda.Items.Select(session =>
                 $"- {session.Title} / {session.TitleArabic} · "
-                + $"{Utc(session.StartUtc)}-{session.EndUtc.UtcDateTime.ToString("HH:mm", CultureInfo.InvariantCulture)} · "
+                + $"{Utc(session.Start)}-{session.End.UtcDateTime.ToString("HH:mm", CultureInfo.InvariantCulture)} · "
                 + $"{session.HallName} / {session.HallNameArabic}"));
 
         AiGroundingText.AppendCappedSection(builder,

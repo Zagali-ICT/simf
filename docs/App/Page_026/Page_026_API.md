@@ -45,8 +45,8 @@ envelope, headers, error model and auth from SIMF-API-001 + SIMF-MOB-API-001
 | Rule | Pass condition | Fail |
 |---|---|---|
 | **1. Arrival at the hall** (D-242) | geofenced hall → a `HallAttendance` arrival record; else `isAtVenue == true` | `403 NOT_AT_VENUE` |
-| **2. Opens 5 min before start** (`PreStartWindow = 5min`) | `now ≥ StartUtc − 5min` | `400 SESSION_NOT_LIVE_FOR_QUESTIONS` |
-| **3. Closes at the end** (`PostEndWindow = 0`) | `now ≤ EndUtc` | `400 SESSION_NOT_LIVE_FOR_QUESTIONS` |
+| **2. Opens 5 min before start** (`PreStartWindow = 5min`) | `now ≥ Start − 5min` | `400 SESSION_NOT_LIVE_FOR_QUESTIONS` |
+| **3. Closes at the end** (`PostEndWindow = 0`) | `now ≤ End` | `400 SESSION_NOT_LIVE_FOR_QUESTIONS` |
 
 A successful submission lands **`Status = Pending`** (D-212) and is tagged by the
 **advisory AI filter** (`AiFilterVerdict`, D-236 — does not change the status). It

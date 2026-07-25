@@ -18,7 +18,7 @@ internal sealed class HallAttendanceConfiguration : IEntityTypeConfiguration<Hal
         builder.HasKey(a => a.Id);
 
         builder.Property(a => a.Method).IsRequired();
-        builder.Property(a => a.EnterUtc).IsRequired();
+        builder.Property(a => a.Enter).IsRequired();
 
         builder.HasOne(a => a.Session)
             .WithMany()
@@ -33,10 +33,10 @@ internal sealed class HallAttendanceConfiguration : IEntityTypeConfiguration<Hal
         // At most one OPEN attendance row per attendee per session.
         builder.HasIndex(a => new { a.SessionId, a.UserId })
             .IsUnique()
-            .HasFilter("[LeaveUtc] IS NULL");
+            .HasFilter("[Leave] IS NULL");
 
         // Live per-hall presence count rides this (open rows in a hall).
-        builder.HasIndex(a => new { a.HallId, a.LeaveUtc });
+        builder.HasIndex(a => new { a.HallId, a.Leave });
 
         // D-611 (Wave B) — the per-attendee attendance-history lookup by user.
         builder.HasIndex(a => a.UserId);

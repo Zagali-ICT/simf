@@ -52,7 +52,7 @@ public sealed class SpeakerMeetingVipSlotTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var req = await db.SpeakerMeetingRequests.SingleAsync(r => r.SpeakerId == speakerId);
-        Assert.Equal(WindowStart, req.SlotStartUtc);
+        Assert.Equal(WindowStart, req.SlotStart);
         Assert.Equal(MeetingRequestStatus.Pending, req.Status);
         // D-612 — the picked slot's availability window is persisted (was inert).
         Assert.NotNull(req.AvailabilityWindowId);
@@ -273,13 +273,13 @@ public sealed class SpeakerMeetingVipSlotTests : IClassFixture<SimfApiFactory>
         db.SpeakerAvailabilityWindows.Add(new SpeakerAvailabilityWindow
         {
             Id = Guid.NewGuid(), SpeakerId = speaker.Id,
-            StartUtc = winAStart, EndUtc = winAStart.AddMinutes(60), SlotMinutes = 60,
+            Start = winAStart, End = winAStart.AddMinutes(60), SlotMinutes = 60,
             IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
         });
         db.SpeakerAvailabilityWindows.Add(new SpeakerAvailabilityWindow
         {
             Id = Guid.NewGuid(), SpeakerId = speaker.Id,
-            StartUtc = winBStart, EndUtc = winBStart.AddMinutes(60), SlotMinutes = 60,
+            Start = winBStart, End = winBStart.AddMinutes(60), SlotMinutes = 60,
             IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
         });
         await db.SaveChangesAsync();
@@ -292,8 +292,8 @@ public sealed class SpeakerMeetingVipSlotTests : IClassFixture<SimfApiFactory>
         {
             RequesterName = "VIP Guest",
             Subject = "Partnership discussion",
-            SlotStartUtc = start,
-            SlotEndUtc = end,
+            SlotStart = start,
+            SlotEnd = end,
         };
 
     private async Task<Guid> SeedSpeakerWithWindowAsync()
@@ -316,8 +316,8 @@ public sealed class SpeakerMeetingVipSlotTests : IClassFixture<SimfApiFactory>
         {
             Id = Guid.NewGuid(),
             SpeakerId = speaker.Id,
-            StartUtc = WindowStart,
-            EndUtc = WindowStart.AddMinutes(60),
+            Start = WindowStart,
+            End = WindowStart.AddMinutes(60),
             SlotMinutes = 30,
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,

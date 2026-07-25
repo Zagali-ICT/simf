@@ -32,7 +32,7 @@ void main() {
         'title': 'Official attendance certificate',
         'titleArabic': 'شهادة حضور رسمية',
         'status': 0,
-        'eventDateUtc': null,
+        'eventDate': null,
         'createdAt': '2026-01-10T08:00:00Z',
         'canCancel': true,
       });
@@ -40,7 +40,7 @@ void main() {
       expect(item.id, 'abc');
       expect(item.status, AppRequestStatus.pending);
       expect(item.canCancel, isTrue);
-      expect(item.eventDateUtc, isNull);
+      expect(item.eventDate, isNull);
       expect(item.localizedSubtitle(true), 'شهادة حضور رسمية');
       expect(item.localizedSubtitle(false), 'Official attendance certificate');
     });
@@ -134,7 +134,7 @@ void main() {
         'title': 'Vision 2030 · Main Hall',
         'titleArabic': 'رؤية 2030 · القاعة',
         'status': 1,
-        'eventDateUtc': '2026-01-12T09:00:00Z',
+        'eventDate': '2026-01-12T09:00:00Z',
         'createdAt': '2026-01-01T09:00:00Z',
       });
       expect(item.displayDate, DateTime.utc(2026, 1, 12, 9));

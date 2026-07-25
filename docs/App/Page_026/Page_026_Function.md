@@ -44,9 +44,9 @@ A submission is only accepted when **all three** hold (Page_026_Logic L-2):
    `HallAttendance` arrival record; otherwise the `IsAtVenue` self-assert toggle
    must be **true** (D-242 / D-171). A remote user (`IsAtVenue = false`, no
    arrival) is rejected `403 NOT_AT_VENUE`.
-2. **Opens 5 minutes before start** — questions open only within `StartUtc − 5min`
+2. **Opens 5 minutes before start** — questions open only within `Start − 5min`
    (`PreStartWindow = 5min`). Earlier than that → `400 SESSION_NOT_LIVE_FOR_QUESTIONS`.
-3. **Closes at the end** — questions close at `EndUtc` (`PostEndWindow = 0`). After
+3. **Closes at the end** — questions close at `End` (`PostEndWindow = 0`). After
    the session ends → `400 SESSION_NOT_LIVE_FOR_QUESTIONS`.
 
 ## Acceptance criteria

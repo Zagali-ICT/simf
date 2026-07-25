@@ -51,7 +51,7 @@ public sealed class OperationsTogglesTests : IClassFixture<SimfApiFactory>
         var token = await CreateAdministratorAndSignInAsync();
         var close = await PutAuthAsync(
             "/api/v1/admin/registration-gate",
-            new UpdateRegistrationGateRequest { IsOpen = false, AutoCloseUtc = null },
+            new UpdateRegistrationGateRequest { IsOpen = false, AutoClose = null },
             token);
         Assert.Equal(HttpStatusCode.OK, close.StatusCode);
 
@@ -99,7 +99,7 @@ public sealed class OperationsTogglesTests : IClassFixture<SimfApiFactory>
             new UpdateRegistrationGateRequest
             {
                 IsOpen = true,
-                AutoCloseUtc = DateTimeOffset.UtcNow.AddMinutes(-1),
+                AutoClose = DateTimeOffset.UtcNow.AddMinutes(-1),
             },
             token);
         Assert.Equal(HttpStatusCode.OK, setAutoClose.StatusCode);
@@ -195,14 +195,14 @@ public sealed class OperationsTogglesTests : IClassFixture<SimfApiFactory>
             {
                 Id = RegistrationGate.SingletonId,
                 IsOpen = true,
-                AutoCloseUtc = null,
+                AutoClose = null,
                 LastChangedAt = DateTimeOffset.UtcNow,
             });
         }
         else
         {
             row.IsOpen = true;
-            row.AutoCloseUtc = null;
+            row.AutoClose = null;
         }
         await db.SaveChangesAsync();
     }

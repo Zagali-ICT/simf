@@ -29,7 +29,7 @@
                 <SimfCheckbox @bind-Value="_gateIsOpen" Disabled="_busy">
                     @L["Admin.Operations.RegistrationGate.IsOpen"]
                 </SimfCheckbox>
-                <SimfTextField Label="@L["Admin.Operations.RegistrationGate.AutoCloseUtc"]"
+                <SimfTextField Label="@L["Admin.Operations.RegistrationGate.AutoClose"]"
                                Helper="@L["Admin.Operations.RegistrationGate.AutoCloseHint"]"
                                Type="datetime-local"
                                Value="@_gateAutoCloseInput"
@@ -38,7 +38,7 @@
                                Disabled="_busy" />
                 <dl class="simf-dl">
                     <dt>@L["Admin.Operations.RegistrationGate.LastChangedAt"]</dt>
-                    <dd>@_gate.LastChangedAt.FormatSaudi("yyyy-MM-dd HH:mm")</dd>
+                    <dd>@_gate.LastChangedAt.FormatSaudi("dd-MM-yyyy hh:mm tt")</dd>
                 </dl>
             </div>
             <div class="simf-form__actions">
@@ -67,7 +67,7 @@
                 </SimfCheckbox>
                 <dl class="simf-dl">
                     <dt>@L["Admin.Operations.Archive.LastChangedAt"]</dt>
-                    <dd>@_archive.LastChangedAt.FormatSaudi("yyyy-MM-dd HH:mm")</dd>
+                    <dd>@_archive.LastChangedAt.FormatSaudi("dd-MM-yyyy hh:mm tt")</dd>
                 </dl>
             </div>
             <div class="simf-form__actions">

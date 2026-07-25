@@ -232,8 +232,8 @@ public sealed class CreateHallAllocationEndpoint(IBusinessMeetingService service
                     Mode = req.Mode,
                     UnitCount = req.UnitCount,
                     RowColumnSpec = req.RowColumnSpec,
-                    StartUtc = req.StartUtc,
-                    EndUtc = req.EndUtc,
+                    Start = req.Start,
+                    End = req.End,
                     Notes = req.Notes,
                 }, ct)), ct);
     }

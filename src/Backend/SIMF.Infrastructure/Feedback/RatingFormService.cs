@@ -78,18 +78,18 @@ internal sealed class RatingFormService(
         // "watched at {session} · {date}" header. Session scope only; a one-row
         // projection (Global/Day carry no header).
         string? targetName = null, targetNameArabic = null;
-        DateTimeOffset? targetStartUtc = null;
+        DateTimeOffset? targetStart = null;
         if (type.Scope == RatingScope.PerSession && targetId != Guid.Empty)
         {
             var session = await dbContext.Sessions.AsNoTracking()
                 .Where(s => s.Id == targetId)
-                .Select(s => new { s.Title, s.TitleArabic, s.StartUtc })
+                .Select(s => new { s.Title, s.TitleArabic, s.Start })
                 .SingleOrDefaultAsync(cancellationToken);
             if (session is not null)
             {
                 targetName = session.Title;
                 targetNameArabic = session.TitleArabic;
-                targetStartUtc = session.StartUtc;
+                targetStart = session.Start;
             }
         }
 
@@ -98,7 +98,7 @@ internal sealed class RatingFormService(
             type.HasOverallStars, type.AllowComment, type.CommentLabel, type.CommentLabelArabic,
             type.Scope == RatingScope.Global ? null : targetId,
             grouped, ungrouped, existing,
-            targetName, targetNameArabic, targetStartUtc,
+            targetName, targetNameArabic, targetStart,
             isEligible);
     }
 
@@ -316,8 +316,8 @@ internal sealed class RatingFormService(
 
         var inHall = await dbContext.HallAttendances.AnyAsync(
             a => a.UserId == userId
-                && a.Session!.StartUtc >= dayStart
-                && a.Session!.StartUtc < dayEnd,
+                && a.Session!.Start >= dayStart
+                && a.Session!.Start < dayEnd,
             cancellationToken);
         if (inHall)
         {
@@ -333,8 +333,8 @@ internal sealed class RatingFormService(
             g => g.UserProfileId == profileId
                 && g.Direction == ScanDirection.CheckIn
                 && g.Outcome == ScanOutcome.Allowed
-                && g.ScannedAtUtc >= dayStart
-                && g.ScannedAtUtc < dayEnd,
+                && g.ScannedAt >= dayStart
+                && g.ScannedAt < dayEnd,
             cancellationToken);
     }
 

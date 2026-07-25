@@ -44,7 +44,7 @@ public static class EmailTemplateCatalog
         new("Count", "Badge count", "عدد الشارات", "8");
 
     private static readonly EmailTemplateToken GeneratedAtToken =
-        new("GeneratedAt", "Generated at (UTC)", "تاريخ التوليد (UTC)", "2026-07-20 09:30");
+        new("GeneratedAt", "Generated at (Saudi time)", "تاريخ التوليد (بتوقيت السعودية)", "2026-07-20 09:30 AM");
 
     private static readonly IReadOnlyList<EmailTemplateToken> BulkBadgeTokens =
         [CountToken, GeneratedAtToken];
@@ -118,10 +118,10 @@ public static class EmailTemplateCatalog
 
         new(EmailTemplateType.BulkBadgeDelivery,
             "Your SIMF badge batch ({Count} badges)",
-            "<p>A batch of {Count} SIMF badge(s) was generated for you on {GeneratedAt} UTC.</p>" +
+            "<p>A batch of {Count} SIMF badge(s) was generated for you on {GeneratedAt}.</p>" +
             "<p>The QR badge images are attached to this email as a single ZIP file, " +
             "one PNG per badge.</p>",
-            "<p>تم توليد دفعة من {Count} شارة في نظام سيمف بتاريخ {GeneratedAt} بتوقيت UTC.</p>" +
+            "<p>تم توليد دفعة من {Count} شارة في نظام سيمف بتاريخ {GeneratedAt}.</p>" +
             "<p>صور رموز QR للشارات مرفقة بهذه الرسالة في ملف مضغوط واحد، صورة PNG لكل شارة.</p>",
             BulkBadgeTokens),
 

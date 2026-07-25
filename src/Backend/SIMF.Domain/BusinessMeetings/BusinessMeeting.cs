@@ -22,10 +22,10 @@ public sealed class BusinessMeeting
     public BusinessMeetingType MeetingType { get; set; }
 
     /// <summary>Slot start (inclusive, UTC).</summary>
-    public DateTimeOffset StartUtc { get; set; }
+    public DateTimeOffset Start { get; set; }
 
-    /// <summary>Slot end (exclusive, UTC). Must be after <see cref="StartUtc"/>.</summary>
-    public DateTimeOffset EndUtc { get; set; }
+    /// <summary>Slot end (exclusive, UTC). Must be after <see cref="Start"/>.</summary>
+    public DateTimeOffset End { get; set; }
 
     /// <summary>Lifecycle state. Confirmed on create; Cancelled after an admin
     /// cancels.</summary>

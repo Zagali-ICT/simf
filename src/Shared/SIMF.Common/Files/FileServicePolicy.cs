@@ -40,7 +40,7 @@ public enum FileAccessClass
 /// <param name="OwnerEntityType">The polymorphic owner family.</param>
 /// <param name="OwnerRequired">When true, an upload MUST carry a (server-derived)
 /// owner id and the download owner-check can never silently fall through to admin.</param>
-/// <param name="Retention">Retention period from which RetainUntilUtc is computed;
+/// <param name="Retention">Retention period from which RetainUntil is computed;
 /// null = indefinite. (The concrete schedule is open owner decision D-568 #7.)</param>
 /// <param name="DeletableDefault">Default for StoredFile.IsDeletable.</param>
 public sealed record FileServicePolicy(
@@ -104,6 +104,18 @@ public static class FileServicePolicies
             [FileService.SessionRecording] = new(
                 FileService.SessionRecording, FileSensitivityTier.Internal, FileAccessClass.Authenticated,
                 AdminPermission: null, EncryptAtRest: false, Videos, FileOwnerEntityType.Session,
+                OwnerRequired: false, Retention: null, DeletableDefault: true),
+
+            // ── Public video (plaintext, seekable) ───────────────────────────
+            // D-768 — the landing/home hero background video. Public-tier (shown to
+            // anonymous guests on the app home + the website landing) and, like a
+            // recording, EncryptAtRest:false so it stays seekable for Range/HTTP-206
+            // streaming (AES-GCM is not seekable). It is public branding content,
+            // never PII — the same posture as the public logos, only larger and
+            // range-served through its own dedicated .mp4 route.
+            [FileService.OrganizationHeroVideo] = new(
+                FileService.OrganizationHeroVideo, FileSensitivityTier.Public, FileAccessClass.Public,
+                AdminPermission: null, EncryptAtRest: false, Videos, FileOwnerEntityType.OrganizationProfile,
                 OwnerRequired: false, Retention: null, DeletableDefault: true),
 
             // ── Public images (plaintext) ────────────────────────────────────

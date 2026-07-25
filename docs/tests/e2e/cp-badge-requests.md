@@ -79,7 +79,7 @@ Background:
 Scenario: Accept a pending badge update request
   Given the grid is showing rows of every status (no filter applied)
   Then POST /account/api/admin/badge-requests/list fires with Skip=0
-  And each row shows the columns: Requester, Requested job title, Status, Submitted (UTC), and a quiet Actions column
+  And each row shows the columns: Requester, Requested job title, Status, Submitted (Saudi time), and a quiet Actions column
   And the Pending row shows the amber "Pending" pill and the requested title "Lead Naval Architect"
 
   When the administrator clicks the row's Respond (reply ↩ icon) action on the first Pending row

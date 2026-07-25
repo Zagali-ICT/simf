@@ -129,6 +129,9 @@
   <data name="Admin.SpeakerAvailability.Speaker" xml:space="preserve"><value>المتحدّث</value></data>
   <data name="Admin.SpeakerAvailability.PickSpeaker" xml:space="preserve"><value>اختر متحدّثاً…</value></data>
   <data name="Admin.SpeakerAvailability.AddWindow" xml:space="preserve"><value>إضافة فترة توفّر</value></data>
+  <data name="Admin.Availability.WindowsHelp" xml:space="preserve"><value>يُقسَّم كل نطاق تلقائياً إلى فترات قابلة للحجز بالطول الذي تحدده أدناه. يختار مقدّمو الطلبات من هذه الفترات المتاحة، وتختفي الفترة من القائمة بمجرد حجزها.</value></data>
+  <data name="Admin.Availability.DeleteConfirmMsg" xml:space="preserve"><value>حذف فترة التوفّر هذه؟ لن تُعرض فتراتها القابلة للحجز بعد الآن.</value></data>
+  <data name="Admin.Availability.WindowDeleted" xml:space="preserve"><value>تم حذف فترة التوفّر.</value></data>
   <data name="Admin.SpeakerAvailability.Start" xml:space="preserve"><value>البداية (بتوقيت السعودية)</value></data>
   <data name="Admin.SpeakerAvailability.End" xml:space="preserve"><value>النهاية (بتوقيت السعودية)</value></data>
   <data name="Admin.SpeakerAvailability.SlotMinutes" xml:space="preserve"><value>مدة الفترة (دقائق)</value></data>
@@ -161,6 +164,7 @@
   <data name="Admin.DelegationAvailability.BadDateRange" xml:space="preserve"><value>يجب أن تكون التواريخ ضمن {0}.</value></data>
   <data name="Admin.Meetings.CheckIn" xml:space="preserve"><value>تسجيل الحضور</value></data>
   <data name="Admin.Meetings.CheckIn.Done" xml:space="preserve"><value>تم تسجيل حضور الاجتماع.</value></data>
+  <data name="Admin.Meetings.CheckIn.ConfirmMsg" xml:space="preserve"><value>تسجيل حضور هذا الاجتماع في القاعة؟ سيُعلَّم كمنتهٍ.</value></data>
   <data name="Admin.Meetings.Bind.Hall" xml:space="preserve"><value>القاعة</value></data>
   <data name="Admin.Meetings.Bind.PickHall" xml:space="preserve"><value>— اختر قاعة —</value></data>
   <data name="Admin.Meetings.Bind.Slot" xml:space="preserve"><value>فترة القاعة</value></data>
@@ -180,6 +184,10 @@
   <data name="Admin.Meetings.Status.AwaitingConfirmation" xml:space="preserve"><value>بانتظار التأكيد</value></data>
   <data name="Admin.Meetings.Status.Done" xml:space="preserve"><value>منتهٍ</value></data>
   <data name="Admin.Meetings.Status.Cancelled" xml:space="preserve"><value>ملغى</value></data>
+  <data name="Admin.Meetings.Status.Pending" xml:space="preserve"><value>قيد الانتظار</value></data>
+  <data name="Admin.Meetings.Status.Accepted" xml:space="preserve"><value>مؤكَّد</value></data>
+  <data name="Admin.Meetings.Status.Rejected" xml:space="preserve"><value>مرفوض</value></data>
+  <data name="Admin.Meetings.RespondHelp" xml:space="preserve"><value>«موافقة»: تُرسل للطرف الآخر رابط تأكيد (يُعقد الاجتماع بعد تأكيده). «تأكيد»: يحجزه فوراً عند وجود موافقة شفهية مسبقة. «رفض/إلغاء»: يغلق الطلب (يلزم إدخال مبرّر).</value></data>
   <data name="Admin.Edit.Meetings.Section" xml:space="preserve"><value>صلاحية اللقاءات الثنائية</value></data>
   <data name="Admin.Edit.Meetings.AllowsSpeaker" xml:space="preserve"><value>يمكنه طلب لقاءات المتحدثين</value></data>
   <data name="Admin.Edit.Meetings.AllowsDelegation" xml:space="preserve"><value>يمكنه طلب اجتماعات الوفود</value></data>
@@ -901,8 +909,14 @@
   <data name="Admin.Gates.Field.AllowedProfileTypes" xml:space="preserve"><value>أنواع الملفات المسموح بها</value></data>
   <data name="Admin.Gates.Field.AllowedProfileTypesHint" xml:space="preserve"><value>فارغة = جميع الأنواع مسموحة (بوابة عامة). اختر واحدة أو أكثر لتقييد البوابة.</value></data>
   <data name="Admin.Gates.Field.AssignedOperators" xml:space="preserve"><value>المشغلون المعيّنون</value></data>
-  <data name="Admin.Gates.Field.AssignedOperatorsHint" xml:space="preserve"><value>المشغلون الذين يمكنهم المسح في هذه البوابة. اضغط Ctrl/Cmd لتحديد متعدد.</value></data>
+  <data name="Admin.Gates.Field.AssignedOperatorsHint" xml:space="preserve"><value>المشغلون الذين يمكنهم المسح في هذه البوابة. حدّد كل مشغّل لتعيينه.</value></data>
   <data name="Admin.Gates.Field.IsActive" xml:space="preserve"><value>نشطة — متاحة للمسح</value></data>
+  <data name="Admin.Gates.Section.Identification" xml:space="preserve"><value>التعريف</value></data>
+  <data name="Admin.Gates.Section.Routing" xml:space="preserve"><value>الاتجاه والقاعة</value></data>
+  <data name="Admin.Gates.Section.Descriptions" xml:space="preserve"><value>الأوصاف</value></data>
+  <data name="Admin.Gates.Section.Access" xml:space="preserve"><value>الصلاحيات والمشغّلون</value></data>
+  <data name="Admin.Gates.Field.NoProfileTypes" xml:space="preserve"><value>لا توجد أنواع ملفات نشطة.</value></data>
+  <data name="Admin.Gates.Field.NoOperators" xml:space="preserve"><value>لا يوجد مشغّلون مرشحون.</value></data>
   <data name="Admin.Gates.DirectionMode.In" xml:space="preserve"><value>دخول فقط</value></data>
   <data name="Admin.Gates.DirectionMode.Out" xml:space="preserve"><value>خروج فقط</value></data>
   <data name="Admin.Gates.DirectionMode.Both" xml:space="preserve"><value>كلاهما (اتجاه مستنتج)</value></data>
@@ -1018,6 +1032,13 @@
   <data name="Admin.OrganizationProfile.Saved" xml:space="preserve"><value>تم الحفظ.</value></data>
   <data name="Admin.OrganizationProfile.SaveFailed" xml:space="preserve"><value>تعذّر حفظ الملف.</value></data>
   <data name="Admin.OrganizationProfile.LoadFailed" xml:space="preserve"><value>تعذّر تحميل الملف.</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoUpload" xml:space="preserve"><value>رفع فيديو</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoUploading" xml:space="preserve"><value>جارٍ الرفع…</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoRemove" xml:space="preserve"><value>إزالة الفيديو المرفوع</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoHint" xml:space="preserve"><value>MP4 أو M4V أو WebM، حتى 200 ميغابايت. الرفع يستبدل خلفية الواجهة أعلاه ويعمل على أندرويد. لاستخدام رابط يوتيوب أو رابط خارجي بدلاً من ذلك، ألصقه في الحقل أعلاه واترك هذا فارغاً.</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoUploaded" xml:space="preserve"><value>تم رفع فيديو الواجهة.</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoRemoved" xml:space="preserve"><value>تمت إزالة فيديو الواجهة.</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoFailed" xml:space="preserve"><value>تعذّر تحديث فيديو الواجهة.</value></data>
   <data name="Admin.SiteSettings.Title" xml:space="preserve"><value>إعدادات الموقع</value></data>
   <data name="Admin.SiteSettings.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
   <data name="Admin.SiteSettings.Section.Registration" xml:space="preserve"><value>رسالة التسجيل</value></data>
@@ -1881,6 +1902,46 @@
   <data name="Admin.Vips.Notify.Cancel" xml:space="preserve"><value>إلغاء</value></data>
   <data name="Admin.Vips.Notify.Sent" xml:space="preserve"><value>تم الإرسال إلى {0} ضيفاً ({1} بريداً إلكترونياً).</value></data>
   <data name="Admin.Vips.Notify.Failed" xml:space="preserve"><value>تعذّر إرسال الرسالة.</value></data>
+  <data name="Module.Announcements" xml:space="preserve"><value>الإعلانات</value></data>
+  <data name="Admin.Announcements.Title" xml:space="preserve"><value>الإعلانات</value></data>
+  <data name="Admin.Announcements.Compose" xml:space="preserve"><value>إنشاء إعلان</value></data>
+  <data name="Admin.Announcements.Target" xml:space="preserve"><value>الإرسال إلى</value></data>
+  <data name="Admin.Announcements.Target.Session" xml:space="preserve"><value>جلسة محددة</value></data>
+  <data name="Admin.Announcements.Target.Audience" xml:space="preserve"><value>جمهور عام</value></data>
+  <data name="Admin.Announcements.Session" xml:space="preserve"><value>الجلسة</value></data>
+  <data name="Admin.Announcements.Session.Placeholder" xml:space="preserve"><value>اختر جلسة…</value></data>
+  <data name="Admin.Announcements.Audience" xml:space="preserve"><value>الجمهور</value></data>
+  <data name="Admin.Announcements.Audience.ApprovedAppUsers" xml:space="preserve"><value>جميع مستخدمي التطبيق المعتمدين</value></data>
+  <data name="Admin.Announcements.Audience.EventAttendees" xml:space="preserve"><value>حضور الفعالية (لديهم حجز مقعد)</value></data>
+  <data name="Admin.Announcements.Audience.EveryoneIncludingPending" xml:space="preserve"><value>الجميع (بما في ذلك قيد الاعتماد)</value></data>
+  <data name="Admin.Announcements.Severity" xml:space="preserve"><value>الأهمية</value></data>
+  <data name="Admin.Announcements.Severity.Info" xml:space="preserve"><value>معلومة</value></data>
+  <data name="Admin.Announcements.Severity.Success" xml:space="preserve"><value>نجاح</value></data>
+  <data name="Admin.Announcements.Severity.Warning" xml:space="preserve"><value>تحذير</value></data>
+  <data name="Admin.Announcements.Severity.Error" xml:space="preserve"><value>حرِج</value></data>
+  <data name="Admin.Announcements.TitleField" xml:space="preserve"><value>العنوان (بالإنجليزية)</value></data>
+  <data name="Admin.Announcements.TitleArabicField" xml:space="preserve"><value>العنوان (بالعربية)</value></data>
+  <data name="Admin.Announcements.BodyField" xml:space="preserve"><value>الرسالة (بالإنجليزية)</value></data>
+  <data name="Admin.Announcements.BodyArabicField" xml:space="preserve"><value>الرسالة (بالعربية)</value></data>
+  <data name="Admin.Announcements.Recipients" xml:space="preserve"><value>سيصل هذا إلى {0} مستلماً.</value></data>
+  <data name="Admin.Announcements.RecipientsUnknown" xml:space="preserve"><value>اختر هدفاً لعرض عدد المستلمين.</value></data>
+  <data name="Admin.Announcements.Send" xml:space="preserve"><value>إرسال الإعلان</value></data>
+  <data name="Admin.Announcements.Sent" xml:space="preserve"><value>تم إدراج الإعلان: يُرسل إلى {0} مستلماً.</value></data>
+  <data name="Admin.Announcements.Failed" xml:space="preserve"><value>تعذّر إرسال الإعلان.</value></data>
+  <data name="Admin.Announcements.History" xml:space="preserve"><value>الإعلانات الأخيرة</value></data>
+  <data name="Admin.Announcements.Loading" xml:space="preserve"><value>جارٍ تحميل الإعلانات…</value></data>
+  <data name="Admin.Announcements.None" xml:space="preserve"><value>لم يُرسل أي إعلان بعد.</value></data>
+  <data name="Admin.Announcements.LoadFailed" xml:space="preserve"><value>تعذّر تحميل الإعلانات.</value></data>
+  <data name="Admin.Announcements.Status.Pending" xml:space="preserve"><value>قيد الانتظار</value></data>
+  <data name="Admin.Announcements.Status.Processing" xml:space="preserve"><value>قيد الإرسال</value></data>
+  <data name="Admin.Announcements.Status.Completed" xml:space="preserve"><value>تم الإرسال</value></data>
+  <data name="Admin.Announcements.Status.Failed" xml:space="preserve"><value>فشل</value></data>
+  <data name="Admin.Announcements.Col.When" xml:space="preserve"><value>الوقت</value></data>
+  <data name="Admin.Announcements.Col.Target" xml:space="preserve"><value>الهدف</value></data>
+  <data name="Admin.Announcements.Col.Message" xml:space="preserve"><value>الرسالة</value></data>
+  <data name="Admin.Announcements.Col.Status" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Admin.Announcements.Col.Recipients" xml:space="preserve"><value>المستلمون</value></data>
+  <data name="Admin.Announcements.Col.Emails" xml:space="preserve"><value>البريد</value></data>
   <data name="Module.SessionModerators" xml:space="preserve"><value>مشرفو الجلسات</value></data>
   <data name="Module.QuestionQueue" xml:space="preserve"><value>قائمة الأسئلة</value></data>
   <data name="Admin.QuestionQueue.Title" xml:space="preserve"><value>قائمة الأسئلة</value></data>
@@ -2200,6 +2261,11 @@
   <data name="Admin.HallSeatLayouts.CapacityExceeded" xml:space="preserve"><value>إجمالي المقاعد يتجاوز سعة القاعة، أو أحد الصفوف خارج النطاق 1–80. عدّل الأعداد قبل الحفظ.</value></data>
   <data name="Admin.HallSeatLayouts.Save" xml:space="preserve"><value>حفظ المخطط</value></data>
   <data name="Admin.HallSeatLayouts.Saved" xml:space="preserve"><value>تم حفظ المخطط.</value></data>
+  <data name="Admin.HallSeatLayouts.RowsBySeats" xml:space="preserve"><value>{0} صفوف × {1} مقعداً لكل صف</value></data>
+  <data name="Admin.HallSeatLayouts.Capacity.Over" xml:space="preserve"><value>سعة المخطط تتجاوز سعة القاعة. قلّل عدد الصفوف أو المقاعد لكل صف قبل الحفظ.</value></data>
+  <data name="Admin.HallSeatLayouts.Preview.Title" xml:space="preserve"><value>معاينة المخطط</value></data>
+  <data name="Admin.HallSeatLayouts.Preview.Empty" xml:space="preserve"><value>أدخل رموز الصفوف وعدد المقاعد لكل صف لمعاينة مخطط المقاعد.</value></data>
+  <data name="Admin.HallSeatLayouts.Preview.Front" xml:space="preserve"><value>المقدمة / المنصة</value></data>
   <data name="Admin.SessionSeatPlans.Title" xml:space="preserve"><value>مخطط مقاعد الجلسات</value></data>
   <data name="Admin.SessionSeatPlans.Legend.Free" xml:space="preserve"><value>متاح</value></data>
   <data name="Admin.SessionSeatPlans.Legend.User" xml:space="preserve"><value>محجوز (زائر)</value></data>
@@ -2237,6 +2303,7 @@
   <data name="Admin.SpeakerMeetingRequests.Filter.AwaitingSpeaker" xml:space="preserve"><value>بانتظار المتحدّث</value></data>
   <data name="Admin.SpeakerMeetingRequests.Resend" xml:space="preserve"><value>إعادة إرسال تأكيد المتحدّث</value></data>
   <data name="Admin.SpeakerMeetingRequests.Resend.Done" xml:space="preserve"><value>تمت إعادة إرسال بريد تأكيد المتحدّث.</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Resend.ConfirmMsg" xml:space="preserve"><value>إعادة إرسال بريد التأكيد بروابط جديدة صالحة ٧٢ ساعة؟</value></data>
   <data name="Admin.SpeakerMeetingRequests.Filter.Cancelled" xml:space="preserve"><value>ملغى</value></data>
   <data name="Admin.SpeakerMeetingRequests.Bind.Hall" xml:space="preserve"><value>الربط بقاعة (اختياري)</value></data>
   <data name="Admin.SpeakerMeetingRequests.Bind.NoHall" xml:space="preserve"><value>— بدون قاعة (قبول فقط) —</value></data>

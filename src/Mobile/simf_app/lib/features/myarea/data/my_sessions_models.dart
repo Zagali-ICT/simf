@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../core/utils/saudi_time.dart';
 import '../../sessions/data/session_models.dart' show SessionStatus;
 
 /// One card on the "my sessions" list — App "تفاصيل الجلسات" (Figma 1388:9067),
@@ -14,8 +15,8 @@ class MyAreaSessionItem {
     required this.id,
     required this.title,
     required this.titleArabic,
-    required this.startUtc,
-    required this.endUtc,
+    required this.start,
+    required this.end,
     required this.status,
     required this.attended,
     required this.isFavourite,
@@ -31,8 +32,8 @@ class MyAreaSessionItem {
   final String id;
   final String title;
   final String titleArabic;
-  final DateTime startUtc;
-  final DateTime endUtc;
+  final DateTime start;
+  final DateTime end;
   final SessionStatus status;
   final bool attended;
   final bool isFavourite;
@@ -44,20 +45,20 @@ class MyAreaSessionItem {
   final String? speakerNameAr;
   final String? speakerTitle;
 
-  /// The session's start in the device-local zone (the wire value is UTC).
-  DateTime get startLocal => startUtc.toLocal();
+  /// The session's start on the Saudi event-local wall clock (wire value UTC).
+  DateTime get startLocal => saudiOf(start);
 
   /// The session length in whole minutes (floored at 0).
   int get durationMinutes {
-    final minutes = endUtc.difference(startUtc).inMinutes;
+    final minutes = end.difference(start).inMinutes;
     return minutes < 0 ? 0 : minutes;
   }
 
   /// True once the session has finished (its end is in the past).
-  bool hasEnded(DateTime nowUtc) => endUtc.isBefore(nowUtc);
+  bool hasEnded(DateTime nowUtc) => end.isBefore(nowUtc);
 
   /// True while the session is still to come (its start is in the future).
-  bool isUpcoming(DateTime nowUtc) => startUtc.isAfter(nowUtc);
+  bool isUpcoming(DateTime nowUtc) => start.isAfter(nowUtc);
 
   /// True when the session has a replayable recording on the archive tab
   /// (broadcast lifecycle reached Recorded / Published).
@@ -81,8 +82,8 @@ class MyAreaSessionItem {
         id: json['id'] as String? ?? '',
         title: json['title'] as String? ?? '',
         titleArabic: json['titleArabic'] as String? ?? '',
-        startUtc: _parseUtc(json['startUtc']),
-        endUtc: _parseUtc(json['endUtc']),
+        start: _parseUtc(json['start']),
+        end: _parseUtc(json['end']),
         status: SessionStatus.fromJson(json['status']),
         attended: json['attended'] as bool? ?? false,
         isFavourite: json['isFavourite'] as bool? ?? false,

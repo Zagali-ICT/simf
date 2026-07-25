@@ -72,7 +72,7 @@
 | E2E-BNR-009 | Edit read-back: `GET /{id}` pre-fills every field incl. optional Image/Link URLs | happy | P1 | _to author_ |
 | E2E-BNR-010 | Delete a banner → green "Banner deleted." toast + row drops from grid | happy | P1 | _to author_ |
 | E2E-BNR-011 | Edit not-found: stale id → 404 `BANNER_NOT_FOUND` bilingual toast, modal stays | error | P2 | _to author_ |
-| E2E-BNR-012 | Display-order sort: grid orders by DisplayOrder then StartUtc | happy | P2 | _to author_ |
+| E2E-BNR-012 | Display-order sort: grid orders by DisplayOrder then Start | happy | P2 | _to author_ |
 | E2E-BNR-013 | Server 500 on `/list` → bilingual fallback "The banners could not be loaded." | resilience | P2 | _to author_ |
 | E2E-BNR-014 | RTL / Arabic render: page + modal mirror, Arabic title column shown | i18n | P1 | _to author_ |
 | E2E-BNR-015 | Per-column filter: typing in the Title filter narrows the grid (`Filters["title"]`, Skip→0) | happy | P1 | _to author_ |
@@ -152,7 +152,7 @@ Scenario: Create, read-back via Edit, toggle Active, then delete one banner
   Then the BFF calls DELETE /account/api/admin/banners/{id} and returns 200
   And a green toast reads "Banner deleted." / "تم حذف اللافتة."
   And the grid reloads and the row no longer appears (soft-deleted: IsActive=false,
-      and the list shows only DisplayOrder/StartUtc ordering — deactivated rows
+      and the list shows only DisplayOrder/Start ordering — deactivated rows
       drop out because the row was already inactive after the edit)
 ```
 
@@ -314,13 +314,13 @@ Scenario: Editing a since-deleted banner returns 404
 ### E2E-BNR-012 — Display-order sort
 
 ```gherkin
-Scenario: Grid orders by DisplayOrder then StartUtc
+Scenario: Grid orders by DisplayOrder then Start
   Given three banners exist with Display order 0, 2 and 2
     (the two order-2 banners start one day apart)
   When the administrator opens /admin/banners
   Then the grid lists the Order=0 banner first
-  And then the two Order=2 banners in ascending StartUtc order
-  (server-side: rows.OrderBy(b => b.DisplayOrder).ThenBy(b => b.StartUtc))
+  And then the two Order=2 banners in ascending Start order
+  (server-side: rows.OrderBy(b => b.DisplayOrder).ThenBy(b => b.Start))
 ```
 
 ### E2E-BNR-013 — Server 500 on /list
@@ -376,7 +376,7 @@ Scenario: Typing in the Title column filter narrows the grid to matching banners
 ```gherkin
 Scenario: Clicking a sortable header toggles ascending / descending order
   Given the administrator is on /admin/banners
-  And the grid defaults to DisplayOrder asc, then StartUtc asc (no Sort key sent)
+  And the grid defaults to DisplayOrder asc, then Start asc (no Sort key sent)
   When the administrator clicks the "Title" column header
   Then the BFF posts POST /account/api/admin/banners/list and the API returns 200
   And the GridQuery carries Sort="title" with SortDescending=false (server: OrderBy(b => b.TitleEn))
@@ -384,9 +384,9 @@ Scenario: Clicking a sortable header toggles ascending / descending order
   When the administrator clicks the "Title" header again
   Then a fresh POST fires with Sort="title" and SortDescending=true (server: OrderByDescending(b => b.TitleEn))
   And the grid re-renders ordered by Title Z→A
-  When the administrator clicks the "Start" column header (Key="startUtc")
-  Then a fresh POST fires with Sort="startUtc", SortDescending=false (server: OrderBy(b => b.StartUtc))
-  And the grid re-renders by earliest StartUtc first
+  When the administrator clicks the "Start" column header (Key="start")
+  Then a fresh POST fires with Sort="start", SortDescending=false (server: OrderBy(b => b.Start))
+  And the grid re-renders by earliest Start first
 ```
 
 ### E2E-BNR-017 — Presentation toggle persists (D-353)
@@ -474,7 +474,7 @@ Scenario: Export the filtered grid to an XLSX workbook
       application/vnd.openxmlformats-officedocument.spreadsheetml.sheet)
   And the browser saves a file named simf-banners-{yyyyMMddHHmmss}.xlsx
   And the workbook's "Banners" sheet header row reads
-      Title | TitleArabic | StartUtc | EndUtc | DisplayOrder | IsActive
+      Title | TitleArabic | Start | End | DisplayOrder | IsActive
       | Body | BodyArabic | ImageUrl | LinkUrl
       (D-506 — the last four were appended so the export round-trips back through
        import without dropping the body or the image/link URLs)
@@ -498,7 +498,7 @@ Scenario: Import banners from a workbook and see the per-row outcome
   Then OnImportAsync calls _excel.TriggerImportAsync, which clicks the hidden
       file input id="banners-import-input" (accept=".xlsx")
   When they choose an .xlsx whose "Banners" sheet has the required headers
-      Title | TitleArabic | Body | BodyArabic | StartUtc | EndUtc
+      Title | TitleArabic | Body | BodyArabic | Start | End
       with rows for two new banners
   Then a POST /account/api/admin/banners/import fires as multipart/form-data
   And the import-result modal shows "2 created, 0 updated, 0 skipped." with no row errors
@@ -567,7 +567,7 @@ Scenario: Upload an image to a banner and see it serve on the app home hero
        gated by Banners.Edit, and returns 200
   And the admin preview GET /account/api/admin/assets/Banner/{bannerId}/image shows it
   And the public GET /app/assets/Banner/{bannerId}/image returns 200 (the banner is
-      active AND within [StartUtc, EndUtc])
+      active AND within [Start, End])
   When the banner's window has ended (or it is deactivated)
   Then the public GET /app/assets/Banner/{bannerId}/image returns 404
       (matching GET /app/banners visibility — the app then falls back)
@@ -578,7 +578,7 @@ Scenario: Upload an image to a banner and see it serve on the app home hero
 `test/features/home/widgets/home_hero_banner_test.dart` (rotation + the edition
 overlay); the serve-window predicate is asserted at the API layer by
 `CmsTests.Banner_create_then_public_list_returns_active_only_within_window`
-(same `IsActive && StartUtc <= now && EndUtc >= now` predicate the image serve reuses).
+(same `IsActive && Start <= now && End >= now` predicate the image serve reuses).
 
 ---
 

@@ -135,7 +135,7 @@ public sealed class PublicPresentationsTests : IClassFixture<SimfApiFactory>
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Session", TitleArabic = "جلسة",
             HallId = hall.Id,
-            StartUtc = now, EndUtc = now.AddHours(1),
+            Start = now, End = now.AddHours(1),
             IsActive = true, CreatedAt = now,
         };
         app.Sessions.Add(session);
@@ -203,7 +203,7 @@ public sealed class PublicPresentationsTests : IClassFixture<SimfApiFactory>
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Deckless Session", TitleArabic = "جلسة بلا عرض",
             HallId = hall.Id,
-            StartUtc = now.AddHours(2), EndUtc = now.AddHours(3),
+            Start = now.AddHours(2), End = now.AddHours(3),
             IsActive = true, CreatedAt = now,
         };
         app.Sessions.Add(session);

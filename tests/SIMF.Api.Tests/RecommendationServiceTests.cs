@@ -361,7 +361,7 @@ public sealed class RecommendationServiceTests : IClassFixture<SimfApiFactory>
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Subsea Panel", TitleArabic = "جلسة قاع البحار",
             HallId = hall.Id,
-            StartUtc = now, EndUtc = now.AddHours(1),
+            Start = now, End = now.AddHours(1),
             IsActive = true, CreatedAt = now,
         };
         app.Sessions.Add(session);

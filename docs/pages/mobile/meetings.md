@@ -77,7 +77,7 @@ Two equal pills (shared `RequestActionButton`):
 | Photo | `speakerId` | speaker photo via `/app/assets/SpeakerPhoto/{id}/image`; anchor placeholder for a delegation (no speaker) |
 | Name | `title`/`titleArabic` | gold; the speaker name / target country |
 | Chevron | `speakerId != null` | tap the card → the speaker profile; absent for a delegation |
-| Date + clock | `eventDateUtc` | the meeting slot, "07:45 AM · اليوم" today else the date |
+| Date + clock | `eventDate` | the meeting slot, "07:45 AM · اليوم" today else the date |
 
 ## 5. The create flow (shared sheet)
 
@@ -106,7 +106,7 @@ Home "اللقاءات الثنائية" tile (VIP only) → /meetings
 السجل → /requests (the full history, طلباتي)
 ```
 
-`AppRequestItem { kind, id, title, titleArabic, status, eventDateUtc?, createdAt,
+`AppRequestItem { kind, id, title, titleArabic, status, eventDate?, createdAt,
 canCancel, subtitle?, speakerId?, countryId? }` — `speakerId`/`countryId` are the
 D-745 append-only additions for the card photo + flag (wire contract preserved).
 
@@ -127,7 +127,7 @@ inline-end, speaker photo inline-start) mirror right-to-left; the golden locks i
 ## 9. Edge cases + known limitations
 
 - **Approved + upcoming only.** An accepted meeting with **no slot yet**
-  (`eventDateUtc == null`) still shows (it is not "done"); a **past-dated**
+  (`eventDate == null`) still shows (it is not "done"); a **past-dated**
   accepted meeting drops off. Pending / rejected / cancelled never appear here.
 - **Status-filter chips are intentionally omitted** — the list is single-status
   (accepted), so chips would be redundant. They remain on the history page.

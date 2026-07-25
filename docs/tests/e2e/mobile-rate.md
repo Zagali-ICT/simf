@@ -20,8 +20,8 @@
   `{ ratingTypeId, code, name, scope, hasOverallStars, allowComment, commentLabel,
   targetId, groups[{ name, questions[{ id, text, isRequired }] }], ungroupedQuestions[],
   existing{ overallStars, comment, answers[{ questionId, stars }] },
-  targetName?, targetNameArabic?, targetStartUtc?, isEligible }`.
-  **D-713 (appended):** `targetName` / `targetNameArabic` / `targetStartUtc` carry the
+  targetName?, targetNameArabic?, targetStart?, isEligible }`.
+  **D-713 (appended):** `targetName` / `targetNameArabic` / `targetStart` carry the
   rated **session's** title + start time (null for a Global type), for the app's
   "watched at {session} · {date}" header. Append-only (D-219) — the shipped app ignores them.
   **Owner 2026-07-19 (appended):** `isEligible` is `false` when the caller has not
@@ -176,7 +176,7 @@ Scenario: The clock-end prompt is attendance-gated, not booking-based (owner 202
   When the SessionRatingPromptWorker scans the ended session
   Then visitor A gets exactly one SessionRatingRequest
   And visitor B gets none (a booking is not attendance)
-  And the session is stamped RatingPromptSentUtc so it is not re-scanned
+  And the session is stamped RatingPromptSent so it is not re-scanned
 
 Scenario: Viewing a session's detail never opens the rate form (owner 2026-07-22)
   Given an approved visitor opens an ENDED session's detail without attending it
@@ -202,7 +202,7 @@ Scenario: The CP controls the day and overall rating prompts (owner 2026-07-22)
 
 Scenario: The per-session rate form shows the watched-at header (D-713)
   Given the visitor opens /rate?code=Session&targetId={sessionId}
-  Then GET /app/feedback/form returns targetName + targetStartUtc for that session
+  Then GET /app/feedback/form returns targetName + targetStart for that session
   And the screen shows a "Watched {session} · {date}" context chip above the form
   But the global App form (code=App, no target) shows no such header
 ```

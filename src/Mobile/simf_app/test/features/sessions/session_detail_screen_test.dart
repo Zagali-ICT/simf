@@ -20,8 +20,8 @@ import '../accessibility/_fake_prefs.dart';
 SessionDetail _detail({
   String? liveStreamUrl,
   int? countryId,
-  DateTime? startUtc,
-  DateTime? endUtc,
+  DateTime? start,
+  DateTime? end,
 }) =>
     SessionDetail(
       id: 's1',
@@ -33,8 +33,8 @@ SessionDetail _detail({
       hallName: 'Main Hall',
       hallNameArabic: 'القاعة الرئيسية',
       // Default: an upcoming session (future) → the D-714 pre-session ask label.
-      startUtc: startUtc ?? DateTime.utc(2026, 11, 23, 6),
-      endUtc: endUtc ?? DateTime.utc(2026, 11, 23, 7),
+      start: start ?? DateTime.utc(2026, 11, 23, 6),
+      end: end ?? DateTime.utc(2026, 11, 23, 7),
       speakers: <SessionSpeaker>[
         SessionSpeaker(
           id: 'sp1',
@@ -63,8 +63,8 @@ SessionDetail _endedDetail() => SessionDetail(
       hallId: 'h1',
       hallName: 'Main Hall',
       hallNameArabic: 'القاعة الرئيسية',
-      startUtc: DateTime.utc(2020, 1, 1, 6),
-      endUtc: DateTime.utc(2020, 1, 1, 7),
+      start: DateTime.utc(2020, 1, 1, 6),
+      end: DateTime.utc(2020, 1, 1, 7),
       speakers: const <SessionSpeaker>[],
       description: 'Welcome address',
     );
@@ -485,8 +485,8 @@ void main() {
         'live + streaming (owner 2026-07-14 gate)', (tester) async {
       final live = _detail(
         liveStreamUrl: 'https://youtu.be/abcdefghijk',
-        startUtc: DateTime.now().toUtc().subtract(const Duration(hours: 1)),
-        endUtc: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        start: DateTime.now().toUtc().subtract(const Duration(hours: 1)),
+        end: DateTime.now().toUtc().add(const Duration(hours: 1)),
       );
       await _pump(
         tester,
@@ -549,8 +549,8 @@ void main() {
     testWidgets('S-4 — an in-window in-person session (no live URL) SHOWS the '
         'ask card with the neutral live label on the detail', (tester) async {
       final ongoing = _detail(
-        startUtc: DateTime.now().toUtc().subtract(const Duration(hours: 1)),
-        endUtc: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        start: DateTime.now().toUtc().subtract(const Duration(hours: 1)),
+        end: DateTime.now().toUtc().add(const Duration(hours: 1)),
       );
       await _pump(
         tester,
@@ -569,8 +569,8 @@ void main() {
         'card on the detail (asking moves to the live-broadcast screen)',
         (tester) async {
       final broadcasting = _detail(
-        startUtc: DateTime.now().toUtc().subtract(const Duration(hours: 1)),
-        endUtc: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        start: DateTime.now().toUtc().subtract(const Duration(hours: 1)),
+        end: DateTime.now().toUtc().add(const Duration(hours: 1)),
         liveStreamUrl: 'https://live.example.sa/main.m3u8',
       );
       await _pump(
@@ -588,11 +588,11 @@ void main() {
 
     testWidgets('#7 — a PAST (ended) session HIDES the ask card (the after-view '
         'is a recording, not a live broadcast)', (tester) async {
-      // After EndUtc `_showAsk` returns false regardless of the viewer, so a
+      // After End `_showAsk` returns false regardless of the viewer, so a
       // guest proves it.
       final ended = _detail(
-        startUtc: DateTime.now().toUtc().subtract(const Duration(hours: 3)),
-        endUtc: DateTime.now().toUtc().subtract(const Duration(hours: 2)),
+        start: DateTime.now().toUtc().subtract(const Duration(hours: 3)),
+        end: DateTime.now().toUtc().subtract(const Duration(hours: 2)),
       );
       await _pump(
         tester,

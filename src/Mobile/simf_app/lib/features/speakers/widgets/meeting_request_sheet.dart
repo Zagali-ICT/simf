@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../../core/utils/saudi_time.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -58,6 +59,9 @@ class MeetingRequestSheet extends ConsumerStatefulWidget {
 class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
   final TextEditingController _subject = TextEditingController();
   bool _submitting = false;
+  // R0 (D-767) — inline validation / API-failure feedback. A ScaffoldMessenger
+  // snackbar shown while this modal sheet is open renders behind it (invisible).
+  String? _error;
   // The speaker the request targets: the fixed [widget.speakerId] from a speaker
   // profile, or the one picked from the dropdown in the bilateral flow.
   String? _selectedSpeakerId;
@@ -149,7 +153,7 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
   List<DateTime> get _daysWithSlots {
     final days = <DateTime>[];
     for (final slot in _slots) {
-      final local = slot.startUtc.toLocal();
+      final local = saudiOf(slot.start);
       final day = DateTime(local.year, local.month, local.day);
       if (!days.contains(day)) {
         days.add(day);
@@ -161,7 +165,7 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
   /// The slots on a given local day, in the endpoint's (chronological) order.
   List<SpeakerSlot> _slotsForDay(DateTime day) => <SpeakerSlot>[
         for (final slot in _slots)
-          if (_isSameDay(slot.startUtc.toLocal(), day)) slot,
+          if (_isSameDay(saudiOf(slot.start), day)) slot,
       ];
 
   static bool _isSameDay(DateTime a, DateTime b) =>
@@ -181,32 +185,32 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
     final speakerId = _selectedSpeakerId;
     if (speakerId == null) {
       // Bilateral flow with no speaker picked yet.
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.meetingSelectSpeakerFirst)),
-      );
+      setState(() => _error = l10n.meetingSelectSpeakerFirst);
       return;
     }
     final subject = _subject.text.trim();
     if (subject.isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(l10n.meetingRequestInvalid)));
+      setState(() => _error = l10n.meetingRequestInvalid);
       return;
     }
     // A slot is required only when the speaker actually offers slots; with no
     // slots the request goes subject-only and the team arranges a time.
-    DateTime? slotStartUtc;
-    DateTime? slotEndUtc;
+    DateTime? slotStart;
+    DateTime? slotEnd;
     if (_slots.isNotEmpty) {
       final slot = _selectedSlot;
       if (slot == null) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(l10n.meetingPickDateTime)));
+        setState(() => _error = l10n.meetingPickDateTime);
         return;
       }
-      slotStartUtc = slot.startUtc;
-      slotEndUtc = slot.endUtc;
+      slotStart = slot.start;
+      slotEnd = slot.end;
     }
-    setState(() => _submitting = true);
+    // R0 — clear the inline error and submit. Feedback stays inside the sheet.
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
     try {
@@ -214,22 +218,23 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
             speakerId,
             requesterName: name,
             subject: subject,
-            slotStartUtc: slotStartUtc,
-            slotEndUtc: slotEndUtc,
+            slotStart: slotStart,
+            slotEnd: slotEnd,
           );
       if (!mounted) {
         return;
       }
+      // Success pops the sheet first, so this toast is visible (not occluded).
       navigator.pop();
       messenger.showSnackBar(SnackBar(content: Text(l10n.meetingRequestSent)));
     } on ApiFailure catch (failure) {
       if (!mounted) {
         return;
       }
-      setState(() => _submitting = false);
-      messenger.showSnackBar(
-        SnackBar(content: Text(_failureText(failure, l10n))),
-      );
+      setState(() {
+        _submitting = false;
+        _error = _failureText(failure, l10n);
+      });
     }
   }
 
@@ -306,6 +311,13 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
             _subjectField(l10n),
             const SizedBox(height: SimfTokens.space4),
             ..._slotSection(l10n, isArabic),
+            if (_error != null) ...<Widget>[
+              const SizedBox(height: SimfTokens.space3),
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: Text(_error!, style: SimfTokens.bodyDanger),
+              ),
+            ],
             const SizedBox(height: SimfTokens.space5),
             _sendButton(l10n),
           ],
@@ -561,7 +573,7 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
             MeetingTimeChip(
               key: ValueKey<String>('meeting-time-$i'),
               label: _formatTime(
-                TimeOfDay.fromDateTime(slots[i].startUtc.toLocal()),
+                TimeOfDay.fromDateTime(saudiOf(slots[i].start)),
                 isArabic,
               ),
               selected: _selectedSlot == slots[i],

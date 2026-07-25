@@ -15,8 +15,8 @@ public sealed class SubmitSpeakerMeetingRequestRequest
     /// picked (from <c>GET /app/speakers/{id}/available-slots</c>). When set, this is
     /// the VIP slot flow: the requester must be a VIP/VVIP and the slot must still be
     /// free. When null it is the legacy topic-only request (any approved attendee).</summary>
-    public DateTimeOffset? SlotStartUtc { get; set; }
-    public DateTimeOffset? SlotEndUtc { get; set; }
+    public DateTimeOffset? SlotStart { get; set; }
+    public DateTimeOffset? SlotEnd { get; set; }
 }
 
 /// <summary>D-269 — response after a successful speaker meeting-request
@@ -66,8 +66,8 @@ public sealed record AdminSpeakerMeetingRequestDetail(
     DateTimeOffset CreatedAt,
     DateTimeOffset? RespondedAt,
     // D-716 (item 7, GAP-2) — the hall slot the meeting was bound to on accept.
-    DateTimeOffset? SlotStartUtc = null,
-    DateTimeOffset? SlotEndUtc = null,
+    DateTimeOffset? SlotStart = null,
+    DateTimeOffset? SlotEnd = null,
     Guid? HallId = null,
     string? HallName = null,
     Guid? MeetingTableId = null,
@@ -78,7 +78,7 @@ public sealed record AdminSpeakerMeetingRequestDetail(
 /// route-binding endpoint can carry an <c>Id</c> field (the D-168 pattern).
 /// D-716 (item 7, GAP-2) — an Accept may also bind the meeting to a free hall
 /// slot: when <see cref="HallId"/> is set the picked slot
-/// (<see cref="SlotStartUtc"/>/<see cref="SlotEndUtc"/>, from
+/// (<see cref="SlotStart"/>/<see cref="SlotEnd"/>, from
 /// <c>GET /admin/halls/{id}/available-slots</c>) becomes the meeting time and the
 /// request moves to <see cref="MeetingRequestStatus.AwaitingSpeaker"/> pending the
 /// speaker's confirmation. An accept with no <see cref="HallId"/> keeps the legacy
@@ -86,7 +86,7 @@ public sealed record AdminSpeakerMeetingRequestDetail(
 public class RespondToSpeakerMeetingRequestRequest : RespondToRequest
 {
     /// <summary>Optional hall to bind the accepted meeting to. When set, a free
-    /// slot (<see cref="SlotStartUtc"/>/<see cref="SlotEndUtc"/>) is required.</summary>
+    /// slot (<see cref="SlotStart"/>/<see cref="SlotEnd"/>) is required.</summary>
     public Guid? HallId { get; set; }
 
     /// <summary>Optional meeting table inside <see cref="HallId"/>.</summary>
@@ -94,8 +94,8 @@ public class RespondToSpeakerMeetingRequestRequest : RespondToRequest
 
     /// <summary>The picked hall slot start/end — required when <see cref="HallId"/>
     /// is set, must match a currently-free slot for that hall.</summary>
-    public DateTimeOffset? SlotStartUtc { get; set; }
-    public DateTimeOffset? SlotEndUtc { get; set; }
+    public DateTimeOffset? SlotStart { get; set; }
+    public DateTimeOffset? SlotEnd { get; set; }
 
     /// <summary>Bi-Meeting rework — the admin's 3-button model. With a bound hall:
     /// <c>false</c> = <b>Approve</b> (→ AwaitingSpeaker, mints the speaker

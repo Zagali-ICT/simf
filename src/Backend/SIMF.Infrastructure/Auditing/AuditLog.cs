@@ -27,7 +27,7 @@ internal sealed class AuditLog(
         var record = new OperationLogEntry
         {
             Id = Guid.NewGuid(),
-            TimestampUtc = timeProvider.GetUtcNow(),
+            Timestamp = timeProvider.GetUtcNow(),
             EventType = Clip(entry.EventType, 80) ?? string.Empty,
             Outcome = entry.Outcome,
             SubjectEmail = Clip(entry.SubjectEmail, 256),

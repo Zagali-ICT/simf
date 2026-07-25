@@ -83,8 +83,8 @@ public partial class SessionsAddEdit
             _seatModeInput = Initial.SeatSelectionModeOverride.HasValue
                 ? ((int)Initial.SeatSelectionModeOverride.Value).ToString()
                 : string.Empty;
-            _startInput = Initial.StartUtc.ToSaudi().ToString("yyyy-MM-ddTHH:mm");
-            _endInput = Initial.EndUtc.ToSaudi().ToString("yyyy-MM-ddTHH:mm");
+            _startInput = Initial.Start.ToSaudi().ToString("yyyy-MM-ddTHH:mm");
+            _endInput = Initial.End.ToSaudi().ToString("yyyy-MM-ddTHH:mm");
             _capacityInput = Initial.CapacityOverride?.ToString() ?? string.Empty;
             _selectedSpeakers.AddRange(Initial.Speakers);
             _selectedThemes.AddRange(Initial.ThemeIds);
@@ -477,8 +477,8 @@ public partial class SessionsAddEdit
                         HallId = hallId,
                         CategoryId = categoryId,
                         Type = ParseType(_typeInput),
-                        StartUtc = start,
-                        EndUtc = end,
+                        Start = start,
+                        End = end,
                         CapacityOverride = capacityOverride,
                         Speakers = _selectedSpeakers.ToList(),
                         ThemeIds = _selectedThemes.ToList(),
@@ -506,8 +506,8 @@ public partial class SessionsAddEdit
                         HallId = hallId,
                         CategoryId = categoryId,
                         Type = ParseType(_typeInput),
-                        StartUtc = start,
-                        EndUtc = end,
+                        Start = start,
+                        End = end,
                         CapacityOverride = capacityOverride,
                         Speakers = _selectedSpeakers.ToList(),
                         ThemeIds = _selectedThemes.ToList(),

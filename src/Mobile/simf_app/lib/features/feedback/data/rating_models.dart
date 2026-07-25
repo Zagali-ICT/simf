@@ -122,7 +122,7 @@ class RatingFormView {
     required this.existing,
     this.targetName,
     this.targetNameArabic,
-    this.targetStartUtc,
+    this.targetStart,
     this.isEligible = true,
   });
 
@@ -143,7 +143,7 @@ class RatingFormView {
   /// at {session} · {date}" header. Present only for a per-session rating.
   final String? targetName;
   final String? targetNameArabic;
-  final DateTime? targetStartUtc;
+  final DateTime? targetStart;
 
   /// Owner 2026-07-19 — false when the caller has not attended what this type
   /// rates. The screen keeps the form visible but disables submit and shows an
@@ -192,7 +192,7 @@ class RatingFormView {
       existing: RatingExistingSubmission.fromJson(json['existing']),
       targetName: json['targetName'] as String?,
       targetNameArabic: json['targetNameArabic'] as String?,
-      targetStartUtc: DateTime.tryParse(json['targetStartUtc'] as String? ?? ''),
+      targetStart: DateTime.tryParse(json['targetStart'] as String? ?? ''),
       isEligible: json['isEligible'] as bool? ?? true,
     );
   }

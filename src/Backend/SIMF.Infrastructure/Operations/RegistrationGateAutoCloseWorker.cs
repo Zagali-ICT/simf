@@ -13,12 +13,12 @@ namespace SIMF.Infrastructure.Operations;
 /// <summary>
 /// D-166 (gap doc G4, PDF §2.3) — background worker that flips
 /// <see cref="RegistrationGate.IsOpen"/> to false the first time
-/// <see cref="RegistrationGate.AutoCloseUtc"/> passes. Runs once per
+/// <see cref="RegistrationGate.AutoClose"/> passes. Runs once per
 /// minute; cheap query on a single-row table.
 ///
 /// <para>The worker does not race admins: it writes only when IsOpen
-/// is still true AND AutoCloseUtc &lt;= now. A concurrent admin
-/// re-open simply clears AutoCloseUtc, after which the worker has
+/// is still true AND AutoClose &lt;= now. A concurrent admin
+/// re-open simply clears AutoClose, after which the worker has
 /// nothing to flip.</para>
 /// </summary>
 internal sealed class RegistrationGateAutoCloseWorker(
@@ -90,7 +90,7 @@ internal sealed class RegistrationGateAutoCloseWorker(
             .SingleOrDefaultAsync(g => g.Id == RegistrationGate.SingletonId, cancellationToken);
         if (row is null) { return; }
         if (!row.IsOpen) { return; }
-        if (row.AutoCloseUtc is not { } closeAt) { return; }
+        if (row.AutoClose is not { } closeAt) { return; }
         if (closeAt > timeProvider.GetUtcNow()) { return; }
 
         row.IsOpen = false;
@@ -103,10 +103,10 @@ internal sealed class RegistrationGateAutoCloseWorker(
             EventType = AuditEvents.RegistrationGateAutoClosed,
             Outcome = AuditOutcome.Success,
             ActorUserId = null,
-            Detail = $"autoCloseUtc={closeAt:O}",
+            Detail = $"autoClose={closeAt:O}",
         }, cancellationToken);
 
         logger.LogInformation(
-            "RegistrationGate auto-closed (AutoCloseUtc {CloseAt} passed).", closeAt);
+            "RegistrationGate auto-closed (AutoClose {CloseAt} passed).", closeAt);
     }
 }

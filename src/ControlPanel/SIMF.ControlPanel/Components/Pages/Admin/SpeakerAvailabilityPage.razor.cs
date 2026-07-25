@@ -33,6 +33,10 @@ public partial class SpeakerAvailabilityPage
     private bool _busy;
     private Toast? _toast;
 
+    // R10 (D-767) — a must-decide guard for the destructive window delete.
+    private bool _confirmOpen;
+    private Guid _confirmWindowId;
+
     // D-753 — forum-day bounds read from the backend, replacing the former hardcoded
     // 2026-11-23..25 window. The string forms feed the datetime-local Min/Max; the
     // DateOnly forms back the client-side range check. All null when no programme days
@@ -135,7 +139,7 @@ public partial class SpeakerAvailabilityPage
                 $"/account/api/admin/speakers/{id}/availability-windows",
                 new CreateSpeakerAvailabilityWindowRequest
                 {
-                    StartUtc = start, EndUtc = end, SlotMinutes = slot,
+                    Start = start, End = end, SlotMinutes = slot,
                 });
             if (envelope is { Success: true })
             {
@@ -153,6 +157,22 @@ public partial class SpeakerAvailabilityPage
         finally { _busy = false; }
     }
 
+    // R10 (D-767) — open the delete confirm; RunDeleteAsync does the work on OK.
+    private void ConfirmDelete(Guid windowId)
+    {
+        _confirmWindowId = windowId;
+        _confirmOpen = true;
+        _toast = null;
+    }
+
+    private async Task RunDeleteAsync()
+    {
+        _confirmOpen = false;
+        await DeleteWindowAsync(_confirmWindowId);
+    }
+
+    private void CancelConfirm() => _confirmOpen = false;
+
     private async Task DeleteWindowAsync(Guid windowId)
     {
         _busy = true;
@@ -164,6 +184,7 @@ public partial class SpeakerAvailabilityPage
                 $"/account/api/admin/speaker-availability-windows/{windowId}");
             if (envelope is { Success: true })
             {
+                _toast = new Toast("success", L["Admin.Availability.WindowDeleted"]);
                 await LoadWindowsAsync();
             }
             else

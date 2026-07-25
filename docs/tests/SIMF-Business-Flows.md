@@ -1399,7 +1399,7 @@ Scenario: Accepting and binding a hall slot moves the request to AwaitingSpeaker
   And clicks "Send response"
   Then the response returns ApiResult.Success
   And the row's Status becomes AwaitingSpeaker (double opt-in, awaiting the speaker)
-  And SlotStartUtc/SlotEndUtc hold the bound hall slot and HallId is set
+  And SlotStart/SlotEnd hold the bound hall slot and HallId is set
   And a plain Accept with the Hall left empty would instead land on Accepted
 ```
 
@@ -1539,7 +1539,7 @@ Scenario: SMR desk renders correctly in Arabic (RTL)
 
 ## BF-07 — Q&A pipeline — pre + live, timing gates, AI-advisory + committee + moderator desk
 
-This flow exercises the full three-stage audience-question pipeline across three surfaces. **Mobile** attendees ask from `send_question_screen.dart` (route `/live/question`, screen #26) via `POST /api/v1/app/sessions/{sessionId}/questions` (`SubmitSessionQuestionEndpoint`, policy `RequireApprovedAccount`, rate-limited). The service (`SessionQuestionService.SubmitAsync`) sets `Phase = now < StartUtc ? Pre : Live` and enforces the **timing gate**: `Session.IsActive` is required; **before `StartUtc`** any approved user may ask with no venue gate (ask-ahead); once **LIVE** (`now >= StartUtc`, before `EndUtc`) the attendee must be at the hall — a real `HallAttendance` arrival row when the hall has a geofence (`GeofenceRadiusMeters != null`, D-242/FR-704), else the D-171 `IsAtVenue` self-assert flag (the app always sends `true`); **after `EndUtc`** the window is closed with zero grace → `SESSION_NOT_LIVE_FOR_QUESTIONS`. A venue-gate rejection returns `NOT_AT_VENUE` (403) and writes audit `SessionQuestionRejectedNotAtVenue`. Stage 1 is the **advisory** `IQuestionAiFilter` — default `StubQuestionAiFilter` (deterministic `stub-clean`, no AI call); the real `AiQuestionFilter` (`ai-clean` / `ai-flagged` / `ai-unavailable`) is wired only when `SessionQuestions:AiFilterEnabled=true` — the verdict is persisted to `SessionQuestion.AiFilterVerdict` and shown to the Committee but **never** changes status or auto-hides. Stage 2 is the **Scientific-Committee** cross-session queue in the **Control Panel** at `/admin/question-queue` (`QuestionQueueList.razor`, gated `Questions.View`; approve/hide gated `Questions.Moderate`, escalate `Questions.Escalate`) over `GET /admin/questions/queue` (+ `/approve`, `/hide`, `/escalate`). Stage 3 is the per-session **moderator desk** — CP `/sessions/{id}/moderate` (`SessionModerationDesk.razor`, page-gated `Questions.Moderate`) **and** the app `session_moderate_screen.dart` (route `/sessions/:sessionId/moderate`, screen #104) — showing only **Approved** questions with hide/unhide, push (on-stage → `IsPushed`+`PushedAt`) and reorder; the API authorises by the per-session `SessionModerator` grant **or** the `Administrator` role (which bypasses the grant). Grants are managed in CP at `/admin/session-moderators` (`SessionModeratorsList.razor`, `SessionModerators.View`/`.Assign`/`.Revoke`). Submitter **email is redacted** on both moderator desks (A9/D-185) but is shown on the Committee queue.
+This flow exercises the full three-stage audience-question pipeline across three surfaces. **Mobile** attendees ask from `send_question_screen.dart` (route `/live/question`, screen #26) via `POST /api/v1/app/sessions/{sessionId}/questions` (`SubmitSessionQuestionEndpoint`, policy `RequireApprovedAccount`, rate-limited). The service (`SessionQuestionService.SubmitAsync`) sets `Phase = now < Start ? Pre : Live` and enforces the **timing gate**: `Session.IsActive` is required; **before `Start`** any approved user may ask with no venue gate (ask-ahead); once **LIVE** (`now >= Start`, before `End`) the attendee must be at the hall — a real `HallAttendance` arrival row when the hall has a geofence (`GeofenceRadiusMeters != null`, D-242/FR-704), else the D-171 `IsAtVenue` self-assert flag (the app always sends `true`); **after `End`** the window is closed with zero grace → `SESSION_NOT_LIVE_FOR_QUESTIONS`. A venue-gate rejection returns `NOT_AT_VENUE` (403) and writes audit `SessionQuestionRejectedNotAtVenue`. Stage 1 is the **advisory** `IQuestionAiFilter` — default `StubQuestionAiFilter` (deterministic `stub-clean`, no AI call); the real `AiQuestionFilter` (`ai-clean` / `ai-flagged` / `ai-unavailable`) is wired only when `SessionQuestions:AiFilterEnabled=true` — the verdict is persisted to `SessionQuestion.AiFilterVerdict` and shown to the Committee but **never** changes status or auto-hides. Stage 2 is the **Scientific-Committee** cross-session queue in the **Control Panel** at `/admin/question-queue` (`QuestionQueueList.razor`, gated `Questions.View`; approve/hide gated `Questions.Moderate`, escalate `Questions.Escalate`) over `GET /admin/questions/queue` (+ `/approve`, `/hide`, `/escalate`). Stage 3 is the per-session **moderator desk** — CP `/sessions/{id}/moderate` (`SessionModerationDesk.razor`, page-gated `Questions.Moderate`) **and** the app `session_moderate_screen.dart` (route `/sessions/:sessionId/moderate`, screen #104) — showing only **Approved** questions with hide/unhide, push (on-stage → `IsPushed`+`PushedAt`) and reorder; the API authorises by the per-session `SessionModerator` grant **or** the `Administrator` role (which bypasses the grant). Grants are managed in CP at `/admin/session-moderators` (`SessionModeratorsList.razor`, `SessionModerators.View`/`.Assign`/`.Revoke`). Submitter **email is redacted** on both moderator desks (A9/D-185) but is shown on the Committee queue.
 
 ### Coverage matrix
 
@@ -1548,7 +1548,7 @@ This flow exercises the full three-stage audience-question pipeline across three
 | E2E-BF-07-001 | Golden journey: assign moderator → pre-question asked → Committee approves → moderator pushes on-stage | happy | P0 |
 | E2E-BF-07-002 | LIVE question in a geofenced hall needs a real HallAttendance arrival; without it → NOT_AT_VENUE + audit | error | P0 |
 | E2E-BF-07-003 | LIVE question in a non-geofenced hall falls back to the D-171 IsAtVenue self-assert (app sends true) | happy | P1 |
-| E2E-BF-07-004 | After EndUtc the window is closed with zero grace → SESSION_NOT_LIVE_FOR_QUESTIONS | error | P0 |
+| E2E-BF-07-004 | After End the window is closed with zero grace → SESSION_NOT_LIVE_FOR_QUESTIONS | error | P0 |
 | E2E-BF-07-005 | Inactive session (IsActive=false) rejects every question → SESSION_NOT_LIVE_FOR_QUESTIONS | error | P1 |
 | E2E-BF-07-006 | QuestionText validation (empty / >1000) → SESSION_QUESTION_INVALID | error | P1 |
 | E2E-BF-07-007 | AI filter is advisory-only: default stub tags `stub-clean`, question still lands Pending, nothing auto-hidden | happy | P1 |
@@ -1569,7 +1569,7 @@ Feature: Q&A pipeline golden journey across CP + mobile
     Given the API is reachable and the Control Panel is signed in as an Administrator
     And an Administrator TOTP is generated via the Get-Totp helper (never a literal secret)
     And session "S-204" (SessionId 8f2a1c00-0000-4000-8000-000000000204) is IsActive=true
-    And "S-204" StartUtc is 2 hours in the FUTURE and EndUtc is 3 hours in the future
+    And "S-204" Start is 2 hours in the FUTURE and End is 3 hours in the future
     And an approved visitor's OTP is read from SIMF_Identity.AccountCodes at run time
 
   Scenario: A pre-session question flows all the way to the stage
@@ -1579,7 +1579,7 @@ Feature: Q&A pipeline golden journey across CP + mobile
     Then a SessionModerator row (SessionId=S-204, UserId, AssignedByUserId=the admin) is created
     And a success SimfAlert appears
 
-    # Stage 1 — the visitor asks AHEAD of start (no venue gate before StartUtc)
+    # Stage 1 — the visitor asks AHEAD of start (no venue gate before Start)
     Given the approved visitor is signed in on the app and opens /live/question for "S-204"
     When they type QuestionText="What is the RSNF plan for unmanned surface vessels?"
     And they choose Recipient=Speaker and the app sends IsAtVenue=true
@@ -1606,7 +1606,7 @@ Feature: Q&A pipeline golden journey across CP + mobile
 
 ```gherkin
 Scenario: Geofenced hall gates the live question on a HallAttendance arrival row
-  Given session "S-210" is IsActive=true and now is between its StartUtc and EndUtc (LIVE)
+  Given session "S-210" is IsActive=true and now is between its Start and End (LIVE)
   And "S-210" is assigned to a hall whose GeofenceRadiusMeters is NOT null (D-240)
   And the approved visitor has NO HallAttendance arrival row for "S-210"
   When they submit QuestionText="Can you expand on the sonar upgrade timeline?" with IsAtVenue=true
@@ -1618,14 +1618,14 @@ Scenario: Geofenced hall gates the live question on a HallAttendance arrival row
   When a HallAttendance enter record for (SessionId=S-210, the visitor) then exists
   And they resubmit the same question
   Then the API returns HTTP 200 and the question is persisted with Phase=Live
-  And a briefly-closed arrival row (LeaveUtc set) still satisfies the gate (arrived at any point, not "currently inside")
+  And a briefly-closed arrival row (Leave set) still satisfies the gate (arrived at any point, not "currently inside")
 ```
 
 ### E2E-BF-07-003 — Non-geofenced hall falls back to the self-assert flag
 
 ```gherkin
 Scenario: Live question in a hall with no geofence uses the D-171 self-assert toggle
-  Given session "S-215" is LIVE (now between StartUtc and EndUtc) and IsActive=true
+  Given session "S-215" is LIVE (now between Start and End) and IsActive=true
   And "S-215" is in a hall whose GeofenceRadiusMeters IS null (QR-only / coordinates not seeded)
   When the approved visitor submits a valid question with IsAtVenue=true (the app always sends true)
   Then the API returns HTTP 200 and the question lands Phase=Live, Status=Pending
@@ -1636,11 +1636,11 @@ Scenario: Live question in a hall with no geofence uses the D-171 self-assert to
   And the audit row records gate="self-assert"
 ```
 
-### E2E-BF-07-004 — Window closes at EndUtc with zero grace
+### E2E-BF-07-004 — Window closes at End with zero grace
 
 ```gherkin
 Scenario: A finished session accepts no questions
-  Given session "S-204" is IsActive=true but now is AFTER its EndUtc (PostEndWindow = TimeSpan.Zero)
+  Given session "S-204" is IsActive=true but now is AFTER its End (PostEndWindow = TimeSpan.Zero)
   When the approved visitor submits any valid question
   Then the API returns HTTP 400 with ApiResult.Error.Code = "SESSION_NOT_LIVE_FOR_QUESTIONS"
   And the bilingual message reads "The session is over and no longer accepting questions." / (Arabic)
@@ -1652,7 +1652,7 @@ Scenario: A finished session accepts no questions
 ```gherkin
 Scenario: An IsActive=false session is closed to questions regardless of the clock
   Given session "S-299" exists with IsActive=false
-  And now is BEFORE its StartUtc (would otherwise be the open ask-ahead window)
+  And now is BEFORE its Start (would otherwise be the open ask-ahead window)
   When the approved visitor submits a valid question
   Then the API returns HTTP 400 with Code = "SESSION_NOT_LIVE_FOR_QUESTIONS"
   And the bilingual message reads "The session is not active." / (Arabic)
@@ -1805,17 +1805,17 @@ Scenario: Arabic Committee queue mirrors and a rejected live question shows a bi
 
 - **AI stage is a stub by default.** The shipped wiring registers `StubQuestionAiFilter` (`stub-clean`, no provider call); the real `AiQuestionFilter` (`ai-clean`/`ai-flagged`/`ai-unavailable`) exists but is only registered when `SessionQuestions:AiFilterEnabled=true`. Under either wiring the verdict is **advisory** — it is persisted to `AiFilterVerdict` and shown to the Committee, but it never changes `Status`, never auto-hides, and never blocks submission (any AI failure degrades to `ai-unavailable`). Do not author a scenario that expects the AI to approve/hide a question.
 - **Geofence gate depends on data seeding (D-242/FR-704, G-OI-2 open).** The LIVE venue gate is a real `HallAttendance` arrival only when the hall's `GeofenceRadiusMeters` is non-null; halls with no geofence (QR-only / coordinates not yet seeded) fall back to the D-171 `IsAtVenue` self-assert flag, and the app always sends `true`. On a non-geofenced hall the live gate is effectively a self-assertion — flag this to the tester when validating "must be at the venue". The broader GPS geofence → arrival → attendance chain remains a deferred D-211 item.
-- **The arrival gate is "arrived at any point", not "currently inside".** There is deliberately no `LeaveUtc == null` filter — a visitor who briefly stepped out (row closed) keeps the right to ask within the window.
+- **The arrival gate is "arrived at any point", not "currently inside".** There is deliberately no `Leave == null` filter — a visitor who briefly stepped out (row closed) keeps the right to ask within the window.
 - **Two distinct moderator concepts.** The per-session `SessionModerator` grant (composite PK `SessionId`,`UserId`; managed at `/admin/session-moderators`) is unrelated to `MobileAppRole.Moderator` (broad mobile-app content authority). The `Administrator` role **bypasses** the per-session grant on the API. Note the CP desk page `/sessions/{id}/moderate` is additionally page-gated by `Questions.Moderate`, which is a CP-only convention on top of the API's per-session/Administrator check.
 - **PII asymmetry is intentional (A9/D-185).** The moderator desk (CP and app) redacts the submitter email — the nullable DTO field is kept for wire-compat (D-219) but shipped null; the Committee queue ships the email because the committee needs the identity. A test that asserts the email on the desk is wrong.
-- **Zero grace after `EndUtc`.** `PostEndWindow = TimeSpan.Zero` — there is no post-session grace period; `now > EndUtc` is immediately `SESSION_NOT_LIVE_FOR_QUESTIONS`.
+- **Zero grace after `End`.** `PostEndWindow = TimeSpan.Zero` — there is no post-session grace period; `now > End` is immediately `SESSION_NOT_LIVE_FOR_QUESTIONS`.
 - **Auth setup uses no literal secrets.** Admin TOTP comes from the `Get-Totp` helper; the approved visitor's OTP is read from `SIMF_Identity.AccountCodes` at run time. The submit and mutation endpoints are rate-limited (the `"auth"` limiter), so drive them at human pace.
 
 ---
 
 ## BF-08 — Session reminder + rating triggers (leave-hall / end-of-session / end-of-day / end-of-programme)
 
-This cross-surface flow exercises the four background triggers that turn a booked seat into a timely nudge and, later, a rating prompt, plus the app rating surface and the Control-Panel viewer that closes the loop. **Backend workers** (`src/Backend/SIMF.Infrastructure/Operations/`): `SessionReminderWorker` (D-217) fires the "starts in 30 min" reminder (`ReminderLeadTime=30m`, poll every 1 min after a 1-min startup delay, dedup `Session.ReminderSentUtc`, audience = every active seat where `ReleasedAt==null && ReservedForUserId!=null`); `SessionRatingPromptWorker` fires "rate this session" when `EndUtc` passes (6h back-fill, dedup `Session.RatingPromptSentUtc`); `ProgrammeRatingPromptWorker` (D-679) fires `DayRatingRequest` at end-of-day to everyone who checked in that day and the `Event`+`Exhibition`+`App` trio at end-of-programme to everyone who ever checked in. **Hall exit** (`HallAttendanceService.RecordDepartureAsync`, D-713 GAP-A) closes the attendance row (`LeaveUtc`) then calls `PromptSessionRatingOnDepartureAsync`, which **shares one `DeduplicateByRelatedEntity=true` guard per (session, user)** with the clock-end worker so a leaver is never double-prompted. All prompts are **in-app only** (`SendEmail=false`, `NotificationKind` values `BookingConfirmed`, `SessionReminder`, `SessionRatingRequest`, `DayRatingRequest`, `EventRatingRequest`, `ExhibitionRatingRequest`, `AppRatingRequest`). Deep-links come from `NotificationKindCatalog.ClickUrlFor` (`SessionRatingRequest`→`/rate?code=Session&targetId=…`, `DayRatingRequest`→`/rate?code=Day&targetId=…`, `Event|App|Exhibition`→`/rate?code=…`, `BookingConfirmed`→`/badge`); the app `notifications_screen.dart` `_maybeDeepLink` navigates on tap against the allowlist `{'/rate','/badge'}`. **Mobile** `rate_screen.dart` (page #40, route `/rate`, auth-gated + attendee-role-gated to Visitor/Exhibitor via `_routeRoles`) reads `GET /api/v1/app/feedback/form` and posts `POST /api/v1/app/feedback/submit` (`FeedbackEndpoints.cs` / `RatingFormService.cs`, both `RequireApprovedAccount`); the five rating types are seeded by `RatingSeeder.cs` (`App`/`Event`/`Exhibition` Global, `Session` PerSession with Speaker/Sound/Light questions, `Day` PerDay; all `IsSystem=true`). **Control Panel** `/admin/ratings` (`RatingsList`, `PermissionCatalog.Ratings.View`, `POST /api/v1/admin/feedback/ratings` + `GET …/kpi`) and `/admin/rating-config` (`RatingConfig`, `PermissionCatalog.RatingConfig.View`). Time-based triggers are driven by **seeding `StartUtc` / `EndUtc` / day boundaries and running the worker's internal scan with a controlled `now`, never by waiting**.
+This cross-surface flow exercises the four background triggers that turn a booked seat into a timely nudge and, later, a rating prompt, plus the app rating surface and the Control-Panel viewer that closes the loop. **Backend workers** (`src/Backend/SIMF.Infrastructure/Operations/`): `SessionReminderWorker` (D-217) fires the "starts in 30 min" reminder (`ReminderLeadTime=30m`, poll every 1 min after a 1-min startup delay, dedup `Session.ReminderSent`, audience = every active seat where `ReleasedAt==null && ReservedForUserId!=null`); `SessionRatingPromptWorker` fires "rate this session" when `End` passes (6h back-fill, dedup `Session.RatingPromptSent`); `ProgrammeRatingPromptWorker` (D-679) fires `DayRatingRequest` at end-of-day to everyone who checked in that day and the `Event`+`Exhibition`+`App` trio at end-of-programme to everyone who ever checked in. **Hall exit** (`HallAttendanceService.RecordDepartureAsync`, D-713 GAP-A) closes the attendance row (`Leave`) then calls `PromptSessionRatingOnDepartureAsync`, which **shares one `DeduplicateByRelatedEntity=true` guard per (session, user)** with the clock-end worker so a leaver is never double-prompted. All prompts are **in-app only** (`SendEmail=false`, `NotificationKind` values `BookingConfirmed`, `SessionReminder`, `SessionRatingRequest`, `DayRatingRequest`, `EventRatingRequest`, `ExhibitionRatingRequest`, `AppRatingRequest`). Deep-links come from `NotificationKindCatalog.ClickUrlFor` (`SessionRatingRequest`→`/rate?code=Session&targetId=…`, `DayRatingRequest`→`/rate?code=Day&targetId=…`, `Event|App|Exhibition`→`/rate?code=…`, `BookingConfirmed`→`/badge`); the app `notifications_screen.dart` `_maybeDeepLink` navigates on tap against the allowlist `{'/rate','/badge'}`. **Mobile** `rate_screen.dart` (page #40, route `/rate`, auth-gated + attendee-role-gated to Visitor/Exhibitor via `_routeRoles`) reads `GET /api/v1/app/feedback/form` and posts `POST /api/v1/app/feedback/submit` (`FeedbackEndpoints.cs` / `RatingFormService.cs`, both `RequireApprovedAccount`); the five rating types are seeded by `RatingSeeder.cs` (`App`/`Event`/`Exhibition` Global, `Session` PerSession with Speaker/Sound/Light questions, `Day` PerDay; all `IsSystem=true`). **Control Panel** `/admin/ratings` (`RatingsList`, `PermissionCatalog.Ratings.View`, `POST /api/v1/admin/feedback/ratings` + `GET …/kpi`) and `/admin/rating-config` (`RatingConfig`, `PermissionCatalog.RatingConfig.View`). Time-based triggers are driven by **seeding `Start` / `End` / day boundaries and running the worker's internal scan with a controlled `now`, never by waiting**.
 
 ### Coverage matrix
 
@@ -1848,19 +1848,19 @@ Feature: A booked attendee is reminded, prompted to rate, and the rating reaches
     And Fatimah holds an active seat on S (SeatReservation with ReleasedAt=null, ReservedForUserId=Fatimah) confirmed by a NotificationKind.BookingConfirmed tile that deep-links /badge
 
   Scenario: The 30-minute reminder fires to the active-seat holder
-    Given S.StartUtc is seeded to now + 20 minutes and S.ReminderSentUtc is null
+    Given S.Start is seeded to now + 20 minutes and S.ReminderSent is null
     When RunReminderScanAsync runs with now
     Then Fatimah receives one NotificationKind.SessionReminder tile in group "Sessions"
     And the tile title reads "Session starting soon" / "تبدأ الجلسة قريباً"
     And the notification is in-app only (SendEmail=false, no email row)
-    And S.ReminderSentUtc is stamped
+    And S.ReminderSent is stamped
 
   Scenario: The end-of-session prompt fires and deep-links to the rate screen
-    Given S.EndUtc is seeded to now - 5 minutes and S.RatingPromptSentUtc is null
+    Given S.End is seeded to now - 5 minutes and S.RatingPromptSent is null
     When RunRatingPromptScanAsync runs with now (inside the 6h back-fill)
     Then Fatimah receives one NotificationKind.SessionRatingRequest tile in group "Ratings"
     And its ClickUrlFor deep-link is "/rate?code=Session&targetId=<S.Id>"
-    And S.RatingPromptSentUtc is stamped
+    And S.RatingPromptSent is stamped
 
   Scenario: Tapping the tile submits a rating that the CP can read
     Given Fatimah opens the notifications screen and taps the "Rate this session" tile
@@ -1878,14 +1878,14 @@ Feature: A booked attendee is reminded, prompted to rate, and the rating reaches
 
 ```gherkin
 Scenario: A second scan of the same window re-sends nothing
-  Given session S.StartUtc = now + 15 minutes and RunReminderScanAsync has already stamped S.ReminderSentUtc
+  Given session S.Start = now + 15 minutes and RunReminderScanAsync has already stamped S.ReminderSent
   When RunReminderScanAsync runs a second time with the same now
-  Then S is not re-selected (the filter requires ReminderSentUtc == null)
+  Then S is not re-selected (the filter requires ReminderSent == null)
   And no duplicate SessionReminder tile is created
   And the scan returns 0 sessions reminded
 
 Scenario: A visitor who books after the reminder fired gets no back-reminder
-  Given the reminder for S already fired at T0 and S.ReminderSentUtc is stamped
+  Given the reminder for S already fired at T0 and S.ReminderSent is stamped
   When a new attendee reserves an active seat on S at T0 + 2 minutes
   And RunReminderScanAsync runs again while S is still inside its lead window
   Then the new attendee receives no SessionReminder (per-session dedup is coarse by design; acceptable for a "starts in 30 min" nudge)
@@ -1895,9 +1895,9 @@ Scenario: A visitor who books after the reminder fired gets no back-reminder
 
 ```gherkin
 Scenario: Leaving the hall closes attendance and prompts the session rating
-  Given Fatimah has an open hall-attendance row on session S (entered, LeaveUtc=null)
+  Given Fatimah has an open hall-attendance row on session S (entered, Leave=null)
   When RecordDepartureAsync(userId=Fatimah, sessionId=S) is invoked (a hall-exit gate scan)
-  Then the row's LeaveUtc is set to now and an OperationLog "HallDepartureRecorded" audit row is written
+  Then the row's Leave is set to now and an OperationLog "HallDepartureRecorded" audit row is written
   And PromptSessionRatingOnDepartureAsync dispatches one NotificationKind.SessionRatingRequest
   And it carries RelatedEntityType="Session", RelatedEntityId=S, SendEmail=false, DeduplicateByRelatedEntity=true
   And the returned HallAttendanceStatus reports the departure (leave time already committed)
@@ -1906,7 +1906,7 @@ Scenario: The rating prompt failing never fails the departure
   Given the notification dispatcher throws on this dispatch
   When RecordDepartureAsync runs
   Then the exception is logged and swallowed
-  And LeaveUtc stays committed and the departure still returns success (the leave is not rolled back)
+  And Leave stays committed and the departure still returns success (the leave is not rolled back)
 ```
 
 ### E2E-BF-08-004 — Shared one-per-(session,user) guard (no double prompt)
@@ -1914,26 +1914,26 @@ Scenario: The rating prompt failing never fails the departure
 ```gherkin
 Scenario: The clock-end worker does not re-prompt an attendee already prompted on hall exit
   Given Fatimah left hall H1 for session S and already holds a SessionRatingRequest for S (DeduplicateByRelatedEntity=true)
-  And S.EndUtc later passes and S.RatingPromptSentUtc is still null
+  And S.End later passes and S.RatingPromptSent is still null
   When RunRatingPromptScanAsync runs inside the back-fill window
   Then the dispatcher's DeduplicateByRelatedEntity guard suppresses a second SessionRatingRequest for (S, Fatimah)
   And Fatimah still has exactly one session-rating tile for S
-  And S.RatingPromptSentUtc is stamped so the session is not re-scanned (other unprompted attendees still get theirs)
+  And S.RatingPromptSent is stamped so the session is not re-scanned (other unprompted attendees still get theirs)
 ```
 
 ### E2E-BF-08-005 — End-of-day prompt (checked-in audience only)
 
 ```gherkin
 Scenario: DayRatingRequest reaches only attendees who checked in that day
-  Given ProgrammeDay D1 "Day 1 — Opening" / "اليوم الأول" (Date=2026-11-24, IsActive=true, RatingPromptSentUtc=null)
+  Given ProgrammeDay D1 "Day 1 — Opening" / "اليوم الأول" (Date=2026-11-24, IsActive=true, RatingPromptSent=null)
   And attendee A has a GateScan Direction=CheckIn, Outcome=Allowed on 2026-11-24 (event-local UTC+3)
   And attendee B has no check-in scan for that day
-  And D1 has ended: its latest session EndUtc + 30-min grace is before now, within the 24h back-fill
+  And D1 has ended: its latest session End + 30-min grace is before now, within the 24h back-fill
   When RunDayPromptScanAsync runs with now
   Then attendee A receives one NotificationKind.DayRatingRequest in group "Ratings"
   And its deep-link is "/rate?code=Day&targetId=<D1.Id>" (RelatedEntityType="ProgrammeDay")
   And attendee B receives nothing
-  And D1.RatingPromptSentUtc is stamped (a second scan re-sends nothing, even for a zero-recipient day)
+  And D1.RatingPromptSent is stamped (a second scan re-sends nothing, even for a zero-recipient day)
 ```
 
 ### E2E-BF-08-006 — End-of-programme trio (fires exactly once)
@@ -2021,7 +2021,7 @@ Scenario: One attendee's dispatch failure does not abort the batch or block the 
   When RunReminderScanAsync runs
   Then X and Z each receive their SessionReminder tile
   And Y's failure is logged and skipped
-  And S.ReminderSentUtc is still stamped (the batch is not rolled back; S is not retried next minute)
+  And S.ReminderSent is still stamped (the batch is not rolled back; S is not retried next minute)
 ```
 
 ### E2E-BF-08-011 — RTL / bilingual render
@@ -2050,8 +2050,8 @@ Scenario: A seeded system rating type is protected from deletion
 
 ### Notes
 
-- **Time is injected, never waited on.** Every trigger is exercised by seeding `Session.StartUtc` / `Session.EndUtc` / `ProgrammeDay` boundaries and invoking the worker's `internal` scan method (`RunReminderScanAsync`, `RunRatingPromptScanAsync`, `RunDayPromptScanAsync`, `RunProgramEndScanAsync`) with a controlled `now` via `TimeProvider`. Do not rely on the live 1-minute poll or the 1-minute startup delay in tests.
-- **Dedup is DB-backed and restart-proof.** `Session.ReminderSentUtc`, `Session.RatingPromptSentUtc`, `ProgrammeDay.RatingPromptSentUtc`, and the `Notifications:ProgramEndRatingSentUtc` `SystemSetting` all survive a process restart, so a redeploy mid-window does not resend. The end-of-session prompt and the hall-exit prompt additionally share the dispatcher's `DeduplicateByRelatedEntity=true` guard per (session, user).
+- **Time is injected, never waited on.** Every trigger is exercised by seeding `Session.Start` / `Session.End` / `ProgrammeDay` boundaries and invoking the worker's `internal` scan method (`RunReminderScanAsync`, `RunRatingPromptScanAsync`, `RunDayPromptScanAsync`, `RunProgramEndScanAsync`) with a controlled `now` via `TimeProvider`. Do not rely on the live 1-minute poll or the 1-minute startup delay in tests.
+- **Dedup is DB-backed and restart-proof.** `Session.ReminderSent`, `Session.RatingPromptSent`, `ProgrammeDay.RatingPromptSent`, and the `Notifications:ProgramEndRatingSentUtc` `SystemSetting` all survive a process restart, so a redeploy mid-window does not resend. The end-of-session prompt and the hall-exit prompt additionally share the dispatcher's `DeduplicateByRelatedEntity=true` guard per (session, user).
 - **All prompts are in-app only** (`SendEmail=false`); assert the absence of any outbound email row, not just the presence of the tile.
 - **Audience derivations differ by trigger:** reminder + end-of-session use active `SeatReservation` rows; end-of-day + end-of-programme use `GateScan` Check-In/Allowed rows resolved `GateScan.UserProfileId → UserProfile.Id → UserProfile.UserId` (single-DB, no cross-DB join per D-157).
 - **Verified numeric kinds:** `BookingConfirmed=40`, `SessionReminder=41` (grounding); the rating-request kind integer values were not re-verified this pass — assert them by **name**, not by integer. ⚠ unverified: the exact HTTP status the `RatingConfig` delete-guard returns and its exact toast copy — E2E-BF-08-012 asserts the *behaviour* (delete refused, system type intact) rather than an unverified error code.
@@ -2616,7 +2616,7 @@ Scenario: A Moderator reaches only the session Q&A desk among role screens
 ```gherkin
 Scenario: Submitting a question to a closed session shows the not-open toast
   Given an approved attendee is on Send a question "/live/question?sessionId={id}" (#26)
-  And the target session is past its EndUtc (the after-view is a recording)
+  And the target session is past its End (the after-view is a recording)
   And the question text is "How deep is the reef?"
   When they submit POST /api/v1/app/sessions/{id}/questions
   Then the server returns HTTP 400 with error code "SESSION_NOT_LIVE_FOR_QUESTIONS"

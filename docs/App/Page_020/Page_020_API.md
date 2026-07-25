@@ -48,7 +48,7 @@ envelope, headers, error model and auth from SIMF-API-001 + SIMF-MOB-API-001
       "id": "guid", "code": "S-12",
       "title": "…", "titleArabic": "…",
       "hallId": "guid", "hallName": "Main Hall", "hallNameArabic": "القاعة الرئيسية",
-      "startUtc": "2026-09-01T08:00:00Z", "endUtc": "2026-09-01T09:30:00Z"
+      "start": "2026-09-01T08:00:00Z", "end": "2026-09-01T09:30:00Z"
     }
   ]
 }

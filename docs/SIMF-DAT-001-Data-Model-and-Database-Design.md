@@ -121,7 +121,7 @@ approval (SIMF-RPM-001 section 5.3).
 | `Gate` | `Code` (uppercase-normalised, unique), `Name`, `NameArabic`, `Description?`, `DescriptionArabic?`, `DirectionMode` (In / Out / Both), `IsActive`, `CreatedAt`, `UpdatedAt?` | has many `GateProfileTypeAllow`, `GateAssignment`, `GateScan` |
 | `GateProfileTypeAllow` | composite key `(GateId, ProfileTypeId)` | links `Gate` to a logical `ProfileType` reference (cross-context — see §5.3.1) |
 | `GateAssignment` | `GateId`, `UserId`, `IsActive`, `AssignedAt`, `AssignedByUserId`, `RevokedAt?`, `RevokedByUserId?` | links `Gate` to a logical `SimfUser` reference (cross-context — see §5.3.1) |
-| `GateScan` | `Id` (`bigint IDENTITY` PK — monotonic, no fragmentation), `GateId`, `UserProfileId?`, `QrIdAtScan` (12 chars; preserved exactly even after rotation), `Direction` (CheckIn / CheckOut), `Outcome` (Allowed / Denied), `DenialReasonCode?`, `ScannedAtUtc` (server clock — authoritative), `ClientScannedAtUtc?` (device clock — client-asserted), `ScannedByUserId`, `Source` (Simulator / MobileApp / Kiosk), `CorrelationId`, `IpAddress?`, `UserAgent?`, `IdempotencyKey?` | belongs to `Gate`; logical refs to `UserProfile` and `SimfUser` (see §5.3.1) — append-only audit log (INSTEAD-OF UPDATE/DELETE trigger refuses mutation; opts out of `RowAudit`) |
+| `GateScan` | `Id` (`bigint IDENTITY` PK — monotonic, no fragmentation), `GateId`, `UserProfileId?`, `QrIdAtScan` (12 chars; preserved exactly even after rotation), `Direction` (CheckIn / CheckOut), `Outcome` (Allowed / Denied), `DenialReasonCode?`, `ScannedAt` (server clock — authoritative), `ClientScannedAt?` (device clock — client-asserted), `ScannedByUserId`, `Source` (Simulator / MobileApp / Kiosk), `CorrelationId`, `IpAddress?`, `UserAgent?`, `IdempotencyKey?` | belongs to `Gate`; logical refs to `UserProfile` and `SimfUser` (see §5.3.1) — append-only audit log (INSTEAD-OF UPDATE/DELETE trigger refuses mutation; opts out of `RowAudit`) |
 | `ScanIdempotency` | `Key` (UUIDv4), `GateId`, `RequestHash`, `ResponseHash`, `StoredAt`, 24h retention | 24-hour replay store for `POST /scans` |
 
 `HallAttendance` records both an enter time and a leave time, captured by the
@@ -147,11 +147,11 @@ Five non-clustered indexes ride the clustered bigint PK:
 
 | Index | Columns | Filter | Purpose |
 |-------|---------|--------|---------|
-| `IX_GateScan_Gate_ScannedAt` | `(GateId, ScannedAtUtc DESC)` | — | Per-gate firehose; powers admin reports filtered by gate + date range |
-| `IX_GateScan_UserProfile_ScannedAt` | `(UserProfileId, ScannedAtUtc DESC)` | — | Per-visitor history |
-| `IX_GateScan_UserProfile_LastAllowed` | `(UserProfileId, ScannedAtUtc DESC)` | `WHERE Outcome = Allowed AND UserProfileId IS NOT NULL` | "Currently inside" derivation (design notes §3.3) — single-row seek per visitor |
-| `IX_GateScan_Gate_UserProfile_5sWindow` | `(GateId, UserProfileId, ScannedAtUtc DESC)` | `WHERE UserProfileId IS NOT NULL` | 5-second duplicate absorption per design notes §3.2 |
-| `IX_GateScan_ScannedBy_ScannedAt` | `(ScannedByUserId, ScannedAtUtc DESC)` | — | Operator daily report (`my-reports/today`) |
+| `IX_GateScan_Gate_ScannedAt` | `(GateId, ScannedAt DESC)` | — | Per-gate firehose; powers admin reports filtered by gate + date range |
+| `IX_GateScan_UserProfile_ScannedAt` | `(UserProfileId, ScannedAt DESC)` | — | Per-visitor history |
+| `IX_GateScan_UserProfile_LastAllowed` | `(UserProfileId, ScannedAt DESC)` | `WHERE Outcome = Allowed AND UserProfileId IS NOT NULL` | "Currently inside" derivation (design notes §3.3) — single-row seek per visitor |
+| `IX_GateScan_Gate_UserProfile_5sWindow` | `(GateId, UserProfileId, ScannedAt DESC)` | `WHERE UserProfileId IS NOT NULL` | 5-second duplicate absorption per design notes §3.2 |
+| `IX_GateScan_ScannedBy_ScannedAt` | `(ScannedByUserId, ScannedAt DESC)` | — | Operator daily report (`my-reports/today`) |
 | `UX_GateScan_Idempotency` | `(IdempotencyKey, GateId)` | `WHERE IdempotencyKey IS NOT NULL` | Unique filtered — replay enforcement |
 
 ### 5.4 Forum Programme

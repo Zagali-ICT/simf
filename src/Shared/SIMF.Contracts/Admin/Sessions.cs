@@ -13,8 +13,8 @@ public sealed record AdminSessionSummary(
     Guid HallId,
     string HallName,
     string HallNameArabic,
-    DateTimeOffset StartUtc,
-    DateTimeOffset EndUtc,
+    DateTimeOffset Start,
+    DateTimeOffset End,
     int Capacity,
     bool IsActive,
     DateTimeOffset CreatedAt,
@@ -49,8 +49,8 @@ public sealed record AdminSessionDetail(
     string HallName,
     string HallNameArabic,
     int HallCapacity,
-    DateTimeOffset StartUtc,
-    DateTimeOffset EndUtc,
+    DateTimeOffset Start,
+    DateTimeOffset End,
     int? CapacityOverride,
     int EffectiveCapacity,
     bool IsActive,
@@ -113,8 +113,8 @@ public sealed class AdminCreateSessionRequest
     public string? Description { get; set; }
     public string? DescriptionArabic { get; set; }
     public Guid HallId { get; set; }
-    public DateTimeOffset StartUtc { get; set; }
-    public DateTimeOffset EndUtc { get; set; }
+    public DateTimeOffset Start { get; set; }
+    public DateTimeOffset End { get; set; }
     public int? CapacityOverride { get; set; }
     // B9b — D-226: optional session category (dynamic lookup).
     public Guid? CategoryId { get; set; }
@@ -148,8 +148,8 @@ public sealed class AdminUpdateSessionRequest
     public string? Description { get; set; }
     public string? DescriptionArabic { get; set; }
     public Guid HallId { get; set; }
-    public DateTimeOffset StartUtc { get; set; }
-    public DateTimeOffset EndUtc { get; set; }
+    public DateTimeOffset Start { get; set; }
+    public DateTimeOffset End { get; set; }
     public int? CapacityOverride { get; set; }
     // B9b — D-226: optional session category (dynamic lookup).
     public Guid? CategoryId { get; set; }

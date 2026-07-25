@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using SIMF.ApiClient;
 using SIMF.Contracts.Programme;
+using SIMF.Web.Content;
 
 namespace SIMF.Web.Components.Pages;
 
@@ -53,8 +54,10 @@ public partial class MeetingConfirm
         finally { _submitting = false; }
     }
 
+    // R10 (D-767) — show the slot on the Saudi wall clock via the shared EventTime
+    // helper (the same UTC->Saudi relabel used across the site); stored instants stay UTC.
     private string FormatSlot(MeetingActionPreview preview) =>
-        preview.SlotStartUtc is { } start && preview.SlotEndUtc is { } end
-            ? $"{start.UtcDateTime:yyyy-MM-dd HH:mm}–{end.UtcDateTime:HH:mm} UTC"
+        preview.SlotStart is { } start && preview.SlotEnd is { } end
+            ? $"{EventTime.DateTimeText(start)}–{EventTime.Time(end)}"
             : L["Meeting.Confirm.TBD"];
 }

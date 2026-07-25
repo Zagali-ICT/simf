@@ -69,7 +69,7 @@ Scenario: Close registration, persist across reload, then reopen
   When the administrator UNTICKS "Registration is open"
   And clicks the "Save" button in the Registration gate section
   Then the BFF forwards PUT /account/api/admin/registration-gate
-    with body { "isOpen": false, "autoCloseUtc": null }
+    with body { "isOpen": false, "autoClose": null }
   And the API returns HTTP 200 with ApiResult.Success = true
   And a green SimfAlert appears at the top of the surface reading
     "Registration gate updated." / "تم تحديث بوّابة التسجيل."
@@ -95,7 +95,7 @@ Scenario: Close registration, persist across reload, then reopen
 - Network: every `/account/api/admin/registration-gate` call returns 200; the
   public sign-up probe returns 403 while closed and 201 after reopen
 - Audit row: `OperationLog` / audit entry with `EventType = RegistrationGateUpdated`,
-  `Outcome = Success`, the actor's user id, and `Detail = "isOpen=False; autoCloseUtc=null"`
+  `Outcome = Success`, the actor's user id, and `Detail = "isOpen=False; autoClose=null"`
   (then a second row for the reopen)
 
 ### E2E-OPS-002 — Schedule auto-close
@@ -108,13 +108,13 @@ Scenario: Set a future auto-close moment and confirm it round-trips
     (e.g. "2026-12-31T23:59")
   And clicks "Save" in the Registration gate section
   Then the BFF forwards PUT /account/api/admin/registration-gate
-    with body { "isOpen": true, "autoCloseUtc": "2026-12-31T23:59:00+00:00" }
+    with body { "isOpen": true, "autoClose": "2026-12-31T23:59:00+00:00" }
   And the API returns HTTP 200
   And the green "Registration gate updated." toast appears
 
   When the administrator reloads /admin/operations
   Then the "Auto-close (Saudi time)" field is pre-filled with "2026-12-31T23:59"
-    (the page formats AutoCloseUtc as "yyyy-MM-ddTHH:mm")
+    (the page formats AutoClose as "yyyy-MM-ddTHH:mm")
 
   # Past auto-close behaviour (verified at the API layer, see OperationsTogglesTests):
   # an auto-close moment <= now makes the gate behave closed even when IsOpen=true
@@ -127,7 +127,7 @@ Scenario: Set a future auto-close moment and confirm it round-trips
 - Network: `PUT /account/api/admin/registration-gate` returns 200; body shows the
   UTC offset `+00:00`
 - Audit row: `RegistrationGateUpdated` with `Detail` containing the ISO-8601
-  `autoCloseUtc=2026-12-31T23:59:00.0000000+00:00`
+  `autoClose=2026-12-31T23:59:00.0000000+00:00`
 
 ### E2E-OPS-003 — Toggle archive visibility (public endpoint reflects it)
 
@@ -215,7 +215,7 @@ Scenario: A malformed Auto-close value is rejected client-side before any PUT
 > Note: the field is a native `datetime-local` input so most malformed values are
 > blocked by the browser; this scenario targets the explicit
 > `DateTime.TryParse` guard + `AutoCloseInvalid` toast in `SaveGateAsync`.
-> Leaving the field BLANK is valid (sends `autoCloseUtc: null`) and is covered by
+> Leaving the field BLANK is valid (sends `autoClose: null`) and is covered by
 > E2E-OPS-001 / E2E-OPS-003 — not a validation failure.
 
 ### E2E-OPS-007 — Idempotent no-op save
@@ -227,7 +227,7 @@ Scenario: Saving without changing anything is a no-op but still confirms
     WITHOUT changing the checkbox or the auto-close field
   Then the API returns HTTP 200 and the green "Registration gate updated." toast appears
   But NO new audit row is written (the service only audits when
-    IsOpen or AutoCloseUtc actually changed — see UpdateRegistrationGateAsync `changed` guard)
+    IsOpen or AutoClose actually changed — see UpdateRegistrationGateAsync `changed` guard)
   And the "Last changed" timestamp does NOT advance
 ```
 

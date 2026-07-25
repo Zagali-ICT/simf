@@ -20,7 +20,7 @@ class SessionSummary {
     required this.fullText,
     required this.fullTextArabic,
     required this.generatedByAi,
-    this.publishedAt,
+    this.publishedAtRaw,
     this.recordingUrl,
     this.summaryVideoUrl,
   });
@@ -34,7 +34,7 @@ class SessionSummary {
   final String fullText;
   final String fullTextArabic;
   final bool generatedByAi;
-  final String? publishedAt;
+  final String? publishedAtRaw;
 
   /// Item #35 — the session's FULL live recording feed (from the API's
   /// `recordingUrl`, sourced server-side from `Session.LiveStreamUrl`). Null =
@@ -77,8 +77,8 @@ class SessionSummary {
   }
 
   /// The published timestamp parsed to UTC, or null when missing / unparsable.
-  DateTime? get publishedAtUtc {
-    final raw = publishedAt;
+  DateTime? get publishedAt {
+    final raw = publishedAtRaw;
     if (raw == null || raw.isEmpty) {
       return null;
     }
@@ -95,7 +95,7 @@ class SessionSummary {
         fullText: json['fullText'] as String? ?? '',
         fullTextArabic: json['fullTextArabic'] as String? ?? '',
         generatedByAi: json['generatedByAi'] as bool? ?? false,
-        publishedAt: json['publishedAt'] as String?,
+        publishedAtRaw: json['publishedAt'] as String?,
         recordingUrl: json['recordingUrl'] as String?,
         summaryVideoUrl: json['summaryVideoUrl'] as String?,
       );

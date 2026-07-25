@@ -77,7 +77,7 @@ internal sealed class ContactInquiryService(
             .Take(top)
             .Select(c => new AdminContactInquiryRow(
                 c.Id, c.Name, c.Email, c.Message, c.IsHandled,
-                c.SubmittedByUserId, c.CreatedAt, c.HandledAtUtc))
+                c.SubmittedByUserId, c.CreatedAt, c.HandledAt))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminContactInquiryRow>.Of(page, total,
@@ -97,7 +97,7 @@ internal sealed class ContactInquiryService(
 
         var now = timeProvider.GetUtcNow();
         inquiry.IsHandled = handled;
-        inquiry.HandledAtUtc = handled ? now : null;
+        inquiry.HandledAt = handled ? now : null;
         inquiry.HandledByUserId = handled ? actorUserId : null;
         inquiry.UpdatedAt = now;
         inquiry.UpdatedBy = actorUserId;

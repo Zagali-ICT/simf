@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../core/utils/saudi_time.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -200,7 +201,7 @@ class _RateScreenState extends ConsumerState<RateScreen> {
         icon: Icons.event_available_outlined,
         text: l10n.rateWatchedAt(
           watchedSession,
-          _watchedWhen(isArabic, form.targetStartUtc),
+          _watchedWhen(isArabic, form.targetStart),
         ),
       ));
       children.add(const SizedBox(height: SimfTokens.space5));
@@ -339,11 +340,11 @@ class _RateScreenState extends ConsumerState<RateScreen> {
   /// the active locale (mirrors the session-header card). Empty when the session
   /// start is unknown (an older API), in which case the header shows the title
   /// alone.
-  String _watchedWhen(bool isArabic, DateTime? startUtc) {
-    if (startUtc == null) {
+  String _watchedWhen(bool isArabic, DateTime? start) {
+    if (start == null) {
       return '';
     }
-    final local = startUtc.toLocal();
+    final local = saudiOf(start);
     final hh = local.hour.toString().padLeft(2, '0');
     final mm = local.minute.toString().padLeft(2, '0');
     return '${local.day.toString().padLeft(2, '0')} '

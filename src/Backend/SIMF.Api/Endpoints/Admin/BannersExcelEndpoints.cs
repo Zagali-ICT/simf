@@ -28,8 +28,8 @@ public sealed class ExportBannersEndpoint(IAdminCmsService service, IGridExcelEx
     [
         new("Title", row => row.Title),
         new("TitleArabic", row => row.TitleArabic),
-        new("StartUtc", row => row.StartUtc),
-        new("EndUtc", row => row.EndUtc),
+        new("Start", row => row.Start),
+        new("End", row => row.End),
         new("DisplayOrder", row => row.DisplayOrder),
         new("IsActive", row => row.IsActive),
         // D-506 — round-trip the bilingual body + image/link (appended so the
@@ -64,7 +64,7 @@ public sealed class ImportBannersEndpoint(IAdminCmsService service, IGridExcelIm
     protected override string Permission => PermissionCatalog.Banners.Import;
     protected override string SheetName => "Banners";
     protected override IReadOnlyList<string> RequiredHeaders =>
-        ["Title", "TitleArabic", "Body", "BodyArabic", "StartUtc", "EndUtc"];
+        ["Title", "TitleArabic", "Body", "BodyArabic", "Start", "End"];
 
     protected override string? RowKey(GridImportRow row) =>
         row.Cells.TryGetValue("Title", out var title) ? title : null;
@@ -104,16 +104,16 @@ public sealed class ImportBannersEndpoint(IAdminCmsService service, IGridExcelIm
                 "النص بالعربية مطلوب.");
         }
 
-        var startRaw = row.Cells.GetValueOrDefault("StartUtc", string.Empty);
-        if (!DateTimeOffset.TryParse(startRaw, out var startUtc))
+        var startRaw = row.Cells.GetValueOrDefault("Start", string.Empty);
+        if (!DateTimeOffset.TryParse(startRaw, out var start))
         {
             throw new DataValidationException(
                 "The start date/time is required and must be a valid date.",
                 "تاريخ/وقت البداية مطلوب ويجب أن يكون تاريخاً صالحاً.");
         }
 
-        var endRaw = row.Cells.GetValueOrDefault("EndUtc", string.Empty);
-        if (!DateTimeOffset.TryParse(endRaw, out var endUtc))
+        var endRaw = row.Cells.GetValueOrDefault("End", string.Empty);
+        if (!DateTimeOffset.TryParse(endRaw, out var end))
         {
             throw new DataValidationException(
                 "The end date/time is required and must be a valid date.",
@@ -128,8 +128,8 @@ public sealed class ImportBannersEndpoint(IAdminCmsService service, IGridExcelIm
             BodyArabic = bodyArabic,
             ImageUrl = NullIfBlank(row.Cells.GetValueOrDefault("ImageUrl", string.Empty)),
             LinkUrl = NullIfBlank(row.Cells.GetValueOrDefault("LinkUrl", string.Empty)),
-            StartUtc = startUtc,
-            EndUtc = endUtc,
+            Start = start,
+            End = end,
             DisplayOrder = int.TryParse(
                 row.Cells.GetValueOrDefault("DisplayOrder", string.Empty), out var order) ? order : 0,
         }, ct);

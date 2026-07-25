@@ -29,7 +29,7 @@ namespace SIMF.Domain.Files;
 /// <para>Soft-deleted via the inherited <see cref="BaseAuditEntity.IsActive"/> /
 /// <see cref="BaseAuditEntity.Deactivate"/>. <see cref="IsDeletable"/> is a
 /// separate gate: a legally-retained file (e.g. an ID document under a retention
-/// hold) cannot be deleted until <see cref="RetainUntilUtc"/> passes. All
+/// hold) cannot be deleted until <see cref="RetainUntil"/> passes. All
 /// server-controlled fields (<see cref="StorageKey"/>, <see cref="IsEncrypted"/>,
 /// <see cref="SensitivityTier"/>, owner) are set by the file service from the
 /// resolved <c>FileServicePolicy</c> — never from client input.</para>
@@ -88,11 +88,11 @@ public sealed class StoredFile : BaseAuditEntity
 
     /// <summary>End-of-retention timestamp computed from the <see cref="Service"/>
     /// retention policy at write time; drives the secure-erase sweep. Null = indefinite.</summary>
-    public DateTimeOffset? RetainUntilUtc { get; set; }
+    public DateTimeOffset? RetainUntil { get; set; }
 
     /// <summary>Set when the bytes / key were crypto-shredded (encrypted) or
     /// securely overwritten (plaintext); distinguishes secure-erased from soft-deleted.</summary>
-    public DateTimeOffset? SecureDestroyedUtc { get; set; }
+    public DateTimeOffset? SecureDestroyed { get; set; }
 
     /// <summary>Which entity family this file belongs to (fixes the meaning of
     /// <see cref="OwnerEntityId"/>). <see cref="FileOwnerEntityType.None"/> when standalone.</summary>
@@ -109,7 +109,7 @@ public sealed class StoredFile : BaseAuditEntity
     /// overwritten). Idempotent.</summary>
     public void MarkSecurelyDestroyed(DateTimeOffset whenUtc)
     {
-        SecureDestroyedUtc ??= whenUtc;
+        SecureDestroyed ??= whenUtc;
         IsActive = false;
     }
 }

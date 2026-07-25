@@ -330,8 +330,8 @@ public sealed class SessionQuestionCommitteeTests : IClassFixture<SimfApiFactory
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Committee Session", TitleArabic = "جلسة اللجنة",
             HallId = hall.Id,
-            StartUtc = DateTimeOffset.UtcNow.AddHours(2),
-            EndUtc = DateTimeOffset.UtcNow.AddHours(3),
+            Start = DateTimeOffset.UtcNow.AddHours(2),
+            End = DateTimeOffset.UtcNow.AddHours(3),
             IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
         };
         db.Sessions.Add(session);

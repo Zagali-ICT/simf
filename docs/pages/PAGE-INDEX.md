@@ -56,6 +56,7 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/countries` | ✅ Real | Administrator  | [cp/admin-countries.md](cp/admin-countries.md) | [e2e/cp-admin-countries.md](../tests/e2e/cp-admin-countries.md) |
 | `/admin/vips` | ✅ Real | Administrator  | [cp/admin-vips.md](cp/admin-vips.md) | [e2e/cp-admin-vips.md](../tests/e2e/cp-admin-vips.md) |
 | `/admin/invitations` | ✅ Real | Administrator | [cp/admin-invitations.md](cp/admin-invitations.md) | [e2e/cp-admin-invitations.md](../tests/e2e/cp-admin-invitations.md) |
+| `/admin/announcements` | ✅ Real (D-132: admin broadcast desk — one bilingual message → in-app notification + email to a specific session's registered attendees or a broad audience; background-processed, with a history grid) | Administrator ("Public relations" nav group; `Announcements.Send` = compose/send, `Announcements.View` = history) | [cp/announcements.md](cp/announcements.md) | [e2e/cp-announcements.md](../tests/e2e/cp-announcements.md) |
 | `/admin/reset-2fa` | ✅ Real | Administrator | [cp/admin-reset-2fa.md](cp/admin-reset-2fa.md) | [e2e/cp-admin-reset-2fa.md](../tests/e2e/cp-admin-reset-2fa.md) |
 | `/admin/roles` | ✅ Real | Administrator | [cp/admin-roles.md](cp/admin-roles.md) | [e2e/cp-admin-roles.md](../tests/e2e/cp-admin-roles.md) |
 | `/admin/roles/{id}/permissions` | ✅ Real | Administrator | — | [e2e/cp-admin-roles-permissions.md](../tests/e2e/cp-admin-roles-permissions.md) |
@@ -117,7 +118,7 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/configuration` | ✅ Real (D-229) | Administrator  | [cp/admin-configuration.md](cp/admin-configuration.md) | [e2e/cp-admin-configuration.md](../tests/e2e/cp-admin-configuration.md) |
 | `/admin/email/templates` | ✅ Real (D-735: DB-backed override editor for the 6 transactional identity emails — bilingual token templates, live preview, block-on-unknown-token, reset-to-default) | Administrator | [cp/email-templates.md](cp/email-templates.md) | [e2e/cp-admin-email-templates.md](../tests/e2e/cp-admin-email-templates.md) |
 | `/admin/site-settings` | ✅ Real (D-464; Build #13 partner-directory toggle) | Administrator | [cp/site-settings.md](cp/site-settings.md) | [e2e/cp-site-settings.md](../tests/e2e/cp-site-settings.md) |
-| `/admin/organization-profile` | ✅ Real (D-495) | Administrator | [cp/organization-profile.md](cp/organization-profile.md) | [e2e/cp-organization-profile.md](../tests/e2e/cp-organization-profile.md) |
+| `/admin/organization-profile` | ✅ Real (D-495; hero-video upload D-768) | Administrator | [cp/organization-profile.md](cp/organization-profile.md) | [e2e/cp-organization-profile.md](../tests/e2e/cp-organization-profile.md) |
 | `/admin/contact-inquiries` | ✅ Real (D-464; BFF wired D-649) | Administrator | — | [e2e/cp-contact-inquiries.md](../tests/e2e/cp-contact-inquiries.md) |
 | `/admin/operations` | ✅ Real (D-166) | Administrator | — | [e2e/cp-admin-operations.md](../tests/e2e/cp-admin-operations.md) |
 | `/admin/operation-log` | ✅ Real | Administrator | [cp/admin-operation-log.md](cp/admin-operation-log.md) | [e2e/cp-admin-operation-log.md](../tests/e2e/cp-admin-operation-log.md) |

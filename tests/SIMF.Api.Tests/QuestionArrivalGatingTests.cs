@@ -125,8 +125,8 @@ public sealed class QuestionArrivalGatingTests : IClassFixture<SimfApiFactory>
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Gating Session", TitleArabic = "جلسة البوابة",
             HallId = hall.Id,
-            StartUtc = DateTimeOffset.UtcNow.AddMinutes(-15),
-            EndUtc = DateTimeOffset.UtcNow.AddMinutes(45),
+            Start = DateTimeOffset.UtcNow.AddMinutes(-15),
+            End = DateTimeOffset.UtcNow.AddMinutes(45),
             IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
         };
         db.Sessions.Add(session);

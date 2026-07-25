@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../core/utils/saudi_time.dart';
 import 'session_lifecycle.dart';
 
 /// The session broadcast lifecycle — mirrors `SIMF.Common.Enums.SessionStatus`
@@ -169,7 +170,7 @@ class SessionSpeaker {
 
 /// One row in the cached programme — mirrors
 /// `SIMF.Contracts.Programme.PublicSessionListItem` (`GET /app/programme/sessions`).
-/// [startUtc]/[endUtc] are UTC on the wire — the UI renders device-local
+/// [start]/[end] are UTC on the wire — the UI renders device-local
 /// (Page_016 L-3/L-8). Bilingual fields are paired; [categoryName] is the
 /// "main session" / type tag (null until the team seeds the category list —
 /// L-4); [speakers] is always a list (empty, never null — L-7) and carries the
@@ -184,8 +185,8 @@ class SessionListItem {
     required this.hallId,
     required this.hallName,
     required this.hallNameArabic,
-    required this.startUtc,
-    required this.endUtc,
+    required this.start,
+    required this.end,
     required this.status,
     required this.speakers,
     this.description,
@@ -205,8 +206,8 @@ class SessionListItem {
   final String hallId;
   final String hallName;
   final String hallNameArabic;
-  final DateTime startUtc;
-  final DateTime endUtc;
+  final DateTime start;
+  final DateTime end;
   final SessionStatus status;
   final List<SessionSpeaker> speakers;
   // D-452 (Figma 883:2308): the session's type, driving the type tabs.
@@ -225,20 +226,20 @@ class SessionListItem {
   /// a per-session `/summary` probe.
   final bool hasPublishedSummary;
 
-  /// The session's start in the device-local zone (the wire value is UTC).
-  DateTime get startLocal => startUtc.toLocal();
+  /// The session's start on the Saudi event-local wall clock (wire value UTC).
+  DateTime get startLocal => saudiOf(start);
 
   /// The session's time-phase (upcoming / live / ended) against [nowUtc].
-  SessionPhase phase(DateTime nowUtc) => sessionPhase(startUtc, endUtc, nowUtc);
+  SessionPhase phase(DateTime nowUtc) => sessionPhase(start, end, nowUtc);
 
-  /// The session's end in the device-local zone — drives the agenda time-rail's
-  /// bottom value (Figma 883:2308) and the summary card's duration (1072:13518).
-  DateTime get endLocal => endUtc.toLocal();
+  /// The session's end on the Saudi event-local wall clock — drives the agenda
+  /// time-rail's bottom value (Figma 883:2308) and the summary duration (1072:13518).
+  DateTime get endLocal => saudiOf(end);
 
   /// The session length in whole minutes, floored at 0 — the summary card's
   /// duration label (Figma 1072:13518). Mirrors `MyAreaSessionItem.durationMinutes`.
   int get durationMinutes {
-    final minutes = endUtc.difference(startUtc).inMinutes;
+    final minutes = end.difference(start).inMinutes;
     return minutes < 0 ? 0 : minutes;
   }
 
@@ -262,8 +263,8 @@ class SessionListItem {
         hallId: json['hallId'] as String? ?? '',
         hallName: json['hallName'] as String? ?? '',
         hallNameArabic: json['hallNameArabic'] as String? ?? '',
-        startUtc: _parseUtc(json['startUtc']),
-        endUtc: _parseUtc(json['endUtc']),
+        start: _parseUtc(json['start']),
+        end: _parseUtc(json['end']),
         status: SessionStatus.fromJson(json['status']),
         speakers: _decodeSpeakers(json['speakers']),
         description: json['description'] as String?,
@@ -379,8 +380,8 @@ class SessionDetail {
     required this.hallId,
     required this.hallName,
     required this.hallNameArabic,
-    required this.startUtc,
-    required this.endUtc,
+    required this.start,
+    required this.end,
     required this.speakers,
     this.description,
     this.descriptionArabic,
@@ -398,8 +399,8 @@ class SessionDetail {
   final String hallId;
   final String hallName;
   final String hallNameArabic;
-  final DateTime startUtc;
-  final DateTime endUtc;
+  final DateTime start;
+  final DateTime end;
   final List<SessionSpeaker> speakers;
   final String? description;
   final String? descriptionArabic;
@@ -419,15 +420,15 @@ class SessionDetail {
 
   /// The session's time-phase (upcoming / live / ended) against [nowUtc] — the
   /// header buttons gate off this (summary = ended; live = live + hasLiveStream).
-  SessionPhase phase(DateTime nowUtc) => sessionPhase(startUtc, endUtc, nowUtc);
+  SessionPhase phase(DateTime nowUtc) => sessionPhase(start, end, nowUtc);
 
   /// The session's 1-based position within its day (D-567, Figma 889:2604) —
   /// the gold index badge shows it zero-padded ("02"). 0 = unknown (an older
   /// API), in which case the badge falls back to the [code].
   final int displayOrder;
 
-  DateTime get startLocal => startUtc.toLocal();
-  DateTime get endLocal => endUtc.toLocal();
+  DateTime get startLocal => saudiOf(start);
+  DateTime get endLocal => saudiOf(end);
 
   String localizedTitle(bool isArabic) =>
       _pickRequired(titleArabic, title, isArabic);
@@ -449,8 +450,8 @@ class SessionDetail {
         hallId: json['hallId'] as String? ?? '',
         hallName: json['hallName'] as String? ?? '',
         hallNameArabic: json['hallNameArabic'] as String? ?? '',
-        startUtc: _parseUtc(json['startUtc']),
-        endUtc: _parseUtc(json['endUtc']),
+        start: _parseUtc(json['start']),
+        end: _parseUtc(json['end']),
         speakers: _decodeSpeakers(json['speakers']),
         description: json['description'] as String?,
         descriptionArabic: json['descriptionArabic'] as String?,
@@ -500,7 +501,7 @@ class MySeat {
 enum SessionsView { upcoming, forum }
 
 /// Pure client-side filter over the cached programme (Page_016 L-1): [view]
-/// (Upcoming = `startUtc >= nowUtc`, L-2), an optional [localDay] (matched on
+/// (Upcoming = `start >= nowUtc`, L-2), an optional [localDay] (matched on
 /// the session's device-local calendar day), and a free-text [query] over
 /// title/description/code (both languages). Input order is preserved (the
 /// server returns the list time-ordered, L-5).
@@ -513,7 +514,7 @@ List<SessionListItem> filterSessions(
 }) {
   final needle = query.trim().toLowerCase();
   return items.where((session) {
-    if (view == SessionsView.upcoming && session.startUtc.isBefore(nowUtc)) {
+    if (view == SessionsView.upcoming && session.start.isBefore(nowUtc)) {
       return false;
     }
     if (localDay != null && !sameLocalDay(session.startLocal, localDay)) {

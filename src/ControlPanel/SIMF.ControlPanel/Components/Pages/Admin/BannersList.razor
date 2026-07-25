@@ -67,15 +67,15 @@
                                         Sortable="true" Filterable="true">
                         <CellTemplate>@TitleLabel(context)</CellTemplate>
                     </SimfDataGridColumn>
-                    <SimfDataGridColumn TItem="AdminBannerSummary" Key="startUtc"
-                                        Header="@L["Admin.Banners.Col.StartUtc"]"
+                    <SimfDataGridColumn TItem="AdminBannerSummary" Key="start"
+                                        Header="@L["Admin.Banners.Col.Start"]"
                                         Sortable="true">
-                        <CellTemplate>@context.StartUtc.FormatSaudi("yyyy-MM-dd HH:mm")</CellTemplate>
+                        <CellTemplate>@context.Start.FormatSaudi("dd-MM-yyyy hh:mm tt")</CellTemplate>
                     </SimfDataGridColumn>
-                    <SimfDataGridColumn TItem="AdminBannerSummary" Key="endUtc"
-                                        Header="@L["Admin.Banners.Col.EndUtc"]"
+                    <SimfDataGridColumn TItem="AdminBannerSummary" Key="end"
+                                        Header="@L["Admin.Banners.Col.End"]"
                                         Sortable="true">
-                        <CellTemplate>@context.EndUtc.FormatSaudi("yyyy-MM-dd HH:mm")</CellTemplate>
+                        <CellTemplate>@context.End.FormatSaudi("dd-MM-yyyy hh:mm tt")</CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminBannerSummary" Key="displayOrder"
                                         Header="@L["Admin.Banners.Col.DisplayOrder"]"

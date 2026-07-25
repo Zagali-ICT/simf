@@ -63,7 +63,7 @@ class _FakeFeedbackRepo implements FeedbackRepository {
       // header assertions check the session name, not the tz-shifted time).
       targetName: session ? 'Opening Session' : null,
       targetNameArabic: session ? 'الجلسة الافتتاحية' : null,
-      targetStartUtc: session ? DateTime.utc(2026, 11, 20, 9) : null,
+      targetStart: session ? DateTime.utc(2026, 11, 20, 9) : null,
       groups: const <RatingFormGroup>[],
       ungroupedQuestions: hasQuestion
           ? <RatingFormQuestion>[

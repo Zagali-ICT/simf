@@ -22,7 +22,7 @@ AppRequestItem _meeting({
   required String id,
   required String title,
   AppRequestStatus status = AppRequestStatus.accepted,
-  DateTime? eventDateUtc,
+  DateTime? eventDate,
   String? subtitle,
   String? speakerId,
   int? countryId,
@@ -34,7 +34,7 @@ AppRequestItem _meeting({
       titleArabic: title,
       status: status,
       createdAt: DateTime.utc(2026),
-      eventDateUtc: eventDateUtc,
+      eventDate: eventDate,
       canCancel: false,
       subtitle: subtitle,
       speakerId: speakerId,
@@ -47,6 +47,12 @@ Future<void> _pump(
   bool fail = false,
   bool isVip = true,
 }) async {
+  // A tall viewport so every meeting card is built — ListView(children:) lays out
+  // children lazily, so in the default 600px height off-screen cards would not be
+  // found by find.text (R9 now lists all requests, not just one).
+  tester.view.physicalSize = const Size(800, 3000);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.reset);
   final router = GoRouter(
     initialLocation: '/meetings',
     routes: <RouteBase>[
@@ -109,7 +115,7 @@ void main() {
             id: '1',
             title: 'Dr Mohammed Al-Omari',
             subtitle: 'Marine researcher',
-            eventDateUtc: DateTime.utc(2035),
+            eventDate: DateTime.utc(2035),
             speakerId: 's1',
             countryId: 682,
           ),
@@ -133,8 +139,8 @@ void main() {
       expect(find.text('Request a speaker meeting'), findsOneWidget);
     });
 
-    testWidgets('only approved + upcoming meetings appear (pending/past/rejected '
-        'excluded)', (tester) async {
+    testWidgets('ALL my meeting requests appear regardless of status/date (R9); '
+        'non-meeting kinds are excluded', (tester) async {
       await _pump(
         tester,
         data: <AppRequestItem>[
@@ -142,20 +148,26 @@ void main() {
             kind: AppRequestKind.speakerMeeting,
             id: '1',
             title: 'Future Speaker',
-            eventDateUtc: DateTime.utc(2035),
+            eventDate: DateTime.utc(2035),
           ),
           _meeting(
             kind: AppRequestKind.speakerMeeting,
             id: '2',
             title: 'Past Speaker',
-            eventDateUtc: DateTime.utc(2020),
+            eventDate: DateTime.utc(2020),
           ),
           _meeting(
             kind: AppRequestKind.speakerMeeting,
             id: '3',
             title: 'Pending Speaker',
             status: AppRequestStatus.pending,
-            eventDateUtc: DateTime.utc(2035),
+            eventDate: DateTime.utc(2035),
+          ),
+          _meeting(
+            kind: AppRequestKind.delegationMeeting,
+            id: '5',
+            title: 'Rejected Delegation',
+            status: AppRequestStatus.rejected,
           ),
           // A non-meeting kind never belongs on this page.
           _meeting(
@@ -165,9 +177,12 @@ void main() {
           ),
         ],
       );
+      // R9 — every meeting-kind request shows, whatever its status or date.
       expect(find.text('Future Speaker'), findsOneWidget);
-      expect(find.text('Past Speaker'), findsNothing);
-      expect(find.text('Pending Speaker'), findsNothing);
+      expect(find.text('Past Speaker'), findsOneWidget);
+      expect(find.text('Pending Speaker'), findsOneWidget);
+      expect(find.text('Rejected Delegation'), findsOneWidget);
+      // A non-meeting kind is still excluded.
       expect(find.text('Badge Change'), findsNothing);
     });
 
@@ -199,7 +214,7 @@ void main() {
             kind: AppRequestKind.speakerMeeting,
             id: '1',
             title: 'Today Speaker',
-            eventDateUtc: earlierToday,
+            eventDate: earlierToday,
           ),
         ],
       );
@@ -223,7 +238,7 @@ void main() {
             kind: AppRequestKind.speakerMeeting,
             id: '1',
             title: 'Should Not Show',
-            eventDateUtc: DateTime.utc(2035),
+            eventDate: DateTime.utc(2035),
           ),
         ],
       );

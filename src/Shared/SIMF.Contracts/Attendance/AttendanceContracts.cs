@@ -7,7 +7,7 @@ namespace SIMF.Contracts.Attendance;
 /// no schema, no writes. Served by <c>GET /api/v1/admin/attendance/summary</c>.
 ///
 /// <para><c>LiveAttendeesNow</c> is the distinct count of people currently
-/// inside any hall (an open attendance row — <c>LeaveUtc</c> is null).
+/// inside any hall (an open attendance row — <c>Leave</c> is null).
 /// <c>SessionsWithAttendance</c> is the number of active sessions that have at
 /// least one arrival. <c>TotalArrivals</c> is the sum over active sessions of
 /// each session's distinct-attendee count.</para>
@@ -36,8 +36,8 @@ public sealed record SessionAttendanceRow(
     string TitleArabic,
     string HallName,
     string HallNameArabic,
-    DateTimeOffset StartUtc,
-    DateTimeOffset EndUtc,
+    DateTimeOffset Start,
+    DateTimeOffset End,
     int TotalAttendees,
     int LiveNow);
 
@@ -58,5 +58,5 @@ public sealed record SessionPresentAttendee(
     string? JobTitle,
     string? RowLabel,
     int? SeatNumber,
-    DateTimeOffset EnterUtc,
+    DateTimeOffset Enter,
     SIMF.Common.Enums.AttendanceMethod Method);

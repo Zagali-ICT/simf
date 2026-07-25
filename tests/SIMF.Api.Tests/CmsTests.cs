@@ -182,7 +182,7 @@ public sealed class CmsTests : IClassFixture<SimfApiFactory>
             {
                 Title = "Live Banner", TitleArabic = "بانر مباشر",
                 Body = "Body", BodyArabic = "النص",
-                StartUtc = now.AddDays(-1), EndUtc = now.AddDays(1),
+                Start = now.AddDays(-1), End = now.AddDays(1),
                 DisplayOrder = 0,
             }, admin);
         var live = (await liveCreate.Content
@@ -195,7 +195,7 @@ public sealed class CmsTests : IClassFixture<SimfApiFactory>
             {
                 Title = "Future Banner", TitleArabic = "بانر مستقبلي",
                 Body = "Body", BodyArabic = "النص",
-                StartUtc = now.AddDays(1), EndUtc = now.AddDays(2),
+                Start = now.AddDays(1), End = now.AddDays(2),
                 DisplayOrder = 1,
             }, admin);
 
@@ -218,7 +218,7 @@ public sealed class CmsTests : IClassFixture<SimfApiFactory>
             {
                 Title = "Bad", TitleArabic = "سيء",
                 Body = "b", BodyArabic = "ب",
-                StartUtc = now.AddDays(1), EndUtc = now,
+                Start = now.AddDays(1), End = now,
                 DisplayOrder = 0,
             }, admin);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);

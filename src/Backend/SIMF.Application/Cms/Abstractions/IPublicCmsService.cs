@@ -20,7 +20,7 @@ public interface IPublicCmsService
         IReadOnlyList<string> keys, CancellationToken cancellationToken = default);
 
     /// <summary>Returns banners that are active AND within their
-    /// [StartUtc, EndUtc] window at the moment of the call.</summary>
+    /// [Start, End] window at the moment of the call.</summary>
     Task<PublicBanners> GetActiveBannersAsync(
         CancellationToken cancellationToken = default);
 }

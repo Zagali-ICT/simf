@@ -327,7 +327,7 @@ class UpcomingCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: SimfTokens.space3),
-            _TimeChip(time: session.startUtc),
+            _TimeChip(time: session.start),
           ],
         ),
       ),

@@ -64,32 +64,12 @@
                                     Header="@L["Admin.DelegationMeetings.Col.Status"]"
                                     Filterable="true">
                     <CellTemplate>
-                        @switch (context.Status)
-                        {
-                            case MeetingRequestStatus.Pending:
-                                <SimfPill Variant="warn">@L["Admin.DelegationMeetings.Filter.Pending"]</SimfPill>
-                                break;
-                            case MeetingRequestStatus.AwaitingSpeaker:
-                                <SimfPill Variant="warn">@L["Admin.Meetings.Status.AwaitingConfirmation"]</SimfPill>
-                                break;
-                            case MeetingRequestStatus.Accepted:
-                                <SimfPill Variant="on">@L["Admin.DelegationMeetings.Filter.Accepted"]</SimfPill>
-                                break;
-                            case MeetingRequestStatus.Done:
-                                <SimfPill Variant="on">@L["Admin.Meetings.Status.Done"]</SimfPill>
-                                break;
-                            case MeetingRequestStatus.Rejected:
-                                <SimfPill Variant="off">@L["Admin.DelegationMeetings.Filter.Rejected"]</SimfPill>
-                                break;
-                            case MeetingRequestStatus.Cancelled:
-                                <SimfPill Variant="off">@L["Admin.Meetings.Status.Cancelled"]</SimfPill>
-                                break;
-                        }
+                        <MeetingStatusPill Status="context.Status" />
                     </CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminDelegationMeetingRequestRow" Key="createdAt"
                                     Header="@L["Admin.DelegationMeetings.Col.CreatedAt"]" Sortable="true">
-                    <CellTemplate>@context.CreatedAt.FormatSaudi("yyyy-MM-dd HH:mm")</CellTemplate>
+                    <CellTemplate>@context.CreatedAt.FormatSaudi("dd-MM-yyyy hh:mm tt")</CellTemplate>
                 </SimfDataGridColumn>
             </Columns>
             <RowActions>
@@ -109,7 +89,7 @@
                     <AuthorizedAction Permission="@PermissionCatalog.DelegationMeetings.Manage">
                         <SimfToolbarButton Icon="log-in" Title="@L["Admin.Meetings.CheckIn"]"
                                            Disabled="_busy"
-                                           OnClick="@(() => OnCheckInAsync(context))" />
+                                           OnClick="@(() => ConfirmCheckIn(context))" />
                     </AuthorizedAction>
                 }
             </RowActions>
@@ -122,7 +102,7 @@
 
 @if (_respondOpen && _respondTarget is not null)
 {
-    <SimfModal Open="true" Title="@L["Admin.DelegationMeetings.Respond.Title"]"
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.DelegationMeetings.Respond.Title"]"
                OnClose="@(() => _respondOpen = false)">
         <ChildContent>
             <div class="simf-form__fields">
@@ -212,11 +192,11 @@
                     }
                 }
                 else if (_respondTarget.Status == MeetingRequestStatus.AwaitingSpeaker
-                    && _respondTarget.SlotStartUtc is { } awaitStart)
+                    && _respondTarget.SlotStart is { } awaitStart)
                 {
                     <dl class="simf-dl">
                         <dt>@L["Admin.Meetings.Bind.Slot"]</dt>
-                        <dd>@awaitStart.FormatSaudi("yyyy-MM-dd HH:mm")</dd>
+                        <dd>@awaitStart.FormatSaudi("dd-MM-yyyy hh:mm tt")</dd>
                     </dl>
                 }
                 <label class="simf-field">
@@ -226,6 +206,7 @@
                               @onchange="OnRespondNoteChanged"
                               disabled="@_busy"></textarea>
                 </label>
+                <p class="simf-form__secondary">@L["Admin.Meetings.RespondHelp"]</p>
             </div>
         </ChildContent>
         <Footer>
@@ -250,3 +231,8 @@
         </Footer>
     </SimfModal>
 }
+
+@* R10 (D-767) — must-decide guard for the one-click Check-in row action. *@
+<SimfConfirm Open="_confirmOpen" Title="@_confirmTitle" Message="@_confirmMessage"
+             ConfirmLabel="@_confirmLabel" CancelLabel="@L["Admin.Meetings.Close"]"
+             Busy="_busy" OnConfirm="RunConfirmAsync" OnCancel="CancelConfirm" />

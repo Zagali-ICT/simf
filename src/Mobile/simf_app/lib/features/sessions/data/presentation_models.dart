@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../core/utils/saudi_time.dart';
+
 /// One downloadable session presentation — App "عروض الجلسات" (Figma 1388:7621),
 /// mirroring `SIMF.Contracts.Programme.PublicPresentationItem`. Each card shows
 /// the session it belongs to (title bilingual + start, for the day tabs), the
@@ -12,7 +14,7 @@ class PresentationItem {
     required this.sessionId,
     required this.sessionTitle,
     required this.sessionTitleArabic,
-    required this.sessionStartUtc,
+    required this.sessionStart,
     required this.speakerName,
     required this.speakerNameArabic,
     required this.fileName,
@@ -24,15 +26,15 @@ class PresentationItem {
   final String sessionId;
   final String sessionTitle;
   final String sessionTitleArabic;
-  final DateTime sessionStartUtc;
+  final DateTime sessionStart;
   final String speakerName;
   final String speakerNameArabic;
   final String fileName;
   final String contentType;
   final int sizeBytes;
 
-  /// The session's start in the device-local zone (the wire value is UTC).
-  DateTime get sessionStartLocal => sessionStartUtc.toLocal();
+  /// The session's start on the Saudi event-local wall clock (wire value UTC).
+  DateTime get sessionStartLocal => saudiOf(sessionStart);
 
   String localizedSessionTitle(bool isArabic) =>
       _pickRequired(sessionTitleArabic, sessionTitle, isArabic);
@@ -46,7 +48,7 @@ class PresentationItem {
         sessionId: json['sessionId'] as String? ?? '',
         sessionTitle: json['sessionTitle'] as String? ?? '',
         sessionTitleArabic: json['sessionTitleArabic'] as String? ?? '',
-        sessionStartUtc: _parseUtc(json['sessionStartUtc']),
+        sessionStart: _parseUtc(json['sessionStart']),
         speakerName: json['speakerName'] as String? ?? '',
         speakerNameArabic: json['speakerNameArabic'] as String? ?? '',
         fileName: json['fileName'] as String? ?? '',

@@ -87,8 +87,8 @@ Every scan is one row in `GateScan` — append-only, an INSTEAD-OF UPDATE/DELETE
 | `QrIdAtScan` | The 12-char QR exactly as scanned. Forensic value — survives QR rotation. |
 | `Direction` | `CheckIn` / `CheckOut`. |
 | `Outcome`, `DenialReasonCode` | `Allowed` or `Denied` plus an enum reason (`PROFILE_TYPE_NOT_ALLOWED`, `HOLDER_NOT_APPROVED`, etc.). |
-| `ScannedAtUtc` | Server clock at receive. The authoritative timestamp. |
-| `ClientScannedAtUtc` | Nullable — when the device recorded the scan locally. Always treated as client-asserted, never authoritative. |
+| `ScannedAt` | Server clock at receive. The authoritative timestamp. |
+| `ClientScannedAt` | Nullable — when the device recorded the scan locally. Always treated as client-asserted, never authoritative. |
 | `ScannedByUserId` | The operator (or system user for a kiosk). |
 | `Source` | `Simulator` (dev only), `MobileApp`, or `Kiosk`. |
 | `CorrelationId`, `IpAddress`, `UserAgent` | Tie the row back to the API log; investigate abuse. |
@@ -115,7 +115,7 @@ The "currently inside" view is computed on demand from the most recent allowed s
 - Most recent allowed scan is `CheckIn` → visitor is inside.
 - Most recent allowed scan is `CheckOut`, or no scan exists → visitor is outside.
 
-The filtered index `(UserProfileId, ScannedAtUtc DESC) WHERE Outcome = Allowed` makes this a single-row seek per visitor even at the expected event-end volume (low millions of scans). If reporting load proves the index insufficient under live conditions, a materialised `VisitorPresence` table is the documented fallback (plan OI-5).
+The filtered index `(UserProfileId, ScannedAt DESC) WHERE Outcome = Allowed` makes this a single-row seek per visitor even at the expected event-end volume (low millions of scans). If reporting load proves the index insufficient under live conditions, a materialised `VisitorPresence` table is the documented fallback (plan OI-5).
 
 ## 4. Managing VIP / Normal rejection
 
@@ -160,7 +160,7 @@ The API contract is designed for offline operation from day one (plan §11.4), e
 
 | Primitive | Purpose |
 |-----------|---------|
-| `ClientScannedAtUtc` column on `GateScan` | When the device saw the scan locally. Stored separately, marked client-asserted, never authoritative. |
+| `ClientScannedAt` column on `GateScan` | When the device saw the scan locally. Stored separately, marked client-asserted, never authoritative. |
 | `IdempotencyKey` column on `GateScan` + `ScanIdempotency` 24h replay store | Same key sent twice (queue drain after a 3-hour outage) writes once — replay-safe. |
 | `Source = MobileApp` accepted in any environment | Distinguishes mobile-app scans from CP simulator (dev-only) and kiosk. |
 | `POST /api/v1/gates/{gateId}/scans` accepts both header `Idempotency-Key` and body `idempotencyKey` | Header wins if both are present. |
@@ -175,11 +175,11 @@ On sign-in:
 
 On each scan:
     Generate idempotencyKey = UUIDv4.
-    Stamp clientScannedAtUtc = device clock UTC.
+    Stamp clientScannedAt = device clock UTC.
 
     Online?
         Yes → POST /scans now; render the server's outcome.
-        No  → enqueue the scan in local SQLite with idempotencyKey + clientScannedAtUtc.
+        No  → enqueue the scan in local SQLite with idempotencyKey + clientScannedAt.
               Run a local constraint check against cached gate config
                 (gate active? direction inferable? profile-type acceptable
                  from any cached visitor record?).
@@ -198,8 +198,8 @@ When network resumes:
 
 ### 5.3 Trust model
 
-- Server clock (`ScannedAtUtc`) is the authoritative timestamp on the audit log. A device with a skewed or manipulated clock cannot back-date scans authoritatively.
-- `ClientScannedAtUtc` is recorded but always flagged client-asserted. Reports use it for the visitor's apparent movement timeline; SOC investigations use `ScannedAtUtc` for actor-action ordering.
+- Server clock (`ScannedAt`) is the authoritative timestamp on the audit log. A device with a skewed or manipulated clock cannot back-date scans authoritatively.
+- `ClientScannedAt` is recorded but always flagged client-asserted. Reports use it for the visitor's apparent movement timeline; SOC investigations use `ScannedAt` for actor-action ordering.
 - Idempotency makes drained queues replay-safe. A 3-hour outage's worth of queued scans replays without producing duplicates.
 - A device may locally accept a scan that the server later denies (because the visitor's status changed while offline). That is the "late denial" alert path. The operator at the gate is told to find the person and address the issue. The realistic alternative — "deny everything while offline" — would be worse for the event.
 

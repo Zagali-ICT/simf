@@ -17,8 +17,8 @@ class LiveSession {
     this.liveSignLanguageUrl,
     this.hallName,
     this.hallNameArabic,
-    this.startUtc,
-    this.endUtc,
+    this.start,
+    this.end,
     this.speakers = const <LiveSpeaker>[],
     this.liveCaptions,
     this.liveCaptionsArabic,
@@ -36,8 +36,8 @@ class LiveSession {
       // PublicSessionDetail wire (the live slice just had not decoded them).
       hallName: _trimToNull(json['hallName'] as String?),
       hallNameArabic: _trimToNull(json['hallNameArabic'] as String?),
-      startUtc: DateTime.tryParse((json['startUtc'] as String?) ?? ''),
-      endUtc: DateTime.tryParse((json['endUtc'] as String?) ?? ''),
+      start: DateTime.tryParse((json['start'] as String?) ?? '')?.toUtc(),
+      end: DateTime.tryParse((json['end'] as String?) ?? '')?.toUtc(),
       speakers: (json['speakers'] as List? ?? const <dynamic>[])
           .whereType<Map<dynamic, dynamic>>()
           .map((e) => LiveSpeaker.fromJson(e.cast<String, dynamic>()))
@@ -65,13 +65,13 @@ class LiveSession {
   // (frame 934:3450 header + 934:3617).
   final String? hallName;
   final String? hallNameArabic;
-  final DateTime? startUtc;
+  final DateTime? start;
 
   /// S-3 — the session's scheduled end (UTC on the wire, decoded from the
-  /// existing PublicSessionDetail.EndUtc). With [startUtc] it defines the LIVE
+  /// existing PublicSessionDetail.End). With [start] it defines the LIVE
   /// window: "live" = now within [start, end], not merely "a feed URL exists".
   /// Null when the wire omits it (the global main-live synthetic).
-  final DateTime? endUtc;
+  final DateTime? end;
   final List<LiveSpeaker> speakers;
 
   // P5 — D-439 (Figma 934:3613): the AI live-caption / running-transcript line
@@ -141,21 +141,21 @@ class UpcomingSession {
     required this.id,
     required this.title,
     required this.titleArabic,
-    required this.startUtc,
+    required this.start,
   });
 
   factory UpcomingSession.fromJson(Map<String, dynamic> json) => UpcomingSession(
         id: (json['id'] as String?) ?? '',
         title: (json['title'] as String?) ?? '',
         titleArabic: (json['titleArabic'] as String?) ?? '',
-        startUtc:
-            DateTime.tryParse((json['startUtc'] as String?) ?? '')?.toLocal(),
+        start:
+            DateTime.tryParse((json['start'] as String?) ?? '')?.toUtc(),
       );
 
   final String id;
   final String title;
   final String titleArabic;
-  final DateTime? startUtc;
+  final DateTime? start;
 
   String localizedTitle(bool isArabic) {
     final ar = titleArabic.trim();
@@ -206,16 +206,16 @@ class LiveRepository {
       decodeData: (data) {
         final items = (data is Map ? data['items'] : null) as List? ??
             const <dynamic>[];
-        final now = DateTime.now();
+        final now = DateTime.now().toUtc();
         final upcoming = items
             .whereType<Map<dynamic, dynamic>>()
             .map((e) => UpcomingSession.fromJson(e.cast<String, dynamic>()))
             .where((s) =>
                 s.id != excludeSessionId &&
-                s.startUtc != null &&
-                s.startUtc!.isAfter(now),)
+                s.start != null &&
+                s.start!.isAfter(now),)
             .toList()
-          ..sort((a, b) => a.startUtc!.compareTo(b.startUtc!));
+          ..sort((a, b) => a.start!.compareTo(b.start!));
         return upcoming.take(take).toList(growable: false);
       },
     );

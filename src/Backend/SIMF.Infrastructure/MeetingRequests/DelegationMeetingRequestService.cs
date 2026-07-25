@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
+using SIMF.Application.Email;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Application.MeetingRequests.Abstractions;
 using SIMF.Application.Notifications;
@@ -23,6 +24,8 @@ internal sealed class DelegationMeetingRequestService(
     IIdentityUserDirectory userDirectory,
     INotificationDispatcher notifications,
     IHallAvailabilityService hallAvailability,
+    IMeetingActionTokenService meetingActionTokens,
+    IEmailQueue emailQueue,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<DelegationMeetingRequestService> logger) : IDelegationMeetingRequestService
@@ -55,10 +58,10 @@ internal sealed class DelegationMeetingRequestService(
         // be persisted silently.
         DateTimeOffset? slotStart = null;
         DateTimeOffset? slotEnd = null;
-        if (request.SlotStartUtc is not null || request.SlotEndUtc is not null)
+        if (request.SlotStart is not null || request.SlotEnd is not null)
         {
-            if (request.SlotStartUtc is not { } pickedStart
-                || request.SlotEndUtc is not { } pickedEnd
+            if (request.SlotStart is not { } pickedStart
+                || request.SlotEnd is not { } pickedEnd
                 || pickedEnd <= pickedStart)
             {
                 throw new ApiException(ErrorCodes.DelegationMeetingRequestInvalid, 400,
@@ -69,10 +72,14 @@ internal sealed class DelegationMeetingRequestService(
             slotEnd = pickedEnd;
         }
 
-        // Bi-Meeting rework — the requester must hold the per-user
-        // AllowsDelegationMeeting flag (admin-assigned; replaces the former IsDelegate
-        // requester-gate). Their nationality is the requesting country; it must still
-        // be an invited delegation (Country.IsInvited, checked below).
+        // Bi-Meeting rework + D-768 (owner) — the per-user AllowsDelegationMeeting flag
+        // (admin-assigned) is the SOLE authorization to request. The requester's
+        // nationality is recorded as the requesting country and must be set + active, but
+        // it NO LONGER has to be an invited delegation: the host/owner side (KSA is the
+        // OWNER of the forum, not a visiting delegation, so it is deliberately not flagged
+        // Country.IsInvited) must still be able to request meetings WITH the invited
+        // delegations. The TARGET still must be an invited delegation (checked below), and
+        // you still cannot request a meeting with your own country.
         var profile = await appDbContext.UserProfiles.AsNoTracking()
             .Where(p => p.UserId == requesterUserId)
             .Select(p => new { p.AllowsDelegationMeeting, p.NationalityId })
@@ -85,13 +92,13 @@ internal sealed class DelegationMeetingRequestService(
         }
         var requestingCountry = await appDbContext.Countries.AsNoTracking()
             .Where(c => c.Id == profile.NationalityId && c.IsActive)
-            .Select(c => new { c.Id, c.IsInvited })
+            .Select(c => new { c.Id })
             .SingleOrDefaultAsync(cancellationToken);
-        if (requestingCountry is null || !requestingCountry.IsInvited)
+        if (requestingCountry is null)
         {
             throw new ApiException(ErrorCodes.DelegateCountryNotInvited, 400,
-                "Your country is not an invited delegation.",
-                "دولتك ليست من الوفود المدعوّة.");
+                "Your account has no active nationality set.",
+                "لا توجد جنسية مفعّلة على حسابك.");
         }
 
         var targetCode = (request.TargetCountryCode ?? string.Empty).Trim().ToUpperInvariant();
@@ -112,17 +119,32 @@ internal sealed class DelegationMeetingRequestService(
                 "لا يمكن للوفد طلب اجتماع مع نفسه.");
         }
 
-        // A1 — one open request per (requester, target delegation): reject a
-        // duplicate Pending submission rather than flooding the review queue.
-        var hasOpenRequest = await appDbContext.DelegationMeetingRequests.AsNoTracking()
-            .AnyAsync(r => r.RequestedByUserId == requesterUserId
+        // R8 (bi-meeting rules, D-767) — a requester keeps ONE open request per target
+        // delegation, but a repeat submission is NOT an error: MOVE the existing Pending
+        // request (new slot / subject / attendee count) instead of a duplicate row or a
+        // 409, so re-opening the sheet and picking a different time simply updates it.
+        var openRequest = await appDbContext.DelegationMeetingRequests
+            .SingleOrDefaultAsync(r => r.RequestedByUserId == requesterUserId
                 && r.TargetCountryId == targetCountry.Id
                 && r.Status == MeetingRequestStatus.Pending, cancellationToken);
-        if (hasOpenRequest)
+        if (openRequest is not null)
         {
-            throw new ApiException(ErrorCodes.AppRequestDuplicatePending, 409,
-                "You already have a pending meeting request for this delegation.",
-                "لديك بالفعل طلب اجتماع قيد المراجعة لهذا الوفد.");
+            openRequest.AttendeeCount = request.AttendeeCount;
+            openRequest.Subject = subject;
+            openRequest.SlotStart = slotStart;
+            openRequest.SlotEnd = slotEnd;
+            await appDbContext.SaveChangesAsync(cancellationToken);
+
+            await auditLog.WriteAsync(new AuditEntry
+            {
+                EventType = AuditEvents.DelegationMeetingRequestSubmitted,
+                Outcome = AuditOutcome.Success,
+                ActorUserId = requesterUserId,
+                Detail = $"requestId={openRequest.Id}; target={targetCode}; moved=true",
+            }, cancellationToken);
+
+            return new DelegationMeetingRequestSubmitted(
+                openRequest.Id, openRequest.Status, openRequest.CreatedAt);
         }
 
         var now = timeProvider.GetUtcNow();
@@ -134,8 +156,8 @@ internal sealed class DelegationMeetingRequestService(
             TargetCountryId = targetCountry.Id,
             AttendeeCount = request.AttendeeCount,
             Subject = subject,
-            SlotStartUtc = slotStart,
-            SlotEndUtc = slotEnd,
+            SlotStart = slotStart,
+            SlotEnd = slotEnd,
             Status = MeetingRequestStatus.Pending,
             CreatedAt = now,
         };
@@ -183,7 +205,7 @@ internal sealed class DelegationMeetingRequestService(
                 r.AttendeeCount,
                 r.Subject,
                 r.Status,
-                r.SlotStartUtc,
+                r.SlotStart,
                 r.ResponseNote,
                 r.CreatedAt,
                 r.RespondedAt))
@@ -243,7 +265,7 @@ internal sealed class DelegationMeetingRequestService(
         // bindHall would 409 that finalise-after-approve path, since a null HallId would
         // be read as a plain accept whose only legal source state is Pending. A legacy
         // accept without a hall keeps the requester-proposed-slot behaviour. This is
-        // admin-brokered + low-concurrency; the DB (HallId, SlotStartUtc) filtered-unique
+        // admin-brokered + low-concurrency; the DB (HallId, SlotStart) filtered-unique
         // index is the equal-start hall double-book backstop.
         var cancel = request.Status == MeetingRequestStatus.Rejected;
         var bindHall = request.Status == MeetingRequestStatus.Accepted && request.HallId is not null;
@@ -293,7 +315,7 @@ internal sealed class DelegationMeetingRequestService(
                 await BindDelegationHallSlotAsync(req, request, now, cancellationToken);
             }
             else if (req.Status == MeetingRequestStatus.Pending
-                && req.SlotStartUtc is { } sStart && req.SlotEndUtc is { } sEnd)
+                && req.SlotStart is { } sStart && req.SlotEnd is { } sEnd)
             {
                 // Legacy accept-without-hall from PENDING — honour the requester-proposed
                 // slot with the past + cross-country overlap guard. This guard must NOT run
@@ -327,6 +349,15 @@ internal sealed class DelegationMeetingRequestService(
             ? null : request.ResponseNote.Trim();
         req.RespondedAt = now;
         req.RespondedByUserId = actorUserId;
+
+        // R4 (D-767) — on Approve (→ AwaitingSpeaker) mint the single-use confirm token in
+        // THIS unit of work so it commits atomically with the transition; its link is
+        // emailed to the target members below. Empty when the public base URL is
+        // unconfigured (the members are then emailed without a link, as before).
+        var confirmUrl = req.Status == MeetingRequestStatus.AwaitingSpeaker
+            ? meetingActionTokens.StageDelegationConfirmToken(req.Id)
+            : null;
+
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -397,7 +428,10 @@ internal sealed class DelegationMeetingRequestService(
                 "Delegation meeting request", "طلب اجتماع وفد",
                 $"A meeting request from {detail.RequestingCountry} is awaiting your confirmation.",
                 $"طلب اجتماع من {detail.RequestingCountry} بانتظار تأكيدك.",
-                cancellationToken);
+                cancellationToken,
+                // R4 (D-767) — carry the confirm link; each member is emailed it (and the
+                // in-app card deep-links to the same tap-confirm).
+                confirmUrl: confirmUrl, requestingCountry: detail.RequestingCountry);
         }
         else if (retractFromTargetMembers)
         {
@@ -530,8 +564,15 @@ internal sealed class DelegationMeetingRequestService(
     private async Task NotifyTargetMembersAsync(
         DelegationMeetingRequest req, NotificationKind kind,
         string title, string titleArabic, string body, string bodyArabic,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? confirmUrl = null, string? requestingCountry = null)
     {
+        // R4 (D-767) — when we have a usable confirm link (the Approve case), the members
+        // get a clean in-app card (SendEmail=false, it deep-links to tap-confirm) PLUS a
+        // dedicated link email; otherwise (retract, or an unconfigured base URL) the
+        // dispatcher email carries the notice as before.
+        var hasLink = !string.IsNullOrEmpty(confirmUrl);
+
         var memberIds = await appDbContext.UserProfiles.AsNoTracking()
             .Where(p => p.NationalityId == req.TargetCountryId && p.AllowsDelegationMeeting)
             .Select(p => p.UserId)
@@ -549,16 +590,53 @@ internal sealed class DelegationMeetingRequestService(
                 Severity = NotificationSeverity.Info,
                 RelatedEntityType = nameof(DelegationMeetingRequest),
                 RelatedEntityId = req.Id,
-                SendEmail = true,
+                SendEmail = !hasLink,
             }, logger, cancellationToken);
+
+            if (hasLink)
+            {
+                await EmailMemberConfirmLinkAsync(
+                    userId, confirmUrl!, req, requestingCountry ?? string.Empty, cancellationToken);
+            }
         }
     }
+
+    // R4 (D-767) — email one target-delegation member the confirm link (best-effort, like
+    // the speaker links email). The member is a SimfUser, so the address is resolved on
+    // Identity; a missing address or a queue failure never rolls back the committed Approve.
+    private async Task EmailMemberConfirmLinkAsync(
+        Guid memberUserId, string confirmUrl, DelegationMeetingRequest req,
+        string requestingCountry, CancellationToken cancellationToken)
+    {
+        var email = await userDirectory.GetEmailAsync(memberUserId, cancellationToken);
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            return;
+        }
+        var slot = req.SlotStart is { } s
+            ? s.FormatSaudi()
+            : "to be scheduled";
+        var html =
+            $"<p>Your delegation has a meeting request from <strong>{HtmlEnc(requestingCountry)}</strong>.</p>"
+            + $"<p>Topic: {HtmlEnc(req.Subject)}<br/>Proposed time: {HtmlEnc(slot)}</p>"
+            + "<p>Please confirm — any one of your delegation confirming books the meeting:</p>"
+            + $"<p><a href=\"{HtmlEnc(confirmUrl)}\">Confirm the meeting</a></p>"
+            + "<p style=\"color:#666\">This link expires in 72 hours and can be used once.</p>";
+        await emailQueue.TryEnqueueAsync(
+            new EmailMessage(email!, "SIMF — please confirm a delegation meeting", html),
+            purpose: "DelegationMeetingConfirm",
+            subjectEmail: email!,
+            subjectUserId: memberUserId,
+            auditLog, logger, cancellationToken);
+    }
+
+    private static string HtmlEnc(string value) => System.Net.WebUtility.HtmlEncode(value);
 
     // Bi-Meeting rework — bind the meeting to a free hall slot on Approve/Confirm,
     // mirroring SpeakerMeetingRequestService.BindHallSlotAsync. Validates the hall
     // hosts meetings, the picked slot is currently free (hall availability already
     // subtracts bound meetings), neither delegation overlaps, and the optional table
-    // belongs to the hall. The (HallId, SlotStartUtc) filtered-unique index is the race
+    // belongs to the hall. The (HallId, SlotStart) filtered-unique index is the race
     // backstop.
     private async Task BindDelegationHallSlotAsync(
         DelegationMeetingRequest req,
@@ -567,8 +645,8 @@ internal sealed class DelegationMeetingRequestService(
         CancellationToken cancellationToken)
     {
         var hallId = request.HallId!.Value;
-        if (request.SlotStartUtc is not { } start
-            || request.SlotEndUtc is not { } end || end <= start)
+        if (request.SlotStart is not { } start
+            || request.SlotEnd is not { } end || end <= start)
         {
             throw new ApiException(ErrorCodes.DelegationMeetingRequestInvalid, 400,
                 "A valid hall slot (start and end) is required to bind a hall.",
@@ -594,7 +672,7 @@ internal sealed class DelegationMeetingRequestService(
         }
 
         var slots = await hallAvailability.GetAvailableSlotsAsync(hallId, cancellationToken);
-        if (!slots.Any(s => s.StartUtc == start && s.EndUtc == end))
+        if (!slots.Any(s => s.Start == start && s.End == end))
         {
             throw new ApiException(ErrorCodes.DelegationMeetingRequestInvalid, 409,
                 "That hall slot is no longer available.",
@@ -616,8 +694,8 @@ internal sealed class DelegationMeetingRequestService(
             req.MeetingTableId = tableId;
         }
         req.HallId = hallId;
-        req.SlotStartUtc = start;
-        req.SlotEndUtc = end;
+        req.SlotStart = start;
+        req.SlotEnd = end;
     }
 
     // Neither delegation (as requester OR target) may already hold a LIVE meeting
@@ -634,10 +712,10 @@ internal sealed class DelegationMeetingRequestService(
         var overlaps = await appDbContext.DelegationMeetingRequests.AsNoTracking()
             .Where(r => r.Id != reqId
                 && MeetingRequestStatuses.SlotHolding.Contains(r.Status)
-                && r.SlotStartUtc != null && r.SlotEndUtc != null
+                && r.SlotStart != null && r.SlotEnd != null
                 && (r.RequestingCountryId == homeCountryId || r.TargetCountryId == homeCountryId
                     || r.RequestingCountryId == targetCountryId || r.TargetCountryId == targetCountryId))
-            .AnyAsync(r => r.SlotStartUtc < end && start < r.SlotEndUtc, cancellationToken);
+            .AnyAsync(r => r.SlotStart < end && start < r.SlotEnd, cancellationToken);
         if (overlaps)
         {
             throw new ApiException(ErrorCodes.DelegationMeetingRequestInvalid, 409,
@@ -654,7 +732,7 @@ internal sealed class DelegationMeetingRequestService(
             .Select(x => new
             {
                 x.Id, x.RequestedByUserId, x.AttendeeCount, x.Subject, x.Status,
-                x.SlotStartUtc, x.SlotEndUtc, x.ResponseNote, x.CreatedAt, x.RespondedAt,
+                x.SlotStart, x.SlotEnd, x.ResponseNote, x.CreatedAt, x.RespondedAt,
                 RequestingCountry = x.RequestingCountry!.Name,
                 TargetCountry = x.TargetCountry!.Name,
             })
@@ -668,7 +746,7 @@ internal sealed class DelegationMeetingRequestService(
 
         return new AdminDelegationMeetingRequestDetail(
             r.Id, r.RequestingCountry, r.TargetCountry, r.RequestedByUserId, email,
-            r.AttendeeCount, r.Subject, r.Status, r.SlotStartUtc, r.SlotEndUtc,
+            r.AttendeeCount, r.Subject, r.Status, r.SlotStart, r.SlotEnd,
             r.ResponseNote, r.CreatedAt, r.RespondedAt);
     }
 }

@@ -25,14 +25,14 @@ Union of two kinds of "meeting with others":
 | **B2B / B2C** | the **Control Panel** | `BusinessMeeting` + `BusinessMeetingParticipant` (D-248) | the caller is a `Kind == Visitor` participant **and** the meeting `Status == Confirmed` |
 
 Both are scoped to the caller and **both are now built** — the counter (and the
-schedule) union them. A business meeting carries its **own** `StartUtc`/`EndUtc`
+schedule) union them. A business meeting carries its **own** `Start`/`End`
 (it is not tied to a `Session`), so its schedule item uses that time directly and
 its hall name comes from `MeetingTable.Hall`.
 
 ## L-4 Today's schedule
 A single list, ordered by start time, **today only**, merging:
-- **Session items** — the user's held bookings (L-2) joined to `Session`; time = `Session.StartUtc`, plus title (AR/EN) and `Hall.Name`.
-- **Meeting items** — the user's accepted meetings (L-3) joined to their parent `Session`; **time = the parent `Session.StartUtc`** (meetings carry no own time). Subject from the meeting.
+- **Session items** — the user's held bookings (L-2) joined to `Session`; time = `Session.Start`, plus title (AR/EN) and `Hall.Name`.
+- **Meeting items** — the user's accepted meetings (L-3) joined to their parent `Session`; **time = the parent `Session.Start`** (meetings carry no own time). Subject from the meeting.
 
 Each item carries its `status` so the UI can badge a still-Pending booking.
 
@@ -55,7 +55,7 @@ Each item carries its `status` so the UI can badge a still-Pending booking.
 - Empty counters → show `0`; empty today's schedule → "لا يوجد لديك مواعيد اليوم" placeholder.
 - Single aggregate call → one retry surface on error (`KsaErrorState`).
 - A failed `.vcf`/`.ics` fetch → "تعذّرت المشاركة. حاول مرة أخرى." snackbar (the page stays).
-- `identity.pageColor` and each schedule item's `status`/`endUtc` are decoded but
+- `identity.pageColor` and each schedule item's `status`/`end` are decoded but
   **unused** in the KSA design — the accent is the token gold and rows carry no
   pending badge.
 - Sign-out is **confirm-first** (D-373) and **best-effort** on the wire: the local

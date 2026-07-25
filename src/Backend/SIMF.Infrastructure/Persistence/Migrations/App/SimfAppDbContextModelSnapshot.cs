@@ -152,7 +152,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
-                    b.Property<DateTimeOffset?>("ClientScannedAtUtc")
+                    b.Property<DateTimeOffset?>("ClientScannedAt")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("CorrelationId")
@@ -184,7 +184,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
 
-                    b.Property<DateTimeOffset>("ScannedAtUtc")
+                    b.Property<DateTimeOffset>("ScannedAt")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<Guid>("ScannedByUserId")
@@ -210,7 +210,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasKey("Id");
 
-                    b.HasIndex("GateId", "ScannedAtUtc")
+                    b.HasIndex("GateId", "ScannedAt")
                         .IsDescending(false, true)
                         .HasDatabaseName("IX_GateScan_Gate_ScannedAt");
 
@@ -219,16 +219,16 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasDatabaseName("UX_GateScan_Idempotency")
                         .HasFilter("[IdempotencyKey] IS NOT NULL");
 
-                    b.HasIndex("ScannedByUserId", "ScannedAtUtc")
+                    b.HasIndex("ScannedByUserId", "ScannedAt")
                         .IsDescending(false, true)
                         .HasDatabaseName("IX_GateScan_ScannedBy_ScannedAt");
 
-                    b.HasIndex("UserProfileId", "ScannedAtUtc")
+                    b.HasIndex("UserProfileId", "ScannedAt")
                         .IsDescending(false, true)
                         .HasDatabaseName("IX_GateScan_UserProfile_LastAllowed")
                         .HasFilter("[Outcome] = 0 AND [UserProfileId] IS NOT NULL");
 
-                    b.HasIndex("GateId", "UserProfileId", "ScannedAtUtc")
+                    b.HasIndex("GateId", "UserProfileId", "ScannedAt")
                         .IsDescending(false, false, true)
                         .HasDatabaseName("IX_GateScan_Gate_UserProfile_5sWindow")
                         .HasFilter("[UserProfileId] IS NOT NULL");
@@ -744,7 +744,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("SubjectUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("TimestampUtc")
+                    b.Property<DateTimeOffset>("Timestamp")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("UserAgent")
@@ -755,11 +755,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("SubjectEmail");
 
-                    b.HasIndex("TimestampUtc");
+                    b.HasIndex("Timestamp");
 
-                    b.HasIndex("ActorUserId", "TimestampUtc");
+                    b.HasIndex("ActorUserId", "Timestamp");
 
-                    b.HasIndex("EventType", "TimestampUtc");
+                    b.HasIndex("EventType", "Timestamp");
 
                     b.ToTable("OperationLog", (string)null);
                 });
@@ -892,7 +892,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<DateTimeOffset>("EndUtc")
+                    b.Property<DateTimeOffset>("End")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<Guid>("MeetingTableId")
@@ -908,7 +908,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid>("ScheduledByUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("StartUtc")
+                    b.Property<DateTimeOffset>("Start")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<int>("Status")
@@ -921,11 +921,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("MeetingTableId", "Status");
 
-                    b.HasIndex("Status", "StartUtc");
+                    b.HasIndex("Status", "Start");
 
                     b.ToTable("BusinessMeetings", null, t =>
                         {
-                            t.HasCheckConstraint("CK_BusinessMeetings_TimeWindow", "[EndUtc] > [StartUtc]");
+                            t.HasCheckConstraint("CK_BusinessMeetings_TimeWindow", "[End] > [Start]");
                         });
                 });
 
@@ -992,7 +992,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("CreatedByUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("EndUtc")
+                    b.Property<DateTimeOffset>("End")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<bool>("IsActive")
@@ -1001,7 +1001,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("SlotMinutes")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset>("StartUtc")
+                    b.Property<DateTimeOffset>("Start")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
@@ -1009,16 +1009,49 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CountryId", "StartUtc")
+                    b.HasIndex("CountryId", "Start")
                         .IsUnique()
                         .HasFilter("[IsActive] = 1");
 
-                    b.HasIndex("CountryId", "IsActive", "StartUtc");
+                    b.HasIndex("CountryId", "IsActive", "Start");
 
                     b.ToTable("DelegationAvailabilityWindows", null, t =>
                         {
-                            t.HasCheckConstraint("CK_DelegationAvailabilityWindows_TimeWindow", "[EndUtc] > [StartUtc]");
+                            t.HasCheckConstraint("CK_DelegationAvailabilityWindows_TimeWindow", "[End] > [Start]");
                         });
+                });
+
+            modelBuilder.Entity("SIMF.Domain.BusinessMeetings.DelegationMeetingActionToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("DelegationMeetingRequestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("ExpiresUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTimeOffset?>("UsedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DelegationMeetingRequestId");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.ToTable("DelegationMeetingActionTokens");
                 });
 
             modelBuilder.Entity("SIMF.Domain.BusinessMeetings.DelegationMeetingRequest", b =>
@@ -1054,7 +1087,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("MeetingTableId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("ReminderSentUtc")
+                    b.Property<DateTimeOffset?>("ReminderSent")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<Guid>("RequestedByUserId")
@@ -1073,10 +1106,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
-                    b.Property<DateTimeOffset?>("SlotEndUtc")
+                    b.Property<DateTimeOffset?>("SlotEnd")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<DateTimeOffset?>("SlotStartUtc")
+                    b.Property<DateTimeOffset?>("SlotStart")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<int>("Status")
@@ -1100,15 +1133,15 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("RequestingCountryId");
 
-                    b.HasIndex("HallId", "SlotStartUtc")
+                    b.HasIndex("HallId", "SlotStart")
                         .IsUnique()
-                        .HasFilter("[HallId] IS NOT NULL AND [SlotStartUtc] IS NOT NULL AND [Status] <> 0 AND [Status] <> 2 AND [Status] <> 3");
+                        .HasFilter("[HallId] IS NOT NULL AND [SlotStart] IS NOT NULL AND [Status] <> 0 AND [Status] <> 2 AND [Status] <> 3");
 
                     b.HasIndex("TargetCountryId", "Status", "CreatedAt");
 
                     b.ToTable("DelegationMeetingRequests", null, t =>
                         {
-                            t.HasCheckConstraint("CK_DelegationMeetingRequests_Slot", "[SlotStartUtc] IS NULL OR [SlotEndUtc] IS NULL OR [SlotEndUtc] > [SlotStartUtc]");
+                            t.HasCheckConstraint("CK_DelegationMeetingRequests_Slot", "[SlotStart] IS NULL OR [SlotEnd] IS NULL OR [SlotEnd] > [SlotStart]");
                         });
                 });
 
@@ -1124,7 +1157,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid>("CreatedByUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("EndUtc")
+                    b.Property<DateTimeOffset>("End")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<Guid>("HallId")
@@ -1147,7 +1180,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(512)
                         .HasColumnType("nvarchar(512)");
 
-                    b.Property<DateTimeOffset>("StartUtc")
+                    b.Property<DateTimeOffset>("Start")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<int?>("UnitCount")
@@ -1159,7 +1192,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.ToTable("HallAllocations", null, t =>
                         {
-                            t.HasCheckConstraint("CK_HallAllocations_TimeWindow", "[EndUtc] > [StartUtc]");
+                            t.HasCheckConstraint("CK_HallAllocations_TimeWindow", "[End] > [Start]");
                         });
                 });
 
@@ -1175,7 +1208,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("CreatedByUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("EndUtc")
+                    b.Property<DateTimeOffset>("End")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<Guid>("HallId")
@@ -1187,7 +1220,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("SlotMinutes")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset>("StartUtc")
+                    b.Property<DateTimeOffset>("Start")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
@@ -1195,15 +1228,15 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasKey("Id");
 
-                    b.HasIndex("HallId", "StartUtc")
+                    b.HasIndex("HallId", "Start")
                         .IsUnique()
                         .HasFilter("[IsActive] = 1");
 
-                    b.HasIndex("HallId", "IsActive", "StartUtc");
+                    b.HasIndex("HallId", "IsActive", "Start");
 
                     b.ToTable("HallAvailabilityWindows", null, t =>
                         {
-                            t.HasCheckConstraint("CK_HallAvailabilityWindows_TimeWindow", "[EndUtc] > [StartUtc]");
+                            t.HasCheckConstraint("CK_HallAvailabilityWindows_TimeWindow", "[End] > [Start]");
                         });
                 });
 
@@ -1219,7 +1252,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<DateTimeOffset>("ExpiresUtc")
+                    b.Property<DateTimeOffset>("Expires")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<Guid>("SpeakerMeetingRequestId")
@@ -1299,7 +1332,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("CreatedByUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("EndUtc")
+                    b.Property<DateTimeOffset>("End")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<bool>("IsActive")
@@ -1311,7 +1344,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid>("SpeakerId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("StartUtc")
+                    b.Property<DateTimeOffset>("Start")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
@@ -1319,15 +1352,15 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SpeakerId", "StartUtc")
+                    b.HasIndex("SpeakerId", "Start")
                         .IsUnique()
                         .HasFilter("[IsActive] = 1");
 
-                    b.HasIndex("SpeakerId", "IsActive", "StartUtc");
+                    b.HasIndex("SpeakerId", "IsActive", "Start");
 
                     b.ToTable("SpeakerAvailabilityWindows", null, t =>
                         {
-                            t.HasCheckConstraint("CK_SpeakerAvailabilityWindows_TimeWindow", "[EndUtc] > [StartUtc]");
+                            t.HasCheckConstraint("CK_SpeakerAvailabilityWindows_TimeWindow", "[End] > [Start]");
                         });
                 });
 
@@ -1355,7 +1388,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("MeetingTableId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("ReminderSentUtc")
+                    b.Property<DateTimeOffset?>("ReminderSent")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<Guid>("RequestedByUserId")
@@ -1376,10 +1409,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
-                    b.Property<DateTimeOffset?>("SlotEndUtc")
+                    b.Property<DateTimeOffset?>("SlotEnd")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<DateTimeOffset?>("SlotStartUtc")
+                    b.Property<DateTimeOffset?>("SlotStart")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<DateTimeOffset?>("SpeakerDecisionAt")
@@ -1404,19 +1437,19 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("RequestedByUserId");
 
-                    b.HasIndex("HallId", "SlotStartUtc")
+                    b.HasIndex("HallId", "SlotStart")
                         .IsUnique()
-                        .HasFilter("[HallId] IS NOT NULL AND [SlotStartUtc] IS NOT NULL AND [Status] <> 0 AND [Status] <> 2 AND [Status] <> 3");
+                        .HasFilter("[HallId] IS NOT NULL AND [SlotStart] IS NOT NULL AND [Status] <> 0 AND [Status] <> 2 AND [Status] <> 3");
 
-                    b.HasIndex("SpeakerId", "SlotStartUtc")
+                    b.HasIndex("SpeakerId", "SlotStart")
                         .IsUnique()
-                        .HasFilter("[SlotStartUtc] IS NOT NULL AND [Status] <> 0 AND [Status] <> 2 AND [Status] <> 3");
+                        .HasFilter("[SlotStart] IS NOT NULL AND [Status] <> 0 AND [Status] <> 2 AND [Status] <> 3");
 
                     b.HasIndex("SpeakerId", "Status", "CreatedAt");
 
                     b.ToTable("SpeakerMeetingRequests", null, t =>
                         {
-                            t.HasCheckConstraint("CK_SpeakerMeetingRequests_Slot", "[SlotStartUtc] IS NULL OR [SlotEndUtc] IS NULL OR [SlotEndUtc] > [SlotStartUtc]");
+                            t.HasCheckConstraint("CK_SpeakerMeetingRequests_Slot", "[SlotStart] IS NULL OR [SlotEnd] IS NULL OR [SlotEnd] > [SlotStart]");
                         });
                 });
 
@@ -1448,7 +1481,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset>("EndUtc")
+                    b.Property<DateTimeOffset>("End")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("ImageUrl")
@@ -1462,7 +1495,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(1024)
                         .HasColumnType("nvarchar(1024)");
 
-                    b.Property<DateTimeOffset>("StartUtc")
+                    b.Property<DateTimeOffset>("Start")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Title")
@@ -1483,11 +1516,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasKey("Id");
 
-                    b.HasIndex("IsActive", "StartUtc", "EndUtc", "DisplayOrder");
+                    b.HasIndex("IsActive", "Start", "End", "DisplayOrder");
 
                     b.ToTable("Banners", null, t =>
                         {
-                            t.HasCheckConstraint("CK_Banners_TimeWindow", "[EndUtc] > [StartUtc]");
+                            t.HasCheckConstraint("CK_Banners_TimeWindow", "[End] > [Start]");
                         });
                 });
 
@@ -3204,10 +3237,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("OwnerEntityType")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset?>("RetainUntilUtc")
+                    b.Property<DateTimeOffset?>("RetainUntil")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<DateTimeOffset?>("SecureDestroyedUtc")
+                    b.Property<DateTimeOffset?>("SecureDestroyed")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<int>("SensitivityTier")
@@ -3240,8 +3273,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("CreatedBy");
 
-                    b.HasIndex("RetainUntilUtc")
-                        .HasFilter("[IsActive] = 1 AND [RetainUntilUtc] IS NOT NULL");
+                    b.HasIndex("RetainUntil")
+                        .HasFilter("[IsActive] = 1 AND [RetainUntil] IS NOT NULL");
 
                     b.HasIndex("OwnerEntityType", "OwnerEntityId")
                         .HasFilter("[IsActive] = 1");
@@ -3361,6 +3394,89 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.ToTable("Connections", (string)null);
                 });
 
+            modelBuilder.Entity("SIMF.Domain.Notifications.NotificationBroadcast", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AudienceScope")
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("BodyArabic")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Dispatched")
+                        .HasColumnType("int");
+
+                    b.Property<int>("EmailsEnqueued")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)");
+
+                    b.Property<Guid?>("SessionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Severity")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<int>("Skipped")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("StartedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<string>("TargetMode")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("TitleArabic")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("TotalRecipients")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Status", "CreatedAt");
+
+                    b.ToTable("NotificationBroadcasts");
+                });
+
             modelBuilder.Entity("SIMF.Domain.Operations.ArchiveVisibility", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3395,7 +3511,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("AutoCloseUtc")
+                    b.Property<DateTimeOffset?>("AutoClose")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<bool>("IsOpen")
@@ -4205,13 +4321,13 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<DateTimeOffset>("EnterUtc")
+                    b.Property<DateTimeOffset>("Enter")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<Guid>("HallId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("LeaveUtc")
+                    b.Property<DateTimeOffset?>("Leave")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<int>("Method")
@@ -4230,11 +4346,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("UserId");
 
-                    b.HasIndex("HallId", "LeaveUtc");
+                    b.HasIndex("HallId", "Leave");
 
                     b.HasIndex("SessionId", "UserId")
                         .IsUnique()
-                        .HasFilter("[LeaveUtc] IS NULL");
+                        .HasFilter("[Leave] IS NULL");
 
                     b.ToTable("HallAttendances", (string)null);
                 });
@@ -4263,7 +4379,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<DateTimeOffset?>("RatingPromptSentUtc")
+                    b.Property<DateTimeOffset?>("RatingPromptSent")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Title")
@@ -4327,7 +4443,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(2048)
                         .HasColumnType("nvarchar(2048)");
 
-                    b.Property<DateTimeOffset>("EndUtc")
+                    b.Property<DateTimeOffset>("End")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<Guid>("HallId")
@@ -4363,7 +4479,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<DateTimeOffset?>("PublishedAt")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<DateTimeOffset?>("RatingPromptSentUtc")
+                    b.Property<DateTimeOffset?>("RatingPromptSent")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("RecordingContentType")
@@ -4387,13 +4503,13 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("RecordingUploadedByUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("ReminderSentUtc")
+                    b.Property<DateTimeOffset?>("ReminderSent")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<int?>("SeatSelectionModeOverride")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset>("StartUtc")
+                    b.Property<DateTimeOffset>("Start")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<int>("Status")
@@ -4425,15 +4541,15 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasIndex("Code")
                         .IsUnique();
 
-                    b.HasIndex("HallId", "StartUtc");
+                    b.HasIndex("HallId", "Start");
 
-                    b.HasIndex("IsActive", "StartUtc");
+                    b.HasIndex("IsActive", "Start");
 
-                    b.HasIndex("Status", "StartUtc");
+                    b.HasIndex("Status", "Start");
 
                     b.ToTable("Sessions", null, t =>
                         {
-                            t.HasCheckConstraint("CK_Sessions_TimeWindow", "[EndUtc] > [StartUtc]");
+                            t.HasCheckConstraint("CK_Sessions_TimeWindow", "[End] > [Start]");
                         });
                 });
 
@@ -5398,7 +5514,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid>("CreatedByUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("ExpiresUtc")
+                    b.Property<DateTimeOffset?>("Expires")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<int>("Kind")
@@ -5435,8 +5551,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ExpiresUtc")
-                        .HasFilter("[ReleasedAt] IS NULL AND [ExpiresUtc] IS NOT NULL");
+                    b.HasIndex("Expires")
+                        .HasFilter("[ReleasedAt] IS NULL AND [Expires] IS NOT NULL");
 
                     b.HasIndex("ReservedForUserId", "ReleasedAt");
 
@@ -5682,7 +5798,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<DateTimeOffset?>("HandledAtUtc")
+                    b.Property<DateTimeOffset?>("HandledAt")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<Guid?>("HandledByUserId")
@@ -5936,6 +6052,17 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .IsRequired();
 
                     b.Navigation("Country");
+                });
+
+            modelBuilder.Entity("SIMF.Domain.BusinessMeetings.DelegationMeetingActionToken", b =>
+                {
+                    b.HasOne("SIMF.Domain.BusinessMeetings.DelegationMeetingRequest", "DelegationMeetingRequest")
+                        .WithMany()
+                        .HasForeignKey("DelegationMeetingRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DelegationMeetingRequest");
                 });
 
             modelBuilder.Entity("SIMF.Domain.BusinessMeetings.DelegationMeetingRequest", b =>
