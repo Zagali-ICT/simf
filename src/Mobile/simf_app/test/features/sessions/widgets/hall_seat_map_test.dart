@@ -115,5 +115,29 @@ void main() {
       expect(tappedRow, 'C');
       expect(tappedSeat, 7);
     });
+
+    testWidgets('a tall hall gets a two-axis (horizontal + vertical) scroll',
+        (tester) async {
+      final tall = SessionSeatMap(
+        rowLabels: List<String>.generate(15, (i) => 'R${i + 1}'),
+        seatsPerRow: 20,
+        reservedCells: const <SeatCell>[],
+        activeReservedCount: 0,
+        hallCapacity: 300,
+      );
+      await _pump(tester, tall);
+
+      // The seat grid pans on BOTH axes inside the card: a vertical view (rows)
+      // wraps a horizontal view (seats), so a hall taller/wider than the card
+      // scrolls up/down and left/right rather than overflowing.
+      final scrolls = tester.widgetList<SingleChildScrollView>(
+        find.descendant(
+          of: find.byType(HallSeatMapCard),
+          matching: find.byType(SingleChildScrollView),
+        ),
+      );
+      expect(scrolls.any((s) => s.scrollDirection == Axis.vertical), isTrue);
+      expect(scrolls.any((s) => s.scrollDirection == Axis.horizontal), isTrue);
+    });
   });
 }

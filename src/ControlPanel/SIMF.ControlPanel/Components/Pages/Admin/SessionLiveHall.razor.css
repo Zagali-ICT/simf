@@ -54,7 +54,7 @@
 .seatmap__seat--reserved {
     background: var(--color-seat-user);
     border-color: var(--color-seat-user);
-    color: var(--color-seat-contrast);
+    color: var(--color-seat-user-contrast);
 }
 
 .seatmap__seat--confirmed {

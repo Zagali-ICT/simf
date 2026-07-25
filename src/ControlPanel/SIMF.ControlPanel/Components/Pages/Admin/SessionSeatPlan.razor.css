@@ -42,7 +42,7 @@
 .seatgrid__seat--user {
     background: var(--color-seat-user);
     border-color: var(--color-seat-user);
-    color: var(--color-seat-contrast);
+    color: var(--color-seat-user-contrast);
 }
 
 .seatgrid__seat--admin {
