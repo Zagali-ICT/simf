@@ -64,27 +64,7 @@
                                     Header="@L["Admin.DelegationMeetings.Col.Status"]"
                                     Filterable="true">
                     <CellTemplate>
-                        @switch (context.Status)
-                        {
-                            case MeetingRequestStatus.Pending:
-                                <SimfPill Variant="warn">@L["Admin.DelegationMeetings.Filter.Pending"]</SimfPill>
-                                break;
-                            case MeetingRequestStatus.AwaitingSpeaker:
-                                <SimfPill Variant="warn">@L["Admin.Meetings.Status.AwaitingConfirmation"]</SimfPill>
-                                break;
-                            case MeetingRequestStatus.Accepted:
-                                <SimfPill Variant="on">@L["Admin.DelegationMeetings.Filter.Accepted"]</SimfPill>
-                                break;
-                            case MeetingRequestStatus.Done:
-                                <SimfPill Variant="on">@L["Admin.Meetings.Status.Done"]</SimfPill>
-                                break;
-                            case MeetingRequestStatus.Rejected:
-                                <SimfPill Variant="off">@L["Admin.DelegationMeetings.Filter.Rejected"]</SimfPill>
-                                break;
-                            case MeetingRequestStatus.Cancelled:
-                                <SimfPill Variant="off">@L["Admin.Meetings.Status.Cancelled"]</SimfPill>
-                                break;
-                        }
+                        <MeetingStatusPill Status="context.Status" />
                     </CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminDelegationMeetingRequestRow" Key="createdAt"
@@ -226,6 +206,7 @@
                               @onchange="OnRespondNoteChanged"
                               disabled="@_busy"></textarea>
                 </label>
+                <p class="simf-form__secondary">@L["Admin.Meetings.RespondHelp"]</p>
             </div>
         </ChildContent>
         <Footer>

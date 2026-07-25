@@ -35,6 +35,7 @@
         @if (_hallId is not null)
         {
             <h3 class="simf-section-title">@L["Admin.HallAvailability.AddWindow"]</h3>
+            <p class="simf-form__secondary">@L["Admin.Availability.WindowsHelp"]</p>
             <div class="simf-form__fields">
                 <SimfTextField Label="@L["Admin.HallAvailability.Start"]" Type="datetime-local"
                                @bind-Value="_start" Disabled="_busy" />

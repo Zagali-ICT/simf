@@ -129,6 +129,7 @@
   <data name="Admin.SpeakerAvailability.Speaker" xml:space="preserve"><value>المتحدّث</value></data>
   <data name="Admin.SpeakerAvailability.PickSpeaker" xml:space="preserve"><value>اختر متحدّثاً…</value></data>
   <data name="Admin.SpeakerAvailability.AddWindow" xml:space="preserve"><value>إضافة فترة توفّر</value></data>
+  <data name="Admin.Availability.WindowsHelp" xml:space="preserve"><value>يُقسَّم كل نطاق تلقائياً إلى فترات قابلة للحجز بالطول الذي تحدده أدناه. يختار مقدّمو الطلبات من هذه الفترات المتاحة، وتختفي الفترة من القائمة بمجرد حجزها.</value></data>
   <data name="Admin.SpeakerAvailability.Start" xml:space="preserve"><value>البداية (بتوقيت السعودية)</value></data>
   <data name="Admin.SpeakerAvailability.End" xml:space="preserve"><value>النهاية (بتوقيت السعودية)</value></data>
   <data name="Admin.SpeakerAvailability.SlotMinutes" xml:space="preserve"><value>مدة الفترة (دقائق)</value></data>
@@ -180,6 +181,10 @@
   <data name="Admin.Meetings.Status.AwaitingConfirmation" xml:space="preserve"><value>بانتظار التأكيد</value></data>
   <data name="Admin.Meetings.Status.Done" xml:space="preserve"><value>منتهٍ</value></data>
   <data name="Admin.Meetings.Status.Cancelled" xml:space="preserve"><value>ملغى</value></data>
+  <data name="Admin.Meetings.Status.Pending" xml:space="preserve"><value>قيد الانتظار</value></data>
+  <data name="Admin.Meetings.Status.Accepted" xml:space="preserve"><value>مؤكَّد</value></data>
+  <data name="Admin.Meetings.Status.Rejected" xml:space="preserve"><value>مرفوض</value></data>
+  <data name="Admin.Meetings.RespondHelp" xml:space="preserve"><value>«موافقة»: تُرسل للطرف الآخر رابط تأكيد (يُعقد الاجتماع بعد تأكيده). «تأكيد»: يحجزه فوراً عند وجود موافقة شفهية مسبقة. «رفض/إلغاء»: يغلق الطلب (يلزم إدخال مبرّر).</value></data>
   <data name="Admin.Edit.Meetings.Section" xml:space="preserve"><value>صلاحية اللقاءات الثنائية</value></data>
   <data name="Admin.Edit.Meetings.AllowsSpeaker" xml:space="preserve"><value>يمكنه طلب لقاءات المتحدثين</value></data>
   <data name="Admin.Edit.Meetings.AllowsDelegation" xml:space="preserve"><value>يمكنه طلب اجتماعات الوفود</value></data>

@@ -129,6 +129,7 @@
   <data name="Admin.SpeakerAvailability.Speaker" xml:space="preserve"><value>Speaker</value></data>
   <data name="Admin.SpeakerAvailability.PickSpeaker" xml:space="preserve"><value>Select a speaker…</value></data>
   <data name="Admin.SpeakerAvailability.AddWindow" xml:space="preserve"><value>Add an availability window</value></data>
+  <data name="Admin.Availability.WindowsHelp" xml:space="preserve"><value>Each window is automatically split into bookable slots of the length you set below. Requesters pick from these free slots; once a slot is booked it disappears from the list.</value></data>
   <data name="Admin.SpeakerAvailability.Start" xml:space="preserve"><value>Start (Saudi time)</value></data>
   <data name="Admin.SpeakerAvailability.End" xml:space="preserve"><value>End (Saudi time)</value></data>
   <data name="Admin.SpeakerAvailability.SlotMinutes" xml:space="preserve"><value>Slot length (minutes)</value></data>
@@ -180,6 +181,10 @@
   <data name="Admin.Meetings.Status.AwaitingConfirmation" xml:space="preserve"><value>Awaiting confirmation</value></data>
   <data name="Admin.Meetings.Status.Done" xml:space="preserve"><value>Done</value></data>
   <data name="Admin.Meetings.Status.Cancelled" xml:space="preserve"><value>Cancelled</value></data>
+  <data name="Admin.Meetings.Status.Pending" xml:space="preserve"><value>Pending</value></data>
+  <data name="Admin.Meetings.Status.Accepted" xml:space="preserve"><value>Confirmed</value></data>
+  <data name="Admin.Meetings.Status.Rejected" xml:space="preserve"><value>Rejected</value></data>
+  <data name="Admin.Meetings.RespondHelp" xml:space="preserve"><value>Approve: email the other party a confirmation link (the meeting is held once they confirm). Confirm: book it now, when you already have their verbal agreement. Decline / Cancel: close the request (a justification is required).</value></data>
   <data name="Admin.Edit.Meetings.Section" xml:space="preserve"><value>Bi-Meeting access</value></data>
   <data name="Admin.Edit.Meetings.AllowsSpeaker" xml:space="preserve"><value>Can request speaker meetings</value></data>
   <data name="Admin.Edit.Meetings.AllowsDelegation" xml:space="preserve"><value>Can request delegation meetings</value></data>

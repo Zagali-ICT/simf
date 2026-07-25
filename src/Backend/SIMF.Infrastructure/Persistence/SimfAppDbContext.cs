@@ -279,6 +279,11 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     // action-link tokens (Approve / Reject).
     public DbSet<MeetingActionToken> MeetingActionTokens => Set<MeetingActionToken>();
 
+    // R4 (bi-meeting rules, D-767) — single-use delegation confirm tokens behind the
+    // "please confirm" email link sent to target-delegation members on Approve.
+    public DbSet<DelegationMeetingActionToken> DelegationMeetingActionTokens =>
+        Set<DelegationMeetingActionToken>();
+
     // D-568 — the single, unified file store: ONE table for every uploaded or
     // linked file (avatar, ID document, VIP photo, media gallery, speaker photo /
     // presentation, session recording, all logos, news / archive / banner images).

@@ -429,4 +429,24 @@ public partial class MeetingTablesList
         }
         return false;
     }
+
+    // R10 (D-767) — the resx key for a hall purpose / allocation mode, so the
+    // allocations grid renders the localized label instead of the raw enum name
+    // (e.g. "RandomByCount"). Mirrors the option keys the pickers already use.
+    private static string PurposeKey(HallPurpose purpose) => purpose switch
+    {
+        HallPurpose.General => "Admin.MeetingTables.Purpose.General",
+        HallPurpose.Booth => "Admin.MeetingTables.Purpose.Booth",
+        HallPurpose.Session => "Admin.MeetingTables.Purpose.Session",
+        HallPurpose.Meeting => "Admin.MeetingTables.Purpose.Meeting",
+        _ => "Admin.MeetingTables.Purpose.General",
+    };
+
+    private static string ModeKey(HallAllocationMode mode) => mode switch
+    {
+        HallAllocationMode.Whole => "Admin.MeetingTables.Mode.Whole",
+        HallAllocationMode.RandomByCount => "Admin.MeetingTables.Mode.RandomByCount",
+        HallAllocationMode.RowColumn => "Admin.MeetingTables.Mode.RowColumn",
+        _ => "Admin.MeetingTables.Mode.Whole",
+    };
 }
