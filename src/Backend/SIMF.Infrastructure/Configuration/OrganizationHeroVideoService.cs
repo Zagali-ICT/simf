@@ -41,8 +41,9 @@ internal sealed class OrganizationHeroVideoService(
             content, fileName, contentType, extension, actorUserId, cancellationToken);
 
         // "One active hero video per profile" — retire every other active one now
-        // that the replacement is safely stored (unlinks its bytes too).
-        await RetireActiveAsync(keepId: result.Id, actorUserId, cancellationToken);
+        // that the replacement is safely stored (unlinks its bytes too), keeping the
+        // NEWEST so two concurrent replaces converge on one survivor (never zero).
+        await RetireActiveAsync(keepNewest: true, actorUserId, cancellationToken);
 
         var now = timeProvider.GetUtcNow();
         var profile = await LoadOrCreateProfileAsync(cancellationToken);
@@ -68,7 +69,7 @@ internal sealed class OrganizationHeroVideoService(
     public async Task RemoveAsync(
         Guid actorUserId, string servedUrl, CancellationToken cancellationToken = default)
     {
-        await RetireActiveAsync(keepId: Guid.Empty, actorUserId, cancellationToken);
+        await RetireActiveAsync(keepNewest: false, actorUserId, cancellationToken);
 
         var now = timeProvider.GetUtcNow();
         var profile = await db.OrganizationProfile
@@ -116,19 +117,22 @@ internal sealed class OrganizationHeroVideoService(
             string.IsNullOrEmpty(file.OriginalFileName) ? "hero-video.mp4" : file.OriginalFileName);
     }
 
-    // Retire every active hero-video file except keepId (Guid.Empty keeps none), so
-    // exactly one — or zero, on remove — stays active. Delegates to the file service
-    // so the on-disk bytes are unlinked, not just the row soft-deleted.
-    private async Task RetireActiveAsync(Guid keepId, Guid actorUserId, CancellationToken ct)
+    // Retire active hero-video files: on an upload (keepNewest) keep the single
+    // NEWEST active and drop the rest; on a remove keep none. Keeping the newest
+    // *active* row (not the caller's just-created id) makes two concurrent replaces
+    // converge on one survivor instead of each deleting the other's file and leaving
+    // zero. Delegates to the file service so the on-disk bytes are unlinked, not just
+    // the row soft-deleted.
+    private async Task RetireActiveAsync(bool keepNewest, Guid actorUserId, CancellationToken ct)
     {
-        var priorIds = await db.StoredFiles.AsNoTracking()
+        var active = await db.StoredFiles.AsNoTracking()
             .Where(f => f.IsActive
                 && f.Service == FileService.OrganizationHeroVideo
-                && f.OwnerEntityId == OrganizationProfile.SingletonId
-                && f.Id != keepId)
+                && f.OwnerEntityId == OrganizationProfile.SingletonId)
+            .OrderByDescending(f => f.CreatedAt).ThenByDescending(f => f.Id)
             .Select(f => f.Id)
             .ToListAsync(ct);
-        foreach (var id in priorIds)
+        foreach (var id in keepNewest ? active.Skip(1) : active)
         {
             await fileService.DeleteAsync(id, actorUserId, ct);
         }

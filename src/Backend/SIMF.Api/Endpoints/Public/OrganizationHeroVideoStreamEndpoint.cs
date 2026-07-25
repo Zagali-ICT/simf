@@ -48,6 +48,12 @@ public sealed class OrganizationHeroVideoStreamEndpoint(
         // polyglot file from being interpreted as HTML in the api origin.
         HttpContext.Response.Headers["X-Content-Type-Options"] = "nosniff";
 
+        // Public branding content on a fixed route: allow a short shared cache (matches
+        // the public-file download endpoint). A replace propagates within the window;
+        // the admin changes the hero rarely, so this trades a brief staleness for not
+        // re-streaming a large file from disk on every anonymous hit.
+        HttpContext.Response.Headers.CacheControl = "public, max-age=300";
+
         // Send.StreamAsync disposes the stream after sending. enableRangeProcessing
         // lets the player seek and resume; a large MP4 is never buffered whole.
         await Send.StreamAsync(

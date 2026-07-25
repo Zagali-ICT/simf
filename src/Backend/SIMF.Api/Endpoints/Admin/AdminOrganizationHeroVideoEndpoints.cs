@@ -3,6 +3,7 @@ using System.Security.Claims;
 using FastEndpoints;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using SIMF.Application.Configuration.Abstractions;
 using SIMF.Common;
@@ -21,7 +22,8 @@ namespace SIMF.Api.Endpoints.Admin;
 public sealed class UploadOrganizationHeroVideoEndpoint(
     IOrganizationHeroVideoService heroVideo,
     IOrganizationProfileAdminService profile,
-    IOptions<OrganizationHeroVideoOptions> options)
+    IOptions<OrganizationHeroVideoOptions> options,
+    IHostEnvironment env)
     : EndpointWithoutRequest<ApiResult<OrganizationProfileResponse>>
 {
     // Resolve the canonical content-type from the file EXTENSION (browser-supplied
@@ -54,6 +56,22 @@ public sealed class UploadOrganizationHeroVideoEndpoint(
             await Send.UnauthorizedAsync(ct);
             return;
         }
+
+        // The persisted URL must be one the app/website hero can actually play: an
+        // absolute https .mp4 (LiveStreamUrlPolicy). Behind the reverse proxy the
+        // request-derived fallback yields the internal (http) host, so in Production a
+        // blank OrganizationHeroVideo:PublicApiBaseUrl would silently store an
+        // unplayable URL - reject early with an actionable message instead of a green
+        // "success". (Dev/Test keep the request fallback so a local upload still works.)
+        var servedUrl = OrganizationHeroVideoRoutes.ServedUrl(
+            HttpContext.Request, options.Value.PublicApiBaseUrl);
+        if (env.IsProduction() && !LiveStreamUrlPolicy.IsAllowed(servedUrl))
+        {
+            throw new ApiException(ErrorCodes.OrganizationProfileInvalid, 400,
+                "Set OrganizationHeroVideo:PublicApiBaseUrl to the public https API base so the uploaded video can be served.",
+                "يجب ضبط عنوان واجهة برمجة التطبيقات العام (https) في OrganizationHeroVideo:PublicApiBaseUrl حتى يمكن عرض الفيديو المرفوع.");
+        }
+
         var maxBytes = options.Value.MaxUploadBytes;
 
         // Raise the per-request body + multipart ceilings BEFORE the body is read (the
@@ -88,9 +106,6 @@ public sealed class UploadOrganizationHeroVideoEndpoint(
                 "The hero video must be an mp4, m4v or webm file.",
                 "يجب أن يكون فيديو الواجهة بصيغة mp4 أو m4v أو webm.");
         }
-
-        var servedUrl = OrganizationHeroVideoRoutes.ServedUrl(
-            HttpContext.Request, options.Value.PublicApiBaseUrl);
 
         await using var stream = file.OpenReadStream();
         await heroVideo.SetAsync(actorId, stream, file.FileName, contentType, ext, servedUrl, ct);
