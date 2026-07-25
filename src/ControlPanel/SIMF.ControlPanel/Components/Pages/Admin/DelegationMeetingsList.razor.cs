@@ -31,6 +31,14 @@ public partial class DelegationMeetingsList
     private bool _busy;
     private Toast? _toast;
 
+    // R10 (D-767) — a confirm dialog for the one-click Check-in row action (flips
+    // Accepted→Done) so a mis-click cannot fire it silently.
+    private bool _confirmOpen;
+    private string _confirmTitle = string.Empty;
+    private string _confirmMessage = string.Empty;
+    private string _confirmLabel = string.Empty;
+    private Func<Task>? _confirmAction;
+
     private bool _respondOpen;
     // PII (requester email) is fetched on demand into the detail shape; list
     // rows do not carry email (the D-185 pattern).
@@ -212,6 +220,34 @@ public partial class DelegationMeetingsList
         }
         finally { _busy = false; }
     }
+
+    // R10 (D-767) — guard the one-click Check-in behind a confirm dialog.
+    private void ConfirmCheckIn(AdminDelegationMeetingRequestRow row) =>
+        AskConfirm(L["Admin.Meetings.CheckIn"], L["Admin.Meetings.CheckIn.ConfirmMsg"],
+            L["Admin.Meetings.CheckIn"], () => OnCheckInAsync(row));
+
+    private void AskConfirm(string title, string message, string confirmLabel, Func<Task> action)
+    {
+        _confirmTitle = title;
+        _confirmMessage = message;
+        _confirmLabel = confirmLabel;
+        _confirmAction = action;
+        _confirmOpen = true;
+        _toast = null;
+    }
+
+    private async Task RunConfirmAsync()
+    {
+        var action = _confirmAction;
+        _confirmOpen = false;
+        _confirmAction = null;
+        if (action is not null)
+        {
+            await action();
+        }
+    }
+
+    private void CancelConfirm() => _confirmOpen = false;
 
     // Bi-Meeting rework — the unified 3-button model. Decline/Cancel = Reject
     // (justification required), releasing any held hall. Approve = accept + bind a

@@ -89,7 +89,7 @@
                     <AuthorizedAction Permission="@PermissionCatalog.DelegationMeetings.Manage">
                         <SimfToolbarButton Icon="log-in" Title="@L["Admin.Meetings.CheckIn"]"
                                            Disabled="_busy"
-                                           OnClick="@(() => OnCheckInAsync(context))" />
+                                           OnClick="@(() => ConfirmCheckIn(context))" />
                     </AuthorizedAction>
                 }
             </RowActions>
@@ -231,3 +231,8 @@
         </Footer>
     </SimfModal>
 }
+
+@* R10 (D-767) — must-decide guard for the one-click Check-in row action. *@
+<SimfConfirm Open="_confirmOpen" Title="@_confirmTitle" Message="@_confirmMessage"
+             ConfirmLabel="@_confirmLabel" CancelLabel="@L["Admin.Meetings.Close"]"
+             Busy="_busy" OnConfirm="RunConfirmAsync" OnCancel="CancelConfirm" />

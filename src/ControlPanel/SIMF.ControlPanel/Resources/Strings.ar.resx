@@ -130,6 +130,8 @@
   <data name="Admin.SpeakerAvailability.PickSpeaker" xml:space="preserve"><value>اختر متحدّثاً…</value></data>
   <data name="Admin.SpeakerAvailability.AddWindow" xml:space="preserve"><value>إضافة فترة توفّر</value></data>
   <data name="Admin.Availability.WindowsHelp" xml:space="preserve"><value>يُقسَّم كل نطاق تلقائياً إلى فترات قابلة للحجز بالطول الذي تحدده أدناه. يختار مقدّمو الطلبات من هذه الفترات المتاحة، وتختفي الفترة من القائمة بمجرد حجزها.</value></data>
+  <data name="Admin.Availability.DeleteConfirmMsg" xml:space="preserve"><value>حذف فترة التوفّر هذه؟ لن تُعرض فتراتها القابلة للحجز بعد الآن.</value></data>
+  <data name="Admin.Availability.WindowDeleted" xml:space="preserve"><value>تم حذف فترة التوفّر.</value></data>
   <data name="Admin.SpeakerAvailability.Start" xml:space="preserve"><value>البداية (بتوقيت السعودية)</value></data>
   <data name="Admin.SpeakerAvailability.End" xml:space="preserve"><value>النهاية (بتوقيت السعودية)</value></data>
   <data name="Admin.SpeakerAvailability.SlotMinutes" xml:space="preserve"><value>مدة الفترة (دقائق)</value></data>
@@ -162,6 +164,7 @@
   <data name="Admin.DelegationAvailability.BadDateRange" xml:space="preserve"><value>يجب أن تكون التواريخ ضمن {0}.</value></data>
   <data name="Admin.Meetings.CheckIn" xml:space="preserve"><value>تسجيل الحضور</value></data>
   <data name="Admin.Meetings.CheckIn.Done" xml:space="preserve"><value>تم تسجيل حضور الاجتماع.</value></data>
+  <data name="Admin.Meetings.CheckIn.ConfirmMsg" xml:space="preserve"><value>تسجيل حضور هذا الاجتماع في القاعة؟ سيُعلَّم كمنتهٍ.</value></data>
   <data name="Admin.Meetings.Bind.Hall" xml:space="preserve"><value>القاعة</value></data>
   <data name="Admin.Meetings.Bind.PickHall" xml:space="preserve"><value>— اختر قاعة —</value></data>
   <data name="Admin.Meetings.Bind.Slot" xml:space="preserve"><value>فترة القاعة</value></data>
@@ -2260,6 +2263,7 @@
   <data name="Admin.SpeakerMeetingRequests.Filter.AwaitingSpeaker" xml:space="preserve"><value>بانتظار المتحدّث</value></data>
   <data name="Admin.SpeakerMeetingRequests.Resend" xml:space="preserve"><value>إعادة إرسال تأكيد المتحدّث</value></data>
   <data name="Admin.SpeakerMeetingRequests.Resend.Done" xml:space="preserve"><value>تمت إعادة إرسال بريد تأكيد المتحدّث.</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Resend.ConfirmMsg" xml:space="preserve"><value>إعادة إرسال بريد التأكيد بروابط جديدة صالحة ٧٢ ساعة؟</value></data>
   <data name="Admin.SpeakerMeetingRequests.Filter.Cancelled" xml:space="preserve"><value>ملغى</value></data>
   <data name="Admin.SpeakerMeetingRequests.Bind.Hall" xml:space="preserve"><value>الربط بقاعة (اختياري)</value></data>
   <data name="Admin.SpeakerMeetingRequests.Bind.NoHall" xml:space="preserve"><value>— بدون قاعة (قبول فقط) —</value></data>
