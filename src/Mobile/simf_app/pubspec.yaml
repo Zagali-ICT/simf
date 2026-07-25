@@ -1,9 +1,11 @@
 name: simf_app
 description: SIMF Maritime Forum — the Flutter mobile application for Android and iOS. Routes the 41 mockup screens, applies localisation and theme, and hosts the auth and data packages. See SIMF-MAA-001 v1.2.
-# D-736 — 1.0.0 matches the version the UI has always advertised; the About /
-# More screens now display this real value via package_info_plus, and the
-# server version-policy gate compares against it.
-version: 1.0.1+14
+# D-736 — the About / More screens display this real value via
+# package_info_plus, and the server version-policy gate compares against it.
+# Bumped for the local-time wire rename (*Utc fields dropped, datetimes now
+# Saudi +03:00): installed builds decode the old wire, so the server's
+# minimum-required-version must be set to 1.1.0 at deploy to force the update.
+version: 1.1.0+15
 publish_to: none
 
 environment:
