@@ -228,7 +228,7 @@ Scenario: Clicking a sortable column header toggles ascending/descending (D-256)
 
 **Evidence captured:**
 - Sortable columns are Hall, Table, Type, Start, End, Status (the Parties count
-  column is not sortable). The default (no Sort) order is StartUtc descending.
+  column is not sortable). The default (no Sort) order is Start descending.
 
 ### E2E-BMT-016 — Excel export (D-356)
 
@@ -285,7 +285,7 @@ Scenario: The type dropdown offers G2B and it round-trips
 ```gherkin
 Scenario: A past start is rejected by the shared ValidateSlot lower bound
   Given an Administrator scheduling a meeting on a Meeting-purpose table
-  When StartUtc is in the past (EndUtc a valid hour later) with two valid companies
+  When Start is in the past (End a valid hour later) with two valid companies
   Then POST /account/api/admin/business-meetings returns 400 HALL_ALLOCATION_INVALID
     (bilingual toast: "The start time cannot be in the past." /
     "لا يمكن أن يكون وقت البداية في الماضي.")
@@ -296,7 +296,7 @@ Scenario: A past start is rejected by the shared ValidateSlot lower bound
 ```gherkin
 Scenario: The same not-in-past bound guards the allocation path
   Given an Administrator creating a Whole hall allocation
-  When StartUtc is in the past and EndUtc is a valid hour after it
+  When Start is in the past and End is a valid hour after it
   Then POST /account/api/admin/halls/{id}/hall-allocations returns 400 HALL_ALLOCATION_INVALID
 ```
 
@@ -306,12 +306,12 @@ Scenario: The same not-in-past bound guards the allocation path
 Scenario: A meeting outside the event days is rejected; a day inside is accepted
   Given the programme has authored days 2026-11-20..22 (the forum window)
   And an Administrator scheduling a meeting on a Meeting-purpose table with two companies
-  When StartUtc/EndUtc fall on 2026-12-15 (a future day AFTER the last forum day)
+  When Start/End fall on 2026-12-15 (a future day AFTER the last forum day)
   Then POST /account/api/admin/business-meetings returns 400 HALL_ALLOCATION_INVALID
     (bilingual toast: "Meetings can only be scheduled within the forum days
     (2026-11-20 to 2026-11-22)." /
     "لا يمكن جدولة الاجتماعات إلا خلال أيام الملتقى (2026-11-20 إلى 2026-11-22).")
-  When instead StartUtc/EndUtc fall on 2026-11-21 (inside the window)
+  When instead Start/End fall on 2026-11-21 (inside the window)
   Then the meeting is Confirmed (200)
   # The window is MIN/MAX over the ACTIVE ProgrammeDay.Date rows, NOT the stale
   # OrganizationProfile placeholder. The slot is converted to the event-local (+03:00)

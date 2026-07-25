@@ -16,7 +16,7 @@
 |--|--|
 | **Page** | [`mobile/requests.md`](../../pages/mobile/requests.md) (app screen `requests`) |
 | **Route** | `/requests` (`RouteNames.requests` → `RequestsScreen`) — reached from My-Area (the "meetings" stat tile + an "الطلبات" More row) |
-| **APIs** | `GET /api/v1/app/my-requests` (approved-only) → `AppRequestItem { kind, id, title, titleArabic, status, eventDateUtc?, createdAt, canCancel }[]`; `POST /api/v1/app/document-requests`; `POST /api/v1/app/badge-requests`; `POST /api/v1/app/my-requests/cancel`. All **approved-only**. |
+| **APIs** | `GET /api/v1/app/my-requests` (approved-only) → `AppRequestItem { kind, id, title, titleArabic, status, eventDate?, createdAt, canCancel }[]`; `POST /api/v1/app/document-requests`; `POST /api/v1/app/badge-requests`; `POST /api/v1/app/my-requests/cancel`. All **approved-only**. |
 | **Surface** | Mobile (Flutter) + App API |
 | **Figma** | `1408:9726` |
 | **Auth setup** | An **approved Visitor** token (the user only ever sees and acts on their own requests). No literal secrets. |
@@ -36,7 +36,7 @@
   requests in that status; tapping a chip filters the feed.
 - **Request cards** (expandable, across the five kinds): each card shows the
   bilingual title, a status pill (`MeetingRequestStatus`), the date
-  (`eventDateUtc` when present, else `createdAt`), and — for the user's **own
+  (`eventDate` when present, else `createdAt`), and — for the user's **own
   pending** speaker / document / badge requests — a **Cancel** affordance. The
   `DelegationMeeting` and `SessionAttendance` kinds are **read-only** on this
   screen (no Cancel; `canCancel = false`).
@@ -118,7 +118,7 @@ Scenario: The feed returns the user's own requests across all five kinds, never 
   And another user has their own ParticipationDocument request
   When the app calls GET /api/v1/app/my-requests with the first user's token
   Then the response is 200
-  And it returns AppRequestItem rows for all five of the caller's kinds (kind, id, title, titleArabic, status, eventDateUtc?, createdAt, canCancel)
+  And it returns AppRequestItem rows for all five of the caller's kinds (kind, id, title, titleArabic, status, eventDate?, createdAt, canCancel)
   And it does NOT return the other user's request
   And only the caller's pending SpeakerMeeting / ParticipationDocument / BadgeUpdate rows carry canCancel = true
   And the DelegationMeeting and SessionAttendance rows carry canCancel = false
@@ -290,7 +290,7 @@ Scenario: The rejection reason is shown in the expanded card
   toast text and RTL coverage that the API tests cannot assert.
 - **Backing surface:**
   - Feed — `GET /api/v1/app/my-requests` (approved-only) → list of
-    `AppRequestItem { kind, id, title, titleArabic, status, eventDateUtc?,
+    `AppRequestItem { kind, id, title, titleArabic, status, eventDate?,
     createdAt, canCancel }`. Kinds: `SpeakerMeeting`, `DelegationMeeting`
     (read-only), `SessionAttendance` (surfaced from the user's seat bookings, not
     cancellable here), `ParticipationDocument`, `BadgeUpdate`.

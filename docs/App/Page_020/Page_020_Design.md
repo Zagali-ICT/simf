@@ -33,7 +33,7 @@ Arabic-primary.
 - **Social links** are shown only when `allowsDataSharing == true`, binding to
   `facebookUrl` / `linkedInUrl` / `xUrl` (Page_020_Logic L-3).
 - **Sessions** bind to `sessions[]` (`PublicSpeakerSession`): locale-picked
-  `title`/`hallName`, the `startUtc`/`endUtc` window rendered in the user's
+  `title`/`hallName`, the `start`/`end` window rendered in the user's
   locale/timezone; tap → session detail (Page_020_Logic L-4).
 - **`طلب مقابلة`** is shown only when `allowsMeetingRequests == true`. Tapping it:
   - **guest / pending** → sign-in prompt (the action is

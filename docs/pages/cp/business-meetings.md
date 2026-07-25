@@ -26,7 +26,7 @@ once that aggregate read ships (the union already reserves space for them).
 - **Status filter** (All / Confirmed / Cancelled) + a **Schedule meeting** button.
 - **Grid:** Hall · Table · Type (B2B/B2C/G2B) · Start · End · Participants · Status · View/Cancel.
 - **Schedule modal:** hall picker → table picker (tables of the chosen Meeting/General
-  hall) → type (B2B/B2C/G2B, admin-set) → Start/End (UTC) → participant builder (add any
+  hall) → type (B2B/B2C/G2B, admin-set) → Start/End (Saudi time) → participant builder (add any
   number of Company or Visitor parties; ≥ 2, ≤ table capacity) → optional Notes.
 - **Cancel modal:** optional reason. **Detail modal:** participants + slot + reason.
 - **Excel export (D-356):** a toolbar **Export** action downloads the grid as an

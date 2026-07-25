@@ -188,7 +188,7 @@ Scenario: The pills, day strip and search slice the cache
 ```
 
 **Evidence:** screen tests `the Forum pill reveals past sessions hidden by Upcoming`
-(Upcoming = `startUtc >= now`, L-2) and `the search box filters the list`. The one
+(Upcoming = `start >= now`, L-2) and `the search box filters the list`. The one
 fetch is held in screen state; filters run over it via `filterSessions` (no repo
 call) — `session_models_test.dart` covers the pure filter + `sessionDays`.
 
@@ -257,7 +257,7 @@ Scenario: status and speaker role decode whether int or name
 
 ```gherkin
 Scenario: The list item binds the real wire names incl. the D-271 speaker cluster
-  Given PublicSessionListItem ships title/hallName/startUtc/status + speakers[]
+  Given PublicSessionListItem ships title/hallName/start/status + speakers[]
   And each speaker carries countryId / countryNameEn / countryNameAr / photoRelativePath
   When the client decodes a session
   Then it binds those camelCase names and a missing speakers array decodes to []

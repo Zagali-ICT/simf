@@ -99,7 +99,7 @@ Scenario: Select a session, scan a badge QR, record the arrival
 Scenario: The dropdown shows active sessions only, labelled and sorted
   Given three sessions exist: two active, one inactive (IsActive = false)
   When the operator opens /admin/hall-arrivals
-  Then GET-equivalent POST /account/api/admin/sessions/list fires with { Top: 200, Sort: "startUtc" }
+  Then GET-equivalent POST /account/api/admin/sessions/list fires with { Top: 200, Sort: "start" }
   And the "Session" dropdown lists exactly the two active sessions
   And each option label reads "{Title} · {Code}"
   And the inactive session does not appear
@@ -262,10 +262,10 @@ Scenario: Select a session, scan a checked-in attendee, record the departure
   Given a session is selected and the attendee "Faisal Al-Harbi" is currently checked IN (open HallAttendance row)
   When the operator types that attendee's badge code and clicks "Record departure"
   Then the BFF forwards POST /account/api/admin/sessions/{sessionId}/departures
-  And the API returns HTTP 200 with ApiResult.Data.Status.Arrived = false and a non-null Status.LeaveUtc
+  And the API returns HTTP 200 with ApiResult.Data.Status.Arrived = false and a non-null Status.Leave
   And a green toast reads "Departure recorded: Faisal Al-Harbi" / "تم تسجيل الخروج: <DisplayNameArabic>"
   And the "Attendee badge QR" field clears, ready for the next scan
-  And the attendee's open HallAttendance row for that session is now closed (LeaveUtc set)
+  And the attendee's open HallAttendance row for that session is now closed (Leave set)
   And re-reading the seat map, that attendee's seat is no longer "confirmed / تم التأكيد"
 ```
 
@@ -320,7 +320,7 @@ Scenario: A caller without HallArrivals.Record cannot record a departure
   proof that the CP console drives those same outcomes.
 - **End-of-day auto check-out.** Any attendee still checked in when their session
   ends is auto-closed by `HallAttendanceCloseoutWorker.CloseEndedSessionsAsync`
-  (`LeaveUtc = Session.EndUtc`); covered by
+  (`Leave = Session.End`); covered by
   `tests/SIMF.Api.Tests/Operations/HallAttendanceCloseoutWorkerTests.cs`.
 - **No grid / no CRUD.** Unlike the lookup-table pages (e.g. `/admin/interests`),
   this is a single record action over a loaded session list. There is no

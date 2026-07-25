@@ -158,7 +158,7 @@ Scenario: Pending row — Close / Decline / Approve / Confirm
 
 Scenario: Approve binds a hall + slot and awaits the other party's confirmation
   When they pick a hall + a free slot (+ optional table) and click Approve
-  Then PUT .../respond fires with Status=Accepted, VerbalConfirmed=false, HallId + SlotStartUtc/EndUtc
+  Then PUT .../respond fires with Status=Accepted, VerbalConfirmed=false, HallId + SlotStart/End
   And the row moves to AwaitingConfirmation (pill "Awaiting confirmation" / "بانتظار التأكيد")
   And each eligible target-delegation member is notified (MeetingRequested) + emailed to confirm
   When they click Approve / Confirm without a hall + slot

@@ -103,7 +103,7 @@ Scenario: A race cannot push the session past its declared capacity
 
 ```gherkin
 Scenario: The expiry worker releases a hold the CP never decided
-  Given a visitor's Pending seat hold whose ExpiresUtc has passed
+  Given a visitor's Pending seat hold whose Expires has passed
   And a second Pending hold whose window is still in the future
   When the PendingBookingExpiryWorker scan runs
   Then only the expired hold is released (ReleasedAt set, Status = Cancelled)
@@ -113,7 +113,7 @@ Scenario: The expiry worker releases a hold the CP never decided
 
 **Evidence captured:**
 - API integration tests: `PendingBookingExpiryWorkerTests.Expiry_scan_releases_only_past_pending_holds`, `SeatReservationsTests.Reserving_stamps_an_expiry_on_the_hold`
-- Reserve/random/join stamp `ExpiresUtc = CreatedAt + 24h`; an admin-reserved row never expires (ExpiresUtc null)
+- Reserve/random/join stamp `Expires = CreatedAt + 24h`; an admin-reserved row never expires (Expires null)
 
 ---
 

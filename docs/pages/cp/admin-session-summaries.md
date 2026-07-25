@@ -20,7 +20,7 @@ Programme §6.4.1 (Mockup screen 34, "ملخص الجلسة بالذكاء ال�
 محضر is the Committee's own editorial minute for a session; the app reads it on
 screen 34 **only once it is published**.
 
-The desk lists **every active session** (newest session first, by `StartUtc`
+The desk lists **every active session** (newest session first, by `Start`
 descending) with the state of its summary, and the Committee acts per row:
 
 - **AI draft** (Generate) — routes through the central `IAiService` seam using
@@ -285,7 +285,7 @@ the editor**, **027 pristine AI draft survives an edit (Slice D)**.
 | Date | Decision | Change |
 |------|----------|--------|
 | 2026-06-02 | D-237 / D-238 | Original — `SessionSummary` entity + migration `D237_AddSessionSummary` + the Scientific-Committee محضر desk (list / generate / edit / publish / unpublish) through the central AI seam (Echo provider). Gated by `SessionSummaries.View` / `.Edit` / `.Publish`. |
-| 2026-06-11 | D-356 | Excel **export added** (toolbar Export → `/account/api/admin/session-summaries/export`, sheet "SessionSummaries", columns `SessionCode \| SessionTitle \| SessionTitleArabic \| SessionStartUtc \| Status \| Source \| PublishedAt \| UpdatedAt`, capped at 5000 rows). New permission `SessionSummaries.Export`. **Export only** — no import path (source wires `OnExport`, not `OnImport`). E2E catalogue extended with E2E-SUM-018. |
+| 2026-06-11 | D-356 | Excel **export added** (toolbar Export → `/account/api/admin/session-summaries/export`, sheet "SessionSummaries", columns `SessionCode \| SessionTitle \| SessionTitleArabic \| SessionStart \| Status \| Source \| PublishedAt \| UpdatedAt`, capped at 5000 rows). New permission `SessionSummaries.Export`. **Export only** — no import path (source wires `OnExport`, not `OnImport`). E2E catalogue extended with E2E-SUM-018. |
 | 2026-07-19 | owner (Q&A/summary/rating batch) | **Approval hard-gate before publish.** `SetPublishedAsync` now requires `ApprovedAt` (Draft/In-review → 400 `SESSION_SUMMARY_INVALID`); editing / re-generating / returning a **published** summary clears `PublishedAt` (invariant `PublishedAt ⇒ ApprovedAt`); the public app read **and** `HasPublishedSummary` now also require `ApprovedAt` (hides legacy published-but-unapproved rows). New resx `Admin.SessionSummaries.Action.PublishNeedsApproval` (en+ar); CP Publish button disabled until approved. E2E-SUM-023/024 added; the S-6 clock-gate case renumbered to E2E-SUM-025. |
 | 2026-07-19 | Slice D — AI transparency | **Pristine AI-draft snapshot + raw subtitle in the editor.** Additive nullable columns `AiDraftFullTextArabic` + `AiDraftGeneratedAt` on `SessionSummaries` (migration `AddSessionSummaryAiDraftSnapshot`); `GenerateAsync` captures the untouched AI output into the snapshot (a re-generate refreshes it) and `SaveAsync` never overwrites it; `GetAsync`/`ToDetail` also surface the session's `LiveCaptions*` as `Subtitle`/`SubtitleArabic`. `AdminSessionSummaryDetail` gains the four read-only fields (append-only; **never** on `PublicSessionSummary`/`PublicSessionDetail`). CP editor renders three read-only `Disabled` `SimfTextarea` panels above the editable fields; new resx `Field.Subtitle` / `Field.SubtitleArabic` / `Field.AiDraft` (en+ar). E2E-SUM-026/027 added. |
 

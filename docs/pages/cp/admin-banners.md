@@ -21,7 +21,7 @@ optional image and click-through link, a start/end UTC window and a display
 order; the public Website and Flutter app read only the **active** banners
 whose current time falls inside the window. Each banner carries a bilingual
 `Title`/`TitleArabic`, `Body`/`BodyArabic`, optional `ImageUrl` + `LinkUrl`,
-`StartUtc`, `EndUtc`, `DisplayOrder` and an `IsActive` flag.
+`Start`, `End`, `DisplayOrder` and an `IsActive` flag.
 
 The page follows the owner-mandated `SimfDataGrid` list standard (D-256) and
 the centralised `CrudShell` form framing (D-353); the D-356 wave added the
@@ -32,7 +32,7 @@ Excel export + import pair shared across every grid.
 - `SimfBanner` heading + `SimfDataGrid` (`Multiselect="true"`, server-paged,
   `GridQuery { Top = 20 }`).
 - Grid columns: **Title** (bilingual — `TitleLabel` shows the Arabic title
-  when the culture is `ar`), **Start (UTC)** (`yyyy-MM-dd HH:mm`), **End (UTC)**
+  when the culture is `ar`), **Start (Saudi time)** (`yyyy-MM-dd HH:mm`), **End (Saudi time)**
   (`yyyy-MM-dd HH:mm`), **Display order**, **Active** (`SimfPill` on/off). All
   five columns are sortable; **Title** is the only filterable column.
 - Toolbar actions: **Add**, plus a `CustomToolbar` hosting the
@@ -48,12 +48,12 @@ Excel export + import pair shared across every grid.
   (`Resource="banners"`). Export posts the selected row ids (or none → the whole
   filtered grid) with the current `GridQuery` to `/account/api/admin/banners/export`
   and downloads an `.xlsx` named `simf-banners-{yyyyMMddHHmmss}.xlsx` whose sheet
-  **"Banners"** header row is `Title | TitleArabic | StartUtc | EndUtc |
+  **"Banners"** header row is `Title | TitleArabic | Start | End |
   DisplayOrder | IsActive`. Import (insert-only) posts an `.xlsx` to
   `/account/api/admin/banners/import` and shows a result of created/updated/skipped
   counts plus per-row errors; a green `Grid.Import.Done` toast follows and the
   grid reloads. The import required headers are `Title | TitleArabic | Body |
-  BodyArabic | StartUtc | EndUtc` (`ImageUrl`, `LinkUrl`, `DisplayOrder` are
+  BodyArabic | Start | End` (`ImageUrl`, `LinkUrl`, `DisplayOrder` are
   optional). Export is capped at **5000** rows; import is capped at **5000**
   rows with a **5 MB** upload limit and a ZIP-magic `.xlsx` check.
 - **Page ↔ Popup presentation toggle (D-353):** the toolbar
@@ -77,8 +77,8 @@ server-side in `AdminCmsService.ValidateBanner`.
 | Body (Arabic) | yes | 1–2000 | non-blank; ≤ 2000 chars |
 | Image URL | no | — | optional; `NullIfBlank` |
 | Click-through URL | no | — | optional; `NullIfBlank` |
-| Start (UTC) | yes | n/a | `datetime-local`; defaults to now |
-| End (UTC) | yes | n/a | `datetime-local`; defaults to now + 1 day; must be **after** Start |
+| Start (Saudi time) | yes | n/a | `datetime-local`; defaults to now |
+| End (Saudi time) | yes | n/a | `datetime-local`; defaults to now + 1 day; must be **after** Start |
 | Display order | yes | n/a | `number`; integer ≥ 0 (client coerces a bad/negative parse to 0; server rejects negatives) |
 | Active | (Edit only) | bool | `IsActive` checkbox, shown only when `IsEdit` |
 
@@ -94,7 +94,7 @@ The CP page calls the BFF through `simfAccount.postJson` / `getJson` /
 returns the standard `ApiResult<T>` envelope.
 
 - `POST /admin/banners/list` → `ApiResult<GridPage<AdminBannerSummary>>`
-  (gated `Banners.View`). Default order: `DisplayOrder` asc, then `StartUtc`
+  (gated `Banners.View`). Default order: `DisplayOrder` asc, then `Start`
   asc; per-column **Title** filter matches `TitleEn || TitleAr`.
 - `GET /admin/banners/{id}` → `ApiResult<AdminBannerDetail>` (gated
   `Banners.View`); 404 `BANNER_NOT_FOUND` when missing.
@@ -127,7 +127,7 @@ Server-side in `AdminCmsService.ValidateBanner` (shared by create + update):
 - **Not found:** 404 `BANNER_NOT_FOUND` ("Banner not found." /
   "لم يتم العثور على البانر.") on get/update/delete of a missing id.
 - **Import per-row errors** (`ImportBannersEndpoint`): each of Title,
-  TitleArabic, Body, BodyArabic must be non-blank and StartUtc/EndUtc must
+  TitleArabic, Body, BodyArabic must be non-blank and Start/End must
   parse, else a bilingual `DataValidationException` is recorded as a per-row
   error (the row is skipped, the batch continues). The same `ValidateBanner`
   rules then run inside `CreateBannerAsync`.
@@ -140,7 +140,7 @@ Server-side in `AdminCmsService.ValidateBanner` (shared by create + update):
 
 - **Public read filters the window.** The admin grid lists all banners
   (active + inactive); the public surface (`PublicCmsEndpoints`) shows only
-  active banners inside the current `StartUtc`/`EndUtc` window.
+  active banners inside the current `Start`/`End` window.
 - **Delete is a soft-delete (deactivate).** `DeactivateBannerAsync` sets
   `IsActive = false`; an already-inactive banner stays in the admin grid but
   drops out of the active public read.

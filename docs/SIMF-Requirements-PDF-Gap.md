@@ -213,7 +213,7 @@ Mockup deliverable from the external UI/UX designer.
 ### 3.3 Missing entirely — needs design + build
 
 - **Dynamic content CMS** (§2.1) — `ContentBlock` (or similar) table of key/value markdown blocks, editable from CP; admin form per page region; site/app reads via a typed contract. Includes welcome message, banners, announcements, brand colour tokens, page management.
-- **Registration open/close toggle** (§2.3) — `RegistrationGate` table (or a singleton row) with `IsOpen`, `AutoCloseUtc`, `LastChangedAt`. Sign-up endpoints honour the gate. Admin toggle in CP. Background worker enforces the `AutoCloseUtc` flip.
+- **Registration open/close toggle** (§2.3) — `RegistrationGate` table (or a singleton row) with `IsOpen`, `AutoClose`, `LastChangedAt`. Sign-up endpoints honour the gate. Admin toggle in CP. Background worker enforces the `AutoClose` flip.
 - **Archive visibility toggle** (§2.4) — single `ArchiveVisibility` switch. App contract `GET /archive/visibility`.
 - **Face ID sign-in** (§2.5) — Flutter-side biometric unlock that releases a stored refresh token; backend stays JWT-based. Requires a "device key" registration ceremony on the first sign-in.
 - **Session moderator role + question workflow** (§2.7.2) — `SessionQuestion` table, public submission endpoint (gated by §2.10 below), moderator endpoints (list/hide/reorder/push to speaker). Maps to a per-session permission grant — distinct from `MobileAppRole.Moderator`.
@@ -286,7 +286,7 @@ the order. The owner approves each phase before it begins.
 ### Phase G3 — Sessions module
 
 1. `Session` entity in `SimfAppDbContext` — `Id`, `Code`, `Title`,
-   `TitleArabic`, `HallId` (FK), `StartUtc`, `EndUtc`, `CapacityOverride`,
+   `TitleArabic`, `HallId` (FK), `Start`, `End`, `CapacityOverride`,
    `IsActive`, `CreatedAt`.
 2. M-to-M `Session ↔ Speaker` via `SessionSpeaker` join. FK to the existing
    `Speaker` entity.
@@ -302,12 +302,12 @@ the order. The owner approves each phase before it begins.
 ### Phase G4 — Registration gate + archive visibility
 
 1. `RegistrationGate` singleton row in `SimfAppDbContext` — `IsOpen`,
-   `AutoCloseUtc`, `LastChangedAt`, `LastChangedByUserId`.
+   `AutoClose`, `LastChangedAt`, `LastChangedByUserId`.
 2. Sign-up endpoint reads the gate; returns a typed
    `REGISTRATION_CLOSED` 403 when closed.
 3. Admin endpoint `PUT /api/v1/admin/registration-gate` to toggle / set
-   `AutoCloseUtc`.
-4. Background worker that flips `IsOpen=false` when `AutoCloseUtc` passes.
+   `AutoClose`.
+4. Background worker that flips `IsOpen=false` when `AutoClose` passes.
 5. `ArchiveVisibility` singleton with `IsVisible`. Public `GET
    /api/v1/archive/visibility`.
 6. CP toggles for both, with audit-log entries.

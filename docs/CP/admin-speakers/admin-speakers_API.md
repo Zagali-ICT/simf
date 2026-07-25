@@ -115,7 +115,7 @@ the four bilingual rich-text sections, **`allowsMeetingRequests`** (drives the
 client's "Request meeting" affordance), **`allowsDataSharing`** (the social URLs
 are returned **only** when true), `facebookUrl` / `linkedInUrl` / `xUrl`,
 `photoRelativePath`, `displayOrder`, and `sessions[]` (`PublicSpeakerSession` —
-id, code, bilingual title, hall id + bilingual name, `startUtc` / `endUtc`,
+id, code, bilingual title, hall id + bilingual name, `start` / `end`,
 ordered by start). **`userProfileId` is deliberately NOT on the public
 projection.**
 

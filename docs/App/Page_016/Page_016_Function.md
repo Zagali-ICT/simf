@@ -32,7 +32,7 @@ map and media gallery"). No token required.
    description**, with a forward chevron indicating it is tappable.
 
 ## What the user does
-1. **Switch view** between *Upcoming* (default; `startUtc >= now`) and *Event
+1. **Switch view** between *Upcoming* (default; `start >= now`) and *Event
    agenda* (the whole programme) — handled **client-side** over the cached
    programme.
 2. **Pick a day** from the strip → the list filters to that (device-local)

@@ -195,8 +195,8 @@ round-trip for names, audit, bilingual notifications) are still reused.
 |-----------------|------------------------|
 | `Hall` (extend) | `Purpose {Booth, Session, Meeting}` + per-purpose config signal |
 | `MeetingTable` (new) | `Id`, `HallId` (App FK), `Label`/`Code`, optional location (row/col/label), `Capacity` (group), `IsActive`, timestamps |
-| `HallAllocation` (new) | `Id`, `HallId` (App FK), `Mode {Whole, RandomByCount, RowColumn}`, the allocated units, `StartUtc`, `EndUtc`, `CreatedByUserId`, `ReleasedAt?`, timestamps |
-| `BusinessMeeting` (new) | `Id`, `MeetingType {B2B, B2C}`, `MeetingTableId` (App FK), `StartUtc`, `EndUtc`, `Status {Confirmed, Cancelled}`, `ScheduledByUserId`, `CancelledByUserId?`, `CancelledAt?`, timestamps |
+| `HallAllocation` (new) | `Id`, `HallId` (App FK), `Mode {Whole, RandomByCount, RowColumn}`, the allocated units, `Start`, `End`, `CreatedByUserId`, `ReleasedAt?`, timestamps |
+| `BusinessMeeting` (new) | `Id`, `MeetingType {B2B, B2C}`, `MeetingTableId` (App FK), `Start`, `End`, `Status {Confirmed, Cancelled}`, `ScheduledByUserId`, `CancelledByUserId?`, `CancelledAt?`, timestamps |
 | `BusinessMeetingParticipant` (new) | `Id`, `BusinessMeetingId` (App FK), `Kind {Company, Visitor}`, `PartyId` (Company App FK **or** visitor bare Guid), immutable display-name audit snapshot |
 | New enums (additive) | `HallPurpose`, `HallAllocationMode`, `MeetingPartyKind`, `BusinessMeetingType`, `BusinessMeetingStatus` |
 
@@ -394,7 +394,7 @@ built (§15.2); §15 defines only the **delta**.
 
 | Capability | Where (file:line) | State |
 |-----------|-------------------|-------|
-| **Speaker meeting request** (app → admin) | app submit `POST /app/speakers/{id}/meeting-requests` (`SpeakerMeetingRequestEndpoints.cs:33`); entity `SpeakerMeetingRequest.cs:17` (Subject, `SlotStartUtc?`/`SlotEndUtc?`, `AvailabilityWindowId?`, Status); service `SpeakerMeetingRequestService.cs` | **Built.** Status `Pending→Accepted/Rejected/Cancelled` (`MeetingRequestStatus.cs`). |
+| **Speaker meeting request** (app → admin) | app submit `POST /app/speakers/{id}/meeting-requests` (`SpeakerMeetingRequestEndpoints.cs:33`); entity `SpeakerMeetingRequest.cs:17` (Subject, `SlotStart?`/`SlotEnd?`, `AvailabilityWindowId?`, Status); service `SpeakerMeetingRequestService.cs` | **Built.** Status `Pending→Accepted/Rejected/Cancelled` (`MeetingRequestStatus.cs`). |
 | **Admin review + respond** | `PUT /admin/speaker-meeting-requests/{id}/respond` (`…Endpoints.cs:123`), Accept/Reject/**Accept-with-hall** (D-716) | **Built.** GAP-2 shipped (D-716): an accept may bind a free **hall slot** (+ optional table) → `AwaitingSpeaker`; the picked hall slot is the meeting time (Option A). |
 | **Accept already emails the speaker** | `SpeakerMeetingRequestService.cs:421-441` (purpose `"SpeakerMeetingAccepted"`, plain HTML: topic + proposed slot), speaker email resolved via `Speaker.ContactId` | **Built** — but the email is an FYI with **no approve/reject links** (GAP-3). |
 | **VIP gate on slot picking** | `SpeakerMeetingRequestService.IsVipAsync` reads `ProfileType.AllowsVipMeetingSlots` (`…:382-388`); non-VIP slot → 403 | **Built.** |
@@ -442,10 +442,10 @@ add a display label only. No new entity unless the owner names a distinct workfl
   the hall's free meeting slots (GAP-1) and the admin **assigns a hall + optional table
   + slot**; the request carries that binding and moves to `AwaitingSpeaker` pending the
   speaker's confirmation (Slice C). **OI-C resolved:** the binding is **stamped on the
-  request** (`HallId`/`MeetingTableId`/`SlotStartUtc`/`SlotEndUtc`), not materialised as
+  request** (`HallId`/`MeetingTableId`/`SlotStart`/`SlotEnd`), not materialised as
   a `BusinessMeeting` — smaller and reversible for v1.1 (converge later). **Option A**
   chosen: the picked **hall** slot is the meeting time of record (one time grid). The
-  hall double-booking backstop is a filtered-unique `(HallId, SlotStartUtc)` index over
+  hall double-booking backstop is a filtered-unique `(HallId, SlotStart)` index over
   the live states. *(Delegation requests are not hall-bound in Slice B — speaker only.)*
 - **GAP-3 — speaker double-opt-in email (approve/reject links). ✅ BUILT (D-717,
   Slice C).** After accept-with-hall the request is **AwaitingSpeaker** and the
@@ -495,7 +495,7 @@ path where the owner explicitly asked for it.
 | Change | Detail |
 |--------|--------|
 | `MeetingRequestStatus` (extend) | **append** `AwaitingSpeaker` (new integer, no reorder/rename — enum is append-only per the freeze). Applies to `SpeakerMeetingRequest`; delegation reuse per OI-F. |
-| `SpeakerMeetingRequest` (extend) | additive nullable binding fields — `HallId?`, `MeetingTableId?`, assigned `SlotStartUtc/EndUtc` confirmed at accept, `SpeakerDecisionAt?`. |
+| `SpeakerMeetingRequest` (extend) | additive nullable binding fields — `HallId?`, `MeetingTableId?`, assigned `SlotStart/End` confirmed at accept, `SpeakerDecisionAt?`. |
 | Speaker action token | a **signed, single-use, expiring** token for the two email links. **OI-G:** persisted token entity (revocable, one-shot) **vs** a stateless HMAC/JWT with a short TTL. **Recommendation:** a small persisted `MeetingActionToken` (single-use, revocable, audited) — safer than a stateless link that can be replayed until expiry. |
 | `HallAvailabilityWindow` (new, if OI-B=yes) | mirrors `SpeakerAvailabilityWindow` — `HallId`, Start/End, `SlotMinutes`, soft-delete. |
 | `EmailMessage`/email path | render the two action links into the HTML body (the field is already HTML). No new email transport — reuses `IEmailQueue`. |

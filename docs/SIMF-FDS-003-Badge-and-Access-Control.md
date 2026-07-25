@@ -167,7 +167,7 @@ time-window and booking-required features ship.
 | 11 | If the gate has a non-empty `GateProfileTypeAllow` list filtered by active `ProfileType`, the holder's `ProfileTypeId` must be in the list. Empty allow-list = pass (general gate). Filtered-empty (allow-list referenced only inactive profile types) = deny **all** per the safe-default rule. | `PROFILE_TYPE_NOT_ALLOWED` (recorded) |
 | 11.5 | **Reserved** — booking-required check (plan §11.3) | `BOOKING_REQUIRED_MISSING` (recorded; never fires in this increment) |
 | 12 | Look up the prior allowed scan within the **5-second duplicate window** keyed `(GateId, UserProfileId)` (without `Direction`, so a `Both`-mode race between two devices reading the same QR at the same instant produces one row). If found, return the prior outcome (replay path) — record nothing new. | — (duplicate absorption; no new row) |
-| 13 | Persist the `GateScan` row with `Outcome = Allowed`, the resolved `Direction`, the server clock `ScannedAtUtc`, and (when the client supplied them) `ClientScannedAtUtc` + `IdempotencyKey`. On a denial path, persist with `Outcome = Denied` + the named `DenialReasonCode`. **Audit:** every denial also emits one `OperationLog` row (`EventType = GateScanDenied`) so SOC can surface denials without scanning the `GateScan` firehose. Successful scans are recorded only in `GateScan` to keep operation-log volume sane. | — |
+| 13 | Persist the `GateScan` row with `Outcome = Allowed`, the resolved `Direction`, the server clock `ScannedAt`, and (when the client supplied them) `ClientScannedAt` + `IdempotencyKey`. On a denial path, persist with `Outcome = Denied` + the named `DenialReasonCode`. **Audit:** every denial also emits one `OperationLog` row (`EventType = GateScanDenied`) so SOC can surface denials without scanning the `GateScan` firehose. Successful scans are recorded only in `GateScan` to keep operation-log volume sane. | — |
 
 The engine is implemented as an ordered pipeline. The two reserved hooks
 (9.5, 11.5) are present as no-op delegates in this increment so the
@@ -215,7 +215,7 @@ allowed scan across all gates** for each visitor — not per-gate:
 - Most recent allowed scan is `CheckIn` → visitor is inside.
 - Most recent allowed scan is `CheckOut`, or no scan exists → visitor is outside.
 
-The filtered index `(UserProfileId, ScannedAtUtc DESC) WHERE Outcome =
+The filtered index `(UserProfileId, ScannedAt DESC) WHERE Outcome =
 Allowed AND UserProfileId IS NOT NULL` (SIMF-DAT-001 §5.3.2) makes this a
 single-row seek per visitor even at expected event-end volumes (low
 millions of scans). If reporting load proves the index insufficient, a

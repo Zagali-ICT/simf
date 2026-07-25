@@ -30,9 +30,9 @@ submission:
    self-assert** — the body flag must be `true`. A caller with **neither** (no
    arrival, `IsAtVenue = false`) is rejected **`403 NOT_AT_VENUE`**.
 2. **Opens 5 minutes before start.** Questions open only inside the window
-   `StartUtc − PreStartWindow`, where **`PreStartWindow = 5min`**. A session that
+   `Start − PreStartWindow`, where **`PreStartWindow = 5min`**. A session that
    starts in 10 minutes is still **closed**; one starting in 3 minutes is **open**.
-3. **Closes at the end.** Questions close at **`EndUtc`** (**`PostEndWindow = 0`**).
+3. **Closes at the end.** Questions close at **`End`** (**`PostEndWindow = 0`**).
    After the session ends the window is **closed**.
 
 Outside the time window (rule 2 or 3) the submit returns
@@ -50,7 +50,7 @@ stages before a moderator can push it:
    lands `Pending`.
 2. **Stage 2 — Scientific-Committee approval (D-212).** Every new question lands
    **`Status = Pending`** on the Committee's central queue. A live session
-   (`StartUtc` already past) computes **`Phase = Live`**. The Committee approves
+   (`Start` already past) computes **`Phase = Live`**. The Committee approves
    (`PUT /api/v1/admin/questions/{id}/approve`) — only then does the question
    reach the per-session moderator desk.
 3. **Stage 3 — session moderator (D-169).** On

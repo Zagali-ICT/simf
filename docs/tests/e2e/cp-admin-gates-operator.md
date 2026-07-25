@@ -140,7 +140,7 @@ Scenario: "My day so far" lists today's scans, newest first, capped at 50
   When the report loads (GET /account/api/gates/my-reports/today?gateId={gateId})
   Then the summary reads "{allowed} allowed · {denied} denied" from Totals
   And the table renders exactly 50 rows (Rows.Take(50))
-  And each row shows ScannedAtUtc as HH:mm:ss, Outcome, Direction, Visitor (or "—"), Reason (DenialReasonCode or "—")
+  And each row shows ScannedAt as HH:mm:ss, Outcome, Direction, Visitor (or "—"), Reason (DenialReasonCode or "—")
   And rows with Outcome=Allowed show Reason="—"
 ```
 

@@ -105,8 +105,8 @@ is rendered below the grid; on a successful import it raises a success toast
 | Title | `r.Title` | yes | yes | filter column |
 | Title (Arabic) | `r.TitleArabic` | no | no | |
 | Hall | `HallLabel(r)` | no | no | culture-aware (`HallName`/`HallNameArabic`) |
-| Start (UTC) | `r.StartUtc` | yes | no | `yyyy-MM-dd HH:mm` |
-| End (UTC) | `r.EndUtc` | yes | no | `yyyy-MM-dd HH:mm` |
+| Start (Saudi time) | `r.Start` | yes | no | `yyyy-MM-dd HH:mm` |
+| End (Saudi time) | `r.End` | yes | no | `yyyy-MM-dd HH:mm` |
 | Capacity | `r.Capacity` | no | no | effective capacity |
 | Active | `r.IsActive` | no | no | `SimfPill` on/off |
 | Status | `r.Status` | no | no | lifecycle pill (Published=on, Scheduled=neutral, else admin) |
@@ -130,8 +130,8 @@ First / Prev / numbered / Next / Last; default `Top = 20`; summary
 | Hall | select | yes | — | must parse to a Guid; loaded from `…/halls/list` (Top=500, active) |
 | Category | select | no | — | optional; loaded from `…/session-categories/list` |
 | Type | select | yes* | — | Workshop / Session / Event — **required** on create (#3); *grandfathered: a legacy untyped row may stay untyped on edit, but a set type can't be cleared |
-| Start (UTC) | datetime-local | yes | — | parses; treated as UTC |
-| End (UTC) | datetime-local | yes | — | parses; must be `> Start` |
+| Start (Saudi time) | datetime-local | yes | — | parses; treated as Saudi local time |
+| End (Saudi time) | datetime-local | yes | — | parses; must be `> Start` |
 | Capacity override | number | no | — | blank = inherit hall; else integer ≥ 0 |
 | Seat selection (override) | select | no | — | blank = inherit the hall; else Assigned seat / Open seating (general admission) — D-485 |
 | Add speaker | select | yes* | — | reorderable roster with per-speaker role (Speaker/Host); **≥1 required unless Type = Event** (#4); *grandfathered on edit |
@@ -195,7 +195,7 @@ The Add/Edit form also lazy-loads its pickers on first render:
   - `SESSION_INVALID` (400) — live URL fails the shared `LiveStreamUrlPolicy`.
 - **Excel import** (`ImportSessionsEndpoint` over `AdminGridImportEndpoint`):
   insert-only, dedup/row key = **Code**. Required headers: Code, Title,
-  TitleArabic, Hall, StartUtc, EndUtc. An optional **Speakers** column holds
+  TitleArabic, Hall, Start, End. An optional **Speakers** column holds
   comma-separated speaker **codes** (resolved case-insensitive, active-only;
   position sets the display order, role defaults to Speaker) so an imported
   non-Event row can meet the #4 min-1-speaker rule. Because the create rules run

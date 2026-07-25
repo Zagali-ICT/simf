@@ -23,7 +23,7 @@ on open. Mapping:
 
 | Screen 17 element | Cached field |
 |---|---|
-| index + time band | `Code`, `StartUtc`, `EndUtc` |
+| index + time band | `Code`, `Start`, `End` |
 | title | `Title` / `TitleArabic` |
 | hall tag | `HallName` / `HallNameArabic` |
 | category tag (`جلسة رئيسية`) | `CategoryName` / `CategoryNameArabic` (D-226) |
@@ -48,7 +48,7 @@ on open. Mapping:
   "title": "string", "titleArabic": "string",
   "description": "string?", "descriptionArabic": "string?",
   "hallId": "guid", "hallName": "string", "hallNameArabic": "string",
-  "startUtc": "2026-11-03T06:00:00Z", "endUtc": "2026-11-03T07:30:00Z",
+  "start": "2026-11-03T06:00:00Z", "end": "2026-11-03T07:30:00Z",
   "themes":   [ { "id": "guid", "name": "string", "nameArabic": "string", "color": "#RRGGBB" } ],
   "speakers": [ { "id": "guid", "name": "string", "nameArabic": "string",
                   "title": "string?", "displayOrder": 0, "role": 0,  // int! 0=Speaker 1=Host (wire is int — D-225/D-299)
@@ -103,7 +103,7 @@ on open. Mapping:
 | CTA | Action | Server call |
 |---|---|---|
 | `أضف إلى تقويمي` (add to calendar) | build one calendar event from the cached session (title / start / end / hall = location) → device add-event intent | **none** |
-| `تذكير` (reminder) | schedule a **local** notification at `startUtc − lead-time` | **none** |
+| `تذكير` (reminder) | schedule a **local** notification at `start − lead-time` | **none** |
 
 Both work offline because every field is in the cached session (Page_017_Logic
 L-5). This is **not** the Page_014 `.ics` (which aggregates many server-side
@@ -116,7 +116,7 @@ on their own screens. Listed so the contract is discoverable from the detail
 
 | Surface | Endpoint / field | Rules | Owning screen |
 |---|---|---|---|
-| **Ask a question** | `POST /api/v1/app/sessions/{id}/questions` (`RequireApprovedAccount`) | open only **5 min before `StartUtc` → `EndUtc`** (`PreStartWindow = 5`, `PostEndWindow = 0`) **and** the attendee is arrived at the hall (geofence → `HallAttendance`, else `IsAtVenue` — D-242); outside → **400 `SESSION_NOT_LIVE_FOR_QUESTIONS`**. Tested in `SessionQuestionsTests`. | **screen 26** (Q&A) |
+| **Ask a question** | `POST /api/v1/app/sessions/{id}/questions` (`RequireApprovedAccount`) | open only **5 min before `Start` → `End`** (`PreStartWindow = 5`, `PostEndWindow = 0`) **and** the attendee is arrived at the hall (geofence → `HallAttendance`, else `IsAtVenue` — D-242); outside → **400 `SESSION_NOT_LIVE_FOR_QUESTIONS`**. Tested in `SessionQuestionsTests`. | **screen 26** (Q&A) |
 | **Live broadcast** | `PublicSessionDetail.liveStreamUrl` (+ `liveSignLanguageUrl`) — E2 | non-null `liveStreamUrl` = LIVE (player + badge); null = recorded/scheduled. `liveSignLanguageUrl` drives the live screen's لغة الإشارة toggle. Interim **manual-URL stub provider**, a managed provider replaces it later (deferred, D-211 D7). Tested in `ProgrammeSessionsTests.Session_detail_carries_live_stream_urls_when_set`. | **screen 25** (Live / player) |
 | **Recording + AI summary** | `PublicSessionDetail.hasRecording` (token-gated recording, D-232) · `GET /api/v1/app/programme/sessions/{id}/summary` (محضر — D-237/238, anonymous, gated by the summary's `publishedAt`) | recorded sessions stream via the token-gated endpoint; the AI summary surfaces when published. | **screen 25** (Live / player) |
 | **Audience comments** | two-stage: (1) AI filter on submit (`ICommentAiFilter` stub → **Approved** / **Pending**) → (2) admin **approve / hide** in CP `CommentsModerationList` (`/admin/comments-moderation`) | the standalone app comments screen (28) is **removed** (updated mockup) — comments surface **inside** the session / live screen (25). | **screen 25** (Live / player) + CP moderation |

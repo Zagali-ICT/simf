@@ -65,7 +65,7 @@ Scenario: The profile returns the speaker, the four CV tabs and the sessions
   And name, nameArabic and rank are returned
   And bio/bioArabic, qualifications/qualificationsArabic, trainingExperience/trainingExperienceArabic and awards/awardsArabic are returned
   And the four tabs نبذة عنه / المؤهلات العلمية / الخبرات التدريبية / الجوائز render from those fields
-  And sessions[] contains the session (id, code, title, hallName, startUtc, endUtc)
+  And sessions[] contains the session (id, code, title, hallName, start, end)
 ```
 
 **Evidence:** `PublicSpeakersTests` (green).
@@ -272,7 +272,7 @@ Scenario: The VIP slot is picked from day cards then time chips (light sheet)
   When the visitor taps a day card
   Then that day's free slots appear as time chips ("10:00 ص" style)
   When the visitor enters a subject, taps a time chip and taps "ارسال الطلب" (Send request)
-  Then the POST body's slotStartUtc/slotEndUtc equal the chosen slot
+  Then the POST body's slotStart/slotEnd equal the chosen slot
   # The slot always matches a published availability slot, so the server
   # (which 409s a non-free slot and 403s a non-VIP) accepts it.
 ```

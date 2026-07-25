@@ -316,7 +316,7 @@ Body:
 ```json
 {
   "qr": "AB12CD34EF56",
-  "clientScannedAtUtc": "2026-05-29T08:15:00Z",
+  "clientScannedAt": "2026-05-29T08:15:00Z",
   "idempotencyKey": "...",
   "source": "Simulator"
 }
@@ -325,7 +325,7 @@ Body:
 | Field | Rule |
 |-------|------|
 | `qr` | 12-char QR string exactly as scanned. Required. Trimmed; case-sensitive. |
-| `clientScannedAtUtc` | Optional. Device-asserted local scan time (UTC). Recorded but never authoritative. |
+| `clientScannedAt` | Optional. Device-asserted device-local scan time. Recorded but never authoritative. |
 | `idempotencyKey` | Optional. UUIDv4. Header `Idempotency-Key` takes precedence if both are sent. |
 | `source` | `Simulator` (CP only, dev-only) / `MobileApp` / `Kiosk`. Defaults to `MobileApp` when absent on a non-CP origin. |
 
@@ -340,7 +340,7 @@ HTTP **200**. `X-Idempotent-Replay` absent on first call.
     "scanId": 482719,
     "outcome": "Allowed",
     "direction": "CheckIn",
-    "scannedAtUtc": "2026-05-29T08:15:01.231Z",
+    "scannedAt": "2026-05-29T08:15:01.231Z",
     "userProfile": {
       "id": "...",
       "displayName": "Layla Al-Hassan",
@@ -370,7 +370,7 @@ in the `data.outcome` field.
     "scanId": 482720,
     "outcome": "Denied",
     "direction": "CheckIn",
-    "scannedAtUtc": "2026-05-29T08:15:02.118Z",
+    "scannedAt": "2026-05-29T08:15:02.118Z",
     "userProfile": {
       "id": "...",
       "displayName": "Test Visitor",
@@ -434,7 +434,7 @@ omitted):
       { "code": "PROFILE_TYPE_NOT_ALLOWED", "count": 5 },
       { "code": "QR_UNKNOWN", "count": 2 }
     ],
-    "rows": [ { "scanId": 482719, "scannedAtUtc": "...", "outcome": "Allowed", "direction": "CheckIn", "visitorDisplayName": "Layla Al-Hassan", "denialReasonCode": null } ]
+    "rows": [ { "scanId": 482719, "scannedAt": "...", "outcome": "Allowed", "direction": "CheckIn", "visitorDisplayName": "Layla Al-Hassan", "denialReasonCode": null } ]
   },
   "error": null,
   "meta": null
@@ -471,8 +471,8 @@ to 50 when zero/negative):
 | pageSize   | int                           | Server clamps to `1..200`. Default 50 when omitted / non-positive.                           |
 | direction  | `CheckIn`\|`CheckOut`\|`null` | `null` = any direction.                                                                      |
 | outcome    | `Allowed`\|`Denied`\|`null`   | **Default `Allowed`** when omitted — the "currently inside" use case.                        |
-| sinceUtc   | ISO-8601 \| null              | Inclusive lower bound on `scannedAtUtc`.                                                     |
-| untilUtc   | ISO-8601 \| null              | Exclusive upper bound on `scannedAtUtc`.                                                     |
+| sinceUtc   | ISO-8601 \| null              | Inclusive lower bound on `scannedAt`.                                                     |
+| untilUtc   | ISO-8601 \| null              | Exclusive upper bound on `scannedAt`.                                                     |
 
 Response body:
 
@@ -483,7 +483,7 @@ Response body:
     "items": [
       {
         "scanId": 482719,
-        "scannedAtUtc": "2026-05-29T14:03:00Z",
+        "scannedAt": "2026-05-29T14:03:00Z",
         "direction": "CheckIn",
         "outcome": "Allowed",
         "userProfileId": "abc-...",

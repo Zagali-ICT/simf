@@ -60,8 +60,8 @@ The shell close label is `Admin.Sessions.Details.Close`.
 | 2 | `Admin.Sessions.Column.Title` | `Title` | yes | **yes** | plain text |
 | 3 | `Admin.Sessions.Column.TitleArabic` | `TitleArabic` | no | no | plain text |
 | 4 | `Admin.Sessions.Column.Hall` | `HallLabel(row)` | no | no | culture-aware: `HallNameArabic` when UI culture is `ar`, else `HallName` |
-| 5 | `Admin.Sessions.Column.StartUtc` | `StartUtc` | yes | no | `StartUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm")` |
-| 6 | `Admin.Sessions.Column.EndUtc` | `EndUtc` | yes | no | `EndUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm")` |
+| 5 | `Admin.Sessions.Column.Start` | `Start` | yes | no | `Start.UtcDateTime.ToString("yyyy-MM-dd HH:mm")` |
+| 6 | `Admin.Sessions.Column.End` | `End` | yes | no | `End.UtcDateTime.ToString("yyyy-MM-dd HH:mm")` |
 | 7 | `Admin.Sessions.Column.Capacity` | `Capacity` | no | no | effective capacity (int) |
 | 8 | `Admin.Sessions.Column.Active` | `IsActive` | no | no | `SimfPill` — `on` (`Admin.Sessions.Active.Yes`) / `off` (`Admin.Sessions.Active.No`) |
 | 9 | `Admin.Sessions.Column.Status` | `Status` | no | no | `SimfPill` — variant `StatusPillVariant`: `Published`→`on`, `Scheduled`→`neutral`, else `admin`; label `Admin.Sessions.Status.{enumName}` |
@@ -92,8 +92,8 @@ Fields, in render order:
 | `Admin.Sessions.Field.LiveSignLanguageUrl` | `SimfTextField` | 1024 | helper `…LiveSignLanguageUrlHint`; same policy |
 | `Admin.Sessions.Field.Hall` | `SimfSelect` | — | required; placeholder `…HallPlaceholder`; label `"{Name} ({Code})"` (AR pair when `ar`) |
 | `Admin.Sessions.Field.Category` | `SimfSelect` | — | optional; placeholder `…CategoryNone`; ordered by `DisplayOrder` then `Name` (D-226) |
-| `Admin.Sessions.Field.StartUtc` | `SimfTextField` type `datetime-local` | — | parsed, treated as UTC |
-| `Admin.Sessions.Field.EndUtc` | `SimfTextField` type `datetime-local` | — | must be `> Start` |
+| `Admin.Sessions.Field.Start` | `SimfTextField` type `datetime-local` | — | parsed, treated as Saudi local time |
+| `Admin.Sessions.Field.End` | `SimfTextField` type `datetime-local` | — | must be `> Start` |
 | `Admin.Sessions.Field.CapacityOverride` | `SimfTextField` type `number` | — | helper `…CapacityHint`; blank = inherit hall; else int ≥ 0 |
 | `Admin.Sessions.Field.AddSpeaker` | `SimfSelect` | — | only shown when speaker options exist; builds the roster |
 | (speaker chips) | `<ul class="simf-form__chips">` | — | each chip: `"{n}. {label}"`, a role `<select>` (`…Role.Speaker` / `…Role.Host`), and **Up** (`…Action.Up`) / **Down** (`…Action.Down`) / **Remove** (`…Action.Remove`) ghost buttons |
@@ -168,4 +168,4 @@ extra blocks gate on `Sessions.Publish`.
 - RTL (`<html dir="rtl" lang="ar">`) mirrors the nav rail, grid headers, pills,
   pager arrows, the speaker chip Up/Down/Remove buttons and the lifecycle footer.
 - Times in the grid + view render in **UTC** (admin surface); the **app** (Page 016)
-  renders the same `StartUtc`/`EndUtc` in the device timezone.
+  renders the same `Start`/`End` in the device timezone.

@@ -27,8 +27,8 @@
 > delegation cards and no delegation button.
 
 > **Submit body.** `POST /app/delegation-meeting-requests` carries `targetCountryCode`,
-> `attendeeCount`, `subject`, and (when a slot was picked) `slotStartUtc` + `slotEndUtc`.
-> A `slotStartUtc` without a `slotEndUtc` is rejected 400 by the API.
+> `attendeeCount`, `subject`, and (when a slot was picked) `slotStart` + `slotEnd`.
+> A `slotStart` without a `slotEnd` is rejected 400 by the API.
 
 ## Coverage matrix
 
@@ -69,7 +69,7 @@ Scenario: Request a meeting with a tapped delegation
   And I tap "إرسال الطلب"
   Then GET /app/countries/{France}/available-slots was read to populate the slots
   And POST /app/delegation-meeting-requests fires with targetCountryCode "FR",
-      attendeeCount 5, subject "تعاون بحري", slotStartUtc + slotEndUtc
+      attendeeCount 5, subject "تعاون بحري", slotStart + slotEnd
   And the API returns 200 and the request is Pending
   And the sheet closes with the snackbar "تم إرسال طلب المقابلة" / "Meeting request sent"
 ```
@@ -125,7 +125,7 @@ Scenario: Choosing a slot
 Scenario: A day with no availability
   Given the chosen day has no free slots
   Then "لا توجد فترات متاحة حالياً" / "No meeting slots available right now" is shown
-  # A topic-only request (attendees + subject, no slot) is a valid submit (slotStartUtc/EndUtc omitted).
+  # A topic-only request (attendees + subject, no slot) is a valid submit (slotStart/End omitted).
 ```
 
 **Evidence:** the slots read + the live-meeting exclusion are covered by
@@ -190,7 +190,7 @@ Scenario: The sheet mirrors under Arabic
 
 - **Repository** — `delegations_repository.dart`:
   `getAvailableSlots(int countryId)` → `GET /app/countries/{countryId}/available-slots`;
-  `submitMeetingRequest({targetCountryCode, attendeeCount, subject, slotStartUtc?, slotEndUtc?})`
+  `submitMeetingRequest({targetCountryCode, attendeeCount, subject, slotStart?, slotEnd?})`
   → `POST /app/delegation-meeting-requests`.
 - **Error → message mapping** (`delegation_meeting_request_sheet.dart` `_failureText`):
   403 → `delegationNotAllowed`; 400 → `delegationTargetNotInvited`;

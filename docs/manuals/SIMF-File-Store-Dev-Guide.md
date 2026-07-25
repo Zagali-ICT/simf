@@ -27,7 +27,7 @@ A `StoredFile` row carries: `Id` (the public GUID), `Service` (`FileService`),
 `Tier` (`FileSensitivityTier`, persisted so classification is auditable, not
 inferred), `OwnerEntityType` + `OwnerEntityId` (the polymorphic owner), `FileType`,
 `ContentType`, `SizeBytes`, `Sha256`, `StorageKey`, `IsEncrypted`, `IsDeletable`,
-`RetainUntilUtc`, plus the audit columns. External-link files carry a validated
+`RetainUntil`, plus the audit columns. External-link files carry a validated
 `https` URL instead of stored bytes (the download endpoint 302-redirects to it).
 
 Three enums drive everything (all `int`, **append-only** — never rename/reorder;

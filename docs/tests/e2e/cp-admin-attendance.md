@@ -31,7 +31,7 @@
 > of people who arrived at its hall — any `HallAttendance` enter record (GPS
 > geofence D-241 **or** operator QR door-scan D-244), so a person who re-entered
 > (a closed row + a new open row) counts **once**. **Live now** is the count
-> currently inside (open rows, `LeaveUtc` null). The top-line **Live attendees
+> currently inside (open rows, `Leave` null). The top-line **Live attendees
 > now** is the distinct count of people inside **any** hall; **Total arrivals**
 > sums each active session's distinct-attendee count. The attendee identity is
 > never resolved (D-157) — `UserId` is counted as an opaque Guid.
@@ -49,7 +49,7 @@
 | `code` | Code | ✓ | ✓ |
 | `title` | Session | ✓ | ✓ |
 | `hall` | Hall | — | — |
-| `startUtc` | Start (Saudi time) | ✓ | — |
+| `start` | Start (Saudi time) | ✓ | — |
 | `total` | Total attendees | — | — |
 | `live` | Live now (`SimfPill` when > 0) | — | — |
 
@@ -65,7 +65,7 @@
 | E2E-ATT-006 | Auth gate (API) — caller lacking `Attendance.View` → 403 on summary + list | auth | P0 | authored ✓ (`Summary_is_forbidden_for_a_non_admin`, `List_is_forbidden_for_a_non_admin`) |
 | E2E-ATT-007 | Auth gate (CP) — admin lacking `Attendance.View` → `/not-permitted`; nav item hidden | auth | P0 | _to author_ |
 | E2E-ATT-008 | Per-column filter (code / title) narrows the grid | happy | P1 | _to author_ |
-| E2E-ATT-009 | Column sort toggles (code / title / startUtc ascending↔descending) | happy | P2 | _to author_ |
+| E2E-ATT-009 | Column sort toggles (code / title / start ascending↔descending) | happy | P2 | _to author_ |
 | E2E-ATT-010 | Live-now `SimfPill` shows for sessions with people inside, plain "0" otherwise | function | P1 | _to author_ |
 | E2E-ATT-011 | Server 500 on summary or list → red `SimfAlert` (`Admin.Attendance.LoadFailed`) | resilience | P2 | _to author_ |
 | E2E-ATT-012 | Read-only surface — no Add/Edit/Delete/select; no POST/PUT/DELETE beyond the list call | function | P2 | _to author_ |
@@ -94,7 +94,7 @@ Scenario: The dashboard renders the live top-line and the per-session grid
         arrivals, of which 2 are currently inside
   When the page initialises
   Then it fires GET /account/api/admin/attendance/summary
-  And it fires POST /account/api/admin/attendance/sessions/list with the default GridQuery (Sort="startUtc")
+  And it fires POST /account/api/admin/attendance/sessions/list with the default GridQuery (Sort="start")
   And the BFF forwards them to GET /api/v1/admin/attendance/summary and
       POST /api/v1/admin/attendance/sessions/list on the API (both HTTP 200)
   And the browser tab title is "Session attendance · SIMF"
@@ -202,7 +202,7 @@ Scenario: Typing into the Code / Session column filters narrows the grid
 
 ```gherkin
 Scenario: Sorting by Start, Code, then Session toggles ascending/descending
-  Given the grid is sorted by Start (Saudi time) ascending by default (Sort="startUtc")
+  Given the grid is sorted by Start (Saudi time) ascending by default (Sort="start")
   When the administrator clicks the "Code" column header
   Then the list call carries Sort="code", SortDescending=false and the rows reorder by code A→Z
   When they click "Code" again
