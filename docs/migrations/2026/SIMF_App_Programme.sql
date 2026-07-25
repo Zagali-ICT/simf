@@ -158,7 +158,7 @@ IF NOT EXISTS (SELECT 1 FROM dbo.ProgrammeDays WHERE [Date] = '2026-11-25' AND I
    (UTC+3). Type: 1 = Session (talks/papers/panels/Q&A), 2 = Event (ceremony /
    breaks / cultural). Status = 0 (Scheduled). ThemeCode links axis sessions
    to their pillar (section 6 below). CK_Sessions_TimeWindow requires
-   EndUtc > StartUtc - every row satisfies it.
+   End > Start - every row satisfies it.
    --------------------------------------------------------------------- */
 DECLARE @sessions TABLE (
     Code      nvarchar(16),
@@ -237,7 +237,7 @@ INSERT INTO @sessions (Code, TitleEn, TitleAr, DescrEn, DescrAr, TypeInt, StartD
 (N'D3-13', N'Day 3 Cultural Programme', N'البرنامج الثقافي - اليوم الثالث', N'Proposed cultural programme (timing proposed): a visit to the cities of Makkah and Madinah.', N'البرنامج الثقافي المقترح (التوقيت مقترح): زيارة مدينتي مكة المكرمة والمدينة المنورة.', 2, '2026-11-25T19:00:00+03:00', '2026-11-25T22:00:00+03:00', NULL);
 
 INSERT INTO dbo.Sessions (Id, Code, Title, TitleArabic, Description, DescriptionArabic,
-        HallId, [Type], StartUtc, EndUtc, Status, IsActive, CreatedAt, CreatedBy)
+        HallId, [Type], [Start], [End], Status, IsActive, CreatedAt, CreatedBy)
 SELECT NEWID(), s.Code, s.TitleEn, s.TitleAr, s.DescrEn, s.DescrAr,
         @hallId, s.TypeInt, s.StartDt, s.EndDt, 0, 1, @now, @sys
   FROM @sessions s
