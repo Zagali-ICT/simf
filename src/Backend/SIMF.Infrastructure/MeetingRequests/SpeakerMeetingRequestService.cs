@@ -589,7 +589,7 @@ internal sealed class SpeakerMeetingRequestService(
         }
 
         var slot = req.SlotStartUtc is { } s
-            ? $"{s:yyyy-MM-dd HH:mm} UTC"
+            ? s.FormatSaudi()
             : "to be scheduled";
         var html =
             $"<p>You have a meeting request from <strong>{HtmlEnc(req.RequesterName)}</strong>.</p>"
@@ -808,7 +808,7 @@ internal sealed class SpeakerMeetingRequestService(
             if (!string.IsNullOrWhiteSpace(contactEmail))
             {
                 var slot = req.SlotStartUtc is { } s
-                    ? $" Proposed slot: {s:yyyy-MM-dd HH:mm} UTC."
+                    ? $" Proposed slot: {s.FormatSaudi()}."
                     : string.Empty;
                 var html =
                     $"<p>A meeting request from <strong>{HtmlEnc(req.RequesterName)}</strong> has been accepted.{slot}</p>"
