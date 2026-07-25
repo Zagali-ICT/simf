@@ -3,10 +3,11 @@ import 'package:intl/intl.dart' show DateFormat;
 
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
+import '../../../core/utils/saudi_time.dart';
 import '../data/moderation_models.dart';
 import 'moderator_action_button.dart';
 
-final DateFormat _hm = DateFormat('HH:mm');
+final DateFormat _hm = DateFormat('hh:mm a');
 
 /// One moderator question card (Figma 1462:12236): a navy card with an 8px gold
 /// TOP border, a header row (time left, name + gold initial-avatar right), a
@@ -68,7 +69,7 @@ class ModeratorQuestionCard extends StatelessWidget {
           Row(
             children: <Widget>[
               Text(
-                _hm.format(question.createdAt.toLocal()),
+                _hm.format(saudiOf(question.createdAt)),
                 style: SimfTokens.labelBeigeSemibold24,
               ),
               const Spacer(),

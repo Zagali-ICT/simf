@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../core/utils/saudi_time.dart';
 import '../../sessions/data/session_models.dart' show SessionStatus;
 
 /// One card on the "my sessions" list — App "تفاصيل الجلسات" (Figma 1388:9067),
@@ -44,8 +45,8 @@ class MyAreaSessionItem {
   final String? speakerNameAr;
   final String? speakerTitle;
 
-  /// The session's start in the device-local zone (the wire value is UTC).
-  DateTime get startLocal => startUtc.toLocal();
+  /// The session's start on the Saudi event-local wall clock (wire value UTC).
+  DateTime get startLocal => saudiOf(startUtc);
 
   /// The session length in whole minutes (floored at 0).
   int get durationMinutes {

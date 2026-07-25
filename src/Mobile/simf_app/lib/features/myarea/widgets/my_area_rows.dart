@@ -5,6 +5,7 @@ import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_forward_chevron.dart';
 import '../../../app/widgets/simf_page_shell.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
+import '../../../core/utils/saudi_time.dart';
 import '../data/myarea_models.dart';
 
 /// One 12-hour formatter for the schedule rows (hoisted off the build path).
@@ -27,7 +28,7 @@ class MyAreaScheduleRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final time = _timeFormat.format(item.startUtc.toLocal());
+    final time = _timeFormat.format(saudiOf(item.startUtc));
     final hall = item.localizedHall(isArabic);
     return SimfCard(
       onTap: onTap,
