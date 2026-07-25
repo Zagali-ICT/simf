@@ -773,9 +773,10 @@ internal sealed class SpeakerMeetingRequestService(
             .SingleOrDefaultAsync(cancellationToken);
     }
 
-    // D-474 — in-app notify the requester of the decision; on Accept also email the
-    // speaker (resolved via their Contact). Both best-effort (swallow-and-log) so a
-    // notification/email failure never undoes the committed response.
+    // D-474 + R3 (D-767) — notify the requester (sender) of the decision by in-app AND
+    // email on every terminal outcome (accept/decline); on Accept also email the speaker
+    // (the receiver, resolved via their inline contact email). Both best-effort
+    // (swallow-and-log) so a notification/email failure never undoes the committed response.
     private async Task NotifyOutcomeAsync(
         SpeakerMeetingRequest req, CancellationToken cancellationToken)
     {
@@ -801,7 +802,7 @@ internal sealed class SpeakerMeetingRequestService(
             Severity = NotificationSeverity.Info,
             RelatedEntityType = nameof(SpeakerMeetingRequest),
             RelatedEntityId = req.Id,
-            SendEmail = false,
+            SendEmail = true,
         }, logger, cancellationToken);
 
         if (accepted)
