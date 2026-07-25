@@ -53,11 +53,12 @@
                 @if (_map is not null && _map.RowLabels.Count > 0)
                 {
                     <div class="seatmap">
-                        @foreach (var rowLabel in _map.RowLabels)
+                        @for (var r = 0; r < _map.RowLabels.Count; r++)
                         {
+                            var rowLabel = _map.RowLabels[r];
                             <div class="seatmap__row">
                                 <span class="seatmap__row-label">@rowLabel</span>
-                                @for (var seat = 1; seat <= _map.SeatsPerRow; seat++)
+                                @for (var seat = 1; seat <= SeatsInRow(r); seat++)
                                 {
                                     var cell = FindCell(rowLabel, seat);
                                     var seatNumber = seat;

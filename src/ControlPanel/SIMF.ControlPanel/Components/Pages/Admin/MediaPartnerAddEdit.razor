@@ -27,9 +27,6 @@
         <SimfTextField Label="@L["Admin.MediaPartners.Field.Url"]"
                        MaxLength="512"
                        @bind-Value="_model.Url" Disabled="_busy" />
-        @* SIMF-FDS-014 (D-283) â€” optional link to a shared Contact directory record. *@
-        <ContactPicker Value="_model.ContactId"
-                       ValueChanged="@(v => _model.ContactId = v)" Disabled="_busy" />
         <SimfTextField Label="@L["Admin.MediaPartners.Field.DisplayOrder"]"
                        Type="number"
                        Value="@_displayOrderInput"
@@ -52,6 +49,61 @@
             </div>
         }
     </div>
+
+    @* Contact information (D-766: identity-card fields inlined from the removed
+       shared Contact directory). All optional. *@
+    <SimfFormSection Title="@L["Admin.ContactField.Heading"]">
+        <div class="simf-form__grid">
+            <SimfSelect TValue="string"
+                        Label="@L["Admin.ContactField.Country"]"
+                        Placeholder="@L["Admin.ContactField.CountryNone"]"
+                        Items="_countryIds"
+                        ValueFor="@(id => id)"
+                        LabelFor="@(id => CountryLabel(id))"
+                        Value="@_countryIdInput"
+                        ValueChanged="@(v => _countryIdInput = v ?? string.Empty)"
+                        Disabled="_busy" />
+            <SimfTextField Label="@L["Admin.ContactField.Email"]"
+                           MaxLength="320"
+                           @bind-Value="_model.Email" Disabled="_busy" />
+            <SimfTextField Label="@L["Admin.ContactField.PhonePrimary"]"
+                           MaxLength="32"
+                           @bind-Value="_model.PhonePrimary" Disabled="_busy" />
+            <SimfTextField Label="@L["Admin.ContactField.PhoneSecondary"]"
+                           MaxLength="32"
+                           @bind-Value="_model.PhoneSecondary" Disabled="_busy" />
+            <SimfTextField Label="@L["Admin.ContactField.City"]"
+                           MaxLength="128"
+                           @bind-Value="_model.City" Disabled="_busy" />
+            <SimfTextField Label="@L["Admin.ContactField.CityArabic"]"
+                           MaxLength="128"
+                           @bind-Value="_model.CityArabic" Disabled="_busy" />
+            <SimfTextField Label="@L["Admin.ContactField.Instagram"]"
+                           MaxLength="256"
+                           @bind-Value="_model.InstagramUrl" Disabled="_busy" />
+            <SimfTextField Label="@L["Admin.ContactField.Facebook"]"
+                           MaxLength="256"
+                           @bind-Value="_model.FacebookUrl" Disabled="_busy" />
+            <SimfTextField Label="@L["Admin.ContactField.X"]"
+                           MaxLength="256"
+                           @bind-Value="_model.XUrl" Disabled="_busy" />
+            <SimfTextField Label="@L["Admin.ContactField.LinkedIn"]"
+                           MaxLength="256"
+                           @bind-Value="_model.LinkedInUrl" Disabled="_busy" />
+            <SimfTextField Label="@L["Admin.ContactField.Latitude"]"
+                           Helper="@L["Admin.ContactField.LatLongHint"]"
+                           Value="@_latitudeInput"
+                           ValueChanged="@(v => _latitudeInput = v)"
+                           ValueExpression="@(() => _latitudeInput)"
+                           Disabled="_busy" />
+            <SimfTextField Label="@L["Admin.ContactField.Longitude"]"
+                           Value="@_longitudeInput"
+                           ValueChanged="@(v => _longitudeInput = v)"
+                           ValueExpression="@(() => _longitudeInput)"
+                           Disabled="_busy" />
+        </div>
+    </SimfFormSection>
+
     <div class="simf-form__actions">
         <SimfButton Loading="_busy" LoadingLabel="@L["Admin.MediaPartners.Save"]">
             @L["Admin.MediaPartners.Save"]

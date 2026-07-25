@@ -26,7 +26,7 @@ import 'golden_fonts.dart';
 /// middle, the country **flag tile** at the inline-end/left), a gold code pill
 /// (A-12) beside the deep-navy hall box, and a full-width gold guide-me CTA; RTL
 /// throughout. The logo tile falls back to the short name here (no network in
-/// tests); in production it hosts the CP-uploaded CompanyLogo asset (D-357).
+/// tests); in production it hosts the booth's own CP-uploaded BoothLogo (D-357).
 
 // Three identical SAMI booths matching the frame. countryId drives the inline-end
 // flag tile; countryName is left null so no extra country text line renders

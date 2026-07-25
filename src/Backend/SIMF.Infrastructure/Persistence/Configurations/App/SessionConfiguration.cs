@@ -36,7 +36,8 @@ internal sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
         builder.Property(s => s.LiveSignLanguageUrl).HasMaxLength(1024);
 
         // P5 — D-439: AI live-caption text (manual stub provider, bilingual). 2048
-        // matches the Description column — the SSOT the CP form + validator align to.
+        // matches the Description column — the SSOT the CP form + service-layer
+        // validation align to.
         builder.Property(s => s.LiveCaptions).HasMaxLength(2048);
         builder.Property(s => s.LiveCaptionsArabic).HasMaxLength(2048);
 

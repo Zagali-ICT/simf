@@ -33,10 +33,26 @@ public sealed class MediaPartner : BaseAuditEntity
     /// <see cref="NameArabic"/>. (≥ 0.)</summary>
     public int DisplayOrder { get; set; }
 
-    /// <summary>SIMF-FDS-014 (D-260) — optional link to the shared <c>Contact</c>
-    /// directory record (logo / name / phones / social / website / location /
-    /// country). Null until linked; multiple entities may reference the same
-    /// Contact. The public projection prefers the Contact when set.</summary>
-    public Guid? ContactId { get; set; }
+    // Contact identity-card fields inlined from the removed shared Contact
+    // directory (supersedes SIMF-FDS-014 / D-260). All nullable. Website is not
+    // re-added here — the existing <see cref="Url"/> above is reused as the
+    // website slot.
+    public string? Email { get; set; }
+    public string? PhonePrimary { get; set; }
+    public string? PhoneSecondary { get; set; }
+    public string? FacebookUrl { get; set; }
+    public string? XUrl { get; set; }
+    public string? LinkedInUrl { get; set; }
+    public string? InstagramUrl { get; set; }
+    public string? City { get; set; }
+    public string? CityArabic { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
 
+    /// <summary>Optional country of the partner. Logical + physical same-DB FK
+    /// to <see cref="Country"/> (App context). Null until set.</summary>
+    public int? CountryId { get; set; }
+
+    /// <summary>Navigation for <see cref="CountryId"/> (same FK).</summary>
+    public Country? Country { get; set; }
 }

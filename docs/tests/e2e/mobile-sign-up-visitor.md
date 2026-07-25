@@ -68,6 +68,7 @@
 | E2E-MOB007-022 | **Birth location (D-469/D-471):** a Saudi registrant's "place of birth" is a **searchable region picker** — the same beige search sheet the country picker uses (D-471) — over the 13 official Saudi regions (stored as the region's localized name); a non-Saudi gets the free-text field with an "as in passport" hint. The picker is **code-keyed**, so a region stored in the other language still preselects, and a stored value that is not a region (legacy free text) is kept, not erased. Switching nationality Saudi↔non-Saudi reconciles the field | validation | P1 | authored ✓ (widget — prefill + cross-locale select + open-search-pick; `SaudiRegionsTests` ByName/ByCode) |
 | E2E-MOB007-023 | **All fields mandatory except plate + Arabic job title (owner item 4 / D-723; #37):** job title, place of birth (Saudi region / non-Saudi free text) and the mobile number are now **required** — an empty one blocks Next with its inline error ("Job title is required" / "Place of birth is required" / "Mobile number is required"); only the plate and the Arabic job title stay optional. The women's face-photo exception (D-694) is unchanged | validation | P0 | authored ✓ (widget — each empty field blocks Next) |
 | E2E-MOB007-024 | **Arabic job title (backlog #37):** an **optional** "المسمى الوظيفي (بالعربية)" input sits right after the job title (RTL). Leaving it empty still advances Next; when filled, `Next` carries it into the profile upsert (`jobTitleArabic`) + the interests-screen draft, so `UserProfile.JobTitleArabic` (already carried by the backend + CP) is finally captured by the app. Prefilled on re-entry from the stored profile | happy | P1 | authored ✓ (widget — prefill → upsert + draft round-trip) |
+| E2E-MOB007-025 | **Job-title labels + per-script masks (owner request):** the two job-title fields are language-labelled — "المسمى الوظيفي (بالإنجليزية)" (English, LTR) and "المسمى الوظيفي (بالعربية)" (Arabic, RTL) — so which is which is unambiguous. Each takes the **same per-script keystroke filter as its name field**: the English job title accepts **Latin letters + spaces only** (Arabic/digits/punctuation filtered at the keystroke); the Arabic job title accepts **Arabic letters + spaces only** (Latin filtered). Neither field can ever hold the other's script | validation | P1 | authored ✓ (golden `sign_up_visitor_168-2972` shows both labels; formatters mirror the verified name-field filters E2E-MOB007-021) |
 
 ## Scenarios
 
@@ -369,4 +370,28 @@ title into the saved request (backlog #37)".
 
 ---
 
-_Last reviewed:_ `2026-06-20` by `SIMF Team` — D-471 the birth-region + the 3 plate-letter fields now use the SAME beige searchable picker as the country picker (one shared `_LookupSearchSheet`) (016/022). D-469 Saudi birth-location region picker (code-keyed, cross-locale, non-region values preserved) (022). Earlier: D-459 name 2–4 parts + the 17-letter Saudi plate dropdowns (canonical code + AR/EN renderings) (016/021); D-437 two-photo split (Upload ID gallery + Face photo camera), Arabic-only/English-only name rules, top-avatar swap, and the self-service id-image face-gate removal (017/018/020/021); D-332 data-screen rework; D-371 C4 phone standards.
+### E2E-MOB007-025 — Job-title labels + per-script masks (owner request)
+
+```gherkin
+Feature: Job-title fields are language-labelled and script-masked
+Scenario: The two job-title fields carry a language marker
+  Given a visitor on the complete-profile form
+  Then the English job-title field is labelled "المسمى الوظيفي (بالإنجليزية)"
+  And the Arabic job-title field is labelled "المسمى الوظيفي (بالعربية)"
+
+Scenario: The English job title accepts Latin letters only
+  When the visitor types "Marine مهندس 12" into the English job title
+  Then only "Marine " is kept (Arabic letters and digits filtered at the keystroke)
+
+Scenario: The Arabic job title accepts Arabic letters only
+  When the visitor types "مهندس Marine" into the Arabic job title
+  Then only "مهندس " is kept (Latin letters filtered at the keystroke)
+```
+
+**Evidence:** golden `sign_up_visitor_168-2972` renders both language labels; the
+formatters are the same verified per-script filters as the name fields
+(E2E-MOB007-021).
+
+---
+
+_Last reviewed:_ `2026-07-25` by `SIMF Team` — job-title fields language-labelled (بالإنجليزية / بالعربية) and given the same per-script keystroke masks as the name fields (025); goldens `sign_up_visitor_168-2972` + `staff_register_visitor_1467-12357` regenerated. Earlier: `2026-06-20` — D-471 the birth-region + the 3 plate-letter fields now use the SAME beige searchable picker as the country picker (one shared `_LookupSearchSheet`) (016/022). D-469 Saudi birth-location region picker (code-keyed, cross-locale, non-region values preserved) (022). Earlier: D-459 name 2–4 parts + the 17-letter Saudi plate dropdowns (canonical code + AR/EN renderings) (016/021); D-437 two-photo split (Upload ID gallery + Face photo camera), Arabic-only/English-only name rules, top-avatar swap, and the self-service id-image face-gate removal (017/018/020/021); D-332 data-screen rework; D-371 C4 phone standards.

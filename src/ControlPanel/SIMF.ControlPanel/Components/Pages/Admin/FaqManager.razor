@@ -161,7 +161,7 @@
 
 @if (_groupModalOpen)
 {
-    <SimfModal Open="true" Title="@(_groupEditId is null ? L["Admin.Faq.Group.Add.Title"] : L["Admin.Faq.Group.Edit.Title"])"
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@(_groupEditId is null ? L["Admin.Faq.Group.Add.Title"] : L["Admin.Faq.Group.Edit.Title"])"
                OnClose="CloseGroupModal">
         <ChildContent>
             <div class="simf-form__fields">
@@ -191,7 +191,7 @@
 
 @if (_entryModalOpen)
 {
-    <SimfModal Open="true" Title="@(_entryEditId is null ? L["Admin.Faq.Entry.Add.Title"] : L["Admin.Faq.Entry.Edit.Title"])"
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@(_entryEditId is null ? L["Admin.Faq.Entry.Add.Title"] : L["Admin.Faq.Entry.Edit.Title"])"
                OnClose="CloseEntryModal">
         <ChildContent>
             <div class="simf-form__fields">

@@ -234,12 +234,12 @@ void main() {
       // The version card + its value.
       expect(find.text('System info'), findsOneWidget);
       expect(find.textContaining('1.0.0'), findsOneWidget);
-      // D-761 — English reader sees the English detail value.
+      // D-762 — English reader sees the English detail value.
       expect(find.text('Royal Saudi Naval Forces'), findsOneWidget);
       expect(find.text('القوات البحرية الملكية السعودية'), findsNothing);
     });
 
-    testWidgets('D-761 — Arabic reader sees the Arabic detail value',
+    testWidgets('D-762 — Arabic reader sees the Arabic detail value',
         (tester) async {
       await _pump(
         tester,

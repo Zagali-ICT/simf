@@ -1,10 +1,10 @@
-// D-357 — regression coverage for the Admins/Exhibitors-list company-logo thumbnail.
-// An exhibitor owns no logo of its own; the grid resolves the ONE-HOP
-// Exhibitor→Contact and reports the linked Contact's active CompanyLogo via
-// AdminExhibitorSummary.HasLogo (+ the resolved ContactId). This is a distinct
-// projection from the Booth two-hop (AdminBoothsTests) and the Contact own-id path
-// (ContactsTests), so it needs its own guard. Also satisfies the // Tests: header on
-// AdminExhibitorService.cs.
+// D-357 / D-260 — regression coverage for the Admins/Exhibitors-list logo thumbnail.
+// The shared Contact directory was removed; an exhibitor now carries its own inline
+// contact/identity columns (City, CountryId, ...) and owns its OWN logo — an active
+// ExhibitorLogo asset (owner = the exhibitor's id, FileService.ExhibitorLogo). The
+// grid reports that via AdminExhibitorSummary.HasExhibitorLogo (no ContactId, no
+// Contact hop). This guards the batched WhichOwnersHaveActiveAssetAsync projection
+// in AdminExhibitorService and satisfies its // Tests: header.
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -14,7 +14,6 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Exhibitors;
-using SIMF.Domain.Contacts;
 using SIMF.Domain.Exhibitors;
 using SIMF.Domain.Files;
 using SIMF.Domain.IdentityAccess;
@@ -38,32 +37,25 @@ public sealed class ExhibitorsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Exhibitor_list_reports_HasLogo_from_the_linked_contacts_company_logo()
+    public async Task Exhibitor_list_reports_HasExhibitorLogo_from_its_own_active_logo()
     {
         var token = await CreateAdministratorAndSignInAsync();
         var marker = $"EX{Guid.NewGuid():N}"[..10];
 
-        // Three distinct paths: linked contact WITH a logo, linked contact WITHOUT a
-        // logo, and NO contact at all (the resolve is null-safe, not an inner join
-        // that would hide the row).
-        var withLogo = await SeedExhibitorWithContactAsync($"{marker}-with", withLogo: true);
-        var noLogo = await SeedExhibitorWithContactAsync($"{marker}-nolg", withLogo: false);
-        var noContact = await SeedExhibitorAsync($"{marker}-none");
+        // Two paths: an exhibitor that owns an active ExhibitorLogo, and one with no
+        // logo at all. The resolve is a null-safe batched lookup (not an inner join
+        // that would hide the logo-less row), so both must still list.
+        var withLogo = await SeedExhibitorAsync($"{marker}-with", withLogo: true);
+        var noLogo = await SeedExhibitorAsync($"{marker}-none", withLogo: false);
 
         var rows = await ListExhibitorsAsync(token);
-        var rowWith = rows.Single(e => e.Id == withLogo.ExhibitorId);
-        var rowNoLogo = rows.Single(e => e.Id == noLogo.ExhibitorId);
-        var rowNoContact = rows.Single(e => e.Id == noContact);
+        var rowWith = rows.Single(e => e.Id == withLogo);
+        var rowNoLogo = rows.Single(e => e.Id == noLogo);
 
-        // Linked contact has an active CompanyLogo → HasLogo true + the contact resolved.
-        Assert.True(rowWith.HasLogo);
-        Assert.Equal(withLogo.ContactId, rowWith.ContactId);
-        // Linked contact but no logo → initials fallback (HasLogo false), contact still resolved.
-        Assert.False(rowNoLogo.HasLogo);
-        Assert.Equal(noLogo.ContactId, rowNoLogo.ContactId);
-        // No contact at all → still lists, with no resolved contact / logo.
-        Assert.Null(rowNoContact.ContactId);
-        Assert.False(rowNoContact.HasLogo);
+        // Owns an active ExhibitorLogo → HasExhibitorLogo true (grid renders the thumbnail).
+        Assert.True(rowWith.HasExhibitorLogo);
+        // No logo → initials fallback (HasExhibitorLogo false), row still listed.
+        Assert.False(rowNoLogo.HasExhibitorLogo);
     }
 
     // -- Helpers --------------------------------------------------------------
@@ -77,19 +69,22 @@ public sealed class ExhibitorsTests : IClassFixture<SimfApiFactory>
             .ReadFromJsonAsync<ApiResult<GridPage<AdminExhibitorSummary>>>())!.Data!.Items;
     }
 
-    // Seeds a Contact (optionally with an active CompanyLogo asset) and an Exhibitor
-    // linked to it; returns both ids so the test can assert the resolved ContactId.
-    private async Task<(Guid ExhibitorId, Guid ContactId)> SeedExhibitorWithContactAsync(
-        string nameEn, bool withLogo)
+    // Seeds an active exhibitor with its inline identity columns (City/CityArabic),
+    // optionally owning an active ExhibitorLogo asset (owner = the exhibitor's id,
+    // FileService.ExhibitorLogo) so HasExhibitorLogo resolves true. Mirrors how
+    // AssetEndpointsTests seeds an owned logo row.
+    private async Task<Guid> SeedExhibitorAsync(string nameEn, bool withLogo)
     {
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var contactId = Guid.NewGuid();
-        appDb.Contacts.Add(new Contact
+        var exhibitorId = Guid.NewGuid();
+        appDb.Exhibitors.Add(new Exhibitor
         {
-            Id = contactId,
-            Name = "Logo Co",
-            NameArabic = "جهة الشعار",
+            Id = exhibitorId,
+            Name = nameEn,
+            NameArabic = "عارض",
+            City = "Jeddah",
+            CityArabic = "جدة",
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         });
@@ -98,40 +93,12 @@ public sealed class ExhibitorsTests : IClassFixture<SimfApiFactory>
             appDb.Set<StoredFile>().Add(new StoredFile
             {
                 Id = Guid.NewGuid(),
-                Service = FileService.CompanyLogo,
-                OwnerEntityId = contactId,
+                Service = FileService.ExhibitorLogo,
+                OwnerEntityId = exhibitorId,
                 IsActive = true,
                 CreatedAt = DateTimeOffset.UtcNow,
             });
         }
-        var exhibitorId = Guid.NewGuid();
-        appDb.Exhibitors.Add(new Exhibitor
-        {
-            Id = exhibitorId,
-            Name = nameEn,
-            NameArabic = "عارض",
-            ContactId = contactId,
-            IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
-        });
-        await appDb.SaveChangesAsync();
-        return (exhibitorId, contactId);
-    }
-
-    // Seeds an active exhibitor with NO linked contact.
-    private async Task<Guid> SeedExhibitorAsync(string nameEn)
-    {
-        using var scope = _factory.Services.CreateScope();
-        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var exhibitorId = Guid.NewGuid();
-        appDb.Exhibitors.Add(new Exhibitor
-        {
-            Id = exhibitorId,
-            Name = nameEn,
-            NameArabic = "عارض بلا جهة",
-            IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
-        });
         await appDb.SaveChangesAsync();
         return exhibitorId;
     }

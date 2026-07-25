@@ -35,6 +35,7 @@
         @if (_countryId is not null)
         {
             <h3 class="simf-section-title">@L["Admin.DelegationAvailability.AddWindow"]</h3>
+            <p class="simf-form__secondary">@L["Admin.Availability.WindowsHelp"]</p>
             <div class="simf-form__fields">
                 @* Bound the pickers to the forum days (MIN/MAX programme day), read
                    from the backend instead of a hardcoded event window. *@
@@ -70,7 +71,7 @@
                             <AuthorizedAction Permission="@PermissionCatalog.DelegationMeetings.Manage">
                                 <SimfToolbarButton Icon="trash" Title="@L["Grid.Delete"]"
                                                    Disabled="_busy"
-                                                   OnClick="@(() => DeleteWindowAsync(w.Id))" />
+                                                   OnClick="@(() => ConfirmDelete(w.Id))" />
                             </AuthorizedAction>
                         </li>
                     }
@@ -79,3 +80,9 @@
         }
     </div>
 </div>
+
+@* R10 (D-767) — must-decide guard for the destructive availability-window delete. *@
+<SimfConfirm Open="_confirmOpen" Title="@L["Grid.Delete"]"
+             Message="@L["Admin.Availability.DeleteConfirmMsg"]"
+             ConfirmLabel="@L["Grid.Delete"]" CancelLabel="@L["Admin.Meetings.Close"]"
+             Danger="true" Busy="_busy" OnConfirm="RunDeleteAsync" OnCancel="CancelConfirm" />

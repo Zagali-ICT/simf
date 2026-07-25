@@ -110,7 +110,7 @@
 
 @if (_respondOpen && _respondTarget is not null)
 {
-    <SimfModal Open="true" Title="@L["Admin.DocumentRequests.Respond.Title"]"
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.DocumentRequests.Respond.Title"]"
                OnClose="@(() => _respondOpen = false)">
         <ChildContent>
             <div class="simf-form__fields">

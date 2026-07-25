@@ -100,8 +100,21 @@ public sealed class UpdateMediaPartnerRequest
     public string? LogoRelativePath { get; set; }
     public string? Url { get; set; }
     public int DisplayOrder { get; set; }
-    public Guid? ContactId { get; set; }
     public bool IsActive { get; set; } = true;
+
+    // Contact identity-card fields inlined from the removed Contact directory (D-766).
+    public string? Email { get; set; }
+    public string? PhonePrimary { get; set; }
+    public string? PhoneSecondary { get; set; }
+    public string? FacebookUrl { get; set; }
+    public string? XUrl { get; set; }
+    public string? LinkedInUrl { get; set; }
+    public string? InstagramUrl { get; set; }
+    public string? City { get; set; }
+    public string? CityArabic { get; set; }
+    public int? CountryId { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
 }
 
 public sealed class UpdateMediaPartnerEndpoint(IAdminMediaPartnerService service)
@@ -132,8 +145,19 @@ public sealed class UpdateMediaPartnerEndpoint(IAdminMediaPartnerService service
                     LogoRelativePath = req.LogoRelativePath,
                     Url = req.Url,
                     DisplayOrder = req.DisplayOrder,
-                    ContactId = req.ContactId,
                     IsActive = req.IsActive,
+                    Email = req.Email,
+                    PhonePrimary = req.PhonePrimary,
+                    PhoneSecondary = req.PhoneSecondary,
+                    FacebookUrl = req.FacebookUrl,
+                    XUrl = req.XUrl,
+                    LinkedInUrl = req.LinkedInUrl,
+                    InstagramUrl = req.InstagramUrl,
+                    City = req.City,
+                    CityArabic = req.CityArabic,
+                    CountryId = req.CountryId,
+                    Latitude = req.Latitude,
+                    Longitude = req.Longitude,
                 }, ct)), ct);
     }
 }

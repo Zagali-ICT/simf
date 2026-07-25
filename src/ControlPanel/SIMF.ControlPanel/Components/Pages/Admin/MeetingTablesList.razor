@@ -109,10 +109,12 @@
                           SummaryFormatter="@FormatSummary">
                 <Columns>
                     <SimfDataGridColumn TItem="HallAllocationRow" Key="purpose" Header="@L["Admin.MeetingTables.Col.Purpose"]">
-                        <CellTemplate>@context.Purpose</CellTemplate>
+                        @* R10 (D-767) — render the localized purpose, not the raw enum name. *@
+                        <CellTemplate>@(L[PurposeKey(context.Purpose)].Value)</CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="HallAllocationRow" Key="mode" Header="@L["Admin.MeetingTables.Col.Mode"]">
-                        <CellTemplate>@context.Mode @(context.Mode == HallAllocationMode.RandomByCount ? $"({context.UnitCount})" : context.Mode == HallAllocationMode.RowColumn ? $"({context.RowColumnSpec})" : "")</CellTemplate>
+                        @* R10 (D-767) — localized mode (was the raw 'RandomByCount' enum name). *@
+                        <CellTemplate>@(L[ModeKey(context.Mode)].Value) @(context.Mode == HallAllocationMode.RandomByCount ? $"({context.UnitCount})" : context.Mode == HallAllocationMode.RowColumn ? $"({context.RowColumnSpec})" : "")</CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="HallAllocationRow" Key="start" Header="@L["Admin.MeetingTables.Col.Start"]">
                         <CellTemplate>@context.Start.FormatSaudi("dd-MM-yyyy hh:mm tt")</CellTemplate>
@@ -132,6 +134,7 @@
 @if (_tableOpen)
 {
     <SimfModal Open="true"
+               RequireExplicitClose="true"
                Title="@(_isEditTable ? L["Admin.MeetingTables.EditTable.Title"] : L["Admin.MeetingTables.AddTable.Title"])"
                OnClose="@(() => _tableOpen = false)">
         <ChildContent>
@@ -171,7 +174,7 @@
 
 @if (_generateOpen)
 {
-    <SimfModal Open="true" Title="@L["Admin.MeetingTables.Generate.Title"]"
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.MeetingTables.Generate.Title"]"
                OnClose="@(() => _generateOpen = false)">
         <ChildContent>
             <div class="simf-form__fields">
@@ -222,7 +225,7 @@
 
 @if (_allocOpen)
 {
-    <SimfModal Open="true" Title="@L["Admin.MeetingTables.AddAllocation.Title"]"
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.MeetingTables.AddAllocation.Title"]"
                OnClose="@(() => _allocOpen = false)">
         <ChildContent>
             <div class="simf-form__fields">

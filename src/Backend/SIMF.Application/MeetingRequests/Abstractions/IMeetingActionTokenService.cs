@@ -22,6 +22,17 @@ public interface IMeetingActionTokenService
     Task AuditMintedAsync(
         Guid speakerMeetingRequestId, CancellationToken cancellationToken = default);
 
+    /// <summary>R4 (D-767) — stage ONE single-use delegation confirm token for a request
+    /// into the shared DbContext WITHOUT saving, and return its ready-built landing-page
+    /// URL (the same public <c>/meeting/confirm</c> page the speaker links use). The
+    /// caller commits it in the SAME <c>SaveChanges</c> as the <c>AwaitingSpeaker</c>
+    /// transition; the same URL is emailed to every eligible target member and the FIRST
+    /// click confirms (mirroring the in-app tap). Confirm-only — no decline link. Empty
+    /// when the public base URL is unconfigured (the caller then skips the email; the
+    /// token still commits). <see cref="PreviewAsync"/> / <see cref="ApplyAsync"/> then
+    /// serve BOTH the speaker and the delegation token behind the one endpoint.</summary>
+    string StageDelegationConfirmToken(Guid delegationMeetingRequestId);
+
     /// <summary>Validate a token WITHOUT consuming it and return the meeting
     /// preview, or <c>null</c> if it is unusable (not found / expired / used / the
     /// request is no longer awaiting the speaker). GET-safe — a link prefetcher

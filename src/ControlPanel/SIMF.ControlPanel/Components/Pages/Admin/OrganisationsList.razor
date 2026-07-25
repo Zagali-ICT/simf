@@ -150,6 +150,7 @@
 @if (_importOpen)
 {
     <SimfModal Open="true"
+               RequireExplicitClose="true"
                Title="@L["Admin.Organisations.Import.Title"]"
                OnClose="@(() => _importOpen = false)">
         <ChildContent>

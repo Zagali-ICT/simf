@@ -106,6 +106,18 @@ public static class FileServicePolicies
                 AdminPermission: null, EncryptAtRest: false, Videos, FileOwnerEntityType.Session,
                 OwnerRequired: false, Retention: null, DeletableDefault: true),
 
+            // ── Public video (plaintext, seekable) ───────────────────────────
+            // D-768 — the landing/home hero background video. Public-tier (shown to
+            // anonymous guests on the app home + the website landing) and, like a
+            // recording, EncryptAtRest:false so it stays seekable for Range/HTTP-206
+            // streaming (AES-GCM is not seekable). It is public branding content,
+            // never PII — the same posture as the public logos, only larger and
+            // range-served through its own dedicated .mp4 route.
+            [FileService.OrganizationHeroVideo] = new(
+                FileService.OrganizationHeroVideo, FileSensitivityTier.Public, FileAccessClass.Public,
+                AdminPermission: null, EncryptAtRest: false, Videos, FileOwnerEntityType.OrganizationProfile,
+                OwnerRequired: false, Retention: null, DeletableDefault: true),
+
             // ── Public images (plaintext) ────────────────────────────────────
             [FileService.MediaGalleryImage] = PublicImage(FileService.MediaGalleryImage, FileOwnerEntityType.MediaItem),
             [FileService.SpeakerPhoto] = PublicImage(FileService.SpeakerPhoto, FileOwnerEntityType.Speaker),
@@ -118,6 +130,7 @@ public static class FileServicePolicies
             [FileService.ProgrammeDayImage] = PublicImage(FileService.ProgrammeDayImage, FileOwnerEntityType.ProgrammeDay),
             [FileService.Banner] = PublicImage(FileService.Banner, FileOwnerEntityType.Banner),
             [FileService.BoothLogo] = PublicImage(FileService.BoothLogo, FileOwnerEntityType.Booth),
+            [FileService.ExhibitorLogo] = PublicImage(FileService.ExhibitorLogo, FileOwnerEntityType.Exhibitor),
         };
 
     private static FileServicePolicy PublicImage(FileService service, FileOwnerEntityType owner) =>

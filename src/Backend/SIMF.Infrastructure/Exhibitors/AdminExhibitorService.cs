@@ -83,19 +83,15 @@ internal sealed class AdminExhibitorService(
                 c.ContactEmail, c.ContactPhone, c.Website,
                 AccountCount = appDbContext.Set<ExhibitorMembership>()
                     .Count(m => m.ExhibitorId == c.Id && m.IsActive),
-                c.IsActive, c.CreatedAt, c.Tier, c.ContactId,
+                c.IsActive, c.CreatedAt, c.Tier,
             })
             .ToListAsync(cancellationToken);
 
-        // The grid renders the exhibitor's company-logo thumbnail from the LINKED
-        // Contact's CompanyLogo asset (an exhibitor owns no logo of its own) — one
-        // batched query over the linked contact ids, no N+1. Unlinked exhibitors
-        // (ContactId null) or contacts with no logo fall back to an initials tile.
-        var contactIds = pageRows
-            .Where(row => row.ContactId is not null)
-            .Select(row => row.ContactId!.Value).Distinct().ToList();
-        var logoOwners = await assetService.WhichOwnersHaveActiveAssetAsync(
-            AssetCategory.CompanyLogo, contactIds, cancellationToken);
+        // The exhibitor now also owns its own ExhibitorLogo (the app + the grid
+        // render this, not the linked Contact's) — one batched query over the
+        // page's exhibitor ids.
+        var exhibitorLogoOwners = await assetService.WhichOwnersHaveActiveAssetAsync(
+            AssetCategory.ExhibitorLogo, pageRows.Select(row => row.Id).ToList(), cancellationToken);
 
         var page = pageRows
             .Select(c => new AdminExhibitorSummary(
@@ -103,8 +99,7 @@ internal sealed class AdminExhibitorService(
                 c.ContactEmail, c.ContactPhone, c.Website,
                 c.AccountCount,
                 c.IsActive, c.CreatedAt, c.Tier,
-                c.ContactId,
-                c.ContactId is not null && logoOwners.Contains(c.ContactId.Value)))
+                exhibitorLogoOwners.Contains(c.Id)))
             .ToList();
 
         return GridPage<AdminExhibitorSummary>.Of(page, total,
@@ -119,7 +114,13 @@ internal sealed class AdminExhibitorService(
             .Select(c => new AdminExhibitorDetail(
                 c.Id, c.Name, c.NameArabic,
                 c.ContactEmail, c.ContactPhone, c.Website,
-                c.IsActive, c.CreatedAt, c.UpdatedAt, c.ContactId, c.Tier))
+                c.IsActive, c.CreatedAt, c.UpdatedAt, c.Tier,
+                c.CountryId,
+                c.Country != null ? c.Country.Name : null,
+                c.Country != null ? c.Country.NameArabic : null,
+                c.PhoneSecondary, c.FacebookUrl, c.XUrl, c.LinkedInUrl,
+                c.InstagramUrl, c.City, c.CityArabic,
+                c.Latitude, c.Longitude))
             .SingleOrDefaultAsync(cancellationToken);
     }
 
@@ -129,7 +130,11 @@ internal sealed class AdminExhibitorService(
     {
         Validate(request.NameEn, request.NameAr, request.ContactEmail,
             request.ContactPhone, request.Website, request.Tier);
-        await EnsureContactIsValidAsync(request.ContactId, cancellationToken);
+        ValidateContactFields(
+            request.PhoneSecondary, request.FacebookUrl, request.XUrl,
+            request.LinkedInUrl, request.InstagramUrl, request.City,
+            request.CityArabic, request.Latitude, request.Longitude);
+        await EnsureCountryIsValidAsync(request.CountryId, cancellationToken);
         var now = timeProvider.GetUtcNow();
         var exhibitor = new Exhibitor
         {
@@ -139,8 +144,17 @@ internal sealed class AdminExhibitorService(
             ContactEmail = NormaliseOptional(request.ContactEmail),
             ContactPhone = NormaliseOptional(request.ContactPhone),
             Website = NormaliseOptional(request.Website),
-            ContactId = request.ContactId,
             Tier = request.Tier,
+            CountryId = request.CountryId,
+            PhoneSecondary = NormaliseOptional(request.PhoneSecondary),
+            FacebookUrl = NormaliseOptional(request.FacebookUrl),
+            XUrl = NormaliseOptional(request.XUrl),
+            LinkedInUrl = NormaliseOptional(request.LinkedInUrl),
+            InstagramUrl = NormaliseOptional(request.InstagramUrl),
+            City = NormaliseOptional(request.City),
+            CityArabic = NormaliseOptional(request.CityArabic),
+            Latitude = request.Latitude,
+            Longitude = request.Longitude,
             IsActive = true,
             CreatedAt = now,
         };
@@ -164,7 +178,11 @@ internal sealed class AdminExhibitorService(
     {
         Validate(request.NameEn, request.NameAr, request.ContactEmail,
             request.ContactPhone, request.Website, request.Tier);
-        await EnsureContactIsValidAsync(request.ContactId, cancellationToken);
+        ValidateContactFields(
+            request.PhoneSecondary, request.FacebookUrl, request.XUrl,
+            request.LinkedInUrl, request.InstagramUrl, request.City,
+            request.CityArabic, request.Latitude, request.Longitude);
+        await EnsureCountryIsValidAsync(request.CountryId, cancellationToken);
         var exhibitor = await appDbContext.Exhibitors
             .SingleOrDefaultAsync(c => c.Id == id, cancellationToken)
             ?? throw new ApiException(
@@ -177,8 +195,17 @@ internal sealed class AdminExhibitorService(
         exhibitor.ContactEmail = NormaliseOptional(request.ContactEmail);
         exhibitor.ContactPhone = NormaliseOptional(request.ContactPhone);
         exhibitor.Website = NormaliseOptional(request.Website);
-        exhibitor.ContactId = request.ContactId;
         exhibitor.Tier = request.Tier;
+        exhibitor.CountryId = request.CountryId;
+        exhibitor.PhoneSecondary = NormaliseOptional(request.PhoneSecondary);
+        exhibitor.FacebookUrl = NormaliseOptional(request.FacebookUrl);
+        exhibitor.XUrl = NormaliseOptional(request.XUrl);
+        exhibitor.LinkedInUrl = NormaliseOptional(request.LinkedInUrl);
+        exhibitor.InstagramUrl = NormaliseOptional(request.InstagramUrl);
+        exhibitor.City = NormaliseOptional(request.City);
+        exhibitor.CityArabic = NormaliseOptional(request.CityArabic);
+        exhibitor.Latitude = request.Latitude;
+        exhibitor.Longitude = request.Longitude;
         exhibitor.IsActive = request.IsActive;
         exhibitor.UpdatedAt = timeProvider.GetUtcNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
@@ -400,23 +427,71 @@ internal sealed class AdminExhibitorService(
         }
     }
 
-    // SIMF-FDS-014 (D-281) — the optional shared-Contact link must point at an
-    // existing active Contact (mirrors EnsureExhibitorIsValidAsync on the booth
-    // service). Turns a bad/inactive FK into a clean 400 rather than a DB-level
-    // FK-violation 500.
-    private async Task EnsureContactIsValidAsync(
-        Guid? contactId, CancellationToken cancellationToken)
+    // D-766 — validates the identity-card fields inlined from the removed shared
+    // Contact directory. The email + primary phone are covered by Validate (they
+    // reuse ContactEmail / ContactPhone); this covers the new inline set. Lengths
+    // mirror the EF configuration; latitude and longitude are an all-or-nothing
+    // pair with real-world ranges.
+    private static void ValidateContactFields(
+        string? phoneSecondary, string? facebook, string? x,
+        string? linkedIn, string? instagram, string? city, string? cityArabic,
+        double? latitude, double? longitude)
     {
-        if (contactId is null) { return; }
-        var exists = await appDbContext.Contacts
+        if (!string.IsNullOrWhiteSpace(phoneSecondary) && phoneSecondary.Length > 32)
+        {
+            throw Invalid("Phone numbers must be 32 characters or less.",
+                "يجب ألا يتجاوز رقم الهاتف 32 حرفاً.");
+        }
+        foreach (var url in new[] { facebook, x, linkedIn, instagram })
+        {
+            if (!string.IsNullOrWhiteSpace(url) && url.Length > 256)
+            {
+                throw Invalid("Social URLs must be 256 characters or less.",
+                    "يجب ألا يتجاوز رابط الشبكات الاجتماعية 256 حرفاً.");
+            }
+        }
+        foreach (var cityValue in new[] { city, cityArabic })
+        {
+            if (!string.IsNullOrWhiteSpace(cityValue) && cityValue.Length > 128)
+            {
+                throw Invalid("City must be 128 characters or less.",
+                    "يجب ألا تتجاوز المدينة 128 حرفاً.");
+            }
+        }
+        if (latitude is null != (longitude is null))
+        {
+            throw Invalid("Latitude and longitude must be provided together.",
+                "يجب إدخال خط العرض وخط الطول معاً.");
+        }
+        if (latitude is < -90 or > 90)
+        {
+            throw Invalid("Latitude must be between -90 and 90.",
+                "يجب أن يكون خط العرض بين -90 و 90.");
+        }
+        if (longitude is < -180 or > 180)
+        {
+            throw Invalid("Longitude must be between -180 and 180.",
+                "يجب أن يكون خط الطول بين -180 و 180.");
+        }
+    }
+
+    private static ApiException Invalid(string english, string arabic) =>
+        new(ErrorCodes.ExhibitorInvalid, 400, english, arabic);
+
+    // Same-DB country FK — validated against the live Country table (D-766).
+    private async Task EnsureCountryIsValidAsync(
+        int? countryId, CancellationToken cancellationToken)
+    {
+        if (countryId is null) { return; }
+        var exists = await appDbContext.Countries
             .AsNoTracking()
-            .AnyAsync(contact => contact.Id == contactId.Value && contact.IsActive, cancellationToken);
+            .AnyAsync(country => country.Id == countryId.Value && country.IsActive, cancellationToken);
         if (!exists)
         {
             throw new ApiException(
                 ErrorCodes.ExhibitorInvalid, 400,
-                $"Contact id '{contactId}' does not exist or is inactive.",
-                $"جهة الاتصال '{contactId}' غير موجودة أو غير مفعّلة.");
+                $"Country id '{countryId}' does not exist or is inactive.",
+                $"رقم البلد '{countryId}' غير موجود أو غير مفعّل.");
         }
     }
 

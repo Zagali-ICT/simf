@@ -37,13 +37,30 @@ public sealed record AdminSponsorDetail(
     bool IsActive,
     DateTimeOffset CreatedAt,
     DateTimeOffset? UpdatedAt,
-    Guid? ContactId,
     // D-432 — optional bilingual tagline (Figma 922:2824).
     string? Tagline = null,
     string? TaglineArabic = null,
     // Optional bilingual about paragraph (≤2048 chars each).
     string? About = null,
-    string? AboutArabic = null);
+    string? AboutArabic = null,
+    // Contact identity-card fields inlined from the removed shared Contact
+    // directory (D-766). All optional; nationality is CountryId with its
+    // display names (CountryNameEn / CountryNameAr) projected alongside.
+    // Trailing-optional so any other constructor call stays valid.
+    int? CountryId = null,
+    string? CountryNameEn = null,
+    string? CountryNameAr = null,
+    string? Email = null,
+    string? PhonePrimary = null,
+    string? PhoneSecondary = null,
+    string? FacebookUrl = null,
+    string? XUrl = null,
+    string? LinkedInUrl = null,
+    string? InstagramUrl = null,
+    string? City = null,
+    string? CityArabic = null,
+    double? Latitude = null,
+    double? Longitude = null);
 
 /// <summary>Create payload for a sponsor. <c>Tier</c> is the int enum value
 /// (10=Platinum, 20=Gold, 30=Silver, 40=Bronze).</summary>
@@ -56,10 +73,6 @@ public sealed class AdminCreateSponsorRequest
     public string? Url { get; set; }
     public int DisplayOrder { get; set; }
 
-    /// <summary>SIMF-FDS-014 (D-281) — optional link to a shared <c>Contact</c>
-    /// directory record. Must reference an existing active contact.</summary>
-    public Guid? ContactId { get; set; }
-
     /// <summary>D-432 — optional bilingual tagline (≤256 chars each).</summary>
     public string? Tagline { get; set; }
     public string? TaglineArabic { get; set; }
@@ -67,6 +80,22 @@ public sealed class AdminCreateSponsorRequest
     /// <summary>Optional bilingual about paragraph (≤2048 chars each).</summary>
     public string? About { get; set; }
     public string? AboutArabic { get; set; }
+
+    // Contact identity-card fields inlined from the removed shared Contact
+    // directory (D-766). All optional; nationality is CountryId. The website
+    // slot is the existing Url above (never re-added).
+    public int? CountryId { get; set; }
+    public string? Email { get; set; }
+    public string? PhonePrimary { get; set; }
+    public string? PhoneSecondary { get; set; }
+    public string? FacebookUrl { get; set; }
+    public string? XUrl { get; set; }
+    public string? LinkedInUrl { get; set; }
+    public string? InstagramUrl { get; set; }
+    public string? City { get; set; }
+    public string? CityArabic { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
 }
 
 /// <summary>Update payload (adds IsActive to the create shape).
@@ -82,10 +111,6 @@ public class AdminUpdateSponsorRequest
     public string? Url { get; set; }
     public int DisplayOrder { get; set; }
 
-    /// <summary>SIMF-FDS-014 (D-281) — optional link to a shared <c>Contact</c>
-    /// directory record. Must reference an existing active contact.</summary>
-    public Guid? ContactId { get; set; }
-
     /// <summary>D-432 — optional bilingual tagline (≤256 chars each).</summary>
     public string? Tagline { get; set; }
     public string? TaglineArabic { get; set; }
@@ -93,6 +118,22 @@ public class AdminUpdateSponsorRequest
     /// <summary>Optional bilingual about paragraph (≤2048 chars each).</summary>
     public string? About { get; set; }
     public string? AboutArabic { get; set; }
+
+    // Contact identity-card fields inlined from the removed shared Contact
+    // directory (D-766). All optional; nationality is CountryId. The website
+    // slot is the existing Url above (never re-added).
+    public int? CountryId { get; set; }
+    public string? Email { get; set; }
+    public string? PhonePrimary { get; set; }
+    public string? PhoneSecondary { get; set; }
+    public string? FacebookUrl { get; set; }
+    public string? XUrl { get; set; }
+    public string? LinkedInUrl { get; set; }
+    public string? InstagramUrl { get; set; }
+    public string? City { get; set; }
+    public string? CityArabic { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
 
     public bool IsActive { get; set; } = true;
 }

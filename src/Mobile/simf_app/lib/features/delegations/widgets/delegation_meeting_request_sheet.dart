@@ -46,6 +46,10 @@ class _DelegationMeetingRequestSheetState
   final TextEditingController _subject = TextEditingController();
   final TextEditingController _attendees = TextEditingController(text: '1');
   bool _submitting = false;
+  // R0 (D-767) — validation / API-failure feedback shown INLINE inside the sheet.
+  // A ScaffoldMessenger snackbar fired while this modal bottom sheet is open
+  // renders behind the sheet and is invisible; inline text stays on screen.
+  String? _error;
 
   // The delegation the request targets: the fixed [widget.country], or the one
   // picked from the list in the bilateral flow.
@@ -161,22 +165,17 @@ class _DelegationMeetingRequestSheetState
     final l10n = widget.l10n;
     final target = _selected;
     if (target == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.delegationSelectCountryFirst)),
-      );
+      setState(() => _error = l10n.delegationSelectCountryFirst);
       return;
     }
     final subject = _subject.text.trim();
     if (subject.isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(l10n.meetingRequestInvalid)));
+      setState(() => _error = l10n.meetingRequestInvalid);
       return;
     }
     final attendees = int.tryParse(_attendees.text.trim()) ?? 0;
     if (attendees < 1) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.delegationAttendeeCountInvalid)),
-      );
+      setState(() => _error = l10n.delegationAttendeeCountInvalid);
       return;
     }
     // A slot is required only when the delegation actually offers slots.
@@ -185,14 +184,17 @@ class _DelegationMeetingRequestSheetState
     if (_slots.isNotEmpty) {
       final slot = _selectedSlot;
       if (slot == null) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(l10n.meetingPickDateTime)));
+        setState(() => _error = l10n.meetingPickDateTime);
         return;
       }
       slotStart = slot.start;
       slotEnd = slot.end;
     }
-    setState(() => _submitting = true);
+    // R0 — clear the inline error and submit. Feedback stays inside the sheet.
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
     try {
@@ -206,16 +208,17 @@ class _DelegationMeetingRequestSheetState
       if (!mounted) {
         return;
       }
+      // Success pops the sheet first, so this toast is visible (not occluded).
       navigator.pop();
       messenger.showSnackBar(SnackBar(content: Text(l10n.meetingRequestSent)));
     } on ApiFailure catch (failure) {
       if (!mounted) {
         return;
       }
-      setState(() => _submitting = false);
-      messenger.showSnackBar(
-        SnackBar(content: Text(_failureText(failure, l10n))),
-      );
+      setState(() {
+        _submitting = false;
+        _error = _failureText(failure, l10n);
+      });
     }
   }
 
@@ -291,6 +294,13 @@ class _DelegationMeetingRequestSheetState
             _subjectField(l10n),
             const SizedBox(height: SimfTokens.space4),
             ..._slotSection(l10n, isArabic),
+            if (_error != null) ...<Widget>[
+              const SizedBox(height: SimfTokens.space3),
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: Text(_error!, style: SimfTokens.bodyDanger),
+              ),
+            ],
             const SizedBox(height: SimfTokens.space5),
             _sendButton(l10n),
           ],

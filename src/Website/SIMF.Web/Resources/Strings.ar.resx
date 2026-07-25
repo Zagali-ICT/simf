@@ -319,6 +319,7 @@
   <data name="Meeting.Confirm.When" xml:space="preserve"><value>الوقت</value></data>
   <data name="Meeting.Confirm.Where" xml:space="preserve"><value>المكان</value></data>
   <data name="Meeting.Confirm.TBD" xml:space="preserve"><value>سيُحدَّد لاحقاً</value></data>
+  <data name="Meeting.Confirm.SlotSaudi" xml:space="preserve"><value>{0} – {1} (بتوقيت السعودية)</value></data>
   <data name="Meeting.Confirm.Approve" xml:space="preserve"><value>الموافقة على الاجتماع</value></data>
   <data name="Meeting.Confirm.Reject" xml:space="preserve"><value>رفض الاجتماع</value></data>
   <data name="Meeting.Confirm.Submitting" xml:space="preserve"><value>جارٍ الإرسال…</value></data>

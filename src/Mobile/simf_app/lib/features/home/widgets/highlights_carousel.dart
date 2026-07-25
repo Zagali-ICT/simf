@@ -162,7 +162,7 @@ class _HighlightSlide extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.center,
                     end: Alignment.bottomCenter,
-                    colors: <Color>[SimfTokens.transparent, Color(0xCC01132D)],
+                    colors: <Color>[SimfTokens.transparent, SimfTokens.navyFill80],
                   ),
                 ),
               ),

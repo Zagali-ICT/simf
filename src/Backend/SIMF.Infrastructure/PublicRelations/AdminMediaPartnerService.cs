@@ -91,18 +91,26 @@ internal sealed class AdminMediaPartnerService(
             skip, top);
     }
 
-    public async Task<AdminMediaPartnerDetail?> GetAsync(Guid id, CancellationToken cancellationToken = default) =>
-        await appDbContext.MediaPartners.AsNoTracking()
-            .Where(partner => partner.Id == id)
-            .Select(partner => ToDetail(partner))
-            .SingleOrDefaultAsync(cancellationToken);
+    public async Task<AdminMediaPartnerDetail?> GetAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var partner = await appDbContext.MediaPartners.AsNoTracking()
+            .SingleOrDefaultAsync(p => p.Id == id, cancellationToken);
+        if (partner is null) { return null; }
+        var (en, ar) = await ResolveCountryAsync(partner.CountryId, cancellationToken);
+        return ToDetail(partner, en, ar);
+    }
 
     public async Task<AdminMediaPartnerDetail> CreateAsync(Guid actorUserId, AdminCreateMediaPartnerRequest request, CancellationToken cancellationToken = default)
     {
         var (name, nameArabic, logoRelativePath, url, displayOrder) = Validate(
             request.Name, request.NameArabic, request.LogoRelativePath,
             request.Url, request.DisplayOrder);
-        await EnsureContactIsValidAsync(request.ContactId, cancellationToken);
+        ValidateContactFields(
+            request.Email, request.PhonePrimary, request.PhoneSecondary,
+            request.FacebookUrl, request.XUrl, request.LinkedInUrl, request.InstagramUrl,
+            request.City, request.CityArabic,
+            request.Latitude, request.Longitude);
+        await EnsureCountryIsValidAsync(request.CountryId, cancellationToken);
 
         var nameClash = await appDbContext.MediaPartners.AsNoTracking()
             .AnyAsync(p => p.Name == name, cancellationToken);
@@ -121,7 +129,18 @@ internal sealed class AdminMediaPartnerService(
             LogoRelativePath = logoRelativePath,
             Url = url,
             DisplayOrder = displayOrder,
-            ContactId = request.ContactId,
+            Email = NullIfBlank(request.Email),
+            PhonePrimary = NullIfBlank(request.PhonePrimary),
+            PhoneSecondary = NullIfBlank(request.PhoneSecondary),
+            FacebookUrl = NullIfBlank(request.FacebookUrl),
+            XUrl = NullIfBlank(request.XUrl),
+            LinkedInUrl = NullIfBlank(request.LinkedInUrl),
+            InstagramUrl = NullIfBlank(request.InstagramUrl),
+            City = NullIfBlank(request.City),
+            CityArabic = NullIfBlank(request.CityArabic),
+            CountryId = request.CountryId,
+            Latitude = request.Latitude,
+            Longitude = request.Longitude,
             IsActive = true,
             CreatedAt = now,
         };
@@ -141,7 +160,8 @@ internal sealed class AdminMediaPartnerService(
             "Admin {ActorId} created MediaPartner {Name} (id {Id})",
             actorUserId, name, partner.Id);
 
-        return ToDetail(partner);
+        var (en, ar) = await ResolveCountryAsync(partner.CountryId, cancellationToken);
+        return ToDetail(partner, en, ar);
     }
 
     public async Task<AdminMediaPartnerDetail> UpdateAsync(Guid actorUserId, Guid id, AdminUpdateMediaPartnerRequest request, CancellationToken cancellationToken = default)
@@ -155,7 +175,12 @@ internal sealed class AdminMediaPartnerService(
         var (name, nameArabic, logoRelativePath, url, displayOrder) = Validate(
             request.Name, request.NameArabic, request.LogoRelativePath,
             request.Url, request.DisplayOrder);
-        await EnsureContactIsValidAsync(request.ContactId, cancellationToken);
+        ValidateContactFields(
+            request.Email, request.PhonePrimary, request.PhoneSecondary,
+            request.FacebookUrl, request.XUrl, request.LinkedInUrl, request.InstagramUrl,
+            request.City, request.CityArabic,
+            request.Latitude, request.Longitude);
+        await EnsureCountryIsValidAsync(request.CountryId, cancellationToken);
 
         if (!string.Equals(partner.Name, name, StringComparison.OrdinalIgnoreCase))
         {
@@ -174,7 +199,18 @@ internal sealed class AdminMediaPartnerService(
         partner.LogoRelativePath = logoRelativePath;
         partner.Url = url;
         partner.DisplayOrder = displayOrder;
-        partner.ContactId = request.ContactId;
+        partner.Email = NullIfBlank(request.Email);
+        partner.PhonePrimary = NullIfBlank(request.PhonePrimary);
+        partner.PhoneSecondary = NullIfBlank(request.PhoneSecondary);
+        partner.FacebookUrl = NullIfBlank(request.FacebookUrl);
+        partner.XUrl = NullIfBlank(request.XUrl);
+        partner.LinkedInUrl = NullIfBlank(request.LinkedInUrl);
+        partner.InstagramUrl = NullIfBlank(request.InstagramUrl);
+        partner.City = NullIfBlank(request.City);
+        partner.CityArabic = NullIfBlank(request.CityArabic);
+        partner.CountryId = request.CountryId;
+        partner.Latitude = request.Latitude;
+        partner.Longitude = request.Longitude;
         partner.IsActive = request.IsActive;
         partner.UpdatedAt = timeProvider.GetUtcNow();
 
@@ -188,7 +224,8 @@ internal sealed class AdminMediaPartnerService(
             Detail = $"id={id}; name={name}; active={partner.IsActive}",
         }, cancellationToken);
 
-        return ToDetail(partner);
+        var (en, ar) = await ResolveCountryAsync(partner.CountryId, cancellationToken);
+        return ToDetail(partner, en, ar);
     }
 
     public async Task DeactivateAsync(Guid actorUserId, Guid id, CancellationToken cancellationToken = default)
@@ -255,26 +292,102 @@ internal sealed class AdminMediaPartnerService(
         return (name, nameArabic, logoRelativePath, url, displayOrderRaw);
     }
 
-    // SIMF-FDS-014 (D-281) — the optional shared-Contact link must point at an
-    // existing active Contact. Clean 400 instead of a DB FK-violation 500.
-    private async Task EnsureContactIsValidAsync(
-        Guid? contactId, CancellationToken cancellationToken)
+    // D-766 — validates the identity-card fields inlined from the removed shared
+    // Contact directory. Lengths mirror the EF configuration; latitude and
+    // longitude are an all-or-nothing pair with real-world ranges.
+    private static void ValidateContactFields(
+        string? email, string? phonePrimary, string? phoneSecondary,
+        string? facebook, string? x, string? linkedIn, string? instagram,
+        string? city, string? cityArabic,
+        double? latitude, double? longitude)
     {
-        if (contactId is null) { return; }
-        var exists = await appDbContext.Contacts
-            .AsNoTracking()
-            .AnyAsync(contact => contact.Id == contactId.Value && contact.IsActive, cancellationToken);
-        if (!exists)
+        if (!string.IsNullOrWhiteSpace(email) && email.Length > 320)
         {
-            throw new ApiException(ErrorCodes.ValidationFailed, 400,
-                $"Contact id '{contactId}' does not exist or is inactive.",
-                $"جهة الاتصال '{contactId}' غير موجودة أو غير مفعّلة.");
+            throw Invalid("Email must be 320 characters or less.",
+                "يجب ألا يتجاوز البريد الإلكتروني 320 حرفاً.");
+        }
+        foreach (var phone in new[] { phonePrimary, phoneSecondary })
+        {
+            if (!string.IsNullOrWhiteSpace(phone) && phone.Length > 32)
+            {
+                throw Invalid("Phone numbers must be 32 characters or less.",
+                    "يجب ألا يتجاوز رقم الهاتف 32 حرفاً.");
+            }
+        }
+        foreach (var url in new[] { facebook, x, linkedIn, instagram })
+        {
+            if (!string.IsNullOrWhiteSpace(url) && url.Length > 256)
+            {
+                throw Invalid("Social URLs must be 256 characters or less.",
+                    "يجب ألا يتجاوز رابط الشبكات الاجتماعية 256 حرفاً.");
+            }
+        }
+        foreach (var cityValue in new[] { city, cityArabic })
+        {
+            if (!string.IsNullOrWhiteSpace(cityValue) && cityValue.Length > 128)
+            {
+                throw Invalid("City must be 128 characters or less.",
+                    "يجب ألا تتجاوز المدينة 128 حرفاً.");
+            }
+        }
+        if (latitude is null != (longitude is null))
+        {
+            throw Invalid("Latitude and longitude must be provided together.",
+                "يجب إدخال خط العرض وخط الطول معاً.");
+        }
+        if (latitude is < -90 or > 90)
+        {
+            throw Invalid("Latitude must be between -90 and 90.",
+                "يجب أن يكون خط العرض بين -90 و 90.");
+        }
+        if (longitude is < -180 or > 180)
+        {
+            throw Invalid("Longitude must be between -180 and 180.",
+                "يجب أن يكون خط الطول بين -180 و 180.");
         }
     }
 
-    private static AdminMediaPartnerDetail ToDetail(MediaPartner partner) =>
+    private static ApiException Invalid(string english, string arabic) =>
+        new(ErrorCodes.ValidationFailed, 400, english, arabic);
+
+    private async Task EnsureCountryIsValidAsync(
+        int? countryId, CancellationToken cancellationToken)
+    {
+        if (countryId is null) { return; }
+        var exists = await appDbContext.Countries
+            .AsNoTracking()
+            .AnyAsync(country => country.Id == countryId.Value && country.IsActive, cancellationToken);
+        if (!exists)
+        {
+            throw Invalid(
+                $"Country id '{countryId}' does not exist or is inactive.",
+                $"رقم البلد '{countryId}' غير موجود أو غير مفعّل.");
+        }
+    }
+
+    private async Task<(string? en, string? ar)> ResolveCountryAsync(
+        int? countryId, CancellationToken cancellationToken)
+    {
+        if (countryId is null) { return (null, null); }
+        var row = await appDbContext.Countries
+            .AsNoTracking()
+            .Where(country => country.Id == countryId.Value)
+            .Select(country => new { country.Name, country.NameArabic })
+            .SingleOrDefaultAsync(cancellationToken);
+        return (row?.Name, row?.NameArabic);
+    }
+
+    private static string? NullIfBlank(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private static AdminMediaPartnerDetail ToDetail(
+        MediaPartner partner, string? countryNameEn, string? countryNameAr) =>
         new(partner.Id, partner.Name, partner.NameArabic,
             partner.LogoRelativePath, partner.Url, partner.DisplayOrder,
             partner.IsActive, partner.CreatedAt, partner.UpdatedAt,
-            partner.ContactId);
+            partner.Email, partner.PhonePrimary, partner.PhoneSecondary,
+            partner.FacebookUrl, partner.XUrl, partner.LinkedInUrl,
+            partner.InstagramUrl, partner.City, partner.CityArabic,
+            partner.CountryId, countryNameEn, countryNameAr,
+            partner.Latitude, partner.Longitude);
 }

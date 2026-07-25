@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using SIMF.Domain.Contacts;
 using SIMF.Domain.Exhibition;
 using SIMF.Domain.Exhibitors;
 using SIMF.Domain.Programme;
@@ -36,6 +35,15 @@ internal sealed class BoothConfiguration : IEntityTypeConfiguration<Booth>
         builder.Property(booth => booth.OfficerName).HasMaxLength(256);
         builder.Property(booth => booth.OfficerPhone).HasMaxLength(32);
         builder.Property(booth => booth.OfficerEmail).HasMaxLength(320);
+        builder.Property(booth => booth.OfficerNameArabic).HasMaxLength(256);
+        builder.Property(booth => booth.OfficerPhoneSecondary).HasMaxLength(32);
+        builder.Property(booth => booth.OfficerWebsite).HasMaxLength(512);
+        builder.Property(booth => booth.OfficerFacebookUrl).HasMaxLength(256);
+        builder.Property(booth => booth.OfficerXUrl).HasMaxLength(256);
+        builder.Property(booth => booth.OfficerLinkedInUrl).HasMaxLength(256);
+        builder.Property(booth => booth.OfficerInstagramUrl).HasMaxLength(256);
+        builder.Property(booth => booth.OfficerCity).HasMaxLength(128);
+        builder.Property(booth => booth.OfficerCityArabic).HasMaxLength(128);
         builder.Property(booth => booth.Sector).HasMaxLength(128);
         builder.Property(booth => booth.SectorArabic).HasMaxLength(128);
         builder.Property(booth => booth.Description).HasMaxLength(2048);
@@ -58,12 +66,12 @@ internal sealed class BoothConfiguration : IEntityTypeConfiguration<Booth>
             .HasForeignKey(booth => booth.ExhibitorId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // SIMF-FDS-014 — D-260 (OI-1): optional shared Contact link for the booth
-        // officer. Restrict (a Contact is soft-deleted, never hard-deleted under a
-        // referrer). HasForeignKey creates the FK index.
-        builder.HasOne(booth => booth.OfficerContact)
+        // Booth-officer country: real same-DB FK to Country. Restrict
+        // (countries are soft-deleted, never hard-deleted under a referrer).
+        // HasForeignKey creates the FK index automatically.
+        builder.HasOne(booth => booth.OfficerCountry)
             .WithMany()
-            .HasForeignKey(booth => booth.ContactId)
+            .HasForeignKey(booth => booth.OfficerCountryId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(booth => new { booth.IsActive });

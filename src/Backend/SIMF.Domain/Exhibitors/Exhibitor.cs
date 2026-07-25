@@ -1,6 +1,5 @@
 using SIMF.Common.Enums;
 using SIMF.Domain.Common;
-using SIMF.Domain.Contacts;
 
 namespace SIMF.Domain.Exhibitors;
 
@@ -22,8 +21,8 @@ public sealed class Exhibitor : BaseAuditEntity
     public string NameArabic { get; set; } = string.Empty;
 
     /// <summary>Optional primary contact email (≤320 chars). Retained per
-    /// SIMF-FDS-014 (D-260): the entity keeps its own inline contact; the linked
-    /// <see cref="Contact"/> is the fallback when these are null.</summary>
+    /// SIMF-FDS-014 (D-260): the entity keeps its own inline contact fields
+    /// (the "identity-card" set is inlined directly onto the entity).</summary>
     public string? ContactEmail { get; set; }
 
     /// <summary>Optional primary contact phone (≤32 chars).</summary>
@@ -37,11 +36,36 @@ public sealed class Exhibitor : BaseAuditEntity
     /// Additive (D-219).</summary>
     public ExhibitorTier? Tier { get; set; }
 
-    /// <summary>SIMF-FDS-014 (D-260) — optional link to the shared <c>Contact</c>
-    /// directory record (logo / name / phones / social / website / location /
-    /// country). Null until linked; multiple entities may reference the same
-    /// Contact. The public projection prefers the Contact when set.</summary>
-    public Guid? ContactId { get; set; }
-    public Contact? Contact { get; set; }//Add FK
+    /// <summary>Optional secondary contact phone (≤32 chars).</summary>
+    public string? PhoneSecondary { get; set; }
+
+    /// <summary>Optional Facebook profile URL (≤256 chars).</summary>
+    public string? FacebookUrl { get; set; }
+
+    /// <summary>Optional X (Twitter) profile URL (≤256 chars).</summary>
+    public string? XUrl { get; set; }
+
+    /// <summary>Optional LinkedIn profile URL (≤256 chars).</summary>
+    public string? LinkedInUrl { get; set; }
+
+    /// <summary>Optional Instagram profile URL (≤256 chars).</summary>
+    public string? InstagramUrl { get; set; }
+
+    /// <summary>Optional English city name (≤128 chars).</summary>
+    public string? City { get; set; }
+
+    /// <summary>Optional Arabic city name (≤128 chars).</summary>
+    public string? CityArabic { get; set; }
+
+    /// <summary>Optional map latitude.</summary>
+    public double? Latitude { get; set; }
+
+    /// <summary>Optional map longitude.</summary>
+    public double? Longitude { get; set; }
+
+    /// <summary>Optional same-DB country (logical + real FK to <see cref="Country"/>).
+    /// Null until set.</summary>
+    public int? CountryId { get; set; }
+    public Country? Country { get; set; }
 
 }

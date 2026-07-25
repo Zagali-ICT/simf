@@ -89,7 +89,10 @@ public sealed class PublicEditions(SimfPublicClient api, IMemoryCache cache)
             return Build([]);
         }
 
-        var view = Build(result.Items);
+        // Items is non-nullable on the contract, but System.Text.Json can still
+        // deserialize a malformed/partial envelope's list to null; treat that as
+        // the empty archive (static fallback) rather than throwing (DEF-003).
+        var view = Build(result.Items ?? []);
         cache.Set(CacheKey, view, CacheFor);
         return view;
     }

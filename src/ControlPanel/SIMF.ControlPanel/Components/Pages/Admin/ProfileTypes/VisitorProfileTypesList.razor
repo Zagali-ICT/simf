@@ -89,7 +89,7 @@
 
 @if (_addOpen)
 {
-    <SimfModal Open="true" Title="@L["Admin.ProfileTypes.Add.Title"]" OnClose="@(() => _addOpen = false)">
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.ProfileTypes.Add.Title"]" OnClose="@(() => _addOpen = false)">
         <ChildContent>
             @* D-186: audience-side form — IsPartnerForm=false sends
                IsVisitor=true on Create. *@
@@ -103,6 +103,7 @@
 @if (_editTarget is not null)
 {
     <SimfModal Open="true"
+               RequireExplicitClose="true"
                Title="@string.Format(L["Admin.ProfileTypes.Edit.TitleFor"], _editTarget.Name)"
                OnClose="@(() => _editTarget = null)">
         <ChildContent>
@@ -146,7 +147,7 @@
 
 @if (_deleteTarget is not null)
 {
-    <SimfModal Open="true" Title="@L["Admin.ProfileTypes.Delete.Title"]" OnClose="@(() => _deleteTarget = null)">
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.ProfileTypes.Delete.Title"]" OnClose="@(() => _deleteTarget = null)">
         <ChildContent>
             <p>@string.Format(L["Admin.ProfileTypes.Delete.Confirm"], _deleteTarget.Name)</p>
         </ChildContent>

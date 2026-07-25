@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using SIMF.Domain.Contacts;
 using SIMF.Domain.Sponsors;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
@@ -29,8 +28,8 @@ internal sealed class SponsorConfiguration : IEntityTypeConfiguration<Sponsor>
         builder.Property(sponsor => sponsor.LogoRelativePath).HasMaxLength(256);
         builder.Property(sponsor => sponsor.Url).HasMaxLength(512);
 
-        // D-432 — optional bilingual tagline (≤256, mirrors the validator + CP
-        // MaxLength). Additive nullable columns (D-219 freeze-lift).
+        // D-432 — optional bilingual tagline (<=256, mirrors the service-layer
+        // validation + CP MaxLength). Additive nullable columns (D-219 freeze-lift).
         builder.Property(sponsor => sponsor.Tagline).HasMaxLength(256);
         builder.Property(sponsor => sponsor.TaglineArabic).HasMaxLength(256);
 
@@ -39,12 +38,27 @@ internal sealed class SponsorConfiguration : IEntityTypeConfiguration<Sponsor>
         builder.Property(sponsor => sponsor.About).HasMaxLength(2048);
         builder.Property(sponsor => sponsor.AboutArabic).HasMaxLength(2048);
 
-        // SIMF-FDS-014 — D-260: optional shared Contact link. Restrict (a Contact
-        // is soft-deleted, never hard-deleted under a referrer). HasForeignKey
-        // creates the FK index.
-        builder.HasOne(sponsor => sponsor.Contact)
+        // Contact identity-card fields inlined from the removed shared Contact
+        // directory (supersedes SIMF-FDS-014 / D-260). All nullable. The Website
+        // slot is the existing Url above. Latitude/Longitude are double? and need
+        // no length.
+        builder.Property(sponsor => sponsor.Email).HasMaxLength(320);
+        builder.Property(sponsor => sponsor.PhonePrimary).HasMaxLength(32);
+        builder.Property(sponsor => sponsor.PhoneSecondary).HasMaxLength(32);
+        builder.Property(sponsor => sponsor.FacebookUrl).HasMaxLength(256);
+        builder.Property(sponsor => sponsor.XUrl).HasMaxLength(256);
+        builder.Property(sponsor => sponsor.LinkedInUrl).HasMaxLength(256);
+        builder.Property(sponsor => sponsor.InstagramUrl).HasMaxLength(256);
+        builder.Property(sponsor => sponsor.City).HasMaxLength(128);
+        builder.Property(sponsor => sponsor.CityArabic).HasMaxLength(128);
+
+        // Country inlined from the removed Contact directory — real DB FK on the
+        // same-DB reference (App DB). Restrict matches the soft-delete policy
+        // (countries are deactivated via IsActive, never hard-deleted under a
+        // referrer); HasForeignKey creates the FK index.
+        builder.HasOne(sponsor => sponsor.Country)
             .WithMany()
-            .HasForeignKey(sponsor => sponsor.ContactId)
+            .HasForeignKey(sponsor => sponsor.CountryId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // Public read order: active first, by tier, then display order.

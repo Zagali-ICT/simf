@@ -232,9 +232,6 @@ public static class CpNavigation
             new("Module.Organisations", "/admin/organisations", RequiredPermission: PermissionCatalog.Organisations.View, Icon: "building"),
             // Administrative-regions lookup (the 13 official Saudi regions), seeded from SaudiRegions.All.
             new("Module.Regions", "/admin/regions", RequiredPermission: PermissionCatalog.Regions.View, Icon: "map"),
-            // SIMF-FDS-014 (D-281/C2) — shared Contact directory reused by Sponsors /
-            // Exhibitors / MediaPartners / Speakers / Booth officers.
-            new("Module.Contacts", "/admin/contacts", RequiredPermission: PermissionCatalog.Contacts.View, Icon: "phone"),
             // D-118 — admin-managed lookup CRUD for ProfileType (per UserType).
             new("Module.AdminVisitorProfileTypes", "/admin/profile-types/visitor", RequiredPermission: PermissionCatalog.ProfileTypes.View, Icon: "list"),
             new("Module.AdminOtherProfileTypes", "/admin/profile-types/other", RequiredPermission: PermissionCatalog.ProfileTypes.View, Icon: "list"),

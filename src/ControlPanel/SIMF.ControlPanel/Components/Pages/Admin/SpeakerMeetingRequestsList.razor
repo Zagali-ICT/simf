@@ -64,27 +64,7 @@
                                     Header="@L["Admin.SpeakerMeetingRequests.Col.Status"]"
                                     Sortable="true" Filterable="true">
                     <CellTemplate>
-                        @switch (context.Status)
-                        {
-                            case MeetingRequestStatus.Pending:
-                                <SimfPill Variant="warn">@L["Admin.SpeakerMeetingRequests.Filter.Pending"]</SimfPill>
-                                break;
-                            case MeetingRequestStatus.Accepted:
-                                <SimfPill Variant="on">@L["Admin.SpeakerMeetingRequests.Filter.Accepted"]</SimfPill>
-                                break;
-                            case MeetingRequestStatus.Rejected:
-                                <SimfPill Variant="off">@L["Admin.SpeakerMeetingRequests.Filter.Rejected"]</SimfPill>
-                                break;
-                            case MeetingRequestStatus.AwaitingSpeaker:
-                                <SimfPill Variant="warn">@L["Admin.SpeakerMeetingRequests.Filter.AwaitingSpeaker"]</SimfPill>
-                                break;
-                            case MeetingRequestStatus.Cancelled:
-                                <SimfPill Variant="off">@L["Admin.SpeakerMeetingRequests.Filter.Cancelled"]</SimfPill>
-                                break;
-                            case MeetingRequestStatus.Done:
-                                <SimfPill Variant="on">@L["Admin.Meetings.Status.Done"]</SimfPill>
-                                break;
-                        }
+                        <MeetingStatusPill Status="context.Status" />
                     </CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminSpeakerMeetingRequestRow" Key="createdAt"
@@ -116,7 +96,7 @@
                 {
                     <AuthorizedAction Permission="@PermissionCatalog.SpeakerMeetingRequests.Manage">
                         <SimfToolbarButton Icon="send" Title="@L["Admin.SpeakerMeetingRequests.Resend"]"
-                                           OnClick="@(() => OnResendAsync(context))" />
+                                           OnClick="@(() => ConfirmResend(context))" />
                     </AuthorizedAction>
                 }
                 @* Bi-Meeting rework — a confirmed (Accepted) meeting can be checked in
@@ -126,7 +106,7 @@
                     <AuthorizedAction Permission="@PermissionCatalog.SpeakerMeetingRequests.Manage">
                         <SimfToolbarButton Icon="log-in" Title="@L["Admin.Meetings.CheckIn"]"
                                            Disabled="_busy"
-                                           OnClick="@(() => OnCheckInAsync(context))" />
+                                           OnClick="@(() => ConfirmCheckIn(context))" />
                     </AuthorizedAction>
                 }
             </RowActions>
@@ -139,7 +119,7 @@
 
 @if (_respondOpen && _respondTarget is not null)
 {
-    <SimfModal Open="true" Title="@L["Admin.SpeakerMeetingRequests.Respond.Title"]"
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.SpeakerMeetingRequests.Respond.Title"]"
                OnClose="@(() => _respondOpen = false)">
         <ChildContent>
             <div class="simf-form__fields">
@@ -224,6 +204,7 @@
                               @onchange="OnRespondNoteChanged"
                               disabled="@_busy"></textarea>
                 </label>
+                <p class="simf-form__secondary">@L["Admin.Meetings.RespondHelp"]</p>
             </div>
         </ChildContent>
         <Footer>
@@ -244,3 +225,8 @@
         </Footer>
     </SimfModal>
 }
+
+@* R10 (D-767) — must-decide guard for the one-click Check-in / Resend row actions. *@
+<SimfConfirm Open="_confirmOpen" Title="@_confirmTitle" Message="@_confirmMessage"
+             ConfirmLabel="@_confirmLabel" CancelLabel="@L["Admin.Meetings.Close"]"
+             Busy="_busy" OnConfirm="RunConfirmAsync" OnCancel="CancelConfirm" />

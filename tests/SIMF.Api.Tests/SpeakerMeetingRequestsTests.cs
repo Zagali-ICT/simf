@@ -215,21 +215,31 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task A_second_pending_request_for_the_same_speaker_is_rejected()
+    public async Task A_second_pending_request_for_the_same_speaker_moves_the_existing_one()
     {
-        // A1 — one open request per (requester, speaker): the second submit while a
-        // Pending one exists is a 409 duplicate.
+        // R8 (D-767) — one open request per (requester, speaker); a repeat submit while a
+        // Pending one exists MOVES (updates) it instead of a 409 duplicate.
         var speaker = await SeedSpeakerAsync(allowsMeetings: true);
         var visitor = await SignInApprovedVisitorAsync();
-        await SubmitAsync(speaker.Id, "Visitor", "First topic", visitor);
+
+        var first = await PostAuthAsync(
+            $"/api/v1/app/speakers/{speaker.Id}/meeting-requests",
+            new SubmitSpeakerMeetingRequestRequest { RequesterName = "Visitor", Subject = "First topic" },
+            visitor);
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        var firstBody = (await first.Content
+            .ReadFromJsonAsync<ApiResult<SpeakerMeetingRequestSubmitted>>())!;
 
         var second = await PostAuthAsync(
             $"/api/v1/app/speakers/{speaker.Id}/meeting-requests",
             new SubmitSpeakerMeetingRequestRequest { RequesterName = "Visitor", Subject = "Second topic" },
             visitor);
-        Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
-        var body = (await second.Content.ReadFromJsonAsync<ApiResult<object>>())!;
-        Assert.Equal(ErrorCodes.AppRequestDuplicatePending, body.Error!.Code);
+        Assert.Equal(HttpStatusCode.OK, second.StatusCode);
+        var secondBody = (await second.Content
+            .ReadFromJsonAsync<ApiResult<SpeakerMeetingRequestSubmitted>>())!;
+
+        // Same row (moved in place), not a duplicate.
+        Assert.Equal(firstBody.Data!.Id, secondBody.Data!.Id);
     }
 
     [Fact]

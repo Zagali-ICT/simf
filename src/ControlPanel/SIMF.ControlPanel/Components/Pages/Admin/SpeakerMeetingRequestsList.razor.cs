@@ -31,6 +31,15 @@ public partial class SpeakerMeetingRequestsList
     private bool _busy;
     private Toast? _toast;
 
+    // R10 (D-767) — a confirm dialog for the one-click, state-changing row actions
+    // (Check-in flips Accepted→Done; Resend emails fresh links) so a mis-click cannot
+    // fire them silently. The work runs from RunConfirmAsync only after the admin OKs.
+    private bool _confirmOpen;
+    private string _confirmTitle = string.Empty;
+    private string _confirmMessage = string.Empty;
+    private string _confirmLabel = string.Empty;
+    private Func<Task>? _confirmAction;
+
     private bool _respondOpen;
     // PII (requester email) is fetched on demand into the detail shape; list
     // rows do not carry email (the D-185 pattern).
@@ -200,6 +209,40 @@ public partial class SpeakerMeetingRequestsList
         }
         finally { _busy = false; }
     }
+
+    // R10 (D-767) — open the confirm dialog for a one-click row action; the work runs
+    // from RunConfirmAsync only after the admin confirms.
+    private void ConfirmCheckIn(AdminSpeakerMeetingRequestRow row) =>
+        AskConfirm(L["Admin.Meetings.CheckIn"], L["Admin.Meetings.CheckIn.ConfirmMsg"],
+            L["Admin.Meetings.CheckIn"], () => OnCheckInAsync(row));
+
+    private void ConfirmResend(AdminSpeakerMeetingRequestRow row) =>
+        AskConfirm(L["Admin.SpeakerMeetingRequests.Resend"],
+            L["Admin.SpeakerMeetingRequests.Resend.ConfirmMsg"],
+            L["Admin.SpeakerMeetingRequests.Resend"], () => OnResendAsync(row));
+
+    private void AskConfirm(string title, string message, string confirmLabel, Func<Task> action)
+    {
+        _confirmTitle = title;
+        _confirmMessage = message;
+        _confirmLabel = confirmLabel;
+        _confirmAction = action;
+        _confirmOpen = true;
+        _toast = null;
+    }
+
+    private async Task RunConfirmAsync()
+    {
+        var action = _confirmAction;
+        _confirmOpen = false;
+        _confirmAction = null;
+        if (action is not null)
+        {
+            await action();
+        }
+    }
+
+    private void CancelConfirm() => _confirmOpen = false;
 
     // D-716 — reset the hall-binding selection (the chosen hall is set separately;
     // this clears the slot/table choice + their loaded lists).

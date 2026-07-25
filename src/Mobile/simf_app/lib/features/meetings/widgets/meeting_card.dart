@@ -9,6 +9,7 @@ import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
 import '../../../core/country_flag.dart';
 import '../../requests/data/request_models.dart';
+import '../../requests/widgets/request_status_style.dart';
 import '../../speakers/widgets/speaker_photo_tile.dart';
 
 /// One bilateral-meeting card on the اللقاءات الثنائية page (Figma 1408:9726): a
@@ -19,11 +20,12 @@ import '../../speakers/widgets/speaker_photo_tile.dart';
 ///   is tappable (a speaker meeting opens the speaker profile);
 /// - **row 3**: the meeting date/time with a clock glyph.
 ///
-/// Every card on this page is an approved + upcoming meeting, so the border is
-/// always the accepted green ([SimfTokens.statusAccepted]). Speaker photo + flag
-/// come from the D-745 append-only wire fields ([AppRequestItem.speakerId] /
-/// [AppRequestItem.countryId]); a delegation meeting has no speaker photo and
-/// shows the anchor placeholder.
+/// R9 (D-767) — the card lists ANY of the user's meeting requests, so the border
+/// colour and a status pill reflect the request's status (pending amber / accepted
+/// green / rejected red / cancelled grey), reusing the requests-feed palette.
+/// Speaker photo + flag come from the D-745 append-only wire fields
+/// ([AppRequestItem.speakerId] / [AppRequestItem.countryId]); a delegation meeting
+/// has no speaker photo and shows the anchor placeholder.
 class MeetingCard extends StatelessWidget {
   const MeetingCard({
     required this.item,
@@ -50,7 +52,7 @@ class MeetingCard extends StatelessWidget {
         color: SimfTokens.navyDeep,
         borderRadius: BorderRadius.circular(SimfTokens.radius),
         border: Border.all(
-          color: SimfTokens.statusAccepted,
+          color: requestStatusColor(item.status),
           width: SimfTokens.hairline,
         ),
       ),
@@ -121,6 +123,8 @@ class MeetingCard extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(width: SimfTokens.space2),
+          _statusPill(),
           if (flag != null) ...<Widget>[
             const SizedBox(width: SimfTokens.space3),
             _FlagBadge(flag: flag),
@@ -193,6 +197,33 @@ class MeetingCard extends StatelessWidget {
             color: SimfTokens.beigeBorder,
           ),
         ],
+      ),
+    );
+  }
+
+  // R9 — the request's status pill (status colour at a soft fill + border with the
+  // localized status label), reusing the requests-feed status palette + opacities.
+  Widget _statusPill() {
+    final color = requestStatusColor(item.status);
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: SimfTokens.space2,
+        vertical: SimfTokens.space1,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: SimfTokens.chipFillOpacity),
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        border: Border.all(
+          color: color.withValues(alpha: SimfTokens.chipBorderOpacity),
+        ),
+      ),
+      child: Text(
+        requestStatusLabel(l10n, item.status),
+        style: TextStyle(
+          color: color,
+          fontSize: SimfTokens.textSm,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

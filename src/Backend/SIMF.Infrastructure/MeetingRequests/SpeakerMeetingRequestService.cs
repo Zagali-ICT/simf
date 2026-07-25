@@ -24,7 +24,6 @@ namespace SIMF.Infrastructure.MeetingRequests;
 internal sealed class SpeakerMeetingRequestService(
     SimfAppDbContext appDbContext,
     IIdentityUserDirectory userDirectory,
-    ISpeakerAvailabilityService availability,
     IHallAvailabilityService hallAvailability,
     IMeetingActionTokenService meetingActionTokens,
     INotificationDispatcher notifications,
@@ -99,25 +98,16 @@ internal sealed class SpeakerMeetingRequestService(
                 "طلب مقابلة المتحدّث غير مُفعَّل لحسابك.");
         }
 
-        // A1 — one open request per (requester, speaker): a duplicate Pending
-        // submission floods the review queue and (for VIP slots) stacks rival
-        // claims on one slot. The DB filtered-unique backstop is a Wave B item.
-        var hasOpenRequest = await appDbContext.SpeakerMeetingRequests.AsNoTracking()
-            .AnyAsync(r => r.RequestedByUserId == requesterUserId
-                && r.SpeakerId == speakerId
-                && r.Status == MeetingRequestStatus.Pending, cancellationToken);
-        if (hasOpenRequest)
-        {
-            throw new ApiException(
-                ErrorCodes.AppRequestDuplicatePending, 409,
-                "You already have a pending meeting request for this speaker.",
-                "لديك بالفعل طلب مقابلة قيد المراجعة لهذا المتحدّث.");
-        }
+        // R8 (D-767) — the one-open-request-per-(requester, speaker) rule is applied as an
+        // in-place MOVE of the existing Pending request after the slot is resolved (see
+        // below), not a duplicate 409.
 
-        // D-474 (#11) — slot flow: when the requester picked a slot it must still be
-        // free. Eligibility (AllowsSpeakerMeeting) is already enforced by the gate
-        // above, so there is no re-check here. A null slot is the legacy topic-only
-        // request.
+        // Slot flow (D-474 #11): validate the picked slot pair (both-or-neither, end >
+        // start). R1 (D-767) — the slot is NOT re-checked for availability at submit:
+        // several Pending requests may target the same time; the admin approves only one
+        // (Serializable approve guard), and a reserved slot is already hidden from the
+        // picker (R2), so a requester never sees a same-time error. A null slot is the
+        // legacy topic-only request.
         DateTimeOffset? slotStart = null;
         DateTimeOffset? slotEnd = null;
         Guid? availabilityWindowId = null;
@@ -130,14 +120,6 @@ internal sealed class SpeakerMeetingRequestService(
                     "A valid meeting slot (start and end) is required.",
                     "يلزم اختيار فترة اجتماع صحيحة (بداية ونهاية).");
             }
-            var slots = await availability.GetAvailableSlotsAsync(speakerId, cancellationToken);
-            if (!slots.Any(s => s.Start == pickedStart && s.End == pickedEnd))
-            {
-                throw new ApiException(
-                    ErrorCodes.SpeakerMeetingRequestInvalid, 409,
-                    "That slot is no longer available.",
-                    "لم تعد هذه الفترة متاحة.");
-            }
             slotStart = pickedStart;
             slotEnd = pickedEnd;
 
@@ -149,6 +131,38 @@ internal sealed class SpeakerMeetingRequestService(
                     && w.Start <= pickedStart && w.End >= pickedEnd)
                 .Select(w => (Guid?)w.Id)
                 .FirstOrDefaultAsync(cancellationToken);
+        }
+
+        // R8 (bi-meeting rules, D-767) — a repeat submission MOVES the existing Pending
+        // request (new slot / subject / name) rather than duplicating it or 409-ing.
+        var openRequest = await appDbContext.SpeakerMeetingRequests
+            .SingleOrDefaultAsync(r => r.RequestedByUserId == requesterUserId
+                && r.SpeakerId == speakerId
+                && r.Status == MeetingRequestStatus.Pending, cancellationToken);
+        if (openRequest is not null)
+        {
+            openRequest.RequesterName = name;
+            openRequest.Subject = subject;
+            openRequest.SlotStart = slotStart;
+            openRequest.SlotEnd = slotEnd;
+            openRequest.AvailabilityWindowId = availabilityWindowId;
+            await appDbContext.SaveChangesAsync(cancellationToken);
+
+            await auditLog.WriteAsync(new AuditEntry
+            {
+                EventType = AuditEvents.SpeakerMeetingRequestSubmitted,
+                Outcome = AuditOutcome.Success,
+                ActorUserId = requesterUserId,
+                Detail = DetailJson(new
+                {
+                    speakerMeetingRequestId = openRequest.Id,
+                    speakerId,
+                    moved = true,
+                }),
+            }, cancellationToken);
+
+            return new SpeakerMeetingRequestSubmitted(
+                openRequest.Id, speakerId, openRequest.Status, openRequest.CreatedAt);
         }
 
         var now = timeProvider.GetUtcNow();
@@ -484,6 +498,28 @@ internal sealed class SpeakerMeetingRequestService(
             // the double-opt-in Approve/Reject links (tokens already committed above).
             await meetingActionTokens.AuditMintedAsync(req.Id, cancellationToken);
             await EmailSpeakerConfirmationLinksAsync(req, links, cancellationToken);
+
+            // R3 (D-767) — the requester (sender) is also told, in-app AND by email, that
+            // their request was approved and is now awaiting the speaker's confirmation,
+            // so they are not left in the dark until the speaker acts on the link.
+            var approvedSpeakerName = await appDbContext.Speakers.AsNoTracking()
+                .Where(s => s.Id == req.SpeakerId).Select(s => s.Name)
+                .SingleOrDefaultAsync(cancellationToken) ?? "the speaker";
+            await notifications.TryDispatchAsync(new NotificationRequest
+            {
+                UserId = req.RequestedByUserId,
+                Kind = NotificationKind.MeetingScheduled,
+                Title = "Meeting request approved",
+                TitleArabic = "تمت الموافقة على طلب المقابلة",
+                Body = $"Your meeting request with {approvedSpeakerName} was approved and is "
+                    + "awaiting the speaker's confirmation.",
+                BodyArabic = $"تمت الموافقة على طلب مقابلتك مع {approvedSpeakerName} وهو "
+                    + "بانتظار تأكيد المتحدّث.",
+                Severity = NotificationSeverity.Info,
+                RelatedEntityType = nameof(SpeakerMeetingRequest),
+                RelatedEntityId = req.Id,
+                SendEmail = true,
+            }, logger, cancellationToken);
         }
         else
         {
@@ -605,24 +641,15 @@ internal sealed class SpeakerMeetingRequestService(
 
     private static string HtmlEnc(string value) => System.Net.WebUtility.HtmlEncode(value);
 
-    // The speaker's contact email — the ContactId on Speaker is a bare Guid resolved
-    // on read (no nav). Shared by the accept-outcome email and the D-717 links email.
-    private async Task<string?> ResolveSpeakerContactEmailAsync(
-        Guid speakerId, CancellationToken cancellationToken)
-    {
-        var contactId = await appDbContext.Speakers.AsNoTracking()
+    // The speaker's contact email — now an inline column on Speaker (D-766 removed
+    // the shared Contact directory). Shared by the accept-outcome email and the
+    // D-717 links email.
+    private Task<string?> ResolveSpeakerContactEmailAsync(
+        Guid speakerId, CancellationToken cancellationToken) =>
+        appDbContext.Speakers.AsNoTracking()
             .Where(s => s.Id == speakerId)
-            .Select(s => s.ContactId)
+            .Select(s => s.Email)
             .SingleOrDefaultAsync(cancellationToken);
-        if (contactId is not { } id)
-        {
-            return null;
-        }
-        return await appDbContext.Contacts.AsNoTracking()
-            .Where(c => c.Id == id)
-            .Select(c => c.Email)
-            .SingleOrDefaultAsync(cancellationToken);
-    }
 
     // The fixed enqueue shape for a speaker-facing email (subjectUserId is Guid.Empty
     // — the speaker is not a SIMF account). Shared by the two speaker emails.
@@ -768,16 +795,17 @@ internal sealed class SpeakerMeetingRequestService(
             .SingleOrDefaultAsync(cancellationToken);
     }
 
-    // D-474 — in-app notify the requester of the decision; on Accept also email the
-    // speaker (resolved via their Contact). Both best-effort (swallow-and-log) so a
-    // notification/email failure never undoes the committed response.
+    // D-474 + R3 (D-767) — notify the requester (sender) of the decision by in-app AND
+    // email on every terminal outcome (accept/decline); on Accept also email the speaker
+    // (the receiver, resolved via their inline contact email). Both best-effort
+    // (swallow-and-log) so a notification/email failure never undoes the committed response.
     private async Task NotifyOutcomeAsync(
         SpeakerMeetingRequest req, CancellationToken cancellationToken)
     {
         var accepted = req.Status == MeetingRequestStatus.Accepted;
         var speaker = await appDbContext.Speakers.AsNoTracking()
             .Where(s => s.Id == req.SpeakerId)
-            .Select(s => new { s.Name, s.ContactId })
+            .Select(s => new { s.Name, s.Email })
             .SingleOrDefaultAsync(cancellationToken);
         var speakerName = speaker?.Name ?? "the speaker";
 
@@ -796,15 +824,12 @@ internal sealed class SpeakerMeetingRequestService(
             Severity = NotificationSeverity.Info,
             RelatedEntityType = nameof(SpeakerMeetingRequest),
             RelatedEntityId = req.Id,
-            SendEmail = false,
+            SendEmail = true,
         }, logger, cancellationToken);
 
-        if (accepted && speaker?.ContactId is { } contactId)
+        if (accepted)
         {
-            var contactEmail = await appDbContext.Contacts.AsNoTracking()
-                .Where(c => c.Id == contactId)
-                .Select(c => c.Email)
-                .SingleOrDefaultAsync(cancellationToken);
+            var contactEmail = speaker?.Email;
             if (!string.IsNullOrWhiteSpace(contactEmail))
             {
                 var slot = req.SlotStart is { } s

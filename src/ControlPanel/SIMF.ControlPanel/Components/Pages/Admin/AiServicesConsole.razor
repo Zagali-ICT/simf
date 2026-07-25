@@ -111,7 +111,7 @@
 
 @if (_routingPromptId is not null)
 {
-    <SimfModal Open="true" Title="@L["Admin.AiServices.Routing.Title"]" OnClose="CloseRouting">
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.AiServices.Routing.Title"]" OnClose="CloseRouting">
         <ChildContent>
             <AiRoutingEditor PromptId="_routingPromptId.Value"
                              OnSaved="OnRoutingSavedAsync" OnCancel="CloseRouting" />

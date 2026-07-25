@@ -118,7 +118,7 @@
 
 @if (_reEmailTarget is not null)
 {
-    <SimfModal Open="true" Title="@L["Admin.BadgeBatches.ReEmail.Title"]"
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.BadgeBatches.ReEmail.Title"]"
                OnClose="@(() => _reEmailTarget = null)">
         <ChildContent>
             <div class="simf-form__fields">
@@ -150,7 +150,7 @@
 
 @if (_revokeTarget is not null)
 {
-    <SimfModal Open="true" Title="@L["Admin.BadgeBatches.Revoke.Title"]"
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.BadgeBatches.Revoke.Title"]"
                OnClose="@(() => _revokeTarget = null)">
         <ChildContent>
             <p>@string.Format(L["Admin.BadgeBatches.Revoke.Body"], _revokeTarget.TotalCount, _revokeTarget.CountsSummary)</p>

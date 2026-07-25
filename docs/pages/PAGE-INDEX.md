@@ -53,7 +53,6 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/profile-types/other` | ✅ Real | Administrator | [cp/admin-profile-types-other.md](cp/admin-profile-types-other.md) | [e2e/cp-admin-profile-types-other.md](../tests/e2e/cp-admin-profile-types-other.md) |
 | `/admin/organisations` | ✅ Real (D-220) | Administrator  | [cp/admin-organisations.md](cp/admin-organisations.md) | [e2e/cp-admin-organisations.md](../tests/e2e/cp-admin-organisations.md) |
 | `/admin/regions` | ✅ Real (D-547) | Administrator  | [cp/admin-regions.md](cp/admin-regions.md) | [e2e/cp-admin-regions.md](../tests/e2e/cp-admin-regions.md) |
-| `/admin/contacts` | ✅ Real (D-281) | Administrator  | [cp/admin-contacts.md](cp/admin-contacts.md) | [e2e/cp-admin-contacts.md](../tests/e2e/cp-admin-contacts.md) |
 | `/admin/countries` | ✅ Real | Administrator  | [cp/admin-countries.md](cp/admin-countries.md) | [e2e/cp-admin-countries.md](../tests/e2e/cp-admin-countries.md) |
 | `/admin/vips` | ✅ Real | Administrator  | [cp/admin-vips.md](cp/admin-vips.md) | [e2e/cp-admin-vips.md](../tests/e2e/cp-admin-vips.md) |
 | `/admin/invitations` | ✅ Real | Administrator | [cp/admin-invitations.md](cp/admin-invitations.md) | [e2e/cp-admin-invitations.md](../tests/e2e/cp-admin-invitations.md) |
@@ -63,11 +62,11 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | **Programme & sessions** | | | | |
 | `/admin/themes` | ✅ Real | Administrator | [cp/admin-themes.md](cp/admin-themes.md) | [e2e/cp-admin-themes.md](../tests/e2e/cp-admin-themes.md) |
 | `/admin/halls` | ✅ Real | Administrator | [cp/admin-halls.md](cp/admin-halls.md) | [e2e/cp-admin-halls.md](../tests/e2e/cp-admin-halls.md) |
-| `/admin/halls/seat-layouts` | ✅ Real | Administrator | — | [e2e/cp-admin-halls-seat-layouts.md](../tests/e2e/cp-admin-halls-seat-layouts.md) |
+| `/admin/halls/seat-layouts` | ✅ Real | Administrator | [cp/admin-halls-seat-layouts.md](cp/admin-halls-seat-layouts.md) | [e2e/cp-admin-halls-seat-layouts.md](../tests/e2e/cp-admin-halls-seat-layouts.md) |
 | `/admin/speakers` | ✅ Real (D-199) | Administrator | [cp/admin-speakers.md](cp/admin-speakers.md) | [e2e/cp-admin-speakers.md](../tests/e2e/cp-admin-speakers.md) |
 | `/admin/speaker-presentations` | ✅ Real (D-228) | Administrator  | [cp/admin-speaker-presentations.md](cp/admin-speaker-presentations.md) | [e2e/cp-admin-speaker-presentations.md](../tests/e2e/cp-admin-speaker-presentations.md) |
 | `/admin/sessions` | ✅ Real (D-199) | Administrator | [cp/admin-sessions.md](cp/admin-sessions.md) | [e2e/cp-admin-sessions.md](../tests/e2e/cp-admin-sessions.md) |
-| `/admin/sessions/seat-plans` | ✅ Real | Administrator | — | [e2e/cp-admin-sessions-seat-plans.md](../tests/e2e/cp-admin-sessions-seat-plans.md) |
+| `/admin/sessions/seat-plans` | ✅ Real | Administrator | [cp/admin-sessions-seat-plans.md](cp/admin-sessions-seat-plans.md) | [e2e/cp-admin-sessions-seat-plans.md](../tests/e2e/cp-admin-sessions-seat-plans.md) |
 | `/admin/session-categories` | ✅ Real (D-226) | Administrator  | [cp/admin-session-categories.md](cp/admin-session-categories.md) | [e2e/cp-admin-session-categories.md](../tests/e2e/cp-admin-session-categories.md) |
 | `/admin/programme-days` | ✅ Real (D-452) | Administrator  | [cp/admin-programme-days.md](cp/admin-programme-days.md) | [e2e/cp-admin-programme-days.md](../tests/e2e/cp-admin-programme-days.md) |
 | `/admin/session-moderators` | ✅ Real | Administrator  | [cp/admin-session-moderators.md](cp/admin-session-moderators.md) | [e2e/cp-admin-session-moderators.md](../tests/e2e/cp-admin-session-moderators.md) |
@@ -118,7 +117,7 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/configuration` | ✅ Real (D-229) | Administrator  | [cp/admin-configuration.md](cp/admin-configuration.md) | [e2e/cp-admin-configuration.md](../tests/e2e/cp-admin-configuration.md) |
 | `/admin/email/templates` | ✅ Real (D-735: DB-backed override editor for the 6 transactional identity emails — bilingual token templates, live preview, block-on-unknown-token, reset-to-default) | Administrator | [cp/email-templates.md](cp/email-templates.md) | [e2e/cp-admin-email-templates.md](../tests/e2e/cp-admin-email-templates.md) |
 | `/admin/site-settings` | ✅ Real (D-464; Build #13 partner-directory toggle) | Administrator | [cp/site-settings.md](cp/site-settings.md) | [e2e/cp-site-settings.md](../tests/e2e/cp-site-settings.md) |
-| `/admin/organization-profile` | ✅ Real (D-495) | Administrator | [cp/organization-profile.md](cp/organization-profile.md) | [e2e/cp-organization-profile.md](../tests/e2e/cp-organization-profile.md) |
+| `/admin/organization-profile` | ✅ Real (D-495; hero-video upload D-768) | Administrator | [cp/organization-profile.md](cp/organization-profile.md) | [e2e/cp-organization-profile.md](../tests/e2e/cp-organization-profile.md) |
 | `/admin/contact-inquiries` | ✅ Real (D-464; BFF wired D-649) | Administrator | — | [e2e/cp-contact-inquiries.md](../tests/e2e/cp-contact-inquiries.md) |
 | `/admin/operations` | ✅ Real (D-166) | Administrator | — | [e2e/cp-admin-operations.md](../tests/e2e/cp-admin-operations.md) |
 | `/admin/operation-log` | ✅ Real | Administrator | [cp/admin-operation-log.md](cp/admin-operation-log.md) | [e2e/cp-admin-operation-log.md](../tests/e2e/cp-admin-operation-log.md) |

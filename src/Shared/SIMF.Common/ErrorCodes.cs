@@ -337,7 +337,6 @@ public static class ErrorCodes
 
     // Shared contact directory (SIMF-FDS-014 / D-261).
     public const string ContactInvalid = "CONTACT_INVALID";
-    public const string ContactNotFound = "CONTACT_NOT_FOUND";
     public const string ContactInUse = "CONTACT_IN_USE";
 
     // Centralised AI module (D-176, gap doc G12).

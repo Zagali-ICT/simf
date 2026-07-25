@@ -5,7 +5,7 @@ import '../../../app/theme/tokens.dart';
 
 /// The KSA OTP-frame box border (Figma 505:987 — D-364, promoted to a shared
 /// widget when the 2FA screen became the second consumer, D-369).
-const Color otpCodeBoxBorder = Color(0xFF1E3A5F);
+const Color otpCodeBoxBorder = SimfTokens.navyDisabledBorder;
 
 /// The OTP frame's muted blue caption colour (countdown label) — the shared
 /// [SimfTokens.mutedBlue] under the screen-local name its callers already use.

@@ -2,21 +2,26 @@
 
 | | |
 |--|--|
-| **Page** | `cp/admin-halls-seat-layouts.md` _(reference doc not yet authored — see `docs/pages/cp/admin-halls.md` for the related Halls CRUD page)_ |
+| **Page** | [`cp/admin-halls-seat-layouts.md`](../../pages/cp/admin-halls-seat-layouts.md) _(authored D-767, 2026-07-25; see `docs/pages/cp/admin-halls.md` for the related Halls CRUD page)_ |
 | **Route** | `/admin/halls/seat-layouts` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-07-25 (D-767 per-row seat counts + preview/meter, non-blocking Save) |
 
 > **Page shape (read from `HallSeatLayoutEditor.razor`, D-182).** This is a
 > **single-hall editor**, not a CRUD grid. There is no Add / Edit / Details /
 > Delete modal. The whole page is: a hall **`<select>`** dropdown, and once a
 > hall is chosen, two inputs — **Row labels** (comma-separated text) and
-> **Seats per row** (number 1–80) — plus a read-only **Hall capacity** /
-> **Layout capacity** description list, and one **Save layout** button. All
-> validation is **server-side**; there is no client-side guard, so an invalid
-> input round-trips to the API and returns as an error toast.
+> **Seats per row** (number 1–80) — a **Capacity summary** panel (Hall
+> capacity + Layout capacity readouts, a "N rows × M seats per row" line, a
+> utilisation `<progress>` meter, and a non-blocking over-capacity warning),
+> a **live seat-map preview** (a "Front / Stage" bar over a `rows × seats`
+> grid of neutral seats, or a placeholder when empty), and one **Save layout**
+> button. All validation is **server-side**; there is no client-side guard, so
+> an invalid input round-trips to the API and returns as an error toast. The
+> capacity summary and preview are **display only** — the over-capacity notice
+> does **not** disable Save, so E2E-HSL-012 still round-trips to the API.
 >
 > **Permission gate:** view = `PermissionCatalog.SeatLayouts.View`
 > (`SeatLayouts.View`); save = `SeatLayouts.Edit` enforced on the API PUT.
@@ -28,8 +33,32 @@
 > - `GET  /account/api/admin/halls/{hallId}/seat-layout` → `ApiResult<HallSeatLayoutSnapshot>` (load on select).
 > - `PUT  /account/api/admin/halls/{hallId}/seat-layout` → `ApiResult<HallSeatLayoutSnapshot>` (Save; rate-limited under the `auth` limiter).
 >
-> **`HallSeatLayoutSnapshot`** = `(HallId, RowLabels[], SeatsPerRow, LayoutCapacity, HallCapacity)`.
-> **`SetHallSeatLayoutRequest`** = `{ RowLabels: string[], SeatsPerRow: int }`.
+> **`HallSeatLayoutSnapshot`** = `(HallId, RowLabels[], SeatsPerRow, LayoutCapacity, HallCapacity, SeatCounts?)` (D-767 appends the nullable per-row `SeatCounts` int array; null for a uniform layout, `sum(SeatCounts)` feeds the reused `LayoutCapacity`).
+> **`SetHallSeatLayoutRequest`** = `{ RowLabels: string[], SeatsPerRow: int, SeatCounts?: int[] }` (D-767: `SeatCounts` null/empty = uniform via `SeatsPerRow`; when non-empty its length must equal the row count and each value is 1 to 80).
+
+> **D-767 page-shape update (2026-07-25) - per-row variable seat counts.** The
+> single **Seats per row** number field is REPLACED by **one seat-count input per
+> parsed row label** (a raw `<input type=number min=1 max=80>` beside each row,
+> resx `Admin.HallSeatLayouts.Field.RowSeats`; NOT a `SimfTextField`, to sidestep
+> the D-648 ValueExpression freeze). The **Capacity summary** panel + utilisation
+> `<progress>` meter (kept from the main-branch preview UX) now show the per-row
+> **Layout capacity** = `sum(counts)` (`_totalSeats`); the old `rows × seats`
+> formula line is dropped. A warning (`Admin.HallSeatLayouts.CapacityExceeded`,
+> rendered via the panel's `hsl-capacity--over` style) appears while the total
+> exceeds `Hall.Capacity` or any row is outside 1 to 80, but **Save layout stays
+> enabled** (non-blocking; the server keeps ownership of the rule) - the warning is
+> a client mirror of the server triple-lock. The PUT body carries `SeatCounts`
+> (int[] parallel to `RowLabels`);
+> `SeatReservationService.SetLayoutAsync` stores it as a CSV and keeps
+> `SeatsPerRow = max(counts)` as the uniform fallback (a caller that OMITS
+> `SeatCounts` stays on the pre-D-767 uniform path and persists `SeatCounts = null`).
+> Renaming a row label keeps that position's count (`OnRowLabelsChanged` reconciles
+> `_rows` positionally); a new row seeds from the loaded uniform `SeatsPerRow` (else
+> 1). Scenarios **E2E-HSL-001..016** stay valid as the **uniform** case (enter the
+> same count in every row; the "Layout capacity" readout now = `sum(counts)`); the
+> ragged behaviour + the live preview are **E2E-HSL-017..023**. Grounded in
+> `HallSeatLayoutEditor.razor(.cs)`, `SeatReservationService.SetLayoutAsync`,
+> `SeatReservations.cs`, migration `App/D767_AddHallSeatLayoutSeatCounts`.
 
 ## Coverage matrix
 
@@ -51,6 +80,13 @@
 | E2E-HSL-014 | Server 500 on halls `/list` → bilingual fallback toast, no dropdown | resilience | P2 | _to author_ |
 | E2E-HSL-015 | RTL render — Arabic toggle mirrors banner, hint, fields and Save button | i18n | P1 | _to author_ |
 | E2E-HSL-016 | Orphan guard (H-2) — a layout change that would strand active reservations (dropped row or shrunk seats-per-row) is blocked with 409 SEAT_LAYOUT_HAS_RESERVATIONS; a change with no orphans (and released reservations) still saves | conflict | P1 | authored ✓ |
+| E2E-HSL-017 | Ragged per-row counts (D-767): set VIP=4, A=10, B=8, C=8 -> Save -> read-back carries SeatCounts=[4,10,8,8], SeatsPerRow=max=10, LayoutCapacity=sum=30 | happy | P0 | _to author_ as a browser run (backend + CP coded; API round-trip covered by `SeatReservationsTests.Admin_set_variable_layout_round_trips_the_seat_counts`) |
+| E2E-HSL-018 | Per-row total + capacity meter (D-767): Layout capacity = sum(counts); NON-BLOCKING warning when sum > Hall.Capacity or any row out of 1..80 (Save stays enabled — server authoritative) | happy | P1 | _to author_ (CP coded) |
+| E2E-HSL-019 | Count-mismatch rejection (D-767): SeatCounts length != row count -> 400 SEAT_LAYOUT_INVALID | error | P1 | _to author_ as a browser run (API covered by `SeatReservationsTests.Set_layout_with_a_count_mismatch_is_400`) |
+| E2E-HSL-020 | Out-of-range rejection (D-767): a per-row count < 1 or > 80 -> 400 SEAT_LAYOUT_INVALID | error | P1 | _to author_ as a browser run (API covered by `SeatReservationsTests.Set_layout_rejects_out_of_range_counts_and_an_over_capacity_sum`) |
+| E2E-HSL-021 | Sum-over-capacity rejection (D-767): sum(counts) > Hall.Capacity -> 400 SEAT_CAPACITY_EXCEEDED | error | P1 | _to author_ as a browser run (API covered by `SeatReservationsTests.Set_layout_rejects_out_of_range_counts_and_an_over_capacity_sum`) |
+| E2E-HSL-022 | Uniform back-compat (D-767): omit SeatCounts -> stored null + unchanged pre-D-767 render; all rows equal in the editor -> renders identically | happy | P1 | _to author_ |
+| E2E-HSL-023 | Live seat-map preview — grid renders each row with its OWN seat count, "Front / Stage" bar shown, placeholder when empty | happy | P2 | authored ✓ |
 
 ## Scenarios
 
@@ -323,6 +359,157 @@ Scenario: A change with no orphans succeeds (released seats do not block)
 
 ---
 
+### E2E-HSL-017 - Ragged per-row seat counts round-trip (D-767)
+
+```gherkin
+Feature: Per-row variable seat counts (Option A, D-767)
+  As an Administrator with SeatLayouts.Edit
+  I want each row to carry its own seat count
+  So that a 4-seat VIP row can sit above 10/8/8 general rows
+
+Background:
+  Given an Administrator with SeatLayouts.View + SeatLayouts.Edit has signed in
+  And they are on /admin/halls/seat-layouts with "H-01 — Main Auditorium (cap 120)" selected
+
+Scenario: Set ragged counts, Save, and confirm the read-back
+  When the administrator types Row labels = "VIP,A,B,C"
+  Then a seat-count input appears beside each row label (VIP, A, B, C), each prefilled from the loaded uniform count (else 1)
+  When they set VIP = 4, A = 10, B = 8, C = 8
+  Then the "Total seats" readout reads "30"          # 4 + 10 + 8 + 8
+  And the "Hall capacity" term still reads "120"
+  And "Save layout" is enabled
+  When they click "Save layout"
+  Then a PUT /account/api/admin/halls/<H-01 id>/seat-layout fires with body
+       { "rowLabels": ["VIP","A","B","C"], "seatsPerRow": 10, "seatCounts": [4,10,8,8] }
+  And the API returns HTTP 200 with ApiResult.Success = true
+  And the returned HallSeatLayoutSnapshot has RowLabels=["VIP","A","B","C"], SeatsPerRow=10 (= max), LayoutCapacity=30, SeatCounts=[4,10,8,8]
+  And a green SimfAlert reads "Layout saved." / "تم حفظ المخطط."
+  When they reselect the blank option, then re-select "H-01 — Main Auditorium (cap 120)"
+  Then the GET re-loads and each row input prefills its OWN count (VIP=4, A=10, B=8, C=8)
+```
+
+**Evidence captured:**
+- Grounded in `SeatReservationService.SetLayoutAsync` variable branch (`seatsPerRow = seatCounts.Max()`, `countsCsv = string.Join(',', seatCounts)`, `layoutCapacity = seatCounts.Sum()`, persisted `layout.SeatCounts = countsCsv`).
+- Audit: an `AuditEntry` `EventType = 'HallSeatLayout.Updated'`, `Outcome = Success`, `Detail = "hallId=<H-01 id>; rows=VIP,A,B,C; seatsPerRow=10; seatCounts=4,10,8,8"`.
+- **API coverage:** the D-767 variable-layout paths are covered by `tests/SIMF.Api.Tests/SeatReservationsTests.cs` - 10 new facts on `SeedSessionWithVariableLayoutAsync` (per-row bounds, sum-capacity, random-scan, shrink-guard both ways, uniform-null back-compat, round-trip, count-mismatch, out-of-range + over-capacity, and the wire seat-counts), suite 44/44 passing. The Chrome DevTools MCP run remains the browser-level E2E for the CP editor UI.
+
+### E2E-HSL-018 - Total-seats + capacity meter, NON-BLOCKING warning (D-767)
+
+```gherkin
+Scenario: The Layout-capacity readout + meter track the per-row sum; the warning is advisory
+  Given hall "H-01" (cap 120) is selected with Row labels = "VIP,A,B,C"
+  When the administrator sets VIP = 4, A = 10, B = 8, C = 8
+  Then the capacity panel "Layout capacity" reads "30" and the meter is ~30/120
+  And "Save layout" is enabled
+  When they change C = 90                              # out of 1..80
+  Then the capacity panel switches to its warning style and a warning
+       (Admin.HallSeatLayouts.CapacityExceeded) appears
+  And "Save layout" is STILL enabled (non-blocking; the server enforces 1..80)
+  When they instead set VIP = 40, A = 40, B = 40, C = 40   # total 160 > cap 120
+  Then "Layout capacity" reads "160", the meter renders full in the warning colour,
+       the warning shows, and "Save layout" is STILL enabled
+  When they set the rows back to 4,10,8,8 (total 30, all in 1..80)
+  Then the warning clears
+```
+
+**Evidence captured:**
+- Grounded in `HallSeatLayoutEditor.razor(.cs)`: `_totalSeats => _rows.Sum(r => r.Count)`, `_anyOutOfRange => _rows.Any(r => r.Count < 1 || r.Count > 80)`, `_isOverCapacity => _hallCapacity > 0 && _totalSeats > _hallCapacity`; the `@if (_isOverCapacity || _anyOutOfRange)` warning + the `hsl-capacity--over` meter style. Save is NOT disabled — the PUT still round-trips and the server returns the 400 (per E2E-HSL-020 / 021).
+- Screenshot: `docs/screenshots/cp-admin-halls-seat-layouts-over-capacity.png` (warning panel + full meter + Save enabled).
+
+### E2E-HSL-019 - Count-mismatch rejection (D-767)
+
+```gherkin
+Scenario: SeatCounts length not equal to the row count returns 400 SEAT_LAYOUT_INVALID
+  Given hall "H-01" (cap 120) is selected
+  # The editor always posts a parallel array, so this is the API guard against a stale / hand-crafted PUT.
+  When a PUT /account/api/admin/halls/<H-01 id>/seat-layout is sent with
+       rowLabels = ["VIP","A","B","C"] (4) and seatCounts = [4,10,8] (3)
+  Then the API returns HTTP 400 with ApiResult.Error.Code = "SEAT_LAYOUT_INVALID"
+  And the message reads "Seat counts (3) must match the number of rows (4)." / "يجب أن يساوي عدد قيم المقاعد (3) عدد الصفوف (4)."
+  And no layout is persisted
+```
+
+**Evidence captured:**
+- Grounded in `SetLayoutAsync` variable branch `if (requestedCounts.Count != rows.Count) throw ApiException(ErrorCodes.SeatLayoutInvalid, 400, ...)`.
+
+### E2E-HSL-020 - Out-of-range per-row count rejection (D-767)
+
+```gherkin
+Scenario Outline: A per-row seat count outside 1..80 returns 400 SEAT_LAYOUT_INVALID
+  Given hall "H-01" (cap 120) is selected with Row labels = "VIP,A,B,C"
+  # The number inputs clamp to min=1 max=80; Save stays enabled (non-blocking), so this is the API guard for a forced payload.
+  When a PUT is sent with seatCounts = "<counts>"
+  Then the API returns HTTP 400 with ApiResult.Error.Code = "SEAT_LAYOUT_INVALID"
+  And the message reads "Each row's seat count must be between 1 and 80." / "يجب أن يكون عدد مقاعد كل صف بين 1 و 80."
+
+  Examples:
+    | counts     | reason        |
+    | 0,10,8,8   | a zero count  |
+    | 4,10,8,81  | a count > 80  |
+```
+
+**Evidence captured:**
+- Grounded in `SetLayoutAsync` variable branch `if (requestedCounts.Any(c => c is < 1 or > 80)) throw ...`.
+
+### E2E-HSL-021 - Sum-over-capacity rejection (D-767)
+
+```gherkin
+Scenario: Total seats exceeding hall capacity returns 400 SEAT_CAPACITY_EXCEEDED
+  Given hall "H-03" (cap 50) is selected
+  When the administrator sets Row labels = "A,B,C" and counts 20,20,20 (total 60)
+  Then the "Layout capacity" client readout reads "60" (exceeds 50); the warning shows but "Save layout" stays enabled (non-blocking)
+  When a PUT is forced with rowLabels=["A","B","C"], seatCounts=[20,20,20]
+  Then the API returns HTTP 400 with ApiResult.Error.Code = "SEAT_CAPACITY_EXCEEDED"
+  And the message reads "Layout capacity (60) exceeds hall capacity (50)." / "السعة المقترحة (60) تتجاوز سعة القاعة (50)."
+  And no layout is persisted
+```
+
+**Evidence captured:**
+- Grounded in `SetLayoutAsync`: `var layoutCapacity = seatCounts.Sum(); if (layoutCapacity > hall.Capacity) throw ApiException(ErrorCodes.SeatCapacityExceeded, 400, ...)`. This is the SAME `SEAT_CAPACITY_EXCEEDED` code the uniform path (E2E-HSL-012) raises; only the value now sums the per-row array.
+
+### E2E-HSL-022 - Uniform back-compat preserved (D-767)
+
+```gherkin
+Scenario: Path A - a caller that omits SeatCounts keeps the pre-D-767 uniform contract
+  Given hall "H-01" (cap 120) is selected
+  When a PUT /account/api/admin/halls/<H-01 id>/seat-layout is sent with
+       rowLabels = ["A","B","C","D"], seatsPerRow = 20 and NO seatCounts field
+  Then the API returns HTTP 200
+  And the layout persists SeatCounts = null, SeatsPerRow = 20, LayoutCapacity = 80   # 4 x 20
+  And the read-back HallSeatLayoutSnapshot has SeatCounts = null and every row renders 20 seats (identical to pre-D-767)
+
+Scenario: Path B - the editor with every row equal renders identically
+  When the administrator instead sets all four row inputs = 20 and clicks "Save layout"
+  Then the PUT carries seatCounts = [20,20,20,20]; the service stores that CSV with SeatsPerRow = max = 20
+  And the "Total seats" readout reads "80" and the grid renders a uniform 4 x 20 (same as Path A)
+```
+
+**Evidence captured:**
+- Grounded in `SetLayoutAsync` uniform branch (`seatCounts = Enumerable.Repeat(request.SeatsPerRow, rows.Count)`, `countsCsv = variable ? ... : null`) vs the variable branch storing the CSV; the existing `BookingApprovalTests` seeder still posts `SetHallSeatLayoutRequest { RowLabels, SeatsPerRow }` with `SeatCounts = null` and must stay green.
+### E2E-HSL-023 — Live seat-map preview (each row its own count)
+
+```gherkin
+Scenario: The preview renders each row with its own seat count
+  Given hall "H-01" (cap 120) is selected
+  And the "Layout preview" section shows the placeholder
+    "Enter row labels and seats per row to preview the seat map."
+  When the administrator types Row labels = "VIP,A,B" and sets VIP=4, A=10, B=10
+  Then the preview shows a "Front / Stage" bar
+  And the preview grid renders 3 rows labelled VIP, A, B
+  And row VIP renders 4 neutral seats and rows A and B render 10 seats each
+
+Scenario: Blank / trailing row entries are ignored in the preview
+  Given hall "H-01" is selected
+  When the administrator types Row labels = "A,B, ,C,"
+  Then the preview renders exactly 3 rows (A, B, C) — blank entries dropped
+```
+
+**Evidence captured:**
+- Screenshot: `docs/screenshots/cp-admin-halls-seat-layouts-preview.png` (Front/Stage bar + per-row seat grid)
+- Display only — no API call fires while typing; the grid iterates `_rows` (the same parse Save uses) and renders `Math.Clamp(row.Count, 0, 80)` seats per row.
+
+---
+
 ## Implementation notes
 
 - **API integration tests at a lower layer.** `tests/SIMF.Api.Tests/SeatReservationsTests.cs`
@@ -347,10 +534,15 @@ Scenario: A change with no orphans succeeds (released seats do not block)
   Auth setup row and capture screenshots into
   `docs/screenshots/cp-admin-halls-seat-layouts-*.png`. The Gherkin shape is
   already runner-agnostic for the eventual `.feature` port.
-- **Reference doc gap.** `docs/pages/cp/admin-halls-seat-layouts.md` does not
-  exist yet; the closest authored page doc is `docs/pages/cp/admin-halls.md`
-  (the Halls CRUD page that feeds this editor's dropdown).
+- **Reference doc** (D-767, 2026-07-25): the page reference doc
+  `docs/pages/cp/admin-halls-seat-layouts.md` is now authored (was a gap); the
+  related Halls CRUD page doc is `docs/pages/cp/admin-halls.md` (it feeds this
+  editor's dropdown).
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-07-25 by Claude (D-767 - added E2E-HSL-017..022 for per-row
+variable seat counts: ragged round-trip, Total-seats preview + disabled-Save guard,
+count-mismatch / out-of-range / sum-over-capacity 400s, and uniform back-compat; the
+single "Seats per row" field is now one input per row + a "Total seats" readout).
+Prior: 2026-06-02 by Claude (E2E catalogue rebuild).

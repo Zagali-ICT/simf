@@ -11,23 +11,21 @@ namespace SIMF.Infrastructure.Sponsors;
 /// grouped by tier (highest tier first; Platinum=10 before Bronze=40), then by
 /// DisplayOrder then NameArabic. Mirrors PublicDelegationService.
 ///
-/// <para>SIMF-FDS-014 (D-281) — when a sponsor links a shared <c>Contact</c>,
-/// the public card's name / logo / website are sourced from that Contact
-/// (falling back to the sponsor's own inline columns). The JSON field names are
-/// unchanged, preserving the shipped mobile/public wire contract (D-219).</para></summary>
+/// <para>The public card's identity-card fields (name / logo / website /
+/// contact / social / location) are sourced from the sponsor's own inlined
+/// columns — superseding the removed shared <c>Contact</c> directory
+/// (SIMF-FDS-014 / D-281). The JSON field names are unchanged, preserving the
+/// shipped mobile/public wire contract (D-219).</para></summary>
 internal sealed class PublicSponsorService(SimfAppDbContext appDbContext)
     : IPublicSponsorService
 {
     public async Task<PublicSponsors> ListAsync(
         CancellationToken cancellationToken = default)
     {
-        // A5 — one query with the Sponsor→Contact→Country LEFT JOINs replaces the
-        // prior three round-trips (sponsors, then a batch of active Contacts, then
-        // a batch of Countries). The linked Contact is surfaced only when it is
-        // active (the guard mirrors the old `contact.IsActive` batch filter); each
-        // contact-derived value is projected as null when the contact is missing
-        // or soft-deleted, so the in-memory coalesce below is exactly the old
-        // `c?.Field ?? sponsor.Field` semantics.
+        // A5 — one query with a Sponsor→Country LEFT JOIN. The identity-card
+        // fields come straight from the sponsor's own inlined columns (the shared
+        // Contact directory was removed); the country name is read through the
+        // join and is null when no country is set.
         var rows = await appDbContext.Sponsors.AsNoTracking()
             .Where(sponsor => sponsor.IsActive)
             .OrderBy(sponsor => sponsor.Tier)
@@ -42,65 +40,46 @@ internal sealed class PublicSponsorService(SimfAppDbContext appDbContext)
                 sponsor.LogoRelativePath,
                 sponsor.Url,
                 sponsor.DisplayOrder,
-                // D-432 — the tagline is sponsor-owned (not on Contact).
+                // D-432 — the tagline is sponsor-owned.
                 sponsor.Tagline,
                 sponsor.TaglineArabic,
-                ContactName = sponsor.Contact != null && sponsor.Contact.IsActive
-                    ? sponsor.Contact.Name : null,
-                ContactNameArabic = sponsor.Contact != null && sponsor.Contact.IsActive
-                    ? sponsor.Contact.NameArabic : null,
-                ContactLogoRelativePath = sponsor.Contact != null && sponsor.Contact.IsActive
-                    ? sponsor.Contact.LogoRelativePath : null,
-                ContactWebsite = sponsor.Contact != null && sponsor.Contact.IsActive
-                    ? sponsor.Contact.Website : null,
-                ContactPhonePrimary = sponsor.Contact != null && sponsor.Contact.IsActive
-                    ? sponsor.Contact.PhonePrimary : null,
-                ContactEmail = sponsor.Contact != null && sponsor.Contact.IsActive
-                    ? sponsor.Contact.Email : null,
-                ContactFacebookUrl = sponsor.Contact != null && sponsor.Contact.IsActive
-                    ? sponsor.Contact.FacebookUrl : null,
-                ContactXUrl = sponsor.Contact != null && sponsor.Contact.IsActive
-                    ? sponsor.Contact.XUrl : null,
-                ContactLinkedInUrl = sponsor.Contact != null && sponsor.Contact.IsActive
-                    ? sponsor.Contact.LinkedInUrl : null,
-                ContactInstagramUrl = sponsor.Contact != null && sponsor.Contact.IsActive
-                    ? sponsor.Contact.InstagramUrl : null,
-                ContactLatitude = sponsor.Contact != null && sponsor.Contact.IsActive
-                    ? sponsor.Contact.Latitude : null,
-                ContactLongitude = sponsor.Contact != null && sponsor.Contact.IsActive
-                    ? sponsor.Contact.Longitude : null,
-                ContactCountryId = sponsor.Contact != null && sponsor.Contact.IsActive
-                    ? sponsor.Contact.CountryId : null,
-                ContactCountryNameEn = sponsor.Contact != null && sponsor.Contact.IsActive
-                    && sponsor.Contact.Country != null ? sponsor.Contact.Country.Name : null,
-                ContactCountryNameAr = sponsor.Contact != null && sponsor.Contact.IsActive
-                    && sponsor.Contact.Country != null ? sponsor.Contact.Country.NameArabic : null,
+                sponsor.PhonePrimary,
+                sponsor.Email,
+                sponsor.FacebookUrl,
+                sponsor.XUrl,
+                sponsor.LinkedInUrl,
+                sponsor.InstagramUrl,
+                sponsor.Latitude,
+                sponsor.Longitude,
+                sponsor.CountryId,
+                CountryNameEn = sponsor.Country != null ? sponsor.Country.Name : null,
+                CountryNameAr = sponsor.Country != null ? sponsor.Country.NameArabic : null,
             })
             .ToListAsync(cancellationToken);
 
         var groups = rows
             .Select(r => new PublicSponsor(
                 r.Id,
-                r.ContactName ?? r.Name,
-                r.ContactNameArabic ?? r.NameArabic,
+                r.Name,
+                r.NameArabic,
                 (int)r.Tier,
                 r.Tier.ToString(),
-                r.ContactLogoRelativePath ?? r.LogoRelativePath,
-                r.ContactWebsite ?? r.Url,
+                r.LogoRelativePath,
+                r.Url,
                 r.DisplayOrder,
-                r.ContactPhonePrimary,
-                r.ContactEmail,
-                r.ContactFacebookUrl,
-                r.ContactXUrl,
-                r.ContactLinkedInUrl,
-                r.ContactInstagramUrl,
-                r.ContactLatitude,
-                r.ContactLongitude,
+                r.PhonePrimary,
+                r.Email,
+                r.FacebookUrl,
+                r.XUrl,
+                r.LinkedInUrl,
+                r.InstagramUrl,
+                r.Latitude,
+                r.Longitude,
                 r.Tagline,
                 r.TaglineArabic,
-                r.ContactCountryId,
-                r.ContactCountryNameEn,
-                r.ContactCountryNameAr))
+                r.CountryId,
+                r.CountryNameEn,
+                r.CountryNameAr))
             .GroupBy(sponsor => new { sponsor.Tier, sponsor.TierName })
             .OrderBy(group => group.Key.Tier)
             .Select(group => new PublicSponsorTierGroup(
@@ -115,10 +94,10 @@ internal sealed class PublicSponsorService(SimfAppDbContext appDbContext)
     public async Task<PublicSponsorDetail?> GetAsync(
         Guid id, CancellationToken cancellationToken = default)
     {
-        // A5 — one query with the Sponsor→Contact→Country LEFT JOINs (was three
-        // round-trips). The linked Contact is surfaced only when active; its name /
-        // logo / website fall back to the sponsor's inline columns, and the city +
-        // country come from that Contact — exactly the old coalesce semantics.
+        // A5 — one query with a Sponsor→Country LEFT JOIN. The identity-card
+        // fields (name / logo / website / city) come straight from the sponsor's
+        // own inlined columns (the shared Contact directory was removed); the
+        // country name is read through the join.
         var row = await appDbContext.Sponsors.AsNoTracking()
             .Where(sponsor => sponsor.IsActive && sponsor.Id == id)
             .Select(sponsor => new
@@ -132,24 +111,11 @@ internal sealed class PublicSponsorService(SimfAppDbContext appDbContext)
                 // Wave 3 — the about is sponsor-owned (like the tagline).
                 sponsor.About,
                 sponsor.AboutArabic,
-                ContactName = sponsor.Contact != null && sponsor.Contact.IsActive
-                    ? sponsor.Contact.Name : null,
-                ContactNameArabic = sponsor.Contact != null && sponsor.Contact.IsActive
-                    ? sponsor.Contact.NameArabic : null,
-                ContactLogoRelativePath = sponsor.Contact != null && sponsor.Contact.IsActive
-                    ? sponsor.Contact.LogoRelativePath : null,
-                ContactWebsite = sponsor.Contact != null && sponsor.Contact.IsActive
-                    ? sponsor.Contact.Website : null,
-                ContactCity = sponsor.Contact != null && sponsor.Contact.IsActive
-                    ? sponsor.Contact.City : null,
-                ContactCityArabic = sponsor.Contact != null && sponsor.Contact.IsActive
-                    ? sponsor.Contact.CityArabic : null,
-                ContactCountryId = sponsor.Contact != null && sponsor.Contact.IsActive
-                    ? sponsor.Contact.CountryId : null,
-                ContactCountryNameEn = sponsor.Contact != null && sponsor.Contact.IsActive
-                    && sponsor.Contact.Country != null ? sponsor.Contact.Country.Name : null,
-                ContactCountryNameAr = sponsor.Contact != null && sponsor.Contact.IsActive
-                    && sponsor.Contact.Country != null ? sponsor.Contact.Country.NameArabic : null,
+                sponsor.City,
+                sponsor.CityArabic,
+                sponsor.CountryId,
+                CountryNameEn = sponsor.Country != null ? sponsor.Country.Name : null,
+                CountryNameAr = sponsor.Country != null ? sponsor.Country.NameArabic : null,
             })
             .FirstOrDefaultAsync(cancellationToken);
         if (row is null)
@@ -159,18 +125,18 @@ internal sealed class PublicSponsorService(SimfAppDbContext appDbContext)
 
         return new PublicSponsorDetail(
             row.Id,
-            row.ContactName ?? row.Name,
-            row.ContactNameArabic ?? row.NameArabic,
+            row.Name,
+            row.NameArabic,
             (int)row.Tier,
             row.Tier.ToString(),
-            row.ContactLogoRelativePath ?? row.LogoRelativePath,
-            row.ContactWebsite ?? row.Url,
+            row.LogoRelativePath,
+            row.Url,
             row.About,
             row.AboutArabic,
-            row.ContactCity,
-            row.ContactCityArabic,
-            row.ContactCountryId,
-            row.ContactCountryNameEn,
-            row.ContactCountryNameAr);
+            row.City,
+            row.CityArabic,
+            row.CountryId,
+            row.CountryNameEn,
+            row.CountryNameAr);
     }
 }

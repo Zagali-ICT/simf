@@ -139,6 +139,7 @@
 @if (_accountsOpen)
 {
     <SimfModal Open="true"
+               RequireExplicitClose="true"
                Title="@string.Format(L["Admin.Exhibitors.Accounts.Title"], _accountsExhibitorName)"
                OnClose="@(() => _accountsOpen = false)">
         <ChildContent>

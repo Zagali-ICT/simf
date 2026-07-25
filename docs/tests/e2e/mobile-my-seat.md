@@ -67,6 +67,7 @@
 | E2E-MOB018-015 | الصف / مقعد chips below the title show the seat row + number (or "—") | happy | P1 | authored ✓ (frame 905:1576 — `_SeatChip`) |
 | E2E-MOB018-016 | Stage band shows "المسرح · STAGE" above the A–H grid | happy | P2 | authored ✓ (frame 905:1584 — `_StageBar`) |
 | E2E-MOB018-017 | Legend reads محجوز · متاح · مقعدك (LTR, not mirrored); seat fills — available = beige-outline transparent, reserved = darker filled, mine = gold; seats are squares with no h-scroll | i18n/visual | P2 | authored ✓ (frame 907:1591 — `_Legend` forced LTR; `_SeatBox` fills; `_SeatRow` square clamp) |
+| E2E-MOB018-018 | **Ragged read-only render (D-767):** a variable hall layout draws each row at its own `seatCounts[i]` width and highlights the viewer's own seat with its number + state icon | visual | P1 | authored ✓ (widget `my_seat_screen_test.dart` via the shared `hall_seat_map`; regenerated golden `my_seat_898-2873.png`) |
 
 ## Scenarios
 
@@ -277,6 +278,34 @@ Scenario: The legend reads left-to-right and the seats carry the frame colours
 
 **Evidence:** screen `_Legend` (frame 907:1591, forced `Directionality.ltr`, children محجوز/متاح/مقعدك) + `_SeatBox` (available `Colors.transparent` + beige border, reserved `navy` fill, mine `accent`); square sizing in `_SeatRow` (`LayoutBuilder` clamp ≤20, centred). Device-verified on TXZ W09 (commit `60458a5`).
 
+### E2E-MOB018-018 - Ragged read-only render + own-seat number/icon (D-767)
+
+```gherkin
+Scenario: A variable layout renders ragged and my seat shows its number + state icon
+  Given an approved visitor holds seat "A" / 7 in a hall whose layout is
+    rowLabels ["VIP","A","B"] with seatCounts [4,10,10]
+  When GET /api/v1/app/sessions/{id}/seats returns 200 with seatCounts [4,10,10] and myCell A/7
+    (seatsPerRow = 10 = max(seatCounts), the append-only uniform fallback)
+  And the My-Seat hall card renders (read-only; onSeatTap null)
+  Then row VIP draws 4 seats, row A 10, row B 10 (SessionSeatMap.seatsInRow(i)), each showing its number
+  And my seat A7 is the gold "mine" cell showing its number (token seatNumberOnGold) and the your-seat state icon
+  And the grid stays forced-LTR (L-7) with no horizontal scroll, the short VIP row centred under the stage
+```
+
+**Evidence:**
+- Wire/model grounded: `SessionSeatMap.SeatCounts` -> `seat_map_models.dart` `seatCounts` / `seatsInRow(i)` / `maxSeatsPerRow`; tokens `seatNumberOnGold` / `seatStateIconSize`. `my_seat_screen.dart` inherits all of this through the shared `HallSeatMapCard(map: map, l10n: l10n)` (no functional change of its own).
+- **Implementation status (2026-07-25) - IMPLEMENTED (green).**
+  The wire, model and tokens above have landed AND `hall_seat_map.dart` is wired for
+  D-767: it draws each row at its own `seatsInRow(i)` width, every cell shows its seat
+  number, and the viewer's own seat shows its number (`seatNumberOnGold`) plus the
+  your-seat state icon (`seatStateIconSize`), with the short VIP row centred under the
+  stage and no horizontal scroll. `my_seat_screen.dart` inherits all of this through the
+  shared `HallSeatMapCard`. Covered by the app widget test `my_seat_screen_test.dart`
+  and the regenerated golden `my_seat_898-2873.png`. See DECISIONS_LOG D-767.
+
 ---
 
-_Last reviewed:_ `2026-06-19` by `SIMF Team`.
+_Last reviewed:_ `2026-07-25` by `Claude` (D-767 - added E2E-MOB018-018 for the ragged
+read-only render + own-seat number/icon. Implemented and green: the wire/model/tokens
+landed AND `hall_seat_map.dart` render is wired, covered by `my_seat_screen_test.dart`
+and the regenerated golden `my_seat_898-2873.png`). Prior: `2026-06-19` by `SIMF Team`.

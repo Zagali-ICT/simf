@@ -75,6 +75,24 @@
   <data name="Admin.Edit.Save" xml:space="preserve"><value>حفظ التغييرات</value></data>
   <data name="Admin.Edit.Saving" xml:space="preserve"><value>جارٍ الحفظ…</value></data>
   <data name="Admin.Edit.Saved" xml:space="preserve"><value>تم تحديث الحساب.</value></data>
+  <data name="Admin.ContactField.Heading" xml:space="preserve"><value>معلومات الاتصال</value></data>
+  <data name="Admin.ContactField.City" xml:space="preserve"><value>المدينة</value></data>
+  <data name="Admin.ContactField.CityArabic" xml:space="preserve"><value>المدينة (بالعربية)</value></data>
+  <data name="Admin.ContactField.Country" xml:space="preserve"><value>الدولة</value></data>
+  <data name="Admin.ContactField.CountryNone" xml:space="preserve"><value>— بدون —</value></data>
+  <data name="Admin.ContactField.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
+  <data name="Admin.ContactField.PhonePrimary" xml:space="preserve"><value>الهاتف</value></data>
+  <data name="Admin.ContactField.PhoneSecondary" xml:space="preserve"><value>هاتف إضافي</value></data>
+  <data name="Admin.ContactField.Facebook" xml:space="preserve"><value>رابط فيسبوك</value></data>
+  <data name="Admin.ContactField.X" xml:space="preserve"><value>رابط إكس</value></data>
+  <data name="Admin.ContactField.LinkedIn" xml:space="preserve"><value>رابط لينكدإن</value></data>
+  <data name="Admin.ContactField.Instagram" xml:space="preserve"><value>رابط إنستغرام</value></data>
+  <data name="Admin.ContactField.Latitude" xml:space="preserve"><value>خط العرض</value></data>
+  <data name="Admin.ContactField.Longitude" xml:space="preserve"><value>خط الطول</value></data>
+  <data name="Admin.ContactField.LatLongHint" xml:space="preserve"><value>يجب إدخال خط العرض وخط الطول معاً.</value></data>
+  <data name="Admin.ContactField.LatLongInvalid" xml:space="preserve"><value>يجب أن يكون خط العرض وخط الطول أرقاماً عشرية صحيحة.</value></data>
+  <data name="Admin.ContactField.CountryInvalid" xml:space="preserve"><value>اختر دولة صحيحة من القائمة.</value></data>
+  <data name="Admin.ContactField.Website" xml:space="preserve"><value>رابط الموقع الإلكتروني</value></data>
   <data name="Admin.ChangeType.Heading" xml:space="preserve"><value>تغيير نوع الحساب</value></data>
   <data name="Admin.ChangeType.Note.VisitorToOther" xml:space="preserve"><value>تحويل هذا الزائر إلى حساب شريك (موظف، راعٍ، عارض، إعلام…). يتم تسجيل خروج الحساب وإعادة إصداره بالنوع الجديد.</value></data>
   <data name="Admin.ChangeType.Note.OtherToVisitor" xml:space="preserve"><value>تحويل هذا الحساب الشريك إلى زائر. يتم تسجيل خروج الحساب وإعادة إصداره بالنوع الجديد.</value></data>
@@ -111,6 +129,9 @@
   <data name="Admin.SpeakerAvailability.Speaker" xml:space="preserve"><value>المتحدّث</value></data>
   <data name="Admin.SpeakerAvailability.PickSpeaker" xml:space="preserve"><value>اختر متحدّثاً…</value></data>
   <data name="Admin.SpeakerAvailability.AddWindow" xml:space="preserve"><value>إضافة فترة توفّر</value></data>
+  <data name="Admin.Availability.WindowsHelp" xml:space="preserve"><value>يُقسَّم كل نطاق تلقائياً إلى فترات قابلة للحجز بالطول الذي تحدده أدناه. يختار مقدّمو الطلبات من هذه الفترات المتاحة، وتختفي الفترة من القائمة بمجرد حجزها.</value></data>
+  <data name="Admin.Availability.DeleteConfirmMsg" xml:space="preserve"><value>حذف فترة التوفّر هذه؟ لن تُعرض فتراتها القابلة للحجز بعد الآن.</value></data>
+  <data name="Admin.Availability.WindowDeleted" xml:space="preserve"><value>تم حذف فترة التوفّر.</value></data>
   <data name="Admin.SpeakerAvailability.Start" xml:space="preserve"><value>البداية (بتوقيت السعودية)</value></data>
   <data name="Admin.SpeakerAvailability.End" xml:space="preserve"><value>النهاية (بتوقيت السعودية)</value></data>
   <data name="Admin.SpeakerAvailability.SlotMinutes" xml:space="preserve"><value>مدة الفترة (دقائق)</value></data>
@@ -143,6 +164,7 @@
   <data name="Admin.DelegationAvailability.BadDateRange" xml:space="preserve"><value>يجب أن تكون التواريخ ضمن {0}.</value></data>
   <data name="Admin.Meetings.CheckIn" xml:space="preserve"><value>تسجيل الحضور</value></data>
   <data name="Admin.Meetings.CheckIn.Done" xml:space="preserve"><value>تم تسجيل حضور الاجتماع.</value></data>
+  <data name="Admin.Meetings.CheckIn.ConfirmMsg" xml:space="preserve"><value>تسجيل حضور هذا الاجتماع في القاعة؟ سيُعلَّم كمنتهٍ.</value></data>
   <data name="Admin.Meetings.Bind.Hall" xml:space="preserve"><value>القاعة</value></data>
   <data name="Admin.Meetings.Bind.PickHall" xml:space="preserve"><value>— اختر قاعة —</value></data>
   <data name="Admin.Meetings.Bind.Slot" xml:space="preserve"><value>فترة القاعة</value></data>
@@ -162,6 +184,10 @@
   <data name="Admin.Meetings.Status.AwaitingConfirmation" xml:space="preserve"><value>بانتظار التأكيد</value></data>
   <data name="Admin.Meetings.Status.Done" xml:space="preserve"><value>منتهٍ</value></data>
   <data name="Admin.Meetings.Status.Cancelled" xml:space="preserve"><value>ملغى</value></data>
+  <data name="Admin.Meetings.Status.Pending" xml:space="preserve"><value>قيد الانتظار</value></data>
+  <data name="Admin.Meetings.Status.Accepted" xml:space="preserve"><value>مؤكَّد</value></data>
+  <data name="Admin.Meetings.Status.Rejected" xml:space="preserve"><value>مرفوض</value></data>
+  <data name="Admin.Meetings.RespondHelp" xml:space="preserve"><value>«موافقة»: تُرسل للطرف الآخر رابط تأكيد (يُعقد الاجتماع بعد تأكيده). «تأكيد»: يحجزه فوراً عند وجود موافقة شفهية مسبقة. «رفض/إلغاء»: يغلق الطلب (يلزم إدخال مبرّر).</value></data>
   <data name="Admin.Edit.Meetings.Section" xml:space="preserve"><value>صلاحية اللقاءات الثنائية</value></data>
   <data name="Admin.Edit.Meetings.AllowsSpeaker" xml:space="preserve"><value>يمكنه طلب لقاءات المتحدثين</value></data>
   <data name="Admin.Edit.Meetings.AllowsDelegation" xml:space="preserve"><value>يمكنه طلب اجتماعات الوفود</value></data>
@@ -883,8 +909,14 @@
   <data name="Admin.Gates.Field.AllowedProfileTypes" xml:space="preserve"><value>أنواع الملفات المسموح بها</value></data>
   <data name="Admin.Gates.Field.AllowedProfileTypesHint" xml:space="preserve"><value>فارغة = جميع الأنواع مسموحة (بوابة عامة). اختر واحدة أو أكثر لتقييد البوابة.</value></data>
   <data name="Admin.Gates.Field.AssignedOperators" xml:space="preserve"><value>المشغلون المعيّنون</value></data>
-  <data name="Admin.Gates.Field.AssignedOperatorsHint" xml:space="preserve"><value>المشغلون الذين يمكنهم المسح في هذه البوابة. اضغط Ctrl/Cmd لتحديد متعدد.</value></data>
+  <data name="Admin.Gates.Field.AssignedOperatorsHint" xml:space="preserve"><value>المشغلون الذين يمكنهم المسح في هذه البوابة. حدّد كل مشغّل لتعيينه.</value></data>
   <data name="Admin.Gates.Field.IsActive" xml:space="preserve"><value>نشطة — متاحة للمسح</value></data>
+  <data name="Admin.Gates.Section.Identification" xml:space="preserve"><value>التعريف</value></data>
+  <data name="Admin.Gates.Section.Routing" xml:space="preserve"><value>الاتجاه والقاعة</value></data>
+  <data name="Admin.Gates.Section.Descriptions" xml:space="preserve"><value>الأوصاف</value></data>
+  <data name="Admin.Gates.Section.Access" xml:space="preserve"><value>الصلاحيات والمشغّلون</value></data>
+  <data name="Admin.Gates.Field.NoProfileTypes" xml:space="preserve"><value>لا توجد أنواع ملفات نشطة.</value></data>
+  <data name="Admin.Gates.Field.NoOperators" xml:space="preserve"><value>لا يوجد مشغّلون مرشحون.</value></data>
   <data name="Admin.Gates.DirectionMode.In" xml:space="preserve"><value>دخول فقط</value></data>
   <data name="Admin.Gates.DirectionMode.Out" xml:space="preserve"><value>خروج فقط</value></data>
   <data name="Admin.Gates.DirectionMode.Both" xml:space="preserve"><value>كلاهما (اتجاه مستنتج)</value></data>
@@ -1000,6 +1032,13 @@
   <data name="Admin.OrganizationProfile.Saved" xml:space="preserve"><value>تم الحفظ.</value></data>
   <data name="Admin.OrganizationProfile.SaveFailed" xml:space="preserve"><value>تعذّر حفظ الملف.</value></data>
   <data name="Admin.OrganizationProfile.LoadFailed" xml:space="preserve"><value>تعذّر تحميل الملف.</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoUpload" xml:space="preserve"><value>رفع فيديو</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoUploading" xml:space="preserve"><value>جارٍ الرفع…</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoRemove" xml:space="preserve"><value>إزالة الفيديو المرفوع</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoHint" xml:space="preserve"><value>MP4 أو M4V أو WebM، حتى 200 ميغابايت. الرفع يستبدل خلفية الواجهة أعلاه ويعمل على أندرويد. لاستخدام رابط يوتيوب أو رابط خارجي بدلاً من ذلك، ألصقه في الحقل أعلاه واترك هذا فارغاً.</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoUploaded" xml:space="preserve"><value>تم رفع فيديو الواجهة.</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoRemoved" xml:space="preserve"><value>تمت إزالة فيديو الواجهة.</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoFailed" xml:space="preserve"><value>تعذّر تحديث فيديو الواجهة.</value></data>
   <data name="Admin.SiteSettings.Title" xml:space="preserve"><value>إعدادات الموقع</value></data>
   <data name="Admin.SiteSettings.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
   <data name="Admin.SiteSettings.Section.Registration" xml:space="preserve"><value>رسالة التسجيل</value></data>
@@ -2172,13 +2211,21 @@
   <data name="Admin.HallSeatLayouts.None" xml:space="preserve"><value>لا توجد قاعات متاحة.</value></data>
   <data name="Admin.HallSeatLayouts.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
   <data name="Admin.HallSeatLayouts.LoadFailed" xml:space="preserve"><value>تعذّر تحميل مخططات مقاعد القاعات.</value></data>
-  <data name="Admin.HallSeatLayouts.Hint" xml:space="preserve"><value>المخطط يحدّد منتقي المقاعد الذي يراه الزائر. عدد الصفوف × المقاعد لكل صف يجب ألا يتجاوز سعة القاعة.</value></data>
+  <data name="Admin.HallSeatLayouts.Hint" xml:space="preserve"><value>المخطط يحدّد منتقي المقاعد الذي يراه الزائر. إجمالي المقاعد في جميع الصفوف يجب ألا يتجاوز سعة القاعة.</value></data>
   <data name="Admin.HallSeatLayouts.Field.RowLabels" xml:space="preserve"><value>رموز الصفوف (مفصولة بفواصل، من 1 إلى 26 إدخالاً، مثال: A,B,C,VIP)</value></data>
   <data name="Admin.HallSeatLayouts.Field.SeatsPerRow" xml:space="preserve"><value>عدد المقاعد في كل صف (1–80)</value></data>
+  <data name="Admin.HallSeatLayouts.Field.RowSeats" xml:space="preserve"><value>المقاعد في كل صف (1–80)</value></data>
   <data name="Admin.HallSeatLayouts.HallCapacity" xml:space="preserve"><value>سعة القاعة</value></data>
   <data name="Admin.HallSeatLayouts.LayoutCapacity" xml:space="preserve"><value>سعة المخطط</value></data>
+  <data name="Admin.HallSeatLayouts.TotalSeats" xml:space="preserve"><value>إجمالي المقاعد</value></data>
+  <data name="Admin.HallSeatLayouts.CapacityExceeded" xml:space="preserve"><value>إجمالي المقاعد يتجاوز سعة القاعة، أو أحد الصفوف خارج النطاق 1–80. عدّل الأعداد قبل الحفظ.</value></data>
   <data name="Admin.HallSeatLayouts.Save" xml:space="preserve"><value>حفظ المخطط</value></data>
   <data name="Admin.HallSeatLayouts.Saved" xml:space="preserve"><value>تم حفظ المخطط.</value></data>
+  <data name="Admin.HallSeatLayouts.RowsBySeats" xml:space="preserve"><value>{0} صفوف × {1} مقعداً لكل صف</value></data>
+  <data name="Admin.HallSeatLayouts.Capacity.Over" xml:space="preserve"><value>سعة المخطط تتجاوز سعة القاعة. قلّل عدد الصفوف أو المقاعد لكل صف قبل الحفظ.</value></data>
+  <data name="Admin.HallSeatLayouts.Preview.Title" xml:space="preserve"><value>معاينة المخطط</value></data>
+  <data name="Admin.HallSeatLayouts.Preview.Empty" xml:space="preserve"><value>أدخل رموز الصفوف وعدد المقاعد لكل صف لمعاينة مخطط المقاعد.</value></data>
+  <data name="Admin.HallSeatLayouts.Preview.Front" xml:space="preserve"><value>المقدمة / المنصة</value></data>
   <data name="Admin.SessionSeatPlans.Title" xml:space="preserve"><value>مخطط مقاعد الجلسات</value></data>
   <data name="Admin.SessionSeatPlans.Legend.Free" xml:space="preserve"><value>متاح</value></data>
   <data name="Admin.SessionSeatPlans.Legend.User" xml:space="preserve"><value>محجوز (زائر)</value></data>
@@ -2216,6 +2263,7 @@
   <data name="Admin.SpeakerMeetingRequests.Filter.AwaitingSpeaker" xml:space="preserve"><value>بانتظار المتحدّث</value></data>
   <data name="Admin.SpeakerMeetingRequests.Resend" xml:space="preserve"><value>إعادة إرسال تأكيد المتحدّث</value></data>
   <data name="Admin.SpeakerMeetingRequests.Resend.Done" xml:space="preserve"><value>تمت إعادة إرسال بريد تأكيد المتحدّث.</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Resend.ConfirmMsg" xml:space="preserve"><value>إعادة إرسال بريد التأكيد بروابط جديدة صالحة ٧٢ ساعة؟</value></data>
   <data name="Admin.SpeakerMeetingRequests.Filter.Cancelled" xml:space="preserve"><value>ملغى</value></data>
   <data name="Admin.SpeakerMeetingRequests.Bind.Hall" xml:space="preserve"><value>الربط بقاعة (اختياري)</value></data>
   <data name="Admin.SpeakerMeetingRequests.Bind.NoHall" xml:space="preserve"><value>— بدون قاعة (قبول فقط) —</value></data>
@@ -2507,6 +2555,7 @@
   <data name="Admin.Booths.Field.Exhibitor" xml:space="preserve"><value>العارض</value></data>
   <data name="Admin.Booths.Field.ExhibitorNone" xml:space="preserve"><value>— بدون عارض —</value></data>
   <data name="Admin.Booths.Field.OfficerName" xml:space="preserve"><value>اسم مسؤول الجناح</value></data>
+  <data name="Admin.Booths.Field.OfficerNameAr" xml:space="preserve"><value>اسم مسؤول الجناح (بالعربية)</value></data>
   <data name="Admin.Booths.Field.OfficerPhone" xml:space="preserve"><value>هاتف مسؤول الجناح</value></data>
   <data name="Admin.Booths.Field.OfficerEmail" xml:space="preserve"><value>بريد مسؤول الجناح</value></data>
   <data name="Admin.Booths.Field.Website" xml:space="preserve"><value>موقع العارض</value></data>
@@ -3053,59 +3102,6 @@
   <data name="Grid.Import.Done" xml:space="preserve"><value>اكتمل الاستيراد.</value></data>
   <data name="Admin.AiPrompts.Active.Yes" xml:space="preserve"><value>مُفعّل</value></data>
   <data name="Admin.AiPrompts.Active.No" xml:space="preserve"><value>غير مُفعّل</value></data>
-  <!-- SIMF-FDS-014 (D-281/C2) — shared Contact directory -->
-  <data name="Module.Contacts" xml:space="preserve"><value>جهات الاتصال</value></data>
-  <data name="Admin.Contacts.Title" xml:space="preserve"><value>جهات الاتصال</value></data>
-  <data name="Admin.Contacts.Search" xml:space="preserve"><value>بحث</value></data>
-  <data name="Admin.Contacts.Search.Placeholder" xml:space="preserve"><value>ابحث بالاسم أو الهاتف أو البريد</value></data>
-  <data name="Admin.Contacts.Search.Apply" xml:space="preserve"><value>بحث</value></data>
-  <data name="Admin.Contacts.Loading" xml:space="preserve"><value>جارٍ تحميل جهات الاتصال…</value></data>
-  <data name="Admin.Contacts.None" xml:space="preserve"><value>لا توجد جهات اتصال بعد</value></data>
-  <data name="Admin.Contacts.LoadFailed" xml:space="preserve"><value>حدث خطأ ما. حاول مرة أخرى.</value></data>
-  <data name="Admin.Contacts.Required" xml:space="preserve"><value>الاسم بالعربية مطلوب.</value></data>
-  <data name="Admin.Contacts.Saved" xml:space="preserve"><value>تم حفظ جهة الاتصال.</value></data>
-  <data name="Admin.Contacts.Deleted" xml:space="preserve"><value>تم إلغاء تفعيل جهة الاتصال.</value></data>
-  <data name="Admin.Contacts.Col.NameAr" xml:space="preserve"><value>الاسم (عربي)</value></data>
-  <data name="Admin.Contacts.Col.NameEn" xml:space="preserve"><value>الاسم (إنجليزي)</value></data>
-  <data name="Admin.Contacts.Col.Phone" xml:space="preserve"><value>الهاتف</value></data>
-  <data name="Admin.Contacts.Col.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
-  <data name="Admin.Contacts.Col.Country" xml:space="preserve"><value>الدولة</value></data>
-  <data name="Admin.Contacts.Col.Active" xml:space="preserve"><value>الحالة</value></data>
-  <data name="Admin.Contacts.Add.Title" xml:space="preserve"><value>إضافة جهة اتصال</value></data>
-  <data name="Admin.Contacts.Edit.Title" xml:space="preserve"><value>تعديل جهة اتصال</value></data>
-  <data name="Admin.Contacts.Cancel" xml:space="preserve"><value>إلغاء</value></data>
-  <data name="Admin.Contacts.Save" xml:space="preserve"><value>حفظ</value></data>
-  <data name="Admin.Contacts.Delete.Confirm" xml:space="preserve"><value>إلغاء تفعيل جهة الاتصال هذه؟</value></data>
-  <data name="Admin.Contacts.Field.NameAr" xml:space="preserve"><value>الاسم (عربي)</value></data>
-  <data name="Admin.Contacts.Field.NameEn" xml:space="preserve"><value>الاسم (إنجليزي)</value></data>
-  <data name="Admin.Contacts.Field.LogoRelativePath" xml:space="preserve"><value>مسار الشعار</value></data>
-  <data name="Admin.Contacts.Field.LogoHint" xml:space="preserve"><value>مسار نسبي للأصل، مثل contacts/acme.png</value></data>
-  <data name="Admin.Contacts.Field.PhonePrimary" xml:space="preserve"><value>الهاتف الأساسي</value></data>
-  <data name="Admin.Contacts.Field.PhoneSecondary" xml:space="preserve"><value>الهاتف الثانوي</value></data>
-  <data name="Admin.Contacts.Field.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
-  <data name="Admin.Contacts.Field.Website" xml:space="preserve"><value>الموقع الإلكتروني</value></data>
-  <data name="Admin.Contacts.Field.FacebookUrl" xml:space="preserve"><value>رابط فيسبوك</value></data>
-  <data name="Admin.Contacts.Field.XUrl" xml:space="preserve"><value>رابط إكس (تويتر)</value></data>
-  <data name="Admin.Contacts.Field.LinkedInUrl" xml:space="preserve"><value>رابط لينكدإن</value></data>
-  <data name="Admin.Contacts.Field.InstagramUrl" xml:space="preserve"><value>رابط إنستغرام</value></data>
-  <data name="Admin.Contacts.Field.Country" xml:space="preserve"><value>الدولة</value></data>
-  <data name="Admin.Contacts.Field.CountryPlaceholder" xml:space="preserve"><value>اختر الدولة</value></data>
-  <data name="Admin.Contacts.Field.City" xml:space="preserve"><value>المدينة (إنجليزي)</value></data>
-  <data name="Admin.Contacts.Field.CityAr" xml:space="preserve"><value>المدينة (عربي)</value></data>
-  <data name="Admin.Contacts.Field.Latitude" xml:space="preserve"><value>خط العرض</value></data>
-  <data name="Admin.Contacts.Field.Longitude" xml:space="preserve"><value>خط الطول</value></data>
-  <data name="Admin.Contacts.Field.LatLongHint" xml:space="preserve"><value>موقع اختياري على الخريطة (أدخل كليهما أو اتركهما فارغين)</value></data>
-  <data name="Admin.Contacts.Field.LatLongPair" xml:space="preserve"><value>أدخل خط العرض وخط الطول معاً، أو اتركهما فارغين.</value></data>
-  <data name="Admin.Contacts.Field.LatLongInvalid" xml:space="preserve"><value>يجب أن يكون خط العرض بين -90 و90، وخط الطول بين -180 و180.</value></data>
-  <data name="Admin.Contacts.Field.IsActive" xml:space="preserve"><value>مُفعّل</value></data>
-  <data name="Admin.Contacts.Picker.Label" xml:space="preserve"><value>جهة الاتصال المرتبطة</value></data>
-  <data name="Admin.Contacts.Picker.Hint" xml:space="preserve"><value>اربط جهة اتصال موجودة من الدليل (اختياري)</value></data>
-  <data name="Admin.Contacts.Picker.Search" xml:space="preserve"><value>ابحث في جهات الاتصال</value></data>
-  <data name="Admin.Contacts.Picker.SearchApply" xml:space="preserve"><value>بحث</value></data>
-  <data name="Admin.Contacts.Picker.None" xml:space="preserve"><value>لا توجد جهات اتصال مطابقة</value></data>
-  <data name="Admin.Contacts.Picker.Clear" xml:space="preserve"><value>إزالة</value></data>
-  <data name="Admin.Contacts.Picker.Linked" xml:space="preserve"><value>مرتبطة بـ: {0}</value></data>
-  <data name="Admin.Contacts.Picker.NotLinked" xml:space="preserve"><value>لا توجد جهة اتصال مرتبطة</value></data>
   <data name="Admin.Themes.Delete.Title" xml:space="preserve"><value>تعطيل المحور</value></data>
   <data name="Admin.Themes.Delete.Message" xml:space="preserve"><value>تعطيل المحور "{0}"؟ سيُخفى من جدول الأعمال ومنتقي محرر الجلسة. يمكنك إعادة تفعيله لاحقاً بتعديله.</value></data>
   <data name="Admin.Halls.Delete.Title" xml:space="preserve"><value>إلغاء تفعيل القاعة</value></data>
@@ -3134,11 +3130,6 @@
   <data name="Admin.Configuration.Edit.Submit" xml:space="preserve"><value>حفظ التغييرات</value></data>
   <data name="Admin.Configuration.Edit.Submitting" xml:space="preserve"><value>جارٍ الحفظ…</value></data>
   <data name="Admin.Configuration.Fallback" xml:space="preserve"><value>حدث خطأ ما. يرجى المحاولة مرة أخرى.</value></data>
-  <data name="Admin.Contacts.Details.Title" xml:space="preserve"><value>تفاصيل جهة الاتصال</value></data>
-  <data name="Admin.Contacts.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
-  <data name="Admin.Contacts.Delete.Title" xml:space="preserve"><value>تعطيل جهة الاتصال</value></data>
-  <data name="Admin.Contacts.Delete.Message" xml:space="preserve"><value>هل تريد تعطيل "{0}"؟ لن تكون متاحة للربط من الرعاة أو العارضين أو الشركاء الإعلاميين أو المتحدثين أو الأجنحة.</value></data>
-  <data name="Admin.Contacts.Action.Deactivate" xml:space="preserve"><value>تعطيل</value></data>
   <data name="Admin.News.Details.Title" xml:space="preserve"><value>تفاصيل الخبر</value></data>
   <data name="Admin.News.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
   <data name="Admin.News.Delete.Title" xml:space="preserve"><value>حذف الخبر</value></data>

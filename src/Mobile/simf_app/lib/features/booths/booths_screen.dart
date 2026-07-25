@@ -28,10 +28,10 @@ import 'widgets/booth_card.dart';
 /// name beside the square logo tile, gold-hairline divider), the gold-bordered
 /// **code pill** (A-12) beside the deep-navy **hall box**, the booth-officer row
 /// + email / phone contact boxes (D-432 — now on the wire, server resolves the
-/// officer Contact-first), and a **guide-me** gold CTA. P6 — D-440: the logo tile
-/// renders the exhibitor's real `CompanyLogo` asset (D-357) via
-/// `{base}/app/assets/CompanyLogo/{exhibitorContactId}/image`, falling back to
-/// initials when the exhibitor has no linked Contact.
+/// officer Contact-first), and a **guide-me** gold CTA. D-764: the logo tile
+/// renders the booth's own `BoothLogo` asset (D-357) via
+/// `{base}/app/assets/BoothLogo/{booth.id}/image`, falling back to the booth
+/// short-name initials when the booth has no uploaded logo.
 class BoothsScreen extends ConsumerStatefulWidget {
   const BoothsScreen({super.key});
 
@@ -145,7 +145,7 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
 
     final isArabic = l10n.isArabic;
     final filtered = _filtered(isArabic);
-    // The card builds {base}/app/assets/CompanyLogo/{exhibitorContactId}/image.
+    // The card builds {base}/app/assets/BoothLogo/{booth.id}/image.
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
 
     return Column(

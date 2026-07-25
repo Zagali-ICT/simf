@@ -154,7 +154,10 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   bool _saving = false;
   String? _saveError;
 
-  /// D-736 — "Show in Meet People Like You" toggle. Defaults to true.
+  /// "Show in Meet People Like You" visibility. The in-app opt-in was removed
+  /// (owner 2026-07-24) — this now lives only in the CP; the value is loaded
+  /// from the profile and carried forward unchanged so the app never clobbers
+  /// the CP-set flag. Defaults to true for a brand-new "Other" registrant.
   bool _showInMeetLikeYou = true;
 
   @override
@@ -828,6 +831,12 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     label: l10n.jobTitleLabel,
                     controller: _jobTitle,
                     maxLength: 100,
+                    textDirection: TextDirection.ltr,
+                    // Latin letters + spaces only — mirror the English name
+                    // field so the English job title can never hold Arabic.
+                    inputFormatters: <TextInputFormatter>[
+                      FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z\s]')),
+                    ],
                     // D-723 — required (only the plate number stays optional).
                     validator: (String? v) => (v == null || v.trim().isEmpty)
                         ? l10n.jobTitleRequired
@@ -842,6 +851,11 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     controller: _jobTitleArabic,
                     maxLength: 100,
                     textDirection: TextDirection.rtl,
+                    // Arabic letters + spaces only — mirror the Arabic name
+                    // field so the Arabic job title can never hold Latin text.
+                    inputFormatters: <TextInputFormatter>[
+                      FilteringTextInputFormatter.allow(RegExp(r'[ء-ي\s]')),
+                    ],
                   ),
                   const SizedBox(height: SimfTokens.space4),
                   _buildNationalityField(l10n),
@@ -875,29 +889,6 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                   _buildIdImageField(l10n),
                   const SizedBox(height: SimfTokens.space4),
                   _buildFacePhotoField(l10n),
-                  // D-736 — "Show in Meet People Like You" visibility toggle,
-                  // shown only for the "Other" tab (non-Visitor registrants).
-                  if (!_isVisitorType) ...<Widget>[
-                    const SizedBox(height: SimfTokens.space4),
-                    const Divider(height: 1, color: SimfTokens.beigeBorder),
-                    const SizedBox(height: SimfTokens.space3),
-                    CheckboxListTile(
-                      value: _showInMeetLikeYou,
-                      onChanged: (v) => setState(() => _showInMeetLikeYou = v ?? true),
-                      title: Text(
-                        l10n.showInMeetLikeYou,
-                        style: const TextStyle(
-                          fontSize: SimfTokens.textMd,
-                          color: SimfTokens.headlineInk,
-                        ),
-                      ),
-                      contentPadding: EdgeInsets.zero,
-                      visualDensity: VisualDensity.compact,
-                      controlAffinity: ListTileControlAffinity.leading,
-                      activeColor: SimfTokens.accent,
-                    ),
-                    const SizedBox(height: SimfTokens.space4),
-                  ],
                   if (_saveError != null) ...<Widget>[
                     Text(
                       _saveError!,

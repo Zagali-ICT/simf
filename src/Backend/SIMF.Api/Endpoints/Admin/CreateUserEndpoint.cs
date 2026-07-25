@@ -37,9 +37,23 @@ public sealed class CreateAdminEndpoint(IAdminUserProvisioningService adminAccou
             await Send.UnauthorizedAsync(ct);
             return;
         }
+        // Granting roles at create time requires the same permission as the
+        // standalone role-assignment desk (Admins.AssignRoles): an admin who can
+        // create but not assign roles must not mint an elevated (Administrator)
+        // account through the create payload.
+        if (req.Roles is { Count: > 0 } && !CanAssignRoles())
+        {
+            await Send.ForbiddenAsync(ct);
+            return;
+        }
+
         var response = await adminAccountService.CreateAdminAsync(actorId, req, ct);
         await Send.OkAsync(ApiResult<AdminCreateUserResponse>.Ok(response), ct);
     }
+
+    private bool CanAssignRoles() =>
+        User.HasClaim(PermissionCatalog.ClaimType, PermissionCatalog.Wildcard)
+        || User.HasClaim(PermissionCatalog.ClaimType, PermissionCatalog.Admins.AssignRoles);
 }
 
 /// <summary>

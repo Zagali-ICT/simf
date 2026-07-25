@@ -22,4 +22,14 @@ public enum AssetCategory
     /// <c>Banner.Id</c>). Backs the rotating home hero; served publicly only
     /// while the banner is active and within its display window.</summary>
     Banner = 8,
+
+    /// <summary>An exhibition <c>Booth</c>'s own logo (owner = <c>Booth.Id</c>).
+    /// A booth now owns its logo directly rather than borrowing the linked
+    /// exhibitor's — shown on the app booth card. Public read.</summary>
+    BoothLogo = 9,
+
+    /// <summary>An <c>Exhibitor</c>'s own logo (owner = <c>Exhibitor.Id</c>),
+    /// independent of the linked <c>Contact</c>'s <see cref="CompanyLogo"/> — shown
+    /// on the app exhibitor-detail screen. Public read.</summary>
+    ExhibitorLogo = 10,
 }

@@ -122,6 +122,14 @@ public partial class SessionLiveHall
 
     // -- Seat-map rendering (read-only 4-state grid) -------------------------
 
+    // D-767 — seats in row i: the per-row SeatCounts entry when the layout is
+    // variable (ragged), else the uniform SeatsPerRow. Tolerant of a short/absent
+    // SeatCounts so a length-mismatched payload still renders.
+    private int SeatsInRow(int rowIndex) => _map is null ? 0
+        : (_map.SeatCounts is { Count: > 0 } sc && rowIndex < sc.Count
+            ? sc[rowIndex]
+            : _map.SeatsPerRow);
+
     // Fast (row,seat) -> reserved-cell lookup so the grid renders O(1) per seat.
     private SessionSeatCell? FindCell(string rowLabel, int seatNumber) =>
         _map?.ReservedCells.FirstOrDefault(c =>

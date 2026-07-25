@@ -157,9 +157,10 @@ public sealed class DelegationMeetingRequestsTests : IClassFixture<SimfApiFactor
     }
 
     [Fact]
-    public async Task A_second_pending_request_for_the_same_target_is_rejected()
+    public async Task A_second_pending_request_for_the_same_target_moves_the_existing_one()
     {
-        // A1 — one open request per (requester, target delegation).
+        // R8 (D-767) — one open request per (requester, target delegation); a repeat
+        // submission MOVES (updates) the existing Pending request instead of a 409.
         var homeId = await EnsureCountryAsync("SA", 682, invited: true);
         await EnsureCountryAsync("EG", 818, invited: true);
         var (delegate1, _) = await CreateDelegateAsync(homeId, isDelegate: true);
@@ -172,17 +173,22 @@ public sealed class DelegationMeetingRequestsTests : IClassFixture<SimfApiFactor
             },
             delegate1);
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        var firstBody = (await first.Content
+            .ReadFromJsonAsync<ApiResult<DelegationMeetingRequestSubmitted>>())!;
 
         var second = await PostAuthAsync(
             "/api/v1/app/delegation-meeting-requests",
             new SubmitDelegationMeetingRequestRequest
             {
-                TargetCountryCode = "EG", AttendeeCount = 5, Subject = "Second",
+                TargetCountryCode = "EG", AttendeeCount = 8, Subject = "Second",
             },
             delegate1);
-        Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
-        var body = (await second.Content.ReadFromJsonAsync<ApiResult<object>>())!;
-        Assert.Equal(ErrorCodes.AppRequestDuplicatePending, body.Error!.Code);
+        Assert.Equal(HttpStatusCode.OK, second.StatusCode);
+        var secondBody = (await second.Content
+            .ReadFromJsonAsync<ApiResult<DelegationMeetingRequestSubmitted>>())!;
+
+        // Same row (moved in place), not a duplicate.
+        Assert.Equal(firstBody.Data!.Id, secondBody.Data!.Id);
     }
 
     [Fact]

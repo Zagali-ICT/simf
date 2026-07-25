@@ -63,10 +63,23 @@ Scenario: Tapping a booth opens its exhibitor detail
   Given the exhibition list shows the booth "SAMI"
   When the user taps it
   Then the exhibitor detail screen for that booth opens
+
+Scenario: The detail shows the exhibitor's OWN logo (D-764)
+  Given an exhibitor with an uploaded ExhibitorLogo (exhibitorId "ex1")
+  When the exhibitor detail opens
+  Then the logo tile loads {base}/app/assets/ExhibitorLogo/ex1/image
+  And it falls back to the legacy CompanyLogo/{exhibitorContactId} if that 404s
+  And then to the exhibitor initials if neither logo loads
+
+Scenario: An exhibitor with no own logo yet keeps its existing company logo
+  Given an exhibitor with no ExhibitorLogo but a linked Contact CompanyLogo
+  Then the logo tile loads the CompanyLogo (existing data does not regress)
 ```
 
-**Evidence:** screen test (1 — booth tap → detail nav); API tests (2 — website/city/tier
-on the detail, unknown→404).
+**Evidence:** screen tests (`exhibitor_detail_screen_test` — own ExhibitorLogo primary,
+CompanyLogo fallback when no own logo id) + API tests (website/city/tier on the detail,
+unknown→404, `Upload_exhibitor_logo_then_public_app_image_streams`). The wire adds the
+append-only `PublicBoothDetail.ExhibitorId` (the ExhibitorLogo owner).
 
 ---
 

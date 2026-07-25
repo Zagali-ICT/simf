@@ -277,4 +277,11 @@ own; `AdminBoothSummary` gained `ExhibitorContactId` + `HasLogo`) — or a tinte
 initials tile. Column key unchanged so server-side sort/filter is unaffected.
 E2E-BTH-024.
 
-_Last reviewed:_ 2026-07-14 by Claude (D-357 — booth exhibitor-logo thumbnail in the list). Prior: 2026-06-10 by Claude (D-356 Phase 5).
+**2026-07-25 (D-764):** a booth now owns its **own** logo (`AssetCategory.BoothLogo`,
+owner = the booth). `BoothsAddEdit` (Edit mode) has a `<SimfImageUpload
+Category="BoothLogo">` "Logo" field; the grid + `BoothsViewDelete` render the
+booth's own logo (`AdminBoothSummary.HasBoothLogo`) instead of the exhibitor's
+CompanyLogo, matching the app booth card (`GET /app/assets/BoothLogo/{id}/image`).
+Gated by `Booths.Edit`. E2E-BTH-024 / E2E-BTH-025.
+
+_Last reviewed:_ 2026-07-25 by Claude (D-764 — booth's own logo upload + thumbnail). Prior: 2026-07-14 by Claude (D-357).

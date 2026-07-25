@@ -61,4 +61,12 @@ public enum FileService
 
     /// <summary>Exhibition booth logo (owner = Booth.Id). Public read.</summary>
     BoothLogo = 15,
+
+    /// <summary>Exhibitor company logo (owner = Exhibitor.Id). Public read.</summary>
+    ExhibitorLogo = 16,
+
+    /// <summary>D-768 — home/landing hero background video
+    /// (owner = OrganizationProfile.SingletonId). Public read, range-streamed;
+    /// plaintext (kept seekable for HTTP 206, like <see cref="SessionRecording"/>).</summary>
+    OrganizationHeroVideo = 17,
 }

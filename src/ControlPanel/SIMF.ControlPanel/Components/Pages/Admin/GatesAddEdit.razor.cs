@@ -84,24 +84,18 @@ public partial class GatesAddEdit
         _model.HallId = e.Value is string s && Guid.TryParse(s, out var g) ? g : (Guid?)null;
     }
 
-    private void OnAllowedChanged(ChangeEventArgs e)
+    // Checkbox lists toggle a single id in/out of the selection set — clearer
+    // than a native <select multiple> and keeps the exact Guid set the API expects.
+    private void ToggleAllowed(Guid id, bool selected)
     {
-        if (e.Value is string[] values)
-        {
-            _model.AllowedProfileTypeIds = values
-                .Select(v => Guid.TryParse(v, out var g) ? g : (Guid?)null)
-                .Where(g => g.HasValue).Select(g => g!.Value).ToHashSet();
-        }
+        if (selected) _model.AllowedProfileTypeIds.Add(id);
+        else _model.AllowedProfileTypeIds.Remove(id);
     }
 
-    private void OnOperatorsChanged(ChangeEventArgs e)
+    private void ToggleOperator(Guid id, bool selected)
     {
-        if (e.Value is string[] values)
-        {
-            _model.AssignedOperatorUserIds = values
-                .Select(v => Guid.TryParse(v, out var g) ? g : (Guid?)null)
-                .Where(g => g.HasValue).Select(g => g!.Value).ToHashSet();
-        }
+        if (selected) _model.AssignedOperatorUserIds.Add(id);
+        else _model.AssignedOperatorUserIds.Remove(id);
     }
 
     private async Task HandleSubmitAsync()

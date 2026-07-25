@@ -94,6 +94,13 @@ internal sealed class SeatReservationService(
         var effectiveMode = EffectiveMode(
             session.SeatSelectionModeOverride, hall.SeatSelectionMode, hasLayout);
 
+        // D-767 — emit the per-row counts only for a ragged layout; null (key omitted)
+        // for a uniform one keeps the shipped wire identical for old and new apps, which
+        // then render every row at the still-emitted seatsPerRow (= max for a ragged layout).
+        var seatCounts = string.IsNullOrWhiteSpace(layout?.SeatCounts)
+            ? null
+            : ExpandSeatCounts(layout, rowLabels);
+
         return new SessionSeatMap(
             sessionId, session.HallId, hall.Capacity, session.CapacityOverride,
             rowLabels, layout?.SeatsPerRow ?? 0,
@@ -101,7 +108,9 @@ internal sealed class SeatReservationService(
             // D-432 — the session title is already loaded in the snapshot.
             session.Title, session.TitleArabic,
             // D-485 — the effective mode drives the app's Join CTA.
-            effectiveMode);
+            effectiveMode,
+            // D-767 — the ragged per-row counts (null = uniform).
+            seatCounts);
     }
 
     /// <summary>D-706 — the mode the app branches its Join CTA on. A session with
@@ -387,9 +396,16 @@ internal sealed class SeatReservationService(
         var layout = await LoadLayoutAsync(hallId, cancellationToken);
         var rowLabels = ParseRowLabels(layout?.RowLabels);
         var seatsPerRow = layout?.SeatsPerRow ?? 0;
+        // D-767 — the expanded per-row counts drive the capacity (sum), matching
+        // rows × seatsPerRow when uniform; the wire field stays null when uniform so the
+        // CP editor reads back exactly what it wrote.
+        var expanded = layout is null
+            ? Array.Empty<int>()
+            : ExpandSeatCounts(layout, rowLabels);
+        var seatCounts = string.IsNullOrWhiteSpace(layout?.SeatCounts) ? null : expanded;
         return new HallSeatLayoutSnapshot(
             hallId, rowLabels, seatsPerRow,
-            rowLabels.Count * seatsPerRow, hall.Capacity);
+            expanded.Sum(), hall.Capacity, seatCounts);
     }
 
     public async Task<HallSeatLayoutSnapshot> SetLayoutAsync(
@@ -420,15 +436,44 @@ internal sealed class SeatReservationService(
                 "Row labels must be 1–26 unique entries of 1–8 chars each.",
                 "يجب أن تكون رموز الصفوف بين 1 و 26 إدخالاً فريداً بطول 1 إلى 8 محارف.");
         }
-        if (request.SeatsPerRow is < 1 or > 80)
+        // D-767 — resolve the per-row seat counts. When SeatCounts is supplied it is
+        // AUTHORITATIVE (a ragged grid, one count per row); when null/empty the layout
+        // stays UNIFORM on the frozen SeatsPerRow. Both branches produce one concrete
+        // per-row array so capacity, the orphan guard and the persisted CSV agree.
+        var requestedCounts = request.SeatCounts ?? Array.Empty<int>();
+        var variable = requestedCounts.Count > 0;
+        List<int> seatCounts;
+        if (variable)
         {
-            throw new ApiException(
-                ErrorCodes.SeatLayoutInvalid, 400,
-                "Seats per row must be between 1 and 80.",
-                "يجب أن يكون عدد المقاعد في كل صف بين 1 و 80.");
+            if (requestedCounts.Count != rows.Count)
+            {
+                throw new ApiException(
+                    ErrorCodes.SeatLayoutInvalid, 400,
+                    $"Seat counts ({requestedCounts.Count}) must match the number of rows ({rows.Count}).",
+                    $"يجب أن يساوي عدد قيم المقاعد ({requestedCounts.Count}) عدد الصفوف ({rows.Count}).");
+            }
+            if (requestedCounts.Any(c => c is < 1 or > 80))
+            {
+                throw new ApiException(
+                    ErrorCodes.SeatLayoutInvalid, 400,
+                    "Each row's seat count must be between 1 and 80.",
+                    "يجب أن يكون عدد مقاعد كل صف بين 1 و 80.");
+            }
+            seatCounts = requestedCounts.ToList();
+        }
+        else
+        {
+            if (request.SeatsPerRow is < 1 or > 80)
+            {
+                throw new ApiException(
+                    ErrorCodes.SeatLayoutInvalid, 400,
+                    "Seats per row must be between 1 and 80.",
+                    "يجب أن يكون عدد المقاعد في كل صف بين 1 و 80.");
+            }
+            seatCounts = Enumerable.Repeat(request.SeatsPerRow, rows.Count).ToList();
         }
 
-        var layoutCapacity = rows.Count * request.SeatsPerRow;
+        var layoutCapacity = seatCounts.Sum();
         if (layoutCapacity > hall.Capacity)
         {
             throw new ApiException(
@@ -437,17 +482,23 @@ internal sealed class SeatReservationService(
                 $"السعة المقترحة ({layoutCapacity}) تتجاوز سعة القاعة ({hall.Capacity}).");
         }
 
+        // The persisted uniform fallback: max(counts) for a variable layout (never hides
+        // a real seat from an old/uniform reader), else the supplied SeatsPerRow. The
+        // CSV is null for a uniform layout so a round-trip reads back exactly what it wrote.
+        var seatsPerRow = variable ? seatCounts.Max() : request.SeatsPerRow;
+        var countsCsv = variable ? string.Join(',', seatCounts) : null;
+
         var layout = await appDbContext.HallSeatLayouts
             .SingleOrDefaultAsync(l => l.HallId == hallId, cancellationToken);
         // H-2 — an existing layout may already back active reservations; a change
-        // that drops a row or shrinks the seats-per-row would strand any seat that
+        // that drops a row or shrinks a row's seat count would strand any seat that
         // now falls outside the grid. Block it (the operator must release those
         // seats first). A first-time layout (layout is null) can have no seat-
         // specific reservations yet — the reserve paths require a layout.
         if (layout is not null)
         {
             await EnsureLayoutChangeKeepsActiveReservationsAsync(
-                hallId, rows, request.SeatsPerRow, cancellationToken);
+                hallId, rows, seatCounts, cancellationToken);
         }
         var now = timeProvider.GetUtcNow();
         var rowsCsv = string.Join(',', rows);
@@ -458,7 +509,8 @@ internal sealed class SeatReservationService(
                 Id = Guid.NewGuid(),
                 HallId = hallId,
                 RowLabels = rowsCsv,
-                SeatsPerRow = request.SeatsPerRow,
+                SeatsPerRow = seatsPerRow,
+                SeatCounts = countsCsv,
                 CreatedAt = now,
             };
             appDbContext.HallSeatLayouts.Add(layout);
@@ -466,7 +518,8 @@ internal sealed class SeatReservationService(
         else
         {
             layout.RowLabels = rowsCsv;
-            layout.SeatsPerRow = request.SeatsPerRow;
+            layout.SeatsPerRow = seatsPerRow;
+            layout.SeatCounts = countsCsv;
             layout.UpdatedAt = now;
         }
         await appDbContext.SaveChangesAsync(cancellationToken);
@@ -476,11 +529,13 @@ internal sealed class SeatReservationService(
             EventType = AuditEvents.HallSeatLayoutUpdated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
-            Detail = $"hallId={hallId}; rows={rowsCsv}; seatsPerRow={request.SeatsPerRow}",
+            Detail = $"hallId={hallId}; rows={rowsCsv}; seatsPerRow={seatsPerRow}; "
+                + $"seatCounts={countsCsv ?? "(uniform)"}",
         }, cancellationToken);
 
         return new HallSeatLayoutSnapshot(
-            hallId, rows, request.SeatsPerRow, layoutCapacity, hall.Capacity);
+            hallId, rows, seatsPerRow, layoutCapacity, hall.Capacity,
+            variable ? seatCounts : null);
     }
 
     public async Task AdminReserveRowAsync(
@@ -490,7 +545,10 @@ internal sealed class SeatReservationService(
     {
         var row = (request.RowLabel ?? string.Empty).Trim();
         var ctx = await BuildContextAsync(sessionId, cancellationToken);
-        if (!ctx.RowLabels.Contains(row, StringComparer.OrdinalIgnoreCase))
+        // D-767 — resolve the row's index so the block fills exactly THIS row's seat
+        // count (ctx.SeatCounts[rowIndex]) rather than a single uniform width.
+        var rowIndex = RowIndex(ctx.RowLabels, row);
+        if (rowIndex < 0)
         {
             throw new ApiException(
                 ErrorCodes.SeatOutOfBounds, 400,
@@ -509,7 +567,7 @@ internal sealed class SeatReservationService(
 
         var now = timeProvider.GetUtcNow();
         var inserted = 0;
-        for (var seat = 1; seat <= ctx.Layout!.SeatsPerRow; seat++)
+        for (var seat = 1; seat <= ctx.SeatCounts[rowIndex]; seat++)
         {
             if (taken.Contains(seat)) continue;
             var reservation = new SeatReservation
@@ -881,11 +939,12 @@ internal sealed class SeatReservationService(
             .Select(h => new { h.Capacity, h.SeatSelectionMode })
             .SingleAsync(cancellationToken);
         var effectiveMode = session.SeatSelectionModeOverride ?? hall.SeatSelectionMode;
+        var rowLabels = ParseRowLabels(layout.RowLabels);
         return new SessionContext(
             session.Id, session.HallId, session.CapacityOverride,
-            hall.Capacity, layout, ParseRowLabels(layout.RowLabels),
+            hall.Capacity, layout, rowLabels,
             session.Title, session.TitleArabic, session.Start, session.End,
-            effectiveMode);
+            effectiveMode, ExpandSeatCounts(layout, rowLabels));
     }
 
     private async Task<SessionSnapshot> LoadSessionAsync(
@@ -912,12 +971,12 @@ internal sealed class SeatReservationService(
 
     /// <summary>H-2 — reject a hall-layout change that would orphan any active
     /// (ReleasedAt IS NULL) seat-specific reservation across the hall's sessions:
-    /// a booked row no longer in <paramref name="newRows"/>, or a seat number above
-    /// <paramref name="newSeatsPerRow"/>. Open-seating reservations (null row/seat)
-    /// are unaffected. The operator must release the affected seats before
-    /// shrinking the grid.</summary>
+    /// a booked row no longer in <paramref name="newRows"/>, or (D-767) a seat number
+    /// above that row's new per-row count in <paramref name="newSeatCounts"/>.
+    /// Open-seating reservations (null row/seat) are unaffected. The operator must
+    /// release the affected seats before shrinking the grid.</summary>
     private async Task EnsureLayoutChangeKeepsActiveReservationsAsync(
-        Guid hallId, IReadOnlyList<string> newRows, int newSeatsPerRow,
+        Guid hallId, IReadOnlyList<string> newRows, IReadOnlyList<int> newSeatCounts,
         CancellationToken cancellationToken)
     {
         var sessionIds = await appDbContext.Sessions.AsNoTracking()
@@ -936,10 +995,11 @@ internal sealed class SeatReservationService(
             .Select(r => new { r.RowLabel, r.SeatNumber })
             .ToListAsync(cancellationToken);
 
-        var allowedRows = new HashSet<string>(newRows, StringComparer.OrdinalIgnoreCase);
         var orphaned = activeSeats.Any(s =>
-            !allowedRows.Contains(s.RowLabel!)
-            || (s.SeatNumber ?? 0) > newSeatsPerRow);
+        {
+            var idx = RowIndex(newRows, s.RowLabel!);
+            return idx < 0 || (s.SeatNumber ?? 0) > newSeatCounts[idx];
+        });
         if (orphaned)
         {
             throw new ApiException(
@@ -957,6 +1017,58 @@ internal sealed class SeatReservationService(
             : csv.Split(',', StringSplitOptions.RemoveEmptyEntries
                 | StringSplitOptions.TrimEntries);
 
+    /// <summary>D-767 — expand a layout's per-row seat counts into a concrete array
+    /// parallel to <paramref name="rowLabels"/>. When <c>SeatCounts</c> is null/blank the
+    /// layout is uniform, so every row gets <c>SeatsPerRow</c> (unchanged pre-D-767
+    /// behaviour); when set it is a CSV of ints, one per row. A stored CSV whose length
+    /// differs from the row set, or that fails to parse, is corrupt persisted state — a
+    /// deterministic 500, never a silent fallback (§2 no-silent-fallback rule).</summary>
+    private IReadOnlyList<int> ExpandSeatCounts(
+        HallSeatLayout layout, IReadOnlyList<string> rowLabels)
+    {
+        if (string.IsNullOrWhiteSpace(layout.SeatCounts))
+        {
+            return Enumerable.Repeat(layout.SeatsPerRow, rowLabels.Count).ToArray();
+        }
+        var parts = layout.SeatCounts.Split(
+            ',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var counts = new int[parts.Length];
+        var parsedOk = parts.Length == rowLabels.Count;
+        for (var i = 0; i < parts.Length; i++)
+        {
+            if (!int.TryParse(parts[i], out counts[i]))
+            {
+                parsedOk = false;
+            }
+        }
+        if (!parsedOk)
+        {
+            logger.LogError(
+                "Corrupt HallSeatLayout.SeatCounts '{SeatCounts}' for {RowCount} row(s) on layout {LayoutId}",
+                layout.SeatCounts, rowLabels.Count, layout.Id);
+            throw new ApiException(
+                ErrorCodes.SeatLayoutInvalid, 500,
+                "The stored seat layout is invalid.",
+                "مخطط المقاعد المُخزَّن غير صالح.");
+        }
+        return counts;
+    }
+
+    /// <summary>D-767 — index of <paramref name="label"/> within
+    /// <paramref name="rowLabels"/> (OrdinalIgnoreCase), or -1 when absent. Used to map a
+    /// row label onto its per-row seat count in the expanded array.</summary>
+    private static int RowIndex(IReadOnlyList<string> rowLabels, string label)
+    {
+        for (var i = 0; i < rowLabels.Count; i++)
+        {
+            if (string.Equals(rowLabels[i], label, StringComparison.OrdinalIgnoreCase))
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     private static void EnsureSeatPickAllowed(SessionContext ctx)
     {
         // D-485 — the seat-pick paths are only for assigned-seat sessions; an
@@ -973,20 +1085,22 @@ internal sealed class SeatReservationService(
     private static void ValidateSeatBounds(
         SessionContext ctx, string rowLabel, int seatNumber)
     {
-        if (string.IsNullOrEmpty(rowLabel)
-            || !ctx.RowLabels.Contains(rowLabel, StringComparer.OrdinalIgnoreCase))
+        // D-767 — bound the seat against THIS row's count (ctx.SeatCounts[i]), not a
+        // single uniform width, so a ragged layout accepts/rejects per row.
+        var i = RowIndex(ctx.RowLabels, rowLabel ?? string.Empty);
+        if (i < 0)
         {
             throw new ApiException(
                 ErrorCodes.SeatOutOfBounds, 400,
                 $"Row '{rowLabel}' is not in the hall layout.",
                 $"الصف '{rowLabel}' غير موجود في مخطط القاعة.");
         }
-        if (seatNumber < 1 || seatNumber > ctx.Layout!.SeatsPerRow)
+        if (seatNumber < 1 || seatNumber > ctx.SeatCounts[i])
         {
             throw new ApiException(
                 ErrorCodes.SeatOutOfBounds, 400,
-                $"Seat number must be between 1 and {ctx.Layout.SeatsPerRow}.",
-                $"يجب أن يكون رقم المقعد بين 1 و {ctx.Layout.SeatsPerRow}.");
+                $"Seat number must be between 1 and {ctx.SeatCounts[i]}.",
+                $"يجب أن يكون رقم المقعد بين 1 و {ctx.SeatCounts[i]}.");
         }
     }
 
@@ -1022,12 +1136,13 @@ internal sealed class SeatReservationService(
     }
 
     /// <summary>The session's effective place count: the seat-layout total
-    /// (rows × seatsPerRow) capped by the smaller of Session.CapacityOverride and
+    /// (D-767: sum of the per-row seat counts — equal to rows × seatsPerRow when the
+    /// layout is uniform) capped by the smaller of Session.CapacityOverride and
     /// Hall.Capacity. One definition shared by the reserve pre-check and the
     /// post-insert backstop so they can never disagree.</summary>
     private static int EffectiveCapacity(SessionContext ctx) =>
         Math.Min(
-            ctx.RowLabels.Count * ctx.Layout!.SeatsPerRow,
+            ctx.SeatCounts.Sum(),
             ctx.CapacityOverride ?? ctx.HallCapacity);
 
     /// <summary>M-2/M-1 — the hard capacity backstop the pre-count cannot give.
@@ -1143,9 +1258,12 @@ internal sealed class SeatReservationService(
         SessionContext ctx, IReadOnlySet<(string Row, int Seat)> taken,
         Guid actorUserId, DateTimeOffset now)
     {
-        foreach (var rowLabel in ctx.RowLabels)
+        // D-767 — index loop so each row's free-seat scan stops at ITS own count
+        // (ctx.SeatCounts[i]); a ragged layout never yields a phantom seat on a short row.
+        for (var i = 0; i < ctx.RowLabels.Count; i++)
         {
-            for (var seat = 1; seat <= ctx.Layout!.SeatsPerRow; seat++)
+            var rowLabel = ctx.RowLabels[i];
+            for (var seat = 1; seat <= ctx.SeatCounts[i]; seat++)
             {
                 if (taken.Contains((rowLabel, seat)))
                 {
@@ -1268,5 +1386,9 @@ internal sealed class SeatReservationService(
         HallSeatLayout Layout, IReadOnlyList<string> RowLabels,
         string SessionTitle, string SessionTitleArabic,
         DateTimeOffset Start, DateTimeOffset End,
-        SeatSelectionMode EffectiveMode);
+        SeatSelectionMode EffectiveMode,
+        // D-767 — the expanded per-row seat counts (one per RowLabels entry; a repeat of
+        // SeatsPerRow when the layout is uniform). Every per-seat bound/capacity/random-
+        // pick decision reads this array so uniform and variable layouts share one path.
+        IReadOnlyList<int> SeatCounts);
 }

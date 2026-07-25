@@ -47,6 +47,12 @@ Future<void> _pump(
   bool fail = false,
   bool isVip = true,
 }) async {
+  // A tall viewport so every meeting card is built — ListView(children:) lays out
+  // children lazily, so in the default 600px height off-screen cards would not be
+  // found by find.text (R9 now lists all requests, not just one).
+  tester.view.physicalSize = const Size(800, 3000);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.reset);
   final router = GoRouter(
     initialLocation: '/meetings',
     routes: <RouteBase>[
@@ -133,8 +139,8 @@ void main() {
       expect(find.text('Request a speaker meeting'), findsOneWidget);
     });
 
-    testWidgets('only approved + upcoming meetings appear (pending/past/rejected '
-        'excluded)', (tester) async {
+    testWidgets('ALL my meeting requests appear regardless of status/date (R9); '
+        'non-meeting kinds are excluded', (tester) async {
       await _pump(
         tester,
         data: <AppRequestItem>[
@@ -157,6 +163,12 @@ void main() {
             status: AppRequestStatus.pending,
             eventDate: DateTime.utc(2035),
           ),
+          _meeting(
+            kind: AppRequestKind.delegationMeeting,
+            id: '5',
+            title: 'Rejected Delegation',
+            status: AppRequestStatus.rejected,
+          ),
           // A non-meeting kind never belongs on this page.
           _meeting(
             kind: AppRequestKind.badgeUpdate,
@@ -165,9 +177,12 @@ void main() {
           ),
         ],
       );
+      // R9 — every meeting-kind request shows, whatever its status or date.
       expect(find.text('Future Speaker'), findsOneWidget);
-      expect(find.text('Past Speaker'), findsNothing);
-      expect(find.text('Pending Speaker'), findsNothing);
+      expect(find.text('Past Speaker'), findsOneWidget);
+      expect(find.text('Pending Speaker'), findsOneWidget);
+      expect(find.text('Rejected Delegation'), findsOneWidget);
+      // A non-meeting kind is still excluded.
       expect(find.text('Badge Change'), findsNothing);
     });
 

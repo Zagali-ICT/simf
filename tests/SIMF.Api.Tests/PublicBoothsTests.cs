@@ -10,7 +10,6 @@ using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Exhibition;
 using SIMF.Domain.Common;
-using SIMF.Domain.Contacts;
 using SIMF.Domain.Exhibition;
 using SIMF.Domain.Exhibitors;
 using SIMF.Domain.IdentityAccess;
@@ -77,15 +76,16 @@ public sealed class PublicBoothsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(3.0, detail.MapX);
     }
 
-    // P6 — D-440: the public booth wire carries the exhibitor's Contact id (the
-    // CompanyLogo owner) so the app can render the real logo; null when the
-    // exhibitor has no linked Contact.
+    // P6 — D-440 / D-766: the app renders the exhibitor's logo from the exhibitor's
+    // OWN id (the ExhibitorLogo owner, Exhibitor.Id) — the detail carries ExhibitorId
+    // when the booth is linked, null when it has no exhibitor. The retired
+    // ExhibitorContactId wire field (the old CompanyLogo owner via the removed shared
+    // Contact directory) now always emits null.
     [Fact]
-    public async Task Public_booth_carries_the_exhibitor_contact_id_for_the_logo()
+    public async Task Public_booth_carries_the_exhibitor_id_for_the_logo_and_null_contact_id()
     {
-        var contactId = Guid.NewGuid();
         var exhibitorId = Guid.NewGuid();
-        var boothWithLogo = Guid.NewGuid();
+        var boothWithExhibitor = Guid.NewGuid();
         var boothNoExhibitor = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
         var code1 = NewCode();
@@ -94,27 +94,17 @@ public sealed class PublicBoothsTests : IClassFixture<SimfApiFactory>
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-            // Exhibitor.ContactId is a real FK → the Contact (the CompanyLogo
-            // owner) must exist first.
-            db.Set<Contact>().Add(new Contact
-            {
-                Id = contactId,
-                NameArabic = "سامي",
-                IsActive = true,
-                CreatedAt = now,
-            });
             db.Set<Exhibitor>().Add(new Exhibitor
             {
                 Id = exhibitorId,
                 Name = "SAMI",
                 NameArabic = "سامي",
-                ContactId = contactId,
                 IsActive = true,
                 CreatedAt = now,
             });
             db.Set<Booth>().Add(new Booth
             {
-                Id = boothWithLogo,
+                Id = boothWithExhibitor,
                 Code = code1,
                 Name = "Booth A",
                 NameArabic = "جناح أ",
@@ -138,24 +128,30 @@ public sealed class PublicBoothsTests : IClassFixture<SimfApiFactory>
         var rows = (await list.Content
             .ReadFromJsonAsync<ApiResult<IReadOnlyList<PublicBoothSummary>>>())!.Data!;
 
-        var withLogo = rows.Single(b => b.Id == boothWithLogo);
-        Assert.Equal(contactId, withLogo.ExhibitorContactId);
+        // The retired Contact-directory field is null on every row now.
+        Assert.Null(rows.Single(b => b.Id == boothWithExhibitor).ExhibitorContactId);
+        Assert.Null(rows.Single(b => b.Id == boothNoExhibitor).ExhibitorContactId);
 
-        var noExhibitor = rows.Single(b => b.Id == boothNoExhibitor);
-        Assert.Null(noExhibitor.ExhibitorContactId);
-
-        var detail = (await (await _client.GetAsync($"/api/v1/app/booths/{boothWithLogo}"))
+        // The detail carries the exhibitor's own id (the ExhibitorLogo owner) when
+        // linked, and null ExhibitorContactId either way.
+        var withExhibitor = (await (await _client.GetAsync($"/api/v1/app/booths/{boothWithExhibitor}"))
             .Content.ReadFromJsonAsync<ApiResult<PublicBoothDetail>>())!.Data!;
-        Assert.Equal(contactId, detail.ExhibitorContactId);
+        Assert.Equal(exhibitorId, withExhibitor.ExhibitorId);
+        Assert.Null(withExhibitor.ExhibitorContactId);
+
+        var noExhibitor = (await (await _client.GetAsync($"/api/v1/app/booths/{boothNoExhibitor}"))
+            .Content.ReadFromJsonAsync<ApiResult<PublicBoothDetail>>())!.Data!;
+        Assert.Null(noExhibitor.ExhibitorId);
+        Assert.Null(noExhibitor.ExhibitorContactId);
     }
 
     // #9 — the public booth wire carries the exhibitor company's country NAME
-    // (resolved from the Country lookup on Contact.CountryId), not just the id.
+    // (resolved from the Country lookup on the exhibitor's own inline CountryId),
+    // not just the id.
     [Fact]
     public async Task Public_booth_carries_the_resolved_country_name()
     {
         const int countryId = 682; // SA
-        var contactId = Guid.NewGuid();
         var exhibitorId = Guid.NewGuid();
         var boothId = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
@@ -185,20 +181,14 @@ public sealed class PublicBoothsTests : IClassFixture<SimfApiFactory>
             expectedName = country.Name;
             expectedNameArabic = country.NameArabic;
 
-            db.Set<Contact>().Add(new Contact
-            {
-                Id = contactId,
-                NameArabic = "سامي",
-                CountryId = countryId,
-                IsActive = true,
-                CreatedAt = now,
-            });
+            // The country now comes from the exhibitor's own inline CountryId
+            // (the shared Contact directory was removed).
             db.Set<Exhibitor>().Add(new Exhibitor
             {
                 Id = exhibitorId,
                 Name = "SAMI",
                 NameArabic = "سامي",
-                ContactId = contactId,
+                CountryId = countryId,
                 IsActive = true,
                 CreatedAt = now,
             });
@@ -229,11 +219,11 @@ public sealed class PublicBoothsTests : IClassFixture<SimfApiFactory>
     }
 
     // Wave 3 (Figma 1439:11881) — the booth detail surfaces the exhibitor's
-    // website + tier and the city resolved from the exhibitor's Contact.
+    // website + tier and the city, all now inlined directly on the Exhibitor
+    // (the shared Contact directory was removed).
     [Fact]
     public async Task Public_booth_detail_carries_the_exhibitor_website_city_and_tier()
     {
-        var contactId = Guid.NewGuid();
         var exhibitorId = Guid.NewGuid();
         var boothId = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
@@ -242,20 +232,12 @@ public sealed class PublicBoothsTests : IClassFixture<SimfApiFactory>
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-            db.Set<Contact>().Add(new Contact
-            {
-                Id = contactId,
-                NameArabic = "أرامكو",
-                City = "Dhahran",
-                CityArabic = "الظهران",
-                IsActive = true,
-                CreatedAt = now,
-            });
             db.Set<Exhibitor>().Add(new Exhibitor
             {
                 Id = exhibitorId,
                 Name = "Aramco", NameArabic = "أرامكو",
-                ContactId = contactId,
+                City = "Dhahran",
+                CityArabic = "الظهران",
                 Website = "https://aramco.com",
                 Tier = ExhibitorTier.Premium,
                 IsActive = true,
@@ -282,55 +264,27 @@ public sealed class PublicBoothsTests : IClassFixture<SimfApiFactory>
         Assert.Equal("Premium", detail.TierName);
     }
 
-    // A5 — a booth linked to an officer Contact resolves the officer
-    // name/phone/email from the shared Contact directory record (Contact-first,
-    // D-260), overriding the legacy inline columns; an unlinked booth falls back
-    // to those columns. Covers the nav-based projection's officer resolution.
+    // A5 / D-766 — the booth officer name/phone/email are now inline columns on the
+    // Booth row (the shared Contact directory was removed), and surface on both the
+    // public list and the detail. Covers the nav-based projection's officer fields.
     [Fact]
-    public async Task Public_booth_resolves_the_officer_from_the_linked_contact()
+    public async Task Public_booth_carries_the_inline_officer_fields()
     {
-        var officerContactId = Guid.NewGuid();
-        var boothLinked = Guid.NewGuid();
-        var boothInline = Guid.NewGuid();
+        var boothId = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
-        var codeLinked = NewCode();
-        var codeInline = NewCode();
+        var code = NewCode();
 
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-            db.Set<Contact>().Add(new Contact
-            {
-                Id = officerContactId,
-                NameArabic = "ضابط الجناح",
-                PhonePrimary = "+966500000000",
-                Email = "officer@simf.test",
-                IsActive = true,
-                CreatedAt = now,
-            });
-            // Linked booth: the officer is resolved from the Contact, overriding
-            // the legacy inline columns.
             db.Set<Booth>().Add(new Booth
             {
-                Id = boothLinked,
-                Code = codeLinked,
-                Name = "Linked", NameArabic = "مرتبط",
-                ContactId = officerContactId,
-                OfficerName = "Legacy Officer",
-                OfficerPhone = "+000",
-                OfficerEmail = "legacy@simf.test",
-                IsActive = true,
-                CreatedAt = now,
-            });
-            // Unlinked booth: the officer falls back to the legacy inline columns.
-            db.Set<Booth>().Add(new Booth
-            {
-                Id = boothInline,
-                Code = codeInline,
+                Id = boothId,
+                Code = code,
                 Name = "Inline", NameArabic = "سطري",
-                OfficerName = "Inline Officer",
-                OfficerPhone = "+111",
-                OfficerEmail = "inline@simf.test",
+                OfficerName = "ضابط الجناح",
+                OfficerPhone = "+966500000000",
+                OfficerEmail = "officer@simf.test",
                 IsActive = true,
                 CreatedAt = now,
             });
@@ -340,17 +294,12 @@ public sealed class PublicBoothsTests : IClassFixture<SimfApiFactory>
         var rows = (await (await _client.GetAsync("/api/v1/app/booths"))
             .Content.ReadFromJsonAsync<ApiResult<IReadOnlyList<PublicBoothSummary>>>())!.Data!;
 
-        var linked = rows.Single(b => b.Id == boothLinked);
-        Assert.Equal("ضابط الجناح", linked.OfficerName);
-        Assert.Equal("+966500000000", linked.OfficerPhone);
-        Assert.Equal("officer@simf.test", linked.OfficerEmail);
+        var summary = rows.Single(b => b.Id == boothId);
+        Assert.Equal("ضابط الجناح", summary.OfficerName);
+        Assert.Equal("+966500000000", summary.OfficerPhone);
+        Assert.Equal("officer@simf.test", summary.OfficerEmail);
 
-        var inline = rows.Single(b => b.Id == boothInline);
-        Assert.Equal("Inline Officer", inline.OfficerName);
-        Assert.Equal("+111", inline.OfficerPhone);
-        Assert.Equal("inline@simf.test", inline.OfficerEmail);
-
-        var detail = (await (await _client.GetAsync($"/api/v1/app/booths/{boothLinked}"))
+        var detail = (await (await _client.GetAsync($"/api/v1/app/booths/{boothId}"))
             .Content.ReadFromJsonAsync<ApiResult<PublicBoothDetail>>())!.Data!;
         Assert.Equal("ضابط الجناح", detail.OfficerName);
         Assert.Equal("+966500000000", detail.OfficerPhone);

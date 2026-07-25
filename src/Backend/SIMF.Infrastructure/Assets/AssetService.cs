@@ -44,10 +44,20 @@ internal sealed class AssetService(
             [AssetCategory.ProgrammeDayImage] = FileService.ProgrammeDayImage,
             [AssetCategory.OrganizationLogo] = FileService.OrganizationLogo,
             [AssetCategory.Banner] = FileService.Banner,
+            [AssetCategory.BoothLogo] = FileService.BoothLogo,
+            [AssetCategory.ExhibitorLogo] = FileService.ExhibitorLogo,
         };
 
     private static readonly IReadOnlyDictionary<FileService, AssetCategory> ServiceToCategory =
         CategoryToService.ToDictionary(kv => kv.Value, kv => kv.Key);
+
+    /// <summary>Every <see cref="AssetCategory"/> mapped to a <see cref="FileService"/>
+    /// here — for the guard test that fails the build if a category is added without a
+    /// service mapping (mirrors <c>AssetPermissionRegistry.MappedCategories</c> and
+    /// <c>FileServicePolicies.All</c>). Without it an unmapped category throws
+    /// <see cref="ServiceFor"/>'s 400 only at runtime on first upload/resolve.</summary>
+    internal static IReadOnlyCollection<AssetCategory> MappedCategories =>
+        (IReadOnlyCollection<AssetCategory>)CategoryToService.Keys;
 
     public async Task SetUploadAsync(
         Guid actorUserId, AssetCategory category, Guid ownerId, AssetKind kind,
@@ -152,8 +162,6 @@ internal sealed class AssetService(
         {
             AssetCategory.SpeakerPhoto => dbContext.Speakers
                 .AnyAsync(x => x.Id == ownerId && x.IsActive, cancellationToken),
-            AssetCategory.CompanyLogo => dbContext.Contacts
-                .AnyAsync(x => x.Id == ownerId && x.IsActive, cancellationToken),
             AssetCategory.MediaPartnerLogo => dbContext.MediaPartners
                 .AnyAsync(x => x.Id == ownerId && x.IsActive, cancellationToken),
             AssetCategory.SponsorLogo => dbContext.Sponsors
@@ -173,6 +181,15 @@ internal sealed class AssetService(
                     x => x.Id == ownerId && x.IsActive
                         && x.Start <= now && x.End >= now,
                     cancellationToken),
+            // #16 — a booth is publicly hidden when its linked exhibitor is
+            // soft-deleted (PublicBoothService mirrors this), so its logo must 404 too.
+            AssetCategory.BoothLogo => dbContext.Booths
+                .AnyAsync(
+                    x => x.Id == ownerId && x.IsActive
+                        && (x.Exhibitor == null || x.Exhibitor.IsActive),
+                    cancellationToken),
+            AssetCategory.ExhibitorLogo => dbContext.Exhibitors
+                .AnyAsync(x => x.Id == ownerId && x.IsActive, cancellationToken),
             _ => Task.FromResult(false),
         };
     }
@@ -343,12 +360,6 @@ internal sealed class AssetService(
                         .ToListAsync(cancellationToken))
                         result[(AssetCategory.SpeakerPhoto, r.Id)] = r.Name;
                     break;
-                case AssetCategory.CompanyLogo:
-                    foreach (var r in await dbContext.Contacts.AsNoTracking()
-                        .Where(x => ids.Contains(x.Id)).Select(x => new { x.Id, x.Name, x.NameArabic })
-                        .ToListAsync(cancellationToken))
-                        result[(AssetCategory.CompanyLogo, r.Id)] = r.Name ?? r.NameArabic;
-                    break;
                 case AssetCategory.MediaPartnerLogo:
                     foreach (var r in await dbContext.MediaPartners.AsNoTracking()
                         .Where(x => ids.Contains(x.Id)).Select(x => new { x.Id, x.Name })
@@ -378,6 +389,20 @@ internal sealed class AssetService(
                         .Where(x => ids.Contains(x.Id)).Select(x => new { x.Id, x.Title })
                         .ToListAsync(cancellationToken))
                         result[(AssetCategory.Banner, r.Id)] = r.Title;
+                    break;
+                case AssetCategory.BoothLogo:
+                    foreach (var r in await dbContext.Booths.AsNoTracking()
+                        .Where(x => ids.Contains(x.Id)).Select(x => new { x.Id, x.Name, x.NameArabic })
+                        .ToListAsync(cancellationToken))
+                        result[(AssetCategory.BoothLogo, r.Id)] =
+                            string.IsNullOrEmpty(r.Name) ? r.NameArabic : r.Name;
+                    break;
+                case AssetCategory.ExhibitorLogo:
+                    foreach (var r in await dbContext.Exhibitors.AsNoTracking()
+                        .Where(x => ids.Contains(x.Id)).Select(x => new { x.Id, x.Name, x.NameArabic })
+                        .ToListAsync(cancellationToken))
+                        result[(AssetCategory.ExhibitorLogo, r.Id)] =
+                            string.IsNullOrEmpty(r.Name) ? r.NameArabic : r.Name;
                     break;
             }
         }

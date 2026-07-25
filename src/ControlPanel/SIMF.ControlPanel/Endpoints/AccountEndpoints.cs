@@ -17,7 +17,6 @@ using SIMF.Contracts.Email;
 using SIMF.Contracts.Faq;
 using SIMF.Contracts.Feedback;
 using SIMF.Contracts.Organisations;
-using SIMF.Contracts.Contacts;
 using SIMF.Contracts.Logs;
 using SIMF.Contracts.Media;
 using SIMF.Contracts.Programme;
@@ -47,6 +46,10 @@ internal static class AccountEndpoints
     // from CP config (1 GiB). The live value is read from configuration so it is
     // sourced once, not baked into code — see the recording-upload BFF route.
     private const long DefaultRecordingMaxUploadBytes = 1_073_741_824L;
+
+    // D-768: fallback if OrganizationHeroVideo:MaxUploadBytes is absent from CP
+    // config (200 MiB — a hero loop should be short + web-optimised).
+    private const long DefaultHeroVideoMaxUploadBytes = 209_715_200L;
 
     public static void MapAccountEndpoints(this IEndpointRouteBuilder routes)
     {
@@ -775,9 +778,8 @@ internal static class AccountEndpoints
         MapGridExcel(group, "media-partners"); 
         MapGridExcel(group, "archive"); 
         MapGridExcel(group, "media"); 
-        MapGridExcel(group, "system-settings"); 
-        MapGridExcel(group, "contacts"); 
-        MapGridExcel(group, "news"); 
+        MapGridExcel(group, "system-settings");
+        MapGridExcel(group, "news");
         MapGridExcel(group, "ai/prompts");
         MapGridExcel(group, "sponsors");
         MapGridExcel(group, "exhibitors");
@@ -3030,54 +3032,8 @@ internal static class AccountEndpoints
             return Forward(await api.DeactivateOrganisationAsync(id, token));
         });
 
-        // SIMF-FDS-014 (D-281/C2) — shared Contact directory admin CRUD + picker
-        // passthroughs (backend /api/v1/admin/contacts/*; gated Contacts.View/Edit).
-        group.MapPost("/admin/contacts/list",
-            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
-        {
-            var token = await http.GetTokenAsync("access_token");
-            if (token is null) return Results.Unauthorized();
-            return Forward(await api.ListContactsAsync(body, token));
-        });
-        group.MapGet("/admin/contacts/picker",
-            async (string? search, HttpContext http, SimfAdminClient api) =>
-        {
-            var token = await http.GetTokenAsync("access_token");
-            if (token is null) return Results.Unauthorized();
-            return Forward(await api.PickerContactsAsync(search, token));
-        });
-        group.MapGet("/admin/contacts/{id:guid}",
-            async (Guid id, HttpContext http, SimfAdminClient api) =>
-        {
-            var token = await http.GetTokenAsync("access_token");
-            if (token is null) return Results.Unauthorized();
-            return Forward(await api.GetContactAsync(id, token));
-        });
-        group.MapPost("/admin/contacts",
-            async (CreateContactRequest body, HttpContext http, SimfAdminClient api) =>
-        {
-            var token = await http.GetTokenAsync("access_token");
-            if (token is null) return Results.Unauthorized();
-            return Forward(await api.CreateContactAsync(body, token));
-        });
-        group.MapPut("/admin/contacts/{id:guid}",
-            async (Guid id, UpdateContactRequest body, HttpContext http, SimfAdminClient api) =>
-        {
-            var token = await http.GetTokenAsync("access_token");
-            if (token is null) return Results.Unauthorized();
-            return Forward(await api.UpdateContactAsync(id, body, token));
-        });
-        group.MapDelete("/admin/contacts/{id:guid}",
-            async (Guid id, HttpContext http, SimfAdminClient api) =>
-        {
-            var token = await http.GetTokenAsync("access_token");
-            if (token is null) return Results.Unauthorized();
-            return Forward(await api.DeactivateContactAsync(id, token));
-        });
-
-        // SIMF-FDS-014 (D-283/C2b) — single-row GET passthroughs the Sponsor /
-        // MediaPartner edit modals use to pre-load the linked ContactId for the
-        // contact picker (the list/create/update/delete proxies already exist).
+        // single-row GET passthroughs the Sponsor / MediaPartner edit modals
+        // use to pre-load the row for editing.
         group.MapGet("/admin/sponsors/{id:guid}",
             async (Guid id, HttpContext http, SimfAdminClient api) =>
         {
@@ -3231,6 +3187,51 @@ internal static class AccountEndpoints
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
             return Forward(await api.SaveOrganizationProfileAsync(body, token));
+        });
+        // D-768 — hero background video upload / delete passthrough. Mirrors the
+        // recording route: the per-request body + multipart limits are raised from
+        // config (scoped to this route), and the file is STREAMED to the API without
+        // buffering a byte[] in memory; the API does the authoritative validation.
+        group.MapPost("/admin/organization-profile/hero-video",
+            async (HttpContext http, SimfAdminClient api, IConfiguration config) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+
+            var maxBytes = config.GetValue(
+                "OrganizationHeroVideo:MaxUploadBytes", DefaultHeroVideoMaxUploadBytes);
+            var sizeFeature = http.Features.Get<IHttpMaxRequestBodySizeFeature>();
+            if (sizeFeature is { IsReadOnly: false })
+            {
+                sizeFeature.MaxRequestBodySize = maxBytes;
+            }
+            http.Features.Set<IFormFeature>(
+                new FormFeature(http.Request,
+                    new FormOptions { MultipartBodyLengthLimit = maxBytes }));
+
+            var form = await http.Request.ReadFormAsync();
+            var file = form.Files.GetFile("file");
+            if (file is null || file.Length == 0)
+            {
+                return Results.BadRequest(ApiResult<object>.Fail(new ApiError
+                {
+                    Code = ErrorCodes.OrganizationProfileInvalid,
+                    Message = "A video file is required.",
+                    MessageArabic = "ملف الفيديو مطلوب.",
+                }));
+            }
+            var contentType = string.IsNullOrWhiteSpace(file.ContentType)
+                ? "video/mp4" : file.ContentType;
+            await using var stream = file.OpenReadStream();
+            return Forward(await api.UploadOrganizationHeroVideoAsync(
+                stream, contentType, file.FileName, token));
+        }).DisableAntiforgery();
+        group.MapDelete("/admin/organization-profile/hero-video",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeleteOrganizationHeroVideoAsync(token));
         });
 
         // P2.5 (D-230) — 2D venue-map node CRUD passthroughs.

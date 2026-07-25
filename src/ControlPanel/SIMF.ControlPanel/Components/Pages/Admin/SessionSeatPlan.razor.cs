@@ -32,6 +32,14 @@ public partial class SessionSeatPlan
     private bool _busy;
     private Toast? _toast;
 
+    // D-767 — seats in row i: the per-row SeatCounts entry when the layout is
+    // variable (ragged), else the uniform SeatsPerRow. Tolerant of a short/absent
+    // SeatCounts so a length-mismatched payload still renders.
+    private int SeatsInRow(int rowIndex) => _layout is null ? 0
+        : (_layout.SeatCounts is { Count: > 0 } sc && rowIndex < sc.Count
+            ? sc[rowIndex]
+            : _layout.SeatsPerRow);
+
     // P1.4 — fast (row,seat) -> reservation lookup so the grid renders O(1) per seat.
     private SessionSeatCell? FindReservation(string rowLabel, int seatNumber) =>
         _reservations.FirstOrDefault(r =>

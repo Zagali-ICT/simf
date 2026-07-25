@@ -16,6 +16,10 @@ internal sealed class HallSeatLayoutConfiguration : IEntityTypeConfiguration<Hal
 
         builder.Property(x => x.RowLabels).HasMaxLength(256).IsRequired();
 
+        // D-767 — optional per-row seat-count CSV (nullable → nvarchar(256) NULL),
+        // mirroring the RowLabels(256) convention. Null = uniform SeatsPerRow.
+        builder.Property(x => x.SeatCounts).HasMaxLength(256);
+
         builder.HasOne(x => x.Hall)
             .WithMany()
             .HasForeignKey(x => x.HallId)

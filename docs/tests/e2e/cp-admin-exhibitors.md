@@ -558,24 +558,41 @@ Scenario: Export then re-import carries the exhibitor tier
 
 ---
 
-### E2E-EXH-025 — the list shows the exhibitor's company-logo thumbnail (D-357)
+### E2E-EXH-025 — the list shows the exhibitor's OWN logo thumbnail (D-357 / D-764)
 
 ```gherkin
-Scenario: the English-name column renders the LINKED contact's company logo
+Scenario: the English-name column renders the exhibitor's own logo
   Given an Administrator is on /admin/exhibitors
-  And exhibitor "A" is linked to a Contact that has a CompanyLogo asset
-  And exhibitor "B" is unlinked (or its contact has no logo)
+  And exhibitor "A" has an uploaded ExhibitorLogo (owner = the exhibitor)
+  And exhibitor "B" has no ExhibitorLogo
   When the grid loads a page
-  Then A's name cell shows the company-logo thumbnail beside the name
+  Then A's name cell shows the exhibitor's own logo thumbnail beside the name
   And B's name cell shows a tinted initials tile (never a broken image)
-  And the thumbnail URL points at CompanyLogo/{ContactId} (the linked contact, not the exhibitor id)
+  And the thumbnail URL points at ExhibitorLogo/{exhibitor.Id} (the exhibitor itself)
 ```
 
-**Covered (lower layer):** the two-hop related-contact flag-population path is
-proven by `tests/SIMF.Api.Tests/AdminBoothsTests.cs` →
-`Booth_list_reports_HasLogo_from_the_exhibitor_companys_logo` (Booth→Exhibitor→Contact);
-the Exhibitor list is the one-hop Exhibitor→Contact subset. Confirm the render
-visually in the Chrome DevTools MCP smoke.
+**Covered (lower layer):** `tests/SIMF.Api.Tests/ExhibitorsTests.cs` still asserts the
+legacy `HasLogo`/`ContactId` (the Contact CompanyLogo); the grid thumbnail now reads
+`HasExhibitorLogo` (the exhibitor's own logo). Confirm the render visually in the
+Chrome DevTools MCP smoke.
+
+---
+
+### E2E-EXH-026 — an Administrator uploads an exhibitor logo (D-764)
+
+```gherkin
+Scenario: upload a logo for an exhibitor in the CP
+  Given an Administrator opens an existing exhibitor in Edit
+  When they choose an image file in the "Logo" (Asset) field and upload it
+  Then POST /admin/assets/ExhibitorLogo/{exhibitor.Id}/image returns 200 (gated by Exhibitors.Edit)
+  And the thumbnail refreshes to the uploaded image
+  And GET /app/assets/ExhibitorLogo/{exhibitor.Id}/image now streams the bytes to the app
+  And the button works with no linked Contact (the owner is the exhibitor itself)
+```
+
+**Covered (lower layer):** `tests/SIMF.Api.Tests/AssetEndpointsTests.cs` →
+`Upload_exhibitor_logo_then_public_app_image_streams`. The upload control is edit-only
+(`<SimfImageUpload Category="ExhibitorLogo" OwnerId="@Initial.Id">`).
 
 ---
 

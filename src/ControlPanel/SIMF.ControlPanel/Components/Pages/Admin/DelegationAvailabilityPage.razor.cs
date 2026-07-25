@@ -28,6 +28,10 @@ public partial class DelegationAvailabilityPage
     private bool _busy;
     private Toast? _toast;
 
+    // R10 (D-767) — a must-decide guard for the destructive window delete.
+    private bool _confirmOpen;
+    private Guid _confirmWindowId;
+
     // Forum-day bounds read from the backend (MIN/MAX programme day). The string
     // forms feed the datetime-local Min/Max; the DateOnly forms back the client-side
     // range check. All null when no programme days are seeded (no client bound; the
@@ -147,6 +151,22 @@ public partial class DelegationAvailabilityPage
         finally { _busy = false; }
     }
 
+    // R10 (D-767) — open the delete confirm; RunDeleteAsync does the work on OK.
+    private void ConfirmDelete(Guid windowId)
+    {
+        _confirmWindowId = windowId;
+        _confirmOpen = true;
+        _toast = null;
+    }
+
+    private async Task RunDeleteAsync()
+    {
+        _confirmOpen = false;
+        await DeleteWindowAsync(_confirmWindowId);
+    }
+
+    private void CancelConfirm() => _confirmOpen = false;
+
     private async Task DeleteWindowAsync(Guid windowId)
     {
         _busy = true;
@@ -158,6 +178,7 @@ public partial class DelegationAvailabilityPage
                 $"/account/api/admin/delegation-availability-windows/{windowId}");
             if (envelope is { Success: true })
             {
+                _toast = new Toast("success", L["Admin.Availability.WindowDeleted"]);
                 await LoadWindowsAsync();
             }
             else

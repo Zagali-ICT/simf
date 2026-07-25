@@ -237,10 +237,6 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     // region picker. Seeded from SaudiRegions in every environment.
     public DbSet<Region> Regions => Set<Region>();
 
-    // SIMF-FDS-014 — D-260: shared, de-duplicated contact directory referenced by
-    // Company / Sponsor / MediaPartner / Speaker / Booth (nullable ContactId FK).
-    public DbSet<Contact> Contacts => Set<Contact>();
-
     // SIMF-FDS-014 — D-284 (Track 2): visitor-to-visitor contact sharing. Both
     // tables hold bare-Guid logical FKs to SimfUser.Id (Identity DB) — no DB FK.
     public DbSet<VisitorShareToken> VisitorShareTokens => Set<VisitorShareToken>();
@@ -282,6 +278,11 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     // D-717 (item 7, FDS-013 §15.7 GAP-3) — single-use speaker double-opt-in
     // action-link tokens (Approve / Reject).
     public DbSet<MeetingActionToken> MeetingActionTokens => Set<MeetingActionToken>();
+
+    // R4 (bi-meeting rules, D-767) — single-use delegation confirm tokens behind the
+    // "please confirm" email link sent to target-delegation members on Approve.
+    public DbSet<DelegationMeetingActionToken> DelegationMeetingActionTokens =>
+        Set<DelegationMeetingActionToken>();
 
     // D-568 — the single, unified file store: ONE table for every uploaded or
     // linked file (avatar, ID document, VIP photo, media gallery, speaker photo /

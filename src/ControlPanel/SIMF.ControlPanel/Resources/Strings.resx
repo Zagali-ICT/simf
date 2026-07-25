@@ -75,6 +75,24 @@
   <data name="Admin.Edit.Save" xml:space="preserve"><value>Save changes</value></data>
   <data name="Admin.Edit.Saving" xml:space="preserve"><value>Saving…</value></data>
   <data name="Admin.Edit.Saved" xml:space="preserve"><value>The account was updated.</value></data>
+  <data name="Admin.ContactField.Heading" xml:space="preserve"><value>Contact information</value></data>
+  <data name="Admin.ContactField.City" xml:space="preserve"><value>City</value></data>
+  <data name="Admin.ContactField.CityArabic" xml:space="preserve"><value>City (Arabic)</value></data>
+  <data name="Admin.ContactField.Country" xml:space="preserve"><value>Country</value></data>
+  <data name="Admin.ContactField.CountryNone" xml:space="preserve"><value>— none —</value></data>
+  <data name="Admin.ContactField.Email" xml:space="preserve"><value>Email</value></data>
+  <data name="Admin.ContactField.PhonePrimary" xml:space="preserve"><value>Phone</value></data>
+  <data name="Admin.ContactField.PhoneSecondary" xml:space="preserve"><value>Secondary phone</value></data>
+  <data name="Admin.ContactField.Facebook" xml:space="preserve"><value>Facebook URL</value></data>
+  <data name="Admin.ContactField.X" xml:space="preserve"><value>X (Twitter) URL</value></data>
+  <data name="Admin.ContactField.LinkedIn" xml:space="preserve"><value>LinkedIn URL</value></data>
+  <data name="Admin.ContactField.Instagram" xml:space="preserve"><value>Instagram URL</value></data>
+  <data name="Admin.ContactField.Latitude" xml:space="preserve"><value>Latitude</value></data>
+  <data name="Admin.ContactField.Longitude" xml:space="preserve"><value>Longitude</value></data>
+  <data name="Admin.ContactField.LatLongHint" xml:space="preserve"><value>Latitude and longitude must be provided together.</value></data>
+  <data name="Admin.ContactField.LatLongInvalid" xml:space="preserve"><value>Latitude and longitude must be valid decimal numbers.</value></data>
+  <data name="Admin.ContactField.CountryInvalid" xml:space="preserve"><value>Select a valid country from the list.</value></data>
+  <data name="Admin.ContactField.Website" xml:space="preserve"><value>Website URL</value></data>
   <data name="Admin.ChangeType.Heading" xml:space="preserve"><value>Change account type</value></data>
   <data name="Admin.ChangeType.Note.VisitorToOther" xml:space="preserve"><value>Convert this visitor into a partner account (staff, sponsor, exhibitor, media…). The account is signed out and re-issued under the new type.</value></data>
   <data name="Admin.ChangeType.Note.OtherToVisitor" xml:space="preserve"><value>Convert this partner account into a visitor. The account is signed out and re-issued under the new type.</value></data>
@@ -111,6 +129,9 @@
   <data name="Admin.SpeakerAvailability.Speaker" xml:space="preserve"><value>Speaker</value></data>
   <data name="Admin.SpeakerAvailability.PickSpeaker" xml:space="preserve"><value>Select a speaker…</value></data>
   <data name="Admin.SpeakerAvailability.AddWindow" xml:space="preserve"><value>Add an availability window</value></data>
+  <data name="Admin.Availability.WindowsHelp" xml:space="preserve"><value>Each window is automatically split into bookable slots of the length you set below. Requesters pick from these free slots; once a slot is booked it disappears from the list.</value></data>
+  <data name="Admin.Availability.DeleteConfirmMsg" xml:space="preserve"><value>Delete this availability window? Its bookable slots will no longer be offered.</value></data>
+  <data name="Admin.Availability.WindowDeleted" xml:space="preserve"><value>Availability window deleted.</value></data>
   <data name="Admin.SpeakerAvailability.Start" xml:space="preserve"><value>Start (Saudi time)</value></data>
   <data name="Admin.SpeakerAvailability.End" xml:space="preserve"><value>End (Saudi time)</value></data>
   <data name="Admin.SpeakerAvailability.SlotMinutes" xml:space="preserve"><value>Slot length (minutes)</value></data>
@@ -143,6 +164,7 @@
   <data name="Admin.DelegationAvailability.BadDateRange" xml:space="preserve"><value>Dates must be within {0}.</value></data>
   <data name="Admin.Meetings.CheckIn" xml:space="preserve"><value>Check in</value></data>
   <data name="Admin.Meetings.CheckIn.Done" xml:space="preserve"><value>Meeting checked in.</value></data>
+  <data name="Admin.Meetings.CheckIn.ConfirmMsg" xml:space="preserve"><value>Check this meeting in at the hall? This marks it as done.</value></data>
   <data name="Admin.Meetings.Bind.Hall" xml:space="preserve"><value>Hall</value></data>
   <data name="Admin.Meetings.Bind.PickHall" xml:space="preserve"><value>— Select a hall —</value></data>
   <data name="Admin.Meetings.Bind.Slot" xml:space="preserve"><value>Hall slot</value></data>
@@ -162,6 +184,10 @@
   <data name="Admin.Meetings.Status.AwaitingConfirmation" xml:space="preserve"><value>Awaiting confirmation</value></data>
   <data name="Admin.Meetings.Status.Done" xml:space="preserve"><value>Done</value></data>
   <data name="Admin.Meetings.Status.Cancelled" xml:space="preserve"><value>Cancelled</value></data>
+  <data name="Admin.Meetings.Status.Pending" xml:space="preserve"><value>Pending</value></data>
+  <data name="Admin.Meetings.Status.Accepted" xml:space="preserve"><value>Confirmed</value></data>
+  <data name="Admin.Meetings.Status.Rejected" xml:space="preserve"><value>Rejected</value></data>
+  <data name="Admin.Meetings.RespondHelp" xml:space="preserve"><value>Approve: email the other party a confirmation link (the meeting is held once they confirm). Confirm: book it now, when you already have their verbal agreement. Decline / Cancel: close the request (a justification is required).</value></data>
   <data name="Admin.Edit.Meetings.Section" xml:space="preserve"><value>Bi-Meeting access</value></data>
   <data name="Admin.Edit.Meetings.AllowsSpeaker" xml:space="preserve"><value>Can request speaker meetings</value></data>
   <data name="Admin.Edit.Meetings.AllowsDelegation" xml:space="preserve"><value>Can request delegation meetings</value></data>
@@ -885,8 +911,14 @@
   <data name="Admin.Gates.Field.AllowedProfileTypes" xml:space="preserve"><value>Allowed profile types</value></data>
   <data name="Admin.Gates.Field.AllowedProfileTypesHint" xml:space="preserve"><value>Empty = all profile types allowed (general gate). Pick one or more to restrict the gate.</value></data>
   <data name="Admin.Gates.Field.AssignedOperators" xml:space="preserve"><value>Assigned operators</value></data>
-  <data name="Admin.Gates.Field.AssignedOperatorsHint" xml:space="preserve"><value>Operators who can scan at this gate. Hold Ctrl/Cmd to multi-select.</value></data>
+  <data name="Admin.Gates.Field.AssignedOperatorsHint" xml:space="preserve"><value>Operators who can scan at this gate. Tick each operator to assign them.</value></data>
   <data name="Admin.Gates.Field.IsActive" xml:space="preserve"><value>Active — available for scanning</value></data>
+  <data name="Admin.Gates.Section.Identification" xml:space="preserve"><value>Identification</value></data>
+  <data name="Admin.Gates.Section.Routing" xml:space="preserve"><value>Direction &amp; hall</value></data>
+  <data name="Admin.Gates.Section.Descriptions" xml:space="preserve"><value>Descriptions</value></data>
+  <data name="Admin.Gates.Section.Access" xml:space="preserve"><value>Access &amp; operators</value></data>
+  <data name="Admin.Gates.Field.NoProfileTypes" xml:space="preserve"><value>No active profile types.</value></data>
+  <data name="Admin.Gates.Field.NoOperators" xml:space="preserve"><value>No candidate operators.</value></data>
   <data name="Admin.Gates.DirectionMode.In" xml:space="preserve"><value>In (check-in only)</value></data>
   <data name="Admin.Gates.DirectionMode.Out" xml:space="preserve"><value>Out (check-out only)</value></data>
   <data name="Admin.Gates.DirectionMode.Both" xml:space="preserve"><value>Both (inferred direction)</value></data>
@@ -1008,6 +1040,13 @@
   <data name="Admin.OrganizationProfile.Saved" xml:space="preserve"><value>Saved.</value></data>
   <data name="Admin.OrganizationProfile.SaveFailed" xml:space="preserve"><value>Could not save the profile.</value></data>
   <data name="Admin.OrganizationProfile.LoadFailed" xml:space="preserve"><value>Could not load the profile.</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoUpload" xml:space="preserve"><value>Upload video</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoUploading" xml:space="preserve"><value>Uploading…</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoRemove" xml:space="preserve"><value>Remove uploaded video</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoHint" xml:space="preserve"><value>MP4, M4V or WebM, up to 200 MB. Uploading replaces the hero background above and plays on Android. For a YouTube or external link instead, paste it in the field above and leave this empty.</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoUploaded" xml:space="preserve"><value>Hero video uploaded.</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoRemoved" xml:space="preserve"><value>Hero video removed.</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoFailed" xml:space="preserve"><value>Could not update the hero video.</value></data>
   <data name="Admin.SiteSettings.Title" xml:space="preserve"><value>Site Settings</value></data>
   <data name="Admin.SiteSettings.Loading" xml:space="preserve"><value>Loading…</value></data>
   <data name="Admin.SiteSettings.Section.Registration" xml:space="preserve"><value>Registration message</value></data>
@@ -2179,13 +2218,21 @@
   <data name="Admin.HallSeatLayouts.None" xml:space="preserve"><value>No halls available.</value></data>
   <data name="Admin.HallSeatLayouts.Loading" xml:space="preserve"><value>Loading…</value></data>
   <data name="Admin.HallSeatLayouts.LoadFailed" xml:space="preserve"><value>Could not load hall seat layouts.</value></data>
-  <data name="Admin.HallSeatLayouts.Hint" xml:space="preserve"><value>The layout drives the seat picker visitors see. Rows × seats-per-row must not exceed the hall capacity.</value></data>
+  <data name="Admin.HallSeatLayouts.Hint" xml:space="preserve"><value>The layout drives the seat picker visitors see. The total seats across all rows must not exceed the hall capacity.</value></data>
   <data name="Admin.HallSeatLayouts.Field.RowLabels" xml:space="preserve"><value>Row labels (comma-separated, 1–26 entries, e.g. A,B,C,VIP)</value></data>
   <data name="Admin.HallSeatLayouts.Field.SeatsPerRow" xml:space="preserve"><value>Seats per row (1–80)</value></data>
+  <data name="Admin.HallSeatLayouts.Field.RowSeats" xml:space="preserve"><value>Seats in each row (1–80)</value></data>
   <data name="Admin.HallSeatLayouts.HallCapacity" xml:space="preserve"><value>Hall capacity</value></data>
   <data name="Admin.HallSeatLayouts.LayoutCapacity" xml:space="preserve"><value>Layout capacity</value></data>
+  <data name="Admin.HallSeatLayouts.TotalSeats" xml:space="preserve"><value>Total seats</value></data>
+  <data name="Admin.HallSeatLayouts.CapacityExceeded" xml:space="preserve"><value>The total seats exceed the hall capacity, or a row is outside 1–80. Adjust the counts before saving.</value></data>
   <data name="Admin.HallSeatLayouts.Save" xml:space="preserve"><value>Save layout</value></data>
   <data name="Admin.HallSeatLayouts.Saved" xml:space="preserve"><value>Layout saved.</value></data>
+  <data name="Admin.HallSeatLayouts.RowsBySeats" xml:space="preserve"><value>{0} rows × {1} seats per row</value></data>
+  <data name="Admin.HallSeatLayouts.Capacity.Over" xml:space="preserve"><value>Layout capacity exceeds the hall capacity. Reduce the rows or seats per row before saving.</value></data>
+  <data name="Admin.HallSeatLayouts.Preview.Title" xml:space="preserve"><value>Layout preview</value></data>
+  <data name="Admin.HallSeatLayouts.Preview.Empty" xml:space="preserve"><value>Enter row labels and seats per row to preview the seat map.</value></data>
+  <data name="Admin.HallSeatLayouts.Preview.Front" xml:space="preserve"><value>Front / Stage</value></data>
   <data name="Admin.SessionSeatPlans.Title" xml:space="preserve"><value>Session seat plans</value></data>
   <data name="Admin.SessionSeatPlans.Legend.Free" xml:space="preserve"><value>Free</value></data>
   <data name="Admin.SessionSeatPlans.Legend.User" xml:space="preserve"><value>Reserved (attendee)</value></data>
@@ -2223,6 +2270,7 @@
   <data name="Admin.SpeakerMeetingRequests.Filter.AwaitingSpeaker" xml:space="preserve"><value>Awaiting speaker</value></data>
   <data name="Admin.SpeakerMeetingRequests.Resend" xml:space="preserve"><value>Resend speaker confirmation</value></data>
   <data name="Admin.SpeakerMeetingRequests.Resend.Done" xml:space="preserve"><value>The speaker confirmation email was re-sent.</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Resend.ConfirmMsg" xml:space="preserve"><value>Re-send the confirmation email with fresh 72-hour links?</value></data>
   <data name="Admin.SpeakerMeetingRequests.Filter.Cancelled" xml:space="preserve"><value>Cancelled</value></data>
   <data name="Admin.SpeakerMeetingRequests.Bind.Hall" xml:space="preserve"><value>Bind to hall (optional)</value></data>
   <data name="Admin.SpeakerMeetingRequests.Bind.NoHall" xml:space="preserve"><value>— No hall (accept only) —</value></data>
@@ -2514,6 +2562,7 @@
   <data name="Admin.Booths.Field.Exhibitor" xml:space="preserve"><value>Exhibitor</value></data>
   <data name="Admin.Booths.Field.ExhibitorNone" xml:space="preserve"><value>— No exhibitor —</value></data>
   <data name="Admin.Booths.Field.OfficerName" xml:space="preserve"><value>Booth officer name</value></data>
+  <data name="Admin.Booths.Field.OfficerNameAr" xml:space="preserve"><value>Booth officer name (Arabic)</value></data>
   <data name="Admin.Booths.Field.OfficerPhone" xml:space="preserve"><value>Booth officer phone</value></data>
   <data name="Admin.Booths.Field.OfficerEmail" xml:space="preserve"><value>Booth officer email</value></data>
   <data name="Admin.Booths.Field.Website" xml:space="preserve"><value>Exhibitor website</value></data>
@@ -3060,59 +3109,6 @@
   <data name="Grid.Import.Done" xml:space="preserve"><value>Import complete.</value></data>
   <data name="Admin.AiPrompts.Active.Yes" xml:space="preserve"><value>Active</value></data>
   <data name="Admin.AiPrompts.Active.No" xml:space="preserve"><value>Inactive</value></data>
-  <!-- SIMF-FDS-014 (D-281/C2) — shared Contact directory -->
-  <data name="Module.Contacts" xml:space="preserve"><value>Contacts</value></data>
-  <data name="Admin.Contacts.Title" xml:space="preserve"><value>Contacts</value></data>
-  <data name="Admin.Contacts.Search" xml:space="preserve"><value>Search</value></data>
-  <data name="Admin.Contacts.Search.Placeholder" xml:space="preserve"><value>Search by name, phone or email</value></data>
-  <data name="Admin.Contacts.Search.Apply" xml:space="preserve"><value>Search</value></data>
-  <data name="Admin.Contacts.Loading" xml:space="preserve"><value>Loading contacts…</value></data>
-  <data name="Admin.Contacts.None" xml:space="preserve"><value>No contacts yet</value></data>
-  <data name="Admin.Contacts.LoadFailed" xml:space="preserve"><value>Something went wrong. Please try again.</value></data>
-  <data name="Admin.Contacts.Required" xml:space="preserve"><value>The Arabic name is required.</value></data>
-  <data name="Admin.Contacts.Saved" xml:space="preserve"><value>Contact saved.</value></data>
-  <data name="Admin.Contacts.Deleted" xml:space="preserve"><value>Contact deactivated.</value></data>
-  <data name="Admin.Contacts.Col.NameAr" xml:space="preserve"><value>Name (Arabic)</value></data>
-  <data name="Admin.Contacts.Col.NameEn" xml:space="preserve"><value>Name (English)</value></data>
-  <data name="Admin.Contacts.Col.Phone" xml:space="preserve"><value>Phone</value></data>
-  <data name="Admin.Contacts.Col.Email" xml:space="preserve"><value>Email</value></data>
-  <data name="Admin.Contacts.Col.Country" xml:space="preserve"><value>Country</value></data>
-  <data name="Admin.Contacts.Col.Active" xml:space="preserve"><value>Status</value></data>
-  <data name="Admin.Contacts.Add.Title" xml:space="preserve"><value>Add contact</value></data>
-  <data name="Admin.Contacts.Edit.Title" xml:space="preserve"><value>Edit contact</value></data>
-  <data name="Admin.Contacts.Cancel" xml:space="preserve"><value>Cancel</value></data>
-  <data name="Admin.Contacts.Save" xml:space="preserve"><value>Save</value></data>
-  <data name="Admin.Contacts.Delete.Confirm" xml:space="preserve"><value>Deactivate this contact?</value></data>
-  <data name="Admin.Contacts.Field.NameAr" xml:space="preserve"><value>Name (Arabic)</value></data>
-  <data name="Admin.Contacts.Field.NameEn" xml:space="preserve"><value>Name (English)</value></data>
-  <data name="Admin.Contacts.Field.LogoRelativePath" xml:space="preserve"><value>Logo path</value></data>
-  <data name="Admin.Contacts.Field.LogoHint" xml:space="preserve"><value>Relative asset path, e.g. contacts/acme.png</value></data>
-  <data name="Admin.Contacts.Field.PhonePrimary" xml:space="preserve"><value>Primary phone</value></data>
-  <data name="Admin.Contacts.Field.PhoneSecondary" xml:space="preserve"><value>Secondary phone</value></data>
-  <data name="Admin.Contacts.Field.Email" xml:space="preserve"><value>Email</value></data>
-  <data name="Admin.Contacts.Field.Website" xml:space="preserve"><value>Website</value></data>
-  <data name="Admin.Contacts.Field.FacebookUrl" xml:space="preserve"><value>Facebook URL</value></data>
-  <data name="Admin.Contacts.Field.XUrl" xml:space="preserve"><value>X (Twitter) URL</value></data>
-  <data name="Admin.Contacts.Field.LinkedInUrl" xml:space="preserve"><value>LinkedIn URL</value></data>
-  <data name="Admin.Contacts.Field.InstagramUrl" xml:space="preserve"><value>Instagram URL</value></data>
-  <data name="Admin.Contacts.Field.Country" xml:space="preserve"><value>Country</value></data>
-  <data name="Admin.Contacts.Field.CountryPlaceholder" xml:space="preserve"><value>Select a country</value></data>
-  <data name="Admin.Contacts.Field.City" xml:space="preserve"><value>City (English)</value></data>
-  <data name="Admin.Contacts.Field.CityAr" xml:space="preserve"><value>City (Arabic)</value></data>
-  <data name="Admin.Contacts.Field.Latitude" xml:space="preserve"><value>Latitude</value></data>
-  <data name="Admin.Contacts.Field.Longitude" xml:space="preserve"><value>Longitude</value></data>
-  <data name="Admin.Contacts.Field.LatLongHint" xml:space="preserve"><value>Optional map location (set both, or leave both blank)</value></data>
-  <data name="Admin.Contacts.Field.LatLongPair" xml:space="preserve"><value>Set both latitude and longitude, or leave both blank.</value></data>
-  <data name="Admin.Contacts.Field.LatLongInvalid" xml:space="preserve"><value>Latitude must be between -90 and 90, longitude between -180 and 180.</value></data>
-  <data name="Admin.Contacts.Field.IsActive" xml:space="preserve"><value>Active</value></data>
-  <data name="Admin.Contacts.Picker.Label" xml:space="preserve"><value>Linked contact</value></data>
-  <data name="Admin.Contacts.Picker.Hint" xml:space="preserve"><value>Link an existing contact from the directory (optional)</value></data>
-  <data name="Admin.Contacts.Picker.Search" xml:space="preserve"><value>Search contacts</value></data>
-  <data name="Admin.Contacts.Picker.SearchApply" xml:space="preserve"><value>Find</value></data>
-  <data name="Admin.Contacts.Picker.None" xml:space="preserve"><value>No matching contacts</value></data>
-  <data name="Admin.Contacts.Picker.Clear" xml:space="preserve"><value>Clear</value></data>
-  <data name="Admin.Contacts.Picker.Linked" xml:space="preserve"><value>Linked: {0}</value></data>
-  <data name="Admin.Contacts.Picker.NotLinked" xml:space="preserve"><value>No contact linked</value></data>
   <data name="Admin.Themes.Delete.Title" xml:space="preserve"><value>Deactivate theme</value></data>
   <data name="Admin.Themes.Delete.Message" xml:space="preserve"><value>Deactivate the theme "{0}"? It will be hidden from the agenda and the Session editor picker. You can reactivate it later by editing it.</value></data>
   <data name="Admin.Halls.Delete.Title" xml:space="preserve"><value>Deactivate hall</value></data>
@@ -3141,11 +3137,6 @@
   <data name="Admin.Configuration.Edit.Submit" xml:space="preserve"><value>Save changes</value></data>
   <data name="Admin.Configuration.Edit.Submitting" xml:space="preserve"><value>Saving…</value></data>
   <data name="Admin.Configuration.Fallback" xml:space="preserve"><value>Something went wrong. Please try again.</value></data>
-  <data name="Admin.Contacts.Details.Title" xml:space="preserve"><value>Contact details</value></data>
-  <data name="Admin.Contacts.Details.Close" xml:space="preserve"><value>Close</value></data>
-  <data name="Admin.Contacts.Delete.Title" xml:space="preserve"><value>Deactivate contact</value></data>
-  <data name="Admin.Contacts.Delete.Message" xml:space="preserve"><value>Deactivate "{0}"? It will no longer be available to link from sponsors, exhibitors, media partners, speakers or booths.</value></data>
-  <data name="Admin.Contacts.Action.Deactivate" xml:space="preserve"><value>Deactivate</value></data>
   <data name="Admin.News.Details.Title" xml:space="preserve"><value>News article details</value></data>
   <data name="Admin.News.Details.Close" xml:space="preserve"><value>Close</value></data>
   <data name="Admin.News.Delete.Title" xml:space="preserve"><value>Delete news article</value></data>

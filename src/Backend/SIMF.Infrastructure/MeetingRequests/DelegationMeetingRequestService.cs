@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
+using SIMF.Application.Email;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Application.MeetingRequests.Abstractions;
 using SIMF.Application.Notifications;
@@ -23,6 +24,8 @@ internal sealed class DelegationMeetingRequestService(
     IIdentityUserDirectory userDirectory,
     INotificationDispatcher notifications,
     IHallAvailabilityService hallAvailability,
+    IMeetingActionTokenService meetingActionTokens,
+    IEmailQueue emailQueue,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<DelegationMeetingRequestService> logger) : IDelegationMeetingRequestService
@@ -112,17 +115,32 @@ internal sealed class DelegationMeetingRequestService(
                 "لا يمكن للوفد طلب اجتماع مع نفسه.");
         }
 
-        // A1 — one open request per (requester, target delegation): reject a
-        // duplicate Pending submission rather than flooding the review queue.
-        var hasOpenRequest = await appDbContext.DelegationMeetingRequests.AsNoTracking()
-            .AnyAsync(r => r.RequestedByUserId == requesterUserId
+        // R8 (bi-meeting rules, D-767) — a requester keeps ONE open request per target
+        // delegation, but a repeat submission is NOT an error: MOVE the existing Pending
+        // request (new slot / subject / attendee count) instead of a duplicate row or a
+        // 409, so re-opening the sheet and picking a different time simply updates it.
+        var openRequest = await appDbContext.DelegationMeetingRequests
+            .SingleOrDefaultAsync(r => r.RequestedByUserId == requesterUserId
                 && r.TargetCountryId == targetCountry.Id
                 && r.Status == MeetingRequestStatus.Pending, cancellationToken);
-        if (hasOpenRequest)
+        if (openRequest is not null)
         {
-            throw new ApiException(ErrorCodes.AppRequestDuplicatePending, 409,
-                "You already have a pending meeting request for this delegation.",
-                "لديك بالفعل طلب اجتماع قيد المراجعة لهذا الوفد.");
+            openRequest.AttendeeCount = request.AttendeeCount;
+            openRequest.Subject = subject;
+            openRequest.SlotStart = slotStart;
+            openRequest.SlotEnd = slotEnd;
+            await appDbContext.SaveChangesAsync(cancellationToken);
+
+            await auditLog.WriteAsync(new AuditEntry
+            {
+                EventType = AuditEvents.DelegationMeetingRequestSubmitted,
+                Outcome = AuditOutcome.Success,
+                ActorUserId = requesterUserId,
+                Detail = $"requestId={openRequest.Id}; target={targetCode}; moved=true",
+            }, cancellationToken);
+
+            return new DelegationMeetingRequestSubmitted(
+                openRequest.Id, openRequest.Status, openRequest.CreatedAt);
         }
 
         var now = timeProvider.GetUtcNow();
@@ -327,6 +345,15 @@ internal sealed class DelegationMeetingRequestService(
             ? null : request.ResponseNote.Trim();
         req.RespondedAt = now;
         req.RespondedByUserId = actorUserId;
+
+        // R4 (D-767) — on Approve (→ AwaitingSpeaker) mint the single-use confirm token in
+        // THIS unit of work so it commits atomically with the transition; its link is
+        // emailed to the target members below. Empty when the public base URL is
+        // unconfigured (the members are then emailed without a link, as before).
+        var confirmUrl = req.Status == MeetingRequestStatus.AwaitingSpeaker
+            ? meetingActionTokens.StageDelegationConfirmToken(req.Id)
+            : null;
+
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -397,7 +424,10 @@ internal sealed class DelegationMeetingRequestService(
                 "Delegation meeting request", "طلب اجتماع وفد",
                 $"A meeting request from {detail.RequestingCountry} is awaiting your confirmation.",
                 $"طلب اجتماع من {detail.RequestingCountry} بانتظار تأكيدك.",
-                cancellationToken);
+                cancellationToken,
+                // R4 (D-767) — carry the confirm link; each member is emailed it (and the
+                // in-app card deep-links to the same tap-confirm).
+                confirmUrl: confirmUrl, requestingCountry: detail.RequestingCountry);
         }
         else if (retractFromTargetMembers)
         {
@@ -530,8 +560,15 @@ internal sealed class DelegationMeetingRequestService(
     private async Task NotifyTargetMembersAsync(
         DelegationMeetingRequest req, NotificationKind kind,
         string title, string titleArabic, string body, string bodyArabic,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? confirmUrl = null, string? requestingCountry = null)
     {
+        // R4 (D-767) — when we have a usable confirm link (the Approve case), the members
+        // get a clean in-app card (SendEmail=false, it deep-links to tap-confirm) PLUS a
+        // dedicated link email; otherwise (retract, or an unconfigured base URL) the
+        // dispatcher email carries the notice as before.
+        var hasLink = !string.IsNullOrEmpty(confirmUrl);
+
         var memberIds = await appDbContext.UserProfiles.AsNoTracking()
             .Where(p => p.NationalityId == req.TargetCountryId && p.AllowsDelegationMeeting)
             .Select(p => p.UserId)
@@ -549,10 +586,47 @@ internal sealed class DelegationMeetingRequestService(
                 Severity = NotificationSeverity.Info,
                 RelatedEntityType = nameof(DelegationMeetingRequest),
                 RelatedEntityId = req.Id,
-                SendEmail = true,
+                SendEmail = !hasLink,
             }, logger, cancellationToken);
+
+            if (hasLink)
+            {
+                await EmailMemberConfirmLinkAsync(
+                    userId, confirmUrl!, req, requestingCountry ?? string.Empty, cancellationToken);
+            }
         }
     }
+
+    // R4 (D-767) — email one target-delegation member the confirm link (best-effort, like
+    // the speaker links email). The member is a SimfUser, so the address is resolved on
+    // Identity; a missing address or a queue failure never rolls back the committed Approve.
+    private async Task EmailMemberConfirmLinkAsync(
+        Guid memberUserId, string confirmUrl, DelegationMeetingRequest req,
+        string requestingCountry, CancellationToken cancellationToken)
+    {
+        var email = await userDirectory.GetEmailAsync(memberUserId, cancellationToken);
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            return;
+        }
+        var slot = req.SlotStart is { } s
+            ? s.FormatSaudi()
+            : "to be scheduled";
+        var html =
+            $"<p>Your delegation has a meeting request from <strong>{HtmlEnc(requestingCountry)}</strong>.</p>"
+            + $"<p>Topic: {HtmlEnc(req.Subject)}<br/>Proposed time: {HtmlEnc(slot)}</p>"
+            + "<p>Please confirm — any one of your delegation confirming books the meeting:</p>"
+            + $"<p><a href=\"{HtmlEnc(confirmUrl)}\">Confirm the meeting</a></p>"
+            + "<p style=\"color:#666\">This link expires in 72 hours and can be used once.</p>";
+        await emailQueue.TryEnqueueAsync(
+            new EmailMessage(email!, "SIMF — please confirm a delegation meeting", html),
+            purpose: "DelegationMeetingConfirm",
+            subjectEmail: email!,
+            subjectUserId: memberUserId,
+            auditLog, logger, cancellationToken);
+    }
+
+    private static string HtmlEnc(string value) => System.Net.WebUtility.HtmlEncode(value);
 
     // Bi-Meeting rework — bind the meeting to a free hall slot on Approve/Confirm,
     // mirroring SpeakerMeetingRequestService.BindHallSlotAsync. Validates the hall
