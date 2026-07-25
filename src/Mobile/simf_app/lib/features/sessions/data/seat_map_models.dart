@@ -179,10 +179,17 @@ class SeatCell {
 
 /// The full hall seat grid for one session — mirrors
 /// `SIMF.Contracts.Sessions.SessionSeatMap` (`GET /app/sessions/{id}/seats`,
-/// approved account). One read draws the whole grid: [rowLabels] × [seatsPerRow]
-/// cells, the [reservedCells] occupied, [myCell] the caller's own seat (Page_018
-/// L-1). Seat status is **derived** client-side (L-2): mine = [myCell]; reserved =
+/// approved account). One read draws the whole grid: [rowLabels] rows, the
+/// [reservedCells] occupied, [myCell] the caller's own seat (Page_018 L-1).
+/// Seat status is **derived** client-side (L-2): mine = [myCell]; reserved =
 /// in [reservedCells]; available = neither.
+///
+/// Row width is [seatsPerRow] when uniform, or — when the layout gives each row
+/// its own width — [seatCounts] (a per-row count PARALLEL to [rowLabels],
+/// appended on the wire as `seatCounts`; the shipped `seatsPerRow` key is kept
+/// as the uniform fallback). Read a row's width through [seatsInRow], which
+/// prefers [seatCounts] only when its length matches [rowLabels] and otherwise
+/// falls back to [seatsPerRow].
 @immutable
 class SessionSeatMap {
   const SessionSeatMap({
@@ -196,10 +203,15 @@ class SessionSeatMap {
     this.sessionTitle,
     this.sessionTitleArabic,
     this.mode = SeatSelectionMode.assignedSeat,
+    this.seatCounts = const <int>[],
   });
 
   final List<String> rowLabels;
   final int seatsPerRow;
+  // Per-row seat counts PARALLEL to [rowLabels] (append-only wire key
+  // `seatCounts`). Empty (or length-mismatched) → the grid stays uniform via
+  // [seatsPerRow]; see [seatsInRow].
+  final List<int> seatCounts;
   final List<SeatCell> reservedCells;
   final SeatCell? myCell;
   final int activeReservedCount;
@@ -225,8 +237,39 @@ class SessionSeatMap {
     return fallback.isEmpty ? null : fallback;
   }
 
-  /// False when the hall has no configured layout (L-6) — the grid can't draw.
-  bool get hasLayout => rowLabels.isNotEmpty && seatsPerRow > 0;
+  /// The seat count of row [i] (0-based). Prefers [seatCounts] only when its
+  /// length matches [rowLabels]; otherwise (absent or length-mismatched) falls
+  /// back to the uniform [seatsPerRow].
+  int seatsInRow(int i) {
+    if (seatCounts.length == rowLabels.length &&
+        i >= 0 &&
+        i < seatCounts.length) {
+      return seatCounts[i];
+    }
+    return seatsPerRow;
+  }
+
+  /// The widest row's seat count — the number of seat COLUMNS the grid sizes to
+  /// so every row draws identically-sized squares. Plain loop (no `dart:math`).
+  int get maxSeatsPerRow {
+    var result = seatsPerRow;
+    for (var i = 0; i < rowLabels.length; i++) {
+      final count = seatsInRow(i);
+      if (count > result) {
+        result = count;
+      }
+    }
+    return result;
+  }
+
+  /// False when the hall has no drawable layout (L-6). Defined via
+  /// [maxSeatsPerRow] so it stays consistent with the grid's column count: a
+  /// variable layout with a zero uniform [seatsPerRow] still draws while its
+  /// (length-matched) [seatCounts] carry a positive count, but a degraded
+  /// response whose [seatCounts] length does not match [rowLabels] collapses to
+  /// the uniform fallback and reports no layout — the safe empty state, never a
+  /// zero-column grid.
+  bool get hasLayout => rowLabels.isNotEmpty && maxSeatsPerRow > 0;
 
   /// The effective capacity readout (session override, else hall).
   int get capacity => sessionCapacity ?? hallCapacity;
@@ -247,6 +290,10 @@ class SessionSeatMap {
           .whereType<String>()
           .toList(growable: false),
       seatsPerRow: (json['seatsPerRow'] as num?)?.toInt() ?? 0,
+      seatCounts: (json['seatCounts'] as List? ?? const <dynamic>[])
+          .whereType<num>()
+          .map((n) => n.toInt())
+          .toList(growable: false),
       reservedCells: (json['reservedCells'] as List? ?? const <dynamic>[])
           .whereType<Map<dynamic, dynamic>>()
           .map((e) => SeatCell.fromJson(e.cast<String, dynamic>()))

@@ -797,6 +797,279 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
         Assert.Equal("A", rows);
     }
 
+    // -- D-767: per-row variable seat counts ----------------------------------
+
+    [Fact]
+    public async Task Variable_layout_bounds_each_row_by_its_own_seat_count()
+    {
+        // D-767 — a ragged layout (VIP=2, A=10, B=8) bounds each row by ITS own
+        // count: seat 10 is the last real seat of the 10-seat row A (allowed), but
+        // seat 10 in the 8-seat row B is out of bounds → 400 SEAT_OUT_OF_BOUNDS.
+        var (session, _) = await SeedSessionWithVariableLayoutAsync(
+            new[] { "VIP", "A", "B" }, new[] { 2, 10, 8 });
+
+        var v1 = await SignInApprovedVisitorAsync();
+        var okA = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
+            new ReserveSeatRequest { RowLabel = "A", SeatNumber = 10 }, v1);
+        Assert.Equal(HttpStatusCode.OK, okA.StatusCode);
+
+        var v2 = await SignInApprovedVisitorAsync();
+        var badB = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
+            new ReserveSeatRequest { RowLabel = "B", SeatNumber = 10 }, v2);
+        Assert.Equal(HttpStatusCode.BadRequest, badB.StatusCode);
+        var body = (await badB.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SeatOutOfBounds, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Variable_layout_capacity_equals_the_sum_of_the_row_counts()
+    {
+        // D-767 — the session's capacity is sum(counts) = 1 + 2 = 3, NOT
+        // rows × max(counts) (= 4) and not the roomy hall (100). Fill all three real
+        // seats, then a fourth booking is full → 409 SEAT_SESSION_FULL.
+        var (session, _) = await SeedSessionWithVariableLayoutAsync(
+            new[] { "VIP", "A" }, new[] { 1, 2 }, hallCapacity: 100);
+
+        foreach (var (row, seat) in new[] { ("VIP", 1), ("A", 1), ("A", 2) })
+        {
+            var v = await SignInApprovedVisitorAsync();
+            var ok = await PostAuthAsync(
+                $"/api/v1/app/sessions/{session.Id}/seats/reserve",
+                new ReserveSeatRequest { RowLabel = row, SeatNumber = seat }, v);
+            Assert.Equal(HttpStatusCode.OK, ok.StatusCode);
+        }
+
+        var overflow = await SignInApprovedVisitorAsync();
+        var full = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
+            new ReserveSeatRequest { RowLabel = "A", SeatNumber = 1 }, overflow);
+        Assert.Equal(HttpStatusCode.Conflict, full.StatusCode);
+        var body = (await full.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SeatSessionFull, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Random_allocator_never_returns_a_seat_beyond_a_short_rows_count()
+    {
+        // D-767 — the row-major random scan must stop each row at ITS own count. With
+        // the 2-seat VIP row filled, the allocator has to skip to row A (1..8) rather
+        // than hand out a phantom VIP3 (which a uniform max-width scan would).
+        var (session, _) = await SeedSessionWithVariableLayoutAsync(
+            new[] { "VIP", "A" }, new[] { 2, 8 });
+
+        foreach (var seat in new[] { 1, 2 })
+        {
+            var v = await SignInApprovedVisitorAsync();
+            var ok = await PostAuthAsync(
+                $"/api/v1/app/sessions/{session.Id}/seats/reserve",
+                new ReserveSeatRequest { RowLabel = "VIP", SeatNumber = seat }, v);
+            Assert.Equal(HttpStatusCode.OK, ok.StatusCode);
+        }
+
+        var picker = await SignInApprovedVisitorAsync();
+        var random = await PostAuthAsync<object>(
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve-random", new { }, picker);
+        Assert.Equal(HttpStatusCode.OK, random.StatusCode);
+        var mine = (await random.Content
+            .ReadFromJsonAsync<ApiResult<MySeatReservation>>())!.Data!;
+        Assert.Equal(SeatReservationKind.RandomAssignment, mine.Kind);
+        Assert.Equal("A", mine.RowLabel);
+        Assert.InRange(mine.SeatNumber!.Value, 1, 8);
+    }
+
+    [Fact]
+    public async Task Shrinking_a_variable_row_below_a_booked_seat_is_blocked()
+    {
+        // D-767 — B8 is booked; shrinking row B from 8 to 5 seats would strand it, so
+        // the per-row orphan guard rejects the change → 409 SEAT_LAYOUT_HAS_RESERVATIONS.
+        var (session, hall) = await SeedSessionWithVariableLayoutAsync(
+            new[] { "VIP", "A", "B" }, new[] { 2, 10, 8 });
+        var visitor = await SignInApprovedVisitorAsync();
+        var pick = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
+            new ReserveSeatRequest { RowLabel = "B", SeatNumber = 8 }, visitor);
+        Assert.Equal(HttpStatusCode.OK, pick.StatusCode);
+
+        var admin = await CreateAdministratorAndSignInAsync();
+        var put = await PutAuthAsync(
+            $"/api/v1/admin/halls/{hall.Id}/seat-layout",
+            new SetHallSeatLayoutRequest
+            {
+                RowLabels = new[] { "VIP", "A", "B" },
+                SeatCounts = new[] { 2, 10, 5 },
+            }, admin);
+        Assert.Equal(HttpStatusCode.Conflict, put.StatusCode);
+        var body = (await put.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SeatLayoutHasReservations, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Shrinking_a_variable_row_above_its_booked_seats_succeeds()
+    {
+        // D-767 — B2 is booked and stays inside the shrunk grid (2 <= 5), so reducing
+        // row B from 8 to 5 seats is allowed → 200, and the snapshot reads the new counts.
+        var (session, hall) = await SeedSessionWithVariableLayoutAsync(
+            new[] { "VIP", "A", "B" }, new[] { 2, 10, 8 });
+        var visitor = await SignInApprovedVisitorAsync();
+        var pick = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
+            new ReserveSeatRequest { RowLabel = "B", SeatNumber = 2 }, visitor);
+        Assert.Equal(HttpStatusCode.OK, pick.StatusCode);
+
+        var admin = await CreateAdministratorAndSignInAsync();
+        var put = await PutAuthAsync(
+            $"/api/v1/admin/halls/{hall.Id}/seat-layout",
+            new SetHallSeatLayoutRequest
+            {
+                RowLabels = new[] { "VIP", "A", "B" },
+                SeatCounts = new[] { 2, 10, 5 },
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, put.StatusCode);
+        var snap = (await put.Content
+            .ReadFromJsonAsync<ApiResult<HallSeatLayoutSnapshot>>())!.Data!;
+        Assert.Equal(new[] { 2, 10, 5 }, snap.SeatCounts);
+        Assert.Equal(17, snap.LayoutCapacity);
+    }
+
+    [Fact]
+    public async Task Uniform_layout_set_with_null_seat_counts_uses_rows_times_seats_per_row()
+    {
+        // D-767 back-compat — a layout with no SeatCounts stays uniform: the capacity is
+        // rows × SeatsPerRow (3 × 4 = 12) and the wire key is omitted (null), exactly as
+        // before the per-row feature.
+        var hall = await SeedHallAsync(capacity: 30);
+        var admin = await CreateAdministratorAndSignInAsync();
+        var put = await PutAuthAsync(
+            $"/api/v1/admin/halls/{hall.Id}/seat-layout",
+            new SetHallSeatLayoutRequest
+            {
+                RowLabels = new[] { "A", "B", "C" }, SeatsPerRow = 4,
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, put.StatusCode);
+        var snap = (await put.Content
+            .ReadFromJsonAsync<ApiResult<HallSeatLayoutSnapshot>>())!.Data!;
+        Assert.Null(snap.SeatCounts);
+        Assert.Equal(4, snap.SeatsPerRow);
+        Assert.Equal(12, snap.LayoutCapacity);
+    }
+
+    [Fact]
+    public async Task Admin_set_variable_layout_round_trips_the_seat_counts()
+    {
+        // D-767 — setting counts 2,10,8 stores them and reports sum = 20 with the
+        // uniform fallback SeatsPerRow = max = 10; a subsequent GET reads back the same.
+        var hall = await SeedHallAsync(capacity: 30);
+        var admin = await CreateAdministratorAndSignInAsync();
+        var put = await PutAuthAsync(
+            $"/api/v1/admin/halls/{hall.Id}/seat-layout",
+            new SetHallSeatLayoutRequest
+            {
+                RowLabels = new[] { "VIP", "A", "B" },
+                SeatCounts = new[] { 2, 10, 8 },
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, put.StatusCode);
+        var setSnap = (await put.Content
+            .ReadFromJsonAsync<ApiResult<HallSeatLayoutSnapshot>>())!.Data!;
+        Assert.Equal(new[] { 2, 10, 8 }, setSnap.SeatCounts);
+        Assert.Equal(20, setSnap.LayoutCapacity);
+        Assert.Equal(10, setSnap.SeatsPerRow);
+
+        var get = await GetAuthAsync($"/api/v1/admin/halls/{hall.Id}/seat-layout", admin);
+        Assert.Equal(HttpStatusCode.OK, get.StatusCode);
+        var getSnap = (await get.Content
+            .ReadFromJsonAsync<ApiResult<HallSeatLayoutSnapshot>>())!.Data!;
+        Assert.Equal(new[] { "VIP", "A", "B" }, getSnap.RowLabels);
+        Assert.Equal(new[] { 2, 10, 8 }, getSnap.SeatCounts);
+        Assert.Equal(20, getSnap.LayoutCapacity);
+    }
+
+    [Fact]
+    public async Task Set_layout_with_a_count_mismatch_is_400()
+    {
+        // D-767 — the SeatCounts length MUST equal the row count; 2 counts for 3 rows
+        // is invalid → 400 SEAT_LAYOUT_INVALID.
+        var hall = await SeedHallAsync(capacity: 30);
+        var admin = await CreateAdministratorAndSignInAsync();
+        var put = await PutAuthAsync(
+            $"/api/v1/admin/halls/{hall.Id}/seat-layout",
+            new SetHallSeatLayoutRequest
+            {
+                RowLabels = new[] { "A", "B", "C" },
+                SeatCounts = new[] { 1, 2 },
+            }, admin);
+        Assert.Equal(HttpStatusCode.BadRequest, put.StatusCode);
+        var body = (await put.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SeatLayoutInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Set_layout_rejects_out_of_range_counts_and_an_over_capacity_sum()
+    {
+        // D-767 — per-row range + total-capacity guards: a count of 0 or 81 is outside
+        // 1..80 → 400 SEAT_LAYOUT_INVALID; in-range counts whose SUM exceeds the hall
+        // capacity → 400 SEAT_CAPACITY_EXCEEDED.
+        var admin = await CreateAdministratorAndSignInAsync();
+        var roomy = await SeedHallAsync(capacity: 200);
+
+        var zero = await PutAuthAsync(
+            $"/api/v1/admin/halls/{roomy.Id}/seat-layout",
+            new SetHallSeatLayoutRequest
+            {
+                RowLabels = new[] { "A", "B" }, SeatCounts = new[] { 0, 5 },
+            }, admin);
+        Assert.Equal(HttpStatusCode.BadRequest, zero.StatusCode);
+        Assert.Equal(ErrorCodes.SeatLayoutInvalid,
+            (await zero.Content.ReadFromJsonAsync<ApiResult<object>>())!.Error!.Code);
+
+        var tooMany = await PutAuthAsync(
+            $"/api/v1/admin/halls/{roomy.Id}/seat-layout",
+            new SetHallSeatLayoutRequest
+            {
+                RowLabels = new[] { "A", "B" }, SeatCounts = new[] { 81, 5 },
+            }, admin);
+        Assert.Equal(HttpStatusCode.BadRequest, tooMany.StatusCode);
+        Assert.Equal(ErrorCodes.SeatLayoutInvalid,
+            (await tooMany.Content.ReadFromJsonAsync<ApiResult<object>>())!.Error!.Code);
+
+        var tight = await SeedHallAsync(capacity: 5);
+        var overCap = await PutAuthAsync(
+            $"/api/v1/admin/halls/{tight.Id}/seat-layout",
+            new SetHallSeatLayoutRequest
+            {
+                RowLabels = new[] { "A", "B" }, SeatCounts = new[] { 4, 4 },
+            }, admin);
+        Assert.Equal(HttpStatusCode.BadRequest, overCap.StatusCode);
+        Assert.Equal(ErrorCodes.SeatCapacityExceeded,
+            (await overCap.Content.ReadFromJsonAsync<ApiResult<object>>())!.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Seat_map_emits_seat_counts_for_a_variable_layout_and_null_for_uniform()
+    {
+        // D-767 wire back-compat — the app's seat map carries the per-row counts for a
+        // ragged layout (with SeatsPerRow = max as the frozen uniform-width field) and
+        // omits the key (null) for a uniform layout, so old and new apps both decode.
+        var (variable, _) = await SeedSessionWithVariableLayoutAsync(
+            new[] { "VIP", "A", "B" }, new[] { 2, 10, 8 });
+        var (uniform, _) = await SeedSessionWithLayoutAsync(new[] { "A", "B" }, seatsPerRow: 5);
+        var viewer = await SignInApprovedVisitorAsync();
+
+        var vMap = (await (await GetAuthAsync(
+                $"/api/v1/app/sessions/{variable.Id}/seats", viewer))
+            .Content.ReadFromJsonAsync<ApiResult<SessionSeatMap>>())!.Data!;
+        Assert.Equal(new[] { "VIP", "A", "B" }, vMap.RowLabels);
+        Assert.Equal(new[] { 2, 10, 8 }, vMap.SeatCounts);
+        Assert.Equal(10, vMap.SeatsPerRow);
+
+        var uMap = (await (await GetAuthAsync(
+                $"/api/v1/app/sessions/{uniform.Id}/seats", viewer))
+            .Content.ReadFromJsonAsync<ApiResult<SessionSeatMap>>())!.Data!;
+        Assert.Null(uMap.SeatCounts);
+        Assert.Equal(5, uMap.SeatsPerRow);
+    }
+
     // -- Helpers --------------------------------------------------------------
 
     private async Task<(Session Session, Hall Hall)> SeedSessionWithLayoutAsync(
@@ -836,6 +1109,58 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
             CapacityOverride = capacityOverride,
             // P2.2 — D-227: a FUTURE window so bookings can be cancelled before
             // the session starts (the new cancel-before-start guard, FR-504).
+            StartUtc = DateTimeOffset.UtcNow.AddHours(1),
+            EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        db.Sessions.Add(session);
+        await db.SaveChangesAsync();
+        return (session, hall);
+    }
+
+    private async Task<(Session Session, Hall Hall)> SeedSessionWithVariableLayoutAsync(
+        string[] rowLabels, int[] seatCounts,
+        SeatSelectionMode hallMode = SeatSelectionMode.AssignedSeat,
+        SeatSelectionMode? sessionModeOverride = null,
+        int? capacityOverride = null,
+        int? hallCapacity = null)
+    {
+        // D-767 — mirrors SeedSessionWithLayoutAsync but seeds a RAGGED layout: a
+        // per-row SeatCounts CSV parallel to RowLabels, with SeatsPerRow storing
+        // max(counts) as the uniform fallback (exactly what SetLayoutAsync persists).
+        // The hall defaults to sum(counts) but can be overridden to test the
+        // sum-over-capacity guard.
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var hall = new Hall
+        {
+            Id = Guid.NewGuid(),
+            Code = "H-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+            Name = "Hall", NameArabic = "قاعة",
+            Capacity = hallCapacity ?? seatCounts.Sum(),
+            SeatSelectionMode = hallMode,
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        db.Halls.Add(hall);
+        db.HallSeatLayouts.Add(new HallSeatLayout
+        {
+            Id = Guid.NewGuid(),
+            HallId = hall.Id,
+            RowLabels = string.Join(',', rowLabels),
+            SeatsPerRow = seatCounts.Max(),
+            SeatCounts = string.Join(',', seatCounts),
+            CreatedAt = DateTimeOffset.UtcNow,
+        });
+        var session = new Session
+        {
+            Id = Guid.NewGuid(),
+            Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+            Title = "Live", TitleArabic = "مباشر",
+            HallId = hall.Id,
+            SeatSelectionModeOverride = sessionModeOverride,
+            CapacityOverride = capacityOverride,
             StartUtc = DateTimeOffset.UtcNow.AddHours(1),
             EndUtc = DateTimeOffset.UtcNow.AddHours(2),
             IsActive = true,

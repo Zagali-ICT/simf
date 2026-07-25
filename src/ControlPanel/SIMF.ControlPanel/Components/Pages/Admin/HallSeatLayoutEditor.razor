@@ -46,27 +46,39 @@
         else if (_selectedHallId is not null && _snapshot is not null)
         {
             <div class="simf-form__fields">
-                <div class="simf-form__grid">
-                    <label class="simf-field">
-                        <span class="simf-field__label">@L["Admin.HallSeatLayouts.Field.RowLabels"]</span>
-                        <input class="simf-field__input" type="text"
-                               value="@_rowLabelsCsv"
-                               @onchange="OnRowLabelsChanged"
-                               disabled="@_busy" />
-                    </label>
-                    <label class="simf-field">
-                        <span class="simf-field__label">@L["Admin.HallSeatLayouts.Field.SeatsPerRow"]</span>
-                        <input class="simf-field__input" type="number" min="1" max="80"
-                               value="@_seatsPerRow"
-                               @onchange="OnSeatsPerRowChanged"
-                               disabled="@_busy" />
-                    </label>
-                </div>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.HallSeatLayouts.Field.RowLabels"]</span>
+                    <input class="simf-field__input" type="text"
+                           value="@_rowLabelsCsv"
+                           @onchange="OnRowLabelsChanged"
+                           disabled="@_busy" />
+                </label>
 
-                @* Capacity summary — Hall vs Layout with a utilisation meter.
-                   The over-capacity notice is visual only; Save stays enabled
-                   so the server keeps ownership of the capacity rule. *@
-                <section class="hsl-capacity @(_isOverCapacity ? "hsl-capacity--over" : null)">
+                @* D-767 — one seat-count input per parsed row (raw input, NOT
+                   SimfTextField: a SimfTextField without ValueExpression freezes the
+                   page, D-648). Renaming a label keeps that position's count. *@
+                @if (_rows.Count > 0)
+                {
+                    <div class="simf-form__fields">
+                        <span class="simf-field__label">@L["Admin.HallSeatLayouts.Field.RowSeats"]</span>
+                        @for (var i = 0; i < _rows.Count; i++)
+                        {
+                            var idx = i;
+                            <label class="simf-field simf-field--inline">
+                                <span class="simf-field__label">@_rows[idx].Label</span>
+                                <input class="simf-field__input" type="number" min="1" max="80"
+                                       value="@_rows[idx].Count"
+                                       @onchange="@(e => OnRowCountChanged(idx, e))"
+                                       disabled="@_busy" />
+                            </label>
+                        }
+                    </div>
+                }
+
+                @* Capacity summary — Hall vs Layout (total seats) with a utilisation
+                   meter. The over-capacity / out-of-range notice is visual only; Save
+                   stays enabled so the server keeps ownership of the capacity rule. *@
+                <section class="hsl-capacity @((_isOverCapacity || _anyOutOfRange) ? "hsl-capacity--over" : null)">
                     <dl class="hsl-capacity__stats">
                         <div class="hsl-capacity__stat">
                             <dt class="hsl-capacity__term">@L["Admin.HallSeatLayouts.HallCapacity"]</dt>
@@ -74,20 +86,17 @@
                         </div>
                         <div class="hsl-capacity__stat">
                             <dt class="hsl-capacity__term">@L["Admin.HallSeatLayouts.LayoutCapacity"]</dt>
-                            <dd class="hsl-capacity__value">@_layoutCapacity</dd>
+                            <dd class="hsl-capacity__value">@_totalSeats</dd>
                         </div>
                     </dl>
-                    <p class="hsl-capacity__formula">
-                        @(string.Format(L["Admin.HallSeatLayouts.RowsBySeats"], _currentRowCount, _seatsPerRow))
-                    </p>
                     <progress class="hsl-capacity__meter"
                               aria-label="@L["Admin.HallSeatLayouts.LayoutCapacity"]"
                               max="@(_hallCapacity > 0 ? _hallCapacity : 1)"
-                              value="@_layoutCapacity"></progress>
-                    @if (_isOverCapacity)
+                              value="@_totalSeats"></progress>
+                    @if (_isOverCapacity || _anyOutOfRange)
                     {
                         <p class="hsl-capacity__warning" role="alert">
-                            @L["Admin.HallSeatLayouts.Capacity.Over"]
+                            @L["Admin.HallSeatLayouts.CapacityExceeded"]
                         </p>
                     }
                 </section>
@@ -98,18 +107,19 @@
                not show reservations (that is /admin/sessions/seat-plans). *@
             <section class="hsl-preview">
                 <h2 class="hsl-preview__title">@L["Admin.HallSeatLayouts.Preview.Title"]</h2>
-                @if (_previewRowLabels.Count > 0 && _seatsPerRow > 0)
+                @if (_rows.Count > 0)
                 {
-                    var seatsToRender = Math.Clamp(_seatsPerRow, 0, 80);
                     <div class="hsl-preview__stage">@L["Admin.HallSeatLayouts.Preview.Front"]</div>
                     @* Decorative confirmation of the layout — the capacity panel
                        and the admin's own inputs already convey the numbers, so it
-                       is hidden from assistive tech to avoid a seat-by-seat readout. *@
+                       is hidden from assistive tech to avoid a seat-by-seat readout.
+                       D-767: each row renders its OWN seat count. *@
                     <div class="hsl-preview__grid" aria-hidden="true">
-                        @foreach (var rowLabel in _previewRowLabels)
+                        @foreach (var row in _rows)
                         {
+                            var seatsToRender = Math.Clamp(row.Count, 0, 80);
                             <div class="hsl-preview__row">
-                                <span class="hsl-preview__row-label">@rowLabel</span>
+                                <span class="hsl-preview__row-label">@row.Label</span>
                                 @for (var seat = 1; seat <= seatsToRender; seat++)
                                 {
                                     <span class="hsl-preview__seat">@seat</span>

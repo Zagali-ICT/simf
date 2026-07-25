@@ -1159,6 +1159,11 @@ class AppL10n {
         'Seat reserved successfully. The reservation will be cancelled if you do not check in by 3 minutes before the session starts, to free the seat for others.',
       );
   String get seatReserveFailed => _t('تعذّر حجز المقعد', "Couldn't reserve that seat");
+  // Seat picker — tap→select→confirm (owner 2026-07-25): the chip above the
+  // auto-pick button confirms the tapped seat, and the CTA commits the hold.
+  String seatPickerSelectedChip(String row, int seat) =>
+      _t('المقعد المختار: الصف $row · مقعد $seat', 'Selected: Row $row · Seat $seat');
+  String get seatPickerConfirmCta => _t('تأكيد المقعد', 'Confirm my seat');
   // Join-a-session hub.
   String get joinHubTitle => _t('احجز مقعداً', 'Book a seat');
   String get joinHubHint =>

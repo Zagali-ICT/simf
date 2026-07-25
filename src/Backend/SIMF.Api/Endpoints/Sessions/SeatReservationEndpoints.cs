@@ -189,6 +189,9 @@ public sealed class SetHallSeatLayoutEndpoint(ISeatReservationService service)
                 {
                     RowLabels = req.RowLabels,
                     SeatsPerRow = req.SeatsPerRow,
+                    // D-767 — carry the optional per-row seat counts through the
+                    // over-post-safe re-projection.
+                    SeatCounts = req.SeatCounts,
                 }, ct)), ct);
     }
 }

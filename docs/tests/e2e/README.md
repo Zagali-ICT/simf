@@ -74,11 +74,11 @@ not reused. Each page owns a unique 3–4 letter namespace.
 |------|------|-----------|
 | `/admin/themes` | [`cp-admin-themes.md`](cp-admin-themes.md) | E2E-THM-001..024 |
 | `/admin/halls` | [`cp-admin-halls.md`](cp-admin-halls.md) | E2E-HAL-001..022 |
-| `/admin/halls/seat-layouts` | [`cp-admin-halls-seat-layouts.md`](cp-admin-halls-seat-layouts.md) | E2E-HSL-001..015 |
+| `/admin/halls/seat-layouts` | [`cp-admin-halls-seat-layouts.md`](cp-admin-halls-seat-layouts.md) | E2E-HSL-001..022 |
 | `/admin/speakers` | [`cp-admin-speakers.md`](cp-admin-speakers.md) | E2E-SPK-001..022 |
 | `/admin/speaker-presentations` | [`cp-admin-speaker-presentations.md`](cp-admin-speaker-presentations.md) | E2E-SPP-001..017 |
 | `/admin/sessions` | [`cp-admin-sessions.md`](cp-admin-sessions.md) | E2E-SES-001..030 |
-| `/admin/sessions/seat-plans` | [`cp-admin-sessions-seat-plans.md`](cp-admin-sessions-seat-plans.md) | E2E-SSP-001..014 |
+| `/admin/sessions/seat-plans` | [`cp-admin-sessions-seat-plans.md`](cp-admin-sessions-seat-plans.md) | E2E-SSP-001..016 |
 | `/admin/session-categories` | [`cp-admin-session-categories.md`](cp-admin-session-categories.md) | E2E-SCT-001..021 |
 | `/admin/programme-days` | [`cp-admin-programme-days.md`](cp-admin-programme-days.md) | E2E-PGD-001..018 |
 | `/admin/session-moderators` | [`cp-admin-session-moderators.md`](cp-admin-session-moderators.md) | E2E-SMD-001..018 |
@@ -232,8 +232,8 @@ API endpoints land (D-249). The per-screen design docs live under
 | #15 `venueMap` (`GET /app/venue-map` + `/app/booths` + `/{id}`) | [`mobile-venue-map.md`](mobile-venue-map.md) | E2E-MOB015-001..008 |
 | #16 `sessions` (`GET /app/programme/sessions`) | [`mobile-agenda.md`](mobile-agenda.md) | E2E-MOB016-001..019 |
 | #17 `sessionDetail` (`GET /app/programme/sessions/{id}` + `…/sessions/{id}/seats`) | [`mobile-session-detail.md`](mobile-session-detail.md) | E2E-MOB017-001..011 |
-| #18 `mySeat` (`GET /app/sessions/{id}/seats` + reserve/release) | [`mobile-my-seat.md`](mobile-my-seat.md) | E2E-MOB018-001..017 |
-| `seatPicker` (`GET …/seats` + `POST …/seats/reserve` / `reserve-random`) — D-485 | [`mobile-seat-picker.md`](mobile-seat-picker.md) | E2E-MOBPICK-001..007 |
+| #18 `mySeat` (`GET /app/sessions/{id}/seats` + reserve/release) | [`mobile-my-seat.md`](mobile-my-seat.md) | E2E-MOB018-001..018 |
+| `seatPicker` (`GET …/seats` + `POST …/seats/reserve` / `reserve-random`) — D-485 | [`mobile-seat-picker.md`](mobile-seat-picker.md) | E2E-MOBPICK-001..011 |
 | `joinSessionHub` (`GET /app/programme/sessions`) — D-485 | [`mobile-join-hub.md`](mobile-join-hub.md) | E2E-MOBHUB-001..005 |
 | `savedSessions` (`GET /app/sessions/favourites` ∩ programme) — #8, D-584 | [`mobile-saved-sessions.md`](mobile-saved-sessions.md) | E2E-MOBSAVED-001..007 |
 | #19 `speakers` (`GET /app/speakers`) | [`mobile-speakers.md`](mobile-speakers.md) | E2E-MOB019-001..013 |
@@ -375,3 +375,32 @@ API endpoints land (D-249). The per-screen design docs live under
   `EmailConfirmed=false` when it changes an email. A short note was added to the Edit
   scenarios of `cp-admin-visitors.md` (E2E-VIS-001) and `cp-admin-others.md`
   (E2E-OTH-005); no existing scenario was renumbered.
+
+### Update - 2026-07-25 (D-767 - hall seat layouts gain per-row variable seat counts)
+
+- **Scope:** an additive nullable `HallSeatLayout.SeatCounts` CSV (parallel to
+  `RowLabels`) lets each row carry its own seat count (Option A); `SeatsPerRow` is kept
+  as the uniform fallback (`max(counts)`), and a null CSV = the unchanged uniform
+  layout. Migration `App/D767_AddHallSeatLayoutSeatCounts`. Backend service, contracts
+  (`SessionSeatMap` / `HallSeatLayoutSnapshot` / `SetHallSeatLayoutRequest` all append
+  `SeatCounts`), and the three CP grids (`HallSeatLayoutEditor`, `SessionSeatPlan`,
+  `SessionLiveHall`) are coded on branch `feat/hall-seat-per-row-counts`.
+- **Ranges corrected + scenarios added:** `cp-admin-halls-seat-layouts.md`
+  E2E-HSL-001..015 -> **001..022** (+017..022: ragged round-trip, Total-seats preview +
+  disabled-Save guard, count-mismatch / out-of-range / sum-over-capacity 400s, uniform
+  back-compat); `cp-admin-sessions-seat-plans.md` E2E-SSP-001..014 -> **001..016**
+  (+016 ragged grid renders per-row, reserve/release still per-row); `mobile-seat-picker.md`
+  E2E-MOBPICK-001..007 -> **001..011** (+011 ragged + seat numbers + tap->select->confirm
+  chip); `mobile-my-seat.md` E2E-MOB018-001..017 -> **001..018** (+018 ragged read-only
+  render + own-seat number/icon). The HSL / SSP old maxima in this index were also stale
+  (the files already carried HSL-016 / SSP-015) and are now correct.
+- **Two page reference docs authored** (were `-` in `PAGE-INDEX.md`):
+  `docs/pages/cp/admin-halls-seat-layouts.md` and
+  `docs/pages/cp/admin-sessions-seat-plans.md`.
+- **Honesty flag (branch state):** the two new mobile scenarios (E2E-MOBPICK-011,
+  E2E-MOB018-018) are authored as the target spec but are **RED on this branch** - the
+  Flutter data/model/tokens/l10n landed, but `hall_seat_map.dart` (ragged render + seat
+  numbers + a11y icons) and `seat_picker_screen.dart` (tap->select->confirm chip) are
+  NOT yet wired. The new HSL/SSP CP behaviour IS coded, but no `SeatReservationsTests`
+  variable-layout xUnit facts back it yet, so those scenarios read `_to author_` and are
+  driven manually until the tests land.

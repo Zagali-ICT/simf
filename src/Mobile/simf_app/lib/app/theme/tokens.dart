@@ -828,6 +828,23 @@ class SimfTokens {
   static const double timeRailWidth = 48; // timeline time-rail column width
   static const double opacityHalf = 0.5; // 50% (resting favourite heart)
   static const double seatFillOpacity = 0.15; // reservation seat-marker fill
+  static const double seatNumberSize = 9; // centred numeral inside a seat cell
+  static const double seatStateIconSize = 12; // reserved / your-seat cell icon
+  // Western-digit seat numeral (w600, height 1) centred in the square. OnDark =
+  // light on the reserved/available dark cells; OnGold = navy on the gold
+  // selected / "mine" cell.
+  static const TextStyle seatNumberOnDark = TextStyle(
+    color: surface,
+    fontSize: seatNumberSize,
+    fontWeight: FontWeight.w600,
+    height: 1,
+  );
+  static const TextStyle seatNumberOnGold = TextStyle(
+    color: navy,
+    fontSize: seatNumberSize,
+    fontWeight: FontWeight.w600,
+    height: 1,
+  );
   static const TextStyle labelBeigeSemiboldLg = TextStyle(
     color: beigeBorder,
     fontSize: textLg,
