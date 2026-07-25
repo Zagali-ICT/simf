@@ -129,6 +129,7 @@
   <data name="Admin.SpeakerAvailability.Speaker" xml:space="preserve"><value>Speaker</value></data>
   <data name="Admin.SpeakerAvailability.PickSpeaker" xml:space="preserve"><value>Select a speaker…</value></data>
   <data name="Admin.SpeakerAvailability.AddWindow" xml:space="preserve"><value>Add an availability window</value></data>
+  <data name="Admin.Availability.WindowsHelp" xml:space="preserve"><value>Each window is automatically split into bookable slots of the length you set below. Requesters pick from these free slots; once a slot is booked it disappears from the list.</value></data>
   <data name="Admin.SpeakerAvailability.Start" xml:space="preserve"><value>Start (Saudi time)</value></data>
   <data name="Admin.SpeakerAvailability.End" xml:space="preserve"><value>End (Saudi time)</value></data>
   <data name="Admin.SpeakerAvailability.SlotMinutes" xml:space="preserve"><value>Slot length (minutes)</value></data>

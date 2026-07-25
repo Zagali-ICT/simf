@@ -129,6 +129,7 @@
   <data name="Admin.SpeakerAvailability.Speaker" xml:space="preserve"><value>المتحدّث</value></data>
   <data name="Admin.SpeakerAvailability.PickSpeaker" xml:space="preserve"><value>اختر متحدّثاً…</value></data>
   <data name="Admin.SpeakerAvailability.AddWindow" xml:space="preserve"><value>إضافة فترة توفّر</value></data>
+  <data name="Admin.Availability.WindowsHelp" xml:space="preserve"><value>يُقسَّم كل نطاق تلقائياً إلى فترات قابلة للحجز بالطول الذي تحدده أدناه. يختار مقدّمو الطلبات من هذه الفترات المتاحة، وتختفي الفترة من القائمة بمجرد حجزها.</value></data>
   <data name="Admin.SpeakerAvailability.Start" xml:space="preserve"><value>البداية (بتوقيت السعودية)</value></data>
   <data name="Admin.SpeakerAvailability.End" xml:space="preserve"><value>النهاية (بتوقيت السعودية)</value></data>
   <data name="Admin.SpeakerAvailability.SlotMinutes" xml:space="preserve"><value>مدة الفترة (دقائق)</value></data>
