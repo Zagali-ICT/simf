@@ -1,6 +1,6 @@
 # SIMF App — Web build deployment on IIS (D-376)
 
-Last updated: 2026-06-12
+Last updated: 2026-07-25
 
 The Flutter app's **web build** is published as a static IIS site (proof-of-
 concept distribution of the mobile app's UI in a browser; the shipped product
@@ -27,10 +27,24 @@ is no runtime config file. Optional parameters: `-AppKey`, `-SupportPhone`,
    deploy folder. No application pool .NET runtime is needed — set the pool
    to **No Managed Code** (pure static content).
 2. The bundled `web.config` registers the MIME types Flutter needs
-   (`.wasm`, `.json`, `.bin`, fonts, `.mp4`) and sets `index.html` as the
-   default document. The app uses **hash routing** (`/#/route`), so no
-   URL-Rewrite module is required.
-3. Bind **HTTPS**. A browser page served over `https://` cannot call an
+   (`.wasm`, `.json`, `.bin`, fonts, `.mp4`), sets `index.html` as the
+   default document, and reverse-proxies `/api/*` to the API on the same
+   box (`https://localhost:12340`) so the browser only ever talks to this
+   origin and never validates the API's self-signed cert.
+3. **Install the IIS "URL Rewrite" and "Application Request Routing (ARR)"
+   modules, then enable ARR proxy** (IIS Manager > server node >
+   *Application Request Routing Cache* > *Server Proxy Settings* > check
+   *Enable proxy*). The `web.config` `<rewrite>` proxy rule depends on both.
+   If they are not installed, IIS cannot parse the `<rewrite>` section and
+   returns **HTTP 500 on every request** (this is the failure mode to check
+   first if the site returns 500 for every path, including nonexistent ones).
+   The app uses **hash routing** (`/#/route`), so no rewrite is needed for
+   client navigation, but the same-origin API proxy still requires these
+   modules. If ARR returns 502 validating the backend's self-signed cert
+   (target `localhost` not matching the cert CN), trust that cert in the
+   server's Local Machine > Trusted Root, or change the proxy target in
+   `web.config` to the cert-CN host.
+4. Bind **HTTPS**. A browser page served over `https://` cannot call an
    `http://` API (mixed content), so the site and the API must both be HTTPS.
 
 ## 3. API-side requirements
@@ -76,3 +90,24 @@ is no runtime config file. Optional parameters: `-AppKey`, `-SupportPhone`,
 2. Register / sign in end-to-end (watch the browser network tab: all calls
    go to `https://simf_api.zagali-ict.com/api/v1/...`, no CORS errors).
 3. `docs/tests/e2e/mobile-sign-in.md` scenarios are the full catalogue.
+
+## 6. Troubleshooting
+
+**HTTP 500 on every path (including non-existent paths and `/web.config`).**
+IIS cannot parse the `<rewrite>` section at startup because the **URL Rewrite**
+and/or **ARR** modules are not installed (see §2.3). Run, elevated, on the IIS
+host:
+
+```powershell
+D:\SIMF\System\V1.0.0\deploy\app-web\fix-appweb-500-urlrewrite-arr.ps1
+```
+
+It detects what is missing, installs URL Rewrite then ARR from the official
+Microsoft installers, backs up `applicationHost.config`, enables the ARR proxy,
+restarts IIS, and verifies the site returns HTTP 200. It is idempotent (safe to
+re-run) and supports `-DryRun` (report only) and `-Force` (no prompt).
+
+**HTTP 502 on `/api/*` after the modules are installed.** ARR is rejecting the
+API's self-signed cert because the proxy target `localhost` does not match the
+cert CN. Trust the cert in the server's *Local Machine > Trusted Root*, or change
+the proxy target in `web.config` to the cert-CN host.
