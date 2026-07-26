@@ -7,6 +7,7 @@ using SIMF.Application.SessionQuestions.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
+using SIMF.Domain.Profiles;
 using SIMF.Domain.SessionQuestions;
 using SIMF.Infrastructure.Persistence;
 
@@ -135,17 +136,22 @@ internal sealed class AdminSessionModeratorService(
         // (profile type carries MobileAppRole.Moderator) intersected with the
         // Identity-side approval fact. Two queries against two databases, joined
         // in memory — never a cross-DB JOIN (D-157).
-        var eligibleRows = await EligibleProfiles().ToListAsync(cancellationToken);
+        var eligibleRows = await EligibleProfiles()
+            .Select(p => new
+            {
+                p.UserId,
+                ProfileTypeName = p.ProfileType!.Name,
+                ProfileTypeNameArabic = p.ProfileType.NameArabic,
+            })
+            .ToListAsync(cancellationToken);
         var candidates = new List<SessionModeratorCandidate>();
         if (eligibleRows.Count > 0)
         {
             // A user has at most one profile row; fold defensively so a stray
             // duplicate cannot throw on the picker.
-            var byUserId = new Dictionary<Guid, EligibleProfile>();
-            foreach (var row in eligibleRows)
-            {
-                byUserId.TryAdd(row.UserId, row);
-            }
+            var byUserId = eligibleRows
+                .GroupBy(r => r.UserId)
+                .ToDictionary(g => g.Key, g => g.First());
             var eligibleIds = byUserId.Keys.ToList();
             var users = await identityDbContext.Users.AsNoTracking()
                 .Where(u => eligibleIds.Contains(u.Id)
@@ -306,17 +312,14 @@ internal sealed class AdminSessionModeratorService(
     /// uses to mint the app's moderator role, so the picker and the server-side
     /// assign check share one rule. The Identity-side approval fact is applied
     /// separately by the caller — the two databases are never joined (D-157).
-    /// Returned as a query so the assign path can test ONE user
-    /// (<c>AnyAsync</c>) instead of materialising every eligible profile.</summary>
-    private IQueryable<EligibleProfile> EligibleProfiles() =>
+    /// Returned UNPROJECTED so the assign path can test ONE user
+    /// (<c>AnyAsync</c> over the filter) instead of materialising every eligible
+    /// profile — EF cannot translate an <c>Any</c> applied on top of a projection
+    /// into a custom type, so the projection stays with the picker caller.</summary>
+    private IQueryable<UserProfile> EligibleProfiles() =>
         appDbContext.UserProfiles
             .AsNoTracking()
             .Where(p => p.ProfileType != null
                 && !p.ProfileType.IsForVisitor
-                && p.ProfileType.MobileAppRole == MobileAppRole.Moderator)
-            .Select(p => new EligibleProfile(
-                p.UserId, p.ProfileType!.Name, p.ProfileType.NameArabic));
-
-    private sealed record EligibleProfile(
-        Guid UserId, string ProfileTypeName, string ProfileTypeNameArabic);
+                && p.ProfileType.MobileAppRole == MobileAppRole.Moderator);
 }
