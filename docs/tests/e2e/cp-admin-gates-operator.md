@@ -24,13 +24,16 @@
 >
 > **Advisory notice on an ALLOWED scan (DEF-CHK-004, 2026-07-26).** A scan on a
 > **hall-door** gate (`Gate.HallId` set) also feeds `HallAttendance` for the
-> session live in that hall. When no session is live there, the holder is still
-> admitted but **no attendance is recorded** — which used to be completely
-> silent. `GateScanResponse` now carries an additive, already-localized
-> `NoticeMessage` (same shape as `DenialMessage`, resolved from `Accept-Language`),
-> which the console renders as an amber `SimfAlert` **underneath** the green
-> Allowed alert. It is `null` on every ordinary scan and on every perimeter gate,
-> and it never changes the allow/deny outcome.
+> session live in that hall. Two cases admit the holder while recording **no
+> attendance** — no session is live in that hall, or a fixed **Out** gate scan
+> finds no open attendance row to close — and both used to be completely silent.
+> `GateScanResponse` now carries an additive, already-localized `NoticeMessage`
+> (same shape as `DenialMessage`, resolved from `Accept-Language`), which the
+> console renders as an amber `SimfAlert` **underneath** the green Allowed alert.
+> The wording deliberately does not name a single cause (the server reports the
+> two identically; the exact reason is in the server log). It is `null` on every
+> ordinary scan and on every perimeter gate, and it never changes the allow/deny
+> outcome.
 
 ## Coverage matrix
 
@@ -51,6 +54,7 @@
 | E2E-GOP-013 | RTL render — Arabic toggle mirrors banner, picker, alert, report table | i18n | P1 | _to author_ |
 | E2E-GOP-014 | DEF-CHK-004 — hall-door gate scanned with no session live → Allowed **plus** an amber advisory alert | happy | P0 | authored ✓ (API `Hall_door_gate_with_no_live_session_returns_an_allowed_scan_carrying_a_notice`) |
 | E2E-GOP-015 | DEF-CHK-004 — a scan bound to a live session, and any perimeter-gate scan, carry no advisory | happy | P1 | authored ✓ (API `Hall_door_gate_bound_to_a_live_session_carries_no_notice`, `Perimeter_gate_carries_no_notice`) |
+| E2E-GOP-016 | DEF-CHK-004 — fixed **Out** gate scanned for someone with no open attendance row → Allowed **plus** the amber advisory | edge | P1 | authored ✓ (API `Fixed_out_gate_with_no_open_row_carries_the_advisory_notice`, `Fixed_out_gate_that_closes_an_open_row_carries_no_notice`) |
 
 ## Scenarios
 
@@ -65,8 +69,8 @@ Scenario: a hall-door gate scanned outside every session window
   Then POST /account/api/gates/{gateId}/scans returns HTTP 200
   And the response Outcome is Allowed with DenialReasonCode = null
   And the response carries NoticeMessage
-      "Entry allowed, but no session is running in this hall — attendance was not recorded."
-      / "تم السماح بالدخول، ولكن لا توجد جلسة جارية في هذه القاعة — لم يتم تسجيل الحضور."
+      "Entry allowed, but no session attendance was recorded for this scan."
+      / "تم السماح بالدخول، ولكن لم يتم تسجيل حضور الجلسة لهذا المسح."
   And the console renders the green Allowed alert AND an amber advisory alert beneath it
   And a GateScan row is written; NO HallAttendance row is written
   # Before DEF-CHK-004 the operator saw only "Allowed" and the attendance was
@@ -84,6 +88,27 @@ Scenario: an ordinary scan reports nothing extra
   When the same visitor is scanned at the perimeter gate "G-MAIN" (HallId null)
   Then the response Outcome is Allowed and NoticeMessage is null
   And no advisory alert renders in the console
+```
+
+### E2E-GOP-016 — DEF-CHK-004: a check-out that closes nothing
+
+```gherkin
+Scenario: a fixed Out gate scanned for someone who never checked in
+  Given gate "G-HALL-A-OUT" has DirectionMode = Out and HallId = "Majlis A"
+  And a session IS live in "Majlis A"
+  And an Approved visitor has NO open HallAttendance row for that session
+  When the operator scans that visitor's badge at "G-HALL-A-OUT"
+  Then the response Outcome is Allowed
+  And the response carries the same amber advisory NoticeMessage
+  And no HallAttendance row exists for that session
+  # The check-out branch closed nothing, so nothing was recorded. It used to
+  # report success, and the operator read the plain "Allowed" as "counted".
+
+Scenario: the same gate when there IS an open row
+  Given the visitor was checked in first at the fixed In gate "G-HALL-A-IN"
+  When the operator scans them at "G-HALL-A-OUT"
+  Then the response Outcome is Allowed and NoticeMessage is null
+  And their HallAttendance row now has a non-null Leave
 ```
 
 ### E2E-GOP-001 — Golden path
@@ -318,4 +343,4 @@ Scenario: Arabic toggle mirrors the operator console
 
 ---
 
-_Last reviewed:_ 2026-07-26 by Claude (DEF-CHK-004 — advisory NoticeMessage when a hall-door scan records no attendance). Prior: 2026-06-02 (E2E catalogue rebuild).
+_Last reviewed:_ 2026-07-27 by Claude (DEF-CHK-004 — the advisory NoticeMessage now also covers a check-out that closes nothing, E2E-GOP-016). Prior: 2026-07-26 (DEF-CHK-004 advisory NoticeMessage); 2026-06-02 (E2E catalogue rebuild).
