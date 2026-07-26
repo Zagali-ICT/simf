@@ -46,6 +46,36 @@ public sealed class GetHallEndpoint(IAdminHallService service)
     }
 }
 
+/// <summary>QA B16 — the hall's own occupancy view: the sessions assigned to this
+/// hall, so an admin can see what a hall is doing instead of only meeting the
+/// booking-overlap 409 after the fact. Reuses <c>IAdminSessionService.ListAllAsync</c>
+/// (it already filters on the <c>hallId</c> grid filter) rather than adding a second
+/// query over the same table, and carries the <c>Halls.View</c> gate the hall detail
+/// surface already requires.</summary>
+public sealed class GetHallScheduleEndpoint(IAdminSessionService sessions)
+    : EndpointWithoutRequest<ApiResult<GridPage<AdminSessionSummary>>>
+{
+    /// <summary>How many sessions the hall schedule returns. A hall runs a handful
+    /// of sessions across the forum, so one page is the whole schedule.</summary>
+    private const int ScheduleRows = 200;
+
+    public override void Configure()
+    {
+        Get("/admin/halls/{hallId:guid}/schedule");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Halls.View),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Tags("Admin");
+    }
+
+    public override async Task HandleAsync(CancellationToken ct)
+    {
+        var query = new GridQuery { Top = ScheduleRows };
+        query.Filters["hallId"] = Route<Guid>("hallId").ToString();
+        await Send.OkAsync(ApiResult<GridPage<AdminSessionSummary>>.Ok(
+            await sessions.ListAllAsync(query, ct)), ct);
+    }
+}
+
 public sealed class CreateHallEndpoint(IAdminHallService service)
     : Endpoint<AdminCreateHallRequest, ApiResult<AdminHallDetail>>
 {

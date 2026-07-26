@@ -74,7 +74,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | Page | File | Scenarios |
 |------|------|-----------|
 | `/admin/themes` | [`cp-admin-themes.md`](cp-admin-themes.md) | E2E-THM-001..024 |
-| `/admin/halls` | [`cp-admin-halls.md`](cp-admin-halls.md) | E2E-HAL-001..022 |
+| `/admin/halls` | [`cp-admin-halls.md`](cp-admin-halls.md) | E2E-HAL-001..028 |
 | `/admin/halls/seat-layouts` | [`cp-admin-halls-seat-layouts.md`](cp-admin-halls-seat-layouts.md) | E2E-HSL-001..022 |
 | `/admin/speakers` | [`cp-admin-speakers.md`](cp-admin-speakers.md) | E2E-SPK-001..022 |
 | `/admin/speaker-presentations` | [`cp-admin-speaker-presentations.md`](cp-admin-speaker-presentations.md) | E2E-SPP-001..017 |
@@ -87,7 +87,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/bookings` | [`cp-admin-bookings.md`](cp-admin-bookings.md) | E2E-BKG-001..012 |
 | `/admin/speaker-meeting-requests` | [`cp-admin-speaker-meeting-requests.md`](cp-admin-speaker-meeting-requests.md) | E2E-SMR-001..023 |
 | `/admin/speaker-availability` | [`cp-admin-speaker-availability.md`](cp-admin-speaker-availability.md) | E2E-SAV-001..007 |
-| `/admin/hall-availability` | [`cp-admin-hall-availability.md`](cp-admin-hall-availability.md) | E2E-HAV-001..007 |
+| `/admin/hall-availability` | [`cp-admin-hall-availability.md`](cp-admin-hall-availability.md) | E2E-HAV-001..008 |
 | `/admin/delegation-meetings` | [`cp-admin-delegation-meetings.md`](cp-admin-delegation-meetings.md) | E2E-DLM-001..013 |
 | `/admin/delegation-availability` | [`cp-admin-delegation-availability.md`](cp-admin-delegation-availability.md) | E2E-DAV-001..007 |
 | _(cross-surface bi-meeting lifecycle)_ | [`bi-meeting-lifecycle.md`](bi-meeting-lifecycle.md) | E2E-BML-001..016 |
@@ -159,7 +159,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/ops/services` | [`cp-ops-services.md`](cp-ops-services.md) | E2E-SVCM-001..008 |
 | `/admin/statistics` | [`cp-admin-statistics.md`](cp-admin-statistics.md) | E2E-STA-001..012 |
 | `/admin/attendance` | [`cp-admin-attendance.md`](cp-admin-attendance.md) | E2E-ATT-001..014 |
-| `/admin/sessions/live-hall` | [`cp-admin-session-live-hall.md`](cp-admin-session-live-hall.md) | E2E-SLH-001..013 |
+| `/admin/sessions/live-hall` | [`cp-admin-session-live-hall.md`](cp-admin-session-live-hall.md) | E2E-SLH-001..015 |
 | _system-wide_ — Saudi local-time display (CP + app) | [`cp-timezone-display.md`](cp-timezone-display.md) | E2E-TZ-001..006 |
 
 ### Control Panel — Account & auth (not in main nav)

@@ -43,6 +43,9 @@
 | E2E-HAL-022 | Excel import: a non-.xlsx / wrong-sheet upload → bilingual rejection, nothing created (D-356) | error | P1 | _to author_ |
 | E2E-HAL-023 | Edit preserves a re-sent geofence — regression (D-505) | error | P0 | _to author_ |
 | E2E-HAL-024 | Excel round-trip: import a workbook carrying EquipmentNotes / geofence / SeatSelectionMode → fields land on the summary; export header carries them (D-506) | happy | P1 | _to author_ |
+| E2E-HAL-026 | Hall detail lists the sessions assigned to the hall — the occupancy view (QA B16) | happy | P1 | _to author_ |
+| E2E-HAL-027 | A hall with no sessions shows the schedule empty state (QA B16) | happy | P2 | _to author_ |
+| E2E-HAL-028 | The schedule read is gated by `Halls.View` (QA B16) | auth | P1 | _to author_ |
 
 ## Scenarios
 
@@ -552,6 +555,77 @@ land on the grid summary after import) and `Export_includes_the_extra_columns`
 |----|----------|----------|----------|--------|
 | E2E-HAL-025 | Reducing Capacity below the committed seat-layout total / active reservations → `HALL_CAPACITY_BELOW_USAGE` | validation | P1 | _to author_ |
 
+## QA B16 — hall occupancy view (sessions in this hall)
+
+| Id | Scenario | Category | Priority | Status |
+|----|----------|----------|----------|--------|
+| E2E-HAL-026 | Hall detail lists the sessions assigned to the hall with local times + status | happy | P1 | _to author_ |
+| E2E-HAL-027 | A hall with no sessions shows the schedule empty state | happy | P2 | _to author_ |
+| E2E-HAL-028 | The schedule read is gated by `Halls.View` (same as the page) | auth | P1 | _to author_ |
+
+### E2E-HAL-026 — hall occupancy view
+
+```gherkin
+Scenario: The hall detail shows what the hall is doing
+  # QA B16: before this there was no hall schedule / calendar / session list on
+  # any hall surface, so the one-session-per-hall rule only ever surfaced as a
+  # 409 SESSION_HALL_TIME_OVERLAP from the Sessions editor.
+  Given a hall "Main Auditorium" (Code="H1") exists
+  And session "SES-1" / "Opening Plenary" is assigned to it, 11:00 AM–12:00 PM
+      on 05-01-2026 Saudi time, status Scheduled
+  When the administrator clicks the "Details" icon on the H1 row
+  Then a GET /account/api/admin/halls/{id} fires (HTTP 200)
+  And a GET /account/api/admin/halls/{id}/schedule fires (HTTP 200)
+  And below the read-only <dl> a section headed "Sessions in this hall"
+      / "الجلسات في هذه القاعة" renders a table with the columns
+      Code | Session | Starts | Ends | Status
+  And the row reads SES-1 | Opening Plenary | 05-01-2026 11:00 AM | 05-01-2026 12:00 PM
+      and a "Scheduled" status pill
+  And every time is Saudi local, 12-hour — no UTC stamp appears anywhere
+  And the summary line reads "1 session(s) in this hall."
+```
+
+**Evidence:** `tests/SIMF.ControlPanel.Tests/HallsViewDeleteTests.cs` →
+`B16_schedule_lists_the_sessions_assigned_to_this_hall` (asserts the schedule URL
++ the rendered row) and `B16_schedule_times_are_local_never_utc` (asserts
+`11:00 AM` / `12:00 PM` render and the raw `08:00` UTC hour never does).
+
+### E2E-HAL-027 — unbooked hall
+
+```gherkin
+Scenario: A hall with no sessions shows the empty state
+  Given a hall "Annex" exists with no session assigned to it
+  When the administrator opens its Details form
+  Then GET /account/api/admin/halls/{id}/schedule returns HTTP 200 with an empty page
+  And the "Sessions in this hall" section renders the SimfEmptyState
+      "No sessions are assigned to this hall." / "لا توجد جلسات مسندة إلى هذه القاعة."
+  And no table renders
+```
+
+**Evidence:** `tests/SIMF.ControlPanel.Tests/HallsViewDeleteTests.cs` →
+`B16_schedule_shows_the_empty_state_for_an_unbooked_hall`.
+
+### E2E-HAL-028 — schedule auth gate
+
+```gherkin
+Scenario: The hall schedule carries the hall page's own permission
+  Given an admin holds PermissionCatalog.Halls.View (and is not Administrator "*")
+  When they open a hall's Details form
+  Then GET /admin/halls/{id}/schedule returns HTTP 200
+  # It deliberately does NOT require Sessions.View: the schedule is part of the
+  # hall surface, so whoever can view the hall can see what the hall is doing.
+
+  Given an admin holds no Halls.* permission
+  When the same request is made directly against the API
+  Then it returns HTTP 403
+```
+
+**Evidence:** `tests/SIMF.Api.Tests/PermissionEnforcementTests.cs` →
+`Every_admin_endpoint_is_permission_and_approval_gated` sweeps every mapped
+`/admin/*` route, so an ungated schedule endpoint fails the build.
+
+---
+
 ### E2E-HAL-025 — capacity cannot drop below committed seats
 
 ```gherkin
@@ -567,4 +641,4 @@ Scenario: a capacity reduction below the seat-layout total is blocked
 
 ---
 
-_Last reviewed:_ 2026-07-11 by Claude (W4 on-site remediation — H-3 capacity-shrink guard; E2E-HAL-025). Prior: 2026-06-26 by Claude (D-506 — Excel export/import field-drop fix: EquipmentNotes + geofence triple + SeatSelectionMode now round-trip; scenario E2E-HAL-024 added, E2E-HAL-020/021 column lists reconciled). Prior: 2026-06-10 (D-356 Phase 5 — Excel export/import + D-353 Page<->Popup toggle scenarios E2E-HAL-017..022; E2E-HAL-001 deactivate step reconciled to the CrudShell + SimfConfirm gate).
+_Last reviewed:_ 2026-07-26 by Claude (QA B16 — hall occupancy view; E2E-HAL-026..028). Prior: 2026-07-11 by Claude (W4 on-site remediation — H-3 capacity-shrink guard; E2E-HAL-025). Prior: 2026-06-26 by Claude (D-506 — Excel export/import field-drop fix: EquipmentNotes + geofence triple + SeatSelectionMode now round-trip; scenario E2E-HAL-024 added, E2E-HAL-020/021 column lists reconciled). Prior: 2026-06-10 (D-356 Phase 5 — Excel export/import + D-353 Page<->Popup toggle scenarios E2E-HAL-017..022; E2E-HAL-001 deactivate step reconciled to the CrudShell + SimfConfirm gate).

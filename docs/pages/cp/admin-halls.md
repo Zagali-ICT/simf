@@ -7,7 +7,7 @@
 | **Auth** | `[Authorize(Roles = "Administrator")]` + `RequireApprovedAccount` + `RequireRateLimiting("auth")` (mutations) |
 | **Pattern** | D-117 + D-132 canonical CRUD. |
 | **Status** | ✅ Real (D-134 Sprint B / D-135) |
-| **Backend endpoints** | `POST /account/api/admin/halls/list`, `GET /admin/halls/{id}`, `POST /admin/halls`, `PUT /admin/halls/{id}`, `DELETE /admin/halls/{id}` |
+| **Backend endpoints** | `POST /account/api/admin/halls/list`, `GET /admin/halls/{id}`, `POST /admin/halls`, `PUT /admin/halls/{id}`, `DELETE /admin/halls/{id}`, `GET /admin/halls/{id}/schedule` (QA B16 — the hall occupancy view, `Halls.View`) |
 | **Source** | [`HallsList.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/HallsList.razor), [`HallForm.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/HallForm.razor), [`AdminHallService`](../../../src/Backend/SIMF.Infrastructure/Programme/AdminHallService.cs), [`Hall`](../../../src/Backend/SIMF.Domain/Programme/Hall.cs) |
 | **Backed by** | **New** `dbo.Halls` table (migration `AddHalls`, 2026-05-28). |
 | **Tests** | [`docs/tests/e2e/cp-admin-halls.md`](../../tests/e2e/cp-admin-halls.md) |
@@ -36,6 +36,17 @@ by **`CrudShell`** with a **Page↔Popup presentation toggle**
 `simf.cp.prefs.halls`). Deactivate opens the read-only `HallsViewDelete` form
 whose Deactivate button is gated by a **`SimfConfirm`** dialog (no more one-click
 delete).
+
+**QA B16 — hall occupancy view.** The Details / Deactivate form (`HallsViewDelete`)
+now also renders **"Sessions in this hall"**: every session assigned to the hall,
+with its Code, Title, **local** (Saudi +3, 12-hour) start and end, and its status
+pill. It reads `GET /account/api/admin/halls/{id}/schedule` → API
+`GET /admin/halls/{id}/schedule`, which reuses `AdminSessionService.ListAllAsync`
+with the existing `hallId` grid filter (no second query) and is gated by the same
+`Halls.View` permission the page already requires. An unbooked hall shows the
+`SimfEmptyState` "No sessions are assigned to this hall." Before B16 there was no
+hall-side schedule anywhere, so the "one session per hall at a time" rule only ever
+surfaced as a 409 (`SESSION_HALL_TIME_OVERLAP`) from the Sessions editor.
 
 ## 4.5 Form fields
 
@@ -90,5 +101,7 @@ E2E-HAL-001..007.
 |------|----------|--------|
 | 2026-05-29 | D-134 Sprint B / D-135 | Original — Halls entity + EF migration `AddHalls` + canonical CRUD page. |
 | 2026-06-10 | D-356 / D-353 | Uniform CRUD — added Excel export + import (`CrudGridExcel Resource="halls"`) and the Page↔Popup presentation toggle; CRUD forms hosted by `CrudShell` (`HallsAddEdit` / `HallsViewDelete`), Deactivate now gated by `SimfConfirm`. |
+| 2026-07-26 | QA B16 | Hall occupancy view — `HallsViewDelete` lists the sessions assigned to the hall (code / title / local start + end / status) from the new `GET /admin/halls/{id}/schedule` (`Halls.View`, reusing `AdminSessionService.ListAllAsync`'s `hallId` filter). New E2E-HAL-026..028. |
 
-_Last reviewed:_ 2026-06-10 by Claude (D-356 / D-353 uniform CRUD — Excel + toggle).
+_Last reviewed:_ 2026-07-26 by Claude (QA B16 — hall occupancy view). Prior:
+2026-06-10 by Claude (D-356 / D-353 uniform CRUD — Excel + toggle).

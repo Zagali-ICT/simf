@@ -313,6 +313,20 @@ public static class PermissionCatalog
         public const string Edit = "HallAllocations.Edit";
     }
 
+    /// <summary>QA A36 — the hall's meeting-time windows (D-715, FDS-013 §15
+    /// GAP-1) and the free slots derived from them. Its own code because the
+    /// resource is hall-scoped and read by BOTH meeting desks (speaker
+    /// <i>and</i> delegation): gating it on <see cref="SpeakerMeetingRequests"/>
+    /// locked a delegation-only or halls-only operator out of the windows every
+    /// meeting Approve modal depends on. <c>View</c> reads the windows + free
+    /// slots (grant it to any meeting-desk role); <c>Manage</c> creates and
+    /// deletes windows.</summary>
+    public static class HallAvailability
+    {
+        public const string View = "HallAvailability.View";
+        public const string Manage = "HallAvailability.Manage";
+    }
+
     /// <summary>SIMF-FDS-013 (D-248) — admin-arranged B2B/B2C business meetings.</summary>
     public static class BusinessMeetings
     {
@@ -893,6 +907,9 @@ public static class PermissionCatalog
         new(MeetingTables.Export, "MeetingTables", "Export", "Export meeting tables", AdminOnly),
         new(HallAllocations.View, "HallAllocations", "View", "View hall allocations", AdminOnly),
         new(HallAllocations.Edit, "HallAllocations", "Edit", "Reserve / release hall allocations", AdminOnly),
+        // QA A36 — hall meeting-time windows: hall-scoped, read by both meeting desks.
+        new(HallAvailability.View, "HallAvailability", "View", "View hall availability windows & free slots", AdminOnly),
+        new(HallAvailability.Manage, "HallAvailability", "Manage", "Define / delete hall availability windows", AdminOnly),
         new(BusinessMeetings.View, "BusinessMeetings", "View", "View business meetings", AdminOnly),
         new(BusinessMeetings.Schedule, "BusinessMeetings", "Schedule", "Schedule business meetings", AdminOnly),
         new(BusinessMeetings.Cancel, "BusinessMeetings", "Cancel", "Cancel business meetings", AdminOnly),
