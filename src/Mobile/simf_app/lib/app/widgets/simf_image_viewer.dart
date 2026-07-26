@@ -95,3 +95,37 @@ Future<void> showSimfImageViewer(
     ),
   );
 }
+
+/// The press-to-enlarge affordance: names [child] as a tappable picture and
+/// opens [image] in [SimfImageViewer] when it is pressed. Lives here (not in
+/// each box) so every enlargeable picture — a network logo, the authenticated
+/// badge photo — carries the same semantics and hit behaviour.
+class SimfTapToEnlarge extends StatelessWidget {
+  const SimfTapToEnlarge({
+    required this.image,
+    required this.label,
+    required this.child,
+    super.key,
+  });
+
+  final ImageProvider image;
+
+  /// The picture's accessible name; blank means "unnamed" (no label node).
+  final String label;
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      image: true,
+      label: label.isEmpty ? null : label,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => showSimfImageViewer(context, image: image, label: label),
+        child: child,
+      ),
+    );
+  }
+}

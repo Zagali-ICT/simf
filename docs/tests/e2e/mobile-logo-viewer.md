@@ -9,7 +9,7 @@
 
 | | |
 |--|--|
-| **Widgets** | [`SimfLogoImage`](../../../src/Mobile/simf_app/lib/app/widgets/simf_logo_image.dart) (the box) · [`SimfImageViewer`](../../../src/Mobile/simf_app/lib/app/widgets/simf_image_viewer.dart) (the full-size route) |
+| **Widgets** | [`SimfLogoImage`](../../../src/Mobile/simf_app/lib/app/widgets/simf_logo_image.dart) (the box) · `SimfTapToEnlarge` + [`SimfImageViewer`](../../../src/Mobile/simf_app/lib/app/widgets/simf_image_viewer.dart) (the press affordance + the full-size route, shared with the badge photo) |
 | **Surfaces** | Exhibitor detail · Sponsor detail · Sponsors list + grid · Media partners · Booths (booth card header) · Speaker profile · Entry badge |
 | **APIs** | The anonymous asset routes `GET /api/v1/app/assets/{ExhibitorLogo\|CompanyLogo\|SponsorLogo\|BoothLogo\|SpeakerPhoto}/{id}/image`; the **bearer-gated** `GET /api/v1/app/account/avatar` for the user's own badge photo (fetched as authenticated Dio bytes per D-422 — never a bare `Image.network`) |
 | **Auth setup** | Public for the entity logos; a signed-in token for the badge photo. Obtain via the standard app sign-in; never a literal secret. |

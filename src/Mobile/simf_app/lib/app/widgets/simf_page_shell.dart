@@ -923,20 +923,13 @@ class SimfAvatar extends ConsumerWidget {
       borderRadius: const BorderRadius.all(Radius.circular(SimfTokens.radius)),
       child: SizedBox(width: size, height: size, child: child),
     );
-    final image = photo;
-    if (!enableFullScreen || image == null) {
+    if (!enableFullScreen || photo == null) {
       return Semantics(image: true, label: label, child: box);
     }
-    return Semantics(
-      button: true,
-      image: true,
-      label: label,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () =>
-            showSimfImageViewer(context, image: image, label: label ?? ''),
-        child: box,
-      ),
+    return SimfTapToEnlarge(
+      image: photo,
+      label: label ?? '',
+      child: box,
     );
   }
 }

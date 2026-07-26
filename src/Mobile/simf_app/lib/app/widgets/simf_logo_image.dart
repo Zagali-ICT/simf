@@ -79,19 +79,10 @@ class SimfLogoImage extends StatelessWidget {
     if (!enableFullScreen) {
       return Semantics(image: true, label: semanticLabel, child: image);
     }
-    return Semantics(
-      button: true,
-      image: true,
+    return SimfTapToEnlarge(
+      image: full,
       label: semanticLabel,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => showSimfImageViewer(
-          context,
-          image: full,
-          label: semanticLabel,
-        ),
-        child: image,
-      ),
+      child: image,
     );
   }
 
