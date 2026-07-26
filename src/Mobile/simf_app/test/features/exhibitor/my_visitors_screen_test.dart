@@ -1,5 +1,7 @@
-// D-426 — exhibitor "My Visitors": empty state, list of captured visitors,
+// D-426 — exhibitor "My Booth Visitors": empty state, list of captured visitors,
 // and the 403 (not-an-exhibitor) surface.
+// BUG-025 — the list also carries the "these are booth scans, not My Contacts"
+// note so the two features are never confused.
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/features/contacts/data/contact_models.dart';
 import 'package:simf_app/features/contacts/widgets/contact_card.dart';
 import 'package:simf_app/features/exhibitor/data/exhibitor_models.dart';
@@ -81,7 +84,10 @@ void main() {
   testWidgets('empty state when no visitors captured', (tester) async {
     await _pump(tester, _FakeExhibitorRepo());
     expect(
-      find.text('No visitors yet. Scan a visitor badge to capture them here.'),
+      find.text(
+        'No booth visitors yet. Scan a visitor badge at your booth to capture '
+        'them here.',
+      ),
       findsOneWidget,
     );
     expect(find.byType(ContactCard), findsNothing);
@@ -100,6 +106,25 @@ void main() {
     expect(find.byType(ContactCard), findsNWidgets(2));
     expect(find.text('Visitor One'), findsOneWidget);
     expect(find.text('Visitor Two'), findsOneWidget);
+  });
+
+  // BUG-025 — the exhibitor list is titled for the booth and carries the
+  // one-line note separating it from My Contacts.
+  testWidgets('titles the booth and explains it is not My Contacts',
+      (tester) async {
+    await _pump(
+      tester,
+      _FakeExhibitorRepo(visitors: <ExhibitorVisitor>[_visitor('Visitor One')]),
+    );
+    expect(find.text('My Booth Visitors'), findsOneWidget);
+    expect(find.byType(SimfPageNote), findsOneWidget);
+    expect(
+      find.text(
+        'Badges you scanned at your booth. This list is separate from My '
+        'Contacts.',
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('a 403 (not an exhibitor) shows the forbidden message',

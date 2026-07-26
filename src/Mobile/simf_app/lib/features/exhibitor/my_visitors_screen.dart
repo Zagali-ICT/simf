@@ -12,11 +12,16 @@ import 'data/exhibitor_models.dart';
 import 'data/exhibitor_repository.dart';
 import 'widgets/exhibitor_centered.dart';
 
-/// D-426 — زواري / My Visitors. The exhibitor's ("Other" profile type) captured
-/// visitors: everyone they scanned at their booth, newest first, each with the
-/// visitor's full card resolved live. Reached from the side drawer (Other-only)
-/// and after a successful scan. Approved + non-visitor only (a visitor-tier
-/// caller gets 403 → the limited/forbidden surface).
+/// D-426 — زوار جناحي / My Booth Visitors. The exhibitor's ("Other" profile
+/// type) captured visitors: everyone they scanned at their booth, newest first,
+/// each with the visitor's full card resolved live. Reached from the side drawer
+/// (Other-only), the exhibitor home's tools row, and after a successful scan.
+/// Approved + non-visitor only (a visitor-tier caller gets 403 → the
+/// limited/forbidden surface).
+///
+/// BUG-025 — this is NOT "My Contacts" (`/contacts`, visitor-to-visitor card
+/// sharing). The two lists stay separate pending an owner ruling, so the title
+/// names the booth and a [SimfPageNote] states the difference in both languages.
 class MyVisitorsScreen extends ConsumerStatefulWidget {
   const MyVisitorsScreen({super.key});
 
@@ -96,11 +101,16 @@ class _MyVisitorsScreenState extends ConsumerState<MyVisitorsScreen> {
       onRefresh: _load,
       child: ListView.separated(
         padding: const EdgeInsets.all(SimfTokens.space4),
-        itemCount: _visitors.length,
+        // +1 leading row: the BUG-025 "these are booth scans, not My Contacts"
+        // note, scrolled with the list so it never steals viewport height.
+        itemCount: _visitors.length + 1,
         separatorBuilder: (_, __) =>
             const SizedBox(height: SimfTokens.space3),
-        itemBuilder: (context, i) {
-          final v = _visitors[i];
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            return SimfPageNote(text: l10n.myVisitorsNote);
+          }
+          final v = _visitors[index - 1];
           final card = v.card;
           return ContactCard(
             name: card.localizedName(isArabic),

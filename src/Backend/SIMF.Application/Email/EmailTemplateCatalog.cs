@@ -57,6 +57,24 @@ public static class EmailTemplateCatalog
     private static readonly IReadOnlyList<EmailTemplateToken> NewEmailTokens =
         [NewEmailToken];
 
+    // BUG-024 — the lead card emailed to the exhibitor after a booth badge scan.
+    // Each displayed field is a bilingual PAIR so the English block renders the
+    // English value and the Arabic block the Arabic one (the service falls the
+    // other way round, then to a "not provided" placeholder, when one is missing).
+    // Deliberately absent: the national ID (encrypted at rest, never emailed) and
+    // the raw badge QR id (no existing template carries one).
+    private static readonly IReadOnlyList<EmailTemplateToken> ExhibitorLeadTokens =
+    [
+        new("VisitorName", "Visitor name", "اسم الزائر", "Sara Al-Otaibi"),
+        new("VisitorNameArabic", "Visitor name (Arabic)", "اسم الزائر (بالعربية)", "سارة العتيبي"),
+        new("JobTitle", "Job title", "المسمى الوظيفي", "Operations Manager"),
+        new("JobTitleArabic", "Job title (Arabic)", "المسمى الوظيفي (بالعربية)", "مدير العمليات"),
+        new("Organisation", "Organisation", "جهة العمل", "Red Sea Shipping"),
+        new("OrganisationArabic", "Organisation (Arabic)", "جهة العمل (بالعربية)", "الشحن البحري الأحمر"),
+        new("ScannedAt", "Scanned at (Saudi time)", "وقت المسح (بتوقيت السعودية)", "20-07-2026 09:30 AM"),
+        new("Note", "Your note", "ملاحظتك", "Interested in the fleet package"),
+    ];
+
     private static readonly IReadOnlyList<EmailTemplateDefinition> Definitions =
     [
         new(EmailTemplateType.SignInOtp,
@@ -148,6 +166,22 @@ public static class EmailTemplateCatalog
             "<p>إذا كنت أنت من أجرى هذا التغيير فلا حاجة لأي إجراء. وإذا لم تكن أنت، " +
             "فقد يكون حسابك معرّضاً للخطر — تواصل مع دعم سيمف فوراً.</p>",
             NewEmailTokens),
+
+        new(EmailTemplateType.ExhibitorLeadCapture,
+            "SIMF visitor captured at your booth: {VisitorName}",
+            "<p>You scanned a visitor badge at your booth. The visitor was added to " +
+            "your <strong>My Booth Visitors</strong> list in the SIMF app.</p>" +
+            "<p><strong>{VisitorName}</strong><br/>{JobTitle}<br/>{Organisation}</p>" +
+            "<p>Scanned at {ScannedAt} (Saudi time).<br/>Your note: {Note}</p>" +
+            "<p>The full card, with the visitor's contact details, is in " +
+            "<strong>My Booth Visitors</strong> in the app.</p>",
+            "<p>قمت بمسح بطاقة زائر في جناحك، وتمت إضافته إلى قائمة " +
+            "<strong>زوار جناحي</strong> في تطبيق سيمف.</p>" +
+            "<p><strong>{VisitorNameArabic}</strong><br/>{JobTitleArabic}<br/>{OrganisationArabic}</p>" +
+            "<p>وقت المسح {ScannedAt} (بتوقيت السعودية).<br/>ملاحظتك: {Note}</p>" +
+            "<p>البطاقة الكاملة مع بيانات التواصل متاحة في <strong>زوار جناحي</strong> " +
+            "داخل التطبيق.</p>",
+            ExhibitorLeadTokens),
     ];
 
     private static readonly IReadOnlyDictionary<EmailTemplateType, EmailTemplateDefinition> Map =

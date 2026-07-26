@@ -173,7 +173,8 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 105, name: RouteNames.gateScanner, path: '/gates/scan', labelAr: 'مسح البوابة', labelEn: 'Gate scanner'),
   // D-426 — exhibitor ("Other") lead capture (approved-only; server 403s visitors).
   _Route(number: 106, name: RouteNames.scanVisitor, path: '/exhibitor/scan', labelAr: 'مسح بطاقة زائر', labelEn: 'Scan visitor badge'),
-  _Route(number: 107, name: RouteNames.myVisitors, path: '/exhibitor/visitors', labelAr: 'زواري', labelEn: 'My Visitors'),
+  // BUG-025 — named for the booth so it is never read as "My Contacts".
+  _Route(number: 107, name: RouteNames.myVisitors, path: '/exhibitor/visitors', labelAr: 'زوار جناحي', labelEn: 'My Booth Visitors'),
   // D-509 — staff walk-in visitor registration (approved Staff; server enforces
   // Visitors.RegisterOnsite). Figma 1467:12357.
   _Route(number: 114, name: RouteNames.staffRegisterVisitor, path: '/staff/register-visitor', labelAr: 'تسجيل زائر', labelEn: 'Register visitor'),

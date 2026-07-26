@@ -39,4 +39,9 @@ public enum EmailTemplateType
     /// change completes, so the previous owner is warned out-of-band if the change
     /// was not theirs. Appended (persisted by name — see the type doc).</summary>
     EmailChangedNotice = 8,
+
+    /// <summary>BUG-024 — the lead card emailed to an exhibitor's own account
+    /// address after they scan a visitor's badge at their booth. Appended
+    /// (persisted by name — see the type doc).</summary>
+    ExhibitorLeadCapture = 9,
 }

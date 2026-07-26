@@ -643,6 +643,30 @@ class SimfSectionHeader extends StatelessWidget {
   }
 }
 
+/// A short muted explanatory note under a page title — the shared "what is this
+/// screen for" line (BUG-025: My Visitors vs My Contacts). An info glyph plus one
+/// wrapping paragraph, RTL-safe via the surrounding directionality. Distinct from
+/// [SimfSectionHeader] (a bold section title) and [SimfEmptyState] (a centred
+/// empty surface): this sits above real content and is always shown.
+class SimfPageNote extends StatelessWidget {
+  const SimfPageNote({required this.text, super.key});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        // Sized like the shell's other inline glyphs (cf. SimfEmptyState).
+        const Icon(Icons.info_outline, size: 16, color: SimfTokens.beigeBorder),
+        const SizedBox(width: SimfTokens.space2),
+        Expanded(child: Text(text, style: SimfTokens.bodyBeigeSm)),
+      ],
+    );
+  }
+}
+
 /// A bordered single-line link row — the signed-in home's section bars
 /// (frames 758:1207 / 1049:12844 / 758:1211 "عن الملتقى" / "الرعاة" /
 /// "الأخبار والتغطية"): a transparent 48-high box with the beige hairline, the

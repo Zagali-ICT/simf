@@ -1,15 +1,20 @@
-# E2E test catalogue — `My visitors` (`myVisitors`)
+# E2E test catalogue — `My Booth Visitors` (`myVisitors`)
 
 > **Authority:** SIMF E2E test catalogue (D-133). Mobile catalogue — the
-> exhibitor "زواري / My Visitors" list (D-426). Reached from the exhibitor
-> side-drawer entry and after a successful visitor-badge scan. Backend:
+> exhibitor "زوار جناحي / My Booth Visitors" list (D-426). Reached from the
+> exhibitor side-drawer entry, the exhibitor home's tools row, and after a
+> successful visitor-badge scan. Backend:
 > `GET /app/exhibitor/my-visitors` (`ExhibitorRepository.listMyVisitors`),
 > resolving each captured visitor's card live (no PII snapshot). App tests:
 > `src/Mobile/simf_app/test/features/exhibitor/my_visitors_screen_test.dart`
-> (widget, 3 cases) + the render-lock golden
+> (widget, 4 cases) + the render-lock golden
 > `test/golden/my_visitors_golden_test.dart` (`goldens/my_visitors.png`
 > @375×812). Clean-code reviewed + frozen (D-642, 2026-07-04); per-page doc
 > [`docs/pages/mobile/my-visitors/`](../../pages/mobile/my-visitors/README.md).
+> **BUG-025 (2026-07-26):** the screen was renamed زوار جناحي / My Booth
+> Visitors and carries a `SimfPageNote` stating it is separate from
+> [My Contacts](mobile-my-contacts.md) — the two features are deliberately NOT
+> merged, pending an owner ruling.
 
 | | |
 |--|--|
@@ -22,7 +27,7 @@
 > **Notes:** each row is the shared `ContactCard` with the visitor's card
 > resolved on read; a visitor who has hidden their card renders the "no longer
 > available" state instead of details. The list is pull-to-refresh (branded
-> `SimfPullToRefresh`).
+> `SimfPullToRefresh`) and its first row is the BUG-025 explanatory note.
 
 ---
 
@@ -30,11 +35,11 @@
 
 ```gherkin
 Scenario: An exhibitor sees the visitors they captured
-  Given a signed-in approved exhibitor opens "زواري" from the drawer
+  Given a signed-in approved exhibitor opens "زوار جناحي" from the drawer
   When GET /app/exhibitor/my-visitors returns their captured visitors (newest first)
   Then each visitor renders as a ContactCard (name, job title, organisation,
     country, email, mobile) with gold RTL field icons
-  And the app bar title reads "زواري / My visitors"
+  And the app bar title reads "زوار جناحي / My Booth Visitors"
 ```
 
 ### E2E-MOBMYVIS-002 — Empty state
@@ -43,8 +48,8 @@ Scenario: An exhibitor sees the visitors they captured
 Scenario: No visitors captured yet
   Given the exhibitor has captured no visitors
   When GET /app/exhibitor/my-visitors returns an empty list
-  Then the message "No visitors yet. Scan a visitor badge to capture them here."
-    ("لا زوار بعد…") shows
+  Then the message "No booth visitors yet. Scan a visitor badge at your booth to
+    capture them here." ("لم تقم بمسح أي زائر بعد…") shows
   And no ContactCard is rendered
 ```
 
@@ -108,9 +113,33 @@ Scenario: A captured visitor's job title localizes per language
   # by VisitorContactSharingTests; getter by contact_models_test.localizedJobTitle.
 ```
 
+### E2E-MOBMYVIS-008 — Booth title + "not My Contacts" note (BUG-025, 2026-07-26)
+
+```gherkin
+Scenario: The exhibitor list names the booth and says what it is not
+  Given a signed-in approved exhibitor opens the list with at least one capture
+  Then the app bar title reads "زوار جناحي" (ar) / "My Booth Visitors" (en)
+  And the first row of the list is a SimfPageNote reading
+      "بطاقات الزوار التي مسحتها في جناحك. قائمة منفصلة عن «جهات اتصالي»." (ar) /
+      "Badges you scanned at your booth. This list is separate from My Contacts."
+  And the note scrolls with the list (it never steals viewport height)
+
+Scenario: The two lists stay separate
+  Given the same account also has saved cards in My Contacts (/contacts)
+  Then a badge scanned at the booth appears ONLY in My Booth Visitors
+  And a card saved by visitor-to-visitor sharing appears ONLY in My Contacts
+  # Deliberate: merging the two features needs an owner ruling. See
+  # docs/decisions/DECISIONS_LOG.md D-771.
+```
+
+**Evidence:** `my_visitors_screen_test` case "titles the booth and explains it is
+not My Contacts"; render-lock golden `goldens/my_visitors.png` re-locked with the
+new title + note.
+
 ---
 
-_Last reviewed:_ 2026-07-20 by Claude — bilingual job title: the captured-visitor
-`ContactCard` now localizes the title via `VisitorCard.jobTitleArabic` /
-`localizedJobTitle` (Arabic primary in ar, English fallback); E2E-MOBMYVIS-007.
-Earlier: `2026-07-04` by `SIMF Team`.
+_Last reviewed:_ 2026-07-26 by Claude — BUG-025: renamed زوار جناحي / My Booth
+Visitors, added the `SimfPageNote` separating it from My Contacts, refreshed the
+empty-state copy and re-locked the golden; E2E-MOBMYVIS-008. Earlier:
+`2026-07-20` (bilingual job title, E2E-MOBMYVIS-007) and `2026-07-04` by
+`SIMF Team`.

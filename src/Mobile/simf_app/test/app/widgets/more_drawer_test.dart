@@ -259,14 +259,14 @@ void main() {
       expect(find.text('Gate scanner'), findsOneWidget);
       expect(find.text('Register a visitor'), findsOneWidget);
       expect(find.text('Scan visitor badge'), findsNothing);
-      expect(find.text('My Visitors'), findsNothing);
+      expect(find.text('My Booth Visitors'), findsNothing);
     });
 
     testWidgets('Exhibitor sees the scan + my-visitors entries, not the staff ones',
         (tester) async {
       await pumpRole(tester, AppRole.exhibitor);
       expect(find.text('Scan visitor badge'), findsOneWidget);
-      expect(find.text('My Visitors'), findsOneWidget);
+      expect(find.text('My Booth Visitors'), findsOneWidget);
       expect(find.text('Gate scanner'), findsNothing);
       expect(find.text('Register a visitor'), findsNothing);
     });
@@ -278,7 +278,7 @@ void main() {
       expect(find.text('Gate scanner'), findsNothing);
       expect(find.text('Register a visitor'), findsNothing);
       expect(find.text('Scan visitor badge'), findsNothing);
-      expect(find.text('My Visitors'), findsNothing);
+      expect(find.text('My Booth Visitors'), findsNothing);
     });
 
     testWidgets('Visitor sees none of the operational entries', (tester) async {
@@ -286,7 +286,7 @@ void main() {
       expect(find.text('Gate scanner'), findsNothing);
       expect(find.text('Register a visitor'), findsNothing);
       expect(find.text('Scan visitor badge'), findsNothing);
-      expect(find.text('My Visitors'), findsNothing);
+      expect(find.text('My Booth Visitors'), findsNothing);
     });
   });
 
