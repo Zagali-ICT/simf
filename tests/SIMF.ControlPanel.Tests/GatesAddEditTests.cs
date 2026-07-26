@@ -65,6 +65,52 @@ public sealed class GatesAddEditTests : CpComponentTestBase
         Assert.Equal("Ø¨ÙˆØ§Ø¨Ø© Ø§Ø®ØªØ¨Ø§Ø±", body.NameArabic);
     }
 
+    // BUG-018 (18-1) — the operator picker used to bind to the CP admin-accounts
+    // list (/admin/admins/list), so only Control-Panel admins could be assigned and
+    // none of them could actually scan from the app. It must call the gate module's
+    // own candidate lookup instead.
+    [Fact]
+    public void The_operator_picker_loads_gate_operator_candidates_not_admin_accounts()
+    {
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        var candidates = JSInterop.Setup<ApiResult<GridPage<AdminGateOperatorCandidate>>>(
+            "simfAccount.postJson", _ => true)
+            .SetResult(ApiResult<GridPage<AdminGateOperatorCandidate>>.Ok(
+                GridPage<AdminGateOperatorCandidate>.Of(
+                [
+                    new(Guid.NewGuid(), "ops1@simf.test", "Ahmed Al-Rashid",
+                        "Gate Staff", MobileAppRole.Staff),
+                ], total: 1, skip: 0, top: 25)));
+
+        var cut = RenderComponent<GatesAddEdit>(p => p.Add(x => x.IsEdit, false));
+
+        var call = candidates.Invocations.Single();
+        Assert.Equal("/account/api/admin/gates/operator-candidates/list",
+            (string)call.Arguments[0]!);
+        Assert.Contains("ops1@simf.test", cut.Markup);
+        Assert.Contains("Gate Staff", cut.Markup);
+    }
+
+    // BUG-018 (18-4) — the profile-type / hall lookups now come from the gate
+    // module's own Gates.Manage-gated endpoint, not the ProfileTypes.View /
+    // Halls.View admin lists a gate manager cannot reach.
+    [Fact]
+    public void The_form_loads_its_profile_type_and_hall_options_from_the_gate_lookup()
+    {
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        var options = JSInterop.Setup<ApiResult<AdminGateFormOptions>>(
+            "simfAccount.getJson", "/account/api/admin/gates/form-options")
+            .SetResult(ApiResult<AdminGateFormOptions>.Ok(new AdminGateFormOptions(
+                [new(Guid.NewGuid(), "VIP", "ÙƒØ¨Ø§Ø± Ø§Ù„Ø´Ø®ØµÙŠØ§Øª")],
+                [new(Guid.NewGuid(), "Majlis A", "Ù…Ø¬Ù„Ø³ Ø£")])));
+
+        var cut = RenderComponent<GatesAddEdit>(p => p.Add(x => x.IsEdit, false));
+
+        Assert.Single(options.Invocations);
+        Assert.Contains("VIP", cut.Markup);
+        Assert.Contains("Majlis A", cut.Markup);
+    }
+
     [Fact]
     public void Edit_mode_puts_an_update_request_to_the_row_id()
     {

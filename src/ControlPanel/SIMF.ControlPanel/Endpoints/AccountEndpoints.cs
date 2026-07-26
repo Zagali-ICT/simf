@@ -2057,6 +2057,22 @@ internal static class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.ListGateAssignmentsAsync(id, token));
         });
+        // BUG-018 — the gate form's own lookups (operator candidates + the
+        // profile-type / hall options), both gated on Gates.Manage upstream.
+        group.MapPost("/admin/gates/operator-candidates/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListGateOperatorCandidatesAsync(body, token));
+        });
+        group.MapGet("/admin/gates/form-options",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetGateFormOptionsAsync(token));
+        });
         group.MapPost("/admin/gates/reports/scans",
             async (AdminGateScanReportFilter body, HttpContext http, SimfAdminClient api) =>
         {

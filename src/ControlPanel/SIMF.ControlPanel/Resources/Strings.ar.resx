@@ -911,7 +911,11 @@
   <data name="Admin.Gates.Field.AllowedProfileTypes" xml:space="preserve"><value>أنواع الملفات المسموح بها</value></data>
   <data name="Admin.Gates.Field.AllowedProfileTypesHint" xml:space="preserve"><value>فارغة = جميع الأنواع مسموحة (بوابة عامة). اختر واحدة أو أكثر لتقييد البوابة.</value></data>
   <data name="Admin.Gates.Field.AssignedOperators" xml:space="preserve"><value>المشغلون المعيّنون</value></data>
-  <data name="Admin.Gates.Field.AssignedOperatorsHint" xml:space="preserve"><value>المشغلون الذين يمكنهم المسح في هذه البوابة. حدّد كل مشغّل لتعيينه.</value></data>
+  <data name="Admin.Gates.Field.AssignedOperatorsHint" xml:space="preserve"><value>المشغلون الذين يمكنهم المسح في هذه البوابة من تطبيق الجوال. يمكن تعيين حسابات الموظفين المعتمدة فقط (نوع ملف تشغيلي غير زائر). حدّد كل مشغّل لتعيينه.</value></data>
+  <data name="Admin.Gates.Field.OperatorSearch" xml:space="preserve"><value>بحث عن مشغّل</value></data>
+  <data name="Admin.Gates.Field.OperatorSearchSubmit" xml:space="preserve"><value>بحث</value></data>
+  <data name="Admin.Gates.Field.OperatorShowing" xml:space="preserve"><value>يتم عرض {0} من {1} مرشّحاً — استخدم البحث لتضييق القائمة.</value></data>
+  <data name="Admin.Gates.Lookup.Failed" xml:space="preserve"><value>تعذّر تحميل إحدى قوائم البحث. تحقّق من صلاحياتك ثم أعد المحاولة.</value></data>
   <data name="Admin.Gates.Field.IsActive" xml:space="preserve"><value>نشطة — متاحة للمسح</value></data>
   <data name="Admin.Gates.Section.Identification" xml:space="preserve"><value>التعريف</value></data>
   <data name="Admin.Gates.Section.Routing" xml:space="preserve"><value>الاتجاه والقاعة</value></data>

@@ -4,6 +4,9 @@
 //        DisplayName-placeholder-replaced + admin-name-preserved, D-611
 //        RegionId round-trip + optional + unknown/inactive → 400)
 //        SIMF.Api.Tests/UserProfileRollbackTests.cs (H16 — transaction rollback)
+//        SIMF.Api.Tests/GateOperatorModelTests.cs (BUG-018 — an operational
+//        (IsForVisitor=false) profile type is exempt from the visitor
+//        completeness + male-face rules; the audience side is unchanged)
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Abstractions;
 using SIMF.Application.Auditing;
@@ -211,7 +214,18 @@ internal sealed class UserProfileService(
         //     row" rollback guarantee (H16). The admin walk-in desk
         //     (AdminAccountService.RegisterOnSiteAsync) is a separate capture
         //     path and is intentionally not gated here.
-        if (request.Gender == Gender.Male
+        // BUG-018 (18-3) — the face-photo gate is a VISITOR registration rule. The
+        // effective profile type is the admin's pick when there is one (admin-wins,
+        // applied below), otherwise the user's. An operational partner-side type
+        // (IsForVisitor=false — a gate operator, a moderator) is exempt: a male gate
+        // operator could not submit the form at all, so an admin-created operator
+        // could never finish the profile their sign-in is diverted to.
+        var effectiveProfileTypeId = profile.ProfileTypeId ?? request.ProfileTypeId;
+        var (_, isAudienceRegistrant) =
+            await ResolveProfileTypeFlagsAsync(effectiveProfileTypeId, cancellationToken);
+
+        if (isAudienceRegistrant
+            && request.Gender == Gender.Male
             && string.IsNullOrEmpty(user.AvatarRelativePath))
         {
             throw new ApiException(
@@ -526,6 +540,19 @@ internal sealed class UserProfileService(
         }
         var hasNames = !string.IsNullOrWhiteSpace(facts.NameArabic)
             && !string.IsNullOrWhiteSpace(facts.Name);
+
+        // BUG-018 (18-3) — the interest / ID-document / male-face evidence is a
+        // VISITOR registration requirement. An operational partner-side account
+        // (ProfileType.IsForVisitor=false — a gate operator, a moderator) is created
+        // and vetted by an admin, so holding it to the audience rules diverted every
+        // such user to the visitor "Create profile" form on sign-in (routeAfterAuth,
+        // D-374) and they could never reach their own home. Names stay required for
+        // everyone.
+        if (!facts.IsVisitorProfileType)
+        {
+            return hasNames;
+        }
+
         var hasIdImage = !string.IsNullOrEmpty(facts.IdImageRelativePath);
         var maleFaceSatisfied = facts.Gender != Gender.Male;
         if (!maleFaceSatisfied)

@@ -145,7 +145,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 
 | Page | File | Scenarios |
 |------|------|-----------|
-| `/admin/gates` | [`cp-admin-gates.md`](cp-admin-gates.md) | E2E-GAT-001..021 |
+| `/admin/gates` | [`cp-admin-gates.md`](cp-admin-gates.md) | E2E-GAT-001..029 |
 | `/admin/gates/operator` | [`cp-admin-gates-operator.md`](cp-admin-gates-operator.md) | E2E-GOP-001..013 |
 | `/admin/gates/dashboard` | [`cp-admin-gates-dashboard.md`](cp-admin-gates-dashboard.md) | E2E-GDS-001..011 |
 | `/admin/configuration` | [`cp-admin-configuration.md`](cp-admin-configuration.md) | E2E-CFG-001..024 |

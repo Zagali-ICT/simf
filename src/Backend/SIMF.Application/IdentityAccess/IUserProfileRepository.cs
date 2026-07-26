@@ -163,10 +163,17 @@ public sealed record ProfileTypeFacts(
 public sealed record ProfileTypeRole(bool IsVisitor, MobileAppRole MobileAppRole);
 
 /// <summary>D-374 — the facts the completeness rule reads (names + ≥1
-/// interest + the C7 male-photo rule), projected in one row.</summary>
+/// interest + the C7 male-photo rule), projected in one row.
+/// <para>BUG-018 (18-3) — <paramref name="IsVisitorProfileType"/> says whether the
+/// row belongs to an AUDIENCE registrant (no profile type yet, or one with
+/// <c>IsForVisitor=true</c>). The interest / ID-document / male-face evidence rules
+/// are a visitor-registration requirement and must not lock an operational
+/// partner-side account (a gate operator, a moderator) out of the app. Appended
+/// with a default so the record stays append-only.</para></summary>
 public sealed record ProfileCompletenessFacts(
     string? Name, string? NameArabic, Gender Gender,
-    string? IdImageRelativePath, bool HasInterests);
+    string? IdImageRelativePath, bool HasInterests,
+    bool IsVisitorProfileType = true);
 
 /// <summary>An approved Admin account — a notification recipient.</summary>
 public sealed record PendingAdminRecipient(Guid Id, string? Email, string? DisplayName);

@@ -629,7 +629,92 @@ Scenario: binding a gate to a missing/inactive hall is a clean 400
 
 ---
 
-_Last reviewed:_ 2026-07-11 by Claude (W4 on-site remediation — X-1 hall-door gate binding; E2E-GAT-023/024). Prior: 2026-06-26 by Claude (D-506 — appended the Description /
+## Gate-operator model (BUG-018)
+
+> **Page facts (read from source, do not invent):**
+> - The operator picker binds to `POST /account/api/admin/gates/operator-candidates/list`
+>   (BFF) → `POST /api/v1/admin/gates/operator-candidates/list`, gated
+>   `Gates.Manage`. A candidate is an **approved** account with
+>   `UserType = Visitor` whose `ProfileType` is active, `IsForVisitor = false`,
+>   and whose `MobileAppRole` confers `Gates.Operate` (Staff or Moderator).
+> - The allowed-profile-type + hall options come from
+>   `GET /account/api/admin/gates/form-options` → `GET /api/v1/admin/gates/form-options`,
+>   also gated `Gates.Manage`.
+> - Ineligible operator ids are rejected by `AdminGateService.ValidateOperatorsAsync`
+>   with **400 `GATE_ASSIGNMENT_INVALID`**; the message names the offending id(s).
+> - The Details view (`GatesViewDelete.razor`) lists the assigned operators as
+>   "{display name} ({email})", read from `GET /account/api/admin/gates/{id}/assignments`.
+
+| Id | Scenario | Category | Priority | Status |
+|----|----------|----------|----------|--------|
+| E2E-GAT-025 | The operator picker offers staff-profile app accounts and never a CP admin account | crud | P1 | _to author_ |
+| E2E-GAT-026 | Searching the operator picker narrows the candidate list server-side | crud | P2 | _to author_ |
+| E2E-GAT-027 | Assigning an ineligible operator id via the API → `GATE_ASSIGNMENT_INVALID` (400) naming the id | validation | P1 | _to author_ |
+| E2E-GAT-028 | A `Gates.Manage`-only admin sees populated profile-type / hall / operator lists (no silent empties) | auth | P1 | _to author_ |
+| E2E-GAT-029 | The Details view lists the assigned operators by name + email | crud | P2 | _to author_ |
+
+### E2E-GAT-025 — the picker offers app staff, not CP admins
+
+```gherkin
+Scenario: only operational app accounts are offered as gate operators
+  Given a profile type "Gate Staff" exists with IsVisitor = false and MobileAppRole = "Staff"
+  And an approved app account "ops1@example.sa" carries that profile type
+  And a Control-Panel admin account "cpadmin@example.sa" exists
+  When the admin opens the Gate add form
+  Then the "Assigned operators" list contains "Gate Operator - ops1@example.sa (Gate Staff)"
+  And the list does NOT contain "cpadmin@example.sa"
+```
+
+### E2E-GAT-026 — the operator picker is searchable
+
+```gherkin
+Scenario: the operator picker searches server-side instead of listing a blind top-200
+  Given more than 25 eligible gate-operator accounts exist
+  When the admin opens the Gate add form
+  Then at most 25 candidates are listed
+  And a "Showing 25 of N candidates" hint is shown
+  When the admin types "ops1" into "Search operators" and presses Search
+  Then only the candidates whose email or display name contains "ops1" are listed
+```
+
+### E2E-GAT-027 — an ineligible operator id is rejected and named
+
+```gherkin
+Scenario: the API refuses an operator who could never work the gate
+  Given an approved visitor account with no operational profile type, id "V"
+  When the admin submits POST /api/v1/admin/gates with assignedOperatorUserIds = ["V"]
+  Then the API responds 400 with error code GATE_ASSIGNMENT_INVALID
+  And the message contains the id "V"
+  And no gate row is created
+```
+
+### E2E-GAT-028 — a gate manager sees populated lookups
+
+```gherkin
+Scenario: Gates.Manage alone is enough to fill the gate form
+  Given an admin holds ONLY the Gates.Manage permission (no Admins.View / ProfileTypes.View / Halls.View)
+  When they open the Gate add form
+  Then the "Allowed profile types" list is populated
+  And the "Hall (door gate)" select lists the active halls
+  And the "Assigned operators" list is populated
+  And no lookup-failure alert is shown
+  # Before BUG-018 all three were silently empty (the failures had no else branch).
+```
+
+### E2E-GAT-029 — the Details view names the operators
+
+```gherkin
+Scenario: an assignment can be audited from the Control Panel
+  Given a gate has two assigned operators
+  When the admin opens the gate Details view
+  Then the "Operators" row lists both operators as "{display name} ({email})"
+  And it does not show a bare count
+```
+
+---
+
+_Last reviewed:_ 2026-07-26 by Claude (BUG-018 — gate-operator model; added
+E2E-GAT-025..029). Prior: 2026-07-11 by Claude (W4 on-site remediation — X-1 hall-door gate binding; E2E-GAT-023/024). Prior: 2026-06-26 by Claude (D-506 — appended the Description /
 DescriptionArabic Excel round-trip columns; added E2E-GAT-022 and corrected the
 stale export header list in the page facts + E2E-GAT-019).
 _Previously:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle; added
