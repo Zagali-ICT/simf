@@ -16,6 +16,26 @@ internal sealed class EchoAiProvider : IAiProvider
     /// <c>AiService.ResolveModelForCall</c>.</summary>
     public const string ModelName = "echo";
 
+    /// <summary>A18 (2026-07-26) — the machine-checkable sentinel every stub
+    /// answer opens with. The stub used to emit a bare <c>[echo:model] </c>
+    /// prefix, which reads like an internal tag: a reviewer could take an
+    /// echoed session-summary draft for real minutes and publish it verbatim.
+    /// Consumers that must never ship stub text (see
+    /// <c>AdminSessionSummaryService.EnsureNotStubContent</c>) search for this
+    /// exact string, so it must stay stable and must never appear in real
+    /// provider output.</summary>
+    public const string StubMarker = "[AI-STUB-DO-NOT-PUBLISH]";
+
+    /// <summary>The bilingual banner prepended to every stub answer. Written so
+    /// a reviewer reading either language sees at a glance that the text is not
+    /// model output.</summary>
+    private const string StubBanner =
+        StubMarker
+        + " NOT REAL AI OUTPUT — produced by the offline stub provider; "
+        + "it only echoes the prompt. Do not review, approve or publish it. "
+        + "ليست مخرجات ذكاء اصطناعي حقيقية — من المزوّد التجريبي غير المتصل؛ "
+        + "لا تراجعها أو توافق عليها أو تنشرها.\n";
+
     public AiProvider Tag => AiProvider.Echo;
 
     public Task<AiProviderResponse> CallAsync(
@@ -24,13 +44,16 @@ internal sealed class EchoAiProvider : IAiProvider
         var prefix = call.Model.Length > 0
             ? $"[echo:{call.Model}] "
             : "[echo] ";
-        var output = prefix + call.UserPrompt;
-        // Truncate to the requested max output tokens — 4 chars ≈ 1 token.
+        var echoed = prefix + call.UserPrompt;
+        // Truncate to the requested max output tokens — 4 chars ≈ 1 token. The
+        // cap applies to the echoed body only, so a small MaxOutputTokens can
+        // never truncate the A18 banner away.
         var charCap = Math.Max(8, call.MaxOutputTokens * 4);
-        if (output.Length > charCap)
+        if (echoed.Length > charCap)
         {
-            output = output[..charCap];
+            echoed = echoed[..charCap];
         }
+        var output = StubBanner + echoed;
         var inputTokens = ApproxTokens(call.SystemPrompt) + ApproxTokens(call.UserPrompt);
         var outputTokens = ApproxTokens(output);
         return Task.FromResult(new AiProviderResponse(output, inputTokens, outputTokens));

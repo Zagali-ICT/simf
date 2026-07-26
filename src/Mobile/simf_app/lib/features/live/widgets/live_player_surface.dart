@@ -8,7 +8,7 @@ import 'live_video_player.dart';
 
 /// The black live player surface (frame 934:3614): the player fills a 16:9 box
 /// over a black backdrop, with the LIVE badge + language chip in the top row and
-/// the gold-bordered AI live-caption strip below the feed.
+/// the gold-bordered organiser caption strip below the feed.
 class LivePlayerSurface extends ConsumerStatefulWidget {
   const LivePlayerSurface({
     required this.url,
@@ -25,7 +25,7 @@ class LivePlayerSurface extends ConsumerStatefulWidget {
   /// end without the session being live).
   final String? liveLabel;
 
-  /// P5 — D-439: the admin-set AI caption text for this session, or null.
+  /// P5 — D-439: the admin-typed caption text for this session, or null.
   final String? caption;
   final String captionHint;
 
@@ -70,15 +70,23 @@ class _LivePlayerSurfaceState extends ConsumerState<LivePlayerSurface> {
   }
 }
 
-/// The gold-bordered AI live-caption strip under the player (frame 934:3613):
-/// the caption text with a small gold "AI" badge. P5 — D-439: when the session
-/// carries admin-set [caption] text (the stubbed-provider surface) it is shown
+/// The gold-bordered organiser caption strip under the player (frame 934:3613).
+/// P5 — D-439: when the session carries admin-typed [caption] text it is shown
 /// in readable white; otherwise the muted placeholder [hint] is shown (and for a
 /// YouTube feed the player's own CC supplies captions meanwhile).
+///
+/// A15 (2026-07-26) — the strip used to carry a gold "AI" badge next to copy
+/// promising live translation of the spoken audio. It renders a STATIC
+/// admin-typed string (`Session.LiveCaptions`) that never changes during the
+/// broadcast, so the AI branding and the live-translation promise were a false
+/// capability claim and are gone. Real speech-to-text + streaming translation
+/// is a feature, not a defect fix (see the dead
+/// `/app/ai/live-translation/chunk` endpoint) — it is an owner decision, not
+/// something this surface fakes.
 class _CaptionStrip extends ConsumerWidget {
   const _CaptionStrip({required this.hint, this.caption});
 
-  /// The real AI caption text, or null to show the placeholder [hint].
+  /// The organiser's caption text, or null to show the placeholder [hint].
   final String? caption;
   final String hint;
 
@@ -109,33 +117,15 @@ class _CaptionStrip extends ConsumerWidget {
           width: SimfTokens.hairline,
         ),
       ),
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: Text(
-              caption ?? hint,
-              textAlign: TextAlign.start,
-              style: TextStyle(
-                // Real caption text reads in white; the placeholder is the
-                // frame's soft caption colour (#DDE4F0, 934:3613).
-                color: hasCaption ? SimfTokens.surface : SimfTokens.captionText,
-                fontSize: SimfTokens.textSm,
-              ),
-            ),
-          ),
-          const SizedBox(width: SimfTokens.space2),
-          Container(
-            width: SimfTokens.aiBadgeSize,
-            height: SimfTokens.aiBadgeSize,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: SimfTokens.accent,
-              borderRadius: BorderRadius.circular(SimfTokens.radius5),
-            ),
-            // Frame 934:3602 — 12px SemiBold.
-            child: const Text('AI', style: SimfTokens.labelWhiteSemiboldSm),
-          ),
-        ],
+      child: Text(
+        caption ?? hint,
+        textAlign: TextAlign.start,
+        style: TextStyle(
+          // A real caption reads in white; the placeholder is the frame's soft
+          // caption colour (#DDE4F0, 934:3613).
+          color: hasCaption ? SimfTokens.surface : SimfTokens.captionText,
+          fontSize: SimfTokens.textSm,
+        ),
       ),
     );
   }

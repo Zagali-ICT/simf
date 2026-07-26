@@ -26,7 +26,13 @@ descending) with the state of its summary, and the Committee acts per row:
 - **AI draft** (Generate) — routes through the central `IAiService` seam using
   the seeded `session-summary` prompt. The shipped provider is the
   deterministic **Echo** stub; a real provider plugs in by editing the prompt's
-  provider in the CP (no code change). The draft is written into the **Arabic
+  provider in the CP (no code change). **A18 (2026-07-26) — a stub draft cannot
+  be shipped.** The stub only echoes the prompt back, so its output now opens
+  with the sentinel `[AI-STUB-DO-NOT-PUBLISH]` and a bilingual "not real AI
+  output" banner, and **Approve and Publish both refuse** any summary whose text
+  still carries that sentinel in any field (400 `SESSION_SUMMARY_INVALID`,
+  bilingual). The Committee must replace the placeholder with the real minutes
+  first. Configuring a real provider + key stays an owner/procurement decision. The draft is written into the **Arabic
   full-text column only**, leaving the English column + curated sections for the
   Committee. Re-generating replaces the Arabic AI draft but preserves the
   Committee's English text and curated sections; because the content changed it
@@ -35,7 +41,16 @@ descending) with the state of its summary, and the Committee acts per row:
   re-approved and re-published (owner 2026-07-19).
 - **Edit / Save** — eight bilingual sections (key points, recommendations,
   speakers, full text — each EN + AR). Saving a session that has no summary yet
-  creates a hand-written draft (`AiModel` stays null).
+  creates a hand-written draft (`AiModel` stays null). **A19 (2026-07-26) — a
+  save that changes nothing resets nothing.** `SaveAsync` compares the incoming
+  values against the stored ones and only calls `ResetReviewState` when a
+  persisted field actually differs (same for a re-generate that produces
+  byte-identical text). Re-opening the editor and pressing Save used to clear
+  the review + publish stamps and pull a live محضر out of the app with no
+  warning. A **real** edit still resets (the approval was of the old text) — and
+  the CP now opens a `SimfConfirm` first that names the consequence
+  (`Admin.SessionSummaries.Confirm.UnpublishOnSave` for a published summary,
+  `…Confirm.UnapproveOnSave` for an approved / in-review one).
 - **Publish / Unpublish** — stamps / clears `PublishedAt`; this is the gate the
   public app read honours. **Owner 2026-07-19 — Publish is hard-gated on `ApprovedAt`:**
   a Draft / In-review summary cannot be published (API 400 `SESSION_SUMMARY_INVALID`);
@@ -197,6 +212,13 @@ The BFF `AccountEndpoints` forwards each route with the bearer token via
   soft-deleted (`IsActive = false`) session returns HTTP 404, `Code =
   "SESSION_NOT_FOUND"` (`ErrorCodes.SessionNotFound`), "The session was not
   found." / "لم يتم العثور على الجلسة." (`LoadSessionForDraftAsync`).
+- **Stub placeholder text** (A18, 2026-07-26) — approving or publishing a summary
+  whose text still contains `[AI-STUB-DO-NOT-PUBLISH]` (any field, either
+  language) returns HTTP 400, `Code = "SESSION_SUMMARY_INVALID"`, "This summary
+  still contains placeholder text from the offline AI stub provider. Replace it
+  with the real minutes before approving or publishing it." / "لا يزال هذا
+  الملخّص يحتوي على نص مؤقّت من مزوّد الذكاء الاصطناعي التجريبي. استبدله بالمحضر
+  الحقيقي قبل الموافقة عليه أو نشره."
 - **Generate AI draft** is truncated to `FullTextMax (8000)` rather than rejected
   (`Truncate`), since the provider output is not user input.
 - **Client feedback** — the page surfaces a transient toast (`success` / `error`
@@ -288,5 +310,6 @@ the editor**, **027 pristine AI draft survives an edit (Slice D)**.
 | 2026-06-11 | D-356 | Excel **export added** (toolbar Export → `/account/api/admin/session-summaries/export`, sheet "SessionSummaries", columns `SessionCode \| SessionTitle \| SessionTitleArabic \| SessionStart \| Status \| Source \| PublishedAt \| UpdatedAt`, capped at 5000 rows). New permission `SessionSummaries.Export`. **Export only** — no import path (source wires `OnExport`, not `OnImport`). E2E catalogue extended with E2E-SUM-018. |
 | 2026-07-19 | owner (Q&A/summary/rating batch) | **Approval hard-gate before publish.** `SetPublishedAsync` now requires `ApprovedAt` (Draft/In-review → 400 `SESSION_SUMMARY_INVALID`); editing / re-generating / returning a **published** summary clears `PublishedAt` (invariant `PublishedAt ⇒ ApprovedAt`); the public app read **and** `HasPublishedSummary` now also require `ApprovedAt` (hides legacy published-but-unapproved rows). New resx `Admin.SessionSummaries.Action.PublishNeedsApproval` (en+ar); CP Publish button disabled until approved. E2E-SUM-023/024 added; the S-6 clock-gate case renumbered to E2E-SUM-025. |
 | 2026-07-19 | Slice D — AI transparency | **Pristine AI-draft snapshot + raw subtitle in the editor.** Additive nullable columns `AiDraftFullTextArabic` + `AiDraftGeneratedAt` on `SessionSummaries` (migration `AddSessionSummaryAiDraftSnapshot`); `GenerateAsync` captures the untouched AI output into the snapshot (a re-generate refreshes it) and `SaveAsync` never overwrites it; `GetAsync`/`ToDetail` also surface the session's `LiveCaptions*` as `Subtitle`/`SubtitleArabic`. `AdminSessionSummaryDetail` gains the four read-only fields (append-only; **never** on `PublicSessionSummary`/`PublicSessionDetail`). CP editor renders three read-only `Disabled` `SimfTextarea` panels above the editable fields; new resx `Field.Subtitle` / `Field.SubtitleArabic` / `Field.AiDraft` (en+ar). E2E-SUM-026/027 added. |
+| 2026-07-26 | A18 / A19 (QA round) | **The echo stub can no longer be published, and a typo fix no longer silently unpublishes.** `EchoAiProvider` prefixes every answer with `[AI-STUB-DO-NOT-PUBLISH]` + a bilingual "not real AI output" banner (`EchoAiProvider.StubMarker`); `ApproveAsync` and `SetPublishedAsync(publish: true)` call `EnsureNotStubContent`, rejecting 400 `SESSION_SUMMARY_INVALID` when any text field still carries it. `SaveAsync` / `GenerateAsync` only call `ResetReviewState` when the persisted content actually changed. New resx `Admin.SessionSummaries.Confirm.Title` / `.UnpublishOnSave` / `.UnapproveOnSave` / `.Save` (en+ar) behind a `SimfConfirm` in the editor footer. Configured provider, keys and appsettings untouched — a real provider is an owner/procurement decision. E2E-SUM-029..031. |
 
-_Last reviewed:_ 2026-07-19 by Claude (Slice D — pristine AI-draft snapshot + raw subtitle surfaced read-only in the CP editor; CP-internal only, no public-contract change). Earlier the same day: owner approval hard-gate (Publish requires ApprovedAt; edit-after-publish unpublishes; the public read + HasPublishedSummary require ApprovedAt). Earlier: 2026-06-11 by Claude (D-356 — reference doc authored, grounded in live source; Excel export-only).
+_Last reviewed:_ 2026-07-26 by Claude (A18 — the shipped Echo stub marks its output and Approve/Publish refuse marked text; A19 — a no-op save/regenerate no longer clears the review + publish stamps, and the CP warns before an unpublishing save). Earlier: 2026-07-19 by Claude (Slice D — pristine AI-draft snapshot + raw subtitle surfaced read-only in the CP editor; CP-internal only, no public-contract change). Earlier the same day: owner approval hard-gate (Publish requires ApprovedAt; edit-after-publish unpublishes; the public read + HasPublishedSummary require ApprovedAt). Earlier: 2026-06-11 by Claude (D-356 — reference doc authored, grounded in live source; Excel export-only).

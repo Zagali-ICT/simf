@@ -222,45 +222,11 @@ class SignLanguageNote extends StatelessWidget {
   }
 }
 
-/// The gold region-restriction notice card (frame 934:3619): a bold "إشعار:"
-/// label followed by the static notice body, on a solid gold card.
-class RegionNoticeCard extends StatelessWidget {
-  const RegionNoticeCard({
-    required this.noticeLabel,
-    required this.noticeBody,
-    super.key,
-  });
-
-  final String noticeLabel;
-  final String noticeBody;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SimfTokens.space2,
-        vertical: SimfTokens.space3,
-      ),
-      decoration: BoxDecoration(
-        color: SimfTokens.accent,
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
-      ),
-      child: Text.rich(
-        TextSpan(
-          children: <InlineSpan>[
-            TextSpan(
-              text: '$noticeLabel ',
-              style: SimfTokens.emphasisBold,
-            ),
-            TextSpan(text: noticeBody),
-          ],
-        ),
-        textAlign: TextAlign.start,
-        style: SimfTokens.bodyWhiteMediumTall,
-      ),
-    );
-  }
-}
+// A20 (2026-07-26) — `RegionNoticeCard` (frame 934:3619, the gold "available
+// only inside the Riyadh region per regulations" card) is deleted with its only
+// caller: nothing in the app, API or CP ever checked the viewer's location, so
+// the notice was an unconditional false claim. Geo-fencing the stream for real
+// is a product/legal decision, not a defect fix.
 
 /// The ask-a-question entry (frame's L-3 Q&A affordance) → Page 026
 /// (`/live/question?sessionId=`). A full-width gold action button.

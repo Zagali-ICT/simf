@@ -2024,6 +2024,10 @@
   <data name="Admin.SessionSummaries.Approved" xml:space="preserve"><value>Summary approved — ready for the host.</value></data>
   <data name="Admin.SessionSummaries.ReturnedToDraft" xml:space="preserve"><value>Summary returned to draft.</value></data>
   <data name="Admin.SessionSummaries.Unpublished" xml:space="preserve"><value>Summary unpublished.</value></data>
+  <data name="Admin.SessionSummaries.Confirm.Title" xml:space="preserve"><value>Saving will withdraw this summary</value></data>
+  <data name="Admin.SessionSummaries.Confirm.UnpublishOnSave" xml:space="preserve"><value>This summary is published. Saving your edit clears its approval and unpublishes it, so it disappears from the app until the team approves it again and you publish it again. Save anyway?</value></data>
+  <data name="Admin.SessionSummaries.Confirm.UnapproveOnSave" xml:space="preserve"><value>Saving your edit returns this summary to draft and clears its review/approval, so it must be submitted and approved again before it can be published. Save anyway?</value></data>
+  <data name="Admin.SessionSummaries.Confirm.Save" xml:space="preserve"><value>Save and withdraw</value></data>
   <data name="Module.HallArrivals" xml:space="preserve"><value>Hall arrivals</value></data>
   <data name="Admin.HallArrivals.Title" xml:space="preserve"><value>Hall arrivals (door scan)</value></data>
   <data name="Admin.HallArrivals.Loading" xml:space="preserve"><value>Loading sessions…</value></data>

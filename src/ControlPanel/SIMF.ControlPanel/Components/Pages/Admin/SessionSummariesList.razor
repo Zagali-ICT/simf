@@ -188,7 +188,7 @@
                            @bind-Value="_edit.SummaryVideoUrl" Disabled="_busy" />
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" Loading="_busy" OnClick="SaveAsync">
+            <SimfButton Type="button" Loading="_busy" OnClick="OnSaveClickedAsync">
                 @L["Admin.SessionSummaries.Editor.Save"]
             </SimfButton>
             <SimfButton Type="button" Variant="secondary" OnClick="CloseEditor">
@@ -196,4 +196,18 @@
             </SimfButton>
         </Footer>
     </SimfModal>
+
+    @* A19 — saving an edited summary clears its approval and (if it was live)
+       takes it out of the app until it is re-approved and re-published. That
+       used to happen silently on any save; now it is a must-decide step that
+       names the consequence. *@
+    <SimfConfirm Open="_confirmUnpublishOpen"
+                 Title="@L["Admin.SessionSummaries.Confirm.Title"]"
+                 Message="@UnpublishConfirmMessage"
+                 ConfirmLabel="@L["Admin.SessionSummaries.Confirm.Save"]"
+                 CancelLabel="@L["Admin.SessionSummaries.Editor.Cancel"]"
+                 Danger="_editWasPublished"
+                 Busy="_busy"
+                 OnConfirm="ConfirmUnpublishSaveAsync"
+                 OnCancel="CancelUnpublishConfirm" />
 }
