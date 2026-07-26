@@ -561,25 +561,66 @@ internal sealed class GateOperatorService(
         // FIX C — a Both-mode gate's direction is only an alternation guess, so the
         // chain derives the real action from attendance state (directionInferred);
         // a fixed In/Out gate stays authoritative.
+        // DEF-CHK-004 — a hall-door scan taken outside every session window admits
+        // the holder but records NO session attendance. That used to be silent, so
+        // the operator saw a plain "Allowed" while the attendance was lost. Carry an
+        // advisory notice on the (still Allowed) result, resolved to the caller's
+        // Accept-Language through the same helper the denial messages use.
+        string? notice = null;
         if (hallDoorHallId is { } hallId)
         {
             try
             {
-                await hallAttendance.RecordGateDoorScanAsync(
+                var boundToSession = await hallAttendance.RecordGateDoorScanAsync(
                     resolution.UserId, hallId, direction,
                     hallDoorDirectionInferred, context.OperatorUserId, cancellationToken);
+                if (!boundToSession)
+                {
+                    notice = NoticeMessageFor(
+                        GateScanNotice.NoLiveSessionInHall, context.AcceptLanguage);
+                }
             }
             catch (Exception ex)
             {
                 logger.LogError(ex,
                     "Hall-attendance chain failed for scan {ScanId} on gate {GateId} (hall {HallId}).",
                     scan.Id, context.GateId, hallId);
+                notice = NoticeMessageFor(
+                    GateScanNotice.AttendanceChainFailed, context.AcceptLanguage);
             }
         }
 
         return new GateScanResult(GateScanResultKind.Recorded,
-            response with { ScanId = scan.Id }, false, null);
+            response with { ScanId = scan.Id, NoticeMessage = notice }, false, null);
     }
+
+    /// <summary>DEF-CHK-004 — the advisory notes an ALLOWED scan can carry. Kept
+    /// private to this service: the wire contract only ships the already-localized
+    /// <c>GateScanResponse.NoticeMessage</c>, mirroring how the denial reasons
+    /// surface as <c>DenialMessage</c>.</summary>
+    private enum GateScanNotice
+    {
+        NoLiveSessionInHall,
+        AttendanceChainFailed,
+    }
+
+    private static string NoticeMessageFor(GateScanNotice notice, string? acceptLanguage)
+    {
+        var (en, ar) = NoticeMessages(notice);
+        return string.Equals(acceptLanguage, ArabicLanguageCode, StringComparison.OrdinalIgnoreCase)
+            ? ar : en;
+    }
+
+    private static (string en, string ar) NoticeMessages(GateScanNotice notice) =>
+        notice switch
+        {
+            GateScanNotice.NoLiveSessionInHall =>
+                ("Entry allowed, but no session is running in this hall — attendance was not recorded.",
+                 "تم السماح بالدخول، ولكن لا توجد جلسة جارية في هذه القاعة — لم يتم تسجيل الحضور."),
+            _ =>
+                ("Entry allowed, but the session attendance could not be recorded.",
+                 "تم السماح بالدخول، ولكن تعذّر تسجيل حضور الجلسة."),
+        };
 
     private async Task<GateScanResult> RecordDenialAsync(
         GateScanContext context,

@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-07-18 (staff check-out added) |
+| **Last reviewed** | 2026-07-26 (DEF-CHK-003 picker + FR-CHK-003/004) |
 
 > **What this page does.** The hall-door arrival console (P5.1d — D-244,
 > FDS-003 §5.4). An operator picks one **active** session from a dropdown, then
@@ -22,20 +22,35 @@
 > coordinates are never involved; this is the door-scan means (the geofence means,
 > and the attendee's own self check-out, are the attendee's own device).
 >
+> **Which sessions the picker offers (DEF-CHK-003, 2026-07-26).** The picker used
+> to apply the **arrival** window (`EnsureSessionLiveNow`, ± 15 min) to BOTH
+> buttons, so a session that had ended dropped out of the list and its hall could
+> never be checked OUT — exactly when an operator needs to. The departures
+> endpoint deliberately has **no** window (an attendee already inside must always
+> be able to leave), so the picker now offers every active session that has
+> already opened for arrivals (`now >= Start - 15 min`), with the currently-live
+> ones listed first and the most recently ended next. A session that has not
+> started yet is still hidden (no attendance row can exist for it). Pressing
+> **Record arrival** on an ended session is answered by the server's existing
+> bilingual `SESSION_NOT_LIVE` (409) message in the error toast.
+>
 > **Permission gate.** Page `@attribute [RequirePermission(PermissionCatalog.HallArrivals.View)]`
 > (`HallArrivals.View`); the QR field + both buttons are wrapped in
 > `<AuthorizedAction Permission="PermissionCatalog.HallArrivals.Record">`
 > (`HallArrivals.Record`). Both default to `AdminOnly`. The API endpoints
 > `POST /api/v1/admin/sessions/{sessionId}/arrivals` **and**
 > `POST /api/v1/admin/sessions/{sessionId}/departures` are both gated by
-> `HallArrivals.Record` + `RequireApprovedAccount`.
+> `HallArrivals.Record` + `RequireApprovedAccount` — one code covers BOTH
+> directions, which is why its catalogue text reads "Record a hall arrival **or
+> departure** by badge scan" (FR-CHK-003; the operator population is identical for
+> check-in and check-out, so the codes are deliberately not split).
 
 ## Coverage matrix
 
 | ID | Scenario | Type | Priority | Status |
 |----|----------|------|----------|--------|
 | E2E-HAR-001 | Golden path — select session → scan badge QR → arrival recorded with the resolved attendee name | happy | P0 | _to author_ |
-| E2E-HAR-002 | Session dropdown lists only **active** sessions (`{Title} · {Code}`), sorted by start | happy | P1 | _to author_ |
+| E2E-HAR-002 | Session dropdown lists only **active** sessions (`{Title} · {Code}`), live ones first | happy | P1 | _to author_ |
 | E2E-HAR-003 | "Record arrival" button is the only action; clears the QR field on success (ready for the next scan) | happy | P1 | _to author_ |
 | E2E-HAR-004 | Client guard: Record with no session selected → "Select a session first." (no network call) | error | P1 | _to author_ |
 | E2E-HAR-005 | Client guard: Record with a blank QR field → no-op, no toast, no network call | error | P2 | _to author_ |
@@ -52,6 +67,10 @@
 | E2E-HAR-019 | Check-out with no prior arrival → 200 idempotent no-op (`Arrived=false`), no error | edge | P1 | authored ✓ (API `Departure_without_a_prior_arrival_is_an_idempotent_noop`) |
 | E2E-HAR-020 | Unknown badge QR on departure → 400 `ATTENDEE_QR_UNKNOWN` → bilingual error toast | error | P1 | authored ✓ (API `Unknown_qr_departure_is_400`) |
 | E2E-HAR-021 | Auth gate (Record) — a non-operator cannot record a departure → API 403 | auth | P0 | authored ✓ (API `A_non_operator_cannot_record_a_departure`) |
+| E2E-HAR-022 | DEF-CHK-003 — a session that ENDED hours ago is still selectable, so the hall can be checked out | happy | P0 | authored ✓ (CP `HallArrivalsConsoleSessionPickerTests`) |
+| E2E-HAR-023 | DEF-CHK-003 — a session that has not started yet (and an inactive one) stay out of the picker | edge | P1 | authored ✓ (CP `HallArrivalsConsoleSessionPickerTests`) |
+| E2E-HAR-024 | FR-CHK-004 — concurrent arrivals against a full hall fill it exactly, never past capacity | validation | P1 | authored ✓ (API `Concurrent_arrivals_never_exceed_the_hall_capacity`) |
+| E2E-HAR-025 | DEF-CHK-002 — an operator door scan alone unlocks that session's rating (no geofence needed) | happy | P1 | authored ✓ (API `Operator_scan_makes_the_per_session_rating_submittable`) |
 
 ## Scenarios
 
@@ -316,8 +335,18 @@ Scenario: A caller without HallArrivals.Record cannot record a departure
   - `Departure_without_a_prior_arrival_is_an_idempotent_noop` → E2E-HAR-019.
   - `Unknown_qr_departure_is_400` → E2E-HAR-020.
   - `A_non_operator_cannot_record_a_departure` → E2E-HAR-021 (Record gate on departures, 403).
+  - `Operator_scan_makes_the_per_session_rating_submittable` → E2E-HAR-025
+    (DEF-CHK-002 refutation — the door scan alone unlocks the session rating).
   Keep both layers during the transition; the E2E catalogue is the browser-level
   proof that the CP console drives those same outcomes.
+- **Picker coverage at the component layer.**
+  `tests/SIMF.ControlPanel.Tests/HallArrivalsConsoleSessionPickerTests.cs`
+  (bUnit) pins the DEF-CHK-003 rule: an ended session is still offered
+  (E2E-HAR-022), a not-yet-started / inactive one is not (E2E-HAR-023), and a
+  live session sorts ahead of an ended one.
+- **Capacity under concurrency.**
+  `tests/SIMF.Api.Tests/HallAttendanceTests.cs`
+  → `Concurrent_arrivals_never_exceed_the_hall_capacity` (E2E-HAR-024).
 - **End-of-day auto check-out.** Any attendee still checked in when their session
   ends is auto-closed by `HallAttendanceCloseoutWorker.CloseEndedSessionsAsync`
   (`Leave = Session.End`); covered by
@@ -347,14 +376,15 @@ Scenario: A caller without HallArrivals.Record cannot record a departure
 ### E2E-HAR-015 — arrival bound to a live session window (± 15 min grace)
 
 ```gherkin
-Scenario: the picker hides non-live sessions and the API rejects a stale one
+Scenario: the API rejects an arrival on a stale session
   Given a session "Opening Keynote" runs 09:00–10:00 and it is now 14:00
-  When the operator opens /admin/hall-arrivals
-  Then "Opening Keynote" does NOT appear in the Session dropdown
   When a client posts an arrival for that session id via /admin/sessions/{id}/arrivals
   Then the API responds 409 with error code SESSION_NOT_LIVE
   And no HallAttendance row is written for that session
   # A session live now (± 15 min grace of its window) is offered and accepted.
+  # DEF-CHK-003 (2026-07-26): the session is STILL listed in the picker — it has
+  # to be, so the hall can be checked out — but pressing "Record arrival" on it
+  # surfaces that same SESSION_NOT_LIVE message in the red toast. See E2E-HAR-022.
 ```
 
 ### E2E-HAR-016 — hall at capacity
@@ -370,6 +400,69 @@ Scenario: a full hall rejects a further distinct arrival
   # A re-scan by the attendee already present merges (no capacity denial).
 ```
 
+### E2E-HAR-022 — DEF-CHK-003: an ended session can still be checked out
+
+```gherkin
+Scenario: the operator closes out a hall after the session has finished
+  Given the session "Closed Plenary" ran 09:00–10:00 and it is now 13:00
+  And attendees were checked in at its door
+  When the operator opens /admin/hall-arrivals
+  Then "Closed Plenary · SES-ENDED" IS listed in the Session dropdown
+      (below any session that is live right now)
+  When the operator selects it, scans a badge and clicks "Record departure"
+  Then POST /account/api/admin/sessions/{sessionId}/departures returns HTTP 200
+  And a green toast reads "Departure recorded: <DisplayName>"
+  # Before DEF-CHK-003 the session was absent from the picker entirely, so the
+  # hall could never be closed out once its window had passed.
+```
+
+### E2E-HAR-023 — DEF-CHK-003: sessions the picker still hides
+
+```gherkin
+Scenario: a not-yet-started or inactive session is not offered
+  Given a session "Tomorrow Keynote" starts in 60 minutes
+  And a session "Cancelled Panel" is live-by-clock but IsActive = false
+  When the operator opens /admin/hall-arrivals
+  Then neither appears in the Session dropdown
+  And with no other candidate the page renders SimfEmptyState
+      "No active sessions to record arrivals for."
+  # No attendance row can exist for a session that has not opened for arrivals,
+  # so there is nothing to check in or out.
+```
+
+### E2E-HAR-024 — FR-CHK-004: concurrent arrivals fill the hall exactly
+
+```gherkin
+Scenario: five arrivals race a hall of capacity two
+  Given the live session's hall has Capacity 2 and nobody is present
+  When five distinct approved attendees post an arrival at the same instant
+  Then exactly 2 arrivals return HTTP 200
+  And the other 3 return HTTP 409 with error code HALL_AT_CAPACITY
+  And the hall holds exactly 2 open HallAttendance rows
+  # Capacity was count-then-decide with no DB constraint, so all five used to be
+  # admitted. The count and the insert now share one Serializable transaction
+  # (the pattern SeatReservationService already uses), so there is no oversell
+  # and no over-reject. The passive hall-door gate path stays deliberately
+  # ADVISORY — a person who physically passed a turnstile is always counted.
+```
+
+### E2E-HAR-025 — DEF-CHK-002: a door scan alone unlocks the session rating
+
+```gherkin
+Scenario: the operator's door scan makes the per-session rating submittable
+  Given an approved attendee has no HallAttendance row for the live session
+  When they POST /api/v1/app/feedback/submit { code: "Session", targetId: <sessionId> }
+  Then the API responds 403 with error code RATING_NOT_ATTENDED
+  When the operator scans that attendee's badge at the hall door
+  And the attendee retries the same submission
+  Then the API responds HTTP 200 and the rating is stored against the session
+  # The audit claimed the per-session rating was unreachable because nothing
+  # creates HallAttendance automatically. It is reachable: the operator QR scan
+  # and the hall-door gate both write the row, keyed on the SAME Identity
+  # SimfUser.Id the rating gate reads from the `sub` claim. Only the attendee's
+  # self-service geofence arrival is missing, and that is deferred (D-211).
+```
+
 ### E2E-HAR-017 — inactive profile-type is not admitted at the door
 
 ```gherkin
@@ -383,4 +476,4 @@ Scenario: an approved holder with a deactivated profile-type is denied
 
 ---
 
-_Last reviewed:_ 2026-07-18 by Claude (staff check-OUT — Record departure + departures endpoint). Prior: 2026-07-11 (W4 on-site remediation — X-2/X-3/X-4 hall-arrival guards); 2026-06-02 (E2E catalogue rebuild).
+_Last reviewed:_ 2026-07-26 by Claude (DEF-CHK-003 picker keeps ended sessions selectable for check-out; FR-CHK-003 permission wording; FR-CHK-004 capacity race closed; DEF-CHK-002 refuted). Prior: 2026-07-18 (staff check-OUT — Record departure + departures endpoint); 2026-07-11 (W4 on-site remediation — X-2/X-3/X-4 hall-arrival guards); 2026-06-02 (E2E catalogue rebuild).

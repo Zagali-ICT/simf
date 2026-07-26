@@ -60,6 +60,15 @@
                         }
                     </SimfAlert>
                 }
+
+                @* DEF-CHK-004 — the scan was still allowed, but the server flagged
+                   something the operator has to know (today: a hall-door scan with no
+                   session running, so no hall attendance was recorded). The message
+                   arrives already localized, like DenialMessage. *@
+                @if (!string.IsNullOrWhiteSpace(_last.NoticeMessage))
+                {
+                    <SimfAlert Variant="warning">@_last.NoticeMessage</SimfAlert>
+                }
             }
 
             <hr />

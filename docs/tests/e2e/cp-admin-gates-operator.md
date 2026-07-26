@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-07-26 (DEF-CHK-004 advisory notice) |
 
 > **Permission gate.** The page carries `@attribute [RequirePermission(PermissionCatalog.Gates.Operate)]`
 > (`"Gates.Operate"`, baseline role `GateOperator`). The two backing API
@@ -21,6 +21,16 @@
 > `DenialReasonCode`. Only operational faults (gate not found / not
 > assigned / inactive / idempotency conflict / failure-circuit open) raise
 > 4xx/5xx. The console renders a denial as a red `SimfAlert`, not a toast.
+>
+> **Advisory notice on an ALLOWED scan (DEF-CHK-004, 2026-07-26).** A scan on a
+> **hall-door** gate (`Gate.HallId` set) also feeds `HallAttendance` for the
+> session live in that hall. When no session is live there, the holder is still
+> admitted but **no attendance is recorded** — which used to be completely
+> silent. `GateScanResponse` now carries an additive, already-localized
+> `NoticeMessage` (same shape as `DenialMessage`, resolved from `Accept-Language`),
+> which the console renders as an amber `SimfAlert` **underneath** the green
+> Allowed alert. It is `null` on every ordinary scan and on every perimeter gate,
+> and it never changes the allow/deny outcome.
 
 ## Coverage matrix
 
@@ -39,8 +49,42 @@
 | E2E-GOP-011 | Not-assigned — scan a gate you lost assignment to → 403 fallback alert | error | P1 | _to author_ |
 | E2E-GOP-012 | Resilience — API 500 on `/scans` → bilingual fallback alert, field cleared check | resilience | P2 | _to author_ |
 | E2E-GOP-013 | RTL render — Arabic toggle mirrors banner, picker, alert, report table | i18n | P1 | _to author_ |
+| E2E-GOP-014 | DEF-CHK-004 — hall-door gate scanned with no session live → Allowed **plus** an amber advisory alert | happy | P0 | authored ✓ (API `Hall_door_gate_with_no_live_session_returns_an_allowed_scan_carrying_a_notice`) |
+| E2E-GOP-015 | DEF-CHK-004 — a scan bound to a live session, and any perimeter-gate scan, carry no advisory | happy | P1 | authored ✓ (API `Hall_door_gate_bound_to_a_live_session_carries_no_notice`, `Perimeter_gate_carries_no_notice`) |
 
 ## Scenarios
+
+### E2E-GOP-014 — DEF-CHK-004: allowed, but no attendance recorded
+
+```gherkin
+Scenario: a hall-door gate scanned outside every session window
+  Given the operator is assigned to gate "G-HALL-A" whose HallId is set to "Majlis A"
+  And no session is running in "Majlis A" right now (nor within the 15 min grace)
+  And an Approved visitor's badge QR is "AB12CD34EF56"
+  When the operator scans that badge
+  Then POST /account/api/gates/{gateId}/scans returns HTTP 200
+  And the response Outcome is Allowed with DenialReasonCode = null
+  And the response carries NoticeMessage
+      "Entry allowed, but no session is running in this hall — attendance was not recorded."
+      / "تم السماح بالدخول، ولكن لا توجد جلسة جارية في هذه القاعة — لم يتم تسجيل الحضور."
+  And the console renders the green Allowed alert AND an amber advisory alert beneath it
+  And a GateScan row is written; NO HallAttendance row is written
+  # Before DEF-CHK-004 the operator saw only "Allowed" and the attendance was
+  # lost silently. The allow/deny outcome is deliberately unchanged.
+```
+
+### E2E-GOP-015 — DEF-CHK-004: no advisory on the normal paths
+
+```gherkin
+Scenario: an ordinary scan reports nothing extra
+  Given a session IS live in the hall behind gate "G-HALL-A"
+  When the operator scans an Approved visitor's badge
+  Then the response Outcome is Allowed and NoticeMessage is null
+  And a HallAttendance row is opened for that session
+  When the same visitor is scanned at the perimeter gate "G-MAIN" (HallId null)
+  Then the response Outcome is Allowed and NoticeMessage is null
+  And no advisory alert renders in the console
+```
 
 ### E2E-GOP-001 — Golden path
 
@@ -274,4 +318,4 @@ Scenario: Arabic toggle mirrors the operator console
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-07-26 by Claude (DEF-CHK-004 — advisory NoticeMessage when a hall-door scan records no attendance). Prior: 2026-06-02 (E2E catalogue rebuild).

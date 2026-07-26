@@ -32,6 +32,13 @@ public sealed class GateScanRequest
 
 /// <summary>Response from `POST /api/v1/gates/{gateId}/scans`
 /// (SIMF-API-GATES-001 §7.2.1 / §7.2.2).</summary>
+/// <param name="NoticeMessage">DEF-CHK-004 — an ADVISORY note about a scan that
+/// was still ALLOWED, already resolved to the caller's Accept-Language exactly
+/// like <c>DenialMessage</c>. Today it carries the one case the operator could
+/// not otherwise see: a hall-door gate scan taken outside every session window,
+/// where entry was granted but no hall attendance could be recorded. Null on
+/// every other scan. Append-only addition to the shipped wire contract — it
+/// never changes the allow/deny outcome.</param>
 public sealed record GateScanResponse(
     long ScanId,
     ScanOutcome Outcome,
@@ -39,7 +46,8 @@ public sealed record GateScanResponse(
     DateTimeOffset ScannedAt,
     GateScanUserProfile? UserProfile,
     DenialReasonCode? DenialReasonCode,
-    string? DenialMessage);
+    string? DenialMessage,
+    string? NoticeMessage = null);
 
 public sealed record GateScanUserProfile(
     Guid Id,

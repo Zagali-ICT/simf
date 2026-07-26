@@ -417,10 +417,15 @@ public static class PermissionCatalog
 
     /// <summary>P5.1d — D-244 (FDS-003 §5.4): the hall-door arrival console — an
     /// operator scans an attendee's badge QR to record hall arrival
-    /// (<c>Method = QrScan</c>). View the console; Record an arrival.</summary>
+    /// (<c>Method = QrScan</c>). View the console; Record a door movement.</summary>
     public static class HallArrivals
     {
         public const string View = "HallArrivals.View";
+
+        /// <summary>FR-CHK-003 — record a hall door movement in EITHER direction:
+        /// the arrival (check-in) and the departure (check-out) endpoints and both
+        /// console buttons share this one code. The operator population is identical
+        /// for the two directions, so they are deliberately not split.</summary>
         public const string Record = "HallArrivals.Record";
     }
 
@@ -945,7 +950,10 @@ public static class PermissionCatalog
         // P5.1d — D-244: hall-door arrival console (operator QR scan).
         // D-752 — part of the Security team's access-control surface.
         new(HallArrivals.View, "HallArrivals", "View", "View the hall-arrival console", SecurityTeam),
-        new(HallArrivals.Record, "HallArrivals", "Record", "Record a hall arrival by badge scan", SecurityTeam),
+        // FR-CHK-003 — the one code gates BOTH door actions (the arrivals AND the
+        // departures endpoint, and both console buttons); the old wording named only
+        // the arrival, so an admin granting it could not tell it also allows check-out.
+        new(HallArrivals.Record, "HallArrivals", "Record", "Record a hall arrival or departure by badge scan", SecurityTeam),
 
         // Exhibition
         new(Exhibitors.View, "Exhibitors", "View", "View exhibitors", AdminOnly),

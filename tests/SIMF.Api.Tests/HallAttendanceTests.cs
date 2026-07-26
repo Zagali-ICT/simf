@@ -232,6 +232,41 @@ public sealed class HallAttendanceTests : IClassFixture<SimfApiFactory>
         Assert.Equal(first.Enter, second.Enter);
     }
 
+    [Fact]
+    public async Task Concurrent_arrivals_never_exceed_the_hall_capacity()
+    {
+        // FR-CHK-004 — capacity used to be count-then-decide with no DB constraint,
+        // so several arrivals racing a cap-2 hall could all read "room left" and all
+        // commit, overfilling it. The count and the insert now share one Serializable
+        // transaction (via the execution strategy), so the outcome is exact: precisely
+        // `cap` arrivals succeed and every loser is a clean 409 HALL_AT_CAPACITY.
+        const int cap = 2;
+        var sessionId = await SeedSessionAsync(withGeofence: true, capacity: cap);
+        var visitors = new List<string>();
+        for (var i = 0; i < 5; i++)
+        {
+            visitors.Add(await SeedApprovedVisitorAsync());
+        }
+
+        var responses = await Task.WhenAll(visitors.Select(v =>
+            PostArriveAsync(sessionId, CenterLat, CenterLon, v)));
+
+        var success = responses.Count(r => r.StatusCode == HttpStatusCode.OK);
+        Assert.Equal(cap, success);
+        foreach (var response in responses.Where(r => r.StatusCode != HttpStatusCode.OK))
+        {
+            Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+            var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+            Assert.Equal(ErrorCodes.HallAtCapacity, body.Error!.Code);
+        }
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var present = await db.HallAttendances
+            .CountAsync(a => a.SessionId == sessionId && a.Leave == null);
+        Assert.Equal(cap, present);
+    }
+
     // -- Helpers --------------------------------------------------------------
 
     private async Task<HallAttendanceStatus> ArriveAsync(

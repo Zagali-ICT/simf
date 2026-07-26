@@ -58,6 +58,31 @@ Scenario: A valid badge is allowed in
   And "سكان مرة أخرى" returns to the scanner for the next person
 ```
 
+### E2E-MOBGATE-006 — Allowed, but no session attendance recorded (DEF-CHK-004)
+
+```gherkin
+Scenario: A hall-door gate is scanned outside every session window
+  Given the operator's gate is a HALL-DOOR gate (Gate.HallId is set)
+  And no session is running in that hall right now (nor within the 15 min grace)
+  When they scan a valid badge code
+  Then the scan returns outcome=Allowed (HTTP 200) — the holder is still admitted
+  And the response carries noticeMessage (already localized by Accept-Language)
+  And the green "مسموح / Allowed" card shows that advisory in amber under the subtitle
+      "تم السماح بالدخول، ولكن لا توجد جلسة جارية في هذه القاعة — لم يتم تسجيل الحضور."
+  And a GateScan row is written; NO HallAttendance row is written
+
+Scenario: An ordinary scan shows no advisory
+  Given a session IS live in that hall (or the gate is a perimeter gate)
+  When they scan a valid badge code
+  Then noticeMessage is null and the allowed card renders exactly as before
+```
+
+**Evidence:** API `GateHallDoorChainTests.Hall_door_gate_with_no_live_session_returns_an_allowed_scan_carrying_a_notice`
+(+ `..._bound_to_a_live_session_carries_no_notice`, `Perimeter_gate_carries_no_notice`);
+app decode `test/features/gates/gate_models_test.dart` — "an allowed scan can
+carry an advisory notice". `noticeMessage` is an **additive** field on the
+shipped wire contract; an older app build simply ignores it.
+
 ### E2E-MOBGATE-002 — Denied scan (ممنوع)
 
 ```gherkin
@@ -142,5 +167,7 @@ covered by `GateScanTests` + `test/features/gates/`.
 
 ---
 
-_Last reviewed:_ `2026-07-11` by `SIMF Team` — D-737 unified scanner
-(SimfScannerBody; `gate_scanner_view.dart` deleted). Earlier: `2026-06-27`.
+_Last reviewed:_ `2026-07-26` by `SIMF Team` — DEF-CHK-004 advisory
+`noticeMessage` on an allowed hall-door scan (E2E-MOBGATE-006). Earlier:
+`2026-07-11` D-737 unified scanner (SimfScannerBody; `gate_scanner_view.dart`
+deleted); `2026-06-27`.

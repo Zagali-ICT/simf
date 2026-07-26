@@ -15,6 +15,7 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
+using SIMF.Contracts.Gates;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Programme;
 using SIMF.Infrastructure.Persistence;
@@ -119,6 +120,64 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         Assert.Equal(0, await db.HallAttendances.CountAsync(a => a.HallId == hallId));
+    }
+
+    [Fact]
+    public async Task Hall_door_gate_with_no_live_session_returns_an_allowed_scan_carrying_a_notice()
+    {
+        // DEF-CHK-004 — a hall-door scan outside every session window admits the
+        // holder but records no attendance. That used to be silent (a plain
+        // "Allowed"), so the attendance was lost with no signal. The scan is still
+        // Allowed, but now carries the advisory NoticeMessage.
+        var (token, operatorUserId) = await CreateAdminAsync();
+        var hallId = await SeedHallWithoutSessionAsync();
+        var gateId = await CreateGateAsync(token, operatorUserId, hallId);
+        var (qrId, _) = await CreateApprovedVisitorWithQrAsync();
+
+        var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
+        Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
+        var body = (await scan.Content.ReadFromJsonAsync<ApiResult<GateScanResponse>>())!.Data!;
+
+        // The allow/deny outcome is unchanged — the person is admitted.
+        Assert.Equal(ScanOutcome.Allowed, body.Outcome);
+        Assert.Null(body.DenialReasonCode);
+        Assert.False(string.IsNullOrWhiteSpace(body.NoticeMessage));
+        Assert.Contains("attendance", body.NoticeMessage!, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Hall_door_gate_bound_to_a_live_session_carries_no_notice()
+    {
+        // DEF-CHK-004 — the notice is the exception, not the norm: a scan that DID
+        // bind to a live session records attendance and reports nothing extra.
+        var (token, operatorUserId) = await CreateAdminAsync();
+        var (hallId, _) = await SeedHallWithLiveSessionAsync();
+        var gateId = await CreateGateAsync(token, operatorUserId, hallId);
+        var (qrId, _) = await CreateApprovedVisitorWithQrAsync();
+
+        var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
+        Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
+        var body = (await scan.Content.ReadFromJsonAsync<ApiResult<GateScanResponse>>())!.Data!;
+
+        Assert.Equal(ScanOutcome.Allowed, body.Outcome);
+        Assert.Null(body.NoticeMessage);
+    }
+
+    [Fact]
+    public async Task Perimeter_gate_carries_no_notice()
+    {
+        // DEF-CHK-004 — a perimeter gate (HallId null) never feeds hall attendance,
+        // so the "no attendance recorded" advisory must not fire there.
+        var (token, operatorUserId) = await CreateAdminAsync();
+        var gateId = await CreateGateAsync(token, operatorUserId, hallId: null);
+        var (qrId, _) = await CreateApprovedVisitorWithQrAsync();
+
+        var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
+        Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
+        var body = (await scan.Content.ReadFromJsonAsync<ApiResult<GateScanResponse>>())!.Data!;
+
+        Assert.Equal(ScanOutcome.Allowed, body.Outcome);
+        Assert.Null(body.NoticeMessage);
     }
 
     [Fact]

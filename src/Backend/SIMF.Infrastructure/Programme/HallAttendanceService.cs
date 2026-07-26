@@ -195,7 +195,7 @@ internal sealed class HallAttendanceService(
             resolved.UserId, resolved.DisplayName, resolved.DisplayNameArabic, status);
     }
 
-    public async Task RecordGateDoorScanAsync(
+    public async Task<bool> RecordGateDoorScanAsync(
         Guid attendeeUserId, Guid hallId, ScanDirection direction,
         bool directionInferred, Guid operatorUserId,
         CancellationToken cancellationToken = default)
@@ -227,7 +227,13 @@ internal sealed class HallAttendanceService(
         {
             // No session live in this hall (± grace) — a door scan outside any
             // session window records no hall attendance (the GateScan row stands).
-            return;
+            // DEF-CHK-004 — that used to be silent: the operator saw "Allowed" and
+            // the attendance was simply lost. Report it so the gate can raise an
+            // advisory notice on the scan result (the entry itself stays allowed).
+            logger.LogInformation(
+                "Hall-door gate scan for {UserId} in hall {HallId} matched no live session — no attendance recorded.",
+                attendeeUserId, hallId);
+            return false;
         }
 
         if (directionInferred)
@@ -246,7 +252,7 @@ internal sealed class HallAttendanceService(
             if (open is not null && open.Method != AttendanceMethod.Geofence)
             {
                 await RecordDepartureAsync(attendeeUserId, liveSessionId, cancellationToken);
-                return;
+                return true;
             }
             // No open row (or a geofence arrival to merge with) → fall through to the
             // arrival path below.
@@ -255,7 +261,7 @@ internal sealed class HallAttendanceService(
         {
             // Fixed In/Out gate — its configured direction is authoritative.
             await RecordDepartureAsync(attendeeUserId, liveSessionId, cancellationToken);
-            return;
+            return true;
         }
 
         // FIX D — capacity is ADVISORY on the passive gate-door path: someone who
@@ -274,13 +280,15 @@ internal sealed class HallAttendanceService(
                 "Hall arrival (hall-door gate) recorded for {UserId} at session {SessionId} by operator {OperatorId}.",
                 attendeeUserId, liveSessionId, operatorUserId);
         }
+        return true;
     }
 
     /// <summary>Returns the attendee's open attendance row for the session,
-    /// opening one with <paramref name="method"/> when none exists. Idempotent
-    /// under a concurrent race: on the one-open-row unique-index violation it
-    /// detaches the losing row and returns the committed one (never a 500) —
-    /// mirrors <c>SeatReservationService.PersistWithUniquenessGuardAsync</c>.</summary>
+    /// opening one with <paramref name="method"/> when none exists. The insert is
+    /// idempotent under a concurrent race (see <see cref="InsertArrivalAsync"/>);
+    /// when <paramref name="enforceCapacity"/> is set it also refuses to open a row
+    /// past the hall's capacity, atomically (see
+    /// <see cref="InsertArrivalWithinCapacityAsync"/>).</summary>
     private async Task<(HallAttendance Row, bool Created)> OpenOrCreateArrivalAsync(
         Guid userId, Guid sessionId, Guid hallId, AttendanceMethod method,
         CancellationToken cancellationToken, bool enforceCapacity = true)
@@ -295,35 +303,35 @@ internal sealed class HallAttendanceService(
         // physical capacity. Runs on every arrival means (geofence + door QR +
         // hall-door gate) because it sits in the shared create path; a re-scan that
         // merges into an existing open row (early return above) is never re-checked.
-        var capacity = await HallCapacityStateAsync(sessionId, cancellationToken);
-        if (capacity.IsOver)
+        if (!enforceCapacity)
         {
-            if (enforceCapacity)
-            {
-                // Operator QR-door + geofence arrivals — hard cap (unchanged).
-                throw new ApiException(ErrorCodes.HallAtCapacity, 409,
-                    "This hall is at capacity.",
-                    "بلغت هذه القاعة سعتها القصوى.");
-            }
             // FIX D — passive gate-door path: capacity is advisory. A person who
             // physically passed a turnstile MUST be counted, so record the row and
             // warn rather than drop it (live occupancy would otherwise under-count).
-            logger.LogWarning(
-                "Hall {HallId} / session {SessionId} exceeded capacity ({Present}/{Cap}) on a gate-door arrival — recorded (advisory).",
-                hallId, sessionId, capacity.Present, capacity.Cap);
+            var advisory = await HallCapacityStateAsync(sessionId, cancellationToken);
+            if (advisory.IsOver)
+            {
+                logger.LogWarning(
+                    "Hall {HallId} / session {SessionId} exceeded capacity ({Present}/{Cap}) on a gate-door arrival — recorded (advisory).",
+                    hallId, sessionId, advisory.Present, advisory.Cap);
+            }
+            return await InsertArrivalAsync(userId, sessionId, hallId, method, cancellationToken);
         }
 
-        var now = timeProvider.GetUtcNow();
-        var row = new HallAttendance
-        {
-            Id = Guid.NewGuid(),
-            SessionId = sessionId,
-            HallId = hallId,
-            UserId = userId,
-            Method = method,
-            Enter = now,
-            CreatedAt = now,
-        };
+        // Operator QR-door + geofence arrivals — hard cap.
+        return await InsertArrivalWithinCapacityAsync(
+            userId, sessionId, hallId, method, cancellationToken);
+    }
+
+    /// <summary>Inserts a fresh open attendance row. Idempotent under a concurrent
+    /// race: on the one-open-row unique-index violation it detaches the losing row
+    /// and returns the committed one (never a 500) — mirrors
+    /// <c>SeatReservationService.PersistWithUniquenessGuardAsync</c>.</summary>
+    private async Task<(HallAttendance Row, bool Created)> InsertArrivalAsync(
+        Guid userId, Guid sessionId, Guid hallId, AttendanceMethod method,
+        CancellationToken cancellationToken)
+    {
+        var row = NewArrivalRow(userId, sessionId, hallId, method);
         appDbContext.HallAttendances.Add(row);
         try
         {
@@ -338,16 +346,110 @@ internal sealed class HallAttendanceService(
         return (row, true);
     }
 
+    /// <summary>FR-CHK-004 — opens the arrival row only while the session is below
+    /// its effective capacity, with the capacity COUNT and the INSERT in ONE
+    /// SERIALIZABLE transaction. Count-then-decide outside a transaction let two
+    /// concurrent arrivals both read "one place left" and both commit, overfilling
+    /// the hall; the count now takes a key-range lock on (SessionId, Leave) so a
+    /// concurrent insert cannot slip a phantom row in between the count and the
+    /// save. Run through the EF execution strategy so it composes with
+    /// <c>EnableRetryOnFailure</c> (a manual transaction under the retrying strategy
+    /// throws otherwise) and a serialization/deadlock victim re-runs the whole unit
+    /// against the committed rival — no oversell, no over-reject. Mirrors
+    /// <c>SeatReservationService.InsertHoldWithinCapacityAsync</c>. Throws
+    /// <see cref="ErrorCodes.HallAtCapacity"/> when full.</summary>
+    private async Task<(HallAttendance Row, bool Created)> InsertArrivalWithinCapacityAsync(
+        Guid userId, Guid sessionId, Guid hallId, AttendanceMethod method,
+        CancellationToken cancellationToken)
+    {
+        HallAttendance? added = null;
+        HallAttendance? committed = null;
+        var lostTheOpenRowRace = false;
+        var strategy = appDbContext.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
+        {
+            // A retry re-enters here; drop the row a failed attempt left tracked so
+            // the next SaveChanges never re-inserts a stale (rolled-back) entity.
+            if (added is not null)
+            {
+                appDbContext.Entry(added).State = EntityState.Detached;
+                added = null;
+            }
+            committed = null;
+            lostTheOpenRowRace = false;
+
+            await using var tx = await appDbContext.Database.BeginTransactionAsync(
+                System.Data.IsolationLevel.Serializable, cancellationToken);
+
+            var capacity = await HallCapacityStateAsync(sessionId, cancellationToken);
+            if (capacity.IsOver)
+            {
+                return; // full — the transaction rolls back on dispose
+            }
+
+            var row = NewArrivalRow(userId, sessionId, hallId, method);
+            appDbContext.HallAttendances.Add(row);
+            added = row;
+            try
+            {
+                await appDbContext.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateException)
+            {
+                // The one-open-row filtered unique index — a concurrent arrival for
+                // the SAME attendee committed first. That is a merge, not a capacity
+                // failure, so fall out and return their committed row.
+                appDbContext.Entry(row).State = EntityState.Detached;
+                added = null;
+                lostTheOpenRowRace = true;
+                return;
+            }
+            await tx.CommitAsync(cancellationToken);
+            committed = row;
+        });
+
+        if (committed is not null)
+        {
+            return (committed, true);
+        }
+        if (lostTheOpenRowRace
+            && await OpenRowAsync(userId, sessionId, cancellationToken) is { } existing)
+        {
+            return (existing, false);
+        }
+        throw new ApiException(ErrorCodes.HallAtCapacity, 409,
+            "This hall is at capacity.",
+            "بلغت هذه القاعة سعتها القصوى.");
+    }
+
+    private HallAttendance NewArrivalRow(
+        Guid userId, Guid sessionId, Guid hallId, AttendanceMethod method)
+    {
+        var now = timeProvider.GetUtcNow();
+        return new HallAttendance
+        {
+            Id = Guid.NewGuid(),
+            SessionId = sessionId,
+            HallId = hallId,
+            UserId = userId,
+            Method = method,
+            Enter = now,
+            CreatedAt = now,
+        };
+    }
+
     /// <summary>X-2 — the currently-present count against the session's effective
     /// physical capacity (the session <c>CapacityOverride</c>, else the hall
     /// <c>Capacity</c>), plus whether that arrival would exceed it. A capacity of 0
     /// means "no limit configured" and never blocks (<c>IsOver</c> = false). The
     /// open-row count is intentionally per-session (single-source attendance is a
     /// per-session model that relies on the no-overlap booking invariant — a future
-    /// overlapping-session feature must revisit this bound). ADVISORY under a
-    /// concurrent race — like the open-seating join, there is no DB constraint on
-    /// the attendance row count. The caller enforces (hard 409) or warns (advisory
-    /// gate-door path) per <c>enforceCapacity</c>.</summary>
+    /// overlapping-session feature must revisit this bound). There is no DB
+    /// constraint on the attendance row count, so FR-CHK-004 runs this count inside
+    /// the enforcing path's SERIALIZABLE transaction — read on its own (the advisory
+    /// gate-door path) it is a point-in-time snapshot, not a guarantee. The caller
+    /// enforces (hard 409) or warns (advisory gate-door path) per
+    /// <c>enforceCapacity</c>.</summary>
     private async Task<(int Present, int Cap, bool IsOver)> HallCapacityStateAsync(
         Guid sessionId, CancellationToken cancellationToken)
     {
