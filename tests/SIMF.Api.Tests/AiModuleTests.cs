@@ -94,6 +94,55 @@ public sealed class AiModuleTests : IClassFixture<SimfApiFactory>
         Assert.Contains("Visitor language: en", body.OutputText);
     }
 
+    // -- A18 (2026-07-27): the stub guard must be INVISIBLE to visitors. The offline
+    // Echo provider is the shipped default (`Ai.DefaultProvider = Echo`), so on a QA
+    // or demo build every chatbot / FAQ reply comes from it. Reviewer instructions
+    // ("do not review, approve or publish it") belong to the session-summary desk,
+    // not to a visitor's chat bubble — the stub signal travels as metadata instead.
+
+    [Fact]
+    public async Task Stub_chatbot_reply_carries_no_reviewer_banner_but_is_flagged_as_stub()
+    {
+        var visitor = await SignInApprovedVisitorAsync();
+        var response = await PostAuthAsync(
+            "/api/v1/app/ai/assistance",
+            new AssistanceRequest { Message = "Where is hall H1?", Locale = "en" },
+            visitor);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AiCallResult>>())!.Data!;
+
+        AssertNoReviewerBanner(body.OutputText);
+        // ...but the caller that must not ship stub content can still detect it.
+        Assert.True(body.IsStub);
+    }
+
+    [Fact]
+    public async Task Stub_anonymous_faq_reply_carries_no_reviewer_banner()
+    {
+        var response = await _client.PostAsJsonAsync(
+            "/api/v1/app/ai/faq",
+            new AskFaqRequest { Question = "What time is the keynote?" });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AiCallResult>>())!.Data!;
+
+        AssertNoReviewerBanner(body.OutputText);
+        Assert.True(body.IsStub);
+    }
+
+    // The reviewer-facing wording, in both languages, plus the machine sentinel.
+    // None of it may ever be rendered to a visitor.
+    private static void AssertNoReviewerBanner(string outputText)
+    {
+        Assert.DoesNotContain("AI-STUB-DO-NOT-PUBLISH", outputText, StringComparison.Ordinal);
+        Assert.DoesNotContain("NOT REAL AI OUTPUT", outputText, StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "Do not review, approve or publish", outputText, StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "لا تراجعها أو توافق عليها أو تنشرها", outputText, StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task Assistance_persists_the_turn_and_history_returns_it()
     {

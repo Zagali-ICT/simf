@@ -2261,15 +2261,14 @@ class AppL10n {
   // (Figma 934-3450 / 934-3636 / 947-3764 / 958-2246).
   String get liveNowBroadcasting => _t('يُبث الآن', 'Now broadcasting');
   String get liveSessionLabel => _t('الجلسة', 'Session');
+  // A15 (2026-07-26) — the caption strip renders the admin-typed
+  // `Session.LiveCaptions` note, which never changes during the broadcast. The
+  // old copy promised live AI translation of the spoken audio, which the app
+  // does not do (there is no speech-to-text and no streaming translation), so
+  // the placeholder now names what the strip actually is: an organiser note.
   String get liveCaptionHint => _t(
-        'الترجمة الفورية للنص المنطوق تظهر هنا...',
-        'Live captions of the spoken word appear here…',
-      );
-  String get liveRegionNoticeLabel => _t('إشعار:', 'Notice:');
-  String get liveRegionNoticeBody => _t(
-        'البث المباشر متاح داخل منطقة الرياض فقط حسب لوائح التنظيم.',
-        'Live broadcasting is available only inside the Riyadh region per the '
-            'organising regulations.',
+        'يظهر هنا النص التوضيحي الذي يكتبه المنظّم لهذه الجلسة.',
+        'Caption text written by the organiser for this session appears here.',
       );
   String get liveAskQuestion => _t('اطرح سؤالاً', 'Ask a question');
   String get liveUpcomingSessions => _t('الجلسات القادمة', 'Upcoming sessions');

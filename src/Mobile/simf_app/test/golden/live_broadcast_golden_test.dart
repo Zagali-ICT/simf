@@ -24,11 +24,15 @@ import 'golden_fonts.dart';
 /// `video_player`) has no headless platform in a widget test, so the central
 /// player box renders the error surface (the controller build throws and is
 /// caught) — the golden's parity claim is the *chrome*
-/// (the LIVE badge + language chip + AI caption strip) and the *info column*
-/// below it (يُبث الآن header, the gold session-title + speakers bullets, the
-/// gold region-restriction notice, and the الجلسات القادمة upcoming cards),
-/// which all render deterministically. The player init is left to `pump` fixed
-/// frames (never `pumpAndSettle` — the feed never settles).
+/// (the LIVE badge + language chip + organiser caption strip) and the *info
+/// column* below it (يُبث الآن header, the gold session-title + speakers
+/// bullets, and the الجلسات القادمة upcoming cards), which all render
+/// deterministically. The player init is left to `pump` fixed frames (never
+/// `pumpAndSettle` — the feed never settles).
+///
+/// Re-captured 2026-07-26 for A15 + A20: the caption strip's gold "AI" chip and
+/// the gold "Riyadh region only" restriction card are gone — both were
+/// capability claims the app never backed (see `live_player_surface.dart`).
 
 class _SignedIn extends AuthController {
   @override
