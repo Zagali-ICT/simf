@@ -134,7 +134,11 @@ internal sealed class UserProfileRepository(
             .Where(p => p.UserId == userId)
             .Select(p => new ProfileCompletenessFacts(
                 p.Name, p.NameArabic, p.Gender,
-                p.IdImageRelativePath, p.Interests.Any()))
+                p.IdImageRelativePath, p.Interests.Any(),
+                // BUG-018 (18-3) — audience side = no profile type yet, or one
+                // flagged IsForVisitor. Partner/operational types are exempt from
+                // the visitor evidence rules.
+                p.ProfileType == null || p.ProfileType.IsForVisitor))
             .SingleOrDefaultAsync(cancellationToken);
 
     public Task<ProfileTypeRole?> GetAssignedProfileTypeRoleAsync(

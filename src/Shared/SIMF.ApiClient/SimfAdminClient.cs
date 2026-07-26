@@ -1990,6 +1990,25 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Get, $"gates/{id}/assignments", content: null,
             accessToken, cancellationToken);
 
+    // BUG-018 — the gate form's own lookups, both gated on Gates.Manage so a gate
+    // manager no longer needs Admins.View / ProfileTypes.View / Halls.View to fill
+    // the Add/Edit form.
+
+    public Task<ApiCallResult<GridPage<AdminGateOperatorCandidate>>>
+        ListGateOperatorCandidatesAsync(
+            GridQuery query, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminGateOperatorCandidate>>(
+            HttpMethod.Post, "gates/operator-candidates/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminGateFormOptions>> GetGateFormOptionsAsync(
+        string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<AdminGateFormOptions>(
+            HttpMethod.Get, "gates/form-options", content: null,
+            accessToken, cancellationToken);
+
     public Task<ApiCallResult<IReadOnlyList<AdminGateScanRow>>> ListGateScansAsync(
         AdminGateScanReportFilter filter, string accessToken,
         CancellationToken cancellationToken = default) =>

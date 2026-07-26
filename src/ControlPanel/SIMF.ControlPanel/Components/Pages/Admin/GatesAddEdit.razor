@@ -12,6 +12,12 @@
 {
     <SimfAlert Variant="error">@_error</SimfAlert>
 }
+@* BUG-018 (18-4) — a lookup that fails is reported; it used to leave a silently
+   empty dropdown with no else branch. *@
+@if (_lookupError is not null)
+{
+    <SimfAlert Variant="info">@_lookupError</SimfAlert>
+}
 
 <EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
     <div class="simf-form__fields">
@@ -101,6 +107,18 @@
                 </div>
                 <div class="simf-field">
                     <span class="simf-field__label">@L["Admin.Gates.Field.AssignedOperators"]</span>
+                    @* BUG-018 (18-7) — server-side search over the candidate
+                       operators, so the picker is not a blind top-200. *@
+                    <div class="gate-form__operator-search">
+                        <SimfTextField Label="@L["Admin.Gates.Field.OperatorSearch"]"
+                                       @bind-Value="_operatorSearch"
+                                       Disabled="_busy || _loadingOperators" />
+                        <SimfButton Type="button" Variant="secondary"
+                                    Disabled="_busy || _loadingOperators"
+                                    OnClick="LoadOperatorsAsync">
+                            @L["Admin.Gates.Field.OperatorSearchSubmit"]
+                        </SimfButton>
+                    </div>
                     <div class="gate-form__checklist">
                         @if (_operators.Count == 0)
                         {
@@ -113,12 +131,18 @@
                                 <SimfCheckbox Value="_model.AssignedOperatorUserIds.Contains(op.Id)"
                                               ValueChanged="@(v => ToggleOperator(op.Id, v))"
                                               Disabled="_busy">
-                                    @op.Email — @op.DisplayName
+                                    @op.DisplayName — @op.Email (@op.ProfileTypeName)
                                 </SimfCheckbox>
                             }
                         }
                     </div>
                     <span class="simf-field__helper">@L["Admin.Gates.Field.AssignedOperatorsHint"]</span>
+                    @if (_operatorTotal > _operators.Count)
+                    {
+                        <span class="simf-field__helper">
+                            @string.Format(L["Admin.Gates.Field.OperatorShowing"], _operators.Count, _operatorTotal)
+                        </span>
+                    }
                 </div>
             </div>
         </section>

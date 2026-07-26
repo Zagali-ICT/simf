@@ -66,6 +66,31 @@ public sealed class AdminUpdateGateRequest
     public List<Guid> AssignedOperatorUserIds { get; set; } = new();
 }
 
+/// <summary>BUG-018 — one selectable gate-operator candidate
+/// (`POST /api/v1/admin/gates/operator-candidates/list`). Gate scanning happens
+/// through the mobile app, so a candidate is an approved APP account whose
+/// profile type is operational (<c>IsForVisitor=false</c>) and carries a
+/// <see cref="MobileAppRole"/> that confers <c>Gates.Operate</c> — never a
+/// Control-Panel admin account.</summary>
+public sealed record AdminGateOperatorCandidate(
+    Guid UserId,
+    string Email,
+    string DisplayName,
+    string ProfileTypeName,
+    MobileAppRole MobileAppRole);
+
+/// <summary>BUG-018 — one option in a gate-form lookup list.</summary>
+public sealed record AdminGateLookupOption(Guid Id, string Name, string NameArabic);
+
+/// <summary>BUG-018 — the lookup lists the gate Add/Edit form needs, served under
+/// <c>Gates.Manage</c> (`GET /api/v1/admin/gates/form-options`). Previously the
+/// form read the shared ProfileTypes / Halls admin lists, which need
+/// <c>ProfileTypes.View</c> / <c>Halls.View</c> — so a Security-team gate manager
+/// (who holds only <c>Gates.Manage</c>) saw silently empty dropdowns.</summary>
+public sealed record AdminGateFormOptions(
+    IReadOnlyList<AdminGateLookupOption> ProfileTypes,
+    IReadOnlyList<AdminGateLookupOption> Halls);
+
 /// <summary>One row in `GET /api/v1/admin/gates/{id}/assignments`
 /// (SIMF-API-GATES-001 §6.7).</summary>
 public sealed record AdminGateAssignmentRow(
@@ -73,7 +98,11 @@ public sealed record AdminGateAssignmentRow(
     Guid UserId,
     string UserDisplayName,
     DateTimeOffset AssignedAt,
-    Guid AssignedByUserId);
+    Guid AssignedByUserId,
+    // BUG-018 (18-6) — the gate detail view lists WHO is assigned, not just a
+    // count, so an assignment can be audited from the CP. Appended with a default
+    // so this CP-only contract stays append-only.
+    string UserEmail = "");
 
 /// <summary>Filter for `GET /api/v1/admin/gates/reports/scans`
 /// (SIMF-API-GATES-001 §6.8).</summary>
