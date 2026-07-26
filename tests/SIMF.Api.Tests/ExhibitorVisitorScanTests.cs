@@ -9,6 +9,10 @@
 // DEF-EXH-004 — the subject test also runs on the READ path, so a row captured
 //               while the old rule was in force stops projecting a card.
 // DEF-EXH-005 — a booth officer provisioned from the CP can actually scan.
+// DEF-EXH-006 — the role is not authority on its own: revoking the booth
+//               membership (or closing the exhibitor) refuses scan AND list.
+// DEF-EXH-007 — the capture notice names the EXHIBITOR the officer represents,
+//               which a CP-provisioned stub profile could never supply.
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -283,6 +287,90 @@ public sealed class ExhibitorVisitorScanTests : IClassFixture<SimfApiFactory>
         Assert.DoesNotContain(rows, row => row.Card.UserId == retiredId);
     }
 
+    // DEF-EXH-006 — scan authority must follow a CURRENT booth membership, not
+    // only the profile type. The officer's ProfileType (and the app role baked
+    // into their existing token) survives the revocation, so only a server-side
+    // membership test can stop them; the 200 taken while the membership was live
+    // proves the rule does not simply lock every officer out.
+    [Fact]
+    public async Task Booth_officer_is_refused_once_the_membership_is_revoked()
+    {
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var exhibitorId = await SeedExhibitorCompanyAsync();
+        var (officerToken, officerUserId) =
+            await ProvisionBoothOfficerAsync(adminToken, exhibitorId, "Revoked Officer");
+
+        var (_, visitorId) = await CreateApprovedUserAsync();
+        await SeedVisitorWithQrAsync(visitorId, "REVOKEBADGE", "Lead Two", "زائر");
+
+        // While the membership is live the officer works normally.
+        var allowed = await PostAuthAsync("/api/v1/app/exhibitor/visitors/scan",
+            new ScanVisitorBadgeRequest { QrId = "REVOKEBADGE" }, officerToken);
+        Assert.Equal(HttpStatusCode.OK, allowed.StatusCode);
+
+        await RevokeMembershipAsync(officerUserId);
+
+        var scan = await PostAuthAsync("/api/v1/app/exhibitor/visitors/scan",
+            new ScanVisitorBadgeRequest { QrId = "REVOKEBADGE" }, officerToken);
+        Assert.Equal(HttpStatusCode.Forbidden, scan.StatusCode);
+
+        var list = await GetAuthAsync("/api/v1/app/exhibitor/visitors", officerToken);
+        Assert.Equal(HttpStatusCode.Forbidden, list.StatusCode);
+    }
+
+    // DEF-EXH-006 — the CP's own revocation path. Closing the exhibitor
+    // (DELETE /admin/exhibitors/{id}, a soft-delete) ends every officer's booth
+    // membership, so none of them may keep harvesting visitor cards.
+    [Fact]
+    public async Task Closing_the_exhibitor_revokes_its_officers_scan_authority()
+    {
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var exhibitorId = await SeedExhibitorCompanyAsync();
+        var (officerToken, _) =
+            await ProvisionBoothOfficerAsync(adminToken, exhibitorId, "Closed Booth Officer");
+
+        var (_, visitorId) = await CreateApprovedUserAsync();
+        await SeedVisitorWithQrAsync(visitorId, "CLOSEDBOOTH", "Lead Three", "زائر");
+
+        var closed = await DeleteAuthAsync(
+            $"/api/v1/admin/exhibitors/{exhibitorId}", adminToken);
+        Assert.Equal(HttpStatusCode.OK, closed.StatusCode);
+
+        var scan = await PostAuthAsync("/api/v1/app/exhibitor/visitors/scan",
+            new ScanVisitorBadgeRequest { QrId = "CLOSEDBOOTH" }, officerToken);
+        Assert.Equal(HttpStatusCode.Forbidden, scan.StatusCode);
+
+        var list = await GetAuthAsync("/api/v1/app/exhibitor/visitors", officerToken);
+        Assert.Equal(HttpStatusCode.Forbidden, list.StatusCode);
+    }
+
+    // DEF-EXH-007 — the whole point of the capture notice is that it NAMES who
+    // received the data. A CP-provisioned officer's UserProfile is a stub with no
+    // Name / NameArabic at all (AdminAccountService.CreateAccountAsync), so taking
+    // the name off the scanning account degraded the notice to "An exhibitor" for
+    // exactly the accounts the CP creates. It must name the EXHIBITOR they
+    // represent, in both languages.
+    [Fact]
+    public async Task Capture_notice_names_the_exhibitor_a_cp_officer_represents()
+    {
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var exhibitorId = await SeedExhibitorCompanyAsync(
+            "Northern Shipyards", "أحواض الشمال");
+        var (officerToken, _) =
+            await ProvisionBoothOfficerAsync(adminToken, exhibitorId, "Named Officer");
+
+        var (_, visitorId) = await CreateApprovedUserAsync();
+        await SeedVisitorWithQrAsync(visitorId, "NAMEDBADGE", "Visitor Three", "الزائر");
+
+        var scan = await PostAuthAsync("/api/v1/app/exhibitor/visitors/scan",
+            new ScanVisitorBadgeRequest { QrId = "NAMEDBADGE" }, officerToken);
+        Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
+
+        var notification = await SingleCaptureNotificationAsync(visitorId);
+        Assert.Contains("Northern Shipyards", notification.Body);
+        Assert.Contains("أحواض الشمال", notification.BodyArabic);
+    }
+
     // DEF-EXH-001 (read path) — the caller test guards the list endpoint too, so a
     // Staff token cannot read back rows it captured while the old rule let it scan.
     [Fact]
@@ -311,13 +399,39 @@ public sealed class ExhibitorVisitorScanTests : IClassFixture<SimfApiFactory>
 
     // -- seeding ---------------------------------------------------------------
 
-    private Task SeedExhibitorProfileAsync(Guid userId, string name, string nameArabic) =>
+    private async Task SeedExhibitorProfileAsync(Guid userId, string name, string nameArabic)
+    {
         // Reuse the seeder's canonical "Exhibitor" profile type — D-611 added a
         // unique index on the active ProfileType.Name (the admin service already
         // returns 409 for the same duplicate), so seeding a second "Exhibitor"
         // row now collides. It carries MobileAppRole.Exhibitor (D-519), which is
         // what the scan authorises on (DEF-EXH-001).
-        SeedProfileAsync(userId, "Exhibitor", name, nameArabic);
+        await SeedProfileAsync(userId, "Exhibitor", name, nameArabic);
+
+        // DEF-EXH-006 — a booth officer is an officer OF a booth: the role alone
+        // no longer authorises the tools, so give them the exhibitor they belong
+        // to. It carries the same display name, which is what the capture notice
+        // now names (DEF-EXH-007).
+        var exhibitorId = await SeedExhibitorCompanyAsync(name, nameArabic);
+        await SeedMembershipAsync(exhibitorId, userId, name);
+    }
+
+    private async Task SeedMembershipAsync(
+        Guid exhibitorId, Guid userId, string contactName)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        appDb.ExhibitorMemberships.Add(new ExhibitorMembership
+        {
+            Id = Guid.NewGuid(),
+            ExhibitorId = exhibitorId,
+            UserId = userId,
+            ContactName = contactName,
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        });
+        await appDb.SaveChangesAsync();
+    }
 
     // DEF-EXH-009 — a scanned visitor now carries the seeded audience type
     // ("Normal", IsForVisitor=true) instead of no profile type at all, so both
@@ -371,21 +485,57 @@ public sealed class ExhibitorVisitorScanTests : IClassFixture<SimfApiFactory>
         await appDb.SaveChangesAsync();
     }
 
-    private async Task<Guid> SeedExhibitorCompanyAsync()
+    private async Task<Guid> SeedExhibitorCompanyAsync(
+        string? name = null, string? nameArabic = null)
     {
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var exhibitor = new Exhibitor
         {
             Id = Guid.NewGuid(),
-            Name = $"Booth {Guid.NewGuid():N}"[..16],
-            NameArabic = "جناح",
+            Name = name ?? $"Booth {Guid.NewGuid():N}"[..16],
+            NameArabic = nameArabic ?? "جناح",
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };
         appDb.Exhibitors.Add(exhibitor);
         await appDb.SaveChangesAsync();
         return exhibitor.Id;
+    }
+
+    /// <summary>The exhibitor the officer represents drops them from the booth —
+    /// the ExhibitorMembership soft-delete the entity documents. The officer's
+    /// ProfileType, account state and already-issued token are all untouched.</summary>
+    private async Task RevokeMembershipAsync(Guid officerUserId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var membership = await appDb.ExhibitorMemberships
+            .FirstAsync(m => m.UserId == officerUserId && m.IsActive);
+        membership.IsActive = false;
+        await appDb.SaveChangesAsync();
+    }
+
+    /// <summary>Runs the CP's real provisioning path (POST
+    /// /admin/exhibitors/{id}/accounts) and returns a signed-in booth-officer
+    /// token plus the account's user id.</summary>
+    private async Task<(string AccessToken, Guid UserId)> ProvisionBoothOfficerAsync(
+        string adminToken, Guid exhibitorId, string contactName)
+    {
+        var email = $"booth-{Guid.NewGuid():N}@simf.test";
+        var provision = await PostAuthAsync(
+            $"/api/v1/admin/exhibitors/{exhibitorId}/accounts",
+            new ProvisionExhibitorAccountRequest
+            {
+                ContactName = contactName,
+                Email = email,
+                RoleLabel = "Stand lead",
+            },
+            adminToken);
+        Assert.Equal(HttpStatusCode.OK, provision.StatusCode);
+        var account = (await provision.Content
+            .ReadFromJsonAsync<ApiResult<ExhibitorAccountSummary>>())!.Data!;
+        return (await SignInProvisionedAccountAsync(email), account.UserId);
     }
 
     private async Task<MobileAppRole?> AssignedMobileAppRoleAsync(Guid userId)
@@ -501,6 +651,13 @@ public sealed class ExhibitorVisitorScanTests : IClassFixture<SimfApiFactory>
     private Task<HttpResponseMessage> GetAuthAsync(string url, string token)
     {
         var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(request);
+    }
+
+    private Task<HttpResponseMessage> DeleteAuthAsync(string url, string token)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Delete, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return _client.SendAsync(request);
     }

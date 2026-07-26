@@ -16,7 +16,7 @@
 | **Page** | mobile exhibitor captured-visitor list (no Figma frame — functional page) |
 | **Route** | app screen `/exhibitor/visitors` (`RouteNames.myVisitors`) |
 | **Surface** | Mobile (Flutter); single-column list |
-| **Role/gate** | Exhibitor (approved) — DEF-EXH-001: the server authorises on `ProfileType.MobileAppRole == Exhibitor` (D-519), so Staff / Moderator / Media / Sponsor / plain Visitor callers all get 403 → the forbidden surface |
+| **Role/gate** | Exhibitor (approved) with a current booth membership — DEF-EXH-001: the server authorises on `ProfileType.MobileAppRole == Exhibitor` (D-519), so Staff / Moderator / Media / Sponsor / plain Visitor callers all get 403 → the forbidden surface. DEF-EXH-006: an active `ExhibitorMembership` of an active `Exhibitor` is required alongside the role |
 | **Test runner** | Flutter widget/unit test + device manual |
 
 > **Notes:** each row is the shared `ContactCard` with the visitor's card
@@ -140,9 +140,34 @@ Scenario: A still-eligible subject is unaffected
 `Legacy_captures_of_ineligible_subjects_are_not_listed`,
 `Staff_caller_cannot_list_rows_it_captured_under_the_old_rule_403`.
 
+### E2E-MOBMYVIS-009 — A former officer cannot read the booth's cards (DEF-EXH-006)
+
+```gherkin
+Scenario: Revoking the booth membership closes the list too
+  Given a signed-in booth officer whose captures are listed by
+    GET /api/v1/app/exhibitor/visitors
+  When their ExhibitorMembership is deactivated (or the exhibitor is closed
+    with DELETE /api/v1/admin/exhibitors/{id})
+  Then the same call answers 403 on their existing token
+  And no visitor PII (login email, Saudi mobile, international mobile) is
+    projected for any captured row
+```
+
+> DEF-EXH-006: the DEF-EXH-001 role test alone left the authority attached to
+> the PERSON, so an officer dropped from a booth kept a live window onto every
+> contact card that booth had captured. `ListMyVisitorsAsync` shares
+> `EnsureExhibitorAsync` with the scan, so the membership requirement closes the
+> read path with it.
+
+**Evidence:**
+`ExhibitorVisitorScanTests.Booth_officer_is_refused_once_the_membership_is_revoked`,
+`ExhibitorVisitorScanTests.Closing_the_exhibitor_revokes_its_officers_scan_authority`.
+
 ---
 
-_Last reviewed:_ `2026-07-27` by `SIMF Team` — DEF-EXH-004: the capture-time
+_Last reviewed:_ `2026-07-27` by `SIMF Team` — DEF-EXH-006: the list now needs a
+CURRENT booth membership, so a former officer loses the captured cards with the
+booth; E2E-MOBMYVIS-009. Earlier: `2026-07-27` — DEF-EXH-004: the capture-time
 subject eligibility test now also runs on the READ path, so rows captured while
 the old rule was in force stop projecting a card; E2E-MOBMYVIS-008. Earlier:
 2026-07-20 — bilingual job title: the captured-visitor `ContactCard` now

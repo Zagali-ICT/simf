@@ -1,11 +1,13 @@
 # My visitors — زواري (`myVisitors`, D-426)
 
 - **Route:** `/exhibitor/visitors` (`RouteNames.myVisitors`). Access:
-  **Exhibitor (approved)** — DEF-EXH-001: the server authorises on
-  `ProfileType.MobileAppRole == Exhibitor` (D-519), so Staff / Moderator /
-  Media / Sponsor / plain Visitor callers all get 403 → the forbidden surface.
-  Reached from the side drawer (Other-only) and after a successful
-  visitor-badge scan.
+  **Exhibitor (approved) with a current booth membership** — DEF-EXH-001: the
+  server authorises on `ProfileType.MobileAppRole == Exhibitor` (D-519), so
+  Staff / Moderator / Media / Sponsor / plain Visitor callers all get 403 → the
+  forbidden surface. DEF-EXH-006: an active `ExhibitorMembership` of an active
+  `Exhibitor` is required alongside the role, so a former officer can no longer
+  read back the contact cards of the booth they left. Reached from the side
+  drawer (Other-only) and after a successful visitor-badge scan.
 - **API:** `GET /app/exhibitor/my-visitors` (`ExhibitorRepository.listMyVisitors`).
   DEF-EXH-004: the capture-time SUBJECT test runs here too, so a row captured
   while the old rule was in force (a staff / rival-exhibitor / since-deactivated
