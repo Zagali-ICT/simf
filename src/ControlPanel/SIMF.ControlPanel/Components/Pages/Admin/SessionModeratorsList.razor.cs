@@ -33,6 +33,11 @@ public partial class SessionModeratorsList
     private string _newSessionId = string.Empty;
     private string _newUserId = string.Empty;
 
+    /// <summary>The in-dialog error. Separate from <c>_toast</c> because the
+    /// page-level alert renders under the modal backdrop and is invisible while
+    /// the Add dialog is open.</summary>
+    private string? _error;
+
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
     private async Task OnQueryChangedAsync(GridQuery next)
@@ -83,6 +88,7 @@ public partial class SessionModeratorsList
     private void OnAdd()
     {
         _addOpen = true;
+        _error = null;
         _newSessionId = string.Empty;
         _newUserId = string.Empty;
     }
@@ -90,10 +96,11 @@ public partial class SessionModeratorsList
     private async Task SubmitAssignAsync()
     {
         if (_busy) return;
+        _error = null;
         if (!Guid.TryParse(_newSessionId, out var sessionId)
             || !Guid.TryParse(_newUserId, out var userId))
         {
-            _toast = new Toast("error", L["Admin.SessionModerators.LoadFailed"]);
+            _error = L["Admin.SessionModerators.Required"];
             return;
         }
         _busy = true;
@@ -115,9 +122,9 @@ public partial class SessionModeratorsList
             }
             else
             {
-                _toast = new Toast("error",
-                    env?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.SessionModerators.LoadFailed"]);
+                // Dialog still open — report in it, not behind it.
+                _error = env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.SessionModerators.LoadFailed"];
             }
         }
         finally { _busy = false; }

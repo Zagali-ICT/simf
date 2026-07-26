@@ -270,6 +270,8 @@
   <data name="Admin.Faq.Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Admin.Faq.LoadFailed" xml:space="preserve"><value>Could not complete the request. Please try again.</value></data>
   <data name="Admin.Faq.Saved" xml:space="preserve"><value>Saved.</value></data>
+  <data name="Admin.Faq.Group.Required" xml:space="preserve"><value>An English and an Arabic group name are both required.</value></data>
+  <data name="Admin.Faq.Entry.Required" xml:space="preserve"><value>The question and the answer are required in both English and Arabic.</value></data>
   <data name="Admin.Faq.Deactivated" xml:space="preserve"><value>Deactivated.</value></data>
   <data name="Module.AiDashboard" xml:space="preserve"><value>AI dashboard</value></data>
   <data name="Module.AiServices" xml:space="preserve"><value>AI services</value></data>
@@ -2051,6 +2053,7 @@
   <data name="Admin.SessionModerators.Revoke" xml:space="preserve"><value>Revoke</value></data>
   <data name="Admin.SessionModerators.Revoked" xml:space="preserve"><value>Moderator grant revoked.</value></data>
   <data name="Admin.SessionModerators.Assigned" xml:space="preserve"><value>Moderator assigned.</value></data>
+  <data name="Admin.SessionModerators.Required" xml:space="preserve"><value>A session id and a user id are both required, and each must be a valid id.</value></data>
   <data name="Admin.SessionModerators.Col.Session" xml:space="preserve"><value>Session</value></data>
   <data name="Admin.SessionModerators.Col.Moderator" xml:space="preserve"><value>Moderator</value></data>
   <data name="Admin.SessionModerators.Col.AssignedAt" xml:space="preserve"><value>Assigned</value></data>
@@ -2702,6 +2705,9 @@
   <data name="Admin.RatingConfig.Title" xml:space="preserve"><value>Rating configuration</value></data>
   <data name="Admin.RatingConfig.LoadFailed" xml:space="preserve"><value>Could not load rating configuration. Please try again.</value></data>
   <data name="Admin.RatingConfig.Saved" xml:space="preserve"><value>Saved.</value></data>
+  <data name="Admin.RatingConfig.Type.Required" xml:space="preserve"><value>A code and both names (English and Arabic) are required.</value></data>
+  <data name="Admin.RatingConfig.Group.Required" xml:space="preserve"><value>Both group names (English and Arabic) are required.</value></data>
+  <data name="Admin.RatingConfig.Question.Required" xml:space="preserve"><value>Both question texts (English and Arabic) are required.</value></data>
   <data name="Admin.RatingConfig.Deactivated" xml:space="preserve"><value>Deactivated.</value></data>
   <data name="Admin.RatingConfig.Save" xml:space="preserve"><value>Save</value></data>
   <data name="Admin.RatingConfig.Cancel" xml:space="preserve"><value>Cancel</value></data>

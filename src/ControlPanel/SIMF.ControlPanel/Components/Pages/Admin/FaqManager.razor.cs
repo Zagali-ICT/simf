@@ -30,6 +30,11 @@ public partial class FaqManager
     private bool _busy;
     private Toast? _toast;
 
+    /// <summary>The in-dialog error. Separate from <c>_toast</c> because the
+    /// page-level alert renders under the modal backdrop and is invisible while
+    /// a modal is open.</summary>
+    private string? _error;
+
     // Group modal state.
     private bool _groupModalOpen;
     private Guid? _groupEditId;
@@ -123,6 +128,7 @@ public partial class FaqManager
     private void OpenAddGroup()
     {
         _groupEditId = null;
+        _error = null;
         _groupNameEn = _groupNameAr = string.Empty;
         _groupOrder = "0";
         _groupActive = true;
@@ -131,6 +137,7 @@ public partial class FaqManager
 
     private void OpenEditGroup(AdminFaqGroupSummary g)
     {
+        _error = null;
         _groupEditId = g.Id;
         _groupNameEn = g.NameEn;
         _groupNameAr = g.NameAr;
@@ -143,6 +150,13 @@ public partial class FaqManager
 
     private async Task SaveGroupAsync()
     {
+        if (_busy) return;
+        _error = null;
+        if (string.IsNullOrWhiteSpace(_groupNameEn) || string.IsNullOrWhiteSpace(_groupNameAr))
+        {
+            _error = L["Admin.Faq.Group.Required"];
+            return;
+        }
         _busy = true;
         _toast = null;
         try
@@ -169,8 +183,8 @@ public partial class FaqManager
             }
             else
             {
-                _toast = new Toast("error",
-                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.Faq.LoadFailed"]);
+                // Dialog still open — report in it, not behind it.
+                _error = env?.Error?.MessageForCurrentCulture() ?? L["Admin.Faq.LoadFailed"];
             }
         }
         finally { _busy = false; }
@@ -198,6 +212,7 @@ public partial class FaqManager
     private void OpenAddEntry()
     {
         _entryEditId = null;
+        _error = null;
         _entryQuestionEn = _entryQuestionAr = _entryAnswerEn = _entryAnswerAr = string.Empty;
         _entryOrder = "0";
         _entryActive = true;
@@ -206,6 +221,7 @@ public partial class FaqManager
 
     private void OpenEditEntry(AdminFaqEntrySummary e)
     {
+        _error = null;
         _entryEditId = e.Id;
         _entryQuestionEn = e.Question;
         _entryQuestionAr = e.QuestionArabic;
@@ -220,7 +236,14 @@ public partial class FaqManager
 
     private async Task SaveEntryAsync()
     {
-        if (_selectedGroup is null) return;
+        if (_selectedGroup is null || _busy) return;
+        _error = null;
+        if (string.IsNullOrWhiteSpace(_entryQuestionEn) || string.IsNullOrWhiteSpace(_entryQuestionAr)
+            || string.IsNullOrWhiteSpace(_entryAnswerEn) || string.IsNullOrWhiteSpace(_entryAnswerAr))
+        {
+            _error = L["Admin.Faq.Entry.Required"];
+            return;
+        }
         _busy = true;
         _toast = null;
         try
@@ -259,8 +282,8 @@ public partial class FaqManager
             }
             else
             {
-                _toast = new Toast("error",
-                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.Faq.LoadFailed"]);
+                // Dialog still open — report in it, not behind it.
+                _error = env?.Error?.MessageForCurrentCulture() ?? L["Admin.Faq.LoadFailed"];
             }
         }
         finally { _busy = false; }

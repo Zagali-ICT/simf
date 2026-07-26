@@ -270,6 +270,8 @@
   <data name="Admin.Faq.Cancel" xml:space="preserve"><value>إلغاء</value></data>
   <data name="Admin.Faq.LoadFailed" xml:space="preserve"><value>تعذّر إكمال الطلب. حاول مرة أخرى.</value></data>
   <data name="Admin.Faq.Saved" xml:space="preserve"><value>تم الحفظ.</value></data>
+  <data name="Admin.Faq.Group.Required" xml:space="preserve"><value>اسم المجموعة بالإنجليزية والعربية مطلوبان معاً.</value></data>
+  <data name="Admin.Faq.Entry.Required" xml:space="preserve"><value>السؤال والإجابة مطلوبان بالإنجليزية والعربية.</value></data>
   <data name="Admin.Faq.Deactivated" xml:space="preserve"><value>تم إلغاء التفعيل.</value></data>
   <data name="Module.AiDashboard" xml:space="preserve"><value>لوحة الذكاء الاصطناعي</value></data>
   <data name="Module.AiServices" xml:space="preserve"><value>خدمات الذكاء الاصطناعي</value></data>
@@ -2044,6 +2046,7 @@
   <data name="Admin.SessionModerators.Revoke" xml:space="preserve"><value>إلغاء التعيين</value></data>
   <data name="Admin.SessionModerators.Revoked" xml:space="preserve"><value>تم إلغاء تعيين المشرف.</value></data>
   <data name="Admin.SessionModerators.Assigned" xml:space="preserve"><value>تم تعيين المشرف.</value></data>
+  <data name="Admin.SessionModerators.Required" xml:space="preserve"><value>معرّف الجلسة ومعرّف المستخدم مطلوبان معاً، ويجب أن يكون كل منهما معرّفاً صحيحاً.</value></data>
   <data name="Admin.SessionModerators.Col.Session" xml:space="preserve"><value>الجلسة</value></data>
   <data name="Admin.SessionModerators.Col.Moderator" xml:space="preserve"><value>المشرف</value></data>
   <data name="Admin.SessionModerators.Col.AssignedAt" xml:space="preserve"><value>تاريخ التعيين</value></data>
@@ -2695,6 +2698,9 @@
   <data name="Admin.RatingConfig.Title" xml:space="preserve"><value>إعداد التقييمات</value></data>
   <data name="Admin.RatingConfig.LoadFailed" xml:space="preserve"><value>تعذّر تحميل إعداد التقييمات. حاول مرة أخرى.</value></data>
   <data name="Admin.RatingConfig.Saved" xml:space="preserve"><value>تم الحفظ.</value></data>
+  <data name="Admin.RatingConfig.Type.Required" xml:space="preserve"><value>الرمز والاسمان (الإنجليزي والعربي) مطلوبة.</value></data>
+  <data name="Admin.RatingConfig.Group.Required" xml:space="preserve"><value>اسما المجموعة (الإنجليزي والعربي) مطلوبان.</value></data>
+  <data name="Admin.RatingConfig.Question.Required" xml:space="preserve"><value>نصّا السؤال (الإنجليزي والعربي) مطلوبان.</value></data>
   <data name="Admin.RatingConfig.Deactivated" xml:space="preserve"><value>تم التعطيل.</value></data>
   <data name="Admin.RatingConfig.Save" xml:space="preserve"><value>حفظ</value></data>
   <data name="Admin.RatingConfig.Cancel" xml:space="preserve"><value>إلغاء</value></data>

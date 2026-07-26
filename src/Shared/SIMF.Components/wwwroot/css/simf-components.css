@@ -445,6 +445,11 @@
   flex-wrap: wrap;
 }
 
+/* Tighter lead-in for an action row that follows a single field rather than a
+   full form (the gate operator console's scan row). Logical margin so RTL is
+   unaffected. */
+.simf-form__actions--tight { margin-block-start: var(--space-4); }
+
 /* Inline filter bar — fields flow in a compact wrapping row instead of
    stacking full-width. Used by the CP filter toolbars (operation log,
    attendees). Scoped under --inline so no other form is affected. */

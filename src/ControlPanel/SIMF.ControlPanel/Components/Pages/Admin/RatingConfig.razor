@@ -243,6 +243,12 @@
     <SimfModal Open="true" RequireExplicitClose="true" Title="@(_typeEditId is null ? L["Admin.RatingConfig.Type.Add.Title"] : L["Admin.RatingConfig.Type.Edit.Title"])"
                OnClose="CloseTypeModal">
         <ChildContent>
+            @* The page-level toast sits under the modal backdrop, so a rejected
+               save must report inside the dialog or it reads as a dead button. *@
+            @if (_error is not null)
+            {
+                <SimfAlert Variant="error">@_error</SimfAlert>
+            }
             <div class="simf-form__fields">
                 <SimfTextField Label="@L["Admin.RatingConfig.Field.Code"]" MaxLength="64"
                                @bind-Value="_typeCode" Disabled="@(_busy || _typeEditId is not null)" />
@@ -294,6 +300,10 @@
     <SimfModal Open="true" RequireExplicitClose="true" Title="@(_groupEditId is null ? L["Admin.RatingConfig.Group.Add.Title"] : L["Admin.RatingConfig.Group.Edit.Title"])"
                OnClose="CloseGroupModal">
         <ChildContent>
+            @if (_error is not null)
+            {
+                <SimfAlert Variant="error">@_error</SimfAlert>
+            }
             <div class="simf-form__fields">
                 <SimfTextField Label="@L["Admin.RatingConfig.Field.NameEn"]" MaxLength="128"
                                @bind-Value="_groupNameEn" Disabled="_busy" />
@@ -324,6 +334,10 @@
     <SimfModal Open="true" RequireExplicitClose="true" Title="@(_questionEditId is null ? L["Admin.RatingConfig.Question.Add.Title"] : L["Admin.RatingConfig.Question.Edit.Title"])"
                OnClose="CloseQuestionModal">
         <ChildContent>
+            @if (_error is not null)
+            {
+                <SimfAlert Variant="error">@_error</SimfAlert>
+            }
             <div class="simf-form__fields">
                 <SimfTextField Label="@L["Admin.RatingConfig.Field.TextEn"]" MaxLength="512"
                                @bind-Value="_questionTextEn" Disabled="_busy" />

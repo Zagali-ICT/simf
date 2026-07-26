@@ -30,7 +30,8 @@
 | E2E-SMD-003 | Auth gate — signed-in admin lacking `SessionModerators.View` → `/not-permitted` | auth | P0 | _to author_ |
 | E2E-SMD-004 | "Assign moderator" opens the modal (SessionId + UserId fields) | function | P1 | _to author_ |
 | E2E-SMD-005 | Cancel closes the modal without a POST | function | P2 | _to author_ |
-| E2E-SMD-006 | Client validation — non-GUID id → error toast, no POST | error | P1 | _to author_ |
+| E2E-SMD-006 | Client validation — non-GUID id → bilingual error **inside the dialog**, no POST (BUG-004) | error | P1 | _to author_ |
+| E2E-SMD-019 | Client validation — empty submit → bilingual error **inside the dialog**, no POST (BUG-004) | error | P1 | _to author_ |
 | E2E-SMD-007 | Server validation — unknown SessionId → `SESSION_NOT_FOUND` (404) | error | P1 | _to author_ |
 | E2E-SMD-008 | Server validation — inactive session → `SESSION_INVALID` (400) | error | P1 | _to author_ |
 | E2E-SMD-009 | Server validation — unknown moderator user → `ADMIN_USER_NOT_FOUND` (404) | error | P1 | _to author_ |
@@ -155,10 +156,35 @@ Scenario: A non-GUID id is rejected client-side with no POST
   And fills Moderator user id="<a valid GUID>"
   And clicks "Assign"
   Then the page's Guid.TryParse guard fails
-  And a red toast reads "The session moderators could not be loaded." /
-      "تعذّر تحميل مشرفي الجلسات." (the page's LoadFailed fallback)
+  And a red SimfAlert renders INSIDE the dialog body (.simf-modal__body), not on
+      the page behind the backdrop, reading
+      "A session id and a user id are both required, and each must be a valid id." /
+      "معرّف الجلسة ومعرّف المستخدم مطلوبان معاً، ويجب أن يكون كل منهما معرّفاً صحيحاً."
   And the modal stays open
   And no /account/api/admin/session-moderators POST request fires
+```
+
+> **BUG-004 (as-built).** The page-level toast is rendered inside
+> `.simf-surface`, which sits under the modal backdrop
+> (`.simf-modal { position: fixed; inset: 0; z-index: 100 }`), so the old
+> `_toast` assignment was invisible while the dialog was open and the submit
+> read as a dead button. The message is now a dedicated `_error` rendered in the
+> dialog body — the same shape the canonical CRUD forms use. Server rejections
+> (SMD-007..SMD-011) surface in the same place while the dialog is open.
+
+### E2E-SMD-019 — Client validation (empty submit)
+
+```gherkin
+Scenario: Submitting the Assign dialog with both fields empty reports, and creates nothing
+  Given the Assign modal is open with both fields empty
+  When the administrator clicks "Assign" without typing anything
+  Then a red SimfAlert renders INSIDE the dialog body reading
+      "A session id and a user id are both required, and each must be a valid id." /
+      "معرّف الجلسة ومعرّف المستخدم مطلوبان معاً، ويجب أن يكون كل منهما معرّفاً صحيحاً."
+  And the modal stays open
+  And no /account/api/admin/session-moderators POST request fires
+  And the grid row count is unchanged
+  And closing and re-opening the dialog clears the message
 ```
 
 ### E2E-SMD-007 — Unknown session
@@ -402,3 +428,4 @@ Scenario: Export only the selected grant rows
 
 _Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
 _Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle): added E2E-SMD-018 (Excel export); toggle/import/CrudShell-delete confirmed NOT present (export-only page).
+_Last reviewed:_ 2026-07-26 by Claude (BUG-004): the Assign dialog's validation message now renders inside the dialog body instead of behind the backdrop; reworded E2E-SMD-006 and added E2E-SMD-019 (empty submit).
