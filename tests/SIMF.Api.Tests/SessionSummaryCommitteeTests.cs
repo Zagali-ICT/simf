@@ -474,6 +474,77 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
             (await _client.GetAsync(PublicUrl(sessionId))).StatusCode);
     }
 
+    // -- A18-r2 (2026-07-27): the guard has to cover the rows that are ALREADY on
+    // the QA / production databases. Every draft the stub produced before the
+    // sentinel existed opens with the bare "[echo:model] " prefix; those rows must
+    // be just as unapprovable and unpublishable as a freshly stamped one.
+
+    [Fact]
+    public async Task A18_ApproveAsync_WithLegacyEchoPrefixedDraft_ReturnsBadRequest()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var sessionId = await SeedSessionAsync(start: DateTimeOffset.UtcNow.AddHours(-1));
+        // Exactly what Generate stored before this guard shipped: the stub's own
+        // "[echo:echo] " prefix followed by the echoed prompt.
+        await SaveAsync(sessionId, new SaveSessionSummaryRequest
+        {
+            FullTextArabic = "[echo:echo] اكتب محضراً لجلسة: الردع البحري",
+        }, admin);
+        await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/submit-review", new { }, admin);
+
+        var approve = await PutAuthAsync(
+            $"/api/v1/admin/session-summaries/{sessionId}/approve", new { }, admin);
+
+        Assert.Equal(HttpStatusCode.BadRequest, approve.StatusCode);
+        var body = (await approve.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SessionSummaryInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task A18_PublishAsync_WithLegacyEchoPrefixedDraftAlreadyApproved_ReturnsBadRequest()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var sessionId = await SeedSessionAsync(start: DateTimeOffset.UtcNow.AddHours(-1));
+        // The pre-existing case: a stub draft that was approved BEFORE the guard
+        // shipped, sitting one Publish click away from every visitor.
+        await SaveAsync(sessionId, new SaveSessionSummaryRequest
+        {
+            FullTextArabic = "[echo] اكتب محضراً لجلسة: الردع البحري",
+        }, admin);
+        await SetSummaryApprovedDirectAsync(sessionId);
+
+        var publish = await PutAuthAsync(
+            $"/api/v1/admin/session-summaries/{sessionId}/publish", new { }, admin);
+
+        Assert.Equal(HttpStatusCode.BadRequest, publish.StatusCode);
+        var body = (await publish.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SessionSummaryInvalid, body.Error!.Code);
+        // The echoed prompt never reaches the app.
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await _client.GetAsync(PublicUrl(sessionId))).StatusCode);
+    }
+
+    [Fact]
+    public async Task A18_real_minutes_that_merely_mention_echo_still_publish()
+    {
+        // The legacy sweep is LEADING-prefix only, so genuine minutes that happen
+        // to quote the token are not collateral damage.
+        var admin = await CreateAdministratorAndSignInAsync();
+        var sessionId = await SeedSessionAsync(start: DateTimeOffset.UtcNow.AddHours(-1));
+        await SaveAsync(sessionId, new SaveSessionSummaryRequest
+        {
+            FullTextArabic = "ناقش المتحدثون تقنية [echo] للسونار في المياه الضحلة.",
+        }, admin);
+        await SubmitForReviewAndApproveAsync(sessionId, admin);
+
+        var publish = await PutAuthAsync(
+            $"/api/v1/admin/session-summaries/{sessionId}/publish", new { }, admin);
+
+        Assert.Equal(HttpStatusCode.OK, publish.StatusCode);
+        Assert.Equal(HttpStatusCode.OK,
+            (await _client.GetAsync(PublicUrl(sessionId))).StatusCode);
+    }
+
     // -- A19 (2026-07-26): a save that changes nothing must not silently retract a
     // live محضر. A save that DOES change the content still does (the approval was
     // of the old text) — the CP warns about that consequence before it happens.
@@ -891,6 +962,25 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
         summary.ApprovedByUserId = actor;
         summary.PublishedAt = now;
         summary.PublishedByUserId = actor;
+        await db.SaveChangesAsync();
+    }
+
+    // A18-r2 — stamp a summary approved but NOT published, straight in the DB. That
+    // is the state a legacy stub row is really in on a QA / production database: it
+    // was approved before the guard existed, so only the publish gate can still stop
+    // it. The API approve path would refuse the same content first.
+    private async Task SetSummaryApprovedDirectAsync(Guid sessionId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var summary = await db.SessionSummaries
+            .SingleAsync(s => s.SessionId == sessionId && s.IsActive);
+        var now = DateTimeOffset.UtcNow;
+        var actor = Guid.NewGuid();
+        summary.ReviewSubmittedAt = now;
+        summary.ReviewSubmittedByUserId = actor;
+        summary.ApprovedAt = now;
+        summary.ApprovedByUserId = actor;
         await db.SaveChangesAsync();
     }
 

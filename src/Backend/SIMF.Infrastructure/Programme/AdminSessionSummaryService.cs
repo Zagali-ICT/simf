@@ -23,10 +23,14 @@ namespace SIMF.Infrastructure.Programme;
 /// read (<see cref="ProgrammeSessionService.GetSessionSummaryAsync"/>) gates on
 /// the publish stamp.
 ///
-/// <para>A18 (2026-07-26) — because that shipped provider only echoes the
-/// prompt back, <see cref="EnsureNotStubContent"/> refuses to approve or publish
-/// a summary whose text still carries the stub's marker, so placeholder output
-/// can never reach the app or the host read.</para>
+/// <para>A18 (2026-07-26, revised 2026-07-27) — because that shipped provider
+/// only echoes the prompt back, this desk (a) stamps
+/// <see cref="StubDraftBanner"/> onto any draft the provider reports as stub
+/// output, and (b) refuses via <see cref="EnsureNotStubContent"/> to approve or
+/// publish a summary that still carries stub text, so placeholder output can
+/// never reach the app or the host read. The stamp lives HERE and not in the
+/// shared provider: the same provider answers the visitor chatbot, and a
+/// reviewer instruction must never be rendered in a chat bubble.</para>
 /// </summary>
 internal sealed class AdminSessionSummaryService(
     SimfAppDbContext appDbContext,
@@ -44,6 +48,20 @@ internal sealed class AdminSessionSummaryService(
 
     /// <summary>The seeded prompt key the AI draft routes through (D-238).</summary>
     private const string SummaryPromptKey = "session-summary";
+
+    /// <summary>A18 — the bilingual notice this desk stamps on a draft the AI seam
+    /// reported as stub output (<c>AiCallResult.IsStub</c>). It opens with the
+    /// machine-checkable <see cref="EchoAiProvider.StubMarker"/> so
+    /// <see cref="EnsureNotStubContent"/> can find it again at approve / publish
+    /// time, and reads in both languages so a reviewer opening the editor cannot
+    /// mistake the text for real minutes. It is stored only on the summary row —
+    /// no visitor-facing AI surface ever sees it.</summary>
+    private const string StubDraftBanner =
+        EchoAiProvider.StubMarker
+        + " NOT REAL AI OUTPUT — produced by the offline stub provider; "
+        + "it only echoes the prompt. Do not review, approve or publish it. "
+        + "ليست مخرجات ذكاء اصطناعي حقيقية — من المزوّد التجريبي غير المتصل؛ "
+        + "لا تراجعها أو توافق عليها أو تنشرها.\n";
 
     public async Task<IReadOnlyList<AdminSessionSummaryRow>> ListAsync(
         CancellationToken cancellationToken = default)
@@ -153,7 +171,14 @@ internal sealed class AdminSessionSummaryService(
         // stays for the Committee to fill (or the app falls back to Arabic per
         // the bilingual contract). Writing one language into both columns would
         // surface the wrong language once a real Arabic provider replaces Echo.
-        var draft = Truncate(result.OutputText, FullTextMax);
+        // A18 — a draft the seam reports as stub output is stamped with the
+        // bilingual "not real AI output" notice + the sentinel, so the reviewer
+        // sees what it is and approve / publish can refuse it. The echoed body is
+        // capped so the notice can never be truncated away.
+        var draft = result.IsStub
+            ? StubDraftBanner
+                + Truncate(result.OutputText, FullTextMax - StubDraftBanner.Length)
+            : Truncate(result.OutputText, FullTextMax);
 
         if (summary is null)
         {
@@ -434,22 +459,20 @@ internal sealed class AdminSessionSummaryService(
             "لا يوجد ملخّص لهذه الجلسة بعد.");
 
     /// <summary>A18 — refuses to sign off / expose content that came out of the
-    /// offline Echo stub provider. The stub opens every answer with
-    /// <see cref="EchoAiProvider.StubMarker"/>, so a draft that still carries it
-    /// anywhere in its text was never written (or even reviewed) by a human. The
-    /// marker survives copy/paste between the summary's fields, so every text
-    /// column is checked, not just the one the draft landed in.</summary>
+    /// offline Echo stub provider. Stub text survives copy/paste between the
+    /// summary's fields, so every text column is checked, not just the one the
+    /// draft landed in.</summary>
     private static void EnsureNotStubContent(SessionSummary summary)
     {
         var carriesStubText =
-            ContainsStubMarker(summary.FullText)
-            || ContainsStubMarker(summary.FullTextArabic)
-            || ContainsStubMarker(summary.KeyPoints)
-            || ContainsStubMarker(summary.KeyPointsArabic)
-            || ContainsStubMarker(summary.Recommendations)
-            || ContainsStubMarker(summary.RecommendationsArabic)
-            || ContainsStubMarker(summary.Speakers)
-            || ContainsStubMarker(summary.SpeakersArabic);
+            IsStubText(summary.FullText)
+            || IsStubText(summary.FullTextArabic)
+            || IsStubText(summary.KeyPoints)
+            || IsStubText(summary.KeyPointsArabic)
+            || IsStubText(summary.Recommendations)
+            || IsStubText(summary.RecommendationsArabic)
+            || IsStubText(summary.Speakers)
+            || IsStubText(summary.SpeakersArabic);
         if (!carriesStubText)
         {
             return;
@@ -462,9 +485,31 @@ internal sealed class AdminSessionSummaryService(
                 + "استبدله بالمحضر الحقيقي قبل الموافقة عليه أو نشره.");
     }
 
-    private static bool ContainsStubMarker(string? value) =>
-        value is not null
-        && value.Contains(EchoAiProvider.StubMarker, StringComparison.Ordinal);
+    /// <summary>A18 — true when this field still holds stub output. Two shapes
+    /// count, because the guard has to cover data written before it existed:
+    /// <list type="bullet">
+    /// <item>the sentinel <see cref="EchoAiProvider.StubMarker"/> anywhere in the
+    /// text — what <see cref="StubDraftBanner"/> stamps today, and what survives a
+    /// copy/paste into another column;</item>
+    /// <item>a LEADING <c>"[echo:…] "</c> / <c>"[echo] "</c> — every draft
+    /// generated before the sentinel existed opens with it, and those rows are on
+    /// every QA / production database that ever pressed Generate. Leading-only, so
+    /// real minutes that merely quote the token are not blocked.</item>
+    /// </list></summary>
+    private static bool IsStubText(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return false;
+        }
+        if (value.Contains(EchoAiProvider.StubMarker, StringComparison.Ordinal))
+        {
+            return true;
+        }
+        var text = value.TrimStart();
+        return text.StartsWith(EchoAiProvider.EchoModelPrefix, StringComparison.Ordinal)
+            || text.StartsWith(EchoAiProvider.EchoPrefix, StringComparison.Ordinal);
+    }
 
     /// <summary>A19 — true when this save actually changes something that is
     /// persisted with the summary. Reopening the editor and pressing Save without

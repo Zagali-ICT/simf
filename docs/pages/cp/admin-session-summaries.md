@@ -26,12 +26,18 @@ descending) with the state of its summary, and the Committee acts per row:
 - **AI draft** (Generate) — routes through the central `IAiService` seam using
   the seeded `session-summary` prompt. The shipped provider is the
   deterministic **Echo** stub; a real provider plugs in by editing the prompt's
-  provider in the CP (no code change). **A18 (2026-07-26) — a stub draft cannot
-  be shipped.** The stub only echoes the prompt back, so its output now opens
-  with the sentinel `[AI-STUB-DO-NOT-PUBLISH]` and a bilingual "not real AI
-  output" banner, and **Approve and Publish both refuse** any summary whose text
-  still carries that sentinel in any field (400 `SESSION_SUMMARY_INVALID`,
-  bilingual). The Committee must replace the placeholder with the real minutes
+  provider in the CP (no code change). **A18 (2026-07-26, revised 2026-07-27) —
+  a stub draft cannot be shipped.** The stub only echoes the prompt back and
+  reports that fact as metadata (`AiCallResult.IsStub`); **this desk** — not the
+  shared provider — stamps the stored draft with the sentinel
+  `[AI-STUB-DO-NOT-PUBLISH]` and a bilingual "not real AI output" banner, so the
+  visitor-facing AI surfaces (chatbot / FAQ / translate) never render reviewer
+  wording. **Approve and Publish both refuse** any summary whose text still
+  carries that sentinel in any field, **or whose text still opens with the
+  stub's own `[echo:…]` / `[echo]` prefix** — the shape every draft generated
+  before the sentinel existed still has on QA / production databases (400
+  `SESSION_SUMMARY_INVALID`, bilingual). The Committee must replace the
+  placeholder with the real minutes
   first. Configuring a real provider + key stays an owner/procurement decision. The draft is written into the **Arabic
   full-text column only**, leaving the English column + curated sections for the
   Committee. Re-generating replaces the Arabic AI draft but preserves the
@@ -212,13 +218,42 @@ The BFF `AccountEndpoints` forwards each route with the bearer token via
   soft-deleted (`IsActive = false`) session returns HTTP 404, `Code =
   "SESSION_NOT_FOUND"` (`ErrorCodes.SessionNotFound`), "The session was not
   found." / "لم يتم العثور على الجلسة." (`LoadSessionForDraftAsync`).
-- **Stub placeholder text** (A18, 2026-07-26) — approving or publishing a summary
-  whose text still contains `[AI-STUB-DO-NOT-PUBLISH]` (any field, either
-  language) returns HTTP 400, `Code = "SESSION_SUMMARY_INVALID"`, "This summary
+- **Stub placeholder text** (A18, 2026-07-26; legacy sweep 2026-07-27) —
+  approving or publishing a summary whose text still contains
+  `[AI-STUB-DO-NOT-PUBLISH]` **or still opens with `[echo:` / `[echo]`** (any
+  field, either language) returns HTTP 400, `Code = "SESSION_SUMMARY_INVALID"`,
+  "This summary
   still contains placeholder text from the offline AI stub provider. Replace it
   with the real minutes before approving or publishing it." / "لا يزال هذا
   الملخّص يحتوي على نص مؤقّت من مزوّد الذكاء الاصطناعي التجريبي. استبدله بالمحضر
-  الحقيقي قبل الموافقة عليه أو نشره."
+  الحقيقي قبل الموافقة عليه أو نشره." The prefix check is **leading-only**, so
+  real minutes that merely quote the token still publish.
+
+  **Operator note — finding rows that were already published as stub text.** The
+  guard blocks new approvals/publishes but does not retract what a QA or
+  production database already published (deciding to retract is an owner call, so
+  no migration ships with it). To list them, run against `SIMF_App`:
+
+  ```sql
+  SELECT s.Code, s.Title, ss.PublishedAt, LEFT(ss.FullTextArabic, 120) AS Preview
+  FROM   SessionSummaries ss
+  JOIN   Sessions s ON s.Id = ss.SessionId
+  WHERE  ss.IsActive = 1
+    AND (ss.FullText          LIKE '[[]AI-STUB-DO-NOT-PUBLISH]%' OR ss.FullTextArabic          LIKE '[[]AI-STUB-DO-NOT-PUBLISH]%'
+      OR ss.KeyPoints         LIKE '[[]AI-STUB-DO-NOT-PUBLISH]%' OR ss.KeyPointsArabic        LIKE '[[]AI-STUB-DO-NOT-PUBLISH]%'
+      OR ss.Recommendations   LIKE '[[]AI-STUB-DO-NOT-PUBLISH]%' OR ss.RecommendationsArabic  LIKE '[[]AI-STUB-DO-NOT-PUBLISH]%'
+      OR ss.Speakers          LIKE '[[]AI-STUB-DO-NOT-PUBLISH]%' OR ss.SpeakersArabic         LIKE '[[]AI-STUB-DO-NOT-PUBLISH]%'
+      OR ss.FullText          LIKE '[[]echo%'                    OR ss.FullTextArabic          LIKE '[[]echo%'
+      OR ss.KeyPoints         LIKE '[[]echo%'                    OR ss.KeyPointsArabic        LIKE '[[]echo%'
+      OR ss.Recommendations   LIKE '[[]echo%'                    OR ss.RecommendationsArabic  LIKE '[[]echo%'
+      OR ss.Speakers          LIKE '[[]echo%'                    OR ss.SpeakersArabic         LIKE '[[]echo%')
+  ORDER BY ss.PublishedAt DESC;
+  ```
+
+  (`[[]` is the T-SQL escape for a literal `[`. Rows with a non-null
+  `PublishedAt` are live in the app right now.) Retracting one needs no code:
+  Unpublish on the desk row is always allowed, and re-publishing is then blocked
+  by this guard until the minutes are real.
 - **Generate AI draft** is truncated to `FullTextMax (8000)` rather than rejected
   (`Truncate`), since the provider output is not user input.
 - **Client feedback** — the page surfaces a transient toast (`success` / `error`
@@ -311,5 +346,6 @@ the editor**, **027 pristine AI draft survives an edit (Slice D)**.
 | 2026-07-19 | owner (Q&A/summary/rating batch) | **Approval hard-gate before publish.** `SetPublishedAsync` now requires `ApprovedAt` (Draft/In-review → 400 `SESSION_SUMMARY_INVALID`); editing / re-generating / returning a **published** summary clears `PublishedAt` (invariant `PublishedAt ⇒ ApprovedAt`); the public app read **and** `HasPublishedSummary` now also require `ApprovedAt` (hides legacy published-but-unapproved rows). New resx `Admin.SessionSummaries.Action.PublishNeedsApproval` (en+ar); CP Publish button disabled until approved. E2E-SUM-023/024 added; the S-6 clock-gate case renumbered to E2E-SUM-025. |
 | 2026-07-19 | Slice D — AI transparency | **Pristine AI-draft snapshot + raw subtitle in the editor.** Additive nullable columns `AiDraftFullTextArabic` + `AiDraftGeneratedAt` on `SessionSummaries` (migration `AddSessionSummaryAiDraftSnapshot`); `GenerateAsync` captures the untouched AI output into the snapshot (a re-generate refreshes it) and `SaveAsync` never overwrites it; `GetAsync`/`ToDetail` also surface the session's `LiveCaptions*` as `Subtitle`/`SubtitleArabic`. `AdminSessionSummaryDetail` gains the four read-only fields (append-only; **never** on `PublicSessionSummary`/`PublicSessionDetail`). CP editor renders three read-only `Disabled` `SimfTextarea` panels above the editable fields; new resx `Field.Subtitle` / `Field.SubtitleArabic` / `Field.AiDraft` (en+ar). E2E-SUM-026/027 added. |
 | 2026-07-26 | A18 / A19 (QA round) | **The echo stub can no longer be published, and a typo fix no longer silently unpublishes.** `EchoAiProvider` prefixes every answer with `[AI-STUB-DO-NOT-PUBLISH]` + a bilingual "not real AI output" banner (`EchoAiProvider.StubMarker`); `ApproveAsync` and `SetPublishedAsync(publish: true)` call `EnsureNotStubContent`, rejecting 400 `SESSION_SUMMARY_INVALID` when any text field still carries it. `SaveAsync` / `GenerateAsync` only call `ResetReviewState` when the persisted content actually changed. New resx `Admin.SessionSummaries.Confirm.Title` / `.UnpublishOnSave` / `.UnapproveOnSave` / `.Save` (en+ar) behind a `SimfConfirm` in the editor footer. Configured provider, keys and appsettings untouched — a real provider is an owner/procurement decision. E2E-SUM-029..031. |
+| 2026-07-27 | A18 follow-up (verifier round 2) | **The stub banner moved off the shared provider, and the guard now sees pre-existing rows.** `EchoAiProvider` no longer writes the banner into `OutputText` (it leaked ~200 chars of mixed LTR/RTL reviewer instructions into every visitor chatbot / FAQ / translate reply, since `Ai.DefaultProvider` ships as `Echo`); it reports `AiProviderResponse.IsStub` instead, carried out to callers on the append-only `AiCallResult.IsStub`. `AdminSessionSummaryService.GenerateAsync` stamps the banner onto the stored draft when `result.IsStub`, and `EnsureNotStubContent` (now `IsStubText`) additionally treats a **leading** `[echo:` / `[echo]` as stub content, so drafts generated before the sentinel existed can no longer be approved or published either. Operator query for already-published stub rows added above; no migration, no retraction (owner call). E2E-SUM-032..034. |
 
-_Last reviewed:_ 2026-07-26 by Claude (A18 — the shipped Echo stub marks its output and Approve/Publish refuse marked text; A19 — a no-op save/regenerate no longer clears the review + publish stamps, and the CP warns before an unpublishing save). Earlier: 2026-07-19 by Claude (Slice D — pristine AI-draft snapshot + raw subtitle surfaced read-only in the CP editor; CP-internal only, no public-contract change). Earlier the same day: owner approval hard-gate (Publish requires ApprovedAt; edit-after-publish unpublishes; the public read + HasPublishedSummary require ApprovedAt). Earlier: 2026-06-11 by Claude (D-356 — reference doc authored, grounded in live source; Excel export-only).
+_Last reviewed:_ 2026-07-27 by Claude (A18 follow-up — the reviewer banner is stamped by this desk instead of the shared AI provider, so it never reaches a visitor chat bubble, and the approve/publish guard also catches legacy `[echo:…]` drafts). Earlier: 2026-07-26 by Claude (A18 — the shipped Echo stub marks its output and Approve/Publish refuse marked text; A19 — a no-op save/regenerate no longer clears the review + publish stamps, and the CP warns before an unpublishing save). Earlier: 2026-07-19 by Claude (Slice D — pristine AI-draft snapshot + raw subtitle surfaced read-only in the CP editor; CP-internal only, no public-contract change). Earlier the same day: owner approval hard-gate (Publish requires ApprovedAt; edit-after-publish unpublishes; the public read + HasPublishedSummary require ApprovedAt). Earlier: 2026-06-11 by Claude (D-356 — reference doc authored, grounded in live source; Excel export-only).
