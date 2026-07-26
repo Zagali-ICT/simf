@@ -54,10 +54,33 @@
                            disabled="@_busy" />
                 </label>
                 <div class="simf-form__actions">
-                    <SimfButton Type="button" OnClick="ReserveRowAsync" Loading="_busy">
-                        @L["Admin.SessionSeatPlans.ReserveRow.Action"]
-                    </SimfButton>
+                    <AuthorizedAction Permission="@PermissionCatalog.SeatPlans.Edit">
+                        <SimfButton Type="button" OnClick="ReserveRowAsync" Loading="_busy">
+                            @L["Admin.SessionSeatPlans.ReserveRow.Action"]
+                        </SimfButton>
+                    </AuthorizedAction>
                 </div>
+
+                @* D-771 (owner 2026-07-26) — a VVIP seat has NO registration: the
+                   admin types the guest's name here, then taps the seat on the grid
+                   to hold it. The note travels with the block and is what the app +
+                   the staff seating desk show for that seat. Raw inputs (not
+                   SimfTextField, which freezes without ValueExpression — D-648). *@
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.SessionSeatPlans.GuestHint.Arabic"]</span>
+                    <input class="simf-field__input" type="text" maxlength="256"
+                           value="@_guestHintArabic"
+                           @onchange="OnGuestHintArabicChanged"
+                           disabled="@_busy" />
+                </label>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.SessionSeatPlans.GuestHint.English"]</span>
+                    <input class="simf-field__input" type="text" maxlength="256"
+                           value="@_guestHint"
+                           @onchange="OnGuestHintChanged"
+                           disabled="@_busy" />
+                </label>
+                <p class="simf-hint">@L["Admin.SessionSeatPlans.GuestHint.Hint"]</p>
             </div>
 
             @* P1.4 (D-215) — visual seat grid: render the hall layout when it
@@ -70,8 +93,9 @@
                     @for (var r = 0; r < _layout.RowLabels.Count; r++)
                     {
                         var rowLabel = _layout.RowLabels[r];
-                        <div class="seatgrid__row">
-                            <span class="seatgrid__row-label">@rowLabel</span>
+                        var tier = TierOfRow(r);
+                        <div class="seatgrid__row seatgrid__row--@TierModifier(tier)">
+                            <span class="seatgrid__row-label" title="@TierLabel(tier)">@rowLabel</span>
                             @for (var seat = 1; seat <= SeatsInRow(r); seat++)
                             {
                                 var cell = FindReservation(rowLabel, seat);

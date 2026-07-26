@@ -83,4 +83,18 @@ public sealed class SeatReservation
     /// for an AdminReservedRow block (admin holds never expire). Existing rows and
     /// already-decided bookings carry NULL and are ignored by the expiry worker.</summary>
     public DateTimeOffset? Expires { get; set; }
+
+    /// <summary>D-771 (owner 2026-07-26) — the manual guest HINT an administrator
+    /// types when blocking a VVIP seat from the Control Panel. A VVIP seat has no
+    /// registration, so there is no <see cref="ReservedForUserId"/> to resolve a
+    /// name from: the hint IS the occupant record (e.g. "Reserved for the
+    /// Minister"). Only meaningful on a
+    /// <see cref="SeatReservationKind.AdminReservedRow"/> block; null everywhere
+    /// else. ≤256 chars.</summary>
+    public string? GuestHint { get; set; }
+
+    /// <summary>D-771 — the Arabic twin of <see cref="GuestHint"/> (the surrounding
+    /// entities are all bilingual), e.g. "هذا المقعد محجوز لمعالي الوزير". ≤256
+    /// chars; null when the admin typed only one language.</summary>
+    public string? GuestHintArabic { get; set; }
 }

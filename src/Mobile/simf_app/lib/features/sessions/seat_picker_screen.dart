@@ -95,9 +95,14 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
       // A full session (the capacity cap the CP enforces) gets its own message so
       // a random/auto pick that hits the maximum reads "no places remain" instead
       // of a generic failure. Other errors keep the generic seat-reserve message.
-      final message = failureCode == 'SEAT_SESSION_FULL'
-          ? l10n.joinSessionFull
-          : l10n.seatReserveFailed;
+      // D-771 — the two tier refusals get their own copy so a visitor who somehow
+      // reaches an ineligible seat is told WHY, not "could not reserve".
+      final message = switch (failureCode) {
+        'SEAT_SESSION_FULL' => l10n.joinSessionFull,
+        'SEAT_TIER_RESERVED' => l10n.seatTierVvipLocked,
+        'SEAT_TIER_NOT_ELIGIBLE' => l10n.seatTierVipLocked,
+        _ => l10n.seatReserveFailed,
+      };
       messenger.showSnackBar(SnackBar(content: Text(message)));
     }
   }
@@ -140,6 +145,16 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
             textAlign: TextAlign.center,
             style: SimfTokens.labelBeigeSm,
           ),
+          // D-771 — explain the padlocked seats, but only for a tiered hall so a
+          // plain hall keeps the shipped copy unchanged.
+          if (map.hasTiers) ...<Widget>[
+            const SizedBox(height: SimfTokens.space2),
+            Text(
+              l10n.seatTierPickerHint,
+              textAlign: TextAlign.center,
+              style: SimfTokens.labelBeigeSm,
+            ),
+          ],
           const SizedBox(height: SimfTokens.space5),
           // The shared hall card in its selectable configuration: available
           // seats tappable with a gold border cue, 26px seat cap, 16px legend

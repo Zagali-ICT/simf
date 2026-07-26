@@ -24,6 +24,24 @@
     text-align: center;
 }
 
+/* D-771 — the row's seat TIER band. The tier belongs to the whole row, so it is a
+   start-edge marker on the row (logical border → correct under RTL); the seat
+   squares keep their reservation-state colours. */
+.seatgrid__row--vvip {
+    border-inline-start: var(--space-1) solid var(--color-seat-tier-vvip);
+    padding-inline-start: var(--space-2);
+}
+
+.seatgrid__row--vip {
+    border-inline-start: var(--space-1) solid var(--color-seat-tier-vip);
+    padding-inline-start: var(--space-2);
+}
+
+.seatgrid__row--normal {
+    border-inline-start: var(--space-1) solid var(--color-seat-tier-normal);
+    padding-inline-start: var(--space-2);
+}
+
 .seatgrid__seat {
     width: 2rem;
     height: 2rem;

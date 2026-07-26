@@ -13,6 +13,7 @@ class SessionDetailHeader extends StatelessWidget {
     required this.onBack,
     this.moderateTooltip,
     this.onModerate,
+    this.actionIcon = Icons.forum_outlined,
     super.key,
   });
 
@@ -20,6 +21,11 @@ class SessionDetailHeader extends StatelessWidget {
   final VoidCallback onBack;
   final String? moderateTooltip;
   final VoidCallback? onModerate;
+
+  /// D-771 — the trailing action's glyph. Defaults to the moderator Q&A icon; the
+  /// staff seating desk passes an event-seat icon through the SAME slot (the two
+  /// roles are disjoint, so only one trailing action is ever offered).
+  final IconData actionIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -54,8 +60,8 @@ class SessionDetailHeader extends StatelessWidget {
                 : IconButton(
                     tooltip: moderateTooltip,
                     onPressed: onModerate,
-                    icon: const Icon(
-                      Icons.forum_outlined,
+                    icon: Icon(
+                      actionIcon,
                       color: SimfTokens.surface,
                       size: 22,
                     ),

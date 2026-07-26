@@ -230,6 +230,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #104 `sessionModerate` (`GET/PUT /app/sessions/{id}/questions/moderate·push·hide`) | [`mobile-session-moderate.md`](mobile-session-moderate.md) | E2E-MOBMOD-001..004 |
 | #105 `gateScanner` (`GET /app/gates/my-assignments` · `POST /app/gates/{id}/scans`) | [`mobile-gate-scan.md`](mobile-gate-scan.md) | E2E-MOBGATE-000..005 |
 | #114 `staffRegisterVisitor` (`POST /app/staff/visitors/register-onsite` · `…/{id}/id-document` · `…/{id}/avatar`) | [`mobile-staff-register-visitor.md`](mobile-staff-register-visitor.md) | E2E-MOBSTAFFREG-001..004 |
+| #118 `staffSeating` — **guest seating desk** (`POST /app/staff/sessions/{id}/seating/by-badge` · `GET …/seating/seat` · `GET …/seating/occupant/{userId}/photo`) | [`mobile-staff-seating.md`](mobile-staff-seating.md) | E2E-MOBSEATDESK-001..008 |
 | #15 `venueMap` (`GET /app/venue-map` + `/app/booths` + `/{id}`) | [`mobile-venue-map.md`](mobile-venue-map.md) | E2E-MOB015-001..008 |
 | #16 `sessions` (`GET /app/programme/sessions`) | [`mobile-agenda.md`](mobile-agenda.md) | E2E-MOB016-001..019 |
 | #17 `sessionDetail` (`GET /app/programme/sessions/{id}` + `…/sessions/{id}/seats`) | [`mobile-session-detail.md`](mobile-session-detail.md) | E2E-MOB017-001..011 |

@@ -1206,6 +1206,58 @@ class AppL10n {
         'My SIMF seat: Row $row · Seat $seat',
       );
 
+  // D-771 (owner 2026-07-26) — seat TIERS. The tier is real data on the hall
+  // layout: a VVIP row is protocol seating nobody may book, a VIP row is for VIP
+  // guests only, a Normal row is open to every visitor.
+  String get seatTierVvip => _t('شخصيات بالغة الأهمية', 'VVIP');
+  String get seatTierVip => _t('كبار الشخصيات', 'VIP');
+  String get seatTierNormal => _t('عادي', 'Normal');
+  String get seatTierVvipLocked => _t(
+        'مقعد محجوز لكبار الضيوف — لا يمكن حجزه',
+        'Reserved for protocol guests — cannot be booked',
+      );
+  String get seatTierVipLocked => _t(
+        'مقعد مخصص لكبار الشخصيات',
+        'Reserved for VIP guests',
+      );
+  String get seatTierPickerHint => _t(
+        'المقاعد المقفلة غير متاحة لك: مقاعد الشخصيات بالغة الأهمية يخصّصها المنظّم، ومقاعد كبار الشخصيات لكبار الشخصيات فقط.',
+        'Locked seats are not available to you: VVIP seats are assigned by the organiser, and VIP seats are for VIP guests only.',
+      );
+
+  // D-771 — the staff seating desk (tablet, Staff role only).
+  String get staffSeatingTitle => _t('إرشاد الضيوف للمقاعد', 'Guest seating desk');
+  String get staffSeatingIntro => _t(
+        'امسح بطاقة الضيف لمعرفة مقعده، أو اضغط على أي مقعد لمعرفة صاحبه.',
+        "Scan a guest's badge to find their seat, or tap a seat to see who it belongs to.",
+      );
+  String get staffSeatingScanLabel => _t('رمز البطاقة', 'Badge code');
+  String get staffSeatingScanCta => _t('بحث', 'Look up');
+  String get staffSeatingScanHint => _t(
+        'وجّه الكاميرا نحو رمز QR على بطاقة الضيف',
+        "Point the camera at the QR code on the guest's badge",
+      );
+  String get staffSeatingSessionLabel => _t('الجلسة', 'Session');
+  String get staffSeatingPickSession =>
+      _t('اختر الجلسة أولاً', 'Choose a session first');
+  String get staffSeatingNoSeat =>
+      _t('لا يوجد مقعد لهذا الضيف في هذه الجلسة', 'This guest has no seat in this session');
+  String get staffSeatingSeatEmpty => _t('هذا المقعد شاغر', 'This seat is empty');
+  String get staffSeatingReference => _t('الرقم المرجعي', 'Reference');
+  String get staffSeatingGuest => _t('الضيف', 'Guest');
+  String get staffSeatingSeat => _t('المقعد', 'Seat');
+  String staffSeatingSeatValue(String row, int seat) =>
+      _t('صف $row · مقعد $seat', 'Row $row · Seat $seat');
+  String get staffSeatingCheckedIn => _t('سجّل الدخول', 'Checked in');
+  String get staffSeatingNotCheckedIn =>
+      _t('لم يسجّل الدخول بعد', 'Not checked in yet');
+  String get staffSeatingLookupFailed =>
+      _t('تعذّر تنفيذ البحث.', 'The lookup failed.');
+  String get staffSeatingUnknownBadge =>
+      _t('لم يتم التعرف على هذه البطاقة.', 'That badge was not recognised.');
+  String get staffSeatingGuestPhoto => _t('صورة الضيف', 'Guest photo');
+  String get staffSeatingClear => _t('مسح النتيجة', 'Clear result');
+
   // Speakers list (Page 019).
   String get speakersTitle => _t('المتحدثون', 'Speakers');
   String get speakersError =>

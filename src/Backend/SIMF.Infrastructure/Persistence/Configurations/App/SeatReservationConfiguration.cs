@@ -34,6 +34,10 @@ internal sealed class SeatReservationConfiguration : IEntityTypeConfiguration<Se
         // default (not a persisted model concern).
         builder.Property(x => x.RejectionReason).HasMaxLength(512);
 
+        // D-771 — the admin-typed VVIP guest hint (bilingual, both nullable).
+        builder.Property(x => x.GuestHint).HasMaxLength(256);
+        builder.Property(x => x.GuestHintArabic).HasMaxLength(256);
+
         // D-611 (Wave B) — Restrict (was Cascade): deleting a Session must not
         // silently wipe its seat reservations; release/cancel them explicitly.
         builder.HasOne(x => x.Session)

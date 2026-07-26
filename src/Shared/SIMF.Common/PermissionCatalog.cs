@@ -286,6 +286,17 @@ public static class PermissionCatalog
         public const string Edit = "SeatPlans.Edit";
     }
 
+    /// <summary>D-771 (owner 2026-07-26) — the on-ground SEATING DESK: staff help a
+    /// guest find their seat (scan a badge → where do they sit; tap a seat → who
+    /// sits there). This is an OPERATIONAL capability, not a Control-Panel page: it
+    /// is granted to the app's Staff / Moderator roles via
+    /// <see cref="OperationalPermissionsForAppRole"/> so a partner-side staff
+    /// attendee reaches it without any admin RBAC role.</summary>
+    public static class Seating
+    {
+        public const string Assist = "Seating.Assist";
+    }
+
     /// <summary>#6/#17 (owner 2026-07-20) — the read-only booking monitor. There is
     /// no approval step (bookings auto-confirm) and no-shows are released by a
     /// background worker, so Approve/Reject were retired — only View + Export
@@ -883,6 +894,10 @@ public static class PermissionCatalog
         new(SeatPlans.View, "SeatPlans", "View", "View session seat plans", AdminOnly),
         new(SeatPlans.Edit, "SeatPlans", "Edit", "Edit session seat plans", AdminOnly),
 
+        // D-771 — the staff seating desk (app-side operational capability; also
+        // grantable to a Control-Panel role so a desk supervisor can hold it).
+        new(Seating.Assist, "Seating", "Assist", "Assist guests with seating (staff seating desk)", AdminOnly),
+
         // #6/#17 — read-only booking monitor (approve/reject retired: no approval step).
         new(Bookings.View, "Bookings", "View", "View the booking monitor", AdminOnly),
         new(Bookings.Export, "Bookings", "Export", "Export bookings to Excel", AdminOnly),
@@ -1129,6 +1144,7 @@ public static class PermissionCatalog
         Gates.Operate,           // /app/gates scans + my-assignments
         Gates.ViewOwnReports,    // /app/gates visitor list + my reports
         Visitors.RegisterOnsite, // /app/staff/visitors/register-onsite
+        Seating.Assist,          // D-771 — /app/staff/sessions/{id}/seating/*
     ];
 
     /// <summary>Moderator = Staff + content/user moderation.</summary>
@@ -1137,6 +1153,7 @@ public static class PermissionCatalog
         Gates.Operate,
         Gates.ViewOwnReports,
         Visitors.RegisterOnsite,
+        Seating.Assist,          // D-771 — the seating desk (Moderator = Staff + …)
         Questions.View,
         Questions.Moderate,
         SessionModeration.Moderate,

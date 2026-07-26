@@ -146,6 +146,10 @@ class RouteNames {
   // Staff walk-in visitor registration (D-509; additive, drawer entry; role-gated
   // to Staff, server enforces the Visitors.RegisterOnsite grant). Figma 1467:12357.
   static const String staffRegisterVisitor = 'staffRegisterVisitor';
+  // D-771 — the staff seating desk (owner 2026-07-26; additive, role-gated to
+  // Staff, server enforces the Seating.Assist grant). Entered from the session
+  // detail header when the signed-in user is Staff.
+  static const String staffSeating = 'staffSeating';
   // D-485 — the in-app session-join flow (additive, approved Visitor): the seat
   // picker (assigned-seat sessions) + the standalone "Join a session" hub (the
   // owner's "both" entry — the other is the Join CTA on the session page).
