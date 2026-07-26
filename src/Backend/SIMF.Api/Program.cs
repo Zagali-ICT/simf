@@ -522,6 +522,14 @@ if (!app.Environment.IsEnvironment("Testing"))
         await services.GetRequiredService<SIMF.Infrastructure.Seeding.SqlContentSeeder>()
             .RunAsync(SIMF.Infrastructure.Seeding.SqlContentSeeder.AllFiles);
     }
+
+    // BUG-023 — the demo OPERATIONAL configuration (gates + the demo staff
+    // operator assignment, the demo moderator's per-session grants, and the main
+    // hall's seat grid). Runs LAST because it configures the content the SQL seed
+    // above creates. Self-gated to Development / Seed:EnableDemoAccounts, so
+    // production is a no-op; idempotent.
+    await services.GetRequiredService<SIMF.Infrastructure.Seeding.DemoOperationalConfigSeeder>()
+        .SeedAsync();
 }
 
 // Recover the real client IP — but only from a trusted proxy (see above).
