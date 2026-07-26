@@ -57,3 +57,15 @@ logo renders the D-357 asset or the initials fallback. Reads
 
 - **D-630** (this clean-code freeze — data move + shared `MediaCoverageTabs` adoption + `PartnerCard` + first golden; completes the D-629 tab dedup).
 - **D-306** (screen built), **D-199** (public endpoint), **D-357** (unified media-asset route for the logo).
+
+## Logo / photo boxes (owner 2026-07-26)
+
+Every logo / photo box on this page renders through the shared
+[`SimfLogoImage`](../../../../src/Mobile/simf_app/lib/app/widgets/simf_logo_image.dart):
+a brand mark FITS its box (`BoxFit.contain`, replacing the crop-happy
+`BoxFit.cover`), a portrait still fills its frame (`BoxFit.cover`), and — where
+the box is not inside a tappable row — pressing it opens the picture full size
+in [`SimfImageViewer`](../../../../src/Mobile/simf_app/lib/app/widgets/simf_image_viewer.dart)
+(pinch-zoom, named for a screen reader, close / back to dismiss). The rules and
+their scenarios live once in [`e2e/mobile-logo-viewer.md`](../../../tests/e2e/mobile-logo-viewer.md)
+(E2E-LOGO-001..008).

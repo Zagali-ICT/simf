@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/localization/locale_controller.dart';
 import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
 import 'package:simf_app/app/theme/app_theme.dart';
 import 'package:simf_app/features/onboarding/onboarding_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
@@ -156,6 +157,35 @@ void main() {
       await tester.pumpAndSettle();
       // Toggling AR ↔ EN must not remove or crash the control.
       expect(toggle, findsOneWidget);
+    });
+
+    testWidgets(
+        'every step keeps a background poster (owner 2026-07-26 — the '
+        'background must never be blank navy)', (tester) async {
+      // The test runtime has no video decoder, so every step falls back. Before
+      // the fix the poster was gated on step 1 and steps 2/3 rendered plain
+      // navy — "there is a video in the background — not exist / not working".
+      final prefs = _FakePrefs();
+      await _pumpOnboarding(tester, prefs);
+
+      final poster = find.byWidgetPredicate(
+        (widget) =>
+            widget is Image &&
+            widget.image is AssetImage &&
+            (widget.image as AssetImage).assetName ==
+                AppAssets.onboardingWorldMap,
+      );
+      for (var step = 1; step <= 3; step++) {
+        expect(
+          poster,
+          findsOneWidget,
+          reason: 'step $step must still paint the world-map poster',
+        );
+        if (step < 3) {
+          await tester.tap(find.text('Next'));
+          await tester.pumpAndSettle();
+        }
+      }
     });
 
     testWidgets('the back chevron steps back (hidden on step 1)',

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme/tokens.dart';
+import '../../../app/widgets/simf_logo_image.dart';
 import '../../../app/widgets/simf_page_shell.dart';
 
 /// One partner — frame node 958:2263: the navy KSA card with a centred gold
@@ -44,6 +45,10 @@ class PartnerCard extends StatelessWidget {
 /// partner's uploaded logo from the public anonymous asset route with a spinner
 /// while it loads; falls back to the partner's initials on a gold tile when the
 /// partner has no logo (the route 404s) or the fetch fails.
+///
+/// Owner 2026-07-26 — the mark FITS the tile (`BoxFit.contain` via the shared
+/// [SimfLogoImage]; the old `BoxFit.cover` cropped wide mastheads) and opens
+/// full size on tap.
 class _PartnerLogo extends StatelessWidget {
   const _PartnerLogo({required this.url, required this.name});
 
@@ -71,29 +76,22 @@ class _PartnerLogo extends StatelessWidget {
       child: SizedBox(
         width: _size,
         height: _size,
-        child: Image.network(
-          url,
-          fit: BoxFit.cover,
-          gaplessPlayback: true,
-          loadingBuilder: (context, child, progress) {
-            if (progress == null) {
-              return child;
-            }
-            return const ColoredBox(
-              color: SimfTokens.navyDeep,
-              child: Center(
-                child: SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
+        child: SimfLogoImage(
+          url: url,
+          semanticLabel: name,
+          placeholder: const ColoredBox(
+            color: SimfTokens.navyDeep,
+            child: Center(
+              child: SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
               ),
-            );
-          },
+            ),
+          ),
           // Initials are computed only when the fetch fails — the common
           // success path skips the split.
-          errorBuilder: (context, error, stackTrace) =>
-              _InitialsTile(initials: _initials),
+          onError: () => _InitialsTile(initials: _initials),
         ),
       ),
     );

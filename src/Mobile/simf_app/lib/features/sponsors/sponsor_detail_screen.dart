@@ -77,6 +77,7 @@ class SponsorDetailScreen extends ConsumerWidget {
       logo: EntityLogoImage(
         url: '$baseUrl/app/assets/SponsorLogo/${sponsor.id}/image',
         initials: entityInitials(name),
+        name: name,
       ),
       name: name,
       locationLine: entityLocationLine(

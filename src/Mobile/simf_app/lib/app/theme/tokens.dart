@@ -48,6 +48,7 @@ class SimfTokens {
   static const Color navyFill80 = Color(0xCC01132D); // navy #01132D @ 80% — reference-number card fill (registration success 505:1525)
   static const Color navyFill70 = Color(0xB301132D); // navy #01132D @ 70% — gallery video play-circle fill (Figma 949:4059)
   static const Color navyFill90 = Color(0xE601132D); // navy #01132D @ 90% — onboarding photo overlay (Figma 148:22)
+  static const Color navyFill60 = Color(0x9901132D); // navy #01132D @ 60% — onboarding VIDEO scrim (owner 2026-07-26: the 90% photo overlay hid the moving footage; 60% keeps white/beige copy legible)
   static const Color chipBorderNavy = Color(0xFF2A4066); // muted navy border on unselected pills (interests grid, Figma 505:1222)
   static const Color tileBorderNavy = Color(0xFF253660); // contact-tile border (registration success, Figma 522:2223)
   static const Color scannerCard = Color(0xFF0F2044); // QR-scanner card fill (Figma 758:4566)

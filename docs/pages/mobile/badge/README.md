@@ -57,3 +57,15 @@ error+retry, role actions) and `test/core/utils/hex_color_test.dart` (the
 - **D-633** (this clean-code freeze — `_Badge` split into `BadgeQrCard` + `BadgeActions`; node inconsistency flagged).
 - **D-320** (screen built), **D-423** (circle QR — visual style superseded by D-743), **D-426** (role-based actions).
 - **D-743** (badge QR → standard **square** so the in-app `flutter_zxing` scanner can decode it; the round style read on a phone camera but not in-app. Same change fixed gate / exhibitor / contact scanners via the shared `SimfScannerBody` full-frame `cropPercent`).
+
+## Logo / photo boxes (owner 2026-07-26)
+
+Every logo / photo box on this page renders through the shared
+[`SimfLogoImage`](../../../../src/Mobile/simf_app/lib/app/widgets/simf_logo_image.dart):
+a brand mark FITS its box (`BoxFit.contain`, replacing the crop-happy
+`BoxFit.cover`), a portrait still fills its frame (`BoxFit.cover`), and — where
+the box is not inside a tappable row — pressing it opens the picture full size
+in [`SimfImageViewer`](../../../../src/Mobile/simf_app/lib/app/widgets/simf_image_viewer.dart)
+(pinch-zoom, named for a screen reader, close / back to dismiss). The rules and
+their scenarios live once in [`e2e/mobile-logo-viewer.md`](../../../tests/e2e/mobile-logo-viewer.md)
+(E2E-LOGO-001..008).

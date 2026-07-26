@@ -17,6 +17,7 @@ import '../theme/tokens.dart';
 import 'more_drawer.dart';
 import 'simf_app_shell.dart' show SimfShellScope, tabIndex;
 import 'simf_bottom_nav.dart';
+import 'simf_image_viewer.dart';
 import 'simf_language_toggle.dart';
 import 'simf_logo.dart';
 import 'simf_svg_icon.dart';
@@ -873,11 +874,18 @@ class _TileBody extends StatelessWidget {
 /// `Image.network` can't load it) and refreshed immediately after an upload via
 /// the avatar bust token. Otherwise — and whenever no photo is available — it
 /// renders the brand-mark fallback. [name] drives the accessibility label only.
+///
+/// Owner 2026-07-26 — set [enableFullScreen] on a DISPLAY-ONLY photo (the badge
+/// card) so tapping it opens the picture full size from the already-fetched
+/// bytes (D-422: the avatar endpoint is bearer-gated, so the viewer paints a
+/// [MemoryImage], never a bare `Image.network`). It stays off where the tap
+/// already means something else (My-Area's change-photo affordance).
 class SimfAvatar extends ConsumerWidget {
   const SimfAvatar({
     required this.name,
     this.currentUser = false,
     this.size = 42,
+    this.enableFullScreen = false,
     super.key,
   });
 
@@ -889,28 +897,45 @@ class SimfAvatar extends ConsumerWidget {
   final bool currentUser;
   final double size;
 
+  /// Opens the photo full size on tap. Only honoured when a real photo is
+  /// shown — the brand-mark fallback has nothing to enlarge.
+  final bool enableFullScreen;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final fallback = _AvatarFallback(size: size);
     Widget child = fallback;
+    MemoryImage? photo;
     if (currentUser) {
       final bytes = ref.watch(myAvatarBytesProvider).asData?.value;
       if (bytes != null && bytes.isNotEmpty) {
-        child = Image.memory(
-          bytes,
+        photo = MemoryImage(bytes);
+        child = Image(
+          image: photo,
           fit: BoxFit.cover,
           gaplessPlayback: true,
           errorBuilder: (_, __, ___) => fallback,
         );
       }
     }
+    final label = name.trim().isEmpty ? null : name;
+    final box = ClipRRect(
+      borderRadius: const BorderRadius.all(Radius.circular(SimfTokens.radius)),
+      child: SizedBox(width: size, height: size, child: child),
+    );
+    final image = photo;
+    if (!enableFullScreen || image == null) {
+      return Semantics(image: true, label: label, child: box);
+    }
     return Semantics(
+      button: true,
       image: true,
-      label: name.trim().isEmpty ? null : name,
-      child: ClipRRect(
-        borderRadius:
-            const BorderRadius.all(Radius.circular(SimfTokens.radius)),
-        child: SizedBox(width: size, height: size, child: child),
+      label: label,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () =>
+            showSimfImageViewer(context, image: image, label: label ?? ''),
+        child: box,
       ),
     );
   }

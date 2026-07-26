@@ -1,18 +1,27 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme/tokens.dart';
+import '../../../app/widgets/simf_logo_image.dart';
 import '../data/sponsor_models.dart';
 
 /// The sponsor's real logo (D-357 `SponsorLogo` asset, served anonymously at
-/// `{base}/app/assets/SponsorLogo/{id}/image`) clipped to fill its parent box,
-/// falling back to the acronym initials while it loads or when no logo is set
-/// (the route 404s). [hero] picks the initials colour for the box it sits in.
+/// `{base}/app/assets/SponsorLogo/{id}/image`) shown **whole** inside its parent
+/// box, falling back to the acronym initials while it loads or when no logo is
+/// set (the route 404s). [hero] picks the initials colour for the box it sits in.
+///
+/// Owner 2026-07-26 — a sponsor mark must FIT its box (the old `BoxFit.cover`
+/// cropped wide logos), so it renders through the shared [SimfLogoImage]. Set
+/// [enableFullScreen] only where the logo is not inside a tappable row — a card
+/// / grid cell owns its own tap (it opens the sponsor detail, whose 108px
+/// identity logo IS tappable to full size).
 class SponsorLogo extends StatelessWidget {
   const SponsorLogo({
     required this.id,
     required this.baseUrl,
     required this.fallbackInitials,
     required this.hero,
+    required this.name,
+    this.enableFullScreen = false,
     super.key,
   });
 
@@ -20,6 +29,14 @@ class SponsorLogo extends StatelessWidget {
   final String baseUrl;
   final String fallbackInitials;
   final bool hero;
+
+  /// The sponsor's localized name — the logo's accessible name and the
+  /// full-size viewer's title.
+  final String name;
+
+  /// Opens the logo full size on tap. Off by default: every current call site
+  /// is a tappable card / grid cell that navigates instead.
+  final bool enableFullScreen;
 
   @override
   Widget build(BuildContext context) {
@@ -40,15 +57,13 @@ class SponsorLogo extends StatelessWidget {
     if (id.isEmpty) {
       return fallback;
     }
-    return Image.network(
-      '$baseUrl/app/assets/SponsorLogo/$id/image',
-      fit: BoxFit.cover,
+    return SimfLogoImage(
+      url: '$baseUrl/app/assets/SponsorLogo/$id/image',
+      placeholder: fallback,
+      semanticLabel: name,
       width: double.infinity,
       height: double.infinity,
-      gaplessPlayback: true,
-      loadingBuilder: (context, child, progress) =>
-          progress == null ? child : fallback,
-      errorBuilder: (context, error, stackTrace) => fallback,
+      enableFullScreen: enableFullScreen,
     );
   }
 }

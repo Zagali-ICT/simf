@@ -28,6 +28,10 @@ class RouteNames {
   /// #14 — the standalone "My interests" edit surface, opened from My-Area. The
   /// same screen as [signUpInterests] rendered in edit mode.
   static const String myInterests = 'myInterests';
+
+  /// Owner 2026-07-26 — the standalone "My mobile number" add / edit surface,
+  /// opened from My-Area. Validation only: no OTP, no verification step.
+  static const String myMobile = 'myMobile';
   static const String terms = 'terms';
   static const String registrationSuccess = 'registrationSuccess';
   static const String registrationStatus = 'registrationStatus';
