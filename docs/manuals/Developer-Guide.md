@@ -854,10 +854,19 @@ app calls `AddEnvironmentVariables("SIMF_")`, which strips the prefix, so
 `deploy/set-env-*.ps1`).
 
 A local developer needs **none** of these to run the API, the Control Panel and
-the Website: with the values empty the demo-account seed is skipped, the AI
-provider falls back to `Echo`, and email send fails at the SMTP connect (the OTP
-still lands in `SIMF_Identity.AccountCodes`, which is how the dev OTP flow is
-normally driven). Set only the ones your task needs, per session:
+the Website: with the values empty the demo-account seed is skipped
+(`IdentitySeeder` logs "Demo-account seed skipped"), and email send fails at the
+SMTP connect (the OTP still lands in `SIMF_Identity.AccountCodes`, which is how
+the dev OTP flow is normally driven).
+
+The **AI features are the exception — they do not degrade to `Echo`**.
+`appsettings.json` ships `Ai:DefaultProvider = "Echo"` (the offline canned
+provider), but `appsettings.Development.json` overrides it to `"Anthropic"`, and
+`AiProviderRouting` redirects every `Echo`-default prompt to that provider. With
+`Ai:Anthropic:ApiKey` empty, `AnthropicAiProvider.CallAsync` throws
+**503 `AI_PROVIDER_NOT_CONFIGURED`**. If your task touches AI, either set
+`SIMF_Ai__Anthropic__ApiKey` or set `SIMF_Ai__DefaultProvider=Echo` to get the
+offline provider back. Set only the ones your task needs, per session:
 
 ```powershell
 # Current PowerShell session only — nothing lands in the repo.
@@ -886,8 +895,9 @@ connection string grows an inline password.
 | Website | http://localhost:5115 |
 | API health | http://localhost:5175/health |
 | CP sign-in | http://localhost:5158/login |
-| Default super-admin | `superadmin@zagali-ict.com` / `Aa@123456789` |
-| TOTP secret (dev) | `dbji csx7 c3mj s2qa sjcl rbcl kiqk ovr3` |
+| Default super-admin | `superadmin@zagali-ict.com` (`SuperAdmin:Email`) |
+| Super-admin password | not committed, set `SIMF_SuperAdmin__TempPassword` (section 20.3) |
+| TOTP secret (dev) | not committed, set `SIMF_SuperAdmin__TotpSecret` (section 20.3) |
 
 ### 20.5 Database reset (development)
 

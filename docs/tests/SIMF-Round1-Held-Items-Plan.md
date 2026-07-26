@@ -17,7 +17,8 @@ base-vs-branch regression certification). Findings detail: `scratchpad/audit_con
 ## #1 — BLOCKER — demo accounts (incl. Administrator) seeded in every environment
 **Defect** — `IdentitySeeder.EnsureDemoAccountsAsync` (IdentitySeeder.cs:510) runs on every non-Testing
 boot including production. `DemoSeedOptions.DemoPassword` has a **hardcoded non-empty default**
-(`"Simf@Demo2026#"`, DemoSeedOptions.cs) and no environment gate, so `admin@simf.local` is created
+(a literal in `DemoSeedOptions.cs`, removed under DEF-SEC-001 — the value now comes from
+`Seed:DemoPassword` / `SIMF_Seed__DemoPassword`) and no environment gate, so `admin@simf.local` is created
 with the Administrator role, `PasswordChangeRequired=false`, `TwoFactorEnabled=false` — a pre-known,
 source-committed admin credential. (Compounds with #2.)
 
