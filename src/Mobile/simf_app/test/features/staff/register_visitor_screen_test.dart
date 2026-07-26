@@ -10,6 +10,22 @@ import 'package:simf_app/features/staff/data/staff_repository.dart';
 import 'package:simf_app/features/staff/register_visitor_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+/// Taps a [SimfPickerField] by its [fieldKey], then picks [label] from the
+/// searchable bottom sheet that opens.
+Future<void> _pickFromSheet(
+  WidgetTester tester,
+  String fieldKey,
+  String label,
+) async {
+  final handle = find.byKey(ValueKey<String>(fieldKey));
+  await tester.ensureVisible(handle);
+  await tester.pumpAndSettle();
+  await tester.tap(handle);
+  await tester.pumpAndSettle();
+  await tester.tap(find.text(label).last);
+  await tester.pumpAndSettle();
+}
+
 /// Fake lookups — only the three the screen reads; the rest throw.
 class _FakeProfileRepo implements ProfileRepository {
   _FakeProfileRepo({this.fail = false});
@@ -183,14 +199,10 @@ void main() {
       await tester.enterText(fields.at(5), 'Engineer'); // jobTitle (required, D-723)
       await tester.enterText(fields.at(6), 'مهندس'); // jobTitleArabic (optional, #37)
 
-      // Pick the organisation (the second/last dropdown; nationality defaults SA).
-      final orgDropdown = find.byType(DropdownButtonFormField<String>).last;
-      await tester.ensureVisible(orgDropdown);
-      await tester.pumpAndSettle();
-      await tester.tap(orgDropdown);
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Acme').last);
-      await tester.pumpAndSettle();
+      // Pick the nationality (opens bottom sheet) — required for the form.
+      await _pickFromSheet(tester, 'nationalityPicker', 'Saudi Arabia');
+      // Pick the organisation (opens bottom sheet).
+      await _pickFromSheet(tester, 'organisationPicker', 'Acme');
 
       final next = find.widgetWithText(FilledButton, 'Next');
       await tester.ensureVisible(next);
