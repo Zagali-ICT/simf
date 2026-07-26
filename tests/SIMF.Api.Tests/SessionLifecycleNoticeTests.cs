@@ -265,6 +265,65 @@ public sealed class SessionLifecycleNoticeTests : IClassFixture<BulkBadgeEmailAp
             && notification.RelatedEntityId == session.Id));
     }
 
+    [Fact]
+    public async Task B2_Unticking_Active_on_the_edit_form_notifies_exactly_like_Deactivate()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hall = await SeedHallAsync(capacity: 50);
+        var session = await CreateSessionAsync(token, hall.Id);
+        var saver = await SeedApprovedVisitorAsync();
+        await SeedFavouriteAsync(session.Id, saver.Id);
+
+        // SessionsAddEdit.razor renders an Active checkbox on the edit form and the
+        // PUT carries its value, so this is a fully reachable cancellation path. It
+        // used to flip IsActive and tell nobody, while the Deactivate action notified.
+        var response = await PutAuthAsync(
+            $"/api/v1/admin/sessions/{session.Id}",
+            UpdateFrom(session, isActive: false),
+            token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var identity = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var row = await identity.Notifications.AsNoTracking().SingleAsync(notification =>
+            notification.UserId == saver.Id
+            && notification.Kind == NotificationKind.SessionCancelled);
+        Assert.Equal(session.Id, row.RelatedEntityId);
+        Assert.Contains(session.Title, row.Body);
+        Assert.Contains(session.Start.FormatSaudi(), row.Body);
+        Assert.DoesNotContain("UTC", row.Body);
+        Assert.False(string.IsNullOrWhiteSpace(row.BodyArabic));
+        Assert.Contains(_factory.Emails.Messages, message => message.To == saver.Email);
+
+        var audit = FindAudit(AuditEvents.SessionDeactivated, $"id={session.Id}");
+        Assert.NotNull(audit);
+        Assert.Contains("notified=1", audit!.Detail);
+    }
+
+    [Fact]
+    public async Task B2_An_edit_that_leaves_Active_ticked_announces_no_cancellation()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hall = await SeedHallAsync(capacity: 50);
+        var session = await CreateSessionAsync(token, hall.Id);
+        var saver = await SeedApprovedVisitorAsync();
+        await SeedFavouriteAsync(session.Id, saver.Id);
+
+        var response = await PutAuthAsync(
+            $"/api/v1/admin/sessions/{session.Id}",
+            UpdateFrom(session, title: "Renamed only"),
+            token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        // An ordinary save is not a cancellation — no notice, no deactivation audit.
+        using var scope = _factory.Services.CreateScope();
+        var identity = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        Assert.False(await identity.Notifications.AnyAsync(notification =>
+            notification.Kind == NotificationKind.SessionCancelled
+            && notification.RelatedEntityId == session.Id));
+        Assert.Null(FindAudit(AuditEvents.SessionDeactivated, $"id={session.Id}"));
+    }
+
     // -- A37: a hall in use cannot be deactivated ----------------------------
 
     [Fact]
@@ -334,7 +393,8 @@ public sealed class SessionLifecycleNoticeTests : IClassFixture<BulkBadgeEmailAp
         Guid? hallId = null,
         string? title = null,
         DateTimeOffset? start = null,
-        DateTimeOffset? end = null) =>
+        DateTimeOffset? end = null,
+        bool? isActive = null) =>
         new()
         {
             Code = created.Code,
@@ -344,7 +404,7 @@ public sealed class SessionLifecycleNoticeTests : IClassFixture<BulkBadgeEmailAp
             Start = start ?? created.Start,
             End = end ?? created.End,
             CapacityOverride = created.CapacityOverride,
-            IsActive = created.IsActive,
+            IsActive = isActive ?? created.IsActive,
             Type = created.Type,
         };
 

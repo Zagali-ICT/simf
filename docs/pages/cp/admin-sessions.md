@@ -264,6 +264,15 @@ cancellation (re-activated, then cancelled again) is **not** suppressed. The
 `Session.Deactivated` audit row carries `notified=N`. Before this the
 cancellation wrote an audit row and nothing else.
 
+**Both cancellation paths announce.** An admin can cancel a session two ways —
+the Delete/Deactivate action (`DeactivateAsync`) and clearing the **Active**
+checkbox on the edit form (`UpdateAsync`, the PUT carries `IsActive`). Both run
+the same `AnnounceSessionCancelledAsync` step: the audience is resolved before
+the row is hidden, and after the commit it writes the `Session.Deactivated`
+audit row with `notified=N` and dispatches the notice. So an edit-form
+deactivation also produces a `Session.Deactivated` row alongside the ordinary
+`Session.Updated` one. An edit that leaves Active ticked announces nothing.
+
 ## 7. Edge cases + known limitations
 
 - **Edit/View/Delete fetch the full detail first** (`LoadDetailAsync`) — the grid

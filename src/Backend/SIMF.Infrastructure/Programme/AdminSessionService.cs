@@ -366,7 +366,8 @@ internal sealed class AdminSessionService(
 
         // S-1 — soft-deleting via update (IsActive true -> false) must not orphan
         // active visitor bookings (same rule as DeactivateAsync).
-        if (session.IsActive && !request.IsActive)
+        var deactivating = session.IsActive && !request.IsActive;
+        if (deactivating)
         {
             var heldVisitorBookings = await dbContext.SeatReservations
                 .CountAsync(reservation =>
@@ -432,6 +433,16 @@ internal sealed class AdminSessionService(
         {
             await EnsureNoHallTimeOverlapAsync(
                 hall.Id, request.Start, request.End, id, cancellationToken);
+        }
+
+        // B2 — unticking Active on the edit form cancels the session exactly as the
+        // Deactivate action does, so it owes the same notice. Resolve the audience
+        // BEFORE the row is hidden and before the cascade releases anything; the
+        // dispatch itself happens after the commit, in the shared announce step.
+        List<Guid> cancellationAudience = [];
+        if (deactivating)
+        {
+            cancellationAudience = await ResolveCancellationAudienceAsync(id, cancellationToken);
         }
 
         session.Code = code;
@@ -529,6 +540,17 @@ internal sealed class AdminSessionService(
             await TryNotifyBookingReleasedAsync(reservation, session, cancellationToken);
         }
 
+        // B2 — the edit form's Active checkbox is a fully reachable cancellation path,
+        // so it takes the SAME announce step as DeactivateAsync: the notified=N audit
+        // row plus the bilingual in-app + email notice. Without this the admin who
+        // unticks Active instead of pressing Deactivate reproduces the exact silence
+        // B2 was written to end.
+        if (deactivating)
+        {
+            await AnnounceSessionCancelledAsync(
+                actorUserId, session, cancellationAudience, cancellationToken);
+        }
+
         return (await GetAsync(session.Id, cancellationToken))! with
         {
             ReleasedReservationCount = releasedForVisitors,
@@ -579,6 +601,22 @@ internal sealed class AdminSessionService(
         session.UpdatedAt = timeProvider.GetUtcNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
+        await AnnounceSessionCancelledAsync(actorUserId, session, audience, cancellationToken);
+    }
+
+    /// <summary>B2 — the single "this session is cancelled" step, shared by BOTH ways an
+    /// admin can cancel one: the Deactivate action and unticking Active on the edit form
+    /// (<see cref="UpdateAsync"/>). Call it AFTER the commit, with an audience resolved
+    /// BEFORE the row was hidden. Writes the SessionDeactivated audit row carrying
+    /// notified=N, then tells each recipient — best-effort, because the dispatcher
+    /// writes to the Identity DB via its own context and cannot share this
+    /// transaction (D-157).</summary>
+    private async Task AnnounceSessionCancelledAsync(
+        Guid actorUserId,
+        Session session,
+        IReadOnlyList<Guid> audience,
+        CancellationToken cancellationToken)
+    {
         await auditLog.WriteAsync(new AuditEntry
         {
             EventType = AuditEvents.SessionDeactivated,
@@ -587,8 +625,6 @@ internal sealed class AdminSessionService(
             Detail = $"id={session.Id}; code={session.Code}; notified={audience.Count}",
         }, cancellationToken);
 
-        // B2 — tell them AFTER the commit (best-effort; the dispatcher writes to the
-        // Identity DB via its own context, so it cannot share this transaction, D-157).
         foreach (var userId in audience)
         {
             await TryNotifySessionCancelledAsync(userId, session, cancellationToken);

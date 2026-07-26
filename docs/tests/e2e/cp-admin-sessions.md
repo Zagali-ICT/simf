@@ -84,6 +84,7 @@
 | E2E-SES-050 | Reschedule re-arms the workers (A4) — moving Start/End clears `ReminderSent` + `RatingPromptSent` so the reminder fires for the new time; a title-only edit leaves both stamped | happy/regression | P1 | authored ✓ (`SessionLifecycleNoticeTests.A4_Moving_the_window_rearms_the_reminder_and_rating_prompt` + `.A4_An_edit_that_keeps_the_window_does_not_rearm_the_reminder`) |
 | E2E-SES-051 | Booking-conflict copy (A5) — the 409 `SESSION_HAS_ACTIVE_BOOKINGS` message names `/admin/sessions/seat-plans` (bilingual) and never the read-only `/admin/bookings` monitor | error | P1 | authored ✓ (`SessionLifecycleNoticeTests.A5_Active_booking_conflict_points_at_the_seat_plans_page`) |
 | E2E-SES-052 | Cancellation notice (B2) — deactivating a session dispatches `SessionCancelled` (in-app + email, bilingual, Saudi wall clock) to everyone holding a seat or who favourited it; the audit row carries `notified=N`; a session nobody saved notifies nobody | happy/regression | P0 | authored ✓ (`SessionLifecycleNoticeTests.B2_Deactivating_a_session_notifies_everyone_who_saved_it` + `.B2_A_session_nobody_saved_is_cancelled_without_notifying_anyone`) |
+| E2E-SES-053 | Cancellation notice on the edit-form path (B2) — clearing the **Active** checkbox and saving announces exactly like Deactivate (`SessionCancelled` in-app + email + `Session.Deactivated` audit with `notified=N`); an edit that leaves Active ticked announces nothing | happy/regression | P0 | authored ✓ (`SessionLifecycleNoticeTests.B2_Unticking_Active_on_the_edit_form_notifies_exactly_like_Deactivate` + `.B2_An_edit_that_leaves_Active_ticked_announces_no_cancellation`) |
 | E2E-SES-046 | Excel import Speakers column (#3/#4) — a `Speakers` cell of speaker codes attaches the roster in order; a non-Event row with no speakers, an unknown speaker code, or a blank Type each become a per-row error | error | P1 | authored ✓ (`SessionsExcelTests.Import_attaches_the_speakers_column_in_order` + `.Import_non_event_row_without_speakers_is_a_per_row_error` + `.Import_unknown_speaker_code_is_a_per_row_error` + `.Import_row_without_a_type_is_a_per_row_error`) |
 
 ## Scenarios
@@ -1034,6 +1035,31 @@ Scenario: A session nobody booked or saved is cancelled quietly
   Then no SessionCancelled notification is written for it
 ```
 
+### E2E-SES-053 — The edit form's Active checkbox is the same cancellation
+
+```gherkin
+Feature: Unticking Active cancels a session exactly as Deactivate does
+
+Scenario: Clearing Active on the edit form announces the cancellation (B2)
+  Given session SES-004 has no active bookings
+  And attendee "saver@simf.test" has favourited it
+  When the administrator opens Edit on SES-004
+  And they untick "Active"
+  And they click "Save changes"
+  Then the API returns 200 and the session leaves the public agenda
+  And saver@simf.test has an in-app notification of kind SessionCancelled
+      whose body names the session and its Saudi-wall-clock start, with no "UTC"
+  And an email addressed to saver@simf.test was queued
+  And a Session.Deactivated OperationLog row carries "notified=1"
+      (alongside the ordinary Session.Updated row)
+
+Scenario: An ordinary edit that leaves Active ticked announces nothing
+  Given the same favourited session, still Active
+  When the administrator edits only the Title and saves
+  Then no SessionCancelled notification is written for it
+  And no Session.Deactivated OperationLog row is written for it
+```
+
 ---
 
 ## Implementation notes
@@ -1082,3 +1108,5 @@ _Last reviewed:_ 2026-07-11 by Claude (on-site ops — booking guards on delete/
 _Last reviewed:_ 2026-07-22 by Claude (#3 required session Type + #4 min-1-speaker-unless-Event with no-regression grandfathering on edit, and the Excel-import Speakers column: SES-044..046).
 
 _Last reviewed:_ 2026-07-26 by Claude (session-lifecycle QA package — A1/A6 seat-release confirmation + counts + audit, A2 release email, A4 reminder re-arm, A5 corrected conflict copy, B2 session-cancelled notice: SES-047..052; covered by `tests/SIMF.Api.Tests/SessionLifecycleNoticeTests.cs`).
+
+_Last reviewed:_ 2026-07-27 by Claude (B2 completed on the second cancellation path — clearing the Active checkbox on the edit form now runs the same announce step as Deactivate: SES-053).
