@@ -66,6 +66,7 @@
 | E2E-REQ-014 | B11 — a Pending or AwaitingConfirmation `DelegationMeeting` reports `canCancel = true` (still folded to Pending on the wire) | data | P0 | authored ✓ (`MyRequestsTests`, API) |
 | E2E-REQ-015 | B11 — withdrawing an AwaitingConfirmation delegation meeting sets Cancelled and releases the hall + table | happy | P0 | authored ✓ (`MyRequestsTests`, API) |
 | E2E-REQ-016 | B11 — withdrawing an already-confirmed delegation meeting is 409 and leaves it Accepted; another user's is 404 | conflict / auth | P1 | authored ✓ (`MyRequestsTests`, API) |
+| E2E-REQ-017 | D1 — withdrawing an AwaitingConfirmation delegation meeting retracts the target delegation's "please confirm" card; withdrawing a Pending one tells them nothing | data | P0 | authored ✓ (`DelegationMeetingQaFixesTests.D1_*`, API) |
 
 ## Scenarios
 
@@ -361,6 +362,27 @@ Scenario: Cancelling somebody else's delegation meeting
 `Cancelling_an_already_confirmed_delegation_meeting_is_a_conflict`,
 `Cancelling_another_users_delegation_meeting_is_a_404`.
 
+### E2E-REQ-017 — The withdraw retracts the other delegation's prompt (D1)
+
+```gherkin
+Scenario: The target delegation is not left tapping a dead prompt
+  Given an admin approved the meeting, so every eligible member of the TARGET
+        delegation holds a "please confirm" card deep-linking to /meeting-confirm
+        plus an emailed confirm link
+  When the requester withdraws it from "My requests"
+  Then each of those members receives a MeetingCancelled notification for the
+       same request (bilingual EN + AR), so the dead prompt is retracted
+  And re-tapping the old card would have returned 409 APP_REQUEST_ALREADY_RESPONDED
+
+Scenario: A withdraw from Pending stays silent
+  Given the meeting was never approved, so the target delegation was never told
+  When the requester withdraws it
+  Then no notification is sent to the target delegation
+```
+
+**Evidence:** `DelegationMeetingQaFixesTests.D1_a_requester_withdraw_retracts_the_target_delegations_prompt`,
+`D1_withdrawing_a_still_pending_meeting_tells_the_target_nothing`.
+
 ---
 
 _Last reviewed:_ `2026-07-11` by `Claude` — on-site W2b (R-1c AwaitingSpeaker speaker meeting is cancellable + R-3 admin response-note surfacing; added E2E-REQ-012/013). Prior: `2026-06-26` by `SIMF Team` — D-500 Wave 5 unified requests feed
@@ -368,3 +390,5 @@ _Last reviewed:_ `2026-07-11` by `Claude` — on-site W2b (R-1c AwaitingSpeaker 
 supersedes the D-479 My-meetings screen.
 
 _Last reviewed:_ 2026-07-26 by Claude — B11: a delegation meeting is withdrawable on the speaker rule (E2E-REQ-014/015/016); E2E-REQ-004 narrowed to SessionAttendance.
+
+_Last reviewed:_ 2026-07-27 by Claude — D1: the B11 withdraw now retracts the target delegation's confirm prompt (E2E-REQ-017).

@@ -46,6 +46,7 @@
 | E2E-MOBMC-008 | Golden decline (B8): tap **رفض الاجتماع** → the meeting is Rejected, the hall slot is released, the requester is notified + emailed | happy | P0 | authored ✓ (`meeting_confirm_screen_test.dart`, widget; `B8_a_target_member_can_decline_an_awaiting_meeting`, API) |
 | E2E-MOBMC-009 | Decline is refused for a non-member (403) / a non-awaiting meeting (409) | auth-gate / conflict | P0 | authored ✓ (`B8_a_member_of_another_delegation_cannot_decline`, `B8_declining_a_pending_meeting_is_a_conflict`, `B8_declining_twice_is_a_conflict`, API) |
 | E2E-MOBMC-010 | A30 — the screen names the DELEGATION meeting, so it is not confused with the website's speaker token page | i18n | P2 | authored ✓ (`meeting_confirm_screen_test.dart`, widget) |
+| E2E-MOBMC-011 | D2 — one member's decline retracts the prompt from the OTHER eligible members of the same delegation; the decliner is skipped | data | P0 | authored ✓ (`DelegationMeetingQaFixesTests.D2_*`, API) |
 
 ## Scenarios
 
@@ -187,6 +188,22 @@ Scenario: The app screen and the website page are told apart
   And driving a SPEAKER meeting through this app screen is a 403/409 by design
 ```
 
+### E2E-MOBMC-011 — A decline retracts the prompt from the rest of the delegation (D2)
+
+```gherkin
+Scenario: One member's decline is a decline for the whole delegation
+  Given two eligible members of the TARGET delegation each hold the
+        "awaiting your confirmation" card + the emailed confirm link
+  When one of them taps "رفض الاجتماع" and the decline returns 200
+  Then the OTHER member receives a MeetingCancelled notification for the same
+       request (bilingual EN + AR), so their prompt is retracted
+  And the member who declined receives no extra card — they already have the answer
+  And re-tapping the other member's old card would have returned
+      409 APP_REQUEST_ALREADY_RESPONDED
+```
+
+**Evidence:** `DelegationMeetingQaFixesTests.D2_a_decline_retracts_the_prompt_from_the_other_target_members`.
+
 ---
 
 ## Implementation notes
@@ -223,3 +240,5 @@ Scenario: The app screen and the website page are told apart
 _Last reviewed:_ 2026-07-22 by Claude — bi-meeting rework: new delegation other-party confirm-on-tap screen (route 117), reached from the `MeetingRequested` notification deep link. The confirm transition + PII strip are covered by `DelegationMeetingRequestsTests`; the screen / RTL / deep-link-allow-list layer is on-device `_to author_`.
 
 _Last reviewed:_ 2026-07-26 by Claude — B8 target-side decline + A30 delegation-specific copy (E2E-MOBMC-008..010).
+
+_Last reviewed:_ 2026-07-27 by Claude — D2: the decline retracts the confirm prompt from the other target members (E2E-MOBMC-011).
