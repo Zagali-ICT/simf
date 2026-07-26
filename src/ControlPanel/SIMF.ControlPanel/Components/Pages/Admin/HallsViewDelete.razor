@@ -75,6 +75,15 @@
         <p class="simf-table__summary">
             @(string.Format(L["Admin.Halls.Schedule.Count"], _schedule.Count))
         </p>
+        @* The endpoint caps the page, so say when the schedule is partial
+           rather than letting a capped list read as the whole occupancy. *@
+        @if (_scheduleTotal > _schedule.Count)
+        {
+            <SimfAlert Variant="info">
+                @(string.Format(L["Admin.Halls.Schedule.Capped"],
+                                _schedule.Count, _scheduleTotal))
+            </SimfAlert>
+        }
     }
 
     <div class="simf-form__actions">

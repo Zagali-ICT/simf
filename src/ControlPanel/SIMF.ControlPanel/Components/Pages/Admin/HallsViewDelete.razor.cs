@@ -32,6 +32,10 @@ public partial class HallsViewDelete
     // list's hallId filter). Loaded per hall, so re-opening the shell on a
     // different row re-reads instead of showing the previous hall's sessions.
     private List<AdminSessionSummary> _schedule = new();
+    // The unclamped active-session count for this hall. The endpoint caps the
+    // page, so when this exceeds the rows we hold, the panel says the schedule
+    // was capped instead of showing a partial list as if it were complete.
+    private int _scheduleTotal;
     private bool _scheduleLoading;
     private Guid? _scheduleHallId;
 
@@ -46,6 +50,7 @@ public partial class HallsViewDelete
     {
         _scheduleLoading = true;
         _schedule = new();
+        _scheduleTotal = 0;
         try
         {
             var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminSessionSummary>>>(
@@ -53,6 +58,7 @@ public partial class HallsViewDelete
             if (envelope is { Success: true, Data: not null })
             {
                 _schedule = envelope.Data.Items.ToList();
+                _scheduleTotal = envelope.Data.Total;
             }
             else
             {

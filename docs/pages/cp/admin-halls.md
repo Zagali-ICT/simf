@@ -48,6 +48,16 @@ with the existing `hallId` grid filter (no second query) and is gated by the sam
 hall-side schedule anywhere, so the "one session per hall at a time" rule only ever
 surfaced as a 409 (`SESSION_HALL_TIME_OVERLAP`) from the Sessions editor.
 
+The schedule is **active sessions only**: the endpoint pins the `isActive` grid
+filter to `true`. `EnsureNoHallTimeOverlapAsync` matches on `other.IsActive`, so a
+soft-deleted session is not occupancy and must not make the hall read as busy —
+and the Status column shows the `SessionStatus` lifecycle, not `IsActive`, so a
+leaked deactivated row would be indistinguishable from a live booking. The page is
+capped at 200 rows (the `ClampPage` ceiling); when the hall's active-session
+`Total` exceeds what came back, an info alert says the list is partial and points
+at the Sessions grid filtered by the hall, rather than passing a truncated
+schedule off as the whole occupancy.
+
 ## 4.5 Form fields
 
 | Field | Required | MaxLength | Validation |
@@ -102,6 +112,8 @@ E2E-HAL-001..007.
 | 2026-05-29 | D-134 Sprint B / D-135 | Original — Halls entity + EF migration `AddHalls` + canonical CRUD page. |
 | 2026-06-10 | D-356 / D-353 | Uniform CRUD — added Excel export + import (`CrudGridExcel Resource="halls"`) and the Page↔Popup presentation toggle; CRUD forms hosted by `CrudShell` (`HallsAddEdit` / `HallsViewDelete`), Deactivate now gated by `SimfConfirm`. |
 | 2026-07-26 | QA B16 | Hall occupancy view — `HallsViewDelete` lists the sessions assigned to the hall (code / title / local start + end / status) from the new `GET /admin/halls/{id}/schedule` (`Halls.View`, reusing `AdminSessionService.ListAllAsync`'s `hallId` filter). New E2E-HAL-026..028. |
+| 2026-07-27 | QA B16 follow-up | The occupancy view pins `isActive=true`, so a soft-deleted session no longer renders as a live booking (the Status column shows the lifecycle enum, not `IsActive`); a schedule longer than one page now says it was capped. New E2E-HAL-029/030. |
 
-_Last reviewed:_ 2026-07-26 by Claude (QA B16 — hall occupancy view). Prior:
-2026-06-10 by Claude (D-356 / D-353 uniform CRUD — Excel + toggle).
+_Last reviewed:_ 2026-07-27 by Claude (QA B16 follow-up — active-only occupancy +
+capped-page notice). Prior: 2026-07-26 by Claude (QA B16 — hall occupancy view).
+Prior: 2026-06-10 by Claude (D-356 / D-353 uniform CRUD — Excel + toggle).

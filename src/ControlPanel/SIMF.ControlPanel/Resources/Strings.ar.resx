@@ -866,6 +866,7 @@
   <data name="Admin.Halls.Schedule.Col.End" xml:space="preserve"><value>النهاية</value></data>
   <data name="Admin.Halls.Schedule.Col.Status" xml:space="preserve"><value>الحالة</value></data>
   <data name="Admin.Halls.Schedule.Count" xml:space="preserve"><value>{0} جلسة في هذه القاعة.</value></data>
+  <data name="Admin.Halls.Schedule.Capped" xml:space="preserve"><value>يتم عرض أول {0} من أصل {1} جلسة. جدول هذه القاعة أطول من صفحة واحدة؛ افتح قائمة الجلسات مصفاة على هذه القاعة لعرضها جميعًا.</value></data>
 
   <!-- D-148 — Gate Module -->
   <data name="Admin.Gates.Title" xml:space="preserve"><value>البوابات</value></data>

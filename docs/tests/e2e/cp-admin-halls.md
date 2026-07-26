@@ -46,6 +46,8 @@
 | E2E-HAL-026 | Hall detail lists the sessions assigned to the hall — the occupancy view (QA B16) | happy | P1 | _to author_ |
 | E2E-HAL-027 | A hall with no sessions shows the schedule empty state (QA B16) | happy | P2 | _to author_ |
 | E2E-HAL-028 | The schedule read is gated by `Halls.View` (QA B16) | auth | P1 | _to author_ |
+| E2E-HAL-029 | A soft-deleted session is not shown as occupancy — regression (QA B16) | error | P0 | _to author_ |
+| E2E-HAL-030 | A schedule longer than one page says it was capped (QA B16) | error | P2 | _to author_ |
 
 ## Scenarios
 
@@ -562,6 +564,8 @@ land on the grid summary after import) and `Export_includes_the_extra_columns`
 | E2E-HAL-026 | Hall detail lists the sessions assigned to the hall with local times + status | happy | P1 | _to author_ |
 | E2E-HAL-027 | A hall with no sessions shows the schedule empty state | happy | P2 | _to author_ |
 | E2E-HAL-028 | The schedule read is gated by `Halls.View` (same as the page) | auth | P1 | _to author_ |
+| E2E-HAL-029 | A soft-deleted session is not shown as occupancy (matches the overlap guard) | error | P0 | _to author_ |
+| E2E-HAL-030 | A schedule longer than one page says it was capped | error | P2 | _to author_ |
 
 ### E2E-HAL-026 — hall occupancy view
 
@@ -624,6 +628,53 @@ Scenario: The hall schedule carries the hall page's own permission
 `Every_admin_endpoint_is_permission_and_approval_gated` sweeps every mapped
 `/admin/*` route, so an ungated schedule endpoint fails the build.
 
+### E2E-HAL-029 — a deactivated session is not occupancy
+
+```gherkin
+Scenario: The occupancy view agrees with the overlap guard
+  # The schedule exists to expose SESSION_HALL_TIME_OVERLAP up front, and that
+  # guard matches on other.IsActive. The Status column shows the SessionStatus
+  # lifecycle (Scheduled/Held/Recorded/Published), NOT IsActive, so a leaked
+  # soft-deleted row would be indistinguishable from a live booking.
+  Given a hall "Main Auditorium" exists
+  And session "SES-1" is assigned to it and is active
+  And session "SES-2" is assigned to the same hall and has been deactivated
+  When the administrator opens the hall's Details form
+  Then the "Sessions in this hall" table lists SES-1
+  And it does NOT list SES-2
+  And creating a new session in that hall over SES-2's window succeeds
+      (no SESSION_HALL_TIME_OVERLAP), so the view and the guard agree
+
+  Given the hall's only session has been deactivated
+  When the administrator opens the hall's Details form
+  Then the schedule renders the empty state, not a phantom booking
+```
+
+**Evidence:** `tests/SIMF.Api.Tests/HallScheduleTests.cs` →
+`Schedule_lists_only_the_active_sessions_in_this_hall` and
+`Schedule_of_a_hall_whose_only_session_is_deleted_is_empty`.
+
+### E2E-HAL-030 — a schedule longer than one page says it was capped
+
+```gherkin
+Scenario: A capped schedule is not shown as if it were complete
+  # The endpoint asks for 200 rows, which is also the ClampPage ceiling, so a
+  # hall with more active sessions than that WOULD be truncated silently.
+  Given a hall has more active sessions than the schedule page holds
+  When the administrator opens its Details form
+  Then the table renders the first page of rows
+  And an info alert reads "Showing the first {shown} of {total} sessions..."
+      / "يتم عرض أول {shown} من أصل {total} جلسة..."
+  And it points the administrator at the Sessions list filtered by this hall
+
+  Given the hall's schedule fits in one page
+  Then no capped notice renders
+```
+
+**Evidence:** `tests/SIMF.ControlPanel.Tests/HallsViewDeleteTests.cs` →
+`B16_a_capped_schedule_says_so_instead_of_reading_as_complete` and
+`B16_a_complete_schedule_shows_no_capped_notice`.
+
 ---
 
 ### E2E-HAL-025 — capacity cannot drop below committed seats
@@ -641,4 +692,4 @@ Scenario: a capacity reduction below the seat-layout total is blocked
 
 ---
 
-_Last reviewed:_ 2026-07-26 by Claude (QA B16 — hall occupancy view; E2E-HAL-026..028). Prior: 2026-07-11 by Claude (W4 on-site remediation — H-3 capacity-shrink guard; E2E-HAL-025). Prior: 2026-06-26 by Claude (D-506 — Excel export/import field-drop fix: EquipmentNotes + geofence triple + SeatSelectionMode now round-trip; scenario E2E-HAL-024 added, E2E-HAL-020/021 column lists reconciled). Prior: 2026-06-10 (D-356 Phase 5 — Excel export/import + D-353 Page<->Popup toggle scenarios E2E-HAL-017..022; E2E-HAL-001 deactivate step reconciled to the CrudShell + SimfConfirm gate).
+_Last reviewed:_ 2026-07-27 by Claude (QA B16 follow-up — the occupancy view now filters `isActive` so a soft-deleted session no longer reads as a live booking, and a capped page says so; E2E-HAL-029/030). Prior: 2026-07-26 by Claude (QA B16 — hall occupancy view; E2E-HAL-026..028). Prior: 2026-07-11 by Claude (W4 on-site remediation — H-3 capacity-shrink guard; E2E-HAL-025). Prior: 2026-06-26 by Claude (D-506 — Excel export/import field-drop fix: EquipmentNotes + geofence triple + SeatSelectionMode now round-trip; scenario E2E-HAL-024 added, E2E-HAL-020/021 column lists reconciled). Prior: 2026-06-10 (D-356 Phase 5 — Excel export/import + D-353 Page<->Popup toggle scenarios E2E-HAL-017..022; E2E-HAL-001 deactivate step reconciled to the CrudShell + SimfConfirm gate).

@@ -1,4 +1,5 @@
 // Tests: SIMF.Api.Tests/AdminHallsTests.cs
+// Tests: SIMF.Api.Tests/HallScheduleTests.cs (QA B16 — active-only occupancy)
 using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Application.Programme.Abstractions;
@@ -56,7 +57,10 @@ public sealed class GetHallScheduleEndpoint(IAdminSessionService sessions)
     : EndpointWithoutRequest<ApiResult<GridPage<AdminSessionSummary>>>
 {
     /// <summary>How many sessions the hall schedule returns. A hall runs a handful
-    /// of sessions across the forum, so one page is the whole schedule.</summary>
+    /// of sessions across the forum, so one page is the whole schedule. This is
+    /// also the <c>ClampPage</c> ceiling, so a busier hall WOULD be truncated —
+    /// the returned <c>GridPage.Total</c> is the unclamped active count, and the
+    /// panel says so rather than passing a partial schedule off as complete.</summary>
     private const int ScheduleRows = 200;
 
     public override void Configure()
@@ -71,6 +75,13 @@ public sealed class GetHallScheduleEndpoint(IAdminSessionService sessions)
     {
         var query = new GridQuery { Top = ScheduleRows };
         query.Filters["hallId"] = Route<Guid>("hallId").ToString();
+        // Occupancy means ACTIVE occupancy. ListAllAsync only applies its
+        // isActive filter when the caller supplies it, and the panel's Status
+        // column shows the SessionStatus lifecycle, not IsActive — so without
+        // this a soft-deleted session would render as a live booking. The rule
+        // this view exists to expose (EnsureNoHallTimeOverlapAsync) matches on
+        // other.IsActive, so the two must agree.
+        query.Filters["isActive"] = bool.TrueString;
         await Send.OkAsync(ApiResult<GridPage<AdminSessionSummary>>.Ok(
             await sessions.ListAllAsync(query, ct)), ct);
     }

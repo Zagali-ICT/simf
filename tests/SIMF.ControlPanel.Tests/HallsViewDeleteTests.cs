@@ -149,4 +149,39 @@ public sealed class HallsViewDeleteTests : CpComponentTestBase
 
         Assert.Contains("Admin.Halls.Schedule.None", cut.Markup);
     }
+
+    [Fact]
+    public void B16_a_capped_schedule_says_so_instead_of_reading_as_complete()
+    {
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        var row = Detail();
+        // The endpoint caps the page at 200 rows; Total is the unclamped count.
+        JSInterop.Setup<ApiResult<GridPage<AdminSessionSummary>>>(
+            "simfAccount.getJson", _ => true)
+            .SetResult(ApiResult<GridPage<AdminSessionSummary>>.Ok(
+                GridPage<AdminSessionSummary>.Of(
+                    [ScheduledSession(row.Id)], total: 213, skip: 0, top: 200)));
+
+        var cut = RenderComponent<HallsViewDelete>(p => p
+            .Add(x => x.IsDelete, false)
+            .Add(x => x.Initial, row));
+
+        Assert.Contains("Admin.Halls.Schedule.Capped", cut.Markup);
+    }
+
+    [Fact]
+    public void B16_a_complete_schedule_shows_no_capped_notice()
+    {
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        var row = Detail();
+        JSInterop.Setup<ApiResult<GridPage<AdminSessionSummary>>>(
+            "simfAccount.getJson", _ => true)
+            .SetResult(SchedulePage(ScheduledSession(row.Id)));
+
+        var cut = RenderComponent<HallsViewDelete>(p => p
+            .Add(x => x.IsDelete, false)
+            .Add(x => x.Initial, row));
+
+        Assert.DoesNotContain("Admin.Halls.Schedule.Capped", cut.Markup);
+    }
 }
