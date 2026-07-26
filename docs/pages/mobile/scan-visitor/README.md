@@ -1,10 +1,26 @@
 # Scan visitor badge — مسح بطاقة زائر (`scanVisitor`, D-426)
 
 - **Route:** `/exhibitor/scan` (`RouteNames.scanVisitor`). Access:
-  **Exhibitor (approved, non-visitor)** — a visitor-tier caller gets 403 → a
-  toast. Reached from the badge screen (exhibitor action).
+  **Exhibitor (approved) with a current booth membership** — DEF-EXH-001: the
+  server authorises on `ProfileType.MobileAppRole == Exhibitor` (D-519), so
+  Staff / Moderator / Media / Sponsor / plain Visitor callers all get 403 → a
+  toast. DEF-EXH-006: the role alone is **not** authority — an active
+  `ExhibitorMembership` of an active `Exhibitor` is required alongside it, so
+  dropping an officer from a booth (or closing the exhibitor with
+  `DELETE /admin/exhibitors/{id}`) revokes scan **and** list immediately, even
+  on an already-issued token. Reached from the badge screen (exhibitor action).
 - **API:** `ExhibitorRepository.scanByBadge(qrId)` — captures the visitor
-  server-side; on success routes to `myVisitors`.
+  server-side; on success routes to `myVisitors`. DEF-EXH-003: the scanned
+  subject must itself be an ACTIVE audience-side account (a staff or rival
+  exhibitor badge answers the same 404 as an unknown code). DEF-EXH-002: a NEW
+  capture raises one `NotificationKind.ExhibitorLeadCaptured` in-app notice to
+  the visitor naming the exhibitor; an idempotent re-scan raises none.
+  DEF-EXH-007: that name is the **exhibitor** the officer represents (the
+  officer's own profile name is only a fallback) — a CP-provisioned officer has
+  a stub profile with no name, which used to degrade the notice to "An
+  exhibitor". DEF-EXH-005: a booth officer provisioned from the CP
+  (`POST /admin/exhibitors/{id}/accounts`) now carries the exhibitor profile
+  type, so the CP's own path produces an account that can actually scan.
 - **Figma:** none — a D-426 functional page, not a KSA design frame.
   **Clean-code freeze:** D-643 (2026-07-04).
 

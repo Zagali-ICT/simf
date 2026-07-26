@@ -21,7 +21,7 @@ load-failure keep their respective states.
 |------|-------|
 | `badge_screen.dart` (158) | `BadgeScreen` + State — the approval-gated dashboard load, the loading / not-approved / error / pending / badge dispatch (`_buildBody`), and the top-level `maskedBadgeId` helper (kept here — the badge test unit-tests it). The badge case composes the card + actions. |
 | `widgets/badge_qr_card.dart` (`BadgeQrCard`) | The gold-bordered white card — the **standard square** QR (`QrImageView`, D-743; the round D-423 style was undecodable by the in-app ZXing scanner), the scan hint, and the identity strip (`SimfAvatar` + name + tier + `ID · {maskedId}`) tinted by `identity.pageColor` via `parseHexColor` (`core/utils/hex_color.dart`), gold fallback + luminance-based ink (D-763). |
-| `widgets/badge_actions.dart` (`BadgeActions`) | The role-based actions (D-426) — a visitor's gold "امسح لإضافة شخص" (→ the fullscreen `ScanContactScreen`) + outlined "share my contact"; an exhibitor's "scan visitor" — with the shared `_actionButton` filled/outlined helper. |
+| `widgets/badge_actions.dart` (`BadgeActions`) | The role-based actions (D-426) — a visitor's gold "امسح لإضافة شخص" (→ the fullscreen `ScanContactScreen`) + outlined "share my contact"; an exhibitor's "scan visitor" — with the shared `_actionButton` filled/outlined helper. **DEF-EXH-005:** the branch takes the signed-in `AppRole` (`CurrentUser.effectiveAppRole`), not the dashboard's `identity.isVisitor` flag — `isVisitor` is false for EVERY partner type, so Staff / Moderator / Media / Sponsor were all shown the exhibitor-only scan button and the router (`_routeRoles[106] = {exhibitor}`) bounced them. Staff / Moderator / Guest now get no action button. |
 
 The off-states already used the shared `SimfEmptyState`/`SimfErrorState` (kept).
 Screen was already fully tokenised (no raw `Color(0x..)`). `maskedBadgeId` stays in
@@ -56,4 +56,5 @@ error+retry, role actions) and `test/core/utils/hex_color_test.dart` (the
 - **D-763** (identity strip tinted by the profile type's server colour `ProfileType.PageColor` via `identity.pageColor` + `parseHexColor`; gold fallback + luminance-based ink; supersedes the Page_014 "pageColor carried but unused" note).
 - **D-633** (this clean-code freeze — `_Badge` split into `BadgeQrCard` + `BadgeActions`; node inconsistency flagged).
 - **D-320** (screen built), **D-423** (circle QR — visual style superseded by D-743), **D-426** (role-based actions).
+- **DEF-EXH-005** (the actions gate on the signed-in app ROLE instead of the dashboard `isVisitor` flag, killing the dead exhibitor-scan control shown to Staff / Moderator / Media / Sponsor).
 - **D-743** (badge QR → standard **square** so the in-app `flutter_zxing` scanner can decode it; the round style read on a phone camera but not in-app. Same change fixed gate / exhibitor / contact scanners via the shared `SimfScannerBody` full-frame `cropPercent`).

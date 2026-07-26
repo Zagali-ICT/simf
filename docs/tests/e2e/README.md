@@ -245,8 +245,8 @@ API endpoints land (D-249). The per-screen design docs live under
 | #21 `delegations` (`GET /app/delegations`) — Wave 4, Figma `1426:10771` (restored from D-277); bi-meeting rework: cards tappable → delegation request sheet for an entitled account | [`mobile-delegations.md`](mobile-delegations.md) | E2E-DEL-001..011 |
 | #220 `exhibitorDetail` (`GET /app/booths/{id}`) — Wave 3, Figma `1439:11881` | [`mobile-exhibitor-detail.md`](mobile-exhibitor-detail.md) | E2E-MOB220-001..007 |
 | #221 `sponsorDetail` (`GET /app/sponsors/{id}`) — Wave 3, Figma `1439:11826` | [`mobile-sponsor-detail.md`](mobile-sponsor-detail.md) | E2E-MOB221-001..007 |
-| `myVisitors` (`GET /app/exhibitor/my-visitors`) — D-426 exhibitor captured-visitor list | [`mobile-my-visitors.md`](mobile-my-visitors.md) | E2E-MOBMYVIS-001..006 |
-| `scanVisitor` (`scanByBadge` — exhibitor lead-capture scan) — D-426 | [`mobile-scan-visitor.md`](mobile-scan-visitor.md) | E2E-MOBSCANVIS-001..006 |
+| `myVisitors` (`GET /app/exhibitor/my-visitors`) — D-426 exhibitor captured-visitor list; DEF-EXH-004 read-path subject eligibility; DEF-EXH-006 current-booth-membership gate | [`mobile-my-visitors.md`](mobile-my-visitors.md) | E2E-MOBMYVIS-001..009 |
+| `scanVisitor` (`scanByBadge` — exhibitor lead-capture scan) — D-426; DEF-EXH-001/002/003/005/006/007 scan authorisation + current booth membership + subject eligibility + capture notice naming the exhibitor + CP-provisioned booth officer | [`mobile-scan-visitor.md`](mobile-scan-visitor.md) | E2E-MOBSCANVIS-001..012 |
 | #24 `archive` (`GET /app/archive` + `/{id}`) | [`mobile-archive.md`](mobile-archive.md) | E2E-MOB024-001..005 |
 | #29 `news` (`GET /app/news` + `/{id}`) | [`mobile-news.md`](mobile-news.md) | E2E-MOB029-001..005 |
 | #30 `gallery` (`GET /app/media`) | [`mobile-gallery.md`](mobile-gallery.md) | E2E-MOB030-001..004 |
@@ -261,7 +261,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #34 `aiSummary` (`GET /app/programme/sessions/{id}/summary`) | [`mobile-ai-summary.md`](mobile-ai-summary.md) | E2E-MOB034-001..010 |
 | #111 `sessionSummaryList` (cached programme + favourites/booked overlay) — Wave 2 pixel pass, Figma `1388:8392` | [`mobile-session-summaries.md`](mobile-session-summaries.md) | E2E-MOB111-001..008 |
 | #26 `sendQuestion` (`POST /app/sessions/{id}/questions`) | [`mobile-send-question.md`](mobile-send-question.md) | E2E-MOB026-001..014 |
-| #32 `badge` (`GET /app/account/dashboard`) | [`mobile-badge.md`](mobile-badge.md) | E2E-MOB032-001..005 |
+| #32 `badge` (`GET /app/account/dashboard`) | [`mobile-badge.md`](mobile-badge.md) | E2E-MOB032-001..007 |
 | #25 `liveBroadcast` (`GET /app/programme/sessions/{id}`) | [`mobile-live.md`](mobile-live.md) | E2E-MOB025-001..007 |
 | #36 `chatbot` (AI assistant → `/app/ai/assistance`) | [`mobile-chatbot.md`](mobile-chatbot.md) | E2E-MOB036-001..007 |
 | #24-01 `archiveDetail` (`GET /app/archive/{id}`) | [`mobile-archive-detail.md`](mobile-archive-detail.md) | E2E-MOB024D-001..009 |

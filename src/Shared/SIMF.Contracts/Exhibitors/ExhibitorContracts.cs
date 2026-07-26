@@ -187,8 +187,10 @@ public sealed record ExhibitorAccountSummary(
 /// <summary>
 /// D-199 #3 — body of <c>POST /api/v1/admin/exhibitors/{id}/accounts</c>.
 /// Provisions a least-privilege login account tagged to the exhibitor. The
-/// account is created through the existing admin provisioning pipeline
-/// (a Visitor account) and an <c>ExhibitorMembership</c> row links it.
+/// account is created through the existing admin provisioning pipeline as a
+/// partner-side account carrying the exhibitor profile type (DEF-EXH-005, so
+/// the booth officer can actually use the lead-capture tools), and an
+/// <c>ExhibitorMembership</c> row links it.
 /// Not sealed: the endpoint binds {id}+body via a derived route class (D-202).
 /// </summary>
 public class ProvisionExhibitorAccountRequest

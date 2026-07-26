@@ -449,10 +449,13 @@ Scenario: List and provision a per-exhibitor login account
   And the grid's "Accounts" column for that exhibitor increments by one (LoadAsync is re-run)
   And an OperationLog row with Event='Exhibitor.AccountProvisioned' records the actor id and
       the new SubjectUserId / SubjectEmail
-  And note: the provisioned account is a least-privilege Visitor created in the
-      pending-approval state through the existing admin provisioning pipeline
-      (CreateVisitorAsync), linked by an ExhibitorMembership row (Data↔Identity stays
-      separated: UserId is a logical FK resolved cross-context on read)
+  And note: the provisioned account is a least-privilege PARTNER-side account created
+      in the pending-approval state through the existing admin provisioning pipeline
+      (CreateOtherAsync), carrying the exhibitor profile type (DEF-EXH-005 — resolved
+      by ProfileType.MobileAppRole == Exhibitor, so the booth officer can actually use
+      the app's scan / My Visitors tools), linked by an ExhibitorMembership row
+      (Data↔Identity stays separated: UserId is a logical FK resolved cross-context on
+      read); it therefore appears in the Others pending-approval queue, not Visitors
 
   When they click "Provision account" with the Contact name OR Email blank
   Then no POST fires and a red toast reads "The contact name and email are both required."

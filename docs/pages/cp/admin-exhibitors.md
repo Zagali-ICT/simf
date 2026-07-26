@@ -113,14 +113,28 @@ JOIN.
 - **Deactivate** — `DELETE /account/api/admin/exhibitors/{id}` (policy
   `Exhibitors.Delete`, rate-limited "auth"). Soft-delete (`IsActive =
   false`); idempotent (returns early if already inactive). Writes
-  `Exhibitor.Deactivated`.
+  `Exhibitor.Deactivated`. **DEF-EXH-006:** this also revokes the app
+  lead-capture tools for every officer under the exhibitor — the scan and My
+  Visitors endpoints require an active `ExhibitorMembership` of an **active**
+  `Exhibitor`, so closing the booth answers 403 on their existing tokens.
 - **List accounts** — `GET /admin/exhibitors/{id}/accounts` (policy
   `Exhibitors.View`). 404 if the exhibitor id is unknown; resolves the
   account emails cross-context from the Identity DB.
 - **Provision account** — `POST /admin/exhibitors/{id}/accounts` (policy
-  `Exhibitors.Create`, rate-limited "auth"). Reuses `CreateVisitorAsync`
-  (least-privilege Visitor, pending approval) + an `ExhibitorMembership`
-  row. Writes `Exhibitor.AccountProvisioned`.
+  `Exhibitors.Create`, rate-limited "auth"). Reuses `CreateOtherAsync`
+  (least-privilege partner-side account, pending approval) + an
+  `ExhibitorMembership` row. Writes `Exhibitor.AccountProvisioned`.
+  **DEF-EXH-005:** the account is provisioned with the **exhibitor profile
+  type** — resolved by `ProfileType.MobileAppRole == Exhibitor` (D-519), never
+  by a name literal — because the app lead-capture tools (scan a visitor badge
+  / My Visitors) authorise on exactly that column; the earlier "no profile
+  type" account could never scan. Consequence for the desk: a booth officer now
+  lands in the **Others** pending-approval queue, not the Visitors queue. With
+  no active exhibitor-mapped profile type at all, the call answers 409
+  `ADMIN_PROFILE_TYPE_INVALID` instead of minting an unusable account.
+  **DEF-EXH-006:** the `ExhibitorMembership` row is not just a tag — it is half
+  the authorisation. Deactivating it (or the exhibitor) is what takes the
+  lead-capture tools away again; the profile type alone no longer grants them.
 - **Export** — `POST /admin/exhibitors/export` (policy
   `Exhibitors.Export`, rate-limited "auth") via
   `ExportExhibitorsEndpoint : AdminGridExportEndpoint<AdminExhibitorSummary>`.

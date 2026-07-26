@@ -16,9 +16,10 @@ namespace SIMF.Infrastructure.Exhibitors;
 /// <summary>D-199 #3 — admin CRUD over exhibitors plus account provisioning.
 /// Mirrors AdminDelegationService for the CRUD; account provisioning reuses the
 /// existing admin provisioning pipeline
-/// (<see cref="IAdminUserProvisioningService.CreateVisitorAsync"/>) so we never
-/// hand-roll UserManager — the provisioned account is a least-privilege
-/// Visitor tagged to the exhibitor via an ExhibitorMembership row.</summary>
+/// (<see cref="IAdminUserProvisioningService.CreateOtherAsync"/>) so we never
+/// hand-roll UserManager — the provisioned account is a partner-side booth
+/// officer carrying the exhibitor profile type (DEF-EXH-005), tagged to the
+/// exhibitor via an ExhibitorMembership row.</summary>
 internal sealed class AdminExhibitorService(
     SimfAppDbContext appDbContext,
     IAuditLog auditLog,
@@ -338,16 +339,21 @@ internal sealed class AdminExhibitorService(
                 "يجب ألا يتجاوز المسمى الوظيفي 128 حرفاً.");
         }
 
-        // Reuse the existing admin provisioning pipeline — a least-privilege
-        // Visitor account (no ProfileTypeId, no RBAC role). It validates the
-        // email-already-registered case and throws ApiException on conflict.
-        var created = await provisioning.CreateVisitorAsync(
+        // Reuse the existing admin provisioning pipeline (no RBAC role). It
+        // validates the email-already-registered case and throws ApiException on
+        // conflict. DEF-EXH-005: the account is provisioned with the EXHIBITOR
+        // profile type, not with no profile type at all — the lead-capture
+        // endpoints authorise on ProfileType.MobileAppRole == Exhibitor (D-519),
+        // so a type-less account could never scan the booth's own visitors. The
+        // exhibitor type is partner-side (IsForVisitor=false), which only the
+        // Other pipeline accepts; CreateVisitorAsync enforces audience scope.
+        var created = await provisioning.CreateOtherAsync(
             actorUserId,
-            new AdminCreateVisitorRequest
+            new AdminCreateOtherRequest
             {
                 Email = email,
                 DisplayName = contactName,
-                ProfileTypeId = null,
+                ProfileTypeId = await ResolveExhibitorProfileTypeIdAsync(cancellationToken),
             },
             cancellationToken);
 
@@ -383,6 +389,37 @@ internal sealed class AdminExhibitorService(
             membership.RoleLabel,
             membership.IsActive,
             membership.CreatedAt);
+    }
+
+    /// <summary>DEF-EXH-005 — the ProfileTypes row a booth officer is provisioned
+    /// under. Resolved by its <see cref="MobileAppRole"/> rather than by a name
+    /// literal: the row is admin-curated at runtime (renameable, and an admin may
+    /// add further exhibitor-mapped types), and MobileAppRole is exactly what the
+    /// lead-capture endpoints authorise on (D-519). Partner-side by definition
+    /// (<c>IsForVisitor=false</c>) so the Other provisioning pipeline accepts it.
+    /// Deterministic pick — oldest first — when an admin has created more than one.
+    /// The seeder creates the canonical row on every boot, so the 409 only fires
+    /// when an admin has deactivated or re-mapped every exhibitor type.</summary>
+    private async Task<Guid> ResolveExhibitorProfileTypeIdAsync(
+        CancellationToken cancellationToken)
+    {
+        var profileTypeId = await appDbContext.ProfileTypes
+            .AsNoTracking()
+            .Where(profileType => profileType.IsActive
+                && !profileType.IsForVisitor
+                && profileType.MobileAppRole == MobileAppRole.Exhibitor)
+            .OrderBy(profileType => profileType.CreatedAt)
+            .ThenBy(profileType => profileType.Name)
+            .Select(profileType => (Guid?)profileType.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (profileTypeId is null)
+        {
+            throw new ApiException(
+                ErrorCodes.AdminProfileTypeInvalid, 409,
+                "No active exhibitor profile type exists. Create a partner profile type whose mobile app role is Exhibitor before provisioning booth accounts.",
+                "لا يوجد نوع ملف شخصي فعّال للعارضين. يرجى إنشاء نوع ملف من نطاق الشركاء دوره في التطبيق «عارض» قبل إضافة حسابات الجناح.");
+        }
+        return profileTypeId.Value;
     }
 
     private static void Validate(

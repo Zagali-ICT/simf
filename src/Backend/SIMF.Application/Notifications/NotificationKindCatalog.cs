@@ -47,7 +47,11 @@ public static class NotificationKindCatalog
         NotificationKind.BadgeUpdateDecided or
         // Manual admin broadcast — the default group for an audience-wide announcement.
         // A session-scoped broadcast overrides Group to Sessions at dispatch time.
-        NotificationKind.AdminAnnouncement => Groups.Account,
+        NotificationKind.AdminAnnouncement or
+        // DEF-EXH-002 — "an exhibitor now holds your contact card" is a personal
+        // privacy notice about the holder's own data, so it sits with the account
+        // section (there is no separate privacy chip).
+        NotificationKind.ExhibitorLeadCaptured => Groups.Account,
 
         NotificationKind.InvitationReceived or
         NotificationKind.VipBroadcast => Groups.Vip,

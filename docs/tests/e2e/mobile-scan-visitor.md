@@ -31,7 +31,7 @@
 | **Page** | mobile exhibitor lead-capture scan (no Figma frame — functional page) |
 | **Route** | app screen `/exhibitor/scan` (`RouteNames.scanVisitor`) |
 | **Surface** | Mobile (Flutter); shared `QrScanView` (camera + manual entry) |
-| **Role/gate** | Exhibitor (approved, non-visitor). A visitor-tier caller → server 403 → a toast |
+| **Role/gate** | Exhibitor (approved) with a current booth membership — DEF-EXH-001: the server authorises on `ProfileType.MobileAppRole == Exhibitor` (D-519), so Staff / Moderator / Media / Sponsor / plain Visitor callers all get 403 → a toast. DEF-EXH-006: an active `ExhibitorMembership` of an active `Exhibitor` is required alongside the role |
 | **Test runner** | Flutter widget/golden test + device manual (camera path is device-only) |
 
 > **Notes:** the entry `QrId` scanned here is the visitor's badge QR; on success
@@ -63,7 +63,7 @@ Scenario: An unknown / expired badge code
   And the exhibitor stays on the scan screen (no navigation)
 ```
 
-### E2E-MOBSCANVIS-003 — Auth gate (visitor-tier → 403)
+### E2E-MOBSCANVIS-003 — Auth gate (any non-exhibitor → 403)
 
 ```gherkin
 Scenario: A non-exhibitor account is refused
@@ -72,6 +72,181 @@ Scenario: A non-exhibitor account is refused
   Then the forbidden toast ("يمكن لحسابات العارضين فقط…") shows
   And no capture happens; the screen stays put
 ```
+
+### E2E-MOBSCANVIS-007 — Only a real exhibitor may scan (DEF-EXH-001)
+
+```gherkin
+Scenario Outline: Every non-exhibitor caller is refused, not just visitors
+  Given a signed-in Approved account whose profile type is <type>
+  When it calls POST /api/v1/app/exhibitor/visitors/scan with any badge code
+  Then the API answers 403 "Only exhibitor accounts can scan visitor badges."
+  And GET /api/v1/app/exhibitor/visitors also answers 403
+  And no visitor PII (email, Saudi mobile, international mobile) is returned
+
+  Examples:
+    | type      |
+    | Normal    |
+    | Staff     |
+    | Moderator |
+
+Scenario: A genuine exhibitor may scan
+  Given a signed-in Approved account whose profile type is "Exhibitor"
+    (ProfileType.MobileAppRole = Exhibitor, D-519)
+  When it scans an eligible visitor badge
+  Then the API answers 200 with the visitor's full card
+```
+
+> The old rule authorised on "the profile type is NOT a visitor type", which
+> admitted every partner type — Staff, Moderator, Media and Sponsor tokens could
+> call both endpoints and harvest visitor PII (login email + both mobile
+> numbers). `ProfileType` lives on the App DB beside `UserProfile`, so the
+> `MobileAppRole` test is a single-database query (D-157: no cross-DB join).
+
+**Evidence:** `tests/SIMF.Api.Tests/ExhibitorVisitorScanTests.cs` —
+`Exhibitor_scans_visitor_badge_captures_and_returns_full_card`,
+`Visitor_caller_cannot_scan_badges_403`, `Staff_caller_cannot_scan_badges_403`,
+`Moderator_caller_cannot_scan_badges_403`.
+
+### E2E-MOBSCANVIS-008 — Only a visitor may be scanned (DEF-EXH-003)
+
+```gherkin
+Scenario Outline: An ineligible badge subject is indistinguishable from unknown
+  Given a signed-in Approved exhibitor
+  When it scans <badge>
+  Then the API answers 404 "No visitor badge matches this code."
+  And nothing is added to My Visitors
+
+  Examples:
+    | badge                                   |
+    | a Staff account's badge                 |
+    | another exhibitor's badge               |
+    | a deactivated (soft-deleted) profile    |
+    | an unknown code                         |
+```
+
+> The scan previously resolved a `QrId` with no `IsActive` and no audience-side
+> filter, so a staff badge or a rival exhibitor's badge was capturable as a
+> "lead". The four cases share ONE error shape so the scan never leaks whether a
+> badge exists but is ineligible. A visitor with no tier assigned stays eligible
+> — the approve-time tier is optional (CS-D / D-386), so a null `ProfileType` is
+> an ordinary audience account, not a partner.
+
+**Evidence:** `ExhibitorVisitorScanTests.Ineligible_badge_subject_returns_404`,
+`ExhibitorVisitorScanTests.Unknown_badge_returns_404`.
+
+### E2E-MOBSCANVIS-009 — The visitor is told their card was shared (DEF-EXH-002)
+
+```gherkin
+Scenario: A new capture notifies the visitor, naming the exhibitor
+  Given a signed-in Approved officer of the exhibitor "Acme Marine / أكمي البحرية"
+  And an eligible visitor badge that this exhibitor has not captured before
+  When the exhibitor scans it
+  Then the capture succeeds (200)
+  And exactly ONE in-app notification of kind "ExhibitorLeadCaptured" is
+    written for the VISITOR, in the "Account" group
+  And its body names "Acme Marine" (Arabic body names "أكمي البحرية")
+  And no email is queued
+
+Scenario: An idempotent re-scan does not re-notify
+  When the same exhibitor scans the same badge again (refreshing the note)
+  Then the capture still succeeds (200)
+  And the visitor still has exactly ONE ExhibitorLeadCaptured notification
+```
+
+> DEF-EXH-002 (privacy): the scan reads the visitor's ENTRY badge and returns a
+> full contact card, so the visitor is at minimum told who now holds it. The
+> notification is best-effort (`TryDispatchAsync`) — a dispatch failure never
+> undoes the committed capture. **Not implemented, deliberately:** an opt-out
+> flag / consent gate on the scan itself. Whether an exhibitor may scan at all is
+> a product decision affecting live event operations; the recommended design is
+> written up for the owner rather than shipped.
+
+**Evidence:**
+`ExhibitorVisitorScanTests.New_capture_notifies_the_visitor_once_and_a_rescan_is_silent`.
+
+### E2E-MOBSCANVIS-010 — A CP-provisioned booth officer can scan (DEF-EXH-005)
+
+```gherkin
+Scenario: The CP's own provisioning path produces a working exhibitor
+  Given an administrator provisions a booth account with
+    POST /api/v1/admin/exhibitors/{id}/accounts
+  And the officer completes the invite (password) and is approved
+  When the officer signs in to the app and scans an eligible visitor badge
+  Then the API answers 200 with the visitor's full card
+  And GET /api/v1/app/exhibitor/visitors lists the capture
+  And the provisioned account's profile type carries MobileAppRole = Exhibitor
+```
+
+> The provisioning path created the officer with **no** profile type ("a
+> least-privilege Visitor account"), which the DEF-EXH-001 rule can never admit —
+> the CP produced exhibitors that could not use the tools they were provisioned
+> for. The account is now created through the partner-side `CreateOtherAsync`
+> pipeline with the exhibitor profile type, resolved by its `MobileAppRole`
+> (never by a name literal — the row is admin-curated and renameable). With no
+> active exhibitor-mapped profile type at all, provisioning answers a clean 409
+> `ADMIN_PROFILE_TYPE_INVALID` instead of minting an unusable account.
+
+**Evidence:** `ExhibitorVisitorScanTests.Cp_provisioned_booth_officer_can_scan_and_list`.
+
+### E2E-MOBSCANVIS-011 — Leaving the booth revokes the scan (DEF-EXH-006)
+
+```gherkin
+Scenario: A revoked booth membership ends the officer's scan authority
+  Given an administrator provisioned a booth officer under an exhibitor
+  And the officer is signed in and can scan an eligible visitor badge (200)
+  When the officer's ExhibitorMembership is deactivated
+  Then POST /api/v1/app/exhibitor/visitors/scan answers 403
+       "Only exhibitor accounts with a current booth membership can scan
+        visitor badges." /
+       "مسح بطاقات الزوار متاح فقط لحسابات العارضين المرتبطة بجناح فعّال."
+  And GET /api/v1/app/exhibitor/visitors also answers 403
+  And no visitor PII (email, Saudi mobile, international mobile) is returned
+
+Scenario: Closing the exhibitor revokes every officer under it
+  Given an administrator provisioned a booth officer under an exhibitor
+  When the administrator closes the exhibitor with
+    DELETE /api/v1/admin/exhibitors/{id}
+  Then the officer's scan and list both answer 403
+```
+
+> DEF-EXH-006: `MobileAppRole.Exhibitor` is granted at provisioning time and then
+> lives on the PERSON's `UserProfile`, so it outlived the booth — removing
+> someone from an exhibitor did not stop them scanning visitor badges or reading
+> the contact cards they already held. Authority now requires an **active**
+> `ExhibitorMembership` of an **active** `Exhibitor` alongside the role. The test
+> runs on an already-issued token: the JWT still carries the exhibitor app role,
+> so only the server-side membership check can revoke it. `UserProfile`,
+> `ExhibitorMembership` and `Exhibitor` are all on the App DB, so this is still a
+> single-database check (D-157: no cross-DB join).
+
+**Evidence:**
+`ExhibitorVisitorScanTests.Booth_officer_is_refused_once_the_membership_is_revoked`,
+`ExhibitorVisitorScanTests.Closing_the_exhibitor_revokes_its_officers_scan_authority`.
+
+### E2E-MOBSCANVIS-012 — The notice names the exhibitor, not the account (DEF-EXH-007)
+
+```gherkin
+Scenario: A CP-provisioned officer's capture still names who received the data
+  Given an exhibitor named "Northern Shipyards / أحواض الشمال"
+  And an administrator provisioned a booth officer under it
+    (the officer's UserProfile is a stub with NO Name / NameArabic)
+  When the officer scans an eligible visitor badge for the first time
+  Then the capture succeeds (200)
+  And the visitor's ExhibitorLeadCaptured notice names "Northern Shipyards"
+  And the Arabic body names "أحواض الشمال"
+```
+
+> DEF-EXH-007: the notice used to take its name from the SCANNING ACCOUNT's
+> `UserProfile.Name` / `NameArabic`. The CP provisioning pipeline creates a stub
+> profile with neither set (`AdminAccountService.CreateAccountAsync`), so for
+> exactly the accounts DEF-EXH-005 enabled the notice degraded to the generic
+> "An exhibitor" / "أحد العارضين" — the one thing the notice exists to say was
+> missing. The name is now resolved from the `Exhibitor` the officer represents,
+> falling back to the officer's own profile name and only then to the generic
+> wording.
+
+**Evidence:**
+`ExhibitorVisitorScanTests.Capture_notice_names_the_exhibitor_a_cp_officer_represents`.
 
 ### E2E-MOBSCANVIS-004 — Manual-entry path + generic failure
 
@@ -124,5 +299,18 @@ covers the always-mounted manual field with the camera off; `scan_gate_test`
 
 ---
 
-_Last reviewed:_ `2026-07-11` by `SIMF Team` — D-737 unified scanner (QrScanView
-now hosts SimfScannerBody + camera-error state). Earlier: `2026-07-04`.
+_Last reviewed:_ `2026-07-27` by `SIMF Team` — DEF-EXH-006: scan authority now
+requires a CURRENT booth membership, so revoking a membership or closing the
+exhibitor revokes the tools (E2E-MOBSCANVIS-011); DEF-EXH-007: the capture
+notice names the EXHIBITOR the officer represents, which a CP-provisioned stub
+profile could not (E2E-MOBSCANVIS-012). The backing class
+`ExhibitorVisitorScanTests` now holds 13 tests. Earlier: `2026-07-27` —
+DEF-EXH-005: the CP provisioning path now assigns the exhibitor profile type, so
+a booth officer created from the CP can actually scan (E2E-MOBSCANVIS-010).
+Earlier: `2026-07-26` —
+security/privacy fixes DEF-EXH-001 (only `MobileAppRole.Exhibitor` may scan),
+DEF-EXH-003 (the scanned subject must be an active audience account),
+DEF-EXH-002 (a new capture notifies the visitor once, naming the exhibitor) —
+E2E-MOBSCANVIS-007..009. Earlier:
+`2026-07-11` — D-737 unified scanner (QrScanView now hosts SimfScannerBody +
+camera-error state); `2026-07-04`.
