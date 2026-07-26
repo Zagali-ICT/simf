@@ -13,6 +13,7 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_logo.dart';
 import '../../core/validation/digit_normalization.dart';
+import '../../core/validation/name_validation.dart';
 import '../../core/validation/phone_validation.dart';
 import '../../core/validation/required_validation.dart';
 import '../../core/validation/saudi_id_validation.dart';
@@ -544,7 +545,7 @@ class _StaffRegisterVisitorScreenState
             maxLength: 100,
             validator: (v) => _required(l10n, v),
             inputFormatters: <TextInputFormatter>[
-              FilteringTextInputFormatter.allow(RegExp(r'[ء-ي\s]')),
+              FilteringTextInputFormatter.allow(arabicNameCharacters),
             ],
           ),
           _textField(

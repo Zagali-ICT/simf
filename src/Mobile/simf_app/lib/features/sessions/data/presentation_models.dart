@@ -48,7 +48,7 @@ class PresentationItem {
         sessionId: json['sessionId'] as String? ?? '',
         sessionTitle: json['sessionTitle'] as String? ?? '',
         sessionTitleArabic: json['sessionTitleArabic'] as String? ?? '',
-        sessionStart: _parseUtc(json['sessionStart']),
+        sessionStart: parseWireUtc(json['sessionStart'], 'sessionStart'),
         speakerName: json['speakerName'] as String? ?? '',
         speakerNameArabic: json['speakerNameArabic'] as String? ?? '',
         fileName: json['fileName'] as String? ?? '',
@@ -73,16 +73,6 @@ class PresentationsPage {
         .toList(growable: false);
     return PresentationsPage(items);
   }
-}
-
-DateTime _parseUtc(Object? value) {
-  if (value is String && value.isNotEmpty) {
-    final parsed = DateTime.tryParse(value);
-    if (parsed != null) {
-      return parsed.toUtc();
-    }
-  }
-  return DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
 }
 
 String _pickRequired(String arabic, String english, bool isArabic) {

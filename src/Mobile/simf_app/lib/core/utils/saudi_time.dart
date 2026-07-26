@@ -25,6 +25,28 @@ DateTime saudiOf(DateTime instant) => instant.toUtc().add(saudiOffset);
 /// device zone.
 DateTime saudiNow() => saudiOf(DateTime.now());
 
+/// Parses an ISO-8601 wire timestamp into a UTC [DateTime] — the ONE decoder
+/// every model uses for an API instant (the contract is always UTC). [field] is
+/// the wire field name, so a failure says which one broke.
+///
+/// BUG-011 — a missing / unparseable value used to fall back to the Unix epoch,
+/// so a dropped or renamed timestamp field rendered as 1970 (03:00 AM on the
+/// Saudi clock) on every row: no error, no empty state, just wrong times. It now
+/// throws a [FormatException], which the API client reports as a
+/// `clientMalformedResponse` failure the screen surfaces with a retry.
+DateTime parseWireUtc(Object? value, String field) {
+  if (value is String && value.isNotEmpty) {
+    final parsed = DateTime.tryParse(value);
+    if (parsed != null) {
+      return parsed.toUtc();
+    }
+  }
+  throw FormatException(
+    'The wire field "$field" is not an ISO-8601 timestamp.',
+    value,
+  );
+}
+
 /// One 12-hour AM/PM time-of-day formatter (hoisted off the build path). No
 /// explicit intl locale — like the shared date utils — so it needs no
 /// `initializeDateFormatting`; it renders Latin "AM/PM", matching the backend

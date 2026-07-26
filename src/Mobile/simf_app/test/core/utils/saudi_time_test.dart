@@ -23,6 +23,30 @@ void main() {
     });
   });
 
+  group('parseWireUtc', () {
+    test('reads an ISO-8601 instant as UTC', () {
+      final parsed = parseWireUtc('2026-11-23T06:00:00Z', 'start');
+      expect(parsed.isUtc, isTrue);
+      expect(parsed, DateTime.utc(2026, 11, 23, 6));
+    });
+
+    test('normalises an offset instant to UTC', () {
+      expect(
+        parseWireUtc('2026-11-23T09:00:00+03:00', 'start'),
+        DateTime.utc(2026, 11, 23, 6),
+      );
+    });
+
+    test('a missing or unparseable value throws instead of yielding 1970', () {
+      // BUG-011 — the epoch fallback made a broken/renamed wire field render as
+      // 03:00 AM on every row with no error at all. It must fail loudly.
+      expect(() => parseWireUtc(null, 'start'), throwsFormatException);
+      expect(() => parseWireUtc('', 'start'), throwsFormatException);
+      expect(() => parseWireUtc('not-a-timestamp', 'start'), throwsFormatException);
+      expect(() => parseWireUtc(0, 'start'), throwsFormatException);
+    });
+  });
+
   test('formatSaudiTime12 renders 12-hour AM/PM', () {
     expect(formatSaudiTime12(DateTime.utc(2026, 11, 22, 13, 45)), '04:45 PM');
     expect(formatSaudiTime12(DateTime.utc(2026, 11, 20, 22, 30)), '01:30 AM');
