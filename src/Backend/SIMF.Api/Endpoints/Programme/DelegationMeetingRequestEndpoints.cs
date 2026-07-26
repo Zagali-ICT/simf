@@ -117,6 +117,36 @@ public sealed class ConfirmDelegationMeetingEndpoint(IDelegationMeetingRequestSe
     }
 }
 
+// B8 — the decline twin of the confirm endpoint: the same target-delegation member may
+// DECLINE an Approved (AwaitingSpeaker) meeting instead of being stuck between confirming
+// and waiting for an admin cancel. Same policy + rate limit as confirm.
+public sealed class DeclineDelegationMeetingRoute
+{
+    public Guid Id { get; set; }
+}
+
+public sealed class DeclineDelegationMeetingEndpoint(IDelegationMeetingRequestService service)
+    : Endpoint<DeclineDelegationMeetingRoute, ApiResult<AdminDelegationMeetingRequestDetail>>
+{
+    public override void Configure()
+    {
+        Post("/app/delegation-meeting-requests/{id:guid}/decline");
+        Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Delegates");
+    }
+    public override async Task HandleAsync(DeclineDelegationMeetingRoute req, CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        await Send.OkAsync(ApiResult<AdminDelegationMeetingRequestDetail>.Ok(
+            await service.DeclineByOtherPartyAsync(actorId, req.Id, ct)), ct);
+    }
+}
+
 public sealed class RespondToDelegationMeetingRequestRoute : RespondToDelegationMeetingRequestRequest
 {
     public Guid Id { get; set; }

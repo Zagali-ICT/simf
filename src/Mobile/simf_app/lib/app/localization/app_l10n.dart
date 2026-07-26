@@ -1305,12 +1305,22 @@ class AppL10n {
         'هذا الوفد غير متاح للاجتماعات',
         'This delegation is not available for meetings',
       );
-  String get meetingConfirmTitle => _t('تأكيد الاجتماع', 'Confirm meeting');
+  // A30 — this in-app screen answers a DELEGATION meeting only
+  // (`/meeting-confirm` with a requestId). The website's
+  // `/meeting/confirm?token=` page is the separate emailed-link surface. They
+  // used to share the title "تأكيد الاجتماع / Confirm meeting", so a tester
+  // driving this screen for a SPEAKER meeting hit a spurious 403/409; the copy
+  // now names the delegation explicitly.
+  String get meetingConfirmTitle =>
+      _t('تأكيد اجتماع الوفد', 'Confirm delegation meeting');
   String get meetingConfirmIntro => _t(
-        'اضغط لتأكيد هذا الاجتماع مع الطرف الآخر.',
-        'Tap to confirm this meeting with the other party.',
+        'اضغط لتأكيد اجتماع وفدكم مع الوفد الآخر، '
+            'أو ارفضه إذا تعذّر عقده.',
+        'Confirm your delegation meeting with the other delegation, '
+            'or decline it if it cannot go ahead.',
       );
-  String get meetingConfirmButton => _t('تأكيد الاجتماع', 'Confirm meeting');
+  String get meetingConfirmButton =>
+      _t('تأكيد الاجتماع', 'Confirm the meeting');
   String get meetingConfirmDone => _t('تم تأكيد الاجتماع', 'Meeting confirmed');
   String get meetingConfirmNotAwaiting => _t(
         'هذا الاجتماع ليس بانتظار التأكيد',
@@ -1322,6 +1332,23 @@ class AppL10n {
       );
   String get meetingConfirmMissing =>
       _t('لم يتم العثور على الاجتماع', 'Meeting not found');
+
+  // B8 — the delegation target's DECLINE action on the same screen. Before
+  // this the only exit from an approved meeting they could not attend was an
+  // admin cancel.
+  String get meetingDeclineButton =>
+      _t('رفض الاجتماع', 'Decline the meeting');
+  String get meetingDeclineDone =>
+      _t('تم رفض الاجتماع', 'Meeting declined');
+  String get meetingDeclineIntro => _t(
+        'تم إبلاغ الوفد الطالب بالرفض وتحرير فترة القاعة.',
+        'The requesting delegation has been told, '
+            'and the hall slot is released.',
+      );
+  String get meetingDeclineFailed => _t(
+        'تعذّر رفض الاجتماع. حاول مرة أخرى.',
+        'Could not decline the meeting. Try again.',
+      );
 
   // D-500 (Wave 5, الطلبات 1408:9726) — the unified requests feed (supersedes the
   // D-479 read-only My-meetings screen).

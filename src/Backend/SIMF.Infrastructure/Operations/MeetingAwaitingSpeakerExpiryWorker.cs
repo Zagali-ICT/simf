@@ -22,6 +22,10 @@ namespace SIMF.Infrastructure.Operations;
 /// re-decide cleanly. The requester saw the row as "under review" (AwaitingSpeaker folds to
 /// Pending on the app feed) the whole time, so nothing changes for them. Mirrors
 /// <see cref="SessionReminderWorker"/>'s scoped-poll shape.
+///
+/// <para>B10 — the same sweep now also covers DELEGATION meeting requests
+/// (<see cref="RunDelegationExpiryScanAsync"/>), which hold a hall slot in
+/// AwaitingSpeaker exactly like a speaker request but were never expired.</para>
 /// </summary>
 internal sealed class MeetingAwaitingSpeakerExpiryWorker(
     IServiceScopeFactory scopeFactory,
@@ -40,7 +44,7 @@ internal sealed class MeetingAwaitingSpeakerExpiryWorker(
 
         heartbeat.Register(
             nameof(MeetingAwaitingSpeakerExpiryWorker),
-            "Reverts stale speaker meeting requests once their invite links expire.",
+            "Reverts stale speaker and delegation meeting requests once their invite links expire.",
             PollInterval);
 
         try
@@ -86,13 +90,20 @@ internal sealed class MeetingAwaitingSpeakerExpiryWorker(
         var auditLog = scope.ServiceProvider.GetRequiredService<IAuditLog>();
         var notifications = scope.ServiceProvider.GetRequiredService<INotificationDispatcher>();
 
+        // MERGE: the speaker scan gained notifications+logger (A29 — tell the requester
+        // when a stale AwaitingSpeaker reverts); the delegation scan (B10) is additive
+        // beside it. Both run each tick.
+        var now = timeProvider.GetUtcNow();
         var reverted = await RunExpiryScanAsync(
-            db, auditLog, notifications, logger, timeProvider.GetUtcNow(), cancellationToken);
-        if (reverted > 0)
+            db, auditLog, notifications, logger, now, cancellationToken);
+        var delegationReverted = await RunDelegationExpiryScanAsync(
+            db, auditLog, now, cancellationToken);
+        if (reverted > 0 || delegationReverted > 0)
         {
             logger.LogInformation(
-                "MeetingAwaitingSpeakerExpiryWorker reverted {Count} stale AwaitingSpeaker request(s).",
-                reverted);
+                "MeetingAwaitingSpeakerExpiryWorker reverted {Count} stale AwaitingSpeaker "
+                + "speaker request(s) and {DelegationCount} delegation request(s).",
+                reverted, delegationReverted);
         }
     }
 
@@ -181,5 +192,55 @@ internal sealed class MeetingAwaitingSpeakerExpiryWorker(
             RelatedEntityId = req.Id,
             SendEmail = true,
         }, logger, cancellationToken);
+    }
+
+    /// <summary>
+    /// B10 — the delegation twin of <see cref="RunExpiryScanAsync"/>. An AwaitingSpeaker
+    /// DELEGATION meeting HOLDS its hall slot (<c>MeetingRequestStatuses.SlotHolding</c>)
+    /// but nothing ever expired one, so a target delegation that simply never confirmed
+    /// held the slot forever and the admin queue dead-ended. Same cadence, same shape and
+    /// the same "no still-usable token" rule as the speaker sweep — the D-767 delegation
+    /// confirm token carries the same 72h TTL, so this is time-based via that TTL. Reverts
+    /// to a clean Pending (which releases the slot) so the admin can re-decide. Extracted
+    /// for direct unit testing; returns the number reverted.
+    /// </summary>
+    internal static async Task<int> RunDelegationExpiryScanAsync(
+        SimfAppDbContext db, IAuditLog auditLog, DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        var stale = await db.DelegationMeetingRequests
+            .Where(r => r.Status == MeetingRequestStatus.AwaitingSpeaker
+                && !db.DelegationMeetingActionTokens.Any(
+                    t => t.DelegationMeetingRequestId == r.Id
+                        && t.UsedAt == null && t.ExpiresUtc > now))
+            .ToListAsync(cancellationToken);
+        if (stale.Count == 0)
+        {
+            return 0;
+        }
+
+        foreach (var req in stale)
+        {
+            req.Status = MeetingRequestStatus.Pending;
+            req.HallId = null;
+            req.MeetingTableId = null;
+            req.SlotStart = null;
+            req.SlotEnd = null;
+            req.AvailabilityWindowId = null;
+            req.RespondedAt = null;
+            req.RespondedByUserId = null;
+            req.ResponseNote = null;
+
+            await auditLog.WriteAsync(new AuditEntry
+            {
+                EventType = AuditEvents.DelegationMeetingRequestReverted,
+                Outcome = AuditOutcome.Success,
+                ActorUserId = Guid.Empty,
+                Detail = $"requestId={req.Id}; reason=AwaitingConfirmTokenExpired",
+            }, cancellationToken);
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+        return stale.Count;
     }
 }

@@ -9,6 +9,7 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.BusinessMeetings;
 using SIMF.Domain.BusinessMeetings;
+using SIMF.Infrastructure.MeetingRequests;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.BusinessMeetings;
@@ -561,19 +562,19 @@ internal sealed class BusinessMeetingService(
             await using var tx = await appDbContext.Database.BeginTransactionAsync(
                 System.Data.IsolationLevel.Serializable, cancellationToken);
 
-            // Table conflict — another Confirmed meeting overlaps this table/slot.
-            var tableClash = await appDbContext.BusinessMeetings.AsNoTracking()
-                .Where(m => m.MeetingTableId == table.Id
-                    && m.Status == BusinessMeetingStatus.Confirmed)
-                .AnyAsync(m => m.Start < request.End && request.Start < m.End,
-                    cancellationToken);
-            if (tableClash)
-            {
-                throw new ApiException(
-                    ErrorCodes.BusinessMeetingTableConflict, 409,
-                    "The table is already booked for an overlapping time-slot.",
-                    "الطاولة محجوزة بالفعل في فترة زمنية متداخلة.");
-            }
+            // Table conflict — the table is already held over this slot. D-773: the
+            // scan used to see this service's OWN family only, so a business meeting
+            // could be scheduled onto a table already held by a delegation or speaker
+            // meeting request. The shared guard covers all three families; running it
+            // here keeps its range scans inside this Serializable transaction, so the
+            // key-range locks that close the M-5 race still cover them.
+            await MeetingTableOverlapGuard.EnsureTableIsFreeAsync(
+                appDbContext, table.Id, request.Start, request.End,
+                ErrorCodes.BusinessMeetingTableConflict,
+                excludeDelegationRequestId: null,
+                excludeSpeakerRequestId: null,
+                excludeBusinessMeetingId: meeting.Id,
+                cancellationToken);
 
             // Hall conflict — the table's hall is wholly reserved for a non-meeting
             // purpose (e.g. a session) for an overlapping slot (FDS-013 §5.6: a

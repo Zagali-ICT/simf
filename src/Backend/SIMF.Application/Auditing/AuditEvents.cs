@@ -330,6 +330,9 @@ public static class AuditEvents
     // D-478 (#11, Group G phase 2) — delegation↔delegation (G2G) meeting requests.
     public const string DelegationMeetingRequestSubmitted = "DelegationMeetingRequest.Submitted";
     public const string DelegationMeetingRequestResponded = "DelegationMeetingRequest.Responded";
+    // B10 — the AwaitingSpeaker->Pending auto-revert for a delegation meeting whose
+    // confirm token expired unused (the delegation twin of SpeakerMeetingRequestReverted).
+    public const string DelegationMeetingRequestReverted = "DelegationMeetingRequest.Reverted";
     public const string AdminDelegationMeetingRequestsListed = "Admin.DelegationMeetingRequestsListed";
     public const string AdminDelegationMeetingRequestViewed = "Admin.DelegationMeetingRequestViewed";
     public const string AdminSpeakerMeetingRequestsListed = "Admin.SpeakerMeetingRequestsListed";

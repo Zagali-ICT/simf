@@ -144,6 +144,15 @@ public sealed class AdminUpdateVisitorRequest
     /// <summary>Bi-Meeting rework — the admin-assigned per-user flag that lets this
     /// account request a delegation (وفد) meeting. Independent of the delegate flag.</summary>
     public bool AllowsDelegationMeeting { get; set; }
+
+    /// <summary>B22 — the ISO alpha-2 nationality code (the same wire shape the
+    /// self-service profile upsert and <see cref="AdminUserProfileView.NationalityCode"/>
+    /// use). Optional: null / empty leaves the stored nationality untouched, so every
+    /// existing caller keeps working. When supplied it must match an ACTIVE
+    /// <c>Countries</c> row — the same rule the self-service path enforces. This is the
+    /// only admin path that can correct a wrong nationality, and nationality gates
+    /// delegation-meeting confirm eligibility.</summary>
+    public string? NationalityCode { get; set; }
 }
 
 /// <summary>
@@ -173,6 +182,10 @@ public sealed class AdminUpdateOtherRequest
     /// <summary>Bi-Meeting rework — the admin-assigned per-user delegation-meeting flag
     /// (see <see cref="AdminUpdateVisitorRequest.AllowsDelegationMeeting"/>).</summary>
     public bool AllowsDelegationMeeting { get; set; }
+
+    /// <summary>B22 — the ISO alpha-2 nationality code
+    /// (see <see cref="AdminUpdateVisitorRequest.NationalityCode"/>). Optional.</summary>
+    public string? NationalityCode { get; set; }
 }
 
 /// <summary>

@@ -42,7 +42,11 @@
 | E2E-MOBMC-004 | Missing / blank requestId → "لم يتم العثور على الاجتماع"; no POST fires | edge | P1 | _to author_ |
 | E2E-MOBMC-005 | The confirm response carries no requester email (PII strip) | security | P0 | authored ✓ (`Other_party_confirm_response_does_not_leak_the_requester_email`, API) |
 | E2E-MOBMC-006 | Deep-link allow-list — only `/meeting-confirm` (with `?requestId=`) is a permitted notification click path | security | P1 | _to author_ |
-| E2E-MOBMC-007 | RTL render (Arabic) — title "تأكيد الاجتماع", intro + button mirror | i18n | P1 | _to author_ |
+| E2E-MOBMC-007 | RTL render (Arabic) — title "تأكيد اجتماع الوفد", intro + both buttons mirror | i18n | P1 | _to author_ |
+| E2E-MOBMC-008 | Golden decline (B8): tap **رفض الاجتماع** → the meeting is Rejected, the hall slot is released, the requester is notified + emailed | happy | P0 | authored ✓ (`meeting_confirm_screen_test.dart`, widget; `B8_a_target_member_can_decline_an_awaiting_meeting`, API) |
+| E2E-MOBMC-009 | Decline is refused for a non-member (403) / a non-awaiting meeting (409) | auth-gate / conflict | P0 | authored ✓ (`B8_a_member_of_another_delegation_cannot_decline`, `B8_declining_a_pending_meeting_is_a_conflict`, `B8_declining_twice_is_a_conflict`, API) |
+| E2E-MOBMC-010 | A30 — the screen names the DELEGATION meeting, so it is not confused with the website's speaker token page | i18n | P2 | authored ✓ (`meeting_confirm_screen_test.dart`, widget) |
+| E2E-MOBMC-011 | D2 — one member's decline retracts the prompt from the OTHER eligible members of the same delegation; the decliner is skipped | data | P0 | authored ✓ (`DelegationMeetingQaFixesTests.D2_*`, API) |
 
 ## Scenarios
 
@@ -146,6 +150,60 @@ Scenario: The confirm screen mirrors under Arabic
   And on success the "تم تأكيد الاجتماع" view renders RTL with no horizontal overflow
 ```
 
+### E2E-MOBMC-008/009 — The target delegation declines
+
+```gherkin
+Scenario: A member of the target delegation cannot host the meeting
+  Given an admin approved a delegation meeting and it is AwaitingConfirmation
+  And I am an eligible member of the TARGET delegation
+  When I open /meeting-confirm?requestId={id}
+  Then I see both "تأكيد الاجتماع" (Confirm the meeting) and "رفض الاجتماع" (Decline)
+  When I tap "رفض الاجتماع"
+  Then POST /app/delegation-meeting-requests/{id}/decline returns 200
+  And the request status is Rejected and its hall + table binding is cleared
+  And the requester receives a "Delegation meeting declined" notification and email
+  And I see "تم رفض الاجتماع" with the note that the hall slot is released
+  And the response never carries the requester's email (same PII strip as confirm)
+
+Scenario: Someone outside the target delegation tries to decline
+  Given I am a member of a third delegation
+  When I POST /app/delegation-meeting-requests/{id}/decline
+  Then the response is 403 FORBIDDEN and the meeting stays AwaitingConfirmation
+
+Scenario: Declining a meeting that is not awaiting confirmation
+  When I decline a still-Pending meeting, or decline the same meeting twice
+  Then the response is 409 APP_REQUEST_ALREADY_RESPONDED
+  And the screen shows "هذا الاجتماع ليس بانتظار التأكيد"
+```
+
+### E2E-MOBMC-010 — The screen names the delegation (A30)
+
+```gherkin
+Scenario: The app screen and the website page are told apart
+  When I open /meeting-confirm?requestId={id}
+  Then the title reads "تأكيد اجتماع الوفد" / "Confirm delegation meeting"
+  And the website's /meeting/confirm?token= page keeps the generic
+      "تأكيد الاجتماع" / "Confirm meeting" — it serves BOTH the speaker links and
+      the delegation confirm link (D-767)
+  And driving a SPEAKER meeting through this app screen is a 403/409 by design
+```
+
+### E2E-MOBMC-011 — A decline retracts the prompt from the rest of the delegation (D2)
+
+```gherkin
+Scenario: One member's decline is a decline for the whole delegation
+  Given two eligible members of the TARGET delegation each hold the
+        "awaiting your confirmation" card + the emailed confirm link
+  When one of them taps "رفض الاجتماع" and the decline returns 200
+  Then the OTHER member receives a MeetingCancelled notification for the same
+       request (bilingual EN + AR), so their prompt is retracted
+  And the member who declined receives no extra card — they already have the answer
+  And re-tapping the other member's old card would have returned
+      409 APP_REQUEST_ALREADY_RESPONDED
+```
+
+**Evidence:** `DelegationMeetingQaFixesTests.D2_a_decline_retracts_the_prompt_from_the_other_target_members`.
+
 ---
 
 ## Implementation notes
@@ -157,7 +215,14 @@ Scenario: The confirm screen mirrors under Arabic
   `POST /app/delegation-meeting-requests/{requestId}/confirm` (empty body) →
   `DelegationMeetingSummary`.
 - **Error switch** (`meeting_confirm_screen.dart`): `409 → meetingConfirmNotAwaiting`,
-  `403 → delegationNotAllowed`, `_ → meetingConfirmFailed`; blank id → `meetingConfirmMissing`.
+  `403 → delegationNotAllowed`, `_ → meetingConfirmFailed` (or `meetingDeclineFailed`
+  on the decline arm); blank id → `meetingConfirmMissing`.
+- **B8 decline** — `delegations_repository.dart` `declineMeeting(String requestId)` →
+  `POST /app/delegation-meeting-requests/{requestId}/decline`; the screen's buttons
+  carry the keys `delegation-meeting-confirm` / `delegation-meeting-decline`.
+  Server side `DelegationMeetingRequestService.DeclineByOtherPartyAsync` mirrors the
+  confirm guard exactly (`LoadAwaitingForOtherPartyAsync`) and flips
+  AwaitingConfirmation → **Rejected**, clearing `HallId` / `MeetingTableId`.
 - **Notifications** — `notifications_screen.dart`: `_allowedClickPaths` includes
   `'/meeting-confirm'`; `_groupForItem` maps `MeetingRequested` / `MeetingReminder` → `'Meetings'`.
   `NotificationKindCatalog.ClickUrlFor(MeetingRequested)` → `/meeting-confirm?requestId={relatedId}`;
@@ -173,3 +238,7 @@ Scenario: The confirm screen mirrors under Arabic
 ---
 
 _Last reviewed:_ 2026-07-22 by Claude — bi-meeting rework: new delegation other-party confirm-on-tap screen (route 117), reached from the `MeetingRequested` notification deep link. The confirm transition + PII strip are covered by `DelegationMeetingRequestsTests`; the screen / RTL / deep-link-allow-list layer is on-device `_to author_`.
+
+_Last reviewed:_ 2026-07-26 by Claude — B8 target-side decline + A30 delegation-specific copy (E2E-MOBMC-008..010).
+
+_Last reviewed:_ 2026-07-27 by Claude — D2: the decline retracts the confirm prompt from the other target members (E2E-MOBMC-011).

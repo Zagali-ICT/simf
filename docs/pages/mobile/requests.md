@@ -201,7 +201,8 @@ auth-gate, validation (empty job title → 400), conflict (cancel already-cancel
 | Date | Decision | Change |
 |------|----------|--------|
 | 2026-06-26 | D-500 | Wave 5 — new unified الطلبات requests screen (Figma `1408:9726`) + `GET /app/my-requests` (five kinds) + `POST /app/document-requests` + `POST /app/badge-requests` + `POST /app/my-requests/cancel`; `Cancelled` added to `MeetingRequestStatus` (additive); two new additive App tables (`ParticipationDocumentRequests`, `BadgeUpdateRequests`, migration `D500`). Supersedes and removes the D-479 read-only My-meetings screen / endpoint / contract. |
+| 2026-07-26 | B11 | **A delegation meeting is withdrawable.** The feed reported `CanCancel: false` for `DelegationMeeting` while the cancel switch fell through to a 409 — asymmetric with the speaker meeting next to it, which is cancellable while Pending or AwaitingConfirmation. `MyRequestsService` now projects the same rule for delegation meetings and gained a `DelegationMeeting` cancel arm: a conditional `UPDATE … WHERE Status IN (Pending, AwaitingSpeaker)` to `Cancelled` that also clears `HallId` / `MeetingTableId`, so the other delegation's confirm wins the race (409) and the hall slot frees immediately. `SessionAttendance` stays read-only here. E2E-REQ-014/015/016. |
 
 ---
 
-_Last reviewed:_ 2026-06-26 by SIMF Team (D-500 — requests screen reference doc).
+_Last reviewed:_ 2026-07-26 by Claude (B11 — delegation meetings are self-cancellable). Earlier: 2026-06-26 by SIMF Team (D-500 — requests screen reference doc).

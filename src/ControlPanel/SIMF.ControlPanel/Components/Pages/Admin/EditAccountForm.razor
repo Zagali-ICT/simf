@@ -5,6 +5,7 @@
    makes that explicit. Used by VisitorsList and OthersList so the two desks
    share one form. *@
 @using SIMF.Contracts.Authentication
+@using SIMF.Contracts.UserProfile
 
 @if (_loading)
 {
@@ -41,6 +42,20 @@ else
                     Value="@_selectedProfileType"
                     ValueChanged="OnProfileTypeChanged"
                     Placeholder="@(IsVisitorScope ? L["Admin.Edit.ProfileType.None"].Value : L["Admin.Edit.ProfileType.Choose"].Value)" />
+
+        @* B22 — nationality. It gates delegation-meeting confirm eligibility, yet it
+           was only ever written by the self-service sign-up, so an admin could not fix
+           a delegate blocked by a wrong nationality. Leaving the picker empty sends no
+           nationality and leaves the stored value untouched. *@
+        <SimfSelect TValue="CountryDto"
+                    Label="@L["Admin.Edit.Nationality"]"
+                    Placeholder="@L["Admin.Edit.Nationality.Keep"]"
+                    Items="_countries"
+                    ValueFor="@(c => c.Code)"
+                    LabelFor="@(c => CountryLabel(c))"
+                    Value="@_selectedCountry"
+                    ValueChanged="OnNationalityPicked" />
+        <p class="simf-form__hint">@L["Admin.Edit.Nationality.Hint"]</p>
 
         <p class="simf-form__hint">@L["Admin.Edit.EmailChangeNote"]</p>
 

@@ -22,6 +22,11 @@ public sealed class UpdateVisitorRouteRequest
     /// <summary>Bi-Meeting rework — the admin-assigned speaker/delegation meeting flags.</summary>
     public bool AllowsSpeakerMeeting { get; set; }
     public bool AllowsDelegationMeeting { get; set; }
+
+    /// <summary>B22 — optional ISO alpha-2 nationality correction; null / empty leaves
+    /// the stored nationality untouched. See
+    /// <see cref="AdminUpdateVisitorRequest.NationalityCode"/>.</summary>
+    public string? NationalityCode { get; set; }
 }
 
 /// <summary>P1.3 (D-214) — the route id + body for the Other edit endpoint.</summary>
@@ -35,6 +40,10 @@ public sealed class UpdateOtherRouteRequest
     /// <summary>Bi-Meeting rework — the admin-assigned speaker/delegation meeting flags.</summary>
     public bool AllowsSpeakerMeeting { get; set; }
     public bool AllowsDelegationMeeting { get; set; }
+
+    /// <summary>B22 — optional ISO alpha-2 nationality correction; null / empty leaves
+    /// the stored nationality untouched.</summary>
+    public string? NationalityCode { get; set; }
 }
 
 /// <summary>Validates the visitor edit (Email + DisplayName; tier optional).</summary>
@@ -121,6 +130,9 @@ public sealed class UpdateVisitorEndpoint(IAdminUserProvisioningService service)
                 ProfileTypeId = req.ProfileTypeId,
                 AllowsSpeakerMeeting = req.AllowsSpeakerMeeting,
                 AllowsDelegationMeeting = req.AllowsDelegationMeeting,
+                // B22 — carry the optional nationality correction through the
+                // route DTO -> contract DTO hand-off.
+                NationalityCode = req.NationalityCode,
             }, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -157,6 +169,9 @@ public sealed class UpdateOtherEndpoint(IAdminUserProvisioningService service)
                 ProfileTypeId = req.ProfileTypeId,
                 AllowsSpeakerMeeting = req.AllowsSpeakerMeeting,
                 AllowsDelegationMeeting = req.AllowsDelegationMeeting,
+                // B22 — carry the optional nationality correction through the
+                // route DTO -> contract DTO hand-off.
+                NationalityCode = req.NationalityCode,
             }, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

@@ -10,12 +10,18 @@ import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import '../delegations/data/delegations_repository.dart';
 
-/// Bi-Meeting rework — the other-party confirm screen (route `/meeting-confirm`),
-/// reached by tapping a "MeetingRequested" notification (deep-link
-/// `?requestId=…`). An eligible member of the TARGET delegation confirms the
-/// meeting with one tap; on success the meeting summary (both delegations +
-/// subject + time) is shown. Eligibility + state are enforced server-side (403 =
-/// not the other party, 409 = not awaiting confirmation).
+/// Bi-Meeting rework — the other-party DELEGATION-meeting confirm screen
+/// (route `/meeting-confirm`), reached by tapping a "MeetingRequested"
+/// notification (deep-link `?requestId=…`). An eligible member of the TARGET
+/// delegation confirms — or, since B8, DECLINES — the meeting with one tap; on
+/// success the meeting summary (both delegations + subject + time) is shown.
+/// Eligibility + state are enforced server-side (403 = not the other party,
+/// 409 = not awaiting confirmation).
+///
+/// A30 — this screen is delegation-only and keyed on a `requestId`. The SPEAKER
+/// double-opt-in link lands on the Website's anonymous
+/// `/meeting/confirm?token=` page instead; driving a speaker meeting through
+/// here is a 403/409 by design, which is why the copy names the delegation.
 class MeetingConfirmScreen extends ConsumerStatefulWidget {
   const MeetingConfirmScreen({required this.requestId, super.key});
 
@@ -28,10 +34,17 @@ class MeetingConfirmScreen extends ConsumerStatefulWidget {
 
 class _MeetingConfirmScreenState extends ConsumerState<MeetingConfirmScreen> {
   bool _submitting = false;
-  DelegationMeetingSummary? _confirmed;
+  DelegationMeetingSummary? _outcome;
+  // B8 — which action produced [_outcome], so the success view reads
+  // "confirmed" or "declined" from the one summary both endpoints return.
+  bool _declined = false;
   String? _error;
 
-  Future<void> _confirm() async {
+  Future<void> _confirm() => _submit(decline: false);
+
+  Future<void> _decline() => _submit(decline: true);
+
+  Future<void> _submit({required bool decline}) async {
     if (_submitting) {
       return;
     }
@@ -41,14 +54,16 @@ class _MeetingConfirmScreenState extends ConsumerState<MeetingConfirmScreen> {
       _error = null;
     });
     try {
-      final summary = await ref
-          .read(delegationsRepositoryProvider)
-          .confirmMeeting(widget.requestId);
+      final repository = ref.read(delegationsRepositoryProvider);
+      final summary = decline
+          ? await repository.declineMeeting(widget.requestId)
+          : await repository.confirmMeeting(widget.requestId);
       if (!mounted) {
         return;
       }
       setState(() {
-        _confirmed = summary;
+        _outcome = summary;
+        _declined = decline;
         _submitting = false;
       });
     } on ApiFailure catch (failure) {
@@ -60,7 +75,7 @@ class _MeetingConfirmScreenState extends ConsumerState<MeetingConfirmScreen> {
         _error = switch (failure.httpStatus) {
           409 => l10n.meetingConfirmNotAwaiting,
           403 => l10n.delegationNotAllowed,
-          _ => l10n.meetingConfirmFailed,
+          _ => decline ? l10n.meetingDeclineFailed : l10n.meetingConfirmFailed,
         };
       });
     }
@@ -82,8 +97,8 @@ class _MeetingConfirmScreenState extends ConsumerState<MeetingConfirmScreen> {
                 ),
               ),
             )
-          : _confirmed != null
-              ? _successView(l10n, _confirmed!)
+          : _outcome != null
+              ? _successView(l10n, _outcome!)
               : _confirmView(l10n),
     );
   }
@@ -115,6 +130,10 @@ class _MeetingConfirmScreenState extends ConsumerState<MeetingConfirmScreen> {
         ],
         const SizedBox(height: SimfTokens.space6),
         _confirmButton(l10n),
+        // B8 — the decline action. Same authorisation as confirm; the
+        // requester is notified and the hall slot is released server-side.
+        const SizedBox(height: SimfTokens.space3),
+        _declineButton(l10n),
       ],
     );
   }
@@ -127,17 +146,25 @@ class _MeetingConfirmScreenState extends ConsumerState<MeetingConfirmScreen> {
       padding: const EdgeInsets.all(SimfTokens.space4),
       children: <Widget>[
         const SizedBox(height: SimfTokens.space6),
-        const Icon(
-          Icons.check_circle_outline,
+        Icon(
+          _declined ? Icons.cancel_outlined : Icons.check_circle_outline,
           size: 64,
           color: SimfTokens.accent,
         ),
         const SizedBox(height: SimfTokens.space4),
         Text(
-          l10n.meetingConfirmDone,
+          _declined ? l10n.meetingDeclineDone : l10n.meetingConfirmDone,
           textAlign: TextAlign.center,
           style: SimfTokens.labelInkSemiboldTitle,
         ),
+        if (_declined) ...<Widget>[
+          const SizedBox(height: SimfTokens.space2),
+          Text(
+            l10n.meetingDeclineIntro,
+            textAlign: TextAlign.center,
+            style: SimfTokens.bodyGreyMd,
+          ),
+        ],
         const SizedBox(height: SimfTokens.space4),
         if (parties.trim().isNotEmpty && parties.trim() != '—')
           Text(
@@ -180,6 +207,7 @@ class _MeetingConfirmScreenState extends ConsumerState<MeetingConfirmScreen> {
   }
 
   Widget _confirmButton(AppL10n l10n) => Material(
+        key: const ValueKey<String>('delegation-meeting-confirm'),
         color: SimfTokens.accent,
         borderRadius: SimfTokens.borderRadiusSmall,
         child: InkWell(
@@ -191,6 +219,32 @@ class _MeetingConfirmScreenState extends ConsumerState<MeetingConfirmScreen> {
             child: Text(
               _submitting ? l10n.loadingLabel : l10n.meetingConfirmButton,
               style: SimfTokens.labelWhiteBoldLg,
+            ),
+          ),
+        ),
+      );
+
+  // B8 — the secondary (outlined) decline action, so declining never reads as
+  // the primary path but is always reachable.
+  Widget _declineButton(AppL10n l10n) => Material(
+        key: const ValueKey<String>('delegation-meeting-decline'),
+        color: SimfTokens.surface,
+        borderRadius: SimfTokens.borderRadiusSmall,
+        child: InkWell(
+          onTap: _submitting ? null : () => unawaited(_decline()),
+          borderRadius: SimfTokens.borderRadiusSmall,
+          child: Container(
+            height: SimfTokens.controlHeight,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              borderRadius: SimfTokens.borderRadiusSmall,
+              border: Border.fromBorderSide(
+                BorderSide(color: SimfTokens.beigeBorder),
+              ),
+            ),
+            child: Text(
+              l10n.meetingDeclineButton,
+              style: SimfTokens.labelNavyMediumSm,
             ),
           ),
         ),
