@@ -252,8 +252,11 @@ internal sealed class HallAttendanceService(
             var open = await OpenRowAsync(attendeeUserId, liveSessionId, cancellationToken);
             if (open is not null && open.Method != AttendanceMethod.Geofence)
             {
-                await RecordDepartureAsync(attendeeUserId, liveSessionId, cancellationToken);
-                return true;
+                // A non-null Leave is the proof a row was actually closed — the same
+                // honest signal the fixed Out branch below returns.
+                var inferredDeparture = await RecordDepartureAsync(
+                    attendeeUserId, liveSessionId, cancellationToken);
+                return inferredDeparture.Leave is not null;
             }
             // No open row (or a geofence arrival to merge with) → fall through to the
             // arrival path below.
@@ -274,7 +277,7 @@ internal sealed class HallAttendanceService(
         // physically passed a turnstile MUST be counted even past the cap, so this
         // arrival records + warns rather than throwing (operator + geofence
         // arrivals keep the hard HALL_AT_CAPACITY 409).
-        var (_, created) = await OpenOrCreateArrivalAsync(
+        var (row, created) = await OpenOrCreateArrivalAsync(
             attendeeUserId, liveSessionId, hallId, AttendanceMethod.QrScan,
             cancellationToken, enforceCapacity: false);
         if (created)
@@ -286,7 +289,13 @@ internal sealed class HallAttendanceService(
                 "Hall arrival (hall-door gate) recorded for {UserId} at session {SessionId} by operator {OperatorId}.",
                 attendeeUserId, liveSessionId, operatorUserId);
         }
-        return true;
+        // DEF-CHK-004 (A4) — a null row means the advisory insert was rejected by
+        // the store and no rival open row could be re-read, so NOTHING is recorded
+        // for this attendee. Reporting true here (as this branch used to,
+        // unconditionally) is exactly the "allowed but silently unrecorded" defect:
+        // the operator reads a plain "Allowed" as "counted". Entry stays allowed —
+        // only the recorded-attendance signal is corrected.
+        return row is not null;
     }
 
     /// <summary>Returns the attendee's open attendance row for the session,
@@ -294,8 +303,16 @@ internal sealed class HallAttendanceService(
     /// idempotent under a concurrent race (see <see cref="InsertArrivalAsync"/>);
     /// when <paramref name="enforceCapacity"/> is set it also refuses to open a row
     /// past the hall's capacity, atomically (see
-    /// <see cref="InsertArrivalWithinCapacityAsync"/>).</summary>
-    private async Task<(HallAttendance Row, bool Created)> OpenOrCreateArrivalAsync(
+    /// <see cref="InsertArrivalWithinCapacityAsync"/>).
+    /// <para>DEF-CHK-004 (A4) — <c>Row</c> is the row that is REALLY on the store,
+    /// so it is null when the arrival persisted nothing. That can only happen on the
+    /// advisory (<paramref name="enforceCapacity"/> = false) gate-door path; the
+    /// enforcing path either returns a committed row or throws
+    /// <see cref="ErrorCodes.HallAtCapacity"/>. A caller that reports whether
+    /// attendance was recorded must test <c>Row</c>, not <c>Created</c> — a false
+    /// <c>Created</c> means either "merged into an existing row" (recorded) or
+    /// "nothing landed" (not recorded).</para></summary>
+    private async Task<(HallAttendance? Row, bool Created)> OpenOrCreateArrivalAsync(
         Guid userId, Guid sessionId, Guid hallId, AttendanceMethod method,
         CancellationToken cancellationToken, bool enforceCapacity = true)
     {
@@ -332,8 +349,15 @@ internal sealed class HallAttendanceService(
     /// <summary>Inserts a fresh open attendance row. Idempotent under a concurrent
     /// race: on the one-open-row unique-index violation it detaches the losing row
     /// and returns the committed one (never a 500) — mirrors
-    /// <c>SeatReservationService.PersistWithUniquenessGuardAsync</c>.</summary>
-    private async Task<(HallAttendance Row, bool Created)> InsertArrivalAsync(
+    /// <c>SeatReservationService.PersistWithUniquenessGuardAsync</c>.
+    /// <para>DEF-CHK-004 (A4) — when the store rejects the write for any OTHER
+    /// reason (a deadlock victim, a command timeout, a constraint fault), or when
+    /// the race was lost but the rival's row has already closed, there is no row on
+    /// the store: it returns a null Row rather than the unsaved entity, so the
+    /// gate-door caller cannot claim an attendance it does not have. The swallowed
+    /// exception is logged there and then — it is the only place that still holds
+    /// the reason the operator's advisory notice does not name.</para></summary>
+    private async Task<(HallAttendance? Row, bool Created)> InsertArrivalAsync(
         Guid userId, Guid sessionId, Guid hallId, AttendanceMethod method,
         CancellationToken cancellationToken)
     {
@@ -343,11 +367,17 @@ internal sealed class HallAttendanceService(
         {
             await appDbContext.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException)
+        catch (DbUpdateException ex)
         {
             appDbContext.Entry(row).State = EntityState.Detached;
             var existing = await OpenRowAsync(userId, sessionId, cancellationToken);
-            return (existing ?? row, false);
+            if (existing is null)
+            {
+                logger.LogWarning(ex,
+                    "Hall arrival insert was rejected for {UserId} at session {SessionId} and no open row could be re-read — no attendance recorded.",
+                    userId, sessionId);
+            }
+            return (existing, false);
         }
         return (row, true);
     }

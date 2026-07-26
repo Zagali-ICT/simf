@@ -10,6 +10,10 @@ using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using SIMF.Application.AccessControl.Abstractions;
+using SIMF.Application.Auditing;
+using SIMF.Application.Notifications;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -19,6 +23,7 @@ using SIMF.Contracts.Gates;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Programme;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Infrastructure.Programme;
 using Xunit;
 
 namespace SIMF.Api.Tests;
@@ -429,7 +434,68 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
             a => a.SessionId == sessionId && a.Leave == null));
     }
 
+    [Fact]
+    public async Task Gate_door_arrival_that_persisted_no_row_does_not_report_attendance_recorded()
+    {
+        // DEF-CHK-004 (A4, round 3) — the ARRIVAL branch used to `return true`
+        // unconditionally, so a scan whose insert never landed still told the gate
+        // "attendance recorded" and the operator saw a plain "Allowed". The shared
+        // create path swallows a DbUpdateException on the advisory (gate-door)
+        // insert and hands back an UNSAVED row when no rival row can be re-read —
+        // a deadlock victim, a command timeout, or the one-open-row race whose
+        // rival has since closed. Nothing is then on the store for this attendee,
+        // so the chain must report false and let the gate raise its advisory.
+        // The failing SaveChanges is simulated at the DbContext boundary because
+        // none of those store faults can be provoked deterministically against
+        // LocalDB; every other query the service runs still hits the real database.
+        var (hallId, sessionId) = await SeedHallWithLiveSessionAsync();
+        var (_, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
+
+        using var scope = _factory.Services.CreateScope();
+        var services = scope.ServiceProvider;
+        await using var failingDb = new AttendanceInsertFailsDbContext(
+            services.GetRequiredService<DbContextOptions<SimfAppDbContext>>(),
+            services.GetRequiredService<SIMF.Application.Abstractions.IPiiEncryptor>());
+        var attendance = new HallAttendanceService(
+            failingDb,
+            services.GetRequiredService<IQrResolver>(),
+            services.GetRequiredService<IAuditLog>(),
+            services.GetRequiredService<INotificationDispatcher>(),
+            services.GetRequiredService<TimeProvider>(),
+            services.GetRequiredService<ILogger<HallAttendanceService>>());
+
+        // A fixed In gate (directionInferred: false) keeps this on the arrival branch.
+        var recorded = await attendance.RecordGateDoorScanAsync(
+            attendeeUserId, hallId, ScanDirection.CheckIn,
+            directionInferred: false, operatorUserId: Guid.NewGuid());
+
+        Assert.False(recorded);
+        var db = services.GetRequiredService<SimfAppDbContext>();
+        Assert.Equal(0, await db.HallAttendances.CountAsync(a => a.SessionId == sessionId));
+    }
+
     // -- Helpers --------------------------------------------------------------
+
+    /// <summary>Fails ONLY the attendance insert, with the <see cref="DbUpdateException"/>
+    /// the service's own catch block is written against. Every other query — the
+    /// live-session lookup, the capacity read, the post-failure open-row re-read —
+    /// runs against the real database, so the service takes exactly the production
+    /// path up to the store rejecting the write.</summary>
+    private sealed class AttendanceInsertFailsDbContext(
+        DbContextOptions<SimfAppDbContext> options,
+        SIMF.Application.Abstractions.IPiiEncryptor pii)
+        : SimfAppDbContext(options, pii)
+    {
+        public override Task<int> SaveChangesAsync(
+            bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+        {
+            if (ChangeTracker.Entries<HallAttendance>().Any(e => e.State == EntityState.Added))
+            {
+                throw new DbUpdateException("Simulated store failure on the attendance insert.");
+            }
+            return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        }
+    }
 
     private Task<HttpResponseMessage> PostScanAsync(
         Guid gateId, string qr, string token, ScanDirection direction,

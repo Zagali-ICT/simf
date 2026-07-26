@@ -604,9 +604,10 @@ internal sealed class GateOperatorService(
     private enum GateScanNotice
     {
         /// <summary>The chain ran but recorded nothing — no session live in the
-        /// hall, or a check-out that found no open attendance row to close. The
-        /// service reports the two identically (one bool), so the wording must
-        /// not name a single cause; the exact reason is in the server log.</summary>
+        /// hall, a check-out that found no open attendance row to close, or an
+        /// arrival whose insert the store rejected. The service reports all of
+        /// them identically (one bool), so the wording must not name a single
+        /// cause; the exact reason is in the server log.</summary>
         AttendanceNotRecorded,
         AttendanceChainFailed,
     }
