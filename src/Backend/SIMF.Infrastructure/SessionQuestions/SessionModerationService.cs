@@ -1,6 +1,7 @@
 // Tests: SIMF.Api.Tests/SessionQuestionsTests.cs
 // Tests: SIMF.Api.Tests/SessionQuestionCommitteeTests.cs (P3.3 — D-234 desk = Approved set)
-// Tests: SIMF.Api.Tests/ModeratorDeskStateTests.cs (DEF-MOD-001/002 — answered + rejected recovery)
+// Tests: SIMF.Api.Tests/ModeratorDeskStateTests.cs (DEF-MOD-001/002 — answered + rejected recovery;
+//        D-772 — the Hidden tab excludes Committee rejections)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -54,10 +55,36 @@ internal sealed class SessionModerationService(
         var query = appDbContext.SessionQuestions
             .AsNoTracking()
             .Where(q => q.SessionId == sessionId);
-        query = status is { } wanted
-            ? query.Where(q => q.Status == wanted)
-            : query.Where(q => q.Status == QuestionStatus.Approved
+        if (status == QuestionStatus.Hidden)
+        {
+            // D-772 — the rejected tab is the DESK's recovery tray, not a window
+            // into the Committee's bin. Allowing ?status=Hidden through verbatim
+            // still shipped the full QuestionText of every question the Scientific
+            // Committee rejected while it was PENDING — text that never cleared the
+            // stage-2 gate (D-212) and that the same r2 allow-list was added to keep
+            // off this desk. StatusBeforeHidden (D-771) records where each hidden
+            // row came from, so the tab now returns only rows hidden FROM the desk
+            // (prior status Approved or Answered).
+            //
+            // NULL provenance = hidden before D-771 existed = unknown, and unknown
+            // is treated as Committee, NOT desk. That is the safe side: being wrong
+            // here costs one legacy row the desk cannot self-serve (an Administrator
+            // still recovers it from the Committee queue), whereas the other way it
+            // costs the leak this fix exists to close. SQL's three-valued logic
+            // excludes NULL from both equality tests already.
+            query = query.Where(q => q.Status == QuestionStatus.Hidden
+                && (q.StatusBeforeHidden == QuestionStatus.Approved
+                    || q.StatusBeforeHidden == QuestionStatus.Answered));
+        }
+        else if (status is { } wanted)
+        {
+            query = query.Where(q => q.Status == wanted);
+        }
+        else
+        {
+            query = query.Where(q => q.Status == QuestionStatus.Approved
                 || q.Status == QuestionStatus.Answered);
+        }
 
         var rows = await query
             .OrderBy(q => q.Order).ThenBy(q => q.CreatedAt)

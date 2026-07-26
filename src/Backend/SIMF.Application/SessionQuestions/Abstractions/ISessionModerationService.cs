@@ -29,7 +29,16 @@ public interface ISessionModerationService
     /// and <see cref="QuestionStatus.Hidden"/>. Anything else (notably
     /// <see cref="QuestionStatus.Pending"/>, which is still inside the Scientific
     /// Committee's stage-2 gate) throws a 400 — the moderator desk must not be
-    /// able to read a question the Committee has not released.</para></summary>
+    /// able to read a question the Committee has not released.</para>
+    /// <para>D-772 — <see cref="QuestionStatus.Hidden"/> returns only rows hidden
+    /// FROM the desk, i.e. whose <c>StatusBeforeHidden</c> is
+    /// <see cref="QuestionStatus.Approved"/> or <see cref="QuestionStatus.Answered"/>.
+    /// A question the Committee rejected while it was still
+    /// <see cref="QuestionStatus.Pending"/> belongs to the Committee queue, not the
+    /// desk, and its text must not be readable here — the same stage-2 gate the
+    /// allow-list enforces. Rows hidden before <c>StatusBeforeHidden</c> existed
+    /// (null) have unknown provenance and are treated as Committee rows: the desk
+    /// does not expose them.</para></summary>
     Task<IReadOnlyList<SessionQuestionModeratorRow>> ListAsync(
         Guid sessionId,
         QuestionStatus? status = null,

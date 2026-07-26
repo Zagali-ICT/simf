@@ -21,7 +21,13 @@ rejected question was unrecoverable from the app. Now:
   gate as `hide` / `push`, idempotent, and only reachable from `Approved`.
 - The desk list takes an optional **`?status=`**: omitted returns the working desk
   (Approved + Answered); `?status=Hidden` returns the desk's own rejected rows, which
-  it can then **restore**.
+  it can then **restore**. The tab is an allow-list — `Pending` is a **400**, because
+  those questions are still inside the Scientific Committee's stage-2 gate (D-212).
+- **D-772** — `?status=Hidden` returns only rows hidden **from the desk**
+  (`StatusBeforeHidden` = Approved or Answered). A question the Committee rejected
+  while it was still Pending stays in the Committee queue and its `questionText` is
+  never shipped to the desk. Rows hidden before `StatusBeforeHidden` existed (null)
+  have unknown provenance and are treated as Committee rows — not exposed.
 - Every action updates the row **optimistically** and rolls it back on failure.
 
 ## Structure (post-decomposition)

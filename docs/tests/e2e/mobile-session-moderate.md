@@ -151,6 +151,26 @@ Scenario: Restoring a Committee rejection returns it to the Committee
     reach the public recorded-questions archive
   # api: ModeratorDeskStateTests.Restoring_a_committee_rejected_question_returns_it_to_the_committee
 
+Scenario: D-772 the مرفوض tab does not expose a Committee rejection
+  Given the Scientific Committee rejected a Pending question Q, text
+    "Committee eyes only - rejected at stage two"
+  And the moderator separately rejected a released question R from the desk
+  When the moderator (or an Administrator) calls GET …/moderate?status=Hidden
+  Then the API returns 200
+  And R is listed and is still restorable back onto the working desk
+  And Q is NOT listed, and its questionText appears NOWHERE in the body —
+    it never cleared the stage-2 gate, so the desk must not read it
+  And Q's persisted status is still Hidden with StatusBeforeHidden = Pending —
+    the Committee's own queue is unchanged
+  # api: ModeratorDeskStateTests.The_hidden_tab_hides_committee_rejections_and_keeps_the_desks_own
+
+Scenario: D-772 a row hidden before StatusBeforeHidden existed stays off the desk
+  Given a Hidden question whose StatusBeforeHidden is NULL (hidden pre-D-771)
+  When the moderator calls GET …/moderate?status=Hidden
+  Then the row is NOT listed and its text is nowhere in the body — unknown
+    provenance is treated as a Committee row, the safe side
+  # api: ModeratorDeskStateTests.A_row_hidden_before_the_provenance_column_existed_stays_off_the_desk
+
 Scenario: Reorder accepts the whole desk
   Given the desk holds an Approved question and an Answered one
   When the moderator drags to reorder and the app sends both ids
@@ -229,3 +249,4 @@ Scenario: Rejecting a pushed question drops it from the on-stage state
 _Last reviewed:_ `2026-07-11` by `Claude` (S-8 — push-only-approved + hide-clears-push guards, MOBMOD-005).
 _Last reviewed:_ `2026-07-26` by `Claude` (DEF-MOD-001/002 — persisted `QuestionStatus.Answered` + `?status=` desk filter; added MOBMOD-006/007, rewrote MOBMOD-001).
 _Last reviewed:_ `2026-07-26` by `Claude` (D-771 — `?status=` allow-list (Pending refused) + un-hide restores the prior status; added MOBMOD-008).
+_Last reviewed:_ `2026-07-27` by `Claude` (D-772 — the مرفوض tab returns desk-hidden rows only; Committee rejections and null-provenance rows are no longer readable from the desk; extended MOBMOD-008).

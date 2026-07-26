@@ -330,6 +330,100 @@ public sealed class ModeratorDeskStateTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task The_hidden_tab_hides_committee_rejections_and_keeps_the_desks_own()
+    {
+        // D-772 — the rejected tab is the DESK's recovery tray, not a window into
+        // the Committee's bin. A question the Committee rejected while it was still
+        // Pending never cleared the stage-2 gate (D-212), so its text must not be
+        // readable from the desk at all — listing it there leaked exactly the text
+        // the allow-list on ?status= was added to protect. A row the MODERATOR hid
+        // from its own desk is the opposite case and must stay recoverable.
+        var admin = await CreateAdministratorAndSignInAsync();
+        var session = await SeedFutureSessionAsync();
+        const string committeeSecret = "Committee eyes only - rejected at stage two";
+        const string deskMisclick = "Desk mis-click - recover me";
+
+        var rejectedByCommittee = await SubmitQuestionAsync(session.Id, committeeSecret);
+        var hidByDesk = await SubmitQuestionAsync(session.Id, deskMisclick);
+
+        // The Committee rejects one while it is still Pending …
+        Assert.Equal(HttpStatusCode.OK, (await PutAuthAsync(
+            $"/api/v1/admin/questions/{rejectedByCommittee}/hide", new { }, admin)).StatusCode);
+        // … and releases the other, which the moderator then hides from the desk.
+        Assert.Equal(HttpStatusCode.OK, (await PutAuthAsync(
+            $"/api/v1/admin/questions/{hidByDesk}/approve", new { }, admin)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await PutAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/questions/{hidByDesk}/hide",
+            new SetQuestionHiddenRequest { IsHidden = true }, admin)).StatusCode);
+
+        var rejectedTab = await GetAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/questions/moderate?status=Hidden", admin);
+
+        Assert.Equal(HttpStatusCode.OK, rejectedTab.StatusCode);
+        var payload = await rejectedTab.Content.ReadAsStringAsync();
+        // Not just absent from the row set — the text is nowhere in the body.
+        Assert.DoesNotContain(committeeSecret, payload, StringComparison.Ordinal);
+        var rows = (await rejectedTab.Content
+            .ReadFromJsonAsync<ApiResult<IReadOnlyList<SessionQuestionModeratorRow>>>())!.Data!;
+        Assert.DoesNotContain(rows, r => r.Id == rejectedByCommittee);
+        Assert.Contains(rows, r => r.Id == hidByDesk && r.IsHidden);
+
+        // The desk's own rejection is still restorable, back onto the working desk.
+        Assert.Equal(HttpStatusCode.OK, (await PutAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/questions/{hidByDesk}/hide",
+            new SetQuestionHiddenRequest { IsHidden = false }, admin)).StatusCode);
+        var desk = await GetAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/questions/moderate", admin);
+        Assert.Contains(
+            (await desk.Content
+                .ReadFromJsonAsync<ApiResult<IReadOnlyList<SessionQuestionModeratorRow>>>())!.Data!,
+            r => r.Id == hidByDesk);
+
+        // The Committee keeps its own view of what it rejected — unweakened.
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var stored = await db.SessionQuestions.AsNoTracking()
+            .SingleAsync(q => q.Id == rejectedByCommittee);
+        Assert.Equal(QuestionStatus.Hidden, stored.Status);
+        Assert.Equal(QuestionStatus.Pending, stored.StatusBeforeHidden);
+    }
+
+    [Fact]
+    public async Task A_row_hidden_before_the_provenance_column_existed_stays_off_the_desk()
+    {
+        // D-772 — a row whose StatusBeforeHidden is NULL predates D-771, so its
+        // provenance is unknown: it may be a Committee rejection of a Pending
+        // question. Unknown provenance is treated as Committee, not desk — the safe
+        // side, because the cost of being wrong is leaking un-released text, while
+        // the cost the other way is one legacy row the desk cannot self-serve
+        // (an Administrator still recovers it from the Committee queue).
+        var admin = await CreateAdministratorAndSignInAsync();
+        var session = await SeedLiveSessionAsync();
+        const string legacySecret = "Legacy hidden row - unknown provenance";
+        var qid = await SubmitLiveQuestionAsync(session.Id, legacySecret);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var question = await db.SessionQuestions.SingleAsync(q => q.Id == qid);
+            question.Status = QuestionStatus.Hidden;
+            question.StatusBeforeHidden = null; // as written before D-771 landed
+            await db.SaveChangesAsync();
+        }
+
+        var rejectedTab = await GetAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/questions/moderate?status=Hidden", admin);
+
+        Assert.Equal(HttpStatusCode.OK, rejectedTab.StatusCode);
+        Assert.DoesNotContain(
+            legacySecret, await rejectedTab.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            (await rejectedTab.Content
+                .ReadFromJsonAsync<ApiResult<IReadOnlyList<SessionQuestionModeratorRow>>>())!.Data!,
+            r => r.Id == qid);
+    }
+
+    [Fact]
     public async Task Reorder_accepts_the_desk_including_its_answered_rows()
     {
         // DEF-MOD-001 put Answered rows on the working desk, so the desk sends
