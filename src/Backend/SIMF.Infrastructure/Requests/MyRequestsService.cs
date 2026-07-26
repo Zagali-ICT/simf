@@ -1,8 +1,10 @@
 // Tests: SIMF.Api.Tests/MyRequestsTests.cs
+// Tests: SIMF.Api.Tests/DelegationMeetingQaFixesTests.cs
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
+using SIMF.Application.MeetingRequests.Abstractions;
 using SIMF.Application.Requests.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -23,6 +25,7 @@ namespace SIMF.Infrastructure.Requests;
 internal sealed class MyRequestsService(
     SimfAppDbContext appDbContext,
     IAuditLog auditLog,
+    IDelegationMeetingRequestService delegationMeetings,
     TimeProvider timeProvider,
     ILogger<MyRequestsService> logger) : IMyRequestsService
 {
@@ -131,6 +134,10 @@ internal sealed class MyRequestsService(
         CancellationToken cancellationToken = default)
     {
         var now = timeProvider.GetUtcNow();
+        // D1 — set when this withdraw killed a delegation meeting the TARGET delegation had
+        // already been asked to confirm, so their live prompt is retracted once the cancel
+        // is durable (see the dispatch after the audit write).
+        Guid? retractDelegationPromptFor = null;
         switch (kind)
         {
             case AppRequestKind.SpeakerMeeting:
@@ -201,6 +208,15 @@ internal sealed class MyRequestsService(
                         "Only a pending request can be cancelled.",
                         "لا يمكن إلغاء سوى طلب قيد المراجعة.");
                 }
+
+                // D1 — only an APPROVED (AwaitingSpeaker) meeting ever reached the target
+                // delegation, so only that one leaves a live "please confirm" card + emailed
+                // confirm link behind. Withdrawing from Pending must stay silent: those
+                // members were never told the request existed.
+                if (r.Status == MeetingRequestStatus.AwaitingSpeaker)
+                {
+                    retractDelegationPromptFor = id;
+                }
                 break;
             }
             case AppRequestKind.ParticipationDocument:
@@ -242,6 +258,16 @@ internal sealed class MyRequestsService(
 
         logger.LogInformation(
             "App request {Kind}/{Id} cancelled by {Actor} at {When}", kind, id, userId, now);
+
+        // D1 — dispatched only after the cancel is durable and audited: every eligible
+        // member of the target delegation is holding a MeetingRequested card that deep-links
+        // to /meeting-confirm plus an emailed confirm link, and both now dead-end (409
+        // APP_REQUEST_ALREADY_RESPONDED). The admin cancel path retracts them the same way.
+        if (retractDelegationPromptFor is { } delegationRequestId)
+        {
+            await delegationMeetings.RetractTargetMemberPromptsAsync(
+                delegationRequestId, cancellationToken);
+        }
     }
 
     private static ApiException NotFound() => new(

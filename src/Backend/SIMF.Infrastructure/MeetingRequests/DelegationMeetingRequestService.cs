@@ -1,4 +1,5 @@
 // Tests: SIMF.Api.Tests/DelegationMeetingRequestsTests.cs
+// Tests: SIMF.Api.Tests/DelegationMeetingQaFixesTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -585,9 +586,44 @@ internal sealed class DelegationMeetingRequestService(
                 detail, req),
         }, logger, cancellationToken);
 
+        // D2 — the decline kills the meeting for the WHOLE target delegation, not just the
+        // member who tapped. Every other eligible member still holds the "awaiting your
+        // confirmation" card + the emailed confirm link from approve time, and both now
+        // dead-end (409 APP_REQUEST_ALREADY_RESPONDED). Retract the prompt through the same
+        // helper the admin cancel uses; the decliner is skipped — they just acted and
+        // already have the response.
+        await NotifyTargetMembersAsync(req, NotificationKind.MeetingCancelled,
+            "Delegation meeting cancelled", "تم إلغاء اجتماع الوفد",
+            $"The delegation meeting request from {detail.RequestingCountry} was declined by your delegation.",
+            $"تم رفض طلب اجتماع الوفد من {detail.RequestingCountry} من قِبل وفدكم.",
+            cancellationToken, excludeUserId: callerUserId);
+
         // Same PII rule as the confirm response — an app peer never sees the requester's
         // Identity login email.
         return detail with { RequesterEmail = null };
+    }
+
+    public async Task RetractTargetMemberPromptsAsync(
+        Guid requestId, CancellationToken cancellationToken = default)
+    {
+        // D1 — the requester's own withdraw (B11) flips the status in MyRequestsService and
+        // has no delegation-notification surface, so the retraction lives here next to the
+        // admin cancel's. Projected read (no Identity round-trip, no cross-DB join): the
+        // retraction only needs the target delegation and the requesting country's name.
+        var req = await appDbContext.DelegationMeetingRequests.AsNoTracking()
+            .Where(r => r.Id == requestId)
+            .Select(r => new { Request = r, RequestingCountry = r.RequestingCountry!.Name })
+            .SingleOrDefaultAsync(cancellationToken);
+        if (req is null)
+        {
+            return;
+        }
+
+        await NotifyTargetMembersAsync(req.Request, NotificationKind.MeetingCancelled,
+            "Delegation meeting cancelled", "تم إلغاء اجتماع الوفد",
+            $"The delegation meeting request from {req.RequestingCountry} was cancelled.",
+            $"تم إلغاء طلب اجتماع الوفد من {req.RequestingCountry}.",
+            cancellationToken);
     }
 
     // B8 — the shared other-party guard for confirm + decline: the request must exist, be
@@ -656,14 +692,17 @@ internal sealed class DelegationMeetingRequestService(
     // Bi-Meeting rework — dispatch a notification to every eligible member of the target
     // delegation (profile country == target country AND AllowsDelegationMeeting). App row
     // (deep-link from NotificationKindCatalog) + email. Members are resolved on the App DB;
-    // their emails are resolved by the dispatcher (Identity) — no cross-DB JOIN. Used both
-    // on Approve (request-to-confirm) and on Cancel-after-approval (retract that request so
-    // the other party is not left with a stale "please confirm" prompt).
+    // their emails are resolved by the dispatcher (Identity) — no cross-DB JOIN. Used on
+    // Approve (request-to-confirm) and on every retraction — admin cancel-after-approval,
+    // the other party's decline (D2) and the requester's own withdraw (D1) — so nobody is
+    // left with a stale "please confirm" prompt. <paramref name="excludeUserId"/> skips the
+    // member who triggered the retraction themselves (the decliner already has the answer).
     private async Task NotifyTargetMembersAsync(
         DelegationMeetingRequest req, NotificationKind kind,
         string title, string titleArabic, string body, string bodyArabic,
         CancellationToken cancellationToken,
-        string? confirmUrl = null, string? requestingCountry = null)
+        string? confirmUrl = null, string? requestingCountry = null,
+        Guid? excludeUserId = null)
     {
         // R4 (D-767) — when we have a usable confirm link (the Approve case), the members
         // get a clean in-app card (SendEmail=false, it deep-links to tap-confirm) PLUS a
@@ -672,7 +711,8 @@ internal sealed class DelegationMeetingRequestService(
         var hasLink = !string.IsNullOrEmpty(confirmUrl);
 
         var memberIds = await appDbContext.UserProfiles.AsNoTracking()
-            .Where(p => p.NationalityId == req.TargetCountryId && p.AllowsDelegationMeeting)
+            .Where(p => p.NationalityId == req.TargetCountryId && p.AllowsDelegationMeeting
+                && (excludeUserId == null || p.UserId != excludeUserId))
             .Select(p => p.UserId)
             .ToListAsync(cancellationToken);
         foreach (var userId in memberIds)
@@ -827,10 +867,13 @@ internal sealed class DelegationMeetingRequestService(
     // table is active and belongs to the hall, and the hall-level guards are keyed on the
     // HALL (the (HallId, SlotStart) filtered-unique index + the free-slot subtraction), so
     // nothing stopped two meetings from being pinned to the same table at the same time.
-    // Both meeting families can occupy a table, so both are scanned. Same half-open
-    // overlap rule and same live set (`MeetingRequestStatuses.SlotHolding`) the hall guards
-    // use, so touching windows (end == start) do NOT collide. Read-then-write, consistent
-    // with GuardDelegationOverlapAsync — this is an admin-brokered, low-concurrency desk.
+    // THREE families can occupy a table, so all three are scanned: delegation meetings,
+    // speaker meetings, and the admin-arranged BusinessMeeting (FDS-013), whose own create
+    // guard (BusinessMeetingService, M-5) already refuses an overlapping table booking —
+    // it just never saw the two request families. Same half-open overlap rule and same live
+    // set (`MeetingRequestStatuses.SlotHolding`) the hall guards use, so touching windows
+    // (end == start) do NOT collide. Read-then-write, consistent with
+    // GuardDelegationOverlapAsync — this is an admin-brokered, low-concurrency desk.
     private async Task GuardTableOverlapAsync(
         Guid requestId, Guid tableId, DateTimeOffset start, DateTimeOffset end,
         CancellationToken cancellationToken)
@@ -847,7 +890,12 @@ internal sealed class DelegationMeetingRequestService(
                     && MeetingRequestStatuses.SlotHolding.Contains(r.Status)
                     && r.SlotStart != null && r.SlotEnd != null)
                 .AnyAsync(r => r.SlotStart < end && start < r.SlotEnd, cancellationToken);
-        if (delegationClash || speakerClash)
+        var businessClash = !delegationClash && !speakerClash
+            && await appDbContext.BusinessMeetings.AsNoTracking()
+                .Where(m => m.MeetingTableId == tableId
+                    && m.Status == BusinessMeetingStatus.Confirmed)
+                .AnyAsync(m => m.Start < end && start < m.End, cancellationToken);
+        if (delegationClash || speakerClash || businessClash)
         {
             throw new ApiException(ErrorCodes.DelegationMeetingRequestInvalid, 409,
                 "That meeting table is already booked at that time.",

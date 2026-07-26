@@ -8,7 +8,14 @@
 //   A33 the outcome email carries real pre-rendered HTML (parties + topic + Saudi
 //       local time), not the dispatcher's bare HtmlEncode'd paragraph;
 //   A34 a meeting TABLE cannot be double-booked (the bind only checked the table was
-//       active and in the hall).
+//       active and in the hall);
+//   D1  the requester's own withdraw (B11) retracts the target delegation's live
+//       "please confirm" prompt — it used to dispatch nothing, so every eligible
+//       member was left tapping a card that 409s;
+//   D2  one member's decline retracts the prompt from the OTHER members of the same
+//       target delegation (the decline notified the requester only);
+//   D3  the A34 table guard also sees the admin-arranged BusinessMeeting family,
+//       which owns MeetingTable rows too.
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -22,6 +29,7 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Programme;
+using SIMF.Contracts.Requests;
 using SIMF.Domain.BusinessMeetings;
 using SIMF.Domain.Common;
 using SIMF.Domain.IdentityAccess;
@@ -154,6 +162,92 @@ public sealed class DelegationMeetingQaFixesTests
             $"/api/v1/app/delegation-meeting-requests/{requestId}/decline",
             memberToken, new { });
         Assert.Equal(HttpStatusCode.Conflict, decline.StatusCode);
+    }
+
+    // -- D2: a decline retracts the prompt from the OTHER target members ------
+
+    [Fact]
+    public async Task D2_a_decline_retracts_the_prompt_from_the_other_target_members()
+    {
+        var (_, requesterId) = await CreateDelegateAsync("YA", 9101);
+        // Two eligible members of the SAME target delegation — both were sent the
+        // "awaiting your confirmation" card + confirm link at approve time.
+        var (declinerToken, declinerId) = await CreateDelegateAsync("YB", 9102);
+        var (_, colleagueId) = await CreateDelegateAsync("YB", 9102);
+        var requestId = await SeedAwaitingRequestAsync(
+            requesterId, "YA", "YB", withHall: true);
+
+        var decline = await SendAuthAsync(
+            HttpMethod.Post,
+            $"/api/v1/app/delegation-meeting-requests/{requestId}/decline",
+            declinerToken, new { });
+        Assert.Equal(HttpStatusCode.OK, decline.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var identity = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+
+        // Before D2 the decline notified the requester only, so the colleague kept a
+        // live prompt that now 409s.
+        var retraction = await identity.Notifications.SingleOrDefaultAsync(
+            n => n.UserId == colleagueId && n.RelatedEntityId == requestId);
+        Assert.NotNull(retraction);
+        Assert.Equal(NotificationKind.MeetingCancelled, retraction!.Kind);
+        Assert.False(string.IsNullOrWhiteSpace(retraction.BodyArabic));
+
+        // The member who declined is skipped — they already have the response.
+        Assert.False(await identity.Notifications.AnyAsync(
+            n => n.UserId == declinerId && n.RelatedEntityId == requestId));
+    }
+
+    // -- D1: the requester's own withdraw retracts the prompt too -------------
+
+    [Fact]
+    public async Task D1_a_requester_withdraw_retracts_the_target_delegations_prompt()
+    {
+        var (requesterToken, requesterId) = await CreateDelegateAsync("YC", 9103);
+        var (_, targetMemberId) = await CreateDelegateAsync("YD", 9104);
+        var requestId = await SeedAwaitingRequestAsync(
+            requesterId, "YC", "YD", withHall: true);
+
+        var cancel = await SendAuthAsync(
+            HttpMethod.Post, "/api/v1/app/my-requests/cancel", requesterToken,
+            new { kind = (int)AppRequestKind.DelegationMeeting, id = requestId });
+        Assert.Equal(HttpStatusCode.OK, cancel.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var req = await db.DelegationMeetingRequests.SingleAsync(r => r.Id == requestId);
+        Assert.Equal(MeetingRequestStatus.Cancelled, req.Status);
+
+        // Before D1 the new B11 cancel arm dispatched nothing at all, so the target
+        // member still held a MeetingRequested card deep-linking to /meeting-confirm.
+        var identity = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var retraction = await identity.Notifications.SingleOrDefaultAsync(
+            n => n.UserId == targetMemberId && n.RelatedEntityId == requestId);
+        Assert.NotNull(retraction);
+        Assert.Equal(NotificationKind.MeetingCancelled, retraction!.Kind);
+        Assert.False(string.IsNullOrWhiteSpace(retraction.BodyArabic));
+    }
+
+    [Fact]
+    public async Task D1_withdrawing_a_still_pending_meeting_tells_the_target_nothing()
+    {
+        // Only an APPROVED meeting ever reached the target delegation, so a withdraw
+        // from Pending must stay silent — they were never told it existed.
+        var (requesterToken, requesterId) = await CreateDelegateAsync("YE", 9105);
+        var (_, targetMemberId) = await CreateDelegateAsync("YF", 9106);
+        var requestId = await SeedRequestAsync(
+            requesterId, "YE", "YF", MeetingRequestStatus.Pending);
+
+        var cancel = await SendAuthAsync(
+            HttpMethod.Post, "/api/v1/app/my-requests/cancel", requesterToken,
+            new { kind = (int)AppRequestKind.DelegationMeeting, id = requestId });
+        Assert.Equal(HttpStatusCode.OK, cancel.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var identity = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        Assert.False(await identity.Notifications.AnyAsync(
+            n => n.UserId == targetMemberId && n.RelatedEntityId == requestId));
     }
 
     // -- A31 + A33: the decline notice reaches the requester by e-mail --------
@@ -304,7 +398,118 @@ public sealed class DelegationMeetingQaFixesTests
         Assert.Equal(fixtureSlot.AddHours(1), bound.SlotStart);
     }
 
+    [Fact]
+    public async Task D3_binding_a_table_held_by_a_business_meeting_is_a_conflict()
+    {
+        // A34 landed scanning the two meeting-REQUEST families only. A MeetingTable is
+        // also owned by the admin-arranged BusinessMeeting (FDS-013) — a real FK, and
+        // BusinessMeetingService refuses an overlapping booking within its own family —
+        // so a delegation meeting could still be pinned onto an occupied table.
+        var fixtureSlot = new DateTimeOffset(2047, 3, 4, 9, 0, 0, TimeSpan.Zero);
+        var (otherToken, _) = await CreateDelegateAsync("YG", 9107);
+        await EnsureCountryAsync("YH", 9108, invited: true);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var (hallId, tableId) = await SeedTableHeldByBusinessMeetingAsync(fixtureSlot);
+
+        var submit = await SendAuthAsync(
+            HttpMethod.Post, "/api/v1/app/delegation-meeting-requests", otherToken,
+            new SubmitDelegationMeetingRequestRequest
+            {
+                TargetCountryCode = "YH", AttendeeCount = 3,
+                Subject = "Business-meeting table clash probe",
+            });
+        Assert.Equal(HttpStatusCode.OK, submit.StatusCode);
+        var requestId = (await submit.Content
+            .ReadFromJsonAsync<ApiResult<DelegationMeetingRequestSubmitted>>())!.Data!.Id;
+
+        var clash = await SendAuthAsync(
+            HttpMethod.Put,
+            $"/api/v1/admin/delegation-meeting-requests/{requestId}/respond", admin,
+            new RespondToDelegationMeetingRequestRequest
+            {
+                Status = MeetingRequestStatus.Accepted,
+                HallId = hallId,
+                SlotStart = fixtureSlot,
+                SlotEnd = fixtureSlot.AddHours(1),
+                MeetingTableId = tableId,
+            });
+        Assert.Equal(HttpStatusCode.Conflict, clash.StatusCode);
+        var body = (await clash.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.DelegationMeetingRequestInvalid, body.Error!.Code);
+
+        // A CANCELLED business meeting no longer holds the table.
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var meeting = await db.BusinessMeetings.SingleAsync(m => m.MeetingTableId == tableId);
+            meeting.Status = BusinessMeetingStatus.Cancelled;
+            await db.SaveChangesAsync();
+        }
+
+        var freed = await SendAuthAsync(
+            HttpMethod.Put,
+            $"/api/v1/admin/delegation-meeting-requests/{requestId}/respond", admin,
+            new RespondToDelegationMeetingRequestRequest
+            {
+                Status = MeetingRequestStatus.Accepted,
+                HallId = hallId,
+                SlotStart = fixtureSlot,
+                SlotEnd = fixtureSlot.AddHours(1),
+                MeetingTableId = tableId,
+            });
+        Assert.Equal(HttpStatusCode.OK, freed.StatusCode);
+    }
+
     // -- helpers --------------------------------------------------------------
+
+    /// <summary>D3 — a hall with a free availability window whose table is already held
+    /// for the fixture slot by a Confirmed BusinessMeeting, so only a table guard that
+    /// scans that family can catch the clash.</summary>
+    private async Task<(Guid HallId, Guid TableId)> SeedTableHeldByBusinessMeetingAsync(
+        DateTimeOffset slotStart)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var suffix = Guid.NewGuid().ToString("N")[..6].ToUpperInvariant();
+
+        var hall = NewHall("M" + suffix);
+        db.Halls.Add(hall);
+        var table = new MeetingTable
+        {
+            Id = Guid.NewGuid(),
+            HallId = hall.Id,
+            Code = "TM" + suffix,
+            Capacity = 6, IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        db.MeetingTables.Add(table);
+        db.HallAvailabilityWindows.Add(new HallAvailabilityWindow
+        {
+            Id = Guid.NewGuid(),
+            HallId = hall.Id,
+            Start = slotStart,
+            End = slotStart.AddHours(2),
+            SlotMinutes = 60,
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        });
+        db.BusinessMeetings.Add(new BusinessMeeting
+        {
+            Id = Guid.NewGuid(),
+            MeetingTableId = table.Id,
+            MeetingType = BusinessMeetingType.B2B,
+            Start = slotStart,
+            End = slotStart.AddHours(1),
+            Status = BusinessMeetingStatus.Confirmed,
+            ScheduledByUserId = Guid.NewGuid(),
+            CreatedAt = DateTimeOffset.UtcNow,
+        });
+
+        await db.SaveChangesAsync();
+        return (hall.Id, table.Id);
+    }
+
 
     /// <summary>Builds the reachable table-double-book setup: table T lives in hall B
     /// today (an admin moved it there), but an older LIVE meeting in hall A still holds
