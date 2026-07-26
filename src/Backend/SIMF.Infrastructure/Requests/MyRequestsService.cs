@@ -179,8 +179,17 @@ internal sealed class MyRequestsService(
                     .Where(t => t.SpeakerMeetingRequestId == id && t.UsedAt == null)
                     .ExecuteUpdateAsync(
                         s => s.SetProperty(t => t.UsedAt, now), cancellationToken);
-                await EmailSpeakerCancellationAsync(
-                    r.SpeakerId, r.RequesterName, r.Subject, cancellationToken);
+                // ...but only a request the speaker was ACTUALLY told about earns the
+                // withdrawal notice. A Pending cancel never minted a token and never
+                // emailed anyone, so mailing the speaker now would hand an uninvolved
+                // outsider the requester's real name and the meeting subject for a
+                // request they never saw — and the "any confirmation link you received"
+                // line would be false. AwaitingSpeaker is the only status that emailed them.
+                if (r.Status == MeetingRequestStatus.AwaitingSpeaker)
+                {
+                    await EmailSpeakerCancellationAsync(
+                        r.SpeakerId, r.RequesterName, r.Subject, cancellationToken);
+                }
                 break;
             }
             case AppRequestKind.ParticipationDocument:

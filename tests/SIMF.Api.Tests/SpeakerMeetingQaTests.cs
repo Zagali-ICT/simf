@@ -311,6 +311,39 @@ public sealed class SpeakerMeetingQaTests : IClassFixture<SpeakerMeetingQaApiFac
                 && m.Subject.Contains("withdrawn", StringComparison.OrdinalIgnoreCase));
     }
 
+    [Fact]
+    public async Task B13_Cancelling_a_still_Pending_request_emails_the_speaker_nothing()
+    {
+        // A Pending request never reached the speaker: no token was minted and no
+        // confirmation mail was ever sent. Mailing them the withdrawal notice would
+        // hand an uninvolved outsider the requester's real name and the meeting
+        // subject for something they never saw — and its closing "any confirmation
+        // link you received for it is no longer valid" line would be a lie.
+        var speaker = await SeedSpeakerAsync(email: "never-told@simf.test");
+        var visitor = await SignInEligibleVisitorAsync();
+        var created = await SubmitAsync(speaker.Id, visitor);
+
+        var cancel = await PostAuthAsync(
+            "/api/v1/app/my-requests/cancel",
+            new CancelMyRequestBody
+            {
+                Kind = AppRequestKind.SpeakerMeeting,
+                Id = created.Id,
+            }, visitor);
+        Assert.Equal(HttpStatusCode.OK, cancel.StatusCode);
+
+        // The cancel itself still landed...
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var row = await db.SpeakerMeetingRequests.SingleAsync(r => r.Id == created.Id);
+        Assert.Equal(MeetingRequestStatus.Cancelled, row.Status);
+
+        // ...and the speaker heard nothing, because they were never told in the
+        // first place. (The address is unique to this test, so the fixture-shared
+        // queue cannot leak another test's mail into the assertion.)
+        Assert.DoesNotContain(_factory.Emails.Messages, m => m.To == "never-told@simf.test");
+    }
+
     // -- B20: a rejected / cancelled request can be reopened ---------------------
 
     [Fact]

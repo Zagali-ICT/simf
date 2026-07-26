@@ -2504,6 +2504,14 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Post, $"speaker-meeting-requests/{id}/check-in",
             content: null, accessToken, cancellationToken);
 
+    // QA B20 — an admin reopens a Rejected / Cancelled request back to Pending.
+    public Task<ApiCallResult<AdminSpeakerMeetingRequestDetail>> ReopenSpeakerMeetingRequestAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminSpeakerMeetingRequestDetail>(
+            HttpMethod.Post, $"speaker-meeting-requests/{id}/reopen",
+            content: null, accessToken, cancellationToken);
+
     // -- D-500 (Wave 5, الطلبات) — participation-document + badge-update request
     //    desks (SIMF.Contracts.Requests) -------------------------------------
 

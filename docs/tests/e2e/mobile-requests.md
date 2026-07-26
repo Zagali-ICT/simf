@@ -297,10 +297,18 @@ Scenario: Cancelling an AwaitingSpeaker meeting also tells the speaker
   When the user withdraws it from الطلبات
   Then every live MeetingActionToken for the request is voided
   And the speaker is emailed "SIMF — a meeting request was withdrawn"
+
+Scenario: Cancelling a still-Pending meeting tells the speaker nothing
+  Given the user holds a Pending speaker meeting no admin has approved yet
+  When the user withdraws it from الطلبات
+  Then the request becomes Cancelled
+  And the speaker is emailed nothing — they never saw the request, so a withdrawal
+      notice would leak the requester's name and the subject to an outsider
 ```
 
-**Evidence:** `SpeakerMeetingQaTests.B12_Check_in_notifies_the_requester_and_surfaces_as_CheckedIn_on_their_feed`
-and `SpeakerMeetingQaTests.B13_Cancelling_voids_the_live_speaker_tokens_and_emails_the_speaker`
+**Evidence:** `SpeakerMeetingQaTests.B12_Check_in_notifies_the_requester_and_surfaces_as_CheckedIn_on_their_feed`,
+`SpeakerMeetingQaTests.B13_Cancelling_voids_the_live_speaker_tokens_and_emails_the_speaker`
+and `SpeakerMeetingQaTests.B13_Cancelling_a_still_Pending_request_emails_the_speaker_nothing`
 (API) — green. App side: `AppRequestItem.checkedIn` + `requestStatusLabel(..., checkedIn:)`.
 
 ---

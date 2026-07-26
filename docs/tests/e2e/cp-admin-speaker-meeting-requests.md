@@ -108,6 +108,8 @@
 | E2E-SMR-027 | **Reopen request** row action on a Rejected / Cancelled row → back to Pending, decision + hall binding cleared, audited `SpeakerMeetingRequest.Reopened`; an Accepted row → 409 (QA B20) | happy | P0 | authored ✓ (`B20_Reopening_a_rejected_request_puts_it_back_to_Pending_and_is_audited`, `B20_Reopening_an_accepted_request_is_409`, `B20_Reopen_requires_the_manage_permission`) |
 | E2E-SMR-028 | Check-in reaches the requester — in-app "Meeting attendance recorded" + `checkedIn: true` on `GET /app/my-requests` (QA B12) | happy | P1 | authored ✓ (`B12_Check_in_notifies_the_requester_and_surfaces_as_CheckedIn_on_their_feed`) |
 | E2E-SMR-029 | Requester cancels an AwaitingSpeaker meeting → the speaker's live action tokens are voided and the speaker is emailed the withdrawal (QA B13) | happy | P1 | authored ✓ (`B13_Cancelling_voids_the_live_speaker_tokens_and_emails_the_speaker`) |
+| E2E-SMR-030 | Requester cancels a still-**Pending** meeting → the speaker (who was never told about it) is emailed nothing — no requester name, no subject leaked (QA B13 r2) | error | P0 | authored ✓ (`B13_Cancelling_a_still_Pending_request_emails_the_speaker_nothing`) |
+| E2E-SMR-031 | The **Reopen request** row action reaches the API — the CP BFF proxy maps `POST /account/api/admin/speaker-meeting-requests/{id}/reopen`, so the button is not a silent 404 (QA B20 r2) | happy | P0 | authored ✓ (`SpeakerMeetingRequestsReopenProxyTests`, CP) |
 
 ## Scenarios
 
@@ -737,10 +739,28 @@ Scenario: E2E-SMR-029 — cancelling kills the speaker's emailed link
   Then every MeetingActionToken for the request has UsedAt stamped
   And the speaker is emailed "SIMF — a meeting request was withdrawn" (AR + EN body)
   And a later click on the emailed link can no longer decide anything
+
+Scenario: E2E-SMR-030 — cancelling a still-Pending meeting tells the speaker nothing
+  Given a Pending speaker meeting no admin has approved yet
+    (no MeetingActionToken was minted and the speaker was never emailed)
+  When the requester withdraws it from the app
+  Then the request becomes Cancelled
+  And the speaker receives NO mail at all — a withdrawal notice would disclose the
+      requester's real name and the meeting subject to someone who never saw the
+      request, and its "any confirmation link you received" line would be false
+
+Scenario: E2E-SMR-031 — the Reopen row action actually reaches the API
+  Given a Rejected row and an admin holding SpeakerMeetingRequests.Manage
+  When the admin confirms Reopen
+  Then the page posts /account/api/admin/speaker-meeting-requests/{id}/reopen
+  And that URL resolves to a mapped CP BFF proxy route (the proxy has no catch-all,
+      so an unmapped route would 404 into the generic load-failed toast)
 ```
 
-**Evidence:** `SpeakerMeetingQaTests.B12_Check_in_notifies_the_requester_and_surfaces_as_CheckedIn_on_their_feed`
-and `SpeakerMeetingQaTests.B13_Cancelling_voids_the_live_speaker_tokens_and_emails_the_speaker`
+**Evidence:** `SpeakerMeetingQaTests.B12_Check_in_notifies_the_requester_and_surfaces_as_CheckedIn_on_their_feed`,
+`SpeakerMeetingQaTests.B13_Cancelling_voids_the_live_speaker_tokens_and_emails_the_speaker`,
+`SpeakerMeetingQaTests.B13_Cancelling_a_still_Pending_request_emails_the_speaker_nothing`
+and `SIMF.ControlPanel.Tests/SpeakerMeetingRequestsReopenProxyTests`
 — green. The speaker's own Approve / Decline now emails the requester too
 (`A22_The_speakers_own_approval_emails_the_requester_not_just_an_in_app_row`), and the
 72-hour revert notifies them (`A29_The_expiry_revert_notifies_the_requester`).
