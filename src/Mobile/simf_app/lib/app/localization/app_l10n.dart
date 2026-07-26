@@ -270,6 +270,11 @@ class AppL10n {
         'Attachments (ID / Iqama / passport image)',
       );
   String get attachFileLabel => _t('إرفاق ملف', 'Attach file');
+  // BUG-019 / 19f — a walk-in desk has to be able to shoot the document on the
+  // spot, so an attachment offers the camera as well as a file pick.
+  String get attachSourceTitle => _t('إضافة صورة', 'Add an image');
+  String get attachFromCamera => _t('التقاط بالكاميرا', 'Take a photo');
+  String get attachFromFile => _t('اختيار ملف', 'Choose a file');
   String get termsAgreeQuestion => _t(
         'الموافقة على الشروط والأحكام؟',
         'Agree to the terms & conditions?',
@@ -302,9 +307,13 @@ class AppL10n {
       _t('مكان الميلاد مطلوب', 'Place of birth is required');
   String get mobileRequired =>
       _t('رقم الجوال مطلوب', 'Mobile number is required');
+  // BUG-019 / 19m — the validator also applies the Luhn mod-10 check digit
+  // (`isValidNationalId`), so a number that matches the "10 digits starting
+  // with 1" shape can still be rejected. Say so, or the message reads as a lie.
   String get nationalIdInvalid => _t(
-        'رقم الهوية الوطنية غير صحيح (10 أرقام تبدأ بـ 1)',
-        'Invalid national ID (10 digits starting with 1)',
+        'رقم الهوية الوطنية غير صحيح (10 أرقام تبدأ بـ 1 مع رقم تحقق صحيح)',
+        'Invalid national ID (10 digits starting with 1, with a valid check '
+            'digit)',
       );
   String get iqamaInvalid => _t(
         'رقم الإقامة غير صحيح (10 أرقام تبدأ بـ 2)',
@@ -982,14 +991,20 @@ class AppL10n {
   String get staffEmailLabel => _t('البريد الالكتروني', 'Email');
   String get staffPhoneLabel => _t('رقم الجوال', 'Mobile number');
   String get staffOrganisationLabel => _t('الجهة / المنظمة', 'Organisation');
-  String get staffAttachIdLabel => _t(
-        'المرفقات (صورة الهوية / الإقامة / الجواز)',
-        'Attachments (ID / Iqama / passport image)',
+  // BUG-019 / 19k — the long parenthetical wrapped these two captions onto a
+  // second line while every sibling label was one line. The caption is now
+  // short; the detail moved to the field hint below it.
+  String get staffAttachIdLabel => _t('صورة الهوية', 'ID document');
+  String get staffAttachIdHint => _t(
+        'الهوية الوطنية أو الإقامة أو جواز السفر',
+        'National ID, Iqama or passport',
       );
-  String get staffAttachPhotoLabel =>
-      _t('المرفقات (إرفاق صورة شخصية)', 'Attachments (personal photo)');
+  String get staffAttachPhotoLabel => _t('الصورة الشخصية', 'Personal photo');
+  String get staffAttachOptionalHint => _t('اختياري', 'Optional');
   String get staffAttachFile => _t('إرفاق ملف', 'Attach file');
-  String get staffAttachPhoto => _t('إرفاق صورة شخصية', 'Attach personal photo');
+  // BUG-019 / 19k — "Attach personal photo" overflowed the fixed attach box on
+  // a phone-width column; the field caption above it already says which photo.
+  String get staffAttachPhoto => _t('إرفاق صورة', 'Attach photo');
   String get staffCompletePrompt => _t(
         'أكمل بيانات الزائر المطلوبة.',
         "Complete the visitor's required details.",

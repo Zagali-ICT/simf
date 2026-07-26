@@ -280,11 +280,11 @@ class _SimfScannerBodyState extends State<SimfScannerBody> {
                   // the reason a phone camera (full-frame) reads a code the app
                   // could not.
                   cropPercent: 1,
-                  loading: const ColoredBox(color: Colors.black),
+                  loading: const ColoredBox(color: SimfTokens.black),
                 ),
                 if (_processing)
                   const ColoredBox(
-                    color: Color(0x66000000),
+                    color: SimfTokens.scrimBlack40,
                     child: Center(child: CircularProgressIndicator()),
                   ),
               ],
@@ -322,7 +322,7 @@ class _SimfScannerBodyState extends State<SimfScannerBody> {
           controller: _manual,
           textDirection: TextDirection.ltr,
           enabled: !_processing,
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color: SimfTokens.surface),
           decoration: simfFieldDecoration(hintText: widget.fieldLabel),
           onSubmitted: (_) => _submitManual(),
         ),

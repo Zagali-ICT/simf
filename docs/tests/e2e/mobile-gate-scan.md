@@ -179,6 +179,14 @@ Scenario: A steady badge under the camera fires one scan
   When a badge stays in the viewfinder
   Then POST /app/gates/{gateId}/scans runs ONCE (ScanGate single-flight + dedupe)
   And re-presenting the badge after the result lets the next person be scanned (onNoCode reset)
+
+Scenario: The viewfinder is sized for the device it runs on (BUG-019 / 19e)
+  Given the gate console runs on a phone
+  Then the viewfinder card keeps the Figma 343px width
+  Given the gate console runs on a wide tablet panel
+  Then the viewfinder card scales up (clamped, not stretched edge-to-edge)
+    instead of rendering as a small phone-sized card
+  And on a very narrow window it never exceeds the screen width
 ```
 
 **Evidence:** source-verified — `simf_scanner_body.dart` renders `_CameraErrorCard`
@@ -195,3 +203,8 @@ _Last reviewed:_ `2026-07-27` by `SIMF Team` — DEF-CHK-004 advisory
 `2026-07-26` DEF-CHK-004 advisory `noticeMessage`;
 `2026-07-11` D-737 unified scanner (SimfScannerBody; `gate_scanner_view.dart`
 deleted); `2026-06-27`.
+_Last reviewed:_ `2026-07-26` by `SIMF Team` — BUG-019 / 19d + 19e: the shared
+viewfinder's raw `Color(0x…)` / `Colors.black|white` moved to `SimfTokens`, and the
+card width is now responsive (`WindowSize`), locked by
+`test/app/widgets/simf_scanner_frame_test.dart`. Earlier: `2026-07-11` (D-737
+unified scanner; `gate_scanner_view.dart` deleted), `2026-06-27`.

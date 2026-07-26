@@ -3,6 +3,10 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/widgets/simf_language_toggle.dart';
+import 'package:simf_app/core/widgets/simf_field_style.dart';
+import 'package:simf_app/core/widgets/simf_image_source_sheet.dart';
+import 'package:simf_app/core/widgets/simf_picker_field.dart';
 import 'package:simf_app/features/account/data/profile_models.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_app/features/staff/data/staff_models.dart';
@@ -33,6 +37,8 @@ class _FakeProfileRepo implements ProfileRepository {
       const <ProfileTypeItem>[
         ProfileTypeItem(
             id: 'pt-normal', name: 'Normal', nameArabic: 'عادي', isVisitor: true),
+        ProfileTypeItem(
+            id: 'pt-vip', name: 'VIP', nameArabic: 'كبار الزوار', isVisitor: true),
       ];
 
   @override
@@ -82,6 +88,7 @@ Future<void> _pump(
   WidgetTester tester, {
   required _FakeProfileRepo profile,
   required _FakeStaffRepo staff,
+  String language = 'en',
 }) async {
   await tester.pumpWidget(
     ProviderScope(
@@ -89,19 +96,35 @@ Future<void> _pump(
         profileRepositoryProvider.overrideWithValue(profile),
         staffRepositoryProvider.overrideWithValue(staff),
       ],
-      child: const MaterialApp(
-        locale: Locale('en'),
-        localizationsDelegates: <LocalizationsDelegate<dynamic>>[
+      child: MaterialApp(
+        locale: Locale(language),
+        localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
           ...AppL10n.localizationsDelegates,
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
         supportedLocales: AppL10n.supportedLocales,
-        home: StaffRegisterVisitorScreen(),
+        home: const StaffRegisterVisitorScreen(),
       ),
     ),
   );
+  await tester.pumpAndSettle();
+}
+
+/// Opens a [SimfPickerField] by its stable [fieldKey] and taps [optionLabel] in
+/// the shared searchable sheet.
+Future<void> _pickFromSheet(
+  WidgetTester tester,
+  String fieldKey,
+  String optionLabel,
+) async {
+  final field = find.byKey(ValueKey<String>(fieldKey));
+  await tester.ensureVisible(field);
+  await tester.pumpAndSettle();
+  await tester.tap(field);
+  await tester.pumpAndSettle();
+  await tester.tap(find.text(optionLabel).last);
   await tester.pumpAndSettle();
 }
 
@@ -144,10 +167,10 @@ void main() {
         (tester) async {
       await _pump(tester, profile: _FakeProfileRepo(), staff: _FakeStaffRepo());
 
-      // Saudi default field order: email, phone, arabicName, englishName,
-      // nationalId. Each carries a sensible maxLength so over-long input can
-      // never reach the server. (maxLength lives on the inner TextField that
-      // TextFormField builds.)
+      // Saudi default field order: arabicName, englishName, nationalId,
+      // jobTitle, jobTitleArabic, email, phone. Each carries a sensible
+      // maxLength so over-long input can never reach the server. (maxLength
+      // lives on the inner TextField that TextFormField builds.)
       final inputs =
           tester.widgetList<TextField>(find.byType(TextField)).toList();
       expect(inputs, isNotEmpty);
@@ -158,7 +181,7 @@ void main() {
       );
 
       // The email field truncates input beyond its 50-char cap.
-      final email = find.byType(TextFormField).at(0);
+      final email = find.byType(TextFormField).at(5);
       await tester.enterText(email, 'a' * 80);
       await tester.pump();
       final emailState = tester.widget<TextField>(find.descendant(
@@ -172,25 +195,19 @@ void main() {
       final staff = _FakeStaffRepo();
       await _pump(tester, profile: _FakeProfileRepo(), staff: staff);
 
-      // Saudi default → fields order: email, phone, arabicName, englishName,
-      // nationalId, jobTitle, jobTitleArabic.
+      // Saudi default → field order: arabicName, englishName, nationalId,
+      // jobTitle, jobTitleArabic, email, phone.
       final fields = find.byType(TextFormField);
-      await tester.enterText(fields.at(0), 'raed@example.com');
-      await tester.enterText(fields.at(1), '0512345678');
-      await tester.enterText(fields.at(2), 'رائد سالم');
-      await tester.enterText(fields.at(3), 'Raed Salem');
-      await tester.enterText(fields.at(4), '1000000008'); // Luhn-valid (D-700)
-      await tester.enterText(fields.at(5), 'Engineer'); // jobTitle (required, D-723)
-      await tester.enterText(fields.at(6), 'مهندس'); // jobTitleArabic (optional, #37)
+      await tester.enterText(fields.at(0), 'رائد سالم');
+      await tester.enterText(fields.at(1), 'Raed Salem');
+      await tester.enterText(fields.at(2), '1000000008'); // Luhn-valid (D-700)
+      await tester.enterText(fields.at(3), 'Engineer'); // jobTitle (D-723)
+      await tester.enterText(fields.at(4), 'مهندس'); // jobTitleArabic (#37)
+      await tester.enterText(fields.at(5), 'raed@example.com');
+      await tester.enterText(fields.at(6), '0512345678');
 
-      // Pick the organisation (the second/last dropdown; nationality defaults SA).
-      final orgDropdown = find.byType(DropdownButtonFormField<String>).last;
-      await tester.ensureVisible(orgDropdown);
-      await tester.pumpAndSettle();
-      await tester.tap(orgDropdown);
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Acme').last);
-      await tester.pumpAndSettle();
+      // BUG-019 / 19j — the lookups are the shared searchable picker now.
+      await _pickFromSheet(tester, 'staffOrganisationPicker', 'Acme');
 
       final next = find.widgetWithText(FilledButton, 'Next');
       await tester.ensureVisible(next);
@@ -212,18 +229,201 @@ void main() {
       final staff = _FakeStaffRepo();
       await _pump(tester, profile: _FakeProfileRepo(), staff: staff);
 
-      // Saudi default order: email, phone, arabicName, englishName, nationalId.
+      // Saudi default order: arabicName, englishName, nationalId.
       // 1012345678 has the right shape (^1\d{9}$) but fails the Luhn checksum;
       // the client now rejects it before the server does.
       final fields = find.byType(TextFormField);
-      await tester.enterText(fields.at(4), '1012345678');
+      await tester.enterText(fields.at(2), '1012345678');
       await tester.pump();
 
+      // BUG-019 / 19m — the message names the check digit, because the
+      // validator applies Luhn on top of the "10 digits starting with 1" shape.
       expect(
-        find.text('Invalid national ID (10 digits starting with 1)'),
+        find.text(
+          'Invalid national ID (10 digits starting with 1, with a valid check '
+          'digit)',
+        ),
         findsOneWidget,
       );
       expect(staff.registerCalls, 0);
+    });
+  });
+
+  group('StaffRegisterVisitorScreen — BUG-019 design-system rebuild', () {
+    testWidgets('19i — the inputs use the shared simfFieldDecoration '
+        '(unfilled), not a page-local filled copy', (tester) async {
+      await _pump(tester, profile: _FakeProfileRepo(), staff: _FakeStaffRepo());
+
+      final decorations = tester
+          .widgetList<TextField>(find.byType(TextField))
+          .map((f) => f.decoration)
+          .toList();
+      expect(decorations, isNotEmpty);
+      // The removed local `_decoration()` was `filled: true` with a white
+      // fillColor — the wrong background the owner reported.
+      expect(
+        decorations.every((d) => d?.filled == false),
+        isTrue,
+        reason: 'every input must come from simfFieldDecoration (filled: false)',
+      );
+      // Sanity-check the shared decoration really is unfilled.
+      expect(simfFieldDecoration().filled, isFalse);
+    });
+
+    testWidgets('19j — every lookup is a SimfPickerField, no raw dropdown',
+        (tester) async {
+      await _pump(tester, profile: _FakeProfileRepo(), staff: _FakeStaffRepo());
+
+      expect(find.byType(DropdownButtonFormField<String>), findsNothing);
+      // Profile type (19g), nationality and organisation.
+      expect(find.byType(SimfPickerField), findsNWidgets(3));
+      expect(
+        find.byKey(const ValueKey<String>('staffProfileTypePicker')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('staffNationalityPicker')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('staffOrganisationPicker')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('19a — the language control is the shared SimfLanguageToggle',
+        (tester) async {
+      await _pump(tester, profile: _FakeProfileRepo(), staff: _FakeStaffRepo());
+
+      expect(find.byType(SimfLanguageToggle), findsOneWidget);
+      // The page-local globe IconButton is gone.
+      expect(find.byIcon(Icons.language), findsNothing);
+    });
+
+    testWidgets('19g — the operator can change the visitor classification',
+        (tester) async {
+      final staff = _FakeStaffRepo();
+      await _pump(tester, profile: _FakeProfileRepo(), staff: staff);
+
+      // Seeded to the "Normal" tier, then re-picked by the operator.
+      expect(find.text('Normal'), findsOneWidget);
+      await _pickFromSheet(tester, 'staffProfileTypePicker', 'VIP');
+      expect(find.text('VIP'), findsOneWidget);
+
+      final fields = find.byType(TextFormField);
+      await tester.enterText(fields.at(0), 'رائد سالم');
+      await tester.enterText(fields.at(1), 'Raed Salem');
+      await tester.enterText(fields.at(2), '1000000008');
+      await tester.enterText(fields.at(3), 'Engineer');
+      await tester.enterText(fields.at(6), '0512345678');
+      await _pickFromSheet(tester, 'staffOrganisationPicker', 'Acme');
+
+      final next = find.widgetWithText(FilledButton, 'Next');
+      await tester.ensureVisible(next);
+      await tester.pumpAndSettle();
+      await tester.tap(next);
+      await tester.pumpAndSettle();
+
+      expect(staff.lastRequest?.profileTypeId, 'pt-vip');
+    });
+
+    testWidgets('19l — a pristine submit reveals every field error AND scrolls '
+        'the first one into view', (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await _pump(tester, profile: _FakeProfileRepo(), staff: _FakeStaffRepo());
+
+      final next = find.widgetWithText(FilledButton, 'Next');
+      await tester.ensureVisible(next);
+      await tester.pumpAndSettle();
+      await tester.tap(next);
+      await tester.pumpAndSettle();
+
+      final errors = find.text('This field is required');
+      expect(errors, findsWidgets);
+
+      // The regression the owner reported: the errors rendered, but the CTA is
+      // at the BOTTOM of a long form so every one of them was off-screen above.
+      // The submit now brings the first problem (the Arabic name) into view.
+      final viewport = tester.getRect(find.byType(StaffRegisterVisitorScreen));
+      final visible = errors.evaluate().where((element) {
+        final rect = tester.getRect(find.byWidget(element.widget));
+        return rect.top >= viewport.top && rect.bottom <= viewport.bottom;
+      });
+      expect(
+        visible, isNotEmpty,
+        reason: 'at least the first invalid field must be on screen',
+      );
+    });
+
+    testWidgets('19c — the phone card builds in Arabic with no overflow',
+        (tester) async {
+      tester.view.physicalSize = const Size(400, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await _pump(
+        tester,
+        profile: _FakeProfileRepo(),
+        staff: _FakeStaffRepo(),
+        language: 'ar',
+      );
+      // A RenderFlex overflow throws in the test binding, so reaching here with
+      // the card rendered is the assertion. Confirm the Arabic copy landed.
+      expect(find.text('إنشاء ملف زائر'), findsWidgets);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('19c — the tablet card builds two columns with no overflow',
+        (tester) async {
+      tester.view.physicalSize = const Size(1024, 1314);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await _pump(
+        tester,
+        profile: _FakeProfileRepo(),
+        staff: _FakeStaffRepo(),
+        language: 'ar',
+      );
+      expect(tester.takeException(), isNull);
+      // Two-column: the Arabic and English name fields share a row.
+      final arabic = tester.getRect(find.byType(TextFormField).at(0));
+      final english = tester.getRect(find.byType(TextFormField).at(1));
+      expect(arabic.top, english.top);
+    });
+
+    testWidgets('19f — an attachment offers the camera as well as a file',
+        (tester) async {
+      await _pump(tester, profile: _FakeProfileRepo(), staff: _FakeStaffRepo());
+
+      final attach = find.text('Attach file');
+      await tester.ensureVisible(attach);
+      await tester.pumpAndSettle();
+      await tester.tap(attach);
+      await tester.pumpAndSettle();
+
+      // The walk-in desk must be able to shoot the document on the spot; the
+      // screen used to open the photo gallery with no camera path at all.
+      expect(find.byType(SimfImageSourceSheet), findsOneWidget);
+      expect(find.text('Take a photo'), findsOneWidget);
+      expect(find.text('Choose a file'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('imageSource_camera')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('19k — the attachment captions are one line', (tester) async {
+      await _pump(tester, profile: _FakeProfileRepo(), staff: _FakeStaffRepo());
+
+      // The old caption "Attachments (ID / Iqama / passport image)" wrapped to
+      // two lines next to every one-line sibling; the detail is a hint now.
+      expect(find.text('ID document'), findsOneWidget);
+      expect(find.text('National ID, Iqama or passport'), findsOneWidget);
+      expect(find.text('Personal photo'), findsOneWidget);
     });
   });
 }

@@ -8,32 +8,51 @@ import 'package:image_picker/image_picker.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
-import '../../app/localization/locale_controller.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_logo.dart';
+import '../../app/widgets/simf_form_scaffold.dart';
+import '../../core/responsive/breakpoints.dart';
+import '../../core/responsive/max_width_body.dart';
 import '../../core/validation/digit_normalization.dart';
 import '../../core/validation/name_validation.dart';
 import '../../core/validation/phone_validation.dart';
 import '../../core/validation/required_validation.dart';
 import '../../core/validation/saudi_id_validation.dart';
+import '../../core/widgets/simf_field_label.dart';
+import '../../core/widgets/simf_image_source_sheet.dart';
+import '../../core/widgets/simf_labeled_text_field.dart';
+import '../../core/widgets/simf_picker_field.dart';
 import '../account/data/profile_models.dart';
 import '../account/data/profile_repository.dart';
+import '../account/widgets/attachment_field.dart';
+import '../account/widgets/beige_tabs.dart';
+import '../account/widgets/gender_pills_field.dart';
+import '../account/widgets/lookup_search_sheet.dart';
+import '../account/widgets/mobile_field.dart';
+import '../account/widgets/terms_and_next_buttons.dart';
 import 'data/staff_models.dart';
 import 'data/staff_repository.dart';
 
-/// D-509 — "إنشاء ملف زائر" / add a visitor at the exhibition (staff). Figma
-/// 1467:12357 — the navy header (logo + forum name + back + globe) over a beige
-/// card holding a two-column form (single column on phones). Staff fill in the
-/// walk-in visitor's details and submit; the API creates a **PendingApproval**
-/// visitor (no QR until an admin approves, D-425) and the optional ID-document +
-/// personal photo are attached afterwards.
+/// D-509 — "إنشاء ملف زائر" / add a visitor at the exhibition (staff). Staff
+/// fill in the walk-in visitor's details and submit; the API creates a
+/// **PendingApproval** visitor (no QR until an admin approves, D-425) and the
+/// optional ID-document + personal photo are attached afterwards.
 ///
 /// Role-gated to `AppRole.staff`+ (router) and the server's
-/// `Visitors.RegisterOnsite` permission. The visitor **classification**
-/// (ProfileType) is required by the API but not shown in the frame, so it is
-/// auto-assigned to the seeded "Normal" audience tier (parity with self-service
-/// sign-up); the server re-validates everything and returns a bilingual message.
+/// `Visitors.RegisterOnsite` permission; the server re-validates everything and
+/// returns a bilingual message.
+///
+/// **BUG-019 rebuild (2026-07-26).** The screen used to hand-roll its own field
+/// system (a local `filled: true` decoration + label, raw Material dropdowns, a
+/// page-local globe language button, hardcoded `TextDirection.ltr` blocks and
+/// raw pixel literals), which is why it read as a different product from the
+/// visitor Create-profile screen. It now composes the SAME shared pieces that
+/// screen uses — [SimfFormScaffold] (back + the shared language pill + crest),
+/// [MaxWidthBody] + [WindowSize] for the responsive card, [SimfLabeledTextField]
+/// / [MobileField] on `simfFieldDecoration`, [SimfPickerField] + the searchable
+/// [LookupSearchSheet] for every lookup, [GenderPillsField], [BeigeTabs],
+/// [AttachmentField] and [TermsAndNextButtons] — plus a camera-or-file
+/// attachment source and an operator-chosen visitor classification.
 ///
 /// Route: `RouteNames.staffRegisterVisitor` (`/staff/register-visitor`, #114),
 /// from the staff-only drawer. Data: `profileRepository` (countries / visitor
@@ -51,6 +70,12 @@ class StaffRegisterVisitorScreen extends ConsumerStatefulWidget {
 
 enum _DocType { iqama, passport }
 
+/// The card's content cap: a phone/compact window gets the 560 form width the
+/// Create-profile screen uses; a tablet gets the wider reading width so the
+/// two-column grid has room (both are [MaxWidthBody]'s documented values).
+const double _formMaxWidthCompact = 560;
+const double _formMaxWidthWide = 840;
+
 class _StaffRegisterVisitorScreenState
     extends ConsumerState<StaffRegisterVisitorScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
@@ -64,6 +89,19 @@ class _StaffRegisterVisitorScreenState
   final TextEditingController _nationalId = TextEditingController();
   final TextEditingController _documentNumber = TextEditingController();
 
+  // 19l — scroll anchors, in visual order, so a blocked submit can bring the
+  // FIRST problem into view instead of leaving the operator at the bottom of a
+  // long form with every error off-screen above.
+  final GlobalKey _profileTypeAnchor = GlobalKey();
+  final GlobalKey _arabicNameAnchor = GlobalKey();
+  final GlobalKey _englishNameAnchor = GlobalKey();
+  final GlobalKey _nationalityAnchor = GlobalKey();
+  final GlobalKey _documentAnchor = GlobalKey();
+  final GlobalKey _documentNumberAnchor = GlobalKey();
+  final GlobalKey _jobTitleAnchor = GlobalKey();
+  final GlobalKey _phoneAnchor = GlobalKey();
+  final GlobalKey _organisationAnchor = GlobalKey();
+
   AppGender _gender = AppGender.male;
   String? _nationalityCode;
   String? _organisationId;
@@ -74,6 +112,7 @@ class _StaffRegisterVisitorScreenState
 
   List<CountryItem> _countries = const <CountryItem>[];
   List<OrganisationItem> _organisations = const <OrganisationItem>[];
+  List<ProfileTypeItem> _profileTypes = const <ProfileTypeItem>[];
 
   Uint8List? _idBytes;
   String? _idName;
@@ -119,13 +158,13 @@ class _StaffRegisterVisitorScreenState
       if (!mounted) {
         return;
       }
-      final types = results[1] as List<ProfileTypeItem>;
       setState(() {
         _countries = results[0] as List<CountryItem>;
+        _profileTypes = results[1] as List<ProfileTypeItem>;
         _organisations = results[2] as List<OrganisationItem>;
         _nationalityCode ??=
             _countries.any((c) => c.code == 'SA') ? 'SA' : null;
-        _profileTypeId = _defaultVisitorTypeId(types);
+        _profileTypeId = _defaultVisitorTypeId(_profileTypes);
         _loading = false;
       });
     } on ApiFailure catch (failure) {
@@ -139,9 +178,10 @@ class _StaffRegisterVisitorScreenState
     }
   }
 
-  /// The classification is not shown in the frame; auto-assign the seeded
-  /// "Normal" (عادي) audience tier, falling back to the only row (parity with
-  /// the self-service sign-up's visitor lock, C5/D-371).
+  /// 19g — the operator now PICKS the classification; this only seeds the
+  /// field. The seeded "Normal" (عادي) audience tier is the sensible default
+  /// (parity with the self-service sign-up's visitor lock, C5/D-371), falling
+  /// back to the only row when the lookup has exactly one.
   static String? _defaultVisitorTypeId(List<ProfileTypeItem> types) {
     final normal = types.where((t) => t.name == 'Normal').toList();
     if (normal.isNotEmpty) {
@@ -150,9 +190,15 @@ class _StaffRegisterVisitorScreenState
     return types.length == 1 ? types.first.id : null;
   }
 
-  Future<void> _pickImage(bool isIdDocument) async {
+  /// 19f — offer the CAMERA as well as a file pick: a registration desk must be
+  /// able to shoot the visitor's document without leaving the app.
+  Future<void> _pickImage({required bool isIdDocument}) async {
+    final source = await showSimfImageSourceSheet(context);
+    if (source == null || !mounted) {
+      return;
+    }
     try {
-      final file = await ImagePicker().pickImage(source: ImageSource.gallery);
+      final file = await ImagePicker().pickImage(source: source);
       if (file == null) {
         return;
       }
@@ -169,15 +215,31 @@ class _StaffRegisterVisitorScreenState
           _photoName = file.name;
         }
       });
-    } catch (_) {
-      // The gallery is unavailable; the attachments are optional, so ignore.
+    } on Exception {
+      // The camera / gallery is unavailable; the attachments are optional, so
+      // the registration still goes through without them.
     }
+  }
+
+  void _removeImage({required bool isIdDocument}) {
+    setState(() {
+      if (isIdDocument) {
+        _idBytes = null;
+        _idName = null;
+      } else {
+        _photoBytes = null;
+        _photoName = null;
+      }
+    });
   }
 
   Future<void> _submit() async {
     setState(() => _triedSubmit = true);
     final l10n = AppL10n.of(context);
     final messenger = ScaffoldMessenger.of(context);
+    // 19l — validate() reveals EVERY field error at once (it does not wait for
+    // the per-field onUserInteraction gate), and the anchor below scrolls the
+    // first problem into view.
     final formValid = _formKey.currentState?.validate() ?? false;
     final ok = formValid &&
         _nationalityCode != null &&
@@ -186,6 +248,7 @@ class _StaffRegisterVisitorScreenState
         _gender != AppGender.unspecified;
     if (!ok) {
       setState(() {});
+      _revealFirstProblem(l10n);
       messenger
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(l10n.staffCompletePrompt)));
@@ -252,6 +315,55 @@ class _StaffRegisterVisitorScreenState
     }
   }
 
+  /// 19l — brings the first invalid field into view after a blocked submit.
+  /// The order mirrors the on-screen order so the operator lands on the top-most
+  /// problem, not an arbitrary one.
+  void _revealFirstProblem(AppL10n l10n) {
+    final anchor = _firstProblemAnchor(l10n)?.currentContext;
+    if (anchor == null) {
+      return;
+    }
+    unawaited(
+      Scrollable.ensureVisible(
+        anchor,
+        alignment: 0.15,
+        duration: const Duration(milliseconds: 250),
+      ),
+    );
+  }
+
+  GlobalKey? _firstProblemAnchor(AppL10n l10n) {
+    if (_profileTypeId == null) {
+      return _profileTypeAnchor;
+    }
+    if (_required(l10n, _arabicName.text) != null) {
+      return _arabicNameAnchor;
+    }
+    if (_required(l10n, _englishName.text) != null) {
+      return _englishNameAnchor;
+    }
+    if (_nationalityCode == null) {
+      return _nationalityAnchor;
+    }
+    if (_isSaudi) {
+      if (_validateNationalId(l10n, _nationalId.text) != null) {
+        return _documentAnchor;
+      }
+    } else if (_validateDocumentNumber(l10n, _documentNumber.text) != null) {
+      return _documentNumberAnchor;
+    }
+    if (_required(l10n, _jobTitle.text) != null) {
+      return _jobTitleAnchor;
+    }
+    if (_validatePhone(_phone.text) != null) {
+      return _phoneAnchor;
+    }
+    if (_organisationId == null) {
+      return _organisationAnchor;
+    }
+    return null;
+  }
+
   Future<void> _uploadAttachments(StaffRepository repo, String userId) async {
     if (userId.isEmpty) {
       return;
@@ -310,15 +422,6 @@ class _StaffRegisterVisitorScreenState
     return trimmed.isEmpty ? null : trimmed;
   }
 
-  void _toggleLanguage() {
-    final isArabic = ref.read(localeControllerProvider).languageCode == 'ar';
-    unawaited(
-      ref
-          .read(localeControllerProvider.notifier)
-          .setLanguage(isArabic ? 'en' : 'ar'),
-    );
-  }
-
   void _back() {
     if (context.canPop()) {
       context.pop();
@@ -330,106 +433,14 @@ class _StaffRegisterVisitorScreenState
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return Scaffold(
-      backgroundColor: SimfTokens.navySurface,
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: <Widget>[
-            _buildHeader(l10n),
-            Expanded(child: _buildBody(l10n)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// The navy header block (Figma 1467:12565 — #071832): the forced-LTR back +
-  /// globe row, then the centred forum title with the crest.
-  Widget _buildHeader(AppL10n l10n) {
-    return Container(
-      color: SimfTokens.navyHeader,
-      padding: const EdgeInsets.only(bottom: SimfTokens.space6),
-      child: Column(
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              SimfTokens.space5,
-              SimfTokens.space2,
-              SimfTokens.space5,
-              0,
-            ),
-            child: Row(
-              textDirection: TextDirection.ltr,
-              children: <Widget>[
-                // Circular navy back button with a left chevron (Figma).
-                Padding(
-                  padding: const EdgeInsets.all(SimfTokens.space2),
-                  child: Material(
-                    color: SimfTokens.navyDeep,
-                    shape: const CircleBorder(),
-                    child: InkWell(
-                      customBorder: const CircleBorder(),
-                      onTap: _back,
-                      child: const Padding(
-                        padding: EdgeInsets.all(10),
-                        child: Icon(
-                          Icons.chevron_left,
-                          color: SimfTokens.surface,
-                          size: 26,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const Spacer(),
-                SizedBox(
-                  width: 56,
-                  height: 56,
-                  child: IconButton(
-                    tooltip: l10n.languageToggleLabel,
-                    onPressed: _toggleLanguage,
-                    style: IconButton.styleFrom(
-                      backgroundColor: SimfTokens.navyDeep,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(SimfTokens.radius6),
-                      ),
-                    ),
-                    icon: const Icon(
-                      Icons.language,
-                      color: SimfTokens.accent,
-                      size: 30,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: SimfTokens.space4),
-          Center(
-            child: Row(
-              textDirection: TextDirection.ltr,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Flexible(
-                  child: Text(
-                    l10n.signInForumTitle,
-                    textAlign: TextAlign.center,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: SimfTokens.text32,
-                      fontWeight: FontWeight.w500,
-                      color: SimfTokens.surface,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: SimfTokens.space4),
-                const SimfLogo(size: 44),
-              ],
-            ),
-          ),
-        ],
-      ),
+    // 19a/19b/19c — the shared account/form chrome owns the back chevron, the
+    // shared EN/ع language pill and the crest header, so this screen no longer
+    // hand-rolls a globe button or pins whole blocks to LTR.
+    return SimfFormScaffold(
+      pinnedHeader: true,
+      onBack: _back,
+      busy: _submitting,
+      child: _buildBody(l10n),
     );
   }
 
@@ -440,41 +451,27 @@ class _StaffRegisterVisitorScreenState
       );
     }
     if (_loadError != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(SimfTokens.space6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text(
-                l10n.staffRegisterError,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: SimfTokens.beigeBorder),
-              ),
-              const SizedBox(height: SimfTokens.space4),
-              FilledButton(
-                onPressed: () => unawaited(_load()),
-                child: Text(l10n.retryLabel),
-              ),
-            ],
-          ),
-        ),
-      );
+      return _buildLoadError(l10n);
     }
+    // 19c — the window-size class, not an inline `maxWidth >= 600` literal.
+    final wide = !WindowSize.of(context).isCompact;
     return Form(
       key: _formKey,
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(SimfTokens.space6),
-        child: Material(
-          color: SimfTokens.cardBeige,
-          borderRadius: SimfTokens.borderRadiusSmall,
-          child: Padding(
-            padding: const EdgeInsets.all(SimfTokens.space6),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final wide = constraints.maxWidth >= 600;
-                return _buildForm(l10n, wide);
-              },
+        padding: const EdgeInsets.fromLTRB(
+          SimfTokens.space4,
+          0,
+          SimfTokens.space4,
+          SimfTokens.space6,
+        ),
+        child: MaxWidthBody(
+          maxWidth: wide ? _formMaxWidthWide : _formMaxWidthCompact,
+          child: Material(
+            color: SimfTokens.cardBeige,
+            borderRadius: SimfTokens.borderRadiusSmall,
+            child: Padding(
+              padding: const EdgeInsets.all(SimfTokens.space6),
+              child: _buildForm(l10n, wide: wide),
             ),
           ),
         ),
@@ -482,458 +479,509 @@ class _StaffRegisterVisitorScreenState
     );
   }
 
-  Widget _buildForm(AppL10n l10n, bool wide) {
-    const gap = SizedBox(height: SimfTokens.space8);
+  Widget _buildLoadError(AppL10n l10n) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(SimfTokens.space6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text(
+              l10n.staffRegisterError,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: SimfTokens.txtSecondary),
+            ),
+            const SizedBox(height: SimfTokens.space4),
+            FilledButton(
+              onPressed: () => unawaited(_load()),
+              child: Text(l10n.retryLabel),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildForm(AppL10n l10n, {required bool wide}) {
+    const gap = SizedBox(height: SimfTokens.space4);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        // Card head — avatar (left) + title (right), Figma 805:1441.
+        // Card head — title then the visitor glyph, laid out by Directionality
+        // (19b) rather than a hardcoded direction + TextAlign.end.
         Row(
           children: <Widget>[
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: SimfTokens.navyDeep,
-                borderRadius: BorderRadius.circular(SimfTokens.radius),
-              ),
-              child: const Icon(
-                Icons.person_outline,
-                color: SimfTokens.accent,
-                size: 32,
-              ),
-            ),
-            const SizedBox(width: SimfTokens.space4),
             Expanded(
               child: Text(
                 l10n.staffRegisterVisitorTitle,
-                textAlign: TextAlign.end,
                 style: const TextStyle(
-                  fontSize: SimfTokens.textHero,
+                  fontSize: SimfTokens.text24,
                   fontWeight: FontWeight.w600,
                   color: SimfTokens.headlineInk,
                 ),
               ),
             ),
+            const SizedBox(width: SimfTokens.space4),
+            Container(
+              width: SimfTokens.controlHeight,
+              height: SimfTokens.controlHeight,
+              decoration: const BoxDecoration(
+                color: SimfTokens.navyDeep,
+                borderRadius: SimfTokens.borderRadiusSmall,
+              ),
+              child: const Icon(
+                Icons.person_outline,
+                color: SimfTokens.accent,
+                size: SimfTokens.metaIconBox,
+              ),
+            ),
           ],
         ),
+        const SizedBox(height: SimfTokens.space6),
+        _profileTypeField(l10n),
         gap,
         _twoCol(
-          wide,
-          _textField(
-            l10n.staffEmailLabel,
-            _email,
-            keyboardType: TextInputType.emailAddress,
-            ltr: true,
-            maxLength: 50,
-          ),
-          _textField(
-            l10n.staffPhoneLabel,
-            _phone,
-            keyboardType: TextInputType.phone,
-            ltr: true,
-            maxLength: 16,
-            validator: _validatePhone,
-          ),
-        ),
-        gap,
-        _twoCol(
-          wide,
-          _textField(
+          wide: wide,
+          start: _named(
             l10n.arabicNameLabel,
-            _arabicName,
-            maxLength: 100,
-            validator: (v) => _required(l10n, v),
-            inputFormatters: <TextInputFormatter>[
-              FilteringTextInputFormatter.allow(arabicNameCharacters),
-            ],
+            KeyedSubtree(
+              key: _arabicNameAnchor,
+              child: SimfLabeledTextField(
+                label: l10n.arabicNameLabel,
+                controller: _arabicName,
+                maxLength: 100,
+                textDirection: TextDirection.rtl,
+                // MERGE (BUG-019 rebuild + BUG-021): the rebuilt field keeps the
+                // shared widget, but the character class is the widened shared one
+                // so tashkeel/tatweel are no longer silently dropped as you type.
+                inputFormatters: <TextInputFormatter>[
+                  FilteringTextInputFormatter.allow(arabicNameCharacters),
+                ],
+                validator: (v) => _required(l10n, v),
+              ),
+            ),
           ),
-          _textField(
+          end: _named(
             l10n.englishNameLabel,
-            _englishName,
-            ltr: true,
-            maxLength: 100,
-            validator: (v) => _required(l10n, v),
-            inputFormatters: <TextInputFormatter>[
-              FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z\s]')),
-            ],
+            KeyedSubtree(
+              key: _englishNameAnchor,
+              child: SimfLabeledTextField(
+                label: l10n.englishNameLabel,
+                controller: _englishName,
+                maxLength: 100,
+                textDirection: TextDirection.ltr,
+                inputFormatters: <TextInputFormatter>[
+                  FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z\s]')),
+                ],
+                validator: (v) => _required(l10n, v),
+              ),
+            ),
           ),
         ),
         gap,
         _twoCol(
-          wide,
-          _genderField(l10n),
-          _nationalityField(l10n),
+          wide: wide,
+          start: _genderField(l10n),
+          end: _nationalityField(l10n),
         ),
         gap,
         _twoCol(
-          wide,
-          _documentField(l10n),
-          _isSaudi ? const SizedBox.shrink() : _documentNumberField(l10n),
+          wide: wide,
+          start: _documentField(l10n),
+          end: _isSaudi ? null : _documentNumberField(l10n),
         ),
         gap,
         _twoCol(
-          wide,
-          _textField(
+          wide: wide,
+          start: _named(
             l10n.jobTitleLabel,
-            _jobTitle,
-            maxLength: 100,
-            // D-723 — required (matches the app self-registration form).
-            validator: (v) => _required(l10n, v),
+            KeyedSubtree(
+              key: _jobTitleAnchor,
+              child: SimfLabeledTextField(
+                label: l10n.jobTitleLabel,
+                controller: _jobTitle,
+                maxLength: 100,
+                textDirection: TextDirection.ltr,
+                // D-723 — required (matches the app self-registration form).
+                validator: (v) => _required(l10n, v),
+              ),
+            ),
           ),
           // Optional Arabic job title — the backend already carries
           // AdminWalkInRegistrationRequest.JobTitleArabic; capture it here too.
-          _textField(
+          end: _named(
             l10n.jobTitleArabicLabel,
-            _jobTitleArabic,
-            maxLength: 100,
+            SimfLabeledTextField(
+              label: l10n.jobTitleArabicLabel,
+              controller: _jobTitleArabic,
+              maxLength: 100,
+              textDirection: TextDirection.rtl,
+            ),
+          ),
+        ),
+        gap,
+        _twoCol(
+          wide: wide,
+          // 19b — email and phone are genuinely LTR CONTENT, so the inputs stay
+          // explicitly LTR while the layout follows the locale.
+          start: _named(
+            l10n.staffEmailLabel,
+            SimfLabeledTextField(
+              label: l10n.staffEmailLabel,
+              controller: _email,
+              maxLength: 50,
+              keyboardType: TextInputType.emailAddress,
+              textDirection: TextDirection.ltr,
+            ),
+          ),
+          end: _named(
+            l10n.staffPhoneLabel,
+            KeyedSubtree(
+              key: _phoneAnchor,
+              child: MobileField(
+                saudi: _isSaudi,
+                controller: _phone,
+                validator: _validatePhone,
+              ),
+            ),
           ),
         ),
         gap,
         _organisationField(l10n),
         gap,
         _twoCol(
-          wide,
-          _attachField(
-            l10n.staffAttachIdLabel,
-            l10n.staffAttachFile,
-            _idName,
-            () => unawaited(_pickImage(true)),
+          wide: wide,
+          start: Semantics(
+            label: l10n.staffAttachIdLabel,
+            child: AttachmentField(
+              label: l10n.staffAttachIdLabel,
+              // 19k — the long "ID / Iqama / passport" detail lives here now,
+              // so the caption stays one line like every sibling.
+              hintText: l10n.staffAttachIdHint,
+              bytes: _idBytes,
+              round: false,
+              attachLabel: l10n.staffAttachFile,
+              attachIcon: Icons.add_circle_outline,
+              onAttach: () => unawaited(_pickImage(isIdDocument: true)),
+              attachedName: _idName ?? l10n.idImageAttachedLabel,
+              actionLabel: l10n.removeLabel,
+              onAction: () => _removeImage(isIdDocument: true),
+            ),
           ),
-          _attachField(
-            l10n.staffAttachPhotoLabel,
-            l10n.staffAttachPhoto,
-            _photoName,
-            () => unawaited(_pickImage(false)),
+          end: Semantics(
+            label: l10n.staffAttachPhotoLabel,
+            child: AttachmentField(
+              label: l10n.staffAttachPhotoLabel,
+              // Keeps the two attach boxes on the same baseline as the ID
+              // field's hint line, and states the (true) optionality.
+              hintText: l10n.staffAttachOptionalHint,
+              bytes: _photoBytes,
+              round: true,
+              attachLabel: l10n.staffAttachPhoto,
+              attachIcon: Icons.photo_camera_outlined,
+              onAttach: () => unawaited(_pickImage(isIdDocument: false)),
+              attachedName: _photoName ?? l10n.idImageAttachedLabel,
+              actionLabel: l10n.removeLabel,
+              onAction: () => _removeImage(isIdDocument: false),
+            ),
           ),
         ),
         const SizedBox(height: SimfTokens.space6),
-        Center(
-          child: TextButton(
-            onPressed: () => context.pushNamed(RouteNames.terms),
-            style: TextButton.styleFrom(
-              padding: EdgeInsets.zero,
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              foregroundColor: SimfTokens.navy,
-            ),
-            child: Text(
-              l10n.termsAgreeQuestion,
-              style: const TextStyle(
-                fontSize: SimfTokens.textTitle,
-                fontWeight: FontWeight.w600,
-                decoration: TextDecoration.underline,
-              ),
-            ),
-          ),
-        ),
-        gap,
-        // التالي — full-width gold CTA, h56 (Figma 805:1547).
-        SizedBox(
-          height: 56,
-          child: FilledButton(
-            onPressed: _submitting ? null : () => unawaited(_submit()),
-            style: FilledButton.styleFrom(
-              backgroundColor: SimfTokens.accent,
-              foregroundColor: SimfTokens.surface,
-              shape: RoundedRectangleBorder(borderRadius: SimfTokens.borderRadiusSmall),
-            ),
-            child: _submitting
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: SimfTokens.surface,
-                    ),
-                  )
-                : Text(
-                    l10n.nextLabel,
-                    style: const TextStyle(
-                      fontSize: SimfTokens.textTitle,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-          ),
+        TermsAndNextButtons(
+          onNext: () => unawaited(_submit()),
+          busy: _submitting,
         ),
       ],
     );
   }
 
   /// Lays two fields side-by-side on a wide (tablet) card, stacked on a phone.
-  Widget _twoCol(bool wide, Widget a, Widget b) {
-    if (b is SizedBox) {
-      // The second slot is empty (e.g. Saudi → no document-type toggle).
-      return a;
+  /// A null [end] (e.g. Saudi → no document-number field) collapses to [start].
+  Widget _twoCol({required bool wide, required Widget start, Widget? end}) {
+    if (end == null) {
+      return start;
     }
     if (!wide) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[a, const SizedBox(height: SimfTokens.space6), b],
+        children: <Widget>[
+          start,
+          const SizedBox(height: SimfTokens.space4),
+          end,
+        ],
       );
     }
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Expanded(child: a),
+        Expanded(child: start),
         const SizedBox(width: SimfTokens.space4),
-        Expanded(child: b),
+        Expanded(child: end),
       ],
     );
   }
 
-  Widget _textField(
-    String label,
-    TextEditingController controller, {
-    String? Function(String?)? validator,
-    TextInputType? keyboardType,
-    List<TextInputFormatter>? inputFormatters,
-    int? maxLength,
-    bool ltr = false,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        _FieldLabel(label),
-        const SizedBox(height: SimfTokens.space4),
-        TextFormField(
-          controller: controller,
-          keyboardType: keyboardType,
-          textDirection: ltr ? TextDirection.ltr : null,
-          inputFormatters: inputFormatters,
-          maxLength: maxLength,
-          autovalidateMode: AutovalidateMode.onUserInteraction,
-          validator: validator,
-          style: _inputStyle,
-          decoration: _decoration(counterText: ''),
-        ),
-      ],
-    );
-  }
+  /// 19h — the shared field widgets render a visible caption but leave the
+  /// input itself unnamed for a screen reader; this names it.
+  Widget _named(String label, Widget field) =>
+      Semantics(label: label, textField: true, child: field);
 
   Widget _genderField(AppL10n l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        _FieldLabel(l10n.genderLabel),
-        const SizedBox(height: SimfTokens.space4),
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: _Pill(
-                label: l10n.genderMale,
-                selected: _gender == AppGender.male,
-                onTap: () => setState(() => _gender = AppGender.male),
-              ),
-            ),
-            const SizedBox(width: SimfTokens.space2),
-            Expanded(
-              child: _Pill(
-                label: l10n.genderFemale,
-                selected: _gender == AppGender.female,
-                onTap: () => setState(() => _gender = AppGender.female),
-              ),
-            ),
-          ],
+        SimfFieldLabel(l10n.genderLabel),
+        const SizedBox(height: SimfTokens.space2),
+        GenderPillsField(
+          gender: _gender,
+          onChanged: (value) => setState(() => _gender = value),
         ),
       ],
     );
   }
 
-  Widget _nationalityField(AppL10n l10n) {
-    final isArabic = l10n.isArabic;
-    final showError = _triedSubmit && _nationalityCode == null;
+  /// 19g — the walk-in classification is no longer silently pinned to the row
+  /// literally named "Normal": the operator picks from the visitor-eligible
+  /// types (seeded to "Normal" when it exists).
+  Widget _profileTypeField(AppL10n l10n) {
+    final selected =
+        _profileTypes.where((t) => t.id == _profileTypeId).toList();
+    final hasValue = selected.isNotEmpty;
     return Column(
+      key: _profileTypeAnchor,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        _FieldLabel(l10n.nationalityLabel),
-        const SizedBox(height: SimfTokens.space4),
-        DropdownButtonFormField<String>(
-          initialValue: _nationalityCode,
-          isExpanded: true,
-          style: _inputStyle,
-          icon: const Icon(Icons.keyboard_arrow_down, color: SimfTokens.inputInk),
-          decoration: _decoration(
-            errorText: showError ? l10n.nationalityRequired : null,
+        SimfFieldLabel(l10n.profileTypeLabel),
+        const SizedBox(height: SimfTokens.space2),
+        Semantics(
+          label: l10n.profileTypeLabel,
+          child: SimfPickerField(
+            fieldKey: 'staffProfileTypePicker',
+            displayText: hasValue
+                ? (l10n.isArabic
+                    ? selected.first.nameArabic
+                    : selected.first.name)
+                : l10n.profileTypeLabel,
+            isPlaceholder: !hasValue,
+            onTap: () => unawaited(_pickProfileType(l10n)),
+            errorText: (_triedSubmit && _profileTypeId == null)
+                ? l10n.profileTypeRequired
+                : null,
           ),
-          items: <DropdownMenuItem<String>>[
-            for (final c in _countries)
-              DropdownMenuItem<String>(
-                value: c.code,
-                child: Text(
-                  isArabic ? c.nameArabic : c.name,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-          ],
-          onChanged: (code) {
-            setState(() {
-              final wasSaudi = _isSaudi;
-              _nationalityCode = code;
-              if (wasSaudi != _isSaudi) {
-                _nationalId.clear();
-                _documentNumber.clear();
-              }
-            });
-          },
         ),
       ],
     );
+  }
+
+  Future<void> _pickProfileType(AppL10n l10n) async {
+    final picked = await _openLookupSheet(
+      options: <PickerOption>[
+        for (final ProfileTypeItem t in _profileTypes)
+          PickerOption(
+            value: t.id,
+            label: l10n.isArabic ? t.nameArabic : t.name,
+            search: '${t.name} ${t.nameArabic}',
+          ),
+      ],
+      searchHint: l10n.profileTypeSearchHint,
+      searchFieldKey: const ValueKey<String>('staffProfileTypeSearchField'),
+    );
+    if (picked == null || !mounted) {
+      return;
+    }
+    setState(() => _profileTypeId = picked);
+  }
+
+  /// 19j — the 57-country list gets the shared searchable picker, exactly like
+  /// Create-profile, instead of a raw Material dropdown.
+  Widget _nationalityField(AppL10n l10n) {
+    final selected =
+        _countries.where((c) => c.code == _nationalityCode).toList();
+    final hasValue = selected.isNotEmpty;
+    return Column(
+      key: _nationalityAnchor,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        SimfFieldLabel(l10n.nationalityLabel),
+        const SizedBox(height: SimfTokens.space2),
+        Semantics(
+          label: l10n.nationalityLabel,
+          child: SimfPickerField(
+            fieldKey: 'staffNationalityPicker',
+            displayText: hasValue
+                ? (l10n.isArabic ? selected.first.nameArabic : selected.first.name)
+                : l10n.nationalityLabel,
+            isPlaceholder: !hasValue,
+            onTap: () => unawaited(_pickNationality(l10n)),
+            errorText: (_triedSubmit && _nationalityCode == null)
+                ? l10n.nationalityRequired
+                : null,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _pickNationality(AppL10n l10n) async {
+    final picked = await _openLookupSheet(
+      options: <PickerOption>[
+        for (final CountryItem c in _countries)
+          PickerOption(
+            value: c.code,
+            label: l10n.isArabic ? c.nameArabic : c.name,
+            search: '${c.name} ${c.nameArabic}',
+          ),
+      ],
+      searchHint: l10n.searchCountryHint,
+      searchFieldKey: const ValueKey<String>('staffCountrySearchField'),
+    );
+    if (picked == null || !mounted) {
+      return;
+    }
+    setState(() {
+      final wasSaudi = _isSaudi;
+      _nationalityCode = picked;
+      if (wasSaudi != _isSaudi) {
+        _nationalId.clear();
+        _documentNumber.clear();
+      }
+    });
   }
 
   Widget _documentField(AppL10n l10n) {
     if (_isSaudi) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          _FieldLabel(l10n.nationalIdLabel),
-          const SizedBox(height: SimfTokens.space4),
-          TextFormField(
+      return _named(
+        l10n.nationalIdLabel,
+        KeyedSubtree(
+          key: _documentAnchor,
+          child: SimfLabeledTextField(
+            label: l10n.nationalIdLabel,
             controller: _nationalId,
             keyboardType: TextInputType.number,
             maxLength: 10,
+            // The id renders LTR (digits) even under Arabic — genuinely-LTR
+            // content, unlike the surrounding layout (19b).
+            textDirection: TextDirection.ltr,
             inputFormatters: <TextInputFormatter>[
               const WesternDigitsFormatter(),
               FilteringTextInputFormatter.digitsOnly,
             ],
-            autovalidateMode: AutovalidateMode.onUserInteraction,
             validator: (v) => _validateNationalId(l10n, v),
-            style: _inputStyle,
-            decoration: _decoration(counterText: ''),
           ),
-        ],
+        ),
       );
     }
     return Column(
+      key: _documentAnchor,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        _FieldLabel(l10n.documentTypeLabel),
-        const SizedBox(height: SimfTokens.space4),
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: _Pill(
-                label: l10n.iqamaSegment,
-                selected: _docType == _DocType.iqama,
-                onTap: () => setState(() {
-                  _docType = _DocType.iqama;
-                  _documentNumber.clear();
-                }),
-              ),
-            ),
-            const SizedBox(width: SimfTokens.space2),
-            Expanded(
-              child: _Pill(
-                label: l10n.passportSegment,
-                selected: _docType == _DocType.passport,
-                onTap: () => setState(() {
-                  _docType = _DocType.passport;
-                  _documentNumber.clear();
-                }),
-              ),
-            ),
-          ],
+        SimfFieldLabel(l10n.documentTypeLabel),
+        const SizedBox(height: SimfTokens.space2),
+        Semantics(
+          label: l10n.documentTypeLabel,
+          child: BeigeTabs(
+            options: <String>[l10n.iqamaSegment, l10n.passportSegment],
+            selectedIndex: _docType == _DocType.iqama ? 0 : 1,
+            onChanged: (index) => setState(() {
+              _docType = index == 0 ? _DocType.iqama : _DocType.passport;
+              _documentNumber.clear();
+            }),
+          ),
         ),
       ],
     );
   }
 
   Widget _documentNumberField(AppL10n l10n) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        _FieldLabel(l10n.documentNumberLabel),
-        const SizedBox(height: SimfTokens.space4),
-        TextFormField(
+    return _named(
+      l10n.documentNumberLabel,
+      KeyedSubtree(
+        key: _documentNumberAnchor,
+        child: SimfLabeledTextField(
+          label: l10n.documentNumberLabel,
           controller: _documentNumber,
           maxLength: _docType == _DocType.iqama ? 10 : 9,
+          textDirection: TextDirection.ltr,
           inputFormatters: const <TextInputFormatter>[WesternDigitsFormatter()],
-          autovalidateMode: AutovalidateMode.onUserInteraction,
           validator: (v) => _validateDocumentNumber(l10n, v),
-          style: _inputStyle,
-          decoration: _decoration(counterText: ''),
         ),
-      ],
+      ),
     );
   }
 
+  /// 19j — the organisation list also moves to the shared searchable picker;
+  /// the type-to-filter sheet handles the 200 loaded rows.
   Widget _organisationField(AppL10n l10n) {
-    final isArabic = l10n.isArabic;
-    final showError = _triedSubmit && _organisationId == null;
+    final selected =
+        _organisations.where((o) => o.id == _organisationId).toList();
+    final hasValue = selected.isNotEmpty;
     return Column(
+      key: _organisationAnchor,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        _FieldLabel(l10n.staffOrganisationLabel),
-        const SizedBox(height: SimfTokens.space4),
-        DropdownButtonFormField<String>(
-          initialValue: _organisationId,
-          isExpanded: true,
-          style: _inputStyle,
-          icon: const Icon(Icons.keyboard_arrow_down, color: SimfTokens.inputInk),
-          decoration: _decoration(
-            errorText: showError ? l10n.requiredField : null,
+        SimfFieldLabel(l10n.staffOrganisationLabel),
+        const SizedBox(height: SimfTokens.space2),
+        Semantics(
+          label: l10n.staffOrganisationLabel,
+          child: SimfPickerField(
+            fieldKey: 'staffOrganisationPicker',
+            displayText: hasValue
+                ? _organisationName(selected.first, l10n)
+                : l10n.organisationSearchHint,
+            isPlaceholder: !hasValue,
+            onTap: () => unawaited(_pickOrganisation(l10n)),
+            errorText: (_triedSubmit && _organisationId == null)
+                ? l10n.organisationRequired
+                : null,
           ),
-          items: <DropdownMenuItem<String>>[
-            for (final o in _organisations)
-              DropdownMenuItem<String>(
-                value: o.id,
-                child: Text(
-                  isArabic ? o.nameAr : (o.nameEn ?? o.nameAr),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-          ],
-          onChanged: (id) => setState(() => _organisationId = id),
         ),
       ],
     );
   }
 
-  Widget _attachField(
-    String label,
-    String action,
-    String? pickedName,
-    VoidCallback onTap,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        _FieldLabel(label),
-        const SizedBox(height: SimfTokens.space4),
-        InkWell(
-          onTap: onTap,
-          borderRadius: SimfTokens.borderRadiusSmall,
-          child: Container(
-            height: 56,
-            padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
-            decoration: BoxDecoration(
-              color: SimfTokens.surface,
-              borderRadius: SimfTokens.borderRadiusSmall,
-              border: Border.all(color: SimfTokens.beigeBorder),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Flexible(
-                  child: Text(
-                    pickedName ?? action,
-                    overflow: TextOverflow.ellipsis,
-                    style: pickedName == null
-                        ? _inputStyle.copyWith(color: SimfTokens.greyText)
-                        : _inputStyle,
-                  ),
-                ),
-                const SizedBox(width: SimfTokens.space2),
-                const Icon(
-                  Icons.add_circle_outline,
-                  color: SimfTokens.accent,
-                  size: 28,
-                ),
-              ],
-            ),
+  Future<void> _pickOrganisation(AppL10n l10n) async {
+    final picked = await _openLookupSheet(
+      options: <PickerOption>[
+        for (final OrganisationItem o in _organisations)
+          PickerOption(
+            value: o.id,
+            label: _organisationName(o, l10n),
+            search: '${o.nameAr} ${o.nameEn ?? ''}',
           ),
-        ),
       ],
+      searchHint: l10n.organisationSearchHint,
+      searchFieldKey: const ValueKey<String>('staffOrganisationSearchField'),
+    );
+    if (picked == null || !mounted) {
+      return;
+    }
+    setState(() => _organisationId = picked);
+  }
+
+  static String _organisationName(OrganisationItem o, AppL10n l10n) =>
+      l10n.isArabic ? o.nameAr : (o.nameEn ?? o.nameAr);
+
+  /// Opens the shared searchable picker sheet and returns the picked value —
+  /// the same sheet the Create-profile lookups use (19j).
+  Future<String?> _openLookupSheet({
+    required List<PickerOption> options,
+    required String searchHint,
+    Key? searchFieldKey,
+  }) {
+    return showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: SimfTokens.cardBeige,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(SimfTokens.radiusLarge),
+        ),
+      ),
+      builder: (_) => LookupSearchSheet(
+        options: options,
+        searchHint: searchHint,
+        searchFieldKey: searchFieldKey,
+      ),
     );
   }
 
@@ -977,100 +1025,5 @@ class _StaffRegisterVisitorScreenState
       return null;
     }
     return _isSaudi ? l10n.saudiMobileInvalid : l10n.internationalMobileInvalid;
-  }
-
-  InputDecoration _decoration({
-    String? counterText,
-    String? errorText,
-    Widget? suffixIcon,
-  }) {
-    return InputDecoration(
-      counterText: counterText,
-      errorText: errorText,
-      suffixIcon: suffixIcon,
-      filled: true,
-      fillColor: SimfTokens.surface,
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: SimfTokens.space4,
-        vertical: SimfTokens.space4,
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: SimfTokens.borderRadiusSmall,
-        borderSide: const BorderSide(color: SimfTokens.beigeBorder),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: SimfTokens.borderRadiusSmall,
-        borderSide: const BorderSide(color: SimfTokens.accent),
-      ),
-      border: const OutlineInputBorder(borderRadius: SimfTokens.borderRadiusSmall),
-    );
-  }
-
-  static const TextStyle _inputStyle = TextStyle(
-    fontFamily: 'Inter',
-    fontFamilyFallback: <String>['Cairo'],
-    fontSize: SimfTokens.textTitle,
-    color: SimfTokens.inputInk,
-  );
-}
-
-class _FieldLabel extends StatelessWidget {
-  const _FieldLabel(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      textAlign: TextAlign.end,
-      style: const TextStyle(
-        fontSize: SimfTokens.textXxl,
-        fontWeight: FontWeight.w500,
-        color: SimfTokens.navy,
-      ),
-    );
-  }
-}
-
-class _Pill extends StatelessWidget {
-  const _Pill({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    // Figma "Tabbing" half: selected = gold fill (radius 4), unselected = white
-    // with a thin navy hairline (radius 7); bold 20px label.
-    final radius = BorderRadius.circular(selected ? 4 : 7);
-    return InkWell(
-      onTap: onTap,
-      borderRadius: radius,
-      child: Container(
-        height: 48,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: selected ? SimfTokens.accent : SimfTokens.surface,
-          borderRadius: radius,
-          border: selected
-              ? null
-              : Border.all(color: SimfTokens.navy, width: 0.6),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: selected ? SimfTokens.surface : SimfTokens.navyDeep,
-            fontWeight: FontWeight.w700,
-            fontSize: SimfTokens.textXl,
-          ),
-        ),
-      ),
-    );
   }
 }
