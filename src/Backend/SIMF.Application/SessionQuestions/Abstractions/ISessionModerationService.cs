@@ -23,7 +23,13 @@ public interface ISessionModerationService
     /// (<see cref="QuestionStatus.Hidden"/>) rows so a mis-click is recoverable.
     /// The caller is already authorized as a moderator of this session, so a
     /// hidden row never leaks to an attendee — attendees have no route to
-    /// this surface.</para></summary>
+    /// this surface.</para>
+    /// <para>The tab is an ALLOW-LIST of the three buckets the desk renders —
+    /// <see cref="QuestionStatus.Approved"/>, <see cref="QuestionStatus.Answered"/>
+    /// and <see cref="QuestionStatus.Hidden"/>. Anything else (notably
+    /// <see cref="QuestionStatus.Pending"/>, which is still inside the Scientific
+    /// Committee's stage-2 gate) throws a 400 — the moderator desk must not be
+    /// able to read a question the Committee has not released.</para></summary>
     Task<IReadOnlyList<SessionQuestionModeratorRow>> ListAsync(
         Guid sessionId,
         QuestionStatus? status = null,

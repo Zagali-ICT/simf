@@ -73,6 +73,16 @@ public sealed class SessionQuestion
     /// approves or hides them.</summary>
     public QuestionStatus Status { get; set; } = QuestionStatus.Pending;
 
+    /// <summary>D-771 — the <see cref="Status"/> the row held immediately before
+    /// it was hidden, so un-hiding puts it back exactly where it was instead of
+    /// promoting it. A Committee-rejected question returns to
+    /// <see cref="QuestionStatus.Pending"/> (back in the Committee queue, NOT on
+    /// the moderator desk) and an answered one returns to
+    /// <see cref="QuestionStatus.Answered"/>. Null whenever the row is not hidden,
+    /// and on rows hidden before this column existed (those fall back to
+    /// <see cref="QuestionStatus.Approved"/>, the old behaviour).</summary>
+    public QuestionStatus? StatusBeforeHidden { get; set; }
+
     /// <summary>P3.3 — D-212 / P4.2: the AI advisory verdict (free-text bucket,
     /// e.g. "clean" / "flagged"). Advisory only — never auto-hides. Null until
     /// the question AI filter is wired (P4.2).</summary>

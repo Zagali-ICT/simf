@@ -31,6 +31,17 @@
 > **restored**. Nothing lives in screen state any more — the marks survive leaving
 > the screen, an app restart and a co-moderator on another device. Each action
 > updates the row **optimistically** and rolls it back if the call fails.
+>
+> **D-771 (2026-07-26) — the tab filter is an allow-list and a restore is a
+> rewind.** `?status=` accepts **Approved / Answered / Hidden** only; anything
+> else — notably `Pending`, which is still inside the Scientific Committee's
+> stage-2 gate — is **400 `SESSION_QUESTION_INVALID`**, so the desk cannot read a
+> question the Committee has not released. Un-hiding now restores the status the
+> row held **before** it was hidden (additive nullable column
+> `SessionQuestion.StatusBeforeHidden`, migration
+> `App/D771_AddSessionQuestionStatusBeforeHidden`): an answered question stays
+> answered, and a Committee-rejected one goes back to **Pending** (the Committee
+> queue) instead of being promoted onto the desk and pushable on stage.
 
 ---
 
@@ -112,6 +123,41 @@ Scenario: A hidden question never leaks to an attendee
   # api: ModeratorDeskStateTests.A_hidden_question_never_reaches_an_attendee
 ```
 
+### E2E-MOBMOD-008 — D-771 the desk cannot reach behind the Committee gate
+
+```gherkin
+Scenario: Pending is not a desk tab
+  Given a question on the session is still Pending (stage 2, with the Committee)
+  When the moderator (or an Administrator) calls
+    GET …/moderate?status=Pending
+  Then the API returns 400 "SESSION_QUESTION_INVALID"
+  And the response body carries no question text
+  And ?status=Approved, ?status=Answered and ?status=Hidden still return 200
+  # api: ModeratorDeskStateTests.Pending_is_not_a_desk_tab_and_is_refused
+
+Scenario: Restoring keeps the answered mark
+  Given question Q is Answered and the moderator then rejects it by mis-click
+  When they restore it (PUT …/{id}/hide {isHidden:false})
+  Then Q's persisted status is Answered again, not Approved
+  # api: ModeratorDeskStateTests.Un_hiding_an_answered_question_keeps_the_answered_mark
+
+Scenario: Restoring a Committee rejection returns it to the Committee
+  Given the Scientific Committee rejected a Pending question Q
+    (PUT /admin/questions/{id}/hide)
+  When a per-session moderator restores it from the مرفوض tab
+  Then Q's persisted status is Pending — it is back in the Committee queue
+  And Q is NOT on the working desk
+  And PUT …/{id}/push returns 400 — it cannot be put on stage, so it can never
+    reach the public recorded-questions archive
+  # api: ModeratorDeskStateTests.Restoring_a_committee_rejected_question_returns_it_to_the_committee
+
+Scenario: Reorder accepts the whole desk
+  Given the desk holds an Approved question and an Answered one
+  When the moderator drags to reorder and the app sends both ids
+  Then PUT …/questions/reorder returns 200 and both Orders are renumbered
+  # api: ModeratorDeskStateTests.Reorder_accepts_the_desk_including_its_answered_rows
+```
+
 ### E2E-MOBMOD-002 — Role gate (app)
 
 ```gherkin
@@ -182,3 +228,4 @@ Scenario: Rejecting a pushed question drops it from the on-stage state
 
 _Last reviewed:_ `2026-07-11` by `Claude` (S-8 — push-only-approved + hide-clears-push guards, MOBMOD-005).
 _Last reviewed:_ `2026-07-26` by `Claude` (DEF-MOD-001/002 — persisted `QuestionStatus.Answered` + `?status=` desk filter; added MOBMOD-006/007, rewrote MOBMOD-001).
+_Last reviewed:_ `2026-07-26` by `Claude` (D-771 — `?status=` allow-list (Pending refused) + un-hide restores the prior status; added MOBMOD-008).

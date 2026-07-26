@@ -2073,6 +2073,7 @@
   <data name="Admin.SessionModeration.Col.Actions" xml:space="preserve"><value>Actions</value></data>
   <data name="Admin.SessionModeration.State.Hidden" xml:space="preserve"><value>Hidden</value></data>
   <data name="Admin.SessionModeration.State.Queued" xml:space="preserve"><value>Queued</value></data>
+  <data name="Admin.SessionModeration.State.Answered" xml:space="preserve"><value>Answered</value></data>
   <data name="Module.ContentBlocks" xml:space="preserve"><value>Content blocks</value></data>
   <data name="Module.Banners" xml:space="preserve"><value>Banners</value></data>
   <data name="Admin.ContentBlocks.Title" xml:space="preserve"><value>Content blocks</value></data>

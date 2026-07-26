@@ -38,6 +38,17 @@ internal sealed class SessionModerationService(
         // mis-click is no longer permanent from the app. The endpoint has already
         // proved the caller moderates THIS session (or is an Administrator), so a
         // hidden row is never exposed to an attendee.
+        // The tab is an ALLOW-LIST, not a pass-through: a per-session moderator
+        // works stage 3, so Pending text — still gated by the Scientific Committee
+        // at stage 2 (D-212) — must not be readable from this desk, and an
+        // unsupported value is refused rather than silently ignored.
+        if (status is { } requested && !IsDeskTab(requested))
+        {
+            throw new ApiException(
+                ErrorCodes.SessionQuestionInvalid, 400,
+                "The moderator desk lists approved, answered or hidden questions only.",
+                "يعرض مكتب المنسّق الأسئلة المعتمدة أو التي تمت الإجابة عنها أو المخفية فقط.");
+        }
         // Built conditionally (not with an inline ternary) so each shape emits a
         // plain predicate the (SessionId, Status, Order) index can serve.
         var query = appDbContext.SessionQuestions
@@ -114,14 +125,30 @@ internal sealed class SessionModerationService(
         var question = await LoadQuestionAsync(sessionId, questionId, cancellationToken);
 
         // P3.3 — D-212: Status is the single source of truth for visibility; the
-        // row's IsHidden marker is derived from it. Hide → Hidden, un-hide →
-        // Approved. (The persisted IsHidden column is no longer written.)
+        // row's IsHidden marker is derived from it. (The persisted IsHidden column
+        // is no longer written.)
+        // D-771 — un-hiding RESTORES the status the row held before it was hidden
+        // instead of promoting everything to Approved: an Answered question keeps
+        // its answered mark (the durability DEF-MOD-001 exists for), and a
+        // Committee-rejected question goes back to Pending — back into the
+        // Committee queue, not onto the desk, and still un-pushable. Rows hidden
+        // before this column existed have no memory, so they keep the old
+        // fall-back of Approved.
         var currentlyHidden = question.Status == QuestionStatus.Hidden;
         if (currentlyHidden == isHidden)
         {
             return await ToRowAsync(question, cancellationToken); // idempotent
         }
-        question.Status = isHidden ? QuestionStatus.Hidden : QuestionStatus.Approved;
+        if (isHidden)
+        {
+            question.StatusBeforeHidden = question.Status;
+            question.Status = QuestionStatus.Hidden;
+        }
+        else
+        {
+            question.Status = question.StatusBeforeHidden ?? QuestionStatus.Approved;
+            question.StatusBeforeHidden = null;
+        }
         // S-8 — a hidden question must not stay "pushed to the speaker": clear the
         // pushed marker so a pushed-then-hidden question drops off the on-stage
         // queue. (Un-hiding does not re-push — a fresh push is an explicit action.)
@@ -255,15 +282,19 @@ internal sealed class SessionModerationService(
                 "تحتوي قائمة الترتيب على معرّفات مكررة.");
         }
 
-        // S-8 — reorder operates on the moderator DESK, which shows the
-        // Committee-approved set only (see ListAsync). Validate + renumber against
-        // exactly that subset: a desk holding only Approved rows can only ever
-        // supply Approved ids, so requiring SetEquals over EVERY row (Pending /
-        // Hidden included) made the endpoint unsatisfiable (a latent 400).
-        // Pending/Hidden rows are off the desk and keep their Order (they sort by
+        // S-8 — reorder operates on the moderator DESK. Validate + renumber against
+        // exactly the set ListAsync returns with no status filter: a desk can only
+        // ever supply the ids it is holding, so requiring SetEquals over EVERY row
+        // (Pending / Hidden included) made the endpoint unsatisfiable (a latent
+        // 400). DEF-MOD-001 put Answered rows on that working desk too, so the
+        // Approved-only predicate had become a strict subset of what the desk
+        // sends — the same latent 400, one session-with-an-answered-question later.
+        // Pending/Hidden rows stay off the desk and keep their Order (they sort by
         // CreatedAt when later approved).
         var deskQuestions = await appDbContext.SessionQuestions
-            .Where(q => q.SessionId == sessionId && q.Status == QuestionStatus.Approved)
+            .Where(q => q.SessionId == sessionId
+                && (q.Status == QuestionStatus.Approved
+                    || q.Status == QuestionStatus.Answered))
             .ToListAsync(cancellationToken);
 
         var deskIds = deskQuestions.Select(q => q.Id).ToHashSet();
@@ -272,8 +303,8 @@ internal sealed class SessionModerationService(
         {
             throw new ApiException(
                 ErrorCodes.SessionQuestionInvalid, 400,
-                "Reorder list must contain every approved question on the session exactly once.",
-                "يجب أن تشمل قائمة الترتيب جميع الأسئلة المعتمدة للجلسة بالضبط مرة واحدة.");
+                "Reorder list must contain every question on the moderator desk exactly once.",
+                "يجب أن تشمل قائمة الترتيب جميع أسئلة مكتب المنسّق بالضبط مرة واحدة.");
         }
 
         var trackedById = deskQuestions.ToDictionary(q => q.Id);
@@ -300,6 +331,16 @@ internal sealed class SessionModerationService(
                 cancellationToken);
 
     // -- helpers ---------------------------------------------------------------
+
+    /// <summary>DEF-MOD-002 — the three buckets the moderator desk renders as
+    /// tabs. Pending is deliberately absent: those questions are still inside the
+    /// Scientific Committee's stage-2 gate (D-212) and the desk must not be able
+    /// to read them. Any other value (including an int outside the enum) is not a
+    /// tab either.</summary>
+    private static bool IsDeskTab(QuestionStatus status) =>
+        status is QuestionStatus.Approved
+            or QuestionStatus.Answered
+            or QuestionStatus.Hidden;
 
     private async Task<SessionQuestion> LoadQuestionAsync(
         Guid sessionId, Guid questionId, CancellationToken cancellationToken)

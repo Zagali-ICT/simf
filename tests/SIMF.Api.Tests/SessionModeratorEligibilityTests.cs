@@ -14,6 +14,7 @@ using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Domain.Programme;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
@@ -118,6 +119,50 @@ public sealed class SessionModeratorEligibilityTests : IClassFixture<SimfApiFact
             "/api/v1/admin/session-moderators/assign-options", visitor.AccessToken);
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_second_moderator_profile_type_does_not_break_the_eligible_seed()
+    {
+        // M5 — SessionModeratorSeed looked the canonical partner type up with
+        // SingleOrDefault on (MobileAppRole.Moderator && !IsForVisitor), so the
+        // whole eligibility suite would start throwing the day the seeder — or
+        // another test — shipped a SECOND partner type carrying the moderator app
+        // role. The lookup is a deterministic first match instead.
+        // The first call guarantees the canonical partner type exists …
+        await SessionModeratorSeed.CreateEligibleModeratorAsync(_factory);
+        // … and this is the second one that used to break the lookup.
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            appDb.ProfileTypes.Add(new UserProfileType
+            {
+                Id = Guid.NewGuid(),
+                Name = "Co-moderator", NameArabic = "منسّق مشارك",
+                PageColor = "#0EA5E9",
+                IsForVisitor = false,
+                MobileAppRole = MobileAppRole.Moderator,
+                IsActive = true,
+                // Later than the canonical type, so the ordering is unambiguous.
+                CreatedAt = DateTimeOffset.UtcNow.AddYears(1),
+            });
+            await appDb.SaveChangesAsync();
+        }
+
+        var token = await CreateAdministratorAndSignInAsync();
+        var session = await SeedSessionAsync();
+        var moderator =
+            await SessionModeratorSeed.CreateEligibleModeratorAsync(_factory);
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/session-moderators",
+            new AssignSessionModeratorRequest
+            {
+                SessionId = session.Id, UserId = moderator,
+            },
+            token);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     // -- Helpers --------------------------------------------------------------

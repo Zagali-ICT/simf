@@ -95,7 +95,11 @@ public sealed class ListModeratorQueueRoute
     /// call shape) returns the working desk: the Committee-approved rows plus the
     /// ones already marked answered. An explicit status returns exactly that
     /// bucket — <c>Hidden</c> is how the desk lists (and can then restore) the
-    /// questions it rejected, so a mis-click is no longer permanent.</summary>
+    /// questions it rejected, so a mis-click is no longer permanent.
+    /// <para>Only the desk's own three buckets are accepted (Approved / Answered /
+    /// Hidden); the service refuses anything else with a 400 so this filter cannot
+    /// be used to read questions the Scientific Committee has not released.</para>
+    /// </summary>
     public SIMF.Common.Enums.QuestionStatus? Status { get; set; }
 }
 

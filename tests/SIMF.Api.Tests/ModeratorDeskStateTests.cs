@@ -229,6 +229,139 @@ public sealed class ModeratorDeskStateTests : IClassFixture<SimfApiFactory>
             r => r.Id == qid);
     }
 
+    [Fact]
+    public async Task Pending_is_not_a_desk_tab_and_is_refused()
+    {
+        // DEF-MOD-002 (r2) — the desk tab filter is an allow-list. A per-session
+        // moderator works stage 3; a Pending question is still inside the
+        // Scientific Committee's stage-2 gate (D-212), so the desk must not be
+        // able to enumerate — let alone READ — its text. A bad value is a 400, not
+        // a silently ignored filter.
+        var admin = await CreateAdministratorAndSignInAsync();
+        var session = await SeedFutureSessionAsync();
+        const string secret = "Committee eyes only";
+        await SubmitQuestionAsync(session.Id, secret);
+
+        var pending = await GetAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/questions/moderate?status=Pending", admin);
+
+        Assert.Equal(HttpStatusCode.BadRequest, pending.StatusCode);
+        var payload = await pending.Content.ReadAsStringAsync();
+        Assert.DoesNotContain(secret, payload);
+        var body = (await pending.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SessionQuestionInvalid, body.Error!.Code);
+
+        // The three real tabs still answer 200 (the fix is a filter, not a lock).
+        foreach (var tab in new[] { "Approved", "Answered", "Hidden" })
+        {
+            var response = await GetAuthAsync(
+                $"/api/v1/app/sessions/{session.Id}/questions/moderate?status={tab}", admin);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+    }
+
+    [Fact]
+    public async Task Un_hiding_an_answered_question_keeps_the_answered_mark()
+    {
+        // D-771 — hide/restore is a recovery path, not a demotion: the answered
+        // mark DEF-MOD-001 made durable must survive it.
+        var admin = await CreateAdministratorAndSignInAsync();
+        var session = await SeedLiveSessionAsync();
+        var qid = await SubmitLiveQuestionAsync(session.Id, "Answered then mis-clicked");
+
+        await PutAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/questions/{qid}/answered",
+            new { isAnswered = true }, admin);
+        await PutAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/questions/{qid}/hide",
+            new SetQuestionHiddenRequest { IsHidden = true }, admin);
+
+        var restored = await PutAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/questions/{qid}/hide",
+            new SetQuestionHiddenRequest { IsHidden = false }, admin);
+
+        var row = (await restored.Content
+            .ReadFromJsonAsync<ApiResult<SessionQuestionModeratorRow>>())!.Data!;
+        Assert.Equal(QuestionStatus.Answered, row.Status);
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var stored = await db.SessionQuestions.AsNoTracking().SingleAsync(q => q.Id == qid);
+        Assert.Equal(QuestionStatus.Answered, stored.Status);
+    }
+
+    [Fact]
+    public async Task Restoring_a_committee_rejected_question_returns_it_to_the_committee()
+    {
+        // D-771 — the rejected tab lists everything hidden on the session,
+        // including questions the COMMITTEE rejected at stage 2. Restoring one
+        // must put it back where it came from (Pending — the Committee queue), not
+        // promote it onto the desk from where it could be pushed on stage and
+        // published into the public recorded archive.
+        var admin = await CreateAdministratorAndSignInAsync();
+        var session = await SeedFutureSessionAsync();
+        var qid = await SubmitQuestionAsync(session.Id, "Rejected by the committee");
+
+        var committeeHide = await PutAuthAsync(
+            $"/api/v1/admin/questions/{qid}/hide", new { }, admin);
+        Assert.Equal(HttpStatusCode.OK, committeeHide.StatusCode);
+
+        await PutAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/questions/{qid}/hide",
+            new SetQuestionHiddenRequest { IsHidden = false }, admin);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var stored = await db.SessionQuestions.AsNoTracking().SingleAsync(q => q.Id == qid);
+            Assert.Equal(QuestionStatus.Pending, stored.Status);
+        }
+
+        // It is NOT on the working desk …
+        var desk = await GetAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/questions/moderate", admin);
+        Assert.DoesNotContain(
+            (await desk.Content
+                .ReadFromJsonAsync<ApiResult<IReadOnlyList<SessionQuestionModeratorRow>>>())!.Data!,
+            r => r.Id == qid);
+        // … and it cannot be pushed on stage.
+        var push = await PutAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/questions/{qid}/push", new { }, admin);
+        Assert.Equal(HttpStatusCode.BadRequest, push.StatusCode);
+    }
+
+    [Fact]
+    public async Task Reorder_accepts_the_desk_including_its_answered_rows()
+    {
+        // DEF-MOD-001 put Answered rows on the working desk, so the desk sends
+        // them back on a drag-and-drop reorder. Validating the payload against the
+        // Approved rows only made every reorder on a session with one answered
+        // question a 400.
+        var admin = await CreateAdministratorAndSignInAsync();
+        var session = await SeedLiveSessionAsync();
+        var first = await SubmitLiveQuestionAsync(session.Id, "First up");
+        var second = await SubmitLiveQuestionAsync(session.Id, "Second up");
+
+        await PutAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/questions/{first}/answered",
+            new { isAnswered = true }, admin);
+
+        var reorder = await PutAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/questions/reorder",
+            new ReorderQuestionsRequest
+            {
+                OrderedQuestionIds = new List<Guid> { second, first },
+            },
+            admin);
+
+        Assert.Equal(HttpStatusCode.OK, reorder.StatusCode);
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        Assert.Equal(0, (await db.SessionQuestions.AsNoTracking()
+            .SingleAsync(q => q.Id == second)).Order);
+        Assert.Equal(1, (await db.SessionQuestions.AsNoTracking()
+            .SingleAsync(q => q.Id == first)).Order);
+    }
+
     // -- Helpers --------------------------------------------------------------
 
     /// <summary>Submits a question on a LIVE session — the owner's two-path Q&amp;A

@@ -2066,6 +2066,7 @@
   <data name="Admin.SessionModeration.Col.Actions" xml:space="preserve"><value>الإجراءات</value></data>
   <data name="Admin.SessionModeration.State.Hidden" xml:space="preserve"><value>مخفي</value></data>
   <data name="Admin.SessionModeration.State.Queued" xml:space="preserve"><value>في الانتظار</value></data>
+  <data name="Admin.SessionModeration.State.Answered" xml:space="preserve"><value>تمت الإجابة</value></data>
   <data name="Module.ContentBlocks" xml:space="preserve"><value>كتل المحتوى</value></data>
   <data name="Module.Banners" xml:space="preserve"><value>اللافتات</value></data>
   <data name="Admin.ContentBlocks.Title" xml:space="preserve"><value>كتل المحتوى</value></data>

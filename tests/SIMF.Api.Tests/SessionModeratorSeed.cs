@@ -51,10 +51,15 @@ internal static class SessionModeratorSeed
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         // The IdentitySeeder ships the canonical "Moderator" partner type
         // (isVisitor=false, MobileAppRole.Moderator) — reuse it rather than
-        // inventing a second one.
+        // inventing a second one. Deterministic FIRST match, not Single: nothing
+        // stops the seeder (or another test) shipping a second partner type that
+        // also carries the Moderator app role, and a seed helper must not start
+        // throwing when it does. Ordered by CreatedAt then Id so every test in the
+        // run picks the SAME type.
         var moderatorType = await appDb.ProfileTypes
-            .SingleOrDefaultAsync(p => p.MobileAppRole == MobileAppRole.Moderator
-                && !p.IsForVisitor);
+            .Where(p => p.MobileAppRole == MobileAppRole.Moderator && !p.IsForVisitor)
+            .OrderBy(p => p.CreatedAt).ThenBy(p => p.Id)
+            .FirstOrDefaultAsync();
         if (moderatorType is null)
         {
             moderatorType = new UserProfileType
