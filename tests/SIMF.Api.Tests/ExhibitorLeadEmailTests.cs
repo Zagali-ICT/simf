@@ -14,6 +14,7 @@ using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Contacts;
 using SIMF.Contracts.Exhibitors;
+using SIMF.Domain.Exhibitors;
 using SIMF.Domain.Organisations;
 using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
@@ -123,6 +124,31 @@ public sealed class ExhibitorLeadEmailTests : IClassFixture<ExhibitorLeadEmailAp
             ProfileTypeId = type.Id,
             NationalityId = countryId,
             PlaceOfBirth = string.Empty,
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        });
+
+        // MERGE (BUG-024 + DEF-EXH-006): these tests were authored against the older
+        // rule, where the Exhibitor profile type alone authorised a scan. The security
+        // hardening now also requires the officer to belong to a LIVE exhibitor, so
+        // that dropping them from a booth revokes their scanning tools. Without a
+        // membership the caller is correctly 403'd — so the fixture, not the rule,
+        // was what needed updating.
+        var exhibitor = new Exhibitor
+        {
+            Id = Guid.NewGuid(),
+            Name = name,
+            NameArabic = nameArabic,
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        appDb.Exhibitors.Add(exhibitor);
+        appDb.ExhibitorMemberships.Add(new ExhibitorMembership
+        {
+            Id = Guid.NewGuid(),
+            ExhibitorId = exhibitor.Id,
+            UserId = userId,
+            ContactName = name,
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         });
