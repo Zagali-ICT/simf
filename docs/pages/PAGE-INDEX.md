@@ -62,7 +62,7 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/roles/{id}/permissions` | ✅ Real | Administrator | — | [e2e/cp-admin-roles-permissions.md](../tests/e2e/cp-admin-roles-permissions.md) |
 | **Programme & sessions** | | | | |
 | `/admin/themes` | ✅ Real | Administrator | [cp/admin-themes.md](cp/admin-themes.md) | [e2e/cp-admin-themes.md](../tests/e2e/cp-admin-themes.md) |
-| `/admin/halls` | ✅ Real | Administrator | [cp/admin-halls.md](cp/admin-halls.md) | [e2e/cp-admin-halls.md](../tests/e2e/cp-admin-halls.md) |
+| `/admin/halls` | ✅ Real (QA B16: hall detail now lists the hall's assigned sessions — the hall occupancy view) | Administrator | [cp/admin-halls.md](cp/admin-halls.md) | [e2e/cp-admin-halls.md](../tests/e2e/cp-admin-halls.md) |
 | `/admin/halls/seat-layouts` | ✅ Real | Administrator | [cp/admin-halls-seat-layouts.md](cp/admin-halls-seat-layouts.md) | [e2e/cp-admin-halls-seat-layouts.md](../tests/e2e/cp-admin-halls-seat-layouts.md) |
 | `/admin/speakers` | ✅ Real (D-199) | Administrator | [cp/admin-speakers.md](cp/admin-speakers.md) | [e2e/cp-admin-speakers.md](../tests/e2e/cp-admin-speakers.md) |
 | `/admin/speaker-presentations` | ✅ Real (D-228) | Administrator  | [cp/admin-speaker-presentations.md](cp/admin-speaker-presentations.md) | [e2e/cp-admin-speaker-presentations.md](../tests/e2e/cp-admin-speaker-presentations.md) |
@@ -75,7 +75,7 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/bookings` | ✅ Real (#6/#17) | Administrator  | [cp/admin-bookings.md](cp/admin-bookings.md) | [e2e/cp-admin-bookings.md](../tests/e2e/cp-admin-bookings.md) |
 | `/admin/speaker-meeting-requests` | ✅ Real (D-269; bi-meeting rework — unified 3-button respond + operator check-in → Done) | Administrator  | [cp/admin-speaker-meeting-requests.md](cp/admin-speaker-meeting-requests.md) | [e2e/cp-admin-speaker-meeting-requests.md](../tests/e2e/cp-admin-speaker-meeting-requests.md) |
 | `/admin/speaker-availability` | ✅ Real (D-474/D-476 #11: team-defined availability windows → VIP free slots) | Administrator | _(see e2e)_ | [e2e/cp-admin-speaker-availability.md](../tests/e2e/cp-admin-speaker-availability.md) |
-| `/admin/hall-availability` | ✅ Real (D-715 item 7 §15 GAP-1: team-defined hall meeting-time windows → free slots) | Administrator | _(see e2e)_ | [e2e/cp-admin-hall-availability.md](../tests/e2e/cp-admin-hall-availability.md) |
+| `/admin/hall-availability` | ✅ Real (D-715 item 7 §15 GAP-1: team-defined hall meeting-time windows → free slots; QA A36 — gated `HallAvailability.Manage`, no longer `SpeakerMeetingRequests.Manage`) | Administrator | _(see e2e)_ | [e2e/cp-admin-hall-availability.md](../tests/e2e/cp-admin-hall-availability.md) |
 | `/admin/delegation-meetings` | ✅ Real (D-478 #11 desk; bi-meeting rework — requester gate = `AllowsDelegationMeeting`, availability + hall-bind, unified 3-button respond, other-party app-tap confirm, operator check-in → Done) | Administrator | _(see e2e)_ | [e2e/cp-admin-delegation-meetings.md](../tests/e2e/cp-admin-delegation-meetings.md) |
 | `/admin/delegation-availability` | ✅ Real (bi-meeting rework: team-defined delegation availability windows → free slots; clone of speaker-availability; gated `DelegationMeetings.Manage`) | Administrator | _(see e2e)_ | [e2e/cp-admin-delegation-availability.md](../tests/e2e/cp-admin-delegation-availability.md) |
 | `/admin/document-requests` | ✅ Real (D-500 Wave 5: participation document requests review desk — Accept/Reject + note; mirrors speaker-meeting-requests) | Administrator | [cp/document-requests.md](cp/document-requests.md) | [e2e/cp-document-requests.md](../tests/e2e/cp-document-requests.md) |
@@ -126,7 +126,7 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/ops/services` | ✅ Real | Administrator | [cp/ops-services.md](cp/ops-services.md) | [e2e/cp-ops-services.md](../tests/e2e/cp-ops-services.md) |
 | `/admin/statistics` | ✅ Real | Administrator | — | [e2e/cp-admin-statistics.md](../tests/e2e/cp-admin-statistics.md) |
 | `/admin/attendance` | ✅ Real (FR-506) | Administrator | — | [e2e/cp-admin-attendance.md](../tests/e2e/cp-admin-attendance.md) |
-| `/admin/sessions/live-hall` | ✅ Real (2026-07-18) | Administrator | — | [e2e/cp-admin-session-live-hall.md](../tests/e2e/cp-admin-session-live-hall.md) |
+| `/admin/sessions/live-hall` | ✅ Real (2026-07-18; QA B17 — auto-refreshes every 15 s while a session is selected) | Administrator | — | [e2e/cp-admin-session-live-hall.md](../tests/e2e/cp-admin-session-live-hall.md) |
 | `/m/{module}` | 🚧 Stub | Administrator | — | — |
 
 ### CP auth + account pages (not in main nav)

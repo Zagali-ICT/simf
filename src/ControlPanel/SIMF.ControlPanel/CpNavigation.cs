@@ -113,7 +113,8 @@ public static class CpNavigation
             // D-474 (#11, Group G) — the team defines speaker availability windows for VIP meeting slots.
             new("Module.AdminSpeakerAvailability", "/admin/speaker-availability", RequiredPermission: PermissionCatalog.SpeakerMeetingRequests.Manage, Icon: "calendar"),
             // D-715 (item 7, FDS-013 §15 GAP-1) — the team defines a hall's meeting time (availability windows).
-            new("Module.AdminHallAvailability", "/admin/hall-availability", RequiredPermission: PermissionCatalog.SpeakerMeetingRequests.Manage, Icon: "calendar"),
+            // QA A36 — hall-scoped code (both meeting desks read the slots it produces).
+            new("Module.AdminHallAvailability", "/admin/hall-availability", RequiredPermission: PermissionCatalog.HallAvailability.Manage, Icon: "calendar"),
             // D-478 (#11, Group G phase 2) — delegation↔delegation meeting requests review desk.
             new("Module.AdminDelegationMeetings", "/admin/delegation-meetings", RequiredPermission: PermissionCatalog.DelegationMeetings.View, Icon: "inbox"),
             // Bi-Meeting rework — the team defines a delegation/country's availability windows.

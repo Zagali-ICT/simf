@@ -859,6 +859,18 @@
   <data name="Admin.Halls.Created" xml:space="preserve"><value>Hall "{0}" was created.</value></data>
   <data name="Admin.Halls.Updated" xml:space="preserve"><value>Hall "{0}" was updated.</value></data>
   <data name="Admin.Halls.Deactivated" xml:space="preserve"><value>Hall "{0}" was deactivated.</value></data>
+  <!-- QA B16 — hall occupancy view (sessions assigned to this hall). -->
+  <data name="Admin.Halls.Schedule.Heading" xml:space="preserve"><value>Sessions in this hall</value></data>
+  <data name="Admin.Halls.Schedule.Loading" xml:space="preserve"><value>Loading the hall schedule…</value></data>
+  <data name="Admin.Halls.Schedule.None" xml:space="preserve"><value>No sessions are assigned to this hall.</value></data>
+  <data name="Admin.Halls.Schedule.LoadFailed" xml:space="preserve"><value>The hall schedule could not be loaded.</value></data>
+  <data name="Admin.Halls.Schedule.Col.Code" xml:space="preserve"><value>Code</value></data>
+  <data name="Admin.Halls.Schedule.Col.Title" xml:space="preserve"><value>Session</value></data>
+  <data name="Admin.Halls.Schedule.Col.Start" xml:space="preserve"><value>Starts</value></data>
+  <data name="Admin.Halls.Schedule.Col.End" xml:space="preserve"><value>Ends</value></data>
+  <data name="Admin.Halls.Schedule.Col.Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Admin.Halls.Schedule.Count" xml:space="preserve"><value>{0} session(s) in this hall.</value></data>
+  <data name="Admin.Halls.Schedule.Capped" xml:space="preserve"><value>Showing the first {0} of {1} sessions. This hall's schedule is longer than one page; open the Sessions list filtered by this hall to see all of them.</value></data>
 
   <!-- D-148 — Gate Module (SIMF-FDS-003 §5.6 / SIMF-API-GATES-001) -->
   <data name="Admin.Gates.Title" xml:space="preserve"><value>Gates</value></data>

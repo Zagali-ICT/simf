@@ -1231,6 +1231,14 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Delete, $"halls/{id}", content: null,
             accessToken, cancellationToken);
 
+    // QA B16 — the hall's occupancy view: the sessions assigned to this hall.
+    public Task<ApiCallResult<GridPage<AdminSessionSummary>>> GetHallScheduleAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminSessionSummary>>(
+            HttpMethod.Get, $"halls/{id}/schedule", content: null,
+            accessToken, cancellationToken);
+
     // -- SIMF-FDS-013 (D-248) — meeting tables + hall allocations + meetings -
 
     public Task<ApiCallResult<bool>> SetHallPurposeAsync(
