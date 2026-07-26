@@ -165,6 +165,18 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
     if (_error) {
       return _buildErrorState(l10n);
     }
+    if (_currentUser == null) {
+      // BUG-013 — a TRUE guest (no account at all). The bottom nav switches
+      // tabs inside the shell, so the router's auth redirect never runs and a
+      // signed-out visitor lands here; the limited view below described an
+      // account "under review" that was never submitted, with no way out.
+      return SimfGuestPrompt(
+        icon: Icons.person_outline,
+        message: l10n.myAreaGuestNote,
+        signInLabel: l10n.guestSignInCta,
+        createAccountLabel: l10n.signUpButton,
+      );
+    }
     final dashboard = _dashboard;
     if (dashboard == null) {
       return _buildLimited(l10n);

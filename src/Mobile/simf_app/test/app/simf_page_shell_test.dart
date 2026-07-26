@@ -223,6 +223,39 @@ void main() {
       expect(switchedTo, tabIndex(SimfTab.home));
     });
 
+    testWidgets('BUG-003 — the circled back button carries an accessible name',
+        (tester) async {
+      // The chevron is a text-less SVG, so without a tooltip a screen reader
+      // announced a bare "button" on the ~18 screens using the shared header.
+      final handle = tester.ensureSemantics();
+      await _pump(
+        tester,
+        SimfPageShell(
+          title: 'My page',
+          onBack: () {},
+          tab: SimfTab.map,
+          body: const Text('BODY'),
+        ),
+      );
+
+      final button = tester.widget<IconButton>(
+        find.descendant(
+          of: find.byType(SimfCircledBackButton),
+          matching: find.byType(IconButton),
+        ),
+      );
+      expect(button.tooltip, isNotNull);
+      expect(button.tooltip, isNotEmpty);
+      // Flutter surfaces an IconButton tooltip as the node's `tooltip`, which
+      // screen readers append to the announcement.
+      expect(
+        tester.getSemantics(find.byType(SimfCircledBackButton)),
+        isSemantics(tooltip: button.tooltip, isButton: true),
+      );
+
+      handle.dispose();
+    });
+
     testWidgets('the action cluster (showHeaderActions:true) is the bell + menu '
         '— no language pill (owner 2026-07-11)', (tester) async {
       await _pump(
@@ -405,6 +438,38 @@ void main() {
         ).first,
       );
       expect(material.color, SimfTokens.navyDisabled);
+    });
+
+    testWidgets('BUG-014 — a locked tile announces WHY it is locked and stays '
+        'inert', (tester) async {
+      final handle = tester.ensureSemantics();
+      var taps = 0;
+      await _pump(
+        tester,
+        Scaffold(
+          body: SimfNavTile(
+            label: 'My badge',
+            icon: Icons.badge_outlined,
+            enabled: false,
+            disabledHint: 'Locked — sign in to unlock your smart badge',
+            onTap: () => taps++,
+          ),
+        ),
+      );
+
+      expect(
+        tester.getSemantics(find.byType(SimfNavTile)),
+        isSemantics(
+          hint: 'Locked — sign in to unlock your smart badge',
+          hasEnabledState: true,
+          isEnabled: false,
+        ),
+      );
+      // Still intentionally not tappable — only the announcement changed.
+      await tester.tap(find.text('My badge'));
+      expect(taps, 0);
+
+      handle.dispose();
     });
 
     testWidgets('stat tile shows the gold value over its label',

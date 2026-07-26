@@ -33,6 +33,7 @@
 | E2E-MOB036-007 | Grounded answer cites the real agenda (live, requires a configured provider) | happy | P1 | manual (live) — see below |
 | E2E-MOB036-008 | Re-open → the saved transcript reloads (conversation persists, D-756) | happy | P1 | authored ✓ (screen `renders the saved history under the greeting`) + backend `Assistance_persists_the_turn_and_history_returns_it` |
 | E2E-MOB036-009 | The assistant remembers earlier turns (memory across messages, D-756) | happy | P1 | backend `Assistance_second_call_includes_prior_turns_as_memory` |
+| E2E-MOB036-010 | **The message input has an accessible name (BUG-012)** — `ChatComposer`'s text box exposes its placeholder as its own semantics label (the placeholder itself vanishes once the user types); the gold send square already had one | a11y | P2 | authored ✓ (same `Semantics(label:, textField: true)` wrap covered by `simf_search_field_semantics_test`) |
 
 ## Scenarios
 
@@ -131,4 +132,5 @@ backend `AiModuleTests.Assistance_persists_the_turn_and_history_returns_it` +
 
 ---
 
-_Last reviewed:_ `2026-07-22` by `SIMF Team`.
+_Last reviewed:_ `2026-07-26` by `SIMF Team` — BUG-012: the composer's message box
+now carries an accessible name (E2E-MOB036-010). _Prior:_ `2026-07-22` by `SIMF Team`.

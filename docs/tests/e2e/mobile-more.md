@@ -40,6 +40,7 @@
 | E2E-MOB041-008 | Signed-in shows the إعادة تعيين كلمة المرور row; guest hides it | auth | P1 | authored ✓ (screen `renders the three grouped sections…` + `guest hides…`) |
 | E2E-MOB041-009 | Tapping إعادة تعيين كلمة المرور opens the forgot-password flow | happy | P1 | authored ✓ (screen `signed-in tapping Reset password opens the forgot flow`) |
 | E2E-MOB041-010 | Each row's forward "open" caret points to the inline end — right in LTR (English), left in RTL (Arabic) — via the shared SimfForwardChevron | i18n | P2 | authored ✓ (`test/app/widgets/simf_forward_chevron_test.dart` — LTR flip / RTL no-flip) |
+| E2E-MOB041-011 | **Two menus are no longer both "More" (BUG-017):** the side drawer (`MoreDrawer`, the flat list of every destination, opened by the header ☰) is titled **القائمة / Menu**; this **More** screen — the structured hub (My area / Forum info / Settings / Legal) that uniquely holds the **language** row — keeps **المزيد / More** | nav | P2 | authored ✓ (`more_drawer_test` — `BUG-017 — the drawer is titled "Menu", not a second "More"`) |
 
 ## Scenarios
 
@@ -86,4 +87,7 @@ ComingSoon routing covered by the router's fall-through for routes 200–203.
 
 ---
 
-_Last reviewed:_ `2026-07-22` by `Claude` (forward-chevron LTR direction — E2E-MOB041-010, the row caret now points to the inline end via the shared SimfForwardChevron). Prior: `2026-07-10` by `SIMF Team` (D-736 — the version line reads the real installed version, no longer a literal).
+_Last reviewed:_ `2026-07-26` by `SIMF Team` (BUG-017 — the side drawer is renamed
+**Menu** so it no longer collides with this **More** hub; the shared language
+toggle was also added to the signed-in Home header so the language switch is
+reachable from Home — E2E-MOB041-011 / E2E-MOB013-023). Prior: `2026-07-22` by `Claude` (forward-chevron LTR direction — E2E-MOB041-010, the row caret now points to the inline end via the shared SimfForwardChevron); `2026-07-10` by `SIMF Team` (D-736 — the version line reads the real installed version, no longer a literal).

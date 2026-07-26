@@ -15,6 +15,16 @@ profile type's colour** (`identity.pageColor` ← `ProfileType.PageColor`, gold
 fallback) so each tier's badge is distinct (D-763). Not-approved / pending /
 load-failure keep their respective states.
 
+**True-guest state (BUG-016 sibling — BUG-013, 2026-07-26).** The five bottom-nav
+tabs switch **inside** `SimfAppShell`'s IndexedStack, so no go_router navigation
+happens and the router's auth gate on route 32 never runs: a visitor with **no
+account at all** lands on this screen. It used to render the not-approved copy
+("your account is not approved yet…"), describing a registration the guest never
+submitted, with no way out. A signed-out user now gets the shared
+`SimfGuestPrompt` — `badgeGuestBody` ("sign in or create an account to get your
+entry badge") plus **Sign in** / **Create account** actions. The pending copy is
+unchanged for genuinely pending accounts.
+
 ## Structure (post-decomposition)
 
 | File | Holds |

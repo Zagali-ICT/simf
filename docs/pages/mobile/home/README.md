@@ -30,8 +30,12 @@ account sees the guest layout with an awaiting-approval note.
   the open-info FAQ + روح السعودية rows, and the sign-in CTA (or the pending
   note).
 - **Visitor** (758:1134): `GreetingHeader` (avatar → My Area, the static
-  "مرحبًا" welcome + the user's **first name** only (owner 2026-07-21),
-  bell-with-unread-badge + language/theme/menu cluster), the **rotating edition
+  "مرحبًا" welcome + the user's **first name** only (owner 2026-07-21), the
+  shared `SimfLanguageToggle` (**added BUG-017**, 2026-07-26 — every other
+  screen carries the header toggle and the only other language entry point is
+  the Profile "More" menu, so from Home there was no route to the language
+  switch at all), and the bell-with-unread-badge + menu cluster
+  (`SimfHeaderActions`)), the **rotating edition
   hero** (#43 — forum name / theme / dates / location overlaid on the CP-managed
   `/app/banners` images; auto-advances with dots; falls back to the static
   discover photo + "اكتشف السعودية" copy when nothing is configured. **D-756:**
@@ -55,7 +59,9 @@ badge, sponsors, news, more, gate-scanner, staff-register-visitor,
 scan-visitor, my-visitors, sign-in). The bell → notifications; the avatar → My
 Area; the follow-us + روح السعودية rows → external links via the
 confirm-then-launch gate; the LIVE banner is static config (D10, L-6). The
-locked guest بطاقتي card is intentionally inert. No hardcoded data on the page
+locked guest بطاقتي card is intentionally inert — it now carries a semantics
+hint (`guestBadgeLockedHint`, via `SimfNavTile.disabledHint`) so a screen-reader
+user learns it is locked and why (**BUG-014**), without becoming tappable. No hardcoded data on the page
 beyond the static LIVE banner copy; all dynamic content is repo-backed and
 best-effort. No missing API.
 

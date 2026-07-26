@@ -782,6 +782,12 @@ class AppL10n {
       );
   String get tileExhibition => _t('المعرض', 'Exhibition');
   String get tileMyBadgeShort => _t('بطاقتي', 'My badge');
+  // BUG-014 — the locked guest badge tile stays intentionally inert; the hint is
+  // the only cue a screen-reader user gets that it is locked and why.
+  String get guestBadgeLockedHint => _t(
+        'مقفل — سجّل الدخول لفتح بطاقتك الذكية',
+        'Locked — sign in to unlock your smart badge',
+      );
   String get homeOpenInfoSection =>
       _t('معلومات مفتوحة للجميع', 'Open to everyone');
   String get faqRowTitle => _t('الأسئلة الشائعة', 'FAQ');
@@ -1019,6 +1025,11 @@ class AppL10n {
         'حسابك قيد المراجعة. ستظهر بطاقتك وجدولك بعد الاعتماد.',
         'Your account is under review. Your badge and schedule appear once approved.',
       );
+  // BUG-013 — the TRUE-guest copy (no account at all); see [badgeGuestBody].
+  String get myAreaGuestNote => _t(
+        'سجّل الدخول أو أنشئ حساباً لعرض ملفك الشخصي وجدولك.',
+        'Sign in or create an account to see your profile and schedule.',
+      );
   String get myAreaError =>
       _t('تعذّر تحميل منطقتك.', 'Could not load your area.');
 
@@ -1028,6 +1039,12 @@ class AppL10n {
       _t('تعذّر تحميل الخريطة.', 'Could not load the map.');
   String get venueMapEmpty =>
       _t('لا توجد عناصر على الخريطة بعد', 'No map items yet');
+  // The floating map controls are icon-only, so they carried no accessible name
+  // at all (BUG-012) — a screen-reader user could not zoom or recentre the map.
+  String get venueMapZoomIn => _t('تكبير الخريطة', 'Zoom in');
+  String get venueMapZoomOut => _t('تصغير الخريطة', 'Zoom out');
+  String get venueMapResetView =>
+      _t('إعادة ضبط عرض الخريطة', 'Reset the map view');
   String get legendHall => _t('قاعة', 'Hall');
   String get legendZone => _t('منطقة', 'Zone');
   String get legendBooth => _t('جناح', 'Booth');
@@ -1627,6 +1644,15 @@ class AppL10n {
   String get rateStarsRequired =>
       _t('يرجى اختيار عدد النجوم', 'Please pick a star rating');
 
+  /// The accessible name of one star in a 1–5 star bar (BUG-012): the stars are
+  /// bare glyphs, so without it a screen-reader user met five unnamed tappables
+  /// and could not submit a rating at all.
+  String rateStarLabel(int stars) => switch (stars) {
+        1 => _t('نجمة واحدة', '1 star'),
+        2 => _t('نجمتان', '2 stars'),
+        _ => _t('$stars نجوم', '$stars stars'),
+      };
+
   /// D-713 (item 8) — the "watched" context header on a per-session rating: the
   /// session title + when it was held, so a user arriving from a rate prompt (or
   /// a notification days later) knows which session they are rating. A blank
@@ -1765,6 +1791,11 @@ class AppL10n {
 
   // More hub (Page 041; Figma 1129:17224) — grouped sections + version line.
   String get moreTitle => _t('المزيد', 'More');
+  // BUG-017 — the side drawer (a flat list of every destination) and the
+  // Profile "More" hub (My area / Forum info / Settings / Legal, the only home
+  // of the language row) were BOTH labelled "المزيد" / "More". The drawer is the
+  // app's navigation menu, so it takes its own name; the hub keeps [moreTitle].
+  String get menuTitle => _t('القائمة', 'Menu');
   String get moreAbout => _t('عن الملتقى', 'About the forum');
   String get moreAccessibility => _t('إمكانية الوصول', 'Accessibility');
   String get moreTerms => _t('الشروط والأحكام', 'Terms & conditions');
@@ -2218,6 +2249,14 @@ class AppL10n {
         'حسابك غير معتمد بعد. ستتوفر بطاقة الدخول بعد اعتماد حسابك.',
         'Your account is not approved yet. Your entry badge will be available '
             'once your account is approved.',
+      );
+  // BUG-013 — the TRUE-guest copy (no account at all). The bottom nav switches
+  // tabs inside the shell, so the router's auth redirect never runs and a
+  // signed-out visitor lands on this tab; it used to show the PENDING copy
+  // above, which describes a submitted registration that does not exist.
+  String get badgeGuestBody => _t(
+        'سجّل الدخول أو أنشئ حساباً للحصول على بطاقة الدخول الخاصة بك.',
+        'Sign in or create an account to get your entry badge.',
       );
   // KSA Wave-2 frame 221:769 copy.
   String get badgeScanToEnter => _t('امسح للدخول', 'Scan to enter');

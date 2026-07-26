@@ -39,6 +39,14 @@ class _AuthController extends AuthController {
   AuthState build() => AuthStateSignedIn(_session(status, role));
 }
 
+/// A TRUE guest — no account at all (BUG-013). The badge tab is reachable this
+/// way because the bottom nav switches tabs inside the shell, so the router's
+/// auth redirect never runs.
+class _SignedOutAuthController extends AuthController {
+  @override
+  AuthState build() => const AuthStateSignedOut();
+}
+
 MyAreaDashboard _dashboard({
   String? qrId,
   bool isVisitor = true,
@@ -129,6 +137,8 @@ Future<void> _pump(
         (RouteNames.sessions, '/sessions', 'SESSIONS'),
         (RouteNames.venueMap, '/map', 'MAP'),
         (RouteNames.myArea, '/my-area', 'MY-AREA'),
+        (RouteNames.signIn, '/sign-in', 'SIGN-IN'),
+        (RouteNames.signUpForm, '/sign-up', 'SIGN-UP'),
       ])
         GoRoute(
           name: name,
@@ -358,6 +368,35 @@ void main() {
       expect(find.byType(QrImageView), findsNothing);
       expect(find.textContaining('not approved'), findsOneWidget);
       expect(find.widgetWithText(FilledButton, 'Retry'), findsNothing);
+    });
+
+    testWidgets('BUG-013 — a TRUE guest gets the guest copy and a working '
+        'sign-in CTA, never the pending-account copy', (tester) async {
+      final repo = _FakeMyAreaRepository(dashboard: _dashboard(qrId: 'ABC123'));
+      await _pump(
+        tester,
+        repo: repo,
+        controller: _SignedOutAuthController(),
+      );
+
+      expect(repo.dashboardCalls, 0);
+      expect(find.byType(QrImageView), findsNothing);
+      // The pending / not-approved wording describes a registration a guest
+      // never submitted — it must NOT be shown.
+      expect(find.textContaining('not approved'), findsNothing);
+      expect(
+        find.textContaining('once your account is approved'),
+        findsNothing,
+      );
+      expect(
+        find.text('Sign in or create an account to get your entry badge.'),
+        findsOneWidget,
+      );
+      expect(find.widgetWithText(TextButton, 'Create account'), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
+      await tester.pumpAndSettle();
+      expect(find.text('SIGN-IN'), findsOneWidget);
     });
 
     testWidgets('a 403 for an approved user shows the not-approved state, not '

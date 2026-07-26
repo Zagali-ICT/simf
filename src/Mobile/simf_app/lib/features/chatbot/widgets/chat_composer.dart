@@ -40,21 +40,27 @@ class ChatComposer extends StatelessWidget {
       child: Row(
         children: <Widget>[
           Expanded(
-            child: TextField(
-              controller: controller,
-              minLines: 1,
-              maxLines: 4,
-              textInputAction: TextInputAction.send,
-              style: SimfTokens.bodyWhiteSm,
-              onSubmitted: (_) => onSend(),
-              decoration: InputDecoration(
-                hintText: hint,
-                hintStyle: SimfTokens.bodyWhiteSm,
-                isCollapsed: true,
-                filled: false,
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  vertical: SimfTokens.space2,
+            // The placeholder disappears once the user types, so the message
+            // box itself had no accessible name (BUG-012).
+            child: Semantics(
+              label: hint,
+              textField: true,
+              child: TextField(
+                controller: controller,
+                minLines: 1,
+                maxLines: 4,
+                textInputAction: TextInputAction.send,
+                style: SimfTokens.bodyWhiteSm,
+                onSubmitted: (_) => onSend(),
+                decoration: InputDecoration(
+                  hintText: hint,
+                  hintStyle: SimfTokens.bodyWhiteSm,
+                  isCollapsed: true,
+                  filled: false,
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: SimfTokens.space2,
+                  ),
                 ),
               ),
             ),

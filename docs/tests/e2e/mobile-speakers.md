@@ -65,6 +65,7 @@
 | E2E-MOB019-011 | Card with no rank/affiliation drops the beige sub-line, keeps the name | edge | P2 | _to author_ |
 | E2E-MOB019-012 | Arabic app renders the speaker's `rankArabic` when populated (CP-entered **or** Excel-imported) | i18n | P1 | _to author_ |
 | E2E-MOB019-013 | Arabic app falls back to the English `rank` when `rankArabic` is blank — intended, not a bug | i18n | P1 | _to author_ |
+| E2E-MOB019-014 | **The search field has an accessible name (BUG-012)** — the shared `SimfSearchField` exposes its placeholder as the field's own semantics label (and keeps it once the user types, when the placeholder is gone). One fix covers every search surface: speakers, exhibition/booths, delegations, agenda, session summaries, notifications, and the `SimfFilterSearchField` variant | a11y | P1 | authored ✓ (app `test/app/widgets/simf_search_field_semantics_test.dart`) |
 
 ## Scenarios
 
@@ -237,5 +238,8 @@ falls back to the English `rank` when it is blank. Documents the Speakers Excel
 importer fix (the `RankArabic` column now round-trips; previously Excel-created
 speakers landed with `rankArabic=null`). No app render change — the render was
 already correct.
+
+_Last reviewed:_ `2026-07-26` by `SIMF Team` — BUG-012: the shared search field now
+exposes its placeholder as the field's accessible name (E2E-MOB019-014).
 
 _Prior review:_ `2026-06-16` by `SIMF Team`.

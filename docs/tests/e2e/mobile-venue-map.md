@@ -40,6 +40,7 @@
 | E2E-MOB015-006 | Arabic: chrome mirrors (RTL) but the map canvas geometry stays LTR (venue orientation) | i18n | P1 | authored ✓ (screen — RTL chrome / LTR canvas) |
 | E2E-MOB015-007 | `kind` decodes tolerantly (int or name; unknown → a generic marker) | resilience | P2 | authored ✓ (model — `VenueMapNodeKind.fromJson`) |
 | E2E-MOB015-008 | Booth fields bind the real wire names (`name`/`nameArabic`/`exhibitorName`/`sector`) | contract | P0 | authored ✓ (model — `BoothSummary.fromJson`) |
+| E2E-MOB015-009 | **Map controls have accessible names (BUG-012):** the three floating gold controls announce "Reset the map view" / "Zoom in" / "Zoom out" (bilingual) instead of three unnamed views, so a screen-reader user can zoom and recentre | a11y | P2 | authored ✓ (`VenueMapControl` takes a required `label` → `Semantics(button: true, label:)`; strings `venueMapResetView` / `venueMapZoomIn` / `venueMapZoomOut`) |
 
 ## Scenarios
 
@@ -152,4 +153,6 @@ Scenario: The popup binds the real booth field names
 
 ---
 
-_Last reviewed:_ `2026-06-05` by `SIMF Team`.
+_Last reviewed:_ `2026-07-26` by `SIMF Team` — BUG-012: the three floating map
+controls were bare icon views with no accessible name; each now carries a
+bilingual semantics label (E2E-MOB015-009). _Prior:_ `2026-06-05` by `SIMF Team`.

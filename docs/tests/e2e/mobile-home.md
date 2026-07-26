@@ -55,6 +55,8 @@
 | E2E-MOB013-019 | **اللقاءات الثنائية → Coming soon (owner 2026-06-21):** the bilateral-meetings news tile opens the **ComingSoon** placeholder (the feature is not designed yet), not the media gallery | happy | P2 | authored ✓ (screen — tile → `bilateralMeetings` ComingSoon route) |
 | E2E-MOB013-020 | **Smart-features tile → AI-summaries (D-580→D-583):** the smart-row-2 tile reads "ملخص الجلسات" and opens the AI-summaries list (1388:8392, header "ملخص الجلسات") | happy | P2 | authored ✓ (screen — smart-row-2 label + section-scan) |
 | E2E-MOB013-021 | **About-tile → session downloads (D-583):** the Home about-row (4-up) tile reads "الجلسات" and opens the session-materials downloads screen (1388:7621, header "الجلسات"); label matches the screen title | happy | P2 | authored ✓ (screen — about-row label + order) |
+| E2E-MOB013-023 | **Language switch reachable from Home (BUG-017):** the signed-in Home greeting header carries the shared `SimfLanguageToggle`, like every other screen. Before, the only language entry point was the Profile "More" menu, so from Home there was no route to the language switch at all | nav | P1 | authored ✓ (screen `BUG-017 — the greeting header carries the shared language toggle, so the language switch is reachable from Home`) |
+| E2E-MOB013-024 | **Locked guest badge tile announces why (BUG-014):** the guest home's locked "بطاقتي" tile stays intentionally inert but now carries a semantics hint ("Locked — sign in to unlock your smart badge") so a screen-reader user learns it is locked and why | a11y | P2 | authored ✓ (`simf_page_shell_test` — `BUG-014 — a locked tile announces WHY it is locked and stays inert`) |
 | E2E-MOB013-022 | **Hero background video (D-756 / D-761):** when `OrganizationProfile.backgroundVideoUrl` is a **direct MP4/HLS** link the home hero plays it muted + looping + no-controls, cover-fitted as the base layer (edition text overlay + scrim stay on top); a **YouTube** link is NOT played in-app (an Android WebView can't be clipped into the band — D-761) and falls back to the banner-image carousel / discover photo, same as null/unsupported | happy | P2 | authored ✓ (widget — `HeroBackgroundVideo.isSupported` gate + hero base-layer selection) |
 
 ## Scenarios
@@ -397,9 +399,33 @@ Scenario: No configured video keeps the banner-image hero
   And no video surface is mounted
 ```
 
+### E2E-MOB013-023 — The language switch is reachable from Home
+
+```gherkin
+Scenario: Switching language without leaving Home
+  Given I am signed in and on the Home tab
+  Then the greeting header shows the language pill next to the bell and the menu
+  And the pill offers the language I would switch TO ("EN" under Arabic, "ع" under English)
+  When I tap it
+  Then the app language flips and the choice is persisted
+```
+
+> Every other screen carries the toggle in its header; Home did not, and the
+> language row lives only in the Profile "More" menu — a different menu from the
+> Home header "More", so from Home there was no route to the language switch at
+> all (BUG-017).
+
+**Evidence:** screen test `BUG-017 — the greeting header carries the shared
+language toggle, so the language switch is reachable from Home`; the toggle's own
+flip + persist behaviour is covered by `simf_page_shell_test` (`tapping the
+sub-page language pill flips the locale AR → EN and persists it`).
+
 ---
 
-_Last reviewed:_ `2026-07-01` by `SIMF Team` — D-583: the two Home session tiles
+_Last reviewed:_ `2026-07-26` by `SIMF Team` — BUG-017: the shared language toggle
+was added to the signed-in Home greeting header (E2E-MOB013-023); BUG-014: the
+locked guest badge tile now carries a semantics hint (E2E-MOB013-024).
+_Prior:_ `2026-07-01` by `SIMF Team` — D-583: the two Home session tiles
 were crossed against their Figma node titles and swapped so each label opens the
 same-titled screen — about "الجلسات" → session-downloads (1388:7621), smart-features
 "ملخص الجلسات" → AI-summaries list (1388:8392). Supersedes D-582 (which relabelled the

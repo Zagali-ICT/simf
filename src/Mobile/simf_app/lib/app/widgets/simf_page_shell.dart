@@ -313,6 +313,11 @@ class SimfCircledBackButton extends StatelessWidget {
     final flip = mirrorInRtl && Directionality.of(context) == TextDirection.rtl;
     return IconButton(
       onPressed: onBack,
+      // The chevron is an SVG with no text, so without this the control had no
+      // accessible name at all — a screen reader announced a bare "button" on
+      // the ~18 screens that carry the shared header (BUG-003). The localized
+      // Material string keeps it bilingual with no new l10n key.
+      tooltip: MaterialLocalizations.of(context).backButtonTooltip,
       style: IconButton.styleFrom(
         backgroundColor: SimfTokens.navyDeep,
         shape: const CircleBorder(),
@@ -469,7 +474,9 @@ class SimfHeaderActions extends ConsumerWidget {
           ],
           Builder(
             builder: (ctx) => _box(
-              tooltip: l10n.moreTitle,
+              // BUG-017 — this control opens the side drawer, a different menu
+              // from the Profile "More" hub; both used to announce as "More".
+              tooltip: l10n.menuTitle,
               onTap: () => Scaffold.of(ctx).openDrawer(),
               glyph: const Icon(Icons.menu),
             ),
@@ -760,6 +767,7 @@ class SimfNavTile extends StatelessWidget {
     this.iconAsset,
     this.onTap,
     this.enabled = true,
+    this.disabledHint,
     this.minHeight = 72,
     super.key,
   }) : assert(
@@ -780,6 +788,12 @@ class SimfNavTile extends StatelessWidget {
   final VoidCallback? onTap;
   final bool enabled;
 
+  /// Why the tile is locked, announced as the semantics hint when [enabled] is
+  /// false (e.g. "sign in to unlock"). The locked variant is only a colour
+  /// change, so without it a screen-reader user met a tile that simply did
+  /// nothing and was never told why (BUG-014). Null keeps the plain tile.
+  final String? disabledHint;
+
   /// The tile's minimum height. The frame uses 72 for the "عن الملتقى" row and
   /// 80 for the news + smart-feature rows (758:1216 vs 758:1164).
   final double minHeight;
@@ -793,7 +807,7 @@ class SimfNavTile extends StatelessWidget {
     final Widget top = asset != null
         ? SimfSvgIcon(asset, size: 24, color: foreground)
         : Icon(icon, size: 24, color: foreground);
-    return SimfCard(
+    final Widget tile = SimfCard(
       onTap: enabled ? onTap : null,
       color: enabled ? SimfTokens.navyDeep : SimfTokens.navyDisabled,
       borderColor: enabled
@@ -807,6 +821,13 @@ class SimfNavTile extends StatelessWidget {
         minHeight: minHeight,
       ),
     );
+    final hint = disabledHint;
+    if (enabled || hint == null) {
+      return tile;
+    }
+    // The tile stays intentionally inert (it is a locked affordance, not a
+    // broken button) — only the announcement changes.
+    return Semantics(enabled: false, hint: hint, child: tile);
   }
 }
 
@@ -1099,12 +1120,23 @@ class SimfErrorState extends StatelessWidget {
   }
 }
 
-/// The standard empty / pending surface: a muted icon over the message.
+/// The standard empty / pending surface: a muted icon over the message, with an
+/// optional call-to-action underneath.
 class SimfEmptyState extends StatelessWidget {
-  const SimfEmptyState({required this.icon, required this.message, super.key});
+  const SimfEmptyState({
+    required this.icon,
+    required this.message,
+    this.action,
+    super.key,
+  });
 
   final IconData icon;
   final String message;
+
+  /// An optional action rendered under the message — e.g. the true-guest
+  /// sign-in / create-account pair on the badge and profile tabs
+  /// ([SimfGuestPrompt]). Null keeps the plain empty surface.
+  final Widget? action;
 
   @override
   Widget build(BuildContext context) {
@@ -1121,8 +1153,60 @@ class SimfEmptyState extends StatelessWidget {
               textAlign: TextAlign.center,
               style: const TextStyle(color: SimfTokens.beigeBorder),
             ),
+            if (action != null) ...<Widget>[
+              const SizedBox(height: SimfTokens.space4),
+              action!,
+            ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// The **true-guest** surface for a signed-in-only tab: the empty-state icon and
+/// message over a working sign-in button and a create-account link.
+///
+/// The bottom nav switches tabs INSIDE the shell (no go_router navigation), so
+/// the router's auth redirect never runs and a visitor with no account at all
+/// reaches the badge and profile tabs. Both used to render the PENDING-account
+/// copy ("your account is not approved yet…" / "under review…"), which describes
+/// a submitted registration that does not exist and offered no way out — a dead
+/// end (BUG-013). The pending copy stays for genuinely pending accounts.
+class SimfGuestPrompt extends StatelessWidget {
+  const SimfGuestPrompt({
+    required this.icon,
+    required this.message,
+    required this.signInLabel,
+    required this.createAccountLabel,
+    super.key,
+  });
+
+  final IconData icon;
+
+  /// The true-guest copy — "sign in or create an account to …", never the
+  /// pending-approval wording.
+  final String message;
+  final String signInLabel;
+  final String createAccountLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return SimfEmptyState(
+      icon: icon,
+      message: message,
+      action: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          FilledButton(
+            onPressed: () => context.pushNamed(RouteNames.signIn),
+            child: Text(signInLabel),
+          ),
+          TextButton(
+            onPressed: () => context.pushNamed(RouteNames.signUpForm),
+            child: Text(createAccountLabel),
+          ),
+        ],
       ),
     );
   }
