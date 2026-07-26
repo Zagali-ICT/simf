@@ -6,9 +6,13 @@
 //               a partner badge answers the same 404 as an unknown code.
 // DEF-EXH-002 — a NEW capture notifies the visitor once, naming the exhibitor;
 //               an idempotent re-scan raises nothing.
+// DEF-EXH-004 — the subject test also runs on the READ path, so a row captured
+//               while the old rule was in force stops projecting a card.
+// DEF-EXH-005 — a booth officer provisioned from the CP can actually scan.
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SIMF.Common;
@@ -16,6 +20,8 @@ using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Contacts;
 using SIMF.Contracts.Exhibitors;
+using SIMF.Domain.Exhibitors;
+using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Notifications;
 using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
@@ -191,6 +197,108 @@ public sealed class ExhibitorVisitorScanTests : IClassFixture<SimfApiFactory>
         await SingleCaptureNotificationAsync(visitorId);
     }
 
+    // DEF-EXH-005 — the CP's own provisioning path (POST
+    // /admin/exhibitors/{id}/accounts) used to create the booth officer with NO
+    // profile type, which the MobileAppRole.Exhibitor rule can never admit: the
+    // CP produced exhibitors that could not scan. The account must come out of
+    // the pipeline able to use the tools it was provisioned for.
+    [Fact]
+    public async Task Cp_provisioned_booth_officer_can_scan_and_list()
+    {
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var exhibitorId = await SeedExhibitorCompanyAsync();
+
+        var officerEmail = $"booth-{Guid.NewGuid():N}@simf.test";
+        var provision = await PostAuthAsync(
+            $"/api/v1/admin/exhibitors/{exhibitorId}/accounts",
+            new ProvisionExhibitorAccountRequest
+            {
+                ContactName = "Booth Officer",
+                Email = officerEmail,
+                RoleLabel = "Stand lead",
+            },
+            adminToken);
+        Assert.Equal(HttpStatusCode.OK, provision.StatusCode);
+        var account = (await provision.Content
+            .ReadFromJsonAsync<ApiResult<ExhibitorAccountSummary>>())!.Data!;
+
+        // The invite flow sets the password out-of-band; the desk approves the
+        // account. Both are done directly here so the test stays on the scan.
+        var officerToken = await SignInProvisionedAccountAsync(officerEmail);
+
+        var (_, visitorId) = await CreateApprovedUserAsync();
+        await SeedVisitorWithQrAsync(visitorId, "BOOTHBADGE1", "Lead One", "زائر");
+
+        var scan = await PostAuthAsync("/api/v1/app/exhibitor/visitors/scan",
+            new ScanVisitorBadgeRequest { QrId = "BOOTHBADGE1" }, officerToken);
+        Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
+
+        var list = await GetAuthAsync("/api/v1/app/exhibitor/visitors", officerToken);
+        Assert.Equal(HttpStatusCode.OK, list.StatusCode);
+        var rows = (await list.Content
+            .ReadFromJsonAsync<ApiResult<IReadOnlyList<ExhibitorVisitorRow>>>())!.Data!;
+        Assert.Equal("Lead One", Assert.Single(rows).Card.Name);
+
+        // The provisioned account is the exhibitor profile type, resolved by its
+        // MobileAppRole (never by a name literal) — the same column the scan
+        // authorises on.
+        Assert.Equal(
+            MobileAppRole.Exhibitor, await AssignedMobileAppRoleAsync(account.UserId));
+    }
+
+    // DEF-EXH-004 — a row captured while the vulnerable rule was in force (no
+    // subject test at all) must stop projecting the subject's live card: the
+    // exhibitor here legitimately holds a capture of a STAFF account and of a
+    // since-deactivated visitor, and neither may be listed.
+    [Fact]
+    public async Task Legacy_captures_of_ineligible_subjects_are_not_listed()
+    {
+        var (exhibitorToken, exhibitorId) = await CreateApprovedUserAsync();
+        await SeedExhibitorProfileAsync(exhibitorId, "Legacy Booth", "جناح قديم");
+
+        var (_, staffId) = await CreateApprovedUserAsync();
+        await SeedProfileAsync(staffId, "Staff", "Gate Officer", "موظف", "LEGACYSTAFF");
+
+        var (_, retiredId) = await CreateApprovedUserAsync();
+        await SeedVisitorWithQrAsync(retiredId, "LEGACYRETIRED", "Retired", "متقاعد");
+        await DeactivateProfileAsync(retiredId);
+
+        var (_, keptId) = await CreateApprovedUserAsync();
+        await SeedVisitorWithQrAsync(keptId, "LEGACYKEPT", "Still A Visitor", "زائر");
+
+        await SeedLegacyCaptureAsync(exhibitorId, staffId);
+        await SeedLegacyCaptureAsync(exhibitorId, retiredId);
+        await SeedLegacyCaptureAsync(exhibitorId, keptId);
+
+        var list = await GetAuthAsync("/api/v1/app/exhibitor/visitors", exhibitorToken);
+        Assert.Equal(HttpStatusCode.OK, list.StatusCode);
+        var rows = (await list.Content
+            .ReadFromJsonAsync<ApiResult<IReadOnlyList<ExhibitorVisitorRow>>>())!.Data!;
+
+        // Only the still-eligible audience subject survives; no PII (email or
+        // either mobile number) is projected for the other two.
+        var only = Assert.Single(rows);
+        Assert.Equal("Still A Visitor", only.Card.Name);
+        Assert.DoesNotContain(rows, row => row.Card.UserId == staffId);
+        Assert.DoesNotContain(rows, row => row.Card.UserId == retiredId);
+    }
+
+    // DEF-EXH-001 (read path) — the caller test guards the list endpoint too, so a
+    // Staff token cannot read back rows it captured while the old rule let it scan.
+    [Fact]
+    public async Task Staff_caller_cannot_list_rows_it_captured_under_the_old_rule_403()
+    {
+        var (staffToken, staffId) = await CreateApprovedUserAsync();
+        await SeedProfileAsync(staffId, "Staff", "Gate Officer", "موظف");
+
+        var (_, visitorId) = await CreateApprovedUserAsync();
+        await SeedVisitorWithQrAsync(visitorId, "OLDRULEBADGE", "Harvested", "زائر");
+        await SeedLegacyCaptureAsync(staffId, visitorId);
+
+        var list = await GetAuthAsync("/api/v1/app/exhibitor/visitors", staffToken);
+        Assert.Equal(HttpStatusCode.Forbidden, list.StatusCode);
+    }
+
     private async Task<Notification> SingleCaptureNotificationAsync(Guid visitorId)
     {
         using var scope = _factory.Services.CreateScope();
@@ -243,6 +351,109 @@ public sealed class ExhibitorVisitorScanTests : IClassFixture<SimfApiFactory>
             CreatedAt = DateTimeOffset.UtcNow,
         });
         await appDb.SaveChangesAsync();
+    }
+
+    // A capture written straight to the table, exactly as one taken before the
+    // subject test existed — no eligibility check of any kind at write time.
+    private async Task SeedLegacyCaptureAsync(Guid exhibitorUserId, Guid visitorUserId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        appDb.ExhibitorVisitorScans.Add(new ExhibitorVisitorScan
+        {
+            Id = Guid.NewGuid(),
+            ExhibitorUserId = exhibitorUserId,
+            VisitorUserId = visitorUserId,
+            Note = "captured under the old rule",
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        });
+        await appDb.SaveChangesAsync();
+    }
+
+    private async Task<Guid> SeedExhibitorCompanyAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var exhibitor = new Exhibitor
+        {
+            Id = Guid.NewGuid(),
+            Name = $"Booth {Guid.NewGuid():N}"[..16],
+            NameArabic = "جناح",
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        appDb.Exhibitors.Add(exhibitor);
+        await appDb.SaveChangesAsync();
+        return exhibitor.Id;
+    }
+
+    private async Task<MobileAppRole?> AssignedMobileAppRoleAsync(Guid userId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        return await appDb.UserProfiles
+            .AsNoTracking()
+            .Where(profile => profile.UserId == userId && profile.ProfileType != null)
+            .Select(profile => (MobileAppRole?)profile.ProfileType!.MobileAppRole)
+            .FirstOrDefaultAsync();
+    }
+
+    /// <summary>Completes a CP-provisioned account the way the invite + approval
+    /// flow does (password set out-of-band, desk approves) and signs it in on the
+    /// app audience, so the returned token is a real booth-officer token.</summary>
+    private async Task<string> SignInProvisionedAccountAsync(string email)
+    {
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+            var user = await users.FindByEmailAsync(email);
+            await users.AddPasswordAsync(user!, AuthFlow.Password);
+        }
+        AuthFlow.SetAccountState(_factory, email, AccountState.Approved);
+        AuthFlow.DisableTwoFactor(_factory, email);
+
+        var sign = await _client.PostAsJsonAsync("/api/v1/app/auth/sign-in",
+            new SignInRequest { Email = email, Password = AuthFlow.Password });
+        Assert.Equal(HttpStatusCode.OK, sign.StatusCode);
+        return (await sign.Content
+            .ReadFromJsonAsync<ApiResult<SignInResponse>>())!.Data!.Tokens!.AccessToken;
+    }
+
+    private async Task<string> CreateAdministratorAndSignInAsync()
+    {
+        const string administratorRole = "Administrator";
+        var email = $"exhibitor-scan-admin-{Guid.NewGuid():N}@simf.test";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var roles = scope.ServiceProvider.GetRequiredService<RoleManager<SimfRole>>();
+            if (!await roles.RoleExistsAsync(administratorRole))
+            {
+                await roles.CreateAsync(new SimfRole { Name = administratorRole });
+            }
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+            var user = new SimfUser
+            {
+                UserName = email,
+                Email = email,
+                EmailConfirmed = true,
+                DisplayName = "Exhibitor Scan Admin",
+                AccountState = AccountState.Approved,
+                UserType = UserType.Admin,
+            };
+            await users.CreateAsync(user, AuthFlow.Password);
+            await users.AddToRoleAsync(user, administratorRole);
+        }
+
+        var sign = await _client.PostAsJsonAsync("/api/v1/app/auth/sign-in",
+            new SignInRequest
+            {
+                Email = email,
+                Password = AuthFlow.Password,
+                Audience = SignInAudience.Cp,
+            });
+        return (await sign.Content
+            .ReadFromJsonAsync<ApiResult<SignInResponse>>())!.Data!.Tokens!.AccessToken;
     }
 
     private async Task DeactivateProfileAsync(Guid userId)

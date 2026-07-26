@@ -11,6 +11,9 @@
   exhibitor badge answers the same 404 as an unknown code). DEF-EXH-002: a NEW
   capture raises one `NotificationKind.ExhibitorLeadCaptured` in-app notice to
   the visitor naming the exhibitor; an idempotent re-scan raises none.
+  DEF-EXH-005: a booth officer provisioned from the CP
+  (`POST /admin/exhibitors/{id}/accounts`) now carries the exhibitor profile
+  type, so the CP's own path produces an account that can actually scan.
 - **Figma:** none — a D-426 functional page, not a KSA design frame.
   **Clean-code freeze:** D-643 (2026-07-04).
 

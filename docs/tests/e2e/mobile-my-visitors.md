@@ -108,9 +108,44 @@ Scenario: A captured visitor's job title localizes per language
   # by VisitorContactSharingTests; getter by contact_models_test.localizedJobTitle.
 ```
 
+### E2E-MOBMYVIS-008 — Legacy captures stop projecting a card (DEF-EXH-004)
+
+```gherkin
+Scenario Outline: A row captured under the old rule is no longer listed
+  Given a signed-in Approved exhibitor
+  And an ExhibitorVisitorScan row it captured while the subject test did not
+    exist yet, whose subject is <subject>
+  When it calls GET /api/v1/app/exhibitor/visitors
+  Then that row is absent from the response
+  And no PII for that subject (login email, Saudi mobile, international mobile)
+    is projected
+
+  Examples:
+    | subject                                  |
+    | a Staff (partner-side) account           |
+    | a since-deactivated visitor profile      |
+
+Scenario: A still-eligible subject is unaffected
+  Given the same exhibitor also holds a capture of an ACTIVE audience visitor
+  Then that row is still listed with the full card
+```
+
+> DEF-EXH-003 was enforced at CAPTURE time only, so every row taken while the old
+> rule was in force kept projecting a full live card on READ — the fix runs the
+> same subject predicate (`IsCapturableSubject`, one shared expression) on the
+> list path. The CALLER test already guarded this endpoint (DEF-EXH-001): a Staff
+> token gets 403 and can never read back what it captured under the old rule.
+
+**Evidence:** `tests/SIMF.Api.Tests/ExhibitorVisitorScanTests.cs` —
+`Legacy_captures_of_ineligible_subjects_are_not_listed`,
+`Staff_caller_cannot_list_rows_it_captured_under_the_old_rule_403`.
+
 ---
 
-_Last reviewed:_ 2026-07-20 by Claude — bilingual job title: the captured-visitor
-`ContactCard` now localizes the title via `VisitorCard.jobTitleArabic` /
-`localizedJobTitle` (Arabic primary in ar, English fallback); E2E-MOBMYVIS-007.
-Earlier: `2026-07-04` by `SIMF Team`.
+_Last reviewed:_ `2026-07-27` by `SIMF Team` — DEF-EXH-004: the capture-time
+subject eligibility test now also runs on the READ path, so rows captured while
+the old rule was in force stop projecting a card; E2E-MOBMYVIS-008. Earlier:
+2026-07-20 — bilingual job title: the captured-visitor `ContactCard` now
+localizes the title via `VisitorCard.jobTitleArabic` / `localizedJobTitle`
+(Arabic primary in ar, English fallback); E2E-MOBMYVIS-007. Earlier:
+`2026-07-04` by `SIMF Team`.

@@ -164,6 +164,30 @@ Scenario: An idempotent re-scan does not re-notify
 **Evidence:**
 `ExhibitorVisitorScanTests.New_capture_notifies_the_visitor_once_and_a_rescan_is_silent`.
 
+### E2E-MOBSCANVIS-010 — A CP-provisioned booth officer can scan (DEF-EXH-005)
+
+```gherkin
+Scenario: The CP's own provisioning path produces a working exhibitor
+  Given an administrator provisions a booth account with
+    POST /api/v1/admin/exhibitors/{id}/accounts
+  And the officer completes the invite (password) and is approved
+  When the officer signs in to the app and scans an eligible visitor badge
+  Then the API answers 200 with the visitor's full card
+  And GET /api/v1/app/exhibitor/visitors lists the capture
+  And the provisioned account's profile type carries MobileAppRole = Exhibitor
+```
+
+> The provisioning path created the officer with **no** profile type ("a
+> least-privilege Visitor account"), which the DEF-EXH-001 rule can never admit —
+> the CP produced exhibitors that could not use the tools they were provisioned
+> for. The account is now created through the partner-side `CreateOtherAsync`
+> pipeline with the exhibitor profile type, resolved by its `MobileAppRole`
+> (never by a name literal — the row is admin-curated and renameable). With no
+> active exhibitor-mapped profile type at all, provisioning answers a clean 409
+> `ADMIN_PROFILE_TYPE_INVALID` instead of minting an unusable account.
+
+**Evidence:** `ExhibitorVisitorScanTests.Cp_provisioned_booth_officer_can_scan_and_list`.
+
 ### E2E-MOBSCANVIS-004 — Manual-entry path + generic failure
 
 ```gherkin
@@ -215,9 +239,13 @@ covers the always-mounted manual field with the camera off; `scan_gate_test`
 
 ---
 
-_Last reviewed:_ `2026-07-26` by `SIMF Team` — security/privacy fixes
-DEF-EXH-001 (only `MobileAppRole.Exhibitor` may scan), DEF-EXH-003 (the scanned
-subject must be an active audience account), DEF-EXH-002 (a new capture notifies
-the visitor once, naming the exhibitor) — E2E-MOBSCANVIS-007..009. Earlier:
+_Last reviewed:_ `2026-07-27` by `SIMF Team` — DEF-EXH-005: the CP provisioning
+path now assigns the exhibitor profile type, so a booth officer created from the
+CP can actually scan (E2E-MOBSCANVIS-010); the backing class
+`ExhibitorVisitorScanTests` now holds 10 tests. Earlier: `2026-07-26` —
+security/privacy fixes DEF-EXH-001 (only `MobileAppRole.Exhibitor` may scan),
+DEF-EXH-003 (the scanned subject must be an active audience account),
+DEF-EXH-002 (a new capture notifies the visitor once, naming the exhibitor) —
+E2E-MOBSCANVIS-007..009. Earlier:
 `2026-07-11` — D-737 unified scanner (QrScanView now hosts SimfScannerBody +
 camera-error state); `2026-07-04`.

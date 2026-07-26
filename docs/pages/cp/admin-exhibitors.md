@@ -118,9 +118,17 @@ JOIN.
   `Exhibitors.View`). 404 if the exhibitor id is unknown; resolves the
   account emails cross-context from the Identity DB.
 - **Provision account** — `POST /admin/exhibitors/{id}/accounts` (policy
-  `Exhibitors.Create`, rate-limited "auth"). Reuses `CreateVisitorAsync`
-  (least-privilege Visitor, pending approval) + an `ExhibitorMembership`
-  row. Writes `Exhibitor.AccountProvisioned`.
+  `Exhibitors.Create`, rate-limited "auth"). Reuses `CreateOtherAsync`
+  (least-privilege partner-side account, pending approval) + an
+  `ExhibitorMembership` row. Writes `Exhibitor.AccountProvisioned`.
+  **DEF-EXH-005:** the account is provisioned with the **exhibitor profile
+  type** — resolved by `ProfileType.MobileAppRole == Exhibitor` (D-519), never
+  by a name literal — because the app lead-capture tools (scan a visitor badge
+  / My Visitors) authorise on exactly that column; the earlier "no profile
+  type" account could never scan. Consequence for the desk: a booth officer now
+  lands in the **Others** pending-approval queue, not the Visitors queue. With
+  no active exhibitor-mapped profile type at all, the call answers 409
+  `ADMIN_PROFILE_TYPE_INVALID` instead of minting an unusable account.
 - **Export** — `POST /admin/exhibitors/export` (policy
   `Exhibitors.Export`, rate-limited "auth") via
   `ExportExhibitorsEndpoint : AdminGridExportEndpoint<AdminExhibitorSummary>`.

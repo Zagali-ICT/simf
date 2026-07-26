@@ -1,4 +1,5 @@
 // Tests: SIMF.Api.Tests/ExhibitorVisitorScanTests.cs
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Exhibitors.Abstractions;
@@ -9,6 +10,7 @@ using SIMF.Common.Enums;
 using SIMF.Contracts.Contacts;
 using SIMF.Contracts.Exhibitors;
 using SIMF.Domain.Exhibitors;
+using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Exhibitors;
@@ -21,8 +23,10 @@ namespace SIMF.Infrastructure.Exhibitors;
 /// snapshot). DEF-EXH-001: only a genuine exhibitor (a profile type carrying
 /// <see cref="MobileAppRole.Exhibitor"/>, D-519) may use this; every other
 /// caller is rejected with 403. DEF-EXH-003: the scanned subject must itself be
-/// an active audience-side account. DEF-EXH-002: a new capture notifies the
-/// visitor, naming the exhibitor their card was shared with.
+/// an active audience-side account. DEF-EXH-004: that same subject test also runs
+/// on the READ path, so rows captured while the old rule was in force stop
+/// projecting a card. DEF-EXH-002: a new capture notifies the visitor, naming the
+/// exhibitor their card was shared with.
 /// </summary>
 internal sealed class ExhibitorVisitorService(
     SimfAppDbContext appDbContext,
@@ -32,6 +36,19 @@ internal sealed class ExhibitorVisitorService(
     ILogger<ExhibitorVisitorService> logger) : IExhibitorVisitorService
 {
     private const int NoteMaxLength = 512;
+
+    /// <summary>DEF-EXH-003 — the SUBJECT eligibility test: an ACTIVE profile that
+    /// is not a partner-side (<c>IsForVisitor=false</c>) type, so a staff badge or
+    /// another exhibitor's badge is never capturable as a "lead". A visitor with no
+    /// tier assigned yet stays eligible — the approve-time tier is optional
+    /// (AdminAccountService.Approval, CS-D / D-386), so a null ProfileType is an
+    /// ordinary audience account, not a partner.
+    ///
+    /// <para>DEF-EXH-004 — held as one expression so the capture path and the READ
+    /// path apply exactly the same rule and can never drift.</para></summary>
+    private static readonly Expression<Func<UserProfile, bool>> IsCapturableSubject =
+        profile => profile.IsActive
+            && (profile.ProfileType == null || profile.ProfileType.IsForVisitor);
 
     public async Task<VisitorCard> ScanByBadgeAsync(
         Guid exhibitorUserId, string qrId, string? note,
@@ -47,19 +64,13 @@ internal sealed class ExhibitorVisitorService(
                 "رمز البطاقة مطلوب.");
         }
 
-        // DEF-EXH-003 — the SUBJECT must be eligible too, not just the caller: an
-        // ACTIVE profile that is not a partner-side (IsForVisitor=false) type, so a
-        // staff badge or another exhibitor's badge is never capturable as a "lead".
-        // A visitor with no tier assigned yet stays eligible — the approve-time tier
-        // is optional (AdminAccountService.Approval, CS-D / D-386), so a null
-        // ProfileType is an ordinary audience account, not a partner. An ineligible
-        // badge returns the same 404 as an unknown one — the caller never learns
-        // whether the code exists.
+        // DEF-EXH-003 — the SUBJECT must be eligible too, not just the caller
+        // (see IsCapturableSubject). An ineligible badge returns the same 404 as an
+        // unknown one — the caller never learns whether the code exists.
         var visitorId = await appDbContext.UserProfiles
             .AsNoTracking()
-            .Where(p => p.QrId == normalised
-                && p.IsActive
-                && (p.ProfileType == null || p.ProfileType.IsForVisitor))
+            .Where(IsCapturableSubject)
+            .Where(p => p.QrId == normalised)
             .Select(p => (Guid?)p.UserId)
             .FirstOrDefaultAsync(cancellationToken);
         if (visitorId is null)
@@ -134,10 +145,34 @@ internal sealed class ExhibitorVisitorService(
             return Array.Empty<ExhibitorVisitorRow>();
         }
 
-        var cards = await ResolveCardsAsync(
-            rows.Select(r => r.VisitorUserId).Distinct().ToList(), cancellationToken);
+        // DEF-EXH-004 — re-run the capture-time SUBJECT test on the READ path.
+        // Capture-time-only enforcement left every row taken while the old rule was
+        // in force (no IsActive, no audience-side filter) still projecting a full
+        // live card — login email + both mobile numbers — for a staff / rival
+        // exhibitor / since-deactivated subject. A subject that is no longer
+        // capturable simply drops out of the list, so no PII is projected for it
+        // (this also covers a subject whose profile row has gone).
+        var subjectIds = rows.Select(r => r.VisitorUserId).Distinct().ToList();
+        var eligibleSubjectIds = (await appDbContext.UserProfiles
+            .AsNoTracking()
+            .Where(IsCapturableSubject)
+            .Where(p => subjectIds.Contains(p.UserId))
+            .Select(p => p.UserId)
+            .ToListAsync(cancellationToken))
+            .ToHashSet();
 
-        return rows
+        var visible = rows
+            .Where(r => eligibleSubjectIds.Contains(r.VisitorUserId))
+            .ToList();
+        if (visible.Count == 0)
+        {
+            return Array.Empty<ExhibitorVisitorRow>();
+        }
+
+        var cards = await ResolveCardsAsync(
+            visible.Select(r => r.VisitorUserId).Distinct().ToList(), cancellationToken);
+
+        return visible
             .Select(r => new ExhibitorVisitorRow(
                 r.Id, r.CreatedAt, r.Note, cards[r.VisitorUserId]))
             .ToList();

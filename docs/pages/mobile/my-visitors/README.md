@@ -1,10 +1,15 @@
 # My visitors — زواري (`myVisitors`, D-426)
 
 - **Route:** `/exhibitor/visitors` (`RouteNames.myVisitors`). Access:
-  **Exhibitor (approved, non-visitor)** — a visitor-tier caller gets 403 → the
-  forbidden surface. Reached from the side drawer (Other-only) and after a
-  successful visitor-badge scan.
+  **Exhibitor (approved)** — DEF-EXH-001: the server authorises on
+  `ProfileType.MobileAppRole == Exhibitor` (D-519), so Staff / Moderator /
+  Media / Sponsor / plain Visitor callers all get 403 → the forbidden surface.
+  Reached from the side drawer (Other-only) and after a successful
+  visitor-badge scan.
 - **API:** `GET /app/exhibitor/my-visitors` (`ExhibitorRepository.listMyVisitors`).
+  DEF-EXH-004: the capture-time SUBJECT test runs here too, so a row captured
+  while the old rule was in force (a staff / rival-exhibitor / since-deactivated
+  subject) drops out of the list instead of projecting a live card.
 - **Figma:** none — this is a D-426 functional page, not a KSA design frame.
   **Clean-code freeze:** D-642 (2026-07-04).
 
