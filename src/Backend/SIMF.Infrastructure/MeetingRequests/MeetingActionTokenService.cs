@@ -1,4 +1,5 @@
 // Tests: SIMF.Api.Tests/MeetingActionTokenTests.cs
+//        SIMF.Api.Tests/SpeakerMeetingQaTests.cs (QA A22 requester outcome email)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -31,6 +32,11 @@ internal sealed class MeetingActionTokenService(
     IOptions<MeetingLinksOptions> options,
     ILogger<MeetingActionTokenService> logger) : IMeetingActionTokenService
 {
+    // QA A24 — the approve / resend paths ask this BEFORE minting so an unconfigured
+    // public base URL fails up front instead of stranding an AwaitingSpeaker request.
+    public bool LinksConfigured =>
+        !string.IsNullOrWhiteSpace(options.Value.PublicWebBaseUrl);
+
     public MeetingActionLinks StageTokensForRequest(Guid speakerMeetingRequestId)
     {
         var now = timeProvider.GetUtcNow();
@@ -239,7 +245,11 @@ internal sealed class MeetingActionTokenService(
             Severity = NotificationSeverity.Info,
             RelatedEntityType = nameof(SpeakerMeetingRequest),
             RelatedEntityId = request.Id,
-            SendEmail = false,
+            // QA A22 — the speaker's own Approve/Reject decision is a terminal outcome for
+            // the requester, so it is emailed as well as shown in-app (the same convention
+            // the admin decide paths use). Previously in-app only, so a requester who was
+            // not in the app never learned the meeting was confirmed or declined.
+            SendEmail = true,
         }, logger, cancellationToken);
     }
 

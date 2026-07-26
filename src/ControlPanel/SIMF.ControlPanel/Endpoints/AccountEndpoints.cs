@@ -2550,6 +2550,15 @@ internal static class AccountEndpoints
             return Forward(await api.CheckInSpeakerMeetingAsync(id, token));
         });
 
+        // QA B20 — reopen a Rejected / Cancelled request back to Pending.
+        group.MapPost("/admin/speaker-meeting-requests/{id:guid}/reopen",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ReopenSpeakerMeetingRequestAsync(id, token));
+        });
+
         // D-500 (Wave 5, الطلبات) — participation-document request BFF passthroughs.
         group.MapPost("/admin/document-requests/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>

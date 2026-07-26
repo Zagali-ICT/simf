@@ -40,4 +40,12 @@ public interface ISpeakerMeetingRequestService
     /// not confirmed.</summary>
     Task<AdminSpeakerMeetingRequestDetail> CheckInAsync(
         Guid actorUserId, Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>QA B20 — put a Rejected / Cancelled request back to a clean
+    /// <see cref="MeetingRequestStatus.Pending"/> so a mistaken decline or cancel is
+    /// recoverable. 409 for any other status (the slot-holding states must not be
+    /// reopened behind the parties' backs). Writes a
+    /// <c>SpeakerMeetingRequest.Reopened</c> audit entry.</summary>
+    Task<AdminSpeakerMeetingRequestDetail> ReopenAsync(
+        Guid actorUserId, Guid id, CancellationToken cancellationToken = default);
 }

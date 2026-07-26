@@ -270,6 +270,15 @@ public static class ErrorCodes
     /// awaiting the speaker. Deliberately NEUTRAL — the same code for every reason
     /// so the response never leaks which one it was (§15.7).</summary>
     public const string MeetingActionTokenInvalid = "MEETING_ACTION_TOKEN_INVALID";
+    /// <summary>QA A25 — the speaker has no contact email on file, so the
+    /// double-opt-in Approve/Reject links could never be delivered. The approve /
+    /// resend path fails LOUDLY with this code instead of silently stranding the
+    /// request in <c>AwaitingSpeaker</c> with tokens nobody will ever receive.</summary>
+    public const string SpeakerMeetingContactMissing = "SPEAKER_MEETING_CONTACT_MISSING";
+    /// <summary>QA A24 — <c>MeetingLinks:PublicWebBaseUrl</c> is unconfigured, so the
+    /// speaker confirmation link cannot be built. Missing link configuration is a hard
+    /// failure on the approve / resend path, never a silent skip.</summary>
+    public const string MeetingLinksNotConfigured = "MEETING_LINKS_NOT_CONFIGURED";
 
     // Unified requests (D-500, Wave 5 — الطلبات 1408:9726).
     public const string ParticipationDocumentRequestInvalid = "PARTICIPATION_DOCUMENT_REQUEST_INVALID";

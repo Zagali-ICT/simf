@@ -17,6 +17,13 @@ public interface IMeetingActionTokenService
     /// unconfigured (the caller then skips the email; the tokens still commit).</summary>
     MeetingActionLinks StageTokensForRequest(Guid speakerMeetingRequestId);
 
+    /// <summary>QA A24 — is <c>MeetingLinks:PublicWebBaseUrl</c> configured, i.e. can a
+    /// landing-page URL actually be built? The approve / resend paths check this BEFORE
+    /// they mint anything, so a missing setting is a clean up-front failure instead of a
+    /// request parked in <c>AwaitingSpeaker</c> whose only exit is an email that was never
+    /// sent. Keeps the option key knowledge in one place (this service builds the URLs).</summary>
+    bool LinksConfigured { get; }
+
     /// <summary>Write the "minted" OperationLog row (§15.7). Called AFTER the caller
     /// commits the staged tokens, so the audit only records a durable mint.</summary>
     Task AuditMintedAsync(
