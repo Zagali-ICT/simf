@@ -1252,8 +1252,16 @@ class AppL10n {
       _t('الرجاء اختيار التاريخ والوقت', 'Please choose a date and time');
   String get meetingSlotNone =>
       _t('لا توجد فترات متاحة حالياً', 'No meeting slots available right now');
-  String get meetingVipOnly =>
-      _t('حجز فترة اجتماع متاح لضيوف كبار الشخصيات فقط', 'Booking a meeting slot is for VIP guests only');
+  // QA A28 — the old copy ("for VIP guests only") described a rule that no
+  // longer exists: eligibility to request a speaker meeting moved off the VIP
+  // tier onto the per-user, admin-assigned UserProfile.AllowsSpeakerMeeting
+  // flag (bi-meeting rework). This states the real rule and what to do next.
+  String get meetingNotEnabled => _t(
+        'طلب مقابلة المتحدّث غير مُفعَّل لحسابك. '
+            'تواصل مع فريق الملتقى لتفعيله.',
+        'Requesting a speaker meeting is not enabled for your account. '
+            'Contact the SIMF team to enable it.',
+      );
   String get meetingRequestSent =>
       _t('تم إرسال طلب المقابلة', 'Meeting request sent');
   String get meetingRequestInvalid => _t(
@@ -1343,6 +1351,8 @@ class AppL10n {
   // Status chips. (السجل serves "all"; there is no standalone "All" chip.)
   String get requestStatusPending => _t('قيد المراجعة', 'Under review');
   String get requestStatusAccepted => _t('مقبول', 'Accepted');
+  // QA B12 — an accepted meeting checked in at the hall by an operator.
+  String get requestStatusAttended => _t('تم الحضور', 'Attended');
   String get requestStatusRejected => _t('مرفوض', 'Rejected');
   String get requestStatusCancelled => _t('ملغى', 'Cancelled');
 

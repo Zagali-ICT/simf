@@ -210,8 +210,37 @@ public partial class SpeakerMeetingRequestsList
         finally { _busy = false; }
     }
 
+    // QA B20 — reopen a Rejected / Cancelled request back to Pending so a mistaken
+    // decline or cancel is recoverable. Quiet row action behind the same confirm
+    // dialog as Check-in / Resend, gated by the page's Manage permission.
+    private async Task OnReopenAsync(AdminSpeakerMeetingRequestRow row)
+    {
+        if (_busy) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<AdminSpeakerMeetingRequestDetail>>(
+                "simfAccount.postJson",
+                $"/account/api/admin/speaker-meeting-requests/{row.Id}/reopen",
+                new { });
+            _toast = env is { Success: true }
+                ? new Toast("success", L["Admin.SpeakerMeetingRequests.Reopen.Done"])
+                : new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.SpeakerMeetingRequests.LoadFailed"]);
+            if (env is { Success: true }) { await LoadAsync(); }
+        }
+        finally { _busy = false; }
+    }
+
     // R10 (D-767) — open the confirm dialog for a one-click row action; the work runs
     // from RunConfirmAsync only after the admin confirms.
+    private void ConfirmReopen(AdminSpeakerMeetingRequestRow row) =>
+        AskConfirm(L["Admin.SpeakerMeetingRequests.Reopen"],
+            L["Admin.SpeakerMeetingRequests.Reopen.ConfirmMsg"],
+            L["Admin.SpeakerMeetingRequests.Reopen"], () => OnReopenAsync(row));
+
     private void ConfirmCheckIn(AdminSpeakerMeetingRequestRow row) =>
         AskConfirm(L["Admin.Meetings.CheckIn"], L["Admin.Meetings.CheckIn.ConfirmMsg"],
             L["Admin.Meetings.CheckIn"], () => OnCheckInAsync(row));
@@ -304,6 +333,14 @@ public partial class SpeakerMeetingRequestsList
 
     private Task ConfirmAsync() =>
         SendRespondAsync(MeetingRequestStatus.Accepted, verbal: true, requireHall: true);
+
+    // QA B19 — with no HallAvailabilityWindow configured there is no free slot to bind,
+    // so Approve and Confirm both refuse and Decline was the admin's only usable action.
+    // The service has always supported accepting WITHOUT a hall (straight to Accepted, no
+    // room booked), so offer it explicitly as its own clearly-labelled button.
+    // VerbalConfirmed is only read when a hall IS bound, so it is left false here.
+    private Task AcceptWithoutHallAsync() =>
+        SendRespondAsync(MeetingRequestStatus.Accepted, verbal: false, requireHall: false);
 
     private async Task SendRespondAsync(
         MeetingRequestStatus status, bool verbal, bool requireHall)

@@ -312,6 +312,9 @@ public static class AuditEvents
     // speaker confirmation links.
     public const string SpeakerMeetingRequestReverted = "SpeakerMeetingRequest.Reverted";
     public const string SpeakerMeetingConfirmationResent = "SpeakerMeetingRequest.ConfirmationResent";
+    // QA B20 — an admin reopens a Rejected / Cancelled request back to Pending so a
+    // mistaken decline or cancel is recoverable.
+    public const string SpeakerMeetingRequestReopened = "SpeakerMeetingRequest.Reopened";
     // D-474 (#11, Group G) — speaker availability windows for the VIP-meeting slots.
     public const string SpeakerAvailabilityWindowCreated = "SpeakerAvailabilityWindow.Created";
     public const string SpeakerAvailabilityWindowDeleted = "SpeakerAvailabilityWindow.Deleted";

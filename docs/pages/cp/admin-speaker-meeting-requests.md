@@ -190,7 +190,12 @@ Pending→Pending 400 status-invalid, 004 list-omits-email / modal fetches detai
 005 stale-row race, 006 server-500 fallback toast, 007 RTL, 008 empty state, 009
 auth (View-only sees no Respond icon; PUT 403), 010 no-View → `/not-permitted`,
 011 only Pending rows expose Respond, 012 per-column filter, 013 column sort, 014
-list write audited, 015 Excel export (D-356).
+list write audited, 015 Excel export (D-356), 016–018 accept-binds-a-hall-slot,
+019–021 auto-revert / resend / requester-overlap, 022 the unified 3-button modal,
+023 operator check-in, and the QA round: 024 Approve refused when the speaker has
+no contact email, 025 Approve refused when `MeetingLinks:PublicWebBaseUrl` is
+unset, 026 **Accept without a hall**, 027 **Reopen request**, 028 check-in reaches
+the requester, 029 cancel voids the speaker's emailed links.
 
 ## 12. Related docs
 
@@ -207,5 +212,6 @@ list write audited, 015 Excel export (D-356).
 |------|----------|--------|
 | 2026-06-03 | D-269 | Original — `SpeakerMeetingRequest` entity + EF migration `D269_AddSpeakerMeetingRequests` + CP review queue (SimfDataGrid + Respond modal) + public submit endpoint. Response-only (no CRUD). |
 | 2026-06-11 | D-356 | Grid Excel **export only** added (toolbar Export → `.xlsx`, sheet "SpeakerMeetingRequests", header `Speaker | Requester | Subject | Status | CreatedAt | RespondedAt`, capped 5000 rows, requester email excluded as detail-only PII). No import path, no toggle. E2E extended with E2E-SMR-015. |
+| 2026-07-26 | QA round | **Approve now fails loudly instead of stranding a request.** `PUT …/respond` with a hall + `VerbalConfirmed = false` pre-flights the two things the speaker confirmation email needs and refuses with a precise bilingual 409 when either is missing — `SPEAKER_MEETING_CONTACT_MISSING` (the speaker has no `Email`; **every seeded speaker ships this way**) or `MEETING_LINKS_NOT_CONFIGURED` (`MeetingLinks:PublicWebBaseUrl` is empty). No token is minted and the row stays Pending. `POST …/resend-confirmation` applies the same guard. **New CP actions:** an **Accept without a hall** modal button (the only usable acceptance when no `HallAvailabilityWindow` exists) and a **Reopen request** row action on Rejected / Cancelled rows (`POST …/{id}/reopen`, `SpeakerMeetingRequests.Manage`, audited `SpeakerMeetingRequest.Reopened`) that returns the row to a clean Pending. **Requester-facing:** check-in now notifies them and surfaces as `checkedIn` on `GET /app/my-requests`; the speaker's own Approve/Decline and the 72-hour auto-revert are emailed, not in-app only; cancelling voids the speaker's live action tokens and emails them the withdrawal. E2E extended with E2E-SMR-024..029. |
 
-_Last reviewed:_ 2026-06-11 by Claude (D-356 — reference doc authored; Excel export only).
+_Last reviewed:_ 2026-07-26 by Claude (QA speaker-meeting round — Approve deliverability guard, Accept-without-a-hall, Reopen, requester notifications).

@@ -87,6 +87,14 @@ public static class NotificationKindCatalog
         // meeting-confirm screen for this delegation request (route wired in the mobile phase).
         NotificationKind.MeetingRequested when relatedId is { } requestId =>
             $"/meeting-confirm?requestId={requestId}",
+        // QA A27 — every meeting-lifecycle tile is navigable: scheduled / cancelled /
+        // confirmed / the 15-minute reminder all open the bilateral-meetings page, where the
+        // requester's speaker AND delegation meetings live. These four kinds are not
+        // per-target (the app has no meeting-detail route), so they carry no id.
+        NotificationKind.MeetingScheduled or
+        NotificationKind.MeetingCancelled or
+        NotificationKind.MeetingRequestConfirmed or
+        NotificationKind.MeetingReminder => "/meetings",
         NotificationKind.SessionRatingRequest when relatedId is { } sessionId =>
             $"/rate?code=Session&targetId={sessionId}",
         NotificationKind.DayRatingRequest when relatedId is { } dayId =>

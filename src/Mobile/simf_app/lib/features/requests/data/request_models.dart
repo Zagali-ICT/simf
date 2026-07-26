@@ -69,6 +69,7 @@ class AppRequestItem {
     this.speakerId,
     this.countryId,
     this.responseNote,
+    this.checkedIn = false,
   });
 
   final AppRequestKind kind;
@@ -102,6 +103,12 @@ class AppRequestItem {
   /// R-3 — the admin's response note for a decided request (e.g. the rejection
   /// reason). Null when none. Append-only wire field.
   final String? responseNote;
+
+  /// QA B12 — true once an operator checked the meeting in at the hall. The
+  /// server still folds its internal `Done` state onto `accepted` for [status]
+  /// (the shipped wire contract is 0-3), so this append-only flag is the only
+  /// way the requester can tell "confirmed" from "attended". False otherwise.
+  final bool checkedIn;
 
   /// The context line under the type headline, in the active locale (AR/EN with
   /// a fallback).
@@ -158,6 +165,7 @@ class AppRequestItem {
       responseNote: (json['responseNote'] as String?)?.trim().isEmpty ?? true
           ? null
           : (json['responseNote'] as String).trim(),
+      checkedIn: json['checkedIn'] as bool? ?? false,
     );
   }
 

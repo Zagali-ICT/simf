@@ -1,11 +1,14 @@
 // Tests: SIMF.Api.Tests/MeetingAwaitingSpeakerExpiryWorkerTests.cs
+//        SIMF.Api.Tests/SpeakerMeetingQaTests.cs (QA A29 revert notification)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
+using SIMF.Application.Notifications;
 using SIMF.Application.Operations;
 using SIMF.Common.Enums;
+using SIMF.Domain.BusinessMeetings;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Operations;
@@ -81,9 +84,10 @@ internal sealed class MeetingAwaitingSpeakerExpiryWorker(
         using var scope = scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var auditLog = scope.ServiceProvider.GetRequiredService<IAuditLog>();
+        var notifications = scope.ServiceProvider.GetRequiredService<INotificationDispatcher>();
 
         var reverted = await RunExpiryScanAsync(
-            db, auditLog, timeProvider.GetUtcNow(), cancellationToken);
+            db, auditLog, notifications, logger, timeProvider.GetUtcNow(), cancellationToken);
         if (reverted > 0)
         {
             logger.LogInformation(
@@ -98,7 +102,8 @@ internal sealed class MeetingAwaitingSpeakerExpiryWorker(
     /// number reverted.
     /// </summary>
     internal static async Task<int> RunExpiryScanAsync(
-        SimfAppDbContext db, IAuditLog auditLog, DateTimeOffset now,
+        SimfAppDbContext db, IAuditLog auditLog, INotificationDispatcher notifications,
+        ILogger logger, DateTimeOffset now,
         CancellationToken cancellationToken)
     {
         var stale = await db.SpeakerMeetingRequests
@@ -138,6 +143,43 @@ internal sealed class MeetingAwaitingSpeakerExpiryWorker(
         }
 
         await db.SaveChangesAsync(cancellationToken);
+
+        // QA A29 — the revert used to be completely silent: the requester's proposed
+        // time was released and nobody was told. Tell them the speaker did not confirm
+        // in time and the request is back with the team. Dispatched AFTER the save so a
+        // notify failure can never roll back the revert; best-effort (swallow-and-log).
+        // Only the requester is notified — per D-717 owner decision C the CP status flip
+        // back into the Pending queue IS the admin signal.
+        foreach (var req in stale)
+        {
+            await NotifyRequesterRevertedAsync(db, notifications, logger, req, cancellationToken);
+        }
+
         return stale.Count;
+    }
+
+    private static async Task NotifyRequesterRevertedAsync(
+        SimfAppDbContext db, INotificationDispatcher notifications, ILogger logger,
+        SpeakerMeetingRequest req, CancellationToken cancellationToken)
+    {
+        var speakerName = await db.Speakers.AsNoTracking()
+            .Where(s => s.Id == req.SpeakerId).Select(s => s.Name)
+            .SingleOrDefaultAsync(cancellationToken) ?? "the speaker";
+
+        await notifications.TryDispatchAsync(new NotificationRequest
+        {
+            UserId = req.RequestedByUserId,
+            Kind = NotificationKind.MeetingCancelled,
+            Title = "Meeting time released",
+            TitleArabic = "تم تحرير موعد المقابلة",
+            Body = $"{speakerName} did not confirm in time, so the proposed time was "
+                + "released. Your request is back with the SIMF team.",
+            BodyArabic = $"لم يؤكّد {speakerName} في الوقت المحدّد، لذا تم تحرير الموعد "
+                + "المقترح. طلبك عاد إلى فريق الملتقى.",
+            Severity = NotificationSeverity.Info,
+            RelatedEntityType = nameof(SpeakerMeetingRequest),
+            RelatedEntityId = req.Id,
+            SendEmail = true,
+        }, logger, cancellationToken);
     }
 }

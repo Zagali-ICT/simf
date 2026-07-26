@@ -60,6 +60,7 @@
 | E2E-REQ-009 | Cancel a non-owned request → 404 `APP_REQUEST_NOT_FOUND` | auth | P1 | authored ✓ (`MyRequestsTests`, API) |
 | E2E-REQ-010 | Server 500 on `GET /app/my-requests` → inline retry surface, no rows | resilience | P2 | _to author_ |
 | E2E-REQ-011 | RTL render (Arabic) — header, طلب جديد button, status chips, cards + Cancel mirror right-to-left | i18n | P1 | _to author_ |
+| E2E-REQ-014 | A checked-in speaker meeting reads **Attended** (QA B12) — the server sets the append-only `checkedIn: true` while `status` still folds Done → Accepted (1), so the card label switches from "Accepted"/"مقبول" to "Attended"/"تم الحضور" without breaking the shipped 0–3 wire contract | happy | P1 | authored ✓ (`SpeakerMeetingQaTests.B12_Check_in_notifies_the_requester_and_surfaces_as_CheckedIn_on_their_feed`, API) |
 
 ## Scenarios
 
@@ -276,6 +277,34 @@ Scenario: The rejection reason is shown in the expanded card
 
 ---
 
+### E2E-REQ-014 — A checked-in meeting reads "Attended" (QA B12)
+
+```gherkin
+Scenario: The requester can see they were checked in
+  Given the user holds a Confirmed speaker meeting
+  When an operator checks it in at the hall
+  Then GET /app/my-requests returns that row with checkedIn = true
+  And status is still Accepted (1) — the server folds its internal Done (5) so the
+      shipped mobile wire contract (0–3) is untouched and old clients keep working
+  And the card status label reads "Attended" / "تم الحضور"
+  And the user also receives a "Meeting attendance recorded" /
+      "تم تسجيل حضور الاجتماع" notification (in-app + email)
+  # Before the fix check-in was a bare status flip: no notification, and the feed
+  # folded Done back onto "accepted", so the requester could never tell.
+
+Scenario: Cancelling an AwaitingSpeaker meeting also tells the speaker
+  Given the user holds a speaker meeting whose speaker was emailed confirmation links
+  When the user withdraws it from الطلبات
+  Then every live MeetingActionToken for the request is voided
+  And the speaker is emailed "SIMF — a meeting request was withdrawn"
+```
+
+**Evidence:** `SpeakerMeetingQaTests.B12_Check_in_notifies_the_requester_and_surfaces_as_CheckedIn_on_their_feed`
+and `SpeakerMeetingQaTests.B13_Cancelling_voids_the_live_speaker_tokens_and_emails_the_speaker`
+(API) — green. App side: `AppRequestItem.checkedIn` + `requestStatusLabel(..., checkedIn:)`.
+
+---
+
 ## Implementation notes
 
 - **API integration tests** at
@@ -322,6 +351,6 @@ Scenario: The rejection reason is shown in the expanded card
 
 ---
 
-_Last reviewed:_ `2026-07-11` by `Claude` — on-site W2b (R-1c AwaitingSpeaker speaker meeting is cancellable + R-3 admin response-note surfacing; added E2E-REQ-012/013). Prior: `2026-06-26` by `SIMF Team` — D-500 Wave 5 unified requests feed
+_Last reviewed:_ `2026-07-26` by `Claude` — QA B12/B13: a checked-in meeting reads "Attended" via the append-only `checkedIn` flag, and cancelling voids the speaker's emailed links (added E2E-REQ-014). Prior: `2026-07-11` by `Claude` — on-site W2b (R-1c AwaitingSpeaker speaker meeting is cancellable + R-3 admin response-note surfacing; added E2E-REQ-012/013). Prior: `2026-06-26` by `SIMF Team` — D-500 Wave 5 unified requests feed
 (الطلبات, Figma `1408:9726`): five-kind feed + document/badge submit + self-cancel;
 supersedes the D-479 My-meetings screen.

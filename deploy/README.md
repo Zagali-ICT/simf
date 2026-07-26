@@ -100,7 +100,7 @@ Administrator**, then **restart the IIS app pool** so `w3wp` picks them up:
 
 | Script | Service | Key groups |
 |--------|---------|-----------|
-| [set-env-api.ps1](set-env-api.ps1) | SimfAPI | `SIMF_ConnectionStrings__*`, `SIMF_Jwt__SigningKey`, `SIMF_Email__*`, `SIMF_SuperAdmin__*`, `SIMF_Storage__*`, `SIMF_Ai__*`, `SIMF_ReverseProxy__KnownProxies__n`, `SIMF_RateLimit__*`, media/presentation/recording roots, `ASPNETCORE_ENVIRONMENT` |
+| [set-env-api.ps1](set-env-api.ps1) | SimfAPI | `SIMF_ConnectionStrings__*`, `SIMF_Jwt__SigningKey`, `SIMF_Email__*`, `SIMF_SuperAdmin__*`, `SIMF_Storage__*`, `SIMF_Ai__*`, `SIMF_MeetingLinks__PublicWebBaseUrl`, `SIMF_ReverseProxy__KnownProxies__n`, `SIMF_RateLimit__*`, media/presentation/recording roots, `ASPNETCORE_ENVIRONMENT` |
 | [set-env-cp.ps1](set-env-cp.ps1) | SimfCP | `SIMF_Api__BaseUrl`, `SIMF_Storage__LogDirectory`, `ASPNETCORE_ENVIRONMENT` |
 | [set-env-web.ps1](set-env-web.ps1) | SimfWeb | `SIMF_Api__BaseUrl`, `SIMF_Storage__LogDirectory`, `ASPNETCORE_ENVIRONMENT` |
 

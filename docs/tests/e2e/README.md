@@ -85,7 +85,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/session-moderators` | [`cp-admin-session-moderators.md`](cp-admin-session-moderators.md) | E2E-SMD-001..018 |
 | `/admin/programme/timeline` | [`cp-admin-programme-timeline.md`](cp-admin-programme-timeline.md) | E2E-PTL-001..011 |
 | `/admin/bookings` | [`cp-admin-bookings.md`](cp-admin-bookings.md) | E2E-BKG-001..012 |
-| `/admin/speaker-meeting-requests` | [`cp-admin-speaker-meeting-requests.md`](cp-admin-speaker-meeting-requests.md) | E2E-SMR-001..023 |
+| `/admin/speaker-meeting-requests` | [`cp-admin-speaker-meeting-requests.md`](cp-admin-speaker-meeting-requests.md) | E2E-SMR-001..029 |
 | `/admin/speaker-availability` | [`cp-admin-speaker-availability.md`](cp-admin-speaker-availability.md) | E2E-SAV-001..007 |
 | `/admin/hall-availability` | [`cp-admin-hall-availability.md`](cp-admin-hall-availability.md) | E2E-HAV-001..007 |
 | `/admin/delegation-meetings` | [`cp-admin-delegation-meetings.md`](cp-admin-delegation-meetings.md) | E2E-DLM-001..013 |
@@ -238,7 +238,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | `joinSessionHub` (`GET /app/programme/sessions`) — D-485 | [`mobile-join-hub.md`](mobile-join-hub.md) | E2E-MOBHUB-001..005 |
 | `savedSessions` (`GET /app/sessions/favourites` ∩ programme) — #8, D-584 | [`mobile-saved-sessions.md`](mobile-saved-sessions.md) | E2E-MOBSAVED-001..007 |
 | #19 `speakers` (`GET /app/speakers`) | [`mobile-speakers.md`](mobile-speakers.md) | E2E-MOB019-001..013 |
-| #20 `speakerProfile` (`GET /app/speakers/{id}` + meeting-request) | [`mobile-speaker-profile.md`](mobile-speaker-profile.md) | E2E-MOB020-001..020 |
+| #20 `speakerProfile` (`GET /app/speakers/{id}` + meeting-request) | [`mobile-speaker-profile.md`](mobile-speaker-profile.md) | E2E-MOB020-001..022 |
 | #22 `booths` (`GET /app/booths` + `/{id}`) — #9: country name + أرشدني→map | [`mobile-booths.md`](mobile-booths.md) | E2E-MOB022-001..013 |
 | `boothMap` (`/booths/:id/map` → venue map focused on the booth) — #9 | [`mobile-booths.md`](mobile-booths.md) | E2E-MOB022-013 |
 | #23 `sponsors` (`GET /app/sponsors`) | [`mobile-sponsors.md`](mobile-sponsors.md) | E2E-MOB023-001..004 |
@@ -254,7 +254,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #40 `rate` (`GET/POST /app/feedback/form|submit`) | [`mobile-rate.md`](mobile-rate.md) | E2E-MOB040-001..011 |
 | #31 `mediaPartners` (`GET /app/media-partners`) | [`mobile-media-partners.md`](mobile-media-partners.md) | E2E-MOB031-001..003 |
 | #12 `guestMode` (no API) | [`mobile-guest-mode.md`](mobile-guest-mode.md) | E2E-MOB012-001..004 |
-| #33 `notifications` (`POST /app/account/notifications/list` · `/{id}/read` · `/read-all`) | [`mobile-notifications.md`](mobile-notifications.md) | E2E-MOB033-001..006 |
+| #33 `notifications` (`POST /app/account/notifications/list` · `/{id}/read` · `/read-all`) | [`mobile-notifications.md`](mobile-notifications.md) | E2E-MOB033-001..009 |
 | #35 `meetPeople` (`GET /app/networking/partner-directory`) - Build #13 partner directory | [`mobile-meet-people.md`](mobile-meet-people.md) | E2E-MOB035-001..012 |
 | #38 `accessibility` (no API) | [`mobile-accessibility.md`](mobile-accessibility.md) | E2E-MOB038-001..004 |
 | #41 `more` (no API) | [`mobile-more.md`](mobile-more.md) | E2E-MOB041-001..009 |
@@ -266,7 +266,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #36 `chatbot` (AI assistant → `/app/ai/assistance`) | [`mobile-chatbot.md`](mobile-chatbot.md) | E2E-MOB036-001..007 |
 | #24-01 `archiveDetail` (`GET /app/archive/{id}`) | [`mobile-archive-detail.md`](mobile-archive-detail.md) | E2E-MOB024D-001..009 |
 | `My Contacts` / `Share my contact` (`/app/account/share-token` + `/app/contacts/*`) | [`mobile-my-contacts.md`](mobile-my-contacts.md) | E2E-MMC-001..014 |
-| `requests` (`GET /app/my-requests` + `POST …/document-requests` · `…/badge-requests` · `…/my-requests/cancel`) — Wave 5 (D-500), retitled **طلباتي** when the meetings page split off (D-745); the full requests history | [`mobile-requests.md`](mobile-requests.md) | E2E-REQ-001..013 |
+| `requests` (`GET /app/my-requests` + `POST …/document-requests` · `…/badge-requests` · `…/my-requests/cancel`) — Wave 5 (D-500), retitled **طلباتي** when the meetings page split off (D-745); the full requests history | [`mobile-requests.md`](mobile-requests.md) | E2E-REQ-001..014 |
 | `meetings` (`GET /app/my-requests` filtered to approved-upcoming meetings) — **اللقاءات الثنائية** (D-745), Figma `1408:9726`; bi-meeting rework: **flag-gated** (not VIP), **two** request buttons (طلب مقابلة متحدث / طلب اجتماع وفد) + السجل history + speaker/flag cards | [`mobile-meetings.md`](mobile-meetings.md) | E2E-MOBMEET-001..013 |
 | `Delegation meeting request` sheet — bi-meeting rework: the delegation twin of the speaker request sheet; opened from `/meetings` (طلب اجتماع وفد) + a tapped delegation card; `POST /app/delegation-meeting-requests` | [`mobile-delegation-request.md`](mobile-delegation-request.md) | E2E-DELREQ-001..010 |
 | #117 `meetingConfirm` (`/meeting-confirm?requestId=…` → `POST /app/delegation-meeting-requests/{id}/confirm`) — bi-meeting rework: delegation other-party confirm-on-tap, reached from a `MeetingRequested` notification | [`mobile-meeting-confirm.md`](mobile-meeting-confirm.md) | E2E-MOBMC-001..007 |

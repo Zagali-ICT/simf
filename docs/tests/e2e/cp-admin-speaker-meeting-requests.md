@@ -102,6 +102,12 @@
 | E2E-SMR-018 | Binding a hall slot removes it for the next meeting → a second accept onto the same slot → 409 (D-716) | error | P0 | authored ✓ (`Binding_a_hall_slot_makes_it_unavailable_to_a_second_meeting`) |
 | E2E-SMR-022 | Unified 3-button modal — Close / Decline (justification required) / Approve (verbal:false) / Confirm (verbal:true); no verbal checkbox (bi-meeting rework) | happy | P0 | _to author_ (browser) |
 | E2E-SMR-023 | Operator Check-in — a Confirmed (Accepted) row → Check in → status `Done`; a non-Accepted check-in → 409 (bi-meeting rework) | happy | P0 | authored ✓ (`Checking_in_a_confirmed_meeting_marks_it_Done` + `Checking_in_a_non_confirmed_meeting_is_409`, API) |
+| E2E-SMR-024 | Approve for a speaker with **no contact email** → 409 `SPEAKER_MEETING_CONTACT_MISSING`, no tokens minted, row stays Pending; Confirm still works (QA A25) | error | P0 | authored ✓ (`A25_Approve_for_a_speaker_with_no_contact_email_is_refused_and_mints_no_tokens`, `A25_Confirm_still_works_for_a_speaker_with_no_contact_email`, `A25_Resend_confirmation_for_a_speaker_with_no_contact_email_is_refused`) |
+| E2E-SMR-025 | Approve with `MeetingLinks:PublicWebBaseUrl` unset → 409 `MEETING_LINKS_NOT_CONFIGURED`, no tokens minted, row stays Pending (QA A24) | error | P0 | authored ✓ (`A24_Approve_with_no_public_web_base_url_is_refused_and_mints_no_tokens`) |
+| E2E-SMR-026 | **Accept without a hall** button — the admin can accept when no `HallAvailabilityWindow` exists (QA B19) | happy | P0 | _to author_ (browser) |
+| E2E-SMR-027 | **Reopen request** row action on a Rejected / Cancelled row → back to Pending, decision + hall binding cleared, audited `SpeakerMeetingRequest.Reopened`; an Accepted row → 409 (QA B20) | happy | P0 | authored ✓ (`B20_Reopening_a_rejected_request_puts_it_back_to_Pending_and_is_audited`, `B20_Reopening_an_accepted_request_is_409`, `B20_Reopen_requires_the_manage_permission`) |
+| E2E-SMR-028 | Check-in reaches the requester — in-app "Meeting attendance recorded" + `checkedIn: true` on `GET /app/my-requests` (QA B12) | happy | P1 | authored ✓ (`B12_Check_in_notifies_the_requester_and_surfaces_as_CheckedIn_on_their_feed`) |
+| E2E-SMR-029 | Requester cancels an AwaitingSpeaker meeting → the speaker's live action tokens are voided and the speaker is emailed the withdrawal (QA B13) | happy | P1 | authored ✓ (`B13_Cancelling_voids_the_live_speaker_tokens_and_emails_the_speaker`) |
 
 ## Scenarios
 
@@ -575,6 +581,172 @@ lead-window bound + once-only dedup). The delegation check-in twin (E2E-DLM-011)
 
 ---
 
+### E2E-SMR-024/025 — Approve refuses when its confirmation email cannot be delivered (QA A24 / A25)
+
+```gherkin
+Feature: Approve must never strand a request behind an email that cannot be sent
+  As an Administrator
+  I want Approve to fail loudly when the speaker link cannot be delivered
+  So that no request parks in AwaitingSpeaker waiting for an email nobody sent
+
+Background:
+  Given an Administrator with SpeakerMeetingRequests.Manage has signed in
+  And a Pending speaker meeting request exists
+  And a Meeting hall with at least one free availability slot exists
+
+Scenario: E2E-SMR-024 — the speaker has no contact email
+  Given the target speaker's Email is empty (every seeded speaker ships this way)
+  When the administrator picks the hall + slot and presses Approve
+  Then the API returns 409 SPEAKER_MEETING_CONTACT_MISSING
+  And the error toast reads "This speaker has no contact email, so the confirmation link
+      cannot be sent. Add the speaker's email, or use Confirm when you already have their
+      verbal agreement."
+      / "لا يوجد بريد إلكتروني لهذا المتحدّث، لذا لا يمكن إرسال رابط التأكيد. أضف بريد المتحدّث
+      الإلكتروني، أو استخدم \"تأكيد\" إذا كانت لديك موافقته الشفهية."
+  And no MeetingActionToken row exists for the request
+  And the row is still Pending
+
+Scenario: E2E-SMR-024b — Confirm is unaffected
+  Given the same speaker with no contact email
+  When the administrator picks the hall + slot and presses Confirm
+  Then the response is 200 and the status becomes Accepted
+  # Confirm mints no link, so it needs no address.
+
+Scenario: E2E-SMR-024c — Resend is refused the same way
+  Given an AwaitingSpeaker row whose speaker's Email was cleared afterwards
+  When the administrator uses the "Resend speaker confirmation" row action
+  Then the API returns 409 SPEAKER_MEETING_CONTACT_MISSING
+
+Scenario: E2E-SMR-025 — the public link base URL is unset
+  Given the API runs with MeetingLinks:PublicWebBaseUrl empty (the shipped default)
+  When the administrator picks the hall + slot and presses Approve
+  Then the API returns 409 MEETING_LINKS_NOT_CONFIGURED
+  And the error names the setting to fix (bilingual)
+  And no MeetingActionToken row exists and the row is still Pending
+  # OPS: set SIMF_MeetingLinks__PublicWebBaseUrl in QA and Production
+  # (SIMF-OPS-001 §6.0).
+```
+
+**Evidence:** `SpeakerMeetingQaTests.A25_*` (three tests) and
+`SpeakerMeetingLinksUnsetTests.A24_Approve_with_no_public_web_base_url_is_refused_and_mints_no_tokens`
+— all green.
+
+---
+
+### E2E-SMR-026 — Accept without a hall (QA B19)
+
+```gherkin
+Feature: Accept a meeting when no hall window exists
+  As an Administrator
+  I want to accept a request without booking a room
+  So that Decline is not my only usable action before hall availability is configured
+
+Background:
+  Given an Administrator with SpeakerMeetingRequests.Manage has signed in
+  And NO HallAvailabilityWindow has been created, so every meeting hall offers zero slots
+  And a Pending speaker meeting request exists
+
+Scenario: Accept without a hall
+  When the administrator opens the Respond modal
+  Then the hall picker shows "This hall has no free slots. Add hall availability first."
+  And the footer offers Close / Decline / "Accept without a hall" / Approve / Confirm
+  And the help text explains: "Accept without a hall: agree to the meeting when no hall
+      slot is available — no room is booked and the team arranges the place."
+      / "«قبول بدون قاعة»: الموافقة على المقابلة عند عدم توفّر فترة قاعة — لا يُحجز مكان ويتولى الفريق ترتيبه."
+
+  When the administrator presses "Accept without a hall" ("قبول بدون قاعة")
+  Then PUT /account/api/admin/speaker-meeting-requests/{id}/respond fires with
+      Status = Accepted and NO HallId / SlotStart / SlotEnd
+  And the response is 200 and the row flips to Confirmed (Accepted)
+  And the requester is notified of the outcome (in-app + email)
+
+Scenario: Approve / Confirm still require a slot
+  When the administrator presses Approve or Confirm with no hall + slot chosen
+  Then the client blocks the submit with
+      "Select a hall and a free slot to approve or confirm."
+      / "اختر قاعة وفترة متاحة للموافقة أو التأكيد."
+```
+
+**Evidence:** the accept-without-hall service path is covered at the API layer by
+`SpeakerMeetingRequestsTests.Admin_lists_then_responds_with_Accepted` (Accepted with no
+`HallId`); the new CP button is the browser half and is marked _to author_.
+
+---
+
+### E2E-SMR-027 — Reopen a rejected or cancelled request (QA B20)
+
+```gherkin
+Feature: A mistaken decline or cancel is recoverable
+  As an Administrator with SpeakerMeetingRequests.Manage
+  I want to reopen a closed request
+  So that a mis-click does not permanently kill a meeting request
+
+Background:
+  Given an Administrator with SpeakerMeetingRequests.Manage has signed in
+  And a speaker meeting request was Declined with the note "Declined by mistake."
+
+Scenario: Reopen a rejected row
+  Given the Rejected row shows the "Reopen request" (rotate icon) row action
+      (Title "Reopen request" / "إعادة فتح الطلب"); it also shows on a Cancelled row
+      and on NO other status
+  When the administrator clicks it
+  Then a confirm dialog asks "Reopen this declined or cancelled request? It goes back to
+      pending and any earlier decision, note and hall booking are cleared."
+      / "إعادة فتح هذا الطلب المرفوض أو الملغى؟ سيعود قيد المراجعة وسيتم مسح القرار السابق والملاحظة وحجز القاعة."
+  And on confirm POST /account/api/admin/speaker-meeting-requests/{id}/reopen returns 200
+  And the row status becomes Pending with RespondedAt / ResponseNote / HallId cleared
+  And a green toast reads "The request was reopened and is pending again."
+      / "تمت إعادة فتح الطلب وأصبح قيد المراجعة."
+  And an OperationLog row SpeakerMeetingRequest.Reopened records the actor + previousStatus
+
+Scenario: A slot-holding row cannot be reopened
+  Given an Accepted (or AwaitingSpeaker / Done) request
+  When POST .../{id}/reopen is issued
+  Then the API returns 409 SPEAKER_MEETING_REQUEST_STATUS_INVALID
+      ("Only a declined or cancelled request can be reopened."
+       / "لا يمكن إعادة فتح سوى طلب مرفوض أو ملغى.")
+
+Scenario: Reopen is permission-gated
+  Given a signed-in account without SpeakerMeetingRequests.Manage
+  When POST .../{id}/reopen is issued
+  Then the API returns 403 and the CP hides the row action
+```
+
+**Evidence:** `SpeakerMeetingQaTests.B20_*` (three tests) — green.
+
+---
+
+### E2E-SMR-028/029 — The requester actually hears about the outcome (QA B12 / B13)
+
+```gherkin
+Feature: The requester is told what happened to their meeting
+
+Scenario: E2E-SMR-028 — check-in reaches the requester
+  Given a Confirmed (Accepted) speaker meeting for an approved visitor
+  When an operator checks it in at the hall
+  Then the visitor receives a notification titled "Meeting attendance recorded"
+      / "تم تسجيل حضور الاجتماع" in the Meetings group
+  And GET /api/v1/app/my-requests returns that row with checkedIn = true
+  And status still reads Accepted (1) so the shipped mobile wire contract is preserved
+  And the app card reads "Attended" / "تم الحضور" instead of "Accepted"
+
+Scenario: E2E-SMR-029 — cancelling kills the speaker's emailed link
+  Given an AwaitingSpeaker meeting whose speaker was emailed Approve / Decline links
+  When the requester withdraws it from the app
+      (POST /api/v1/app/my-requests/cancel, kind = SpeakerMeeting)
+  Then every MeetingActionToken for the request has UsedAt stamped
+  And the speaker is emailed "SIMF — a meeting request was withdrawn" (AR + EN body)
+  And a later click on the emailed link can no longer decide anything
+```
+
+**Evidence:** `SpeakerMeetingQaTests.B12_Check_in_notifies_the_requester_and_surfaces_as_CheckedIn_on_their_feed`
+and `SpeakerMeetingQaTests.B13_Cancelling_voids_the_live_speaker_tokens_and_emails_the_speaker`
+— green. The speaker's own Approve / Decline now emails the requester too
+(`A22_The_speakers_own_approval_emails_the_requester_not_just_an_in_app_row`), and the
+72-hour revert notifies them (`A29_The_expiry_revert_notifies_the_requester`).
+
+---
+
 ## Implementation notes
 
 - **API integration tests** at [`tests/SIMF.Api.Tests/SpeakerMeetingRequestsTests.cs`](../../../tests/SIMF.Api.Tests/SpeakerMeetingRequestsTests.cs)
@@ -600,9 +772,21 @@ lead-window bound + once-only dedup). The delegation check-in twin (E2E-DLM-011)
   - Permissions — `PermissionCatalog.SpeakerMeetingRequests.View` (page + list + GetById) /
     `.Manage` (respond), both baselined `AdminOnly`
   - Error codes — `SPEAKER_NOT_FOUND` (404), `SPEAKER_MEETING_REQUESTS_NOT_ALLOWED` (409),
-    `SPEAKER_MEETING_REQUEST_INVALID` (400), `SPEAKER_MEETING_REQUEST_STATUS_INVALID` (400)
+    `SPEAKER_MEETING_REQUEST_INVALID` (400), `SPEAKER_MEETING_REQUEST_STATUS_INVALID` (400),
+    `SPEAKER_MEETING_CONTACT_MISSING` (409, QA A25), `MEETING_LINKS_NOT_CONFIGURED` (409, QA A24)
   - Audit events — `SpeakerMeetingRequest.Submitted`, `SpeakerMeetingRequest.Responded`,
+    `SpeakerMeetingRequest.Reopened` (QA B20),
     `Admin.SpeakerMeetingRequestsListed`, `Admin.SpeakerMeetingRequestViewed`
+- **QA round regression tests** live at
+  [`tests/SIMF.Api.Tests/SpeakerMeetingQaTests.cs`](../../../tests/SIMF.Api.Tests/SpeakerMeetingQaTests.cs)
+  (A22 / A25 / A29 / B12 / B13 / B20 — the fixture swaps in a capturing
+  `FakeEmailQueue` so the speaker-facing mail is asserted deterministically) and
+  [`tests/SIMF.Api.Tests/SpeakerMeetingLinksUnsetTests.cs`](../../../tests/SIMF.Api.Tests/SpeakerMeetingLinksUnsetTests.cs)
+  (A24 — boots the API with `MeetingLinks:PublicWebBaseUrl` unset).
+- **Ops prerequisite (QA A24).** `SIMF_MeetingLinks__PublicWebBaseUrl` **must** be set in
+  QA and Production — see SIMF-OPS-001 §6.0. Without it the Approve and Resend actions
+  return `MEETING_LINKS_NOT_CONFIGURED` (409) by design; Confirm and Accept-without-a-hall
+  are unaffected.
 - **Entity separation.** `SpeakerMeetingRequest` is a NEW dedicated entity/table, distinct
   from the session-scoped `MeetingRequest` (mockup screen 27); the two admin queues
   ([`cp-admin-meeting-requests.md`](./cp-admin-meeting-requests.md) vs this file) never
@@ -616,4 +800,4 @@ lead-window bound + once-only dedup). The delegation check-in twin (E2E-DLM-011)
 
 ---
 
-_Last reviewed:_ `2026-07-22` by `Claude` — bi-meeting rework: unified 3-button respond modal (Close/Decline/Approve/Confirm, no verbal checkbox; Approve=verbal:false, Confirm=verbal:true) + `Done=5` status + operator Check-in row action (E2E-SMR-022/023). Earlier: on-site W2b (E2E-SMR-019/020/021, R-1a/R-1b/M-7, 2026-07-11); D-716 item 7 Slice B, accept-binds-hall-slot (E2E-SMR-016/017/018, 2026-07-09); D-356 Phase 5 Excel (E2E-SMR-015, 2026-06-10); original D-269 authoring 2026-06-03.
+_Last reviewed:_ `2026-07-26` by `Claude` — QA speaker-meeting round: Approve/Resend now fail loudly when the confirmation email cannot be delivered (E2E-SMR-024/025), Accept-without-a-hall (E2E-SMR-026), Reopen a Rejected/Cancelled request (E2E-SMR-027), and the requester is actually told about check-in + cancel (E2E-SMR-028/029). Earlier: `2026-07-22` — bi-meeting rework: unified 3-button respond modal (Close/Decline/Approve/Confirm, no verbal checkbox; Approve=verbal:false, Confirm=verbal:true) + `Done=5` status + operator Check-in row action (E2E-SMR-022/023). Earlier: on-site W2b (E2E-SMR-019/020/021, R-1a/R-1b/M-7, 2026-07-11); D-716 item 7 Slice B, accept-binds-hall-slot (E2E-SMR-016/017/018, 2026-07-09); D-356 Phase 5 Excel (E2E-SMR-015, 2026-06-10); original D-269 authoring 2026-06-03.

@@ -109,6 +109,18 @@
                                            OnClick="@(() => ConfirmCheckIn(context))" />
                     </AuthorizedAction>
                 }
+                @* QA B20 — a Rejected / Cancelled row used to carry no actions at all, so a
+                   mistaken decline or a requester's cancel was unrecoverable. Reopen puts it
+                   back to a clean Pending for a fresh decision (audited). *@
+                else if (context.Status is MeetingRequestStatus.Rejected
+                    or MeetingRequestStatus.Cancelled)
+                {
+                    <AuthorizedAction Permission="@PermissionCatalog.SpeakerMeetingRequests.Manage">
+                        <SimfToolbarButton Icon="rotate" Title="@L["Admin.SpeakerMeetingRequests.Reopen"]"
+                                           Disabled="_busy"
+                                           OnClick="@(() => ConfirmReopen(context))" />
+                    </AuthorizedAction>
+                }
             </RowActions>
             <EmptyTemplate>
                 <SimfEmptyState Title="@L["Admin.SpeakerMeetingRequests.None"]" />
@@ -215,6 +227,13 @@
             <SimfButton Type="button" Variant="danger" Disabled="_busy"
                         OnClick="DeclineAsync">
                 @L["Admin.Meetings.Decline"]
+            </SimfButton>
+            @* QA B19 — Approve and Confirm both require a free hall slot, so with no hall
+               availability configured Decline was the only usable action. Accepting with
+               no room booked is a path the service already supports; surface it. *@
+            <SimfButton Type="button" Variant="secondary" Disabled="_busy"
+                        OnClick="AcceptWithoutHallAsync">
+                @L["Admin.Meetings.AcceptNoHall"]
             </SimfButton>
             <SimfButton Type="button" OnClick="ApproveAsync" Loading="_busy">
                 @L["Admin.Meetings.Approve"]

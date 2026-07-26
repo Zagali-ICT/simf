@@ -1,8 +1,10 @@
 // Tests: SIMF.Api.Tests/MyRequestsTests.cs
+//        SIMF.Api.Tests/SpeakerMeetingQaTests.cs (QA B12 CheckedIn, B13 cancel)
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
+using SIMF.Application.Email;
 using SIMF.Application.Requests.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -22,6 +24,7 @@ namespace SIMF.Infrastructure.Requests;
 internal sealed class MyRequestsService(
     SimfAppDbContext appDbContext,
     IAuditLog auditLog,
+    IEmailQueue emailQueue,
     TimeProvider timeProvider,
     ILogger<MyRequestsService> logger) : IMyRequestsService
 {
@@ -87,7 +90,11 @@ internal sealed class MyRequestsService(
             r.Status is MeetingRequestStatus.Pending or MeetingRequestStatus.AwaitingSpeaker,
             Subtitle: r.Rank, SubtitleArabic: r.RankArabic,
             SpeakerId: r.SpeakerId, CountryId: r.CountryId,
-            ResponseNote: r.ResponseNote)));
+            ResponseNote: r.ResponseNote,
+            // QA B12 — Done still folds to Accepted on the wire (values 0–3), so the
+            // check-in reaches the requester through this append-only flag instead:
+            // their card can now read "attended" rather than staying on "accepted".
+            CheckedIn: r.Status == MeetingRequestStatus.Done)));
 
         items.AddRange(delegation.Select(r => new AppRequestItem(
             AppRequestKind.DelegationMeeting, r.Id, r.Name, r.NameArabic,
@@ -160,6 +167,20 @@ internal sealed class MyRequestsService(
                         "Only a pending request can be cancelled.",
                         "لا يمكن إلغاء سوى طلب قيد المراجعة.");
                 }
+
+                // QA B13 — a cancel used to leave the speaker's emailed Approve/Reject
+                // tokens alive (they only stopped working because ApplyAsync re-checks
+                // the status, so the link 404'd neutrally weeks later) and told the
+                // speaker nothing at all. Void every live token for this request so a
+                // stale inbox link can never resurrect a withdrawn meeting, then tell
+                // the speaker — they were emailed when it was proposed, so silence is
+                // not an acceptable ending.
+                await appDbContext.MeetingActionTokens
+                    .Where(t => t.SpeakerMeetingRequestId == id && t.UsedAt == null)
+                    .ExecuteUpdateAsync(
+                        s => s.SetProperty(t => t.UsedAt, now), cancellationToken);
+                await EmailSpeakerCancellationAsync(
+                    r.SpeakerId, r.RequesterName, r.Subject, cancellationToken);
                 break;
             }
             case AppRequestKind.ParticipationDocument:
@@ -200,6 +221,44 @@ internal sealed class MyRequestsService(
 
         logger.LogInformation(
             "App request {Kind}/{Id} cancelled by {Actor} at {When}", kind, id, userId, now);
+    }
+
+    // QA B13 — tell the speaker their proposed meeting was withdrawn. Bilingual (AR
+    // first, matching the app's default locale) and best-effort: the enqueue failure
+    // path audits + swallows, so a mail problem never undoes the committed cancel.
+    // The speaker is not a SIMF account, hence subjectUserId = Guid.Empty.
+    private async Task EmailSpeakerCancellationAsync(
+        Guid speakerId, string requesterName, string subject,
+        CancellationToken cancellationToken)
+    {
+        var contactEmail = await appDbContext.Speakers.AsNoTracking()
+            .Where(s => s.Id == speakerId)
+            .Select(s => s.Email)
+            .SingleOrDefaultAsync(cancellationToken);
+        if (string.IsNullOrWhiteSpace(contactEmail))
+        {
+            logger.LogWarning(
+                "Speaker {SpeakerId} has no contact email — the meeting withdrawal "
+                + "notice was skipped.", speakerId);
+            return;
+        }
+
+        var name = System.Net.WebUtility.HtmlEncode(requesterName);
+        var topic = System.Net.WebUtility.HtmlEncode(subject);
+        var html =
+            $"<p dir=\"rtl\">تم سحب طلب المقابلة المقدَّم من <strong>{name}</strong>.</p>"
+            + $"<p dir=\"rtl\">الموضوع: {topic}</p>"
+            + "<p dir=\"rtl\">أي رابط تأكيد وصلك بشأن هذا الطلب لم يعد صالحاً.</p>"
+            + "<hr/>"
+            + $"<p>The meeting request from <strong>{name}</strong> was withdrawn.</p>"
+            + $"<p>Topic: {topic}</p>"
+            + "<p>Any confirmation link you received for it is no longer valid.</p>";
+        await emailQueue.TryEnqueueAsync(
+            new EmailMessage(contactEmail!, "SIMF — a meeting request was withdrawn", html),
+            purpose: "SpeakerMeetingWithdrawn",
+            subjectEmail: contactEmail!,
+            subjectUserId: Guid.Empty,
+            auditLog, logger, cancellationToken);
     }
 
     private static ApiException NotFound() => new(
