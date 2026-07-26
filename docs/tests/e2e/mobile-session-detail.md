@@ -113,6 +113,8 @@
 | E2E-MOB017-025 | **No-layout session joins (D-706)** — an assigned-seat session with **no seat layout** (a hall left on the default with no rows laid out) reports its effective mode as **OpenSeating**, so the Join CTA is a one-tap join (not an empty seat picker) and `…/seats/join` is accepted (Approved — confirmed immediately). Fixes "join session not working" | happy | P0 | authored ✓ (API `Join_succeeds_on_an_assigned_seat_session_that_has_no_layout`) |
 | E2E-MOB017-025 | **Public screen (D-750, reverses D-576):** a signed-out guest navigating to `/sessions/{id}` opens the detail (no redirect); the join/ask sections stay hidden for a guest (`seatMap == null`) | auth | P0 | authored ✓ (router-gate `D-750 — a signed-out guest hitting /sessions or a session detail is NOT redirected`; `routePathRequiresAuth('/sessions/:sessionId')` is FALSE) |
 | E2E-MOB017-027 | **Join gate (owner 2026-07-14):** the Join CTA is only offered while the session has NOT ended — an ended session drops the join section ("open now to join" is a live/upcoming state) | happy | P1 | authored ✓ (body-gate `phase != SessionPhase.ended`; screen join tests unaffected on upcoming fixtures) |
+| E2E-MOB017-029 | **DEF-MOD-003/004 — the attendee-only affordances are not offered to an operational role:** the اسأل المحاور card and the Join / my-seat section open routes gated to Visitor+Exhibitor (#26 send-question, #18 my-seat, #109 seat picker), so a signed-in **Staff / Moderator** is shown neither (their seat map is not even fetched). A **guest** still sees the ask card DISABLED — that is the sign-in nudge, not a dead control. The routing rule is unchanged; the UI now matches it (`routeAllowsRole`) | auth | P0 | authored ✓ (screen `DEF-MOD-003/004: a MODERATOR is offered neither the ask card nor the join CTA`; body `DEF-MOD-003: a role that cannot open send-question is not offered the ask card at all`) |
+| E2E-MOB017-030 | **DEF-MOD-008 — the moderate action reads the ROUTER's effective role:** an **unapproved** moderator (D-666: presents as guest via `effectiveAppRole`) is NOT shown the "إدارة الأسئلة" Q&A-desk action; an approved moderator still is. Previously the screen read the raw `appRole` and the router bounced the tap to Home | auth | P0 | authored ✓ (screen `DEF-MOD-008: an UNAPPROVED moderator is not shown the Q&A desk action`) |
 | E2E-MOB017-028 | **Seat-map load failure retry (#18, owner 2026-07-21):** an **approved** attendee whose seat-map fetch FAILS (transport / 5xx) gets a "seat map failed to load" error + a **Retry** where the Join CTA would be — instead of a silently-absent Join button — and Retry re-runs the load. Distinct from E2E-MOB017-024: an approved account reaches the seat endpoint, so a null map means the fetch failed (not the guest/pending 403 that legitimately hides the join). Not offered on an ENDED session. | error | P1 | authored ✓ (screen `#18 — an approved account whose seat map FAILS…`; body `#18 seat-map load failure` ×2) |
 
 ## Scenarios
@@ -494,9 +496,38 @@ error + retry`; body `#18 seat-map load failure` (error+retry on upcoming, nothi
 ended). An approved account reaches the seat endpoint, so a null map = a real failure —
 distinct from the guest/pending 403 in E2E-MOB017-024.
 
+### E2E-MOB017-029 / -030 — DEF-MOD-003/004/008 role-gated affordances
+
+```gherkin
+Scenario: A Moderator is offered no attendee-only affordance
+  Given a signed-in APPROVED account whose app role is Moderator
+  When they open /sessions/{id}
+  Then the اسأل المحاور card is NOT rendered
+  And no Join CTA / my-seat card is rendered
+  And the seat map is not even fetched (no GET …/seats)
+  And no "seat map failed to load" retry appears
+  And the "إدارة الأسئلة" Q&A-desk action IS shown (route #104 allows them)
+
+Scenario: A guest still gets the disabled ask nudge
+  Given a signed-out visitor opens /sessions/{id}
+  Then the اسأل المحاور card IS rendered, DISABLED (unchanged behaviour)
+
+Scenario: An unapproved moderator is not offered the desk
+  Given a signed-in moderator whose registration status is Pending
+    (so effectiveAppRole collapses to guest — D-666)
+  When they open /sessions/{id}
+  Then the "إدارة الأسئلة" action is NOT shown
+  # Previously it was shown and the router bounced the tap back to Home.
+```
+
 ---
 
-_Last reviewed:_ `2026-07-21` by `Apexium` — **#18 (owner 2026-07-21): an APPROVED
+_Last reviewed:_ `2026-07-26` by `Claude` — **DEF-MOD-003/004/008: the ask card and
+the join / my-seat section are gated with `routeAllowsRole` (the router's own table)
+so an operational role is never offered a control that bounces; the screen now reads
+`effectiveAppRole` (the router's role) instead of the raw `appRole`. New
+E2E-MOB017-029/-030.**
+_Prior:_ `2026-07-21` by `Apexium` — **#18 (owner 2026-07-21): an APPROVED
 attendee whose seat-map fetch fails now shows a "seat map failed to load" error +
 Retry where the Join CTA would be, instead of a silently-absent Join button
 (`_seatMapError` on the screen drives a body error branch, reusing `l10n.seatMapError`).

@@ -1,4 +1,5 @@
 // Tests: SIMF.Api.Tests/AdminSessionModeratorsTests.cs
+// Tests: SIMF.Api.Tests/SessionModeratorEligibilityTests.cs (DEF-MOD-005)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -6,6 +7,7 @@ using SIMF.Application.SessionQuestions.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
+using SIMF.Domain.Profiles;
 using SIMF.Domain.SessionQuestions;
 using SIMF.Infrastructure.Persistence;
 
@@ -117,6 +119,59 @@ internal sealed class AdminSessionModeratorService(
             skip, top);
     }
 
+    public async Task<SessionModeratorAssignOptions> ListAssignOptionsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        // DEF-MOD-005 — the session picker: the active sessions, code-ordered
+        // (the same shape the CP's live-hall picker uses).
+        var sessions = await appDbContext.Sessions
+            .AsNoTracking()
+            .Where(s => s.IsActive)
+            .OrderBy(s => s.Code)
+            .Select(s => new SessionModeratorSessionOption(
+                s.Id, s.Code, s.Title, s.TitleArabic))
+            .ToListAsync(cancellationToken);
+
+        // DEF-MOD-005 — the moderator picker: the App-side eligibility fact
+        // (profile type carries MobileAppRole.Moderator) intersected with the
+        // Identity-side approval fact. Two queries against two databases, joined
+        // in memory — never a cross-DB JOIN (D-157).
+        var eligibleRows = await EligibleProfiles()
+            .Select(p => new
+            {
+                p.UserId,
+                ProfileTypeName = p.ProfileType!.Name,
+                ProfileTypeNameArabic = p.ProfileType.NameArabic,
+            })
+            .ToListAsync(cancellationToken);
+        var candidates = new List<SessionModeratorCandidate>();
+        if (eligibleRows.Count > 0)
+        {
+            // A user has at most one profile row; fold defensively so a stray
+            // duplicate cannot throw on the picker.
+            var byUserId = eligibleRows
+                .GroupBy(r => r.UserId)
+                .ToDictionary(g => g.Key, g => g.First());
+            var eligibleIds = byUserId.Keys.ToList();
+            var users = await identityDbContext.Users.AsNoTracking()
+                .Where(u => eligibleIds.Contains(u.Id)
+                    && u.AccountState == AccountState.Approved)
+                .Select(u => new { u.Id, u.Email, u.DisplayName })
+                .ToListAsync(cancellationToken);
+            candidates = users
+                .Select(u => new SessionModeratorCandidate(
+                    u.Id,
+                    u.DisplayName,
+                    u.Email,
+                    byUserId[u.Id].ProfileTypeName,
+                    byUserId[u.Id].ProfileTypeNameArabic))
+                .OrderBy(c => c.DisplayName)
+                .ToList();
+        }
+
+        return new SessionModeratorAssignOptions(sessions, candidates);
+    }
+
     public async Task<AdminSessionModeratorRow> AssignAsync(
         Guid actorUserId,
         AssignSessionModeratorRequest request,
@@ -156,6 +211,22 @@ internal sealed class AdminSessionModeratorService(
                 ErrorCodes.AuthAccountNotApproved, 400,
                 "Moderator must be an approved account.",
                 "يجب أن يكون المُشرف حساباً معتمداً.");
+        }
+
+        // DEF-MOD-005 — "approved" alone let ANY visitor be handed a moderation
+        // desk by a typo in the old free-text GUID box. The account must also be
+        // ELIGIBLE: an assigned partner profile type carrying
+        // MobileAppRole.Moderator — the same fact
+        // UserProfileService.ResolveMobileAppRoleAsync mints into the JWT, so the
+        // grant can never outrun the app role that opens the desk.
+        var isEligible = await EligibleProfiles()
+            .AnyAsync(p => p.UserId == request.UserId, cancellationToken);
+        if (!isEligible)
+        {
+            throw new ApiException(
+                ErrorCodes.SessionModeratorNotEligible, 400,
+                "The account is not eligible to moderate — assign it a profile type whose mobile app role is Moderator first.",
+                "الحساب غير مؤهل للمحاورة — عيّن له نوع ملف شخصي دوره في التطبيق \"محاوِر\" أولاً.");
         }
 
         var duplicate = await appDbContext.SessionModerators
@@ -231,4 +302,24 @@ internal sealed class AdminSessionModeratorService(
             Detail = $"sessionId={sessionId}",
         }, cancellationToken);
     }
+
+    // -- helpers ---------------------------------------------------------------
+
+    /// <summary>DEF-MOD-005 — the App-side eligibility fact: the account has an
+    /// assigned PARTNER profile type (<c>IsForVisitor = false</c>) whose
+    /// <c>MobileAppRole</c> is <see cref="MobileAppRole.Moderator"/>. That is
+    /// exactly the condition <c>UserProfileService.ResolveMobileAppRoleAsync</c>
+    /// uses to mint the app's moderator role, so the picker and the server-side
+    /// assign check share one rule. The Identity-side approval fact is applied
+    /// separately by the caller — the two databases are never joined (D-157).
+    /// Returned UNPROJECTED so the assign path can test ONE user
+    /// (<c>AnyAsync</c> over the filter) instead of materialising every eligible
+    /// profile — EF cannot translate an <c>Any</c> applied on top of a projection
+    /// into a custom type, so the projection stays with the picker caller.</summary>
+    private IQueryable<UserProfile> EligibleProfiles() =>
+        appDbContext.UserProfiles
+            .AsNoTracking()
+            .Where(p => p.ProfileType != null
+                && !p.ProfileType.IsForVisitor
+                && p.ProfileType.MobileAppRole == MobileAppRole.Moderator);
 }

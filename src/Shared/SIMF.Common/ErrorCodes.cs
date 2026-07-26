@@ -245,6 +245,9 @@ public static class ErrorCodes
     public const string SessionNotLiveForQuestions = "SESSION_NOT_LIVE_FOR_QUESTIONS";
     public const string SessionModeratorNotAssigned = "SESSION_MODERATOR_NOT_ASSIGNED";
     public const string SessionModeratorAlreadyAssigned = "SESSION_MODERATOR_ALREADY_ASSIGNED";
+    // DEF-MOD-005 — the target account is not eligible to moderate (its profile
+    // type does not carry MobileAppRole.Moderator).
+    public const string SessionModeratorNotEligible = "SESSION_MODERATOR_NOT_ELIGIBLE";
 
     // Venue self-assert (D-171, gap doc G7 — PDF §2.10; G-OI-2 resolved
     // to the self-assert toggle as input source).

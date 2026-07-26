@@ -158,6 +158,35 @@ class _PendingController extends AuthController {
       );
 }
 
+// DEF-MOD-003 / 004 / 008 — a MODERATOR. The approved one may open the Q&A desk
+// (#104) but NOT the attendee-only ask / seat routes; the unapproved one
+// presents as a guest (D-666) and may open neither.
+CurrentUser _moderator({required RegistrationStatus registrationStatus}) =>
+    CurrentUser(
+      id: 'u3',
+      email: 'moderator@example.sa',
+      displayName: 'Moderator',
+      appRole: AppRole.moderator,
+      preferredLanguage: PreferredLanguage.fromJson('en'),
+      registrationStatus: registrationStatus,
+    );
+
+class _ModeratorController extends AuthController {
+  _ModeratorController({required this.registrationStatus});
+
+  final RegistrationStatus registrationStatus;
+
+  @override
+  AuthState build() => AuthStateSignedIn(
+        Session(
+          accessToken: 'A',
+          refreshToken: 'R',
+          accessTokenExpiresAt: DateTime.now().add(const Duration(minutes: 30)),
+          user: _moderator(registrationStatus: registrationStatus),
+        ),
+      );
+}
+
 class _FakeDetailRepo implements SessionDetailRepository {
   _FakeDetailRepo({this.detail, this.detailStatus});
 
@@ -196,9 +225,13 @@ class _FakeSeatRepo implements SeatMapRepository {
   int joinCalls = 0;
   int reserveCalls = 0;
   int releaseCalls = 0;
+  // DEF-MOD-004 — proves the seat map is not even fetched for a role that
+  // cannot open the join / my-seat routes.
+  int getSeatMapCalls = 0;
 
   @override
   Future<SessionSeatMap> getSeatMap(String sessionId) async {
+    getSeatMapCalls++;
     final m = map;
     if (m == null) {
       throw ApiFailure(
@@ -860,6 +893,50 @@ void main() {
         find.widgetWithText(FilledButton, 'Join the session'),
         findsNothing,
       );
+    });
+
+    // DEF-MOD-003 / DEF-MOD-004 — the ask + join/seat affordances open
+    // attendee-only routes, so offering them to a Moderator produced an enabled
+    // control that silently bounced them Home. They must not render at all.
+    testWidgets('DEF-MOD-003/004: a MODERATOR is offered neither the ask card '
+        'nor the join CTA (both routes are attendee-only)', (tester) async {
+      final seatRepo = _FakeSeatRepo(map: _seatMap());
+      await _pump(
+        tester,
+        repo: _FakeDetailRepo(detail: _detail()),
+        seatRepo: seatRepo,
+        controller: _ModeratorController(
+          registrationStatus: RegistrationStatus.approved,
+        ),
+      );
+
+      expect(find.text('Ask a question before it starts'), findsNothing);
+      expect(find.text('Ask a question'), findsNothing);
+      expect(
+        find.widgetWithText(FilledButton, 'Join the session'),
+        findsNothing,
+      );
+      // …and no seat-map retry either: the map was never fetched for them.
+      expect(find.text('Could not load the seat map.'), findsNothing);
+      expect(seatRepo.getSeatMapCalls, 0);
+      // The moderator DOES keep their own desk entry (route #104 allows them).
+      expect(find.byIcon(Icons.forum_outlined), findsOneWidget);
+    });
+
+    // DEF-MOD-008 — the router gates on effectiveAppRole (D-666), so an
+    // UNAPPROVED moderator presents as a guest. Showing them the desk entry
+    // guaranteed a bounce back to Home the moment they tapped it.
+    testWidgets('DEF-MOD-008: an UNAPPROVED moderator is not shown the Q&A desk '
+        'action (the router would bounce them)', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeDetailRepo(detail: _detail()),
+        controller: _ModeratorController(
+          registrationStatus: RegistrationStatus.pending,
+        ),
+      );
+
+      expect(find.byIcon(Icons.forum_outlined), findsNothing);
     });
 
     testWidgets('signed-in, assigned-seat, no reservation → the Select-my-seat '

@@ -28,6 +28,7 @@ class SessionDetailBody extends StatelessWidget {
     required this.onSessionSummary,
     required this.onAskHost,
     required this.onJoin,
+    required this.canAsk,
     required this.seatMapError,
     required this.onRetrySeatMap,
     required this.onCancelReservation,
@@ -49,6 +50,11 @@ class SessionDetailBody extends StatelessWidget {
   final VoidCallback onSessionSummary;
   final VoidCallback onAskHost;
   final VoidCallback onJoin;
+  // DEF-MOD-003 — whether the اسأل المحاور card is OFFERED at all. The
+  // send-question route (#26) is attendee-only, so a Staff / Moderator must not
+  // be shown an enabled card that the router then bounces Home. A guest still
+  // gets it, disabled (the sign-in nudge).
+  final bool canAsk;
   // #18 — an approved attendee whose seat-map fetch failed; when true the join
   // area shows an error+retry (via [onRetrySeatMap]) instead of nothing.
   final bool seatMapError;
@@ -117,7 +123,7 @@ class SessionDetailBody extends StatelessWidget {
         // only when it has NO broadcast feed; a broadcast session's live ask lives
         // on the live-broadcast screen (check-in gated), so we don't double it.
         // The backend enforces the same window + hall-arrival gate.
-        if (_showAsk(detail)) ...<Widget>[
+        if (canAsk && _showAsk(detail)) ...<Widget>[
           const SizedBox(height: SimfTokens.space5),
           AskHostCard(
             label: detail.start.isAfter(DateTime.now().toUtc())

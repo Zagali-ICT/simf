@@ -27,6 +27,18 @@ pending account's 403 hides the join section (L-3). Moderators additionally get
 the Q&A-desk action in the header (UX gate; the server enforces the per-session
 SessionModerator grant).
 
+**DEF-MOD-003 / DEF-MOD-004 / DEF-MOD-008 (2026-07-26) — the affordances now match
+the router.** The ask card and the join / my-seat section open **attendee-only**
+routes (#26 send-question, #18 my-seat, #109 seat picker are gated to
+Visitor+Exhibitor in `_routeRoles`), so a signed-in **Staff / Moderator** used to be
+shown enabled controls that the role gate then bounced back to Home. The screen now
+asks `routeAllowsRole(...)` — the router's own table — before offering either, and
+skips the seat-map fetch entirely for a role that cannot join. A **guest** still sees
+the ask card DISABLED (that is the sign-in nudge, not a dead control). The moderator
+Q&A action reads **`effectiveAppRole`** (the role the router gates on) instead of the
+raw `appRole`, so an **unapproved** moderator — who presents as a guest under D-666 —
+is no longer offered a desk entry that bounces.
+
 ## 3. UI & behaviour
 - Loading spinner → content; 404 → `SimfEmptyState` (not-found); other failures
   → `SimfErrorState` + retry. All states sit in an always-scrollable list so
@@ -63,12 +75,12 @@ SessionModerator grant).
 | Control | Handler | Backend |
 |---|---|---|
 | Back (circled) | `backOrHome` | — |
-| Moderator Q&A (moderator only) | push `sessionModerate` #104 | server-gated |
+| Moderator Q&A (moderator only, `effectiveAppRole`) | push `sessionModerate` #104 | server-gated |
 | ملخص الجلسة | push `aiSummary?sessionId=` #34 | `GET …/summary` (on that screen) |
 | رابط الجلسة | push `liveBroadcast?sessionId=` #25 | — |
 | Speaker card | push `speakerProfile` #20 | — |
-| اسأل المحاور (join-gated) | push `sendQuestion?sessionId=` #26 | — |
-| الانضمام إلى الجلسة | confirm → `POST …/seats/join` or seat picker #109 | D-485 |
+| اسأل المحاور (join-gated; attendee roles only — DEF-MOD-003) | push `sendQuestion?sessionId=` #26 | — |
+| الانضمام إلى الجلسة (attendee roles only — DEF-MOD-004) | confirm → `POST …/seats/join` or seat picker #109 | D-485 |
 | مقعدي card (seat-specific) | push `mySeat` #18 | — |
 | إلغاء (booked) | confirm → `DELETE …/seats/mine` | D-485 |
 | أضف إلى تقويمي | device calendar insert (E4) | client-local |

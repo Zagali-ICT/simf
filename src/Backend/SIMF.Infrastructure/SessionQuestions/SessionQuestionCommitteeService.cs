@@ -1,4 +1,6 @@
 // Tests: SIMF.Api.Tests/SessionQuestionCommitteeTests.cs
+// Tests: SIMF.Api.Tests/ModeratorDeskStateTests.cs (D-771 — a Committee rejection
+//        restores to Pending, never onto the moderator desk)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -99,6 +101,9 @@ internal sealed class SessionQuestionCommitteeService(
         if (question.Status != QuestionStatus.Approved)
         {
             question.Status = QuestionStatus.Approved;
+            // D-771 — an explicit approval is a new decision, so the "put it back
+            // where it was" memory taken at hide time is spent.
+            question.StatusBeforeHidden = null;
             await appDbContext.SaveChangesAsync(cancellationToken);
             await AuditAsync(AuditEvents.SessionQuestionApproved, actorUserId, question, cancellationToken);
             logger.LogInformation(
@@ -116,6 +121,12 @@ internal sealed class SessionQuestionCommitteeService(
             // Status is the single source of truth for visibility; the desk's
             // IsHidden marker is derived from it at projection time, so there is
             // no separate flag to keep in sync.
+            // D-771 — record where the row came from (mirrors
+            // SessionModerationService.SetHiddenAsync). A Committee rejection of a
+            // PENDING question must not become an Approved question the moment a
+            // per-session moderator restores it from the rejected tab: it goes back
+            // to Pending, i.e. back to this queue, never onto the stage.
+            question.StatusBeforeHidden = question.Status;
             question.Status = QuestionStatus.Hidden;
             // S-8 — a hidden question must not stay "pushed to the speaker": clear
             // the pushed marker (mirrors SessionModerationService.SetHiddenAsync) so

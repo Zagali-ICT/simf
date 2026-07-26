@@ -53,7 +53,13 @@ class HomeScreen extends ConsumerWidget {
     final l10n = AppL10n.of(context);
     final auth = ref.watch(authControllerProvider);
     final user = auth is AuthStateSignedIn ? auth.session.user : null;
-    final role = user?.appRole ?? AppRole.guest;
+    // DEF-MOD-008 — read the SAME effective role the router's role-gate reads
+    // (D-666: a not-yet-approved account presents as guest). Home already
+    // short-circuited on [pendingApproval] below, so this is a no-op in
+    // behaviour — but the raw `appRole` is the source of the mismatch that made
+    // session detail offer a moderator affordance the router then bounced, and
+    // one role source keeps the surfaces from drifting apart again.
+    final role = user?.effectiveAppRole ?? AppRole.guest;
     // A signed-in but unapproved account (pending / rejected) has no
     // permissions, so it sees the same guest layout (owner 2026-06-27, frame
     // 758:2910) — with an "awaiting approval" note instead of the sign-in CTA.

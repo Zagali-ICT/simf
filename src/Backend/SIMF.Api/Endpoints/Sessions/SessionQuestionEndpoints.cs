@@ -90,6 +90,17 @@ internal static class SessionModeratorAuth
 public sealed class ListModeratorQueueRoute
 {
     public Guid SessionId { get; set; }
+
+    /// <summary>DEF-MOD-002 — the desk tab to read. Omitted (the shipped app's
+    /// call shape) returns the working desk: the Committee-approved rows plus the
+    /// ones already marked answered. An explicit status returns exactly that
+    /// bucket — <c>Hidden</c> is how the desk lists (and can then restore) the
+    /// questions it rejected, so a mis-click is no longer permanent.
+    /// <para>Only the desk's own three buckets are accepted (Approved / Answered /
+    /// Hidden); the service refuses anything else with a 400 so this filter cannot
+    /// be used to read questions the Scientific Committee has not released.</para>
+    /// </summary>
+    public SIMF.Common.Enums.QuestionStatus? Status { get; set; }
 }
 
 public sealed class ListModeratorQueueEndpoint(ISessionModerationService service)
@@ -111,7 +122,7 @@ public sealed class ListModeratorQueueEndpoint(ISessionModerationService service
             await Send.ForbiddenAsync(ct);
             return;
         }
-        var rows = await service.ListAsync(req.SessionId, ct);
+        var rows = await service.ListAsync(req.SessionId, req.Status, ct);
         await Send.OkAsync(
             ApiResult<IReadOnlyList<SessionQuestionModeratorRow>>.Ok(rows), ct);
     }
@@ -146,6 +157,42 @@ public sealed class HideQuestionEndpoint(ISessionModerationService service)
         }
         var row = await service.SetHiddenAsync(
             actorId.Value, req.SessionId, req.QuestionId, req.IsHidden, ct);
+        await Send.OkAsync(ApiResult<SessionQuestionModeratorRow>.Ok(row), ct);
+    }
+}
+
+/// <summary>DEF-MOD-001 — the moderator's "تمت الإجابة" mark, persisted. Same
+/// shape and gate as <see cref="HideQuestionRoute"/>: the target state travels on
+/// the body and the call is idempotent.</summary>
+public sealed class SetQuestionAnsweredRoute
+{
+    public Guid SessionId { get; set; }
+    public Guid QuestionId { get; set; }
+    public bool IsAnswered { get; set; }
+}
+
+public sealed class SetQuestionAnsweredEndpoint(ISessionModerationService service)
+    : Endpoint<SetQuestionAnsweredRoute, ApiResult<SessionQuestionModeratorRow>>
+{
+    public override void Configure()
+    {
+        Put("/app/sessions/{sessionId:guid}/questions/{questionId:guid}/answered");
+        Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Sessions");
+    }
+
+    public override async Task HandleAsync(SetQuestionAnsweredRoute req, CancellationToken ct)
+    {
+        var actorId = await SessionModeratorAuth.ResolveAuthorizedUserAsync(
+            User, req.SessionId, service, ct);
+        if (actorId is null)
+        {
+            await Send.ForbiddenAsync(ct);
+            return;
+        }
+        var row = await service.SetAnsweredAsync(
+            actorId.Value, req.SessionId, req.QuestionId, req.IsAnswered, ct);
         await Send.OkAsync(ApiResult<SessionQuestionModeratorRow>.Ok(row), ct);
     }
 }

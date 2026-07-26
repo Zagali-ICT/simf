@@ -2070,8 +2070,11 @@
   <data name="Admin.SessionModerators.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
   <data name="Admin.SessionModerators.New" xml:space="preserve"><value>Assign moderator</value></data>
   <data name="Admin.SessionModerators.Add.Title" xml:space="preserve"><value>Assign session moderator</value></data>
-  <data name="Admin.SessionModerators.Field.SessionId" xml:space="preserve"><value>Session id</value></data>
-  <data name="Admin.SessionModerators.Field.UserId" xml:space="preserve"><value>Moderator user id</value></data>
+  <data name="Admin.SessionModerators.Field.Session" xml:space="preserve"><value>Session</value></data>
+  <data name="Admin.SessionModerators.Field.Moderator" xml:space="preserve"><value>Moderator</value></data>
+  <data name="Admin.SessionModerators.PickBoth" xml:space="preserve"><value>Pick a session and a moderator.</value></data>
+  <data name="Admin.SessionModerators.OptionsFailed" xml:space="preserve"><value>The sessions and eligible moderators could not be loaded.</value></data>
+  <data name="Admin.SessionModerators.NoCandidates" xml:space="preserve"><value>No eligible moderator yet. Assign an approved account a profile type whose mobile app role is Moderator first.</value></data>
   <data name="Admin.SessionModerators.Submit" xml:space="preserve"><value>Assign</value></data>
   <data name="Admin.SessionModerators.Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Admin.SessionModerators.Revoke" xml:space="preserve"><value>Revoke</value></data>
@@ -2097,6 +2100,7 @@
   <data name="Admin.SessionModeration.Col.Actions" xml:space="preserve"><value>Actions</value></data>
   <data name="Admin.SessionModeration.State.Hidden" xml:space="preserve"><value>Hidden</value></data>
   <data name="Admin.SessionModeration.State.Queued" xml:space="preserve"><value>Queued</value></data>
+  <data name="Admin.SessionModeration.State.Answered" xml:space="preserve"><value>Answered</value></data>
   <data name="Module.ContentBlocks" xml:space="preserve"><value>Content blocks</value></data>
   <data name="Module.Banners" xml:space="preserve"><value>Banners</value></data>
   <data name="Admin.ContentBlocks.Title" xml:space="preserve"><value>Content blocks</value></data>
