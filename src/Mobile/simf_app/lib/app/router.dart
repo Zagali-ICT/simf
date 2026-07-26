@@ -184,7 +184,8 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 116, name: RouteNames.meetings, path: '/meetings', labelAr: 'اللقاءات الثنائية', labelEn: 'Bilateral meetings'),
   // Bi-Meeting rework — the other-party confirm screen (deep-link from a notification).
   _Route(number: 117, name: RouteNames.meetingConfirm, path: '/meeting-confirm', labelAr: 'تأكيد الاجتماع', labelEn: 'Confirm meeting'),
-  // (D-609: route 115 My-meetings removed — screen backed up as `.bk`.)
+  // (D-609: route 115 My-meetings removed — the screen was deleted; recover it
+  //  from git history if it is ever needed again.)
   // D-485 — the session-join flow (approved-only): the seat picker + the hub.
   _Route(number: 109, name: RouteNames.seatPicker, path: '/sessions/:sessionId/pick-seat', labelAr: 'اختر مقعدك', labelEn: 'Select your seat'),
   _Route(number: 110, name: RouteNames.joinSessionHub, path: '/sessions/join', labelAr: 'احجز مقعداً', labelEn: 'Book a seat'),
@@ -208,7 +209,8 @@ const List<_Route> _routes = <_Route>[
   // Owner batch (2026-06-21) — entry points for features not yet designed/built;
   // they fall through to ComingSoonScreen (sentinel numbers 200+). #5 bilateral
   // meetings (home tile, undesigned); #8 saved meetings (My Area stat).
-  // (D-609: route 205 Saved-sessions removed — screen backed up as `.bk`.)
+  // (D-609: route 205 Saved-sessions removed — the screen was deleted; recover
+  //  it from git history if it is ever needed again.)
   _Route(number: 204, name: RouteNames.bilateralMeetings, path: '/bilateral-meetings', labelAr: 'اللقاءات الثنائية', labelEn: 'Bilateral meetings'),
   _Route(number: 206, name: RouteNames.savedMeetings, path: '/saved-meetings', labelAr: 'المقابلات المحفوظة', labelEn: 'Saved meetings'),
 ];
@@ -297,8 +299,8 @@ const Map<int, Set<AppRole>> _routeRoles = <int, Set<AppRole>>{
   // 202 (Session presentations — the "الجلسات" list) is PUBLIC (owner 2026-07-22):
   // a guest opens it from the home "Sessions" tile, so it is intentionally NOT
   // gated here. Its reads (`GET /app/presentations[/{id}/file]`) are AllowAnonymous.
-  // (D-609: routes 115 My-meetings, 205 Saved-sessions removed — screens backed
-  // up as `.bk`; 113 My-sessions restored by D-710.)
+  // (D-609: routes 115 My-meetings, 205 Saved-sessions removed — the screens
+  // were deleted, recoverable from git history; 113 My-sessions restored by D-710.)
   // Exhibitor-only — lead capture (D-426).
   106: <AppRole>{AppRole.exhibitor}, // Scan visitor badge
   107: <AppRole>{AppRole.exhibitor}, // My Visitors

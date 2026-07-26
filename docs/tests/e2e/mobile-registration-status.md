@@ -9,7 +9,7 @@
 > `src/Mobile/simf_app/test/features/registration/registration_status_screen_test.dart`
 > (pending / approved→home / rejected / error→retry / sign-out); the throwing
 > `refreshCurrentUser` it uses is covered in
-> `src/Mobile/packages/simf_auth_pkg/test/auth_controller_refresh_user_test.dart`.
+> `src/Mobile/simf_app/packages/simf_auth_pkg/test/auth_controller_refresh_user_test.dart`.
 
 | | |
 |--|--|

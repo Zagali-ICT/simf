@@ -8,7 +8,7 @@
 > `src/Mobile/simf_app/test/features/account/sign_in_screen_test.dart` + the golden
 > `test/golden/sign_in_screen_golden_test.dart` (168:2800); the auth controller
 > (sign-in hydration, email-OTP, refresh) in
-> `src/Mobile/packages/simf_auth_pkg/test/auth_controller_signin_test.dart`.
+> `src/Mobile/simf_app/packages/simf_auth_pkg/test/auth_controller_signin_test.dart`.
 
 | | |
 |--|--|

@@ -6,9 +6,9 @@
 > `src/Mobile/simf_app/test/features/account/sign_up_email_verify_screen_test.dart`
 > (+ the golden `test/golden/sign_up_email_verify_golden_test.dart`, 505:837);
 > the controller delegation in
-> `src/Mobile/packages/simf_auth_pkg/test/auth_controller_email_verify_test.dart`;
+> `src/Mobile/simf_app/packages/simf_auth_pkg/test/auth_controller_email_verify_test.dart`;
 > the repository contract in
-> `src/Mobile/packages/simf_auth_pkg/test/auth_repository_impl_test.dart`.
+> `src/Mobile/simf_app/packages/simf_auth_pkg/test/auth_repository_impl_test.dart`.
 
 | | |
 |--|--|

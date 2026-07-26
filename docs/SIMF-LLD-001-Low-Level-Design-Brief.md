@@ -558,9 +558,9 @@ permission policies.
 - Local packages (tracked): **`simf_data_pkg`** (single HTTP layer: `SimfApiClient`, `ApiResult`,
   `ApiFailure`, secure/prefs storage) and **`simf_auth_pkg`** (auth controller/state, session,
   `AppRole`, biometric ES256 device keys). The pubspec resolves these from
-  **`src/Mobile/simf_app/packages/`** (that is the consumed copy). Note: a second, now-stale copy
-  also exists at `src/Mobile/packages/` — the two have diverged (the outer copy lags on
-  `app_role.dart` and several auth files); the app builds against the inner copy.
+  **`src/Mobile/simf_app/packages/`** — the single copy. (BUG-009: a second, stale duplicate
+  used to sit at `src/Mobile/packages/`; it was orphaned — nothing resolved it — and has been
+  deleted.)
 
 ### 10.2 Networking
 

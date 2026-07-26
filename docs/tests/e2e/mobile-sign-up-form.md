@@ -6,9 +6,9 @@
 > `src/Mobile/simf_app/test/features/account/sign_up_form_screen_test.dart` (+ the
 > golden `test/golden/sign_up_form_golden_test.dart`, 168:3454); the
 > controller delegation in
-> `src/Mobile/packages/simf_auth_pkg/test/auth_controller_signup_test.dart`; the
+> `src/Mobile/simf_app/packages/simf_auth_pkg/test/auth_controller_signup_test.dart`; the
 > repository contract in
-> `src/Mobile/packages/simf_auth_pkg/test/auth_repository_impl_test.dart`.
+> `src/Mobile/simf_app/packages/simf_auth_pkg/test/auth_repository_impl_test.dart`.
 
 | | |
 |--|--|
