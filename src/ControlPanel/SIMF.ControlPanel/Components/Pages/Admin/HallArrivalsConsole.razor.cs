@@ -25,6 +25,10 @@ public partial class HallArrivalsConsole
 
     private record Toast(string Variant, string Message);
 
+    // X-3 — mirrors HallAttendanceService.ArrivalGrace: how far outside a session's
+    // [Start, End] window an ARRIVAL is still accepted by the server.
+    private static readonly TimeSpan ArrivalGrace = TimeSpan.FromMinutes(15);
+
     private List<AdminSessionSummary> _sessions = new();
     private AdminSessionSummary? _selected;
     private string _qrId = string.Empty;
@@ -44,16 +48,23 @@ public partial class HallArrivalsConsole
                 new GridQuery { Top = 200, Sort = "start" });
             if (envelope is { Success: true, Data: not null })
             {
-                // X-3 — the operator can only record an arrival against a session
-                // that is currently live (its time window, ± a short grace). Match
-                // the server's EnsureSessionLiveNow rule so the picker never offers
-                // a session the API would reject with SESSION_NOT_LIVE.
+                // DEF-CHK-003 — the picker used to apply the ARRIVAL window
+                // (EnsureSessionLiveNow, ± ArrivalGrace) to BOTH actions, so once a
+                // session had ended the operator could no longer select it — exactly
+                // when a hall has to be checked OUT. RecordQrDepartureAsync
+                // deliberately has NO window (an attendee already inside must always
+                // be able to leave), so any session that has already opened for
+                // arrivals stays selectable; only the not-yet-started ones are
+                // filtered out (no attendance row can exist for those yet). An
+                // arrival attempted on an ended session still gets the server's
+                // bilingual SESSION_NOT_LIVE message in the error toast.
                 var now = DateTimeOffset.UtcNow;
-                var grace = TimeSpan.FromMinutes(15);
                 _sessions = envelope.Data.Items
-                    .Where(s => s.IsActive
-                        && now >= s.Start - grace
-                        && now <= s.End + grace)
+                    .Where(s => s.IsActive && now >= s.Start - ArrivalGrace)
+                    // Live sessions first (the common check-in case), then the most
+                    // recently ended — those are the ones still being closed out.
+                    .OrderBy(s => now <= s.End + ArrivalGrace ? 0 : 1)
+                    .ThenByDescending(s => s.Start)
                     .ToList();
             }
             else

@@ -58,6 +58,53 @@ Scenario: A valid badge is allowed in
   And "سكان مرة أخرى" returns to the scanner for the next person
 ```
 
+### E2E-MOBGATE-006 — Allowed, but no session attendance recorded (DEF-CHK-004)
+
+```gherkin
+Scenario: A hall-door gate is scanned outside every session window
+  Given the operator's gate is a HALL-DOOR gate (Gate.HallId is set)
+  And no session is running in that hall right now (nor within the 15 min grace)
+  When they scan a valid badge code
+  Then the scan returns outcome=Allowed (HTTP 200) — the holder is still admitted
+  And the response carries noticeMessage (already localized by Accept-Language)
+  And the green "مسموح / Allowed" card shows that advisory in amber under the subtitle
+      "تم السماح بالدخول، ولكن لم يتم تسجيل حضور الجلسة لهذا المسح."
+  And a GateScan row is written; NO HallAttendance row is written
+
+Scenario: A fixed Out gate closes nothing
+  Given the operator's gate has DirectionMode = Out and HallId set
+  And a session IS live in that hall
+  And the badge holder has no open HallAttendance row for it
+  When they scan that badge code
+  Then the scan returns outcome=Allowed and carries the SAME advisory noticeMessage
+  # The check-out closed nothing, so nothing was recorded. The advisory wording
+  # names no single cause because the server reports all cases identically.
+
+Scenario: A check-IN whose attendance insert never lands
+  Given the operator's gate has DirectionMode = In and HallId set
+  And a session IS live in that hall
+  And the store rejects the HallAttendance insert (deadlock / timeout / lost race)
+  When they scan that badge code
+  Then the scan returns outcome=Allowed and carries the SAME advisory noticeMessage
+  And NO HallAttendance row is written
+  # The arrival branch used to report success unconditionally, so the operator
+  # read a plain "Allowed" as "counted" while the attendance was lost.
+
+Scenario: An ordinary scan shows no advisory
+  Given a session IS live in that hall (or the gate is a perimeter gate)
+  When they scan a valid badge code
+  Then noticeMessage is null and the allowed card renders exactly as before
+```
+
+**Evidence:** API `GateHallDoorChainTests.Hall_door_gate_with_no_live_session_returns_an_allowed_scan_carrying_a_notice`
+(+ `..._bound_to_a_live_session_carries_no_notice`, `Perimeter_gate_carries_no_notice`,
+`Fixed_out_gate_with_no_open_row_carries_the_advisory_notice`,
+`Fixed_out_gate_that_closes_an_open_row_carries_no_notice`,
+`Gate_door_arrival_that_persisted_no_row_does_not_report_attendance_recorded`);
+app decode `test/features/gates/gate_models_test.dart` — "an allowed scan can
+carry an advisory notice". `noticeMessage` is an **additive** field on the
+shipped wire contract; an older app build simply ignores it.
+
 ### E2E-MOBGATE-002 — Denied scan (ممنوع)
 
 ```gherkin
@@ -142,5 +189,9 @@ covered by `GateScanTests` + `test/features/gates/`.
 
 ---
 
-_Last reviewed:_ `2026-07-11` by `SIMF Team` — D-737 unified scanner
-(SimfScannerBody; `gate_scanner_view.dart` deleted). Earlier: `2026-06-27`.
+_Last reviewed:_ `2026-07-27` by `SIMF Team` — DEF-CHK-004 advisory
+`noticeMessage` now also covers a check-IN whose attendance insert never lands
+(E2E-MOBGATE-006). Earlier: `2026-07-27` fixed-Out scan that closes nothing;
+`2026-07-26` DEF-CHK-004 advisory `noticeMessage`;
+`2026-07-11` D-737 unified scanner (SimfScannerBody; `gate_scanner_view.dart`
+deleted); `2026-06-27`.

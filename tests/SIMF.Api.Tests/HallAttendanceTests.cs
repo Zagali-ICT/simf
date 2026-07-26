@@ -232,7 +232,137 @@ public sealed class HallAttendanceTests : IClassFixture<SimfApiFactory>
         Assert.Equal(first.Enter, second.Enter);
     }
 
+    [Fact]
+    public async Task Concurrent_arrivals_never_exceed_the_hall_capacity()
+    {
+        // FR-CHK-004 — capacity used to be count-then-decide with no DB constraint,
+        // so several arrivals racing a cap-2 hall could all read "room left" and all
+        // commit, overfilling it. The count and the insert now share one Serializable
+        // transaction (via the execution strategy), so the outcome is exact: precisely
+        // `cap` arrivals succeed and every loser is a clean 409 HALL_AT_CAPACITY.
+        //
+        // This test alone can only prove there is no OVERSELL. A wrongly-rejected
+        // contention victim looks identical to a correct rejection here, so the
+        // over-REJECT half is proved by its two siblings:
+        // Concurrent_arrivals_with_room_for_everyone_are_all_admitted (contention
+        // with room for all → zero 409s) and
+        // A_non_unique_index_store_failure_is_not_reported_as_hall_at_capacity
+        // (a deterministic non-unique store failure must not become a 409).
+        const int cap = 2;
+        var sessionId = await SeedSessionAsync(withGeofence: true, capacity: cap);
+        var visitors = new List<string>();
+        for (var i = 0; i < 5; i++)
+        {
+            visitors.Add(await SeedApprovedVisitorAsync());
+        }
+
+        var responses = await Task.WhenAll(visitors.Select(v =>
+            PostArriveAsync(sessionId, CenterLat, CenterLon, v)));
+
+        var success = responses.Count(r => r.StatusCode == HttpStatusCode.OK);
+        Assert.Equal(cap, success);
+        foreach (var response in responses.Where(r => r.StatusCode != HttpStatusCode.OK))
+        {
+            Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+            var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+            Assert.Equal(ErrorCodes.HallAtCapacity, body.Error!.Code);
+        }
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var present = await db.HallAttendances
+            .CountAsync(a => a.SessionId == sessionId && a.Leave == null);
+        Assert.Equal(cap, present);
+    }
+
+    [Fact]
+    public async Task Concurrent_arrivals_with_room_for_everyone_are_all_admitted()
+    {
+        // The over-REJECT half of FR-CHK-004, and the behavioural detector for the
+        // capacity insert swallowing the wrong exception. Six arrivals race the SAME
+        // (SessionId, Leave) key range under SERIALIZABLE, which is exactly the shape
+        // that produces a SQL 1205 conversion deadlock — but the hall has room for
+        // all six, so EVERY 409 here is necessarily wrong. A deadlock victim must be
+        // re-run by the EF execution strategy and end up admitted; it must never be
+        // reported to the attendee as "this hall is at capacity".
+        const int racers = 6;
+        var sessionId = await SeedSessionAsync(withGeofence: true, capacity: 100);
+        var visitors = new List<string>();
+        for (var i = 0; i < racers; i++)
+        {
+            visitors.Add(await SeedApprovedVisitorAsync());
+        }
+
+        var responses = await Task.WhenAll(visitors.Select(v =>
+            PostArriveAsync(sessionId, CenterLat, CenterLon, v)));
+
+        foreach (var response in responses)
+        {
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var present = await db.HallAttendances
+            .CountAsync(a => a.SessionId == sessionId && a.Leave == null);
+        Assert.Equal(racers, present);
+    }
+
+    [Fact]
+    public async Task A_non_unique_index_store_failure_is_not_reported_as_hall_at_capacity()
+    {
+        // The deterministic form of the same defect. The capacity insert may swallow
+        // ONLY the one-open-row filtered-unique-index violation (SQL 2601/2627) —
+        // that one really is "a concurrent arrival for the same attendee won". EF
+        // wraps EVERY other store failure in the same DbUpdateException type (the
+        // 1205 deadlock victim above all), and swallowing those made the method fall
+        // through to "no committed row found" and throw HALL_AT_CAPACITY 409 at a
+        // hall that is completely EMPTY. Here a trigger turns the insert into a
+        // non-unique store failure; the request must NOT come back as 409 at
+        // capacity — it has to surface as a real failure the strategy/caller can act
+        // on.
+        var visitor = await SeedApprovedVisitorAsync();
+        var sessionId = await SeedSessionAsync(withGeofence: true, capacity: 100);
+
+        await ExecuteSqlAsync(
+            """
+            CREATE TRIGGER dbo.TR_HallAttendances_SimulatedStoreFailure
+            ON dbo.HallAttendances AFTER INSERT AS
+            BEGIN
+                SET NOCOUNT ON;
+                RAISERROR (N'simulated non-unique store failure', 16, 1);
+            END
+            """);
+        try
+        {
+            var response = await PostArriveAsync(sessionId, CenterLat, CenterLon, visitor);
+
+            // THE assertion: a store failure that is not a unique-index violation
+            // must never be laundered into "this hall is at capacity".
+            Assert.NotEqual(HttpStatusCode.Conflict, response.StatusCode);
+            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+        }
+        finally
+        {
+            await ExecuteSqlAsync(
+                "DROP TRIGGER IF EXISTS dbo.TR_HallAttendances_SimulatedStoreFailure");
+        }
+
+        // The hall was empty throughout — nothing was committed, so a "full" verdict
+        // could only ever have come from the swallowed exception.
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        Assert.Equal(0, await db.HallAttendances.CountAsync(a => a.SessionId == sessionId));
+    }
+
     // -- Helpers --------------------------------------------------------------
+
+    private async Task ExecuteSqlAsync(string sql)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        await db.Database.ExecuteSqlRawAsync(sql);
+    }
 
     private async Task<HallAttendanceStatus> ArriveAsync(
         Guid sessionId, double lat, double lon, string token)

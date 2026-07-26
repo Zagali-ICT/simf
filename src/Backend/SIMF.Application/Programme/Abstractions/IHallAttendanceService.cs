@@ -68,8 +68,16 @@ public interface IHallAttendanceService
     /// <see cref="ScanDirection.CheckOut"/> closes it.</para>
     /// Idempotent and safe to call after the gate scan is already committed.
     /// <paramref name="attendeeUserId"/> is the Identity <c>SimfUser.Id</c>
-    /// (QrResolution.UserId), NOT the App UserProfile id.</summary>
-    Task RecordGateDoorScanAsync(
+    /// (QrResolution.UserId), NOT the App UserProfile id.
+    /// <para>DEF-CHK-004 — returns <c>true</c> only when hall attendance was
+    /// ACTUALLY recorded: a row was opened, merged into, or closed. It returns
+    /// <c>false</c> when nothing could be recorded — no session was live in the
+    /// hall, a check-out found no open row to close, or the arrival's insert was
+    /// rejected by the store and no open row could be re-read (the reason is
+    /// logged). The gate surfaces that <c>false</c> to the operator as an advisory
+    /// notice: entry was still allowed, but the session attendance is not being
+    /// counted. Allowing entry is never affected — only the signal.</para></summary>
+    Task<bool> RecordGateDoorScanAsync(
         Guid attendeeUserId, Guid hallId, ScanDirection direction,
         bool directionInferred, Guid operatorUserId,
         CancellationToken cancellationToken = default);
