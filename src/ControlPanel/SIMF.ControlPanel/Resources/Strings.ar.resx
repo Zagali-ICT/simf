@@ -63,6 +63,9 @@
   <data name="Admin.Edit.ProfileType.None" xml:space="preserve"><value>— بدون —</value></data>
   <data name="Admin.Edit.ProfileType.Choose" xml:space="preserve"><value>اختر نوع الملف الشخصي…</value></data>
   <data name="Admin.Edit.EmailChangeNote" xml:space="preserve"><value>تغيير البريد الإلكتروني يُنهي جميع جلسات الحساب.</value></data>
+  <data name="Admin.Edit.Nationality" xml:space="preserve"><value>الجنسية</value></data>
+  <data name="Admin.Edit.Nationality.Keep" xml:space="preserve"><value>الإبقاء على الجنسية الحالية</value></data>
+  <data name="Admin.Edit.Nationality.Hint" xml:space="preserve"><value>تحدّد الجنسية الوفد الذي ينتمي إليه هذا الحساب، وبالتالي تتحكّم في إمكانية تأكيده لاجتماع وفد. اترك القائمة فارغة للإبقاء على القيمة المحفوظة.</value></data>
   <data name="Admin.Edit.Photo.Section" xml:space="preserve"><value>الصورة والهوية</value></data>
   <data name="Admin.Edit.Photo.Current" xml:space="preserve"><value>الصورة الحالية</value></data>
   <data name="Admin.Edit.Photo.Avatar" xml:space="preserve"><value>الصورة الشخصية</value></data>

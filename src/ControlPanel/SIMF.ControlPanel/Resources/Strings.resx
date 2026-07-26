@@ -63,6 +63,9 @@
   <data name="Admin.Edit.ProfileType.None" xml:space="preserve"><value>— none —</value></data>
   <data name="Admin.Edit.ProfileType.Choose" xml:space="preserve"><value>Choose a profile type…</value></data>
   <data name="Admin.Edit.EmailChangeNote" xml:space="preserve"><value>Changing the email signs the account out of all sessions.</value></data>
+  <data name="Admin.Edit.Nationality" xml:space="preserve"><value>Nationality</value></data>
+  <data name="Admin.Edit.Nationality.Keep" xml:space="preserve"><value>Keep the current nationality</value></data>
+  <data name="Admin.Edit.Nationality.Hint" xml:space="preserve"><value>Nationality decides which delegation this account belongs to, so it controls whether they can confirm a delegation meeting. Leave the picker empty to keep the stored value.</value></data>
   <data name="Admin.Edit.Photo.Section" xml:space="preserve"><value>Photo &amp; ID</value></data>
   <data name="Admin.Edit.Photo.Current" xml:space="preserve"><value>Current image</value></data>
   <data name="Admin.Edit.Photo.Avatar" xml:space="preserve"><value>Profile photo</value></data>

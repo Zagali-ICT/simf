@@ -18,7 +18,8 @@ namespace SIMF.Infrastructure.Requests;
 /// two new standalone types (participation-document + badge-update). Seat
 /// bookings map their <see cref="BookingStatus"/> onto the unified
 /// <see cref="MeetingRequestStatus"/>. Supersedes <c>MyMeetingsService</c>.
-/// Self-cancel withdraws a still-pending speaker / document / badge request.</summary>
+/// Self-cancel withdraws a still-pending speaker / delegation (B11) / document /
+/// badge request.</summary>
 internal sealed class MyRequestsService(
     SimfAppDbContext appDbContext,
     IAuditLog auditLog,
@@ -93,7 +94,12 @@ internal sealed class MyRequestsService(
             AppRequestKind.DelegationMeeting, r.Id, r.Name, r.NameArabic,
             // Same fold as the speaker projection so the unified state machine's admin-only
             // states (AwaitingSpeaker / Done) never leak past the shipped wire contract (0–3).
-            ToRequesterDisplayStatus(r.Status), r.SlotStart, r.CreatedAt, CanCancel: false,
+            ToRequesterDisplayStatus(r.Status), r.SlotStart, r.CreatedAt,
+            // B11 — a delegation meeting is withdrawable on exactly the speaker rule
+            // (Pending OR AwaitingSpeaker). It used to report CanCancel:false while the
+            // cancel switch fell through to a 409, so the requester could never withdraw
+            // one — asymmetric with the speaker meeting sitting next to it in the feed.
+            r.Status is MeetingRequestStatus.Pending or MeetingRequestStatus.AwaitingSpeaker,
             CountryId: r.TargetCountryId)));
 
         items.AddRange(bookings.Select(r => new AppRequestItem(
@@ -135,7 +141,7 @@ internal sealed class MyRequestsService(
                 // R-1 — a speaker meeting may be withdrawn while Pending OR AwaitingSpeaker
                 // (see the feed's CanCancel). Cancelling voids the double-opt-in tokens
                 // (they validate against this status) and releases the held hall slot.
-                EnsureSpeakerCancellable(r.Status);
+                EnsureMeetingCancellable(r.Status);
 
                 // #10 — the DB is the single arbiter, not the read above (mirrors
                 // MeetingActionTokenService.ApplyAsync). While the requester was on the
@@ -152,6 +158,41 @@ internal sealed class MyRequestsService(
                             || x.Status == MeetingRequestStatus.AwaitingSpeaker))
                     .ExecuteUpdateAsync(
                         s => s.SetProperty(x => x.Status, MeetingRequestStatus.Cancelled),
+                        cancellationToken);
+                if (affected == 0)
+                {
+                    throw new ApiException(
+                        ErrorCodes.AppRequestNotCancellable, 409,
+                        "Only a pending request can be cancelled.",
+                        "لا يمكن إلغاء سوى طلب قيد المراجعة.");
+                }
+                break;
+            }
+            case AppRequestKind.DelegationMeeting:
+            {
+                var r = await appDbContext.DelegationMeetingRequests.AsNoTracking()
+                    .SingleOrDefaultAsync(
+                        x => x.Id == id && x.RequestedByUserId == userId, cancellationToken)
+                    ?? throw NotFound();
+                // B11 — the same withdraw rule as a speaker meeting (see the feed's
+                // CanCancel). Cancelling from AwaitingSpeaker voids the target
+                // delegation's confirm token (it validates against this status) and
+                // clearing the hall binding releases the held slot.
+                EnsureMeetingCancellable(r.Status);
+
+                // Same lost-update guard as the speaker arm: while the requester was on
+                // the cancel screen the other delegation may have confirmed
+                // (AwaitingSpeaker -> Accepted) by app tap or email link. A conditional
+                // UPDATE guarded on the still-cancellable states means their confirm wins
+                // and we surface the 409 instead of silently overwriting it.
+                var affected = await appDbContext.DelegationMeetingRequests
+                    .Where(x => x.Id == id && x.RequestedByUserId == userId
+                        && (x.Status == MeetingRequestStatus.Pending
+                            || x.Status == MeetingRequestStatus.AwaitingSpeaker))
+                    .ExecuteUpdateAsync(s => s
+                        .SetProperty(x => x.Status, MeetingRequestStatus.Cancelled)
+                        .SetProperty(x => x.HallId, (Guid?)null)
+                        .SetProperty(x => x.MeetingTableId, (Guid?)null),
                         cancellationToken);
                 if (affected == 0)
                 {
@@ -181,7 +222,8 @@ internal sealed class MyRequestsService(
                 break;
             }
             default:
-                // Delegation + session-attendance are not self-cancellable here.
+                // Session-attendance is not self-cancellable here (it has its own
+                // seat-release path); B11 moved delegation meetings to their own arm.
                 throw new ApiException(
                     ErrorCodes.AppRequestNotCancellable, 409,
                     "This request type cannot be cancelled from the app.",
@@ -218,8 +260,9 @@ internal sealed class MyRequestsService(
         }
     }
 
-    // R-1 — a speaker meeting is withdrawable while Pending OR AwaitingSpeaker.
-    private static void EnsureSpeakerCancellable(MeetingRequestStatus status)
+    // R-1 — a speaker meeting is withdrawable while Pending OR AwaitingSpeaker;
+    // B11 put delegation meetings on exactly the same rule.
+    private static void EnsureMeetingCancellable(MeetingRequestStatus status)
     {
         if (status is not (MeetingRequestStatus.Pending or MeetingRequestStatus.AwaitingSpeaker))
         {

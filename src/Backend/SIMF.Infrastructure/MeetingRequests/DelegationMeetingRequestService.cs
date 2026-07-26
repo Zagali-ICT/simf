@@ -383,29 +383,28 @@ internal sealed class DelegationMeetingRequestService(
             Detail = $"requestId={req.Id}",
         }, cancellationToken);
 
-        // Notify (and on accept email) the requesting delegate — they are a SimfUser,
-        // so the dispatcher's email path applies. Best-effort.
-        // Notify the requester of the outcome. Confirmed (Accepted) and Approved
-        // (AwaitingSpeaker) email + in-app; a decline is in-app + email too so the
-        // requester always learns the result. The rich other-party 2-email + app-tap
-        // confirm flow is added in P4.
-        var (title, titleAr, body, bodyAr, kind, email) = req.Status switch
+        // Notify (and email) the requesting delegate — they are a SimfUser, so the
+        // dispatcher's email path applies. Best-effort.
+        // A31 — every outcome emails the requester. The comment here always promised
+        // "in-app + email too" for a decline, but the decline arm passed SendEmail=false,
+        // so a declined/cancelled requester only ever saw an in-app row.
+        var (title, titleAr, body, bodyAr, kind) = req.Status switch
         {
             MeetingRequestStatus.Accepted => (
                 "Delegation meeting confirmed", "تم تأكيد اجتماع الوفد",
                 $"Your delegation meeting with {detail.TargetCountry} is confirmed.",
                 $"تم تأكيد اجتماع وفدك مع {detail.TargetCountry}.",
-                NotificationKind.MeetingScheduled, true),
+                NotificationKind.MeetingScheduled),
             MeetingRequestStatus.AwaitingSpeaker => (
                 "Delegation meeting approved", "تمت الموافقة على اجتماع الوفد",
                 $"Your delegation meeting with {detail.TargetCountry} was approved and is awaiting confirmation.",
                 $"تمت الموافقة على اجتماع وفدك مع {detail.TargetCountry} وهو بانتظار التأكيد.",
-                NotificationKind.MeetingScheduled, true),
+                NotificationKind.MeetingScheduled),
             _ => (
                 "Delegation meeting declined", "تم رفض اجتماع الوفد",
                 $"Your delegation meeting with {detail.TargetCountry} was declined.",
                 $"تم رفض اجتماع وفدك مع {detail.TargetCountry}.",
-                NotificationKind.MeetingCancelled, false),
+                NotificationKind.MeetingCancelled),
         };
         await notifications.TryDispatchAsync(new NotificationRequest
         {
@@ -416,7 +415,14 @@ internal sealed class DelegationMeetingRequestService(
             Severity = NotificationSeverity.Info,
             RelatedEntityType = nameof(DelegationMeetingRequest),
             RelatedEntityId = req.Id,
-            SendEmail = email,
+            SendEmail = true,
+            // A33 — a proper meeting notice (both delegations + topic + Saudi local time
+            // + hall) in the same style as the target-member link email, instead of the
+            // dispatcher's bare HtmlEncode'd single paragraph. Deliberately carries NO
+            // action link: the confirm token (D-767) authorises whoever holds it, and the
+            // REQUESTER must never be able to confirm their own meeting — that link goes
+            // only to the target delegation (EmailMemberConfirmLinkAsync).
+            PreRenderedEmailHtml = BuildOutcomeEmailHtml(body, detail, req),
         }, logger, cancellationToken);
 
         // Bi-Meeting rework — on Approve (AwaitingSpeaker) notify the OTHER PARTY (each
@@ -443,6 +449,24 @@ internal sealed class DelegationMeetingRequestService(
                 $"تم إلغاء طلب اجتماع الوفد من {detail.RequestingCountry}.",
                 cancellationToken);
         }
+        else if (req.Status == MeetingRequestStatus.Accepted)
+        {
+            // A32 — the verbal-Confirm arm. Before this branch the chain notified the
+            // target members only on Approve (AwaitingSpeaker) and on a post-approval
+            // cancel, so a Confirm straight from Pending — the admin already holds the
+            // verbal agreement and books it outright — told the TARGET delegation
+            // nothing at all; their first notice was the 15-minute reminder. A Confirm
+            // from AwaitingSpeaker lands here too: "please confirm" becomes "it is
+            // booked", which is the outcome of the prompt they were already sent.
+            var when = req.SlotStart.FormatSaudi(fallback: string.Empty);
+            var whenEn = when.Length == 0 ? string.Empty : $" on {when}";
+            var whenAr = when.Length == 0 ? string.Empty : $" بتاريخ {when}";
+            await NotifyTargetMembersAsync(req, NotificationKind.MeetingScheduled,
+                "Delegation meeting scheduled", "تم جدولة اجتماع الوفد",
+                $"Your delegation meeting with {detail.RequestingCountry} is confirmed{whenEn}.",
+                $"تم تأكيد اجتماع وفدكم مع {detail.RequestingCountry}{whenAr}.",
+                cancellationToken);
+        }
 
         return detail;
     }
@@ -450,32 +474,7 @@ internal sealed class DelegationMeetingRequestService(
     public async Task<AdminDelegationMeetingRequestDetail> ConfirmByOtherPartyAsync(
         Guid callerUserId, Guid id, CancellationToken cancellationToken = default)
     {
-        var req = await appDbContext.DelegationMeetingRequests.AsNoTracking()
-            .SingleOrDefaultAsync(r => r.Id == id, cancellationToken)
-            ?? throw new ApiException(ErrorCodes.DelegationMeetingRequestNotFound, 404,
-                "Delegation meeting request not found.",
-                "لم يتم العثور على طلب اجتماع الوفد.");
-
-        // Only an Approved (AwaitingSpeaker) request can be confirmed by the other party.
-        if (req.Status != MeetingRequestStatus.AwaitingSpeaker)
-        {
-            throw new ApiException(ErrorCodes.AppRequestAlreadyResponded, 409,
-                "This meeting is not awaiting confirmation.",
-                "هذا الاجتماع ليس بانتظار التأكيد.");
-        }
-
-        // The caller must be an eligible member of the TARGET delegation (their profile
-        // country is the target country and they hold the delegation-meeting flag).
-        var isTargetMember = await appDbContext.UserProfiles.AsNoTracking()
-            .AnyAsync(p => p.UserId == callerUserId
-                && p.NationalityId == req.TargetCountryId
-                && p.AllowsDelegationMeeting, cancellationToken);
-        if (!isTargetMember)
-        {
-            throw new ApiException(ErrorCodes.Forbidden, 403,
-                "You are not permitted to confirm this meeting.",
-                "غير مسموح لك بتأكيد هذا الاجتماع.");
-        }
+        var req = await LoadAwaitingForOtherPartyAsync(callerUserId, id, cancellationToken);
 
         var now = timeProvider.GetUtcNow();
 
@@ -524,6 +523,105 @@ internal sealed class DelegationMeetingRequestService(
         // it for the admin desks (audited per D-185); strip it here so a peer app user
         // cannot read another user's private email from the confirm response.
         return detail with { RequesterEmail = null };
+    }
+
+    /// <summary>B8 — the decline twin of <see cref="ConfirmByOtherPartyAsync"/>. Before
+    /// this, the target delegation's only exits from an Approved (AwaitingSpeaker) meeting
+    /// were to confirm it or to wait for an admin cancel. Same authorization model, same
+    /// audit event, same notification treatment; flips AwaitingSpeaker → Rejected (the
+    /// status the speaker decline-link already produces) and releases the held hall slot
+    /// so it frees up immediately.</summary>
+    public async Task<AdminDelegationMeetingRequestDetail> DeclineByOtherPartyAsync(
+        Guid callerUserId, Guid id, CancellationToken cancellationToken = default)
+    {
+        var req = await LoadAwaitingForOtherPartyAsync(callerUserId, id, cancellationToken);
+
+        var now = timeProvider.GetUtcNow();
+
+        // Race-safe conditional flip AwaitingSpeaker → Rejected (a concurrent confirm or a
+        // second decline matches 0 rows and 409s cleanly). Rejected is not a slot-holding
+        // state, and clearing the hall/table binding releases the slot for another meeting
+        // exactly as the admin cancel path does.
+        var affected = await appDbContext.DelegationMeetingRequests
+            .Where(r => r.Id == id && r.Status == MeetingRequestStatus.AwaitingSpeaker)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(r => r.Status, MeetingRequestStatus.Rejected)
+                .SetProperty(r => r.HallId, (Guid?)null)
+                .SetProperty(r => r.MeetingTableId, (Guid?)null)
+                .SetProperty(r => r.RespondedAt, now), cancellationToken);
+        if (affected == 0)
+        {
+            throw new ApiException(ErrorCodes.AppRequestAlreadyResponded, 409,
+                "This meeting is not awaiting confirmation.",
+                "هذا الاجتماع ليس بانتظار التأكيد.");
+        }
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.DelegationMeetingRequestResponded,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = callerUserId,
+            Detail = $"requestId={id}; status=Rejected; declinedByOtherParty=true",
+        }, cancellationToken);
+
+        var detail = await LoadDetailAsync(id, cancellationToken);
+
+        // Tell the requester their meeting was declined — in-app + email, matching the
+        // confirm path (and A31's rule that a decline always reaches the requester).
+        await notifications.TryDispatchAsync(new NotificationRequest
+        {
+            UserId = req.RequestedByUserId,
+            Kind = NotificationKind.MeetingCancelled,
+            Title = "Delegation meeting declined",
+            TitleArabic = "تم رفض اجتماع الوفد",
+            Body = $"{detail.TargetCountry} could not confirm your delegation meeting.",
+            BodyArabic = $"تعذّر على {detail.TargetCountry} تأكيد اجتماع وفدكم.",
+            Severity = NotificationSeverity.Info,
+            RelatedEntityType = nameof(DelegationMeetingRequest),
+            RelatedEntityId = id,
+            SendEmail = true,
+            PreRenderedEmailHtml = BuildOutcomeEmailHtml(
+                $"{detail.TargetCountry} could not confirm your delegation meeting.",
+                detail, req),
+        }, logger, cancellationToken);
+
+        // Same PII rule as the confirm response — an app peer never sees the requester's
+        // Identity login email.
+        return detail with { RequesterEmail = null };
+    }
+
+    // B8 — the shared other-party guard for confirm + decline: the request must exist, be
+    // Approved (AwaitingSpeaker), and the caller must be an eligible member of the TARGET
+    // delegation (their profile country is the target country AND they hold the
+    // admin-assigned delegation-meeting flag).
+    private async Task<DelegationMeetingRequest> LoadAwaitingForOtherPartyAsync(
+        Guid callerUserId, Guid id, CancellationToken cancellationToken)
+    {
+        var req = await appDbContext.DelegationMeetingRequests.AsNoTracking()
+            .SingleOrDefaultAsync(r => r.Id == id, cancellationToken)
+            ?? throw new ApiException(ErrorCodes.DelegationMeetingRequestNotFound, 404,
+                "Delegation meeting request not found.",
+                "لم يتم العثور على طلب اجتماع الوفد.");
+
+        if (req.Status != MeetingRequestStatus.AwaitingSpeaker)
+        {
+            throw new ApiException(ErrorCodes.AppRequestAlreadyResponded, 409,
+                "This meeting is not awaiting confirmation.",
+                "هذا الاجتماع ليس بانتظار التأكيد.");
+        }
+
+        var isTargetMember = await appDbContext.UserProfiles.AsNoTracking()
+            .AnyAsync(p => p.UserId == callerUserId
+                && p.NationalityId == req.TargetCountryId
+                && p.AllowsDelegationMeeting, cancellationToken);
+        if (!isTargetMember)
+        {
+            throw new ApiException(ErrorCodes.Forbidden, 403,
+                "You are not permitted to respond to this meeting.",
+                "غير مسموح لك بالردّ على هذا الاجتماع.");
+        }
+
+        return req;
     }
 
     public async Task<AdminDelegationMeetingRequestDetail> CheckInAsync(
@@ -691,6 +789,7 @@ internal sealed class DelegationMeetingRequestService(
                     "The meeting table was not found in this hall.",
                     "لم يتم العثور على طاولة الاجتماع في هذه القاعة.");
             }
+            await GuardTableOverlapAsync(req.Id, tableId, start, end, cancellationToken);
             req.MeetingTableId = tableId;
         }
         req.HallId = hallId;
@@ -722,6 +821,56 @@ internal sealed class DelegationMeetingRequestService(
                 "One of the delegations already has a meeting at that time.",
                 "لدى أحد الوفدين اجتماع بالفعل في ذلك الوقت.");
         }
+    }
+
+    // A34 — a meeting TABLE can hold one meeting at a time. The bind only checked the
+    // table is active and belongs to the hall, and the hall-level guards are keyed on the
+    // HALL (the (HallId, SlotStart) filtered-unique index + the free-slot subtraction), so
+    // nothing stopped two meetings from being pinned to the same table at the same time.
+    // Both meeting families can occupy a table, so both are scanned. Same half-open
+    // overlap rule and same live set (`MeetingRequestStatuses.SlotHolding`) the hall guards
+    // use, so touching windows (end == start) do NOT collide. Read-then-write, consistent
+    // with GuardDelegationOverlapAsync — this is an admin-brokered, low-concurrency desk.
+    private async Task GuardTableOverlapAsync(
+        Guid requestId, Guid tableId, DateTimeOffset start, DateTimeOffset end,
+        CancellationToken cancellationToken)
+    {
+        var delegationClash = await appDbContext.DelegationMeetingRequests.AsNoTracking()
+            .Where(r => r.Id != requestId
+                && r.MeetingTableId == tableId
+                && MeetingRequestStatuses.SlotHolding.Contains(r.Status)
+                && r.SlotStart != null && r.SlotEnd != null)
+            .AnyAsync(r => r.SlotStart < end && start < r.SlotEnd, cancellationToken);
+        var speakerClash = !delegationClash
+            && await appDbContext.SpeakerMeetingRequests.AsNoTracking()
+                .Where(r => r.MeetingTableId == tableId
+                    && MeetingRequestStatuses.SlotHolding.Contains(r.Status)
+                    && r.SlotStart != null && r.SlotEnd != null)
+                .AnyAsync(r => r.SlotStart < end && start < r.SlotEnd, cancellationToken);
+        if (delegationClash || speakerClash)
+        {
+            throw new ApiException(ErrorCodes.DelegationMeetingRequestInvalid, 409,
+                "That meeting table is already booked at that time.",
+                "طاولة الاجتماع هذه محجوزة بالفعل في ذلك الوقت.");
+        }
+    }
+
+    // A33 — the shared outcome-email body for the REQUESTER (confirmed / approved /
+    // declined). Same markup vocabulary as EmailMemberConfirmLinkAsync so the two
+    // delegation emails read as one template family. Saudi local time only (no UTC).
+    private static string BuildOutcomeEmailHtml(
+        string body, AdminDelegationMeetingRequestDetail detail, DelegationMeetingRequest req)
+    {
+        var slot = req.SlotStart is { } s ? s.FormatSaudi() : "to be scheduled";
+        return $"<p>{HtmlEnc(body)}</p>"
+            + $"<p>Delegations: <strong>{HtmlEnc(detail.RequestingCountry)}</strong>"
+            + $" &nbsp;&mdash;&nbsp; <strong>{HtmlEnc(detail.TargetCountry)}</strong></p>"
+            + $"<p>Topic: {HtmlEnc(req.Subject)}<br/>Time: {HtmlEnc(slot)}</p>"
+            + (string.IsNullOrWhiteSpace(req.ResponseNote)
+                ? string.Empty
+                : $"<p>Note: {HtmlEnc(req.ResponseNote!)}</p>")
+            + "<p style=\"color:#666\">You can follow this request in the SIMF app under"
+            + " &quot;My requests&quot;.</p>";
     }
 
     private async Task<AdminDelegationMeetingRequestDetail> LoadDetailAsync(

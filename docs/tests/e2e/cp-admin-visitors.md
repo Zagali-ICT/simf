@@ -49,6 +49,7 @@
 | E2E-VIS-025 | Walk-in birth location (D-469) — Saudi → region `<select>` over the 13 official regions (code-keyed, cross-locale preselect); non-Saudi → free-text "as in passport" | validation | P1 | _to author_ |
 | E2E-VIS-030 | Edit login email (D-214 + #24) — golden change → 200 + save toast, stamp roll + old-session revoke + new address unverified (re-verify at next sign-in); duplicate → 409 `ADMIN_EMAIL_ALREADY_REGISTERED` inline SimfAlert; name-only edit keeps the session; bad format → 400 | happy | P1 | _to author_ |
 | E2E-VIS-031 | Bulk add (#10 batch-builder) — gated toolbar "Bulk add" opens the `BulkBadgeGenerator` dialog; build a batch (type + count → Add), Generate → confirm → `bulk-generate` 200; hidden without `Visitors.BulkGenerate` | happy | P1 | authored ✓ (BulkBadgeGeneratorTests; gate by CpNavigationPermission/PermissionEnforcement) |
+| E2E-VIS-032 | B22 — Edit account carries **Nationality**: pick a country -> saved onto `UserProfile.NationalityId`; leaving the picker empty keeps the stored value; an unknown / inactive code -> 400 `PROFILE_NATIONALITY_UNKNOWN` and nothing is written; the edit stays gated by the account-management permission | happy / error / auth-gate | P1 | authored ✓ (`AdminAccountNationalityTests`, API) |
 
 ## Scenarios
 
@@ -720,6 +721,52 @@ Scenario: The Bulk add button is hidden without the permission
 The same generator + request contract is exercised on `/admin/delegates`
 (`cp-admin-delegates.md`, E2E-DLG-004/013/014).
 
+### E2E-VIS-032 - Edit account: correct the nationality (B22)
+
+`UserProfile.NationalityId` used to be written **only** by the self-service sign-up
+upsert, so no admin endpoint or CP form could change it - yet nationality decides
+which delegation an account belongs to and therefore gates
+`POST /app/delegation-meeting-requests/{id}/confirm` and `.../decline`
+([`mobile-meeting-confirm.md`](mobile-meeting-confirm.md)). A delegate whose
+nationality was captured wrong could not be helped by an admin at all.
+
+```gherkin
+Feature: An admin corrects a delegate's nationality
+Background:
+  Given an Administrator has signed in to the Control Panel
+  And a visitor account exists whose profile nationality is wrong
+
+Scenario: Correct the nationality
+  When the Administrator opens Edit on that account
+  Then the form shows a "Nationality" / "الجنسية" picker prefilled from the profile
+  And the helper note explains it controls delegation-meeting confirmation
+  When they pick the correct country and Save
+  Then PUT /account/api/admin/visitors/{id} carries nationalityCode
+  And the response is 200 and UserProfile.NationalityId is the picked country
+  And the account can now confirm that delegation's meetings
+
+Scenario: Leaving the picker empty changes nothing
+  When the Administrator edits only the display name and saves
+  Then no nationalityCode is sent and the stored nationality is untouched
+
+Scenario: An unknown or inactive country is refused
+  When a scripted client PUTs nationalityCode "ZZ" (or an inactive country's code)
+  Then the response is 400 PROFILE_NATIONALITY_UNKNOWN
+       ("Nationality code 'ZZ' is not supported." / "الجنسية 'ZZ' غير مدعومة.")
+  And nothing is written - the display name and the stored nationality are unchanged
+
+Scenario: The edit stays permission-gated
+  When a signed-in non-admin account PUTs the same body
+  Then the response is 403 (the existing account-management policy, unchanged)
+```
+
+**Covered (lower layer):** `tests/SIMF.Api.Tests/AdminAccountNationalityTests.cs`
+(correct / omit / unknown / inactive / permission). The same optional
+`NationalityCode` field is on `AdminUpdateOtherRequest`, so
+[`cp-admin-others.md`](cp-admin-others.md) inherits it.
+
 ---
 
 _Last reviewed:_ 2026-07-22 by Claude (#10 front-end redesign - the walk-in wizard regrouped into SimfFormSection cards + SimfSelect/SimfDatePicker/SimfFileUpload (behaviour-preserving, E2E-VIS structure note + WalkInRegistrationFormTests); added E2E-VIS-031 - the gated "Bulk add" toolbar dialog hosting the shared BulkBadgeGenerator batch-builder). Prior: 2026-07-22 by Claude (#24 DoD - added E2E-VIS-030, the dedicated edit-email scenario for PUT /admin/visitors/{id}: golden change, stamp roll + old-session revoke + EmailConfirmed=false re-verify, duplicate 409 ADMIN_EMAIL_ALREADY_REGISTERED inline, name-only keeps the session, bad-format 400). Prior: 2026-07-22 by SIMF Team (Build #24 - noted on E2E-VIS-001 that an Edit which changes the email now marks it unverified (EmailConfirmed=false) for re-verification at next sign-in; not a lockout). Prior: 2026-07-21 by Claude (VIP edit - the shared EditAccountForm gained a Photo & ID section; E2E-VIS-029). Earlier: 2026-07-11 by Claude (W4 on-site remediation - H-1 duplicate-identity guard; E2E-VIS-027). Earlier: 2026-07-09 by SIMF Team (D-728 - E2E-VIS-026 change-account-type); 2026-06-20 (D-469 - E2E-VIS-025 Saudi birth-location region dropdown); 2026-06-10 (D-356 Phase 5 - Excel + toggle; E2E-VIS-023/024).
+
+_Last reviewed:_ 2026-07-26 by Claude (B22 - the Edit account form and PUT /admin/{visitors,others}/{id} now carry an optional NationalityCode; E2E-VIS-032).

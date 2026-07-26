@@ -29,6 +29,7 @@ internal sealed partial class AdminAccountService
             request.ProfileTypeId, expectedIsVisitor: true,
             profileTypeRequired: false,
             request.AllowsSpeakerMeeting, request.AllowsDelegationMeeting,
+            request.NationalityCode,
             cancellationToken);
 
     public Task UpdateOtherAsync(
@@ -39,12 +40,14 @@ internal sealed partial class AdminAccountService
             request.ProfileTypeId, expectedIsVisitor: false,
             profileTypeRequired: true,
             request.AllowsSpeakerMeeting, request.AllowsDelegationMeeting,
+            request.NationalityCode,
             cancellationToken);
 
     private async Task UpdateAccountAsync(
         Guid actorUserId, Guid userId, string email, string displayName,
         Guid? profileTypeId, bool expectedIsVisitor, bool profileTypeRequired,
         bool allowsSpeakerMeeting, bool allowsDelegationMeeting,
+        string? nationalityCode,
         CancellationToken cancellationToken)
     {
         var trimmedEmail = (email ?? string.Empty).Trim();
@@ -89,6 +92,14 @@ internal sealed partial class AdminAccountService
         var resolvedProfileTypeId = await ResolveEditProfileTypeAsync(
             actorUserId, trimmedEmail, target.Id, profileTypeId,
             expectedIsVisitor, profileTypeRequired, cancellationToken);
+
+        // B22 — resolve the optional nationality correction BEFORE any write, with the
+        // same rule (an ACTIVE Countries row, matched on the ISO alpha-2 code) and the
+        // same error code the self-service upsert uses. Nationality gates delegation
+        // -meeting confirm eligibility, so without this an admin had no way to fix a
+        // delegate whose nationality was wrong. null = "leave it as it is".
+        var resolvedNationalityId = await ResolveEditNationalityAsync(
+            actorUserId, trimmedEmail, target.Id, nationalityCode, cancellationToken);
 
         var emailChanged = !string.Equals(
             target.Email, trimmedEmail, StringComparison.OrdinalIgnoreCase);
@@ -147,7 +158,8 @@ internal sealed partial class AdminAccountService
 
             await UpsertProfileTypeAsync(
                 target.Id, resolvedProfileTypeId,
-                allowsSpeakerMeeting, allowsDelegationMeeting, now, innerCt);
+                allowsSpeakerMeeting, allowsDelegationMeeting,
+                resolvedNationalityId, now, innerCt);
 
             await auditLog.WriteAsync(new AuditEntry
             {
@@ -159,7 +171,9 @@ internal sealed partial class AdminAccountService
                 Detail = $"scope={(expectedIsVisitor ? "visitor" : "other")}; "
                     + $"emailChanged={emailChanged}; "
                     + $"profileTypeChanged={profileTypeChanged}; "
-                    + $"profileType={resolvedProfileTypeId}",
+                    + $"profileType={resolvedProfileTypeId}; "
+                    + $"nationalityId={resolvedNationalityId?.ToString(
+                        System.Globalization.CultureInfo.InvariantCulture) ?? "unchanged"}",
             }, innerCt);
         }, cancellationToken);
 
@@ -209,22 +223,58 @@ internal sealed partial class AdminAccountService
         return profileType.Id;
     }
 
-    // Sets the subject's ProfileTypeId and the two Bi-Meeting eligibility flags
-    // (AllowsSpeakerMeeting / AllowsDelegationMeeting) on the App-DB UserProfile
-    // row. The row may not exist yet (a self-signed-up visitor with no
-    // admin-assigned type); create a minimal row when a tier OR a meeting flag is
-    // set so the assignment sticks. A no-tier, no-flag edit of a profile-less
+    // B22 — resolves the optional nationality code an admin edit may carry.
+    // Returns null when the caller omitted it (leave the stored value alone), or the
+    // Country PK when it names an active country. An unknown / inactive code is the
+    // same 400 (ProfileNationalityUnknown) the self-service upsert raises, so the
+    // admin desk and the app agree on what a valid nationality is.
+    private async Task<int?> ResolveEditNationalityAsync(
+        Guid actorUserId, string email, Guid subjectId, string? nationalityCode,
+        CancellationToken cancellationToken)
+    {
+        var code = (nationalityCode ?? string.Empty).Trim().ToUpperInvariant();
+        if (code.Length == 0)
+        {
+            return null;
+        }
+
+        var countryId = await appDbContext.Countries
+            .AsNoTracking()
+            .Where(country => country.Code == code && country.IsActive)
+            .Select(country => (int?)country.Id)
+            .SingleOrDefaultAsync(cancellationToken);
+        if (countryId is null)
+        {
+            await AuditFailure(
+                AuditEvents.AdminUserUpdateFailed, actorUserId, email,
+                subjectId, ErrorCodes.ProfileNationalityUnknown, cancellationToken);
+            throw new ApiException(
+                ErrorCodes.ProfileNationalityUnknown, 400,
+                $"Nationality code '{code}' is not supported.",
+                $"الجنسية '{code}' غير مدعومة.");
+        }
+        return countryId;
+    }
+
+    // Sets the subject's ProfileTypeId, the two Bi-Meeting eligibility flags
+    // (AllowsSpeakerMeeting / AllowsDelegationMeeting) and — when the edit supplied
+    // one (B22) — the nationality, on the App-DB UserProfile row. The row may not
+    // exist yet (a self-signed-up visitor with no admin-assigned type); create a
+    // minimal row when a tier OR a meeting flag OR a nationality is set so the
+    // assignment sticks. A no-tier, no-flag, no-nationality edit of a profile-less
     // account stays a no-op (nothing to persist).
     private async Task UpsertProfileTypeAsync(
         Guid subjectId, Guid? profileTypeId,
-        bool allowsSpeakerMeeting, bool allowsDelegationMeeting, DateTimeOffset now,
+        bool allowsSpeakerMeeting, bool allowsDelegationMeeting,
+        int? nationalityId, DateTimeOffset now,
         CancellationToken cancellationToken)
     {
         var profile = await appDbContext.UserProfiles
             .SingleOrDefaultAsync(p => p.UserId == subjectId, cancellationToken);
         if (profile is null)
         {
-            if (profileTypeId is null && !allowsSpeakerMeeting && !allowsDelegationMeeting)
+            if (profileTypeId is null && !allowsSpeakerMeeting
+                && !allowsDelegationMeeting && nationalityId is null)
             {
                 return;
             }
@@ -235,6 +285,7 @@ internal sealed partial class AdminAccountService
                 ProfileTypeId = profileTypeId,
                 AllowsSpeakerMeeting = allowsSpeakerMeeting,
                 AllowsDelegationMeeting = allowsDelegationMeeting,
+                NationalityId = nationalityId ?? 0,
                 CreatedAt = now,
             });
         }
@@ -243,6 +294,10 @@ internal sealed partial class AdminAccountService
             profile.ProfileTypeId = profileTypeId;
             profile.AllowsSpeakerMeeting = allowsSpeakerMeeting;
             profile.AllowsDelegationMeeting = allowsDelegationMeeting;
+            if (nationalityId is { } resolved)
+            {
+                profile.NationalityId = resolved;
+            }
             profile.UpdatedAt = now;
         }
         await appDbContext.SaveChangesAsync(cancellationToken);

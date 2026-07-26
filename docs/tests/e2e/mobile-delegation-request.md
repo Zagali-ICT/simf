@@ -44,6 +44,8 @@
 | E2E-DELREQ-008 | Target not invited — 400 → "هذا الوفد غير متاح للاجتماعات" | error | P1 | _to author_ (`A_target_country_that_is_not_invited_is_400`, API) |
 | E2E-DELREQ-009 | Duplicate — a second pending request for the same target → conflict toast | error | P1 | _to author_ (`A_second_pending_request_for_the_same_target_is_rejected`, API) |
 | E2E-DELREQ-010 | RTL render (Arabic) — sheet title "طلب اجتماع وفد", fields + slots mirror | i18n | P1 | _to author_ |
+| E2E-DELREQ-011 | A35 — a server-rejected submit shows the **server's own bilingual reason**, never the speaker copy "this speaker is not accepting meeting requests" | error | P1 | authored ✓ (`delegation_meeting_request_sheet_test.dart`, widget) |
+| E2E-DELREQ-012 | A35 — an offline / never-reached-the-server failure still falls back to the local "تعذّر إرسال الطلب" copy | edge | P2 | authored ✓ (`delegation_meeting_request_sheet_test.dart`, widget) |
 
 ## Scenarios
 
@@ -192,9 +194,16 @@ Scenario: The sheet mirrors under Arabic
   `getAvailableSlots(int countryId)` → `GET /app/countries/{countryId}/available-slots`;
   `submitMeetingRequest({targetCountryCode, attendeeCount, subject, slotStart?, slotEnd?})`
   → `POST /app/delegation-meeting-requests`.
-- **Error → message mapping** (`delegation_meeting_request_sheet.dart` `_failureText`):
-  403 → `delegationNotAllowed`; 400 → `delegationTargetNotInvited`;
-  409 → `meetingRequestNotAllowed`; default → `meetingRequestFailed`.
+- **Error → message mapping** (`delegation_meeting_request_sheet.dart` `_failureText`),
+  **A35**: when the call reached the server (`httpStatus != null`) and the envelope
+  carries a message, that message is shown as-is — it is already localised by
+  `ApiFailure.fromEnvelope`. Only a failure that never reached the server falls back to
+  the local copy (403 → `delegationNotAllowed`, 400 → `delegationTargetNotInvited`,
+  otherwise `meetingRequestFailed`). The old map hard-coded one client string per
+  status, so a 409 surfaced the SPEAKER copy `meetingRequestNotAllowed` ("this speaker
+  is not accepting meeting requests") on a delegation sheet, and every distinct 400
+  (subject length, attendee count, invalid slot, own delegation) read as "this
+  delegation is not available for meetings".
 - **API integration tests** — [`tests/SIMF.Api.Tests/DelegationMeetingRequestsTests.cs`](../../../tests/SIMF.Api.Tests/DelegationMeetingRequestsTests.cs)
   (submit + guards + accept/confirm) and
   [`tests/SIMF.Api.Tests/DelegationAvailabilityTests.cs`](../../../tests/SIMF.Api.Tests/DelegationAvailabilityTests.cs)
@@ -205,6 +214,29 @@ Scenario: The sheet mirrors under Arabic
 - **Golden / widget + on-device** scenarios (`_to author_`) are the sheet open → fill →
   send flow, the validation copy, and the RTL render — driven on device / in `flutter test`.
 
+### E2E-DELREQ-011/012 — The sheet shows the server's own reason (A35)
+
+```gherkin
+Scenario: The server rejects the submit with a specific reason
+  Given I am an entitled delegate with the sheet open on a fixed target
+  When I enter a subject and an attendee count and tap "إرسال الطلب"
+  And the API answers 409 DELEGATION_MEETING_REQUEST_INVALID
+      "A delegation cannot request a meeting with itself." /
+      "لا يمكن للوفد طلب اجتماع مع نفسه."
+  Then the sheet shows that exact message inline
+  And it does NOT show "This speaker is not accepting meeting requests"
+
+Scenario: A 400 names the field that failed
+  When the API answers 400 "Subject must be between 1 and 1000 characters."
+  Then the sheet shows that message, not "This delegation is not available for meetings"
+
+Scenario: The request never reached the server
+  When the submit fails with no HTTP status (network down / timeout)
+  Then the sheet shows the local "تعذّر إرسال الطلب. حاول مرة أخرى." copy
+```
+
 ---
 
 _Last reviewed:_ 2026-07-22 by Claude — bi-meeting rework: new delegation meeting request sheet (flag-gated; opened from the Bi-Meeting page picker and from a tapped delegation card). Backend submit + slots covered by `DelegationMeetingRequestsTests` + `DelegationAvailabilityTests`; the sheet/golden/RTL layer is on-device `_to author_`.
+
+_Last reviewed:_ 2026-07-26 by Claude — A35: the sheet surfaces the server's bilingual message instead of a hard-coded speaker string (E2E-DELREQ-011/012).

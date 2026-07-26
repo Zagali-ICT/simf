@@ -105,6 +105,8 @@ internal sealed partial class AdminAccountService
             target.Id, resolvedProfileTypeId,
             currentFlags?.AllowsSpeakerMeeting ?? false,
             currentFlags?.AllowsDelegationMeeting ?? false,
+            // B22 — a scope flip never touches nationality (null = leave it alone).
+            nationalityId: null,
             now, cancellationToken);
 
         // Audit the completed flip — after it is durable, so the trail reflects

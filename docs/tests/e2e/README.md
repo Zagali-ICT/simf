@@ -48,7 +48,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/admins/pending` | [`cp-admin-admins-pending.md`](cp-admin-admins-pending.md) | E2E-APN-001..015 |
 | `/admin/others` | [`cp-admin-others.md`](cp-admin-others.md) | E2E-OTH-001..024 |
 | `/admin/others/pending` | [`cp-admin-others-pending.md`](cp-admin-others-pending.md) | E2E-OPN-001..016 |
-| `/admin/visitors` | [`cp-admin-visitors.md`](cp-admin-visitors.md) | E2E-VIS-001..025 |
+| `/admin/visitors` | [`cp-admin-visitors.md`](cp-admin-visitors.md) | E2E-VIS-001..032 |
 | `/admin/visitors/pending` | [`cp-admin-visitors-pending.md`](cp-admin-visitors-pending.md) | E2E-VPN-001..025 |
 | `/admin/visitors/vip` | [`cp-vip-registration.md`](cp-vip-registration.md) | E2E-VIPR-001..011 |
 | `/admin/visitors/vip/export` | [`cp-vip-export.md`](cp-vip-export.md) | E2E-VIPX-001..008 |
@@ -88,7 +88,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/speaker-meeting-requests` | [`cp-admin-speaker-meeting-requests.md`](cp-admin-speaker-meeting-requests.md) | E2E-SMR-001..023 |
 | `/admin/speaker-availability` | [`cp-admin-speaker-availability.md`](cp-admin-speaker-availability.md) | E2E-SAV-001..007 |
 | `/admin/hall-availability` | [`cp-admin-hall-availability.md`](cp-admin-hall-availability.md) | E2E-HAV-001..007 |
-| `/admin/delegation-meetings` | [`cp-admin-delegation-meetings.md`](cp-admin-delegation-meetings.md) | E2E-DLM-001..013 |
+| `/admin/delegation-meetings` | [`cp-admin-delegation-meetings.md`](cp-admin-delegation-meetings.md) | E2E-DLM-001..019 |
 | `/admin/delegation-availability` | [`cp-admin-delegation-availability.md`](cp-admin-delegation-availability.md) | E2E-DAV-001..007 |
 | _(cross-surface bi-meeting lifecycle)_ | [`bi-meeting-lifecycle.md`](bi-meeting-lifecycle.md) | E2E-BML-001..016 |
 | `/admin/document-requests` | [`cp-document-requests.md`](cp-document-requests.md) | E2E-CPDR-001..008 |
@@ -266,10 +266,10 @@ API endpoints land (D-249). The per-screen design docs live under
 | #36 `chatbot` (AI assistant → `/app/ai/assistance`) | [`mobile-chatbot.md`](mobile-chatbot.md) | E2E-MOB036-001..007 |
 | #24-01 `archiveDetail` (`GET /app/archive/{id}`) | [`mobile-archive-detail.md`](mobile-archive-detail.md) | E2E-MOB024D-001..009 |
 | `My Contacts` / `Share my contact` (`/app/account/share-token` + `/app/contacts/*`) | [`mobile-my-contacts.md`](mobile-my-contacts.md) | E2E-MMC-001..014 |
-| `requests` (`GET /app/my-requests` + `POST …/document-requests` · `…/badge-requests` · `…/my-requests/cancel`) — Wave 5 (D-500), retitled **طلباتي** when the meetings page split off (D-745); the full requests history | [`mobile-requests.md`](mobile-requests.md) | E2E-REQ-001..013 |
+| `requests` (`GET /app/my-requests` + `POST …/document-requests` · `…/badge-requests` · `…/my-requests/cancel`) — Wave 5 (D-500), retitled **طلباتي** when the meetings page split off (D-745); the full requests history | [`mobile-requests.md`](mobile-requests.md) | E2E-REQ-001..016 |
 | `meetings` (`GET /app/my-requests` filtered to approved-upcoming meetings) — **اللقاءات الثنائية** (D-745), Figma `1408:9726`; bi-meeting rework: **flag-gated** (not VIP), **two** request buttons (طلب مقابلة متحدث / طلب اجتماع وفد) + السجل history + speaker/flag cards | [`mobile-meetings.md`](mobile-meetings.md) | E2E-MOBMEET-001..013 |
-| `Delegation meeting request` sheet — bi-meeting rework: the delegation twin of the speaker request sheet; opened from `/meetings` (طلب اجتماع وفد) + a tapped delegation card; `POST /app/delegation-meeting-requests` | [`mobile-delegation-request.md`](mobile-delegation-request.md) | E2E-DELREQ-001..010 |
-| #117 `meetingConfirm` (`/meeting-confirm?requestId=…` → `POST /app/delegation-meeting-requests/{id}/confirm`) — bi-meeting rework: delegation other-party confirm-on-tap, reached from a `MeetingRequested` notification | [`mobile-meeting-confirm.md`](mobile-meeting-confirm.md) | E2E-MOBMC-001..007 |
+| `Delegation meeting request` sheet — bi-meeting rework: the delegation twin of the speaker request sheet; opened from `/meetings` (طلب اجتماع وفد) + a tapped delegation card; `POST /app/delegation-meeting-requests` | [`mobile-delegation-request.md`](mobile-delegation-request.md) | E2E-DELREQ-001..012 |
+| #117 `meetingConfirm` (`/meeting-confirm?requestId=…` → `POST /app/delegation-meeting-requests/{id}/confirm` + `…/decline`) — bi-meeting rework: delegation other-party confirm-on-tap, reached from a `MeetingRequested` notification | [`mobile-meeting-confirm.md`](mobile-meeting-confirm.md) | E2E-MOBMC-001..010 |
 | `myMeetings` (`GET /app/my-requests`, filtered to meetings) — المقابلات (D-587), Figma `1701:9406`; speaker + delegation meetings over status chips; reached from the My-Area "مقابلات" counter | [`mobile-my-meetings.md`](mobile-my-meetings.md) | E2E-MOBMTG-001..007 |
 | `Confirm Face ID` step-up (`POST /app/auth/device-keys/step-up` + gated register) — #7a biometric-enable; **D-738** OS device-credential confirm + sign-in device-PIN fallback | [`mobile-biometric-step-up.md`](mobile-biometric-step-up.md) | E2E-MBSU-001..015 |
 | `Change email` self-service (`POST /app/auth/change-email/send-otp` + `/confirm`) - Build #24 signed-in login-email change; code emailed to the NEW address, confirm rolls the stamp + forces a fresh sign-in; reached from More → Settings | [`mobile-change-email.md`](mobile-change-email.md) | E2E-MCE-001..011 |
