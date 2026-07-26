@@ -16,7 +16,7 @@
 | **Page** | mobile exhibitor captured-visitor list (no Figma frame — functional page) |
 | **Route** | app screen `/exhibitor/visitors` (`RouteNames.myVisitors`) |
 | **Surface** | Mobile (Flutter); single-column list |
-| **Role/gate** | Exhibitor (approved, non-visitor). A visitor-tier caller → server 403 → the forbidden surface |
+| **Role/gate** | Exhibitor (approved) — DEF-EXH-001: the server authorises on `ProfileType.MobileAppRole == Exhibitor` (D-519), so Staff / Moderator / Media / Sponsor / plain Visitor callers all get 403 → the forbidden surface |
 | **Test runner** | Flutter widget/unit test + device manual |
 
 > **Notes:** each row is the shared `ContactCard` with the visitor's card

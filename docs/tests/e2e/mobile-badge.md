@@ -34,6 +34,7 @@
 | E2E-MOB032-004 | Arabic locale renders the Arabic name (RTL) alongside the QR | i18n | P2 | authored ✓ (screen `renders the Arabic name + hint in Arabic`) |
 | E2E-MOB032-005 | **Header back chevron → Home (bug fix):** on the Badge tab of the bottom-nav shell the header back chevron returns to the **Home** tab. Previously it was a dead no-op — an in-shell tab never leaves the shell's `/` location, so `backOrHome`'s `goNamed(home)` navigated to `/` while already there | nav | P1 | authored ✓ (`simf_page_shell_test` — `backOrHome on an in-shell tab (nothing to pop) switches the shell to the Home tab`) |
 | E2E-MOB032-006 | **Strip tinted by profile-type colour (D-763):** the identity strip fill is the account's `identity.pageColor` (`ProfileType.PageColor`, e.g. VIP `#0E7490`); a null/invalid value falls back to the token gold | happy | P1 | authored ✓ (screen `the identity strip is tinted by the profile-type pageColor` + `... falls back to token gold with no pageColor`) |
+| E2E-MOB032-007 | **Badge actions gate on the app ROLE, not `isVisitor` (DEF-EXH-005):** Exhibitor → "Scan visitor badge" only; Visitor (including Media / Sponsor partner types, which resolve to `AppRole.Visitor`) → the two contact actions; Staff / Moderator / not-yet-approved → **no** action button | security | P0 | authored ✓ (screen `an exhibitor sees scan-visitor…`, `a partner-type visitor … never sees scan-visitor (DEF-EXH-005)`, `a Staff badge shows no action button (DEF-EXH-005)`, `a Moderator badge …`) |
 
 ## Scenarios
 
@@ -134,9 +135,48 @@ Scenario: The back chevron on the Badge tab returns to Home
 **Evidence:** `simf_page_shell_test.dart` — `backOrHome on an in-shell tab
 (nothing to pop) switches the shell to the Home tab`.
 
+### E2E-MOB032-007 — Badge actions gate on the app role (DEF-EXH-005)
+
+```gherkin
+Scenario: An exhibitor sees only the lead-capture action
+  Given I am signed in with an Approved account whose profile type carries
+    MobileAppRole.Exhibitor
+  When the badge screen renders its actions
+  Then only "مسح بطاقة زائر / Scan visitor badge" is shown
+  And tapping it opens the exhibitor scan screen (/exhibitor/scan)
+
+Scenario: A partner-type visitor keeps the contact actions
+  Given I am signed in with an Approved Media or Sponsor account
+    (ProfileType.IsForVisitor = false, MobileAppRole.None → app role "Visitor")
+  When the badge screen renders its actions
+  Then "امسح لإضافة شخص / Scan to add a contact" and
+    "شارك جهة اتصالي / Share my contact" are shown
+  And "مسح بطاقة زائر / Scan visitor badge" is NOT shown
+
+Scenario: Staff and Moderator are offered no badge action
+  Given I am signed in with an Approved Staff (or Moderator) account
+  When the badge screen renders its actions
+  Then no action button is shown at all
+```
+
+> Before the fix the branch keyed off the dashboard's `identity.isVisitor`, which
+> is `false` for **every** partner profile type, so Staff, Moderator, Media and
+> Sponsor were all shown the exhibitor-only scan button and the router
+> (`_routeRoles[106] = {exhibitor}`) then bounced them home — a visible dead
+> control. The button now keys off `CurrentUser.effectiveAppRole`, so a
+> not-yet-approved account (which presents as `Guest`, D-666) also sees none.
+
+**Evidence:** screen tests `an exhibitor sees scan-visitor, not the contact
+buttons (D-426)`, `a partner-type visitor (isVisitor=false, role Visitor) keeps
+the contact actions and never sees scan-visitor (DEF-EXH-005)`, `a Staff badge
+shows no action button (DEF-EXH-005)`, `a Moderator badge shows no action button
+(DEF-EXH-005)`.
+
 ---
 
-_Last reviewed:_ `2026-07-24` by `SIMF Team` — **feature: the identity strip is now
+_Last reviewed:_ `2026-07-26` by `SIMF Team` — **security fix: the badge actions
+gate on the signed-in app role instead of the dashboard `isVisitor` flag
+(E2E-MOB032-007, DEF-EXH-005).** _Prior:_ `2026-07-24` — **feature: the identity strip is now
 tinted by the profile type's server colour (`ProfileType.PageColor` → `pageColor`),
 gold fallback + luminance-based ink (E2E-MOB032-006, D-763).** _Prior:_ `2026-07-24`
 — bug fix: header back chevron on the in-shell Badge tab (E2E-MOB032-005); `2026-07-11`

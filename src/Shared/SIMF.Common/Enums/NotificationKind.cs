@@ -195,4 +195,13 @@ public enum NotificationKind
     /// no schema/data change.</summary>
     [Display(Description = nameof(ResNotificationKind.AdminAnnouncement), ResourceType = typeof(ResNotificationKind))]
     AdminAnnouncement = 56,
+
+    /// <summary>DEF-EXH-002 — dispatched to a visitor when an exhibitor captures
+    /// them as a lead by scanning their entry badge, naming the exhibitor so the
+    /// visitor knows who now holds their contact card. Raised once per NEW
+    /// capture; an idempotent re-scan stays silent. In-app row only. Additive
+    /// value (append-only, the frozen-enum rule); persisted by NAME so no
+    /// schema/data change.</summary>
+    [Display(Description = nameof(ResNotificationKind.ExhibitorLeadCaptured), ResourceType = typeof(ResNotificationKind))]
+    ExhibitorLeadCaptured = 57,
 }

@@ -142,7 +142,14 @@ class _BadgeScreenState extends ConsumerState<BadgeScreen> {
           maskedId: maskedBadgeId(referenceNumber ?? qrId),
         ),
         const SizedBox(height: SimfTokens.space4),
-        BadgeActions(l10n: l10n, isVisitor: identity.isVisitor),
+        // DEF-EXH-005 — the actions gate on the signed-in app ROLE, not on the
+        // dashboard's isVisitor flag (which is false for every partner type, so
+        // Staff / Moderator / Media / Sponsor were all shown the exhibitor-only
+        // scan button and then bounced by the router).
+        BadgeActions(
+          l10n: l10n,
+          role: _currentUser?.effectiveAppRole ?? AppRole.guest,
+        ),
       ],
     );
   }

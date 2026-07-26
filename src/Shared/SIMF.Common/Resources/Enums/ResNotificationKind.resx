@@ -37,4 +37,5 @@
   <data name="MeetingRequested" xml:space="preserve"><value>You have a meeting request</value></data>
   <data name="MeetingReminder" xml:space="preserve"><value>Meeting starting soon</value></data>
   <data name="AdminAnnouncement" xml:space="preserve"><value>Announcement from SIMF</value></data>
+  <data name="ExhibitorLeadCaptured" xml:space="preserve"><value>Your details were shared with an exhibitor</value></data>
 </root>

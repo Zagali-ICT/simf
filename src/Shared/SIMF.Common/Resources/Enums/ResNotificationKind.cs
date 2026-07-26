@@ -45,6 +45,7 @@ public static class ResNotificationKind
     public static string MeetingRequested => Get(nameof(MeetingRequested));
     public static string MeetingReminder => Get(nameof(MeetingReminder));
     public static string AdminAnnouncement => Get(nameof(AdminAnnouncement));
+    public static string ExhibitorLeadCaptured => Get(nameof(ExhibitorLeadCaptured));
 
     private static string Get(string key) =>
         ResourceManager.GetString(key, CultureInfo.CurrentUICulture) ?? key;

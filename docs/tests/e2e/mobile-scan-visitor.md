@@ -31,7 +31,7 @@
 | **Page** | mobile exhibitor lead-capture scan (no Figma frame — functional page) |
 | **Route** | app screen `/exhibitor/scan` (`RouteNames.scanVisitor`) |
 | **Surface** | Mobile (Flutter); shared `QrScanView` (camera + manual entry) |
-| **Role/gate** | Exhibitor (approved, non-visitor). A visitor-tier caller → server 403 → a toast |
+| **Role/gate** | Exhibitor (approved) — DEF-EXH-001: the server authorises on `ProfileType.MobileAppRole == Exhibitor` (D-519), so Staff / Moderator / Media / Sponsor / plain Visitor callers all get 403 → a toast |
 | **Test runner** | Flutter widget/golden test + device manual (camera path is device-only) |
 
 > **Notes:** the entry `QrId` scanned here is the visitor's badge QR; on success
@@ -63,7 +63,7 @@ Scenario: An unknown / expired badge code
   And the exhibitor stays on the scan screen (no navigation)
 ```
 
-### E2E-MOBSCANVIS-003 — Auth gate (visitor-tier → 403)
+### E2E-MOBSCANVIS-003 — Auth gate (any non-exhibitor → 403)
 
 ```gherkin
 Scenario: A non-exhibitor account is refused
@@ -72,6 +72,97 @@ Scenario: A non-exhibitor account is refused
   Then the forbidden toast ("يمكن لحسابات العارضين فقط…") shows
   And no capture happens; the screen stays put
 ```
+
+### E2E-MOBSCANVIS-007 — Only a real exhibitor may scan (DEF-EXH-001)
+
+```gherkin
+Scenario Outline: Every non-exhibitor caller is refused, not just visitors
+  Given a signed-in Approved account whose profile type is <type>
+  When it calls POST /api/v1/app/exhibitor/visitors/scan with any badge code
+  Then the API answers 403 "Only exhibitor accounts can scan visitor badges."
+  And GET /api/v1/app/exhibitor/visitors also answers 403
+  And no visitor PII (email, Saudi mobile, international mobile) is returned
+
+  Examples:
+    | type      |
+    | Normal    |
+    | Staff     |
+    | Moderator |
+
+Scenario: A genuine exhibitor may scan
+  Given a signed-in Approved account whose profile type is "Exhibitor"
+    (ProfileType.MobileAppRole = Exhibitor, D-519)
+  When it scans an eligible visitor badge
+  Then the API answers 200 with the visitor's full card
+```
+
+> The old rule authorised on "the profile type is NOT a visitor type", which
+> admitted every partner type — Staff, Moderator, Media and Sponsor tokens could
+> call both endpoints and harvest visitor PII (login email + both mobile
+> numbers). `ProfileType` lives on the App DB beside `UserProfile`, so the
+> `MobileAppRole` test is a single-database query (D-157: no cross-DB join).
+
+**Evidence:** `tests/SIMF.Api.Tests/ExhibitorVisitorScanTests.cs` —
+`Exhibitor_scans_visitor_badge_captures_and_returns_full_card`,
+`Visitor_caller_cannot_scan_badges_403`, `Staff_caller_cannot_scan_badges_403`,
+`Moderator_caller_cannot_scan_badges_403`.
+
+### E2E-MOBSCANVIS-008 — Only a visitor may be scanned (DEF-EXH-003)
+
+```gherkin
+Scenario Outline: An ineligible badge subject is indistinguishable from unknown
+  Given a signed-in Approved exhibitor
+  When it scans <badge>
+  Then the API answers 404 "No visitor badge matches this code."
+  And nothing is added to My Visitors
+
+  Examples:
+    | badge                                   |
+    | a Staff account's badge                 |
+    | another exhibitor's badge               |
+    | a deactivated (soft-deleted) profile    |
+    | an unknown code                         |
+```
+
+> The scan previously resolved a `QrId` with no `IsActive` and no audience-side
+> filter, so a staff badge or a rival exhibitor's badge was capturable as a
+> "lead". The four cases share ONE error shape so the scan never leaks whether a
+> badge exists but is ineligible. A visitor with no tier assigned stays eligible
+> — the approve-time tier is optional (CS-D / D-386), so a null `ProfileType` is
+> an ordinary audience account, not a partner.
+
+**Evidence:** `ExhibitorVisitorScanTests.Ineligible_badge_subject_returns_404`,
+`ExhibitorVisitorScanTests.Unknown_badge_returns_404`.
+
+### E2E-MOBSCANVIS-009 — The visitor is told their card was shared (DEF-EXH-002)
+
+```gherkin
+Scenario: A new capture notifies the visitor, naming the exhibitor
+  Given a signed-in Approved exhibitor named "Acme Marine / أكمي البحرية"
+  And an eligible visitor badge that this exhibitor has not captured before
+  When the exhibitor scans it
+  Then the capture succeeds (200)
+  And exactly ONE in-app notification of kind "ExhibitorLeadCaptured" is
+    written for the VISITOR, in the "Account" group
+  And its body names "Acme Marine" (Arabic body names "أكمي البحرية")
+  And no email is queued
+
+Scenario: An idempotent re-scan does not re-notify
+  When the same exhibitor scans the same badge again (refreshing the note)
+  Then the capture still succeeds (200)
+  And the visitor still has exactly ONE ExhibitorLeadCaptured notification
+```
+
+> DEF-EXH-002 (privacy): the scan reads the visitor's ENTRY badge and returns a
+> full contact card, so the visitor is at minimum told who now holds it. The
+> notification is best-effort (`TryDispatchAsync`) — a dispatch failure never
+> undoes the committed capture. **Not implemented, deliberately:** an opt-out
+> flag / consent gate on the scan itself. Whether an exhibitor may scan at all is
+> a product decision affecting live event operations; the recommended design is
+> written up for the owner rather than shipped.
+
+**Evidence:**
+`ExhibitorVisitorScanTests.New_capture_notifies_the_visitor_once_and_a_rescan_is_silent`.
 
 ### E2E-MOBSCANVIS-004 — Manual-entry path + generic failure
 
@@ -124,5 +215,9 @@ covers the always-mounted manual field with the camera off; `scan_gate_test`
 
 ---
 
-_Last reviewed:_ `2026-07-11` by `SIMF Team` — D-737 unified scanner (QrScanView
-now hosts SimfScannerBody + camera-error state). Earlier: `2026-07-04`.
+_Last reviewed:_ `2026-07-26` by `SIMF Team` — security/privacy fixes
+DEF-EXH-001 (only `MobileAppRole.Exhibitor` may scan), DEF-EXH-003 (the scanned
+subject must be an active audience account), DEF-EXH-002 (a new capture notifies
+the visitor once, naming the exhibitor) — E2E-MOBSCANVIS-007..009. Earlier:
+`2026-07-11` — D-737 unified scanner (QrScanView now hosts SimfScannerBody +
+camera-error state); `2026-07-04`.

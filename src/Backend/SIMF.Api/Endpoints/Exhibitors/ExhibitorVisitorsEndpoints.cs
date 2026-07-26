@@ -9,14 +9,16 @@ using SIMF.Contracts.Exhibitors;
 
 namespace SIMF.Api.Endpoints.Exhibitors;
 
-// D-426 — exhibitor ("Other" profile type) lead capture (app audience). App-only,
-// no CP surface and no permission code — like the visitor contact-share feature
-// it keys off RequireApprovedAccount + the app token; the non-visitor (exhibitor)
-// check is enforced in the service (403 for visitor-tier callers).
+// D-426 — exhibitor lead capture (app audience). App-only, no CP surface and no
+// permission code — like the visitor contact-share feature it keys off
+// RequireApprovedAccount + the app token; the exhibitor check is enforced in the
+// service. DEF-EXH-001: that check is now "the caller's profile type carries
+// MobileAppRole.Exhibitor" (D-519), not the old "any non-visitor type", which let
+// Staff / Moderator / Media / Sponsor tokens harvest visitor PII.
 
 /// <summary>POST — scan a visitor's entry-badge QR → capture to My Visitors +
-/// return the visitor's full card. 403 if the caller is a visitor, 404 if no
-/// badge matches.</summary>
+/// return the visitor's full card. 403 unless the caller is an exhibitor, 404 if
+/// no eligible visitor badge matches.</summary>
 public sealed class ScanVisitorBadgeEndpoint(IExhibitorVisitorService service)
     : Endpoint<ScanVisitorBadgeRequest, ApiResult<VisitorCard>>
 {
@@ -42,7 +44,7 @@ public sealed class ScanVisitorBadgeEndpoint(IExhibitorVisitorService service)
 }
 
 /// <summary>GET — the exhibitor's captured visitors (My Visitors), newest first,
-/// each with the visitor's full card. 403 if the caller is a visitor.</summary>
+/// each with the visitor's full card. 403 unless the caller is an exhibitor.</summary>
 public sealed class ListMyVisitorsEndpoint(IExhibitorVisitorService service)
     : EndpointWithoutRequest<ApiResult<IReadOnlyList<ExhibitorVisitorRow>>>
 {

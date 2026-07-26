@@ -1,8 +1,11 @@
 // Tests: SIMF.Api.Tests/ExhibitorVisitorScanTests.cs
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using SIMF.Application.Exhibitors.Abstractions;
 using SIMF.Application.IdentityAccess.Abstractions;
+using SIMF.Application.Notifications;
 using SIMF.Common;
+using SIMF.Common.Enums;
 using SIMF.Contracts.Contacts;
 using SIMF.Contracts.Exhibitors;
 using SIMF.Domain.Exhibitors;
@@ -15,13 +18,18 @@ namespace SIMF.Infrastructure.Exhibitors;
 /// records the capture, and projects the visitor's full card live from the
 /// App-DB <c>UserProfile</c> (+ Organisation / Country) and a permitted email
 /// round-trip on the Identity DB (D-157 — bare-Guid logical FKs, no join, no PII
-/// snapshot). Only non-visitor ("Other") profile types may use this; a
-/// visitor-tier caller is rejected with 403.
+/// snapshot). DEF-EXH-001: only a genuine exhibitor (a profile type carrying
+/// <see cref="MobileAppRole.Exhibitor"/>, D-519) may use this; every other
+/// caller is rejected with 403. DEF-EXH-003: the scanned subject must itself be
+/// an active audience-side account. DEF-EXH-002: a new capture notifies the
+/// visitor, naming the exhibitor their card was shared with.
 /// </summary>
 internal sealed class ExhibitorVisitorService(
     SimfAppDbContext appDbContext,
     IIdentityUserDirectory userDirectory,
-    TimeProvider timeProvider) : IExhibitorVisitorService
+    TimeProvider timeProvider,
+    INotificationDispatcher notifications,
+    ILogger<ExhibitorVisitorService> logger) : IExhibitorVisitorService
 {
     private const int NoteMaxLength = 512;
 
@@ -29,7 +37,7 @@ internal sealed class ExhibitorVisitorService(
         Guid exhibitorUserId, string qrId, string? note,
         CancellationToken cancellationToken = default)
     {
-        await EnsureExhibitorAsync(exhibitorUserId, cancellationToken);
+        var exhibitor = await EnsureExhibitorAsync(exhibitorUserId, cancellationToken);
 
         var normalised = (qrId ?? string.Empty).Trim().ToUpperInvariant();
         if (normalised.Length == 0)
@@ -39,9 +47,19 @@ internal sealed class ExhibitorVisitorService(
                 "رمز البطاقة مطلوب.");
         }
 
+        // DEF-EXH-003 — the SUBJECT must be eligible too, not just the caller: an
+        // ACTIVE profile that is not a partner-side (IsForVisitor=false) type, so a
+        // staff badge or another exhibitor's badge is never capturable as a "lead".
+        // A visitor with no tier assigned yet stays eligible — the approve-time tier
+        // is optional (AdminAccountService.Approval, CS-D / D-386), so a null
+        // ProfileType is an ordinary audience account, not a partner. An ineligible
+        // badge returns the same 404 as an unknown one — the caller never learns
+        // whether the code exists.
         var visitorId = await appDbContext.UserProfiles
             .AsNoTracking()
-            .Where(p => p.QrId == normalised)
+            .Where(p => p.QrId == normalised
+                && p.IsActive
+                && (p.ProfileType == null || p.ProfileType.IsForVisitor))
             .Select(p => (Guid?)p.UserId)
             .FirstOrDefaultAsync(cancellationToken);
         if (visitorId is null)
@@ -91,6 +109,11 @@ internal sealed class ExhibitorVisitorService(
         }
         await appDbContext.SaveChangesAsync(cancellationToken);
 
+        if (existing is null)
+        {
+            await NotifyVisitorCapturedAsync(visitorId.Value, exhibitor, cancellationToken);
+        }
+
         var cards = await ResolveCardsAsync(new[] { visitorId.Value }, cancellationToken);
         return cards[visitorId.Value];
     }
@@ -120,28 +143,76 @@ internal sealed class ExhibitorVisitorService(
             .ToList();
     }
 
-    /// <summary>403 unless the caller has a non-visitor ("Other") profile type.
-    /// A visitor-tier account (or one with no/unknown profile type) cannot
-    /// capture leads.</summary>
-    private async Task EnsureExhibitorAsync(Guid userId, CancellationToken cancellationToken)
+    /// <summary>DEF-EXH-001 — 403 unless the caller is a genuine EXHIBITOR: an
+    /// active profile whose assigned profile type carries
+    /// <see cref="MobileAppRole.Exhibitor"/> (D-519). The former test admitted any
+    /// profile type that merely was NOT a visitor type, so Staff / Moderator /
+    /// Media / Sponsor tokens could call the scan + list endpoints and harvest
+    /// visitor PII (login email and both mobile numbers).
+    ///
+    /// <para>No cross-database work (D-157): <c>ProfileType</c> lives on the App DB
+    /// beside <c>UserProfile</c>, and <c>MobileAppRole</c> is the same column the
+    /// JWT's app role is resolved from
+    /// (<c>UserProfileRepository.GetAssignedProfileTypeRoleAsync</c>).</para>
+    ///
+    /// <para>Returns the exhibitor's display names for the subject notification
+    /// (DEF-EXH-002).</para></summary>
+    private async Task<ExhibitorIdentity> EnsureExhibitorAsync(
+        Guid userId, CancellationToken cancellationToken)
     {
-        var isVisitor = await appDbContext.UserProfiles
+        var exhibitor = await appDbContext.UserProfiles
             .AsNoTracking()
-            .Where(p => p.UserId == userId)
-            .Select(p => p.ProfileType == null || p.ProfileType.IsForVisitor)
+            .Where(p => p.UserId == userId
+                && p.IsActive
+                && p.ProfileType != null
+                && p.ProfileType.MobileAppRole == MobileAppRole.Exhibitor)
+            .Select(p => new ExhibitorIdentity(p.Name, p.NameArabic))
             .FirstOrDefaultAsync(cancellationToken);
-        // No profile row → FirstOrDefault returns false (default bool); a missing
-        // profile is not an exhibitor either, so reject.
-        var hasProfile = await appDbContext.UserProfiles
-            .AsNoTracking()
-            .AnyAsync(p => p.UserId == userId, cancellationToken);
-        if (!hasProfile || isVisitor)
+        if (exhibitor is null)
         {
             throw new ApiException(ErrorCodes.Forbidden, 403,
                 "Only exhibitor accounts can scan visitor badges.",
                 "مسح بطاقات الزوار متاح لحسابات العارضين فقط.");
         }
+        return exhibitor;
     }
+
+    /// <summary>DEF-EXH-002 — tell the visitor, in-app, that their contact card
+    /// was shared with the NAMED exhibitor who scanned their entry badge. Raised
+    /// once per new capture only; the idempotent re-scan path (which merely
+    /// refreshes the note) stays silent. Best-effort like the other request /
+    /// booking flows — a dispatch failure never undoes the committed capture.
+    /// Notifications live on the Identity DB, dispatched through its own unit of
+    /// work, so this is not a cross-database transaction (D-157).</summary>
+    private Task NotifyVisitorCapturedAsync(
+        Guid visitorUserId, ExhibitorIdentity exhibitor,
+        CancellationToken cancellationToken)
+    {
+        var name = string.IsNullOrWhiteSpace(exhibitor.Name)
+            ? "An exhibitor"
+            : exhibitor.Name.Trim();
+        var nameArabic = string.IsNullOrWhiteSpace(exhibitor.NameArabic)
+            ? "أحد العارضين"
+            : exhibitor.NameArabic.Trim();
+        return notifications.TryDispatchAsync(new NotificationRequest
+        {
+            UserId = visitorUserId,
+            Kind = NotificationKind.ExhibitorLeadCaptured,
+            Title = "Your details were shared with an exhibitor",
+            TitleArabic = "تمت مشاركة بياناتك مع أحد العارضين",
+            Body = $"{name} scanned your entry badge, so your contact card "
+                + "(name, job title, organisation, email and mobile) was shared with them.",
+            BodyArabic = $"قام {nameArabic} بمسح بطاقة دخولك، وتمت مشاركة بطاقة "
+                + "التواصل الخاصة بك (الاسم والمسمى الوظيفي والجهة والبريد الإلكتروني والجوال) معه.",
+            Severity = NotificationSeverity.Info,
+            SendEmail = false,
+        }, logger, cancellationToken);
+    }
+
+    /// <summary>The scanning exhibitor's bilingual display name — carried from the
+    /// authorisation query into the subject notification so the visitor is told WHO
+    /// their card went to.</summary>
+    private sealed record ExhibitorIdentity(string Name, string NameArabic);
 
     /// <summary>Batch-resolves visitor cards from profiles + org / country lookups
     /// (App DB) and a single email round-trip (Identity DB). A subject with no
