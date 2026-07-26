@@ -3276,7 +3276,11 @@
   <data name="Admin.Invitations.Saved" xml:space="preserve"><value>Invitation saved.</value></data>
   <data name="Admin.Invitations.Fallback" xml:space="preserve"><value>The operation could not be completed.</value></data>
   <data name="Admin.Sessions.Delete.Title" xml:space="preserve"><value>Deactivate session</value></data>
-  <data name="Admin.Sessions.Delete.Message" xml:space="preserve"><value>Deactivate the session "{0}"? It will be hidden from the public programme.</value></data>
+  <data name="Admin.Sessions.Delete.Message" xml:space="preserve"><value>Deactivate the session "{0}"? It will be hidden from the public programme, and everyone who booked or saved it is told it was cancelled.</value></data>
+  <data name="Admin.Sessions.Release.Title" xml:space="preserve"><value>This change releases every held seat</value></data>
+  <data name="Admin.Sessions.Release.Message" xml:space="preserve"><value>Changing the hall or the start/end time invalidates every seat already held for this session: {0} attendee registration(s) and {1} admin-reserved row block(s) will be released. The attendees are notified by app and email and must book again; the row blocks have to be re-created by hand. Continue?</value></data>
+  <data name="Admin.Sessions.Release.Confirm" xml:space="preserve"><value>Release and save</value></data>
+  <data name="Admin.Sessions.UpdatedWithReleases" xml:space="preserve"><value>Session "{0}" was updated. {1} attendee registration(s) and {2} admin-reserved row block(s) were released — the attendees were notified; re-create the row blocks.</value></data>
   <data name="Module.MediaLibrary" xml:space="preserve"><value>Media library</value></data>
   <data name="Admin.MediaLibrary.Title" xml:space="preserve"><value>Media library</value></data>
   <data name="Admin.MediaLibrary.Col.Category" xml:space="preserve"><value>Category</value></data>

@@ -31,6 +31,15 @@ internal sealed class AdminSessionService(
     INotificationDispatcher notifications,
     ILogger<AdminSessionService> logger) : IAdminSessionService
 {
+    // A5 — the page that can actually release a held seat. The old copy sent the
+    // admin to the Bookings desk, which is an explicitly read-only monitor with no
+    // row actions, so the instruction could not be carried out. Named once here so
+    // the deactivate-via-update and the delete path stay in step.
+    private const string SeatPlanPageEnglish =
+        "the Session seat plans page (/admin/sessions/seat-plans)";
+    private const string SeatPlanPageArabic =
+        "صفحة مخططات مقاعد الجلسات (/admin/sessions/seat-plans)";
+
     public async Task<GridPage<AdminSessionSummary>> ListAllAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
@@ -123,7 +132,38 @@ internal sealed class AdminSessionService(
             .Include(row => row.Themes)
             .Include(row => row.Outcomes)
             .SingleOrDefaultAsync(row => row.Id == id, cancellationToken);
-        return session is null ? null : ToDetail(session);
+        if (session is null)
+        {
+            return null;
+        }
+        // A1/A6 — stamp the current seat holding so the CP edit form can warn,
+        // with a real number, that changing the hall or the window will destroy
+        // it. One grouped round-trip; no extra endpoint and no extra permission.
+        var (reservations, adminBlocks) = await CountActiveHoldingAsync(id, cancellationToken);
+        return ToDetail(session) with
+        {
+            ActiveReservationCount = reservations,
+            ActiveAdminBlockCount = adminBlocks,
+        };
+    }
+
+    /// <summary>A1/A6 — the session's live seat holding split into the two things a
+    /// hall-or-time change destroys: visitor registrations (an attendee to notify)
+    /// and admin row-blocks (no attendee — the admin must re-paint them). Released
+    /// rows are excluded; a single grouped query serves both counts.</summary>
+    private async Task<(int Reservations, int AdminBlocks)> CountActiveHoldingAsync(
+        Guid sessionId, CancellationToken cancellationToken)
+    {
+        var held = await dbContext.SeatReservations
+            .AsNoTracking()
+            .Where(reservation =>
+                reservation.SessionId == sessionId && reservation.ReleasedAt == null)
+            .GroupBy(reservation => reservation.ReservedForUserId == null)
+            .Select(group => new { IsAdminBlock = group.Key, Count = group.Count() })
+            .ToListAsync(cancellationToken);
+        return (
+            held.SingleOrDefault(row => !row.IsAdminBlock)?.Count ?? 0,
+            held.SingleOrDefault(row => row.IsAdminBlock)?.Count ?? 0);
     }
 
     public async Task<AdminSessionDetail> CreateAsync(
@@ -338,8 +378,11 @@ internal sealed class AdminSessionService(
             {
                 throw new ApiException(
                     ErrorCodes.SessionHasActiveBookings, 409,
-                    $"This session has {heldVisitorBookings} active booking(s) — cancel or reject them before deactivating it.",
-                    $"لهذه الجلسة {heldVisitorBookings} حجز نشط — يجب إلغاؤها أو رفضها قبل إلغاء تفعيلها.");
+                    // A5 — name the page that can actually do it. The Bookings monitor
+                    // (/admin/bookings) is read-only with no row actions; releasing a
+                    // held seat is done on the Session seat plans page.
+                    $"This session has {heldVisitorBookings} active booking(s) — release them on {SeatPlanPageEnglish} before deactivating it.",
+                    $"لهذه الجلسة {heldVisitorBookings} حجز نشط — يجب تحريرها من {SeatPlanPageArabic} قبل إلغاء تفعيلها.");
             }
         }
 
@@ -405,6 +448,17 @@ internal sealed class AdminSessionService(
         session.SeatSelectionModeOverride = request.SeatSelectionModeOverride; // D-485
         session.Start = request.Start;
         session.End = request.End;
+        // A4 — a rescheduled session must stay remindable and rateable. Both workers
+        // treat a non-null stamp as "already done" (SessionReminderWorker filters on
+        // ReminderSent == null, SessionRatingPromptWorker on RatingPromptSent ==
+        // null), so a session moved after its reminder fired would never fire again
+        // for the new time. Cleared ONLY when the window actually moves — an unrelated
+        // save (title, speakers, captions) must not re-arm an already-sent reminder.
+        if (timeChanged)
+        {
+            session.ReminderSent = null;
+            session.RatingPromptSent = null;
+        }
         session.CapacityOverride = request.CapacityOverride;
         // §8 — live broadcast stream URLs (manual stub provider).
         session.LiveStreamUrl = NullIfBlank(request.LiveStreamUrl);
@@ -447,6 +501,27 @@ internal sealed class AdminSessionService(
             Detail = $"id={session.Id}; code={code}; active={session.IsActive}",
         }, cancellationToken);
 
+        // A1/A6 — the cascade release used to leave no trace anywhere: the admin saw
+        // only the generic "was updated" toast and the admin row-blocks vanished
+        // silently (they have no attendee, so even the notify path early-returns).
+        // Record WHAT was destroyed as its own audit row, and hand the counts back on
+        // the response so the Control Panel can say so.
+        var releasedForVisitors = releasedReservations
+            .Count(reservation => reservation.ReservedForUserId is not null);
+        var releasedAdminBlocks = releasedReservations.Count - releasedForVisitors;
+        if (releasedReservations.Count > 0)
+        {
+            await auditLog.WriteAsync(new AuditEntry
+            {
+                EventType = AuditEvents.SeatReservationReleased,
+                Outcome = AuditOutcome.Success,
+                ActorUserId = actorUserId,
+                Detail = $"session={session.Id}; code={code}; reason="
+                    + $"{(hallChanged ? "HallChanged" : "Rescheduled")}; "
+                    + $"reservations={releasedForVisitors}; adminBlocks={releasedAdminBlocks}",
+            }, cancellationToken);
+        }
+
         // S-1 — notify each affected visitor AFTER the commit (best-effort; the
         // dispatcher writes to the Identity DB via its own context, D-157).
         foreach (var reservation in releasedReservations)
@@ -454,7 +529,11 @@ internal sealed class AdminSessionService(
             await TryNotifyBookingReleasedAsync(reservation, session, cancellationToken);
         }
 
-        return (await GetAsync(session.Id, cancellationToken))!;
+        return (await GetAsync(session.Id, cancellationToken))! with
+        {
+            ReleasedReservationCount = releasedForVisitors,
+            ReleasedAdminBlockCount = releasedAdminBlocks,
+        };
     }
 
     public async Task DeactivateAsync(
@@ -486,9 +565,15 @@ internal sealed class AdminSessionService(
         {
             throw new ApiException(
                 ErrorCodes.SessionHasActiveBookings, 409,
-                $"This session has {activeBookings} active booking(s) — cancel or reject them before deleting it.",
-                $"لهذه الجلسة {activeBookings} حجز نشط — يجب إلغاؤها أو رفضها قبل حذفها.");
+                // A5 — name the page that can actually do it (see UpdateAsync).
+                $"This session has {activeBookings} active booking(s) — release them on {SeatPlanPageEnglish} before deleting it.",
+                $"لهذه الجلسة {activeBookings} حجز نشط — يجب تحريرها من {SeatPlanPageArabic} قبل حذفها.");
         }
+
+        // B2 — resolve the audience BEFORE the row is hidden. Cancelling a session
+        // used to write an audit row and nothing else: the card just disappeared from
+        // the app's "my sessions" list and the public agenda with no message at all.
+        var audience = await ResolveCancellationAudienceAsync(id, cancellationToken);
 
         session.IsActive = false;
         session.UpdatedAt = timeProvider.GetUtcNow();
@@ -499,8 +584,79 @@ internal sealed class AdminSessionService(
             EventType = AuditEvents.SessionDeactivated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
-            Detail = $"id={session.Id}; code={session.Code}",
+            Detail = $"id={session.Id}; code={session.Code}; notified={audience.Count}",
         }, cancellationToken);
+
+        // B2 — tell them AFTER the commit (best-effort; the dispatcher writes to the
+        // Identity DB via its own context, so it cannot share this transaction, D-157).
+        foreach (var userId in audience)
+        {
+            await TryNotifySessionCancelledAsync(userId, session, cancellationToken);
+        }
+    }
+
+    /// <summary>B2 — everyone who must be told a session was cancelled: the holders of
+    /// an active seat reservation, plus everyone who favourited it. Both audiences lose
+    /// the session card from their app agenda the moment the row is hidden, and neither
+    /// was told anything before. Distinct user ids, both queries on the App DB only
+    /// (a favourite / reservation carries a bare Guid to the Identity DB, D-157).</summary>
+    private async Task<List<Guid>> ResolveCancellationAudienceAsync(
+        Guid sessionId, CancellationToken cancellationToken)
+    {
+        var booked = await dbContext.SeatReservations
+            .AsNoTracking()
+            .Where(reservation =>
+                reservation.SessionId == sessionId
+                && reservation.ReleasedAt == null
+                && reservation.ReservedForUserId != null)
+            .Select(reservation => reservation.ReservedForUserId!.Value)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        var favourited = await dbContext.SessionFavourites
+            .AsNoTracking()
+            .Where(favourite => favourite.SessionId == sessionId)
+            .Select(favourite => favourite.UserId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        return booked.Union(favourited).ToList();
+    }
+
+    /// <summary>B2 — the "this session was cancelled" notice: an in-app row AND an
+    /// email (a visitor who never opens the app would otherwise turn up to a cancelled
+    /// session). Bilingual; the time is the Saudi wall clock, never UTC. Best-effort —
+    /// one failed recipient never aborts the rest, and the session is already
+    /// cancelled either way.</summary>
+    private async Task TryNotifySessionCancelledAsync(
+        Guid userId, Session session, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await notifications.DispatchAsync(new NotificationRequest
+            {
+                UserId = userId,
+                Kind = NotificationKind.SessionCancelled,
+                Title = "Session cancelled",
+                TitleArabic = "تم إلغاء الجلسة",
+                Body = $"\"{session.Title}\", scheduled for {session.Start.FormatSaudi()}, has been cancelled. It no longer appears in the programme.",
+                BodyArabic = $"تم إلغاء جلسة \"{session.TitleArabic}\" المقرّرة بتاريخ {session.Start.FormatSaudi()}. لم تعد تظهر في البرنامج.",
+                Severity = NotificationSeverity.Warning,
+                RelatedEntityType = "Session",
+                RelatedEntityId = session.Id,
+                // No DeduplicateByRelatedEntity: the audience is already a distinct
+                // set, so a user who both booked AND favourited is notified once, and
+                // a genuine second cancellation (re-activated, then cancelled again)
+                // must not be silently swallowed — that is the very failure this fixes.
+                SendEmail = true,
+            }, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex,
+                "Session-cancelled notification failed for user {UserId} on session {SessionId}",
+                userId, session.Id);
+        }
     }
 
     // P3.2 — D-231: the legal adjacent lifecycle moves. Any pair not listed
@@ -1053,12 +1209,16 @@ internal sealed class AdminSessionService(
                 Kind = NotificationKind.BookingRejected,
                 Title = "Seat reservation released",
                 TitleArabic = "تم إلغاء حجز المقعد",
-                Body = $"\"{session.Title}\" was rescheduled or moved to another hall, so your seat was released. Please book again.",
-                BodyArabic = $"تم تغيير موعد أو قاعة جلسة \"{session.TitleArabic}\"، لذا تم إلغاء حجز مقعدك. يرجى الحجز من جديد.",
+                Body = $"\"{session.Title}\" was rescheduled or moved to another hall (it now starts {session.Start.FormatSaudi()}), so your seat was released. Please book again.",
+                BodyArabic = $"تم تغيير موعد أو قاعة جلسة \"{session.TitleArabic}\" (تبدأ الآن {session.Start.FormatSaudi()})، لذا تم إلغاء حجز مقعدك. يرجى الحجز من جديد.",
                 Severity = NotificationSeverity.Warning,
                 RelatedEntityType = "Session",
                 RelatedEntityId = session.Id,
-                SendEmail = false,
+                // A2 — an in-app row alone reached nobody who does not open the app,
+                // and losing a booked seat is exactly the news that must not be
+                // missed. Email it too (same dispatch convention as every other
+                // must-not-miss kind: the dispatcher renders the body, no template).
+                SendEmail = true,
             }, cancellationToken);
         }
         catch (Exception ex)

@@ -82,11 +82,20 @@ invariant-culture parse) before sending. The geofence feeds the mobile
 arrival/attendance chain (`HallAttendance*`), not this CP page's render — it is a
 write-only configuration field here.
 
-## L-7 `HALL_IN_USE` is reserved, not enforced
-`ErrorCodes.HallInUse` exists but no code path throws it: Deactivate is currently
-**unconditional**. The intended future guard (refuse to deactivate a hall an
-active Session uses) is not wired — recorded here so the doc matches the code, not
-the aspiration. A `VenueMapNode` pointing at the hall is a separate matter (L-9):
+## L-7 `HALL_IN_USE` guards deactivation (A37)
+`AdminHallService.EnsureNoActiveSessionsAsync` counts `Sessions` where
+`HallId == id && IsActive`, and a non-zero count refuses the deactivation with a
+409 `HALL_IN_USE` naming that count (bilingual). Both destructive routes take the
+guard: the `Deactivate` action **and** an edit that clears the Active checkbox
+(`IsActive` true → false).
+
+Until A37 this flip was **unconditional**, and it never failed where the mistake
+was made: the breakage surfaced later and somewhere else, as a 400
+`SESSION_HALL_NOT_FOUND` the next time anyone edited one of the orphaned sessions
+(`AdminSessionService.ResolveHallAsync` rejects an inactive hall). Re-home or
+deactivate the sessions first, then the hall.
+
+A `VenueMapNode` pointing at the hall is a separate matter (L-9):
 the FK is **Restrict**, so a hall referenced by a map node cannot be *hard*-deleted
 at the DB level, but soft-delete (the only delete this page does) is unaffected.
 

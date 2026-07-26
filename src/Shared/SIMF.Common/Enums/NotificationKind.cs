@@ -195,4 +195,15 @@ public enum NotificationKind
     /// no schema/data change.</summary>
     [Display(Description = nameof(ResNotificationKind.AdminAnnouncement), ResourceType = typeof(ResNotificationKind))]
     AdminAnnouncement = 56,
+
+    /// <summary>B2 — dispatched when an administrator cancels (deactivates) a
+    /// programme session. Before this the session simply vanished from the app's
+    /// "my sessions" list and the public agenda with no message at all. Goes to
+    /// everyone still holding an active seat for it AND everyone who favourited
+    /// it (the two audiences whose agenda silently loses the card). Sent as an
+    /// in-app row + a queued email. <c>RelatedEntityType="Session"</c> +
+    /// <c>RelatedEntityId</c> carry the session id. Additive value (append-only,
+    /// the frozen-enum rule); persisted by NAME so no schema/data change.</summary>
+    [Display(Description = nameof(ResNotificationKind.SessionCancelled), ResourceType = typeof(ResNotificationKind))]
+    SessionCancelled = 57,
 }

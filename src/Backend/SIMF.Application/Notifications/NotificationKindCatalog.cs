@@ -57,7 +57,10 @@ public static class NotificationKindCatalog
         // M-4 — an admin-released seat is part of the booking lifecycle.
         NotificationKind.BookingReleased => Groups.Bookings,
 
-        NotificationKind.SessionReminder => Groups.Sessions,
+        NotificationKind.SessionReminder or
+        // B2 — an admin-cancelled session is a programme event, not a booking
+        // outcome: it belongs with the app's Sessions filter chip.
+        NotificationKind.SessionCancelled => Groups.Sessions,
 
         NotificationKind.MeetingScheduled or
         NotificationKind.MeetingCancelled or
@@ -94,6 +97,9 @@ public static class NotificationKindCatalog
         NotificationKind.EventRatingRequest => "/rate?code=Event",
         NotificationKind.AppRatingRequest => "/rate?code=App",
         NotificationKind.ExhibitionRatingRequest => "/rate?code=Exhibition",
+        // B2 — deliberately NO deep link: the cancelled session is soft-deleted, so
+        // its detail screen would 404. The tile is informational only.
+        NotificationKind.SessionCancelled => null,
         _ => null,
     };
 }

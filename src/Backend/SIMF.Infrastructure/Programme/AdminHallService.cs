@@ -188,6 +188,13 @@ internal sealed class AdminHallService(
             await EnsureCapacityNotBelowUsageAsync(id, request.Capacity, cancellationToken);
         }
 
+        // A37 — deactivating via the edit form's Active checkbox is the same
+        // destructive act as the Deactivate action, so it takes the same guard.
+        if (hall.IsActive && !request.IsActive)
+        {
+            await EnsureNoActiveSessionsAsync(id, cancellationToken);
+        }
+
         hall.Code = code; hall.Name = name; hall.NameArabic = nameArabic;
         hall.Capacity = request.Capacity;
         hall.Floor = floor; hall.EquipmentNotes = equipmentNotes;
@@ -220,6 +227,8 @@ internal sealed class AdminHallService(
                 "لم يتم العثور على القاعة.");
 
         if (!hall.IsActive) return;
+
+        await EnsureNoActiveSessionsAsync(id, cancellationToken);
 
         hall.IsActive = false;
         hall.UpdatedAt = timeProvider.GetUtcNow();
@@ -333,6 +342,27 @@ internal sealed class AdminHallService(
                 "يجب أن يكون نصف قطر السياج أكبر من 0 ولا يتجاوز 100000 متر.");
         }
         return (lat, lon, radius);
+    }
+
+    /// <summary>A37 — refuses to deactivate a hall that active sessions still sit in.
+    /// The flip itself always "worked"; the breakage surfaced later and somewhere else,
+    /// as a 400 <c>SESSION_HALL_NOT_FOUND</c> the next time anyone edited one of those
+    /// sessions (<c>AdminSessionService.ResolveHallAsync</c> rejects an inactive hall).
+    /// The bilingual message names the count so the admin knows how much re-homing the
+    /// change costs. Throws <see cref="ErrorCodes.HallInUse"/> — the code the halls
+    /// docs already reserved for exactly this guard.</summary>
+    private async Task EnsureNoActiveSessionsAsync(
+        Guid hallId, CancellationToken cancellationToken)
+    {
+        var sessionsInHall = await dbContext.Sessions
+            .AsNoTracking()
+            .CountAsync(session => session.HallId == hallId && session.IsActive, cancellationToken);
+        if (sessionsInHall > 0)
+        {
+            throw new ApiException(ErrorCodes.HallInUse, 409,
+                $"This hall is still used by {sessionsInHall} active session(s) — move or deactivate them before deactivating the hall.",
+                $"لا تزال هذه القاعة مستخدمة في {sessionsInHall} جلسة نشطة — انقلها أو ألغِ تفعيلها قبل إلغاء تفعيل القاعة.");
+        }
     }
 
     /// <summary>H-3 — guards a hall Capacity reduction. The new capacity must be

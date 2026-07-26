@@ -193,6 +193,14 @@ The Add/Edit form also lazy-loads its pickers on first render:
   - `SESSION_TYPE_REQUIRED` (400, #3) — no type on create; or clearing a set type on edit.
   - `SESSION_SPEAKER_REQUIRED` (400, #4) — a non-Event session with no speaker on create; or dropping the last speaker of a compliant non-Event on edit.
   - `SESSION_INVALID` (400) — live URL fails the shared `LiveStreamUrlPolicy`.
+  - `SESSION_HAS_ACTIVE_BOOKINGS` (409) — deactivating (via Delete, or by clearing
+    Active on the edit form) a session attendees still hold seats for. **A5:** the
+    message names the page that can actually release them — Session seat plans
+    (`/admin/sessions/seat-plans`, behind `SeatPlans.View`). It deliberately does
+    **not** name `/admin/bookings`, which is a read-only monitor with no row
+    actions.
+  - `SESSION_CAPACITY_BELOW_BOOKINGS` (409) — effective capacity under the held
+    seat count (skipped when the hall/time change already releases them).
 - **Excel import** (`ImportSessionsEndpoint` over `AdminGridImportEndpoint`):
   insert-only, dedup/row key = **Code**. Required headers: Code, Title,
   TitleArabic, Hall, Start, End. An optional **Speakers** column holds
@@ -213,7 +221,48 @@ The Add/Edit form also lazy-loads its pickers on first render:
   `Admin.Sessions.Updated` / `Admin.Sessions.Deactivated` (each `string.Format`
   with the title); import success `Grid.Import.Done`; load failure
   `Admin.Sessions.LoadFailed`; form fallback `Admin.Sessions.Fallback`. Server
-  errors surface `Error.MessageForCurrentCulture()` (bilingual).
+  errors surface `Error.MessageForCurrentCulture()` (bilingual). **A1/A6:** when
+  the saved edit released seats, the update toast is
+  `Admin.Sessions.UpdatedWithReleases` instead — title + the released
+  registration count + the destroyed admin row-block count.
+
+### 6.1 The seat-release confirmation (A1 / A6)
+
+Moving the **Hall** or either end of the **Start/End** window cascade-releases
+every seat already held for the session — the seat belongs to a specific hall and
+time slot. That happens in the same unit of work as the save and cannot be undone.
+
+- **Before the save:** `SessionsAddEdit.WouldReleaseHeldSeats` compares HallId /
+  Start / End against `Initial` (exactly the comparison
+  `AdminSessionService.UpdateAsync` makes, so the warning and the cascade can never
+  disagree). If the slot moves and anything is held, the submit is intercepted and
+  a `SimfConfirm` — the same must-decide dialog every destructive CP action uses —
+  opens with `Admin.Sessions.Release.Title` / `.Message` / `.Confirm`, naming both
+  real counts. Cancelling leaves the form untouched; confirming re-runs the submit.
+- **The counts come from the loaded detail**, not a second endpoint:
+  `AdminSessionDetail.ActiveReservationCount` + `.ActiveAdminBlockCount` are
+  stamped by `GetAsync` on every read (one grouped query). No new endpoint and no
+  new permission.
+- **After the save:** the update response carries
+  `ReleasedReservationCount` + `ReleasedAdminBlockCount`, and the service writes a
+  second audit row — `SeatReservation.Released` with
+  `session=…; reason=HallChanged|Rescheduled; reservations=N; adminBlocks=M`.
+- **Who is told:** each affected attendee gets a `BookingRejected` notification —
+  in-app **and email** (A2), bilingual, quoting the new start on the Saudi wall
+  clock, never UTC. **Admin row-blocks have no attendee**, so nothing notifies
+  them; the count in the toast and the audit row is their only trace and the admin
+  must re-paint them on the seat-plan page.
+
+### 6.2 Cancelling a session tells the attendees (B2)
+
+Deactivating a session dispatches `NotificationKind.SessionCancelled` (additive
+value 57, persisted by name) to everyone who still holds an active seat **and**
+everyone who favourited it — the two audiences whose agenda silently loses the
+card. In-app row + email, bilingual, Saudi wall clock. The audience is a distinct
+set, so someone who both booked and favourited is told once; a genuine second
+cancellation (re-activated, then cancelled again) is **not** suppressed. The
+`Session.Deactivated` audit row carries `notified=N`. Before this the
+cancellation wrote an audit row and nothing else.
 
 ## 7. Edge cases + known limitations
 
@@ -231,7 +280,21 @@ The Add/Edit form also lazy-loads its pickers on first render:
   and import never sets them. An admin manages them afterwards via Edit.
 - **Import is insert-only** — a duplicate Code is a per-row error, not an update.
 - **Delete is a soft-delete** — `IsActive=false`; the row stays visible with the
-  grey "Inactive" pill.
+  grey "Inactive" pill in the CP, and disappears from the app + public agenda.
+- **Rescheduling re-arms the workers (A4)** — moving Start/End clears
+  `Session.ReminderSent` and `Session.RatingPromptSent`, because both workers
+  treat a non-null stamp as "already done" and a moved session would otherwise be
+  permanently un-remindable. An edit that leaves the window alone does **not**
+  clear them, so an already-delivered reminder is never re-sent.
+- **There is still no CANCELLED session status** (B3, not built) — `SessionStatus`
+  remains Scheduled/Held/Recorded/Published and a cancellation is expressed as
+  `IsActive=false`. The attendees are now told (B2), but the public agenda still
+  drops the row rather than showing it struck through as cancelled. Adding the
+  additive `Cancelled` value would require every public/app/agenda read and the
+  booking guards (seat surfaces owned elsewhere) to change together — an owner
+  decision, not a QA fix.
+- **No bulk release before deactivating** (B21, not built) — releasing held seats
+  is still one-at-a-time on the seat-plan page, behind `SeatPlans.View`.
 
 ## 8. i18n + RTL
 
