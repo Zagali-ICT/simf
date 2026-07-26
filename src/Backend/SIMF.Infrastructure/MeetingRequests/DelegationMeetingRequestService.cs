@@ -829,7 +829,13 @@ internal sealed class DelegationMeetingRequestService(
                     "The meeting table was not found in this hall.",
                     "لم يتم العثور على طاولة الاجتماع في هذه القاعة.");
             }
-            await GuardTableOverlapAsync(req.Id, tableId, start, end, cancellationToken);
+            await MeetingTableOverlapGuard.EnsureTableIsFreeAsync(
+                appDbContext, tableId, start, end,
+                ErrorCodes.DelegationMeetingRequestInvalid,
+                excludeDelegationRequestId: req.Id,
+                excludeSpeakerRequestId: null,
+                excludeBusinessMeetingId: null,
+                cancellationToken);
             req.MeetingTableId = tableId;
         }
         req.HallId = hallId;
@@ -860,46 +866,6 @@ internal sealed class DelegationMeetingRequestService(
             throw new ApiException(ErrorCodes.DelegationMeetingRequestInvalid, 409,
                 "One of the delegations already has a meeting at that time.",
                 "لدى أحد الوفدين اجتماع بالفعل في ذلك الوقت.");
-        }
-    }
-
-    // A34 — a meeting TABLE can hold one meeting at a time. The bind only checked the
-    // table is active and belongs to the hall, and the hall-level guards are keyed on the
-    // HALL (the (HallId, SlotStart) filtered-unique index + the free-slot subtraction), so
-    // nothing stopped two meetings from being pinned to the same table at the same time.
-    // THREE families can occupy a table, so all three are scanned: delegation meetings,
-    // speaker meetings, and the admin-arranged BusinessMeeting (FDS-013), whose own create
-    // guard (BusinessMeetingService, M-5) already refuses an overlapping table booking —
-    // it just never saw the two request families. Same half-open overlap rule and same live
-    // set (`MeetingRequestStatuses.SlotHolding`) the hall guards use, so touching windows
-    // (end == start) do NOT collide. Read-then-write, consistent with
-    // GuardDelegationOverlapAsync — this is an admin-brokered, low-concurrency desk.
-    private async Task GuardTableOverlapAsync(
-        Guid requestId, Guid tableId, DateTimeOffset start, DateTimeOffset end,
-        CancellationToken cancellationToken)
-    {
-        var delegationClash = await appDbContext.DelegationMeetingRequests.AsNoTracking()
-            .Where(r => r.Id != requestId
-                && r.MeetingTableId == tableId
-                && MeetingRequestStatuses.SlotHolding.Contains(r.Status)
-                && r.SlotStart != null && r.SlotEnd != null)
-            .AnyAsync(r => r.SlotStart < end && start < r.SlotEnd, cancellationToken);
-        var speakerClash = !delegationClash
-            && await appDbContext.SpeakerMeetingRequests.AsNoTracking()
-                .Where(r => r.MeetingTableId == tableId
-                    && MeetingRequestStatuses.SlotHolding.Contains(r.Status)
-                    && r.SlotStart != null && r.SlotEnd != null)
-                .AnyAsync(r => r.SlotStart < end && start < r.SlotEnd, cancellationToken);
-        var businessClash = !delegationClash && !speakerClash
-            && await appDbContext.BusinessMeetings.AsNoTracking()
-                .Where(m => m.MeetingTableId == tableId
-                    && m.Status == BusinessMeetingStatus.Confirmed)
-                .AnyAsync(m => m.Start < end && start < m.End, cancellationToken);
-        if (delegationClash || speakerClash || businessClash)
-        {
-            throw new ApiException(ErrorCodes.DelegationMeetingRequestInvalid, 409,
-                "That meeting table is already booked at that time.",
-                "طاولة الاجتماع هذه محجوزة بالفعل في ذلك الوقت.");
         }
     }
 

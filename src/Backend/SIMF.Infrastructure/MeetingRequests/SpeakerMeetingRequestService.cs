@@ -746,6 +746,20 @@ internal sealed class SpeakerMeetingRequestService(
                     "The meeting table was not found in this hall.",
                     "لم يتم العثور على طاولة الاجتماع في هذه القاعة.");
             }
+
+            // D-773 — a meeting TABLE holds one meeting at a time. "Active + in this
+            // hall" was the only check here, and every other guard on this path is
+            // keyed on the HALL or the SPEAKER, so a speaker bind could take a table
+            // already held by a delegation meeting or a business meeting (reachable
+            // once a table is moved between halls after a booking). The shared scan
+            // covers all three families.
+            await MeetingTableOverlapGuard.EnsureTableIsFreeAsync(
+                appDbContext, tableId, start, end,
+                ErrorCodes.SpeakerMeetingRequestInvalid,
+                excludeDelegationRequestId: null,
+                excludeSpeakerRequestId: req.Id,
+                excludeBusinessMeetingId: null,
+                cancellationToken);
             req.MeetingTableId = tableId;
         }
 
