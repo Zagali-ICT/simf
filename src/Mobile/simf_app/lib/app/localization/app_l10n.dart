@@ -2183,14 +2183,22 @@ class AppL10n {
   // D-426 — QR-page role actions + exhibitor lead capture.
   String get badgeScanVisitor =>
       _t('مسح بطاقة زائر', 'Scan visitor badge');
-  String get myVisitorsTitle => _t('زواري', 'My Visitors');
+  String get myVisitorsTitle => _t('زوار جناحي', 'My Booth Visitors');
+  // BUG-025 — "My Booth Visitors" (exhibitor lead capture) and "My Contacts"
+  // (visitor-to-visitor card sharing) are two separate lists. This one line
+  // states which is which so the two are never confused.
+  String get myVisitorsNote => _t(
+        'بطاقات الزوار التي مسحتها في جناحك. قائمة منفصلة عن «جهات اتصالي».',
+        'Badges you scanned at your booth. This list is separate from My Contacts.',
+      );
   String get myVisitorsEmpty => _t(
-        'لم تقم بمسح أي زائر بعد. امسح بطاقة زائر لإضافته هنا.',
-        'No visitors yet. Scan a visitor badge to capture them here.',
+        'لم تقم بمسح أي زائر بعد. امسح بطاقة زائر في جناحك لإضافته هنا.',
+        'No booth visitors yet. Scan a visitor badge at your booth to capture '
+            'them here.',
       );
   String get scanVisitorTitle => _t('مسح بطاقة زائر', 'Scan visitor badge');
   String get scanVisitorCaptured =>
-      _t('تمت إضافة الزائر إلى زواري', 'Visitor added to My Visitors');
+      _t('تمت إضافة الزائر إلى زوار جناحي', 'Visitor added to My Booth Visitors');
   String get scanVisitorNotFound =>
       _t('لا توجد بطاقة زائر مطابقة', 'No matching visitor badge');
   String get scanVisitorForbidden => _t(

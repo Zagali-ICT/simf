@@ -1,7 +1,10 @@
 // Tests: SIMF.Api.Tests/ExhibitorVisitorScanTests.cs
+// Tests: SIMF.Api.Tests/ExhibitorLeadEmailTests.cs
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using SIMF.Application.Auditing;
+using SIMF.Application.Email;
 using SIMF.Application.Exhibitors.Abstractions;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Application.Notifications;
@@ -30,15 +33,30 @@ namespace SIMF.Infrastructure.Exhibitors;
 /// dropping an officer from a booth revokes their scanning authority.
 /// DEF-EXH-002 / DEF-EXH-007: a new capture notifies the visitor, naming the
 /// EXHIBITOR their card was shared with.
+///
+/// <para>BUG-024 — a NEW capture also emails the lead to the exhibitor's own
+/// account address (the owner's "send to exhibitor email" requirement), through
+/// the shared template resolver + email queue. A repeat scan is still idempotent
+/// and sends nothing, and a mail failure never fails the scan (the queue's
+/// log-and-audit contract).</para>
 /// </summary>
 internal sealed class ExhibitorVisitorService(
     SimfAppDbContext appDbContext,
     IIdentityUserDirectory userDirectory,
     TimeProvider timeProvider,
     INotificationDispatcher notifications,
+    IEmailTemplateResolver emailTemplates,
+    IEmailQueue emailQueue,
+    IAuditLog auditLog,
     ILogger<ExhibitorVisitorService> logger) : IExhibitorVisitorService
 {
     private const int NoteMaxLength = 512;
+
+    // BUG-024 — placeholders for a lead field the visitor's profile leaves empty,
+    // one per body language (the token bag feeds both blocks of the one message).
+    private const string NotProvidedEn = "Not provided";
+    private const string NotProvidedAr = "غير محدد";
+    private const string NoNote = "-";
 
     /// <summary>DEF-EXH-003 — the SUBJECT eligibility test: an ACTIVE profile that
     /// is not a partner-side (<c>IsForVisitor=false</c>) type, so a staff badge or
@@ -104,10 +122,11 @@ internal sealed class ExhibitorVisitorService(
                     && s.VisitorUserId == visitorId.Value
                     && s.IsActive,
                 cancellationToken);
+        var now = timeProvider.GetUtcNow();
         if (existing is not null)
         {
             existing.Note = trimmed;
-            existing.UpdatedAt = timeProvider.GetUtcNow();
+            existing.UpdatedAt = now;
         }
         else
         {
@@ -118,7 +137,7 @@ internal sealed class ExhibitorVisitorService(
                 VisitorUserId = visitorId.Value,
                 Note = trimmed,
                 IsActive = true,
-                CreatedAt = timeProvider.GetUtcNow(),
+                CreatedAt = now,
             });
         }
         await appDbContext.SaveChangesAsync(cancellationToken);
@@ -129,7 +148,17 @@ internal sealed class ExhibitorVisitorService(
         }
 
         var cards = await ResolveCardsAsync(new[] { visitorId.Value }, cancellationToken);
-        return cards[visitorId.Value];
+        var card = cards[visitorId.Value];
+
+        // BUG-024 — only a NEW capture mails the lead out; a repeat scan is a
+        // no-op refresh, so the exhibitor is not spammed on every re-scan. The
+        // row is already committed, so a mail failure cannot roll the scan back.
+        if (existing is null)
+        {
+            await EmailLeadToExhibitorAsync(exhibitorUserId, card, trimmed, now, cancellationToken);
+        }
+
+        return card;
     }
 
     public async Task<IReadOnlyList<ExhibitorVisitorRow>> ListMyVisitorsAsync(
@@ -179,6 +208,62 @@ internal sealed class ExhibitorVisitorService(
             .Select(r => new ExhibitorVisitorRow(
                 r.Id, r.CreatedAt, r.Note, cards[r.VisitorUserId]))
             .ToList();
+    }
+
+    /// <summary>BUG-024 — emails the captured lead to the exhibitor's own account
+    /// address. Fire-and-forget by contract: the capture row is already committed,
+    /// so an exhibitor with no account email is logged and skipped, and an enqueue
+    /// failure is swallowed + audited by <see cref="EmailQueueExtensions.TryEnqueueAsync"/>
+    /// — the 200 and the lead row stand either way. The national ID (encrypted at
+    /// rest) and the raw badge QR id are deliberately NOT in the message.</summary>
+    private async Task EmailLeadToExhibitorAsync(
+        Guid exhibitorUserId, VisitorCard card, string? note,
+        DateTimeOffset scannedAt, CancellationToken cancellationToken)
+    {
+        var recipient = await userDirectory.GetEmailAsync(exhibitorUserId, cancellationToken);
+        if (string.IsNullOrWhiteSpace(recipient))
+        {
+            logger.LogWarning(
+                "Exhibitor {ExhibitorUserId} has no account email; the lead-capture email was skipped.",
+                exhibitorUserId);
+            return;
+        }
+
+        var tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["VisitorName"] = FirstFilled(card.Name, card.NameArabic, NotProvidedEn),
+            ["VisitorNameArabic"] = FirstFilled(card.NameArabic, card.Name, NotProvidedAr),
+            ["JobTitle"] = FirstFilled(card.JobTitle, card.JobTitleArabic, NotProvidedEn),
+            ["JobTitleArabic"] = FirstFilled(card.JobTitleArabic, card.JobTitle, NotProvidedAr),
+            ["Organisation"] = FirstFilled(card.Organisation, card.OrganisationArabic, NotProvidedEn),
+            ["OrganisationArabic"] =
+                FirstFilled(card.OrganisationArabic, card.Organisation, NotProvidedAr),
+            // D-219 — Saudi wall clock, 12-hour. No user-facing UTC.
+            ["ScannedAt"] = scannedAt.FormatSaudi(),
+            ["Note"] = string.IsNullOrWhiteSpace(note) ? NoNote : note,
+        };
+
+        var message = await emailTemplates.RenderAsync(
+            EmailTemplateType.ExhibitorLeadCapture, recipient, tokens, cancellationToken);
+        await emailQueue.TryEnqueueAsync(
+            message,
+            purpose: "ExhibitorLeadCapture",
+            subjectEmail: recipient,
+            subjectUserId: exhibitorUserId,
+            auditLog: auditLog,
+            logger: logger,
+            cancellationToken: cancellationToken);
+    }
+
+    /// <summary>The first non-blank of the preferred value, its other-language
+    /// twin, then the language's "not provided" placeholder.</summary>
+    private static string FirstFilled(string? preferred, string? fallback, string placeholder)
+    {
+        if (!string.IsNullOrWhiteSpace(preferred))
+        {
+            return preferred;
+        }
+        return string.IsNullOrWhiteSpace(fallback) ? placeholder : fallback;
     }
 
     /// <summary>DEF-EXH-001 — 403 unless the caller is a genuine EXHIBITOR: an

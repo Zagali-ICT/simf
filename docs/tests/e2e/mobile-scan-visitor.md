@@ -35,13 +35,13 @@
 | **Test runner** | Flutter widget/golden test + device manual (camera path is device-only) |
 
 > **Notes:** the entry `QrId` scanned here is the visitor's badge QR; on success
-> the visitor is captured and the app navigates to زواري so the exhibitor sees
+> the visitor is captured and the app navigates to زوار جناحي so the exhibitor sees
 > the updated list. The camera is off in the harness (`enableCamera:false`); the
 > manual-entry field drives the flow in tests.
 
 ---
 
-### E2E-MOBSCANVIS-001 — Golden path (scan → capture → My Visitors)
+### E2E-MOBSCANVIS-001 — Golden path (scan → capture → My Booth Visitors)
 
 ```gherkin
 Scenario: An exhibitor scans a visitor badge
@@ -50,7 +50,8 @@ Scenario: An exhibitor scans a visitor badge
   Then scanByBadge is sent with the trimmed code
   And it returns HTTP 200 (the visitor is captured server-side)
   And a "تم تسجيل الزائر / Visitor captured" toast shows
-  And the app routes to زواري (myVisitors) showing the newly-captured visitor
+  And the app routes to زوار جناحي (myVisitors) showing the newly-captured visitor
+  And exactly one lead email is dispatched to the exhibitor (see E2E-MOBSCANVIS-007)
 ```
 
 ### E2E-MOBSCANVIS-002 — Unknown code (404 not found)
@@ -297,6 +298,43 @@ covers the always-mounted manual field with the camera off; `scan_gate_test`
 (single-flight + dedupe). The capture / 404 / 403 / 5xx branches remain in
 `scan_visitor_screen_test`.
 
+### E2E-MOBSCANVIS-007 — The lead is emailed to the exhibitor (BUG-024, 2026-07-26)
+
+```gherkin
+Scenario: A new capture emails the lead card to the exhibitor's own address
+  Given a signed-in approved exhibitor scans a valid visitor badge at their booth
+  When POST /app/exhibitor/visitors/scan returns 200
+  Then exactly ONE email is dispatched, addressed to the exhibitor's own account email
+  And its subject is "SIMF visitor captured at your booth: {VisitorName}"
+  And the body is bilingual (English block, rule, RTL Arabic block) and carries
+      the visitor's name, job title, organisation, the scan time on the SAUDI
+      wall clock in 12-hour form (D-219, never UTC) and the operator's note
+  And it carries NEITHER the visitor's national ID NOR the raw badge QR id
+
+Scenario: A duplicate scan does not email again
+  When the SAME exhibitor re-scans the SAME visitor's badge
+  Then the response is still 200 and My Booth Visitors still holds ONE row
+  And NO second email is dispatched
+
+Scenario: A failed scan emails nothing
+  When the badge resolves to nothing (404) or the caller is visitor-tier (403)
+  Then no lead email is dispatched
+
+Scenario: A mail failure never breaks the scan
+  Given the email queue throws on enqueue
+  When a valid badge is scanned
+  Then the response is still 200 and the capture row is still written
+  And an Email.EnqueueFailed audit row is recorded (purpose "ExhibitorLeadCapture")
+```
+
+**Evidence:** `tests/SIMF.Api.Tests/ExhibitorLeadEmailTests.cs` (exactly-one /
+duplicate-none / failed-scan-none, plus the field + Saudi-time + no-QR-id
+assertions); `EmailTemplateRendererTests.Catalog_default_exhibitor_lead_capture_*`
+for the template shape. The mail-failure path is the shared
+`EmailQueueExtensions.TryEnqueueAsync` contract already covered by
+`EmailEnqueueFailureTests`. The template copy is admin-editable in the Control
+Panel (`/admin/email/templates` → `ExhibitorLeadCapture`).
+
 ---
 
 _Last reviewed:_ `2026-07-27` by `SIMF Team` — DEF-EXH-006: scan authority now
@@ -314,3 +352,6 @@ DEF-EXH-002 (a new capture notifies the visitor once, naming the exhibitor) —
 E2E-MOBSCANVIS-007..009. Earlier:
 `2026-07-11` — D-737 unified scanner (QrScanView now hosts SimfScannerBody +
 camera-error state); `2026-07-04`.
+_Last reviewed:_ 2026-07-26 by Claude — BUG-024: a new booth capture now emails
+the lead card to the exhibitor (E2E-MOBSCANVIS-007). Earlier: `2026-07-11` by
+`SIMF Team` (D-737 unified scanner) and `2026-07-04`.

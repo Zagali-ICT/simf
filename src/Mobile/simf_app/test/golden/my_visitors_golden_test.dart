@@ -14,13 +14,15 @@ import 'package:simf_app/features/exhibitor/my_visitors_screen.dart';
 
 import 'golden_fonts.dart';
 
-/// Render-lock golden of the exhibitor "My Visitors" screen (زواري, D-426).
+/// Render-lock golden of the exhibitor "My Booth Visitors" screen
+/// (زوار جناحي, D-426).
 /// Regenerate:
 ///   flutter test --update-goldens test/golden/my_visitors_golden_test.dart
 ///
 /// No Figma frame is bound for this screen (it is a D-426 functional page, not a
 /// KSA design frame), so this is a **structural** render-lock: the navy shell
-/// over the captured-visitor list, each a shared `ContactCard`. RTL.
+/// over the BUG-025 "not My Contacts" note and the captured-visitor list, each a
+/// shared `ContactCard`. RTL.
 
 class _StubExhibitorRepo implements ExhibitorRepository {
   _StubExhibitorRepo(this._visitors);

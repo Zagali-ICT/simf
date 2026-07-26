@@ -28,8 +28,30 @@
 
 Exhibitor lead-capture: scan a visitor's entry-badge QR (or type the code). On a
 successful scan the visitor is captured and the screen shows a confirmation
-toast, then routes to زواري (My Visitors). A 404 / 403 / other failure each
-surface a distinct toast.
+toast, then routes to زوار جناحي (My Booth Visitors). A 404 / 403 / other failure
+each surface a distinct toast.
+
+## Server side-effect — the lead is emailed to the exhibitor (BUG-024, 2026-07-26)
+
+A **new** capture also mails the lead card to the exhibitor's **own account
+email**, satisfying the owner's "share user info for exhibitor by scanning the
+badge → add to my contact list AND send to exhibitor email". Built on the
+existing pipeline, no new mail path:
+
+- Template `EmailTemplateType.ExhibitorLeadCapture` in `EmailTemplateCatalog`
+  (bilingual EN + RTL AR blocks, admin-editable at `/admin/email/templates`).
+- Tokens: `VisitorName(Arabic)`, `JobTitle(Arabic)`, `Organisation(Arabic)`,
+  `ScannedAt`, `Note`. The scan time is the **Saudi wall clock, 12-hour**
+  (`SaudiTime.FormatSaudi`) — D-219 forbids user-facing UTC.
+- **Never** included: the visitor's national ID (encrypted at rest) and the raw
+  badge QR id (no existing SIMF template carries one).
+- Dispatch is `IEmailTemplateResolver.RenderAsync` + `IEmailQueue.TryEnqueueAsync`
+  — a mail failure is logged + audited (`Email.EnqueueFailed`, purpose
+  `ExhibitorLeadCapture`) and never fails the 200 or the capture row.
+- **Idempotent:** a repeat scan of the same visitor still refreshes only the
+  note; it sends **no** second email.
+
+Backend: `SIMF.Infrastructure/Exhibitors/ExhibitorVisitorService.EmailLeadToExhibitorAsync`.
 
 ## Structure
 
@@ -56,8 +78,9 @@ surface. No Figma frame is bound, so this is a structural render-lock.
 ## Level-F
 
 - **Camera / manual entry** — both feed `_onCode` (shared `QrScanView`).
-- **Successful scan** — capture server-side → toast → route to `myVisitors`.
-- **404 / 403 / error** — distinct failure toasts.
+- **Successful scan** — capture server-side → lead email to the exhibitor
+  (BUG-024, new captures only) → toast → route to `myVisitors`.
+- **404 / 403 / error** — distinct failure toasts; no email.
 - **Back** — `_leave` (pop, else → badge).
 
 ## Tests
@@ -65,14 +88,17 @@ surface. No Figma frame is bound, so this is a structural render-lock.
 `test/golden/scan_visitor_golden_test.dart` (render-lock, @375×812, ar,
 `enableCamera:false`) + `test/features/exhibitor/scan_visitor_screen_test.dart`
 (widget, 4 cases — the `_onCode` branches: valid badge → capture + route to My
-Visitors with the code trimmed; 404 / 403 / 5xx → the distinct toasts, no
-navigation). E2E:
+Booth Visitors with the code trimmed; 404 / 403 / 5xx → the distinct toasts, no
+navigation). Backend: `tests/SIMF.Api.Tests/ExhibitorVisitorScanTests.cs` (scan /
+403 / 404) + `tests/SIMF.Api.Tests/ExhibitorLeadEmailTests.cs` (BUG-024 — exactly
+one lead email per new capture, none for a duplicate or a failed scan). E2E:
 [`docs/tests/e2e/mobile-scan-visitor.md`](../../../tests/e2e/mobile-scan-visitor.md)
-(E2E-MOBSCANVIS-001..005). Both the widget-test and E2E gaps flagged at freeze
+(E2E-MOBSCANVIS-001..007). Both the widget-test and E2E gaps flagged at freeze
 are now closed (D-648).
 
 ## Related decisions
 
+- **D-771** (BUG-024 — the captured lead is emailed to the exhibitor).
 - **D-643** (this clean-code freeze — render-lock golden + first PAGE-INDEX row,
   no code change).
 - **D-426** (exhibitor scan + my-visitors built), **D-430** (shared `QrScanView`).
