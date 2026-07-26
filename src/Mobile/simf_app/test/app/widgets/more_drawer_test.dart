@@ -176,6 +176,18 @@ void main() {
       expect(find.text('Sign out'), findsOneWidget);
     });
 
+    testWidgets('BUG-017 — the drawer is titled "Menu", not a second "More"',
+        (tester) async {
+      // The side drawer (a flat list of every destination) and the Profile
+      // "More" hub (My area / Forum info / Settings / Legal — the only home of
+      // the language row) were both labelled "More", so the two different menus
+      // were indistinguishable.
+      await _pump(tester, auth: _RecordingAuthController(signedIn: true));
+
+      expect(find.text('Menu'), findsOneWidget);
+      expect(find.text('More'), findsNothing);
+    });
+
     testWidgets('signed-out hides the calendar + logout, keeps contact + about',
         (tester) async {
       await _pump(tester, auth: _RecordingAuthController(signedIn: false));

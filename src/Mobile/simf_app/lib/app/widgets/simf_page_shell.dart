@@ -474,7 +474,9 @@ class SimfHeaderActions extends ConsumerWidget {
           ],
           Builder(
             builder: (ctx) => _box(
-              tooltip: l10n.moreTitle,
+              // BUG-017 — this control opens the side drawer, a different menu
+              // from the Profile "More" hub; both used to announce as "More".
+              tooltip: l10n.menuTitle,
               onTap: () => Scaffold.of(ctx).openDrawer(),
               glyph: const Icon(Icons.menu),
             ),

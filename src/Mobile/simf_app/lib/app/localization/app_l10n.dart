@@ -1753,6 +1753,11 @@ class AppL10n {
 
   // More hub (Page 041; Figma 1129:17224) — grouped sections + version line.
   String get moreTitle => _t('المزيد', 'More');
+  // BUG-017 — the side drawer (a flat list of every destination) and the
+  // Profile "More" hub (My area / Forum info / Settings / Legal, the only home
+  // of the language row) were BOTH labelled "المزيد" / "More". The drawer is the
+  // app's navigation menu, so it takes its own name; the hub keeps [moreTitle].
+  String get menuTitle => _t('القائمة', 'Menu');
   String get moreAbout => _t('عن الملتقى', 'About the forum');
   String get moreAccessibility => _t('إمكانية الوصول', 'Accessibility');
   String get moreTerms => _t('الشروط والأحكام', 'Terms & conditions');

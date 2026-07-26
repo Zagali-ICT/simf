@@ -49,7 +49,9 @@ class MoreDrawer extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.all(SimfTokens.space4),
               child: Text(
-                l10n.moreTitle,
+                // BUG-017 — was `moreTitle`, colliding with the Profile "More"
+                // hub (a different menu with different entries).
+                l10n.menuTitle,
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: SimfTokens.textXl,
