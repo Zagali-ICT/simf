@@ -82,11 +82,13 @@ class GuestHome extends StatelessWidget {
           ),
           const SizedBox(height: SimfTokens.space4),
           // The locked smart-badge card — a visual cue that signing in
-          // unlocks it; never tappable as a guest.
+          // unlocks it; never tappable as a guest. The hint is the only cue a
+          // screen-reader user gets that it is locked and why (BUG-014).
           SimfNavTile(
             label: l10n.tileMyBadgeShort,
             iconAsset: HomeIcons.badge,
             enabled: false,
+            disabledHint: l10n.guestBadgeLockedHint,
           ),
           const SizedBox(height: SimfTokens.space6),
           SimfSectionHeader(title: l10n.homeOpenInfoSection),

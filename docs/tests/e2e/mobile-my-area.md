@@ -61,6 +61,7 @@
 | E2E-MOB014-014 | **Single share pill (#21 — was the 758:1305 two-pill order):** only the مشاركة جهة اتصال pill is rendered; the duplicate مشاركة ملفي pill was dropped (owner) | i18n | P2 | authored ✓ (screen — مشاركة جهة اتصال present, مشاركة ملفي absent) |
 | E2E-MOB014-015 | **Saved stat tiles → Coming soon (owner 2026-06-21):** the الإحصائيات tiles **مقابلات** and **جلسات محفوظة** still show their live counts but are now tappable; each opens the **ComingSoon** placeholder (saved meetings / saved sessions are not built yet) | happy | P2 | authored ✓ (widget — `KsaStatTile` fires `onTap`) |
 | E2E-MOB014-017 | The المزيد rows' forward "open" caret points to the inline end — right in LTR (English), left in RTL (Arabic) — via the shared SimfForwardChevron | i18n | P2 | authored ✓ (`test/app/widgets/simf_forward_chevron_test.dart`) |
+| E2E-MOB014-018 | **True guest gets guest copy + a way in (BUG-013):** a visitor with NO account reaching the Profile tab sees "sign in or create an account to see your profile and schedule" and working Sign in / Create account actions — never the "under review" copy | auth | P1 | authored ✓ (screen `BUG-013 — a TRUE guest gets the guest copy and a working sign-in CTA, never the under-review copy`) |
 
 ## Scenarios
 
@@ -275,9 +276,33 @@ Scenario: The back chevron on the Profile tab returns to Home
 **Evidence:** `simf_page_shell_test.dart` — `backOrHome on an in-shell tab
 (nothing to pop) switches the shell to the Home tab`.
 
+### E2E-MOB014-018 — A true guest is not shown "your account is under review"
+
+```gherkin
+Scenario: A visitor with no account at all opens the Profile tab
+  Given I have never signed in (no account)
+  When I tap the Profile tab in the bottom nav
+  Then I do NOT see "Your account is under review"
+  And I see "Sign in or create an account to see your profile and schedule."
+  And a "Sign in" button and a "Create account" link are offered
+  When I tap "Sign in"
+  Then the sign-in screen opens
+  And GET /app/account/dashboard is never called
+```
+
+> The bottom nav switches tabs **inside** `SimfAppShell`'s IndexedStack, so the
+> router's auth redirect never runs and a signed-out visitor really lands here.
+> The limited card previously described an account "under review" that was never
+> submitted, with no way out (BUG-013). The pending copy is unchanged for a
+> genuinely pending/rejected signed-in account.
+
+**Evidence:** screen test `BUG-013 — a TRUE guest gets the guest copy and a
+working sign-in CTA, never the under-review copy`.
+
 ---
 
-_Last reviewed:_ `2026-07-24` by `SIMF Team` — **bug fix: the header back chevron
+_Last reviewed:_ `2026-07-26` by `SIMF Team` — **bug fix: the true-guest state on
+the Profile tab (E2E-MOB014-018, BUG-013).** _Prior:_ `2026-07-24` — bug fix: the header back chevron
 on the in-shell Profile tab was a dead no-op; the shared `backOrHome` now switches
-the shell to the Home tab when there is nothing to pop (E2E-MOB014-017).**
-_Prior:_ `2026-06-19` by `SIMF Team` (D-447).
+the shell to the Home tab when there is nothing to pop (E2E-MOB014-017);
+`2026-06-19` by `SIMF Team` (D-447).

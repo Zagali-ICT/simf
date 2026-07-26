@@ -38,13 +38,22 @@ class _BadgeScreenState extends ConsumerState<BadgeScreen> {
   bool _loading = true;
   bool _error = false;
   bool _notApproved = false;
+  bool _signedOut = false;
   MyAreaIdentity? _identity;
 
   @override
   void initState() {
     super.initState();
     final user = _currentUser;
-    if (user != null && user.isApproved) {
+    if (user == null) {
+      // BUG-013 — a TRUE guest (no account at all). The bottom nav switches
+      // tabs inside the shell, so the router's auth redirect never runs and a
+      // signed-out visitor lands here. Showing the not-approved copy described
+      // a registration they never submitted and offered no way out; the guest
+      // state gets its own copy plus a working sign-in CTA.
+      _loading = false;
+      _signedOut = true;
+    } else if (user.isApproved) {
       unawaited(_load());
     } else {
       // Signed in but not approved: the badge is issued only on approval
@@ -108,6 +117,15 @@ class _BadgeScreenState extends ConsumerState<BadgeScreen> {
   Widget _buildBody(AppL10n l10n, String? referenceNumber) {
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
+    }
+    if (_signedOut) {
+      // No account at all — the guest copy + a way in (BUG-013).
+      return SimfGuestPrompt(
+        icon: Icons.qr_code_2_outlined,
+        message: l10n.badgeGuestBody,
+        signInLabel: l10n.guestSignInCta,
+        createAccountLabel: l10n.signUpButton,
+      );
     }
     if (_notApproved) {
       // Signed-in but not approved — show "account not approved", not the QR.

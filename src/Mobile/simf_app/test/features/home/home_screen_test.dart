@@ -7,6 +7,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/widgets/simf_app_shell.dart';
 import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
+import 'package:simf_app/app/widgets/simf_language_toggle.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 import 'package:simf_app/core/organization_profile/organization_profile.dart';
@@ -569,6 +570,20 @@ void main() {
       await tester.tap(find.byTooltip('Notifications'));
       await tester.pumpAndSettle();
       expect(find.text('NOTIFICATIONS'), findsOneWidget);
+    });
+
+    testWidgets(
+        'BUG-017 — the greeting header carries the shared language toggle, so '
+        'the language switch is reachable from Home', (tester) async {
+      // The header toggle is on essentially every other screen; Home had none,
+      // and the only other language entry point is the Profile "More" menu —
+      // so from Home there was no route to the language switch at all.
+      await _pump(tester, controller: _SignedInController());
+
+      expect(find.byType(SimfLanguageToggle), findsOneWidget);
+      // The pill shows the language it switches TO — 'ع' under the English
+      // locale this harness pumps.
+      expect(find.text('ع'), findsOneWidget);
     });
 
     testWidgets('tapping the greeting avatar switches to the Profile tab '

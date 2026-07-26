@@ -34,6 +34,8 @@
 | E2E-MOB032-004 | Arabic locale renders the Arabic name (RTL) alongside the QR | i18n | P2 | authored ✓ (screen `renders the Arabic name + hint in Arabic`) |
 | E2E-MOB032-005 | **Header back chevron → Home (bug fix):** on the Badge tab of the bottom-nav shell the header back chevron returns to the **Home** tab. Previously it was a dead no-op — an in-shell tab never leaves the shell's `/` location, so `backOrHome`'s `goNamed(home)` navigated to `/` while already there | nav | P1 | authored ✓ (`simf_page_shell_test` — `backOrHome on an in-shell tab (nothing to pop) switches the shell to the Home tab`) |
 | E2E-MOB032-006 | **Strip tinted by profile-type colour (D-763):** the identity strip fill is the account's `identity.pageColor` (`ProfileType.PageColor`, e.g. VIP `#0E7490`); a null/invalid value falls back to the token gold | happy | P1 | authored ✓ (screen `the identity strip is tinted by the profile-type pageColor` + `... falls back to token gold with no pageColor`) |
+| E2E-MOB032-007 | **True guest gets guest copy + a way in (BUG-013):** a visitor with NO account reaching the Badge tab sees "sign in or create an account to get your entry badge" and working Sign in / Create account actions — never the pending-account copy | auth | P1 | authored ✓ (screen `BUG-013 — a TRUE guest gets the guest copy and a working sign-in CTA, never the pending-account copy`) |
+| E2E-MOB032-008 | **Back chevron has an accessible name (BUG-003):** the shared circled back control announces the localized "Back" tooltip instead of a bare "button" | a11y | P2 | authored ✓ (`simf_page_shell_test` — `BUG-003 — the circled back button carries an accessible name`) |
 
 ## Scenarios
 
@@ -134,9 +136,35 @@ Scenario: The back chevron on the Badge tab returns to Home
 **Evidence:** `simf_page_shell_test.dart` — `backOrHome on an in-shell tab
 (nothing to pop) switches the shell to the Home tab`.
 
+### E2E-MOB032-007 — A true guest is not shown pending-account copy
+
+```gherkin
+Scenario: A visitor with no account at all opens the Badge tab
+  Given I have never signed in (no account)
+  When I tap the QR tab in the bottom nav
+  Then no QR is rendered
+  And I do NOT see "your account is not approved yet" or "once your account is approved"
+  And I see "Sign in or create an account to get your entry badge."
+  And a "Sign in" button and a "Create account" link are offered
+  When I tap "Sign in"
+  Then the sign-in screen opens
+```
+
+> The five bottom-nav tabs switch **inside** `SimfAppShell`'s IndexedStack, so no
+> go_router navigation happens and the router's auth redirect never runs — a
+> signed-out visitor really does land on this screen. It previously rendered the
+> PENDING-account copy, describing a registration the guest never submitted and
+> offering no way out (BUG-013). The pending copy is unchanged for genuinely
+> pending accounts (E2E-MOB032-002 / the not-approved state).
+
+**Evidence:** screen test `BUG-013 — a TRUE guest gets the guest copy and a
+working sign-in CTA, never the pending-account copy`.
+
 ---
 
-_Last reviewed:_ `2026-07-24` by `SIMF Team` — **feature: the identity strip is now
+_Last reviewed:_ `2026-07-26` by `SIMF Team` — **bug fix: the true-guest state on
+the Badge tab (E2E-MOB032-007, BUG-013) + an accessible name on the shared back
+control (E2E-MOB032-008, BUG-003).** _Prior:_ `2026-07-24` — **feature: the identity strip is now
 tinted by the profile type's server colour (`ProfileType.PageColor` → `pageColor`),
 gold fallback + luminance-based ink (E2E-MOB032-006, D-763).** _Prior:_ `2026-07-24`
 — bug fix: header back chevron on the in-shell Badge tab (E2E-MOB032-005); `2026-07-11`

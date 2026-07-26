@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
 
 /// A tappable 1–5 star bar. Renders in the ambient direction so the fill grows
@@ -21,21 +22,34 @@ class StarRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         for (var star = 1; star <= 5; star++) ...<Widget>[
           if (star > 1) SizedBox(width: gap),
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => onChanged(star),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: SimfTokens.space1),
-              child: Icon(
-                star <= value ? Icons.star_rounded : Icons.star_outline_rounded,
-                size: size,
-                color:
-                    star <= value ? SimfTokens.accent : SimfTokens.beigeBorder,
+          // Each star is a bare glyph, so the whole rating control was five
+          // unnamed tappables and a screen-reader user could not submit a
+          // rating at all (BUG-012). [selected] reports the current score.
+          Semantics(
+            button: true,
+            selected: star <= value,
+            label: l10n.rateStarLabel(star),
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => onChanged(star),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(vertical: SimfTokens.space1),
+                child: Icon(
+                  star <= value
+                      ? Icons.star_rounded
+                      : Icons.star_outline_rounded,
+                  size: size,
+                  color: star <= value
+                      ? SimfTokens.accent
+                      : SimfTokens.beigeBorder,
+                ),
               ),
             ),
           ),

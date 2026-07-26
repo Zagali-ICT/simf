@@ -310,6 +310,31 @@ const Map<int, Set<AppRole>> _routeRoles = <int, Set<AppRole>>{
   104: <AppRole>{AppRole.moderator}, // Session Q&A desk
 };
 
+/// The flat routes re-ordered so a **static** path (no `:param` segment) is
+/// always emitted before the parameterised ones; the declared order is
+/// otherwise preserved.
+///
+/// go_router matches in DECLARATION order and keeps the first hit, so a
+/// parameterised route declared above a static sibling swallows it. That is
+/// exactly what happened to the seat-booking hub: `/sessions/:sessionId` (#17)
+/// sits above `/sessions/join` (#110) in [_routes], so `/sessions/join` matched
+/// the detail route with `sessionId = "join"` and the screen rendered
+/// "session not found" (`GET /app/programme/sessions/join` → 404), making the
+/// hub unreachable. Sorting here removes the whole class of bug: a new static
+/// route may be declared anywhere in [_routes] without shadowing risk.
+List<GoRoute> _matchSafeOrder(List<GoRoute> routes) {
+  final staticPaths = <GoRoute>[];
+  final parameterised = <GoRoute>[];
+  for (final route in routes) {
+    if (route.path.contains(':')) {
+      parameterised.add(route);
+    } else {
+      staticPaths.add(route);
+    }
+  }
+  return <GoRoute>[...staticPaths, ...parameterised];
+}
+
 /// The five bottom-nav destinations. They render inside [SimfAppShell]'s
 /// IndexedStack, not as separate GoRouter branches. Tab switching is purely
 /// internal (no go_router) to avoid Flutter's `_debugCheckDuplicatedPageKeys`
@@ -653,20 +678,32 @@ GoRouter buildRouter(Ref ref) {
             : null,
       );
     },
-    routes: <RouteBase>[
-      // Shell route — replaces StatefulShellRoute.indexedStack. Renders
-      // SimfAppShell with an IndexedStack of all five tabs. Tab switching is
-      // purely internal (no go_router), so there is only ever ONE page in the
-      // parent Navigator — no key-reservation collision on router.refresh().
-      GoRoute(
-        name: RouteNames.home,
-        path: '/',
-        pageBuilder: (context, state) => NoTransitionPage(
-          key: state.pageKey,
-          child: const SimfAppShell(),
-        ),
+    routes: buildRoutes(),
+  );
+}
+
+/// The router's full route table: the shell home, then the flat (pushed)
+/// screens in [_matchSafeOrder], then the auxiliary auth routes.
+///
+/// Exposed so a test can assert path → screen matching on the real table
+/// without standing up the auth redirect (`test/app/router_route_order_test.dart`).
+List<RouteBase> buildRoutes() {
+  return <RouteBase>[
+    // Shell route — replaces StatefulShellRoute.indexedStack. Renders
+    // SimfAppShell with an IndexedStack of all five tabs. Tab switching is
+    // purely internal (no go_router), so there is only ever ONE page in the
+    // parent Navigator — no key-reservation collision on router.refresh().
+    GoRoute(
+      name: RouteNames.home,
+      path: '/',
+      pageBuilder: (context, state) => NoTransitionPage(
+        key: state.pageKey,
+        child: const SimfAppShell(),
       ),
-      // Flat (pushed) routes — every non-shell screen.
+    ),
+    // Flat (pushed) routes — every non-shell screen plus the auxiliary auth
+    // routes, re-ordered so no parameterised path can shadow a static one.
+    ..._matchSafeOrder(<GoRoute>[
       for (final r in _routes)
         if (r.name != RouteNames.home)
           GoRoute(
@@ -686,8 +723,8 @@ GoRouter buildRouter(Ref ref) {
             child: _auxScreenFor(context, state, r),
           ),
         ),
-    ],
-  );
+    ]),
+  ];
 }
 
 /// Bridges the Riverpod auth state to go_router's [Listenable]-based refresh:

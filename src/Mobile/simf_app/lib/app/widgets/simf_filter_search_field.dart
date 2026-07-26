@@ -45,25 +45,31 @@ class SimfFilterSearchField extends StatelessWidget {
             child: Icon(Icons.search, color: SimfTokens.beigeBorder, size: 16),
           ),
           Expanded(
-            child: TextField(
-              controller: controller,
-              onChanged: onChanged,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: SimfTokens.textMd,
-              ),
-              cursorColor: SimfTokens.accent,
-              decoration: InputDecoration(
-                hintText: hint,
-                hintStyle: const TextStyle(
-                  color: SimfTokens.beigeBorder,
+            // The placeholder is a separate node that disappears once the user
+            // types, so the field itself carried no accessible name (BUG-012).
+            child: Semantics(
+              label: hint,
+              textField: true,
+              child: TextField(
+                controller: controller,
+                onChanged: onChanged,
+                style: const TextStyle(
+                  color: Colors.white,
                   fontSize: SimfTokens.textMd,
                 ),
-                isDense: true,
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: SimfTokens.space3,
-                  vertical: SimfTokens.space2,
+                cursorColor: SimfTokens.accent,
+                decoration: InputDecoration(
+                  hintText: hint,
+                  hintStyle: const TextStyle(
+                    color: SimfTokens.beigeBorder,
+                    fontSize: SimfTokens.textMd,
+                  ),
+                  isDense: true,
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: SimfTokens.space3,
+                    vertical: SimfTokens.space2,
+                  ),
                 ),
               ),
             ),
@@ -71,8 +77,9 @@ class SimfFilterSearchField extends StatelessWidget {
           if (showFilterIcon)
             Container(
               width: 40,
-              // Fill the 48-high field so the divider is a full-height wall, not a
-              // short stub (a bare Row centres children on the cross axis).
+              // Fill the 48-high field so the divider is a full-height wall,
+              // not a short stub (a bare Row centres children on the cross
+              // axis).
               height: double.infinity,
               alignment: Alignment.center,
               decoration: const BoxDecoration(

@@ -41,7 +41,22 @@ Approved Visitor (login-gated route).
 
 All data repo-backed; no missing API.
 
-## 5. Clean-code freeze (D-601)
+## 5. Reachability fix (BUG-016, 2026-07-26)
+The screen was **unreachable**. `lib/app/router.dart` emitted the flat routes in
+declaration order, and `/sessions/:sessionId` (#17) is declared above
+`/sessions/join` (#110); go_router matches in declaration order and keeps the
+first hit, so `/sessions/join` matched the **detail** route with
+`sessionId = "join"` and rendered "session not found" (`GET
+/app/programme/sessions/join` → 404). With a single entry point (the My-Area
+"Book a seat" row) the hub was dead.
+
+`buildRoutes()` now runs the flat + auxiliary routes through `_matchSafeOrder`,
+which emits every path with **no** `:param` segment before the parameterised
+ones — so a static route may be declared anywhere in the table without
+shadowing risk. Covered by `test/app/router_route_order_test.dart`
+(E2E-MOBHUB-008).
+
+## 6. Clean-code freeze (D-601)
 Already well-structured (163 lines, `.when` states, `.separated` list, tokens).
 Two real fixes: pull-to-refresh added on all three states (owner rule), and the
 RTL chevron double-mirror corrected to the shared stroked glyph. Render-lock

@@ -301,12 +301,21 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
           top: SimfTokens.space4,
           child: Column(
             children: <Widget>[
-              VenueMapControl(icon: Icons.my_location, onTap: _resetView),
+              VenueMapControl(
+                icon: Icons.my_location,
+                label: l10n.venueMapResetView,
+                onTap: _resetView,
+              ),
               const SizedBox(height: SimfTokens.space2),
-              VenueMapControl(icon: Icons.add, onTap: () => _zoomBy(_zoomStep)),
+              VenueMapControl(
+                icon: Icons.add,
+                label: l10n.venueMapZoomIn,
+                onTap: () => _zoomBy(_zoomStep),
+              ),
               const SizedBox(height: SimfTokens.space2),
               VenueMapControl(
                 icon: Icons.remove,
+                label: l10n.venueMapZoomOut,
                 onTap: () => _zoomBy(1 / _zoomStep),
               ),
             ],
