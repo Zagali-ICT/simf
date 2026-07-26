@@ -181,6 +181,90 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Fixed_out_gate_with_no_open_row_carries_the_advisory_notice()
+    {
+        // DEF-CHK-004 (A4) — a fixed OUT gate is authoritative, so the chain takes
+        // the departure branch. When the attendee has no open attendance row that
+        // departure closes NOTHING, yet the chain used to report success and the
+        // operator read a plain "Allowed" as "counted". The session IS live here, so
+        // the only way a notice can appear is the honest check-out return value.
+        var (token, operatorUserId) = await CreateAdminAsync();
+        var (hallId, sessionId) = await SeedHallWithLiveSessionAsync();
+        var gateId = await CreateGateAsync(
+            token, operatorUserId, hallId, DirectionMode.Out);
+        var (qrId, _) = await CreateApprovedVisitorWithQrAsync();
+
+        var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckOut);
+        Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
+        var body = (await scan.Content.ReadFromJsonAsync<ApiResult<GateScanResponse>>())!.Data!;
+
+        Assert.Equal(ScanOutcome.Allowed, body.Outcome);
+        Assert.False(string.IsNullOrWhiteSpace(body.NoticeMessage));
+        Assert.Contains("attendance", body.NoticeMessage!, StringComparison.OrdinalIgnoreCase);
+
+        // Nothing was opened or closed — the advisory is telling the truth.
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        Assert.Equal(0, await db.HallAttendances.CountAsync(a => a.SessionId == sessionId));
+    }
+
+    [Fact]
+    public async Task Fixed_out_gate_that_closes_an_open_row_carries_no_notice()
+    {
+        // DEF-CHK-004 (A4) — the counterpart: the SAME fixed OUT gate, but this time
+        // there IS an open row, so the departure really is recorded and the operator
+        // must NOT be warned. Guards the honest return value against over-reporting.
+        var (token, operatorUserId) = await CreateAdminAsync();
+        var (hallId, sessionId) = await SeedHallWithLiveSessionAsync();
+        var inGateId = await CreateGateAsync(
+            token, operatorUserId, hallId, DirectionMode.In);
+        var outGateId = await CreateGateAsync(
+            token, operatorUserId, hallId, DirectionMode.Out);
+        var (qrId, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
+
+        var checkIn = await PostScanAsync(inGateId, qrId, token, ScanDirection.CheckIn);
+        Assert.Equal(HttpStatusCode.OK, checkIn.StatusCode);
+
+        var checkOut = await PostScanAsync(outGateId, qrId, token, ScanDirection.CheckOut);
+        Assert.Equal(HttpStatusCode.OK, checkOut.StatusCode);
+        var body = (await checkOut.Content
+            .ReadFromJsonAsync<ApiResult<GateScanResponse>>())!.Data!;
+
+        Assert.Equal(ScanOutcome.Allowed, body.Outcome);
+        Assert.Null(body.NoticeMessage);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var row = await db.HallAttendances
+            .SingleAsync(a => a.SessionId == sessionId && a.UserId == attendeeUserId);
+        Assert.NotNull(row.Leave);
+    }
+
+    [Fact]
+    public async Task Notice_is_Arabic_for_a_regional_ar_SA_accept_language()
+    {
+        // DEF-CHK-004 (A5) — the notice resolves language by an exact "ar" compare,
+        // so a regional tag such as ar-SA (or a q-weighted list) would fall back to
+        // English IF the raw header reached the service. It does not:
+        // OperatorGateEndpoints normalises Accept-Language to exactly "ar" or "en"
+        // before building the GateScanContext, and that endpoint is the ONLY
+        // producer of the context. This test pins that normalisation so the strict
+        // compare stays safe.
+        var (token, operatorUserId) = await CreateAdminAsync();
+        var hallId = await SeedHallWithoutSessionAsync();
+        var gateId = await CreateGateAsync(token, operatorUserId, hallId);
+        var (qrId, _) = await CreateApprovedVisitorWithQrAsync();
+
+        var scan = await PostScanAsync(
+            gateId, qrId, token, ScanDirection.CheckIn, acceptLanguage: "ar-SA,ar;q=0.9,en;q=0.8");
+        Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
+        var body = (await scan.Content.ReadFromJsonAsync<ApiResult<GateScanResponse>>())!.Data!;
+
+        Assert.False(string.IsNullOrWhiteSpace(body.NoticeMessage));
+        Assert.Contains("تم السماح بالدخول", body.NoticeMessage!, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Hall_door_gate_scan_within_grace_before_the_session_starts_records_attendance()
     {
         // FIX B — a session starting in 10 min is inside the ±15 min arrival grace,
@@ -348,7 +432,8 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
     // -- Helpers --------------------------------------------------------------
 
     private Task<HttpResponseMessage> PostScanAsync(
-        Guid gateId, string qr, string token, ScanDirection direction)
+        Guid gateId, string qr, string token, ScanDirection direction,
+        string? acceptLanguage = null)
     {
         var request = new HttpRequestMessage(
             HttpMethod.Post, $"/api/v1/app/gates/{gateId}/scans")
@@ -362,10 +447,16 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
             }),
         };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        if (acceptLanguage is not null)
+        {
+            request.Headers.TryAddWithoutValidation("Accept-Language", acceptLanguage);
+        }
         return _client.SendAsync(request);
     }
 
-    private async Task<Guid> CreateGateAsync(string token, Guid operatorUserId, Guid? hallId)
+    private async Task<Guid> CreateGateAsync(
+        string token, Guid operatorUserId, Guid? hallId,
+        DirectionMode directionMode = DirectionMode.Both)
     {
         var create = await PostAuthAsync(
             "/api/v1/admin/gates",
@@ -374,7 +465,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
                 Code = $"HD-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}",
                 Name = "Hall Door Gate",
                 NameArabic = "بوابة باب القاعة",
-                DirectionMode = DirectionMode.Both,
+                DirectionMode = directionMode,
                 HallId = hallId,
                 AllowedProfileTypeIds = new List<Guid>(),
                 AssignedOperatorUserIds = new List<Guid> { operatorUserId },

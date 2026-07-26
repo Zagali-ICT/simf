@@ -1,6 +1,7 @@
 // Tests: SIMF.Api.Tests/HallAttendanceTests.cs
 // Tests: SIMF.Api.Tests/HallArrivalScanTests.cs (P5.1d — D-244 operator QR scan)
 // Tests: SIMF.Api.Tests/GateHallDoorChainTests.cs (Both-mode gate → hall-attendance chain)
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.AccessControl.Abstractions;
@@ -260,8 +261,13 @@ internal sealed class HallAttendanceService(
         else if (direction == ScanDirection.CheckOut)
         {
             // Fixed In/Out gate — its configured direction is authoritative.
-            await RecordDepartureAsync(attendeeUserId, liveSessionId, cancellationToken);
-            return true;
+            // DEF-CHK-004 — an Out scan for an attendee with NO open row closes
+            // nothing, so no attendance was recorded and the operator has to be
+            // told (they would otherwise read a plain "Allowed" as "counted"). A
+            // non-null Leave is the proof a row was actually closed.
+            var departure = await RecordDepartureAsync(
+                attendeeUserId, liveSessionId, cancellationToken);
+            return departure.Leave is not null;
         }
 
         // FIX D — capacity is ADVISORY on the passive gate-door path: someone who
@@ -394,7 +400,7 @@ internal sealed class HallAttendanceService(
             {
                 await appDbContext.SaveChangesAsync(cancellationToken);
             }
-            catch (DbUpdateException)
+            catch (DbUpdateException ex) when (IsUniqueIndexViolation(ex))
             {
                 // The one-open-row filtered unique index — a concurrent arrival for
                 // the SAME attendee committed first. That is a merge, not a capacity
@@ -421,6 +427,17 @@ internal sealed class HallAttendanceService(
             "This hall is at capacity.",
             "بلغت هذه القاعة سعتها القصوى.");
     }
+
+    /// <summary>True only when the store rejected the write on a UNIQUE index —
+    /// SQL Server 2601 (duplicate key in a unique index, which is what the
+    /// one-open-row FILTERED unique index raises) or 2627 (unique constraint).
+    /// Everything else EF wraps in a <see cref="DbUpdateException"/> — above all
+    /// the 1205 deadlock victim that two concurrent SERIALIZABLE count-then-insert
+    /// units produce by design — MUST propagate so the execution strategy re-runs
+    /// the whole unit. Swallowing those turned an ordinary contention retry into a
+    /// wrong "this hall is at capacity" 409 at a half-empty hall.</summary>
+    private static bool IsUniqueIndexViolation(DbUpdateException exception) =>
+        exception.InnerException is SqlException { Number: 2601 or 2627 };
 
     private HallAttendance NewArrivalRow(
         Guid userId, Guid sessionId, Guid hallId, AttendanceMethod method)

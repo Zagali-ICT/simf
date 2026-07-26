@@ -1,4 +1,6 @@
 ﻿// Tests: SIMF.Api.Tests/GateScanTests.cs
+// Tests: SIMF.Api.Tests/GateHallDoorChainTests.cs (DEF-CHK-004 — the hall-attendance
+//        chain and the advisory NoticeMessage an allowed scan can carry)
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -561,23 +563,24 @@ internal sealed class GateOperatorService(
         // FIX C — a Both-mode gate's direction is only an alternation guess, so the
         // chain derives the real action from attendance state (directionInferred);
         // a fixed In/Out gate stays authoritative.
-        // DEF-CHK-004 — a hall-door scan taken outside every session window admits
-        // the holder but records NO session attendance. That used to be silent, so
-        // the operator saw a plain "Allowed" while the attendance was lost. Carry an
-        // advisory notice on the (still Allowed) result, resolved to the caller's
-        // Accept-Language through the same helper the denial messages use.
+        // DEF-CHK-004 — a hall-door scan can admit the holder while recording NO
+        // session attendance (no session live in the hall, or an Out scan with no
+        // open row to close). That used to be silent, so the operator saw a plain
+        // "Allowed" while the attendance was lost. Carry an advisory notice on the
+        // (still Allowed) result, resolved to the caller's Accept-Language through
+        // the same helper the denial messages use.
         string? notice = null;
         if (hallDoorHallId is { } hallId)
         {
             try
             {
-                var boundToSession = await hallAttendance.RecordGateDoorScanAsync(
+                var attendanceRecorded = await hallAttendance.RecordGateDoorScanAsync(
                     resolution.UserId, hallId, direction,
                     hallDoorDirectionInferred, context.OperatorUserId, cancellationToken);
-                if (!boundToSession)
+                if (!attendanceRecorded)
                 {
                     notice = NoticeMessageFor(
-                        GateScanNotice.NoLiveSessionInHall, context.AcceptLanguage);
+                        GateScanNotice.AttendanceNotRecorded, context.AcceptLanguage);
                 }
             }
             catch (Exception ex)
@@ -600,7 +603,11 @@ internal sealed class GateOperatorService(
     /// surface as <c>DenialMessage</c>.</summary>
     private enum GateScanNotice
     {
-        NoLiveSessionInHall,
+        /// <summary>The chain ran but recorded nothing — no session live in the
+        /// hall, or a check-out that found no open attendance row to close. The
+        /// service reports the two identically (one bool), so the wording must
+        /// not name a single cause; the exact reason is in the server log.</summary>
+        AttendanceNotRecorded,
         AttendanceChainFailed,
     }
 
@@ -614,9 +621,9 @@ internal sealed class GateOperatorService(
     private static (string en, string ar) NoticeMessages(GateScanNotice notice) =>
         notice switch
         {
-            GateScanNotice.NoLiveSessionInHall =>
-                ("Entry allowed, but no session is running in this hall — attendance was not recorded.",
-                 "تم السماح بالدخول، ولكن لا توجد جلسة جارية في هذه القاعة — لم يتم تسجيل الحضور."),
+            GateScanNotice.AttendanceNotRecorded =>
+                ("Entry allowed, but no session attendance was recorded for this scan.",
+                 "تم السماح بالدخول، ولكن لم يتم تسجيل حضور الجلسة لهذا المسح."),
             _ =>
                 ("Entry allowed, but the session attendance could not be recorded.",
                  "تم السماح بالدخول، ولكن تعذّر تسجيل حضور الجلسة."),
