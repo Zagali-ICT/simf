@@ -893,7 +893,8 @@ class AppL10n {
   String get moderatorChipAccepted => _t('الأسئلة المقبولة', 'Accepted');
   String get moderatorChipAnswered => _t('تمت الإجابة', 'Answered');
   String get moderatorChipRejected => _t('مرفوض', 'Rejected');
-  String get moderatorChipOnStage => _t('يتم الإجابة', 'Being answered');
+  // DEF-MOD-007 — the duplicate `moderatorChipOnStage` was removed: it was a
+  // byte-identical copy of the action label below and was never rendered.
   String get moderatorActionOnStage => _t('يتم الإجابة', 'Being answered');
   String get moderatorActionAnswered => _t('تمت الإجابة', 'Answered');
   String get moderatorActionReject => _t('مرفوض', 'Reject');
@@ -2146,9 +2147,14 @@ class AppL10n {
       _t('اكتب سؤالك أولاً', 'Type your question first');
   String get sendQuestionSubmit => _t('إرسال السؤال', 'Send question');
   String get sendQuestionSent => _t('تم إرسال سؤالك', 'Your question was sent');
+  // DEF-MOD-006 — the copy promised a 5-minute pre-start window the server has
+  // never enforced. `SessionQuestionService.SubmitAsync` has NO lower bound (a
+  // future session takes questions ahead of time) and closes them the moment the
+  // session ends; once live, the hall-arrival gate applies. The string now
+  // describes that behaviour instead of inventing a rule.
   String get sendQuestionNotOpen => _t(
-        'الأسئلة مفتوحة فقط من 5 دقائق قبل بدء الجلسة حتى انتهائها.',
-        'Questions are only open from 5 minutes before the session until it ends.',
+        'الأسئلة مغلقة لهذه الجلسة.',
+        'Questions are closed for this session.',
       );
   String get sendQuestionFailed => _t(
         'تعذر إرسال سؤالك. حاول مرة أخرى.',

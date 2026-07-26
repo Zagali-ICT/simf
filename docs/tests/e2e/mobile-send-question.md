@@ -100,7 +100,12 @@ Scenario: The session is over (#7 — phase-based window)
   # returns SESSION_NOT_LIVE_FOR_QUESTIONS (the after-view is a recording).
   Given the submit returns 400 SESSION_NOT_LIVE_FOR_QUESTIONS
   When the attendee submits a question
-  Then the "questions are only open around the session" not-open toast is shown
+  Then the not-open toast reads "الأسئلة مغلقة لهذه الجلسة." /
+       "Questions are closed for this session."
+  # DEF-MOD-006 — the old copy promised a 5-minute pre-start window that
+  # SessionQuestionService has never enforced (there is no lower bound at all;
+  # questions simply close at the session End). The string now describes the
+  # real behaviour — the server rule is intentional and was NOT changed.
 
 Scenario: A server / transport failure
   Given the submit fails with a 500 (or transport error)
@@ -257,7 +262,11 @@ committee mechanics are covered by `cp-session-moderate.md` / `cp-admin-question
 
 ---
 
-_Last reviewed:_ `2026-07-19` by `Claude` — **Two-path Q&A (owner): the server now
+_Last reviewed:_ `2026-07-26` by `Claude` — **DEF-MOD-006: `sendQuestionNotOpen`
+claimed a 5-minute pre-start window the server never enforced; the AR+EN string now
+says "Questions are closed for this session." The server rule is unchanged (no lower
+bound; closes at the session End). E2E-MOB026-004 reworded.**
+_Prior:_ `2026-07-19` by `Claude` — **Two-path Q&A (owner): the server now
 routes a submission by phase — a LIVE question skips the AI filter + the Scientific
 Committee and lands Approved straight on the moderator desk; a PRE question runs the
 advisory AI filter and lands Pending for the Committee. Composer screen unchanged

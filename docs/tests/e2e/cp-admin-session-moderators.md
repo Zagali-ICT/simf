@@ -14,12 +14,23 @@
 > Q&A desk (`/sessions/{id}/moderate`) and the grant is distinct from the
 > mobile `MobileAppRole.Moderator`. The page is a single **`SimfDataGrid`**
 > of existing grants (D-256 raw-table→grid conversion) plus an **Assign
-> moderator** modal (raw `SessionId` + `UserId` GUID text fields) and a
+> moderator** modal and a
 > per-row **Revoke** quiet icon action. After the conversion the **Session**
 > column is per-column **filterable**, the **Session** and **Assigned**
 > columns are **sortable**, and the grid page size is `Top = 20`.
 > `RequiredPermission = PermissionCatalog.SessionModerators.View`; assign
 > needs `SessionModerators.Assign`, revoke needs `SessionModerators.Revoke`.
+>
+> **DEF-MOD-005 (2026-07-26).** The assign modal no longer takes raw GUIDs. It
+> now shows two **pickers** — a **Session** select (the active sessions) and a
+> **Moderator** select (the accounts *eligible* to moderate) — fed by
+> `GET /admin/session-moderators/assign-options`, which is gated by the same
+> `SessionModerators.Assign` permission as the write it feeds. Eligibility is
+> also enforced **server-side** on assign: the target account must be Approved
+> **and** carry a partner profile type whose `MobileAppRole` is `Moderator`
+> (the same fact the app's moderator role is minted from); anything else is
+> `SESSION_MODERATOR_NOT_ELIGIBLE` (400). Previously any approved visitor could
+> be handed a moderation desk by a typo.
 
 ## Coverage matrix
 
@@ -28,9 +39,9 @@
 | E2E-SMD-001 | Golden round-trip — Assign a moderator then Revoke it | happy | P0 | _to author_ |
 | E2E-SMD-002 | Empty list renders `SimfEmptyState` ("No moderators assigned yet.") | happy | P1 | _to author_ |
 | E2E-SMD-003 | Auth gate — signed-in admin lacking `SessionModerators.View` → `/not-permitted` | auth | P0 | _to author_ |
-| E2E-SMD-004 | "Assign moderator" opens the modal (SessionId + UserId fields) | function | P1 | _to author_ |
+| E2E-SMD-004 | "Assign moderator" opens the modal (Session + Moderator pickers) | function | P1 | _to author_ |
 | E2E-SMD-005 | Cancel closes the modal without a POST | function | P2 | _to author_ |
-| E2E-SMD-006 | Client validation — non-GUID id → error toast, no POST | error | P1 | _to author_ |
+| E2E-SMD-006 | Client validation — submitting with a picker unset → error toast, no POST | error | P1 | _to author_ |
 | E2E-SMD-007 | Server validation — unknown SessionId → `SESSION_NOT_FOUND` (404) | error | P1 | _to author_ |
 | E2E-SMD-008 | Server validation — inactive session → `SESSION_INVALID` (400) | error | P1 | _to author_ |
 | E2E-SMD-009 | Server validation — unknown moderator user → `ADMIN_USER_NOT_FOUND` (404) | error | P1 | _to author_ |
@@ -43,6 +54,8 @@
 | E2E-SMD-016 | Per-column filter — typing in "Filter column Session" narrows the grid | function | P1 | _to author_ |
 | E2E-SMD-017 | Column sort — Session / Assigned headers toggle asc↔desc | function | P2 | _to author_ |
 | E2E-SMD-018 | Excel export — toolbar Export downloads an .xlsx of the grants (whole grid vs selected rows) (D-356) | happy | P1 | _to author_ |
+| E2E-SMD-019 | DEF-MOD-005 — an INELIGIBLE account is never offered and is refused server-side (`SESSION_MODERATOR_NOT_ELIGIBLE`) | error | P0 | _to author_ |
+| E2E-SMD-020 | DEF-MOD-005 — the picker lookup carries the `SessionModerators.Assign` gate | auth | P0 | _to author_ |
 
 ## Scenarios
 
@@ -62,14 +75,17 @@ Background:
   And they have landed on /admin/session-moderators
   And an active session exists with Code="S-01" and Title="Opening Plenary"
   And an Approved user exists with DisplayName="Sara Q." and Email="sara.q@example.com"
+      whose profile type is "Moderator" (MobileAppRole = Moderator), so she is
+      ELIGIBLE to moderate (DEF-MOD-005)
 
 Scenario: Assign a moderator, see the new row, then revoke it
   Given the grid currently shows {N} grant rows
   When the administrator clicks "Assign moderator"
-  Then the "Assign session moderator" modal opens with two fields:
-       "Session id" and "Moderator user id"
-  When they fill Session id="<the S-01 session GUID>"
-  And they fill Moderator user id="<Sara Q. user GUID>"
+  Then GET /account/api/admin/session-moderators/assign-options returns 200
+  And the "Assign session moderator" modal opens with two pickers:
+       "Session" and "Moderator"
+  When they pick Session="S-01 — Opening Plenary"
+  And they pick Moderator="Sara Q. (sara.q@example.com) — Moderator"
   And they click "Assign"
   Then the BFF forwards POST /account/api/admin/session-moderators
   And the API returns HTTP 200 with ApiResult.Success = true
@@ -129,34 +145,43 @@ Scenario: "Assign moderator" opens the modal
   Given the administrator is on /admin/session-moderators
   When they click "Assign moderator"
   Then a SimfModal titled "Assign session moderator" opens
-  And it shows exactly two SimfTextField inputs: "Session id" and "Moderator user id"
-  And both fields start empty
+  And GET /account/api/admin/session-moderators/assign-options is fired once
+  And it shows exactly two SimfSelect pickers: "Session" and "Moderator"
+  And the Session picker lists the ACTIVE sessions as "{Code} — {Title}"
+  And the Moderator picker lists only the accounts eligible to moderate,
+      labelled "{DisplayName} ({Email}) — {ProfileType}"
+  And both pickers start on their placeholder
   And the footer shows "Cancel" and "Assign" buttons
+
+Scenario: No eligible moderator exists yet
+  Given no approved account carries a profile type whose app role is Moderator
+  When the administrator opens the Assign modal
+  Then an info alert reads "No eligible moderator yet. Assign an approved account
+       a profile type whose mobile app role is Moderator first."
+  And the Moderator picker is disabled
 ```
 
 ### E2E-SMD-005 — Cancel closes the modal
 
 ```gherkin
 Scenario: Cancel discards the modal without calling the API
-  Given the Assign modal is open with Session id and Moderator user id partly typed
+  Given the Assign modal is open with a Session and a Moderator picked
   When the administrator clicks "Cancel"
   Then the modal closes
   And no /account/api/admin/session-moderators POST request fires
   And no toast appears
-  And re-opening the modal shows both fields cleared
+  And re-opening the modal shows both pickers back on their placeholder
 ```
 
-### E2E-SMD-006 — Client validation (non-GUID)
+### E2E-SMD-006 — Client validation (a picker left unset)
 
 ```gherkin
-Scenario: A non-GUID id is rejected client-side with no POST
+Scenario: Submitting without both picks is rejected client-side with no POST
   Given the Assign modal is open
-  When the administrator fills Session id="not-a-guid"
-  And fills Moderator user id="<a valid GUID>"
+  When the administrator picks a Session but leaves the Moderator picker unset
   And clicks "Assign"
-  Then the page's Guid.TryParse guard fails
-  And a red toast reads "The session moderators could not be loaded." /
-      "تعذّر تحميل مشرفي الجلسات." (the page's LoadFailed fallback)
+  Then a red toast reads "Pick a session and a moderator." /
+      "اختر الجلسة والمحاوِر."
   And the modal stays open
   And no /account/api/admin/session-moderators POST request fires
 ```
@@ -165,10 +190,10 @@ Scenario: A non-GUID id is rejected client-side with no POST
 
 ```gherkin
 Scenario: Assigning against an unknown SessionId returns 404 SESSION_NOT_FOUND
-  Given the Assign modal is open
-  When the administrator fills Session id="<a random unused GUID>"
-  And fills Moderator user id="<an approved user GUID>"
-  And clicks "Assign"
+  # The pickers make this unreachable from the UI; drive the API directly (or a
+  # session deleted between the lookup and the submit).
+  When the administrator POSTs /admin/session-moderators with
+       SessionId="<a random unused GUID>" and UserId="<an eligible user GUID>"
   Then the BFF forwards POST /admin/session-moderators
   And the API returns HTTP 404 with ApiResult.Error.Code = "SESSION_NOT_FOUND"
   And the modal stays open
@@ -181,10 +206,9 @@ Scenario: Assigning against an unknown SessionId returns 404 SESSION_NOT_FOUND
 ```gherkin
 Scenario: Assigning to an inactive (soft-deleted) session returns 400 SESSION_INVALID
   Given an inactive session exists (IsActive = false)
-  And the Assign modal is open
-  When the administrator fills Session id="<the inactive session GUID>"
-  And fills Moderator user id="<an approved user GUID>"
-  And clicks "Assign"
+  # The Session picker only offers ACTIVE sessions, so drive the API directly.
+  When the administrator POSTs /admin/session-moderators with
+       SessionId="<the inactive session GUID>" and UserId="<an eligible user GUID>"
   Then the API returns HTTP 400 with ApiResult.Error.Code = "SESSION_INVALID"
   And the error toast reads "Cannot assign a moderator to an inactive session." /
       "لا يمكن تعيين مشرف لجلسة غير مفعّلة."
@@ -195,9 +219,9 @@ Scenario: Assigning to an inactive (soft-deleted) session returns 400 SESSION_IN
 
 ```gherkin
 Scenario: Assigning an unknown user returns 404 ADMIN_USER_NOT_FOUND
-  Given the Assign modal is open with a valid active Session id
-  When the administrator fills Moderator user id="<a random unused GUID>"
-  And clicks "Assign"
+  # The Moderator picker only offers real, eligible accounts — drive the API.
+  When the administrator POSTs /admin/session-moderators with a valid active
+       SessionId and UserId="<a random unused GUID>"
   Then the API returns HTTP 404 with ApiResult.Error.Code = "ADMIN_USER_NOT_FOUND"
   And the error toast reads "The moderator user was not found." /
       "لم يتم العثور على المستخدم المُشرف."
@@ -209,9 +233,9 @@ Scenario: Assigning an unknown user returns 404 ADMIN_USER_NOT_FOUND
 ```gherkin
 Scenario: Assigning a not-yet-approved user returns 400 AUTH_ACCOUNT_NOT_APPROVED
   Given a user exists whose AccountState is not Approved (e.g. PendingApproval)
-  And the Assign modal is open with a valid active Session id
-  When the administrator fills Moderator user id="<that pending user GUID>"
-  And clicks "Assign"
+  # Unreachable from the pickers (only Approved accounts are listed) — API-only.
+  When the administrator POSTs /admin/session-moderators with a valid active
+       SessionId and UserId="<that pending user GUID>"
   Then the API returns HTTP 400 with ApiResult.Error.Code = "AUTH_ACCOUNT_NOT_APPROVED"
   And the error toast reads "Moderator must be an approved account." /
       "يجب أن يكون المُشرف حساباً معتمداً."
@@ -284,7 +308,9 @@ Scenario: Arabic toggle mirrors the page and the Assign modal
 
   When they click "تعيين مشرف"
   Then the Assign modal opens in RTL titled "تعيين مشرف للجلسة"
-  And the field labels read "معرّف الجلسة" and "معرّف المستخدم المشرف"
+  And the picker labels read "الجلسة" and "المحاوِر"
+  And the Session options read "{Code} — {TitleArabic}" and the Moderator
+      options carry the Arabic profile-type name
   And the footer buttons read "إلغاء" and "تعيين" in reverse order
 ```
 
@@ -370,6 +396,38 @@ Scenario: Export only the selected grant rows
   the workbook via the `simfAccount.downloadXlsx` JS proxy rather than rendering
   a `CrudGridExcel` component.
 
+### E2E-SMD-019 — DEF-MOD-005 eligibility (not offered, and refused server-side)
+
+```gherkin
+Scenario: A plain approved visitor is never offered as a moderator
+  Given an Approved visitor "Faisal V." exists with an audience profile type
+        (its MobileAppRole is not Moderator)
+  When the administrator opens the Assign modal
+  Then the Moderator picker does NOT list "Faisal V."
+
+Scenario: Assigning an ineligible account is refused by the server
+  # The picker makes this unreachable from the UI — this is the server-side
+  # backstop that used to be missing (any approved visitor could be granted).
+  When the administrator POSTs /admin/session-moderators with a valid active
+       SessionId and UserId="<Faisal V.'s GUID>"
+  Then the API returns HTTP 400 with
+       ApiResult.Error.Code = "SESSION_MODERATOR_NOT_ELIGIBLE"
+  And the message reads "The account is not eligible to moderate — assign it a
+      profile type whose mobile app role is Moderator first." /
+      "الحساب غير مؤهل للمحاورة — عيّن له نوع ملف شخصي دوره في التطبيق \"محاوِر\" أولاً."
+  And no SessionModerator row is created
+```
+
+### E2E-SMD-020 — DEF-MOD-005 the picker lookup is permission-gated
+
+```gherkin
+Scenario: The assign-options lookup carries the same gate as the write
+  Given a signed-in account that does NOT hold SessionModerators.Assign
+  When it calls GET /api/v1/admin/session-moderators/assign-options
+  Then the API returns HTTP 403
+  And the eligible-moderator list is never disclosed
+```
+
 ---
 
 ## Implementation notes
@@ -385,6 +443,9 @@ Scenario: Export only the selected grant rows
   and un-approved-user (SMD-010) branches are exercised by the service
   guards in `AdminSessionModeratorService.AssignAsync` but do **not** yet have
   a dedicated API test — they are E2E-only here.
+  DEF-MOD-005 adds `tests/SIMF.Api.Tests/SessionModeratorEligibilityTests.cs`
+  (SMD-019 + SMD-020) and `tests/SIMF.ControlPanel.Tests/SessionModeratorsListTests.cs`
+  (the pickers replace the GUID boxes; the submit posts the picked ids).
 - **Manual smoke is canonical today.** Until Playwright is adopted, the
   canonical run is a Chrome DevTools MCP session: sign in per the Background,
   walk each scenario, capture screenshots into
@@ -392,13 +453,17 @@ Scenario: Export only the selected grant rows
 - **Convert to Playwright** when the runner lands: each Gherkin block copies
   into a `.feature` under `tests/SIMF.E2E.Tests/` (project to be created) with
   a step-definition class. The steps are already runner-agnostic.
-- **Data note.** The page takes raw GUIDs (`Session id`, `Moderator user id`)
-  rather than pickers — capture the real GUIDs from the Sessions grid / Users
-  list before running, since there is no in-page lookup. The DB-down (SMD-013)
-  and forced server-error scenarios require a controllable API (stub/fault
-  injection or a stopped SQL Server).
+- **Data note (DEF-MOD-005).** The page now uses **pickers**, so no GUIDs need
+  capturing up front — but the eligible-moderator list can be empty on a fresh
+  DB. Seed it by assigning an approved account the seeded "Moderator" profile
+  type (`MobileAppRole = Moderator`) from `/admin/profile-types` first. The
+  unknown-session / inactive-session / unknown-user / un-approved-user /
+  ineligible branches are no longer reachable through the UI and are driven at
+  the API. The DB-down (SMD-013) and forced server-error scenarios require a
+  controllable API (stub/fault injection or a stopped SQL Server).
 
 ---
 
 _Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
 _Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle): added E2E-SMD-018 (Excel export); toggle/import/CrudShell-delete confirmed NOT present (export-only page).
+_Last reviewed:_ 2026-07-26 by Claude (DEF-MOD-005 — GUID boxes → Session/Moderator pickers + server-side eligibility): added E2E-SMD-019/020; SMD-001/004/005/006/007/008/009/010/015 rewritten for the pickers.

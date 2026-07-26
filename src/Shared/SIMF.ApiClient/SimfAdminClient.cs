@@ -1778,6 +1778,13 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
 
+    // DEF-MOD-005 — the assign dialog's session + eligible-moderator pickers.
+    public Task<ApiCallResult<SessionModeratorAssignOptions>> ListSessionModeratorAssignOptionsAsync(
+        string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<SessionModeratorAssignOptions>(
+            HttpMethod.Get, "session-moderators/assign-options", content: null,
+            accessToken, cancellationToken);
+
     public Task<ApiCallResult<AdminSessionModeratorRow>> AssignSessionModeratorAsync(
         AssignSessionModeratorRequest request, string accessToken,
         CancellationToken cancellationToken = default) =>

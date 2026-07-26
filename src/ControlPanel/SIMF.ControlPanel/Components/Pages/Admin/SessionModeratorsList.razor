@@ -29,7 +29,7 @@
                       ExportLabel="@L["Grid.Export"]"
                       Caption="@L["Admin.SessionModerators.Title"]"
                       FilterColumnLabel="@L["Grid.FilterColumn"]"
-                      OnAdd="OnAdd"
+                      OnAdd="OnAddAsync"
                       PrevLabel="@L["Grid.Prev"]"
                       NextLabel="@L["Grid.Next"]"
                       FirstLabel="@L["Grid.First"]"
@@ -86,17 +86,37 @@
     <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.SessionModerators.Add.Title"]"
                OnClose="@(() => _addOpen = false)">
         <ChildContent>
+            @* DEF-MOD-005 — real pickers, not free-text GUIDs: the session list is
+               the active sessions and the moderator list is the accounts eligible
+               to moderate (approved + a profile type whose app role is Moderator).
+               The server re-checks both on assign. *@
             <div class="simf-form__fields">
-                <SimfTextField Label="@L["Admin.SessionModerators.Field.SessionId"]"
-                               Value="@_newSessionId"
-                               ValueChanged="@(v => _newSessionId = v)"
-                               ValueExpression="@(() => _newSessionId)"
-                               Disabled="_busy" />
-                <SimfTextField Label="@L["Admin.SessionModerators.Field.UserId"]"
-                               Value="@_newUserId"
-                               ValueChanged="@(v => _newUserId = v)"
-                               ValueExpression="@(() => _newUserId)"
-                               Disabled="_busy" />
+                @if (_optionsError)
+                {
+                    <SimfAlert Variant="error">@L["Admin.SessionModerators.OptionsFailed"]</SimfAlert>
+                }
+                <SimfSelect TValue="SessionModeratorSessionOption"
+                            Label="@L["Admin.SessionModerators.Field.Session"]"
+                            Placeholder="@L["Admin.SessionModerators.Field.Session"]"
+                            Items="_sessionOptions"
+                            ValueFor="@(s => s.Id.ToString())"
+                            LabelFor="@(s => SessionOptionLabel(s))"
+                            Value="_newSession"
+                            ValueChanged="@(s => _newSession = s)"
+                            Disabled="_busy || _optionsLoading" />
+                @if (_candidates.Count == 0 && !_optionsLoading && !_optionsError)
+                {
+                    <SimfAlert Variant="info">@L["Admin.SessionModerators.NoCandidates"]</SimfAlert>
+                }
+                <SimfSelect TValue="SessionModeratorCandidate"
+                            Label="@L["Admin.SessionModerators.Field.Moderator"]"
+                            Placeholder="@L["Admin.SessionModerators.Field.Moderator"]"
+                            Items="_candidates"
+                            ValueFor="@(c => c.UserId.ToString())"
+                            LabelFor="@(c => CandidateLabel(c))"
+                            Value="_newCandidate"
+                            ValueChanged="@(c => _newCandidate = c)"
+                            Disabled="_busy || _optionsLoading || _candidates.Count == 0" />
             </div>
         </ChildContent>
         <Footer>

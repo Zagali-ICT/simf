@@ -40,6 +40,7 @@ Future<void> _pumpBody(
   required SessionDetail detail,
   required SessionSeatMap? seatMap,
   bool seatMapError = false,
+  bool canAsk = true,
   VoidCallback? onRetrySeatMap,
   VoidCallback? onSessionLink,
   VoidCallback? onSessionSummary,
@@ -71,6 +72,7 @@ Future<void> _pumpBody(
             onSessionSummary: onSessionSummary ?? () {},
             onAskHost: () {},
             onJoin: () {},
+            canAsk: canAsk,
             seatMapError: seatMapError,
             onRetrySeatMap: onRetrySeatMap ?? () {},
             onCancelReservation: () {},
@@ -163,6 +165,24 @@ void main() {
       final card = find.byType(AskHostCard);
       expect(card, findsOneWidget);
       expect(tester.widget<AskHostCard>(card).enabled, isFalse);
+    });
+
+    // DEF-MOD-003 — the send-question route (#26) is attendee-only, so a
+    // Staff / Moderator must not be offered a card that silently bounces them
+    // Home. canAsk=false is what the screen passes for those roles.
+    testWidgets('DEF-MOD-003: a role that cannot open send-question is not '
+        'offered the ask card at all', (tester) async {
+      await _pumpBody(
+        tester,
+        detail: _detail(
+          start: now.add(const Duration(hours: 1)),
+          end: now.add(const Duration(hours: 2)),
+        ),
+        seatMap: _seatMap(),
+        canAsk: false,
+      );
+
+      expect(find.byType(AskHostCard), findsNothing);
     });
   });
 

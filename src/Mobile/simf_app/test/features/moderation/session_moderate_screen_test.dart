@@ -8,39 +8,58 @@ import 'package:simf_app/features/moderation/data/moderation_repository.dart';
 import 'package:simf_app/features/moderation/session_moderate_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-ModeratorQuestion _q(String id, {bool pushed = false, String name = 'Raed'}) =>
+ModeratorQuestion _q(
+  String id, {
+  bool pushed = false,
+  String name = 'Raed',
+  ModeratorQuestionStatus status = ModeratorQuestionStatus.approved,
+}) =>
     ModeratorQuestion.fromJson(<String, dynamic>{
       'id': id,
       'sessionId': 's1',
       'submittedByDisplayName': name,
       'questionText': 'Q $id text',
       'isPushed': pushed,
+      'status': ModeratorQuestionStatus.values.indexOf(status),
       'createdAt': '2026-01-01T10:00:00Z',
     });
 
+/// A fake that behaves like the real backend: the moderation writes change the
+/// PERSISTED status, so a reload of the screen re-reads the same buckets.
 class _FakeRepo implements ModerationRepository {
-  _FakeRepo({this.queue = const <ModeratorQuestion>[], this.status = 0});
+  _FakeRepo({List<ModeratorQuestion> queue = const <ModeratorQuestion>[], this.status = 0})
+      : _rows = <ModeratorQuestion>[...queue];
 
-  List<ModeratorQuestion> queue;
+  final List<ModeratorQuestion> _rows;
   final int status; // 0 = ok; otherwise the ApiFailure httpStatus
   int pushCalls = 0;
   int hideCalls = 0;
+  int answeredCalls = 0;
+  bool failWrites = false;
 
   @override
-  Future<List<ModeratorQuestion>> getQueue(String sessionId) async {
-    if (status != 0) {
+  Future<List<ModeratorQuestion>> getQueue(
+    String sessionId, {
+    ModeratorQuestionStatus? status,
+  }) async {
+    if (this.status != 0) {
       throw ApiFailure(
         code: ApiErrorCodes.clientNetwork,
         message: 'x',
-        httpStatus: status,
+        httpStatus: this.status,
       );
     }
-    return queue;
+    if (status == null) {
+      // The working desk: approved + answered.
+      return _rows.where((r) => !r.isRejected).toList(growable: false);
+    }
+    return _rows.where((r) => r.status == status).toList(growable: false);
   }
 
   @override
   Future<ModeratorQuestion> push(String sessionId, String questionId) async {
     pushCalls++;
+    _failIfAsked();
     return _q(questionId, pushed: true);
   }
 
@@ -51,7 +70,46 @@ class _FakeRepo implements ModerationRepository {
     required bool isHidden,
   }) async {
     hideCalls++;
-    return _q(questionId);
+    _failIfAsked();
+    return _write(
+      questionId,
+      isHidden
+          ? ModeratorQuestionStatus.hidden
+          : ModeratorQuestionStatus.approved,
+    );
+  }
+
+  @override
+  Future<ModeratorQuestion> setAnswered(
+    String sessionId,
+    String questionId, {
+    required bool isAnswered,
+  }) async {
+    answeredCalls++;
+    _failIfAsked();
+    return _write(
+      questionId,
+      isAnswered
+          ? ModeratorQuestionStatus.answered
+          : ModeratorQuestionStatus.approved,
+    );
+  }
+
+  ModeratorQuestion _write(String questionId, ModeratorQuestionStatus next) {
+    final index = _rows.indexWhere((r) => r.id == questionId);
+    final updated = _rows[index].withStatus(next);
+    _rows[index] = updated;
+    return updated;
+  }
+
+  void _failIfAsked() {
+    if (failWrites) {
+      throw ApiFailure(
+        code: ApiErrorCodes.clientNetwork,
+        message: 'x',
+        httpStatus: 500,
+      );
+    }
   }
 }
 
@@ -150,29 +208,89 @@ void main() {
       await tester.pumpAndSettle();
       expect(repo.hideCalls, 1);
 
-      // The rejected row still lists under the Rejected chip (session-local).
+      // The rejected row lists under the Rejected chip …
       await tester.tap(find.text('Rejected').first);
       await tester.pumpAndSettle();
       expect(find.text('Q a text'), findsOneWidget);
 
-      // ...and is gone from the New tab.
+      // …and is gone from the New tab.
       await tester.tap(find.text('New').first);
       await tester.pumpAndSettle();
       expect(find.text('Q a text'), findsNothing);
     });
 
-    testWidgets('answered marks the row (client-only) into the Answered tab',
-        (tester) async {
+    // DEF-MOD-001 — the answered mark is a REAL backend call and survives a
+    // full reload of the screen (the old build kept it in a local Set that died
+    // on screen exit, so a co-moderator or a restart lost it).
+    testWidgets('DEF-MOD-001: answered calls the endpoint and the mark survives '
+        'a reload of the screen', (tester) async {
       final repo = _FakeRepo(queue: <ModeratorQuestion>[_q('a')]);
       await _pump(tester, repo);
 
       await tester.tap(find.byIcon(Icons.check));
       await tester.pumpAndSettle();
-      // No backend call for "answered" (no such status).
-      expect(repo.hideCalls, 0);
-      expect(repo.pushCalls, 0);
+      expect(repo.answeredCalls, 1);
 
       await tester.tap(find.text('Answered').first);
+      await tester.pumpAndSettle();
+      expect(find.text('Q a text'), findsOneWidget);
+
+      // Rebuild the screen from scratch against the SAME backing store — the
+      // mark is still there because it is persisted, not screen state.
+      await _pump(tester, repo);
+      await tester.tap(find.text('Answered').first);
+      await tester.pumpAndSettle();
+      expect(find.text('Q a text'), findsOneWidget);
+      await tester.tap(find.text('New').first);
+      await tester.pumpAndSettle();
+      expect(find.text('Q a text'), findsNothing);
+    });
+
+    // DEF-MOD-002 — a rejected question is fetched back from the server
+    // (?status=Hidden), so a mis-click is recoverable after leaving the screen.
+    testWidgets('DEF-MOD-002: a rejected question survives a reload and can be '
+        'restored', (tester) async {
+      final repo = _FakeRepo(
+        queue: <ModeratorQuestion>[
+          _q('a', status: ModeratorQuestionStatus.hidden),
+        ],
+      );
+      await _pump(tester, repo);
+
+      // A freshly opened desk already lists the previously rejected row.
+      await tester.tap(find.text('Rejected').first);
+      await tester.pumpAndSettle();
+      expect(find.text('Q a text'), findsOneWidget);
+
+      // Restoring it (via the answered action, which un-hides first) puts it
+      // back on the working desk.
+      await tester.tap(find.byIcon(Icons.check));
+      await tester.pumpAndSettle();
+      expect(repo.hideCalls, 1);
+      expect(repo.answeredCalls, 1);
+
+      await tester.tap(find.text('Answered').first);
+      await tester.pumpAndSettle();
+      expect(find.text('Q a text'), findsOneWidget);
+    });
+
+    // DEF-MOD-001 — a failed write must not leave the optimistic mark on screen.
+    testWidgets('DEF-MOD-001: a failed answered call rolls the row back',
+        (tester) async {
+      final repo = _FakeRepo(queue: <ModeratorQuestion>[_q('a')])
+        ..failWrites = true;
+      await _pump(tester, repo);
+
+      await tester.tap(find.byIcon(Icons.check));
+      await tester.pumpAndSettle();
+      expect(repo.answeredCalls, 1);
+      expect(find.text('Action failed. Try again.'), findsOneWidget);
+
+      // Still in New, not in Answered.
+      await tester.tap(find.text('Answered').first);
+      await tester.pumpAndSettle();
+      expect(find.text('Q a text'), findsNothing);
+      await tester.tap(find.text('New').first);
       await tester.pumpAndSettle();
       expect(find.text('Q a text'), findsOneWidget);
     });

@@ -6,11 +6,23 @@
 
 ## Purpose
 
-The per-session moderator Q&A desk. Lists the **approved** question queue with five
+The per-session moderator Q&A desk. Lists the question queue with five
 count-badged filter chips (الكل/جديد/الأسئلة المقبولة/تمت الإجابة/مرفوض) and three
-per-question actions. Backend-faithful: **reject** (`hide`) and **on-stage** (`push`)
-hit real endpoints; **answered** and the **rejected list** are moderator-session-local
-(the API has only Approved/Hidden + a push flag).
+per-question actions, **all five backed by the persisted `QuestionStatus`**.
+
+**DEF-MOD-001 / DEF-MOD-002 (2026-07-26).** Previously **answered** and the
+**rejected list** were moderator-session-local Dart state: leaving the screen (or an
+app restart, or a co-moderator on another device) lost the answered marks, and a
+rejected question was unrecoverable from the app. Now:
+
+- `QuestionStatus` carries an additive **`Answered = 3`** (int column, no check
+  constraint → **no migration**) written by
+  `PUT /app/sessions/{id}/questions/{qid}/answered {isAnswered}` — same per-session
+  gate as `hide` / `push`, idempotent, and only reachable from `Approved`.
+- The desk list takes an optional **`?status=`**: omitted returns the working desk
+  (Approved + Answered); `?status=Hidden` returns the desk's own rejected rows, which
+  it can then **restore**.
+- Every action updates the row **optimistically** and rolls it back on failure.
 
 ## Structure (post-decomposition)
 
@@ -37,11 +49,15 @@ shows the submitter's **country** (green) on every card; the app renders a gold
 
 ## Level-F
 
-Wired: 5 chips filter; reject → `setHidden(true)` (optimistic + rollback); on-stage →
-`push` (restores if rejected first); answered → session-local toggle; retry;
-pull-to-refresh. Reads `getQueue`. No missing API.
+Wired: 5 chips filter; reject → `setHidden(true)`; restore → `setHidden(false)`;
+on-stage → `push` (returns a rejected / answered row to Approved first, which is what
+the server requires); answered → `setAnswered(true|false)`; retry; pull-to-refresh.
+Every write is optimistic with rollback. Reads `getQueue()` (working desk) plus
+`getQueue(status: hidden)` (rejected tab). No missing API.
 
 ## Tests
 
-`test/features/moderation/session_moderate_screen_test.dart` (16). E2E:
-`docs/tests/e2e/mobile-session-moderate.md`.
+`test/features/moderation/session_moderate_screen_test.dart` +
+`test/features/moderation/moderation_models_test.dart`. API twin:
+`tests/SIMF.Api.Tests/ModeratorDeskStateTests.cs` (DEF-MOD-001/002). E2E:
+`docs/tests/e2e/mobile-session-moderate.md` (MOBMOD-006/007).

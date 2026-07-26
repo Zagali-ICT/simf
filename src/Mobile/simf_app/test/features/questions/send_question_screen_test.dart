@@ -221,10 +221,11 @@ void main() {
       await tester.tap(find.widgetWithText(FilledButton, 'Send question'));
       await tester.pumpAndSettle();
 
+      // DEF-MOD-006 — the copy no longer promises a 5-minute pre-start window
+      // the server never enforced (SubmitAsync has NO lower bound; it only
+      // closes questions at the session end).
       expect(
-        find.text(
-          'Questions are only open from 5 minutes before the session until it ends.',
-        ),
+        find.text('Questions are closed for this session.'),
         findsOneWidget,
       );
     });

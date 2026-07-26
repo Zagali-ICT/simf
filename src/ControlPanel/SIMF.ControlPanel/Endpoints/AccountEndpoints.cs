@@ -1848,6 +1848,14 @@ internal static class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.ListSessionModeratorsAsync(body, token));
         });
+        // DEF-MOD-005 — the assign dialog's pickers (replaces two raw GUID boxes).
+        group.MapGet("/admin/session-moderators/assign-options",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListSessionModeratorAssignOptionsAsync(token));
+        });
         group.MapPost("/admin/session-moderators",
             async (AssignSessionModeratorRequest body, HttpContext http, SimfAdminClient api) =>
         {

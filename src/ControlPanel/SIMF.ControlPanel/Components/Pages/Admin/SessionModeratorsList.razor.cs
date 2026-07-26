@@ -30,8 +30,17 @@ public partial class SessionModeratorsList
     private Toast? _toast;
 
     private bool _addOpen;
-    private string _newSessionId = string.Empty;
-    private string _newUserId = string.Empty;
+    // DEF-MOD-005 — the assign dialog picks from real option lists instead of two
+    // free-text GUID boxes (a typo used to hand a moderation desk to whichever
+    // account the GUID happened to name).
+    private IReadOnlyList<SessionModeratorSessionOption> _sessionOptions =
+        Array.Empty<SessionModeratorSessionOption>();
+    private IReadOnlyList<SessionModeratorCandidate> _candidates =
+        Array.Empty<SessionModeratorCandidate>();
+    private SessionModeratorSessionOption? _newSession;
+    private SessionModeratorCandidate? _newCandidate;
+    private bool _optionsLoading;
+    private bool _optionsError;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
@@ -80,20 +89,46 @@ public partial class SessionModeratorsList
         finally { _loading = false; }
     }
 
-    private void OnAdd()
+    private async Task OnAddAsync()
     {
         _addOpen = true;
-        _newSessionId = string.Empty;
-        _newUserId = string.Empty;
+        _newSession = null;
+        _newCandidate = null;
+        await LoadAssignOptionsAsync();
+    }
+
+    /// <summary>DEF-MOD-005 — loads the two pickers. Gated API-side by
+    /// <c>SessionModerators.Assign</c>, the same permission as the write.</summary>
+    private async Task LoadAssignOptionsAsync()
+    {
+        _optionsLoading = true;
+        _optionsError = false;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<SessionModeratorAssignOptions>>(
+                "simfAccount.getJson",
+                "/account/api/admin/session-moderators/assign-options");
+            if (env is { Success: true, Data: not null })
+            {
+                _sessionOptions = env.Data.Sessions;
+                _candidates = env.Data.Candidates;
+            }
+            else
+            {
+                _optionsError = true;
+                _sessionOptions = Array.Empty<SessionModeratorSessionOption>();
+                _candidates = Array.Empty<SessionModeratorCandidate>();
+            }
+        }
+        finally { _optionsLoading = false; }
     }
 
     private async Task SubmitAssignAsync()
     {
         if (_busy) return;
-        if (!Guid.TryParse(_newSessionId, out var sessionId)
-            || !Guid.TryParse(_newUserId, out var userId))
+        if (_newSession is null || _newCandidate is null)
         {
-            _toast = new Toast("error", L["Admin.SessionModerators.LoadFailed"]);
+            _toast = new Toast("error", L["Admin.SessionModerators.PickBoth"]);
             return;
         }
         _busy = true;
@@ -104,8 +139,8 @@ public partial class SessionModeratorsList
                 "simfAccount.postJson", "/account/api/admin/session-moderators",
                 new AssignSessionModeratorRequest
                 {
-                    SessionId = sessionId,
-                    UserId = userId,
+                    SessionId = _newSession.Id,
+                    UserId = _newCandidate.UserId,
                 });
             if (env is { Success: true })
             {
@@ -148,8 +183,23 @@ public partial class SessionModeratorsList
         finally { _busy = false; }
     }
 
+    private static bool IsArabic =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
+
     private static string SessionLabel(AdminSessionModeratorRow row) =>
-        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
+        IsArabic
             ? $"{row.SessionCode} — {row.SessionTitleArabic}"
             : $"{row.SessionCode} — {row.SessionTitle}";
+
+    private static string SessionOptionLabel(SessionModeratorSessionOption option) =>
+        IsArabic
+            ? $"{option.Code} — {option.TitleArabic}"
+            : $"{option.Code} — {option.Title}";
+
+    private static string CandidateLabel(SessionModeratorCandidate candidate)
+    {
+        var type = IsArabic ? candidate.ProfileTypeNameArabic : candidate.ProfileTypeName;
+        var email = string.IsNullOrWhiteSpace(candidate.Email) ? "—" : candidate.Email;
+        return $"{candidate.DisplayName} ({email}) — {type}";
+    }
 }

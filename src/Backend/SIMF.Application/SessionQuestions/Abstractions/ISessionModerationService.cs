@@ -1,4 +1,5 @@
 using SIMF.Common;
+using SIMF.Common.Enums;
 using SIMF.Contracts.Sessions;
 
 namespace SIMF.Application.SessionQuestions.Abstractions;
@@ -12,10 +13,21 @@ namespace SIMF.Application.SessionQuestions.Abstractions;
 /// </summary>
 public interface ISessionModerationService
 {
-    /// <summary>Returns the moderator queue for one session — all
-    /// rows including hidden + pushed, ordered by <c>Order</c>.</summary>
+    /// <summary>Returns the moderator queue for one session, ordered by
+    /// <c>Order</c> then <c>CreatedAt</c>.
+    /// <para>DEF-MOD-002 — <paramref name="status"/> selects the desk tab:
+    /// <c>null</c> (the default) returns the WORKING desk — the Committee-approved
+    /// set plus the rows the moderator has already marked
+    /// <see cref="QuestionStatus.Answered"/>; an explicit status returns exactly
+    /// that bucket, which is how the desk retrieves its own rejected
+    /// (<see cref="QuestionStatus.Hidden"/>) rows so a mis-click is recoverable.
+    /// The caller is already authorized as a moderator of this session, so a
+    /// hidden row never leaks to an attendee — attendees have no route to
+    /// this surface.</para></summary>
     Task<IReadOnlyList<SessionQuestionModeratorRow>> ListAsync(
-        Guid sessionId, CancellationToken cancellationToken = default);
+        Guid sessionId,
+        QuestionStatus? status = null,
+        CancellationToken cancellationToken = default);
 
     /// <summary>Hide or unhide one question (idempotent).</summary>
     Task<SessionQuestionModeratorRow> SetHiddenAsync(
@@ -23,6 +35,17 @@ public interface ISessionModerationService
         Guid sessionId,
         Guid questionId,
         bool isHidden,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>DEF-MOD-001 — mark / unmark one question as ANSWERED on stage
+    /// (idempotent). Only an <see cref="QuestionStatus.Approved"/> question can be
+    /// marked answered; un-marking returns it to
+    /// <see cref="QuestionStatus.Approved"/>.</summary>
+    Task<SessionQuestionModeratorRow> SetAnsweredAsync(
+        Guid actorUserId,
+        Guid sessionId,
+        Guid questionId,
+        bool isAnswered,
         CancellationToken cancellationToken = default);
 
     /// <summary>Mark a question as pushed to the speaker (one-way).

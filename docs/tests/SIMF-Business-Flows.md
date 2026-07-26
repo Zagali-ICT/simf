@@ -2621,8 +2621,9 @@ Scenario: Submitting a question to a closed session shows the not-open toast
   When they submit POST /api/v1/app/sessions/{id}/questions
   Then the server returns HTTP 400 with error code "SESSION_NOT_LIVE_FOR_QUESTIONS"
   And the screen shows a bilingual not-open toast — a SnackBar rendering l10n.sendQuestionNotOpen
-       ("Questions are only open from 5 minutes before the session until it ends." /
-        "الأسئلة مفتوحة فقط من 5 دقائق قبل بدء الجلسة حتى انتهائها.")
+       ("Questions are closed for this session." / "الأسئلة مغلقة لهذه الجلسة.")
+  # DEF-MOD-006 — the old copy claimed a 5-minute pre-start window the server
+  # has never enforced (there is no lower bound; questions close at the End).
   And a 404 for the same submit maps to the same not-open toast
   And the question box keeps the typed text (nothing is lost)
 ```

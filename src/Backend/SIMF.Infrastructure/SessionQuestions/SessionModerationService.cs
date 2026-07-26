@@ -1,5 +1,6 @@
 // Tests: SIMF.Api.Tests/SessionQuestionsTests.cs
 // Tests: SIMF.Api.Tests/SessionQuestionCommitteeTests.cs (P3.3 — D-234 desk = Approved set)
+// Tests: SIMF.Api.Tests/ModeratorDeskStateTests.cs (DEF-MOD-001/002 — answered + rejected recovery)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -24,15 +25,30 @@ internal sealed class SessionModerationService(
     ILogger<SessionModerationService> logger) : ISessionModerationService
 {
     public async Task<IReadOnlyList<SessionQuestionModeratorRow>> ListAsync(
-        Guid sessionId, CancellationToken cancellationToken = default)
+        Guid sessionId,
+        QuestionStatus? status = null,
+        CancellationToken cancellationToken = default)
     {
-        // P3.3 — D-212: the desk shows the Committee-approved set only (stage 3).
-        // Pending questions await the Committee (stage 2); Hidden ones were
-        // rejected. Recovery of a hidden question is via the Committee queue
-        // (its status=Hidden filter), not this desk.
-        var rows = await appDbContext.SessionQuestions
+        // P3.3 — D-212: the desk works the Committee-approved set (stage 3);
+        // Pending questions still await the Committee (stage 2).
+        // DEF-MOD-001 — an Answered row stays on the working desk (its own tab)
+        // instead of dying in a screen-local Set.
+        // DEF-MOD-002 — an explicit status returns exactly that bucket, so the
+        // desk can pull back its own rejected (Hidden) rows and restore one; a
+        // mis-click is no longer permanent from the app. The endpoint has already
+        // proved the caller moderates THIS session (or is an Administrator), so a
+        // hidden row is never exposed to an attendee.
+        // Built conditionally (not with an inline ternary) so each shape emits a
+        // plain predicate the (SessionId, Status, Order) index can serve.
+        var query = appDbContext.SessionQuestions
             .AsNoTracking()
-            .Where(q => q.SessionId == sessionId && q.Status == QuestionStatus.Approved)
+            .Where(q => q.SessionId == sessionId);
+        query = status is { } wanted
+            ? query.Where(q => q.Status == wanted)
+            : query.Where(q => q.Status == QuestionStatus.Approved
+                || q.Status == QuestionStatus.Answered);
+
+        var rows = await query
             .OrderBy(q => q.Order).ThenBy(q => q.CreatedAt)
             .Select(q => new
             {
@@ -129,6 +145,54 @@ internal sealed class SessionModerationService(
         logger.LogInformation(
             "Moderator {Actor} {Action} question {QuestionId} on session {SessionId}",
             actorUserId, isHidden ? "hid" : "unhid", questionId, sessionId);
+
+        return await ToRowAsync(question, cancellationToken);
+    }
+
+    public async Task<SessionQuestionModeratorRow> SetAnsweredAsync(
+        Guid actorUserId,
+        Guid sessionId,
+        Guid questionId,
+        bool isAnswered,
+        CancellationToken cancellationToken = default)
+    {
+        var question = await LoadQuestionAsync(sessionId, questionId, cancellationToken);
+
+        // DEF-MOD-001 — "تمت الإجابة" is now a persisted status, not a screen-local
+        // Set: the mark survives a screen exit, an app restart and a co-moderator
+        // on another device. Mirrors SetHiddenAsync: idempotent, Status is the
+        // single source of truth, and the only legal transition is
+        // Approved <-> Answered. A Pending question has not cleared the Committee
+        // and a Hidden one was rejected — neither is on the working desk, so
+        // neither can be "answered on stage".
+        var currentlyAnswered = question.Status == QuestionStatus.Answered;
+        if (currentlyAnswered == isAnswered)
+        {
+            return await ToRowAsync(question, cancellationToken); // idempotent
+        }
+        if (isAnswered && question.Status != QuestionStatus.Approved)
+        {
+            throw new ApiException(
+                ErrorCodes.SessionQuestionInvalid, 400,
+                "Only an approved question can be marked answered.",
+                "لا يمكن وضع علامة \"تمت الإجابة\" إلا على سؤال معتمد.");
+        }
+        question.Status = isAnswered ? QuestionStatus.Answered : QuestionStatus.Approved;
+        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = isAnswered
+                ? AuditEvents.SessionQuestionAnswered
+                : AuditEvents.SessionQuestionUnanswered,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = $"sessionId={sessionId}; questionId={questionId}",
+        }, cancellationToken);
+
+        logger.LogInformation(
+            "Moderator {Actor} {Action} question {QuestionId} on session {SessionId}",
+            actorUserId, isAnswered ? "answered" : "un-answered", questionId, sessionId);
 
         return await ToRowAsync(question, cancellationToken);
     }

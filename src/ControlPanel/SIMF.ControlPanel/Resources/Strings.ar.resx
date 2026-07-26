@@ -2037,8 +2037,11 @@
   <data name="Admin.SessionModerators.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
   <data name="Admin.SessionModerators.New" xml:space="preserve"><value>تعيين مشرف</value></data>
   <data name="Admin.SessionModerators.Add.Title" xml:space="preserve"><value>تعيين مشرف للجلسة</value></data>
-  <data name="Admin.SessionModerators.Field.SessionId" xml:space="preserve"><value>معرّف الجلسة</value></data>
-  <data name="Admin.SessionModerators.Field.UserId" xml:space="preserve"><value>معرّف المستخدم المشرف</value></data>
+  <data name="Admin.SessionModerators.Field.Session" xml:space="preserve"><value>الجلسة</value></data>
+  <data name="Admin.SessionModerators.Field.Moderator" xml:space="preserve"><value>المحاوِر</value></data>
+  <data name="Admin.SessionModerators.PickBoth" xml:space="preserve"><value>اختر الجلسة والمحاوِر.</value></data>
+  <data name="Admin.SessionModerators.OptionsFailed" xml:space="preserve"><value>تعذّر تحميل الجلسات والمحاوِرين المؤهلين.</value></data>
+  <data name="Admin.SessionModerators.NoCandidates" xml:space="preserve"><value>لا يوجد محاوِر مؤهل بعد. عيّن لحساب معتمد نوع ملف شخصي دوره في التطبيق "محاوِر" أولاً.</value></data>
   <data name="Admin.SessionModerators.Submit" xml:space="preserve"><value>تعيين</value></data>
   <data name="Admin.SessionModerators.Cancel" xml:space="preserve"><value>إلغاء</value></data>
   <data name="Admin.SessionModerators.Revoke" xml:space="preserve"><value>إلغاء التعيين</value></data>

@@ -262,6 +262,9 @@ public static class AuditEvents
     public const string SessionQuestionHidden = "SessionQuestion.Hidden";
     public const string SessionQuestionUnhidden = "SessionQuestion.Unhidden";
     public const string SessionQuestionPushed = "SessionQuestion.Pushed";
+    // DEF-MOD-001 — the moderator's "تمت الإجابة" mark, now persisted.
+    public const string SessionQuestionAnswered = "SessionQuestion.Answered";
+    public const string SessionQuestionUnanswered = "SessionQuestion.Unanswered";
     public const string SessionQuestionReordered = "SessionQuestion.Reordered";
     public const string SessionModeratorAssigned = "SessionModerator.Assigned";
     public const string SessionModeratorRevoked = "SessionModerator.Revoked";
