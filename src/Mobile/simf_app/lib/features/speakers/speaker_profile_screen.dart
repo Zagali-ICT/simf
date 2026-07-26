@@ -220,6 +220,7 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
         SpeakerAvatar(
           imageUrl: '$baseUrl/app/assets/SpeakerPhoto/${speaker.id}/image',
           initials: speakerInitials(speaker.localizedName(isArabic)),
+          name: speaker.localizedName(isArabic),
         ),
         const SizedBox(height: SimfTokens.space8 + SimfTokens.space2), // 40
         if (sections.isNotEmpty) ...<Widget>[

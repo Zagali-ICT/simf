@@ -482,6 +482,56 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    [Fact]
+    public async Task POST_edit_that_only_changes_the_mobile_persists_it_and_keeps_every_other_field()
+    {
+        // Owner 2026-07-26 — "Add / Edit phone number in my profile — NO VERIFY,
+        // ONLY VALIDATE". The app's My-mobile screen re-POSTs the FULL loaded
+        // profile with only the mobile replaced, so this locks the contract it
+        // relies on: the existing upsert IS the edit path (no new endpoint, no
+        // schema change, no OTP), the new number reads back, and nothing else
+        // is nulled by the second save.
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.SaudiMobile = "0501234567";
+        var first = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+
+        request.SaudiMobile = "0559876543";
+        var edit = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, edit.StatusCode);
+
+        var read = await GetAuthAsync(Path, token);
+        var body = (await read.Content.ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!;
+        Assert.Equal("0559876543", body.Data!.SaudiMobile);
+        Assert.Equal(request.ArabicName, body.Data.ArabicName);
+        Assert.Equal(request.EnglishName, body.Data.EnglishName);
+        Assert.Equal(request.OrganisationId, body.Data.OrganisationId);
+        Assert.Equal(request.NationalId, body.Data.NationalId);
+    }
+
+    [Fact]
+    public async Task POST_adds_a_mobile_to_a_profile_that_had_none()
+    {
+        // Owner 2026-07-26 — the "Add" half: a profile saved without a number
+        // takes one on a later edit (the field is optional at first save).
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.SaudiMobile = null;
+        Assert.Equal(
+            HttpStatusCode.OK,
+            (await PostAuthAsync(Path, request, token)).StatusCode);
+
+        request.SaudiMobile = "+966501234567";
+        Assert.Equal(
+            HttpStatusCode.OK,
+            (await PostAuthAsync(Path, request, token)).StatusCode);
+
+        var read = await GetAuthAsync(Path, token);
+        var body = (await read.Content.ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!;
+        Assert.Equal("+966501234567", body.Data!.SaudiMobile);
+    }
+
     // C6 (D-371; relaxed 2026-07-06) — رقم اللوحة: optional, but when present it
     // must be plate letters from the 17-letter set and/or digits (up to 3 + up
     // to 4, separators stripped); the service stores the normalized upper-cased

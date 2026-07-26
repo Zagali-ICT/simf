@@ -60,8 +60,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   /// Best-effort background video for the given step — a missing decoder
-  /// (tests / unsupported runtime) silently falls back to the static
-  /// image / navy background.
+  /// (tests / unsupported runtime) falls back to the world-map poster that
+  /// [OnboardingBackground] always paints underneath.
+  ///
+  /// Owner 2026-07-26 — the failure was swallowed by a bare `catch (_)`, so a
+  /// device that refuses the clip looked identical to one that never had it.
+  /// The reason is now printed in debug builds (release stays silent: a
+  /// decorative background must never surface an error to a visitor).
   Future<void> _loadVideo(int index) async {
     final old = _video;
     _video = null;
@@ -70,7 +75,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       setState(() {});
     }
     await old?.dispose();
-    final controller = VideoPlayerController.asset(_videoAssets[index]);
+    final asset = _videoAssets[index];
+    final controller = VideoPlayerController.asset(asset);
     try {
       await controller.initialize();
       await controller.setLooping(true);
@@ -84,7 +90,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         _video = controller;
         _videoReady = true;
       });
-    } catch (_) {
+    } catch (error) {
+      debugPrint('Onboarding background video "$asset" failed to play: $error');
       await controller.dispose();
     }
   }
@@ -159,13 +166,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       body: Stack(
         children: <Widget>[
           // D-373 — every step plays its looping background video under the
-          // navy overlay; until the decoder is ready (or when it is
-          // unavailable) the step-1 world-map photo / plain navy shows.
+          // navy scrim; until the decoder is ready (or when it never becomes
+          // ready) the world-map poster underneath shows on EVERY step.
           Positioned.fill(
             child: OnboardingBackground(
               video: _video,
               videoReady: _videoReady,
-              index: _index,
             ),
           ),
           SafeArea(

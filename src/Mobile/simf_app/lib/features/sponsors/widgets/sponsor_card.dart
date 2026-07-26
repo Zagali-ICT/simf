@@ -66,6 +66,7 @@ class SponsorCard extends StatelessWidget {
                   baseUrl: baseUrl,
                   fallbackInitials: badge,
                   hero: hero,
+                  name: name,
                 ),
               ),
               const SizedBox(width: SimfTokens.space2),

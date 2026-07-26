@@ -114,8 +114,14 @@ class BadgeQrCard extends StatelessWidget {
               children: <Widget>[
                 // Frame 758:1469 — a 64-px rounded box; the SIMF brand-mark
                 // fallback on its navy box stays visible on the gold strip,
-                // replaced by the photo when present.
-                SimfAvatar(name: name, currentUser: true, size: 64),
+                // replaced by the photo when present. Owner 2026-07-26 — the
+                // badge photo is display-only, so tapping it opens it full size.
+                SimfAvatar(
+                  name: name,
+                  currentUser: true,
+                  size: 64,
+                  enableFullScreen: true,
+                ),
                 const SizedBox(width: SimfTokens.space2),
                 Expanded(
                   child: Column(

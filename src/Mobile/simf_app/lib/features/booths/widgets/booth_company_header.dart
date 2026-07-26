@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme/tokens.dart';
+import '../../../app/widgets/simf_logo_image.dart';
 import '../../../core/country_flag.dart';
 import '../../venuemap/data/venue_map_models.dart';
 
@@ -105,8 +106,15 @@ class _CountryFlagTile extends StatelessWidget {
 
 /// The square booth-logo tile (frame node 922:2560): a 48×48 navy square with a
 /// beige hairline. Renders the booth's own BoothLogo (the D-357 asset owned by
-/// [boothId]) clipped to fill, falling back to the booth **short name** (centred,
-/// as the frame shows "SAMI") while it loads or when the booth has no logo.
+/// [boothId]) shown **whole** inside the tile, falling back to the booth **short
+/// name** (centred, as the frame shows "SAMI") while it loads or when the booth
+/// has no logo.
+///
+/// Owner 2026-07-26 — the mark now FITS its tile (the old `BoxFit.cover` cropped
+/// wide company logos), via the shared [SimfLogoImage]. Full-size-on-tap is OFF
+/// here on purpose: the tile sits inside the tappable booth card, whose tap owns
+/// the navigation to the exhibitor detail — where the 108px identity logo IS
+/// tappable to full size.
 class _LogoTile extends StatelessWidget {
   const _LogoTile({
     required this.boothId,
@@ -145,19 +153,18 @@ class _LogoTile extends StatelessWidget {
       ),
       child: id.isEmpty
           ? fallbackText
-          : Image.network(
-              '$baseUrl/app/assets/BoothLogo/$id/image',
+          : SimfLogoImage(
+              url: '$baseUrl/app/assets/BoothLogo/$id/image',
+              placeholder: fallbackText,
+              semanticLabel: fallback,
               width: 48,
               height: 48,
               // Decode-cap to the tile size (§4): 48px at up to 2x DPR, so a
               // full-res logo never decodes into this per-list-item thumbnail.
+              // The full-size viewer paints the uncapped image.
               cacheWidth: 96,
               cacheHeight: 96,
-              fit: BoxFit.cover,
-              gaplessPlayback: true,
-              loadingBuilder: (context, child, progress) =>
-                  progress == null ? child : fallbackText,
-              errorBuilder: (context, error, stackTrace) => fallbackText,
+              enableFullScreen: false,
             ),
     );
   }

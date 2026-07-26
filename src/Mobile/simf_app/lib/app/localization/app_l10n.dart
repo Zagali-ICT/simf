@@ -55,6 +55,11 @@ class AppL10n {
             'registration is approved.',
       );
   String get retryLabel => _t('إعادة المحاولة', 'Retry');
+  // Full-size image viewer (owner 2026-07-26) — opened by tapping any logo /
+  // photo box rendered through SimfLogoImage.
+  String get imageViewerCloseLabel => _t('إغلاق الصورة', 'Close image');
+  String get imageViewerLoadFailed =>
+      _t('تعذّر تحميل الصورة.', 'Could not load the image.');
   String get loadingLabel => _t('جارٍ التحميل…', 'Loading…');
   String get lookupLoadError =>
       _t('تعذر تحميل القائمة.', 'Could not load the list.');
@@ -261,6 +266,18 @@ class AppL10n {
   // #14 — edit-mode success toast (My interests screen opened from My-Area).
   String get interestsUpdatedToast =>
       _t('تم تحديث اهتماماتك', 'Your interests were updated');
+  // Owner 2026-07-26 — add / edit the mobile number from the profile. Validation
+  // only: there is deliberately NO OTP / verification step on this screen.
+  String get myMobileTitle => _t('رقم الجوال', 'Mobile number');
+  String get myMobileHelper => _t(
+        'أضف أو عدّل رقم جوالك. يُستخدم للتواصل معك بخصوص الملتقى.',
+        'Add or edit your mobile number. It is used to contact you about the '
+            'forum.',
+      );
+  String get myMobileCurrentLabel => _t('الرقم الحالي', 'Current number');
+  String get myMobileNoneYet => _t('لم يُضف بعد', 'Not added yet');
+  String get myMobileUpdatedToast =>
+      _t('تم تحديث رقم الجوال', 'Your mobile number was updated');
   String get attachIdImageLabel => _t('إرفاق صورة الهوية', 'Attach ID image');
   // KSA-Project profile frame copy (Figma 168:2972, D-368).
   String get createProfileTitle => _t('إنشاء ملف شخصى', 'Create profile');
