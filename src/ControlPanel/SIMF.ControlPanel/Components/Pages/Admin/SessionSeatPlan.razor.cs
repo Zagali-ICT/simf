@@ -28,9 +28,36 @@ public partial class SessionSeatPlan
     // paint the full grid (free + reserved). Null when the hall has no layout.
     private HallSeatLayoutSnapshot? _layout;
     private string _reserveRowLabel = string.Empty;
+    // D-771 (owner 2026-07-26) — the manual guest note the admin types before
+    // blocking a VVIP seat. A VVIP seat has no registration, so this free text IS
+    // the occupant record ("هذا المقعد محجوز لمعالي الوزير") the app and the staff
+    // seating desk display. Cleared after each successful block.
+    private string _guestHintArabic = string.Empty;
+    private string _guestHint = string.Empty;
     private bool _loading;
     private bool _busy;
     private Toast? _toast;
+
+    // D-771 — the tier of row i, read off the layout snapshot. Tolerant of an
+    // absent/short SeatTiers (a pre-D-771 payload) → Normal, matching the server.
+    private SeatTier TierOfRow(int rowIndex) =>
+        _layout?.SeatTiers is { Count: > 0 } tiers && rowIndex < tiers.Count
+            ? tiers[rowIndex]
+            : SeatTier.Normal;
+
+    private static string TierModifier(SeatTier tier) => tier switch
+    {
+        SeatTier.Vvip => "vvip",
+        SeatTier.Vip => "vip",
+        _ => "normal",
+    };
+
+    private string TierLabel(SeatTier tier) => tier switch
+    {
+        SeatTier.Vvip => L["Admin.HallSeatLayouts.Tier.Vvip"],
+        SeatTier.Vip => L["Admin.HallSeatLayouts.Tier.Vip"],
+        _ => L["Admin.HallSeatLayouts.Tier.Normal"],
+    };
 
     // D-767 — seats in row i: the per-row SeatCounts entry when the layout is
     // variable (ragged), else the uniform SeatsPerRow. Tolerant of a short/absent
@@ -57,9 +84,18 @@ public partial class SessionSeatPlan
     private string SeatTitle(string rowLabel, int seatNumber, SessionSeatCell? cell)
     {
         var coords = $"{rowLabel}{seatNumber}";
-        return cell is null
-            ? string.Format(L["Admin.SessionSeatPlans.Seat.FreeTitle"], coords)
-            : string.Format(L["Admin.SessionSeatPlans.Seat.ReservedTitle"], coords, cell.Kind);
+        if (cell is null)
+        {
+            return string.Format(L["Admin.SessionSeatPlans.Seat.FreeTitle"], coords);
+        }
+        // D-771 — a VVIP block carries the admin's manual guest note; surface it in
+        // the seat tooltip so the plan reads "who is this seat held for".
+        var hint = string.IsNullOrWhiteSpace(cell.GuestHintArabic)
+            ? cell.GuestHint
+            : cell.GuestHintArabic;
+        var reserved = string.Format(
+            L["Admin.SessionSeatPlans.Seat.ReservedTitle"], coords, cell.Kind);
+        return string.IsNullOrWhiteSpace(hint) ? reserved : $"{reserved} — {hint}";
     }
 
     protected override async Task OnInitializedAsync()
@@ -153,6 +189,12 @@ public partial class SessionSeatPlan
     private void OnReserveRowChanged(ChangeEventArgs e) =>
         _reserveRowLabel = (e.Value?.ToString() ?? string.Empty).Trim();
 
+    private void OnGuestHintArabicChanged(ChangeEventArgs e) =>
+        _guestHintArabic = (e.Value?.ToString() ?? string.Empty).Trim();
+
+    private void OnGuestHintChanged(ChangeEventArgs e) =>
+        _guestHint = (e.Value?.ToString() ?? string.Empty).Trim();
+
     private async Task ReserveRowAsync()
     {
         if (_selectedSessionId is null || _busy
@@ -196,10 +238,19 @@ public partial class SessionSeatPlan
             var env = await JS.InvokeAsync<ApiResult<bool>>(
                 "simfAccount.postJson",
                 $"/account/api/admin/sessions/{_selectedSessionId}/seats/reserve-seat",
-                new AdminReserveSeatRequest { RowLabel = rowLabel, SeatNumber = seatNumber });
+                new AdminReserveSeatRequest
+                {
+                    RowLabel = rowLabel,
+                    SeatNumber = seatNumber,
+                    // D-771 — the manual guest note typed above the grid.
+                    GuestHint = _guestHint,
+                    GuestHintArabic = _guestHintArabic,
+                });
             if (env is { Success: true })
             {
                 _toast = new Toast("success", L["Admin.SessionSeatPlans.ReserveSeat.Done"]);
+                _guestHint = string.Empty;
+                _guestHintArabic = string.Empty;
                 await LoadReservationsAsync();
             }
             else

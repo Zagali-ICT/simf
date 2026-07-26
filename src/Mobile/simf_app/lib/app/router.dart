@@ -70,6 +70,7 @@ import '../features/sessions/session_detail_screen.dart';
 import '../features/sessions/session_presentations_screen.dart';
 import '../features/sessions/sessions_screen.dart';
 import '../features/staff/register_visitor_screen.dart';
+import '../features/staff/staff_seating_screen.dart';
 import '../features/sponsors/sponsor_detail_screen.dart';
 import '../features/sponsors/sponsors_screen.dart';
 import '../features/speakers/speaker_profile_screen.dart';
@@ -182,6 +183,9 @@ const List<_Route> _routes = <_Route>[
   // D-509 — staff walk-in visitor registration (approved Staff; server enforces
   // Visitors.RegisterOnsite). Figma 1467:12357.
   _Route(number: 114, name: RouteNames.staffRegisterVisitor, path: '/staff/register-visitor', labelAr: 'تسجيل زائر', labelEn: 'Register visitor'),
+  // D-771 — the staff seating desk (approved Staff; server enforces
+  // Seating.Assist). Derived from the visitor seat picker (109).
+  _Route(number: 118, name: RouteNames.staffSeating, path: '/staff/seating/:sessionId', labelAr: 'إرشاد الضيوف للمقاعد', labelEn: 'Guest seating desk'),
   // D-500 (Wave 5, الطلبات) — the unified requests feed (approved-only), retitled
   // "طلباتي" once the meetings page split off (D-745).
   _Route(number: 108, name: RouteNames.requests, path: '/requests', labelAr: 'طلباتي', labelEn: 'My requests'),
@@ -313,6 +317,7 @@ const Map<int, Set<AppRole>> _routeRoles = <int, Set<AppRole>>{
   // Staff-only — the gate operations (D-406 / D-509).
   105: <AppRole>{AppRole.staff}, // Gate scanner
   114: <AppRole>{AppRole.staff}, // Walk-in visitor registration
+  118: <AppRole>{AppRole.staff}, // Seating desk (D-771)
   // Moderator-only — the session Q&A desk (D-405). Moderator-EXCLUSIVE now
   // (D-519): Staff no longer inherits it (the old isAtLeast made Staff >= Moderator).
   104: <AppRole>{AppRole.moderator}, // Session Q&A desk
@@ -560,6 +565,11 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.staffRegisterVisitor) {
     return const StaffRegisterVisitorScreen();
+  }
+  if (r.name == RouteNames.staffSeating) {
+    return StaffSeatingScreen(
+      sessionId: state.pathParameters[RouteParams.sessionId] ?? '',
+    );
   }
   if (r.name == RouteNames.scanVisitor) {
     return const ScanVisitorScreen();

@@ -183,6 +183,14 @@
   --color-seat-confirmed: var(--color-success);
   --color-seat-contrast: #FFFFFF;      /* label on dark navy/steel seats */
   --color-seat-user-contrast: #01132D; /* navy label on the gold user seat */
+  /* D-771 seat TIERS (Normal / VIP / VVIP). The tier is a property of the row,
+     so these tint the row BAND, not the seat squares (which keep their
+     reservation-state colours above). Deep red = VVIP protocol seating and deep
+     teal = VIP, matching the seeded VVIP / VIP profile-type badge colours so the
+     tier reads the same on a badge and on a seat plan. */
+  --color-seat-tier-vvip: #B91C1C;
+  --color-seat-tier-vip: #0E7490;
+  --color-seat-tier-normal: var(--color-border);
 }
 
 /* ----------------------------------------------------------------------------

@@ -142,6 +142,24 @@
     inline-size: max-content;
 }
 
+/* D-771 — the row's TIER band. The tier belongs to the whole row, so it is drawn
+   as a start-edge marker on the row rather than on each seat; logical border so
+   it flips correctly under RTL. */
+.hsl-preview__row--vvip {
+    border-inline-start: var(--space-1) solid var(--color-seat-tier-vvip);
+    padding-inline-start: var(--space-2);
+}
+
+.hsl-preview__row--vip {
+    border-inline-start: var(--space-1) solid var(--color-seat-tier-vip);
+    padding-inline-start: var(--space-2);
+}
+
+.hsl-preview__row--normal {
+    border-inline-start: var(--space-1) solid var(--color-seat-tier-normal);
+    padding-inline-start: var(--space-2);
+}
+
 .hsl-preview__row-label {
     flex: 0 0 2.5rem;
     text-align: center;

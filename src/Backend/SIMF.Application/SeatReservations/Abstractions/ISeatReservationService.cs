@@ -75,4 +75,22 @@ public interface ISeatReservationService
     /// <c>ReservationNoShowReleaseWorker</c>.</summary>
     Task<int> ReleaseNoShowsAsync(
         DateTimeOffset now, CancellationToken cancellationToken = default);
+
+    // -- Staff seating desk (D-771 — owner 2026-07-26) --
+
+    /// <summary>D-771 — "who sits here?": resolve one seat in a session to its
+    /// occupant (reference id, bilingual name, whether a photo can be streamed) or,
+    /// for a VVIP protocol seat, to the administrator's manual guest hint.
+    /// <c>Found = false</c> means the seat is free — a valid answer, not an
+    /// error.</summary>
+    Task<StaffSeatOccupant> ResolveSeatOccupantAsync(
+        Guid sessionId, string rowLabel, int seatNumber,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>D-771 — "where do I sit?": resolve a scanned badge QR id to the
+    /// holder's seat in this session. <c>Found = false</c> with the holder's identity
+    /// filled in means the badge is valid but holds no seat here; an unknown badge
+    /// throws <c>ATTENDEE_QR_UNKNOWN</c>.</summary>
+    Task<StaffSeatOccupant> ResolveBadgeSeatAsync(
+        Guid sessionId, string qrId, CancellationToken cancellationToken = default);
 }

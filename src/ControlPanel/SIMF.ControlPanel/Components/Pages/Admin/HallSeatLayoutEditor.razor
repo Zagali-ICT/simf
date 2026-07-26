@@ -56,7 +56,9 @@
 
                 @* D-767 — one seat-count input per parsed row (raw input, NOT
                    SimfTextField: a SimfTextField without ValueExpression freezes the
-                   page, D-648). Renaming a label keeps that position's count. *@
+                   page, D-648). Renaming a label keeps that position's count.
+                   D-771 — each row also carries its TIER (Normal / VIP / VVIP); a
+                   NEWLY added row defaults to VVIP-reserved per the owner rule. *@
                 @if (_rows.Count > 0)
                 {
                     <div class="simf-form__fields">
@@ -70,6 +72,26 @@
                                        value="@_rows[idx].Count"
                                        @onchange="@(e => OnRowCountChanged(idx, e))"
                                        disabled="@_busy" />
+                            </label>
+                        }
+                    </div>
+
+                    <div class="simf-form__fields">
+                        <span class="simf-field__label">@L["Admin.HallSeatLayouts.Field.RowTiers"]</span>
+                        <p class="simf-hint">@L["Admin.HallSeatLayouts.TierHint"]</p>
+                        @for (var i = 0; i < _rows.Count; i++)
+                        {
+                            var idx = i;
+                            <label class="simf-field simf-field--inline">
+                                <span class="simf-field__label">@_rows[idx].Label</span>
+                                <select class="simf-field__input"
+                                        value="@((int)_rows[idx].Tier)"
+                                        @onchange="@(e => OnRowTierChanged(idx, e))"
+                                        disabled="@_busy">
+                                    <option value="@((int)SeatTier.Normal)">@L["Admin.HallSeatLayouts.Tier.Normal"]</option>
+                                    <option value="@((int)SeatTier.Vip)">@L["Admin.HallSeatLayouts.Tier.Vip"]</option>
+                                    <option value="@((int)SeatTier.Vvip)">@L["Admin.HallSeatLayouts.Tier.Vvip"]</option>
+                                </select>
                             </label>
                         }
                     </div>
@@ -118,7 +140,7 @@
                         @foreach (var row in _rows)
                         {
                             var seatsToRender = Math.Clamp(row.Count, 0, 80);
-                            <div class="hsl-preview__row">
+                            <div class="hsl-preview__row hsl-preview__row--@TierModifier(row.Tier)">
                                 <span class="hsl-preview__row-label">@row.Label</span>
                                 @for (var seat = 1; seat <= seatsToRender; seat++)
                                 {
@@ -135,9 +157,11 @@
             </section>
 
             <div class="simf-form__actions">
-                <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy">
-                    @L["Admin.HallSeatLayouts.Save"]
-                </SimfButton>
+                <AuthorizedAction Permission="@PermissionCatalog.SeatLayouts.Edit">
+                    <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy">
+                        @L["Admin.HallSeatLayouts.Save"]
+                    </SimfButton>
+                </AuthorizedAction>
             </div>
         }
     </div>

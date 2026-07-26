@@ -2297,6 +2297,12 @@
   <data name="Admin.HallSeatLayouts.Field.RowLabels" xml:space="preserve"><value>Row labels (comma-separated, 1–26 entries, e.g. A,B,C,VIP)</value></data>
   <data name="Admin.HallSeatLayouts.Field.SeatsPerRow" xml:space="preserve"><value>Seats per row (1–80)</value></data>
   <data name="Admin.HallSeatLayouts.Field.RowSeats" xml:space="preserve"><value>Seats in each row (1–80)</value></data>
+  <!-- D-771 (owner 2026-07-26) — per-row seat tiers -->
+  <data name="Admin.HallSeatLayouts.Field.RowTiers" xml:space="preserve"><value>Seat tier of each row</value></data>
+  <data name="Admin.HallSeatLayouts.TierHint" xml:space="preserve"><value>A new row starts as VVIP reserved. VVIP seats cannot be booked by anyone — assign them from the session seat plan with a guest note. VIP seats can only be booked by VIP guests; Normal seats are open to every visitor.</value></data>
+  <data name="Admin.HallSeatLayouts.Tier.Normal" xml:space="preserve"><value>Normal</value></data>
+  <data name="Admin.HallSeatLayouts.Tier.Vip" xml:space="preserve"><value>VIP</value></data>
+  <data name="Admin.HallSeatLayouts.Tier.Vvip" xml:space="preserve"><value>VVIP (reserved)</value></data>
   <data name="Admin.HallSeatLayouts.HallCapacity" xml:space="preserve"><value>Hall capacity</value></data>
   <data name="Admin.HallSeatLayouts.LayoutCapacity" xml:space="preserve"><value>Layout capacity</value></data>
   <data name="Admin.HallSeatLayouts.TotalSeats" xml:space="preserve"><value>Total seats</value></data>
@@ -2325,6 +2331,10 @@
   <data name="Admin.SessionSeatPlans.ReserveRow.Action" xml:space="preserve"><value>Reserve row</value></data>
   <data name="Admin.SessionSeatPlans.ReserveRow.Done" xml:space="preserve"><value>Row reserved.</value></data>
   <data name="Admin.SessionSeatPlans.ReserveSeat.Done" xml:space="preserve"><value>Seat reserved for a VIP.</value></data>
+  <!-- D-771 (owner 2026-07-26) — the manual guest note on a VVIP seat -->
+  <data name="Admin.SessionSeatPlans.GuestHint.Arabic" xml:space="preserve"><value>Guest note (Arabic)</value></data>
+  <data name="Admin.SessionSeatPlans.GuestHint.English" xml:space="preserve"><value>Guest note (English)</value></data>
+  <data name="Admin.SessionSeatPlans.GuestHint.Hint" xml:space="preserve"><value>A VVIP seat has no registration. Type the guest note here, then tap the seat on the plan to hold it — the note is what the app and the staff seating desk show for that seat.</value></data>
   <data name="Admin.SessionSeatPlans.Col.Row" xml:space="preserve"><value>Row</value></data>
   <data name="Admin.SessionSeatPlans.Col.Seat" xml:space="preserve"><value>Seat</value></data>
   <data name="Admin.SessionSeatPlans.Col.Kind" xml:space="preserve"><value>Kind</value></data>

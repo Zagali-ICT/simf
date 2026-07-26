@@ -315,14 +315,24 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     // isAtLeast ladder). UX gate only — the server still enforces the
     // per-session SessionModerator grant (403).
     final canModerate = role == AppRole.moderator;
+    // D-771 — Staff entry to the seating desk. Staff and Moderator are disjoint
+    // focused roles (D-519), so the two never compete for the header's single
+    // trailing slot. UX gate only — the server enforces Seating.Assist (403).
+    final canAssistSeating = role == AppRole.staff;
     return SimfPageShell(
       tab: SimfTab.sessions,
       // The frame's chrome is the standard circled back + centred title; the
-      // moderator Q&A action is kept as a trailing control on the same row.
+      // moderator Q&A action (or, for Staff, the seating desk) is kept as a
+      // trailing control on the same row.
       header: SessionDetailHeader(
         title: l10n.sessionDetailTitle,
         onBack: () => backOrHome(context),
-        moderateTooltip: canModerate ? l10n.moderatorManageQuestions : null,
+        actionIcon: canAssistSeating
+            ? Icons.event_seat_outlined
+            : Icons.forum_outlined,
+        moderateTooltip: canModerate
+            ? l10n.moderatorManageQuestions
+            : (canAssistSeating ? l10n.staffSeatingTitle : null),
         onModerate: canModerate
             ? () => context.pushNamed(
                   RouteNames.sessionModerate,
@@ -330,7 +340,14 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
                     RouteParams.sessionId: widget.sessionId,
                   },
                 )
-            : null,
+            : (canAssistSeating
+                ? () => context.pushNamed(
+                      RouteNames.staffSeating,
+                      pathParameters: <String, String>{
+                        RouteParams.sessionId: widget.sessionId,
+                      },
+                    )
+                : null),
       ),
       body: _buildBody(l10n),
     );

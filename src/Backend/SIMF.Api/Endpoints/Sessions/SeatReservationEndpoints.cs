@@ -192,6 +192,8 @@ public sealed class SetHallSeatLayoutEndpoint(ISeatReservationService service)
                     // D-767 — carry the optional per-row seat counts through the
                     // over-post-safe re-projection.
                     SeatCounts = req.SeatCounts,
+                    // D-771 — and the per-row seat tiers.
+                    SeatTiers = req.SeatTiers,
                 }, ct)), ct);
     }
 }
@@ -251,7 +253,13 @@ public sealed class AdminReserveSeatEndpoint(ISeatReservationService service)
         await service.AdminReserveSeatAsync(actorId, req.SessionId,
             new AdminReserveSeatRequest
             {
-                RowLabel = req.RowLabel, SeatNumber = req.SeatNumber,
+                RowLabel = req.RowLabel,
+                SeatNumber = req.SeatNumber,
+                // D-771 — carry the manual VVIP guest hint through the over-post-safe
+                // re-projection (a VVIP seat has no registration; the hint is the
+                // occupant record).
+                GuestHint = req.GuestHint,
+                GuestHintArabic = req.GuestHintArabic,
             }, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

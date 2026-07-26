@@ -319,6 +319,12 @@ public static class ErrorCodes
     // effective mode (Session.SeatSelectionModeOverride ?? Hall.SeatSelectionMode).
     public const string SeatSelectionRequired = "SEAT_SELECTION_REQUIRED";
     public const string OpenSeatingOnly = "OPEN_SEATING_ONLY";
+    // D-771 — seat TIER eligibility. NOT_ELIGIBLE: the visitor's profile tier does
+    // not reach the seat's tier (a non-VIP visitor picked a VIP seat). RESERVED: a
+    // VVIP protocol seat, which nobody may self-reserve — an administrator assigns
+    // it manually with a guest hint.
+    public const string SeatTierNotEligible = "SEAT_TIER_NOT_ELIGIBLE";
+    public const string SeatTierReserved = "SEAT_TIER_RESERVED";
 
     // Booking approval workflow (P2.2 / D-227 — FDS-005 §5).
     public const string BookingOverlap = "BOOKING_OVERLAP";

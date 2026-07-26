@@ -38,6 +38,7 @@ class HallSeatMapCard extends StatefulWidget {
     this.maxSeatSize = SimfTokens.seatCapDefault,
     this.availableBorderColor = SimfTokens.beigeBorder,
     this.swatchSize = SimfTokens.seatSwatchSm,
+    this.inspectMode = false,
     super.key,
   });
 
@@ -52,6 +53,14 @@ class HallSeatMapCard extends StatefulWidget {
   final double maxSeatSize;
   final Color availableBorderColor;
   final double swatchSize;
+
+  /// D-771 — INSPECT mode, for the staff seating desk. False (default) keeps the
+  /// visitor picker's booking semantics: only an available (or already selected)
+  /// seat is tappable, and a seat whose tier the caller may not book draws locked
+  /// and inert. True makes EVERY seat tappable — reserved, own, VVIP, VIP alike —
+  /// because the desk is looking up occupants, not reserving, so neither the
+  /// reservation state nor tier eligibility should block a tap.
+  final bool inspectMode;
 
   @override
   State<HallSeatMapCard> createState() => _HallSeatMapCardState();
@@ -124,6 +133,12 @@ class _HallSeatMapCardState extends State<HallSeatMapCard> {
                       _SeatGridRow(
                         rowLabel: row,
                         seatCount: map.seatsInRow(index),
+                        // D-771 — the row's tier + whether THIS caller may book it;
+                        // an ineligible row draws its seats locked and inert.
+                        tier: map.tierOfRow(index),
+                        eligible:
+                            widget.inspectMode || map.canReserveRow(index),
+                        inspectMode: widget.inspectMode,
                         seatSize: widget.maxSeatSize,
                         rowLabelWidth: rowLabelWidth,
                         reserved: reserved,
@@ -183,6 +198,12 @@ class _HallSeatMapCardState extends State<HallSeatMapCard> {
             availableBorderColor: widget.availableBorderColor,
             swatchSize: widget.swatchSize,
           ),
+          // D-771 — the tier legend only appears for a hall that actually has
+          // tiered rows, so a plain hall keeps the shipped three-item legend.
+          if (map.hasTiers) ...<Widget>[
+            const SizedBox(height: SimfTokens.space3),
+            _TierLegend(l10n: l10n, swatchSize: widget.swatchSize),
+          ],
         ],
       ),
     );
@@ -223,6 +244,9 @@ class _SeatGridRow extends StatelessWidget {
   const _SeatGridRow({
     required this.rowLabel,
     required this.seatCount,
+    required this.tier,
+    required this.eligible,
+    required this.inspectMode,
     required this.seatSize,
     required this.rowLabelWidth,
     required this.reserved,
@@ -237,6 +261,14 @@ class _SeatGridRow extends StatelessWidget {
   final String rowLabel;
   // This row's own count — how many seats it actually draws.
   final int seatCount;
+  // D-771 — the row's seat tier, drawn as a start-edge band + a row-label caption.
+  final SeatTier tier;
+  // D-771 — false when THIS caller may not book this row (a VVIP protocol row, or
+  // a VIP row for a non-VIP visitor): its free seats draw locked and inert.
+  final bool eligible;
+  // D-771 — the staff seating desk: every seat is tappable (occupant lookup), so
+  // a reserved / own seat is not inert here.
+  final bool inspectMode;
   // The fixed square size every seat is drawn at (no shrink-to-fit); all rows
   // share it so seats align column-for-column and a wide row scrolls off-edge.
   final double seatSize;
@@ -261,6 +293,11 @@ class _SeatGridRow extends StatelessWidget {
     if (selectedRowLabel == rowLabel && selectedSeatNumber == seat) {
       return _SeatStatus.selected;
     }
+    // D-771 — a free seat the caller may not book is INELIGIBLE, not available:
+    // it draws locked (and never tappable) with a spoken explanation.
+    if (!eligible) {
+      return _SeatStatus.ineligible;
+    }
     return _SeatStatus.available;
   }
 
@@ -273,6 +310,10 @@ class _SeatGridRow extends StatelessWidget {
         return '${l10n.legendReserved} $id';
       case _SeatStatus.mine:
         return '${l10n.legendMine} $id';
+      case _SeatStatus.ineligible:
+        // D-771 — say WHY, not just "unavailable": a VVIP row is protocol
+        // seating, a VIP row needs the VIP tier.
+        return '$id · ${tier.isVvip ? l10n.seatTierVvipLocked : l10n.seatTierVipLocked}';
       case _SeatStatus.selected:
       case _SeatStatus.available:
         return id;
@@ -281,8 +322,12 @@ class _SeatGridRow extends StatelessWidget {
 
   Widget _seat(int seat) {
     final status = _statusFor(seat);
+    // D-771 — in inspect mode EVERY seat is tappable (the desk looks up whoever
+    // is there); otherwise only an available / already-selected seat is.
     final tappable = onSeatTap != null &&
-        (status == _SeatStatus.available || status == _SeatStatus.selected);
+        (inspectMode ||
+            status == _SeatStatus.available ||
+            status == _SeatStatus.selected);
     return _SeatBox(
       size: seatSize,
       seatNumber: seat,
@@ -302,6 +347,14 @@ class _SeatGridRow extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
+        // D-771 — the row's tier band: a thin coloured bar at the row's start edge
+        // (the grid is force-LTR, so "start" is always the left of the plan).
+        Container(
+          width: SimfTokens.hairlineBold,
+          height: seatSize,
+          color: _tierBandColor(tier),
+        ),
+        const SizedBox(width: SimfTokens.space2),
         SizedBox(
           width: rowLabelWidth,
           child: Text(
@@ -320,7 +373,16 @@ class _SeatGridRow extends StatelessWidget {
   }
 }
 
-enum _SeatStatus { mine, selected, reserved, available }
+/// D-771 — the tier band colour. Deep red = VVIP protocol, deep teal = VIP, the
+/// card fill (invisible) = Normal, matching the CP seat plan and the seeded
+/// VVIP / VIP badge colours.
+Color _tierBandColor(SeatTier tier) => switch (tier) {
+      SeatTier.vvip => SimfTokens.seatTierVvip,
+      SeatTier.vip => SimfTokens.seatTierVip,
+      SeatTier.normal => SimfTokens.transparent,
+    };
+
+enum _SeatStatus { mine, selected, reserved, available, ineligible }
 
 class _SeatBox extends StatelessWidget {
   const _SeatBox({
@@ -370,6 +432,16 @@ class _SeatBox extends StatelessWidget {
           size: SimfTokens.seatCellIconSize,
           color: SimfTokens.beigeBorder,
         );
+      case _SeatStatus.ineligible:
+        // D-771 — a free seat this caller may not book: no fill, a muted border and
+        // a padlock, so it never reads as "available" nor as "someone sits here".
+        fill = SimfTokens.transparent;
+        border = Border.all(color: SimfTokens.beigeBorder);
+        glyph = const Icon(
+          Icons.lock_outline,
+          size: SimfTokens.seatCellIconSize,
+          color: SimfTokens.beigeBorder,
+        );
       case _SeatStatus.available:
         fill = SimfTokens.transparent;
         border = Border.all(color: availableBorderColor);
@@ -389,10 +461,10 @@ class _SeatBox extends StatelessWidget {
       child: ExcludeSemantics(child: glyph),
     );
     // Available / selected seats are tappable buttons; reserved / own seats are
-    // inert but still carry a Semantics label for the screen reader.
-    final selectable =
-        status == _SeatStatus.available || status == _SeatStatus.selected;
-    if (selectable && onTap != null) {
+    // inert but still carry a Semantics label for the screen reader. D-771: the
+    // staff desk passes onTap for EVERY seat, so the button branch is keyed off
+    // onTap alone — a tappable reserved seat still announces its state.
+    if (onTap != null) {
       return Semantics(
         button: true,
         label: semanticsLabel,
@@ -403,7 +475,9 @@ class _SeatBox extends StatelessWidget {
         ),
       );
     }
-    if (status == _SeatStatus.reserved || status == _SeatStatus.mine) {
+    if (status == _SeatStatus.reserved ||
+        status == _SeatStatus.mine ||
+        status == _SeatStatus.ineligible) {
       return Semantics(label: semanticsLabel, child: box);
     }
     return box;
@@ -453,6 +527,47 @@ class _Legend extends StatelessWidget {
             size: swatchSize,
             icon: Icons.check,
             iconColor: SimfTokens.navy,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// D-771 — the seat-TIER legend, shown only for a hall that has tiered rows:
+/// شخصيات بالغة الأهمية (deep red) · كبار الشخصيات (deep teal) · عادي (bordered).
+/// Reuses [_LegendItem] so both legends stay one component, and is forced LTR
+/// like the state legend so it never mirrors with the RTL page.
+class _TierLegend extends StatelessWidget {
+  const _TierLegend({required this.l10n, required this.swatchSize});
+
+  final AppL10n l10n;
+  final double swatchSize;
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        spacing: SimfTokens.space2,
+        runSpacing: SimfTokens.space2,
+        children: <Widget>[
+          _LegendItem(
+            label: l10n.seatTierVvip,
+            color: SimfTokens.seatTierVvip,
+            size: swatchSize,
+          ),
+          _LegendItem(
+            label: l10n.seatTierVip,
+            color: SimfTokens.seatTierVip,
+            size: swatchSize,
+          ),
+          _LegendItem(
+            label: l10n.seatTierNormal,
+            color: SimfTokens.transparent,
+            borderColor: SimfTokens.beigeBorder,
+            size: SimfTokens.seatSwatchLg,
           ),
         ],
       ),

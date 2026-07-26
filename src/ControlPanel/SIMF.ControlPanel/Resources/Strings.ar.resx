@@ -2290,6 +2290,12 @@
   <data name="Admin.HallSeatLayouts.Field.RowLabels" xml:space="preserve"><value>رموز الصفوف (مفصولة بفواصل، من 1 إلى 26 إدخالاً، مثال: A,B,C,VIP)</value></data>
   <data name="Admin.HallSeatLayouts.Field.SeatsPerRow" xml:space="preserve"><value>عدد المقاعد في كل صف (1–80)</value></data>
   <data name="Admin.HallSeatLayouts.Field.RowSeats" xml:space="preserve"><value>المقاعد في كل صف (1–80)</value></data>
+  <!-- D-771 (owner 2026-07-26) — per-row seat tiers -->
+  <data name="Admin.HallSeatLayouts.Field.RowTiers" xml:space="preserve"><value>فئة مقاعد كل صف</value></data>
+  <data name="Admin.HallSeatLayouts.TierHint" xml:space="preserve"><value>يبدأ الصف الجديد كفئة شخصيات بالغة الأهمية (محجوز). لا يمكن لأي زائر حجز مقاعد هذه الفئة — يخصّصها المسؤول من مخطط مقاعد الجلسة مع تنويه باسم الضيف. مقاعد كبار الشخصيات متاحة لكبار الشخصيات فقط، والمقاعد العادية متاحة لجميع الزوار.</value></data>
+  <data name="Admin.HallSeatLayouts.Tier.Normal" xml:space="preserve"><value>عادي</value></data>
+  <data name="Admin.HallSeatLayouts.Tier.Vip" xml:space="preserve"><value>كبار الشخصيات</value></data>
+  <data name="Admin.HallSeatLayouts.Tier.Vvip" xml:space="preserve"><value>شخصيات بالغة الأهمية (محجوز)</value></data>
   <data name="Admin.HallSeatLayouts.HallCapacity" xml:space="preserve"><value>سعة القاعة</value></data>
   <data name="Admin.HallSeatLayouts.LayoutCapacity" xml:space="preserve"><value>سعة المخطط</value></data>
   <data name="Admin.HallSeatLayouts.TotalSeats" xml:space="preserve"><value>إجمالي المقاعد</value></data>
@@ -2318,6 +2324,10 @@
   <data name="Admin.SessionSeatPlans.ReserveRow.Action" xml:space="preserve"><value>حجز الصف</value></data>
   <data name="Admin.SessionSeatPlans.ReserveRow.Done" xml:space="preserve"><value>تم حجز الصف.</value></data>
   <data name="Admin.SessionSeatPlans.ReserveSeat.Done" xml:space="preserve"><value>تم حجز المقعد لأحد كبار الشخصيات.</value></data>
+  <!-- D-771 (owner 2026-07-26) — the manual guest note on a VVIP seat -->
+  <data name="Admin.SessionSeatPlans.GuestHint.Arabic" xml:space="preserve"><value>تنويه الضيف (بالعربية)</value></data>
+  <data name="Admin.SessionSeatPlans.GuestHint.English" xml:space="preserve"><value>تنويه الضيف (بالإنجليزية)</value></data>
+  <data name="Admin.SessionSeatPlans.GuestHint.Hint" xml:space="preserve"><value>مقعد فئة الشخصيات بالغة الأهمية لا يوجد له تسجيل. اكتب تنويه الضيف هنا ثم اضغط على المقعد في المخطط لحجزه — هذا التنويه هو ما يظهر للتطبيق ولمكتب الإرشاد للمقعد.</value></data>
   <data name="Admin.SessionSeatPlans.Col.Row" xml:space="preserve"><value>الصف</value></data>
   <data name="Admin.SessionSeatPlans.Col.Seat" xml:space="preserve"><value>المقعد</value></data>
   <data name="Admin.SessionSeatPlans.Col.Kind" xml:space="preserve"><value>النوع</value></data>

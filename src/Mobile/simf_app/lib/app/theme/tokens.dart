@@ -130,6 +130,13 @@ class SimfTokens {
   static const Color scrimBlack25 = Color(0x40000000); // black 25% — scanner-card shadow
   static const Color scrimBlack35 = Color(0x59000000); // black 35% — viewfinder dimming
   static const Color scrimBlack40 = Color(0x66000000); // black 40% — scanner busy overlay
+  // D-771 — seat TIER colours (Normal / VIP / VVIP). The tier belongs to a hall
+  // ROW, so these tint the row's start-edge band, never the seat square (which
+  // keeps its reservation-state colour). The two values match the seeded VVIP /
+  // VIP profile-type badge colours and the Control Panel's --color-seat-tier-*
+  // tokens, so a tier reads identically on a badge, a CP seat plan and the app.
+  static const Color seatTierVvip = Color(0xFFB91C1C); // deep red — protocol
+  static const Color seatTierVip = Color(0xFF0E7490); // deep teal — VIP
 
   // Spacing scale.
   static const double space1 = 4;
@@ -831,6 +838,10 @@ class SimfTokens {
       340; // seat-map viewport height before the grid scrolls vertically
   static const double seatSwatchSm = 14; // my-seat legend swatch
   static const double seatSwatchLg = 16; // picker + available legend swatch
+  // D-771 — the staff seating desk (tablet): the body's reading-width cap and the
+  // guest-photo square on the result card.
+  static const double staffSeatingMaxWidth = 960;
+  static const double staffSeatingPhotoSize = 64;
   static const double seatRowLabelWidth = 12; // seat-map row column (1 letter)
   static const double seatRowLabelCharWidth =
       10; // row column grows this-per-char for multi-char labels (VVIP/A001)
