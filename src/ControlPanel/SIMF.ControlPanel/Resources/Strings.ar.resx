@@ -3291,7 +3291,11 @@
   <data name="Admin.Invitations.Saved" xml:space="preserve"><value>تم حفظ الدعوة.</value></data>
   <data name="Admin.Invitations.Fallback" xml:space="preserve"><value>تعذّر إتمام العملية.</value></data>
   <data name="Admin.Sessions.Delete.Title" xml:space="preserve"><value>إلغاء تفعيل الجلسة</value></data>
-  <data name="Admin.Sessions.Delete.Message" xml:space="preserve"><value>هل تريد إلغاء تفعيل الجلسة "{0}"؟ سيتم إخفاؤها من البرنامج العام.</value></data>
+  <data name="Admin.Sessions.Delete.Message" xml:space="preserve"><value>هل تريد إلغاء تفعيل الجلسة "{0}"؟ سيتم إخفاؤها من البرنامج العام، وسيتم إبلاغ كل من حجزها أو أضافها إلى المفضلة بإلغائها.</value></data>
+  <data name="Admin.Sessions.Release.Title" xml:space="preserve"><value>هذا التغيير يلغي جميع المقاعد المحجوزة</value></data>
+  <data name="Admin.Sessions.Release.Message" xml:space="preserve"><value>تغيير القاعة أو وقت البداية/النهاية يُبطل كل مقعد محجوز لهذه الجلسة: سيتم تحرير {0} تسجيل حضور و {1} صف محجوز من قِبل الإدارة. سيتم إبلاغ الحاضرين عبر التطبيق والبريد الإلكتروني وعليهم الحجز من جديد، ويجب إعادة إنشاء الصفوف المحجوزة يدوياً. هل تريد المتابعة؟</value></data>
+  <data name="Admin.Sessions.Release.Confirm" xml:space="preserve"><value>تحرير المقاعد والحفظ</value></data>
+  <data name="Admin.Sessions.UpdatedWithReleases" xml:space="preserve"><value>تم تحديث الجلسة "{0}". تم تحرير {1} تسجيل حضور و {2} صف محجوز من قِبل الإدارة — تم إبلاغ الحاضرين، ويجب إعادة إنشاء الصفوف المحجوزة.</value></data>
   <data name="Module.MediaLibrary" xml:space="preserve"><value>مكتبة الوسائط</value></data>
   <data name="Admin.MediaLibrary.Title" xml:space="preserve"><value>مكتبة الوسائط</value></data>
   <data name="Admin.MediaLibrary.Col.Category" xml:space="preserve"><value>الفئة</value></data>

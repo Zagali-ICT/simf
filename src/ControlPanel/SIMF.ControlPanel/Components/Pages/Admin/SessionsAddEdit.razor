@@ -292,3 +292,16 @@
         }
     </div>
 </EditForm>
+
+@* A1 / A6 — moving the hall or the start/end window cascade-releases EVERY seat
+   already held for this session. Gate that save behind the same must-decide
+   SimfConfirm every other destructive CP action uses, naming the real counts. *@
+<SimfConfirm Open="_confirmRelease"
+             Title="@L["Admin.Sessions.Release.Title"]"
+             Message="@string.Format(L["Admin.Sessions.Release.Message"], ReleasedReservations, ReleasedAdminBlocks)"
+             ConfirmLabel="@L["Admin.Sessions.Release.Confirm"]"
+             CancelLabel="@L["Admin.Sessions.Cancel"]"
+             Danger="true"
+             Busy="_busy"
+             OnConfirm="ConfirmReleaseAsync"
+             OnCancel="CancelRelease" />

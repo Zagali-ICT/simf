@@ -29,6 +29,23 @@ public partial class SessionsAddEdit
     private bool _busy;
     private string? _error;
 
+    // A1 — a hall move or a start/end change cascade-releases EVERY seat already
+    // held for the session. The admin used to get no warning at all and only the
+    // generic "was updated" toast afterwards, so nudging an end time by half an hour
+    // silently wiped the room. _confirmRelease opens the must-decide dialog naming
+    // the real count; _releaseAccepted records that the admin said yes, so the
+    // second pass through HandleSubmitAsync actually submits.
+    private bool _confirmRelease;
+    private bool _releaseAccepted;
+
+    /// <summary>A1/A6 — how many active attendee registrations the pending change
+    /// would release (stamped on the loaded detail by the admin API).</summary>
+    private int ReleasedReservations => Initial?.ActiveReservationCount ?? 0;
+
+    /// <summary>A6 — how many admin-reserved row blocks the pending change would
+    /// destroy. They carry no attendee, so nothing else reports them.</summary>
+    private int ReleasedAdminBlocks => Initial?.ActiveAdminBlockCount ?? 0;
+
     private string[] _hallIds = Array.Empty<string>();
     private Dictionary<string, AdminHallSummary> _hallsById = new();
     private string[] _speakerOptions = Array.Empty<string>();
@@ -459,6 +476,16 @@ public partial class SessionsAddEdit
             _error = L["Admin.Sessions.Field.SpeakerRequired"]; return;
         }
 
+        // A1 / A6 — the API cascade-releases every held seat when the hall or the
+        // start/end window moves. Mirror its exact trigger (same field comparison)
+        // so the dialog appears precisely when seats really would be destroyed, and
+        // never on an edit that leaves the slot alone.
+        if (WouldReleaseHeldSeats(hallId, start, end) && !_releaseAccepted)
+        {
+            _confirmRelease = true;
+            return;
+        }
+
         _busy = true;
         try
         {
@@ -539,6 +566,34 @@ public partial class SessionsAddEdit
         }
         finally { _busy = false; }
     }
+
+    /// <summary>A1/A6 — true when saving would destroy seats: this is an edit, the
+    /// hall or the start/end window actually moves, and something is currently held.
+    /// The comparison is the same one <c>AdminSessionService.UpdateAsync</c> makes
+    /// (<c>HallId</c> / <c>Start</c> / <c>End</c> against the stored row), so the
+    /// warning and the cascade can never disagree.</summary>
+    private bool WouldReleaseHeldSeats(Guid hallId, DateTimeOffset start, DateTimeOffset end)
+    {
+        if (!IsEdit || Initial is null)
+        {
+            return false;
+        }
+        var slotMoves = Initial.HallId != hallId
+            || Initial.Start != start
+            || Initial.End != end;
+        return slotMoves && (ReleasedReservations + ReleasedAdminBlocks) > 0;
+    }
+
+    /// <summary>A1 — the admin accepted the consequence; re-run the submit, which now
+    /// falls through the guard.</summary>
+    private async Task ConfirmReleaseAsync()
+    {
+        _confirmRelease = false;
+        _releaseAccepted = true;
+        await HandleSubmitAsync();
+    }
+
+    private void CancelRelease() => _confirmRelease = false;
 
     // D-578 — subtitle import (upload .srt/.vtt parsed server-side, or fetch from the
     // video) feedback banner. Variant is one of SimfAlert's error/success/info.

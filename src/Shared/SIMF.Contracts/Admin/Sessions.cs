@@ -84,7 +84,22 @@ public sealed record AdminSessionDetail(
     // append-only.
     string? Language = null,
     string? LanguageArabic = null,
-    IReadOnlyList<AdminSessionOutcomeEntry>? Outcomes = null);
+    IReadOnlyList<AdminSessionOutcomeEntry>? Outcomes = null,
+    // A1/A6 — the seat-release blast radius of a hall / start / end change.
+    // Appended (defaulted) so the wire stays append-only.
+    //
+    // The first pair is the CURRENT holding, stamped on every read: how many
+    // active visitor registrations and admin row-blocks a hall-or-time change
+    // would destroy. The Control Panel reads them off the loaded detail so the
+    // edit form can warn with a real number BEFORE it submits — no extra
+    // endpoint, no extra permission.
+    int ActiveReservationCount = 0,
+    int ActiveAdminBlockCount = 0,
+    // The second pair is what the update JUST destroyed — non-zero only on the
+    // response of an update that actually moved the hall or the time window, so
+    // the Control Panel can report the outcome instead of a bare "was updated".
+    int ReleasedReservationCount = 0,
+    int ReleasedAdminBlockCount = 0);
 
 /// <summary>D-165 — one entry in <see cref="AdminSessionDetail.Speakers"/>.
 /// Order matters: 0 = primary speaker for the session card.</summary>

@@ -76,15 +76,18 @@ schedule off as the whole occupancy.
 Server-side `AdminHallService.Validate`: code length, name length,
 capacity non-negative, optional floor/notes length-gated; throws
 bilingual `ApiException`. Duplicate code → 409 `HallCodeDuplicate`.
-404 `HallNotFound`. `HallInUse` reserved for Sessions in-use guard.
+404 `HallNotFound`. 409 `HallInUse` when the hall is deactivated (Deactivate
+action, or an edit clearing Active) while active sessions still use it — the
+bilingual message names the session count (A37).
 
 ## 7. Edge cases + known limitations
 
 - **Capacity = 0 is allowed** — useful for "overflow / TBA" placeholder
   halls that will be set later.
-- **Deactivate is unconditional** in Sprint B. When Sessions ships, the
-  flow will refuse to deactivate a hall that any active session uses;
-  `HallInUse` is reserved for that.
+- **Deactivate is guarded** (A37): a hall that any active session still uses
+  cannot be deactivated — 409 `HallInUse`, naming the count. Re-home or
+  deactivate those sessions first. The same guard runs when the edit form
+  clears the Active checkbox.
 - **No drag-reorder** — sort by Code or Name from the column headers.
 
 ## 10. Use cases (UCS-001 — to author)

@@ -484,7 +484,8 @@ Scenario: A bad upload is rejected without creating anything
   `src/Backend/SIMF.Api/Endpoints/Admin/HallEndpoints.cs`. Permissions:
   `Halls.View` (list/get), `Halls.Create` (POST), `Halls.Edit` (PUT),
   `Halls.Delete` (DELETE). Error codes live in `SIMF.Common/ErrorCodes.cs`
-  (`HALL_INVALID`, `HALL_NOT_FOUND`, `HALL_CODE_DUPLICATE`, `HALL_IN_USE`,
+  (`HALL_INVALID`, `HALL_NOT_FOUND`, `HALL_CODE_DUPLICATE`, `HALL_IN_USE` —
+  enforced on deactivation since A37, see E2E-HAL-026 —
   `HALL_GEOFENCE_INVALID`). Audit events: `Hall.Created`, `Hall.Updated`,
   `Hall.Deactivated` (`SIMF.Application/Auditing/AuditEvents.cs`).
 - **API integration tests** that cover the same surface at a lower layer
@@ -690,6 +691,42 @@ Scenario: a capacity reduction below the seat-layout total is blocked
   # layout and no active reservations may shrink freely.
 ```
 
+## Session-lifecycle QA package (A37 — hall in-use guard)
+
+| Id | Scenario | Category | Priority | Status |
+|----|----------|----------|----------|--------|
+| E2E-HAL-026 | Deactivating a hall that active sessions still use → 409 `HALL_IN_USE` naming the count; the hall stays Active; the same guard runs when the edit form clears Active | validation | P1 | authored ✓ (`SessionLifecycleNoticeTests.A37_Deactivating_a_hall_active_sessions_use_is_rejected`) |
+
+### E2E-HAL-026 — a hall in use cannot be deactivated
+
+```gherkin
+Feature: Deactivating a hall does not orphan the sessions inside it
+  As an Administrator
+  I want the refusal at the moment I make the mistake
+  So that it does not resurface later as SESSION_HALL_NOT_FOUND on an unrelated edit
+
+Scenario: the Deactivate action is refused while an active session uses the hall
+  Given the hall "Auditorium A" (code "AUD-A") is Active
+  And one active session "SES-001" is scheduled in it
+  When the admin clicks Deactivate on AUD-A and confirms
+  Then the API responds 409 with error code HALL_IN_USE
+  And the message reads "This hall is still used by 1 active session(s) - move or
+      deactivate them before deactivating the hall." with its Arabic pair
+  And AUD-A is still Active in the grid
+
+Scenario: clearing the Active checkbox on the edit form takes the same guard
+  When the admin opens Edit on AUD-A, unticks Active and saves
+  Then the API responds 409 HALL_IN_USE and AUD-A is still Active
+
+Scenario: re-home the session first and the hall deactivates normally
+  When the admin deactivates SES-001 (or moves it to another hall)
+  And then deactivates AUD-A
+  Then the API responds 200 and AUD-A shows the grey Inactive pill
+  # Before A37 the flip always succeeded here; the damage surfaced later, as a
+  # 400 SESSION_HALL_NOT_FOUND the next time anyone edited an orphaned session.
+```
+
 ---
 
 _Last reviewed:_ 2026-07-27 by Claude (QA B16 follow-up — the occupancy view now filters `isActive` so a soft-deleted session no longer reads as a live booking, and a capped page says so; E2E-HAL-029/030). Prior: 2026-07-26 by Claude (QA B16 — hall occupancy view; E2E-HAL-026..028). Prior: 2026-07-11 by Claude (W4 on-site remediation — H-3 capacity-shrink guard; E2E-HAL-025). Prior: 2026-06-26 by Claude (D-506 — Excel export/import field-drop fix: EquipmentNotes + geofence triple + SeatSelectionMode now round-trip; scenario E2E-HAL-024 added, E2E-HAL-020/021 column lists reconciled). Prior: 2026-06-10 (D-356 Phase 5 — Excel export/import + D-353 Page<->Popup toggle scenarios E2E-HAL-017..022; E2E-HAL-001 deactivate step reconciled to the CrudShell + SimfConfirm gate).
+_Last reviewed:_ 2026-07-26 by Claude (session-lifecycle QA package — A37 hall in-use deactivation guard, `HALL_IN_USE` now enforced rather than reserved; E2E-HAL-026). Prior: 2026-07-11 by Claude (W4 on-site remediation — H-3 capacity-shrink guard; E2E-HAL-025). Prior: 2026-06-26 by Claude (D-506 — Excel export/import field-drop fix: EquipmentNotes + geofence triple + SeatSelectionMode now round-trip; scenario E2E-HAL-024 added, E2E-HAL-020/021 column lists reconciled). Prior: 2026-06-10 (D-356 Phase 5 — Excel export/import + D-353 Page<->Popup toggle scenarios E2E-HAL-017..022; E2E-HAL-001 deactivate step reconciled to the CrudShell + SimfConfirm gate).
