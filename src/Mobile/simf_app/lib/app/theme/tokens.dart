@@ -119,6 +119,17 @@ class SimfTokens {
   // widgets never reference `Colors.transparent` directly (#16 sweep).
   static const Color transparent = Color(0x00000000);
 
+  // Framework colour alias — pure black. Only a live camera surface sits on
+  // this (there is no design colour behind a preview), so widgets reference the
+  // token instead of `Colors.black` (BUG-019 / 19d).
+  static const Color black = Color(0xFF000000);
+
+  // QR-scanner scrims (Figma 758:4566 / 758:4735) — the card's drop shadow, the
+  // viewfinder's dimming overlay and the busy overlay drawn over the preview.
+  static const Color scrimBlack25 = Color(0x40000000); // black 25% — scanner-card shadow
+  static const Color scrimBlack35 = Color(0x59000000); // black 35% — viewfinder dimming
+  static const Color scrimBlack40 = Color(0x66000000); // black 40% — scanner busy overlay
+
   // Spacing scale.
   static const double space1 = 4;
   static const double space2 = 8;
