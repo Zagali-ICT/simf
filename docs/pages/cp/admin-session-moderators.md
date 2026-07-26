@@ -68,9 +68,10 @@ Admins assign; moderators do not self-promote (the assign/revoke endpoints are
 | Moderator user id | yes | GUID text | client-side `Guid.TryParse`; must resolve to an **Approved** Identity user (server) |
 
 The page takes **raw GUIDs**, not pickers — there is no in-page lookup, so the
-admin captures the GUIDs from the Sessions grid / Users list beforehand. A
-non-GUID value fails the client guard and surfaces the page's `LoadFailed`
-fallback toast with no POST fired.
+admin captures the GUIDs from the Sessions grid / Users list beforehand. A blank
+or non-GUID value fails the client guard and surfaces
+`Admin.SessionModerators.Required` **inside the dialog** with no POST fired
+(BUG-004 — see §6).
 
 ## 5. Data flow + endpoints
 
@@ -123,10 +124,22 @@ Server-side in `AdminSessionModeratorService.AssignAsync` (verified order):
   `SESSION_MODERATOR_ALREADY_ASSIGNED` ("This user is already a moderator of the
   session." / "هذا المستخدم مشرف على الجلسة بالفعل.").
 
-Client-side, a non-GUID `Session id` / `Moderator user id` fails the page's
-`Guid.TryParse` guard and shows the `LoadFailed` fallback toast with no POST.
-A failed `/list` (e.g. server 500) leaves the grid empty and shows the
-bilingual `LoadFailed` toast.
+Client-side, a blank or non-GUID `Session id` / `Moderator user id` fails the
+page's `Guid.TryParse` guard and shows `Admin.SessionModerators.Required` ("A
+session id and a user id are both required, and each must be a valid id." /
+"معرّف الجلسة ومعرّف المستخدم مطلوبان معاً، ويجب أن يكون كل منهما معرّفاً
+صحيحاً.") with no POST.
+
+**Where the message renders (BUG-004).** The page-level `_toast` `SimfAlert`
+lives inside `.simf-surface`, which sits **under** the modal backdrop
+(`.simf-modal { position: fixed; inset: 0; z-index: 100 }`). While the Assign
+dialog is open a toast is therefore invisible, and the submit read as a dead
+button. The dialog now carries its own `_error`, rendered as a
+`SimfAlert Variant="error"` in the dialog body — the same shape the canonical
+CRUD forms (e.g. `SessionCategoriesAddEdit`) use. Every server rejection above
+lands there too while the dialog is open; `_error` is cleared when the dialog is
+re-opened. A failed `/list` (e.g. server 500) happens with no dialog open, so it
+still shows the bilingual `LoadFailed` toast on the page.
 
 ## 7. Excel export (D-356) — export only
 
@@ -210,3 +223,4 @@ user 400, 011 duplicate 409, 012 revoke idempotency, 013 list 500 fallback,
 | 2026-06-11 | D-356 | Excel **export only** added — toolbar Export → `POST /account/api/admin/session-moderators/export` (sheet "SessionModerators", 7-column workbook, 5000-row cap) via `simfAccount.downloadXlsx`. New `SessionModerators.Export` permission (AdminOnly). No import (grant lifecycle is assign/revoke). E2E catalogue extended with E2E-SMD-018. |
 
 _Last reviewed:_ 2026-06-11 by Claude (D-356 Excel export-only documentation pass).
+_Last reviewed:_ 2026-07-26 by Claude (BUG-004 — the Assign dialog's validation message moved from the hidden page toast into the dialog body).

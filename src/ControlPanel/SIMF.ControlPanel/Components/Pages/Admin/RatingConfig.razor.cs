@@ -31,6 +31,11 @@ public partial class RatingConfig
     private bool _busy;
     private Toast? _toast;
 
+    /// <summary>The in-dialog error. Separate from <c>_toast</c> because the
+    /// page-level alert renders under the modal backdrop and is invisible while
+    /// a modal is open.</summary>
+    private string? _error;
+
     // Type modal state.
     private bool _typeModalOpen;
     private Guid? _typeEditId;
@@ -114,6 +119,7 @@ public partial class RatingConfig
     private void OpenAddType()
     {
         _typeEditId = null;
+        _error = null;
         _typeIsSystem = false;
         _typeCode = _typeNameEn = _typeNameAr = _typeCommentLabelEn = _typeCommentLabelAr = string.Empty;
         _typeScope = RatingScope.Global;
@@ -125,6 +131,7 @@ public partial class RatingConfig
 
     private void OpenEditType(AdminRatingTypeSummary t)
     {
+        _error = null;
         _typeEditId = t.Id;
         _typeIsSystem = t.IsSystem;
         _typeCode = t.Code;
@@ -144,6 +151,15 @@ public partial class RatingConfig
 
     private async Task SaveTypeAsync()
     {
+        if (_busy) return;
+        _error = null;
+        // Code is create-only (locked on edit), so it is required only there.
+        if ((_typeEditId is null && string.IsNullOrWhiteSpace(_typeCode))
+            || string.IsNullOrWhiteSpace(_typeNameEn) || string.IsNullOrWhiteSpace(_typeNameAr))
+        {
+            _error = L["Admin.RatingConfig.Type.Required"];
+            return;
+        }
         _busy = true;
         _toast = null;
         try
@@ -175,7 +191,8 @@ public partial class RatingConfig
                     });
             }
             if (env is { Success: true }) { _typeModalOpen = false; _toast = new Toast("success", L["Admin.RatingConfig.Saved"]); await LoadTypesAsync(); }
-            else { _toast = new Toast("error", env?.Error?.MessageForCurrentCulture() ?? L["Admin.RatingConfig.LoadFailed"]); }
+            // Dialog still open — report in it, not behind it.
+            else { _error = env?.Error?.MessageForCurrentCulture() ?? L["Admin.RatingConfig.LoadFailed"]; }
         }
         finally { _busy = false; }
     }
@@ -214,6 +231,7 @@ public partial class RatingConfig
     private void OpenAddGroup()
     {
         _groupEditId = null;
+        _error = null;
         _groupNameEn = _groupNameAr = string.Empty;
         _groupOrder = "0";
         _groupActive = true;
@@ -222,6 +240,7 @@ public partial class RatingConfig
 
     private void OpenEditGroup(AdminRatingQuestionGroupSummary g)
     {
+        _error = null;
         _groupEditId = g.Id;
         _groupNameEn = g.Name;
         _groupNameAr = g.NameArabic;
@@ -234,7 +253,13 @@ public partial class RatingConfig
 
     private async Task SaveGroupAsync()
     {
-        if (_selectedType is null) return;
+        if (_selectedType is null || _busy) return;
+        _error = null;
+        if (string.IsNullOrWhiteSpace(_groupNameEn) || string.IsNullOrWhiteSpace(_groupNameAr))
+        {
+            _error = L["Admin.RatingConfig.Group.Required"];
+            return;
+        }
         _busy = true;
         _toast = null;
         try
@@ -254,7 +279,8 @@ public partial class RatingConfig
                     new UpdateRatingQuestionGroupRequest { Name = _groupNameEn, NameArabic = _groupNameAr, DisplayOrder = order, IsActive = _groupActive });
             }
             if (env is { Success: true }) { _groupModalOpen = false; _toast = new Toast("success", L["Admin.RatingConfig.Saved"]); await LoadGroupsAsync(); await LoadTypesAsync(); }
-            else { _toast = new Toast("error", env?.Error?.MessageForCurrentCulture() ?? L["Admin.RatingConfig.LoadFailed"]); }
+            // Dialog still open — report in it, not behind it.
+            else { _error = env?.Error?.MessageForCurrentCulture() ?? L["Admin.RatingConfig.LoadFailed"]; }
         }
         finally { _busy = false; }
     }
@@ -288,6 +314,7 @@ public partial class RatingConfig
     private void OpenAddQuestion()
     {
         _questionEditId = null;
+        _error = null;
         _questionTextEn = _questionTextAr = string.Empty;
         _questionGroupId = string.Empty;
         _questionRequired = false;
@@ -298,6 +325,7 @@ public partial class RatingConfig
 
     private void OpenEditQuestion(AdminRatingQuestionSummary q)
     {
+        _error = null;
         _questionEditId = q.Id;
         _questionTextEn = q.Text;
         _questionTextAr = q.TextArabic;
@@ -312,7 +340,13 @@ public partial class RatingConfig
 
     private async Task SaveQuestionAsync()
     {
-        if (_selectedType is null) return;
+        if (_selectedType is null || _busy) return;
+        _error = null;
+        if (string.IsNullOrWhiteSpace(_questionTextEn) || string.IsNullOrWhiteSpace(_questionTextAr))
+        {
+            _error = L["Admin.RatingConfig.Question.Required"];
+            return;
+        }
         _busy = true;
         _toast = null;
         try
@@ -343,7 +377,8 @@ public partial class RatingConfig
                     });
             }
             if (env is { Success: true }) { _questionModalOpen = false; _toast = new Toast("success", L["Admin.RatingConfig.Saved"]); await LoadQuestionsAsync(); await LoadGroupsAsync(); await LoadTypesAsync(); }
-            else { _toast = new Toast("error", env?.Error?.MessageForCurrentCulture() ?? L["Admin.RatingConfig.LoadFailed"]); }
+            // Dialog still open — report in it, not behind it.
+            else { _error = env?.Error?.MessageForCurrentCulture() ?? L["Admin.RatingConfig.LoadFailed"]; }
         }
         finally { _busy = false; }
     }

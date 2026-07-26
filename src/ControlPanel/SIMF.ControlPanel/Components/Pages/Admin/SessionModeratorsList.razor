@@ -86,6 +86,12 @@
     <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.SessionModerators.Add.Title"]"
                OnClose="@(() => _addOpen = false)">
         <ChildContent>
+            @* The page-level toast sits under the modal backdrop, so a rejected
+               submit must report inside the dialog or it reads as a dead button. *@
+            @if (_error is not null)
+            {
+                <SimfAlert Variant="error">@_error</SimfAlert>
+            }
             <div class="simf-form__fields">
                 <SimfTextField Label="@L["Admin.SessionModerators.Field.SessionId"]"
                                Value="@_newSessionId"
