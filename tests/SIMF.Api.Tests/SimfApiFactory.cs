@@ -183,6 +183,12 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         services.GetRequiredService<SIMF.Infrastructure.Seeding.SqlContentSeeder>()
             .RunAsync(SIMF.Infrastructure.Seeding.SqlContentSeeder.RosterFiles)
             .GetAwaiter().GetResult();
+        // BUG-023 — the demo OPERATIONAL configuration (gates + operator
+        // assignment, per-session moderator grants, the main hall's seat grid).
+        // Mirrors Program.cs: it runs LAST because it configures the content the
+        // SQL seed above creates. Idempotent.
+        services.GetRequiredService<SIMF.Infrastructure.Seeding.DemoOperationalConfigSeeder>()
+            .SeedAsync().GetAwaiter().GetResult();
     }
 
     protected override void Dispose(bool disposing)

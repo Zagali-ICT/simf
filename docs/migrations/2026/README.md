@@ -138,3 +138,17 @@ doc) must go through the upload API instead.
 `C:\SIMF\Storage\files\speakerphoto\{id}.{ext}` (see `speaker-photos/MANIFEST.txt`).
 Run `SIMF_App_SpeakerPhotos.sql` and deploy the folder together — a row with no
 file on disk simply 404s the photo serve.
+
+> **Dev / Test auto-copy (BUG-001, D-771).** Nobody performed that copy in
+> Development or Testing, where `SqlContentSeeder` applies the SQL automatically —
+> so every seeded speaker photo pointed at a storage key with no bytes and 404'd
+> behind the UI's graceful placeholder (68+ failed image requests on a QA sweep).
+> `SqlContentSeeder` now materialises the companion bytes through
+> `IFileStorageProvider` right after it applies `SIMF_App_SpeakerPhotos.sql`, and
+> **deactivates** any seeded row it cannot back with bytes — so a seeded asset
+> reference either resolves or is gone and the surface shows its proper empty
+> state. Idempotent (a row whose bytes are already on disk is untouched).
+> **Production is unchanged** — it never runs `SqlContentSeeder`, so the manual
+> copy step above is still required there. A new content file that seeds
+> `StoredFile` rows must add itself to `SqlContentSeeder.CompanionFileBytes`
+> alongside its byte folder, or the same defect returns.

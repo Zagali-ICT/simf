@@ -9,6 +9,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SIMF.Application.Auditing;
+using SIMF.Application.Files.Abstractions;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
@@ -34,6 +35,7 @@ public sealed class IdentitySeeder(
     IOptions<SuperAdminOptions> options,
     IOptions<DemoSeedOptions> demoOptions,
     IQrIdMinter qrIdMinter,
+    IFileService fileService,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     IHostEnvironment hostEnvironment,
@@ -63,6 +65,45 @@ public sealed class IdentitySeeder(
     // UserManager.GetAuthenticatorKeyAsync.
     private const string AuthenticatorKeyProvider = "[AspNetUserStore]";
     private const string AuthenticatorKeyTokenName = "AuthenticatorKey";
+
+    /// <summary>D-585 — the demo account matrix: one account per user type /
+    /// profile type so every role is testable from a fresh database.
+    /// <c>ProfileType == null</c> → an Admin account (Administrator role, no
+    /// profile). BUG-022: this is the SINGLE source of truth for the demo set —
+    /// the interest and asset passes below read it too, so a new demo account can
+    /// no longer be added here and silently forgotten there (which is exactly how
+    /// moderator@ and exhibitor@ ended up with no interests and therefore a
+    /// permanently incomplete profile the app refused to let past sign-in).</summary>
+    private static readonly (string Email, string DisplayName, string EnName, string ArName,
+        UserType UserType, string? ProfileType, string NationalId)[] DemoAccounts =
+    [
+        ("admin@simf.local",     "Demo Admin",     "Demo Admin",     "مدير تجريبي",         UserType.Admin,   null,        "1000000001"),
+        ("vvip@simf.local",      "Demo VVIP",      "Demo VVIP",      "شخصية بالغة الأهمية", UserType.Visitor, "VVIP",      "1000000002"),
+        ("vip@simf.local",       "Demo VIP",       "Demo VIP",       "شخصية مهمة",          UserType.Visitor, "VIP",       "1000000003"),
+        ("visitor@simf.local",   "Demo Visitor",   "Demo Visitor",   "زائر تجريبي",         UserType.Visitor, "Normal",    "1000000004"),
+        ("staff@simf.local",     "Demo Staff",     "Demo Staff",     "موظف تجريبي",         UserType.Visitor, "Staff",     "1000000005"),
+        ("moderator@simf.local", "Demo Moderator", "Demo Moderator", "منسّق تجريبي",        UserType.Visitor, "Moderator", "1000000006"),
+        ("exhibitor@simf.local", "Demo Exhibitor", "Demo Exhibitor", "عارض تجريبي",         UserType.Visitor, "Exhibitor", "1000000007"),
+        ("media@simf.local",     "Demo Media",     "Demo Media",     "إعلامي تجريبي",       UserType.Visitor, "Media",     "1000000008"),
+        ("sponsor@simf.local",   "Demo Sponsor",   "Demo Sponsor",   "راعٍ تجريبي",         UserType.Visitor, "Sponsor",   "1000000009"),
+    ];
+
+    /// <summary>BUG-022 — the demo accounts that carry a <see cref="UserProfile"/>
+    /// (everything except the CP-only Admin), i.e. the ones the completeness rule
+    /// applies to.</summary>
+    private static IEnumerable<string> DemoProfileEmails =>
+        DemoAccounts.Where(demo => demo.ProfileType is not null).Select(demo => demo.Email);
+
+    /// <summary>BUG-022 — a small placeholder portrait (64×64 PNG) stored as the
+    /// demo accounts' face photo, and a placeholder ID card (96×64 PNG) stored as
+    /// their identity document. Real bytes through the real upload pipeline, so a
+    /// demo account satisfies the male-face + ID-document halves of
+    /// <c>UserProfileService.IsProfileCompleteAsync</c> out of the box.</summary>
+    private static readonly byte[] DemoAvatarPng = Convert.FromBase64String(
+        "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAwklEQVR42u3Yyw2EMAxF0dcGNVDF9F/BbFlTBNNARiEx+JMruYB7JCRia9s/qUcAAAAAAAAAAAAAADTne5z5AL/o1kQH/El/iKH3620Ncqk3NMir3sogx3oTw/KAyfp5AwAAngCT+kkDnxAAADwl0gPSv0Yr7AMVNrIKO3GFq0SRuxCnRQAAuE7zI1vmMZd4oTE8ScwwFKR+2KA49WMGhaofMCha/V2DAtbfMihmfb9hDYBLfacBQHyAY32PAQCA1QEXDhmFwqhDWYMAAAAASUVORK5CYII=");
+
+    private static readonly byte[] DemoIdDocumentPng = Convert.FromBase64String(
+        "iVBORw0KGgoAAAANSUhEUgAAAGAAAABACAIAAABqVuVZAAAAmElEQVR42u3cMQ2AQBBE0bNBkIAKSoTgDwUYwA0JCSUooNzA8JKv4DWz11zrhlEPNQSAAJUB7cepO0CAAAEClAHUT/M7AwQIECBAgAABAgQI0JeBvMUAAQIECBCgWKBl3fICBAgQoBQgKwYIECBALunynQIECBCgCCArBggQIECAAAECBAgQIECAAAECBOjHQPLzAiBAxUAX6SqBUHBIRtAAAAAASUVORK5CYII=");
 
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
@@ -296,11 +337,19 @@ public sealed class IdentitySeeder(
         await EnsureBaselineInterestsAsync(admin.Id, cancellationToken);
         await EnsureBaselineOrganisationsAsync(admin.Id, cancellationToken);
 
-        // D-170 (Meet-People) — give a few Approved demo visitors overlapping
+        // D-170 (Meet-People) — give the Approved demo accounts overlapping
         // interests so "قابل أشخاص مثلك" returns matches on a fresh DB. Runs after
         // the demo accounts (above) + the interest lookup (just now) are seeded.
         // App-DB-only, idempotent (skips a profile that already has interests).
+        // BUG-022 — this is also the first half of the completeness rule: every
+        // demo profile needs ≥ 1 interest before the app treats it as complete.
         await EnsureDemoVisitorInterestsAsync(cancellationToken);
+
+        // BUG-022 — the second half: an ID document + a face photo for every demo
+        // profile, so all eight demo accounts land on profileComplete=true and are
+        // usable straight after a fresh seed. Idempotent (skips an account that
+        // already carries the pointer); a no-op when the demo seed is gated off.
+        await EnsureDemoAccountAssetsAsync(cancellationToken);
 
         // D-377 — the app's terms + about content blocks (Page 009 / Page 037
         // render their empty states without them). Insert-when-absent, same
@@ -593,23 +642,8 @@ public sealed class IdentitySeeder(
             return;
         }
 
-        // (email, displayName, EN name, AR name, userType, profileTypeName, nationalId).
-        // profileTypeName == null → an Admin account (Administrator role, no profile).
-        var demoAccounts = new (string Email, string DisplayName, string EnName, string ArName, UserType UserType, string? ProfileType, string NationalId)[]
-        {
-            ("admin@simf.local",     "Demo Admin",     "Demo Admin",     "مدير تجريبي",         UserType.Admin,   null,        "1000000001"),
-            ("vvip@simf.local",      "Demo VVIP",      "Demo VVIP",      "شخصية بالغة الأهمية", UserType.Visitor, "VVIP",      "1000000002"),
-            ("vip@simf.local",       "Demo VIP",       "Demo VIP",       "شخصية مهمة",          UserType.Visitor, "VIP",       "1000000003"),
-            ("visitor@simf.local",   "Demo Visitor",   "Demo Visitor",   "زائر تجريبي",         UserType.Visitor, "Normal",    "1000000004"),
-            ("staff@simf.local",     "Demo Staff",     "Demo Staff",     "موظف تجريبي",         UserType.Visitor, "Staff",     "1000000005"),
-            ("moderator@simf.local", "Demo Moderator", "Demo Moderator", "منسّق تجريبي",        UserType.Visitor, "Moderator", "1000000006"),
-            ("exhibitor@simf.local", "Demo Exhibitor", "Demo Exhibitor", "عارض تجريبي",         UserType.Visitor, "Exhibitor", "1000000007"),
-            ("media@simf.local",     "Demo Media",     "Demo Media",     "إعلامي تجريبي",       UserType.Visitor, "Media",     "1000000008"),
-            ("sponsor@simf.local",   "Demo Sponsor",   "Demo Sponsor",   "راعٍ تجريبي",         UserType.Visitor, "Sponsor",   "1000000009"),
-        };
-
         var now = timeProvider.GetUtcNow();
-        foreach (var demo in demoAccounts)
+        foreach (var demo in DemoAccounts)
         {
             if (await accounts.FindByEmailAsync(demo.Email) is not null)
             {
@@ -1243,14 +1277,21 @@ public sealed class IdentitySeeder(
             toSeed, seed.Length);
     }
 
-    /// <summary>D-170 (Meet-People) — give a few of the seeded, Approved demo
-    /// visitors a couple of OVERLAPPING interests so the "قابل أشخاص مثلك"
-    /// recommender returns matches on a fresh database (it needs the caller AND at
-    /// least one candidate to each carry an overlapping interest). App-DB-only — it
-    /// links existing <see cref="UserInterest"/> rows to the demo profiles'
-    /// <c>UserProfile.Interests</c> M-to-M; no Identity change, no new account, no
-    /// migration. Idempotent: a profile that already has ANY interest is left
-    /// untouched, so an admin edit is never overwritten.</summary>
+    /// <summary>D-170 (Meet-People) — give the seeded, Approved demo accounts a
+    /// couple of OVERLAPPING interests so the "قابل أشخاص مثلك" recommender returns
+    /// matches on a fresh database (it needs the caller AND at least one candidate to
+    /// each carry an overlapping interest). App-DB-only — it links existing
+    /// <see cref="UserInterest"/> rows to the demo profiles' <c>UserProfile.Interests</c>
+    /// M-to-M; no Identity change, no new account, no migration. Idempotent: a profile
+    /// that already has ANY interest is left untouched, so an admin edit is never
+    /// overwritten.
+    /// <para><b>BUG-022:</b> this used to run over a hand-copied list of four emails
+    /// while <see cref="DemoAccounts"/> holds eight profile-carrying accounts, so
+    /// moderator@ / exhibitor@ / media@ / sponsor@ never got an interest — and the
+    /// server completeness rule (which demands ≥ 1 interest) kept them
+    /// <c>profileComplete=false</c> forever, no matter what the tester uploaded. It
+    /// now walks <see cref="DemoProfileEmails"/>, so the two lists cannot drift
+    /// again.</para></summary>
     private async Task EnsureDemoVisitorInterestsAsync(CancellationToken cancellationToken)
     {
         // Shared interests (from the D-377 baseline lookup) so every pair of these
@@ -1269,17 +1310,8 @@ public sealed class IdentitySeeder(
             return; // the interest lookup is empty — nothing to link.
         }
 
-        // The Approved demo visitors that should surface to one another (D-585).
-        var demoEmails = new[]
-        {
-            "visitor@simf.local",
-            "vip@simf.local",
-            "vvip@simf.local",
-            "staff@simf.local",
-        };
-
         var linked = 0;
-        foreach (var email in demoEmails)
+        foreach (var email in DemoProfileEmails)
         {
             var user = await accounts.FindByEmailAsync(email, cancellationToken);
             if (user is null)
@@ -1307,5 +1339,71 @@ public sealed class IdentitySeeder(
         logger.LogInformation(
             "Demo visitor interests ensured (linked {Count} profile(s) for Meet-People).",
             linked);
+    }
+
+    /// <summary>BUG-022 — give every seeded demo profile the two images the server
+    /// completeness rule demands: the identity document (all registrants) and the
+    /// face photo / avatar (required for a male registrant, and every demo profile
+    /// is seeded <see cref="Gender.Male"/>). Without them a demo account boots with
+    /// <c>profileComplete=false</c> and the app parks it on the "complete your
+    /// profile" wall, so none of the eight accounts was usable out of the box.
+    ///
+    /// <para>The bytes go through the ordinary <see cref="IFileService"/> pipeline —
+    /// the ID document and the avatar are encrypted-at-rest services, so they can
+    /// NOT be pre-placed on disk like the public speaker photos (D-718). The
+    /// pointers written back (<c>UserProfile.IdImageRelativePath</c> /
+    /// <c>SimfUser.AvatarRelativePath</c>) are the bare StoredFile ids, exactly as
+    /// the upload endpoints write them.</para>
+    ///
+    /// <para>Idempotent and self-healing: an account that already carries a pointer
+    /// is skipped, so a re-run never uploads twice and an already-seeded database
+    /// picks up only what is missing. Cross-DB safe — the App-side profile and the
+    /// Identity-side user are saved through their own contexts (D-157), never in one
+    /// transaction.</para></summary>
+    private async Task EnsureDemoAccountAssetsAsync(CancellationToken cancellationToken)
+    {
+        var seeded = 0;
+        foreach (var email in DemoProfileEmails)
+        {
+            var user = await accounts.FindByEmailAsync(email, cancellationToken);
+            if (user is null)
+            {
+                continue; // demo accounts not seeded in this environment.
+            }
+            var profile = await appDbContext.UserProfiles
+                .SingleOrDefaultAsync(p => p.UserId == user.Id, cancellationToken);
+            if (profile is null)
+            {
+                continue;
+            }
+
+            if (string.IsNullOrEmpty(profile.IdImageRelativePath))
+            {
+                var idDocument = await fileService.UploadAsync(
+                    new UploadFileCommand(
+                        FileService.IdDocument, user.Id, DemoIdDocumentPng,
+                        "demo-id-document.png", "image/png", user.Id, FailClosed: false),
+                    cancellationToken);
+                profile.IdImageRelativePath = idDocument.Id.ToString();
+                profile.UpdatedAt = timeProvider.GetUtcNow();
+                await appDbContext.SaveChangesAsync(cancellationToken);
+                seeded++;
+            }
+
+            if (string.IsNullOrEmpty(user.AvatarRelativePath))
+            {
+                var avatar = await fileService.UploadAsync(
+                    new UploadFileCommand(
+                        FileService.Avatar, user.Id, DemoAvatarPng,
+                        "demo-avatar.png", "image/png", user.Id, FailClosed: false),
+                    cancellationToken);
+                user.AvatarRelativePath = avatar.Id.ToString();
+                await accounts.UpdateAsync(user).EnsureSuccessAsync();
+                seeded++;
+            }
+        }
+
+        logger.LogInformation(
+            "Demo account assets ensured (seeded {Count} missing image(s)).", seeded);
     }
 }
