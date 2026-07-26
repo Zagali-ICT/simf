@@ -280,6 +280,14 @@ Scenario: A full name needs 2 to 4 parts in one language
   And a 5-part name is likewise rejected (the ceiling is 4)
   And the same rule applies to the English name (Latin letters only, 2–4 parts)
   And the server's UpsertUserProfileRequestValidator re-checks both (400 on violation)
+
+Scenario: Tashkeel is part of an ordinary Arabic name (BUG-021)
+  Given the complete-profile form is open
+  When the visitor types "محمَّد عبدالله" (fatha + shadda on the meem) into the Arabic name
+  Then every character is kept — the keystroke filter accepts U+0621-U+0652
+       (Arabic letters, tatweel and the tashkeel marks), not only U+0621-U+064A
+  And tapping Next saves: the server accepts the shadda-bearing name
+  And "محمد Ahmed" is still filtered / rejected, and digits are still rejected
 ```
 
 ### E2E-MOB007-022 — Birth location: Saudi region dropdown / non-Saudi free text (D-469)

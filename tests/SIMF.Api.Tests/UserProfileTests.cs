@@ -162,6 +162,21 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task POST_accepts_an_arabic_name_carrying_tashkeel()
+    {
+        // BUG-021 — the accepted class stopped at U+064A, so an ordinary Arabic
+        // name carrying a SHADDA (U+0651) was rejected with "Arabic letters
+        // only" — the product's own seed data trips it. Tashkeel is now inside
+        // the class; the mixed-script test above still pins that Latin is not.
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.ArabicName = "محمَّد عبدالله الزهراني";   // shadda on the meem
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
     public async Task POST_rejects_a_single_part_arabic_name()
     {
         var token = await CreateUserAndSignInAsync();

@@ -82,8 +82,8 @@ class MyAreaSessionItem {
         id: json['id'] as String? ?? '',
         title: json['title'] as String? ?? '',
         titleArabic: json['titleArabic'] as String? ?? '',
-        start: _parseUtc(json['start']),
-        end: _parseUtc(json['end']),
+        start: parseWireUtc(json['start'], 'start'),
+        end: parseWireUtc(json['end'], 'end'),
         status: SessionStatus.fromJson(json['status']),
         attended: json['attended'] as bool? ?? false,
         isFavourite: json['isFavourite'] as bool? ?? false,
@@ -113,16 +113,6 @@ class MyAreaSessions {
         .toList(growable: false);
     return MyAreaSessions(items);
   }
-}
-
-DateTime _parseUtc(Object? value) {
-  if (value is String && value.isNotEmpty) {
-    final parsed = DateTime.tryParse(value);
-    if (parsed != null) {
-      return parsed.toUtc();
-    }
-  }
-  return DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
 }
 
 String _pickRequired(String arabic, String english, bool isArabic) {

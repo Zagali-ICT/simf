@@ -72,8 +72,17 @@ public sealed class UpsertUserProfileRequestValidator
     // script characters), and each must be a full name of at least 2 parts
     // (D-683, relaxed from the short-lived D-674 ≥4 rule). The char restriction
     // guarantees every part is in the field's language.
+    //
+    // BUG-021 — the accepted class runs U+0621..U+0652: the Arabic letters and
+    // tatweel (U+0640) as before, PLUS the tashkeel marks U+064B..U+0652
+    // (fathatan … sukun, which includes the SHADDA U+0651). An ordinary Arabic
+    // name carries a shadda — the product's own seed data does — and the old
+    // U+0621..U+064A ceiling rejected it with "Arabic letters only". Arabic-Indic
+    // digits (U+0660..U+0669), Latin letters and punctuation stay rejected. The
+    // client mirror is `name_validation.dart` (arabicNameLettersOnly /
+    // arabicNameCharacters).
     private static readonly System.Text.RegularExpressions.Regex ArabicNameShape =
-        new(@"^[ء-ي\s]+$",
+        new(@"^[\u0621-\u0652\s]+$",
             System.Text.RegularExpressions.RegexOptions.Compiled);
     private static readonly System.Text.RegularExpressions.Regex EnglishNameShape =
         new(@"^[A-Za-z\s]+$",
