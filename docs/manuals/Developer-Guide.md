@@ -65,9 +65,11 @@ The Release build treats warnings as errors and must pass with zero warnings
 
 `appsettings.json` holds non-secret settings. `appsettings.Development.json`
 holds development-only values and is committed, so a new developer has a working
-local environment. Production secrets are never committed — they are supplied
-through `set-env-*` scripts and `appsettings.Production.json` (SIMF-SES-001
-section 4.4).
+local environment. Secrets are never committed — in **any** environment,
+including Development: every secret-shaped key ships as an empty string and is
+supplied through environment variables, `set-env-*` scripts and
+`appsettings.Production.json` (SIMF-SES-001 section 4.4). Section 20.3 lists the
+keys and their `SIMF_*` environment-variable overrides.
 
 ## 5. Increment 1 — the solution scaffold
 
@@ -826,14 +828,63 @@ Start-Process -FilePath "dotnet" `
 
 ### 20.3 Secrets
 
-**Never committed:**
-- `appsettings.json` super-admin credentials
-- `appsettings.Development.json` SMTP / JWT signing keys
-- TOTP secrets
+**Never committed** — every tracked `appsettings*.json` ships these keys with an
+**empty string**. The key stays in the file so the shape and the options binding
+are unchanged; the value is supplied per-developer, out of the repo:
 
-Use `dotnet user-secrets` or `set-env-*.ps1` scripts (out-of-repo). The
-working tree's modifications to `appsettings*.json` and `myComment.txt`
-are intentional un-committable state.
+| Configuration key | Environment variable | Needed for |
+|-------------------|----------------------|------------|
+| `Email:Host` | `SIMF_Email__Host` | outbound email (OTP, notifications) |
+| `Email:User` | `SIMF_Email__User` | outbound email |
+| `Email:Password` | `SIMF_Email__Password` | outbound email |
+| `Seed:DemoPassword` | `SIMF_Seed__DemoPassword` | the demo account seed (empty = seed skipped) |
+| `Jwt:SigningKey` | `SIMF_Jwt__SigningKey` | issuing access tokens |
+| `SuperAdmin:TempPassword` | `SIMF_SuperAdmin__TempPassword` | the first super-admin seed |
+| `SuperAdmin:TotpSecret` | `SIMF_SuperAdmin__TotpSecret` | super-admin TOTP second factor |
+| `Storage:UserIdDocumentEncryptionKey` | `SIMF_Storage__UserIdDocumentEncryptionKey` | visitor ID-document encryption |
+| `FileStorage:EncryptionKey` | `SIMF_FileStorage__EncryptionKey` | the central file store |
+| `Ai:<Provider>:ApiKey` | `SIMF_Ai__<Provider>__ApiKey` | the AI provider (`Gemini`/`Anthropic`/`OpenAi`) |
+| `Swagger:Password` | `SIMF_Swagger__Password` | the Swagger basic-auth gate |
+| `ConnectionStrings:SimfIdentityDb` | `SIMF_ConnectionStrings__SimfIdentityDb` | SQL login when not using `Trusted_Connection` |
+| `ConnectionStrings:SimfAppDb` | `SIMF_ConnectionStrings__SimfAppDb` | SQL login when not using `Trusted_Connection` |
+
+Naming is `SIMF_` + the ASP.NET Core double-underscore section separator — every
+app calls `AddEnvironmentVariables("SIMF_")`, which strips the prefix, so
+`SIMF_Email__Password` binds to `Email:Password` (same convention as
+`deploy/set-env-*.ps1`).
+
+A local developer needs **none** of these to run the API, the Control Panel and
+the Website: with the values empty the demo-account seed is skipped
+(`IdentitySeeder` logs "Demo-account seed skipped"), and email send fails at the
+SMTP connect (the OTP still lands in `SIMF_Identity.AccountCodes`, which is how
+the dev OTP flow is normally driven).
+
+The **AI features are the exception — they do not degrade to `Echo`**.
+`appsettings.json` ships `Ai:DefaultProvider = "Echo"` (the offline canned
+provider), but `appsettings.Development.json` overrides it to `"Anthropic"`, and
+`AiProviderRouting` redirects every `Echo`-default prompt to that provider. With
+`Ai:Anthropic:ApiKey` empty, `AnthropicAiProvider.CallAsync` throws
+**503 `AI_PROVIDER_NOT_CONFIGURED`**. If your task touches AI, either set
+`SIMF_Ai__Anthropic__ApiKey` or set `SIMF_Ai__DefaultProvider=Echo` to get the
+offline provider back. Set only the ones your task needs, per session:
+
+```powershell
+# Current PowerShell session only — nothing lands in the repo.
+$env:SIMF_Email__Host     = "<smtp host>"
+$env:SIMF_Email__User     = "<smtp user>"
+$env:SIMF_Email__Password = "<smtp password>"
+$env:SIMF_Seed__DemoPassword = "<demo password>"
+dotnet run --project src/Backend/SIMF.Api
+```
+
+`dotnet user-secrets` also works, but no project carries a `UserSecretsId`
+today, so it needs `dotnet user-secrets init` first — that edits the `.csproj`,
+which owner-rule §1.7 forbids without explicit approval. Prefer the environment
+variables above; for a server use the `set-env-*.ps1` scripts (out-of-repo).
+
+`tests/SIMF.Api.Tests/CommittedSecretsTests.cs` (DEF-SEC-001) fails the build if
+any of these keys regains a non-empty committed value, or if a committed
+connection string grows an inline password.
 
 ### 20.4 Port map
 
@@ -844,8 +895,9 @@ are intentional un-committable state.
 | Website | http://localhost:5115 |
 | API health | http://localhost:5175/health |
 | CP sign-in | http://localhost:5158/login |
-| Default super-admin | `superadmin@zagali-ict.com` / `Aa@123456789` |
-| TOTP secret (dev) | `dbji csx7 c3mj s2qa sjcl rbcl kiqk ovr3` |
+| Default super-admin | `superadmin@zagali-ict.com` (`SuperAdmin:Email`) |
+| Super-admin password | not committed, set `SIMF_SuperAdmin__TempPassword` (section 20.3) |
+| TOTP secret (dev) | not committed, set `SIMF_SuperAdmin__TotpSecret` (section 20.3) |
 
 ### 20.5 Database reset (development)
 

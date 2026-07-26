@@ -54,6 +54,23 @@ public class SimfApiFactory : WebApplicationFactory<Program>
     public string FileStorageDirectory { get; } =
         Path.Combine(Path.GetTempPath(), $"simf-files-{Guid.NewGuid():N}");
 
+    /// <summary>
+    /// DEF-SEC-001 — the shared password the demo @simf.local accounts are
+    /// seeded with (<c>Seed:DemoPassword</c>). D-585 seeds those accounts in
+    /// every environment, so the value must NOT be committed: it is read from
+    /// <c>SIMF_TEST_DEMO_PASSWORD</c> when a developer or CI supplies one, and
+    /// otherwise generated once per test process so the suite still runs
+    /// offline with no configuration. Generated once (static) so every factory
+    /// in a run agrees. No test asserts the literal — the demo accounts are
+    /// only checked for existence, role and profile — so a per-run value is
+    /// safe. The shape satisfies the Identity password policy (upper, lower,
+    /// digit, non-alphanumeric).
+    /// </summary>
+    private static readonly string DemoSeedPassword =
+        Environment.GetEnvironmentVariable("SIMF_TEST_DEMO_PASSWORD") is { Length: > 0 } supplied
+            ? supplied
+            : $"TestOnly!{Guid.NewGuid():N}Aa1";
+
     public SimfApiFactory()
     {
         Environment.SetEnvironmentVariable(
@@ -131,9 +148,10 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         // "Testing" (not Development), so opt IN explicitly and supply the
         // demo password. Reset here (process-wide vars) so a prior
         // DemoAccountsDisabledApiFactory cannot leak EnableDemoAccounts=false
-        // into later classes.
+        // into later classes. DEF-SEC-001 — the password itself is never
+        // committed; see DemoSeedPassword above.
         Environment.SetEnvironmentVariable("Seed__EnableDemoAccounts", "true");
-        Environment.SetEnvironmentVariable("Seed__DemoPassword", "Simf@Demo2026#");
+        Environment.SetEnvironmentVariable("Seed__DemoPassword", DemoSeedPassword);
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
