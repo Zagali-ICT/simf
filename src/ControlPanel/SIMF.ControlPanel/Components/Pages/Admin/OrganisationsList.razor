@@ -1,4 +1,4 @@
-@* Organisation lookup (CP UI) â€” admin CRUD over the bilingual Saudi-companies
+@* Organisation lookup (CP UI) — admin CRUD over the bilingual Saudi-companies
    lookup. Rows can be created/edited by hand or bulk-loaded from a government
    Excel sheet via "Import Excel" (POST /admin/organisations/import returns an
    OrganisationImportResult with the rows-read / inserted / updated / skipped
@@ -89,22 +89,22 @@
                     <SimfDataGridColumn TItem="AdminOrganisationSummary" Key="nameEn"
                                         Header="@L["Admin.Organisations.Col.NameEn"]"
                                         Filterable="true">
-                        <CellTemplate>@(string.IsNullOrWhiteSpace(context.NameEn) ? "â€”" : context.NameEn)</CellTemplate>
+                        <CellTemplate>@(string.IsNullOrWhiteSpace(context.NameEn) ? "—" : context.NameEn)</CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminOrganisationSummary" Key="commercialRegistration"
                                         Header="@L["Admin.Organisations.Col.CommercialRegistration"]"
                                         Filterable="true">
-                        <CellTemplate>@(string.IsNullOrWhiteSpace(context.CommercialRegistration) ? "â€”" : context.CommercialRegistration)</CellTemplate>
+                        <CellTemplate>@(string.IsNullOrWhiteSpace(context.CommercialRegistration) ? "—" : context.CommercialRegistration)</CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminOrganisationSummary" Key="sector"
                                         Header="@L["Admin.Organisations.Col.Sector"]"
                                         Filterable="true">
-                        <CellTemplate>@(string.IsNullOrWhiteSpace(context.Sector) ? "â€”" : context.Sector)</CellTemplate>
+                        <CellTemplate>@(string.IsNullOrWhiteSpace(context.Sector) ? "—" : context.Sector)</CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminOrganisationSummary" Key="city"
                                         Header="@L["Admin.Organisations.Col.City"]"
                                         Sortable="true" Filterable="true">
-                        <CellTemplate>@(string.IsNullOrWhiteSpace(context.City) ? "â€”" : context.City)</CellTemplate>
+                        <CellTemplate>@(string.IsNullOrWhiteSpace(context.City) ? "—" : context.City)</CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminOrganisationSummary" Key="isActive"
                                         Header="@L["Admin.Organisations.Col.Active"]"

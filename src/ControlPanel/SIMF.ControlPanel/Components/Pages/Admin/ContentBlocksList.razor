@@ -1,12 +1,12 @@
-@* D-173 (gap doc G8, PDF Â§1, Â§2.1) â€” Dynamic CMS: editable content
+@* D-173 (gap doc G8, PDF §1, §2.1) — Dynamic CMS: editable content
    blocks (welcome message, page copy, labels). Admin upserts by Key.
-   D-255 â€” migrated from a raw table to the standard SimfDataGrid.
-   D-353 â€” centralized dialog/full-page framing: Add / Edit / View / Delete are
+   D-255 — migrated from a raw table to the standard SimfDataGrid.
+   D-353 — centralized dialog/full-page framing: Add / Edit / View / Delete are
    hosted by CrudShell, which frames the reusable ContentBlockAddEdit and
    ContentBlockViewDelete forms as a popup or a full page per the admin's toolbar
    choice (persisted in localStorage via CpPreferences). The inline SimfModal
    form + one-click delete it used to carry are gone. The grid summary carries
-   every field the forms need, so the row is bound straight through â€” no
+   every field the forms need, so the row is bound straight through — no
    detail-fetch. *@
 @page "/admin/content-blocks"
 @layout CpShellLayout

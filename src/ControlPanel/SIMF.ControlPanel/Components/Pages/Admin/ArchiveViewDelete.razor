@@ -1,4 +1,4 @@
-@* D-353 â€” reusable Archive (Past Editions) View/Delete form, hosted by
+@* D-353 — reusable Archive (Past Editions) View/Delete form, hosted by
    CrudShell (as a popup or a full page) from ArchiveList.razor. Inherits
    CrudViewDeleteFormBase so it exposes the standard parameter surface
    (IsDelete / Initial / OnDeleted / OnCancel). Read-only details always show
@@ -30,9 +30,9 @@
         <dt>@L["Admin.Archive.Col.TitleAr"]</dt>
         <dd>@Initial.TitleAr</dd>
         <dt>@L["Admin.Archive.Field.SummaryEn"]</dt>
-        <dd>@(string.IsNullOrWhiteSpace(Initial.SummaryEn) ? "â€”" : Initial.SummaryEn)</dd>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.SummaryEn) ? "—" : Initial.SummaryEn)</dd>
         <dt>@L["Admin.Archive.Field.SummaryAr"]</dt>
-        <dd>@(string.IsNullOrWhiteSpace(Initial.SummaryAr) ? "â€”" : Initial.SummaryAr)</dd>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.SummaryAr) ? "—" : Initial.SummaryAr)</dd>
         <dt>@L["Admin.Archive.Col.Attendees"]</dt>
         <dd>@Initial.Attendees</dd>
         <dt>@L["Admin.Archive.Col.Sessions"]</dt>
@@ -40,13 +40,13 @@
         <dt>@L["Admin.Archive.Col.Speakers"]</dt>
         <dd>@Initial.Speakers</dd>
         <dt>@L["Admin.Archive.Field.LocationEn"]</dt>
-        <dd>@(string.IsNullOrWhiteSpace(Initial.LocationEn) ? "â€”" : Initial.LocationEn)</dd>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.LocationEn) ? "—" : Initial.LocationEn)</dd>
         <dt>@L["Admin.Archive.Field.LocationAr"]</dt>
-        <dd>@(string.IsNullOrWhiteSpace(Initial.LocationAr) ? "â€”" : Initial.LocationAr)</dd>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.LocationAr) ? "—" : Initial.LocationAr)</dd>
         <dt>@L["Admin.Archive.Field.DateLabelEn"]</dt>
-        <dd>@(string.IsNullOrWhiteSpace(Initial.DateLabelEn) ? "â€”" : Initial.DateLabelEn)</dd>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.DateLabelEn) ? "—" : Initial.DateLabelEn)</dd>
         <dt>@L["Admin.Archive.Field.DateLabelAr"]</dt>
-        <dd>@(string.IsNullOrWhiteSpace(Initial.DateLabelAr) ? "â€”" : Initial.DateLabelAr)</dd>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.DateLabelAr) ? "—" : Initial.DateLabelAr)</dd>
         <dt>@L["Admin.Archive.Field.CoverImageRelativePath"]</dt>
         <dd>
             @if (!string.IsNullOrWhiteSpace(Initial.CoverImageRelativePath))
@@ -57,7 +57,7 @@
             }
             else
             {
-                <span>â€”</span>
+                <span>—</span>
             }
         </dd>
         <dt>@L["Admin.Archive.Col.Active"]</dt>

@@ -135,7 +135,7 @@ public partial class MediaPartnersList
         _target = detail;
     }
 
-    // Edit / View / Delete all work against the full detail â€” the grid summary
+    // Edit / View / Delete all work against the full detail — the grid summary
     // omits ContactId (SIMF-FDS-014 / D-283), so editing from a summary-only
     // form would wipe an existing link. Returns null and surfaces a toast on
     // failure.

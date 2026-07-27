@@ -53,7 +53,7 @@ public partial class ContentBlockAddEdit
         _busy = true;
         try
         {
-            // Upsert-by-Key â€” one PUT serves both Add and Edit (the row is
+            // Upsert-by-Key — one PUT serves both Add and Edit (the row is
             // created if the Key is new, updated in place if it exists).
             var envelope = await JS.InvokeAsync<ApiResult<AdminContentBlockSummary>>(
                 "simfAccount.putJson", "/account/api/admin/content-blocks",

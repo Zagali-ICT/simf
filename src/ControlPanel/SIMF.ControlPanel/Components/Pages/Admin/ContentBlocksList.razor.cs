@@ -93,7 +93,7 @@ public partial class ContentBlocksList
     }
 
     // The grid summary already carries every field the forms need (Key,
-    // Content, ContentArabic, IsActive) â€” so the row is bound straight to the
+    // Content, ContentArabic, IsActive) — so the row is bound straight to the
     // form. No detail-fetch (like Interests / the upsert-by-Key contract).
     private void OnAdd()
     {
@@ -162,5 +162,5 @@ public partial class ContentBlocksList
     }
 
     private static string TruncatePreview(string s) =>
-        s.Length > 80 ? s.Substring(0, 80) + "â€¦" : s;
+        s.Length > 80 ? s.Substring(0, 80) + "…" : s;
 }

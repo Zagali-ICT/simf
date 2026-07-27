@@ -28,7 +28,7 @@ public partial class RolesViewDelete
     private bool _confirming;
     private string? _error;
 
-    // Issue-1 â€” open the per-role permission editor page.
+    // Issue-1 — open the per-role permission editor page.
     private void OpenPermissionEditor()
     {
         if (Initial is null) return;

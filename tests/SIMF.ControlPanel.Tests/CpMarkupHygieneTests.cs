@@ -10,6 +10,8 @@
 //             against the no-inline-styles rule. The five remaining inline
 //             styles in the CP are the ACCEPTED pattern: they inject a runtime
 //             colour into a CSS custom property, which a static class cannot do.
+using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using Xunit;
 
 namespace SIMF.ControlPanel.Tests;
@@ -19,6 +21,8 @@ public sealed class CpMarkupHygieneTests
     private static readonly string RepoRoot = FindRepoRoot();
 
     private const string CpComponentsDir = "src/ControlPanel/SIMF.ControlPanel/Components";
+
+    private const string CpProjectDir = "src/ControlPanel/SIMF.ControlPanel";
 
     /// <summary>"Â·" — U+00C2 U+00B7, the mojibake produced by reading a UTF-8
     /// middle dot as Latin-1 and re-encoding it.</summary>
@@ -111,7 +115,100 @@ public sealed class CpMarkupHygieneTests
         Assert.Equal(expected, actual);
     }
 
+    [Fact]
+    public void No_cp_source_contains_a_double_encoded_character()
+    {
+        // §6.16 — BUG-002 was the double-encoded middle dot; the same corruption
+        // was still present as 91 more sequences across 36 files (an em dash
+        // "â€”" x80, "Â§" x9, "â€¦", "â‰¤"), reaching the screen as garbage in
+        // grids and View/Delete panes wherever the em dash is the "no value"
+        // placeholder. Every one of these starts with Â, Ã or â — none of which
+        // occurs legitimately anywhere in the CP sources — so banning the lead
+        // characters outright catches the whole family, not just the four seen.
+        var offenders = EnumerateCpSources()
+            .Where(file => File.ReadAllText(file).AsSpan().IndexOfAny(MojibakeLeadCharacters) >= 0)
+            .Select(Relative)
+            .OrderBy(path => path, StringComparer.Ordinal)
+            .ToList();
+
+        Assert.True(offenders.Count == 0,
+            "§6.16: these CP sources carry double-encoded (mojibake) characters. "
+            + "The file was read as Latin-1 and re-saved as UTF-8; re-save it as UTF-8 "
+            + "and restore the real character: " + string.Join(", ", offenders));
+    }
+
+    [Fact]
+    public void Every_localization_key_used_in_cp_source_exists_in_both_resx_files()
+    {
+        // §6.16 — IStringLocalizer returns the KEY NAME when a resource is missing,
+        // so a typo or a half-finished rename renders raw developer text on screen.
+        // That shipped: the D-219 local-time work renamed 7 keys off their "...Utc"
+        // suffix at the call sites but not in the resx, so /admin/banners headed two
+        // columns "Admin.Banners.Col.Start" / ".End", the Sessions and Banners forms
+        // labelled their datetime inputs with raw keys, and creating an admin toasted
+        // "Admin.Users.Add.Saved". The CP component tests could not catch it because
+        // their fake localizer reports every lookup as found — only a source scan can.
+        var english = ResxKeys("src/ControlPanel/SIMF.ControlPanel/Resources/Strings.resx");
+        var arabic = ResxKeys("src/ControlPanel/SIMF.ControlPanel/Resources/Strings.ar.resx");
+
+        var referenced = new SortedDictionary<string, string>(StringComparer.Ordinal);
+        foreach (var file in EnumerateCpSources())
+        {
+            foreach (Match match in LocalizerCall.Matches(File.ReadAllText(file)))
+            {
+                referenced.TryAdd(match.Groups[1].Value, Relative(file));
+            }
+        }
+
+        var missingEnglish = referenced.Where(pair => !english.Contains(pair.Key))
+            .Select(pair => $"{pair.Key} (used in {pair.Value})").ToList();
+        var missingArabic = referenced.Where(pair => english.Contains(pair.Key) && !arabic.Contains(pair.Key))
+            .Select(pair => $"{pair.Key} (used in {pair.Value})").ToList();
+
+        Assert.True(missingEnglish.Count == 0,
+            "§6.16: these localization keys are used in CP markup but are absent from "
+            + "Strings.resx, so the raw key renders on screen: "
+            + string.Join("; ", missingEnglish));
+
+        Assert.True(missingArabic.Count == 0,
+            "§6.16: these localization keys exist in Strings.resx but are missing from "
+            + "Strings.ar.resx, so Arabic admins see the English text or the raw key: "
+            + string.Join("; ", missingArabic));
+    }
+
     // ----------------------------------------------------------------------
+
+    /// <summary>The lead characters of a double-encoded (UTF-8 read as Latin-1)
+    /// sequence. None of them occurs legitimately in any CP source.</summary>
+    private static readonly char[] MojibakeLeadCharacters = ['Â', 'Ã', 'â'];
+
+    /// <summary>Matches a literal localizer lookup — <c>@L["Some.Key"]</c> in markup
+    /// and <c>L["Some.Key"]</c> in code-behind.</summary>
+    private static readonly Regex LocalizerCall =
+        new("""L\[\s*"([^"]+)"\s*\]""", RegexOptions.Compiled);
+
+    /// <summary>Every <c>.razor</c> and <c>.cs</c> source in the CP project, so the
+    /// scan covers code-behind (where several of the missing keys lived) as well as
+    /// markup. Build output is excluded.</summary>
+    private static IEnumerable<string> EnumerateCpSources() =>
+        Directory.EnumerateFiles(
+                Path.Combine(RepoRoot, CpProjectDir.Replace('/', Path.DirectorySeparatorChar)),
+                "*.*", SearchOption.AllDirectories)
+            .Where(file => file.EndsWith(".razor", StringComparison.OrdinalIgnoreCase)
+                        || file.EndsWith(".cs", StringComparison.OrdinalIgnoreCase))
+            .Where(file => !file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                        && !file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal));
+
+    private static HashSet<string> ResxKeys(string relativePath)
+    {
+        var document = XDocument.Parse(ReadSource(relativePath));
+        return document.Root!
+            .Elements("data")
+            .Select(element => (string?)element.Attribute("name"))
+            .Where(name => name is not null)
+            .Select(name => name!)
+            .ToHashSet(StringComparer.Ordinal);
+    }
 
     private static IEnumerable<string> EnumerateRazorSources() =>
         Directory.EnumerateFiles(

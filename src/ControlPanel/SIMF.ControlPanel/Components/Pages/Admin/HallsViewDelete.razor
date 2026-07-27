@@ -1,4 +1,4 @@
-@* D-353 â€” reusable Hall View/Delete form, hosted by CrudShell (popup or full
+@* D-353 — reusable Hall View/Delete form, hosted by CrudShell (popup or full
    page) from HallsList. Inherits CrudViewDeleteFormBase so it exposes the
    standard surface (IsDelete / Initial / OnDeleted / OnCancel). Read-only
    details always show; when IsDelete=true a Deactivate button appears and a
@@ -22,9 +22,9 @@
         <dt>@L["Admin.Halls.Column.Capacity"]</dt>
         <dd>@Initial.Capacity</dd>
         <dt>@L["Admin.Halls.Column.Floor"]</dt>
-        <dd>@(Initial.Floor ?? "â€”")</dd>
+        <dd>@(Initial.Floor ?? "—")</dd>
         <dt>@L["Admin.Halls.Field.EquipmentNotes"]</dt>
-        <dd>@(Initial.EquipmentNotes ?? "â€”")</dd>
+        <dd>@(Initial.EquipmentNotes ?? "—")</dd>
         <dt>@L["Admin.Halls.Column.Active"]</dt>
         <dd>@(Initial.IsActive ? L["Admin.Halls.Active.Yes"] : L["Admin.Halls.Active.No"])</dd>
     </dl>

@@ -1849,6 +1849,16 @@ body.simf-modal-open { overflow: hidden; }
   font-size: var(--font-size-body);
   color: var(--color-text);
   vertical-align: middle;
+  /* Each cell takes its bidi direction from its OWN content. The UA default for
+     a <td> is `isolate`, which isolates the cell but still lays it out in the
+     table's direction — so in Arabic a value like "+973" rendered as "973+",
+     because the leading "+" is a neutral character and got reordered to the
+     trailing edge. `plaintext` resolves direction per cell from its first strong
+     character (none in "+973" → LTR), which fixes the dial-code column and any
+     Latin value ending in a neutral, e.g. "Saudi Ports Authority (Mawani)".
+     This does NOT change the computed `direction`, so `text-align: start` still
+     resolves RTL and Arabic cells stay right-aligned exactly as before. */
+  unicode-bidi: plaintext;
 }
 
 .simf-grid__td--actions {
@@ -1893,6 +1903,15 @@ body.simf-modal-open { overflow: hidden; }
 }
 
 .simf-grid__pager-controls { display: flex; gap: var(--space-2); }
+
+/* RTL — mirror the pager chevrons. The flex row already reverses under `dir=rtl`,
+   so First/Prev correctly move to the right of the page numbers, but the four
+   chevron glyphs are fixed SVG paths and do not follow: "Next" kept pointing
+   right while sitting on the left, i.e. every arrow pointed away from the page
+   it navigates to. Flipping the glyph horizontally maps chevron-left↔right and
+   chevron-first↔last, which is exactly the mirroring RTL needs. Scoped to the
+   pager so no other icon is affected. */
+[dir="rtl"] .simf-grid__pager-controls svg { transform: scaleX(-1); }
 
 @media (max-width: 639px) {
   .simf-grid__pager { flex-direction: column; align-items: stretch; }
@@ -2122,12 +2141,19 @@ body.simf-modal-open { overflow: hidden; }
   transition: border-color var(--transition-fast),
               box-shadow var(--transition-fast);
 }
+/* `--color-accent` is not a token that exists — theme.tokens.css defines
+   --color-accent-blue / --color-accent-gold / --color-focus. An undefined custom
+   property makes the whole declaration invalid at computed-value time, so the
+   outline fell back to its initial value and these dashboard tiles had NO focus
+   ring at all (and no hover border). Using the tokens that exist: --color-primary
+   to match the sibling clickable card (.simf-speaker-card:hover), and
+   --color-focus, which is defined for exactly this purpose. */
 .simf-stat--clickable:hover {
-  border-color: var(--color-accent);
+  border-color: var(--color-primary);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 .simf-stat--clickable:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
 .simf-stat--clickable:active {
