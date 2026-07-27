@@ -131,6 +131,66 @@ class ModeratorQuestion {
           .toList(growable: false);
 }
 
+/// FR-MOD-001 — one session the signed-in user actually moderates. Mirrors the
+/// public JSON of `ModeratedSessionRow` (`GET /app/sessions/moderated`).
+///
+/// The Q&A desk is authorised **per session**, so the app used to offer the
+/// forum action on EVERY session and let the missing grant surface as a 403
+/// after the tap. This is the discovery list behind that affordance: the
+/// session-detail action is now only offered where the grant exists, and the
+/// moderator's operational home lists these sessions so they can navigate
+/// straight to their own desks.
+@immutable
+class ModeratedSession {
+  const ModeratedSession({
+    required this.sessionId,
+    required this.title,
+    required this.titleArabic,
+    required this.hallName,
+    required this.hallNameArabic,
+    required this.start,
+    required this.end,
+  });
+
+  final String sessionId;
+  final String title;
+  final String titleArabic;
+  final String hallName;
+  final String hallNameArabic;
+  final DateTime start;
+  final DateTime end;
+
+  String localizedTitle(bool isArabic) =>
+      _pick(titleArabic, title, isArabic);
+
+  String localizedHall(bool isArabic) =>
+      _pick(hallNameArabic, hallName, isArabic);
+
+  static String _pick(String arabic, String english, bool isArabic) {
+    final preferred = isArabic ? arabic : english;
+    if (preferred.trim().isNotEmpty) {
+      return preferred;
+    }
+    return isArabic ? english : arabic;
+  }
+
+  static ModeratedSession fromJson(Map<String, dynamic> json) => ModeratedSession(
+        sessionId: json['sessionId'] as String? ?? '',
+        title: json['title'] as String? ?? '',
+        titleArabic: json['titleArabic'] as String? ?? '',
+        hallName: json['hallName'] as String? ?? '',
+        hallNameArabic: json['hallNameArabic'] as String? ?? '',
+        start: _utc(json['start']),
+        end: _utc(json['end']),
+      );
+
+  static List<ModeratedSession> listFromData(Object? data) =>
+      (data as List? ?? const <dynamic>[])
+          .whereType<Map<dynamic, dynamic>>()
+          .map((e) => ModeratedSession.fromJson(e.cast<String, dynamic>()))
+          .toList(growable: false);
+}
+
 /// The five filter chips on the desk (Figma 1461:12227).
 ///
 /// DEF-MOD-001 / DEF-MOD-002 — every chip is now backed by the PERSISTED

@@ -350,6 +350,34 @@ internal sealed class SessionModerationService(
         }, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<ModeratedSessionRow>> ListMySessionsAsync(
+        Guid userId, CancellationToken cancellationToken = default)
+    {
+        // FR-MOD-001 — the moderator's own grant list. Served by the existing
+        // SessionModerators(UserId) index, joined to its session inside the SAME
+        // context (both live on the App DB, so this is not a cross-DB join —
+        // D-157 only forbids reaching across to Identity).
+        //
+        // Inactive (soft-deleted) sessions drop out: a grant on a session that no
+        // longer exists for the audience is not a desk the moderator can work.
+        return await appDbContext.SessionModerators
+            .AsNoTracking()
+            .Where(m => m.UserId == userId
+                && m.Session != null
+                && m.Session.IsActive)
+            .OrderBy(m => m.Session!.Start)
+            .Select(m => new ModeratedSessionRow(
+                m.SessionId,
+                m.Session!.Title,
+                m.Session.TitleArabic,
+                m.Session.Hall == null ? string.Empty : m.Session.Hall.Name,
+                m.Session.Hall == null ? string.Empty : m.Session.Hall.NameArabic,
+                m.Session.Start,
+                m.Session.End,
+                m.AssignedAt))
+            .ToListAsync(cancellationToken);
+    }
+
     public Task<bool> IsModeratorAsync(
         Guid sessionId, Guid userId, CancellationToken cancellationToken = default) =>
         appDbContext.SessionModerators

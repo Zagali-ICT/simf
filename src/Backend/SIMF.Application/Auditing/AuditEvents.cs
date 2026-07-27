@@ -449,6 +449,12 @@ public static class AuditEvents
     public const string ExhibitorDeactivated = "Exhibitor.Deactivated";
     public const string ExhibitorAccountProvisioned = "Exhibitor.AccountProvisioned";
 
+    /// <summary>FR-EXH-002 — a booth officer dropped a captured lead from the
+    /// booth's My Visitors list (soft-delete). Recorded because the row carries
+    /// the visitor's consent trail: the capture notified the visitor that their
+    /// card had been shared, so its removal has to be attributable too.</summary>
+    public const string ExhibitorLeadRemoved = "Exhibitor.LeadRemoved";
+
     // News (D-199 — PR / marketing news. Promoted from AdminNewsService
     // module-local consts; string values are the audit contract and must
     // stay verbatim).

@@ -37,6 +37,40 @@ class _FakeRepo implements ModerationRepository {
   int answeredCalls = 0;
   bool failWrites = false;
 
+  /// FR-MOD-003 — the id order the desk last sent to `…/questions/reorder`.
+  List<String>? lastReorder;
+
+  /// FR-MOD-001 — the grants this fake account holds.
+  List<ModeratedSession> mySessions = const <ModeratedSession>[];
+
+  @override
+  Future<List<ModeratedSession>> getMySessions() async {
+    if (status != 0) {
+      throw ApiFailure(
+        code: ApiErrorCodes.clientNetwork,
+        message: 'x',
+        httpStatus: status,
+      );
+    }
+    return mySessions;
+  }
+
+  @override
+  Future<void> reorder(String sessionId, List<String> orderedQuestionIds) async {
+    _failIfAsked();
+    lastReorder = orderedQuestionIds;
+    // Behave like the backend: the persisted Order becomes the supplied order,
+    // so the next read comes back in it.
+    final byId = <String, ModeratorQuestion>{for (final r in _rows) r.id: r};
+    final reordered = orderedQuestionIds
+        .where(byId.containsKey)
+        .map((id) => byId[id]!)
+        .toList();
+    _rows
+      ..removeWhere((r) => orderedQuestionIds.contains(r.id))
+      ..insertAll(0, reordered);
+  }
+
   @override
   Future<List<ModeratorQuestion>> getQueue(
     String sessionId, {
@@ -136,6 +170,33 @@ Future<void> _pump(
       ),
     ),
   );
+  await tester.pumpAndSettle();
+}
+
+/// FR-MOD-003 — drags the FIRST desk row's handle down past the row below it.
+///
+/// `ReorderableListView` derives the drop index from how far the dragged proxy
+/// overlaps its neighbours, and it recomputes that on each pointer move — one
+/// big jump lands the pointer past the list but never reports an index change,
+/// so the drag is walked down in steps. The distance is measured from the two
+/// handles rather than hardcoded, because an Arabic row is not the same height
+/// as an English one. The handle uses `ReorderableDragStartListener`
+/// (immediate), so no long-press delay is needed before the first move; the
+/// initial pump only lets the Listener register.
+Future<void> _dragFirstRowDown(WidgetTester tester) async {
+  final handles = find.byIcon(Icons.drag_handle);
+  final from = tester.getCenter(handles.first);
+  // Just past the row below, so the dragged proxy fully clears it.
+  final distance = tester.getCenter(handles.at(1)).dy - from.dy + 8;
+
+  final drag = await tester.startGesture(from);
+  await tester.pump(const Duration(milliseconds: 100));
+  const steps = 12;
+  for (var step = 0; step < steps; step++) {
+    await drag.moveBy(Offset(0, distance / steps));
+    await tester.pump(const Duration(milliseconds: 16));
+  }
+  await drag.up();
   await tester.pumpAndSettle();
 }
 
@@ -293,6 +354,91 @@ void main() {
       await tester.tap(find.text('New').first);
       await tester.pumpAndSettle();
       expect(find.text('Q a text'), findsOneWidget);
+    });
+
+    // FR-MOD-003 — `PUT …/questions/reorder` shipped gated but with NO
+    // interface, so the moderator could not order the queue they read on stage.
+    // The desk now carries a drag handle per desk row.
+    testWidgets('FR-MOD-003: a desk row carries a drag handle and a rejected '
+        'row does not', (tester) async {
+      await _pump(
+        tester,
+        _FakeRepo(
+          queue: <ModeratorQuestion>[
+            _q('a'),
+            _q('b'),
+            _q('c', status: ModeratorQuestionStatus.hidden),
+          ],
+        ),
+      );
+
+      // Two desk rows → two handles; the rejected row (also visible on الكل)
+      // has none, because it is not part of the running order.
+      expect(find.byIcon(Icons.drag_handle), findsNWidgets(2));
+
+      // The handle is reachable by name, not just by glyph — a bare icon is
+      // unusable with a screen reader. bySemanticsLabel reads the rendered
+      // semantics tree, which a widget test only builds while a handle is held.
+      final semantics = tester.ensureSemantics();
+      await tester.pump();
+      expect(find.bySemanticsLabel('Reorder question'), findsNWidgets(2));
+      semantics.dispose();
+    });
+
+    testWidgets('FR-MOD-003: dragging a row sends the full desk order',
+        (tester) async {
+      final repo = _FakeRepo(
+        queue: <ModeratorQuestion>[_q('a'), _q('b'), _q('c')],
+      );
+      await _pump(tester, repo);
+
+      await _dragFirstRowDown(tester);
+
+      // The whole desk is sent (the server requires every desk id exactly once)
+      // and 'a' is no longer first.
+      expect(repo.lastReorder, isNotNull);
+      expect(repo.lastReorder!.toSet(), <String>{'a', 'b', 'c'});
+      expect(repo.lastReorder!.first, isNot('a'));
+    });
+
+    // FR-MOD-003 — a vertical reorder list has no left/right semantics to
+    // invert: the Arabic desk must send the SAME order as the English one for
+    // the same gesture.
+    testWidgets('FR-MOD-003: RTL does not invert the reorder semantics',
+        (tester) async {
+      Future<List<String>> orderAfterDrag(Locale locale) async {
+        final repo = _FakeRepo(
+          queue: <ModeratorQuestion>[_q('a'), _q('b'), _q('c')],
+        );
+        // Tear the previous tree down first: pumping a second
+        // SessionModerateScreen straight over the first reuses its element, so
+        // the state keeps the OLD fake's rows and the drag writes nowhere.
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _pump(tester, repo, locale: locale);
+        await _dragFirstRowDown(tester);
+        return repo.lastReorder!;
+      }
+
+      final english = await orderAfterDrag(const Locale('en'));
+      final arabic = await orderAfterDrag(const Locale('ar'));
+      expect(arabic, english);
+    });
+
+    testWidgets('FR-MOD-003: a failed reorder rolls the order back and toasts',
+        (tester) async {
+      final repo = _FakeRepo(queue: <ModeratorQuestion>[_q('a'), _q('b')])
+        ..failWrites = true;
+      await _pump(tester, repo);
+
+      await _dragFirstRowDown(tester);
+
+      expect(find.text('Could not save the order. Try again.'), findsOneWidget);
+      // Rolled back — the optimistic move is undone, so the desk still reads
+      // in its server order.
+      expect(
+        tester.getCenter(find.text('Q a text')).dy,
+        lessThan(tester.getCenter(find.text('Q b text')).dy),
+      );
     });
   });
 }

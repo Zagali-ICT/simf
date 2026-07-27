@@ -10,6 +10,7 @@ import '../../app/widgets/simf_page_shell.dart';
 import '../contacts/widgets/contact_card.dart';
 import 'data/exhibitor_models.dart';
 import 'data/exhibitor_repository.dart';
+import 'widgets/captured_visitor_sheet.dart';
 import 'widgets/exhibitor_centered.dart';
 
 /// D-426 — زوار جناحي / My Booth Visitors. The exhibitor's ("Other" profile
@@ -69,6 +70,22 @@ class _MyVisitorsScreenState extends ConsumerState<MyVisitorsScreen> {
     }
   }
 
+  /// FR-EXH-002 — opens the lead's detail sheet (export vCard / remove). A
+  /// confirmed removal pops `true`, so the list reloads and toasts.
+  Future<void> _openDetail(ExhibitorVisitor visitor) async {
+    final removed = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => CapturedVisitorSheet(visitor: visitor),
+    );
+    if (removed == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppL10n.of(context).myVisitorsRemoved)),
+      );
+      await _load();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
@@ -112,15 +129,20 @@ class _MyVisitorsScreenState extends ConsumerState<MyVisitorsScreen> {
           }
           final v = _visitors[index - 1];
           final card = v.card;
-          return ContactCard(
-            name: card.localizedName(isArabic),
-            available: card.available,
-            jobTitle: card.localizedJobTitle(isArabic),
-            organisation: card.localizedOrganisation(isArabic),
-            country: card.localizedCountry(isArabic),
-            email: card.email,
-            saudiMobile: card.saudiMobile,
-            internationalMobile: card.internationalMobile,
+          // FR-EXH-002 — a row now opens the detail sheet (export vCard /
+          // remove), the same affordance My Contacts has had since D-286.
+          return InkWell(
+            onTap: () => unawaited(_openDetail(v)),
+            child: ContactCard(
+              name: card.localizedName(isArabic),
+              available: card.available,
+              jobTitle: card.localizedJobTitle(isArabic),
+              organisation: card.localizedOrganisation(isArabic),
+              country: card.localizedCountry(isArabic),
+              email: card.email,
+              saudiMobile: card.saudiMobile,
+              internationalMobile: card.internationalMobile,
+            ),
           );
         },
       ),

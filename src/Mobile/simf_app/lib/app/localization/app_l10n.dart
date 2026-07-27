@@ -944,6 +944,26 @@ class AppL10n {
   String get moderatorActionFailed =>
       _t('تعذّر تنفيذ الإجراء. حاول مرة أخرى.', 'Action failed. Try again.');
 
+  // FR-MOD-001 — the moderator's own sessions (GET /app/sessions/moderated), so
+  // the desk is offered only where the per-session grant exists instead of being
+  // discovered as a 403 after the tap.
+  String get moderatorMySessions => _t('جلساتي', 'My sessions');
+  String get moderatorMySessionsEmpty => _t(
+        'لم يتم إسنادك إلى أي جلسة بعد.',
+        'You are not assigned to any session yet.',
+      );
+  String get moderatorMySessionsError => _t(
+        'تعذّر تحميل جلساتك. حاول مرة أخرى.',
+        'Could not load your sessions. Try again.',
+      );
+
+  // FR-MOD-003 — drag-to-reorder on the desk queue.
+  String get moderatorReorderHandle => _t('إعادة ترتيب السؤال', 'Reorder question');
+  String get moderatorReorderFailed => _t(
+        'تعذّر حفظ الترتيب. حاول مرة أخرى.',
+        'Could not save the order. Try again.',
+      );
+
   // Staff gate-operator console (Figma 758:4380/4651/4735/4819/4886, D-406/D-509).
   String get gateScannerEntry => _t('مسح البوابة', 'Gate scanner');
   String get gateScanTitle => _t('فحص رمز QR — موظف', 'QR scan — staff');
@@ -2362,6 +2382,21 @@ class AppL10n {
         'No booth visitors yet. Scan a visitor badge at your booth to capture '
             'them here.',
       );
+  // FR-EXH-002 — the lead list gained the remove + vCard export My Contacts has
+  // had since D-286. The wording deliberately mirrors the My-Contacts sheet so
+  // the two card lists behave the same way.
+  String get myVisitorsNoteLabel => _t('ملاحظة', 'Note');
+  String get myVisitorsExportVcard => _t('تصدير vCard', 'Export vCard');
+  String get myVisitorsRemove => _t('إزالة', 'Remove');
+  String get myVisitorsRemoveConfirmTitle =>
+      _t('إزالة هذا الزائر؟', 'Remove this visitor?');
+  String get myVisitorsRemoveConfirmBody => _t(
+        'سيتم حذف هذا الزائر من قائمة جناحي. يمكنك مسح بطاقته مرة أخرى لاحقاً.',
+        "This visitor will be removed from your booth's list. You can scan their "
+            'badge again later.',
+      );
+  String get myVisitorsRemoved =>
+      _t('تمت إزالة الزائر', 'Visitor removed');
   String get scanVisitorTitle => _t('مسح بطاقة زائر', 'Scan visitor badge');
   String get scanVisitorCaptured =>
       _t('تمت إضافة الزائر إلى زوار جناحي', 'Visitor added to My Booth Visitors');

@@ -87,6 +87,35 @@ internal static class SessionModeratorAuth
     }
 }
 
+/// <summary>FR-MOD-001 — the signed-in user's own moderated sessions. Gated the
+/// same way the desk is (an approved app account); the grant list itself is what
+/// scopes the response, so there is nothing here another moderator could read.
+/// The app calls it to offer the desk only where the grant exists — the icon used
+/// to show on every session and the missing grant only surfaced as a 403 after the
+/// tap — and to list the moderator's sessions on their operational home.</summary>
+public sealed class ListMyModeratedSessionsEndpoint(ISessionModerationService service)
+    : EndpointWithoutRequest<ApiResult<IReadOnlyList<ModeratedSessionRow>>>
+{
+    public override void Configure()
+    {
+        Get("/app/sessions/moderated");
+        Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Tags("Sessions");
+        Summary(s => s.Summary = "List the sessions the caller moderates.");
+    }
+
+    public override async Task HandleAsync(CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        var rows = await service.ListMySessionsAsync(userId, ct);
+        await Send.OkAsync(ApiResult<IReadOnlyList<ModeratedSessionRow>>.Ok(rows), ct);
+    }
+}
+
 public sealed class ListModeratorQueueRoute
 {
     public Guid SessionId { get; set; }

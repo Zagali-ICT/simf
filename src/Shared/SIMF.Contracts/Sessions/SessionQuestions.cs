@@ -60,6 +60,25 @@ public sealed record SessionQuestionModeratorRow(
     QuestionPhase Phase = QuestionPhase.Live,
     QuestionStatus Status = QuestionStatus.Approved);
 
+/// <summary>FR-MOD-001 — one session the signed-in user actually moderates
+/// (a row in <c>SessionModerators</c>), returned by
+/// <c>GET /api/v1/app/sessions/moderated</c>.
+///
+/// <para>The moderator desk is authorised per session, so the app had no way to
+/// know WHICH sessions carry the grant: it offered the desk on every session and
+/// the missing grant only surfaced as a 403 after the tap. This row is the
+/// discovery list behind that affordance — enough to render a navigable card
+/// (bilingual title, hall, start/end) without a second fetch per session.</para></summary>
+public sealed record ModeratedSessionRow(
+    Guid SessionId,
+    string Title,
+    string TitleArabic,
+    string HallName,
+    string HallNameArabic,
+    DateTimeOffset Start,
+    DateTimeOffset End,
+    DateTimeOffset AssignedAt);
+
 /// <summary>P3.3 — D-212 (Completion Programme §5.3): one row in the Scientific
 /// Committee's central queue (stage 2). Carries the session title + submitter
 /// projection so the queue needs no second fetch, plus the AI advisory verdict
