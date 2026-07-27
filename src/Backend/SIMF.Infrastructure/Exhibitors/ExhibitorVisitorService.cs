@@ -120,13 +120,39 @@ internal sealed class ExhibitorVisitorService(
         // booth's existing lead instead of forking a second private copy of it.
         // Legacy rows carry no ExhibitorId, so the caller's own un-backfilled
         // capture of the same visitor still counts as the existing one.
-        var existing = await appDbContext.ExhibitorVisitorScans
-            .FirstOrDefaultAsync(
-                s => s.VisitorUserId == visitorId.Value
-                    && s.IsActive
-                    && (s.ExhibitorId == exhibitor.Id
-                        || (s.ExhibitorId == null && s.ExhibitorUserId == exhibitorUserId)),
-                cancellationToken);
+        //
+        // FR-EXH-003 regression — the two kinds can be live AT ONCE: a colleague
+        // captures the visitor for the booth while this officer still holds their
+        // own un-backfilled legacy row of that visitor. Taking whichever row the
+        // database happened to return first then either stamped the booth id onto
+        // the LEGACY row — a second ACTIVE (booth, visitor) pair, which the
+        // filtered unique index rejects, surfacing as a 500 — or picked the booth
+        // row and left the legacy one active, so the booth listed the visitor
+        // twice. The whole matched set is loaded and resolved deliberately
+        // instead; the unordered "first" is never the deciding factor.
+        var matches = await appDbContext.ExhibitorVisitorScans
+            .Where(s => s.VisitorUserId == visitorId.Value
+                && s.IsActive
+                && (s.ExhibitorId == exhibitor.Id
+                    || (s.ExhibitorId == null && s.ExhibitorUserId == exhibitorUserId)))
+            .ToListAsync(cancellationToken);
+
+        // The BOOTH-scoped row wins. It is the row the booth's officers share and
+        // the one the filtered unique index protects — and that index is what
+        // makes the choice unambiguous: at most ONE active row can carry this
+        // (ExhibitorId, VisitorUserId), so there is never a second booth row to
+        // arbitrate between. With no booth row the newest legacy row is adopted
+        // into the booth instead (the FR-EXH-003 hand-over), which is index-safe
+        // precisely because no active booth row exists for this pair.
+        // The legacy tie-break is the migration's, so a row collapsed by hand and
+        // a row collapsed here are decided the same way: freshest write wins.
+        var existing = matches.FirstOrDefault(s => s.ExhibitorId == exhibitor.Id)
+            ?? matches
+                .OrderByDescending(s => s.UpdatedAt ?? s.CreatedAt)
+                .ThenByDescending(s => s.CreatedAt)
+                .ThenByDescending(s => s.Id)
+                .FirstOrDefault();
+
         var now = timeProvider.GetUtcNow();
         if (existing is not null)
         {
@@ -135,6 +161,22 @@ internal sealed class ExhibitorVisitorService(
             // Adopt a legacy row into the booth on the first re-scan, so the list
             // stops depending on the person who happened to capture it.
             existing.ExhibitorId ??= exhibitor.Id;
+
+            // FR-EXH-003 regression — converge the rows that did not win. They
+            // are the caller's own legacy captures of a visitor the booth already
+            // holds, so they can neither be adopted (the booth pair is taken) nor
+            // be left active (the booth would list the visitor twice). Soft-delete
+            // is the project's remove contract — the row and its consent trail
+            // survive, it simply stops being a second live copy of one lead.
+            foreach (var superseded in matches.Where(s => s.Id != existing.Id))
+            {
+                superseded.Deactivate();
+                superseded.UpdatedAt = now;
+                logger.LogInformation(
+                    "Converged legacy exhibitor capture {CaptureId} of visitor {VisitorUserId} "
+                    + "into the booth's capture {WinningCaptureId} for exhibitor {ExhibitorId}.",
+                    superseded.Id, visitorId.Value, existing.Id, exhibitor.Id);
+            }
         }
         else
         {
