@@ -78,7 +78,10 @@ class GreetingHeader extends StatelessWidget {
           // The shared language toggle. Every other screen carries it in its
           // header, but the signed-in Home did not — and the language row lives
           // only in the Profile "More" menu, so from Home there was no route to
-          // the language switch at all (BUG-017).
+          // the language switch at all (BUG-017). It sits BESIDE the action
+          // cluster, not inside it: the pill was dropped from the shared
+          // cluster on 2026-07-11 and the owner reversed that for Home only on
+          // 2026-07-27 ("keep home lang", D-772). Keep it here.
           Consumer(
             builder: (context, ref, _) => SimfLanguageToggle(
               onPressed: () => unawaited(

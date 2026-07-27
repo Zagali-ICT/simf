@@ -55,7 +55,8 @@
 | E2E-MOB013-019 | **اللقاءات الثنائية → Coming soon (owner 2026-06-21):** the bilateral-meetings news tile opens the **ComingSoon** placeholder (the feature is not designed yet), not the media gallery | happy | P2 | authored ✓ (screen — tile → `bilateralMeetings` ComingSoon route) |
 | E2E-MOB013-020 | **Smart-features tile → AI-summaries (D-580→D-583):** the smart-row-2 tile reads "ملخص الجلسات" and opens the AI-summaries list (1388:8392, header "ملخص الجلسات") | happy | P2 | authored ✓ (screen — smart-row-2 label + section-scan) |
 | E2E-MOB013-021 | **About-tile → session downloads (D-583):** the Home about-row (4-up) tile reads "الجلسات" and opens the session-materials downloads screen (1388:7621, header "الجلسات"); label matches the screen title | happy | P2 | authored ✓ (screen — about-row label + order) |
-| E2E-MOB013-023 | **Language switch reachable from Home (BUG-017):** the signed-in Home greeting header carries the shared `SimfLanguageToggle`, like every other screen. Before, the only language entry point was the Profile "More" menu, so from Home there was no route to the language switch at all | nav | P1 | authored ✓ (screen `BUG-017 — the greeting header carries the shared language toggle, so the language switch is reachable from Home`) |
+| E2E-MOB013-023 | **Language switch reachable from Home (BUG-017; owner-confirmed 2026-07-27, D-772):** the signed-in Home greeting header carries the shared `SimfLanguageToggle` as a **sibling beside** the bell + ☰ cluster (not inside it). Before, the only language entry point was the Profile "More" menu, so from Home there was no route to the language switch at all | nav | P1 | authored ✓ (screen `BUG-017 — the greeting header carries the shared language toggle …`; placement + flip in `simf_page_shell_test`) |
+| E2E-MOB013-025 | **The Home pill really drives the locale (D-772):** tapping it re-renders the greeting header in the other language — greeting `Welcome` ↔ `مرحبًا`, pill `ع` ↔ `EN` — and persists the choice. Asserted in **both** directions (EN→AR and AR→EN) | i18n | P1 | authored ✓ (screen `the Home language toggle flips EN → AR …` + `… flips AR → EN …`) |
 | E2E-MOB013-024 | **Locked guest badge tile announces why (BUG-014):** the guest home's locked "بطاقتي" tile stays intentionally inert but now carries a semantics hint ("Locked — sign in to unlock your smart badge") so a screen-reader user learns it is locked and why | a11y | P2 | authored ✓ (`simf_page_shell_test` — `BUG-014 — a locked tile announces WHY it is locked and stays inert`) |
 | E2E-MOB013-022 | **Hero background video (D-756 / D-761):** when `OrganizationProfile.backgroundVideoUrl` is a **direct MP4/HLS** link the home hero plays it muted + looping + no-controls, cover-fitted as the base layer (edition text overlay + scrim stay on top); a **YouTube** link is NOT played in-app (an Android WebView can't be clipped into the band — D-761) and falls back to the banner-image carousel / discover photo, same as null/unsupported | happy | P2 | authored ✓ (widget — `HeroBackgroundVideo.isSupported` gate + hero base-layer selection) |
 
@@ -413,16 +414,51 @@ Scenario: Switching language without leaving Home
 > Every other screen carries the toggle in its header; Home did not, and the
 > language row lives only in the Profile "More" menu — a different menu from the
 > Home header "More", so from Home there was no route to the language switch at
-> all (BUG-017).
+> all (BUG-017). **Owner-confirmed 2026-07-27 ("keep home lang", D-772),**
+> superseding the 2026-07-11 removal of the pill from the shared cluster: the
+> Home pill is a **sibling beside** `SimfHeaderActions`, not a member of it, so
+> every sub-page keeps the bell + ☰ cluster shape.
 
 **Evidence:** screen test `BUG-017 — the greeting header carries the shared
-language toggle, so the language switch is reachable from Home`; the toggle's own
-flip + persist behaviour is covered by `simf_page_shell_test` (`tapping the
-sub-page language pill flips the locale AR → EN and persists it`).
+language toggle, so the language switch is reachable from Home (owner 2026-07-27
+"keep home lang", D-772)`; the pill's placement + flip + persist behaviour is
+covered by `simf_page_shell_test` (`the signed-in Home greeting header exposes a
+WORKING language toggle, beside the bell + ☰ cluster rather than inside it`), and
+the re-render is covered by E2E-MOB013-025.
+
+### E2E-MOB013-025 — Tapping the Home pill re-renders Home in the other language
+
+```gherkin
+Scenario Outline: The Home language pill actually drives the app locale
+  Given I am signed in and on the Home tab with the app in <from>
+  Then the greeting reads "<greeting_from>" and the pill offers "<pill_from>"
+  When I tap the language pill
+  Then the greeting header re-renders in <to> and reads "<greeting_to>"
+  And the pill now offers "<pill_to>"
+  And "<greeting_from>" is no longer on screen
+  And the stored preferred language is "<stored_to>"
+
+  Examples:
+    | from    | to      | greeting_from | greeting_to | pill_from | pill_to | stored_to |
+    | English | Arabic  | Welcome       | مرحبًا       | ع         | EN      | ar        |
+    | Arabic  | English | مرحبًا         | Welcome     | EN        | ع       | en        |
+```
+
+> Presence alone is not proof — the pill has to drive the live locale. Both
+> directions are asserted so neither language is the only one exercised.
+
+**Evidence:** screen tests `the Home language toggle flips EN → AR and the
+greeting header re-renders in Arabic (owner 2026-07-27)` and `… flips AR → EN and
+the greeting header re-renders in English (owner 2026-07-27)`, both pumped
+against a **live** `localeControllerProvider` (a fixed `MaterialApp.locale` would
+swallow the re-render).
 
 ---
 
-_Last reviewed:_ `2026-07-26` by `SIMF Team` — BUG-017: the shared language toggle
+_Last reviewed:_ `2026-07-27` by `SIMF Team` — D-772: the owner confirmed the
+signed-in Home keeps its language toggle, superseding the 2026-07-11 removal;
+added E2E-MOB013-025 for the AR/EN re-render.
+_Prior:_ `2026-07-26` by `SIMF Team` — BUG-017: the shared language toggle
 was added to the signed-in Home greeting header (E2E-MOB013-023); BUG-014: the
 locked guest badge tile now carries a semantics hint (E2E-MOB013-024).
 _Prior:_ `2026-07-01` by `SIMF Team` — D-583: the two Home session tiles

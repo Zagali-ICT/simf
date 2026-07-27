@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/localization/locale_controller.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/widgets/simf_app_shell.dart';
 import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
@@ -135,6 +136,42 @@ OrgProfile _orgProfile(OrgSocial social, {String? contactWebsite}) => OrgProfile
       details: const <OrgDetail>[],
     );
 
+/// Minimal in-memory prefs so a real [LocaleController] can back the
+/// language-toggle tests without touching the platform store.
+class _FakePrefs implements SimfPrefsStorage {
+  final Map<String, Object> _store = <String, Object>{};
+
+  @override
+  String? getString(String key) {
+    final v = _store[key];
+    return v is String ? v : null;
+  }
+
+  @override
+  Future<bool> setString(String key, String value) async {
+    _store[key] = value;
+    return true;
+  }
+
+  @override
+  bool? getBool(String key) => null;
+  @override
+  Future<bool> setBool(String key, bool value) async => true;
+  @override
+  double? getDouble(String key) => null;
+  @override
+  Future<bool> setDouble(String key, double value) async => true;
+  @override
+  int? getInt(String key) => null;
+  @override
+  Future<bool> setInt(String key, int value) async => true;
+  @override
+  Future<bool> remove(String key) async {
+    _store.remove(key);
+    return true;
+  }
+}
+
 class _FakeNotificationsRepository implements NotificationsRepository {
   _FakeNotificationsRepository(this.count);
 
@@ -191,6 +228,7 @@ Future<void> _pump(
   List<NewsListItem> news = const <NewsListItem>[],
   MyAreaDashboard? profile,
   Locale locale = const Locale('en'),
+  SimfPrefsStorage? localePrefs,
   OrgSocial social = _allSocial,
   String? website,
   bool isVip = false,
@@ -241,10 +279,31 @@ Future<void> _pump(
     ],
   );
 
+  // The real app drives MaterialApp.locale from localeControllerProvider
+  // (app.dart). Most tests just pin a language, so they pass `locale`. A test
+  // that TAPS the header language toggle passes [localePrefs] instead: the
+  // locale then comes from the live controller, so the flip actually re-renders
+  // the app in the other language — a fixed `locale` would swallow it.
+  MaterialApp buildApp(Locale active) => MaterialApp.router(
+        routerConfig: router,
+        locale: active,
+        supportedLocales: AppL10n.supportedLocales,
+        localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+          ...AppL10n.localizationsDelegates,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+      );
+
   await tester.pumpWidget(
     ProviderScope(
       overrides: <Override>[
         authControllerProvider.overrideWith(() => controller),
+        if (localePrefs != null)
+          localeControllerProvider.overrideWith(
+            () => LocaleController(prefs: localePrefs),
+          ),
         // Bi-Meeting rework — the meeting-access flags drive the "اللقاءات الثنائية"
         // tile; overridden so no real getMyProfile() network call happens.
         currentUserMeetingAccessProvider.overrideWith(
@@ -279,17 +338,12 @@ Future<void> _pump(
           ),
         ),
       ],
-      child: MaterialApp.router(
-        routerConfig: router,
-        locale: locale,
-        supportedLocales: AppL10n.supportedLocales,
-        localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
-          ...AppL10n.localizationsDelegates,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-      ),
+      child: localePrefs == null
+          ? buildApp(locale)
+          : Consumer(
+              builder: (context, ref, _) =>
+                  buildApp(ref.watch(localeControllerProvider)),
+            ),
     ),
   );
   await tester.pumpAndSettle();
@@ -337,8 +391,10 @@ void main() {
       // signed-in home greeting header. The shared ☰ stays on the guest top bar.
       expect(find.byTooltip('Notifications'), findsNothing);
       expect(find.byIcon(Icons.menu), findsOneWidget);
-      // The language pill was removed from the Home top nav (owner 2026-07-11);
-      // language is changed from the More screen's اللغة row now.
+      // The GUEST top bar carries no language pill. The owner's 2026-07-27
+      // "keep home lang" ruling was about the SIGNED-IN Home greeting header
+      // (BUG-017 / D-772) and did not extend to this surface, so the guest bar
+      // is unchanged — a guest still switches language from the ☰ drawer.
       expect(
         find.byKey(const ValueKey<String>('languageToggle')),
         findsNothing,
@@ -574,16 +630,69 @@ void main() {
 
     testWidgets(
         'BUG-017 — the greeting header carries the shared language toggle, so '
-        'the language switch is reachable from Home', (tester) async {
+        'the language switch is reachable from Home (owner 2026-07-27 "keep '
+        'home lang", D-772)', (tester) async {
       // The header toggle is on essentially every other screen; Home had none,
       // and the only other language entry point is the Profile "More" menu —
-      // so from Home there was no route to the language switch at all.
+      // so from Home there was no route to the language switch at all. The
+      // owner kept this fix on 2026-07-27, superseding the 2026-07-11 removal.
       await _pump(tester, controller: _SignedInController());
 
       expect(find.byType(SimfLanguageToggle), findsOneWidget);
       // The pill shows the language it switches TO — 'ع' under the English
       // locale this harness pumps.
       expect(find.text('ع'), findsOneWidget);
+    });
+
+    testWidgets(
+        'the Home language toggle flips EN → AR and the greeting header '
+        're-renders in Arabic (owner 2026-07-27)', (tester) async {
+      // Presence is not enough — the pill has to actually drive the app locale
+      // from Home. Live locale (localePrefs) so the flip really re-renders.
+      final prefs = _FakePrefs();
+      await prefs.setString(StorageKeys.preferredLanguage, 'en');
+      await _pump(
+        tester,
+        controller: _SignedInController(),
+        localePrefs: prefs,
+      );
+
+      // English: the greeting reads "Welcome" and the pill offers Arabic.
+      expect(find.text('Welcome'), findsOneWidget);
+      expect(find.text('ع'), findsOneWidget);
+
+      await tester.tap(find.byType(SimfLanguageToggle));
+      await tester.pumpAndSettle();
+
+      // Arabic: the SAME header re-rendered — greeting and pill both flipped.
+      expect(find.text('مرحبًا'), findsOneWidget);
+      expect(find.text('Welcome'), findsNothing);
+      expect(find.text('EN'), findsOneWidget);
+      expect(prefs.getString(StorageKeys.preferredLanguage), 'ar');
+    });
+
+    testWidgets(
+        'the Home language toggle flips AR → EN and the greeting header '
+        're-renders in English (owner 2026-07-27)', (tester) async {
+      // The mirror case, from the app's default language (Arabic — nothing
+      // stored, SIMF-MAA-001 §10).
+      final prefs = _FakePrefs();
+      await _pump(
+        tester,
+        controller: _SignedInController(),
+        localePrefs: prefs,
+      );
+
+      expect(find.text('مرحبًا'), findsOneWidget);
+      expect(find.text('EN'), findsOneWidget);
+
+      await tester.tap(find.byType(SimfLanguageToggle));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Welcome'), findsOneWidget);
+      expect(find.text('مرحبًا'), findsNothing);
+      expect(find.text('ع'), findsOneWidget);
+      expect(prefs.getString(StorageKeys.preferredLanguage), 'en');
     });
 
     testWidgets('tapping the greeting avatar switches to the Profile tab '
