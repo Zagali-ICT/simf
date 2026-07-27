@@ -824,6 +824,7 @@
   <data name="Admin.Halls.Action.Deactivate" xml:space="preserve"><value>تعطيل</value></data>
   <data name="Admin.Halls.Action.SelectAll" xml:space="preserve"><value>تحديد الكل</value></data>
   <data name="Admin.Halls.Action.SelectRow" xml:space="preserve"><value>تحديد الصف</value></data>
+  <data name="Admin.Halls.Action.SeatLayout" xml:space="preserve"><value>مخطط المقاعد</value></data>
   <data name="Admin.Halls.Field.Code" xml:space="preserve"><value>الرمز</value></data>
   <data name="Admin.Halls.Field.CodeHint" xml:space="preserve"><value>من 2 إلى 16 حرفاً؛ فريد. معرف ثابت يستخدمه فريق الموقع (مثل H1, A201).</value></data>
   <data name="Admin.Halls.Field.CodeInvalid" xml:space="preserve"><value>يجب أن يتراوح الرمز بين 2 و 16 حرفاً.</value></data>
@@ -2302,6 +2303,18 @@
   <data name="Admin.HallSeatLayouts.CapacityExceeded" xml:space="preserve"><value>إجمالي المقاعد يتجاوز سعة القاعة، أو أحد الصفوف خارج النطاق 1–80. عدّل الأعداد قبل الحفظ.</value></data>
   <data name="Admin.HallSeatLayouts.Save" xml:space="preserve"><value>حفظ المخطط</value></data>
   <data name="Admin.HallSeatLayouts.Saved" xml:space="preserve"><value>تم حفظ المخطط.</value></data>
+  <data name="Admin.HallSeatLayouts.Delete" xml:space="preserve"><value>إزالة المخطط</value></data>
+  <data name="Admin.HallSeatLayouts.Delete.Title" xml:space="preserve"><value>إزالة مخطط المقاعد هذا؟</value></data>
+  <data name="Admin.HallSeatLayouts.Delete.Confirm" xml:space="preserve"><value>ستعود القاعة إلى نظام الدخول العام: يتم الانضمام إلى كل جلسة فيها بضغطة واحدة دون اختيار مقعد. يجب إلغاء الحجوزات القائمة أولاً. ويمكنك تعريف مخطط جديد في أي وقت.</value></data>
+  <data name="Admin.HallSeatLayouts.Delete.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.HallSeatLayouts.Deleted" xml:space="preserve"><value>تمت إزالة المخطط. أصبحت القاعة بنظام الدخول العام.</value></data>
+  <data name="Admin.HallSeatLayouts.DeleteFailed" xml:space="preserve"><value>تعذّرت إزالة مخطط المقاعد.</value></data>
+  <data name="Admin.HallSeatLayouts.Validation.RowCount" xml:space="preserve"><value>أدخل عدداً من رموز الصفوف بين {0} و {1}. ولترك القاعة بلا مخطط مقاعد نهائياً استخدم «إزالة المخطط».</value></data>
+  <data name="Admin.HallSeatLayouts.Validation.RowLabelLength" xml:space="preserve"><value>يجب ألا يتجاوز طول كل رمز صف {0} محارف.</value></data>
+  <data name="Admin.HallSeatLayouts.Validation.RowLabelDuplicate" xml:space="preserve"><value>يجب أن تكون رموز الصفوف فريدة.</value></data>
+  <data name="Admin.HallSeatLayouts.Validation.RowLabelsTooLong" xml:space="preserve"><value>يجب ألا يتجاوز مجموع رموز الصفوف {0} محرفاً.</value></data>
+  <data name="Admin.HallSeatLayouts.Validation.SeatCount" xml:space="preserve"><value>يجب أن يكون عدد مقاعد كل صف بين {0} و {1}.</value></data>
+  <data name="Admin.HallSeatLayouts.Validation.Capacity" xml:space="preserve"><value>سعة المخطط ({0}) تتجاوز سعة القاعة ({1}).</value></data>
   <data name="Admin.HallSeatLayouts.RowsBySeats" xml:space="preserve"><value>{0} صفوف × {1} مقعداً لكل صف</value></data>
   <data name="Admin.HallSeatLayouts.Capacity.Over" xml:space="preserve"><value>سعة المخطط تتجاوز سعة القاعة. قلّل عدد الصفوف أو المقاعد لكل صف قبل الحفظ.</value></data>
   <data name="Admin.HallSeatLayouts.Preview.Title" xml:space="preserve"><value>معاينة المخطط</value></data>

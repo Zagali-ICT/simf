@@ -826,6 +826,7 @@
   <data name="Admin.Halls.Action.Deactivate" xml:space="preserve"><value>Deactivate</value></data>
   <data name="Admin.Halls.Action.SelectAll" xml:space="preserve"><value>Select all</value></data>
   <data name="Admin.Halls.Action.SelectRow" xml:space="preserve"><value>Select row</value></data>
+  <data name="Admin.Halls.Action.SeatLayout" xml:space="preserve"><value>Seat layout</value></data>
   <data name="Admin.Halls.Field.Code" xml:space="preserve"><value>Code</value></data>
   <data name="Admin.Halls.Field.CodeHint" xml:space="preserve"><value>2–16 characters; unique. Venue team's stable identifier (e.g. H1, A201).</value></data>
   <data name="Admin.Halls.Field.CodeInvalid" xml:space="preserve"><value>Code must be between 2 and 16 characters.</value></data>
@@ -2309,6 +2310,18 @@
   <data name="Admin.HallSeatLayouts.CapacityExceeded" xml:space="preserve"><value>The total seats exceed the hall capacity, or a row is outside 1–80. Adjust the counts before saving.</value></data>
   <data name="Admin.HallSeatLayouts.Save" xml:space="preserve"><value>Save layout</value></data>
   <data name="Admin.HallSeatLayouts.Saved" xml:space="preserve"><value>Layout saved.</value></data>
+  <data name="Admin.HallSeatLayouts.Delete" xml:space="preserve"><value>Remove layout</value></data>
+  <data name="Admin.HallSeatLayouts.Delete.Title" xml:space="preserve"><value>Remove this seat layout?</value></data>
+  <data name="Admin.HallSeatLayouts.Delete.Confirm" xml:space="preserve"><value>The hall goes back to general admission: every session in it is joined with one tap and no visitor picks a seat. Existing bookings must be released first. You can define a new layout at any time.</value></data>
+  <data name="Admin.HallSeatLayouts.Delete.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.HallSeatLayouts.Deleted" xml:space="preserve"><value>Layout removed. The hall is now general admission.</value></data>
+  <data name="Admin.HallSeatLayouts.DeleteFailed" xml:space="preserve"><value>Could not remove the seat layout.</value></data>
+  <data name="Admin.HallSeatLayouts.Validation.RowCount" xml:space="preserve"><value>Enter between {0} and {1} row labels. To leave the hall with no seat map at all, use Remove layout.</value></data>
+  <data name="Admin.HallSeatLayouts.Validation.RowLabelLength" xml:space="preserve"><value>Each row label must be {0} characters or fewer.</value></data>
+  <data name="Admin.HallSeatLayouts.Validation.RowLabelDuplicate" xml:space="preserve"><value>Row labels must be unique.</value></data>
+  <data name="Admin.HallSeatLayouts.Validation.RowLabelsTooLong" xml:space="preserve"><value>All row labels together must be {0} characters or fewer.</value></data>
+  <data name="Admin.HallSeatLayouts.Validation.SeatCount" xml:space="preserve"><value>Each row's seat count must be between {0} and {1}.</value></data>
+  <data name="Admin.HallSeatLayouts.Validation.Capacity" xml:space="preserve"><value>Layout capacity ({0}) exceeds hall capacity ({1}).</value></data>
   <data name="Admin.HallSeatLayouts.RowsBySeats" xml:space="preserve"><value>{0} rows × {1} seats per row</value></data>
   <data name="Admin.HallSeatLayouts.Capacity.Over" xml:space="preserve"><value>Layout capacity exceeds the hall capacity. Reduce the rows or seats per row before saving.</value></data>
   <data name="Admin.HallSeatLayouts.Preview.Title" xml:space="preserve"><value>Layout preview</value></data>

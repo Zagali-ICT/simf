@@ -361,6 +361,8 @@ public static class AuditEvents
 
     // Seat reservations (D-175, gap doc G11 — Mockup page 7)
     public const string HallSeatLayoutUpdated = "HallSeatLayout.Updated";
+    // B15 — the whole grid was removed (the hall reverts to general admission).
+    public const string HallSeatLayoutDeleted = "HallSeatLayout.Deleted";
     public const string SeatReservationCreated = "SeatReservation.Created";
     public const string SeatReservationReleased = "SeatReservation.Released";
     public const string SeatRowAdminReserved = "SeatReservation.RowAdminReserved";

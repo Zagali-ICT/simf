@@ -2454,6 +2454,15 @@ internal static class AccountEndpoints
             return Forward(await api.SetHallSeatLayoutAsync(hallId, body, token));
         });
 
+        // B15 — remove a hall's seat layout (back to general admission).
+        group.MapDelete("/admin/halls/{hallId:guid}/seat-layout",
+            async (Guid hallId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeleteHallSeatLayoutAsync(hallId, token));
+        });
+
         group.MapPost("/admin/sessions/{sessionId:guid}/seats/list",
             async (Guid sessionId, GridQuery body,
                    HttpContext http, SimfAdminClient api) =>

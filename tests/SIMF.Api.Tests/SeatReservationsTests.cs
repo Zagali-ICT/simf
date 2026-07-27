@@ -1070,6 +1070,143 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(5, uMap.SeatsPerRow);
     }
 
+    // -- B15: a seat layout can be removed (back to general admission) --------
+
+    [Fact]
+    public async Task Deleting_a_layout_reverts_the_hall_to_general_admission()
+    {
+        // B15 — the layout can be removed entirely: the row is gone from the DB, the
+        // read-back is empty, and the session's seat map now reports OpenSeating, so a
+        // laid-out hall really can be converted back to general admission.
+        var (session, hall) = await SeedSessionWithLayoutAsync(new[] { "A", "B" }, seatsPerRow: 5);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var delete = await DeleteAuthAsync(
+            $"/api/v1/admin/halls/{hall.Id}/seat-layout", admin);
+        Assert.Equal(HttpStatusCode.OK, delete.StatusCode);
+        var after = (await delete.Content
+            .ReadFromJsonAsync<ApiResult<HallSeatLayoutSnapshot>>())!.Data!;
+        Assert.Empty(after.RowLabels);
+        Assert.Equal(0, after.SeatsPerRow);
+        Assert.Equal(0, after.LayoutCapacity);
+        Assert.Equal(hall.Capacity, after.HallCapacity);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            Assert.False(await db.HallSeatLayouts.AnyAsync(l => l.HallId == hall.Id));
+        }
+
+        var reread = (await (await GetAuthAsync(
+                $"/api/v1/admin/halls/{hall.Id}/seat-layout", admin))
+            .Content.ReadFromJsonAsync<ApiResult<HallSeatLayoutSnapshot>>())!.Data!;
+        Assert.Empty(reread.RowLabels);
+
+        // D-706 — no layout means no assignable seats, so the session is now joined
+        // with one tap rather than by picking a seat.
+        var viewer = await SignInApprovedVisitorAsync();
+        var map = (await (await GetAuthAsync(
+                $"/api/v1/app/sessions/{session.Id}/seats", viewer))
+            .Content.ReadFromJsonAsync<ApiResult<SessionSeatMap>>())!.Data!;
+        Assert.Equal(SeatSelectionMode.OpenSeating, map.Mode);
+    }
+
+    [Fact]
+    public async Task Deleting_a_layout_that_would_strand_a_reservation_is_blocked()
+    {
+        // B15 — the H-2 orphan rule applied to the hardest shrink: A2 is actively
+        // reserved, so the delete is refused 409 and the layout survives intact.
+        var (session, hall) = await SeedSessionWithLayoutAsync(new[] { "A" }, seatsPerRow: 5);
+        var visitor = await SignInApprovedVisitorAsync();
+        var pick = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
+            new ReserveSeatRequest { RowLabel = "A", SeatNumber = 2 }, visitor);
+        Assert.Equal(HttpStatusCode.OK, pick.StatusCode);
+
+        var admin = await CreateAdministratorAndSignInAsync();
+        var delete = await DeleteAuthAsync(
+            $"/api/v1/admin/halls/{hall.Id}/seat-layout", admin);
+        Assert.Equal(HttpStatusCode.Conflict, delete.StatusCode);
+        var body = (await delete.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SeatLayoutHasReservations, body.Error!.Code);
+        // The message names how many reservations block it, in both languages.
+        Assert.Contains("1", body.Error!.Message);
+        Assert.Contains("1", body.Error!.MessageArabic);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var rows = await db.HallSeatLayouts.Where(l => l.HallId == hall.Id)
+            .Select(l => l.RowLabels).SingleAsync();
+        Assert.Equal("A", rows);
+    }
+
+    [Fact]
+    public async Task Deleting_a_layout_ignores_released_reservations()
+    {
+        // B15 — only ACTIVE holds block the delete. A released seat is not stranded,
+        // so the removal goes through.
+        var (session, hall) = await SeedSessionWithLayoutAsync(new[] { "A" }, seatsPerRow: 5);
+        var visitor = await SignInApprovedVisitorAsync();
+        var pick = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
+            new ReserveSeatRequest { RowLabel = "A", SeatNumber = 2 }, visitor);
+        Assert.Equal(HttpStatusCode.OK, pick.StatusCode);
+        var release = await DeleteAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/seats/mine", visitor);
+        Assert.Equal(HttpStatusCode.OK, release.StatusCode);
+
+        var admin = await CreateAdministratorAndSignInAsync();
+        var delete = await DeleteAuthAsync(
+            $"/api/v1/admin/halls/{hall.Id}/seat-layout", admin);
+        Assert.Equal(HttpStatusCode.OK, delete.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        Assert.False(await db.HallSeatLayouts.AnyAsync(l => l.HallId == hall.Id));
+    }
+
+    [Fact]
+    public async Task Deleting_a_layout_that_does_not_exist_is_a_404()
+    {
+        // B15 — a hall that was never laid out has nothing to remove; the delete is a
+        // precise 404 rather than a silent success.
+        var hall = await SeedHallAsync(capacity: 30);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var delete = await DeleteAuthAsync(
+            $"/api/v1/admin/halls/{hall.Id}/seat-layout", admin);
+        Assert.Equal(HttpStatusCode.NotFound, delete.StatusCode);
+        Assert.Equal(ErrorCodes.SeatLayoutMissing,
+            (await delete.Content.ReadFromJsonAsync<ApiResult<object>>())!.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Deleting_a_layout_can_be_followed_by_defining_a_new_one()
+    {
+        // B15 — the round trip the operator actually needs: remove the grid, then lay
+        // the hall out again from scratch.
+        var (_, hall) = await SeedSessionWithLayoutAsync(new[] { "A", "B" }, seatsPerRow: 5);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        Assert.Equal(HttpStatusCode.OK, (await DeleteAuthAsync(
+            $"/api/v1/admin/halls/{hall.Id}/seat-layout", admin)).StatusCode);
+
+        var put = await PutAuthAsync(
+            $"/api/v1/admin/halls/{hall.Id}/seat-layout",
+            new SetHallSeatLayoutRequest
+            {
+                RowLabels = new[] { "VIP", "A" },
+                SeatCounts = new[] { 2, 6 },
+                SeatTiers = new[] { SeatTier.Vvip, SeatTier.Normal },
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, put.StatusCode);
+        var snapshot = (await put.Content
+            .ReadFromJsonAsync<ApiResult<HallSeatLayoutSnapshot>>())!.Data!;
+        Assert.Equal(new[] { "VIP", "A" }, snapshot.RowLabels);
+        Assert.Equal(new[] { 2, 6 }, snapshot.SeatCounts);
+        Assert.Equal(8, snapshot.LayoutCapacity);
+    }
+
     // -- Helpers --------------------------------------------------------------
 
     private async Task<(Session Session, Hall Hall)> SeedSessionWithLayoutAsync(

@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-07-25 (D-767 per-row seat counts + preview/meter, non-blocking Save) |
+| **Last reviewed** | 2026-07-27 (B15 remove-layout + A40 Halls-grid row action and client-side validation; Save is now BLOCKED while a client rule fails) |
 
 > **Page shape (read from `HallSeatLayoutEditor.razor`, D-182).** This is a
 > **single-hall editor**, not a CRUD grid. There is no Add / Edit / Details /
@@ -81,12 +81,19 @@
 | E2E-HSL-015 | RTL render — Arabic toggle mirrors banner, hint, fields and Save button | i18n | P1 | _to author_ |
 | E2E-HSL-016 | Orphan guard (H-2) — a layout change that would strand active reservations (dropped row or shrunk seats-per-row) is blocked with 409 SEAT_LAYOUT_HAS_RESERVATIONS; a change with no orphans (and released reservations) still saves | conflict | P1 | authored ✓ |
 | E2E-HSL-017 | Ragged per-row counts (D-767): set VIP=4, A=10, B=8, C=8 -> Save -> read-back carries SeatCounts=[4,10,8,8], SeatsPerRow=max=10, LayoutCapacity=sum=30 | happy | P0 | _to author_ as a browser run (backend + CP coded; API round-trip covered by `SeatReservationsTests.Admin_set_variable_layout_round_trips_the_seat_counts`) |
-| E2E-HSL-018 | Per-row total + capacity meter (D-767): Layout capacity = sum(counts); NON-BLOCKING warning when sum > Hall.Capacity or any row out of 1..80 (Save stays enabled — server authoritative) | happy | P1 | _to author_ (CP coded) |
+| E2E-HSL-018 | Per-row total + capacity meter (D-767): Layout capacity = sum(counts); the panel turns amber when sum > Hall.Capacity or any row is out of 1..80. **Superseded by A40 (2026-07-27): that state now also BLOCKS Save** — see E2E-HSL-026; the panel warning is the inline signal, the validation list carries the exact numbers | happy | P1 | _to author_ (CP coded) |
 | E2E-HSL-019 | Count-mismatch rejection (D-767): SeatCounts length != row count -> 400 SEAT_LAYOUT_INVALID | error | P1 | _to author_ as a browser run (API covered by `SeatReservationsTests.Set_layout_with_a_count_mismatch_is_400`) |
 | E2E-HSL-020 | Out-of-range rejection (D-767): a per-row count < 1 or > 80 -> 400 SEAT_LAYOUT_INVALID | error | P1 | _to author_ as a browser run (API covered by `SeatReservationsTests.Set_layout_rejects_out_of_range_counts_and_an_over_capacity_sum`) |
 | E2E-HSL-021 | Sum-over-capacity rejection (D-767): sum(counts) > Hall.Capacity -> 400 SEAT_CAPACITY_EXCEEDED | error | P1 | _to author_ as a browser run (API covered by `SeatReservationsTests.Set_layout_rejects_out_of_range_counts_and_an_over_capacity_sum`) |
 | E2E-HSL-022 | Uniform back-compat (D-767): omit SeatCounts -> stored null + unchanged pre-D-767 render; all rows equal in the editor -> renders identically | happy | P1 | _to author_ |
 | E2E-HSL-023 | Live seat-map preview — grid renders each row with its OWN seat count, "Front / Stage" bar shown, placeholder when empty | happy | P2 | authored ✓ |
+| E2E-HSL-024 | Reachability (A40): the Halls grid row action "Seat layout" opens this editor already focused on that hall via `?hallId=` | happy | P0 | authored ✓ |
+| E2E-HSL-025 | Row-action permission (A40): an admin without `SeatLayouts.View` is not offered the Halls-grid row action | auth | P1 | authored ✓ |
+| E2E-HSL-026 | Client-side validation (A40): each broken rule (rows outside 1–26, a label over 8 chars, duplicate labels, a count outside 1–80, sum over hall capacity) lists its own message and disables Save — no round-trip | error | P0 | authored ✓ |
+| E2E-HSL-027 | Remove layout (B15): "Remove layout" → confirm → 200, the grid clears, the hall reverts to general admission (its sessions are one-tap join) | happy | P0 | authored ✓ |
+| E2E-HSL-028 | Remove refused (B15): a hall with an active seat reservation → 409 SEAT_LAYOUT_HAS_RESERVATIONS naming how many block it; the layout is untouched | conflict | P0 | authored ✓ |
+| E2E-HSL-029 | Remove permission (B15): an admin without `SeatLayouts.Delete` is not offered the Remove button, and the DELETE is 403 | auth | P1 | authored ✓ |
+| E2E-HSL-030 | Remove is hidden on a hall with no layout (B15), and a DELETE on one is 404 SEAT_LAYOUT_MISSING | error | P2 | authored ✓ |
 
 ## Scenarios
 
@@ -413,7 +420,7 @@ Scenario: The Layout-capacity readout + meter track the per-row sum; the warning
 ```
 
 **Evidence captured:**
-- Grounded in `HallSeatLayoutEditor.razor(.cs)`: `_totalSeats => _rows.Sum(r => r.Count)`, `_anyOutOfRange => _rows.Any(r => r.Count < 1 || r.Count > 80)`, `_isOverCapacity => _hallCapacity > 0 && _totalSeats > _hallCapacity`; the `@if (_isOverCapacity || _anyOutOfRange)` warning + the `hsl-capacity--over` meter style. Save is NOT disabled — the PUT still round-trips and the server returns the 400 (per E2E-HSL-020 / 021).
+- Grounded in `HallSeatLayoutEditor.razor(.cs)`: `_totalSeats => _rows.Sum(r => r.Count)`, `_anyOutOfRange => _rows.Any(r => r.Count < 1 || r.Count > 80)`, `_isOverCapacity => _hallCapacity > 0 && _totalSeats > _hallCapacity`; the `@if (_isOverCapacity || _anyOutOfRange)` warning + the `hsl-capacity--over` meter style. **Updated by A40 (2026-07-27):** Save IS now disabled in this state (`_canSave => _errors.Count == 0 && !_busy`), and the validation list states the exact numbers alongside the panel's general warning. E2E-HSL-020 / 021 remain the definitive server 400s, reachable by a direct API call.
 - Screenshot: `docs/screenshots/cp-admin-halls-seat-layouts-over-capacity.png` (warning panel + full meter + Save enabled).
 
 ### E2E-HSL-019 - Count-mismatch rejection (D-767)
@@ -510,6 +517,173 @@ Scenario: Blank / trailing row entries are ignored in the preview
 
 ---
 
+### E2E-HSL-024 — Reachability from the Halls grid (A40)
+
+```gherkin
+Scenario: The Halls grid row action opens this editor on that hall
+  Given the administrator holds "Halls.View" and "SeatLayouts.View"
+  And they are on "/admin/halls" with hall "H-01" (Main Hall, cap 120) listed
+  When they click the "Seat layout" row action on the "Main Hall" row
+  Then the browser navigates to "/admin/halls/seat-layouts?hallId=<H-01 id>"
+  And the hall picker already shows "H-01 - Main Hall (cap 120)"
+  And the stored row labels and per-row seat counts are loaded for editing
+```
+
+**Evidence captured:**
+- bUnit: `HallsListSeatLayoutActionTests.The_seat_layout_row_action_deep_links_to_that_hall`
+  and `HallSeatLayoutEditorTests.The_hallId_query_parameter_opens_the_editor_on_that_hall`.
+- Before A40 the editor had no entry point from the grid: the only route in was the
+  side-menu item, which opens on a blank picker.
+
+### E2E-HSL-025 — Row action hidden without the permission (A40)
+
+```gherkin
+Scenario: An admin who cannot view seat layouts is not offered the row action
+  Given the administrator holds "Halls.View" but NOT "SeatLayouts.View"
+  When they open "/admin/halls"
+  Then the hall rows render
+  And no "Seat layout" row action is offered on any row
+```
+
+**Evidence captured:**
+- bUnit: `HallsListSeatLayoutActionTests.The_seat_layout_row_action_is_hidden_without_the_permission`
+  (the action is wrapped in `<AuthorizedAction Permission="SeatLayouts.View">`).
+
+### E2E-HSL-026 — Client-side validation mirrors the server (A40)
+
+```gherkin
+Scenario Outline: A broken rule is reported before the round-trip
+  Given hall "H-01" (cap 120) is selected with layout "A,B" at 10 seats each
+  When the administrator enters <input>
+  Then the message "<message>" is listed above the capacity panel
+  And the "Save layout" button is disabled
+  And no PUT .../seat-layout request is sent
+
+  Examples:
+    | input                                  | message                                            |
+    | Row labels = ""                        | Enter between 1 and 26 row labels. To leave the hall with no seat map at all, use Remove layout. |
+    | Row labels = "R1,R2,...,R27" (27)      | Enter between 1 and 26 row labels. To leave the hall with no seat map at all, use Remove layout. |
+    | Row labels = "BALCONY-LEFT" (12 chars) | Each row label must be 8 characters or fewer.      |
+    | Row labels = "A,a"                     | Row labels must be unique.                         |
+    | Row A seat count = 81                  | Each row's seat count must be between 1 and 80.    |
+    | Row A seat count = 200 (cap 120)       | Layout capacity (200) exceeds hall capacity (120). |
+
+Scenario: The row-labels input cannot exceed the persisted column
+  Given hall "H-01" is selected
+  Then the Row labels input carries maxlength="256"
+  # UI MaxLength == EF HallSeatLayout.RowLabels HasMaxLength(256) == the service rule.
+```
+
+```gherkin
+Scenario: A hall that has no layout yet is not reported as broken
+  Given hall "H-09" has never had a seat layout
+  When the administrator selects it
+  Then no validation message is listed
+  And the preview shows "Enter row labels and seats per row to preview the seat map."
+  And "Save layout" is disabled — there is nothing to save
+  When they type any row label
+  Then the validation list becomes live again
+```
+
+**Evidence captured:**
+- bUnit: the six `*_blocks_save_client_side` facts in `HallSeatLayoutEditorTests`,
+  `A_hall_with_no_layout_yet_is_not_shouted_at`, and
+  `The_row_labels_input_max_length_matches_the_persisted_column`.
+- Arabic equivalents: `Admin.HallSeatLayouts.Validation.*` exist in both
+  `Strings.resx` and `Strings.ar.resx`.
+- The server still re-validates every rule (E2E-HSL-009..011, 019..021) — the client
+  mirror only removes the wasted round-trip. **Supersedes** the old
+  "Save stays enabled — server authoritative" note on E2E-HSL-018.
+
+### E2E-HSL-027 — Remove the layout, back to general admission (B15)
+
+```gherkin
+Scenario: An administrator converts a laid-out hall back to general admission
+  Given hall "H-01" (cap 120) has layout "A,B" at 10 seats each
+  And no active seat reservation exists for any session in that hall
+  And the administrator holds "SeatLayouts.Delete"
+  When they open the editor on "H-01" and click "Remove layout"
+  Then a must-decide confirmation "Remove this seat layout?" appears
+  And it explains the hall goes back to general admission
+  When they confirm
+  Then DELETE /api/v1/admin/halls/<H-01 id>/seat-layout returns 200
+  And the toast reads "Layout removed. The hall is now general admission."
+    / "تمت إزالة المخطط. أصبحت القاعة بنظام الدخول العام."
+  And the row labels input, the preview and the "Remove layout" button all clear
+  And GET .../seat-layout reads back an empty layout
+  And the seat map of a session in that hall now reports Mode = OpenSeating
+  And an audit entry "HallSeatLayout.Deleted" records the removed grid
+```
+
+**Evidence captured:**
+- API: `SeatReservationsTests.Deleting_a_layout_reverts_the_hall_to_general_admission`
+  and `Deleting_a_layout_can_be_followed_by_defining_a_new_one`.
+- bUnit: `HallSeatLayoutEditorTests.Removing_a_layout_asks_for_confirmation_first`
+  and `Confirming_the_removal_clears_the_grid_and_reports_success`.
+
+### E2E-HSL-028 — Removal refused while reservations are live (B15)
+
+```gherkin
+Scenario: The removal names how many bookings block it
+  Given hall "H-01" has layout "A" at 5 seats
+  And a visitor holds seat A2 in a session in that hall
+  When the administrator confirms "Remove layout"
+  Then the response is 409 SEAT_LAYOUT_HAS_RESERVATIONS
+  And the message reads
+    "Removing this layout would strand 1 active seat reservation(s). Release them
+     before removing the layout."
+    / "ستؤدي إزالة هذا المخطط إلى إلغاء 1 حجز مقعد نشط. يرجى إلغاء هذه الحجوزات قبل إزالة المخطط."
+  And the stored layout is unchanged (rows still "A")
+
+Scenario: A released reservation does not block the removal
+  Given the visitor has released seat A2
+  When the administrator confirms "Remove layout"
+  Then the response is 200 and the layout row is gone
+  # Open-seating holds (null row/seat) never block — general admission needs no grid.
+```
+
+**Evidence captured:**
+- API: `SeatReservationsTests.Deleting_a_layout_that_would_strand_a_reservation_is_blocked`
+  and `Deleting_a_layout_ignores_released_reservations`.
+- bUnit: `HallSeatLayoutEditorTests.A_refused_removal_shows_the_servers_reservation_count_message`.
+
+### E2E-HSL-029 — Remove is permission-gated (B15)
+
+```gherkin
+Scenario: An admin who can edit but not delete is not offered the removal
+  Given the administrator holds "SeatLayouts.View" and "SeatLayouts.Edit"
+    but NOT "SeatLayouts.Delete"
+  When they open the editor on a laid-out hall
+  Then "Save layout" is offered
+  And no "Remove layout" button is rendered
+  And a direct DELETE .../seat-layout returns 403
+```
+
+**Evidence captured:**
+- The button is wrapped in `<AuthorizedAction Permission="SeatLayouts.Delete">`;
+  the endpoint declares
+  `Policies(PolicyFor(SeatLayouts.Delete), nameof(RequireApprovedAccount))`.
+- `PermissionEnforcementTests.Every_admin_endpoint_is_permission_and_approval_gated`
+  fails the build if that gate is dropped.
+
+### E2E-HSL-030 — Nothing to remove on an un-laid-out hall (B15)
+
+```gherkin
+Scenario: The Remove button is hidden and the API answers 404
+  Given hall "H-09" has never had a seat layout
+  When the administrator selects it in the editor
+  Then no "Remove layout" button is rendered
+  And a direct DELETE .../seat-layout returns 404 SEAT_LAYOUT_MISSING
+    "This hall does not have a seat layout to remove."
+    / "لا يوجد مخطط مقاعد لهذه القاعة لإزالته."
+```
+
+**Evidence captured:**
+- API: `SeatReservationsTests.Deleting_a_layout_that_does_not_exist_is_a_404`.
+- bUnit: `HallSeatLayoutEditorTests.The_remove_button_appears_only_when_a_layout_exists`.
+
+---
+
 ## Implementation notes
 
 - **API integration tests at a lower layer.** `tests/SIMF.Api.Tests/SeatReservationsTests.cs`
@@ -520,15 +694,19 @@ Scenario: Blank / trailing row entries are ignored in the preview
   also seeds a layout via `SetHallSeatLayoutRequest { RowLabels = "A,B", SeatsPerRow = 5 }`.
   When an E2E scenario above is covered by Playwright, the matching
   `Api.Tests` case can usually be retired — but keep both during the transition.
-- **No client-side validation on this page.** `HallSeatLayoutEditor.razor`
-  performs no in-browser bounds check; every invalid input round-trips to the
-  API and returns via `MessageForCurrentCulture()`. The bounds live only in
-  `SeatReservationService.SetLayoutAsync` (1–26 unique rows, ≤8 chars each,
-  1–80 seats, rows × seats ≤ `Hall.Capacity`).
-- **Permission seeding.** `SeatLayouts.View` and `SeatLayouts.Edit` are
-  seeded with `BaselineRoles = AdminOnly` in `PermissionCatalog.All`. The
-  `CpNavigationPermissionTests` / `PermissionEnforcementTests` guards fail the
-  build if either gate is dropped.
+- **Client-side validation (A40, supersedes the old "none on this page" note).**
+  `HallSeatLayoutEditor.razor.cs` `Revalidate()` mirrors
+  `SeatReservationService.SetLayoutAsync` exactly — 1–26 rows, each label ≤8 chars,
+  labels unique case-insensitively, each per-row count 1–80, `sum(counts) ≤
+  Hall.Capacity` — and the row-labels input's `maxlength="256"` equals the EF
+  `HallSeatLayout.RowLabels` `HasMaxLength(256)`. Every violation lists its own
+  `Admin.HallSeatLayouts.Validation.*` message and disables Save. The server stays
+  the authority: it re-validates every rule, so E2E-HSL-009..011 / 019..021 remain
+  the definitive rejections (reachable via a direct API call).
+- **Permission seeding.** `SeatLayouts.View`, `SeatLayouts.Edit` and (B15)
+  `SeatLayouts.Delete` are seeded with `BaselineRoles = AdminOnly` in
+  `PermissionCatalog.All`. The `CpNavigationPermissionTests` /
+  `PermissionEnforcementTests` guards fail the build if any gate is dropped.
 - **Manual smoke is the canonical run today.** Until a Playwright project
   exists, drive these scenarios with a Chrome DevTools MCP session per the
   Auth setup row and capture screenshots into
@@ -541,7 +719,10 @@ Scenario: Blank / trailing row entries are ignored in the preview
 
 ---
 
-_Last reviewed:_ 2026-07-25 by Claude (D-767 - added E2E-HSL-017..022 for per-row
+_Last reviewed:_ 2026-07-27 by Claude (B15 + A40 - added E2E-HSL-024..030: the Halls-grid
+row action + `?hallId=` deep link, the row-action permission gate, the client-side
+validation mirror, and the whole remove-layout path - happy, 409-with-count, 403 and
+404). Prior: 2026-07-25 by Claude (D-767 - added E2E-HSL-017..022 for per-row
 variable seat counts: ragged round-trip, Total-seats preview + disabled-Save guard,
 count-mismatch / out-of-range / sum-over-capacity 400s, and uniform back-compat; the
 single "Seats per row" field is now one input per row + a "Total seats" readout).

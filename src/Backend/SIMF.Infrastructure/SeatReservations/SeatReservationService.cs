@@ -613,6 +613,64 @@ internal sealed class SeatReservationService(
             variable ? seatCounts : null, seatTiers);
     }
 
+    public async Task<HallSeatLayoutSnapshot> DeleteLayoutAsync(
+        Guid actorUserId, Guid hallId,
+        CancellationToken cancellationToken = default)
+    {
+        var hall = await appDbContext.Halls.AsNoTracking()
+            .Where(h => h.Id == hallId)
+            .Select(h => new { h.Id, h.Capacity })
+            .SingleOrDefaultAsync(cancellationToken)
+            ?? throw new ApiException(
+                ErrorCodes.HallNotFound, 404,
+                "Hall not found.",
+                "لم يتم العثور على القاعة.");
+
+        var layout = await appDbContext.HallSeatLayouts
+            .SingleOrDefaultAsync(l => l.HallId == hallId, cancellationToken)
+            ?? throw new ApiException(
+                ErrorCodes.SeatLayoutMissing, 404,
+                "This hall does not have a seat layout to remove.",
+                "لا يوجد مخطط مقاعد لهذه القاعة لإزالته.");
+
+        // B15 — the same orphan rule SetLayoutAsync enforces (H-2), applied to the
+        // hardest possible shrink: removing the grid strands EVERY active
+        // seat-specific reservation, so any single one blocks the delete and the
+        // error names how many the operator must release first.
+        var blocking = await CountActiveSeatReservationsAsync(hallId, cancellationToken);
+        if (blocking > 0)
+        {
+            throw new ApiException(
+                ErrorCodes.SeatLayoutHasReservations, 409,
+                $"Removing this layout would strand {blocking} active seat reservation(s). "
+                + "Release them before removing the layout.",
+                $"ستؤدي إزالة هذا المخطط إلى إلغاء {blocking} حجز مقعد نشط. "
+                + "يرجى إلغاء هذه الحجوزات قبل إزالة المخطط.");
+        }
+
+        appDbContext.HallSeatLayouts.Remove(layout);
+        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.HallSeatLayoutDeleted,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = $"hallId={hallId}; rows={layout.RowLabels}; "
+                + $"seatsPerRow={layout.SeatsPerRow}; "
+                + $"seatCounts={layout.SeatCounts ?? "(uniform)"}",
+        }, cancellationToken);
+
+        logger.LogInformation(
+            "Seat layout removed for hall {HallId} by user {Actor} — the hall reverts "
+            + "to general admission.", hallId, actorUserId);
+
+        // The hall is now general admission: no rows, no seats, zero layout capacity.
+        return new HallSeatLayoutSnapshot(
+            hallId, Array.Empty<string>(), 0, 0, hall.Capacity,
+            SeatCounts: null, SeatTiers: Array.Empty<SeatTier>());
+    }
+
     public async Task AdminReserveRowAsync(
         Guid actorUserId, Guid sessionId,
         AdminReserveRowRequest request,
@@ -1223,10 +1281,7 @@ internal sealed class SeatReservationService(
         Guid hallId, IReadOnlyList<string> newRows, IReadOnlyList<int> newSeatCounts,
         CancellationToken cancellationToken)
     {
-        var sessionIds = await appDbContext.Sessions.AsNoTracking()
-            .Where(s => s.HallId == hallId)
-            .Select(s => s.Id)
-            .ToListAsync(cancellationToken);
+        var sessionIds = await HallSessionIdsAsync(hallId, cancellationToken);
         if (sessionIds.Count == 0)
         {
             return;
@@ -1254,6 +1309,35 @@ internal sealed class SeatReservationService(
                 + "يرجى إلغاء المقاعد المتأثرة قبل تغيير المخطط.");
         }
     }
+
+    /// <summary>B15 — how many ACTIVE (ReleasedAt IS NULL) seat-SPECIFIC reservations
+    /// exist across every session in this hall. Open-seating rows (null row label)
+    /// survive a layout removal untouched — general admission needs no grid — so they
+    /// are excluded. Counted in the database (no rows materialised) because the caller
+    /// only needs the number to put in the refusal message.</summary>
+    private async Task<int> CountActiveSeatReservationsAsync(
+        Guid hallId, CancellationToken cancellationToken)
+    {
+        var sessionIds = await HallSessionIdsAsync(hallId, cancellationToken);
+        if (sessionIds.Count == 0)
+        {
+            return 0;
+        }
+        return await appDbContext.SeatReservations.AsNoTracking()
+            .CountAsync(r => sessionIds.Contains(r.SessionId)
+                && r.ReleasedAt == null
+                && r.RowLabel != null, cancellationToken);
+    }
+
+    /// <summary>Every session held in this hall. One definition shared by the two
+    /// layout guards (the shrink orphan check and the B15 delete count) so they can
+    /// never disagree on which sessions a layout change affects.</summary>
+    private Task<List<Guid>> HallSessionIdsAsync(
+        Guid hallId, CancellationToken cancellationToken) =>
+        appDbContext.Sessions.AsNoTracking()
+            .Where(s => s.HallId == hallId)
+            .Select(s => s.Id)
+            .ToListAsync(cancellationToken);
 
     private static IReadOnlyList<string> ParseRowLabels(string? csv) =>
         string.IsNullOrWhiteSpace(csv)

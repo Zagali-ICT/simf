@@ -277,6 +277,11 @@ public static class PermissionCatalog
     {
         public const string View = "SeatLayouts.View";
         public const string Edit = "SeatLayouts.Edit";
+
+        /// <summary>B15 — remove a hall's seat layout entirely (convert the hall back
+        /// to general admission). Separate from <see cref="Edit"/> because it is
+        /// destructive: it discards the whole grid, not one row of it.</summary>
+        public const string Delete = "SeatLayouts.Delete";
     }
 
     /// <summary>Per-session seat plan / reservations.</summary>
@@ -909,6 +914,7 @@ public static class PermissionCatalog
 
         new(SeatLayouts.View, "SeatLayouts", "View", "View hall seat layouts", AdminOnly),
         new(SeatLayouts.Edit, "SeatLayouts", "Edit", "Edit hall seat layouts", AdminOnly),
+        new(SeatLayouts.Delete, "SeatLayouts", "Delete", "Delete hall seat layouts", AdminOnly),
 
         new(SeatPlans.View, "SeatPlans", "View", "View session seat plans", AdminOnly),
         new(SeatPlans.Edit, "SeatPlans", "Edit", "Edit session seat plans", AdminOnly),
