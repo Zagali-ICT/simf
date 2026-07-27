@@ -1866,6 +1866,15 @@ body.simf-modal-open { overflow: hidden; }
   white-space: nowrap;
 }
 
+/* The control cells hold buttons/checkboxes, not text, so they have no strong
+   character for `plaintext` to resolve against — it would fall back to LTR and
+   reverse the visual order of the row-action icons under RTL. They must keep
+   laying out in the table's own direction, so restore the UA default here. */
+.simf-grid__td--actions,
+.simf-grid__td--select {
+  unicode-bidi: isolate;
+}
+
 .simf-grid__empty {
   padding: var(--space-7);
   text-align: center;
