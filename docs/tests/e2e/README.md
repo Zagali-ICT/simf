@@ -116,7 +116,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | Page | File | Scenarios |
 |------|------|-----------|
 | `/admin/companies` | [`cp-admin-companies.md`](cp-admin-companies.md) | E2E-CMP-001..016 |
-| `/admin/exhibitors` | [`cp-admin-exhibitors.md`](cp-admin-exhibitors.md) | E2E-EXH-001..026 |
+| `/admin/exhibitors` | [`cp-admin-exhibitors.md`](cp-admin-exhibitors.md) | E2E-EXH-001..028 (D-781 link an existing account: 027/028) |
 | `/admin/booths` | [`cp-admin-booths.md`](cp-admin-booths.md) | E2E-BTH-001..025 |
 | `/admin/sponsors` | [`cp-admin-sponsors.md`](cp-admin-sponsors.md) | E2E-SPN-001..023 |
 | `/admin/media-partners` | [`cp-admin-media-partners.md`](cp-admin-media-partners.md) | E2E-MPR-001..019 |
@@ -256,8 +256,8 @@ API endpoints land (D-249). The per-screen design docs live under
 | #21 `delegations` (`GET /app/delegations`) — Wave 4, Figma `1426:10771` (restored from D-277); bi-meeting rework: cards tappable → delegation request sheet for an entitled account | [`mobile-delegations.md`](mobile-delegations.md) | E2E-DEL-001..011 |
 | #220 `exhibitorDetail` (`GET /app/booths/{id}`) — Wave 3, Figma `1439:11881` | [`mobile-exhibitor-detail.md`](mobile-exhibitor-detail.md) | E2E-MOB220-001..007 |
 | #221 `sponsorDetail` (`GET /app/sponsors/{id}`) — Wave 3, Figma `1439:11826` | [`mobile-sponsor-detail.md`](mobile-sponsor-detail.md) | E2E-MOB221-001..007 |
-| `myVisitors` (`GET /app/exhibitor/my-visitors`) — D-426 exhibitor captured-visitor list; DEF-EXH-004 read-path subject eligibility; DEF-EXH-006 current-booth-membership gate | [`mobile-my-visitors.md`](mobile-my-visitors.md) | E2E-MOBMYVIS-001..009 |
-| `scanVisitor` (`scanByBadge` — exhibitor lead-capture scan) — D-426; DEF-EXH-001/002/003/005/006/007 scan authorisation + current booth membership + subject eligibility + capture notice naming the exhibitor + CP-provisioned booth officer | [`mobile-scan-visitor.md`](mobile-scan-visitor.md) | E2E-MOBSCANVIS-001..012 |
+| `myVisitors` (`GET /app/exhibitor/my-visitors`) — D-426 exhibitor captured-visitor list; DEF-EXH-004 read-path subject eligibility (D-780: any ACTIVE subject lists, only a deactivated one drops out); DEF-EXH-006 current-booth-membership gate | [`mobile-my-visitors.md`](mobile-my-visitors.md) | E2E-MOBMYVIS-001..009 |
+| `scanVisitor` (`scanByBadge` — exhibitor lead-capture scan) — D-426; DEF-EXH-001/002/005/006/007 scan authorisation + current booth membership + capture notice naming the exhibitor + CP-provisioned booth officer; **D-780** ALL badges scannable (reverses DEF-EXH-003); **D-781** link an Others-pipeline account to a booth | [`mobile-scan-visitor.md`](mobile-scan-visitor.md) | E2E-MOBSCANVIS-001..013 |
 | `myVisitors` (`GET /app/exhibitor/my-visitors`) — D-426 exhibitor booth-visitor list (BUG-025 title + note) | [`mobile-my-visitors.md`](mobile-my-visitors.md) | E2E-MOBMYVIS-001..008 |
 | `scanVisitor` (`scanByBadge` — exhibitor lead-capture scan, BUG-024 lead email) — D-426 | [`mobile-scan-visitor.md`](mobile-scan-visitor.md) | E2E-MOBSCANVIS-001..007 |
 | #24 `archive` (`GET /app/archive` + `/{id}`) | [`mobile-archive.md`](mobile-archive.md) | E2E-MOB024-001..005 |
@@ -421,3 +421,30 @@ API endpoints land (D-249). The per-screen design docs live under
   NOT yet wired. The new HSL/SSP CP behaviour IS coded, but no `SeatReservationsTests`
   variable-layout xUnit facts back it yet, so those scenarios read `_to author_` and are
   driven manually until the tests land.
+
+### Update - 2026-07-27 (owner decisions D-780 "can scan all badges" + D-781 link an existing account)
+
+- **D-780 - the exhibitor SUBJECT rule is widened to any ACTIVE badge holder.** The owner
+  was asked whether a booth may scan a MEDIA or SPONSOR badge and ruled that **all badges
+  are scannable**, reversing the premise of DEF-EXH-003. `mobile-scan-visitor.md`
+  E2E-MOBSCANVIS-008 was rewritten (media / sponsor / staff / fellow-exhibitor badges now
+  200 and list; only a DEACTIVATED account is refused, with the same 404 as an unknown
+  code), and `mobile-my-visitors.md` E2E-MOBMYVIS-008 with it (an ACTIVE staff subject now
+  lists). The SCANNER-side gates (DEF-EXH-001 role + DEF-EXH-006 current booth membership)
+  are unchanged, so E2E-MOBSCANVIS-007 / -011 stand as written.
+- **D-781 - an existing account can be attached to an exhibitor from the CP.**
+  `POST /admin/exhibitors/{id}/accounts/link`, permission `Exhibitors.LinkAccount`, fixes
+  the lockout DEF-EXH-006 introduced for exhibitor-typed accounts created through the
+  generic Others pipeline (right profile type, no `ExhibitorMembership`, 403 everywhere).
+  `cp-admin-exhibitors.md` E2E-EXH-001..026 -> **001..028** (+027 the golden link path and
+  the "can scan afterwards" proof, +028 the 404 / 409 / 409 / 409 / 400 rejection matrix
+  and the missing-permission gate); `mobile-scan-visitor.md` E2E-MOBSCANVIS-001..012 ->
+  **001..013** (+013 the same journey from the app side). No existing scenario was
+  renumbered.
+- **Backing xUnit:** `tests/SIMF.Api.Tests/ExhibitorVisitorScanTests.cs` (now 17 facts) -
+  `Every_active_badge_is_capturable_whatever_its_profile_type`,
+  `Deactivated_badge_subject_returns_404`,
+  `Legacy_captures_of_deactivated_subjects_are_not_listed`,
+  `Others_pipeline_account_can_scan_once_it_is_linked_to_an_exhibitor`,
+  `Linking_refuses_an_account_that_is_not_exhibitor_typed`,
+  `Linking_refuses_an_unknown_email_and_an_already_linked_account`.

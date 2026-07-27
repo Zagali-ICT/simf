@@ -204,3 +204,28 @@ public class ProvisionExhibitorAccountRequest
     /// <summary>Optional free-text role label inside the exhibitor (≤128 chars).</summary>
     public string? RoleLabel { get; init; }
 }
+
+/// <summary>
+/// D-781 — body of <c>POST /api/v1/admin/exhibitors/{id}/accounts/link</c>.
+/// Attaches an <b>existing</b> account to the exhibitor by writing the missing
+/// <c>ExhibitorMembership</c>. <c>ProvisionExhibitorAccountRequest</c> is the only
+/// other writer of that row, so an exhibitor-typed account created through the
+/// generic Others pipeline (<c>POST /admin/others</c>) or the Others walk-in desk
+/// had no membership at all — and therefore 403 on badge scan and on My Visitors,
+/// with no Control-Panel path to fix it (DEF-EXH-006 made a current membership
+/// half the authorisation). This is that path.
+/// Not sealed: the endpoint binds {id}+body via a derived route class.
+/// </summary>
+public class LinkExhibitorAccountRequest
+{
+    /// <summary>The existing account's login email (1–320 chars). Matched
+    /// case-insensitively against the Identity database.</summary>
+    public string Email { get; init; } = string.Empty;
+
+    /// <summary>Optional contact name for the membership row (≤256 chars).
+    /// Defaults to the account's display name, then to its email.</summary>
+    public string? ContactName { get; init; }
+
+    /// <summary>Optional free-text role label inside the exhibitor (≤128 chars).</summary>
+    public string? RoleLabel { get; init; }
+}

@@ -116,33 +116,37 @@ Scenario: A captured visitor's job title localizes per language
 ### E2E-MOBMYVIS-008 — Legacy captures stop projecting a card (DEF-EXH-004)
 
 ```gherkin
-Scenario Outline: A row captured under the old rule is no longer listed
+Scenario: A row whose subject is now deactivated is no longer listed
   Given a signed-in Approved exhibitor
   And an ExhibitorVisitorScan row it captured while the subject test did not
-    exist yet, whose subject is <subject>
+    exist yet, whose subject has since been deactivated (soft-deleted)
   When it calls GET /api/v1/app/exhibitor/visitors
   Then that row is absent from the response
   And no PII for that subject (login email, Saudi mobile, international mobile)
     is projected
 
+Scenario Outline: Every ACTIVE subject is listed, whatever its profile type
+  Given the same exhibitor also holds a capture of <subject>
+  Then that row is still listed with the full card
+
   Examples:
     | subject                                  |
+    | an ACTIVE audience visitor               |
     | a Staff (partner-side) account           |
-    | a since-deactivated visitor profile      |
-
-Scenario: A still-eligible subject is unaffected
-  Given the same exhibitor also holds a capture of an ACTIVE audience visitor
-  Then that row is still listed with the full card
 ```
 
-> DEF-EXH-003 was enforced at CAPTURE time only, so every row taken while the old
-> rule was in force kept projecting a full live card on READ — the fix runs the
-> same subject predicate (`IsCapturableSubject`, one shared expression) on the
-> list path. The CALLER test already guarded this endpoint (DEF-EXH-001): a Staff
-> token gets 403 and can never read back what it captured under the old rule.
+> The subject test was enforced at CAPTURE time only, so every row taken while
+> there was no test at all kept projecting a full live card on READ — the fix runs
+> the same subject predicate (`IsCapturableSubject`, one shared expression) on the
+> list path. **D-780 (owner decision 2026-07-27, "can scan all badges")** then
+> widened that predicate itself to "any ACTIVE profile", reversing the DEF-EXH-003
+> audience-side narrowing: a staff / media / sponsor capture is a legitimate lead
+> and DOES list; only a deactivated subject drops out. The CALLER test still
+> guards this endpoint (DEF-EXH-001 + DEF-EXH-006): a Staff token gets 403 and can
+> never read back what it captured under the old rule.
 
 **Evidence:** `tests/SIMF.Api.Tests/ExhibitorVisitorScanTests.cs` —
-`Legacy_captures_of_ineligible_subjects_are_not_listed`,
+`Legacy_captures_of_deactivated_subjects_are_not_listed`,
 `Staff_caller_cannot_list_rows_it_captured_under_the_old_rule_403`.
 
 ### E2E-MOBMYVIS-009 — A former officer cannot read the booth's cards (DEF-EXH-006)
@@ -170,7 +174,11 @@ Scenario: Revoking the booth membership closes the list too
 
 ---
 
-_Last reviewed:_ `2026-07-27` by `SIMF Team` — DEF-EXH-006: the list now needs a
+_Last reviewed:_ `2026-07-27` by `SIMF Team` — **owner decision D-780 ("can scan
+all badges")**: the shared subject predicate is now "any ACTIVE profile", so a
+media / sponsor / staff capture legitimately lists and only a DEACTIVATED subject
+drops out; E2E-MOBMYVIS-008 rewritten. Earlier: `2026-07-27` — DEF-EXH-006: the
+list now needs a
 CURRENT booth membership, so a former officer loses the captured cards with the
 booth; E2E-MOBMYVIS-009. Earlier: `2026-07-27` — DEF-EXH-004: the capture-time
 subject eligibility test now also runs on the READ path, so rows captured while

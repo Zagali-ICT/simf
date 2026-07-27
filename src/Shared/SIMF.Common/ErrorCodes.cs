@@ -464,6 +464,20 @@ public static class ErrorCodes
     public const string ExhibitorInactive = "EXHIBITOR_INACTIVE";
     public const string ExhibitorAccountInvalid = "EXHIBITOR_ACCOUNT_INVALID";
 
+    // D-781 — attaching an EXISTING account to an exhibitor
+    // (POST /admin/exhibitors/{id}/accounts/link). No account is registered under
+    // the supplied email (404).
+    public const string ExhibitorAccountNotFound = "EXHIBITOR_ACCOUNT_NOT_FOUND";
+
+    // D-781 — the account exists but does not carry an active exhibitor-mapped
+    // profile type, so linking it would hand it booth tools it cannot use (409).
+    public const string ExhibitorAccountNotEligible = "EXHIBITOR_ACCOUNT_NOT_ELIGIBLE";
+
+    // D-781 — the account already holds an active ExhibitorMembership; an account
+    // belongs to at most one booth at a time (409, mirrors the filtered unique
+    // index on ExhibitorMembership.UserId).
+    public const string ExhibitorAccountAlreadyLinked = "EXHIBITOR_ACCOUNT_ALREADY_LINKED";
+
     // Organisations (B3 / D-220 — Saudi-companies lookup, government Excel
     // bulk-import; the visitor الجهة picker reads from this table).
     public const string OrganisationInvalid = "ORGANISATION_INVALID";

@@ -2,8 +2,15 @@
 // + return the full card.
 // DEF-EXH-001 — only a profile type carrying MobileAppRole.Exhibitor may scan
 //               (Staff / Moderator / plain Visitor are all 403).
-// DEF-EXH-003 — the scanned SUBJECT must be an active audience-side account;
-//               a partner badge answers the same 404 as an unknown code.
+// D-780 (owner decision 2026-07-27, "can scan all badges") — ALL badges are
+//               scannable: media, sponsor, staff and fellow-exhibitor badges are
+//               capturable leads. Only a DEACTIVATED account is refused, with the
+//               same 404 as an unknown code. This REVERSES the premise of
+//               DEF-EXH-003, which had narrowed the subject to audience-side types.
+// D-781 (owner decision 2026-07-27) — an EXISTING account can be attached to an
+//               exhibitor from the CP, so an exhibitor-typed account created
+//               through the generic Others pipeline is no longer locked out of the
+//               booth tools by the DEF-EXH-006 membership rule.
 // DEF-EXH-002 — a NEW capture notifies the visitor once, naming the exhibitor;
 //               an idempotent re-scan raises nothing.
 // DEF-EXH-004 — the subject test also runs on the READ path, so a row captured
@@ -139,32 +146,63 @@ public sealed class ExhibitorVisitorScanTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.NotFound, scan.StatusCode);
     }
 
-    // DEF-EXH-003 — a partner badge (staff / another exhibitor) and a deactivated
-    // profile are not capturable, and both answer the SAME 404 as an unknown code
-    // so the scan never leaks that the badge exists.
+    // D-780 (owner decision 2026-07-27, "can scan all badges") — a MEDIA badge, a
+    // SPONSOR badge, a STAFF badge and a fellow exhibitor's badge are all
+    // capturable leads. Before the decision each of these answered 404 (the
+    // DEF-EXH-003 audience-side-only rule), so this fails without the change.
     [Fact]
-    public async Task Ineligible_badge_subject_returns_404()
+    public async Task Every_active_badge_is_capturable_whatever_its_profile_type()
     {
         var (exhibitorToken, exhibitorId) = await CreateApprovedUserAsync();
         await SeedExhibitorProfileAsync(exhibitorId, "Acme Booth", "جناح أكمي");
 
+        var (_, mediaId) = await CreateApprovedUserAsync();
+        await SeedProfileAsync(mediaId, "Media", "Press One", "صحفي", "MEDIABADGE1");
+
+        var (_, sponsorId) = await CreateApprovedUserAsync();
+        await SeedProfileAsync(sponsorId, "Sponsor", "Sponsor One", "راعٍ", "SPONSORBADGE1");
+
         var (_, staffId) = await CreateApprovedUserAsync();
         await SeedProfileAsync(staffId, "Staff", "Gate Officer", "موظف", "STAFFBADGE1");
 
-        var (_, otherExhibitorId) = await CreateApprovedUserAsync();
+        var (_, rivalId) = await CreateApprovedUserAsync();
         await SeedProfileAsync(
-            otherExhibitorId, "Exhibitor", "Rival Booth", "جناح منافس", "RIVALBADGE1");
+            rivalId, "Exhibitor", "Rival Booth", "جناح منافس", "RIVALBADGE1");
+
+        foreach (var badge in new[]
+                 { "MEDIABADGE1", "SPONSORBADGE1", "STAFFBADGE1", "RIVALBADGE1" })
+        {
+            var scan = await PostAuthAsync("/api/v1/app/exhibitor/visitors/scan",
+                new ScanVisitorBadgeRequest { QrId = badge }, exhibitorToken);
+            Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
+        }
+
+        var list = await GetAuthAsync("/api/v1/app/exhibitor/visitors", exhibitorToken);
+        var rows = (await list.Content
+            .ReadFromJsonAsync<ApiResult<IReadOnlyList<ExhibitorVisitorRow>>>())!.Data!;
+        Assert.Equal(4, rows.Count);
+        Assert.Contains(rows, row => row.Card.UserId == mediaId);
+        Assert.Contains(rows, row => row.Card.UserId == sponsorId);
+        Assert.Contains(rows, row => row.Card.UserId == staffId);
+        Assert.Contains(rows, row => row.Card.UserId == rivalId);
+    }
+
+    // D-780 keeps the IsActive half of the subject rule: a deactivated
+    // (soft-deleted) account is not a valid attendee, and it answers the SAME 404
+    // as an unknown code so the scan never leaks that the badge exists.
+    [Fact]
+    public async Task Deactivated_badge_subject_returns_404()
+    {
+        var (exhibitorToken, exhibitorId) = await CreateApprovedUserAsync();
+        await SeedExhibitorProfileAsync(exhibitorId, "Acme Booth", "جناح أكمي");
 
         var (_, retiredId) = await CreateApprovedUserAsync();
         await SeedVisitorWithQrAsync(retiredId, "RETIREDBADGE", "Retired", "متقاعد");
         await DeactivateProfileAsync(retiredId);
 
-        foreach (var badge in new[] { "STAFFBADGE1", "RIVALBADGE1", "RETIREDBADGE" })
-        {
-            var scan = await PostAuthAsync("/api/v1/app/exhibitor/visitors/scan",
-                new ScanVisitorBadgeRequest { QrId = badge }, exhibitorToken);
-            Assert.Equal(HttpStatusCode.NotFound, scan.StatusCode);
-        }
+        var scan = await PostAuthAsync("/api/v1/app/exhibitor/visitors/scan",
+            new ScanVisitorBadgeRequest { QrId = "RETIREDBADGE" }, exhibitorToken);
+        Assert.Equal(HttpStatusCode.NotFound, scan.StatusCode);
 
         var list = await GetAuthAsync("/api/v1/app/exhibitor/visitors", exhibitorToken);
         var rows = (await list.Content
@@ -250,12 +288,12 @@ public sealed class ExhibitorVisitorScanTests : IClassFixture<SimfApiFactory>
             MobileAppRole.Exhibitor, await AssignedMobileAppRoleAsync(account.UserId));
     }
 
-    // DEF-EXH-004 — a row captured while the vulnerable rule was in force (no
-    // subject test at all) must stop projecting the subject's live card: the
-    // exhibitor here legitimately holds a capture of a STAFF account and of a
-    // since-deactivated visitor, and neither may be listed.
+    // DEF-EXH-004 — the READ path re-runs the capture-time subject test, so a row
+    // captured while there was no subject test at all stops projecting a live card
+    // for a since-DEACTIVATED subject. D-780 widened the rule itself, so the STAFF
+    // capture here is now a legitimate lead and DOES list.
     [Fact]
-    public async Task Legacy_captures_of_ineligible_subjects_are_not_listed()
+    public async Task Legacy_captures_of_deactivated_subjects_are_not_listed()
     {
         var (exhibitorToken, exhibitorId) = await CreateApprovedUserAsync();
         await SeedExhibitorProfileAsync(exhibitorId, "Legacy Booth", "جناح قديم");
@@ -279,11 +317,12 @@ public sealed class ExhibitorVisitorScanTests : IClassFixture<SimfApiFactory>
         var rows = (await list.Content
             .ReadFromJsonAsync<ApiResult<IReadOnlyList<ExhibitorVisitorRow>>>())!.Data!;
 
-        // Only the still-eligible audience subject survives; no PII (email or
-        // either mobile number) is projected for the other two.
-        var only = Assert.Single(rows);
-        Assert.Equal("Still A Visitor", only.Card.Name);
-        Assert.DoesNotContain(rows, row => row.Card.UserId == staffId);
+        // Both ACTIVE subjects survive (D-780 — a staff badge is a lead like any
+        // other); no PII (email or either mobile number) is projected for the
+        // deactivated one.
+        Assert.Equal(2, rows.Count);
+        Assert.Contains(rows, row => row.Card.UserId == keptId);
+        Assert.Contains(rows, row => row.Card.UserId == staffId);
         Assert.DoesNotContain(rows, row => row.Card.UserId == retiredId);
     }
 
@@ -385,6 +424,104 @@ public sealed class ExhibitorVisitorScanTests : IClassFixture<SimfApiFactory>
 
         var list = await GetAuthAsync("/api/v1/app/exhibitor/visitors", staffToken);
         Assert.Equal(HttpStatusCode.Forbidden, list.StatusCode);
+    }
+
+    // D-781 — the Others-pipeline lockout. An exhibitor-typed account created
+    // through POST /admin/others gets the right profile type but NO
+    // ExhibitorMembership, and DEF-EXH-006 made a current membership half the
+    // authorisation — so it was 403 on scan AND on My Visitors with no CP path to
+    // attach it to a booth. Linking it from the CP is that path. Fails without the
+    // link endpoint: the account can never reach 200.
+    [Fact]
+    public async Task Others_pipeline_account_can_scan_once_it_is_linked_to_an_exhibitor()
+    {
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var exhibitorId = await SeedExhibitorCompanyAsync("Linked Booth", "جناح مرتبط");
+
+        var (officerEmail, officerToken) =
+            await CreateOtherAccountAsync(adminToken, "Exhibitor", "Others Desk Officer");
+
+        var (_, visitorId) = await CreateApprovedUserAsync();
+        await SeedVisitorWithQrAsync(visitorId, "LINKEDBADGE1", "Lead Four", "زائر");
+
+        // Locked out before the link — the profile type alone is not authority.
+        var beforeScan = await PostAuthAsync("/api/v1/app/exhibitor/visitors/scan",
+            new ScanVisitorBadgeRequest { QrId = "LINKEDBADGE1" }, officerToken);
+        Assert.Equal(HttpStatusCode.Forbidden, beforeScan.StatusCode);
+        var beforeList = await GetAuthAsync("/api/v1/app/exhibitor/visitors", officerToken);
+        Assert.Equal(HttpStatusCode.Forbidden, beforeList.StatusCode);
+
+        var link = await LinkAccountAsync(adminToken, exhibitorId, officerEmail, "Stand lead");
+        Assert.Equal(HttpStatusCode.OK, link.StatusCode);
+        var account = (await link.Content
+            .ReadFromJsonAsync<ApiResult<ExhibitorAccountSummary>>())!.Data!;
+        Assert.Equal(officerEmail, account.Email);
+        Assert.Equal("Stand lead", account.RoleLabel);
+
+        var scan = await PostAuthAsync("/api/v1/app/exhibitor/visitors/scan",
+            new ScanVisitorBadgeRequest { QrId = "LINKEDBADGE1" }, officerToken);
+        Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
+
+        var list = await GetAuthAsync("/api/v1/app/exhibitor/visitors", officerToken);
+        Assert.Equal(HttpStatusCode.OK, list.StatusCode);
+        var rows = (await list.Content
+            .ReadFromJsonAsync<ApiResult<IReadOnlyList<ExhibitorVisitorRow>>>())!.Data!;
+        Assert.Equal("Lead Four", Assert.Single(rows).Card.Name);
+
+        // The linked account shows up under the exhibitor's accounts in the CP.
+        var accounts = await GetAuthAsync(
+            $"/api/v1/admin/exhibitors/{exhibitorId}/accounts", adminToken);
+        var summaries = (await accounts.Content
+            .ReadFromJsonAsync<ApiResult<IReadOnlyList<ExhibitorAccountSummary>>>())!.Data!;
+        Assert.Contains(summaries, summary => summary.Email == officerEmail);
+    }
+
+    // D-781 — linking is not a back door onto the booth tools: the target account
+    // must already carry an exhibitor-mapped profile type. A Media account is
+    // refused with a distinct 409 rather than silently gaining scan authority.
+    [Fact]
+    public async Task Linking_refuses_an_account_that_is_not_exhibitor_typed()
+    {
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var exhibitorId = await SeedExhibitorCompanyAsync();
+
+        var (mediaEmail, _) =
+            await CreateOtherAccountAsync(adminToken, "Media", "Press Desk");
+
+        var link = await LinkAccountAsync(adminToken, exhibitorId, mediaEmail, null);
+        Assert.Equal(HttpStatusCode.Conflict, link.StatusCode);
+        var error = (await link.Content
+            .ReadFromJsonAsync<ApiResult<ExhibitorAccountSummary>>())!.Error!;
+        Assert.Equal(ErrorCodes.ExhibitorAccountNotEligible, error.Code);
+    }
+
+    // D-781 — an unknown email is a clean 404, and an account already holding an
+    // active membership is a clean 409 (the filtered unique index on
+    // ExhibitorMembership.UserId is a backstop, not the error surface).
+    [Fact]
+    public async Task Linking_refuses_an_unknown_email_and_an_already_linked_account()
+    {
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var exhibitorId = await SeedExhibitorCompanyAsync();
+        var otherExhibitorId = await SeedExhibitorCompanyAsync();
+
+        var unknown = await LinkAccountAsync(
+            adminToken, exhibitorId, $"nobody-{Guid.NewGuid():N}@simf.test", null);
+        Assert.Equal(HttpStatusCode.NotFound, unknown.StatusCode);
+        var notFound = (await unknown.Content
+            .ReadFromJsonAsync<ApiResult<ExhibitorAccountSummary>>())!.Error!;
+        Assert.Equal(ErrorCodes.ExhibitorAccountNotFound, notFound.Code);
+
+        var (officerEmail, _) =
+            await CreateOtherAccountAsync(adminToken, "Exhibitor", "Double Linked");
+        Assert.Equal(HttpStatusCode.OK,
+            (await LinkAccountAsync(adminToken, exhibitorId, officerEmail, null)).StatusCode);
+
+        var second = await LinkAccountAsync(adminToken, otherExhibitorId, officerEmail, null);
+        Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
+        var conflict = (await second.Content
+            .ReadFromJsonAsync<ApiResult<ExhibitorAccountSummary>>())!.Error!;
+        Assert.Equal(ErrorCodes.ExhibitorAccountAlreadyLinked, conflict.Code);
     }
 
     private async Task<Notification> SingleCaptureNotificationAsync(Guid visitorId)
@@ -536,6 +673,44 @@ public sealed class ExhibitorVisitorScanTests : IClassFixture<SimfApiFactory>
         var account = (await provision.Content
             .ReadFromJsonAsync<ApiResult<ExhibitorAccountSummary>>())!.Data!;
         return (await SignInProvisionedAccountAsync(email), account.UserId);
+    }
+
+    /// <summary>D-781 — creates an account through the GENERIC Others pipeline
+    /// (POST /admin/others), which assigns the partner profile type but writes NO
+    /// ExhibitorMembership, then signs it in. Returns its email + app token.</summary>
+    private async Task<(string Email, string AccessToken)> CreateOtherAccountAsync(
+        string adminToken, string profileTypeName, string displayName)
+    {
+        var email = $"other-{Guid.NewGuid():N}@simf.test";
+        var created = await PostAuthAsync(
+            "/api/v1/admin/others",
+            new AdminCreateOtherRequest
+            {
+                Email = email,
+                DisplayName = displayName,
+                ProfileTypeId = await ProfileTypeIdAsync(profileTypeName),
+            },
+            adminToken);
+        Assert.Equal(HttpStatusCode.OK, created.StatusCode);
+        return (email, await SignInProvisionedAccountAsync(email));
+    }
+
+    private Task<HttpResponseMessage> LinkAccountAsync(
+        string adminToken, Guid exhibitorId, string email, string? roleLabel) =>
+        PostAuthAsync(
+            $"/api/v1/admin/exhibitors/{exhibitorId}/accounts/link",
+            new LinkExhibitorAccountRequest { Email = email, RoleLabel = roleLabel },
+            adminToken);
+
+    private async Task<Guid> ProfileTypeIdAsync(string profileTypeName)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        return await appDb.ProfileTypes
+            .AsNoTracking()
+            .Where(profileType => profileType.Name == profileTypeName && profileType.IsActive)
+            .Select(profileType => profileType.Id)
+            .FirstAsync();
     }
 
     private async Task<MobileAppRole?> AssignedMobileAppRoleAsync(Guid userId)

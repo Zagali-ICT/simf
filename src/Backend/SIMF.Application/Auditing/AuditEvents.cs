@@ -449,6 +449,12 @@ public static class AuditEvents
     public const string ExhibitorDeactivated = "Exhibitor.Deactivated";
     public const string ExhibitorAccountProvisioned = "Exhibitor.AccountProvisioned";
 
+    // D-781 — an EXISTING account (typically created through the generic Others
+    // pipeline) attached to an exhibitor from the Control Panel. Distinct from
+    // AccountProvisioned: no account is created here, an existing one gains the
+    // booth membership that carries the lead-capture authority.
+    public const string ExhibitorAccountLinked = "Exhibitor.AccountLinked";
+
     // News (D-199 — PR / marketing news. Promoted from AdminNewsService
     // module-local consts; string values are the audit contract and must
     // stay verbatim).

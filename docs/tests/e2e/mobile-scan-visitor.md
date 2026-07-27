@@ -31,7 +31,8 @@
 | **Page** | mobile exhibitor lead-capture scan (no Figma frame — functional page) |
 | **Route** | app screen `/exhibitor/scan` (`RouteNames.scanVisitor`) |
 | **Surface** | Mobile (Flutter); shared `QrScanView` (camera + manual entry) |
-| **Role/gate** | Exhibitor (approved) with a current booth membership — DEF-EXH-001: the server authorises on `ProfileType.MobileAppRole == Exhibitor` (D-519), so Staff / Moderator / Media / Sponsor / plain Visitor callers all get 403 → a toast. DEF-EXH-006: an active `ExhibitorMembership` of an active `Exhibitor` is required alongside the role |
+| **Role/gate** | Exhibitor (approved) with a current booth membership — DEF-EXH-001: the server authorises on `ProfileType.MobileAppRole == Exhibitor` (D-519), so Staff / Moderator / Media / Sponsor / plain Visitor callers all get 403 → a toast. DEF-EXH-006: an active `ExhibitorMembership` of an active `Exhibitor` is required alongside the role. D-781: an exhibitor-typed account created through the Others pipeline is attached to a booth from the CP (`POST /admin/exhibitors/{id}/accounts/link`) |
+| **Subject** | D-780 (owner decision 2026-07-27, "can scan all badges") — ANY ACTIVE badge holder is capturable: media, sponsor, staff and fellow-exhibitor badges included. Only a deactivated account is refused (same 404 as an unknown code) |
 | **Test runner** | Flutter widget/golden test + device manual (camera path is device-only) |
 
 > **Notes:** the entry `QrId` scanned here is the visitor's badge QR; on success
@@ -108,10 +109,24 @@ Scenario: A genuine exhibitor may scan
 `Visitor_caller_cannot_scan_badges_403`, `Staff_caller_cannot_scan_badges_403`,
 `Moderator_caller_cannot_scan_badges_403`.
 
-### E2E-MOBSCANVIS-008 — Only a visitor may be scanned (DEF-EXH-003)
+### E2E-MOBSCANVIS-008 — ALL badges are scannable; only a dead account is refused (D-780)
 
 ```gherkin
-Scenario Outline: An ineligible badge subject is indistinguishable from unknown
+Scenario Outline: Every ACTIVE badge holder is a capturable lead
+  Given a signed-in Approved exhibitor with a current booth membership
+  When it scans <badge>
+  Then the API answers 200 with that person's full card
+  And the row appears in My Visitors
+
+  Examples:
+    | badge                                   |
+    | a Media account's badge                 |
+    | a Sponsor account's badge               |
+    | a Staff account's badge                 |
+    | another exhibitor's badge               |
+    | an ordinary visitor's badge             |
+
+Scenario Outline: A badge that resolves to nothing usable is indistinguishable
   Given a signed-in Approved exhibitor
   When it scans <badge>
   Then the API answers 404 "No visitor badge matches this code."
@@ -119,20 +134,25 @@ Scenario Outline: An ineligible badge subject is indistinguishable from unknown
 
   Examples:
     | badge                                   |
-    | a Staff account's badge                 |
-    | another exhibitor's badge               |
     | a deactivated (soft-deleted) profile    |
     | an unknown code                         |
 ```
 
-> The scan previously resolved a `QrId` with no `IsActive` and no audience-side
-> filter, so a staff badge or a rival exhibitor's badge was capturable as a
-> "lead". The four cases share ONE error shape so the scan never leaks whether a
-> badge exists but is ineligible. A visitor with no tier assigned stays eligible
-> — the approve-time tier is optional (CS-D / D-386), so a null `ProfileType` is
-> an ordinary audience account, not a partner.
+> **Owner decision, 2026-07-27 (D-780) — "can scan all badges".** The owner was
+> asked directly whether a booth may capture a MEDIA or SPONSOR attendee's badge,
+> given the rule then admitted only audience-side (`IsForVisitor`) profile types
+> and answered 404 for everything else, and ruled that ALL badges are scannable.
+> That **reverses the premise of DEF-EXH-003**, which had introduced the
+> audience-side narrowing. The `IsActive` half is deliberately KEPT: a deactivated
+> account is not a valid attendee, and it answers the SAME 404 as an unknown code
+> so the scan never leaks whether a badge exists. The **scanner-side** controls
+> are untouched — the caller must still be exhibitor-typed AND hold a current
+> booth membership (E2E-MOBSCANVIS-007 / -011).
 
-**Evidence:** `ExhibitorVisitorScanTests.Ineligible_badge_subject_returns_404`,
+**Evidence:**
+`ExhibitorVisitorScanTests.Every_active_badge_is_capturable_whatever_its_profile_type`
+(media + sponsor + staff + rival-exhibitor badges all 200 and all listed),
+`ExhibitorVisitorScanTests.Deactivated_badge_subject_returns_404`,
 `ExhibitorVisitorScanTests.Unknown_badge_returns_404`.
 
 ### E2E-MOBSCANVIS-009 — The visitor is told their card was shared (DEF-EXH-002)
@@ -223,6 +243,58 @@ Scenario: Closing the exhibitor revokes every officer under it
 **Evidence:**
 `ExhibitorVisitorScanTests.Booth_officer_is_refused_once_the_membership_is_revoked`,
 `ExhibitorVisitorScanTests.Closing_the_exhibitor_revokes_its_officers_scan_authority`.
+
+### E2E-MOBSCANVIS-013 — An Others-pipeline account can be attached to a booth (D-781)
+
+```gherkin
+Scenario: The Others-pipeline lockout is fixed from the Control Panel
+  Given an administrator creates an account with POST /api/v1/admin/others
+    carrying the "Exhibitor" profile type (MobileAppRole = Exhibitor)
+  And the account completes the invite (password) and is approved
+  When it signs in to the app and scans an eligible badge
+  Then the API answers 403 (it has the role but NO ExhibitorMembership)
+  And GET /api/v1/app/exhibitor/visitors also answers 403
+
+  When the administrator opens /admin/exhibitors → the row's "Accounts" modal
+  And fills "Account email" with that account's email under "Link an existing
+    account" and clicks "Link account"
+  Then POST /api/v1/admin/exhibitors/{id}/accounts/link returns HTTP 200
+    (permission Exhibitors.LinkAccount; audit Exhibitor.AccountLinked)
+  And a green toast reads "Account linked to this exhibitor." /
+    "تم ربط الحساب بهذا العارض."
+  And the account now appears in the exhibitor's Accounts table
+  And the same scan now answers 200 and My Visitors lists the capture
+
+Scenario Outline: Linking is not a back door
+  When the administrator links <case>
+  Then the API answers <status> with error code <code>
+
+  Examples:
+    | case                                             | status | code                             |
+    | an email no account is registered under          | 404    | EXHIBITOR_ACCOUNT_NOT_FOUND      |
+    | an account with a Media (non-exhibitor) type     | 409    | EXHIBITOR_ACCOUNT_NOT_ELIGIBLE   |
+    | an account that already belongs to an exhibitor  | 409    | EXHIBITOR_ACCOUNT_ALREADY_LINKED |
+    | any account under a deactivated exhibitor        | 409    | EXHIBITOR_INACTIVE               |
+```
+
+> **Owner decision, 2026-07-27 (D-781).** DEF-EXH-006 made a CURRENT
+> `ExhibitorMembership` half the lead-capture authorisation, and
+> `AdminExhibitorService.ProvisionAccountAsync` was the ONLY writer of that row —
+> so an exhibitor-typed account created through the generic Others pipeline
+> (`POST /admin/others`) or the Others walk-in desk got 403 on scan AND on My
+> Visitors with no Control-Panel path to attach it to a booth. The link action is
+> that path. It deliberately does NOT mutate the account's profile type (that
+> would silently change an app role another admin assigned): the account must
+> already carry an active exhibitor-mapped type, else a distinct 409 tells the
+> administrator to set it on the Others page first. The **scanner-side** controls
+> are unchanged — removing an officer from a booth still revokes their tools
+> (E2E-MOBSCANVIS-011).
+
+**Evidence:**
+`ExhibitorVisitorScanTests.Others_pipeline_account_can_scan_once_it_is_linked_to_an_exhibitor`
+(403 before the link → 200 after),
+`ExhibitorVisitorScanTests.Linking_refuses_an_account_that_is_not_exhibitor_typed`,
+`ExhibitorVisitorScanTests.Linking_refuses_an_unknown_email_and_an_already_linked_account`.
 
 ### E2E-MOBSCANVIS-012 — The notice names the exhibitor, not the account (DEF-EXH-007)
 
@@ -337,7 +409,16 @@ Panel (`/admin/email/templates` → `ExhibitorLeadCapture`).
 
 ---
 
-_Last reviewed:_ `2026-07-27` by `SIMF Team` — DEF-EXH-006: scan authority now
+_Last reviewed:_ `2026-07-27` by `SIMF Team` — **owner decisions D-780 + D-781**:
+D-780 "can scan all badges" widened the SUBJECT rule to any ACTIVE badge holder
+(media / sponsor / staff / fellow exhibitor now capturable; only a deactivated
+account is refused), reversing the premise of DEF-EXH-003
+(E2E-MOBSCANVIS-008 rewritten); D-781 added
+`POST /admin/exhibitors/{id}/accounts/link` so an exhibitor-typed account created
+through the Others pipeline can be attached to a booth from the CP instead of
+being locked out by the DEF-EXH-006 membership rule (E2E-MOBSCANVIS-013). The
+backing class `ExhibitorVisitorScanTests` now holds 17 tests. Earlier:
+`2026-07-27` — DEF-EXH-006: scan authority now
 requires a CURRENT booth membership, so revoking a membership or closing the
 exhibitor revokes the tools (E2E-MOBSCANVIS-011); DEF-EXH-007: the capture
 notice names the EXHIBITOR the officer represents, which a CP-provisioned stub
