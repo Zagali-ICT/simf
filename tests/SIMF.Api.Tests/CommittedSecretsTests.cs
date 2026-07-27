@@ -400,10 +400,16 @@ public sealed class CommittedSecretsTests
 
         // SuperAdmin:TempPassword — the bootstrap super-admin seed password.
         // Removed from the Developer-Guide port map; the residual occurrences
-        // are the boot-time deny-list, the two security documents that record
-        // the finding, and the dev-login line repeated across the E2E
-        // catalogue + the smoke script. Owner ops: rotate the credential, then
-        // strip these and shrink this list.
+        // are the boot-time deny-list and the dev-login line repeated across
+        // the E2E catalogue + the smoke script. Owner ops: rotate the
+        // credential, then strip these and shrink this list.
+        //
+        // 2026-07-27 (owner decision, "fix docs"): the three NARRATIVE
+        // documents that merely recorded the finding were redacted — they now
+        // name the configuration key path instead of the value — so their
+        // entries are gone from this list and the guard protects them from
+        // here on. Redaction is not rotation: the value is still in git
+        // history, so the rotation item stays open.
         new(
             "SuperAdmin:TempPassword (supply SIMF_SuperAdmin__TempPassword)",
             12,
@@ -413,12 +419,9 @@ public sealed class CommittedSecretsTests
             {
                 // Refuses to boot in Production when the value is still this one.
                 "src/Backend/SIMF.Api/Program.cs",
-                // Security records of the finding — redacting them may destroy
-                // the evidence trail; owner decision pending.
-                "docs/security/SIMF-Security-Assessment-2026-06-20.md",
-                "docs/security/SIMF-NCA-AppSec-Standard-GapAnalysis-2026-06-20.md",
-                "docs/SIMF-Sprint1-Login-API-Completion.md",
-                // E2E catalogue + smoke script sign-in lines.
+                // E2E catalogue + smoke script sign-in lines — these are
+                // executable fixtures (the literal is the input a runner
+                // types), not prose, so they are cleared by the rotation op.
                 "docs/tests/e2e/cp-account-profile.md",
                 "docs/tests/e2e/cp-admin-admins.md",
                 "docs/tests/e2e/cp-admin-archive.md",
