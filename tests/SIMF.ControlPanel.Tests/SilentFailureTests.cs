@@ -63,6 +63,42 @@ public sealed class SilentFailureTests
             + string.Join(", ", offenders));
     }
 
+    [Fact]
+    public void A_page_toast_is_rendered_above_any_dialog_it_can_fire_behind()
+    {
+        // §6.16 (F-U5-001) — .simf-modal is position:fixed / z-index:100 with a 45%
+        // scrim, and body.simf-modal-open locks scroll. A page-level <SimfAlert>
+        // rendered in flow therefore sits BEHIND the dialog and cannot be scrolled
+        // to. Pages closed their dialog only on success, so a failed in-dialog
+        // action left the dialog open and wrote its reason somewhere invisible: the
+        // admin clicked Deactivate, the spinner stopped, and nothing happened.
+        // .simf-toast is the existing fix — position:fixed, z-index:110.
+        var offenders = new List<string>();
+
+        foreach (var file in Directory.EnumerateFiles(
+            Path.Combine(RepoRoot, (CpProjectDir + "/Components").Replace('/', Path.DirectorySeparatorChar)),
+            "*.razor", SearchOption.AllDirectories))
+        {
+            var source = File.ReadAllText(file);
+            if (!source.Contains("_toast is not null", StringComparison.Ordinal)) continue;
+
+            var hasDialog = source.Contains("<SimfModal", StringComparison.Ordinal)
+                         || source.Contains("<CrudShell", StringComparison.Ordinal);
+            if (!hasDialog) continue;   // no dialog on this page: in-flow is fine
+
+            if (!source.Contains("class=\"simf-toast\"", StringComparison.Ordinal))
+            {
+                offenders.Add(Relative(file));
+            }
+        }
+
+        Assert.True(offenders.Count == 0,
+            "§6.16 (F-U5-001): these pages host a dialog but render their toast in "
+            + "flow, so a failure reported while the dialog is open is painted behind "
+            + "the scrim and never seen. Wrap it in <div class=\"simf-toast\">: "
+            + string.Join(", ", offenders));
+    }
+
     [Theory]
     [InlineData("Components/Pages/Admin/UsersList.razor.cs")]
     [InlineData("Components/Pages/Admin/VisitorsList.razor.cs")]

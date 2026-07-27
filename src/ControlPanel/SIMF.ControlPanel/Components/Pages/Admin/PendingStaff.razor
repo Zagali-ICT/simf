@@ -17,7 +17,9 @@
 
         @if (_toast is not null)
         {
-            <SimfAlert Variant="@_toastVariant">@_toast</SimfAlert>
+            <div class="simf-toast">
+                <SimfAlert Variant="@_toastVariant">@_toast</SimfAlert>
+            </div>
         }
 
         <SimfDataGrid TItem="AdminPendingUserSummary"

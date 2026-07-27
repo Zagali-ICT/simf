@@ -15,7 +15,9 @@
     <div class="simf-surface">
         @if (_toast is not null)
         {
-            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            <div class="simf-toast">
+                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            </div>
         }
 
         <SimfDataGrid TItem="NotificationDto"
