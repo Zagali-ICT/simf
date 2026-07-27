@@ -1061,6 +1061,58 @@
   <data name="Module.EmailTemplates" xml:space="preserve"><value>Email Templates</value></data>
   <data name="Module.OrganizationProfile" xml:space="preserve"><value>Organization Profile</value></data>
   <data name="Admin.OrganizationProfile.Title" xml:space="preserve"><value>Organization Profile</value></data>
+  <data name="Admin.OrganizationProfile.Section.Identity" xml:space="preserve"><value>Identity</value></data>
+  <data name="Admin.OrganizationProfile.Section.IdentityHint" xml:space="preserve"><value>The forum name, title, slogan and biography — each paired English / Arabic.</value></data>
+  <data name="Admin.OrganizationProfile.Section.Edition" xml:space="preserve"><value>Edition</value></data>
+  <data name="Admin.OrganizationProfile.Section.EditionHint" xml:space="preserve"><value>The active year, status and dates shown across the app and website.</value></data>
+  <data name="Admin.OrganizationProfile.Section.Location" xml:space="preserve"><value>Location</value></data>
+  <data name="Admin.OrganizationProfile.Section.LocationHint" xml:space="preserve"><value>The venue text (bilingual) and its map coordinates.</value></data>
+  <data name="Admin.OrganizationProfile.Section.Contact" xml:space="preserve"><value>Contact</value></data>
+  <data name="Admin.OrganizationProfile.Section.Media" xml:space="preserve"><value>Media</value></data>
+  <data name="Admin.OrganizationProfile.Section.MediaHint" xml:space="preserve"><value>A YouTube (or direct MP4/HLS) link; absolute http(s).</value></data>
+  <data name="Admin.OrganizationProfile.Section.Social" xml:space="preserve"><value>Social links</value></data>
+  <data name="Admin.OrganizationProfile.Section.SocialHint" xml:space="preserve"><value>Each an absolute http(s) URL; leave blank to hide the icon.</value></data>
+  <data name="Admin.OrganizationProfile.Section.About" xml:space="preserve"><value>About items</value></data>
+  <data name="Admin.OrganizationProfile.Section.AboutHint" xml:space="preserve"><value>Vision / mission cards — a bilingual title and body each. Order top to bottom.</value></data>
+  <data name="Admin.OrganizationProfile.Section.Details" xml:space="preserve"><value>Details</value></data>
+  <data name="Admin.OrganizationProfile.Section.DetailsHint" xml:space="preserve"><value>Name : value fact rows (e.g. Organiser, Edition, Dates). The label and value are each bilingual; leave Value (AR) blank for a language-neutral value like a year or a URL — the app then shows Value (EN).</value></data>
+  <data name="Admin.OrganizationProfile.Field.NameEn" xml:space="preserve"><value>Name (EN)</value></data>
+  <data name="Admin.OrganizationProfile.Field.NameAr" xml:space="preserve"><value>Name (AR)</value></data>
+  <data name="Admin.OrganizationProfile.Field.TitleEn" xml:space="preserve"><value>Title (EN)</value></data>
+  <data name="Admin.OrganizationProfile.Field.TitleAr" xml:space="preserve"><value>Title (AR)</value></data>
+  <data name="Admin.OrganizationProfile.Field.SloganEn" xml:space="preserve"><value>Slogan (EN)</value></data>
+  <data name="Admin.OrganizationProfile.Field.SloganAr" xml:space="preserve"><value>Slogan (AR)</value></data>
+  <data name="Admin.OrganizationProfile.Field.BioEn" xml:space="preserve"><value>Bio (EN)</value></data>
+  <data name="Admin.OrganizationProfile.Field.BioAr" xml:space="preserve"><value>Bio (AR)</value></data>
+  <data name="Admin.OrganizationProfile.Field.CurrentYear" xml:space="preserve"><value>Current year</value></data>
+  <data name="Admin.OrganizationProfile.Field.Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Admin.OrganizationProfile.Status.Soon" xml:space="preserve"><value>Soon</value></data>
+  <data name="Admin.OrganizationProfile.Status.Open" xml:space="preserve"><value>Open</value></data>
+  <data name="Admin.OrganizationProfile.Status.Archived" xml:space="preserve"><value>Archived (closed)</value></data>
+  <data name="Admin.OrganizationProfile.Field.EventStart" xml:space="preserve"><value>Event start (YYYY-MM-DD)</value></data>
+  <data name="Admin.OrganizationProfile.Field.EventEnd" xml:space="preserve"><value>Event end (YYYY-MM-DD)</value></data>
+  <data name="Admin.OrganizationProfile.Field.Version" xml:space="preserve"><value>Version</value></data>
+  <data name="Admin.OrganizationProfile.Field.SysVersion" xml:space="preserve"><value>System version</value></data>
+  <data name="Admin.OrganizationProfile.Field.LocationEn" xml:space="preserve"><value>Location (EN)</value></data>
+  <data name="Admin.OrganizationProfile.Field.LocationAr" xml:space="preserve"><value>Location (AR)</value></data>
+  <data name="Admin.OrganizationProfile.Field.Latitude" xml:space="preserve"><value>Latitude</value></data>
+  <data name="Admin.OrganizationProfile.Field.Longitude" xml:space="preserve"><value>Longitude</value></data>
+  <data name="Admin.OrganizationProfile.Field.Phone" xml:space="preserve"><value>Phone</value></data>
+  <data name="Admin.OrganizationProfile.Field.Email" xml:space="preserve"><value>Email</value></data>
+  <data name="Admin.OrganizationProfile.Field.Website" xml:space="preserve"><value>Website</value></data>
+  <data name="Admin.OrganizationProfile.Field.LiveStream" xml:space="preserve"><value>Main live-stream link (YouTube)</value></data>
+  <data name="Admin.OrganizationProfile.Field.HeroVideo" xml:space="preserve"><value>Hero background video (YouTube or MP4/HLS link)</value></data>
+  <data name="Admin.OrganizationProfile.Field.HeroVideoFile" xml:space="preserve"><value>Or upload a video file — served from SIMF as an MP4, so it plays on Android (where a YouTube hero cannot render in the band)</value></data>
+  <data name="Admin.OrganizationProfile.About.IndexLabel" xml:space="preserve"><value>Item</value></data>
+  <data name="Admin.OrganizationProfile.About.Empty" xml:space="preserve"><value>No about items yet. Add the mission, the vision, or any about-card.</value></data>
+  <data name="Admin.OrganizationProfile.About.Add" xml:space="preserve"><value>+ Add about item</value></data>
+  <data name="Admin.OrganizationProfile.About.TextEn" xml:space="preserve"><value>Text (EN)</value></data>
+  <data name="Admin.OrganizationProfile.About.TextAr" xml:space="preserve"><value>Text (AR)</value></data>
+  <data name="Admin.OrganizationProfile.Detail.IndexLabel" xml:space="preserve"><value>Detail</value></data>
+  <data name="Admin.OrganizationProfile.Detail.Empty" xml:space="preserve"><value>No details yet. Add a name / value fact row.</value></data>
+  <data name="Admin.OrganizationProfile.Detail.Add" xml:space="preserve"><value>+ Add detail</value></data>
+  <data name="Admin.OrganizationProfile.Detail.ValueEn" xml:space="preserve"><value>Value (EN)</value></data>
+  <data name="Admin.OrganizationProfile.Detail.ValueAr" xml:space="preserve"><value>Value (AR)</value></data>
   <data name="Admin.OrganizationProfile.Loading" xml:space="preserve"><value>Loading…</value></data>
   <data name="Admin.OrganizationProfile.Save" xml:space="preserve"><value>Save</value></data>
   <data name="Admin.OrganizationProfile.Saving" xml:space="preserve"><value>Saving…</value></data>
