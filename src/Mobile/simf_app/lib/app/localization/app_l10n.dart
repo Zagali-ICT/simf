@@ -1157,14 +1157,26 @@ class AppL10n {
   // open-seating join is a registration, not a seat reservation.
   String get joinOpenRegisterCta =>
       _t('سجل لحضور الجلسة', 'Register to attend the session');
-  String get joinSeatHint =>
-      _t('اختر مقعدك ثم انتظر موافقة الإدارة', 'Pick your seat, then await approval');
+  // A8 (2026-07-27) — bookings auto-confirm: the owner removed the Control
+  // Panel approval step on 2026-07-18, so the seat is HELD the moment it is
+  // picked. The old copy ("then await approval") described a dead workflow.
+  String get joinSeatHint => _t(
+        'اختر مقعدك ويُحجز لك فوراً',
+        'Pick your seat — it is held for you straight away',
+      );
   String get joinOpenHint =>
       _t('دخول عام — بدون مقعد محدد', 'General admission — no specific seat');
   String get joinConfirmTitle => _t('تأكيد الانضمام', 'Join this session?');
+  // A8 — the open-seating join confirmation. There is no approval request:
+  // the registration is recorded immediately, it does not reserve a specific
+  // seat, and entry is confirmed at check-in (matches joinOpenSuccessBody).
   String get joinConfirmBody => _t(
-        'سيتم إرسال طلب انضمامك إلى الإدارة للموافقة.',
-        'Your request to join will be sent to the organisers for approval.',
+        'سيتم تسجيلك لحضور هذه الجلسة فوراً دون الحاجة إلى موافقة. '
+            'التسجيل لا يحجز مقعداً محدداً، '
+            'وسيتم تأكيد دخولك عند تسجيل الدخول للجلسة.',
+        'You will be registered for this session right away — no approval '
+            'needed. This does not reserve a specific seat; your entry is '
+            'confirmed at session check-in.',
       );
   String get joinConfirmAction => _t('انضمام', 'Join');
   String get joinPendingToast =>
@@ -1247,6 +1259,10 @@ class AppL10n {
   String get legendMine => _t('مقعدك', 'Your seat');
   String get legendAvailable => _t('متاح', 'Available');
   String get legendReserved => _t('محجوز', 'Reserved');
+  // A12 — the fourth seat state: the holder has scanned in at the hall gate,
+  // so the seat is confirmed rather than merely held. Same wording as the
+  // Control Panel's live-hall map (Admin.SessionLiveHall.Seat.Confirmed).
+  String get legendConfirmed => _t('تم التأكيد', 'Confirmed');
   String seatCapacity(int reserved, int total) =>
       _t('محجوز $reserved من $total', '$reserved of $total reserved');
   String get navigateToSeat => _t('إرشادي إلى مقعدي', 'Guide me to my seat');

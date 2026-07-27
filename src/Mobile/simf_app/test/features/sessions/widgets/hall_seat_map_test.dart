@@ -116,6 +116,63 @@ void main() {
       expect(tappedSeat, 7);
     });
 
+    // A12 / DEF-SEA-002 — the fourth state. Before the fix every held seat drew
+    // (and announced) as محجوز / Reserved, because SeatCell dropped `checkedIn`
+    // on decode, so the confirmed seat could never be told apart.
+    testWidgets('a checked-in holder draws the confirmed state, a held one '
+        'stays reserved', (tester) async {
+      const confirmedMap = SessionSeatMap(
+        rowLabels: <String>['A'],
+        seatsPerRow: 3,
+        reservedCells: <SeatCell>[
+          SeatCell(
+            rowLabel: 'A',
+            seatNumber: 1,
+            kind: SeatReservationKind.userBooking,
+            checkedIn: true,
+          ),
+          SeatCell(
+            rowLabel: 'A',
+            seatNumber: 2,
+            kind: SeatReservationKind.userBooking,
+          ),
+        ],
+        activeReservedCount: 2,
+        hallCapacity: 3,
+      );
+      await _pump(tester, confirmedMap);
+
+      // The seat's own Semantics carries the state, so the two held seats must
+      // announce differently — that is the visible fourth state.
+      expect(find.bySemanticsLabel('Confirmed A1'), findsOneWidget);
+      expect(find.bySemanticsLabel('Reserved A2'), findsOneWidget);
+      // …and the legend gains its confirmed entry.
+      expect(find.text('Confirmed'), findsOneWidget);
+      // The confirmed square draws its own glyph, not the reserved cross.
+      expect(find.byIcon(Icons.how_to_reg), findsWidgets);
+    });
+
+    testWidgets('a hall with nobody checked in keeps the 3-item legend',
+        (tester) async {
+      const heldOnly = SessionSeatMap(
+        rowLabels: <String>['A'],
+        seatsPerRow: 2,
+        reservedCells: <SeatCell>[
+          SeatCell(
+            rowLabel: 'A',
+            seatNumber: 1,
+            kind: SeatReservationKind.userBooking,
+          ),
+        ],
+        activeReservedCount: 1,
+        hallCapacity: 2,
+      );
+      await _pump(tester, heldOnly);
+
+      expect(find.text('Confirmed'), findsNothing);
+      expect(find.text('Reserved'), findsOneWidget);
+    });
+
     testWidgets('a tall hall gets a two-axis (horizontal + vertical) scroll',
         (tester) async {
       final tall = SessionSeatMap(

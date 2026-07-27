@@ -22,6 +22,11 @@ import '../data/seat_map_models.dart';
 /// * [swatchSize] — the reserved/mine legend swatches (14 on My-Seat per the
 ///   frame, 16 on the picker); the available swatch is always 16.
 ///
+/// A12 — a held seat draws in one of two states, matching the Control
+/// Panel's live-hall map: **محجوز / reserved** while the holder has not
+/// arrived, and **confirmed** (green, `how_to_reg`) once they scanned in at
+/// the gate. The confirmed legend appears only when one exists.
+///
 /// Each row is drawn at its own width at a FIXED, readable seat size (never
 /// shrunk to fit): every square is identical and a short row draws fewer seats
 /// with its label pinned start. A hall wider than the card SCROLLS horizontally
@@ -100,7 +105,9 @@ class _HallSeatMapCardState extends State<HallSeatMapCard> {
   Widget build(BuildContext context) {
     final map = widget.map;
     final l10n = widget.l10n;
-    final reserved = map.reservedKeys();
+    // A12 — the grid needs the CELL, not just "is this seat taken": a held
+    // seat whose holder has checked in draws confirmed, not reserved.
+    final reserved = map.reservedByKey();
     final rowLabelWidth = _rowLabelWidth(map.rowLabels);
     return Container(
       padding: const EdgeInsets.all(SimfTokens.space4),
@@ -197,6 +204,10 @@ class _HallSeatMapCardState extends State<HallSeatMapCard> {
             l10n: l10n,
             availableBorderColor: widget.availableBorderColor,
             swatchSize: widget.swatchSize,
+            // A12 — the confirmed swatch appears only once someone has
+            // actually checked in, so a hall with nobody through the gate
+            // keeps the shipped three-item legend.
+            showConfirmed: map.hasConfirmed,
           ),
           // D-771 — the tier legend only appears for a hall that actually has
           // tiered rows, so a plain hall keeps the shipped three-item legend.
@@ -275,7 +286,9 @@ class _SeatGridRow extends StatelessWidget {
   // The shared row-letter column width (sized to the longest label so all rows
   // align and multi-char labels do not wrap).
   final double rowLabelWidth;
-  final Set<String> reserved;
+  // A12 — occupied seats by `row:seat` key. The CELL is needed (not a bare
+  // key set) so a checked-in holder draws the confirmed state.
+  final Map<String, SeatCell> reserved;
   final SessionSeatMap map;
   final AppL10n l10n;
   final Color availableBorderColor;
@@ -287,8 +300,13 @@ class _SeatGridRow extends StatelessWidget {
     if (map.isMine(rowLabel, seat)) {
       return _SeatStatus.mine;
     }
-    if (reserved.contains('$rowLabel:$seat')) {
-      return _SeatStatus.reserved;
+    final held = reserved['$rowLabel:$seat'];
+    if (held != null) {
+      // A12 — the fourth state: a holder who scanned in at the hall gate is
+      // CONFIRMED, not merely reserved. The CP live-hall map has always
+      // drawn this; the app could not, because the wire key was dropped on
+      // decode.
+      return held.checkedIn ? _SeatStatus.confirmed : _SeatStatus.reserved;
     }
     if (selectedRowLabel == rowLabel && selectedSeatNumber == seat) {
       return _SeatStatus.selected;
@@ -308,6 +326,8 @@ class _SeatGridRow extends StatelessWidget {
     switch (status) {
       case _SeatStatus.reserved:
         return '${l10n.legendReserved} $id';
+      case _SeatStatus.confirmed:
+        return '${l10n.legendConfirmed} $id';
       case _SeatStatus.mine:
         return '${l10n.legendMine} $id';
       case _SeatStatus.ineligible:
@@ -382,7 +402,7 @@ Color _tierBandColor(SeatTier tier) => switch (tier) {
       SeatTier.normal => SimfTokens.transparent,
     };
 
-enum _SeatStatus { mine, selected, reserved, available, ineligible }
+enum _SeatStatus { mine, selected, reserved, confirmed, available, ineligible }
 
 class _SeatBox extends StatelessWidget {
   const _SeatBox({
@@ -432,6 +452,17 @@ class _SeatBox extends StatelessWidget {
           size: SimfTokens.seatCellIconSize,
           color: SimfTokens.beigeBorder,
         );
+      case _SeatStatus.confirmed:
+        // A12 — distinct from a plain reserved square on BOTH channels (green
+        // fill AND a different glyph), so the fourth state reads without
+        // relying on colour alone.
+        fill = SimfTokens.seatConfirmed;
+        border = Border.all(color: SimfTokens.seatConfirmed);
+        glyph = const Icon(
+          Icons.how_to_reg,
+          size: SimfTokens.seatCellIconSize,
+          color: SimfTokens.surface,
+        );
       case _SeatStatus.ineligible:
         // D-771 — a free seat this caller may not book: no fill, a muted border and
         // a padlock, so it never reads as "available" nor as "someone sits here".
@@ -476,6 +507,7 @@ class _SeatBox extends StatelessWidget {
       );
     }
     if (status == _SeatStatus.reserved ||
+        status == _SeatStatus.confirmed ||
         status == _SeatStatus.mine ||
         status == _SeatStatus.ineligible) {
       return Semantics(label: semanticsLabel, child: box);
@@ -488,16 +520,21 @@ class _SeatBox extends StatelessWidget {
 /// مقعدك (gold fill) — each a label next to its colour swatch. The reserved and
 /// mine swatches mirror the in-grid state icons. Reads left-to-right like the
 /// frame (forced LTR so it never mirrors with the RTL page).
+/// A12 — a fourth entry, "confirmed" (green fill), joins them only when
+/// the hall holds a confirmed seat, so the shipped three-item frame is
+/// unchanged for a hall nobody has entered yet.
 class _Legend extends StatelessWidget {
   const _Legend({
     required this.l10n,
     required this.availableBorderColor,
     required this.swatchSize,
+    required this.showConfirmed,
   });
 
   final AppL10n l10n;
   final Color availableBorderColor;
   final double swatchSize;
+  final bool showConfirmed;
 
   @override
   Widget build(BuildContext context) {
@@ -515,6 +552,14 @@ class _Legend extends StatelessWidget {
             icon: Icons.close,
             iconColor: SimfTokens.beigeBorder,
           ),
+          if (showConfirmed)
+            _LegendItem(
+              label: l10n.legendConfirmed,
+              color: SimfTokens.seatConfirmed,
+              size: swatchSize,
+              icon: Icons.how_to_reg,
+              iconColor: SimfTokens.surface,
+            ),
           _LegendItem(
             label: l10n.legendAvailable,
             color: SimfTokens.transparent,

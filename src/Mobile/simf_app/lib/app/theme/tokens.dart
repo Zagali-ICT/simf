@@ -137,6 +137,11 @@ class SimfTokens {
   // tokens, so a tier reads identically on a badge, a CP seat plan and the app.
   static const Color seatTierVvip = Color(0xFFB91C1C); // deep red — protocol
   static const Color seatTierVip = Color(0xFF0E7490); // deep teal — VIP
+  // A12 — the CONFIRMED seat square: the holder scanned in at the hall gate,
+  // so the seat is no longer just held. Mirrors the Control Panel's
+  // --color-seat-confirmed (= --color-success, dark #4FA37D) so a confirmed
+  // seat reads the same green on the CP seat map and in the app.
+  static const Color seatConfirmed = Color(0xFF4FA37D);
 
   // Spacing scale.
   static const double space1 = 4;

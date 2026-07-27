@@ -141,6 +141,80 @@ void main() {
     });
   });
 
+  // A12 / DEF-SEA-002 — the fourth seat state. `checkedIn` has shipped on the
+  // wire since Wave 2 but SeatCell.fromJson dropped it, so the app could never
+  // tell a merely-held seat from a confirmed (تم التأكيد) one. These fail
+  // against the old decode.
+  group('SeatCell checkedIn (A12)', () {
+    test('decodes the checkedIn wire key', () {
+      final confirmed = SeatCell.fromJson(<String, dynamic>{
+        'reservationId': 'r1',
+        'rowLabel': 'A',
+        'seatNumber': 1,
+        'kind': 0,
+        'status': 1,
+        'checkedIn': true,
+      });
+      expect(confirmed.checkedIn, isTrue);
+    });
+
+    test('an omitted checkedIn key reads as not-yet-arrived', () {
+      final held = SeatCell.fromJson(<String, dynamic>{
+        'reservationId': 'r2',
+        'rowLabel': 'A',
+        'seatNumber': 2,
+        'kind': 0,
+      });
+      expect(held.checkedIn, isFalse);
+    });
+
+    test('the map exposes the cell by key and flags a confirmed hall', () {
+      final map = SessionSeatMap.fromJson(<String, dynamic>{
+        'rowLabels': <dynamic>['A'],
+        'seatsPerRow': 2,
+        'reservedCells': <dynamic>[
+          <String, dynamic>{
+            'reservationId': 'r1',
+            'rowLabel': 'A',
+            'seatNumber': 1,
+            'kind': 0,
+            'checkedIn': true,
+          },
+          <String, dynamic>{
+            'reservationId': 'r2',
+            'rowLabel': 'A',
+            'seatNumber': 2,
+            'kind': 0,
+            'checkedIn': false,
+          },
+        ],
+        'activeReservedCount': 2,
+        'hallCapacity': 2,
+      });
+      expect(map.reservedByKey()['A:1']!.checkedIn, isTrue);
+      expect(map.reservedByKey()['A:2']!.checkedIn, isFalse);
+      expect(map.hasConfirmed, isTrue);
+    });
+
+    test('a hall with nobody through the gate is not confirmed', () {
+      final map = SessionSeatMap.fromJson(<String, dynamic>{
+        'rowLabels': <dynamic>['A'],
+        'seatsPerRow': 1,
+        'reservedCells': <dynamic>[
+          <String, dynamic>{
+            'reservationId': 'r1',
+            'rowLabel': 'A',
+            'seatNumber': 1,
+            'kind': 0,
+          },
+        ],
+        'activeReservedCount': 1,
+        'hallCapacity': 1,
+      });
+      expect(map.hasConfirmed, isFalse);
+    });
+  });
+
   group('SessionSeatMap per-row seat counts (Option A)', () {
     test('parses seatCounts and reads each row at its own width', () {
       final map = SessionSeatMap.fromJson(<String, dynamic>{

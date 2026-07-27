@@ -2449,10 +2449,12 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    public Task<ApiCallResult<GridPage<SessionSeatCell>>> ListSessionSeatReservationsAsync(
+    /// <summary>DEF-SEA-001 / A11 — the seat plan's active reservations in the ADMIN
+    /// shape: each row names its holder and carries the real status + check-in flag.</summary>
+    public Task<ApiCallResult<GridPage<SeatPlanCell>>> ListSessionSeatReservationsAsync(
         Guid sessionId, GridQuery query, string accessToken,
         CancellationToken cancellationToken = default) =>
-        SendAsync<GridPage<SessionSeatCell>>(
+        SendAsync<GridPage<SeatPlanCell>>(
             HttpMethod.Post, $"sessions/{sessionId}/seats/list",
             JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);

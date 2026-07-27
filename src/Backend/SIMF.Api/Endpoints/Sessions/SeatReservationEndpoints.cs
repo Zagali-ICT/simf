@@ -305,8 +305,13 @@ public sealed class ListSessionSeatReservationsRoute
     public Dictionary<string, string> Filters { get; set; } = new();
 }
 
+/// <summary>DEF-SEA-001 / A11 — the Control Panel seat plan's active reservations.
+/// Returns the ADMIN cell shape (<see cref="SeatPlanCell"/>): it names the holder
+/// so the release confirmation can say whose seat is being taken, and carries the
+/// real booking status + check-in flag. Gated <c>SeatPlans.View</c>; the
+/// app-facing seat map keeps the identity-free <see cref="SessionSeatCell"/>.</summary>
 public sealed class ListSessionSeatReservationsEndpoint(ISeatReservationService service)
-    : Endpoint<ListSessionSeatReservationsRoute, ApiResult<GridPage<SessionSeatCell>>>
+    : Endpoint<ListSessionSeatReservationsRoute, ApiResult<GridPage<SeatPlanCell>>>
 {
     public override void Configure()
     {
@@ -317,7 +322,7 @@ public sealed class ListSessionSeatReservationsEndpoint(ISeatReservationService 
     }
     public override async Task HandleAsync(
         ListSessionSeatReservationsRoute req, CancellationToken ct) =>
-        await Send.OkAsync(ApiResult<GridPage<SessionSeatCell>>.Ok(
+        await Send.OkAsync(ApiResult<GridPage<SeatPlanCell>>.Ok(
             await service.ListSessionReservationsAsync(
                 req.SessionId,
                 new GridQuery

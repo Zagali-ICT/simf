@@ -2312,14 +2312,14 @@
   <data name="Admin.SessionSeatPlans.Legend.User" xml:space="preserve"><value>محجوز (زائر)</value></data>
   <data name="Admin.SessionSeatPlans.Legend.Admin" xml:space="preserve"><value>محجوز (إدارة)</value></data>
   <data name="Admin.SessionSeatPlans.Legend.Random" xml:space="preserve"><value>عشوائي</value></data>
-  <data name="Admin.SessionSeatPlans.Seat.ReservedTitle" xml:space="preserve"><value>المقعد {0} — {1}</value></data>
+  <data name="Admin.SessionSeatPlans.Seat.ReservedTitle" xml:space="preserve"><value>المقعد {0} — {1} — محجوز لـ {2}</value></data>
   <data name="Admin.SessionSeatPlans.Seat.FreeTitle" xml:space="preserve"><value>حجز المقعد {0} لأحد كبار الشخصيات</value></data>
   <data name="Admin.SessionSeatPlans.Pick" xml:space="preserve"><value>اختر جلسة</value></data>
   <data name="Admin.SessionSeatPlans.None" xml:space="preserve"><value>لا توجد جلسات متاحة.</value></data>
   <data name="Admin.SessionSeatPlans.NoReservations" xml:space="preserve"><value>لا توجد حجوزات نشطة لهذه الجلسة.</value></data>
   <data name="Admin.SessionSeatPlans.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
   <data name="Admin.SessionSeatPlans.LoadFailed" xml:space="preserve"><value>تعذّر تحميل مخطط مقاعد الجلسة.</value></data>
-  <data name="Admin.SessionSeatPlans.Hint" xml:space="preserve"><value>يمكن للمسؤول حجز صف كامل كمحجوز إدارياً (يمنع اختيار الزوار)، أو النقر على مقعد متاح لحجزه لأحد كبار الشخصيات، أو النقر على مقعد محجوز لإلغائه.</value></data>
+  <data name="Admin.SessionSeatPlans.Hint" xml:space="preserve"><value>يمكن للمسؤول حجز صف كامل كمحجوز إدارياً (يمنع اختيار الزوار)، أو النقر على مقعد متاح لحجزه لأحد كبار الشخصيات، أو النقر على مقعد محجوز لإلغائه — مع طلب تأكيد يوضّح صاحب الحجز قبل التنفيذ.</value></data>
   <data name="Admin.SessionSeatPlans.ReserveRow.Label" xml:space="preserve"><value>الصف المراد حجزه (يجب أن يكون موجوداً في مخطط القاعة)</value></data>
   <data name="Admin.SessionSeatPlans.ReserveRow.Action" xml:space="preserve"><value>حجز الصف</value></data>
   <data name="Admin.SessionSeatPlans.ReserveRow.Done" xml:space="preserve"><value>تم حجز الصف.</value></data>
@@ -2332,7 +2332,17 @@
   <data name="Admin.SessionSeatPlans.Col.Seat" xml:space="preserve"><value>المقعد</value></data>
   <data name="Admin.SessionSeatPlans.Col.Kind" xml:space="preserve"><value>النوع</value></data>
   <data name="Admin.SessionSeatPlans.Col.Actions" xml:space="preserve"><value>الإجراءات</value></data>
+  <data name="Admin.SessionSeatPlans.Col.Holder" xml:space="preserve"><value>محجوز لـ</value></data>
+  <data name="Admin.SessionSeatPlans.Col.State" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Admin.SessionSeatPlans.Holder.AdminBlock" xml:space="preserve"><value>حجز إداري (بدون زائر)</value></data>
+  <data name="Admin.SessionSeatPlans.OpenSeating" xml:space="preserve"><value>دخول عام</value></data>
+  <data name="Admin.SessionSeatPlans.State.Unavailable" xml:space="preserve"><value>غير متاح</value></data>
+  <data name="Admin.SessionSeatPlans.State.Reserved" xml:space="preserve"><value>محجوز</value></data>
+  <data name="Admin.SessionSeatPlans.State.Confirmed" xml:space="preserve"><value>تم التأكيد</value></data>
   <data name="Admin.SessionSeatPlans.Release" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.SessionSeatPlans.Release.Title" xml:space="preserve"><value>إلغاء حجز هذا المقعد؟</value></data>
+  <data name="Admin.SessionSeatPlans.Release.Message" xml:space="preserve"><value>المقعد {0} محجوز لـ {1}. إلغاء الحجز يتيح المقعد لشخص آخر ولا يمكن التراجع عنه، وسيتم إشعار الزائر.</value></data>
+  <data name="Admin.SessionSeatPlans.Release.Cancel" xml:space="preserve"><value>الإبقاء على الحجز</value></data>
   <data name="Admin.SessionSeatPlans.Released" xml:space="preserve"><value>تم إلغاء الحجز.</value></data>
   <data name="Admin.SessionSeatPlans.Summary" xml:space="preserve"><value>{0} حجز نشط</value></data>
 

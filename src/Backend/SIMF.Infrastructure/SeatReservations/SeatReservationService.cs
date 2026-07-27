@@ -775,8 +775,10 @@ internal sealed class SeatReservationService(
         }
         // M-4 — a release must also close the booking's lifecycle. Leaving Status
         // untouched left an Approved row with ReleasedAt set (a stale
-        // "confirmed-but-gone" state the CP/app could still read as active). Mark it
-        // Cancelled and stamp the reviewer (the admin performing the release).
+        // "confirmed-but-gone" state the CP/app could still read as active), so mark
+        // it Cancelled. A9 — the ReviewedBy/ReviewedAt pair records the admin who
+        // performed THIS RELEASE; there is no approval queue left for it to record a
+        // review decision (see BookingStatus), and this is its only writer.
         var now = timeProvider.GetUtcNow();
         reservation.ReleasedAt = now;
         reservation.Status = BookingStatus.Cancelled;
@@ -803,7 +805,7 @@ internal sealed class SeatReservationService(
         await TryNotifyBookingReleasedAsync(reservation, session, cancellationToken);
     }
 
-    public async Task<GridPage<SessionSeatCell>> ListSessionReservationsAsync(
+    public async Task<GridPage<SeatPlanCell>> ListSessionReservationsAsync(
         Guid sessionId, GridQuery query,
         CancellationToken cancellationToken = default)
     {
@@ -812,13 +814,58 @@ internal sealed class SeatReservationService(
         var baseQuery = appDbContext.SeatReservations.AsNoTracking()
             .Where(r => r.SessionId == sessionId && r.ReleasedAt == null);
         var total = await baseQuery.CountAsync(cancellationToken);
+        // A11 — project the REAL Status (it used to fall through to the record
+        // default, putting Pending on the wire for rows that are all Approved).
         var rows = await baseQuery
             .OrderBy(r => r.RowLabel).ThenBy(r => r.SeatNumber)
             .Skip(skip).Take(top)
-            .Select(r => new SessionSeatCell(r.Id, r.RowLabel, r.SeatNumber, r.Kind))
+            .Select(r => new
+            {
+                r.Id, r.RowLabel, r.SeatNumber, r.Kind, r.Status,
+                r.ReservedForUserId, r.GuestHint, r.GuestHintArabic,
+            })
             .ToListAsync(cancellationToken);
-        return GridPage<SessionSeatCell>.Of(rows, total,
-            skip, top);
+
+        // A11 — the "confirmed" seat state: the holder has an OPEN HallAttendance
+        // row for this session. Same definition as the app/CP seat map, one query
+        // for the whole page rather than per row.
+        var checkedInUserIds = (await appDbContext.HallAttendances.AsNoTracking()
+            .Where(a => a.SessionId == sessionId && a.Leave == null)
+            .Select(a => a.UserId)
+            .ToListAsync(cancellationToken))
+            .ToHashSet();
+
+        // DEF-SEA-001 — an admin must see WHOSE seat they are about to release, so
+        // resolve the holders' bilingual names in one batch. The names live on the
+        // App-side UserProfile, so there is no cross-database read (D-157).
+        var holderIds = rows
+            .Where(r => r.ReservedForUserId is not null)
+            .Select(r => r.ReservedForUserId!.Value)
+            .Distinct()
+            .ToList();
+        var holders = holderIds.Count == 0
+            ? new Dictionary<Guid, (string Name, string NameArabic)>()
+            : (await appDbContext.UserProfiles.AsNoTracking()
+                .Where(p => holderIds.Contains(p.UserId))
+                .Select(p => new { p.UserId, p.Name, p.NameArabic })
+                .ToListAsync(cancellationToken))
+                .ToDictionary(p => p.UserId, p => (p.Name, p.NameArabic));
+
+        var cells = rows.Select(r =>
+        {
+            var holder = r.ReservedForUserId is { } id
+                && holders.TryGetValue(id, out var found)
+                ? found
+                : (Name: string.Empty, NameArabic: string.Empty);
+            return new SeatPlanCell(
+                r.Id, r.RowLabel, r.SeatNumber, r.Kind, r.Status,
+                r.ReservedForUserId is { } holderId
+                    && checkedInUserIds.Contains(holderId),
+                r.ReservedForUserId, holder.Name, holder.NameArabic,
+                r.GuestHint, r.GuestHintArabic);
+        }).ToList();
+
+        return GridPage<SeatPlanCell>.Of(cells, total, skip, top);
     }
 
     // -- Booking monitor + no-show release (#6/#17 — owner 2026-07-20) --

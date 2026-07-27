@@ -56,7 +56,12 @@ public interface ISeatReservationService
         Guid actorUserId, Guid sessionId, Guid reservationId,
         CancellationToken cancellationToken = default);
 
-    Task<GridPage<SessionSeatCell>> ListSessionReservationsAsync(
+    /// <summary>The Control Panel seat plan's active reservations. Returns
+    /// <see cref="SeatPlanCell"/> — the ADMIN shape — so each row names its holder
+    /// and carries the real booking status + check-in flag (DEF-SEA-001 / A11).
+    /// The app-facing seat map keeps <see cref="SessionSeatCell"/>, which has no
+    /// attendee identity on it.</summary>
+    Task<GridPage<SeatPlanCell>> ListSessionReservationsAsync(
         Guid sessionId, GridQuery query,
         CancellationToken cancellationToken = default);
 

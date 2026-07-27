@@ -17,8 +17,10 @@ No notification is sent on reserving. On success the app shows a **one-button in
 alert** (D-750, `seatReservedAlertBody`) explaining that the hold is released if the
 visitor does not check in by 3 minutes before the session starts, to free the seat
 for others; on **OK** the picker pops back so the session page reloads to show the
-reservation. The old Control Panel approval queue (list-pending / approve / reject)
-is **retained but dormant** — nothing creates a Pending attendee booking, so it is
+reservation. **A8 (2026-07-27):** the screen doc comment and `joinSeatHint` were still
+describing the removed approval step ("then await approval"); both now state that the
+seat is held immediately. The old Control Panel approval queue (list-pending / approve /
+reject) is **retained but dormant** — nothing creates a Pending attendee booking, so it is
 always empty.
 
 > **Reserve-success alert (D-750, 2026-07-20).** The owner's exact reserve-success

@@ -200,6 +200,7 @@ class SeatCell {
     required this.kind,
     this.reservationId,
     this.status = BookingStatus.pending,
+    this.checkedIn = false,
     this.guestHint,
     this.guestHintArabic,
   });
@@ -234,6 +235,13 @@ class SeatCell {
   /// older server that omits the field reads as awaiting approval.
   final BookingStatus status;
 
+  /// A12 — the holder has an OPEN hall-attendance row for this session: they
+  /// scanned in at the gate, so the seat is **confirmed** (تم التأكيد)
+  /// rather than merely held. Wire key `checkedIn`, shipped since Wave 2 but
+  /// never decoded, which is why the fourth seat state could not render.
+  /// Defaults to false, so a server that omits it reads as "not yet arrived".
+  final bool checkedIn;
+
   /// A stable `row:seat` key for set membership (status derivation, L-2).
   String get key => '$rowLabel:$seatNumber';
 
@@ -243,6 +251,7 @@ class SeatCell {
         seatNumber: (json['seatNumber'] as num?)?.toInt() ?? 0,
         kind: SeatReservationKind.fromJson(json['kind']),
         status: BookingStatus.fromJson(json['status']),
+        checkedIn: json['checkedIn'] as bool? ?? false,
         guestHint: json['guestHint'] as String?,
         guestHintArabic: json['guestHintArabic'] as String?,
       );
@@ -390,6 +399,24 @@ class SessionSeatMap {
   /// The `row:seat` keys of every occupied seat — built once for O(1) lookup.
   Set<String> reservedKeys() =>
       <String>{for (final cell in reservedCells) cell.key};
+
+  /// A12 — every occupied seat by its `row:seat` key, so the grid can read
+  /// the CELL (and therefore [SeatCell.checkedIn]) and not just "is it
+  /// taken". Built once per render, like [reservedKeys].
+  Map<String, SeatCell> reservedByKey() =>
+      <String, SeatCell>{for (final cell in reservedCells) cell.key: cell};
+
+  /// A12 — true when at least one seat is confirmed (its holder checked in).
+  /// The confirmed legend entry only appears for a hall that actually has
+  /// one, mirroring how [hasTiers] gates the tier legend.
+  bool get hasConfirmed {
+    for (final cell in reservedCells) {
+      if (cell.checkedIn) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   bool isMine(String rowLabel, int seatNumber) =>
       myCell != null &&
