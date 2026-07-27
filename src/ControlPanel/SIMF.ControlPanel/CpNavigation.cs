@@ -55,6 +55,10 @@ public static class CpNavigation
             // 2026-07-18 — live per-session hall view: 4-state seat grid + who's
             // currently inside the hall (over HallAttendance + the seat map).
             new("Module.SessionLiveHall", "/admin/sessions/live-hall", RequiredPermission: PermissionCatalog.Attendance.View, Icon: "monitor"),
+            // §6.16 — /admin/statistics was an ORPHAN: a real page rendering live stat
+            // tiles and gated on Statistics.View, but reachable from nowhere in the CP.
+            // Granting that permission was silently inert; only a hand-typed URL opened it.
+            new("Module.Statistics", "/admin/statistics", RequiredPermission: PermissionCatalog.Statistics.View, Icon: "chart-bar"),
         ]),
         new("Nav.People",
         [

@@ -1394,6 +1394,13 @@
   <data name="Module.ComingSoon.Text" xml:space="preserve"><value>هذه الوحدة قيد الإعداد وستكون متاحة في إصدار لاحق.</value></data>
 
   <data name="NotPermitted.Title" xml:space="preserve"><value>غير مصرّح</value></data>
+  <data name="NotFound.Title" xml:space="preserve"><value>الصفحة غير موجودة</value></data>
+  <data name="NotFound.Text" xml:space="preserve"><value>الصفحة التي تبحث عنها غير موجودة أو تم نقلها.</value></data>
+  <data name="NotFound.Back" xml:space="preserve"><value>العودة إلى لوحة المعلومات</value></data>
+  <data name="Error.Title" xml:space="preserve"><value>حدث خطأ ما</value></data>
+  <data name="Error.Text" xml:space="preserve"><value>تعذّر إكمال الطلب. حاول مرة أخرى، وإذا استمر الأمر فأبلغ المسؤول بالرقم المرجعي أدناه.</value></data>
+  <data name="Error.RequestId" xml:space="preserve"><value>الرقم المرجعي</value></data>
+  <data name="Error.Back" xml:space="preserve"><value>العودة إلى لوحة المعلومات</value></data>
   <data name="NotPermitted.Text" xml:space="preserve"><value>ليس لديك صلاحية لفتح هذه الصفحة. إذا كنت ترى أن هذا خطأ، فيرجى التواصل مع مسؤول النظام.</value></data>
   <data name="NotPermitted.Back" xml:space="preserve"><value>العودة إلى لوحة المعلومات</value></data>
 
