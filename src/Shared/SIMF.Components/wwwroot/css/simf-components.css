@@ -1672,6 +1672,35 @@ body.simf-modal-open { overflow: hidden; }
   position: relative;
 }
 
+/* -- Standalone toolbar / section heading ----------------------------------
+   §6.16 (DT-004 / DT-005) — .simf-toolbar, .simf-toolbar__search and
+   .simf-section__title are used on 13 elements across Archive, Organisations,
+   Regions, FAQ and the two Ratings pages, but had NO rule anywhere in the
+   stylesheet: the toolbars rendered as unstyled block divs and the headings as a
+   browser-default <h2>. Mirrors .simf-grid__toolbar / .simf-panel__title so the
+   standalone and in-grid variants match. */
+.simf-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-block-end: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.simf-toolbar__search {
+  flex: 1 1 220px;
+  min-inline-size: 0;   /* shrink inside the flex row rather than overflow it */
+  max-inline-size: 420px;
+}
+
+.simf-section__title {
+  margin: 0 0 var(--space-3);
+  font-size: var(--font-size-subtitle);
+  font-weight: var(--font-weight-heading);
+  color: var(--color-text);
+}
+
 /* -- Top toolbar (D-044 b) -------------------------------------------------- */
 .simf-grid__toolbar {
   display: flex;
