@@ -145,6 +145,9 @@
                     <SimfRepeater TItem="AboutRow" Items="_model.AboutItems" IndexLabel="@L["Admin.OrganizationProfile.About.IndexLabel"]"
                                   EmptyText="@L["Admin.OrganizationProfile.About.Empty"]"
                                   AddLabel="@L["Admin.OrganizationProfile.About.Add"]" Disabled="_busy"
+                                  MoveUpLabel="@L["Grid.MoveUp"]"
+                                  MoveDownLabel="@L["Grid.MoveDown"]"
+                                  RemoveLabel="@L["Grid.Remove"]"
                                   OnAdd="AddAbout" OnRemove="RemoveAbout"
                                   OnMove="@(m => MoveAbout(m.Item, m.Delta))">
                         <RowTemplate Context="item">
@@ -169,6 +172,9 @@
                     <SimfRepeater TItem="DetailRow" Items="_model.Details" IndexLabel="@L["Admin.OrganizationProfile.Detail.IndexLabel"]"
                                   EmptyText="@L["Admin.OrganizationProfile.Detail.Empty"]"
                                   AddLabel="@L["Admin.OrganizationProfile.Detail.Add"]" Disabled="_busy"
+                                  MoveUpLabel="@L["Grid.MoveUp"]"
+                                  MoveDownLabel="@L["Grid.MoveDown"]"
+                                  RemoveLabel="@L["Grid.Remove"]"
                                   OnAdd="AddDetail" OnRemove="RemoveDetail"
                                   OnMove="@(m => MoveDetail(m.Item, m.Delta))">
                         <RowTemplate Context="row">

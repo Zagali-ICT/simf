@@ -3272,6 +3272,9 @@
   <data name="Grid.FilterPlaceholder" xml:space="preserve"><value>Search</value></data>
   <data name="Grid.Loading" xml:space="preserve"><value>Loading…</value></data>
   <data name="Grid.Working" xml:space="preserve"><value>Working…</value></data>
+  <data name="Grid.MoveUp" xml:space="preserve"><value>Up</value></data>
+  <data name="Grid.MoveDown" xml:space="preserve"><value>Down</value></data>
+  <data name="Grid.Remove" xml:space="preserve"><value>Remove</value></data>
   <data name="Grid.Empty" xml:space="preserve"><value>No records yet.</value></data>
   <data name="Grid.Prev" xml:space="preserve"><value>Previous</value></data>
   <data name="Grid.Next" xml:space="preserve"><value>Next</value></data>
