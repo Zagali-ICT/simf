@@ -303,6 +303,7 @@
   <data name="Admin.ProfileTypes.Visitor.Title" xml:space="preserve"><value>أنواع ملفات الزوار</value></data>
   <data name="Admin.ProfileTypes.Other.Title" xml:space="preserve"><value>أنواع الملفات الأخرى</value></data>
   <data name="Admin.ProfileTypes.None" xml:space="preserve"><value>لا توجد أنواع ملفات بعد.</value></data>
+  <data name="Admin.ProfileTypes.LoadFailed" xml:space="preserve"><value>تعذّر تحميل أنواع الملفات.</value></data>
   <data name="Admin.ProfileTypes.Column.Name" xml:space="preserve"><value>الاسم</value></data>
   <data name="Admin.ProfileTypes.Column.NameArabic" xml:space="preserve"><value>الاسم (عربي)</value></data>
   <data name="Admin.ProfileTypes.Column.PageColor" xml:space="preserve"><value>لون الصفحة</value></data>
@@ -1199,6 +1200,7 @@
   <data name="Admin.Users.Title" xml:space="preserve"><value>المسؤولون</value></data>
   <data name="Admin.Users.Fallback" xml:space="preserve"><value>حدث خطأ ما. حاول مرة أخرى.</value></data>
   <data name="Admin.Users.None" xml:space="preserve"><value>لا توجد حسابات بعد.</value></data>
+  <data name="Admin.Users.LoadFailed" xml:space="preserve"><value>تعذّر تحميل المسؤولين.</value></data>
   <data name="Admin.Users.CreateNew" xml:space="preserve"><value>إضافة مستخدم</value></data>
   <data name="Admin.Users.Column.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
   <data name="Admin.Users.Column.DisplayName" xml:space="preserve"><value>الاسم المعروض</value></data>
@@ -1247,6 +1249,7 @@
 
   <!-- P3: visitor management (sibling of /admin/staff) -->
   <data name="Admin.Visitors.Title" xml:space="preserve"><value>الزوار</value></data>
+  <data name="Admin.Visitors.LoadFailed" xml:space="preserve"><value>تعذّر تحميل الزوار.</value></data>
   <data name="Admin.Visitors.CreateNew" xml:space="preserve"><value>إضافة زائر</value></data>
   <data name="Admin.Visitors.None" xml:space="preserve"><value>لا يوجد زوار بعد.</value></data>
 
@@ -1548,6 +1551,7 @@
   <data name="Admin.Others.Title" xml:space="preserve"><value>مستخدمون آخرون</value></data>
   <data name="Admin.Others.CreateNew" xml:space="preserve"><value>إضافة مستخدم آخر</value></data>
   <data name="Admin.Others.None" xml:space="preserve"><value>لا يوجد مستخدمون من نوع آخر بعد.</value></data>
+  <data name="Admin.Others.LoadFailed" xml:space="preserve"><value>تعذّر تحميل المستخدمين الآخرين.</value></data>
   <data name="Admin.Others.New.Title" xml:space="preserve"><value>إضافة مستخدم من نوع آخر</value></data>
   <data name="Admin.Others.New.Supporting" xml:space="preserve"><value>أنشئ مستخدمًا جديدًا من النوع "آخر". سيستلم المستخدم دعوة لتعيين كلمة المرور صالحة لمدة 7 أيام عبر البريد الإلكتروني.</value></data>
   <data name="Admin.Others.New.Submit" xml:space="preserve"><value>إنشاء مستخدم آخر</value></data>
@@ -1573,6 +1577,7 @@
   <data name="Admin.Sessions.ClearFilter" xml:space="preserve"><value>إزالة التصفية</value></data>
   <data name="Admin.Sessions.None" xml:space="preserve"><value>لا توجد جلسات بعد.</value></data>
   <data name="Admin.Sessions.LoadFailed" xml:space="preserve"><value>تعذّر تحميل الجلسات.</value></data>
+  <data name="Admin.Sessions.LookupsFailed" xml:space="preserve"><value>تعذّر تحميل بعض خيارات النموذج. أغلق النموذج ثم افتحه مرة أخرى لإعادة المحاولة.</value></data>
   <data name="Admin.Sessions.Fallback" xml:space="preserve"><value>تعذّر إكمال العملية.</value></data>
   <data name="Admin.Sessions.Loading" xml:space="preserve"><value>جارٍ تحميل الجلسات…</value></data>
   <data name="Admin.Sessions.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>

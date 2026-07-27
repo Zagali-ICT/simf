@@ -145,8 +145,23 @@ public partial class SessionsAddEdit
                     .Select(h => h.Id.ToString())
                     .ToArray();
             }
+            else
+            {
+                // §6.16 (F-U5-003) — the commoner failure is a RETURNED failed
+                // envelope, not a throw: simfReadEnvelope converts an HTTP error
+                // or a non-JSON error page into ApiResult.Fail instead of
+                // throwing, so the catch above never sees it.
+                ReportLookupFailure();
+            }
         }
-        catch { }
+        catch
+        {
+            // §6.16 (F-U5-003) — a bare `catch { }` left the Hall / Speaker /
+            // Theme / Category picker silently EMPTY. HandleSubmitAsync then
+            // hard-fails on the missing hall, so the form cannot be saved and
+            // nothing on screen says why. The dialog already renders _error.
+            ReportLookupFailure();
+        }
     }
 
     private async Task LoadSpeakersAsync()
@@ -161,8 +176,23 @@ public partial class SessionsAddEdit
                 _speakersById = envelope.Data.Items.ToDictionary(s => s.Id.ToString(), s => s);
                 RefreshSpeakerOptions();
             }
+            else
+            {
+                // §6.16 (F-U5-003) — the commoner failure is a RETURNED failed
+                // envelope, not a throw: simfReadEnvelope converts an HTTP error
+                // or a non-JSON error page into ApiResult.Fail instead of
+                // throwing, so the catch above never sees it.
+                ReportLookupFailure();
+            }
         }
-        catch { }
+        catch
+        {
+            // §6.16 (F-U5-003) — a bare `catch { }` left the Hall / Speaker /
+            // Theme / Category picker silently EMPTY. HandleSubmitAsync then
+            // hard-fails on the missing hall, so the form cannot be saved and
+            // nothing on screen says why. The dialog already renders _error.
+            ReportLookupFailure();
+        }
     }
 
     private async Task LoadThemesAsync()
@@ -177,8 +207,23 @@ public partial class SessionsAddEdit
                 _themesById = envelope.Data.Items.ToDictionary(t => t.Id.ToString(), t => t);
                 RefreshThemeOptions();
             }
+            else
+            {
+                // §6.16 (F-U5-003) — the commoner failure is a RETURNED failed
+                // envelope, not a throw: simfReadEnvelope converts an HTTP error
+                // or a non-JSON error page into ApiResult.Fail instead of
+                // throwing, so the catch above never sees it.
+                ReportLookupFailure();
+            }
         }
-        catch { }
+        catch
+        {
+            // §6.16 (F-U5-003) — a bare `catch { }` left the Hall / Speaker /
+            // Theme / Category picker silently EMPTY. HandleSubmitAsync then
+            // hard-fails on the missing hall, so the form cannot be saved and
+            // nothing on screen says why. The dialog already renders _error.
+            ReportLookupFailure();
+        }
     }
 
     private async Task LoadCategoriesAsync()
@@ -196,8 +241,23 @@ public partial class SessionsAddEdit
                     .Select(c => c.Id.ToString())
                     .ToArray();
             }
+            else
+            {
+                // §6.16 (F-U5-003) — the commoner failure is a RETURNED failed
+                // envelope, not a throw: simfReadEnvelope converts an HTTP error
+                // or a non-JSON error page into ApiResult.Fail instead of
+                // throwing, so the catch above never sees it.
+                ReportLookupFailure();
+            }
         }
-        catch { }
+        catch
+        {
+            // §6.16 (F-U5-003) — a bare `catch { }` left the Hall / Speaker /
+            // Theme / Category picker silently EMPTY. HandleSubmitAsync then
+            // hard-fails on the missing hall, so the form cannot be saved and
+            // nothing on screen says why. The dialog already renders _error.
+            ReportLookupFailure();
+        }
     }
 
     private string CategoryLabel(string id)
@@ -732,4 +792,9 @@ public partial class SessionsAddEdit
         public string LiveCaptionsArabic { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
     }
+
+    /// <summary>§6.16 (F-U5-003) — surface a lookup failure once, into the
+    /// dialog's own error area. Uses ??= so a validation message the admin is
+    /// already acting on is never overwritten by a background load failure.</summary>
+    private void ReportLookupFailure() => _error ??= L["Admin.Sessions.LookupsFailed"];
 }
