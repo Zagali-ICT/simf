@@ -526,6 +526,8 @@ public sealed class ExhibitorVisitorScanTests : IClassFixture<SimfApiFactory>
         var conflict = (await second.Content
             .ReadFromJsonAsync<ApiResult<ExhibitorAccountSummary>>())!.Error!;
         Assert.Equal(ErrorCodes.ExhibitorAccountAlreadyLinked, conflict.Code);
+    }
+
     // FR-EXH-003 regression — a legacy un-scoped capture and a booth-scoped one
     // can be live for the SAME visitor at once: a colleague captures the visitor
     // for the booth while this officer still holds their own un-backfilled row.

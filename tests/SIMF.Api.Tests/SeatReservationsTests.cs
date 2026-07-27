@@ -1206,6 +1206,7 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(new[] { "VIP", "A" }, snapshot.RowLabels);
         Assert.Equal(new[] { 2, 6 }, snapshot.SeatCounts);
         Assert.Equal(8, snapshot.LayoutCapacity);
+    }
 
     [Fact]
     public async Task Seat_plan_list_names_the_holder_and_ships_the_real_status_and_check_in()
