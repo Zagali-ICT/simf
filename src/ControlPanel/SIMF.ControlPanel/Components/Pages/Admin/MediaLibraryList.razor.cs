@@ -68,6 +68,14 @@ public partial class MediaLibraryList
         {
             _detailsTarget = env.Data;
         }
+        else
+        {
+            // §6.16 (F-U5-011) — a failed detail fetch used to do literally
+            // nothing: no modal, no message, no spinner. The Manage button was
+            // indistinguishable from an unwired one.
+            _toast = new Toast("error",
+                env?.Error?.MessageForCurrentCulture() ?? L["Admin.MediaLibrary.LoadFailed"]);
+        }
     }
 
     private async Task DeactivateAsync()

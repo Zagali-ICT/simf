@@ -79,14 +79,19 @@ public partial class VipsList
     // download via the generic /export proxy. Export only — the VIP list is a
     // derived view (no add/edit/import); the page's only action is bulk-notify.
     // The row id is the UserProfileId (the grid's row key).
-    private Task OnExportAsync(IReadOnlyList<AdminVipSummary> selected) =>
-        JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+    private async Task OnExportAsync(IReadOnlyList<AdminVipSummary> selected)
+    {
+        // §6.16 (F-U5-005) — a failed export used to return silently, so
+        // the Export button was indistinguishable from an unwired one.
+        var error = await JS.ExportXlsxAsync(
             "/account/api/admin/vips/export",
             new AdminGridExportRequest
             {
                 Ids = selected.Select(row => row.UserProfileId).ToList(),
                 Query = selected.Count == 0 ? _query : null,
-            }).AsTask();
+            }, L);
+        if (error is not null) _toast = new Toast("error", error);
+    }
 
     private string FormatSummary(int skip, int taken, int total) =>
         string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);

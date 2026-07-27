@@ -183,6 +183,10 @@
   --color-seat-confirmed: var(--color-success);
   --color-seat-contrast: #FFFFFF;      /* label on dark navy/steel seats */
   --color-seat-user-contrast: #01132D; /* navy label on the gold user seat */
+  /* The label on the RANDOM seat. Its own token because the dark theme has to
+     lighten that seat past the point where a white label still reads — see the
+     dark-theme block below. Light theme: identical to --color-seat-contrast. */
+  --color-seat-random-contrast: var(--color-seat-contrast);
   /* D-771 seat TIERS (Normal / VIP / VVIP). The tier is a property of the row,
      so these tint the row BAND, not the seat squares (which keep their
      reservation-state colours above). Deep red = VVIP protocol seating and deep
@@ -231,6 +235,27 @@
                  0 8px 24px rgba(0, 0, 0, 0.40);
 
   --pattern-opacity: 0.18;
+
+  /* §6.16 (DT-003) — seat states in the dark theme.
+     The seat colours above are the MOBILE APP's, chosen against the app's light
+     seat board. --color-seat-free aliases --color-surface-sunken, so in dark
+     theme the board becomes #101D30 and the reserved/admin seat (#01132D) lands
+     at 1.10:1 against it — and because the seat sets its BORDER to the same
+     colour, a reserved seat rendered as a hole in the grid rather than a seat.
+     Free seats kept their #2B3D57 border, so the two states were inverted: the
+     empty seat was the visible one.
+
+     Lightened along the SAME hues, so a reserved seat still reads navy and a
+     random seat still reads steel. Measured against the dark board (#101D30),
+     WCAG 2.2 1.4.11 non-text contrast, 3:1 target:
+       admin  #3F6BA6 → 3.12:1 board, 5.43:1 white label
+       random #8CB0D6 → 7.50:1 board, 8.21:1 navy  label
+     and 2.41:1 between the two seat kinds, close to the light theme's 2.68:1.
+     Random has to go light enough that a white label no longer reads on it,
+     which is what --color-seat-random-contrast is for. */
+  --color-seat-admin: #3F6BA6;
+  --color-seat-random: #8CB0D6;
+  --color-seat-random-contrast: #01132D;
 }
 
 /* ----------------------------------------------------------------------------

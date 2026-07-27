@@ -295,9 +295,12 @@ public partial class OthersList
     private async Task OnExportAsync(IReadOnlyList<AdminUserSummary> selected)
     {
         var ids = selected.Select(u => u.Id).ToList();
-        await JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+        // §6.16 (F-U5-005) — a failed export used to return silently, so
+        // the Export button was indistinguishable from an unwired one.
+        var error = await JS.ExportXlsxAsync(
             "/account/api/admin/others/export",
-            new AdminExportUsersRequest { Ids = ids, Query = ids.Count == 0 ? _query : null });
+            new AdminExportUsersRequest { Ids = ids, Query = ids.Count == 0 ? _query : null }, L);
+        if (error is not null) ShowToast("error", error);
     }
 
     private async Task OnImportAsync() =>

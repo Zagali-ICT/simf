@@ -123,14 +123,19 @@ public partial class SpeakerMeetingRequestsList
     // download via the generic /export proxy. Export only — speaker meeting
     // requests are created from the app + responded to in the CP, so there is
     // no import path.
-    private Task OnExportAsync(IReadOnlyList<AdminSpeakerMeetingRequestRow> selected) =>
-        JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+    private async Task OnExportAsync(IReadOnlyList<AdminSpeakerMeetingRequestRow> selected)
+    {
+        // §6.16 (F-U5-005) — a failed export used to return silently, so
+        // the Export button was indistinguishable from an unwired one.
+        var error = await JS.ExportXlsxAsync(
             "/account/api/admin/speaker-meeting-requests/export",
             new AdminGridExportRequest
             {
                 Ids = selected.Select(row => row.Id).ToList(),
                 Query = selected.Count == 0 ? _query : null,
-            }).AsTask();
+            }, L);
+        if (error is not null) _toast = new Toast("error", error);
+    }
 
     private async Task OnRespondAsync(AdminSpeakerMeetingRequestRow row)
     {

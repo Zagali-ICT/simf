@@ -81,14 +81,19 @@ public partial class SessionSummariesList
     // download via the generic /export proxy. Export only — summaries are
     // drafted / edited / published from this desk's own actions, so there is no
     // import path. Rows are keyed by SessionId (the desk has no separate Id).
-    private Task OnExportAsync(IReadOnlyList<AdminSessionSummaryRow> selected) =>
-        JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+    private async Task OnExportAsync(IReadOnlyList<AdminSessionSummaryRow> selected)
+    {
+        // §6.16 (F-U5-005) — a failed export used to return silently, so
+        // the Export button was indistinguishable from an unwired one.
+        var error = await JS.ExportXlsxAsync(
             "/account/api/admin/session-summaries/export",
             new AdminGridExportRequest
             {
                 Ids = selected.Select(row => row.SessionId).ToList(),
                 Query = selected.Count == 0 ? _query : null,
-            }).AsTask();
+            }, L);
+        if (error is not null) _toast = new Toast("error", error);
+    }
 
     private async Task LoadAsync()
     {

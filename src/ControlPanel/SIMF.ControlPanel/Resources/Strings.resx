@@ -2164,6 +2164,16 @@
   <data name="Admin.RatingConfig.Questions.Delete.Confirm.Title" xml:space="preserve"><value>Delete this question?</value></data>
   <data name="Admin.RatingConfig.Questions.Delete.Confirm.Message" xml:space="preserve"><value>"{0}" will be deactivated.</value></data>
   <data name="Common.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Common.Retry" xml:space="preserve"><value>Try again</value></data>
+  <data name="Grid.Export.Failed" xml:space="preserve"><value>The export could not be generated. Please try again.</value></data>
+  <data name="Grid.Import.BusyTitle" xml:space="preserve"><value>Importing</value></data>
+  <data name="Grid.Import.BusyBody" xml:space="preserve"><value>Uploading and reading the spreadsheet. Please do not close this page.</value></data>
+  <data name="Admin.Logs.LoadFailed" xml:space="preserve"><value>The log files could not be listed.</value></data>
+  <data name="Admin.Logs.TailFailed" xml:space="preserve"><value>The log could not be refreshed, so the text below may be out of date.</value></data>
+  <data name="Account.Notifications.LoadFailed" xml:space="preserve"><value>The notifications could not be loaded.</value></data>
+  <data name="Account.Notifications.MarkReadFailed" xml:space="preserve"><value>The notification could not be marked as read.</value></data>
+  <data name="Account.Notifications.DismissFailed" xml:space="preserve"><value>The notification could not be dismissed.</value></data>
+  <data name="Account.Notifications.BulkDismissedPartial" xml:space="preserve"><value>Dismissed {0} of {1} notifications. The rest could not be dismissed.</value></data>
   <data name="Admin.SessionModerators.Assigned" xml:space="preserve"><value>Moderator assigned.</value></data>
   <data name="Admin.SessionModerators.Required" xml:space="preserve"><value>A session id and a user id are both required, and each must be a valid id.</value></data>
   <data name="Admin.SessionModerators.Col.Session" xml:space="preserve"><value>Session</value></data>

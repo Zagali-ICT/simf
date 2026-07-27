@@ -63,6 +63,9 @@ public sealed class LocalizedLabelCoverageTests
     public void Every_modal_supplies_a_localized_close_label()
     {
         var offenders = OpeningTags("SimfModal")
+            // A HideClose modal renders no X at all — a blocking progress overlay
+            // with nothing to close to. There is no button left to name.
+            .Where(tag => !tag.Text.Contains("HideClose=\"true\"", StringComparison.Ordinal))
             .Where(tag => !tag.Text.Contains("CloseLabel", StringComparison.Ordinal))
             .Select(tag => $"{tag.File}:{tag.Line}")
             .ToList();

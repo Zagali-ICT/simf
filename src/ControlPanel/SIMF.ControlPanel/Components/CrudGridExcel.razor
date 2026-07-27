@@ -9,7 +9,25 @@
 @using SIMF.Contracts.Admin
 
 <input type="file" id="@InputId" accept=".xlsx" class="simf-hidden-input"
-       aria-label="@L["Grid.Import.Picker"]" @onchange="OnFileSelectedAsync" />
+       aria-label="@L["Grid.Import.Picker"]" disabled="@_importing"
+       @onchange="OnFileSelectedAsync" />
+
+@* §6.16 (F-U5-008) — an import upload had no busy state at all: the page just
+   looked frozen and the Import button stayed live, so the same file could be
+   imported twice. RequireExplicitClose with no close handler makes this modal
+   genuinely blocking — Esc and backdrop clicks cannot dismiss it. *@
+@if (_importing)
+{
+    <SimfModal Open="true" RequireExplicitClose="true" HideClose="true"
+               Title="@L["Grid.Import.BusyTitle"]">
+        <ChildContent>
+            <p class="simf-modal__busy">
+                <SimfSpinner Label="@L["Grid.Import.BusyTitle"]" />
+                <span>@L["Grid.Import.BusyBody"]</span>
+            </p>
+        </ChildContent>
+    </SimfModal>
+}
 
 @if (_result is not null)
 {

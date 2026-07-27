@@ -134,6 +134,151 @@ public sealed class SilentFailureTests
             + $"found only {reports} of the expected 8 report sites.");
     }
 
+    [Fact]
+    public void No_page_starts_an_excel_export_without_handling_the_failure()
+    {
+        // §6.16 (F-U5-005) — simfAccount.downloadXlsx used to `return` silently on
+        // any non-OK status, and every call site used InvokeVoidAsync, so the
+        // return value could not have been inspected even if there had been one.
+        // The admin clicked Export, no file arrived, and nothing on the page
+        // changed. CpExport.ExportXlsxAsync is now the only supported entry point;
+        // it returns the localized message to toast, or null on success.
+        var offenders = CpSources()
+            .Where(f => File.ReadAllText(f)
+                .Contains("InvokeVoidAsync(\"simfAccount.downloadXlsx\"", StringComparison.Ordinal))
+            .Select(Relative)
+            .ToList();
+
+        Assert.True(offenders.Count == 0,
+            "§6.16 (F-U5-005): these call downloadXlsx through InvokeVoidAsync, which "
+            + "discards the failure envelope and makes a failed Export look like a dead "
+            + "button. Use JS.ExportXlsxAsync(url, request, L) and toast the result: "
+            + string.Join(", ", offenders));
+    }
+
+    [Fact]
+    public void The_download_helper_reports_a_failure_instead_of_returning_silently()
+    {
+        // The C#-side ratchet above is only meaningful while the JS helper actually
+        // produces a failure envelope to inspect.
+        var js = File.ReadAllText(Path.Combine(
+            RepoRoot, (CpProjectDir + "/wwwroot/js/simf-account.js")
+                .Replace('/', Path.DirectorySeparatorChar)));
+
+        var download = Between(js, "async downloadXlsx(url, body)", "\n    },");
+
+        Assert.DoesNotContain("if (!response.ok) return;", download, StringComparison.Ordinal);
+        Assert.Contains("EXPORT_FAILED", download, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_excel_import_blocks_the_page_while_it_uploads()
+    {
+        // §6.16 (F-U5-008) — a spreadsheet import is neither instant nor idempotent.
+        // With no busy state the page looked frozen and the Import button stayed
+        // live, so a second click imported the same file again and doubled every
+        // created row.
+        var source = File.ReadAllText(Path.Combine(
+            RepoRoot, (CpProjectDir + "/Components/CrudGridExcel.razor.cs")
+                .Replace('/', Path.DirectorySeparatorChar)));
+        var markup = File.ReadAllText(Path.Combine(
+            RepoRoot, (CpProjectDir + "/Components/CrudGridExcel.razor")
+                .Replace('/', Path.DirectorySeparatorChar)));
+
+        Assert.Contains("if (_importing) return;", source, StringComparison.Ordinal);
+        Assert.Contains("_importing = true;", source, StringComparison.Ordinal);
+        Assert.Contains("@if (_importing)", markup, StringComparison.Ordinal);
+        // A blocking overlay with no OnClose must not render a close button that
+        // does nothing — that is the very defect class this sweep is closing.
+        Assert.Contains("HideClose=\"true\"", markup, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Both_log_viewer_loads_report_their_own_failure()
+    {
+        // §6.16 (F-U5-009) — the log viewer had two distinct silent failures: a
+        // failed LIST fell into the same branch as an empty one, so "I could not
+        // reach the log service" rendered as "there are no log files"; and a failed
+        // TAIL assigned null, blanking the pane. With auto-refresh on a 5-second
+        // poll that wiped the text mid-read. Each needs its OWN message — they are
+        // different facts on an incident desk.
+        //
+        // Asserted on the resource KEYS, not on field names: a key only appears
+        // here if the branch that reports it exists.
+        var source = File.ReadAllText(Path.Combine(
+            RepoRoot, (CpProjectDir + "/Components/Pages/Admin/LogsViewer.razor.cs")
+                .Replace('/', Path.DirectorySeparatorChar)));
+
+        Assert.Contains("Admin.Logs.LoadFailed", source, StringComparison.Ordinal);
+        Assert.Contains("Admin.Logs.TailFailed", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_media_library_manage_button_reports_a_failed_detail_fetch()
+    {
+        // §6.16 (F-U5-011) — a failed detail fetch did literally nothing: no modal,
+        // no message, no spinner. The Manage button was indistinguishable from an
+        // unwired one.
+        var source = File.ReadAllText(Path.Combine(
+            RepoRoot, (CpProjectDir + "/Components/Pages/Admin/MediaLibraryList.razor.cs")
+                .Replace('/', Path.DirectorySeparatorChar)));
+
+        var details = Between(source, "private async Task OnDetailsAsync", "\r\n    }");
+
+        Assert.Contains("_toast = new Toast(\"error\"", details, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_registration_gate_page_separates_loading_from_failed()
+    {
+        // §6.16 (F-U5-007) — "Loading…" keyed off `_gate is null`, which is also
+        // true after a FAILED load, so the page read "Loading…" indefinitely.
+        var markup = File.ReadAllText(Path.Combine(
+            RepoRoot, (CpProjectDir + "/Components/Pages/Admin/OperationsToggles.razor")
+                .Replace('/', Path.DirectorySeparatorChar)));
+
+        Assert.DoesNotContain("@if (_gate is null)", markup, StringComparison.Ordinal);
+        Assert.DoesNotContain("@if (_archive is null)", markup, StringComparison.Ordinal);
+        Assert.Contains("@if (_loading)", markup, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Bulk_dismissing_notifications_counts_what_actually_succeeded()
+    {
+        // §6.16 (F-U5-006) — the loop discarded every per-row result and reported
+        // "Dismissed N notifications." unconditionally, so an admin whose N deletes
+        // ALL failed was told they had all succeeded.
+        var source = File.ReadAllText(Path.Combine(
+            RepoRoot, (CpProjectDir + "/Components/Pages/Account/Notifications.razor.cs")
+                .Replace('/', Path.DirectorySeparatorChar)));
+
+        var bulk = Between(source, "private async Task OnBulkDeleteAsync", "\r\n    }");
+
+        Assert.Contains("dismissed++", bulk, StringComparison.Ordinal);
+        Assert.Contains("BulkDismissedPartial", bulk, StringComparison.Ordinal);
+        Assert.Contains("dismissed == 0", bulk, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_dark_theme_gives_the_reserved_seat_its_own_colour()
+    {
+        // §6.16 (DT-003) — the seat palette is the mobile app's, picked against a
+        // LIGHT board. --color-seat-free aliases --color-surface-sunken, so in dark
+        // theme the reserved seat (#01132D) sat at 1.10:1 against the board and,
+        // because the seat sets its border to the same colour, rendered as a hole
+        // in the grid while the free seat kept a visible border.
+        var tokens = File.ReadAllText(Path.Combine(
+            RepoRoot, "src/Shared/SIMF.Components/wwwroot/css/theme.tokens.css"
+                .Replace('/', Path.DirectorySeparatorChar)));
+
+        var dark = Between(tokens, "[data-theme=\"dark\"] {", "\n}");
+
+        Assert.Contains("--color-seat-admin:", dark, StringComparison.Ordinal);
+        Assert.Contains("--color-seat-random:", dark, StringComparison.Ordinal);
+        // Random has to go light enough that a white label stops reading on it.
+        Assert.Contains("--color-seat-random-contrast:", dark, StringComparison.Ordinal);
+    }
+
     // ----------------------------------------------------------------------
 
     private static IEnumerable<string> CpSources() =>

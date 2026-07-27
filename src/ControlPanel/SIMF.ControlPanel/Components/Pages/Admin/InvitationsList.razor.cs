@@ -154,14 +154,19 @@ public partial class InvitationsList
     // D-356 — Excel export (selected rows, or the current filtered set). Direct
     // download via the generic /export proxy. Export only — invitations are
     // created/edited from the CP forms, so there is no import path.
-    private Task OnExportAsync(IReadOnlyList<AdminInvitationSummary> selected) =>
-        JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+    private async Task OnExportAsync(IReadOnlyList<AdminInvitationSummary> selected)
+    {
+        // §6.16 (F-U5-005) — a failed export used to return silently, so
+        // the Export button was indistinguishable from an unwired one.
+        var error = await JS.ExportXlsxAsync(
             "/account/api/admin/invitations/export",
             new AdminGridExportRequest
             {
                 Ids = selected.Select(row => row.Id).ToList(),
                 Query = selected.Count == 0 ? _query : null,
-            }).AsTask();
+            }, L);
+        if (error is not null) _toast = new Toast("error", error);
+    }
 
     private async Task OnSavedAsync(AdminInvitationDetail saved)
     {

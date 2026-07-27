@@ -72,7 +72,9 @@
 .seatgrid__seat--random {
     background: var(--color-seat-random);
     border-color: var(--color-seat-random);
-    color: var(--color-seat-contrast);
+    /* §6.16 (DT-003) — its own contrast token: the dark theme lightens this
+       seat past the point where a white label reads. */
+    color: var(--color-seat-random-contrast);
 }
 
 /* Reserved seats are clickable (to release); free seats are not. */

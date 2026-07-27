@@ -1534,6 +1534,15 @@
   line-height: var(--line-height-body);
 }
 
+/* §6.16 (F-U5-008) — the body of a blocking progress modal: spinner beside the
+   message, on one baseline. Used by the Excel-import overlay. */
+.simf-modal__busy {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+}
+
 .simf-modal__footer {
   display: flex;
   justify-content: flex-end;

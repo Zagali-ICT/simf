@@ -58,14 +58,19 @@ public partial class SessionModeratorsList
     // D-356 — Excel export (selected rows, or the current filtered set). Direct
     // download via the generic /export proxy. Export only — grants are managed
     // in place via assign/revoke; the row's UserId is the selectable id.
-    private Task OnExportAsync(IReadOnlyList<AdminSessionModeratorRow> selected) =>
-        JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+    private async Task OnExportAsync(IReadOnlyList<AdminSessionModeratorRow> selected)
+    {
+        // §6.16 (F-U5-005) — a failed export used to return silently, so
+        // the Export button was indistinguishable from an unwired one.
+        var error = await JS.ExportXlsxAsync(
             "/account/api/admin/session-moderators/export",
             new AdminGridExportRequest
             {
                 Ids = selected.Select(row => row.UserId).ToList(),
                 Query = selected.Count == 0 ? _query : null,
-            }).AsTask();
+            }, L);
+        if (error is not null) _toast = new Toast("error", error);
+    }
 
     private string FormatSummary(int skip, int taken, int total) =>
         string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);

@@ -32,6 +32,13 @@ public partial class LogsViewer
     private bool _loadingTail;
     private System.Timers.Timer? _timer;
 
+    /// <summary>§6.16 (F-U5-009) — the load error, when either call fails.
+    /// A failed LIST used to render as "no log files" and a failed TAIL used to
+    /// blank the pane, so an admin diagnosing an incident was shown "there is
+    /// nothing here" when the truth was "I could not ask". With auto-refresh on
+    /// a 5-second poll, a transient failure also wiped the text mid-read.</summary>
+    private string? _error;
+
     protected override async Task OnInitializedAsync()
     {
         await LoadListAsync();
@@ -45,8 +52,18 @@ public partial class LogsViewer
         {
             var envelope = await JS.InvokeAsync<ApiResult<LogListResponse>>(
                 "simfAccount.getJson", "/account/api/admin/logs/list");
-            _list = envelope is { Success: true, Data: not null } ? envelope.Data : null;
-            if (_list is not null && _list.Projects.Count > 0)
+            if (envelope is { Success: true, Data: not null })
+            {
+                _list = envelope.Data;
+                _error = null;
+            }
+            else
+            {
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Logs.LoadFailed"];
+                return;
+            }
+            if (_list.Projects.Count > 0)
             {
                 _selectedProject = _list.Projects[0].Name;
                 var first = CurrentProjectFiles().FirstOrDefault();
@@ -130,7 +147,19 @@ public partial class LogsViewer
                 + $"&lines={_lineCount}";
             var envelope = await JS.InvokeAsync<ApiResult<LogTailResponse>>(
                 "simfAccount.getJson", url);
-            _tail = envelope is { Success: true, Data: not null } ? envelope.Data : null;
+            if (envelope is { Success: true, Data: not null })
+            {
+                _tail = envelope.Data;
+                _error = null;
+            }
+            else
+            {
+                // Report it, and KEEP the last good content. Blanking the pane
+                // on every failed 5-second poll would destroy the text the
+                // admin is reading; the banner says the view is stale.
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Logs.TailFailed"];
+            }
         }
         finally { _loadingTail = false; }
     }

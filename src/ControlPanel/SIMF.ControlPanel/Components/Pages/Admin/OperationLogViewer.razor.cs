@@ -117,9 +117,14 @@ public partial class OperationLogViewer
 
     // P1.6 — download the filtered result set as XLSX. The browser saves the
     // file; the BFF streams the workbook bytes (no ApiResult envelope).
-    private async Task OnExportAsync() =>
-        await JS.InvokeVoidAsync("simfAccount.downloadXlsx",
-            "/account/api/admin/operation-log/export", ApplyFilterValues(_query));
+    private async Task OnExportAsync()
+    {
+        // §6.16 (F-U5-005) — a failed export used to return silently, so
+        // the Export button was indistinguishable from an unwired one.
+        var error = await JS.ExportXlsxAsync(
+            "/account/api/admin/operation-log/export", ApplyFilterValues(_query), L);
+        if (error is not null) _toast = new Toast("error", error);
+    }
 
     private async Task OnDetailsAsync(AdminOperationLogSummary row)
     {

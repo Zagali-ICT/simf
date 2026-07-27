@@ -2157,6 +2157,16 @@
   <data name="Admin.RatingConfig.Questions.Delete.Confirm.Title" xml:space="preserve"><value>حذف السؤال؟</value></data>
   <data name="Admin.RatingConfig.Questions.Delete.Confirm.Message" xml:space="preserve"><value>سيتم تعطيل "{0}".</value></data>
   <data name="Common.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Common.Retry" xml:space="preserve"><value>إعادة المحاولة</value></data>
+  <data name="Grid.Export.Failed" xml:space="preserve"><value>تعذر إنشاء ملف التصدير. يرجى المحاولة مرة أخرى.</value></data>
+  <data name="Grid.Import.BusyTitle" xml:space="preserve"><value>جارٍ الاستيراد</value></data>
+  <data name="Grid.Import.BusyBody" xml:space="preserve"><value>يجري رفع الملف وقراءته. يرجى عدم إغلاق هذه الصفحة.</value></data>
+  <data name="Admin.Logs.LoadFailed" xml:space="preserve"><value>تعذر عرض قائمة ملفات السجل.</value></data>
+  <data name="Admin.Logs.TailFailed" xml:space="preserve"><value>تعذر تحديث السجل، وقد يكون النص أدناه غير محدّث.</value></data>
+  <data name="Account.Notifications.LoadFailed" xml:space="preserve"><value>تعذر تحميل الإشعارات.</value></data>
+  <data name="Account.Notifications.MarkReadFailed" xml:space="preserve"><value>تعذر تعليم الإشعار كمقروء.</value></data>
+  <data name="Account.Notifications.DismissFailed" xml:space="preserve"><value>تعذر تجاهل الإشعار.</value></data>
+  <data name="Account.Notifications.BulkDismissedPartial" xml:space="preserve"><value>تم تجاهل {0} من {1} إشعارات. وتعذر تجاهل الباقي.</value></data>
   <data name="Admin.SessionModerators.Assigned" xml:space="preserve"><value>تم تعيين المشرف.</value></data>
   <data name="Admin.SessionModerators.Required" xml:space="preserve"><value>معرّف الجلسة ومعرّف المستخدم مطلوبان معاً، ويجب أن يكون كل منهما معرّفاً صحيحاً.</value></data>
   <data name="Admin.SessionModerators.Col.Session" xml:space="preserve"><value>الجلسة</value></data>

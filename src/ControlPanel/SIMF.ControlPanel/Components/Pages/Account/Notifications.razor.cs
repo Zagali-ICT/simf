@@ -53,6 +53,14 @@ public partial class Notifications
             {
                 _page = envelope.Data;
             }
+            else
+            {
+                // §6.16 (F-U5-006) — a failed fetch used to leave the last page
+                // on screen with no hint it was stale.
+                _toast = new Toast("error",
+                    envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Account.Notifications.LoadFailed"]);
+            }
         }
         finally { _loading = false; }
     }
@@ -61,26 +69,44 @@ public partial class Notifications
     {
         if (row.ReadAt is null)
         {
-            await JS.InvokeAsync<ApiResult<bool>>(
+            // §6.16 (F-U5-006) — only paint the row as read if the server
+            // actually recorded it. The optimistic update used to run
+            // unconditionally, so a failed mark-read left the list showing
+            // "read" while the bell count stayed stubbornly unchanged.
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
                 "simfAccount.postJson", $"/account/api/notifications/{row.Id}/read", null);
-
-            var updated = row with { ReadAt = DateTimeOffset.UtcNow, IsRead = true };
-            _page = new GridPage<NotificationDto>
+            if (env is { Success: true })
             {
-                Items = _page.Items.Select(n => n.Id == row.Id ? updated : n).ToList(),
-                Total = _page.Total,
-                Skip = _page.Skip,
-                Top = _page.Top,
-            };
-            if (BellRefresh is not null) await BellRefresh();
+                var updated = row with { ReadAt = DateTimeOffset.UtcNow, IsRead = true };
+                _page = new GridPage<NotificationDto>
+                {
+                    Items = _page.Items.Select(n => n.Id == row.Id ? updated : n).ToList(),
+                    Total = _page.Total,
+                    Skip = _page.Skip,
+                    Top = _page.Top,
+                };
+                if (BellRefresh is not null) await BellRefresh();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Account.Notifications.MarkReadFailed"]);
+            }
         }
         _detailsTarget = row;
     }
 
     private async Task OnDeleteAsync(NotificationDto row)
     {
-        await JS.InvokeAsync<ApiResult<bool>>(
+        var env = await JS.InvokeAsync<ApiResult<bool>>(
             "simfAccount.deleteJson", $"/account/api/notifications/{row.Id}");
+        if (env is not { Success: true })
+        {
+            _toast = new Toast("error",
+                env?.Error?.MessageForCurrentCulture()
+                ?? L["Account.Notifications.DismissFailed"]);
+        }
         await LoadAsync();
         if (BellRefresh is not null) await BellRefresh();
     }
@@ -89,22 +115,61 @@ public partial class Notifications
     {
         // No bulk-dismiss endpoint exists yet; loop the per-row delete.
         // Latency is acceptable — selection caps at the visible page.
+        //
+        // §6.16 (F-U5-006) — every per-row result used to be discarded and the
+        // page reported "N dismissed" unconditionally, so an admin whose N
+        // deletes ALL failed was told they had all succeeded. Count them.
+        var dismissed = 0;
+        string? firstError = null;
         foreach (var row in rows)
         {
-            await JS.InvokeAsync<ApiResult<bool>>(
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
                 "simfAccount.deleteJson", $"/account/api/notifications/{row.Id}");
+            if (env is { Success: true })
+            {
+                dismissed++;
+            }
+            else
+            {
+                firstError ??= env?.Error?.MessageForCurrentCulture();
+            }
         }
-        _toast = new Toast("success",
-            string.Format(L["Account.Notifications.BulkDismissed"], rows.Count));
+
+        if (dismissed == rows.Count)
+        {
+            _toast = new Toast("success",
+                string.Format(L["Account.Notifications.BulkDismissed"], dismissed));
+        }
+        else if (dismissed == 0)
+        {
+            _toast = new Toast("error",
+                firstError ?? L["Account.Notifications.DismissFailed"]);
+        }
+        else
+        {
+            // A partial result is its own outcome — saying "12 dismissed" when
+            // 3 of them are still there is the same lie in a smaller size.
+            // "error" (not info): SimfAlert has no warning variant, and some of
+            // what the admin asked for did not happen, so it is announced
+            // assertively rather than styled as a neutral note.
+            _toast = new Toast("error",
+                string.Format(L["Account.Notifications.BulkDismissedPartial"],
+                    dismissed, rows.Count));
+        }
+
         await LoadAsync();
         if (BellRefresh is not null) await BellRefresh();
     }
 
     private async Task MarkAllReadAsync()
     {
-        await JS.InvokeAsync<ApiResult<bool>>(
+        var env = await JS.InvokeAsync<ApiResult<bool>>(
             "simfAccount.postJson", "/account/api/notifications/read-all", null);
-        _toast = new Toast("success", L["Account.Notifications.MarkAllReadDone"]);
+        _toast = env is { Success: true }
+            ? new Toast("success", L["Account.Notifications.MarkAllReadDone"])
+            : new Toast("error",
+                env?.Error?.MessageForCurrentCulture()
+                ?? L["Account.Notifications.MarkReadFailed"]);
         await LoadAsync();
         if (BellRefresh is not null) await BellRefresh();
     }
