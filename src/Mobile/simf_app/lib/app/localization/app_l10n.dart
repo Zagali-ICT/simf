@@ -2395,9 +2395,15 @@ class AppL10n {
         'تعذر إرسال سؤالك. حاول مرة أخرى.',
         'Could not send your question. Try again.',
       );
+  // A17 — the copy promised a review that does not happen for a LIVE question.
+  // `SessionQuestionService.SubmitAsync` only screens (AI, advisory) and
+  // queues for the Scientific Committee when the question is asked BEFORE the
+  // session starts; once it is live the question lands Approved with no AI and
+  // no committee, and the session's moderator alone decides what is pushed on
+  // air. The string now names the gate that is always real — the moderator.
   String get sendQuestionWindowHint => _t(
-        'تتم مراجعة الأسئلة قبل عرضها على الهواء.',
-        'Questions are reviewed before going on air.',
+        'يختار مشرف الجلسة الأسئلة التي تُعرض على الهواء.',
+        'The session moderator picks which questions go on air.',
       );
 
   // (D-605/D-609: the Audience-comments (Page 028) l10n strings were removed

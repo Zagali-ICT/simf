@@ -2,7 +2,9 @@
 //        round-trip, get-empty-when-not-saved-yet, nationality-unknown,
 //        D-374 Me_profileComplete flip + male-without-photo, D-609
 //        DisplayName-placeholder-replaced + admin-name-preserved, D-611
-//        RegionId round-trip + optional + unknown/inactive → 400)
+//        RegionId round-trip + optional + unknown/inactive → 400,
+//        DEF-PHN-003 mobile stored canonicalised [Saudi theory + international],
+//        DEF-PHN-004 mobile required / cannot be blanked / international-only OK)
 //        SIMF.Api.Tests/UserProfileRollbackTests.cs (H16 — transaction rollback)
 //        SIMF.Api.Tests/GateOperatorModelTests.cs (BUG-018 — an operational
 //        (IsForVisitor=false) profile type is exempt from the visitor
@@ -293,8 +295,14 @@ internal sealed class UserProfileService(
             throw ApiException.DuplicateIdentity();
         }
 
-        profile.SaudiMobile = NormaliseOptional(request.SaudiMobile);
-        profile.InternationalMobile = NormaliseOptional(request.InternationalMobile);
+        // DEF-PHN-003 — store the CANONICAL number (separators stripped, a
+        // leading `00` rewritten to `+`), not the raw text. A plain trim let the
+        // one column hold "+966501234567" from the app and "+966-555987654" from
+        // the Control-Panel / Website phone input — two spellings of one number.
+        // Same reasoning (and the same shared-normaliser shape) as the plate below.
+        profile.SaudiMobile = MobileNumber.NormalizeOptional(request.SaudiMobile);
+        profile.InternationalMobile =
+            MobileNumber.NormalizeOptional(request.InternationalMobile);
         // C6 — D-371: رقم اللوحة, stored normalized (validator-checked shape;
         // separators stripped so the column holds the canonical ≤7 chars).
         profile.PlateNumber = NormalisePlate(request.PlateNumber);

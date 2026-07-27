@@ -57,6 +57,27 @@ else
                     ValueChanged="OnNationalityPicked" />
         <p class="simf-form__hint">@L["Admin.Edit.Nationality.Hint"]</p>
 
+        @* FR-PHN-002 — the mobile numbers. Every other admin surface shows them
+           read-only and only the walk-in CREATE desk had an editable field, so a
+           wrong number could never be corrected. Leaving a field empty sends
+           nothing and leaves the stored number untouched. Same shapes as the
+           self-service rule; the same SimfTextField/tel pattern the walk-in desk
+           uses (not SimfPhoneInput, whose "+dial-local" output is exactly the
+           second spelling DEF-PHN-003 canonicalises away). *@
+        <SimfTextField Label="@L["Admin.Edit.SaudiMobile"]"
+                       Helper="@L["Admin.Edit.Mobile.Hint"]"
+                       Type="tel" InputMode="tel" Autocomplete="off" MaxLength="32"
+                       Value="@_saudiMobile"
+                       ValueChanged="@(v => _saudiMobile = v)"
+                       ValueExpression="@(() => _saudiMobile)" />
+
+        <SimfTextField Label="@L["Admin.Edit.InternationalMobile"]"
+                       Helper="@L["Admin.Edit.Mobile.Hint"]"
+                       Type="tel" InputMode="tel" Autocomplete="off" MaxLength="32"
+                       Value="@_internationalMobile"
+                       ValueChanged="@(v => _internationalMobile = v)"
+                       ValueExpression="@(() => _internationalMobile)" />
+
         <p class="simf-form__hint">@L["Admin.Edit.EmailChangeNote"]</p>
 
         @* Bi-Meeting rework — the two admin-assigned per-user meeting-eligibility flags.

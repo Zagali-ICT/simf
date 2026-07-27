@@ -124,19 +124,20 @@ Scenario: An approved visitor enables/disables Face-ID sign-in from My Area
 
 **Evidence:** `biometric_auth_test.dart` — `FaceIdToggleTile` hidden-when-unavailable / toggle-on enrols + flips on / toggle-off **confirm→revoke+flip** / **cancel→keep** (green). The OS biometric prompt itself is the owner's on-device test.
 
-### E2E-MOB014-015 — Saved stat tiles → Coming soon (owner 2026-06-21)
+### E2E-MOB014-015 — Saved stat tiles are display-only (D-653 / D-609 / B18)
 
 ```gherkin
-Scenario: The الإحصائيات stat tiles open the Coming-soon placeholder
+Scenario: The الإحصائيات stat tiles show counts and are not tappable
   Given an approved visitor on /my-area
-  Then the مقابلات and جلسات محفوظة tiles still show their live counts
-  When they tap the جلسات محفوظة tile
-  Then the ComingSoon placeholder for "Saved sessions" / "الجلسات المحفوظة" opens
-  When they go back and tap the مقابلات tile
-  Then the ComingSoon placeholder for "Saved meetings" / "المقابلات المحفوظة" opens
+  Then the مقابلات and جلسات محفوظة tiles show their live counts
+  And neither tile carries an onTap — there is no drill-down to open
 ```
 
-**Evidence:** `ksa_shell_test.dart` — `KsaStatTile` fires its `onTap` (green); the tiles are wired to the `savedSessions` / `savedMeetings` ComingSoon routes in `my_area_screen.dart`.
+**Evidence:** `my_area_dashboard_body.dart` builds both `SimfStatTile`s with a
+`value` + `label` and **no** `onTap` (D-653, owner: display-only). The drill-down
+list screens were retired by D-609; **B18 (2026-07-27)** then deleted the last
+dangling sentinel routes, `savedMeetings` (206) and `bilateralMeetings` (204),
+which had no screen and no caller left. `savedSessions` (205) went with D-609.
 
 ### E2E-MOB014-011 — Update ID photo — 🗑️ REMOVED (D-654, owner)
 

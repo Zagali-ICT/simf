@@ -104,7 +104,7 @@
 | E2E-MOB017-017 | CTA row — تذكير (outlined) + أضف إلى تقويمي (gold) order and toasts | happy | P1 | authored ✓ (Figma 897:2872 re-skin) |
 | E2E-MOB017-018 | رابط الجلسة — **state-gated (owner 2026-07-14)**: both header buttons keep their slots, but رابط الجلسة is ACTIVE only while the session is LIVE **and** carries a `liveStreamUrl` (streaming) — greyed/inert otherwise; when active it opens Live (25) | happy | P1 | authored ✓ (`…session link opens the live screen while the session is live + streaming`; body-gate tests future+feed→inactive) |
 | E2E-MOB017-019 | ملخص الجلسة — **state-gated (owner 2026-07-14)**: ACTIVE only once the session has ENDED (a future/live session has no محضر → greyed/inert); when active it opens AI summary (34) | happy | P1 | authored ✓ (`…summary button opens the AI session summary once the session has ended`; body-gate tests future→inactive / ended→active) |
-| E2E-MOB017-020 | اسأل المحاور card — **gated on joining (#3)**: enabled (opens Send question #26) only once the user has **joined** the session (holds a booking, NOT physical check-in); not joined → the card is disabled with a "Join the session to ask a question" hint and the tap is inert | happy/auth | P1 | authored ✓ (Figma 1056:12876; `#3 — a joined user can ask…` + `#3 — pre-ask is gated on joining…`) |
+| E2E-MOB017-020 | اسأل المحاور card — **NO join gate (#7 / D-733 superseded #3)**: enabled (opens Send question #26) for **any approved account** whose seat map has loaded, with or without a booking — the owner dropped the D-485 join/booking requirement for the pre-start ask ("anyone before start"). Only a **guest / pending** account (no seat map) sees it disabled, as the sign-in nudge. The `askHostJoinFirst` ("Join the session to ask a question") string is consequently **unreferenced by design** — see the A21 note below | happy/auth | P1 | authored ✓ (Figma 1056:12876; `#3 — a joined user can ask: the ask card opens send-question` + `#7 — an approved user can ask a FUTURE session without a booking (no join gate)`) |
 | E2E-MOB017-026 | **Pre-session ask label (D-714 GAP-2)** — while the session is **upcoming** (`now < start`) the ask card reads the distinct pre-session label "اطرح سؤالاً قبل الجلسة" / "Ask a question before it starts" (mode B, `Phase=Pre`); once **live/started** it reverts to "اسأل المحاور" / "Ask the host" (mode A). The backend derives the phase + enforces the [start−5min, end] window either way | happy/i18n | P1 | authored ✓ (screen `a live (already started) session shows the "Ask the host" label` + the ask-label tests; golden `session_detail_889-2450` shows the pre-session label) |
 | E2E-MOB017-021 | Speaker country flag — `CountryId` 682 → 🇸🇦 emoji beside the name | happy | P2 | authored ✓ (`…renders its flag emoji`; `core/country_flag.dart`) |
 | E2E-MOB017-022 | **Join CTA (D-485; label + alert D-750)** — an approved user with no reservation sees a Join section, branched by the session's effective mode: assigned-seat → "الانضمام إلى الجلسة" / "Join the session" opens the seat picker; open-seating → the CTA reads "سجل لحضور الجلسة" / "Register to attend the session" and confirms then joins (Approved — confirmed immediately, no CP approval), showing a one-button success **alert** (`joinOpenSuccessBody`: "registering is not a seat reservation … confirmed at check-in") instead of a snackbar | happy | P1 | authored ✓ (widget — assigned→picker / open→register-label+confirm→join+success-alert; `D-750 — signed-in, open-seating …`) |
@@ -388,7 +388,26 @@ Scenario: The ask-the-host card opens send-question for everyone
   When the user taps it
   Then Send question (26) opens at /live/question?sessionId={id}
   And a guest tapping it is routed to sign-in by the auth gate (the route is login-only)
+
+Scenario: No join/booking gate on the pre-start ask (#7 / D-733)
+  Given an APPROVED account on an upcoming session
+  And the account holds NO reservation (the seat map loaded, myCell is null)
+  Then the ask card is ENABLED
+  And no "Join the session to ask a question" hint is shown
 ```
+
+**A21 (2026-07-27) — refuted, no change made.** The QA note read the card's
+`enabled: seatMap != null` as a bug that made the `askHostJoinFirst` hint
+unreachable, and asked for the "join the session first" gate to be restored.
+It is **unreachable by design**: owner batch item **#7 (D-733, 2026-07-10)**
+explicitly dropped the D-485 join/booking requirement for the pre-start ask
+("anyone before start"), and `session_detail_screen_test.dart` guards that with
+`#7 — an approved user can ask a FUTURE session without a booking (no join
+gate)`, which asserts the hint is **not** shown. Re-gating on `seatMap?.myCell`
+reverses D-733 and turns that regression test red. The stale artefact was this
+row's own "gated on joining (#3)" wording, corrected above. The now-unreferenced
+`askHostJoinFirst` string is left in place for the owner to retire or reuse — a
+dead string is not a reason to reverse a shipped decision.
 
 ### E2E-MOB017-021 — Speaker country flag (core/country_flag.dart)
 

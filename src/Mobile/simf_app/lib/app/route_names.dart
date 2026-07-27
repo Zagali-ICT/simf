@@ -122,13 +122,11 @@ class RouteNames {
   // (D-609: myMeetings + myAreaSessions route names removed — their screens are
   // backed up as `.bk` and their routes + My-Area/More entry points are gone.)
 
-  // Owner batch (2026-06-21) — entry points whose feature is not designed/built
-  // yet, so they render the ComingSoon placeholder (sentinel numbers 200+):
-  //   • bilateralMeetings (اللقاءات الثنائية) — home tile, not designed yet (#5).
-  //   • savedMeetings — My Area stat tile, not built yet (#8).
-  //   (D-609: savedSessions removed — screen backed up as `.bk`.)
-  static const String bilateralMeetings = 'bilateralMeetings';
-  static const String savedMeetings = 'savedMeetings';
+  // (B18: bilateralMeetings + savedMeetings removed with routes 204 / 206 —
+  //  ComingSoon sentinels with no screen and no caller left. The Home
+  //  "اللقاءات الثنائية" tile opens the real VIP [meetings] page (D-745); the
+  //  My-Area saved-meetings stat went with the D-609 screen deletion, which had
+  //  already removed savedSessions the same way.)
 
   // FDS-014 visitor contact sharing (D-286 API; additive, not mockup-numbered).
   // Reached from More / My Area; all three require an Approved account.

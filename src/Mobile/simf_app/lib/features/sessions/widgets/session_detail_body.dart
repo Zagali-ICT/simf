@@ -130,8 +130,16 @@ class SessionDetailBody extends StatelessWidget {
                 ? l10n.askHostPreSession
                 : l10n.liveAskQuestion,
             onTap: onAskHost,
-            // Approved accounts may ask; a guest / pending account (no seat map)
-            // sees it disabled.
+            // A21 (2026-07-27) — REFUTED, deliberately left as-is. The ask is
+            // enabled for any approved account (a loaded seat map) and passes
+            // NO `disabledHint`, because owner decision #7 / D-733 DROPPED the
+            // D-485 join/booking requirement for the pre-start ask ("anyone
+            // before start"). `askHostJoinFirst` is therefore unreachable BY
+            // DESIGN, not by accident — re-gating on `seatMap?.myCell` would
+            // reverse D-733 and breaks its regression test
+            // (`#7 — an approved user can ask a FUTURE session without a
+            // booking`). A guest / pending account (no seat map) still lands
+            // on the disabled branch — the sign-in nudge.
             enabled: seatMap != null,
           ),
         ],

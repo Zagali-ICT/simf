@@ -442,6 +442,8 @@ public sealed class GateOperatorModelTests : IClassFixture<SimfApiFactory>
             IsSaudi = true,
             NationalId = TestIdentity.MintNationalId(),
             OrganisationId = organisationId,
+            // DEF-PHN-004 — the mobile is required on the upsert now.
+            SaudiMobile = "0501234567",
         };
     }
 

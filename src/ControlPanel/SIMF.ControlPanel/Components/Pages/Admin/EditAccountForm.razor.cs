@@ -64,6 +64,11 @@ public partial class EditAccountForm
     private IReadOnlyList<CountryDto> _countries = new List<CountryDto>();
     private string _nationalityCode = string.Empty;
 
+    // FR-PHN-002 — the mobile correction. Prefilled from the loaded profile;
+    // an empty field sends nothing and leaves the stored number untouched.
+    private string _saudiMobile = string.Empty;
+    private string _internationalMobile = string.Empty;
+
     private bool _loading = true;
     private bool _busy;
     private string? _loadError;
@@ -113,6 +118,14 @@ public partial class EditAccountForm
     // Null when nothing is picked, so the server leaves the stored nationality alone.
     private string? NationalityCodeForSave =>
         string.IsNullOrWhiteSpace(_nationalityCode) ? null : _nationalityCode;
+
+    // FR-PHN-002 — an empty field means "no change" (the server's contract), so a
+    // desk correcting only the email never wipes the number.
+    private string? SaudiMobileForSave =>
+        string.IsNullOrWhiteSpace(_saudiMobile) ? null : _saudiMobile.Trim();
+
+    private string? InternationalMobileForSave =>
+        string.IsNullOrWhiteSpace(_internationalMobile) ? null : _internationalMobile.Trim();
 
     private static string CountryLabel(CountryDto c) =>
         CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
@@ -187,6 +200,8 @@ public partial class EditAccountForm
             _hasAvatar = envelope.Data.HasAvatar;
             _hasIdImage = envelope.Data.HasIdImage;
             _nationalityCode = envelope.Data.NationalityCode ?? string.Empty;
+            _saudiMobile = envelope.Data.SaudiMobile ?? string.Empty;
+            _internationalMobile = envelope.Data.InternationalMobile ?? string.Empty;
         }
         else
         {
@@ -230,6 +245,8 @@ public partial class EditAccountForm
                     AllowsSpeakerMeeting = _allowsSpeakerMeeting,
                     AllowsDelegationMeeting = _allowsDelegationMeeting,
                     NationalityCode = NationalityCodeForSave,
+                    SaudiMobile = SaudiMobileForSave,
+                    InternationalMobile = InternationalMobileForSave,
                 }
                 : new AdminUpdateOtherRequest
                 {
@@ -239,6 +256,8 @@ public partial class EditAccountForm
                     AllowsSpeakerMeeting = _allowsSpeakerMeeting,
                     AllowsDelegationMeeting = _allowsDelegationMeeting,
                     NationalityCode = NationalityCodeForSave,
+                    SaudiMobile = SaudiMobileForSave,
+                    InternationalMobile = InternationalMobileForSave,
                 };
 
             var envelope = await JS.InvokeAsync<ApiResult<bool>>(
