@@ -56,6 +56,18 @@ public interface ISeatReservationService
         SetHallSeatLayoutRequest request,
         CancellationToken cancellationToken = default);
 
+    /// <summary>B15 — remove the hall's seat layout entirely, converting the hall
+    /// back to general admission (no seat picker; <c>EffectiveMode</c> falls to
+    /// <c>OpenSeating</c> for every session in it). A hall with no layout is a 404
+    /// <c>SEAT_LAYOUT_MISSING</c>. Refuses with 409
+    /// <c>SEAT_LAYOUT_HAS_RESERVATIONS</c> — naming how many block it — when any
+    /// active seat-specific reservation exists across the hall's sessions, the same
+    /// rule <c>SetLayoutAsync</c> applies when a change would strand a seat: the
+    /// operator releases those seats first. Returns the now-empty snapshot.</summary>
+    Task<HallSeatLayoutSnapshot> DeleteLayoutAsync(
+        Guid actorUserId, Guid hallId,
+        CancellationToken cancellationToken = default);
+
     Task AdminReserveRowAsync(
         Guid actorUserId, Guid sessionId,
         AdminReserveRowRequest request,

@@ -2449,6 +2449,15 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
+    /// <summary>B15 — remove the hall's seat layout (the hall reverts to general
+    /// admission). Returns the now-empty snapshot.</summary>
+    public Task<ApiCallResult<HallSeatLayoutSnapshot>> DeleteHallSeatLayoutAsync(
+        Guid hallId, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<HallSeatLayoutSnapshot>(
+            HttpMethod.Delete, $"halls/{hallId}/seat-layout", content: null,
+            accessToken, cancellationToken);
+
     public Task<ApiCallResult<GridPage<SessionSeatCell>>> ListSessionSeatReservationsAsync(
         Guid sessionId, GridQuery query, string accessToken,
         CancellationToken cancellationToken = default) =>

@@ -730,3 +730,42 @@ Scenario: re-home the session first and the hall deactivates normally
 
 _Last reviewed:_ 2026-07-27 by Claude (QA B16 follow-up — the occupancy view now filters `isActive` so a soft-deleted session no longer reads as a live booking, and a capped page says so; E2E-HAL-029/030). Prior: 2026-07-26 by Claude (QA B16 — hall occupancy view; E2E-HAL-026..028). Prior: 2026-07-11 by Claude (W4 on-site remediation — H-3 capacity-shrink guard; E2E-HAL-025). Prior: 2026-06-26 by Claude (D-506 — Excel export/import field-drop fix: EquipmentNotes + geofence triple + SeatSelectionMode now round-trip; scenario E2E-HAL-024 added, E2E-HAL-020/021 column lists reconciled). Prior: 2026-06-10 (D-356 Phase 5 — Excel export/import + D-353 Page<->Popup toggle scenarios E2E-HAL-017..022; E2E-HAL-001 deactivate step reconciled to the CrudShell + SimfConfirm gate).
 _Last reviewed:_ 2026-07-26 by Claude (session-lifecycle QA package — A37 hall in-use deactivation guard, `HALL_IN_USE` now enforced rather than reserved; E2E-HAL-026). Prior: 2026-07-11 by Claude (W4 on-site remediation — H-3 capacity-shrink guard; E2E-HAL-025). Prior: 2026-06-26 by Claude (D-506 — Excel export/import field-drop fix: EquipmentNotes + geofence triple + SeatSelectionMode now round-trip; scenario E2E-HAL-024 added, E2E-HAL-020/021 column lists reconciled). Prior: 2026-06-10 (D-356 Phase 5 — Excel export/import + D-353 Page<->Popup toggle scenarios E2E-HAL-017..022; E2E-HAL-001 deactivate step reconciled to the CrudShell + SimfConfirm gate).
+
+---
+
+## QA A40 — the seat-layout row action
+
+| Id | Scenario | Category | Priority | Status |
+|----|----------|----------|----------|--------|
+| E2E-HAL-031 | A "Seat layout" row action deep-links each hall to its seat-layout editor; it is hidden from an admin without `SeatLayouts.View` | happy | P0 | authored ✓ (`HallsListSeatLayoutActionTests`) |
+
+### E2E-HAL-031 — jump from a hall row to its seat layout
+
+```gherkin
+Scenario: The row action opens the seat-layout editor on that hall
+  Given the administrator holds "Halls.View" and "SeatLayouts.View"
+  And they are on "/admin/halls" with hall "H-01" (Main Hall, cap 120) listed
+  When they click the "Seat layout" row action on the "Main Hall" row
+  Then the browser navigates to "/admin/halls/seat-layouts?hallId=<H-01 id>"
+  And the editor's hall picker already shows "H-01 - Main Hall (cap 120)"
+  And H-01's stored rows and per-row seat counts are loaded for editing
+  # Before A40 the editor was reachable only from the side-menu item, which opens
+  # on a blank picker — there was no route from a hall to its own seat map.
+
+Scenario: The row action is hidden without the seat-layout permission
+  Given the administrator holds "Halls.View" but NOT "SeatLayouts.View"
+  When they open "/admin/halls"
+  Then the hall rows render with Details / Edit / Deactivate
+  And no "Seat layout" row action is offered on any row
+```
+
+**Evidence captured:**
+- bUnit: `tests/SIMF.ControlPanel.Tests/HallsListSeatLayoutActionTests.cs` — the action
+  renders, navigates to `?hallId=`, and is absent without the permission.
+- The editor side of the same journey is E2E-HSL-024 / 025 in
+  [`cp-admin-halls-seat-layouts.md`](cp-admin-halls-seat-layouts.md).
+
+---
+
+_Last reviewed:_ 2026-07-27 by Claude (QA A40 — the "Seat layout" row action on the
+Halls grid + its permission gate; E2E-HAL-031).

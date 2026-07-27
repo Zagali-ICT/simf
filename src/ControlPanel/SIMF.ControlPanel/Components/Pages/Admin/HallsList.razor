@@ -85,6 +85,16 @@
                         </CellTemplate>
                     </SimfDataGridColumn>
                 </Columns>
+                <RowActions>
+                    @* A40 — the seat-layout editor had no way in from this grid, so an
+                       admin looking at a hall could not reach its seat map. Quiet icon
+                       action, same convention as the grid's built-in row buttons. *@
+                    <AuthorizedAction Permission="@PermissionCatalog.SeatLayouts.View">
+                        <SimfToolbarButton Icon="grid"
+                                           Title="@L["Admin.Halls.Action.SeatLayout"]"
+                                           OnClick="@(() => OpenSeatLayout(context))" />
+                    </AuthorizedAction>
+                </RowActions>
                 <EmptyTemplate>
                     <SimfEmptyState Title="@L["Admin.Halls.None"]" />
                 </EmptyTemplate>

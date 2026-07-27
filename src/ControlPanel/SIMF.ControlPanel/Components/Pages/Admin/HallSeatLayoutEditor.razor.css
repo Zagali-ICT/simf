@@ -4,6 +4,22 @@
    All colours / spacing / radii come from theme.tokens.css (no hardcoded
    values), per the CSS rules; logical properties keep it correct under RTL. */
 
+/* ---- Client-side validation list (A40) -------------------------------- */
+
+.hsl-errors {
+    margin: 0;
+    padding-inline-start: var(--space-5);
+    list-style: disc;
+}
+
+.hsl-errors__item {
+    margin-block-start: var(--space-1);
+}
+
+.hsl-errors__item:first-child {
+    margin-block-start: 0;
+}
+
 /* ---- Capacity summary ------------------------------------------------- */
 
 .hsl-capacity {

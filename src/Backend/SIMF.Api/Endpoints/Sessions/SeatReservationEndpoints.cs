@@ -240,6 +240,35 @@ public sealed class SetHallSeatLayoutEndpoint(ISeatReservationService service)
     }
 }
 
+public sealed class DeleteHallSeatLayoutRoute { public Guid HallId { get; set; } }
+
+/// <summary>B15 — remove a hall's seat layout so the hall reverts to general
+/// admission. Refused (409 <c>SEAT_LAYOUT_HAS_RESERVATIONS</c>) while any active
+/// seat-specific reservation would be stranded — the same rule the PUT applies to a
+/// shrinking layout change.</summary>
+public sealed class DeleteHallSeatLayoutEndpoint(ISeatReservationService service)
+    : Endpoint<DeleteHallSeatLayoutRoute, ApiResult<HallSeatLayoutSnapshot>>
+{
+    public override void Configure()
+    {
+        Delete("/admin/halls/{hallId:guid}/seat-layout");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.SeatLayouts.Delete),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Admin");
+    }
+    public override async Task HandleAsync(DeleteHallSeatLayoutRoute req, CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        await Send.OkAsync(ApiResult<HallSeatLayoutSnapshot>.Ok(
+            await service.DeleteLayoutAsync(actorId, req.HallId, ct)), ct);
+    }
+}
+
 public sealed class AdminReserveRowRoute : AdminReserveRowRequest
 {
     public Guid SessionId { get; set; }

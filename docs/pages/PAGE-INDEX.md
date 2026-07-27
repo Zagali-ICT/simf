@@ -62,8 +62,8 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/roles/{id}/permissions` | ✅ Real | Administrator | — | [e2e/cp-admin-roles-permissions.md](../tests/e2e/cp-admin-roles-permissions.md) |
 | **Programme & sessions** | | | | |
 | `/admin/themes` | ✅ Real | Administrator | [cp/admin-themes.md](cp/admin-themes.md) | [e2e/cp-admin-themes.md](../tests/e2e/cp-admin-themes.md) |
-| `/admin/halls` | ✅ Real (QA B16: hall detail now lists the hall's assigned sessions — the hall occupancy view) | Administrator | [cp/admin-halls.md](cp/admin-halls.md) | [e2e/cp-admin-halls.md](../tests/e2e/cp-admin-halls.md) |
-| `/admin/halls/seat-layouts` | ✅ Real | Administrator | [cp/admin-halls-seat-layouts.md](cp/admin-halls-seat-layouts.md) | [e2e/cp-admin-halls-seat-layouts.md](../tests/e2e/cp-admin-halls-seat-layouts.md) |
+| `/admin/halls` | ✅ Real (QA B16: hall detail now lists the hall's assigned sessions — the hall occupancy view; QA A40: a "Seat layout" row action deep-links each hall to its seat-layout editor) | Administrator | [cp/admin-halls.md](cp/admin-halls.md) | [e2e/cp-admin-halls.md](../tests/e2e/cp-admin-halls.md) |
+| `/admin/halls/seat-layouts` | ✅ Real (QA B15: the layout can now be REMOVED — back to general admission; QA A40: reachable from the Halls grid via `?hallId=` + client-side validation) | Administrator | [cp/admin-halls-seat-layouts.md](cp/admin-halls-seat-layouts.md) | [e2e/cp-admin-halls-seat-layouts.md](../tests/e2e/cp-admin-halls-seat-layouts.md) |
 | `/admin/speakers` | ✅ Real (D-199) | Administrator | [cp/admin-speakers.md](cp/admin-speakers.md) | [e2e/cp-admin-speakers.md](../tests/e2e/cp-admin-speakers.md) |
 | `/admin/speaker-presentations` | ✅ Real (D-228) | Administrator  | [cp/admin-speaker-presentations.md](cp/admin-speaker-presentations.md) | [e2e/cp-admin-speaker-presentations.md](../tests/e2e/cp-admin-speaker-presentations.md) |
 | `/admin/sessions` | ✅ Real (D-199) | Administrator | [cp/admin-sessions.md](cp/admin-sessions.md) | [e2e/cp-admin-sessions.md](../tests/e2e/cp-admin-sessions.md) |
