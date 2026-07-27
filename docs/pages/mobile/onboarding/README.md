@@ -66,20 +66,37 @@ back-chevron (hidden on step 1), and complete-on-third-next — all pass unchang
 ## Level-F
 
 Wired: next/back paging, skip → complete, third next → complete (sets
-`onboardingCompleted` → sign-in); best-effort per-step video with graceful
-image/navy fallback. No SIMF API.
+`onboardingCompleted` → sign-in); each step renders its OWN title + body
+(`onboardingTitle1..3` / `onboardingBody1..3`); a single best-effort background
+clip on a single decoder, with the world-map poster as the graceful fallback.
+No SIMF API.
+
+**Background media (DEF-ONB-004).** The carousel plays ONE asset
+(`AppAssets.onboardVideo` → `assets/videos/onboard_01.mp4`) on ONE
+`VideoPlayerController`, opened in `initState` and kept across swipes. It used to
+open a fresh controller per step against three byte-identical placeholder files
+(`onboard_01..03.mp4`), so every swipe tore the background down for about a
+second, restarted the footage at 0:00, and shipped ~13.8 MB of the same 4.6 MB
+clip in the APK. The duplicates are deleted. When the owner supplies genuinely
+different step clips, add them back as new `AppAssets` constants and restore the
+per-step list.
 
 ## Tests
 
 `test/features/onboarding/onboarding_screen_test.dart` (third-next completes, skip
-hides on last, back-chevron steps back / hidden on step 1) and
-`test/features/onboarding/onboarding_background_test.dart` (the poster backs every
-step; the still-poster scrim stays at 90%; the video scrim is lighter). E2E:
+hides on last, back-chevron steps back / hidden on step 1, per-step titles, one
+bundled clip) and `test/features/onboarding/onboarding_background_test.dart` (the
+poster backs every step; the still-poster scrim stays at 90%; the PLAYING branch
+paints the video cover-fitted under the 60% scrim). E2E:
 `docs/tests/e2e/mobile-onboarding.md`.
 
 ## Related decisions
 
 - **D-636** (this clean-code freeze — background/top-bar/dots widgets + 2 tokens).
-- **D-362** (KSA static-panels redesign), **D-373** (per-step background video).
+- **D-362** (KSA static-panels redesign), **D-373** (background video).
 - **Owner 2026-07-26** — the "background video not working" fix (poster on every
   step, 60% video scrim, debug-visible decode failure).
+- **DEF-ONB-004 / DEF-ONB-005 / DEF-ONB-006 (2026-07-27)** — one controller + one
+  de-duplicated clip; the playing branch has real test coverage; each step renders
+  its own title. **DEF-ONB-003** (a still fallback on every step, plus an
+  `errorBuilder` on the poster) was already fixed in the 2026-07-26 wave.

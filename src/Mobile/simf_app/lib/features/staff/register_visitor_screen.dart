@@ -70,6 +70,26 @@ class StaffRegisterVisitorScreen extends ConsumerStatefulWidget {
 
 enum _DocType { iqama, passport }
 
+/// The two optional images the desk can attach after the account is created.
+enum _Attachment { idDocument, photo }
+
+/// A field the SERVER rejected, with the exact value it rejected — so the
+/// message shows on that field and clears the moment the operator edits it
+/// (DEF-STF-003).
+@immutable
+class _ServerFieldError {
+  const _ServerFieldError({required this.message, required this.rejectedValue});
+
+  final String message;
+  final String rejectedValue;
+}
+
+/// The desk's name fields are `UserProfile.Name` / `NameArabic` — nvarchar(50)
+/// in EF, `MaximumLength(50)` in AdminWalkInRegistrationRequestValidator. The
+/// input caps at the SAME 50 (DEF-STF-003: it used to accept 100, so a long
+/// name round-tripped into a 400 with nothing highlighted).
+const int _nameMaxLength = 50;
+
 /// The card's content cap: a phone/compact window gets the 560 form width the
 /// Create-profile screen uses; a tablet gets the wider reading width so the
 /// two-column grid has room (both are [MaxWidthBody]'s documented values).
@@ -123,6 +143,11 @@ class _StaffRegisterVisitorScreenState
   String? _loadError;
   bool _submitting = false;
   bool _triedSubmit = false;
+
+  /// Server-side field rejections from the last 400, keyed by the request
+  /// property name FluentValidation reports (DEF-STF-003).
+  final Map<String, _ServerFieldError> _serverErrors =
+      <String, _ServerFieldError>{};
 
   @override
   void initState() {
@@ -234,7 +259,11 @@ class _StaffRegisterVisitorScreenState
   }
 
   Future<void> _submit() async {
-    setState(() => _triedSubmit = true);
+    setState(() {
+      _triedSubmit = true;
+      // A fresh attempt re-asks the server; last round's rejections are stale.
+      _serverErrors.clear();
+    });
     final l10n = AppL10n.of(context);
     final messenger = ScaffoldMessenger.of(context);
     // 19l — validate() reveals EVERY field error at once (it does not wait for
@@ -285,10 +314,18 @@ class _StaffRegisterVisitorScreenState
     final repo = ref.read(staffRepositoryProvider);
     try {
       final result = await repo.registerVisitor(request);
-      // Attach the optional images by the new visitor's id; a failed upload does
-      // not undo the (already-created) registration — surface it but keep going.
-      await _uploadAttachments(repo, result.userId);
+      // Attach the optional images by the new visitor's id. A failed upload does
+      // NOT undo the (already-created) registration, so the operator is offered
+      // a retry of the UPLOAD instead of re-registering the person (DEF-STF-004).
+      final failed = await _uploadAttachments(repo, result.userId);
       if (!mounted) {
+        return;
+      }
+      if (failed.isNotEmpty) {
+        // The registration itself is finished — drop the busy state before the
+        // modal so its controls are live (and the CTA is not left spinning).
+        setState(() => _submitting = false);
+        await _resolveFailedUploads(l10n, messenger, repo, result.userId, failed);
         return;
       }
       messenger
@@ -299,6 +336,7 @@ class _StaffRegisterVisitorScreenState
       if (!mounted) {
         return;
       }
+      _applyServerFieldErrors(l10n, e);
       messenger
         ..hideCurrentSnackBar()
         ..showSnackBar(
@@ -313,6 +351,76 @@ class _StaffRegisterVisitorScreenState
         setState(() => _submitting = false);
       }
     }
+  }
+
+  /// Moves the server's field-level rejections onto the matching inputs so a 400
+  /// highlights the offending field instead of only raising a toast
+  /// (DEF-STF-003). Anything the form has no field for stays in the toast.
+  void _applyServerFieldErrors(AppL10n l10n, ApiFailure failure) {
+    final errors = <String, _ServerFieldError>{};
+    for (final detail in failure.details) {
+      final property = detail.field.trim();
+      final controller = _controllerFor(property);
+      if (property.isEmpty || controller == null) {
+        continue;
+      }
+      final message = l10n.isArabic && detail.messageArabic.trim().isNotEmpty
+          ? detail.messageArabic
+          : detail.message;
+      if (message.trim().isEmpty) {
+        continue;
+      }
+      errors[property] = _ServerFieldError(
+        message: message,
+        rejectedValue: controller.text.trim(),
+      );
+    }
+    if (errors.isEmpty) {
+      return;
+    }
+    setState(() => _serverErrors.addAll(errors));
+    // Re-run the validators so the freshly-attached messages paint, then bring
+    // the first rejected field into view.
+    _formKey.currentState?.validate();
+    _revealFirstProblem(l10n);
+  }
+
+  /// The input backing a server property name, or null when the form has no
+  /// field for it (e.g. a whole-request rule).
+  TextEditingController? _controllerFor(String property) {
+    switch (property) {
+      case 'ArabicName':
+        return _arabicName;
+      case 'EnglishName':
+      case 'DisplayName':
+        return _englishName;
+      case 'Email':
+        return _email;
+      case 'JobTitle':
+        return _jobTitle;
+      case 'JobTitleArabic':
+        return _jobTitleArabic;
+      case 'NationalId':
+        return _nationalId;
+      case 'IqamaNumber':
+      case 'PassportNumber':
+        return _documentNumber;
+      case 'SaudiMobile':
+      case 'InternationalMobile':
+        return _phone;
+      default:
+        return null;
+    }
+  }
+
+  /// The server's message for [property], while the field still holds the value
+  /// the server rejected. Editing the field clears it without any listener.
+  String? _serverError(String property, String? value) {
+    final error = _serverErrors[property];
+    if (error == null) {
+      return null;
+    }
+    return (value?.trim() ?? '') == error.rejectedValue ? error.message : null;
   }
 
   /// 19l — brings the first invalid field into view after a blocked submit.
@@ -364,13 +472,24 @@ class _StaffRegisterVisitorScreenState
     return null;
   }
 
-  Future<void> _uploadAttachments(StaffRepository repo, String userId) async {
+  /// Uploads the attached images against the new visitor's id and returns the
+  /// ones that did NOT land. An upload failure is non-fatal — the account
+  /// already exists — but it must never be swallowed: the operator has to know
+  /// the document is missing (DEF-STF-004).
+  Future<List<_Attachment>> _uploadAttachments(
+    StaffRepository repo,
+    String userId, {
+    Set<_Attachment>? only,
+  }) async {
     if (userId.isEmpty) {
-      return;
+      return const <_Attachment>[];
     }
+    final failed = <_Attachment>[];
     final idBytes = _idBytes;
     final idName = _idName;
-    if (idBytes != null && idName != null) {
+    if (idBytes != null &&
+        idName != null &&
+        (only?.contains(_Attachment.idDocument) ?? true)) {
       try {
         await repo.uploadIdImage(
           userId: userId,
@@ -378,12 +497,14 @@ class _StaffRegisterVisitorScreenState
           filename: idName,
         );
       } on ApiFailure {
-        // Non-fatal — the account exists; the document can be added later.
+        failed.add(_Attachment.idDocument);
       }
     }
     final photoBytes = _photoBytes;
     final photoName = _photoName;
-    if (photoBytes != null && photoName != null) {
+    if (photoBytes != null &&
+        photoName != null &&
+        (only?.contains(_Attachment.photo) ?? true)) {
       try {
         await repo.uploadAvatar(
           userId: userId,
@@ -391,10 +512,82 @@ class _StaffRegisterVisitorScreenState
           filename: photoName,
         );
       } on ApiFailure {
-        // Non-fatal.
+        failed.add(_Attachment.photo);
       }
     }
+    return failed;
   }
+
+  /// Tells the operator exactly which attachment did not land and lets them
+  /// retry the UPLOAD for the already-created visitor — the person is never
+  /// registered twice (DEF-STF-004). The form is only cleared once the operator
+  /// is done with the attachments (retried successfully, or chose to skip).
+  Future<void> _resolveFailedUploads(
+    AppL10n l10n,
+    ScaffoldMessengerState messenger,
+    StaffRepository repo,
+    String userId,
+    List<_Attachment> failed,
+  ) async {
+    var pending = failed;
+    while (pending.isNotEmpty && mounted) {
+      final retry = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(l10n.staffUploadFailedTitle),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(l10n.staffUploadFailedIntro),
+              const SizedBox(height: SimfTokens.space2),
+              for (final attachment in pending)
+                Text('• ${_attachmentLabel(l10n, attachment)}'),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(l10n.staffUploadSkipLabel),
+            ),
+            FilledButton(
+              key: const ValueKey<String>('staffUploadRetry'),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(l10n.staffUploadRetryLabel),
+            ),
+          ],
+        ),
+      );
+      if (!mounted) {
+        return;
+      }
+      if (retry != true) {
+        break;
+      }
+      pending = await _uploadAttachments(repo, userId, only: pending.toSet());
+      if (!mounted) {
+        return;
+      }
+      if (pending.isEmpty) {
+        messenger
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(content: Text(l10n.staffUploadRetrySuccess)),
+          );
+      }
+    }
+    if (!mounted) {
+      return;
+    }
+    messenger.showSnackBar(SnackBar(content: Text(l10n.staffRegisterSuccess)));
+    _resetForm();
+  }
+
+  static String _attachmentLabel(AppL10n l10n, _Attachment attachment) =>
+      attachment == _Attachment.idDocument
+          ? l10n.staffAttachIdLabel
+          : l10n.staffAttachPhotoLabel;
 
   void _resetForm() {
     setState(() {
@@ -413,6 +606,7 @@ class _StaffRegisterVisitorScreenState
       _photoBytes = null;
       _photoName = null;
       _triedSubmit = false;
+      _serverErrors.clear();
     });
     _formKey.currentState?.reset();
   }
@@ -549,7 +743,7 @@ class _StaffRegisterVisitorScreenState
               child: SimfLabeledTextField(
                 label: l10n.arabicNameLabel,
                 controller: _arabicName,
-                maxLength: 100,
+                maxLength: _nameMaxLength,
                 textDirection: TextDirection.rtl,
                 // MERGE (BUG-019 rebuild + BUG-021): the rebuilt field keeps the
                 // shared widget, but the character class is the widened shared one
@@ -557,7 +751,8 @@ class _StaffRegisterVisitorScreenState
                 inputFormatters: <TextInputFormatter>[
                   FilteringTextInputFormatter.allow(arabicNameCharacters),
                 ],
-                validator: (v) => _required(l10n, v),
+                validator: (v) =>
+                    _required(l10n, v) ?? _serverError('ArabicName', v),
               ),
             ),
           ),
@@ -568,12 +763,18 @@ class _StaffRegisterVisitorScreenState
               child: SimfLabeledTextField(
                 label: l10n.englishNameLabel,
                 controller: _englishName,
-                maxLength: 100,
+                maxLength: _nameMaxLength,
                 textDirection: TextDirection.ltr,
                 inputFormatters: <TextInputFormatter>[
                   FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z\s]')),
                 ],
-                validator: (v) => _required(l10n, v),
+                // DisplayName is derived from this field (the request sends the
+                // English name as the display name), so its rejection lands
+                // here too.
+                validator: (v) =>
+                    _required(l10n, v) ??
+                    _serverError('EnglishName', v) ??
+                    _serverError('DisplayName', v),
               ),
             ),
           ),
@@ -603,7 +804,8 @@ class _StaffRegisterVisitorScreenState
                 maxLength: 100,
                 textDirection: TextDirection.ltr,
                 // D-723 — required (matches the app self-registration form).
-                validator: (v) => _required(l10n, v),
+                validator: (v) =>
+                    _required(l10n, v) ?? _serverError('JobTitle', v),
               ),
             ),
           ),
@@ -616,6 +818,7 @@ class _StaffRegisterVisitorScreenState
               controller: _jobTitleArabic,
               maxLength: 100,
               textDirection: TextDirection.rtl,
+              validator: (v) => _serverError('JobTitleArabic', v),
             ),
           ),
         ),
@@ -632,6 +835,7 @@ class _StaffRegisterVisitorScreenState
               maxLength: 50,
               keyboardType: TextInputType.emailAddress,
               textDirection: TextDirection.ltr,
+              validator: (v) => _serverError('Email', v),
             ),
           ),
           end: _named(
@@ -743,10 +947,16 @@ class _StaffRegisterVisitorScreenState
   /// 19g — the walk-in classification is no longer silently pinned to the row
   /// literally named "Normal": the operator picks from the visitor-eligible
   /// types (seeded to "Normal" when it exists).
+  ///
+  /// DEF-STF-007 — when the lookup comes back EMPTY there is nothing to pick,
+  /// so submit could never pass and the operator had no correctable field. The
+  /// field now says so, and says what to do about it, instead of silently
+  /// blocking.
   Widget _profileTypeField(AppL10n l10n) {
     final selected =
         _profileTypes.where((t) => t.id == _profileTypeId).toList();
     final hasValue = selected.isNotEmpty;
+    final unavailable = _profileTypes.isEmpty;
     return Column(
       key: _profileTypeAnchor,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -761,12 +971,16 @@ class _StaffRegisterVisitorScreenState
                 ? (l10n.isArabic
                     ? selected.first.nameArabic
                     : selected.first.name)
-                : l10n.profileTypeLabel,
+                : (unavailable
+                    ? l10n.staffProfileTypeUnavailable
+                    : l10n.profileTypeLabel),
             isPlaceholder: !hasValue,
-            onTap: () => unawaited(_pickProfileType(l10n)),
-            errorText: (_triedSubmit && _profileTypeId == null)
-                ? l10n.profileTypeRequired
-                : null,
+            onTap: unavailable ? null : () => unawaited(_pickProfileType(l10n)),
+            errorText: unavailable
+                ? l10n.staffProfileTypeEmptyHelp
+                : (_triedSubmit && _profileTypeId == null)
+                    ? l10n.profileTypeRequired
+                    : null,
           ),
         ),
       ],
@@ -996,7 +1210,10 @@ class _StaffRegisterVisitorScreenState
     if (id.isEmpty) {
       return _required(l10n, value);
     }
-    return isValidNationalId(id) ? null : l10n.nationalIdInvalid;
+    if (!isValidNationalId(id)) {
+      return l10n.nationalIdInvalid;
+    }
+    return _serverError('NationalId', value);
   }
 
   String? _validateDocumentNumber(AppL10n l10n, String? value) {
@@ -1005,9 +1222,13 @@ class _StaffRegisterVisitorScreenState
       return _required(l10n, value);
     }
     if (_docType == _DocType.iqama) {
-      return isValidIqama(number) ? null : l10n.iqamaInvalid;
+      return isValidIqama(number)
+          ? _serverError('IqamaNumber', value)
+          : l10n.iqamaInvalid;
     }
-    return isValidPassport(number) ? null : l10n.passportInvalid;
+    return isValidPassport(number)
+        ? _serverError('PassportNumber', value)
+        : l10n.passportInvalid;
   }
 
   /// Phone is required server-side (Saudi or international); validate inline like
@@ -1022,7 +1243,10 @@ class _StaffRegisterVisitorScreenState
         ? isStandardSaudiMobile(phone)
         : isStandardInternationalMobile(phone);
     if (valid) {
-      return null;
+      return _serverError(
+        _isSaudi ? 'SaudiMobile' : 'InternationalMobile',
+        value,
+      );
     }
     return _isSaudi ? l10n.saudiMobileInvalid : l10n.internationalMobileInvalid;
   }

@@ -330,6 +330,10 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
               l10n: l10n,
               node: selected,
               booth: selectedBooth,
+              // FR-LGO-005 — the badge builds
+              // `{base}/app/assets/BoothLogo/{id}/image` (the D-357 anonymous
+              // asset route), exactly like the booths list.
+              baseUrl: ref.watch(simfDataConfigProvider).baseUrl,
               onDirect: () => _centreOn(selected),
               onDetails: selected.isBooth
                   ? () => _openDetails(selected, selectedBooth)

@@ -16,22 +16,12 @@ import 'widgets/onboarding_background.dart';
 import 'widgets/onboarding_dots.dart';
 import 'widgets/onboarding_top_bar.dart';
 
-// D-373 — one looping, muted background video per step. The same hero clip
-// ships as all three placeholders; the owner replaces 02/03 in place later.
-const List<String> _videoAssets = <String>[
-  AppAssets.onboardVideo1,
-  AppAssets.onboardVideo2,
-  AppAssets.onboardVideo3,
-];
-
 /// Page 002 — التهيئة · Onboarding (first-run only). The KSA-Project Figma
-/// design (frames 148:22 / 159:942 / 159:1052 — D-362): a three-step static
-/// carousel — the world-map photo with a 90% navy overlay behind step 1, plain
-/// navy behind steps 2–3 — with the brand mark, the welcome copy per step,
-/// pill dots, the gold التالي button, a تخطي link (hidden on the last step)
-/// and a back chevron (steps 2–3). Replaces the interim intro-video
-/// placeholder per the owner's static-panels decision; the old screen is
-/// parked in `_legacy_mockup/`.
+/// design (frames 148:22 / 159:942 / 159:1052 — D-362): a three-step carousel
+/// over one looping, muted hero clip (world-map poster fallback) — with the
+/// brand mark, the step's own title + body, pill dots, the gold التالي button,
+/// a تخطي link (hidden on the last step) and a back chevron (steps 2–3). The
+/// old screen is parked in `_legacy_mockup/`.
 ///
 /// Contract unchanged: finishing or skipping sets `onboardingCompleted` and
 /// routes to sign-in; the splash gates on that flag. There is **no SIMF API**
@@ -49,40 +39,36 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _index = 0;
 
-  // D-373 — one decoder at a time: the controller follows the active step.
+  // D-373 — ONE decoder for the whole carousel. The clip is the same on every
+  // step, so it is opened once in initState and simply keeps playing across
+  // swipes (DEF-ONB-004: re-initialising per step tore the background down for
+  // ~a second and restarted the footage at 0:00 on every swipe).
   VideoPlayerController? _video;
   bool _videoReady = false;
 
   @override
   void initState() {
     super.initState();
-    unawaited(_loadVideo(0));
+    unawaited(_loadVideo());
   }
 
-  /// Best-effort background video for the given step — a missing decoder
-  /// (tests / unsupported runtime) falls back to the world-map poster that
-  /// [OnboardingBackground] always paints underneath.
+  /// Best-effort background video — a missing decoder (tests / unsupported
+  /// runtime) falls back to the world-map poster that [OnboardingBackground]
+  /// always paints underneath.
   ///
   /// Owner 2026-07-26 — the failure was swallowed by a bare `catch (_)`, so a
   /// device that refuses the clip looked identical to one that never had it.
   /// The reason is now printed in debug builds (release stays silent: a
   /// decorative background must never surface an error to a visitor).
-  Future<void> _loadVideo(int index) async {
-    final old = _video;
-    _video = null;
-    _videoReady = false;
-    if (mounted) {
-      setState(() {});
-    }
-    await old?.dispose();
-    final asset = _videoAssets[index];
+  Future<void> _loadVideo() async {
+    const asset = AppAssets.onboardVideo;
     final controller = VideoPlayerController.asset(asset);
     try {
       await controller.initialize();
       await controller.setLooping(true);
       await controller.setVolume(0);
       await controller.play();
-      if (!mounted || _index != index) {
+      if (!mounted) {
         await controller.dispose();
         return;
       }
@@ -154,6 +140,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
+    // DEF-ONB-006 — each step has its OWN title; the screen used to render
+    // title 1 three times while onboardingTitle2/3 sat unused, so every step
+    // read as the same welcome panel.
+    final titles = <String>[
+      l10n.onboardingTitle1,
+      l10n.onboardingTitle2,
+      l10n.onboardingTitle3,
+    ];
     final bodies = <String>[
       l10n.onboardingBody1,
       l10n.onboardingBody2,
@@ -165,9 +159,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       backgroundColor: SimfTokens.navy,
       body: Stack(
         children: <Widget>[
-          // D-373 — every step plays its looping background video under the
-          // navy scrim; until the decoder is ready (or when it never becomes
-          // ready) the world-map poster underneath shows on EVERY step.
+          // D-373 — the looping background clip runs under the navy scrim for
+          // the whole carousel; until the decoder is ready (or when it never
+          // becomes ready) the world-map poster underneath shows on EVERY step.
           Positioned.fill(
             child: OnboardingBackground(
               video: _video,
@@ -190,11 +184,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   child: PageView.builder(
                     controller: _pageController,
                     itemCount: _stepCount,
-                    onPageChanged: (i) {
-                      setState(() => _index = i);
-                      // D-373 — swap the background video to the new step.
-                      unawaited(_loadVideo(i));
-                    },
+                    onPageChanged: (i) => setState(() => _index = i),
                     itemBuilder: (context, i) => Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: SimfTokens.space6,
@@ -203,9 +193,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
                           Text(
-                            // The design repeats one welcome title on all
-                            // three steps (148:22 / 159:943 / 159:1053).
-                            l10n.onboardingTitle1,
+                            // Per-step title (148:22 / 159:943 / 159:1053).
+                            titles[i],
                             textAlign: TextAlign.center,
                             style: SimfTokens.labelWhiteSemibold24Tall,
                           ),

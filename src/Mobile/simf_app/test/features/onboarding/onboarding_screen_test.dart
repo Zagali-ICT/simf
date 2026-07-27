@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -99,6 +100,18 @@ Future<void> _pumpOnboarding(WidgetTester tester, _FakePrefs prefs) async {
   await tester.pumpAndSettle();
 }
 
+/// True when [key] is in the app's asset bundle. A missing entry raises
+/// FlutterError ("Unable to load asset"), which is caught here so it never
+/// escapes to the test zone.
+Future<bool> _isBundled(String key) async {
+  try {
+    await rootBundle.load(key);
+    return true;
+  } on FlutterError {
+    return false;
+  }
+}
+
 void main() {
   group('OnboardingScreen (Page 002 — KSA design, D-362)', () {
     testWidgets('Skip sets the first-run flag and routes to sign-in',
@@ -186,6 +199,38 @@ void main() {
           await tester.pumpAndSettle();
         }
       }
+    });
+
+    testWidgets('DEF-ONB-006 — each step shows its OWN title, not title 1 '
+        'three times', (tester) async {
+      final prefs = _FakePrefs();
+      await _pumpOnboarding(tester, prefs);
+
+      // onboardingTitle2 / onboardingTitle3 were defined but never rendered:
+      // the carousel painted onboardingTitle1 on all three steps.
+      expect(find.text('Welcome to the SIMF app'), findsOneWidget);
+      expect(find.text('Follow the sessions and speakers'), findsNothing);
+
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+      expect(find.text('Follow the sessions and speakers'), findsOneWidget);
+      expect(find.text('Welcome to the SIMF app'), findsNothing);
+
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+      expect(find.text('Your smart badge and networking'), findsOneWidget);
+    });
+
+    testWidgets('DEF-ONB-004 — the carousel ships ONE background clip, not '
+        'three byte-identical copies', (tester) async {
+      // The screen opens a single decoder on AppAssets.onboardVideo and keeps
+      // it across swipes; the per-step placeholders onboard_02/03.mp4 were the
+      // same 4.6 MB file three times (~13.8 MB of duplicate APK payload).
+      final clip = await rootBundle.load(AppAssets.onboardVideo);
+      expect(clip.lengthInBytes, greaterThan(0));
+
+      expect(await _isBundled('assets/videos/onboard_02.mp4'), isFalse);
+      expect(await _isBundled('assets/videos/onboard_03.mp4'), isFalse);
     });
 
     testWidgets('the back chevron steps back (hidden on step 1)',

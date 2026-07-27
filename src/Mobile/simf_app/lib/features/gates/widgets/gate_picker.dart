@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../app/theme/tokens.dart';
 import '../data/gate_models.dart';
 
 /// The assigned-gates dropdown (setup stage), keyed by `gateId`.
+///
+/// DEF-STF-006 — an INACTIVE gate is tagged (and dimmed) in the list. It used to
+/// look exactly like a working one, so picking it turned every scan into a red
+/// denial with nothing pointing at the gate.
 class GatePicker extends StatelessWidget {
   const GatePicker({
     required this.isArabic,
@@ -19,8 +24,14 @@ class GatePicker extends StatelessWidget {
   final OperatorGate gate;
   final ValueChanged<OperatorGate> onGate;
 
+  static String label(OperatorGate gate, AppL10n l10n, {required bool isArabic}) {
+    final name = gate.localizedName(isArabic);
+    return gate.isActive ? name : '$name — ${l10n.gateInactiveTag}';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
     return DropdownButtonFormField<String>(
       initialValue: gate.gateId,
       isExpanded: true,
@@ -62,7 +73,14 @@ class GatePicker extends StatelessWidget {
         for (final g in gates)
           DropdownMenuItem<String>(
             value: g.gateId,
-            child: Text(g.localizedName(isArabic)),
+            child: Text(
+              label(g, l10n, isArabic: isArabic),
+              // `greyText` is for light surfaces; this list paints on navy, so
+              // an inactive row dims to the 65%-white secondary token.
+              style: g.isActive
+                  ? null
+                  : const TextStyle(color: SimfTokens.txtSecondary),
+            ),
           ),
       ],
       onChanged: (id) {

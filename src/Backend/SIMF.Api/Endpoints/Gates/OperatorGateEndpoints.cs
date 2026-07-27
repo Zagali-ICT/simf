@@ -100,10 +100,11 @@ public sealed class PostScanEndpoint(IGateOperatorService service)
                 throw new ApiException(ErrorCodes.GateOperatorNotAssigned, 403,
                     "You are not assigned to this gate.",
                     "أنت غير معيّن لهذه البوابة.");
-            case GateScanResultKind.GateInactive:
-                throw new ApiException(ErrorCodes.GateInactive, 503,
-                    "This gate is currently inactive.",
-                    "هذه البوابة غير نشطة حالياً.");
+            // DEF-STF-008 — there is deliberately no GATE_INACTIVE (503) arm: an
+            // inactive gate is a RECORDED denial at HTTP 200
+            // (DenialReasonCode.GateInactiveAtScan), so the attempt still lands
+            // in the append-only GateScan audit trail and the operator gets the
+            // designed denial card instead of an envelope failure.
             case GateScanResultKind.IdempotencyConflict:
                 throw new ApiException(ErrorCodes.IdempotencyKeyConflict, 409,
                     "An idempotency key was reused with a different payload.",

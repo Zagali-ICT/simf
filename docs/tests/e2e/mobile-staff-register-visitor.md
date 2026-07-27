@@ -167,6 +167,86 @@ Scenario: Operator picks the visitor classification
   Then the registration payload carries that profileTypeId
 ```
 
+### E2E-MOBSTAFFREG-007 — Name length matches the server (DEF-STF-003)
+
+```gherkin
+Scenario: The name inputs cap where the server caps
+  Given the staff walk-in form is open
+  When the staff member types 80 characters into "الاسم بالعربية / Arabic name"
+  Then only 50 characters are kept
+  And the same holds for "الاسم بالإنجليزية / English name"
+# UserProfile.Name / NameArabic are nvarchar(50) and
+# AdminWalkInRegistrationRequestValidator caps both at 50; the inputs used to
+# accept 100, so a long name round-tripped into a 400 with nothing highlighted.
+
+Scenario: A server field rejection lands ON the field
+  Given the server rejects EnglishName with
+    "English name must be at most 50 characters." /
+    "يجب ألا يتجاوز الاسم بالإنجليزية 50 حرفًا."
+  When the staff member submits
+  Then POST /app/staff/visitors/register-onsite returns 400 VALIDATION_FAILED
+  And that message is shown UNDER the English-name field (locale-appropriate)
+  And the first rejected field is scrolled into view
+  When the staff member edits that field
+  Then the server message clears without another round-trip
+```
+
+**Evidence:** `register_visitor_screen_test` — "DEF-STF-003 — the name inputs cap
+at the server's 50, not 100", "DEF-STF-003 — a server field rejection paints ON
+the field, and clears when it is edited".
+
+### E2E-MOBSTAFFREG-008 — A failed attachment upload is retryable (DEF-STF-004)
+
+```gherkin
+Scenario: The ID-document upload fails after the visitor was created
+  Given the staff member attached an ID document
+  And POST /app/staff/visitors/register-onsite succeeded (PendingApproval)
+  When POST /app/staff/visitors/{userId}/id-document fails
+  Then a modal says "تم تسجيل الزائر — تعذّر رفع المرفقات /
+      Visitor registered — attachments not uploaded"
+  And it names which attachment did not land ("صورة الهوية / ID document")
+  And the form is NOT cleared yet
+  When the staff member taps "إعادة رفع المرفقات / Retry upload"
+  Then ONLY the upload is re-sent, against the SAME userId
+  And registration is NOT called a second time (no duplicate visitor)
+  And on success a toast confirms "تم رفع المرفقات. /
+      The attachments were uploaded." and the form resets
+
+Scenario: The operator chooses to continue without the attachment
+  When they tap "المتابعة بدون المرفقات / Continue without them"
+  Then the success toast is shown and the form resets
+  And the document can be attached later from the Control Panel
+# The failure used to be swallowed by an empty catch, so the operator was told
+# everything succeeded while the document was missing.
+```
+
+**Evidence:** `register_visitor_screen_test` — "DEF-STF-004 — a failed attachment
+upload is surfaced and can be retried WITHOUT registering the visitor again".
+
+### E2E-MOBSTAFFREG-009 — An empty classification lookup explains itself (DEF-STF-007)
+
+```gherkin
+Scenario: No active visitor classification exists
+  Given GET the visitor profile-types lookup returns an EMPTY list
+  When the staff walk-in form opens
+  Then the classification field reads
+      "تعذّر تحميل تصنيف الزائر. / Could not load the visitor classification."
+  And under it: "لا توجد تصنيفات زوار مفعّلة. اطلب من مسؤول لوحة التحكم إضافة
+      تصنيف زائر ثم أعد المحاولة." / "No active visitor classifications exist.
+      Ask a Control Panel administrator to add one, then retry."
+  And the picker is inert (an empty sheet would waste the operator's time)
+  And no registration call is made
+# The operator-chosen classification (no longer pinned to the row literally
+# named "Normal") shipped with E2E-MOBSTAFFREG-006; this is the remaining
+# unavailable case, which used to block submit with no correctable field.
+```
+
+**Evidence:** `register_visitor_screen_test` — "DEF-STF-007 — an empty
+classification lookup explains itself instead of silently blocking submit".
+
 ---
 
-_Last reviewed:_ `2026-07-26` by `SIMF Team`.
+_Last reviewed:_ `2026-07-27` by `SIMF Team` — added E2E-MOBSTAFFREG-007..009 for
+the deferred walk-in items (DEF-STF-003 name-length alignment + server field
+errors, DEF-STF-004 retryable attachment upload, DEF-STF-007 the unavailable
+classification). Earlier: `2026-07-26`.

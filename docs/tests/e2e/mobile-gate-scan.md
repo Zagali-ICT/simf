@@ -195,11 +195,69 @@ covers the always-mounted manual field with the camera off; `scan_gate_test`
 (single-flight + same-code dedupe + `onNoCode` reset). Gate scan outcomes remain
 covered by `GateScanTests` + `test/features/gates/`.
 
+### E2E-MOBGATE-007 — A 403 names its own reason (DEF-STF-005)
+
+```gherkin
+Scenario: The operator holds no Gates.Operate grant
+  Given a staff app user WITHOUT the Gates.Operate permission
+  When the console loads GET /app/gates/my-assignments
+  Then the call returns 403 with no envelope message
+  And the console shows its own "لا تملك صلاحية تشغيل البوابات /
+      You are not authorised to operate gates."
+
+Scenario: The operator holds the grant but not this gate's assignment
+  Given the operator scans a gate they are not assigned to
+  When POST /app/gates/{gateId}/scans returns 403 GATE_OPERATOR_NOT_ASSIGNED
+  Then the toast shows the SERVER's bilingual text
+      "أنت غير معيّن لهذه البوابة. / You are not assigned to this gate."
+  And NOT the generic operate-gates copy
+# Both are 403 but need different operator actions (ask for the permission vs
+# ask for the assignment); the console used to flatten them into the first one.
+```
+
+**Evidence:** `gate_scan_screen_test` — "DEF-STF-005 — a 403 on load shows the
+SERVER's reason…", "…a 403 on the scan surfaces the server message",
+"…a 403 with no server body keeps the generic copy". Server text:
+`OperatorGateEndpoints` `GateScanResultKind.NotAssigned` arm.
+
+### E2E-MOBGATE-008 — An inactive gate is marked, and denies at 200 (DEF-STF-006 / DEF-STF-008)
+
+```gherkin
+Scenario: The picker marks an inactive assigned gate
+  Given the operator is assigned to a gate whose IsActive is false
+  When the setup card loads
+  Then that row reads "<gate name> — غير نشطة / — inactive" and is dimmed
+  And a warning under the picker says every scan on it will be denied
+      "هذه البوابة غير نشطة — سيُرفض كل مسح عليها…"
+
+Scenario: An active gate carries no marker
+  Given every assigned gate is active
+  Then no row is tagged and no warning is shown
+
+Scenario: Scanning at an inactive gate is a RECORDED denial, not a 503
+  Given the operator scans a valid badge at an inactive gate
+  When POST /app/gates/{gateId}/scans is sent
+  Then the call returns HTTP 200 with outcome=Denied
+  And denialReasonCode is GATE_INACTIVE_AT_SCAN
+  And denialMessage reads "This gate is currently inactive. /
+      هذه البوابة غير نشطة حالياً."
+  And a GateScan row is written so the attempt stays auditable
+# DEF-STF-008 — GateScanResultKind.GateInactive (503 GATE_INACTIVE) was dead
+# code; nothing ever produced it. The 503 arm was removed and the spec's
+# §7.2.4 / §8.1 rows carry the as-built note.
+```
+
+**Evidence:** `gate_scan_screen_test` — "DEF-STF-006 — an inactive gate is tagged
+in the picker and warns before the first scan", "…an ACTIVE gate carries no tag
+and no warning"; API `GateScanTests.Inactive_gate_records_a_GATE_INACTIVE_AT_SCAN_denial_at_200`.
+
 ---
 
-_Last reviewed:_ `2026-07-27` by `SIMF Team` — DEF-CHK-004 advisory
+_Last reviewed:_ `2026-07-27` by `SIMF Team` — added E2E-MOBGATE-007 (DEF-STF-005,
+the server's own 403 reason) and E2E-MOBGATE-008 (DEF-STF-006 inactive-gate marker
++ DEF-STF-008 the retired 503). Earlier: DEF-CHK-004 advisory
 `noticeMessage` now also covers a check-IN whose attendance insert never lands
-(E2E-MOBGATE-006). Earlier: `2026-07-27` fixed-Out scan that closes nothing;
+(E2E-MOBGATE-006); `2026-07-27` fixed-Out scan that closes nothing;
 `2026-07-26` DEF-CHK-004 advisory `noticeMessage`;
 `2026-07-11` D-737 unified scanner (SimfScannerBody; `gate_scanner_view.dart`
 deleted); `2026-06-27`.

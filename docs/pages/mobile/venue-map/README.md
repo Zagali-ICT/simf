@@ -43,13 +43,18 @@ Two **owner-decided deviations** (flagged, not changed):
 1. The frame shows a **geographic map-tile background**; the app renders the
    **2D node-plane** — the **D-199 "2D venue map"** decision (no external map
    provider; egress/NCA-blocked).
-2. The frame's card has a 60×60 gold **exhibitor-logo badge**; the app uses a
-   close-**X** (no logo assets).
+~~2. The frame's card has a 60×60 gold **exhibitor-logo badge**; the app uses a
+   close-**X** (no logo assets).~~ **Closed 2026-07-27 (FR-LGO-005)** — booths own
+   real logo assets now (BoothLogo, D-357 / D-764), so the card renders the badge
+   (the booth's own mark via the shared `SimfLogoImage`, booth short-name
+   fallback) at the inline start, with the dismiss control keeping its own place
+   beside it.
 
 ## Tests
 
-`test/features/venuemap/venue_map_screen_test.dart` (8) +
-`venue_map_models_test.dart` (7) — markers, info card, booth sheet, lazy
-detail, 404, empty, error/retry, RTL geometry, and the wire model binding.
+`test/features/venuemap/venue_map_screen_test.dart` (10) +
+`venue_map_models_test.dart` (7) — markers, info card, the exhibitor logo badge
+(and its absence on a non-booth node), booth sheet, lazy detail, 404, empty,
+error/retry, RTL geometry, and the wire model binding.
 No golden (render covered by the widget tests; a fake-node plane would not
 overlay on the geographic frame). E2E: `docs/tests/e2e/mobile-venue-map.md`.

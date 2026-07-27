@@ -82,6 +82,30 @@ only).
   the digit shape; the messages now say so (BUG-019 / 19m) instead of implying that
   any `1` + 9 digits is accepted.
 - Every text input declares a `maxLength` so over-long input can't reach the server.
+  The two name inputs cap at **50** — the same number as
+  `AdminWalkInRegistrationRequestValidator.MaximumLength(50)` and EF's
+  `UserProfile.Name` / `NameArabic` `HasMaxLength(50)` (DEF-STF-003; they used to
+  accept 100, so a long name round-tripped into a 400 with nothing highlighted).
+- **A server field rejection paints ON the field** (DEF-STF-003). The 400's
+  `details[]` are mapped from the FluentValidation property name to the matching
+  input (`ArabicName`, `EnglishName`/`DisplayName`, `Email`, `JobTitle`,
+  `JobTitleArabic`, `NationalId`, `IqamaNumber`/`PassportNumber`,
+  `SaudiMobile`/`InternationalMobile`), the form re-validates, and the first
+  rejected field is scrolled into view. Each message is held against the exact
+  value the server rejected, so editing that field clears it with no listener and
+  no second round-trip. A detail the form has no field for stays in the toast.
+- **A failed attachment upload is retryable** (DEF-STF-004). The ID-document /
+  avatar uploads run AFTER the account exists, so a failure cannot undo the
+  registration — but it must not be swallowed either. A modal names the
+  attachment that did not land and offers **إعادة رفع المرفقات / Retry upload**
+  (re-sends only the failed file against the same `userId`; the person is never
+  registered twice) or **المتابعة بدون المرفقات / Continue without them**. The
+  form is cleared only once that modal closes.
+- **An empty classification lookup explains itself** (DEF-STF-007). When the
+  visitor profile-type lookup returns no rows there is nothing to pick and submit
+  could never pass, so the field shows `staffProfileTypeUnavailable` plus
+  `staffProfileTypeEmptyHelp` ("ask a Control Panel administrator to add one")
+  and the picker is inert.
 - Switching nationality clears the stale national-ID / document number.
 - Lookup load failure → an error + **Retry** surface.
 - A server 400/403 → the bilingual server message in a SnackBar; the form keeps its
@@ -97,7 +121,7 @@ and document-number inputs. The one remaining forced-LTR row is the shared
 account screen shares. Brand font applied once in the theme.
 
 ## 7. Testing
-- **Widget** (`register_visitor_screen_test.dart`, 15 cases): renders after the
+- **Widget** (`register_visitor_screen_test.dart`, 19 cases): renders after the
   lookups load, the load-failure Retry surface, the empty-submit guard (no API
   call), every input caps its length, a filled form posts the walk-in payload
   (Saudi path → `saudiMobile`, `isSaudi`, org + Normal profile type, plus the
@@ -107,7 +131,10 @@ account screen shares. Brand font applied once in the theme.
   `DropdownButtonFormField` and three `SimfPickerField`s, the shared
   `SimfLanguageToggle`, the operator-picked classification, the pristine-submit
   reveal + scroll, no overflow at 400×900 Arabic and 1024×1314 two-column, the
-  camera-or-file source sheet, and the one-line attachment captions.
+  camera-or-file source sheet, and the one-line attachment captions — plus the
+  deferred-defect group: the 50-char name cap, a server field rejection painted on
+  the field (and cleared on edit), the retryable attachment upload that never
+  re-registers, and the empty-classification help.
 - **Golden** (`staff_register_visitor_golden_test.dart`):
   `goldens/staff_register_visitor_1467-12357.png` @1024×1314 RTL (Saudi default,
   empty state) — locks the frozen two-column tablet parity. `pumpAndSettle` is safe
@@ -136,6 +163,17 @@ account screen shares. Brand font applied once in the theme.
       (`StaffWalkInRequest`/`StaffWalkInResult`, D-219) unchanged
 
 ## 9. Changelog
+- **2026-07-27 (deferred walk-in defects):** DEF-STF-003 — the Arabic/English name
+  inputs cap at the server's 50 (was 100), and a 400's field-level `details[]` now
+  paint on the matching input and clear when it is edited; DEF-STF-004 — an
+  attachment upload that fails after a successful registration is surfaced in a
+  modal that retries the UPLOAD only (never re-registers the person) or continues
+  without it; DEF-STF-007 — an EMPTY classification lookup now explains itself
+  (`staffProfileTypeUnavailable` + `staffProfileTypeEmptyHelp`, inert picker)
+  instead of silently blocking submit. The operator-chosen classification half of
+  DEF-STF-007 had already shipped with BUG-019 / 19g. `SimfPickerField.onTap`
+  became nullable (an additive shared-widget change; existing callers unaffected)
+  so a lookup with nothing to pick can be inert. Wire contract unchanged.
 - **2026-07-26 (BUG-019 — design-system + validation rebuild):** the owner reviewed
   the live tablet screen and reported it as off-design-system. The screen now
   composes the same shared pieces as the visitor Create-profile screen:

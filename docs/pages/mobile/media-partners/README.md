@@ -69,3 +69,11 @@ in [`SimfImageViewer`](../../../../src/Mobile/simf_app/lib/app/widgets/simf_imag
 (pinch-zoom, named for a screen reader, close / back to dismiss). The rules and
 their scenarios live once in [`e2e/mobile-logo-viewer.md`](../../../tests/e2e/mobile-logo-viewer.md)
 (E2E-LOGO-001..008).
+
+**FR-LGO-003 (2026-07-27).** Media partners have no detail route (the frame
+defines none), which left the card completely inert — only the 48px logo box
+carried the press-to-enlarge. The affordance moved up to the WHOLE card, so
+pressing the partner NAME opens the mark full size too; the inner box sets
+`enableFullScreen: false` so there is one gesture and one target rather than a
+nested pair. A partner with no logo keeps a plain, non-tappable card (there is
+nothing to enlarge but an initials tile).

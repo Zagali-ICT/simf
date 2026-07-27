@@ -9,6 +9,10 @@ import 'simf_field_style.dart';
 /// placeholder ([isPlaceholder] greys it). The picker logic stays in the screen
 /// ([onTap] opens the sheet); this is pure display. [showChevron] false drops
 /// the arrow (the narrow plate-letter boxes need the full width — D-459).
+///
+/// A null [onTap] renders the field un-tappable — for a lookup with nothing to
+/// pick, where opening an empty sheet would only waste the user's time
+/// (DEF-STF-007). Pair it with an [errorText] that says why.
 class SimfPickerField extends StatelessWidget {
   const SimfPickerField({
     required this.fieldKey,
@@ -23,7 +27,7 @@ class SimfPickerField extends StatelessWidget {
   final String fieldKey;
   final String displayText;
   final bool isPlaceholder;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final String? errorText;
   final bool showChevron;
 
