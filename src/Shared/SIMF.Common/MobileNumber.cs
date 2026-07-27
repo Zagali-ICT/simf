@@ -1,5 +1,4 @@
 // Tests: SIMF.Api.Tests/MobileNumberTests.cs
-using System.Text.RegularExpressions;
 
 namespace SIMF.Common;
 
@@ -14,14 +13,19 @@ namespace SIMF.Common;
 /// number defeat search, export and de-duplication. Every write path stores
 /// <see cref="NormalizeOptional"/>'s output, so the column holds one form.</para>
 ///
-/// <para><b>Two jobs, deliberately kept apart.</b> Stripping separators is not
-/// enough on its own: D-371 accepts a Saudi mobile in TWO spellings —
-/// <c>05XXXXXXXX</c> and <c>+9665XXXXXXXX</c> — and neither rewrites into the
-/// other, so the same number still reached the column two ways and equality
-/// checks still failed. <see cref="Canonicalize"/> converges them; the E.164
-/// <c>+9665…</c> spelling is the one kept, because it is already one of the two
-/// spellings D-371 accepts and it matches the international column's own format
-/// — no third form is invented.</para>
+/// <para><b>Scope, settled at integration 2026-07-27.</b> DEF-PHN-003 as filed is
+/// a SEPARATOR defect: the column held <c>+966501234567</c> and
+/// <c>+966-555987654</c> — the same spelling, differing only by a dash.
+/// <see cref="NormalizeOptional"/> closes exactly that.
+///
+/// It does NOT fold the two spellings D-371 accepts (<c>05XXXXXXXX</c> and
+/// <c>+9665XXXXXXXX</c>) onto each other. A concurrent fix tried to, and the two
+/// branches picked OPPOSITE target forms — the disagreement only surfaced when they
+/// were merged, with each side's tests asserting the other's output was wrong.
+/// Picking a canonical spelling rewrites stored values and changes duplicate
+/// detection, search and export, so it is an OWNER decision, not a merge decision.
+/// It is recorded as an open item rather than silently chosen here. Both spellings
+/// are still ACCEPTED and both still round-trip unchanged apart from separators.</para>
 ///
 /// <para><b>What is ACCEPTED does not change — only what is STORED.</b>
 /// <see cref="Normalize"/> stays exactly the match form the D-371 shape rules are
@@ -39,15 +43,6 @@ namespace SIMF.Common;
 /// </summary>
 public static class MobileNumber
 {
-    /// <summary>C4 (D-371) — the Saudi LOCAL spelling: a leading trunk <c>0</c>,
-    /// then <c>5</c> and 8 more digits. Captured without the trunk zero, which is
-    /// exactly what follows the country code in the international spelling.</summary>
-    private static readonly Regex SaudiLocalShape =
-        new(@"^0(5\d{8})$", RegexOptions.Compiled);
-
-    /// <summary>The Saudi country code the local trunk <c>0</c> is exchanged for.</summary>
-    private const string SaudiCountryCode = "+966";
-
     /// <summary>The MATCH form of <paramref name="value"/>: trimmed, spaces and
     /// dashes stripped, a leading <c>00</c> rewritten to <c>+</c>. So
     /// "+9665 0123-4567", "+966501234567" and "009665..." all reduce to the same
@@ -61,20 +56,12 @@ public static class MobileNumber
             : stripped;
     }
 
-    /// <summary>DEF-PHN-003 — the STORAGE form: <see cref="Normalize"/>, plus the
-    /// Saudi local spelling folded onto the E.164 one, so both spellings D-371
-    /// accepts persist as a single string. Only an exact <c>05</c> + 8 digits is
-    /// folded; anything else — a non-Saudi international number, or a <c>05…</c>
-    /// of the wrong length — is returned as <see cref="Normalize"/> left it, so no
-    /// value is handed a country code it did not earn.</summary>
-    public static string Canonicalize(string value)
-    {
-        var normalized = Normalize(value);
-        var saudiLocal = SaudiLocalShape.Match(normalized);
-        return saudiLocal.Success
-            ? string.Concat(SaudiCountryCode, saudiLocal.Groups[1].Value)
-            : normalized;
-    }
+    /// <summary>DEF-PHN-003 — the STORAGE form. Currently identical to
+    /// <see cref="Normalize"/>: separators stripped and <c>00</c> rewritten to
+    /// <c>+</c>, which is the whole of the defect as filed. Kept as its own name so
+    /// the storage path has a single seam to change if the owner later decides to
+    /// fold the two accepted Saudi spellings onto one (see the class remarks).</summary>
+    public static string Canonicalize(string value) => Normalize(value);
 
     /// <summary>The canonical form for storage, or <c>null</c> when the value is
     /// blank — the shape every persistence path uses, so an absent number is a
