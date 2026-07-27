@@ -303,8 +303,21 @@ foreach ($pool in $AppPools) {
         Write-Warning ("app pool not found, skipped: {0}" -f $pool)
         continue
     }
-    Restart-WebAppPool -Name $pool
-    Write-Host ("  restarted: {0}" -f $pool) -ForegroundColor Green
+    # Restart-WebAppPool throws on a STOPPED pool, and $ErrorActionPreference
+    # is Stop, so fall back to starting it rather than aborting the runbook.
+    try {
+        Restart-WebAppPool -Name $pool -ErrorAction Stop
+        Write-Host ("  restarted: {0}" -f $pool) -ForegroundColor Green
+    }
+    catch {
+        try {
+            Start-WebAppPool -Name $pool -ErrorAction Stop
+            Write-Host ("  started (was stopped): {0}" -f $pool) -ForegroundColor Green
+        }
+        catch {
+            Write-Warning ("could not restart or start app pool: {0}" -f $pool)
+        }
+    }
 }
 
 Write-Host ""
