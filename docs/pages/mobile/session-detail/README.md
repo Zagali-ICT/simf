@@ -69,7 +69,12 @@ is no longer offered a desk entry that bounces.
   `sessionCalendarProvider`, E4) + تذكير (outlined; **deferred toast — D-300**,
   the notifications-platform pass owns real reminders).
 - Cancel (booked only): plain white text line under the CTA row (owner
-  2026-06-30); failures surface the backend's localized reason.
+  2026-06-30); failures surface the backend's localized reason. **A13
+  (2026-07-27):** the line reads **إلغاء الحجز / Cancel booking**
+  (`cancelBookingCta`), not the bare إلغاء — it must agree with the dialog it
+  opens, which is titled إلغاء الحجز (`cancelBookingConfirmTitle`). As a
+  side-effect the screen's line and the dialog's own dismiss button (إلغاء) are
+  no longer the same words, so they are unambiguous to find and to read out.
 
 ## 4. Button / action audit (Level F, 2026-07-03)
 | Control | Handler | Backend |
@@ -82,7 +87,7 @@ is no longer offered a desk entry that bounces.
 | اسأل المحاور (join-gated; attendee roles only — DEF-MOD-003) | push `sendQuestion?sessionId=` #26 | — |
 | الانضمام إلى الجلسة (attendee roles only — DEF-MOD-004) | confirm → `POST …/seats/join` or seat picker #109 | D-485 |
 | مقعدي card (seat-specific) | push `mySeat` #18 | — |
-| إلغاء (booked) | confirm → `DELETE …/seats/mine` | D-485 |
+| إلغاء الحجز (booked — A13) | confirm → `DELETE …/seats/mine` | D-485 |
 | أضف إلى تقويمي | device calendar insert (E4) | client-local |
 | تذكير | deferred-notice toast (**intentional stub — D-300**) | — |
 | Pull-to-refresh / retry | `_load()` re-fetch | both GETs |

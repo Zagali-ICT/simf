@@ -29,6 +29,20 @@ public interface ISeatReservationService
         Guid sessionId, Guid actorUserId,
         CancellationToken cancellationToken = default);
 
+    /// <summary>B1 (owner "change seat") — move the caller's already-held seat to
+    /// another seat in the SAME session. Atomic: the destination is acquired and the
+    /// source released inside one transaction, so a lost race (the target taken
+    /// between the read and the write) rolls the whole move back and leaves the
+    /// caller on their original seat — never seatless. Re-runs the initial
+    /// reservation's rules: seat bounds, tier eligibility (a non-VIP visitor cannot
+    /// move into a VIP seat; nobody self-moves into a VVIP seat) and, per the owner's
+    /// cancel boundary, only BEFORE the session starts
+    /// (<c>BOOKING_SESSION_STARTED</c> after that).</summary>
+    Task<MySeatReservation> MoveAsync(
+        Guid sessionId, Guid actorUserId,
+        MoveSeatRequest request,
+        CancellationToken cancellationToken = default);
+
     Task ReleaseMineAsync(
         Guid sessionId, Guid actorUserId,
         CancellationToken cancellationToken = default);

@@ -1,4 +1,6 @@
 // Tests: SIMF.Api.Tests/SeatReservationsTests.cs
+// Tests: SIMF.Api.Tests/SeatTierEligibilityTests.cs
+// Tests: SIMF.Api.Tests/SeatChangeTests.cs (B1 — the atomic seat move)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -365,6 +367,162 @@ internal sealed class SeatReservationService(
             sessionId, actorUserId);
 
         return ToMine(reservation);
+    }
+
+    public async Task<MySeatReservation> MoveAsync(
+        Guid sessionId, Guid actorUserId,
+        MoveSeatRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var row = (request.RowLabel ?? string.Empty).Trim();
+        var seat = request.SeatNumber;
+        var ctx = await BuildContextAsync(sessionId, cancellationToken);
+        EnsureSeatPickAllowed(ctx);
+        // B1 (owner rule, deliberate) — a self-service change of seat is allowed only
+        // BEFORE the session starts, the SAME boundary the cancel already enforces
+        // (D-227 / FR-504). Once the session is running the seat plan is what the
+        // staff seating desk and the gate flow work from on the floor, and the
+        // pre-start no-show sweep has already redistributed the un-checked-in holds;
+        // a visitor reshuffling themselves at that point would desync the desk. A
+        // move during a live session goes through staff, not the app.
+        EnsureSessionNotStarted(ctx.Start);
+        ValidateSeatBounds(ctx, row, seat);
+        // D-771 — the DESTINATION seat must pass exactly the same tier gate as a
+        // first reservation, via the one shared rule: a VVIP seat is never
+        // self-reservable, a VIP seat needs the VIP tier.
+        EnsureTierEligible(
+            ctx.SeatTiers[RowIndex(ctx.RowLabels, row)],
+            await IsVipVisitorAsync(actorUserId, cancellationToken));
+
+        var moved = await MoveHoldAtomicallyAsync(
+            ctx, actorUserId, row, seat, cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.SeatReservationMoved,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = $"reservationId={moved.Reservation.Id}; sessionId={sessionId}; "
+                + $"fromRow={moved.FromRowLabel}; fromSeat={moved.FromSeatNumber}; "
+                + $"row={row}; seat={seat}; kind=UserBooking; status=Approved",
+        }, cancellationToken);
+
+        logger.LogInformation(
+            "Seat moved from {FromRow}{FromSeat} to {Row}{Seat} on session {SessionId} by user {Actor}",
+            moved.FromRowLabel, moved.FromSeatNumber, row, seat, sessionId, actorUserId);
+
+        return ToMine(moved.Reservation);
+    }
+
+    /// <summary>B1 — the ATOMIC half of the seat change: release the held seat and
+    /// acquire the destination in ONE serializable transaction, so the holder can
+    /// never end up with no seat. Shaped like
+    /// <see cref="InsertHoldWithinCapacityAsync"/> — run through the EF execution
+    /// strategy (a manual transaction under <c>EnableRetryOnFailure</c> throws
+    /// otherwise) and deliberately NOT swallowing <see cref="DbUpdateException"/>, so
+    /// a deadlock victim re-runs the whole unit instead of being reported as a taken
+    /// seat. The "is the destination free?" read happens INSIDE the transaction, where
+    /// its key-range lock stops a concurrent hold slipping in between the read and
+    /// the insert; the filtered unique index on (SessionId, RowLabel, SeatNumber) is
+    /// the backstop, and firing it rolls the release back with it.
+    /// <para>The release is saved BEFORE the insert (two saves, one transaction)
+    /// because the OTHER filtered unique index — one active row per
+    /// (SessionId, ReservedForUserId) — would otherwise reject the new row while the
+    /// old one is still held; statement order inside a single SaveChanges batch is
+    /// an EF implementation detail, so it is made explicit here.</para></summary>
+    private async Task<(SeatReservation Reservation, string? FromRowLabel, int? FromSeatNumber)>
+        MoveHoldAtomicallyAsync(
+            SessionContext ctx, Guid actorUserId, string row, int seat,
+            CancellationToken cancellationToken)
+    {
+        SeatReservation? origin = null;
+        SeatReservation? added = null;
+        (SeatReservation Reservation, string? FromRowLabel, int? FromSeatNumber)? committed = null;
+        var strategy = appDbContext.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
+        {
+            // A retry re-enters here; drop everything a rolled-back attempt left
+            // tracked so the next SaveChanges neither re-inserts a stale row nor
+            // re-applies a release the database has already thrown away.
+            if (added is not null)
+            {
+                appDbContext.Entry(added).State = EntityState.Detached;
+                added = null;
+            }
+            if (origin is not null)
+            {
+                appDbContext.Entry(origin).State = EntityState.Detached;
+                origin = null;
+            }
+            committed = null;
+
+            await using var tx = await appDbContext.Database.BeginTransactionAsync(
+                System.Data.IsolationLevel.Serializable, cancellationToken);
+
+            origin = await appDbContext.SeatReservations
+                .SingleOrDefaultAsync(r => r.SessionId == ctx.SessionId
+                    && r.ReservedForUserId == actorUserId
+                    && r.ReleasedAt == null, cancellationToken)
+                ?? throw new ApiException(
+                    ErrorCodes.SeatReservationNotFound, 404,
+                    "You do not have a seat to change in this session.",
+                    "ليس لديك مقعد لتغييره في هذه الجلسة.");
+
+            if (string.Equals(origin.RowLabel, row, StringComparison.OrdinalIgnoreCase)
+                && origin.SeatNumber == seat)
+            {
+                throw new ApiException(
+                    ErrorCodes.SeatMoveSameSeat, 409,
+                    "You already have that seat — pick a different one.",
+                    "هذا المقعد محجوز لك بالفعل — اختر مقعداً آخر.");
+            }
+
+            var taken = await appDbContext.SeatReservations.AsNoTracking()
+                .AnyAsync(r => r.SessionId == ctx.SessionId
+                    && r.RowLabel == row
+                    && r.SeatNumber == seat
+                    && r.ReleasedAt == null, cancellationToken);
+            if (taken)
+            {
+                throw new ApiException(
+                    ErrorCodes.SeatAlreadyReserved, 409,
+                    "That seat is already reserved.",
+                    "هذا المقعد محجوز بالفعل.");
+            }
+
+            var now = timeProvider.GetUtcNow();
+            var fromRow = origin.RowLabel;
+            var fromSeat = origin.SeatNumber;
+            origin.ReleasedAt = now;
+            origin.Status = BookingStatus.Cancelled;
+            await appDbContext.SaveChangesAsync(cancellationToken);
+
+            var target = new SeatReservation
+            {
+                Id = Guid.NewGuid(),
+                SessionId = ctx.SessionId,
+                RowLabel = row,
+                SeatNumber = seat,
+                // A move is a deliberate self-pick, whatever the seat it replaces was
+                // acquired as (self-pick or auto-pick).
+                Kind = SeatReservationKind.UserBooking,
+                ReservedForUserId = actorUserId,
+                CreatedByUserId = actorUserId,
+                CreatedAt = now,
+                Status = BookingStatus.Approved,
+                // #6/#17 — the moved hold keeps the SAME no-show deadline as the seat
+                // it replaces: 3 minutes before the session starts.
+                Expires = ctx.Start - NoShowReleaseGrace,
+            };
+            appDbContext.SeatReservations.Add(target);
+            added = target;
+            await appDbContext.SaveChangesAsync(cancellationToken);
+            await tx.CommitAsync(cancellationToken);
+            committed = (target, fromRow, fromSeat);
+        });
+
+        return committed ?? throw new InvalidOperationException(
+            "The seat move completed without producing a reservation.");
     }
 
     public async Task ReleaseMineAsync(
@@ -1474,6 +1632,23 @@ internal sealed class SeatReservationService(
                 ErrorCodes.BookingSessionEnded, 409,
                 "This session has ended; you can no longer book a seat.",
                 "انتهت هذه الجلسة، ولم يعد بإمكانك حجز مقعد.");
+        }
+    }
+
+    /// <summary>B1 — the self-service seat CHANGE window: only BEFORE the session
+    /// starts. Deliberately the same boundary <see cref="ReleaseMineAsync"/> uses for
+    /// a cancel (D-227 / FR-504) rather than the looser not-yet-ENDED rule the create
+    /// paths use: a walk-in may still book a live session, but reshuffling an
+    /// already-placed attendee mid-session would desync the staff seating desk and the
+    /// pre-start no-show sweep that has already redistributed the free seats.</summary>
+    private void EnsureSessionNotStarted(DateTimeOffset start)
+    {
+        if (timeProvider.GetUtcNow() >= start)
+        {
+            throw new ApiException(
+                ErrorCodes.BookingSessionStarted, 409,
+                "You cannot change your seat after the session has started.",
+                "لا يمكنك تغيير مقعدك بعد بدء الجلسة.");
         }
     }
 

@@ -1,4 +1,5 @@
 // Tests: SIMF.Api.Tests/SeatReservationsTests.cs
+// Tests: SIMF.Api.Tests/SeatChangeTests.cs (B1 — the change-seat endpoint)
 using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
@@ -114,6 +115,47 @@ public sealed class JoinOpenSeatingEndpoint(ISeatReservationService service)
         }
         await Send.OkAsync(ApiResult<MySeatReservation>.Ok(
             await service.JoinOpenSeatingAsync(req.SessionId, actorId, ct)), ct);
+    }
+}
+
+public sealed class MoveSeatRoute : MoveSeatRequest
+{
+    public Guid SessionId { get; set; }
+}
+
+/// <summary>B1 (owner "change seat") — move the caller's already-held seat to a
+/// different seat in the same session in ONE atomic step, so they are never left
+/// seatless by a cancel-then-rebook. 409 <c>SEAT_ALREADY_RESERVED</c> when the
+/// destination was taken first (the original seat stays held), 409
+/// <c>SEAT_MOVE_SAME_SEAT</c> for a no-op move, 409 <c>SEAT_TIER_*</c> when the
+/// destination's tier is out of reach, 409 <c>BOOKING_SESSION_STARTED</c> once the
+/// session has begun, 404 <c>SEAT_RESERVATION_NOT_FOUND</c> with no seat to
+/// move.</summary>
+public sealed class MoveSeatEndpoint(ISeatReservationService service)
+    : Endpoint<MoveSeatRoute, ApiResult<MySeatReservation>>
+{
+    public override void Configure()
+    {
+        Post("/app/sessions/{sessionId:guid}/seats/move");
+        Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Sessions");
+    }
+    public override async Task HandleAsync(MoveSeatRoute req, CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        await Send.OkAsync(ApiResult<MySeatReservation>.Ok(
+            await service.MoveAsync(req.SessionId, actorId,
+                // Re-projected so the route model cannot over-post onto the request.
+                new MoveSeatRequest
+                {
+                    RowLabel = req.RowLabel,
+                    SeatNumber = req.SeatNumber,
+                }, ct)), ct);
     }
 }
 

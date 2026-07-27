@@ -325,6 +325,10 @@ public static class ErrorCodes
     // it manually with a guest hint.
     public const string SeatTierNotEligible = "SEAT_TIER_NOT_ELIGIBLE";
     public const string SeatTierReserved = "SEAT_TIER_RESERVED";
+    // B1 — a CHANGE-SEAT request whose destination is the seat the caller already
+    // holds. Distinct from SEAT_ALREADY_RESERVED (someone else has it) so the app
+    // can say "you are already sitting there" instead of "that seat is taken".
+    public const string SeatMoveSameSeat = "SEAT_MOVE_SAME_SEAT";
 
     // Booking approval workflow (P2.2 / D-227 — FDS-005 §5).
     public const string BookingOverlap = "BOOKING_OVERLAP";
