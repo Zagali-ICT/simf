@@ -42,6 +42,8 @@
 | E2E-MOB002-009 | Background media — the world-map poster backs EVERY step, so a step is never blank navy | happy | P0 | authored ✓ (widget test) |
 | E2E-MOB002-010 | Background media — a PLAYING video sits under the 60% scrim (visible motion); the still poster keeps the design 90% | happy | P1 | authored ✓ (widget test) |
 | E2E-MOB002-011 | Background media — a device that refuses the clip degrades to the poster and logs the reason in debug (no visitor-facing error) | resilience | P1 | authored ✓ (widget test) |
+| E2E-MOB002-012 | Each step shows its OWN title (DEF-ONB-006) | happy | P1 | authored ✓ (widget test) |
+| E2E-MOB002-013 | One decoder + one bundled clip across all three steps — no restart, no gap, no duplicate APK payload (DEF-ONB-004) | perf | P1 | authored ✓ (widget test) |
 
 ## Scenarios
 
@@ -180,17 +182,60 @@ Scenario: The scrim over a playing video is lighter than over the poster
 
 ```gherkin
 Scenario: A device that cannot decode the clip still shows a background
-  Given the platform video decoder rejects assets/videos/onboard_02.mp4
-  When the user pages to step 2
-  Then the world-map poster + the 90% scrim are shown
+  Given the platform video decoder rejects assets/videos/onboard_01.mp4
+  When the onboarding screen opens
+  Then the world-map poster + the 90% scrim are shown on every step
   And NO error is surfaced to the visitor
   And a debug build prints the asset path and the decoder error
 # The Huawei/HiSilicon AVC decoder case is handled by the vendored
 # third_party/video_player_android decoder-fallback patch (D-768).
 ```
 
+### E2E-MOB002-012 — Each step shows its own title (DEF-ONB-006)
+
+```gherkin
+Scenario Outline: The step title matches the step
+  Given the onboarding screen is shown in English
+  When the user pages to step <step>
+  Then the title reads "<title>"
+
+  Examples:
+    | step | title                             |
+    | 1    | Welcome to the SIMF app           |
+    | 2    | Follow the sessions and speakers  |
+    | 3    | Your smart badge and networking   |
+# onboardingTitle2 / onboardingTitle3 existed but were never rendered: all
+# three steps painted onboardingTitle1, so the carousel read as one panel.
+```
+
+**Evidence:** `onboarding_screen_test` — "DEF-ONB-006 — each step shows its OWN
+title, not title 1 three times".
+
+### E2E-MOB002-013 — One decoder, one clip (DEF-ONB-004)
+
+```gherkin
+Scenario: Swiping does not restart or re-download the background
+  Given the onboarding background video is playing on step 1
+  When the user swipes to step 2 and then step 3
+  Then the SAME controller keeps playing (no black gap, no restart at 0:00)
+
+Scenario: The bundle carries the clip once
+  Given the app asset bundle
+  Then assets/videos/onboard_01.mp4 is present
+  And assets/videos/onboard_02.mp4 is absent
+  And assets/videos/onboard_03.mp4 is absent
+# The three per-step placeholders were byte-identical — the same 4.6 MB clip
+# three times (~13.8 MB of duplicate APK payload), re-initialised on every
+# swipe. When the owner supplies genuinely different step clips, add them back
+# as new AppAssets constants and restore the per-step list.
+```
+
+**Evidence:** `onboarding_screen_test` — "DEF-ONB-004 — the carousel ships ONE
+background clip, not three byte-identical copies".
+
 ---
 
-_Last reviewed:_ `2026-07-26` by `SIMF Team` — added E2E-MOB002-009..011 for the
-owner's "background video not working" fix (poster on every step, 60% video scrim,
-debug-visible decode failure).
+_Last reviewed:_ `2026-07-27` by `SIMF Team` — added E2E-MOB002-012..013 for the
+deferred onboarding items (per-step titles DEF-ONB-006, single controller +
+de-duplicated clip DEF-ONB-004). DEF-ONB-003 (a still fallback on every step)
+was already covered by E2E-MOB002-009 and shipped in the earlier wave.

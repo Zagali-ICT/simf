@@ -8,6 +8,12 @@ import 'package:simf_app/features/venuemap/data/venue_map_repository.dart';
 import 'package:simf_app/features/venuemap/venue_map_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+const _testConfig = SimfDataConfig(
+  baseUrl: 'http://test.local/api/v1',
+  appKey: 'test',
+  deviceType: SimfDeviceType.android,
+);
+
 const _boothNode = VenueMapNode(
   id: 'n1',
   label: 'Booth A-12',
@@ -98,6 +104,9 @@ Future<void> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: <Override>[
+        // FR-LGO-005 — the info card's logo badge builds its asset URL off the
+        // data config, so the screen now reads it.
+        simfDataConfigProvider.overrideWithValue(_testConfig),
         venueMapRepositoryProvider.overrideWithValue(repo),
       ],
       child: MaterialApp(
@@ -158,6 +167,62 @@ void main() {
       // Figma 758:1358 has a single action — the "View details" button was
       // removed (owner 2026-07-08), so no booth node shows it.
       expect(find.text('View details'), findsNothing);
+    });
+
+    testWidgets('FR-LGO-005 — a booth card carries the exhibitor logo badge '
+        'from the BoothLogo asset route', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeVenueMapRepository(
+          nodes: const <VenueMapNode>[_boothNode, _farNode],
+          booths: const <BoothSummary>[_booth],
+          detail: _detail,
+        ),
+      );
+
+      await tester.tap(find.text('Booth A-12'));
+      await tester.pumpAndSettle();
+
+      // The frame's 60x60 badge was dropped when booths had no logo assets;
+      // they do now (BoothLogo, D-357/D-764), so the card renders it.
+      final badge = tester.widget<Image>(find.byType(Image));
+      // The badge decode-caps its thumbnail, so the provider is a ResizeImage
+      // wrapping the real NetworkImage.
+      final provider = badge.image;
+      final network = provider is ResizeImage
+          ? provider.imageProvider as NetworkImage
+          : provider as NetworkImage;
+      expect(
+        network.url,
+        'http://test.local/api/v1/app/assets/BoothLogo/b1/image',
+      );
+      final box = tester.getSize(
+        find
+            .ancestor(
+              of: find.byType(Image),
+              matching: find.byType(Container),
+            )
+            .first,
+      );
+      expect(box.width, 60);
+      expect(box.height, 60);
+    });
+
+    testWidgets('FR-LGO-005 — a non-booth node has no logo badge',
+        (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeVenueMapRepository(
+          nodes: const <VenueMapNode>[_hallNode, _farNode],
+          booths: const <BoothSummary>[],
+        ),
+      );
+
+      await tester.tap(find.text('Hall A'));
+      await tester.pumpAndSettle();
+
+      // A hall / zone node has no exhibitor, so there is nothing to badge.
+      expect(find.byType(Image), findsNothing);
     });
 
     testWidgets('a non-booth node shows the card with Guide-me only and '

@@ -460,6 +460,13 @@ public static class ErrorCodes
     public const string GateInvalid = "GATE_INVALID";
     public const string GateNotFound = "GATE_NOT_FOUND";
     public const string GateCodeDuplicate = "GATE_CODE_DUPLICATE";
+    // DEF-STF-008 — GATE_INACTIVE (503) is retired: a scan at an inactive gate
+    // is a RECORDED denial at HTTP 200 (DenialReasonCode.GateInactiveAtScan),
+    // never an envelope failure, so no endpoint ever emitted this code. Kept in
+    // the published vocabulary so an older client that still branches on it
+    // keeps compiling / decoding; nothing produces it.
+    [Obsolete("Never emitted — an inactive gate is denied at HTTP 200 with " +
+              "GATE_INACTIVE_AT_SCAN (DEF-STF-008).")]
     public const string GateInactive = "GATE_INACTIVE";
     public const string GateOperatorNotAssigned = "GATE_OPERATOR_NOT_ASSIGNED";
     public const string GateAssignmentInvalid = "GATE_ASSIGNMENT_INVALID";

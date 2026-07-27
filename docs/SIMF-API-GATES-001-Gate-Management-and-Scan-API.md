@@ -472,11 +472,22 @@ Same `(Idempotency-Key, GateId)` posted a second time. HTTP **200**.
 | 409 | `IDEMPOTENCY_KEY_CONFLICT` | Same key, **different** payload (qr / gateId mismatch) |
 | 429 | `RATE_LIMIT_EXCEEDED` | Standard rate-limiter |
 | 429 | `GATE_FAILURE_CIRCUIT_OPEN` | Failure-rate circuit fired; `X-Gate-Failure-Circuit: open` |
-| 503 | `GATE_INACTIVE` | The gate itself is `IsActive = false` |
+| ~~503~~ | ~~`GATE_INACTIVE`~~ | **Retired — see the as-built note below** |
 
 A denial recorded in `GateScan` is **not** in this table — denials use the
 HTTP 200 success-envelope path of §7.2.2 because the system did record the
 event the operator asked for.
+
+**As-built (DEF-STF-008).** `POST /scans` never returns `503 GATE_INACTIVE`.
+A scan aimed at a gate with `IsActive = false` is denied by engine step 5 as a
+**recorded** `GATE_INACTIVE_AT_SCAN` denial at HTTP **200** (§7.2.2 / §8.2), so
+the attempt still lands in the append-only `GateScan` audit trail and the
+operator gets the localised denial card rather than an envelope failure. The
+inactive-gate check reads the same cached gate snapshot the rest of the engine
+uses, so there is no separate "pre-engine" moment for a 503 to occupy; the
+endpoint arm that handled that result kind was unreachable and has been removed.
+`ErrorCodes.GateInactive` stays in the published vocabulary (marked obsolete)
+but nothing emits it.
 
 ### 7.3 My report — today
 
@@ -609,7 +620,7 @@ These are *envelope failures* (`success: false`).
 | `GATE_INVALID` | 400 | Validation of a gate-management payload failed (code length, name length, direction mode, …) |
 | `GATE_NOT_FOUND` | 404 | The addressed gate does not exist |
 | `GATE_CODE_DUPLICATE` | 409 | Create or update would collide with an existing gate code |
-| `GATE_INACTIVE` | 503 | Scan target gate is `IsActive = false` |
+| ~~`GATE_INACTIVE`~~ | ~~503~~ | **Retired (DEF-STF-008)** — an inactive scan target is denied at HTTP 200 with `GATE_INACTIVE_AT_SCAN` (§7.2.4 as-built note, §8.2) |
 | `GATE_OPERATOR_NOT_ASSIGNED` | 403 | Caller has no active assignment for the addressed gate |
 | `GATE_ASSIGNMENT_INVALID` | 400 | Assignment add/remove payload invalid |
 | `GATE_PROFILE_TYPE_INVALID` | 400 | Allowed-profile-type id is missing, duplicated, or refers to a non-existent / inactive `ProfileType` |
@@ -625,7 +636,7 @@ emits exactly one of these on a denial.
 | Code | Meaning | Emitted by engine step |
 |------|---------|------------------------|
 | `QR_UNKNOWN` | The QR resolved to no `UserProfile` | 3 |
-| `GATE_INACTIVE_AT_SCAN` | Gate became inactive between request and validation. Recorded for forensic completeness; the HTTP path also returns 503 if reached pre-engine. | 5 |
+| `GATE_INACTIVE_AT_SCAN` | The scan target gate is `IsActive = false`. This is the ONLY outcome for an inactive gate (DEF-STF-008): recorded, so the attempt keeps its audit row, and localised so the operator sees "This gate is currently inactive." | 5 |
 | `HOLDER_NOT_APPROVED` | The visitor's account is not in `Approved` state | 6 |
 | `HOLDER_DISABLED` | The visitor's account is `Disabled` | 7 |
 | `HOLDER_LOCKED` | The visitor's account is `Locked` | 8 |

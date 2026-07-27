@@ -241,6 +241,34 @@ void main() {
       expect(find.text('SAMI'), findsNWidgets(2));
     });
 
+    testWidgets('DEF-LGO-002 — the logo tile paints into a SQUARE box, so a '
+        'square logo is never cropped', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeRepo(booths: const <BoothSummary>[_samiWithLogo]),
+      );
+
+      // The tile is the Figma 48x48 square.
+      final tile = tester.getSize(
+        find
+            .ancestor(
+              of: find.byType(Image),
+              matching: find.byType(Container),
+            )
+            .first,
+      );
+      expect(tile.width, 48);
+      expect(tile.height, 48);
+
+      // The inset used to be horizontal-only (4px each side), leaving a 40x48
+      // content box while the image still asked for 48x48 — the tile's clip
+      // then shaved 4px off each side of even a perfectly SQUARE logo. The
+      // paint box is now square and fits inside the tile's 4px inset.
+      final mark = tester.widget<Image>(find.byType(Image));
+      expect(mark.width, mark.height);
+      expect(mark.width, 40); // 48 − 2×4
+    });
+
     testWidgets('PAR-B3 — RTL: the booth logo tile is at the inline start '
         '(right) of the company name', (tester) async {
       await _pump(

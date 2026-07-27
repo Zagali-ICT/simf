@@ -102,8 +102,8 @@ class AppL10n {
         'مرحباً بك في تطبيق الملتقى',
         'Welcome to the SIMF app',
       );
-  // Step bodies — the KSA-Project onboarding copy (Figma 148:22 / 159:942 /
-  // 159:1052, D-362). All three steps share onboardingTitle1 as their title.
+  // Step titles + bodies — the KSA-Project onboarding copy (Figma 148:22 /
+  // 159:942 / 159:1052, D-362). One title per step (DEF-ONB-006).
   String get onboardingBody1 => _t(
         'دليلك المتكامل: الأجندة، المتحدثون، الخريطة التفاعلية، البطاقة الذكية، والبث المباشر في تطبيق واحد.',
         'Your complete guide: the agenda, speakers, interactive map, smart badge and live broadcast in one app.',
@@ -980,6 +980,16 @@ class AppL10n {
         'لست مشغّلاً لأي بوابة.',
         'You are not assigned to any gate.',
       );
+  // DEF-STF-006 — an inactive gate denies EVERY scan, so it must be marked in
+  // the picker; the operator was left reading red denials with no hint that the
+  // GATE, not the badge, was the problem.
+  String get gateInactiveTag => _t('غير نشطة', 'inactive');
+  String get gateInactiveWarning => _t(
+        'هذه البوابة غير نشطة — سيُرفض كل مسح عليها. اختر بوابة أخرى أو اطلب '
+            'تفعيلها من لوحة التحكم.',
+        'This gate is inactive — every scan on it will be denied. Pick another '
+            'gate, or ask the Control Panel to activate it.',
+      );
   String get gateForbidden => _t(
         'لا تملك صلاحية تشغيل البوابات.',
         'You are not authorised to operate gates.',
@@ -1037,6 +1047,31 @@ class AppL10n {
   String get staffProfileTypeUnavailable => _t(
         'تعذّر تحميل تصنيف الزائر.',
         'Could not load the visitor classification.',
+      );
+  // DEF-STF-007 — the classification lookup came back EMPTY, so the operator has
+  // nothing to pick and submit can never pass. Say what to do about it.
+  String get staffProfileTypeEmptyHelp => _t(
+        'لا توجد تصنيفات زوار مفعّلة. اطلب من مسؤول لوحة التحكم إضافة تصنيف زائر ثم أعد المحاولة.',
+        'No active visitor classifications exist. Ask a Control Panel administrator to add one, then retry.',
+      );
+  // DEF-STF-004 — an attachment upload that fails AFTER the visitor was created.
+  // The account exists; only the file is missing, so the operator retries the
+  // UPLOAD instead of registering the person a second time.
+  String get staffUploadFailedTitle => _t(
+        'تم تسجيل الزائر — تعذّر رفع المرفقات',
+        'Visitor registered — attachments not uploaded',
+      );
+  String get staffUploadFailedIntro => _t(
+        'تم إنشاء حساب الزائر (بانتظار الاعتماد)، لكن تعذّر رفع ما يلي:',
+        'The visitor account was created (pending approval), but these could '
+            'not be uploaded:',
+      );
+  String get staffUploadRetryLabel => _t('إعادة رفع المرفقات', 'Retry upload');
+  String get staffUploadSkipLabel =>
+      _t('المتابعة بدون المرفقات', 'Continue without them');
+  String get staffUploadRetrySuccess => _t(
+        'تم رفع المرفقات.',
+        'The attachments were uploaded.',
       );
   String get staffRegisterAnother => _t('تسجيل زائر آخر', 'Register another');
   // The My-Area "الجلسات المحفوظة" counter (D-584) — shows the SAVED (favourited)

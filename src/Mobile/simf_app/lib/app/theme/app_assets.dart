@@ -53,9 +53,15 @@ class AppAssets {
   static const String chevronLeft = 'assets/icons/chevron_left.svg';
 
   // ── Onboarding ──────────────────────────────────────────────────────────
-  static const String onboardVideo1 = 'assets/videos/onboard_01.mp4';
-  static const String onboardVideo2 = 'assets/videos/onboard_02.mp4';
-  static const String onboardVideo3 = 'assets/videos/onboard_03.mp4';
+  /// The single looping hero clip behind all three onboarding steps.
+  ///
+  /// It used to ship three times (`onboard_01..03.mp4`) as per-step
+  /// placeholders, but the three files were byte-identical — ~13.8 MB of the
+  /// same 4.6 MB clip in the APK, re-decoded from scratch on every swipe. One
+  /// asset, one decoder (DEF-ONB-004). When the owner supplies genuinely
+  /// different step clips, add them back as new constants and give the screen a
+  /// per-step list again.
+  static const String onboardVideo = 'assets/videos/onboard_01.mp4';
   static const String onboardingWorldMap =
       'assets/images/onboarding_world_map.jpg';
 }
