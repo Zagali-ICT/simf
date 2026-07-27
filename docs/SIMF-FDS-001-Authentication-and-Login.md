@@ -4,14 +4,14 @@
 |-------|-------|
 | Document ID | SIMF-FDS-001 |
 | Title | Feature Design Specification — Authentication and Login |
-| Version | 2.0 |
+| Version | 2.1 |
 | Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
 | Owner | Product Owner |
 | Approver | Product Owner |
 | Date issued | 2026-05-20 |
-| Last updated | 2026-05-24 |
+| Last updated | 2026-07-27 |
 | Related documents | SIMF-SRS-001, SIMF-UCS-001, SIMF-API-001, SIMF-DAT-001, SIMF-RPM-001, SIMF-SAD-001, SIMF-SES-001, SIMF-CPD-001, docs/decisions/DECISIONS_LOG.md |
 
 ### Revision history
@@ -20,6 +20,7 @@
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. The authentication feature, build-ready. |
 | 1.1 | 2026-05-21 | Engineering & Architecture Team | Architecture-review amendment (see Amendment A): account lockout; the visitor email-OTP second factor; second-factor token rules; the superadmin TOTP bootstrap; the forced-password-change state; sessions, admin force-sign-out and the token-revocation security stamp. |
+| 2.1 | 2026-07-27 | Engineering & Architecture Team | **Amendment C — OI-3 closed on the negative (D-774).** The owner decided the public Website ships **no sign-in and no account area**, so OI-3 is resolved and every description of a Website sign-in in this document is corrected: §7 (user interface), B.2 (the Website cookie scheme, retired), B.8 (the second-factor bypass) and B.12 (the audience gate). Reverses D-018; supersedes the `/account` landing of D-024. The `SignInAudience.Web` value and the `/api/v1/app/auth/*` endpoints are unchanged — only the Website's own sign-in surface is gone. |
 | 2.0 | 2026-05-24 | Engineering & Architecture Team | **Amendment B — Implementation update.** Captures everything built between 2026-05-22 and 2026-05-24: bilingual error messages (D-030); the CP cookie-auth + ticket hand-off pattern (D-026, D-029, D-037); TOTP enrolment two-slot pattern (D-036) and the time-source / secret-format fix (D-034); TOTP recovery codes — 10 single-use Crockford codes (D-040); the `TwoFactorEnabled=false` bypass for visitors and non-enrolled admins (D-033); admin-driven 2FA reset with a mandatory reason (D-041); the `change-password` endpoint; the sign-in **audience gate** (cp / web / app — P2); the **PendingApproval-blocks-CP-allows-Web** rule introduced with the approval workflow (P4); the password-reset code reuse policy; and the full implemented endpoint surface (Amendment B section B.13). Records the open P7 rework that will introduce the `UserType` model and `ProfileType` lookup. |
 
 ---
@@ -266,7 +267,7 @@ is the external designer's; the Control Panel screens follow SIMF-CPD-001.
 |---------|---------|
 | Mobile app | Screen 3 Login · Screen 4 Sign-up step 1 · Screen 6 Email OTP verification (the mockup also holds an alternate Screen 6 photo-verification variant, which belongs to registration, not this feature) |
 | Control Panel | The sign-in screen and the TOTP step |
-| Website | The website sign-in, where the site offers it |
+| Website | **None — the public Website carries no sign-in and no account area (D-774, 2026-07-27; OI-3 closed).** Its only authentication-adjacent page is `/meeting/confirm`, which is anonymous and token-addressed (the opaque token in the emailed link is the sole credential). |
 
 Every screen shows a loading state and a clear error state; a field error is
 shown against its field, using the `details` entries from the API response.
@@ -361,7 +362,7 @@ The feature is accepted when all of the following hold:
 |----|------|---------|
 | OI-1 | Generalise `EmailVerificationCode` in SIMF-DAT-001 to an account-code entity with a `Purpose` field (email verification / password reset) | Section 6 |
 | OI-2 | Confirm the verification/reset code lifetime (10 minutes assumed) and the auth rate-limit values with the owner | Sections 5, 9 |
-| OI-3 | Confirm whether the website offers sign-in, or only the app and Control Panel do | Section 7 |
+| ~~OI-3~~ | **CLOSED 2026-07-27 by D-774 — the website offers NO sign-in; only the app and the Control Panel do.** Asked directly, the owner answered "remove auth from web", so the Website's `/login`, `/login/verify`, `/forgot-password`, `/reset-password` and `/account/*` routes were deleted together with the Website-local cookie scheme and its auth plumbing. This closes OI-3 on the negative, which is the exit D-018 recorded in advance. `/meeting/confirm` is deliberately kept (anonymous, token-addressed). See `docs/decisions/DECISIONS_LOG.md` **D-774** (and D-018, D-024, both marked superseded there). | Section 7, B.2, B.8, B.12 |
 | OI-4 | Confirm document classification with the owner | Control block |
 
 ---
@@ -459,12 +460,17 @@ the anonymous surface is the sign-in pages, password-reset, error and
 not-found pages, the `/auth/complete` ticket-handoff endpoint, and the
 `/culture` language-cookie endpoint.
 
-The Website (SIMF.Web) gained the same cookie-auth shape under D-046(c) so
-that `/account/visitor-profile` can render server-side with the user's API
-tokens kept out of the browser. The Website cookie scheme is named
-`simf.web.auth`; the Control Panel cookie scheme is the ASP.NET Core
-Identity default. Both are independent — a sign-in in one does not affect
-the other.
+**RETIRED 2026-07-27 (D-774).** The Website (SIMF.Web) gained the same
+cookie-auth shape under D-046(c) so that `/account/visitor-profile` could
+render server-side with the user's API tokens kept out of the browser. That
+whole surface is gone: with the Website sign-in removed (OI-3 closed on the
+negative), the `simf.web.auth` cookie scheme, `AddAuthorization`,
+`UseAuthentication` / `UseAuthorization`, the ticket-handoff and
+`/account/api/*` proxy endpoints and `SimfCookieRefreshHandler` were all
+deleted, because nothing signed in on the Website any more. **The Control
+Panel is unaffected** — it keeps the ASP.NET Core Identity default cookie
+scheme described above, and it is now the only cookie-authenticated SIMF
+surface.
 
 ### B.3 The CP proxy pattern (D-037)
 
@@ -548,12 +554,14 @@ The sign-in second factor is **skipped** when the account has
 `TwoFactorEnabled = false`. The API issues tokens directly on the password
 step and `SignInResponse.Tokens` carries them; `MfaRequired` is `false`,
 `MfaToken` and `OtpToken` are null. This applies to **both** Control Panel
-users (today: TOTP) and Website visitors (today: email OTP).
+users (today: TOTP) and visitors (today: email OTP).
 
 Why: a visitor who has not opted into 2FA must not be forced through it.
-The Control Panel sign-in page and the Website sign-in page branch on
-`MfaRequired`: tokens present → complete sign-in; otherwise → continue to
-the second-factor page.
+The client sign-in surface branches on `MfaRequired`: tokens present →
+complete sign-in; otherwise → continue to the second-factor page. Since
+D-774 (2026-07-27) those surfaces are the **Control Panel sign-in page** and
+the **Flutter app**; the Website no longer signs anyone in, so it no longer
+takes part in this branch.
 
 ### B.9 Admin-driven 2FA reset (D-041)
 
@@ -621,9 +629,23 @@ attempted audience.
 
 The gate runs **after** the password and account-state checks so the
 response can't be used as a credential-existence oracle. The CP sign-in
-page sets `Audience = Cp`; the Website sets `Audience = Web`; the
-Flutter app will set `Audience = App` when it ships (same rule as Web —
-visitor-only).
+page sets `Audience = Cp` and the Flutter app sets `Audience = App`
+(visitor-only).
+
+**Since D-774 (2026-07-27) no first-party client sets `Audience = Web`.**
+The Website has no sign-in, so nothing selects that surface deliberately.
+The `SignInAudience.Web` enum value and its `AUTH_WRONG_SURFACE_WEB` error
+code are **retained**, not removed: the enum is frozen against rename and
+reorder under D-110, `Web = 0` is persisted in existing
+`SignIn.WrongSurface` audit rows, and the `/api/v1/app/auth/*` endpoints
+that accept it were not touched.
+
+Note that `Web` is still the **wire default** — `SignInRequest.Audience`
+initialises to `SignInAudience.Web` (`SIMF.Contracts/Authentication/SignIn.cs`),
+deliberately, because it is the least-privileged surface: a caller that
+omits the field is treated as a visitor and can never reach the Control
+Panel. So `Web` is a reserved, no-longer-deliberately-selected audience that
+remains the safe fallback, **not** a dead value to be deleted.
 
 This implements the customer's instruction: "never any user type other
 than super admin can access CP, and same for WEB/APP."

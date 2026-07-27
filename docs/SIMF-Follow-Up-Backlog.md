@@ -257,7 +257,7 @@ file itself is left untouched per the standing "never commit
   The expansion is to do the same for the credential-flow code-issue
   emails (password reset, email-verification, sign-in OTP — currently
   email-only).
-- L36 The seeded TOTP secret `dbji csx7 c3mj s2qa sjcl rbcl kiqk ovr3`
+- L36 The seeded TOTP secret `[REDACTED - supply via SIMF_SuperAdmin__TotpSecret]`
   — owner reported "not working". `TotpVerifier` uses `OtpNet` which
   defaults to UTC + 30-second window. The secret IS the
   super-admin's; the test infrastructure verifies the same code path

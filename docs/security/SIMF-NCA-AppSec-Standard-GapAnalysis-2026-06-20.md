@@ -131,7 +131,7 @@ These are the highest‑risk items and they map directly onto NCA controls.
 | **C2** | Flutter app installs an app‑wide `badCertificateCallback => true` trust‑all override (`lib/core/net/self_signed_api_tls_io.dart:26‑27`), wired in `main.dart:28` with **no `kReleaseMode` guard** → ships in release → full MITM of all app traffic | A11‑1, A11‑15, A11‑22, A5‑6 | **OPEN — owner‑held** pending CA cert |
 | **H2** | Production TLS is a **self‑signed** cert `CN=WIN‑MAP9VAMAU4Q` with no trusted chain | A5‑1, A5‑6 | **OPEN — owner‑held** |
 | **C1** | `appsettings.Development.json` is git‑tracked; JWT signing key, ID‑document AES‑256 key, and Zoho SMTP password are blanked in the working tree but **remain in git history** | A2‑9, A2‑3, A2‑19, A7‑16 | **OPEN — ops:** rotate + purge history |
-| **H1** | Super‑admin default password (`Aa@123456789`) + working TOTP seed were committed; inert only if `SIMF_SuperAdmin__*` env overrides are set on the server | A7‑7, §3‑14 | **OPEN — ops:** verify env + rotate |
+| **H1** | Super‑admin default password (`[REDACTED - supply via SIMF_SuperAdmin__TempPassword]`) + working TOTP seed were committed; inert only if `SIMF_SuperAdmin__*` env overrides are set on the server | A7‑7, §3‑14 | **OPEN — ops:** verify env + rotate |
 
 > A Production boot guard now refuses to start with the committed default password
 > (`Program.cs:354‑360`) and the JWT key length is gated (`Program.cs:274‑278`) — these

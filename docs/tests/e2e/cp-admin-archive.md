@@ -6,7 +6,7 @@
 | **Route** | `/admin/archive` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
-| **Auth setup** | `superadmin@zagali-ict.com` / `Aa@123456789` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@zagali-ict.com` / `[REDACTED - supply via SIMF_SuperAdmin__TempPassword]` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-06-16 (D-440 — gallery/past-speaker image fields now expect a full https URL) |
 
 > **P6 (D-440):** the gallery `url` and past-speaker `photo` fields are now

@@ -36,10 +36,10 @@ Feature: Administrator sign-in
   Scenario: Super-admin signs in (password + TOTP)
     Given an administrator opens /login
     When they fill Email="superadmin@zagali-ict.com"
-    And they fill Password="Aa@123456789"
+    And they fill Password="[REDACTED - supply via SIMF_SuperAdmin__TempPassword]"
     And they click "Sign in"
     Then they land on /login/totp
-    When they generate a TOTP via Get-Totp 'dbji csx7 c3mj s2qa sjcl rbcl kiqk ovr3'
+    When they generate a TOTP via Get-Totp '[REDACTED - supply via SIMF_SuperAdmin__TotpSecret]'
     And they fill that 6-digit code
     And they click "Verify"
     Then they land on /

@@ -399,11 +399,14 @@ public sealed class CommittedSecretsTests
             Array.Empty<string>()),
 
         // SuperAdmin:TempPassword — the bootstrap super-admin seed password.
-        // Removed from the Developer-Guide port map; the residual occurrences
-        // are the boot-time deny-list, the two security documents that record
-        // the finding, and the dev-login line repeated across the E2E
-        // catalogue + the smoke script. Owner ops: rotate the credential, then
-        // strip these and shrink this list.
+        // Round 3 finished the docs/ sweep: the two security documents, the
+        // Sprint-1 completion record and the seven E2E catalogue sign-in lines
+        // now carry the redaction marker + the SIMF_SuperAdmin__TempPassword
+        // key path instead of the value, so they left this list. The two
+        // residual occurrences are both OUTSIDE docs/ and both need the
+        // literal: the boot-time deny-list that refuses to start Production on
+        // the committed password, and the smoke script's sign-in line.
+        // Owner ops: rotate the credential, then strip those two as well.
         new(
             "SuperAdmin:TempPassword (supply SIMF_SuperAdmin__TempPassword)",
             12,
@@ -413,29 +416,19 @@ public sealed class CommittedSecretsTests
             {
                 // Refuses to boot in Production when the value is still this one.
                 "src/Backend/SIMF.Api/Program.cs",
-                // Security records of the finding — redacting them may destroy
-                // the evidence trail; owner decision pending.
-                "docs/security/SIMF-Security-Assessment-2026-06-20.md",
-                "docs/security/SIMF-NCA-AppSec-Standard-GapAnalysis-2026-06-20.md",
-                "docs/SIMF-Sprint1-Login-API-Completion.md",
-                // E2E catalogue + smoke script sign-in lines.
-                "docs/tests/e2e/cp-account-profile.md",
-                "docs/tests/e2e/cp-admin-admins.md",
-                "docs/tests/e2e/cp-admin-archive.md",
-                "docs/tests/e2e/cp-admin-bookings.md",
-                "docs/tests/e2e/cp-admin-halls.md",
-                "docs/tests/e2e/cp-admin-interests.md",
-                "docs/tests/e2e/cp-auth-flow.md",
-                "docs/tests/e2e/web-login.md",
                 "tools/smoke/smoke.sh",
             }),
 
         // SuperAdmin:TotpSecret — the development TOTP seed, in its two written
-        // forms (grouped with spaces, and tight). Removed from the
-        // Developer-Guide port map; residual occurrences are the myComment #35
-        // regression fixture and the same documentation set as above. (The FDS
-        // and the security assessment quote a TRUNCATED prefix only, so they
-        // are not listed — the scan does not match them.)
+        // forms (grouped with spaces, and tight). Round 3 finished the docs/
+        // sweep: the follow-up backlog, the decisions log, the Test-Guide and
+        // the two E2E catalogue files now name SIMF_SuperAdmin__TotpSecret
+        // instead of the seed, so they left this list. The residual
+        // occurrences are both OUTSIDE docs/ — the myComment #35 regression
+        // fixture (which asserts the normalisation of exactly these two written
+        // forms, so the literal IS the test input) and the smoke script.
+        // (The FDS and the security assessment quote a TRUNCATED prefix only,
+        // so they were never listed — the scan does not match them.)
         new(
             "SuperAdmin:TotpSecret, spaced form (supply SIMF_SuperAdmin__TotpSecret)",
             39,
@@ -444,11 +437,6 @@ public sealed class CommittedSecretsTests
             new[]
             {
                 "tests/SIMF.Api.Tests/TotpVerifierTests.cs",
-                "docs/SIMF-Follow-Up-Backlog.md",
-                "docs/decisions/DECISIONS_LOG.md",
-                "docs/manuals/Test-Guide.md",
-                "docs/tests/e2e/cp-admin-interests.md",
-                "docs/tests/e2e/cp-auth-flow.md",
                 "tools/smoke/smoke.sh",
             }),
         new(

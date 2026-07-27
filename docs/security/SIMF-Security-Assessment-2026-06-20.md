@@ -132,11 +132,11 @@ Production does **not** load `appsettings.Development.json` (ASPNETCORE_ENVIRONM
 
 ### 🟠 H1 — Super-admin temp password + working TOTP seed committed
 
-**Evidence:** `src/Backend/SIMF.Api/appsettings.json:34-38` — `SuperAdmin.Email = superadmin@zagali-ict.com`, `TempPassword = "Aa@123456789"`, `TotpSecret = "dbji csx7 …"` (a valid base32 authenticator seed). Seeded by `IdentitySeeder.cs` (`CreateSuperAdminAsync` sets `PasswordChangeRequired=true` at first creation; the TOTP secret is re-asserted on deploy while 2FA is enabled). Override path exists: `Program.cs:36` `AddEnvironmentVariables("SIMF_")` lets `SIMF_SuperAdmin__TempPassword`/`__TotpSecret` win, and `deploy/set-env-api.ps1` lists them as required-but-skips-empty.
+**Evidence:** `src/Backend/SIMF.Api/appsettings.json:34-38` — `SuperAdmin.Email = superadmin@zagali-ict.com`, `TempPassword = "[REDACTED - supply via SIMF_SuperAdmin__TempPassword]"`, `TotpSecret = "dbji csx7 …"` (a valid base32 authenticator seed). Seeded by `IdentitySeeder.cs` (`CreateSuperAdminAsync` sets `PasswordChangeRequired=true` at first creation; the TOTP secret is re-asserted on deploy while 2FA is enabled). Override path exists: `Program.cs:36` `AddEnvironmentVariables("SIMF_")` lets `SIMF_SuperAdmin__TempPassword`/`__TotpSecret` win, and `deploy/set-env-api.ps1` lists them as required-but-skips-empty.
 
 **Impact — conditional:**
 - If prod **did** set the `SIMF_SuperAdmin__*` env vars before first boot → the committed values are inert defaults (residual: git exposure of an example). 
-- If prod **did not** (the template skips empty values, so appsettings wins) → the **live super-admin is `superadmin@zagali-ict.com` / `Aa@123456789` with a known TOTP seed**. The committed seed yields valid 6-digit codes, so MFA gives zero protection against a repo-access adversary → full `Administrator` (`perm:*`) compromise. `PasswordChangeRequired=true` only forces a reset *after* a successful first login; it doesn't stop the attacker logging in first.
+- If prod **did not** (the template skips empty values, so appsettings wins) → the **live super-admin is `superadmin@zagali-ict.com` / `[REDACTED - supply via SIMF_SuperAdmin__TempPassword]` with a known TOTP seed**. The committed seed yields valid 6-digit codes, so MFA gives zero protection against a repo-access adversary → full `Administrator` (`perm:*`) compromise. `PasswordChangeRequired=true` only forces a reset *after* a successful first login; it doesn't stop the attacker logging in first.
 
 **This is the single most important thing to verify on the server.** It is rated High but is **Critical** in the un-overridden case.
 
