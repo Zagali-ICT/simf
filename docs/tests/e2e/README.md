@@ -238,9 +238,10 @@ API endpoints land (D-249). The per-screen design docs live under
 | #10 `registrationSuccess` (no API — static confirmation) | [`mobile-registration-success.md`](mobile-registration-success.md) | E2E-MOB010-001..007 |
 | #11 `registrationStatus` (`GET /app/users/me`) | [`mobile-registration-status.md`](mobile-registration-status.md) | E2E-MOB011-001..007 |
 | #13 `home` (`GET /app/bootstrap`) | [`mobile-home.md`](mobile-home.md) | E2E-MOB013-001..025 |
+| #13 `home` (`GET /app/bootstrap`; Moderator home also `GET /app/sessions/moderated` — FR-MOD-001 جلساتي) | [`mobile-home.md`](mobile-home.md) | E2E-MOB013-001..025 |
 | #14 `myArea` (`GET /app/account/dashboard` + `.ics` + `.vcf`) | [`mobile-my-area.md`](mobile-my-area.md) | E2E-MOB014-001..017 |
 | #103 `identityVerification` (`POST /app/account/avatar`) | [`mobile-identity-verification.md`](mobile-identity-verification.md) | E2E-MOBIDV-001..004 |
-| #104 `sessionModerate` (`GET/PUT /app/sessions/{id}/questions/moderate·push·hide`) | [`mobile-session-moderate.md`](mobile-session-moderate.md) | E2E-MOBMOD-001..004 |
+| #104 `sessionModerate` (`GET/PUT /app/sessions/{id}/questions/moderate·push·hide·reorder`; FR-MOD-001 `GET /app/sessions/moderated` discovery + جلساتي on the moderator home; FR-MOD-003 drag-to-reorder the desk queue) | [`mobile-session-moderate.md`](mobile-session-moderate.md) | E2E-MOBMOD-001..010 |
 | #105 `gateScanner` (`GET /app/gates/my-assignments` · `POST /app/gates/{id}/scans`) | [`mobile-gate-scan.md`](mobile-gate-scan.md) | E2E-MOBGATE-000..006 |
 | #114 `staffRegisterVisitor` (`POST /app/staff/visitors/register-onsite` · `…/{id}/id-document` · `…/{id}/avatar`) | [`mobile-staff-register-visitor.md`](mobile-staff-register-visitor.md) | E2E-MOBSTAFFREG-001..004 |
 | #105 `gateScanner` (`GET /app/gates/my-assignments` · `POST /app/gates/{id}/scans`) | [`mobile-gate-scan.md`](mobile-gate-scan.md) | E2E-MOBGATE-000..005 |
@@ -265,6 +266,8 @@ API endpoints land (D-249). The per-screen design docs live under
 | #221 `sponsorDetail` (`GET /app/sponsors/{id}`) — Wave 3, Figma `1439:11826` | [`mobile-sponsor-detail.md`](mobile-sponsor-detail.md) | E2E-MOB221-001..007 |
 | `myVisitors` (`GET /app/exhibitor/my-visitors`) — D-426 exhibitor captured-visitor list; DEF-EXH-004 read-path subject eligibility (D-780: any ACTIVE subject lists, only a deactivated one drops out); DEF-EXH-006 current-booth-membership gate | [`mobile-my-visitors.md`](mobile-my-visitors.md) | E2E-MOBMYVIS-001..009 |
 | `scanVisitor` (`scanByBadge` — exhibitor lead-capture scan) — D-426; DEF-EXH-001/002/005/006/007 scan authorisation + current booth membership + capture notice naming the exhibitor + CP-provisioned booth officer; **D-780** ALL badges scannable (reverses DEF-EXH-003); **D-781** link an Others-pipeline account to a booth | [`mobile-scan-visitor.md`](mobile-scan-visitor.md) | E2E-MOBSCANVIS-001..013 |
+| `myVisitors` (`GET /app/exhibitor/visitors` · `DELETE …/{id}` · `GET …/{id}/vcard`) — D-426 exhibitor captured-visitor list; DEF-EXH-004 read-path subject eligibility; DEF-EXH-006 current-booth-membership gate; **FR-EXH-002** remove + vCard export; **FR-EXH-003** the list is scoped to the BOOTH, not the officer | [`mobile-my-visitors.md`](mobile-my-visitors.md) | E2E-MOBMYVIS-001..012 |
+| `scanVisitor` (`scanByBadge` — exhibitor lead-capture scan) — D-426; DEF-EXH-001/002/003/005/006/007 scan authorisation + current booth membership + subject eligibility + capture notice naming the exhibitor + CP-provisioned booth officer | [`mobile-scan-visitor.md`](mobile-scan-visitor.md) | E2E-MOBSCANVIS-001..012 |
 | `myVisitors` (`GET /app/exhibitor/my-visitors`) — D-426 exhibitor booth-visitor list (BUG-025 title + note) | [`mobile-my-visitors.md`](mobile-my-visitors.md) | E2E-MOBMYVIS-001..008 |
 | `scanVisitor` (`scanByBadge` — exhibitor lead-capture scan, BUG-024 lead email) — D-426 | [`mobile-scan-visitor.md`](mobile-scan-visitor.md) | E2E-MOBSCANVIS-001..007 |
 | #24 `archive` (`GET /app/archive` + `/{id}`) | [`mobile-archive.md`](mobile-archive.md) | E2E-MOB024-001..005 |

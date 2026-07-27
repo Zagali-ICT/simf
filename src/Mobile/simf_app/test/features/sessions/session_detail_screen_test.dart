@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/widgets/simf_svg_icon.dart';
+import 'package:simf_app/features/moderation/data/moderation_models.dart';
+import 'package:simf_app/features/moderation/data/moderation_repository.dart';
 import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 import 'package:simf_app/features/sessions/data/seat_map_repository.dart';
 import 'package:simf_app/features/sessions/data/session_calendar.dart';
@@ -300,6 +302,17 @@ class _FakeCalendar implements SessionCalendar {
       true;
 }
 
+/// FR-MOD-001 — one row of `GET /app/sessions/moderated`.
+ModeratedSession _moderatedSession(String id) => ModeratedSession(
+      sessionId: id,
+      title: 'Granted $id',
+      titleArabic: 'جلسة $id',
+      hallName: 'Main Hall',
+      hallNameArabic: 'القاعة الرئيسية',
+      start: DateTime.utc(2026, 3, 1, 9),
+      end: DateTime.utc(2026, 3, 1, 10),
+    );
+
 Future<void> _pump(
   WidgetTester tester, {
   required SessionDetailRepository repo,
@@ -308,6 +321,11 @@ Future<void> _pump(
   SeatMapRepository? seatRepo,
   SessionCalendar? calendar,
   Locale locale = const Locale('en'),
+  // FR-MOD-001 — the session ids the signed-in user actually holds a
+  // SessionModerator grant on. The desk action is offered only for these; the
+  // moderator ROLE alone no longer earns it, because the grant is per session
+  // and a missing one used to surface as a 403 after the tap.
+  List<String> moderatedSessionIds = const <String>['s1'],
 }) async {
   // A tall surface so the whole lazy ListView (down to the CTA row) lays out —
   // the restructured frame (header buttons + ask-host card) pushes the lower
@@ -370,6 +388,11 @@ Future<void> _pump(
         sessionCalendarProvider
             .overrideWithValue(calendar ?? _FakeCalendar()),
         authControllerProvider.overrideWith(() => controller),
+        myModeratedSessionsProvider.overrideWith(
+          (ref) async => <ModeratedSession>[
+            for (final id in moderatedSessionIds) _moderatedSession(id),
+          ],
+        ),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -933,8 +956,42 @@ void main() {
       // …and no seat-map retry either: the map was never fetched for them.
       expect(find.text('Could not load the seat map.'), findsNothing);
       expect(seatRepo.getSeatMapCalls, 0);
-      // The moderator DOES keep their own desk entry (route #104 allows them).
+      // The moderator DOES keep their own desk entry (route #104 allows them)
+      // on a session they hold the grant for — the harness grants 's1'.
       expect(find.byIcon(Icons.forum_outlined), findsOneWidget);
+    });
+
+    // FR-MOD-001 — the desk is authorised PER SESSION, but the icon used to
+    // render for any moderator on every session in the programme, so a missing
+    // grant was only discoverable as a 403 after the tap. The action now needs
+    // a confirmed grant for THIS session.
+    testWidgets('FR-MOD-001: a moderator with no grant for this session is not '
+        'offered the Q&A desk', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeDetailRepo(detail: _detail()),
+        controller: _ModeratorController(
+          registrationStatus: RegistrationStatus.approved,
+        ),
+        // They moderate something — just not this one.
+        moderatedSessionIds: const <String>['some-other-session'],
+      );
+
+      expect(find.byIcon(Icons.forum_outlined), findsNothing);
+    });
+
+    testWidgets('FR-MOD-001: a moderator who moderates nothing is not offered '
+        'the Q&A desk', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeDetailRepo(detail: _detail()),
+        controller: _ModeratorController(
+          registrationStatus: RegistrationStatus.approved,
+        ),
+        moderatedSessionIds: const <String>[],
+      );
+
+      expect(find.byIcon(Icons.forum_outlined), findsNothing);
     });
 
     // DEF-MOD-008 — the router gates on effectiveAppRole (D-666), so an

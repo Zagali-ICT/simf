@@ -28,13 +28,29 @@ class ExhibitorRepository {
     );
   }
 
-  /// The exhibitor's captured visitors, newest first.
+  /// The BOOTH's captured visitors, newest first. FR-EXH-003 — the list is
+  /// scoped to the caller's exhibitor, not to the caller: every officer of the
+  /// booth sees the same leads.
   Future<List<ExhibitorVisitor>> listMyVisitors() {
     return _client.get<List<ExhibitorVisitor>>(
       '/app/exhibitor/visitors',
       decodeData: ExhibitorVisitor.listFromData,
     );
   }
+
+  /// `DELETE /app/exhibitor/visitors/{id}` — FR-EXH-002: drop one captured lead
+  /// from the booth's list (soft-delete server-side, idempotent).
+  Future<void> removeVisitor(String id) {
+    return _client.delete<bool>(
+      '/app/exhibitor/visitors/$id',
+      decodeData: (_) => true,
+    );
+  }
+
+  /// `GET /app/exhibitor/visitors/{id}/vcard` — FR-EXH-002: raw vCard 3.0 text
+  /// for one captured lead, the same export My Contacts offers.
+  Future<String> getVcard(String id) =>
+      _client.getText('/app/exhibitor/visitors/$id/vcard');
 }
 
 final exhibitorRepositoryProvider = Provider<ExhibitorRepository>((ref) {

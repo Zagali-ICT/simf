@@ -81,6 +81,20 @@ public interface ISessionModerationService
         IReadOnlyList<Guid> orderedQuestionIds,
         CancellationToken cancellationToken = default);
 
+    /// <summary>FR-MOD-001 — every ACTIVE session the supplied user holds a
+    /// <c>SessionModerator</c> grant on, soonest first. The app uses it to offer
+    /// the Q&amp;A desk only where the grant actually exists (it used to offer it
+    /// on every session and let the user discover the gap as a 403) and to list
+    /// the moderator's own sessions on their operational home.
+    /// <para>Scoped to the caller — there is no "list another user's grants"
+    /// shape here; the admin surface for that is
+    /// <c>IAdminSessionModeratorService</c>. An Administrator may moderate any
+    /// session without a grant, so an empty list is not a statement that they
+    /// cannot open a desk.</para></summary>
+    Task<IReadOnlyList<ModeratedSessionRow>> ListMySessionsAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default);
+
     /// <summary>Returns true when the supplied user is a moderator
     /// for the supplied session (used by the authorization handler).
     /// Administrator-role callers are NOT short-circuited here — the

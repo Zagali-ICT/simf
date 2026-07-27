@@ -14,6 +14,17 @@ class ModerationRepository {
 
   final SimfApiClient _client;
 
+  /// `GET /app/sessions/moderated` — FR-MOD-001: the sessions the signed-in user
+  /// actually holds a per-session grant on. Drives both the session-detail
+  /// affordance (offer the desk only where the grant exists) and the moderator's
+  /// operational home list.
+  Future<List<ModeratedSession>> getMySessions() {
+    return _client.get<List<ModeratedSession>>(
+      '/app/sessions/moderated',
+      decodeData: ModeratedSession.listFromData,
+    );
+  }
+
   /// `GET /app/sessions/{sessionId}/questions/moderate[?status=…]`.
   ///
   /// DEF-MOD-002 — omitting [status] returns the working desk (the
@@ -69,10 +80,31 @@ class ModerationRepository {
     );
   }
 
+  /// `PUT …/questions/reorder` `{orderedQuestionIds}` — FR-MOD-003: persist the
+  /// desk's running order. The server replays `Order` 0..n-1 over the supplied
+  /// ids and requires EVERY question on the working desk exactly once, so the
+  /// caller sends the full desk in its new order, not just the moved row.
+  Future<void> reorder(String sessionId, List<String> orderedQuestionIds) {
+    return _client.put<bool>(
+      '/app/sessions/$sessionId/questions/reorder',
+      body: <String, dynamic>{'orderedQuestionIds': orderedQuestionIds},
+      decodeData: (_) => true,
+    );
+  }
+
   static Map<String, dynamic> _asMap(Object? data) =>
       (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
 }
 
 final moderationRepositoryProvider = Provider<ModerationRepository>((ref) {
   return ModerationRepository(ref.watch(simfApiClientProvider));
+});
+
+/// FR-MOD-001 — the signed-in user's moderated sessions, cached for the
+/// session-detail affordance gate and the moderator home list. `autoDispose` so
+/// leaving both surfaces drops it and a fresh grant is picked up on the next
+/// visit rather than being cached for the app's lifetime.
+final myModeratedSessionsProvider =
+    FutureProvider.autoDispose<List<ModeratedSession>>((ref) {
+  return ref.watch(moderationRepositoryProvider).getMySessions();
 });

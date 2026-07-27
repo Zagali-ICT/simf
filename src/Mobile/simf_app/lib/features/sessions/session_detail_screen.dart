@@ -13,6 +13,7 @@ import '../../app/widgets/simf_bottom_nav.dart';
 import '../../app/widgets/simf_confirm_dialog.dart';
 import '../../app/widgets/simf_info_dialog.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../moderation/data/moderation_repository.dart';
 import 'data/seat_map_models.dart';
 import 'data/seat_map_repository.dart';
 import 'data/session_calendar.dart';
@@ -312,9 +313,23 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     final role = _roleOf(ref.watch(authControllerProvider));
     // Moderator (محاور) entry to the Q&A desk (D-405). Moderator-EXCLUSIVE
     // (D-519): Staff no longer inherits it (the focused role model dropped the
-    // isAtLeast ladder). UX gate only — the server still enforces the
-    // per-session SessionModerator grant (403).
-    final canModerate = role == AppRole.moderator;
+    // isAtLeast ladder). The server still enforces the per-session
+    // SessionModerator grant (403).
+    //
+    // FR-MOD-001 — the role alone is NOT the gate any more. The grant is
+    // per-session, so the icon used to appear on every session in the programme
+    // and the missing grant was only discoverable as a 403 after the tap. The
+    // action now needs a CONFIRMED grant for this session; while the discovery
+    // call is in flight, or if it failed, no action is offered (an icon that
+    // 403s is worse than none — the moderator's own home lists their sessions
+    // and surfaces the failure there with a retry).
+    final moderatedSessionIds = ref.watch(myModeratedSessionsProvider).maybeWhen(
+          data: (sessions) =>
+              sessions.map((s) => s.sessionId).toSet(),
+          orElse: () => const <String>{},
+        );
+    final canModerate = role == AppRole.moderator &&
+        moderatedSessionIds.contains(widget.sessionId);
     // D-771 — Staff entry to the seating desk. Staff and Moderator are disjoint
     // focused roles (D-519), so the two never compete for the header's single
     // trailing slot. UX gate only — the server enforces Seating.Assist (403).

@@ -20,6 +20,10 @@
 //               membership (or closing the exhibitor) refuses scan AND list.
 // DEF-EXH-007 — the capture notice names the EXHIBITOR the officer represents,
 //               which a CP-provisioned stub profile could never supply.
+// FR-EXH-003  — a legacy un-scoped row and the booth's row can be live for the
+//               same visitor at once; re-scanning converges them to ONE active
+//               booth-scoped row instead of 500-ing on the unique index or
+//               listing the visitor twice.
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -522,6 +526,78 @@ public sealed class ExhibitorVisitorScanTests : IClassFixture<SimfApiFactory>
         var conflict = (await second.Content
             .ReadFromJsonAsync<ApiResult<ExhibitorAccountSummary>>())!.Error!;
         Assert.Equal(ErrorCodes.ExhibitorAccountAlreadyLinked, conflict.Code);
+    // FR-EXH-003 regression — a legacy un-scoped capture and a booth-scoped one
+    // can be live for the SAME visitor at once: a colleague captures the visitor
+    // for the booth while this officer still holds their own un-backfilled row.
+    // The idempotency lookup matched BOTH, and whichever the database returned
+    // first decided the outcome: stamping the booth id onto the legacy row made a
+    // second ACTIVE (booth, visitor) pair that the filtered unique index rejects
+    // — a 500 — while picking the booth row left the legacy one active, so the
+    // booth listed the same visitor twice. The re-scan must be an ordinary
+    // idempotent 200 leaving exactly ONE active, booth-scoped row.
+    [Fact]
+    public async Task Rescan_converges_a_legacy_capture_onto_the_booths_row()
+    {
+        // Two officers of ONE booth.
+        var boothId = await SeedExhibitorCompanyAsync("Shared Booth", "جناح مشترك");
+
+        var (officerToken, officerId) = await CreateApprovedUserAsync();
+        await SeedProfileAsync(officerId, "Exhibitor", "Officer One", "الموظف الأول");
+        await SeedMembershipAsync(boothId, officerId, "Officer One");
+
+        var (colleagueToken, colleagueId) = await CreateApprovedUserAsync();
+        await SeedProfileAsync(colleagueId, "Exhibitor", "Officer Two", "الموظف الثاني");
+        await SeedMembershipAsync(boothId, colleagueId, "Officer Two");
+
+        var (_, visitorId) = await CreateApprovedUserAsync();
+        await SeedVisitorWithQrAsync(visitorId, "CONVERGEBADGE", "Converge Lead", "زائر");
+
+        // The officer's own capture from before the ExhibitorId column existed.
+        await SeedLegacyCaptureAsync(officerId, visitorId);
+
+        // The colleague captures the same visitor FOR THE BOOTH, so a booth-scoped
+        // row now coexists with the officer's legacy one.
+        var colleagueScan = await PostAuthAsync("/api/v1/app/exhibitor/visitors/scan",
+            new ScanVisitorBadgeRequest { QrId = "CONVERGEBADGE", Note = "colleague pass" },
+            colleagueToken);
+        Assert.Equal(HttpStatusCode.OK, colleagueScan.StatusCode);
+
+        // The officer re-scans — the reproduced 500.
+        var rescan = await PostAuthAsync("/api/v1/app/exhibitor/visitors/scan",
+            new ScanVisitorBadgeRequest { QrId = "CONVERGEBADGE", Note = "officer pass" },
+            officerToken);
+        Assert.Equal(HttpStatusCode.OK, rescan.StatusCode);
+
+        // One lead on the booth's list, whichever officer reads it, carrying the
+        // note the last scan wrote.
+        foreach (var token in new[] { officerToken, colleagueToken })
+        {
+            var list = await GetAuthAsync("/api/v1/app/exhibitor/visitors", token);
+            Assert.Equal(HttpStatusCode.OK, list.StatusCode);
+            var rows = (await list.Content
+                .ReadFromJsonAsync<ApiResult<IReadOnlyList<ExhibitorVisitorRow>>>())!.Data!;
+            var only = Assert.Single(rows);
+            Assert.Equal("Converge Lead", only.Card.Name);
+            Assert.Equal("officer pass", only.Note);
+        }
+
+        // ...and the survivor is the BOOTH's row: the legacy one converged onto it
+        // by soft-delete rather than lingering as a second live copy.
+        var active = await ActiveCapturesOfAsync(visitorId);
+        Assert.Equal(boothId, Assert.Single(active).ExhibitorId);
+    }
+
+    /// <summary>Every ACTIVE capture row of one visitor, straight from the table —
+    /// the booth-scoping invariant is about the rows themselves, not only about
+    /// what the list endpoint chooses to project.</summary>
+    private async Task<List<ExhibitorVisitorScan>> ActiveCapturesOfAsync(Guid visitorUserId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        return await appDb.ExhibitorVisitorScans
+            .AsNoTracking()
+            .Where(scan => scan.VisitorUserId == visitorUserId && scan.IsActive)
+            .ToListAsync();
     }
 
     private async Task<Notification> SingleCaptureNotificationAsync(Guid visitorId)

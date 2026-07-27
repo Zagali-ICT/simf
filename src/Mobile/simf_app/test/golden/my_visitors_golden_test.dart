@@ -35,6 +35,14 @@ class _StubExhibitorRepo implements ExhibitorRepository {
 
   @override
   Future<List<ExhibitorVisitor>> listMyVisitors() async => _visitors;
+
+  // FR-EXH-002 — the per-lead actions live behind a tap, so the render-lock
+  // golden never reaches either.
+  @override
+  Future<void> removeVisitor(String id) async => throw UnimplementedError();
+
+  @override
+  Future<String> getVcard(String id) async => throw UnimplementedError();
 }
 
 ExhibitorVisitor _visitor(String id, VisitorCard card) =>

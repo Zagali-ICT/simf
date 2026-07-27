@@ -463,11 +463,42 @@ the greeting header re-renders in English (owner 2026-07-27)`, both pumped
 against a **live** `localeControllerProvider` (a fixed `MaterialApp.locale` would
 swallow the re-render).
 
+### E2E-MOB013-025 — Moderator home lists جلساتي (FR-MOD-001)
+
+```gherkin
+Scenario: The moderator's operational home lists the sessions they moderate
+  Given a signed-in approved Moderator opens Home
+  Then the programme entry ("Sessions") is still offered
+  And a "جلساتي / My sessions" section lists one row per session they hold a
+    SessionModerator grant on, soonest first, showing the bilingual title,
+    the hall and the Saudi 12-hour start time (never a UTC instant)
+  When they tap a row
+  Then the app opens that session's Q&A desk directly
+
+Scenario: No grants / a failed load
+  Given the moderator holds no grants
+  Then "لم يتم إسنادك إلى أي جلسة بعد. / You are not assigned to any session
+    yet." shows in place of the rows
+  And when GET /app/sessions/moderated fails instead
+  Then the shared error surface shows "تعذّر تحميل جلساتك. حاول مرة أخرى. /
+    Could not load your sessions. Try again." with Retry
+  And the list is pull-to-refresh in every state
+```
+
+> Full behaviour, the endpoint contract and the matching session-detail gate are
+> catalogued in [`mobile-session-moderate.md`](mobile-session-moderate.md)
+> **E2E-MOBMOD-009** — this row exists so the Home catalogue records the section.
+
+**Evidence:** `test/features/home/moderator_home_test.dart` (5 cases).
+
 ---
 
 _Last reviewed:_ `2026-07-27` by `SIMF Team` — D-772: the owner confirmed the
 signed-in Home keeps its language toggle, superseding the 2026-07-11 removal;
 added E2E-MOB013-025 for the AR/EN re-render.
+_Last reviewed:_ `2026-07-27` by `SIMF Team` — FR-MOD-001: the Moderator
+operational home lists جلساتي, the sessions they actually hold a grant on
+(E2E-MOB013-025).
 _Prior:_ `2026-07-26` by `SIMF Team` — BUG-017: the shared language toggle
 was added to the signed-in Home greeting header (E2E-MOB013-023); BUG-014: the
 locked guest badge tile now carries a semantics hint (E2E-MOB013-024).

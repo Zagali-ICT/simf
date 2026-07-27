@@ -30,11 +30,59 @@ rejected question was unrecoverable from the app. Now:
   have unknown provenance and are treated as Committee rows — not exposed.
 - Every action updates the row **optimistically** and rolls it back on failure.
 
+## Finding the desk at all (FR-MOD-001, 2026-07-27)
+
+The desk is authorised **per session**, but nothing told the app WHICH sessions
+carry the grant: the forum action rendered on **every** session in the programme
+for anyone with `AppRole.moderator`, and the missing grant was only discoverable
+as a **403 after the tap**. An icon that 403s is worse than no icon.
+
+- **`GET /app/sessions/moderated`** (`ListMyModeratedSessionsEndpoint`, beside
+  `SessionQuestionEndpoints` and gated the same way the desk is) returns the
+  caller's own grants on ACTIVE sessions, soonest first, projecting the bilingual
+  title + hall + start/end so the app needs no second fetch per session. It is
+  scoped to the caller — there is no "list another user's grants" shape here; the
+  admin surface for that stays `IAdminSessionModeratorService`.
+- The app caches it in `myModeratedSessionsProvider` (`autoDispose`, so a fresh
+  grant is picked up on the next visit). **Session detail** now offers the desk
+  action only for a session in that set; while the call is in flight, or if it
+  failed, no action is offered.
+- The **moderator's operational home** grew a **جلساتي / My sessions** section
+  listing those sessions (shared `SimfListRow` via `ModeratedSessionTile`, hall +
+  Saudi 12-hour start, never a UTC instant), each tapping straight through to its
+  desk. Empty and error states are the shared `SimfPageNote` / `SimfErrorState`,
+  and the list is pull-to-refresh like every other data page.
+- An **Administrator** may moderate any session without a grant, so an empty list
+  is not a statement that they cannot open a desk.
+
+## Ordering the queue (FR-MOD-003, 2026-07-27)
+
+`PUT …/questions/reorder` shipped **implemented and permission-gated but with no
+interface**, so a moderator could not order the queue they were about to read on
+stage. The desk list is now a `ReorderableListView.builder` with a per-card drag
+handle (`buildDefaultDragHandles: false` — the handle is built per row, so a
+**rejected** row simply has none: it is off the desk and has no place in the
+running order).
+
+- The handle carries its own accessible name
+  (**إعادة ترتيب السؤال / Reorder question**) as a `Semantics` **container**, so a
+  screen reader announces the control rather than merging its name into the
+  question text.
+- **RTL:** the handle sits at the row's leading edge and mirrors with the card. A
+  vertical reorder list has no left/right semantics to invert — "up" is earlier in
+  the running order in both languages — and a test pins that the same gesture
+  produces the same order in `ar` and `en`.
+- The endpoint replaces the whole order and requires **every** working-desk
+  question exactly once, so the call always ships the full desk even when a chip
+  is showing a subset; the rows the filter hides keep their slots. Optimistic like
+  every other desk action, with rollback + toast on failure.
+
 ## Structure (post-decomposition)
 
 | File | Holds |
 |------|-------|
-| `session_moderate_screen.dart` (264) | State — queue load, action handlers, filter counts, build + `_body` |
+| `session_moderate_screen.dart` | State — queue load, action handlers, `_reorder`, filter counts, build + `_body` |
+| `widgets/moderated_session_tile.dart` | `ModeratedSessionTile` — one جلساتي row on the moderator's home (FR-MOD-001) |
 | `widgets/moderator_header.dart` | `ModeratorDeskHeader` (+ `_RolePill`) — custom navy header with the role pill (kept local; SimfPageShell has no trailing slot) |
 | `widgets/moderator_filter_bar.dart` | `ModeratorFilterBar` (+ `_Chip`) — five equal-width count chips |
 | `widgets/moderator_question_card.dart` | `ModeratorQuestionCard` (+ `_ActionButton`, `_hm`, `_initials`) |
@@ -57,13 +105,21 @@ shows the submitter's **country** (green) on every card; the app renders a gold
 
 Wired: 5 chips filter; reject → `setHidden(true)`; restore → `setHidden(false)`;
 on-stage → `push` (returns a rejected / answered row to Approved first, which is what
-the server requires); answered → `setAnswered(true|false)`; retry; pull-to-refresh.
-Every write is optimistic with rollback. Reads `getQueue()` (working desk) plus
-`getQueue(status: hidden)` (rejected tab). No missing API.
+the server requires); answered → `setAnswered(true|false)`; **drag-to-reorder →
+`reorder`** (FR-MOD-003); retry; pull-to-refresh. Every write is optimistic with
+rollback. Reads `getQueue()` (working desk), `getQueue(status: hidden)` (rejected
+tab) and `getMySessions()` (FR-MOD-001 discovery). No missing API — the last
+implemented-but-unreachable endpoint (`reorder`) now has its affordance.
 
 ## Tests
 
-`test/features/moderation/session_moderate_screen_test.dart` +
-`test/features/moderation/moderation_models_test.dart`. API twin:
-`tests/SIMF.Api.Tests/ModeratorDeskStateTests.cs` (DEF-MOD-001/002). E2E:
-`docs/tests/e2e/mobile-session-moderate.md` (MOBMOD-006/007).
+`test/features/moderation/session_moderate_screen_test.dart` (14 cases, incl. the
+four FR-MOD-003 reorder cases) +
+`test/features/moderation/moderation_models_test.dart` +
+`test/features/home/moderator_home_test.dart` (5 cases — the FR-MOD-001 جلساتي
+list, tap-through, empty, error, RTL) + the two FR-MOD-001 gate cases in
+`test/features/sessions/session_detail_screen_test.dart`. API twins:
+`tests/SIMF.Api.Tests/ModeratorDeskStateTests.cs` (DEF-MOD-001/002) and
+`tests/SIMF.Api.Tests/ModeratedSessionsTests.cs` (FR-MOD-001 — own grants only,
+soonest first, soft-deleted session dropped, empty list, 401). E2E:
+`docs/tests/e2e/mobile-session-moderate.md` (MOBMOD-006/007, MOBMOD-009/010).

@@ -205,6 +205,70 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
     return ok;
   }
 
+  /// FR-MOD-003 — drag-to-reorder. `PUT …/questions/reorder` replaces the whole
+  /// desk order and REQUIRES every working-desk question exactly once, so the
+  /// call always ships the full [_desk] even when a chip is showing a subset.
+  ///
+  /// Reordering inside a filtered view keeps the rows the filter hides exactly
+  /// where they were: the visible desk rows are moved among THEIR OWN positions
+  /// in [_desk], and every hidden row stays at its index. Optimistic like the
+  /// other desk actions — the list rolls back and toasts if the write fails.
+  Future<void> _reorder(
+    List<ModeratorQuestion> visible,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    // Only desk rows carry a handle; rejected rows are appended on the الكل tab
+    // and are not part of the running order.
+    final deskIds = _desk.map((q) => q.id).toSet();
+    final visibleDesk = visible.where((q) => deskIds.contains(q.id)).toList();
+    if (visibleDesk.isEmpty || oldIndex >= visibleDesk.length) {
+      return;
+    }
+    // `onReorderItem` already reports the FINAL position (unlike the
+    // deprecated `onReorder`'s insert-before index). Clamp it into the desk
+    // block so a drop past the last desk row — the rejected rows trailing the
+    // الكل tab — lands at the end of the running order rather than nowhere.
+    final target = newIndex.clamp(0, visibleDesk.length - 1);
+    if (target == oldIndex) {
+      return;
+    }
+
+    final movedVisible = <ModeratorQuestion>[...visibleDesk];
+    movedVisible.insert(target, movedVisible.removeAt(oldIndex));
+
+    // Write the moved sequence back into the positions the visible rows held in
+    // the full desk; untouched (filtered-out) rows keep their slots.
+    final visibleIds = visibleDesk.map((q) => q.id).toSet();
+    final slots = <int>[];
+    for (var i = 0; i < _desk.length; i++) {
+      if (visibleIds.contains(_desk[i].id)) {
+        slots.add(i);
+      }
+    }
+    final next = <ModeratorQuestion>[..._desk];
+    for (var i = 0; i < slots.length; i++) {
+      next[slots[i]] = movedVisible[i];
+    }
+
+    final before = _desk;
+    setState(() => _desk = next);
+    try {
+      await ref.read(moderationRepositoryProvider).reorder(
+            widget.sessionId,
+            next.map((q) => q.id).toList(growable: false),
+          );
+    } on ApiFailure {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _desk = before);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppL10n.of(context).moderatorReorderFailed)),
+      );
+    }
+  }
+
   static List<ModeratorQuestion> _without(
     List<ModeratorQuestion> rows,
     String id,
@@ -307,19 +371,32 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
                 )
               : SimfPullToRefresh(
                   onRefresh: _load,
-                  child: ListView.separated(
+                  // FR-MOD-003 — the queue the moderator reads on stage is
+                  // now orderable from the desk itself (the reorder endpoint
+                  // had no interface at all). Handles are built per card, so
+                  // a rejected row simply has none.
+                  child: ReorderableListView.builder(
                     padding: const EdgeInsets.all(SimfTokens.space4),
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    buildDefaultDragHandles: false,
                     itemCount: rows.length,
-                    separatorBuilder: (_, __) =>
-                        const SizedBox(height: SimfTokens.space3),
-                    itemBuilder: (context, i) => ModeratorQuestionCard(
-                      l10n: l10n,
-                      question: rows[i],
-                      answered: rows[i].isAnswered,
-                      rejected: rows[i].isRejected,
-                      onReject: () => unawaited(_reject(rows[i])),
-                      onAnswered: () => unawaited(_toggleAnswered(rows[i])),
-                      onPush: () => unawaited(_push(rows[i])),
+                    onReorderItem: (oldIndex, newIndex) =>
+                        unawaited(_reorder(rows, oldIndex, newIndex)),
+                    itemBuilder: (context, i) => Padding(
+                      key: ValueKey<String>(rows[i].id),
+                      padding: const EdgeInsets.only(
+                        bottom: SimfTokens.space3,
+                      ),
+                      child: ModeratorQuestionCard(
+                        l10n: l10n,
+                        question: rows[i],
+                        answered: rows[i].isAnswered,
+                        rejected: rows[i].isRejected,
+                        dragHandleIndex: rows[i].isRejected ? null : i,
+                        onReject: () => unawaited(_reject(rows[i])),
+                        onAnswered: () => unawaited(_toggleAnswered(rows[i])),
+                        onPush: () => unawaited(_push(rows[i])),
+                      ),
                     ),
                   ),
                 ),

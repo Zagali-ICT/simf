@@ -244,9 +244,113 @@ Scenario: Rejecting a pushed question drops it from the on-stage state
   # backend: SessionQuestionsTests.Hiding_a_pushed_question_clears_the_pushed_marker
 ```
 
+### E2E-MOBMOD-009 — Discovering WHICH sessions carry the grant (FR-MOD-001)
+
+```gherkin
+Scenario: The desk is offered only where the grant exists
+  Given a signed-in Moderator who holds a SessionModerator grant on session "s1"
+    and none on session "s2"
+  When they open session detail for "s1"
+  Then the إدارة الأسئلة (forum) app-bar action IS offered
+  When they open session detail for "s2"
+  Then NO forum action is offered at all
+  # The role alone used to be the whole gate, so the icon rendered on EVERY
+  # session in the programme and the missing grant only surfaced as a 403 after
+  # the tap. An icon that 403s is worse than no icon.
+
+Scenario: The moderator's own home lists their sessions
+  Given the same moderator opens Home
+  When GET /api/v1/app/sessions/moderated returns their grants
+  Then a "جلساتي / My sessions" section lists one row per granted session,
+    soonest first, showing the bilingual title, the hall and the Saudi
+    12-hour start time (never a UTC instant)
+  When they tap a row
+  Then the app navigates straight to that session's Q&A desk
+
+Scenario: No grants
+  Given a Moderator with no SessionModerator rows
+  Then GET /api/v1/app/sessions/moderated returns an empty list (not an error)
+  And Home shows "لم يتم إسنادك إلى أي جلسة بعد. /
+    You are not assigned to any session yet."
+
+Scenario: A colleague's grants are never visible
+  Given another moderator holds a grant on session "s3"
+  Then "s3" is absent from this caller's /app/sessions/moderated response
+
+Scenario: A soft-deleted session drops out
+  Given a grant on a session that has since been deactivated
+  Then that session is absent from the response
+  # A grant on a session the audience can no longer see is not a workable desk.
+
+Scenario: Auth gate
+  Given no bearer token
+  Then GET /api/v1/app/sessions/moderated answers 401
+
+Scenario: Load failure
+  Given the discovery call fails
+  Then Home shows "تعذّر تحميل جلساتك. حاول مرة أخرى. /
+    Could not load your sessions. Try again." with a Retry
+  And session detail offers NO desk action while the grant is unconfirmed
+```
+
+**Evidence:** `tests/SIMF.Api.Tests/ModeratedSessionsTests.cs` —
+`Returns_only_the_callers_own_grants_soonest_first`,
+`Drops_a_grant_whose_session_was_soft_deleted`,
+`Returns_an_empty_list_when_the_caller_moderates_nothing`,
+`Requires_an_authenticated_account`. App:
+`test/features/home/moderator_home_test.dart` (5 cases) and
+`session_detail_screen_test` — "FR-MOD-001: a moderator with no grant for this
+session is not offered the Q&A desk", "…who moderates nothing…".
+
+### E2E-MOBMOD-010 — Ordering the queue read on stage (FR-MOD-003)
+
+```gherkin
+Scenario: The moderator reorders the running order
+  Given a granted moderator on the desk with questions a, b, c
+  Then each DESK row carries a drag handle named
+    "إعادة ترتيب السؤال / Reorder question"
+  And a REJECTED row carries none (it is off the desk, so it has no place in
+    the running order)
+  When they drag the first row below the second
+  Then the desk reorders optimistically
+  And PUT /api/v1/app/sessions/{id}/questions/reorder is called with the FULL
+    desk in its new order (the server requires every desk question exactly once)
+
+Scenario: RTL does not invert the semantics
+  Given the app language is Arabic
+  When the same downward drag is performed
+  Then the resulting order is IDENTICAL to the English one
+  # A vertical reorder list has no left/right semantics to mirror: "up" is
+  # earlier in the running order in both languages. The handle sits at the
+  # row's leading edge, so it mirrors with the rest of the card.
+
+Scenario: Reordering inside a filtered tab
+  Given a chip is showing a subset of the desk
+  When a visible row is moved
+  Then only the visible rows exchange THEIR OWN positions in the full desk
+  And every row the filter hides keeps its slot
+
+Scenario: A failed write rolls back
+  Given the reorder call fails
+  Then the desk returns to its previous order
+  And "تعذّر حفظ الترتيب. حاول مرة أخرى. / Could not save the order. Try again."
+    is toasted
+```
+
+> FR-MOD-003: `PUT …/questions/reorder` shipped implemented AND permission-gated
+> but with **no interface at all**, so a moderator could not order the queue they
+> were about to read on stage. No backend change was needed — this is the missing
+> affordance only.
+
+**Evidence:** `test/features/moderation/session_moderate_screen_test.dart` —
+"FR-MOD-003: a desk row carries a drag handle and a rejected row does not",
+"…dragging a row sends the full desk order", "…RTL does not invert the reorder
+semantics", "…a failed reorder rolls the order back and toasts".
+
 ---
 
 _Last reviewed:_ `2026-07-11` by `Claude` (S-8 — push-only-approved + hide-clears-push guards, MOBMOD-005).
 _Last reviewed:_ `2026-07-26` by `Claude` (DEF-MOD-001/002 — persisted `QuestionStatus.Answered` + `?status=` desk filter; added MOBMOD-006/007, rewrote MOBMOD-001).
 _Last reviewed:_ `2026-07-26` by `Claude` (D-771 — `?status=` allow-list (Pending refused) + un-hide restores the prior status; added MOBMOD-008).
 _Last reviewed:_ `2026-07-27` by `Claude` (D-772 — the مرفوض tab returns desk-hidden rows only; Committee rejections and null-provenance rows are no longer readable from the desk; extended MOBMOD-008).
+_Last reviewed:_ `2026-07-27` by `SIMF Team` (FR-MOD-001 — `GET /app/sessions/moderated` + the جلساتي list on the moderator's home, and the session-detail desk action now needs a CONFIRMED per-session grant; FR-MOD-003 — the desk queue is drag-reorderable at last. Added MOBMOD-009/010).

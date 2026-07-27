@@ -125,18 +125,68 @@ internal sealed class ExhibitorVisitorService(
                 $"يجب ألا تتجاوز الملاحظة {NoteMaxLength} حرفاً.");
         }
 
-        // Idempotent per (exhibitor, visitor) — a repeat scan refreshes the note.
-        var existing = await appDbContext.ExhibitorVisitorScans
-            .FirstOrDefaultAsync(
-                s => s.ExhibitorUserId == exhibitorUserId
-                    && s.VisitorUserId == visitorId.Value
-                    && s.IsActive,
-                cancellationToken);
+        // Idempotent per (BOOTH, visitor) — FR-EXH-003. A repeat scan refreshes
+        // the note, and a colleague re-scanning the same visitor updates the
+        // booth's existing lead instead of forking a second private copy of it.
+        // Legacy rows carry no ExhibitorId, so the caller's own un-backfilled
+        // capture of the same visitor still counts as the existing one.
+        //
+        // FR-EXH-003 regression — the two kinds can be live AT ONCE: a colleague
+        // captures the visitor for the booth while this officer still holds their
+        // own un-backfilled legacy row of that visitor. Taking whichever row the
+        // database happened to return first then either stamped the booth id onto
+        // the LEGACY row — a second ACTIVE (booth, visitor) pair, which the
+        // filtered unique index rejects, surfacing as a 500 — or picked the booth
+        // row and left the legacy one active, so the booth listed the visitor
+        // twice. The whole matched set is loaded and resolved deliberately
+        // instead; the unordered "first" is never the deciding factor.
+        var matches = await appDbContext.ExhibitorVisitorScans
+            .Where(s => s.VisitorUserId == visitorId.Value
+                && s.IsActive
+                && (s.ExhibitorId == exhibitor.Id
+                    || (s.ExhibitorId == null && s.ExhibitorUserId == exhibitorUserId)))
+            .ToListAsync(cancellationToken);
+
+        // The BOOTH-scoped row wins. It is the row the booth's officers share and
+        // the one the filtered unique index protects — and that index is what
+        // makes the choice unambiguous: at most ONE active row can carry this
+        // (ExhibitorId, VisitorUserId), so there is never a second booth row to
+        // arbitrate between. With no booth row the newest legacy row is adopted
+        // into the booth instead (the FR-EXH-003 hand-over), which is index-safe
+        // precisely because no active booth row exists for this pair.
+        // The legacy tie-break is the migration's, so a row collapsed by hand and
+        // a row collapsed here are decided the same way: freshest write wins.
+        var existing = matches.FirstOrDefault(s => s.ExhibitorId == exhibitor.Id)
+            ?? matches
+                .OrderByDescending(s => s.UpdatedAt ?? s.CreatedAt)
+                .ThenByDescending(s => s.CreatedAt)
+                .ThenByDescending(s => s.Id)
+                .FirstOrDefault();
+
         var now = timeProvider.GetUtcNow();
         if (existing is not null)
         {
             existing.Note = trimmed;
             existing.UpdatedAt = now;
+            // Adopt a legacy row into the booth on the first re-scan, so the list
+            // stops depending on the person who happened to capture it.
+            existing.ExhibitorId ??= exhibitor.Id;
+
+            // FR-EXH-003 regression — converge the rows that did not win. They
+            // are the caller's own legacy captures of a visitor the booth already
+            // holds, so they can neither be adopted (the booth pair is taken) nor
+            // be left active (the booth would list the visitor twice). Soft-delete
+            // is the project's remove contract — the row and its consent trail
+            // survive, it simply stops being a second live copy of one lead.
+            foreach (var superseded in matches.Where(s => s.Id != existing.Id))
+            {
+                superseded.Deactivate();
+                superseded.UpdatedAt = now;
+                logger.LogInformation(
+                    "Converged legacy exhibitor capture {CaptureId} of visitor {VisitorUserId} "
+                    + "into the booth's capture {WinningCaptureId} for exhibitor {ExhibitorId}.",
+                    superseded.Id, visitorId.Value, existing.Id, exhibitor.Id);
+            }
         }
         else
         {
@@ -144,6 +194,7 @@ internal sealed class ExhibitorVisitorService(
             {
                 Id = Guid.NewGuid(),
                 ExhibitorUserId = exhibitorUserId,
+                ExhibitorId = exhibitor.Id,
                 VisitorUserId = visitorId.Value,
                 Note = trimmed,
                 IsActive = true,
@@ -174,11 +225,11 @@ internal sealed class ExhibitorVisitorService(
     public async Task<IReadOnlyList<ExhibitorVisitorRow>> ListMyVisitorsAsync(
         Guid exhibitorUserId, CancellationToken cancellationToken = default)
     {
-        await EnsureExhibitorAsync(exhibitorUserId, cancellationToken);
+        var exhibitor = await EnsureExhibitorAsync(exhibitorUserId, cancellationToken);
 
         var rows = await appDbContext.ExhibitorVisitorScans
             .AsNoTracking()
-            .Where(s => s.ExhibitorUserId == exhibitorUserId && s.IsActive)
+            .Where(CapturedByBooth(exhibitorUserId, exhibitor.Id))
             .OrderByDescending(s => s.CreatedAt)
             .Select(s => new { s.Id, s.VisitorUserId, s.Note, s.CreatedAt })
             .ToListAsync(cancellationToken);
@@ -220,6 +271,85 @@ internal sealed class ExhibitorVisitorService(
                 r.Id, r.CreatedAt, r.Note, cards[r.VisitorUserId]))
             .ToList();
     }
+
+    public async Task RemoveCaptureAsync(
+        Guid exhibitorUserId, Guid captureId, CancellationToken cancellationToken = default)
+    {
+        var exhibitor = await EnsureExhibitorAsync(exhibitorUserId, cancellationToken);
+
+        // FR-EXH-002 — soft-delete, the project convention (BaseAuditEntity
+        // .Deactivate), so the lead leaves the booth's list without destroying the
+        // capture record. Idempotent: the row is already filtered to the ACTIVE
+        // ones, so a repeat delete is a no-op 200 rather than a 404 — the same
+        // contract My Contacts' remove honours.
+        var capture = await appDbContext.ExhibitorVisitorScans
+            .Where(CapturedByBooth(exhibitorUserId, exhibitor.Id))
+            .FirstOrDefaultAsync(s => s.Id == captureId, cancellationToken);
+        if (capture is null)
+        {
+            return;
+        }
+        capture.Deactivate();
+        capture.UpdatedAt = timeProvider.GetUtcNow();
+        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.ExhibitorLeadRemoved,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = exhibitorUserId,
+            Detail = $"captureId={captureId}; exhibitorId={exhibitor.Id}",
+        }, cancellationToken);
+    }
+
+    public async Task<VisitorCard> GetCaptureCardAsync(
+        Guid exhibitorUserId, Guid captureId, CancellationToken cancellationToken = default)
+    {
+        var exhibitor = await EnsureExhibitorAsync(exhibitorUserId, cancellationToken);
+
+        var subjectId = await appDbContext.ExhibitorVisitorScans
+            .AsNoTracking()
+            .Where(CapturedByBooth(exhibitorUserId, exhibitor.Id))
+            .Where(s => s.Id == captureId)
+            .Select(s => (Guid?)s.VisitorUserId)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (subjectId is null)
+        {
+            throw CaptureNotFound();
+        }
+
+        // DEF-EXH-004 — the export runs the SAME subject test as the read path:
+        // a lead the list refuses to project must not be exportable through a
+        // second door either.
+        var eligible = await appDbContext.UserProfiles
+            .AsNoTracking()
+            .Where(IsCapturableSubject)
+            .AnyAsync(p => p.UserId == subjectId.Value, cancellationToken);
+        if (!eligible)
+        {
+            throw CaptureNotFound();
+        }
+
+        var cards = await ResolveCardsAsync(new[] { subjectId.Value }, cancellationToken);
+        return cards[subjectId.Value];
+    }
+
+    /// <summary>FR-EXH-003 — the booth's active captures: everything tagged to the
+    /// exhibitor, plus the caller's own legacy rows that predate the column (the
+    /// migration backfills from membership, so only a capturer who had no
+    /// membership at migration time leaves one behind). Held as one expression so
+    /// the list, the delete and the export can never disagree about what belongs
+    /// to the booth.</summary>
+    private static Expression<Func<ExhibitorVisitorScan, bool>> CapturedByBooth(
+        Guid exhibitorUserId, Guid exhibitorId) =>
+        scan => scan.IsActive
+            && (scan.ExhibitorId == exhibitorId
+                || (scan.ExhibitorId == null && scan.ExhibitorUserId == exhibitorUserId));
+
+    private static ApiException CaptureNotFound() =>
+        new(ErrorCodes.NotFound, 404,
+            "That captured visitor is not on your booth's list.",
+            "هذا الزائر غير موجود في قائمة جناحك.");
 
     /// <summary>BUG-024 — emails the captured lead to the exhibitor's own account
     /// address. Fire-and-forget by contract: the capture row is already committed,
@@ -326,7 +456,7 @@ internal sealed class ExhibitorVisitorService(
                 && m.Exhibitor != null
                 && m.Exhibitor.IsActive)
             .OrderBy(m => m.CreatedAt)
-            .Select(m => new { m.Exhibitor!.Name, m.Exhibitor!.NameArabic })
+            .Select(m => new { m.ExhibitorId, m.Exhibitor!.Name, m.Exhibitor!.NameArabic })
             .FirstOrDefaultAsync(cancellationToken);
         if (booth is null)
         {
@@ -341,6 +471,7 @@ internal sealed class ExhibitorVisitorService(
         // the fallback for a self-registered exhibitor whose booth row somehow
         // carries a blank name.
         return new ExhibitorIdentity(
+            booth.ExhibitorId,
             string.IsNullOrWhiteSpace(booth.Name) ? officer.Name : booth.Name,
             string.IsNullOrWhiteSpace(booth.NameArabic)
                 ? officer.NameArabic
@@ -388,11 +519,12 @@ internal sealed class ExhibitorVisitorService(
         }, logger, cancellationToken);
     }
 
-    /// <summary>The bilingual display name of the EXHIBITOR the scanning officer
-    /// represents — carried from the authorisation query into the subject
-    /// notification so the visitor is told WHO their card went to
+    /// <summary>The EXHIBITOR the scanning officer represents — its id (FR-EXH-003,
+    /// the booth every capture is tagged to and every list is scoped by) and its
+    /// bilingual display name, carried from the authorisation query into the
+    /// subject notification so the visitor is told WHO their card went to
     /// (DEF-EXH-007).</summary>
-    private sealed record ExhibitorIdentity(string Name, string NameArabic);
+    private sealed record ExhibitorIdentity(Guid Id, string Name, string NameArabic);
 
     /// <summary>Batch-resolves visitor cards from profiles + org / country lookups
     /// (App DB) and a single email round-trip (Identity DB). A subject with no

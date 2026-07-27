@@ -210,10 +210,131 @@ Scenario: The two lists stay separate
 not My Contacts"; render-lock golden `goldens/my_visitors.png` re-locked with the
 new title + note.
 
+### E2E-MOBMYVIS-010 — The list is the BOOTH's, not the officer's (FR-EXH-003)
+
+```gherkin
+Scenario: Two officers of one booth share one lead list
+  Given "Officer One" and "Officer Two" are both active members of booth
+    "Shared Booth"
+  And Officer One scans visitor badge "SHAREDLEAD1" with the note "met at the stand"
+  And Officer Two scans visitor badge "SHAREDLEAD2"
+  When either of them calls GET /api/v1/app/exhibitor/visitors
+  Then BOTH captures are listed, with the same capture ids for both officers
+
+Scenario: A rival booth sees none of them
+  Given an officer of a different exhibitor "Rival Booth"
+  When they call GET /api/v1/app/exhibitor/visitors
+  Then neither capture is listed
+  And no PII for either subject is projected
+
+Scenario: A colleague re-scanning updates the booth's ONE lead
+  Given Officer One captured badge "DEDUPEBADGE" with the note "morning"
+  When Officer Two scans the same badge with the note "afternoon"
+  Then the booth still holds exactly ONE capture for that visitor
+  And its note reads "afternoon"
+  And the visitor received exactly ONE ExhibitorLeadCaptured notification
+
+Scenario: A legacy untagged capture is adopted on the next scan
+  Given an ExhibitorVisitorScan row written before the ExhibitorId column
+    existed, whose capturer had no membership for the migration to backfill from
+  Then it is listed for its CAPTURER only, and not for their colleague
+  When its capturer scans that visitor again
+  Then the SAME row is adopted into the booth (not duplicated)
+  And the colleague now sees it too
+```
+
+> `ExhibitorVisitorScan` carried no `ExhibitorId`, so a lead belonged to the
+> PERSON who scanned it: two officers of one booth kept two disjoint lead lists
+> and neither could see the other's captures. The additive nullable column +
+> migration `App/20260727045650_FRExh003_AddExhibitorVisitorScanExhibitorId`
+> backfills from the capturing user's oldest ACTIVE `ExhibitorMembership`; a row
+> whose capturer has no membership is deliberately left NULL rather than guessed
+> at, and the person-scoped fallback keeps it visible to that capturer alone.
+
+**Evidence:** `tests/SIMF.Api.Tests/ExhibitorLeadManagementTests.cs` —
+`Both_officers_of_a_booth_see_the_same_captured_leads`,
+`A_rival_booths_officer_does_not_see_the_leads`,
+`A_colleague_rescanning_updates_the_booths_single_lead`,
+`A_legacy_untagged_capture_stays_visible_and_is_adopted_on_rescan`.
+
+### E2E-MOBMYVIS-011 — Remove a captured lead (FR-EXH-002)
+
+```gherkin
+Scenario: A mis-scan is dropped from the booth's list
+  Given a signed-in booth officer with at least one captured lead
+  When they tap the lead's row
+  Then the captured-visitor sheet opens showing the full card plus
+    "تصدير vCard / Export vCard" and "إزالة / Remove"
+  When they tap Remove
+  Then the confirm dialog "إزالة هذا الزائر؟ / Remove this visitor?" asks first
+  When they confirm
+  Then DELETE /api/v1/app/exhibitor/visitors/{id} answers 200
+  And the toast "تمت إزالة الزائر / Visitor removed" shows
+  And the list reloads without that lead
+  And a colleague on the same booth no longer sees it either
+
+Scenario: Soft, not hard
+  Then the ExhibitorVisitorScan row survives with IsActive = false
+  And an Exhibitor.LeadRemoved audit entry names the actor and the capture id
+  # The capture carries the visitor's consent trail (the capture notified them
+  # their card had been shared), so its removal has to stay attributable.
+
+Scenario: Idempotent
+  When the same id is deleted a second time
+  Then the response is still 200
+
+Scenario: A rival booth cannot remove our lead
+  Given an officer of a different exhibitor
+  When they DELETE the same capture id
+  Then our lead is still listed
+```
+
+### E2E-MOBMYVIS-012 — Export a captured lead as a vCard (FR-EXH-002)
+
+```gherkin
+Scenario: The lead is exported as a .vcf
+  Given a captured lead "Nabil Farid", job title "Fleet Engineer",
+    Saudi mobile "0501234567"
+  When the officer taps "Export vCard" on the sheet
+  Then GET /api/v1/app/exhibitor/visitors/{id}/vcard answers 200
+  And the content type is "text/vcard; charset=utf-8"
+  And the body starts "BEGIN:VCARD\r\nVERSION:3.0\r\n" and ends "END:VCARD\r\n"
+  And it carries FN:Nabil Farid, TITLE:Fleet Engineer, TEL;TYPE=CELL:0501234567
+  And the share sheet opens with the filename "simf-lead.vcf"
+
+Scenario: The export is not a second door onto a refused card
+  Given a lead captured by a DIFFERENT booth
+  When this officer requests its vcard
+  Then the response is 404
+  # Same booth scope AND the same DEF-EXH-004 subject-eligibility test as the
+  # list, so a card the list will not project cannot be exported either.
+
+Scenario: A visitor token is refused outright
+  Given a plain visitor-tier token
+  Then both DELETE …/visitors/{id} and GET …/visitors/{id}/vcard answer 403
+```
+
+> FR-EXH-002: My Contacts has had BOTH a remove and a vCard export since D-286;
+> the exhibitor lead list had neither, so a mis-scan was permanent and the card
+> could only be read on screen. The export shares one renderer with My Contacts
+> (`VisitorCardVCard`) so the two can never drift; only the download filename
+> differs.
+
+**Evidence:** `tests/SIMF.Api.Tests/ExhibitorLeadManagementTests.cs` —
+`Removing_a_lead_soft_deletes_it_for_the_whole_booth`,
+`A_rival_booth_cannot_remove_our_lead`, `Exports_a_captured_lead_as_a_vcard`,
+`Cannot_export_a_lead_from_another_booth`,
+`A_visitor_token_cannot_remove_or_export_a_lead`. App:
+`my_visitors_screen_test` — "FR-EXH-002: tapping a lead opens the export +
+remove sheet", "FR-EXH-002: a confirmed removal drops the lead and reloads".
+
 ---
 
-_Last reviewed:_ 2026-07-26 by Claude — BUG-025: renamed زوار جناحي / My Booth
-Visitors, added the `SimfPageNote` separating it from My Contacts, refreshed the
-empty-state copy and re-locked the golden; E2E-MOBMYVIS-008. Earlier:
-`2026-07-20` (bilingual job title, E2E-MOBMYVIS-007) and `2026-07-04` by
-`SIMF Team`.
+_Last reviewed:_ `2026-07-27` by `SIMF Team` — FR-EXH-002 (remove + vCard export
+on a captured lead, via the new `CapturedVisitorSheet`) and FR-EXH-003 (the list
+is scoped to the BOOTH, not the officer — additive `ExhibitorVisitorScan
+.ExhibitorId`); E2E-MOBMYVIS-010..012. Earlier: 2026-07-26 by Claude — BUG-025:
+renamed زوار جناحي / My Booth Visitors, added the `SimfPageNote` separating it
+from My Contacts, refreshed the empty-state copy and re-locked the golden;
+E2E-MOBMYVIS-008. Earlier: `2026-07-20` (bilingual job title,
+E2E-MOBMYVIS-007) and `2026-07-04` by `SIMF Team`.
