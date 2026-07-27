@@ -66,6 +66,9 @@
   <data name="Admin.Edit.Nationality" xml:space="preserve"><value>Nationality</value></data>
   <data name="Admin.Edit.Nationality.Keep" xml:space="preserve"><value>Keep the current nationality</value></data>
   <data name="Admin.Edit.Nationality.Hint" xml:space="preserve"><value>Nationality decides which delegation this account belongs to, so it controls whether they can confirm a delegation meeting. Leave the picker empty to keep the stored value.</value></data>
+  <data name="Admin.Edit.SaudiMobile" xml:space="preserve"><value>Saudi mobile</value></data>
+  <data name="Admin.Edit.InternationalMobile" xml:space="preserve"><value>International mobile</value></data>
+  <data name="Admin.Edit.Mobile.Hint" xml:space="preserve"><value>Saudi 05XXXXXXXX or +9665XXXXXXXX; international +&lt;country code&gt;&lt;number&gt;. Leave empty to keep the stored number.</value></data>
   <data name="Admin.Edit.Photo.Section" xml:space="preserve"><value>Photo &amp; ID</value></data>
   <data name="Admin.Edit.Photo.Current" xml:space="preserve"><value>Current image</value></data>
   <data name="Admin.Edit.Photo.Avatar" xml:space="preserve"><value>Profile photo</value></data>

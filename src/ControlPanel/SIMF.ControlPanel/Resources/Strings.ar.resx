@@ -66,6 +66,9 @@
   <data name="Admin.Edit.Nationality" xml:space="preserve"><value>الجنسية</value></data>
   <data name="Admin.Edit.Nationality.Keep" xml:space="preserve"><value>الإبقاء على الجنسية الحالية</value></data>
   <data name="Admin.Edit.Nationality.Hint" xml:space="preserve"><value>تحدّد الجنسية الوفد الذي ينتمي إليه هذا الحساب، وبالتالي تتحكّم في إمكانية تأكيده لاجتماع وفد. اترك القائمة فارغة للإبقاء على القيمة المحفوظة.</value></data>
+  <data name="Admin.Edit.SaudiMobile" xml:space="preserve"><value>الجوال السعودي</value></data>
+  <data name="Admin.Edit.InternationalMobile" xml:space="preserve"><value>الجوال الدولي</value></data>
+  <data name="Admin.Edit.Mobile.Hint" xml:space="preserve"><value>السعودي بصيغة 05XXXXXXXX أو ‎+9665XXXXXXXX‎؛ والدولي ‎+‎ يليه رمز الدولة والرقم. اترك الحقل فارغًا للإبقاء على الرقم المحفوظ.</value></data>
   <data name="Admin.Edit.Photo.Section" xml:space="preserve"><value>الصورة والهوية</value></data>
   <data name="Admin.Edit.Photo.Current" xml:space="preserve"><value>الصورة الحالية</value></data>
   <data name="Admin.Edit.Photo.Avatar" xml:space="preserve"><value>الصورة الشخصية</value></data>

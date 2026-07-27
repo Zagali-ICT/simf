@@ -215,13 +215,13 @@ const List<_Route> _routes = <_Route>[
   // D-668 — About-the-app page (version / release date / organizer + links),
   // reached from the end of the side drawer. Public.
   _Route(number: 207, name: RouteNames.aboutApp, path: '/about-app', labelAr: 'عن التطبيق', labelEn: 'About the app'),
-  // Owner batch (2026-06-21) — entry points for features not yet designed/built;
-  // they fall through to ComingSoonScreen (sentinel numbers 200+). #5 bilateral
-  // meetings (home tile, undesigned); #8 saved meetings (My Area stat).
-  // (D-609: route 205 Saved-sessions removed — the screen was deleted; recover
-  //  it from git history if it is ever needed again.)
-  _Route(number: 204, name: RouteNames.bilateralMeetings, path: '/bilateral-meetings', labelAr: 'اللقاءات الثنائية', labelEn: 'Bilateral meetings'),
-  _Route(number: 206, name: RouteNames.savedMeetings, path: '/saved-meetings', labelAr: 'المقابلات المحفوظة', labelEn: 'Saved meetings'),
+  // (B18: routes 204 bilateral-meetings + 206 saved-meetings removed — both
+  //  ComingSoon sentinels with no screen, no inbound navigation and nothing
+  //  persisted behind them. 204's Home tile went to the real VIP meetings page
+  //  (116) with D-745, and 206's My-Area stat tile went with the D-609 screen
+  //  deletion, so the two paths had been unreachable dead declarations since.
+  //  D-609 removed 205 Saved-sessions the same way. Recover from git history
+  //  if a feature ever lands.)
 ];
 
 /// Auxiliary auth routes that aren't numbered in the mockup but live in

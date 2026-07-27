@@ -107,6 +107,8 @@ internal sealed partial class AdminAccountService
             currentFlags?.AllowsDelegationMeeting ?? false,
             // B22 — a scope flip never touches nationality (null = leave it alone).
             nationalityId: null,
+            // FR-PHN-002 — nor the mobile numbers (same "null = no change" rule).
+            saudiMobile: null, internationalMobile: null,
             now, cancellationToken);
 
         // Audit the completed flip — after it is durable, so the trail reflects

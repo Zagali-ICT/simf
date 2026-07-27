@@ -33,6 +33,8 @@
 | E2E-MYMOB-007 | Load failure → error state + Retry; no write fired | resilience | P1 | authored ✓ (widget) |
 | E2E-MYMOB-008 | Auth gate — anonymous open of `/my-area/mobile` redirects to sign-in | auth | P0 | authored ✓ (router-gate matrix) |
 | E2E-MYMOB-009 | RTL render (Arabic) — labels mirror, the NUMBER stays LTR | i18n | P1 | spec |
+| E2E-MYMOB-010 | **DEF-PHN-003** — the SERVER canonicalises on write: separators stripped and a leading `00` rewritten to `+`, so the app's `+966501234567` and the CP/Website `+966-555987654` land in the column as **one** form | validation | P0 | authored ✓ (`UserProfileTests.POST_stores_the_Saudi_mobile_canonicalised` theory + `..._international_mobile_canonicalised`; `AdminAccountMobileTests.Admin_edit_stores_the_mobile_canonicalised`) |
+| E2E-MYMOB-011 | **DEF-PHN-004** — the mobile is required **server-side** too (at least one, Saudi or international), so a save can no longer clear the number the app then refuses to submit without | validation | P0 | authored ✓ (`UserProfileTests.POST_rejects_a_profile_with_no_mobile_at_all`, `..._rejects_a_save_that_blanks_an_existing_mobile`, `..._accepts_an_international_only_mobile_for_a_Saudi`) |
 
 ## Scenarios
 
@@ -108,6 +110,69 @@ Scenario: The submitted value is always the canonical form
   # Arabic-Indic digits fold to Western and spaces / dashes are stripped the
   # same way (normalizePhone), client and server identically.
 ```
+
+### E2E-MYMOB-010 — The SERVER canonicalises on write (DEF-PHN-003)
+
+Until this shipped the shape rules stripped separators **only to match** — the
+value was persisted exactly as typed. So one column held `+966501234567` (the
+app, which canonicalises client-side) and `+966-555987654` (the Control-Panel /
+Website `SimfPhoneInput`, which emits `+dial-local`). Two spellings of one
+number defeat search, export and de-duplication. Every write path now stores
+`MobileNumber.Normalize`'s output — the *same* normaliser the validator matches
+against, not a second copy.
+
+```gherkin
+Scenario Outline: A number is stored in exactly one form, whoever typed it
+  Given a signed-in user saving their profile
+  When the submitted mobile is "<typed>"
+  Then the stored column holds "<stored>"
+
+  Examples:
+    | typed             | stored         |
+    | +966-501234567    | +966501234567  |   # the CP / Website dash form
+    | 050 123-4567      | 0501234567     |   # spaces + dash
+    | 00966501234567    | +966501234567  |   # the 00 international prefix
+    | 0044-7700 900123  | +447700900123  |   # international, both rules
+```
+
+**Covered (lower layer):** `UserProfileTests.POST_stores_the_Saudi_mobile_canonicalised`
+(theory, 3 cases) + `POST_stores_the_international_mobile_canonicalised`; the
+admin path is `AdminAccountMobileTests.Admin_edit_stores_the_mobile_canonicalised`.
+
+### E2E-MYMOB-011 — The mobile is REQUIRED on the server too (DEF-PHN-004)
+
+The number was mandatory on the app form (D-723) and on the walk-in desk, but
+**optional on the server**, so a save could still clear it — and the app would
+then refuse to let the user submit the form next time they opened it, with no
+way out. The server rule now matches the product rule: **at least one mobile,
+Saudi or international**. Resolved toward *required* (not toward making the app
+optional) because the number is the event's only non-email contact channel and
+the two other write paths already demanded it; requiring "at least one" rather
+than "the one matching IsSaudi" keeps a Saudi national reachable on a foreign
+number.
+
+```gherkin
+Scenario: A save with no mobile at all is rejected
+  Given a signed-in user whose profile save carries neither mobile
+  When the profile is submitted
+  Then the response is 400
+       ("A mobile number is required (Saudi or international)." /
+        "رقم الجوال مطلوب (سعودي أو دولي).")
+
+Scenario: A later save cannot blank a stored number
+  Given a stored Saudi mobile "0501234567"
+  When a save submits a blank mobile
+  Then the response is 400
+  And the stored number survives the rejected save
+
+Scenario: An international-only number satisfies the rule for a Saudi national
+  Given a Saudi user with no Saudi mobile but "+447700900123" international
+  Then the save succeeds
+```
+
+**Covered (lower layer):** `UserProfileTests.POST_rejects_a_profile_with_no_mobile_at_all`,
+`POST_rejects_a_save_that_blanks_an_existing_mobile`,
+`POST_accepts_an_international_only_mobile_for_a_Saudi`.
 
 ### E2E-MYMOB-006 — Server error
 

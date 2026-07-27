@@ -119,16 +119,57 @@ void main() {
       await _pump(tester, repo: repo, sessionId: 's1');
 
       // The "الاسئلة" section label, the question box, the gold submit, and
-      // the "reviewed before air" note all render.
+      // the on-air note all render.
       expect(find.byType(TextField), findsOneWidget);
       expect(find.widgetWithText(FilledButton, 'Send question'), findsOneWidget);
+      // A17 — the note names the moderator (the gate that is always real), not a
+      // "review" that never happens for a live question.
       expect(
-        find.textContaining('Questions are reviewed before going on air.'),
+        find.textContaining(
+          'The session moderator picks which questions go on air.',
+        ),
         findsOneWidget,
       );
-      // The frame carries no recipient selector.
-      expect(find.text('Speaker'), findsNothing);
-      expect(find.text('Host'), findsNothing);
+      expect(
+        find.textContaining('Questions are reviewed before going on air.'),
+        findsNothing,
+      );
+      // B7 — the D-174 recipient choice is on the screen.
+      expect(find.text('Send to'), findsOneWidget);
+      expect(find.text('Speaker'), findsOneWidget);
+      expect(find.text('Host'), findsOneWidget);
+    });
+
+    // B7 — the Host path was dead: the screen hardcoded Speaker, so `recipient`
+    // was always 0 and the Host half of SessionQuestionRecipient could never be
+    // produced by any client.
+    testWidgets('choosing Host submits recipient = 1', (tester) async {
+      final repo = _FakeQuestionsRepo();
+      await _pump(tester, repo: repo, sessionId: 's1');
+
+      await tester.tap(find.text('Host'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'Who chairs the panel?');
+      await tester.tap(find.widgetWithText(FilledButton, 'Send question'));
+      await tester.pumpAndSettle();
+
+      expect(repo.lastRecipientIndex, 1);
+    });
+
+    testWidgets('switching back to Speaker submits recipient = 0',
+        (tester) async {
+      final repo = _FakeQuestionsRepo();
+      await _pump(tester, repo: repo, sessionId: 's1');
+
+      await tester.tap(find.text('Host'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Speaker'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'How deep is the reef?');
+      await tester.tap(find.widgetWithText(FilledButton, 'Send question'));
+      await tester.pumpAndSettle();
+
+      expect(repo.lastRecipientIndex, 0);
     });
 
     testWidgets('renders the بيانات الجلسة block as a numbered list',
@@ -202,7 +243,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(repo.lastQuestionText, 'How deep is the reef?');
-      // The frame has no selector; the wire `recipient` stays the default (0).
+      // B7 — Speaker is still the default, so a user who never taps the picker
+      // sends exactly what the shipped app sent (0).
       expect(repo.lastRecipientIndex, 0);
       expect(find.text('Your question was sent'), findsOneWidget);
       // The field is cleared after a successful submit.

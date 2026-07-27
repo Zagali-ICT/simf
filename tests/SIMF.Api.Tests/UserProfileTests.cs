@@ -513,15 +513,17 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task POST_adds_a_mobile_to_a_profile_that_had_none()
     {
-        // Owner 2026-07-26 — the "Add" half: a profile saved without a number
-        // takes one on a later edit (the field is optional at first save).
+        // Owner 2026-07-26 — the "Add" half of the My-mobile screen: an account
+        // whose stored number is absent gets one from a later save. Since
+        // DEF-PHN-004 the save must always CARRY a number (the app never sends an
+        // empty one), so "had none" is the pre-save state, not a saved empty.
         var token = await CreateUserAndSignInAsync();
-        var request = await ValidSaudiRequestAsync();
-        request.SaudiMobile = null;
-        Assert.Equal(
-            HttpStatusCode.OK,
-            (await PostAuthAsync(Path, request, token)).StatusCode);
+        var beforeAnySave = await GetAuthAsync(Path, token);
+        var before = (await beforeAnySave.Content
+            .ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!;
+        Assert.Null(before.Data?.SaudiMobile);
 
+        var request = await ValidSaudiRequestAsync();
         request.SaudiMobile = "+966501234567";
         Assert.Equal(
             HttpStatusCode.OK,
@@ -530,6 +532,97 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         var read = await GetAuthAsync(Path, token);
         var body = (await read.Content.ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!;
         Assert.Equal("+966501234567", body.Data!.SaudiMobile);
+    }
+
+    // DEF-PHN-004 — the mobile was mandatory on the app form (D-723) and on the
+    // walk-in desk, but OPTIONAL here, so a save could still clear the number the
+    // app then refuses to let the user submit without. The server rule now matches
+    // the product rule: at least one mobile, Saudi or international.
+    [Fact]
+    public async Task POST_rejects_a_profile_with_no_mobile_at_all()
+    {
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.SaudiMobile = null;
+        request.InternationalMobile = null;
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task POST_rejects_a_save_that_blanks_an_existing_mobile()
+    {
+        // The exact defect: the number is saved, then a later save clears it.
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.SaudiMobile = "0501234567";
+        Assert.Equal(
+            HttpStatusCode.OK,
+            (await PostAuthAsync(Path, request, token)).StatusCode);
+
+        request.SaudiMobile = "   ";
+        Assert.Equal(
+            HttpStatusCode.BadRequest,
+            (await PostAuthAsync(Path, request, token)).StatusCode);
+
+        // …and the stored number survived the rejected save.
+        var read = await GetAuthAsync(Path, token);
+        var body = (await read.Content.ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!;
+        Assert.Equal("0501234567", body.Data!.SaudiMobile);
+    }
+
+    [Fact]
+    public async Task POST_accepts_an_international_only_mobile_for_a_Saudi()
+    {
+        // The rule is "at least one number", not "the one that matches IsSaudi" —
+        // a Saudi national reachable only on a foreign number must still save.
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.SaudiMobile = null;
+        request.InternationalMobile = "+447700900123";
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    // DEF-PHN-003 — the shapes always stripped separators BEFORE matching, but the
+    // value was stored exactly as typed, so one column held "+966501234567" (the
+    // app) and "+966-555987654" (the CP / Website phone input, which emits
+    // "+dial-local"). Every write path now stores the canonical form.
+    [Theory]
+    [InlineData("+966-501234567", "+966501234567")]  // the CP / Website dash form
+    [InlineData("050 123-4567", "0501234567")]       // spaces + dash
+    [InlineData("00966501234567", "+966501234567")]  // the 00 international prefix
+    public async Task POST_stores_the_Saudi_mobile_canonicalised(
+        string typed, string stored)
+    {
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.SaudiMobile = typed;
+        Assert.Equal(
+            HttpStatusCode.OK,
+            (await PostAuthAsync(Path, request, token)).StatusCode);
+
+        var read = await GetAuthAsync(Path, token);
+        var body = (await read.Content.ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!;
+        Assert.Equal(stored, body.Data!.SaudiMobile);
+    }
+
+    [Fact]
+    public async Task POST_stores_the_international_mobile_canonicalised()
+    {
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.SaudiMobile = null;
+        request.InternationalMobile = "0044-7700 900123";
+        Assert.Equal(
+            HttpStatusCode.OK,
+            (await PostAuthAsync(Path, request, token)).StatusCode);
+
+        var read = await GetAuthAsync(Path, token);
+        var body = (await read.Content.ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!;
+        Assert.Equal("+447700900123", body.Data!.InternationalMobile);
     }
 
     // C6 (D-371; relaxed 2026-07-06) — رقم اللوحة: optional, but when present it
@@ -1560,6 +1653,10 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
             // Luhn-valid Saudi id per call (mirrors WalkInRegistrationTests).
             NationalId = TestIdentity.MintNationalId(),
             OrganisationId = organisationId,
+            // DEF-PHN-004 — the mobile is required now (the D-723 app rule, finally
+            // enforced on the server), so the baseline valid request carries one.
+            // No uniqueness constraint on the column, so a constant is fine.
+            SaudiMobile = "0501234567",
         };
     }
 

@@ -1,3 +1,6 @@
+// Tests: SIMF.Api.Tests/AdminAccountMobileTests.cs (FR-PHN-002 — the optional
+//        mobile correction, stored canonicalised per DEF-PHN-003)
+// Tests: SIMF.Api.Tests/AdminAccountNationalityTests.cs (B22 — nationality)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -30,6 +33,7 @@ internal sealed partial class AdminAccountService
             profileTypeRequired: false,
             request.AllowsSpeakerMeeting, request.AllowsDelegationMeeting,
             request.NationalityCode,
+            request.SaudiMobile, request.InternationalMobile,
             cancellationToken);
 
     public Task UpdateOtherAsync(
@@ -41,6 +45,7 @@ internal sealed partial class AdminAccountService
             profileTypeRequired: true,
             request.AllowsSpeakerMeeting, request.AllowsDelegationMeeting,
             request.NationalityCode,
+            request.SaudiMobile, request.InternationalMobile,
             cancellationToken);
 
     private async Task UpdateAccountAsync(
@@ -48,6 +53,7 @@ internal sealed partial class AdminAccountService
         Guid? profileTypeId, bool expectedIsVisitor, bool profileTypeRequired,
         bool allowsSpeakerMeeting, bool allowsDelegationMeeting,
         string? nationalityCode,
+        string? saudiMobile, string? internationalMobile,
         CancellationToken cancellationToken)
     {
         var trimmedEmail = (email ?? string.Empty).Trim();
@@ -100,6 +106,15 @@ internal sealed partial class AdminAccountService
         // delegate whose nationality was wrong. null = "leave it as it is".
         var resolvedNationalityId = await ResolveEditNationalityAsync(
             actorUserId, trimmedEmail, target.Id, nationalityCode, cancellationToken);
+
+        // FR-PHN-002 — the optional mobile correction. Canonicalised here
+        // (DEF-PHN-003) so a desk-typed "+966-55 598 7654" lands in the column in
+        // the SAME form the app would have written; null = "leave it as it is",
+        // which is also why an admin cannot blank a number (DEF-PHN-004 made the
+        // mobile mandatory).
+        var normalisedSaudiMobile = MobileNumber.NormalizeOptional(saudiMobile);
+        var normalisedInternationalMobile =
+            MobileNumber.NormalizeOptional(internationalMobile);
 
         var emailChanged = !string.Equals(
             target.Email, trimmedEmail, StringComparison.OrdinalIgnoreCase);
@@ -159,7 +174,9 @@ internal sealed partial class AdminAccountService
             await UpsertProfileTypeAsync(
                 target.Id, resolvedProfileTypeId,
                 allowsSpeakerMeeting, allowsDelegationMeeting,
-                resolvedNationalityId, now, innerCt);
+                resolvedNationalityId,
+                normalisedSaudiMobile, normalisedInternationalMobile,
+                now, innerCt);
 
             await auditLog.WriteAsync(new AuditEntry
             {
@@ -173,7 +190,13 @@ internal sealed partial class AdminAccountService
                     + $"profileTypeChanged={profileTypeChanged}; "
                     + $"profileType={resolvedProfileTypeId}; "
                     + $"nationalityId={resolvedNationalityId?.ToString(
-                        System.Globalization.CultureInfo.InvariantCulture) ?? "unchanged"}",
+                        System.Globalization.CultureInfo.InvariantCulture) ?? "unchanged"}; "
+                    // FR-PHN-002 — a phone correction is a contact-detail change on
+                    // someone else's account, so the trail records THAT it happened.
+                    // The number itself is not written to the audit detail (the
+                    // RowAudit interceptor already masks the mobile columns).
+                    + $"mobileChanged={normalisedSaudiMobile is not null
+                        || normalisedInternationalMobile is not null}",
             }, innerCt);
         }, cancellationToken);
 
@@ -258,15 +281,18 @@ internal sealed partial class AdminAccountService
 
     // Sets the subject's ProfileTypeId, the two Bi-Meeting eligibility flags
     // (AllowsSpeakerMeeting / AllowsDelegationMeeting) and — when the edit supplied
-    // one (B22) — the nationality, on the App-DB UserProfile row. The row may not
-    // exist yet (a self-signed-up visitor with no admin-assigned type); create a
-    // minimal row when a tier OR a meeting flag OR a nationality is set so the
-    // assignment sticks. A no-tier, no-flag, no-nationality edit of a profile-less
-    // account stays a no-op (nothing to persist).
+    // them — the nationality (B22) and the mobile numbers (FR-PHN-002), on the
+    // App-DB UserProfile row. The row may not exist yet (a self-signed-up visitor
+    // with no admin-assigned type); create a minimal row when a tier OR a meeting
+    // flag OR a nationality OR a mobile is set so the assignment sticks. An edit
+    // that changes none of those on a profile-less account stays a no-op (nothing
+    // to persist).
     private async Task UpsertProfileTypeAsync(
         Guid subjectId, Guid? profileTypeId,
         bool allowsSpeakerMeeting, bool allowsDelegationMeeting,
-        int? nationalityId, DateTimeOffset now,
+        int? nationalityId,
+        string? saudiMobile, string? internationalMobile,
+        DateTimeOffset now,
         CancellationToken cancellationToken)
     {
         var profile = await appDbContext.UserProfiles
@@ -274,7 +300,8 @@ internal sealed partial class AdminAccountService
         if (profile is null)
         {
             if (profileTypeId is null && !allowsSpeakerMeeting
-                && !allowsDelegationMeeting && nationalityId is null)
+                && !allowsDelegationMeeting && nationalityId is null
+                && saudiMobile is null && internationalMobile is null)
             {
                 return;
             }
@@ -286,6 +313,8 @@ internal sealed partial class AdminAccountService
                 AllowsSpeakerMeeting = allowsSpeakerMeeting,
                 AllowsDelegationMeeting = allowsDelegationMeeting,
                 NationalityId = nationalityId ?? 0,
+                SaudiMobile = saudiMobile,
+                InternationalMobile = internationalMobile,
                 CreatedAt = now,
             });
         }
@@ -297,6 +326,17 @@ internal sealed partial class AdminAccountService
             if (nationalityId is { } resolved)
             {
                 profile.NationalityId = resolved;
+            }
+            // FR-PHN-002 — an omitted number leaves the stored one alone (the
+            // same "null = no change" contract as the nationality above), so a
+            // desk editing only the email never wipes the contact detail.
+            if (saudiMobile is not null)
+            {
+                profile.SaudiMobile = saudiMobile;
+            }
+            if (internationalMobile is not null)
+            {
+                profile.InternationalMobile = internationalMobile;
             }
             profile.UpdatedAt = now;
         }

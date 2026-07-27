@@ -52,7 +52,7 @@
 | E2E-MOB013-016 | The full-width اسأل المحاور tile opens send-question (1052:12856, D-446) | happy | P1 | authored ✓ (screen — tile → `sendQuestion`) |
 | E2E-MOB013-017 | RTL tile/row order matches the frame (D-436 position assertions) | i18n | P1 | authored ✓ (screen — `getCenter().dx` about/news/smart-row-2) |
 | E2E-MOB013-018 | Discover badge is the filled "السعودية" (signed-in), not "KSA" (758:1280, D-446) | i18n/visual | P2 | authored ✓ (screen) |
-| E2E-MOB013-019 | **اللقاءات الثنائية → Coming soon (owner 2026-06-21):** the bilateral-meetings news tile opens the **ComingSoon** placeholder (the feature is not designed yet), not the media gallery | happy | P2 | authored ✓ (screen — tile → `bilateralMeetings` ComingSoon route) |
+| E2E-MOB013-019 | **اللقاءات الثنائية → the VIP meetings page (D-745; ComingSoon retired by B18, 2026-07-27):** the bilateral-meetings tile opens the real VIP `/meetings` page for a VIP, and is hidden for a non-VIP. The old `bilateralMeetings` ComingSoon sentinel (route 204) has been **deleted** — it had no screen and no caller once D-745 landed | happy | P2 | authored ✓ (screen `the bilateral-meetings tile opens the VIP meetings page` + `the bilateral-meetings tile is hidden for a non-VIP (D-745)`) |
 | E2E-MOB013-020 | **Smart-features tile → AI-summaries (D-580→D-583):** the smart-row-2 tile reads "ملخص الجلسات" and opens the AI-summaries list (1388:8392, header "ملخص الجلسات") | happy | P2 | authored ✓ (screen — smart-row-2 label + section-scan) |
 | E2E-MOB013-021 | **About-tile → session downloads (D-583):** the Home about-row (4-up) tile reads "الجلسات" and opens the session-materials downloads screen (1388:7621, header "الجلسات"); label matches the screen title | happy | P2 | authored ✓ (screen — about-row label + order) |
 | E2E-MOB013-023 | **Language switch reachable from Home (BUG-017):** the signed-in Home greeting header carries the shared `SimfLanguageToggle`, like every other screen. Before, the only language entry point was the Profile "More" menu, so from Home there was no route to the language switch at all | nav | P1 | authored ✓ (screen `BUG-017 — the greeting header carries the shared language toggle, so the language switch is reachable from Home`) |
@@ -317,15 +317,25 @@ Scenario: The full-width اسأل المحاور tile opens the send-question sc
   Then the send-a-question screen opens (RouteNames.sendQuestion)
 ```
 
-### E2E-MOB013-019 — اللقاءات الثنائية opens Coming soon (owner 2026-06-21)
+### E2E-MOB013-019 — اللقاءات الثنائية opens the VIP meetings page (D-745 / B18)
 
 ```gherkin
-Scenario: The bilateral-meetings tile lands on the Coming-soon placeholder
-  Given the signed-in Home is shown
+Scenario: The bilateral-meetings tile opens the real VIP meetings page
+  Given the signed-in Home is shown for a VIP attendee
   When the user taps the "اللقاءات الثنائية" news tile
-  Then the ComingSoon placeholder opens (RouteNames.bilateralMeetings)
-  And the media gallery does NOT open (the feature is not designed yet)
+  Then the VIP meetings page opens (RouteNames.meetings, route 116)
+  And the media gallery does NOT open
+
+Scenario: The tile is not offered to a non-VIP
+  Given the signed-in Home is shown for a non-VIP attendee
+  Then no "اللقاءات الثنائية" tile is rendered
 ```
+
+**B18 (2026-07-27):** the `bilateralMeetings` ComingSoon sentinel (route 204) and
+`savedMeetings` (route 206) were **removed**. Both were declared routes with no
+screen, no inbound navigation and nothing persisted behind them — 204's tile went
+to the real VIP page with D-745, and 206's My-Area stat tile went with the D-609
+screen deletion (which had already removed 205 Saved-sessions the same way).
 
 ### E2E-MOB013-017 — RTL tile/row order matches the frame (D-436)
 
