@@ -25,10 +25,11 @@ namespace SIMF.Infrastructure.Exhibitors;
 /// round-trip on the Identity DB (D-157 — bare-Guid logical FKs, no join, no PII
 /// snapshot). DEF-EXH-001: only a genuine exhibitor (a profile type carrying
 /// <see cref="MobileAppRole.Exhibitor"/>, D-519) may use this; every other
-/// caller is rejected with 403. DEF-EXH-003: the scanned subject must itself be
-/// an active audience-side account. DEF-EXH-004: that same subject test also runs
-/// on the READ path, so rows captured while the old rule was in force stop
-/// projecting a card. DEF-EXH-006: the role is not enough on its own — a CURRENT
+/// caller is rejected with 403. D-780 (owner decision 2026-07-27 — "can scan all
+/// badges"): the scanned subject only has to be an ACTIVE account holding a
+/// badge, whatever its profile type. DEF-EXH-004: that same subject test also
+/// runs on the READ path, so a since-deactivated subject stops projecting a card.
+/// DEF-EXH-006: the role is not enough on its own — a CURRENT
 /// <see cref="ExhibitorMembership"/> of a live exhibitor is required too, so
 /// dropping an officer from a booth revokes their scanning authority.
 /// DEF-EXH-002 / DEF-EXH-007: a new capture notifies the visitor, naming the
@@ -58,18 +59,26 @@ internal sealed class ExhibitorVisitorService(
     private const string NotProvidedAr = "غير محدد";
     private const string NoNote = "-";
 
-    /// <summary>DEF-EXH-003 — the SUBJECT eligibility test: an ACTIVE profile that
-    /// is not a partner-side (<c>IsForVisitor=false</c>) type, so a staff badge or
-    /// another exhibitor's badge is never capturable as a "lead". A visitor with no
-    /// tier assigned yet stays eligible — the approve-time tier is optional
-    /// (AdminAccountService.Approval, CS-D / D-386), so a null ProfileType is an
-    /// ordinary audience account, not a partner.
+    /// <summary>The SUBJECT eligibility test: an ACTIVE profile — i.e. any live
+    /// account holding a badge, whatever profile type it carries.
+    ///
+    /// <para><b>D-780 — owner decision, 2026-07-27: "can scan all badges".</b> The
+    /// owner was asked directly whether a booth may capture a MEDIA or SPONSOR
+    /// attendee's badge and ruled that ALL badges are scannable. That REVERSES the
+    /// premise of DEF-EXH-003, which had narrowed the rule to audience-side
+    /// (<c>IsForVisitor</c>) types so that a media, sponsor, staff or fellow
+    /// exhibitor badge answered the same 404 as an unknown code. Media, sponsor
+    /// and staff attendees are attendees; a booth that meets one captures the lead
+    /// like any other.</para>
+    ///
+    /// <para><c>IsActive</c> is deliberately KEPT: a deactivated (soft-deleted)
+    /// account is not a valid attendee, and the read path must never project a
+    /// live contact card for one.</para>
     ///
     /// <para>DEF-EXH-004 — held as one expression so the capture path and the READ
     /// path apply exactly the same rule and can never drift.</para></summary>
     private static readonly Expression<Func<UserProfile, bool>> IsCapturableSubject =
-        profile => profile.IsActive
-            && (profile.ProfileType == null || profile.ProfileType.IsForVisitor);
+        profile => profile.IsActive;
 
     public async Task<VisitorCard> ScanByBadgeAsync(
         Guid exhibitorUserId, string qrId, string? note,
@@ -85,9 +94,10 @@ internal sealed class ExhibitorVisitorService(
                 "رمز البطاقة مطلوب.");
         }
 
-        // DEF-EXH-003 — the SUBJECT must be eligible too, not just the caller
-        // (see IsCapturableSubject). An ineligible badge returns the same 404 as an
-        // unknown one — the caller never learns whether the code exists.
+        // D-780 — the SUBJECT must be eligible too, not just the caller: any
+        // ACTIVE badge holder (see IsCapturableSubject). A deactivated account
+        // returns the same 404 as an unknown code — the caller never learns
+        // whether the code exists.
         var visitorId = await appDbContext.UserProfiles
             .AsNoTracking()
             .Where(IsCapturableSubject)
@@ -178,12 +188,13 @@ internal sealed class ExhibitorVisitorService(
         }
 
         // DEF-EXH-004 — re-run the capture-time SUBJECT test on the READ path.
-        // Capture-time-only enforcement left every row taken while the old rule was
-        // in force (no IsActive, no audience-side filter) still projecting a full
-        // live card — login email + both mobile numbers — for a staff / rival
-        // exhibitor / since-deactivated subject. A subject that is no longer
-        // capturable simply drops out of the list, so no PII is projected for it
-        // (this also covers a subject whose profile row has gone).
+        // Capture-time-only enforcement left every row taken while the old rule
+        // was in force (no IsActive test at all) still projecting a full live card
+        // — login email + both mobile numbers — for a since-deactivated subject. A
+        // subject that is no longer capturable simply drops out of the list, so no
+        // PII is projected for it (this also covers a subject whose profile row has
+        // gone). D-780 widened the rule itself to "any active badge holder", so a
+        // media / sponsor / staff capture now legitimately stays in the list.
         var subjectIds = rows.Select(r => r.VisitorUserId).Distinct().ToList();
         var eligibleSubjectIds = (await appDbContext.UserProfiles
             .AsNoTracking()

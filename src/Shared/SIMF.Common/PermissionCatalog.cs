@@ -464,6 +464,14 @@ public static class PermissionCatalog
         public const string Delete = "Exhibitors.Delete";
         public const string Export = "Exhibitors.Export";
         public const string Import = "Exhibitors.Import";
+
+        /// <summary>D-781 — attach an EXISTING account to an exhibitor
+        /// (<c>POST /admin/exhibitors/{id}/accounts/link</c>). Held separately from
+        /// <see cref="Create"/> because it does not create anything: it grants the
+        /// booth lead-capture tools (badge scan + the visitors' contact cards) to
+        /// an account somebody else created, so it is the one exhibitor action that
+        /// hands out access to visitor PII.</summary>
+        public const string LinkAccount = "Exhibitors.LinkAccount";
     }
 
     public static class Booths
@@ -994,6 +1002,10 @@ public static class PermissionCatalog
         new(Exhibitors.Delete, "Exhibitors", "Delete", "Delete exhibitors", AdminOnly),
         new(Exhibitors.Export, "Exhibitors", "Export", "Export exhibitors", AdminOnly),
         new(Exhibitors.Import, "Exhibitors", "Import", "Import exhibitors", AdminOnly),
+        // D-781 — attach an existing account to an exhibitor (grants the booth
+        // lead-capture tools to an account the admin did not create here).
+        new(Exhibitors.LinkAccount, "Exhibitors", "LinkAccount",
+            "Link an existing account to an exhibitor", AdminOnly),
 
         new(Booths.View, "Booths", "View", "View booths", AdminOnly),
         new(Booths.Create, "Booths", "Create", "Create booths", AdminOnly),

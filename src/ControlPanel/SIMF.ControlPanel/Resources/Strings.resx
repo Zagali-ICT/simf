@@ -2929,6 +2929,17 @@
   <data name="Admin.Exhibitors.Provision.Required" xml:space="preserve"><value>The contact name and email are both required.</value></data>
   <data name="Admin.Exhibitors.Provision.Failed" xml:space="preserve"><value>Could not provision the account. Please try again.</value></data>
 
+  <!-- D-781 - attach an EXISTING account to this exhibitor (the Others-pipeline lockout fix). -->
+  <data name="Admin.Exhibitors.Link.Heading" xml:space="preserve"><value>Link an existing account</value></data>
+  <data name="Admin.Exhibitors.Link.Hint" xml:space="preserve"><value>Use this for an account that already exists (for example one created on the Others page). It must already carry an exhibitor profile type.</value></data>
+  <data name="Admin.Exhibitors.Link.Email" xml:space="preserve"><value>Account email</value></data>
+  <data name="Admin.Exhibitors.Link.ContactName" xml:space="preserve"><value>Contact name (optional)</value></data>
+  <data name="Admin.Exhibitors.Link.RoleLabel" xml:space="preserve"><value>Role label (optional)</value></data>
+  <data name="Admin.Exhibitors.Link.Submit" xml:space="preserve"><value>Link account</value></data>
+  <data name="Admin.Exhibitors.Link.Done" xml:space="preserve"><value>Account linked to this exhibitor.</value></data>
+  <data name="Admin.Exhibitors.Link.Required" xml:space="preserve"><value>The account email is required.</value></data>
+  <data name="Admin.Exhibitors.Link.Failed" xml:space="preserve"><value>Could not link the account. Please try again.</value></data>
+
   <!-- Gates operations dashboard (read-only live overview). -->
   <data name="Module.GatesDashboard" xml:space="preserve"><value>Gates dashboard</value></data>
   <data name="Admin.GatesDashboard.Title" xml:space="preserve"><value>Gates operations dashboard</value></data>

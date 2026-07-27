@@ -173,3 +173,39 @@ public sealed class ProvisionExhibitorAccountEndpoint(IAdminExhibitorService ser
             await service.ProvisionAccountAsync(actorId, req.Id, req, ct)), ct);
     }
 }
+
+public sealed class LinkExhibitorAccountRoute : LinkExhibitorAccountRequest
+{
+    public Guid Id { get; set; }
+}
+
+/// <summary>D-781 — <c>POST /api/v1/admin/exhibitors/{id}/accounts/link</c>.
+/// Attaches an EXISTING exhibitor-typed account to the exhibitor, which is the
+/// only way an account created through the generic Others pipeline can ever get
+/// the ExhibitorMembership the lead-capture tools require (DEF-EXH-006). Gated by
+/// its own <c>Exhibitors.LinkAccount</c> permission rather than by Create: it
+/// creates no account, it hands an existing one access to visitor contact
+/// cards.</summary>
+public sealed class LinkExhibitorAccountEndpoint(IAdminExhibitorService service)
+    : Endpoint<LinkExhibitorAccountRoute, ApiResult<ExhibitorAccountSummary>>
+{
+    public override void Configure()
+    {
+        Post("/admin/exhibitors/{id:guid}/accounts/link");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Exhibitors.LinkAccount),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Admin");
+    }
+
+    public override async Task HandleAsync(LinkExhibitorAccountRoute req, CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        await Send.OkAsync(ApiResult<ExhibitorAccountSummary>.Ok(
+            await service.LinkAccountAsync(actorId, req.Id, req, ct)), ct);
+    }
+}

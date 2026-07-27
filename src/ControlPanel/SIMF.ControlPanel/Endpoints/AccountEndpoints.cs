@@ -3622,6 +3622,16 @@ internal static class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.ProvisionExhibitorAccountAsync(id, body, token));
         });
+        // D-781 — attach an EXISTING account to the exhibitor (the Others-pipeline
+        // lockout fix). The API gates it on Exhibitors.LinkAccount.
+        group.MapPost("/admin/exhibitors/{id:guid}/accounts/link",
+            async (Guid id, LinkExhibitorAccountRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.LinkExhibitorAccountAsync(id, body, token));
+        });
     }
 
     /// <summary>

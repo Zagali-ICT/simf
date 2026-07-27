@@ -10,9 +10,14 @@
   `DELETE /admin/exhibitors/{id}`) revokes scan **and** list immediately, even
   on an already-issued token. Reached from the badge screen (exhibitor action).
 - **API:** `ExhibitorRepository.scanByBadge(qrId)` — captures the visitor
-  server-side; on success routes to `myVisitors`. DEF-EXH-003: the scanned
-  subject must itself be an ACTIVE audience-side account (a staff or rival
-  exhibitor badge answers the same 404 as an unknown code). DEF-EXH-002: a NEW
+  server-side; on success routes to `myVisitors`. **D-780 (owner decision
+  2026-07-27 — "can scan all badges"):** the scanned subject only has to be an
+  ACTIVE account holding a badge — a media, sponsor, staff or fellow-exhibitor
+  badge is a capturable lead like any other. Only a DEACTIVATED (soft-deleted)
+  account is refused, with the same 404 as an unknown code, so the scan never
+  leaks that a badge exists. This **reverses** the DEF-EXH-003 rule, which had
+  narrowed the subject to audience-side (`IsForVisitor`) profile types.
+  DEF-EXH-002: a NEW
   capture raises one `NotificationKind.ExhibitorLeadCaptured` in-app notice to
   the visitor naming the exhibitor; an idempotent re-scan raises none.
   DEF-EXH-007: that name is the **exhibitor** the officer represents (the
@@ -21,6 +26,14 @@
   exhibitor". DEF-EXH-005: a booth officer provisioned from the CP
   (`POST /admin/exhibitors/{id}/accounts`) now carries the exhibitor profile
   type, so the CP's own path produces an account that can actually scan.
+  **D-781 (owner decision 2026-07-27):** an exhibitor-typed account created
+  through the generic Others pipeline (`POST /admin/others`) or the Others
+  walk-in desk has the right profile type but no `ExhibitorMembership`, so the
+  DEF-EXH-006 rule locked it out with nothing in the CP able to fix it — an
+  administrator now attaches it to a booth with
+  `POST /admin/exhibitors/{id}/accounts/link` (permission
+  `Exhibitors.LinkAccount`) from the exhibitor's Accounts modal. The scanner-side
+  controls are unchanged.
 - **Figma:** none — a D-426 functional page, not a KSA design frame.
   **Clean-code freeze:** D-643 (2026-07-04).
 

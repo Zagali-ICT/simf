@@ -3454,6 +3454,16 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
+    // D-781 — attach an EXISTING account to the exhibitor (the Others-pipeline
+    // lockout fix). Permission Exhibitors.LinkAccount.
+    public Task<ApiCallResult<ExhibitorAccountSummary>> LinkExhibitorAccountAsync(
+        Guid id, LinkExhibitorAccountRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<ExhibitorAccountSummary>(
+            HttpMethod.Post, $"exhibitors/{id}/accounts/link",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
     private static ApiResult<T> TransportFailure<T>(string message, string messageArabic) =>
         ApiResult<T>.Fail(new ApiError
         {

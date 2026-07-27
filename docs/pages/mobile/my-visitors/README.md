@@ -12,9 +12,12 @@
   forbidden surface. Reached from the side drawer (Other-only), the exhibitor
   home's "Exhibitor tools" tile row, and after a successful visitor-badge scan.
 - **API:** `GET /app/exhibitor/my-visitors` (`ExhibitorRepository.listMyVisitors`).
-  DEF-EXH-004: the capture-time SUBJECT test runs here too, so a row captured
-  while the old rule was in force (a staff / rival-exhibitor / since-deactivated
-  subject) drops out of the list instead of projecting a live card.
+  DEF-EXH-004: the capture-time SUBJECT test runs here too, so a row whose
+  subject has since been DEACTIVATED drops out of the list instead of projecting
+  a live card. **D-780 (owner decision 2026-07-27 — "can scan all badges"):** that
+  shared test is now simply "an ACTIVE profile", reversing the DEF-EXH-003
+  audience-side narrowing — a media / sponsor / staff / fellow-exhibitor capture
+  is a legitimate lead and DOES list.
 - **Figma:** none — this is a D-426 functional page, not a KSA design frame.
   **Clean-code freeze:** D-642 (2026-07-04).
 

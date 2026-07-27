@@ -1,4 +1,5 @@
 // Tests: SIMF.Api.Tests/ExhibitorsTests.cs
+// Tests: SIMF.Api.Tests/ExhibitorVisitorScanTests.cs
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Assets.Abstractions;
 using SIMF.Application.Auditing;
@@ -19,7 +20,12 @@ namespace SIMF.Infrastructure.Exhibitors;
 /// (<see cref="IAdminUserProvisioningService.CreateOtherAsync"/>) so we never
 /// hand-roll UserManager — the provisioned account is a partner-side booth
 /// officer carrying the exhibitor profile type (DEF-EXH-005), tagged to the
-/// exhibitor via an ExhibitorMembership row.</summary>
+/// exhibitor via an ExhibitorMembership row.
+/// <para>D-781 — <see cref="LinkAccountAsync"/> attaches an EXISTING account to an
+/// exhibitor. Provisioning used to be the only writer of ExhibitorMembership, so
+/// an exhibitor-typed account created through the generic Others pipeline had no
+/// membership and was locked out of the booth tools (DEF-EXH-006) with no CP path
+/// to attach it.</para></summary>
 internal sealed class AdminExhibitorService(
     SimfAppDbContext appDbContext,
     IAuditLog auditLog,
@@ -307,19 +313,7 @@ internal sealed class AdminExhibitorService(
         Guid actorUserId, Guid exhibitorId, ProvisionExhibitorAccountRequest request,
         CancellationToken cancellationToken = default)
     {
-        var exhibitor = await appDbContext.Exhibitors
-            .SingleOrDefaultAsync(c => c.Id == exhibitorId, cancellationToken)
-            ?? throw new ApiException(
-                ErrorCodes.ExhibitorNotFound, 404,
-                "Exhibitor not found.",
-                "لم يتم العثور على العارض.");
-        if (!exhibitor.IsActive)
-        {
-            throw new ApiException(
-                ErrorCodes.ExhibitorInactive, 409,
-                "The exhibitor is not active; reactivate it before adding accounts.",
-                "العارض غير نشط؛ يرجى إعادة تفعيله قبل إضافة الحسابات.");
-        }
+        var exhibitor = await LoadActiveExhibitorAsync(exhibitorId, cancellationToken);
 
         var contactName = (request.ContactName ?? string.Empty).Trim();
         var email = (request.Email ?? string.Empty).Trim();
@@ -389,6 +383,179 @@ internal sealed class AdminExhibitorService(
             membership.RoleLabel,
             membership.IsActive,
             membership.CreatedAt);
+    }
+
+    /// <summary>D-781 — attach an EXISTING account to this exhibitor by writing the
+    /// <see cref="ExhibitorMembership"/> that <see cref="ProvisionAccountAsync"/>
+    /// would otherwise be the only source of.
+    ///
+    /// <para>Why this exists: DEF-EXH-006 made a CURRENT membership half the
+    /// lead-capture authorisation, and provisioning is the only writer of that row.
+    /// An exhibitor-typed account created through the generic Others pipeline
+    /// (<c>POST /admin/others</c>) or the Others walk-in desk therefore came out
+    /// with the right profile type and NO membership — 403 on badge scan and on My
+    /// Visitors, with nothing in the Control Panel able to attach it to a booth.
+    /// The scanner-side controls themselves are unchanged (owner decision D-780
+    /// widened the SUBJECT rule only): the caller must still be exhibitor-typed AND
+    /// hold a live membership, so revoking a membership still revokes the tools.</para>
+    ///
+    /// <para>The account must already carry an active exhibitor-mapped profile type
+    /// — linking deliberately does not mutate the account's profile type, because
+    /// that silently changes the app role a different admin assigned. An admin sets
+    /// the type on the Others page and then links here.</para>
+    ///
+    /// <para>D-157 — the account lives on the Identity DB and the membership on the
+    /// App DB; they are resolved with two separate queries on two contexts, never a
+    /// cross-database join, and only the App-DB row is written.</para></summary>
+    public async Task<ExhibitorAccountSummary> LinkAccountAsync(
+        Guid actorUserId, Guid exhibitorId, LinkExhibitorAccountRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var exhibitor = await LoadActiveExhibitorAsync(exhibitorId, cancellationToken);
+
+        var email = (request.Email ?? string.Empty).Trim();
+        if (email.Length is 0 or > 320)
+        {
+            throw new ApiException(
+                ErrorCodes.ExhibitorAccountInvalid, 400,
+                "The account email is required (1-320 characters).",
+                "البريد الإلكتروني للحساب مطلوب (من 1 إلى 320 حرفاً).");
+        }
+        var contactNameOverride = NormaliseOptional(request.ContactName);
+        if (contactNameOverride is { Length: > 256 })
+        {
+            throw new ApiException(
+                ErrorCodes.ExhibitorAccountInvalid, 400,
+                "Contact name must be 256 characters or fewer.",
+                "يجب ألا يتجاوز اسم جهة الاتصال 256 حرفاً.");
+        }
+        var roleLabel = NormaliseOptional(request.RoleLabel);
+        if (roleLabel is { Length: > 128 })
+        {
+            throw new ApiException(
+                ErrorCodes.ExhibitorAccountInvalid, 400,
+                "Role label must be 128 characters or fewer.",
+                "يجب ألا يتجاوز المسمى الوظيفي 128 حرفاً.");
+        }
+
+        // Identity DB (read-only). NormalizedEmail is what Identity itself matches
+        // on, so the lookup is case-insensitive without a collation assumption.
+        var normalisedEmail = email.ToUpperInvariant();
+        var account = await identityDbContext.Users
+            .AsNoTracking()
+            .Where(user => user.NormalizedEmail == normalisedEmail)
+            .Select(user => new { user.Id, user.Email, user.DisplayName })
+            .FirstOrDefaultAsync(cancellationToken);
+        if (account is null)
+        {
+            throw new ApiException(
+                ErrorCodes.ExhibitorAccountNotFound, 404,
+                "No account is registered under this email.",
+                "لا يوجد حساب مسجّل بهذا البريد الإلكتروني.");
+        }
+
+        // App DB — the same column the lead-capture endpoints authorise on
+        // (ProfileType.MobileAppRole, D-519). Linking an account that does not
+        // carry it would produce a membership that still cannot scan.
+        var isExhibitorTyped = await appDbContext.UserProfiles
+            .AsNoTracking()
+            .AnyAsync(
+                profile => profile.UserId == account.Id
+                    && profile.IsActive
+                    && profile.ProfileType != null
+                    && profile.ProfileType.MobileAppRole == MobileAppRole.Exhibitor,
+                cancellationToken);
+        if (!isExhibitorTyped)
+        {
+            throw new ApiException(
+                ErrorCodes.ExhibitorAccountNotEligible, 409,
+                "This account does not carry an exhibitor profile type. Assign it an exhibitor profile type before linking it to a booth.",
+                "هذا الحساب لا يحمل نوع ملف شخصي للعارضين. يرجى تعيين نوع ملف «عارض» للحساب قبل ربطه بجناح.");
+        }
+
+        // At most one ACTIVE membership per account (the filtered unique index on
+        // ExhibitorMembership.UserId). Answer 409 rather than letting the insert
+        // fail with a raw database error.
+        var alreadyLinked = await appDbContext.Set<ExhibitorMembership>()
+            .AsNoTracking()
+            .AnyAsync(
+                membership => membership.UserId == account.Id && membership.IsActive,
+                cancellationToken);
+        if (alreadyLinked)
+        {
+            throw new ApiException(
+                ErrorCodes.ExhibitorAccountAlreadyLinked, 409,
+                "This account already belongs to an exhibitor. Remove it from that exhibitor before linking it here.",
+                "هذا الحساب مرتبط بالفعل بعارض آخر. يرجى إلغاء ارتباطه قبل ربطه هنا.");
+        }
+
+        var accountEmail = account.Email ?? email;
+        var contactName = contactNameOverride
+            ?? DefaultContactName(account.DisplayName, accountEmail);
+
+        var link = new ExhibitorMembership
+        {
+            Id = Guid.NewGuid(),
+            ExhibitorId = exhibitor.Id,
+            UserId = account.Id,
+            ContactName = contactName,
+            RoleLabel = roleLabel,
+            IsActive = true,
+            CreatedAt = timeProvider.GetUtcNow(),
+        };
+        appDbContext.Set<ExhibitorMembership>().Add(link);
+        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.ExhibitorAccountLinked,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            SubjectUserId = account.Id,
+            SubjectEmail = accountEmail,
+            Detail = $"exhibitorId={exhibitor.Id}; membershipId={link.Id}",
+        }, cancellationToken);
+
+        return new ExhibitorAccountSummary(
+            link.Id,
+            link.UserId,
+            link.ContactName,
+            accountEmail,
+            link.RoleLabel,
+            link.IsActive,
+            link.CreatedAt);
+    }
+
+    /// <summary>D-781 — the membership contact name when the admin leaves the field
+    /// blank: the account's display name, else its login email. Capped at the
+    /// column's 256 characters so a pathological address cannot fail the insert
+    /// (an email may be up to 320).</summary>
+    private static string DefaultContactName(string displayName, string email)
+    {
+        var value = string.IsNullOrWhiteSpace(displayName) ? email : displayName.Trim();
+        return value.Length <= 256 ? value : value[..256];
+    }
+
+    /// <summary>The exhibitor an account operation runs against: it must exist and
+    /// be active (a closed booth takes on no new officers). Shared by the provision
+    /// and link paths so the two answer the same 404 / 409.</summary>
+    private async Task<Exhibitor> LoadActiveExhibitorAsync(
+        Guid exhibitorId, CancellationToken cancellationToken)
+    {
+        var exhibitor = await appDbContext.Exhibitors
+            .SingleOrDefaultAsync(c => c.Id == exhibitorId, cancellationToken)
+            ?? throw new ApiException(
+                ErrorCodes.ExhibitorNotFound, 404,
+                "Exhibitor not found.",
+                "لم يتم العثور على العارض.");
+        if (!exhibitor.IsActive)
+        {
+            throw new ApiException(
+                ErrorCodes.ExhibitorInactive, 409,
+                "The exhibitor is not active; reactivate it before adding accounts.",
+                "العارض غير نشط؛ يرجى إعادة تفعيله قبل إضافة الحسابات.");
+        }
+        return exhibitor;
     }
 
     /// <summary>DEF-EXH-005 — the ProfileTypes row a booth officer is provisioned
