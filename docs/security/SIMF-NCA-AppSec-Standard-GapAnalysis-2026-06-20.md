@@ -132,6 +132,8 @@ These are the highest‑risk items and they map directly onto NCA controls.
 | **H2** | Production TLS is a **self‑signed** cert `CN=WIN‑MAP9VAMAU4Q` with no trusted chain | A5‑1, A5‑6 | **OPEN — owner‑held** |
 | **C1** | `appsettings.Development.json` is git‑tracked; JWT signing key, ID‑document AES‑256 key, and Zoho SMTP password are blanked in the working tree but **remain in git history** | A2‑9, A2‑3, A2‑19, A7‑16 | **OPEN — ops:** rotate + purge history |
 | **H1** | Super‑admin default password (`[REDACTED - supply via SIMF_SuperAdmin__TempPassword]`) + working TOTP seed were committed; inert only if `SIMF_SuperAdmin__*` env overrides are set on the server | A7‑7, §3‑14 | **OPEN — ops:** verify env + rotate |
+| **C1** | `appsettings.Development.json` is git‑tracked; JWT signing key, ID‑document AES‑256 key, and the third‑party SMTP password (`Email:Password`; relay host redacted 2026‑07‑27) are blanked in the working tree but **remain in git history** | A2‑9, A2‑3, A2‑19, A7‑16 | **OPEN — ops:** rotate + purge history |
+| **H1** | Super‑admin default password (`SuperAdmin:TempPassword` — value redacted 2026‑07‑27, supplied via `SIMF_SuperAdmin__TempPassword`) + working TOTP seed were committed; inert only if `SIMF_SuperAdmin__*` env overrides are set on the server | A7‑7, §3‑14 | **OPEN — ops:** verify env + rotate |
 
 > A Production boot guard now refuses to start with the committed default password
 > (`Program.cs:354‑360`) and the JWT key length is gated (`Program.cs:274‑278`) — these
