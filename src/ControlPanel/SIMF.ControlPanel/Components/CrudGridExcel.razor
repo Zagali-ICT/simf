@@ -13,7 +13,7 @@
 
 @if (_result is not null)
 {
-    <SimfModal Open="true" Title="@L["Grid.Import.ResultTitle"]" OnClose="CloseResult">
+    <SimfModal Open="true" Title="@L["Grid.Import.ResultTitle"]" OnClose="CloseResult" CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <p>@string.Format(L["Grid.Import.ResultBody"],
                 _result.Created, _result.Updated, _result.Skipped)</p>

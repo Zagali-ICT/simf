@@ -42,10 +42,10 @@
                                MaxLength="64"
                                @bind-Value="_qrId" Disabled="_busy" />
                 <div class="simf-form__actions">
-                    <SimfButton Type="button" Loading="_busy" OnClick="RecordAsync">
+                    <SimfButton Type="button" Loading="_busy" OnClick="RecordAsync" LoadingLabel="@L["Grid.Working"]">
                         @L["Admin.HallArrivals.Action.Record"]
                     </SimfButton>
-                    <SimfButton Type="button" Loading="_busy" OnClick="DepartAsync">
+                    <SimfButton Type="button" Loading="_busy" OnClick="DepartAsync" LoadingLabel="@L["Grid.Working"]">
                         @L["Admin.HallArrivals.Action.CheckOut"]
                     </SimfButton>
                 </div>

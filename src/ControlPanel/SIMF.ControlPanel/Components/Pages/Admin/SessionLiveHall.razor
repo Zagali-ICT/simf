@@ -43,7 +43,7 @@
             @if (_selected is not null)
             {
                 <div class="simf-form__actions">
-                    <SimfButton Type="button" OnClick="RefreshAsync" Loading="_busy">
+                    <SimfButton Type="button" OnClick="RefreshAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
                         @L["Admin.SessionLiveHall.Refresh"]
                     </SimfButton>
                 </div>

@@ -113,7 +113,8 @@
 @if (_scheduleOpen)
 {
     <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.BusinessMeetings.Schedule.Title"]"
-               OnClose="@(() => _scheduleOpen = false)">
+               OnClose="@(() => _scheduleOpen = false)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <div class="simf-form__fields">
                 <label class="simf-field">
@@ -226,7 +227,7 @@
             <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _scheduleOpen = false)">
                 @L["Admin.BusinessMeetings.Cancel"]
             </SimfButton>
-            <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy">
+            <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.BusinessMeetings.Schedule.Submit"]
             </SimfButton>
         </Footer>
@@ -236,7 +237,8 @@
 @if (_cancelOpen && _cancelTarget is not null)
 {
     <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.BusinessMeetings.Cancel.Title"]"
-               OnClose="@(() => _cancelOpen = false)">
+               OnClose="@(() => _cancelOpen = false)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <div class="simf-form__fields">
                 <p>@string.Format(L["Admin.BusinessMeetings.Cancel.Prompt"],
@@ -253,7 +255,7 @@
             <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _cancelOpen = false)">
                 @L["Admin.BusinessMeetings.Cancel.Keep"]
             </SimfButton>
-            <SimfButton Type="button" OnClick="ConfirmCancelAsync" Loading="_busy">
+            <SimfButton Type="button" OnClick="ConfirmCancelAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.BusinessMeetings.Cancel.Confirm"]
             </SimfButton>
         </Footer>
@@ -263,7 +265,8 @@
 @if (_detailOpen && _detail is not null)
 {
     <SimfModal Open="true" Title="@L["Admin.BusinessMeetings.Detail.Title"]"
-               OnClose="@(() => _detailOpen = false)">
+               OnClose="@(() => _detailOpen = false)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <dl class="simf-dl">
                 <dt>@L["Admin.BusinessMeetings.Col.Hall"]</dt><dd>@_detail.HallName</dd>

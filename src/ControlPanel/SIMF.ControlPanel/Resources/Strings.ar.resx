@@ -3204,6 +3204,7 @@
   <data name="Grid.FilterColumn" xml:space="preserve"><value>تصفية العمود</value></data>
   <data name="Grid.FilterPlaceholder" xml:space="preserve"><value>بحث</value></data>
   <data name="Grid.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
+  <data name="Grid.Working" xml:space="preserve"><value>جارٍ التنفيذ…</value></data>
   <data name="Grid.Empty" xml:space="preserve"><value>لا توجد سجلات بعد.</value></data>
   <data name="Grid.Prev" xml:space="preserve"><value>السابق</value></data>
   <data name="Grid.Next" xml:space="preserve"><value>التالي</value></data>

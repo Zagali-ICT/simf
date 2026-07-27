@@ -85,7 +85,8 @@
 @if (_detailsTarget is not null)
 {
     <SimfModal Open="true" Title="@L["Account.Notifications.Details.Title"]"
-               OnClose="@(() => _detailsTarget = null)">
+               OnClose="@(() => _detailsTarget = null)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <dl class="simf-dl">
                 <dt>@L["Account.Notifications.Details.Field.Title"]</dt>

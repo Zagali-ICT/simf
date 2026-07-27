@@ -82,7 +82,8 @@
                     </label>
                     <SimfButton Type="button" Loading="_busy"
                                 Disabled="@(string.IsNullOrEmpty(_sessionId))"
-                                OnClick="UploadAsync">
+                                OnClick="UploadAsync"
+                                LoadingLabel="@L["Grid.Working"]">
                         @L["Admin.SpeakerPresentations.Upload"]
                     </SimfButton>
                 </div>

@@ -162,7 +162,8 @@
 @if (_groupModalOpen)
 {
     <SimfModal Open="true" RequireExplicitClose="true" Title="@(_groupEditId is null ? L["Admin.Faq.Group.Add.Title"] : L["Admin.Faq.Group.Edit.Title"])"
-               OnClose="CloseGroupModal">
+               OnClose="CloseGroupModal"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             @* The page-level toast sits under the modal backdrop, so a rejected
                save must report inside the dialog or it reads as a dead button. *@
@@ -187,7 +188,7 @@
             </div>
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" OnClick="SaveGroupAsync" Loading="_busy">@L["Admin.Faq.Save"]</SimfButton>
+            <SimfButton Type="button" OnClick="SaveGroupAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">@L["Admin.Faq.Save"]</SimfButton>
             <SimfButton Type="button" Variant="secondary" OnClick="CloseGroupModal" Disabled="_busy">
                 @L["Admin.Faq.Cancel"]
             </SimfButton>
@@ -198,7 +199,8 @@
 @if (_entryModalOpen)
 {
     <SimfModal Open="true" RequireExplicitClose="true" Title="@(_entryEditId is null ? L["Admin.Faq.Entry.Add.Title"] : L["Admin.Faq.Entry.Edit.Title"])"
-               OnClose="CloseEntryModal">
+               OnClose="CloseEntryModal"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             @if (_error is not null)
             {
@@ -231,7 +233,7 @@
             </div>
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" OnClick="SaveEntryAsync" Loading="_busy">@L["Admin.Faq.Save"]</SimfButton>
+            <SimfButton Type="button" OnClick="SaveEntryAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">@L["Admin.Faq.Save"]</SimfButton>
             <SimfButton Type="button" Variant="secondary" OnClick="CloseEntryModal" Disabled="_busy">
                 @L["Admin.Faq.Cancel"]
             </SimfButton>

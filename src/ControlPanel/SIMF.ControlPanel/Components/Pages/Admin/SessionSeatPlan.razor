@@ -55,7 +55,7 @@
                 </label>
                 <div class="simf-form__actions">
                     <AuthorizedAction Permission="@PermissionCatalog.SeatPlans.Edit">
-                        <SimfButton Type="button" OnClick="ReserveRowAsync" Loading="_busy">
+                        <SimfButton Type="button" OnClick="ReserveRowAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
                             @L["Admin.SessionSeatPlans.ReserveRow.Action"]
                         </SimfButton>
                     </AuthorizedAction>

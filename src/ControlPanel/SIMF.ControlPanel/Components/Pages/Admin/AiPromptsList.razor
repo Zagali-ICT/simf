@@ -164,7 +164,8 @@
 @if (_testOpen)
 {
     <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.AiPrompts.Test.Title"]"
-               OnClose="OnTestModalClose">
+               OnClose="OnTestModalClose"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <div class="simf-form__fields">
                 <p><code>@_testTargetKey</code></p>
@@ -192,7 +193,7 @@
             <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="OnTestModalClose">
                 @L["Admin.AiPrompts.Cancel"]
             </SimfButton>
-            <SimfButton Type="button" OnClick="RunTestAsync" Loading="_busy">
+            <SimfButton Type="button" OnClick="RunTestAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.AiPrompts.Test.Action"]
             </SimfButton>
         </Footer>
@@ -201,7 +202,7 @@
 
 @if (_historyOpen)
 {
-    <SimfModal Open="true" Title="@L["Admin.AiPrompts.History.Title"]" OnClose="CloseHistory">
+    <SimfModal Open="true" Title="@L["Admin.AiPrompts.History.Title"]" OnClose="CloseHistory" CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <p><code>@_historyKey</code></p>
             @if (_history.Count == 0)

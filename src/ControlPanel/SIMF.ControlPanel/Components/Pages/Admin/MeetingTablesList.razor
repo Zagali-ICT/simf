@@ -136,7 +136,8 @@
     <SimfModal Open="true"
                RequireExplicitClose="true"
                Title="@(_isEditTable ? L["Admin.MeetingTables.EditTable.Title"] : L["Admin.MeetingTables.AddTable.Title"])"
-               OnClose="@(() => _tableOpen = false)">
+               OnClose="@(() => _tableOpen = false)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <div class="simf-form__fields">
                 <SimfTextField Label="@L["Admin.MeetingTables.Col.Code"]"
@@ -165,7 +166,7 @@
             <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _tableOpen = false)">
                 @L["Admin.MeetingTables.Cancel"]
             </SimfButton>
-            <SimfButton Type="button" OnClick="SaveTableAsync" Loading="_busy">
+            <SimfButton Type="button" OnClick="SaveTableAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.MeetingTables.Save"]
             </SimfButton>
         </Footer>
@@ -175,7 +176,8 @@
 @if (_generateOpen)
 {
     <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.MeetingTables.Generate.Title"]"
-               OnClose="@(() => _generateOpen = false)">
+               OnClose="@(() => _generateOpen = false)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <div class="simf-form__fields">
                 <label class="simf-field">
@@ -216,7 +218,7 @@
             <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _generateOpen = false)">
                 @L["Admin.MeetingTables.Cancel"]
             </SimfButton>
-            <SimfButton Type="button" OnClick="GenerateAsync" Loading="_busy">
+            <SimfButton Type="button" OnClick="GenerateAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.MeetingTables.Generate.Submit"]
             </SimfButton>
         </Footer>
@@ -226,7 +228,8 @@
 @if (_allocOpen)
 {
     <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.MeetingTables.AddAllocation.Title"]"
-               OnClose="@(() => _allocOpen = false)">
+               OnClose="@(() => _allocOpen = false)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <div class="simf-form__fields">
                 <label class="simf-field">
@@ -280,7 +283,7 @@
             <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _allocOpen = false)">
                 @L["Admin.MeetingTables.Cancel"]
             </SimfButton>
-            <SimfButton Type="button" OnClick="SaveAllocationAsync" Loading="_busy">
+            <SimfButton Type="button" OnClick="SaveAllocationAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.MeetingTables.Save"]
             </SimfButton>
         </Footer>

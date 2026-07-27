@@ -137,7 +137,7 @@
 
 @if (_edit is not null)
 {
-    <SimfModal Open="true" RequireExplicitClose="true" Title="@_editTitle" OnClose="CloseEditor">
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@_editTitle" OnClose="CloseEditor" CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             @if (_editAiModel is not null)
             {
@@ -188,7 +188,7 @@
                            @bind-Value="_edit.SummaryVideoUrl" Disabled="_busy" />
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" Loading="_busy" OnClick="OnSaveClickedAsync">
+            <SimfButton Type="button" Loading="_busy" OnClick="OnSaveClickedAsync" LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.SessionSummaries.Editor.Save"]
             </SimfButton>
             <SimfButton Type="button" Variant="secondary" OnClick="CloseEditor">

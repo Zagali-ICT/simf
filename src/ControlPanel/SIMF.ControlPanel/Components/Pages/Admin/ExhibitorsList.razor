@@ -141,7 +141,8 @@
     <SimfModal Open="true"
                RequireExplicitClose="true"
                Title="@string.Format(L["Admin.Exhibitors.Accounts.Title"], _accountsExhibitorName)"
-               OnClose="@(() => _accountsOpen = false)">
+               OnClose="@(() => _accountsOpen = false)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <SimfAlert Variant="info">@L["Admin.Exhibitors.Accounts.Hint"]</SimfAlert>
 
@@ -229,7 +230,7 @@
                                    Disabled="_linkBusy" />
                 </div>
                 <div class="simf-form__actions">
-                    <SimfButton Type="button" OnClick="LinkAsync" Loading="_linkBusy">
+                    <SimfButton Type="button" OnClick="LinkAsync" Loading="_linkBusy" LoadingLabel="@L["Grid.Working"]">
                         @L["Admin.Exhibitors.Link.Submit"]
                     </SimfButton>
                 </div>
@@ -241,7 +242,7 @@
             <SimfButton Type="button" Variant="secondary" Disabled="@(_provisionBusy || _linkBusy)" OnClick="@(() => _accountsOpen = false)">
                 @L["Admin.Exhibitors.Accounts.Close"]
             </SimfButton>
-            <SimfButton Type="button" OnClick="ProvisionAsync" Loading="_provisionBusy">
+            <SimfButton Type="button" OnClick="ProvisionAsync" Loading="_provisionBusy" LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.Exhibitors.Provision.Submit"]
             </SimfButton>
         </Footer>

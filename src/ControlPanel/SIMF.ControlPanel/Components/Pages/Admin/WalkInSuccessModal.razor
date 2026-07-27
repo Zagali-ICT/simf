@@ -13,7 +13,8 @@
 {
     <SimfModal Open="true"
                Title="@(Pending ? L["Admin.WalkIn.Success.PendingTitle"] : L["Admin.WalkIn.Success.Title"])"
-               OnClose="OnClose">
+               OnClose="OnClose"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <div class="simf-walkin-badge"
                  style="@($"--simf-badge-color: {Response.ProfileTypeColor}")">

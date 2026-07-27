@@ -153,7 +153,8 @@
 {
     <SimfModal Open="true"
                Title="@L["Admin.Archive.Snapshot.Title"]"
-               OnClose="@(() => _snapshotOpen = false)">
+               OnClose="@(() => _snapshotOpen = false)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <div class="simf-form__fields">
                 <p>@L["Admin.Archive.Snapshot.Intro"]</p>
@@ -168,7 +169,7 @@
             <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _snapshotOpen = false)">
                 @L["Admin.Archive.Cancel"]
             </SimfButton>
-            <SimfButton Type="button" OnClick="SnapshotConfirmAsync" Loading="_busy">
+            <SimfButton Type="button" OnClick="SnapshotConfirmAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.Archive.Snapshot.Confirm"]
             </SimfButton>
         </Footer>

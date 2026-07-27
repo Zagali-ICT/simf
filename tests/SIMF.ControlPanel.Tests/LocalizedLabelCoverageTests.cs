@@ -12,10 +12,11 @@
 //     SelectAllLabel/SelectRowLabel, so an Arabic toolbar showed the English
 //     "Select all" as VISIBLE text.
 //
-// Deliberately NOT covered yet: SimfModal.CloseLabel (59 of 63 call sites) and
-// SimfButton.LoadingLabel (62 of 116). Both are the same defect class and are
-// reported, but fixing them is a large mechanical sweep that is not part of this
-// change — a ratchet asserting them today would simply fail.
+//   • SimfModal — the icon-only X announced "Close" on 59 of 63 CP dialogs,
+//     including RequireExplicitClose ones where the X is the ONLY way out.
+//   • SimfButton — while Loading, the component replaces its label entirely with
+//     a spinner named "Working", so on 62 of 116 buttons the accessible name
+//     flipped from the localized label to an English literal mid-action.
 using System.Text.RegularExpressions;
 using Xunit;
 
@@ -55,6 +56,37 @@ public sealed class LocalizedLabelCoverageTests
         Assert.True(offenders.Count == 0,
             "§6.16: these multiselect SimfDataGrid usages omit SelectAllLabel/"
             + "SelectRowLabel, so the Arabic toolbar shows the English \"Select all\": "
+            + string.Join(", ", offenders));
+    }
+
+    [Fact]
+    public void Every_modal_supplies_a_localized_close_label()
+    {
+        var offenders = OpeningTags("SimfModal")
+            .Where(tag => !tag.Text.Contains("CloseLabel", StringComparison.Ordinal))
+            .Select(tag => $"{tag.File}:{tag.Line}")
+            .ToList();
+
+        Assert.True(offenders.Count == 0,
+            "§6.16: these SimfModal usages omit CloseLabel, so the only accessible "
+            + "name on the X button is the English default \"Close\": "
+            + string.Join(", ", offenders));
+    }
+
+    [Fact]
+    public void Every_loading_button_supplies_a_localized_loading_label()
+    {
+        // SimfButton drops its ChildContent entirely while Loading, so LoadingLabel
+        // is the button's ONLY accessible name during the action it is performing.
+        var offenders = OpeningTags("SimfButton")
+            .Where(tag => tag.Text.Contains("Loading=", StringComparison.Ordinal))
+            .Where(tag => !tag.Text.Contains("LoadingLabel", StringComparison.Ordinal))
+            .Select(tag => $"{tag.File}:{tag.Line}")
+            .ToList();
+
+        Assert.True(offenders.Count == 0,
+            "§6.16: these SimfButton usages pass Loading= without LoadingLabel, so "
+            + "mid-action the accessible name becomes the English default \"Working\": "
             + string.Join(", ", offenders));
     }
 

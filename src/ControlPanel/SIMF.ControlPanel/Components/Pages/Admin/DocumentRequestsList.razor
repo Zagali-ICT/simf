@@ -111,7 +111,8 @@
 @if (_respondOpen && _respondTarget is not null)
 {
     <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.DocumentRequests.Respond.Title"]"
-               OnClose="@(() => _respondOpen = false)">
+               OnClose="@(() => _respondOpen = false)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <div class="simf-form__fields">
                 <dl class="simf-dl">
@@ -161,7 +162,7 @@
                         OnClick="@(() => _respondOpen = false)">
                 @L["Admin.DocumentRequests.Cancel"]
             </SimfButton>
-            <SimfButton Type="button" OnClick="SendResponseAsync" Loading="_busy">
+            <SimfButton Type="button" OnClick="SendResponseAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.DocumentRequests.Respond.Submit"]
             </SimfButton>
         </Footer>

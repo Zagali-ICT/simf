@@ -146,7 +146,8 @@
 @if (_detailsTarget is not null)
 {
     <SimfModal Open="true" Title="@L["Admin.OperationLog.Details.Title"]"
-               OnClose="@(() => _detailsTarget = null)">
+               OnClose="@(() => _detailsTarget = null)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             @if (_detailsLoading)
             {

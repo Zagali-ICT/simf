@@ -138,7 +138,7 @@
 
 @if (_bulkDeleteOpen)
 {
-    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.Visitors.BulkDelete.Title"]" OnClose="@(() => _bulkDeleteOpen = false)">
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.Visitors.BulkDelete.Title"]" OnClose="@(() => _bulkDeleteOpen = false)" CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <p>@string.Format(L["Admin.Visitors.BulkDelete.Confirm"], _bulkDeleteTargets.Count)</p>
             <SimfTextarea Label="@L["Admin.Users.BulkDelete.Reason"]"
@@ -154,7 +154,8 @@
             <SimfButton Type="button" Variant="primary"
                         Loading="_busy"
                         Disabled="@(_bulkDeleteReason.Length is < 10 or > 500)"
-                        OnClick="ConfirmBulkDeleteAsync">
+                        OnClick="ConfirmBulkDeleteAsync"
+                        LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.Users.BulkDelete.Submit"]
             </SimfButton>
         </Footer>
@@ -163,7 +164,7 @@
 
 @if (_duplicateOpen)
 {
-    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.Visitors.Duplicate.Title"]" OnClose="@(() => _duplicateOpen = false)">
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.Visitors.Duplicate.Title"]" OnClose="@(() => _duplicateOpen = false)" CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <p>@string.Format(L["Admin.Users.Duplicate.Confirm"], _duplicateSource?.Email)</p>
             <SimfTextField Label="@L["Admin.Users.Duplicate.NewEmail"]"
@@ -181,7 +182,8 @@
             <SimfButton Type="button" Variant="primary"
                         Loading="_busy"
                         Disabled="@(!IsLikelyEmail(_duplicateEmail))"
-                        OnClick="ConfirmDuplicateAsync">
+                        OnClick="ConfirmDuplicateAsync"
+                        LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.Users.Duplicate.Submit"]
             </SimfButton>
         </Footer>
@@ -193,7 +195,8 @@
 @if (_bulkAddOpen)
 {
     <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.Delegates.Bulk.Title"]"
-               OnClose="@(() => _bulkAddOpen = false)">
+               OnClose="@(() => _bulkAddOpen = false)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <BulkBadgeGenerator ShowHeader="false" />
         </ChildContent>
@@ -202,7 +205,7 @@
 
 @if (_importResult is not null)
 {
-    <SimfModal Open="true" Title="@L["Admin.Users.Import.ResultTitle"]" OnClose="@(() => _importResult = null)">
+    <SimfModal Open="true" Title="@L["Admin.Users.Import.ResultTitle"]" OnClose="@(() => _importResult = null)" CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <p>@string.Format(L["Admin.Users.Import.ResultBody"], _importResult.Created, _importResult.Skipped)</p>
             @if (_importResult.Errors.Count > 0)

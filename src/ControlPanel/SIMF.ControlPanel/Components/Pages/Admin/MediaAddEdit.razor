@@ -88,7 +88,8 @@
             <div class="simf-form__actions">
                 <SimfButton Type="button" Loading="_uploadingImage"
                             Disabled="@(_busy || string.IsNullOrEmpty(_imageName))"
-                            OnClick="UploadImageAsync">
+                            OnClick="UploadImageAsync"
+                            LoadingLabel="@L["Grid.Working"]">
                     @L["Admin.Media.Image.Upload"]
                 </SimfButton>
             </div>

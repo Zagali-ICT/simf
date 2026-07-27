@@ -177,7 +177,8 @@
             <div class="simf-form__actions">
                 <AuthorizedAction Permission="@PermissionCatalog.SeatLayouts.Edit">
                     <SimfButton Type="button" OnClick="SaveAsync"
-                                Loading="_busy" Disabled="@(!_canSave)">
+                                Loading="_busy" Disabled="@(!_canSave)"
+                                LoadingLabel="@L["Grid.Working"]">
                         @L["Admin.HallSeatLayouts.Save"]
                     </SimfButton>
                 </AuthorizedAction>

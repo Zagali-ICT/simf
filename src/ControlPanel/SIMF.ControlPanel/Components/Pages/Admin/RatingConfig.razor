@@ -241,7 +241,8 @@
 @if (_typeModalOpen)
 {
     <SimfModal Open="true" RequireExplicitClose="true" Title="@(_typeEditId is null ? L["Admin.RatingConfig.Type.Add.Title"] : L["Admin.RatingConfig.Type.Edit.Title"])"
-               OnClose="CloseTypeModal">
+               OnClose="CloseTypeModal"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             @* The page-level toast sits under the modal backdrop, so a rejected
                save must report inside the dialog or it reads as a dead button. *@
@@ -287,7 +288,7 @@
             </div>
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" OnClick="SaveTypeAsync" Loading="_busy">@L["Admin.RatingConfig.Save"]</SimfButton>
+            <SimfButton Type="button" OnClick="SaveTypeAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">@L["Admin.RatingConfig.Save"]</SimfButton>
             <SimfButton Type="button" Variant="secondary" OnClick="CloseTypeModal" Disabled="_busy">
                 @L["Admin.RatingConfig.Cancel"]
             </SimfButton>
@@ -298,7 +299,8 @@
 @if (_groupModalOpen)
 {
     <SimfModal Open="true" RequireExplicitClose="true" Title="@(_groupEditId is null ? L["Admin.RatingConfig.Group.Add.Title"] : L["Admin.RatingConfig.Group.Edit.Title"])"
-               OnClose="CloseGroupModal">
+               OnClose="CloseGroupModal"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             @if (_error is not null)
             {
@@ -321,7 +323,7 @@
             </div>
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" OnClick="SaveGroupAsync" Loading="_busy">@L["Admin.RatingConfig.Save"]</SimfButton>
+            <SimfButton Type="button" OnClick="SaveGroupAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">@L["Admin.RatingConfig.Save"]</SimfButton>
             <SimfButton Type="button" Variant="secondary" OnClick="CloseGroupModal" Disabled="_busy">
                 @L["Admin.RatingConfig.Cancel"]
             </SimfButton>
@@ -332,7 +334,8 @@
 @if (_questionModalOpen)
 {
     <SimfModal Open="true" RequireExplicitClose="true" Title="@(_questionEditId is null ? L["Admin.RatingConfig.Question.Add.Title"] : L["Admin.RatingConfig.Question.Edit.Title"])"
-               OnClose="CloseQuestionModal">
+               OnClose="CloseQuestionModal"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             @if (_error is not null)
             {
@@ -368,7 +371,7 @@
             </div>
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" OnClick="SaveQuestionAsync" Loading="_busy">@L["Admin.RatingConfig.Save"]</SimfButton>
+            <SimfButton Type="button" OnClick="SaveQuestionAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">@L["Admin.RatingConfig.Save"]</SimfButton>
             <SimfButton Type="button" Variant="secondary" OnClick="CloseQuestionModal" Disabled="_busy">
                 @L["Admin.RatingConfig.Cancel"]
             </SimfButton>

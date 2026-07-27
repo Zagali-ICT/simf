@@ -152,7 +152,8 @@
     <SimfModal Open="true"
                RequireExplicitClose="true"
                Title="@L["Admin.Organisations.Import.Title"]"
-               OnClose="@(() => _importOpen = false)">
+               OnClose="@(() => _importOpen = false)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <div class="simf-form__fields">
                 <p class="simf-walkin__hint">@L["Admin.Organisations.Import.Hint"]</p>
@@ -192,7 +193,8 @@
                 @L["Admin.Organisations.Cancel"]
             </SimfButton>
             <SimfButton Type="button" OnClick="UploadImportAsync" Loading="_importing"
-                        Disabled="@(string.IsNullOrEmpty(_importFileName))">
+                        Disabled="@(string.IsNullOrEmpty(_importFileName))"
+                        LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.Organisations.Import.Upload"]
             </SimfButton>
         </Footer>

@@ -84,7 +84,8 @@
 @if (_addOpen)
 {
     <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.SessionModerators.Add.Title"]"
-               OnClose="@(() => _addOpen = false)">
+               OnClose="@(() => _addOpen = false)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             @* The page-level toast sits under the modal backdrop, so a rejected
                submit must report inside the dialog or it reads as a dead button. *@
@@ -129,7 +130,7 @@
             <SimfButton Type="button" Variant="secondary" OnClick="@(() => _addOpen = false)">
                 @L["Admin.SessionModerators.Cancel"]
             </SimfButton>
-            <SimfButton Type="button" OnClick="SubmitAssignAsync" Loading="_busy">
+            <SimfButton Type="button" OnClick="SubmitAssignAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.SessionModerators.Submit"]
             </SimfButton>
         </Footer>
