@@ -1,0 +1,4 @@
+@* Sends a SIGNED-IN admin who lacks the required permission to /not-permitted.
+   AuthorizeRouteView renders its <NotAuthorized> fragment for both the
+   unauthenticated and the authenticated-but-forbidden case, so Routes.razor
+   picks between this and <RedirectToLogin /> on the authentication state. *@

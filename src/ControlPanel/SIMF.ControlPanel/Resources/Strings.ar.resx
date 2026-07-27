@@ -1355,6 +1355,8 @@
   <data name="Auth.SignIn.Supporting" xml:space="preserve"><value>الوصول إلى لوحة تحكم SIMF.</value></data>
   <data name="Auth.SignIn.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
   <data name="Auth.SignIn.Password" xml:space="preserve"><value>كلمة المرور</value></data>
+  <data name="Auth.Password.Show" xml:space="preserve"><value>إظهار كلمة المرور</value></data>
+  <data name="Auth.Password.Hide" xml:space="preserve"><value>إخفاء كلمة المرور</value></data>
   <data name="Auth.SignIn.ForgotLink" xml:space="preserve"><value>نسيت كلمة المرور؟</value></data>
   <data name="Auth.SignIn.Submit" xml:space="preserve"><value>تسجيل الدخول</value></data>
   <data name="Auth.SignIn.Submitting" xml:space="preserve"><value>جارٍ تسجيل الدخول</value></data>

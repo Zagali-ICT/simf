@@ -18,6 +18,8 @@
                       Multiselect="true"
                       RowKey="@(row => row.Id.ToString())"
                       RowLabel="@(row => row.Name)"
+                      SelectAllLabel="@L["Grid.SelectAll"]"
+                      SelectRowLabel="@L["Grid.SelectRow"]"
                       Caption="@L["Admin.ProfileTypes.Other.Title"]"
                       FilterColumnLabel="@L["Admin.Users.FilterColumn"]"
                       OnAdd="OnAddAsync"

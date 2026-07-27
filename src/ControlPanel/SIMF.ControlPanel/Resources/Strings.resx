@@ -1364,6 +1364,8 @@
   <data name="Auth.SignIn.Supporting" xml:space="preserve"><value>Access the SIMF Control Panel.</value></data>
   <data name="Auth.SignIn.Email" xml:space="preserve"><value>Email address</value></data>
   <data name="Auth.SignIn.Password" xml:space="preserve"><value>Password</value></data>
+  <data name="Auth.Password.Show" xml:space="preserve"><value>Show password</value></data>
+  <data name="Auth.Password.Hide" xml:space="preserve"><value>Hide password</value></data>
   <data name="Auth.SignIn.ForgotLink" xml:space="preserve"><value>Forgot password?</value></data>
   <data name="Auth.SignIn.Submit" xml:space="preserve"><value>Sign in</value></data>
   <data name="Auth.SignIn.Submitting" xml:space="preserve"><value>Signing in</value></data>
