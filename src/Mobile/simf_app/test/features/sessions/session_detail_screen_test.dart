@@ -283,6 +283,15 @@ class _FakeSeatRepo implements SeatMapRepository {
       throw failure;
     }
   }
+
+  // B1 — the move is driven from the seat picker, not the session page.
+  @override
+  Future<MyReservation> moveSeat(
+    String sessionId, {
+    required String rowLabel,
+    required int seatNumber,
+  }) =>
+      throw UnimplementedError();
 }
 
 class _FakeCalendar implements SessionCalendar {
@@ -663,9 +672,14 @@ void main() {
       expect(find.text('Row B · Seat 12'), findsOneWidget);
       // D-485 — the pending-approval hint replaced the badge hint.
       expect(find.text('Pending approval'), findsOneWidget);
-      // Owner 2026-06-30 — cancel is now a plain white "Cancel" line under the
-      // CTA row (was the red "Cancel booking" link inside the card).
-      expect(find.text('Cancel'), findsOneWidget);
+      // Owner 2026-06-30 — cancel is a plain white line under the CTA row (was
+      // the red link inside the card). A13 — it reads "Cancel booking", matching
+      // the dialog it opens (which is titled "Cancel booking?").
+      expect(
+        find.widgetWithText(TextButton, 'Cancel booking'),
+        findsOneWidget,
+      );
+      expect(find.text('Cancel'), findsNothing);
       expect(
         find.widgetWithText(FilledButton, 'Add to calendar'),
         findsOneWidget,
@@ -698,8 +712,8 @@ void main() {
         controller: _SignedInController(),
       );
 
-      // Open the confirm dialog from the white "Cancel" link under the CTA row.
-      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      // Open the confirm dialog from the white cancel line under the CTA row.
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel booking'));
       await tester.pumpAndSettle();
       expect(find.text('Cancel booking?'), findsOneWidget);
 
@@ -721,10 +735,10 @@ void main() {
         controller: _SignedInController(),
       );
 
-      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel booking'));
       await tester.pumpAndSettle();
-      // Tap the dialog's dismiss (Cancel) button — scoped to the dialog so it
-      // doesn't collide with the screen's own white "Cancel" link.
+      // Tap the dialog's dismiss (Cancel) button — scoped to the dialog, which
+      // A13 also disambiguates (the screen's line now reads "Cancel booking").
       await tester.tap(
         find.descendant(
           of: find.byType(Dialog),
@@ -756,7 +770,7 @@ void main() {
         controller: _SignedInController(),
       );
 
-      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel booking'));
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(FilledButton, 'Cancel booking'));
       await tester.pumpAndSettle();
@@ -788,7 +802,7 @@ void main() {
         controller: _SignedInController(),
       );
 
-      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel booking'));
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(FilledButton, 'Cancel booking'));
       await tester.pumpAndSettle();

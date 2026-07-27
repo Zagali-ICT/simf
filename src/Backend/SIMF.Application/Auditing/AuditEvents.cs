@@ -363,6 +363,9 @@ public static class AuditEvents
     public const string HallSeatLayoutUpdated = "HallSeatLayout.Updated";
     public const string SeatReservationCreated = "SeatReservation.Created";
     public const string SeatReservationReleased = "SeatReservation.Released";
+    // B1 — a self-service seat CHANGE: one atomic release-and-re-hold, audited as a
+    // single event carrying both the old and the new seat.
+    public const string SeatReservationMoved = "SeatReservation.Moved";
     public const string SeatRowAdminReserved = "SeatReservation.RowAdminReserved";
     public const string SeatRowAdminReleased = "SeatReservation.RowAdminReleased";
 

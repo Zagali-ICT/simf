@@ -78,6 +78,19 @@ public class ReserveSeatRequest
     public int SeatNumber { get; set; }
 }
 
+/// <summary>B1 (owner "change seat") — move an EXISTING held seat to another one
+/// in the same session, atomically: the destination is acquired and the source
+/// released in a single unit of work, so a lost race leaves the caller on their
+/// original seat. Same shape as <see cref="ReserveSeatRequest"/> — the row+seat
+/// the app read off the <see cref="SessionSeatMap"/> — and open for inheritance so
+/// the route-binding endpoint can carry a <c>SessionId</c> (D-168 / D-174
+/// pattern).</summary>
+public class MoveSeatRequest
+{
+    public string RowLabel { get; set; } = string.Empty;
+    public int SeatNumber { get; set; }
+}
+
 /// <summary>D-175 — admin row-block request. The whole row is marked
 /// <see cref="SeatReservationKind.AdminReservedRow"/> for this session
 /// (one reservation row per seat). Subsequent visitor picks against

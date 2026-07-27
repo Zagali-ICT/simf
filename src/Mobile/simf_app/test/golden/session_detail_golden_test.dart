@@ -164,6 +164,14 @@ class _FakeSeatRepo implements SeatMapRepository {
 
   @override
   Future<void> releaseMine(String sessionId) async {}
+
+  @override
+  Future<MyReservation> moveSeat(
+    String sessionId, {
+    required String rowLabel,
+    required int seatNumber,
+  }) =>
+      throw UnimplementedError();
 }
 
 class _FakeCalendar implements SessionCalendar {

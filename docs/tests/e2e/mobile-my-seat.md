@@ -40,7 +40,7 @@
 | | |
 |--|--|
 | **Page** | [`Page_018`](../../App/Page_018/README.md) (App page docs) |
-| **Route** | `GET /api/v1/app/sessions/{id}/seats` (grid, approved) · `POST …/seats/reserve` · `…/reserve-random` · `DELETE …/seats/mine` · app screen #18 `/sessions/:sessionId/my-seat` (auth-gated) |
+| **Route** | `GET /api/v1/app/sessions/{id}/seats` (grid, approved) · `POST …/seats/reserve` · `…/reserve-random` · **`POST …/seats/move`** (B1 change seat) · `DELETE …/seats/mine` · app screen #18 `/sessions/:sessionId/my-seat` (auth-gated) |
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
 | **Auth setup** | An **approved Visitor** token (the page is login-only); an **Admin** token only to seed the session, the seat layout and a blocked row. **No literal secrets** (admin TOTP via the `Get-Totp` helper). |
@@ -68,6 +68,7 @@
 | E2E-MOB018-016 | Stage band shows "المسرح · STAGE" above the A–H grid | happy | P2 | authored ✓ (frame 905:1584 — `_StageBar`) |
 | E2E-MOB018-017 | Legend reads محجوز · متاح · مقعدك (LTR, not mirrored); seat fills — available = beige-outline transparent, reserved = darker filled, mine = gold; seats are squares with no h-scroll | i18n/visual | P2 | authored ✓ (frame 907:1591 — `_Legend` forced LTR; `_SeatBox` fills; `_SeatRow` square clamp) |
 | E2E-MOB018-018 | **Ragged read-only render (D-767):** a variable hall layout draws each row at its own `seatCounts[i]` width and highlights the viewer's own seat with its number + state icon | visual | P1 | authored ✓ (widget `my_seat_screen_test.dart` via the shared `hall_seat_map`; regenerated golden `my_seat_898-2873.png`) |
+| E2E-MOB018-019 | **Change seat (B1):** a seat-specific hold shows a full-width **تغيير المقعد / Change seat** action under the frame's two CTAs; it opens the seat picker (109) in CHANGE mode, and a successful move (`true` pop) re-reads the grid so the new seat is drawn. An **open-seating** join (general admission) gets **no** such action | happy | P0 | authored ✓ (widget `my_seat_screen_test.dart` — CTA → picker → re-read; open-seating → no CTA; regenerated golden `my_seat_898-2873.png`) |
 
 ## Scenarios
 
@@ -303,9 +304,36 @@ Scenario: A variable layout renders ragged and my seat shows its number + state 
   shared `HallSeatMapCard`. Covered by the app widget test `my_seat_screen_test.dart`
   and the regenerated golden `my_seat_898-2873.png`. See DECISIONS_LOG D-767.
 
+### E2E-MOB018-019 - Change seat (B1)
+
+```gherkin
+Scenario: Changing seat from the My-Seat page
+  Given an approved visitor whose myCell is the seat-specific reservation B2
+  When the My-Seat page renders
+  Then a full-width "تغيير المقعد" / "Change seat" action shows under the
+    إرشادي إلى مقعدي / مشاركة الموقع row, its visible label being its accessible name
+  When they tap it
+  Then the seat picker route (109) opens for the same session, in CHANGE mode
+  And when the picker pops `true` (the move landed) the seat map is re-read so the
+    page redraws on the NEW seat
+
+Scenario: General admission has no seat to move
+  Given an approved visitor whose myCell.kind is OpenSeating (no row/seat)
+  When the My-Seat page renders
+  Then the share/navigate actions still show
+  And NO "تغيير المقعد" / "Change seat" action is offered
+```
+
+**Evidence:**
+- App widget tests: `my_seat_screen_test.dart` — "B1 — the change-seat action opens the picker and re-reads the grid when the move lands" and "B1 — an open-seating join offers no change-seat action" (both on a surface tall enough to build the lazily-built action area).
+- Server side + the move rules: `docs/tests/e2e/mobile-seat-picker.md` E2E-MOBPICK-012..016 and `tests/SIMF.Api.Tests/SeatChangeTests.cs`.
+- Golden `my_seat_898-2873.png` regenerated to include the new action.
+
+
 ---
 
-_Last reviewed:_ `2026-07-25` by `Claude` (D-767 - added E2E-MOB018-018 for the ragged
+_Last reviewed:_ `2026-07-27` by `Claude` (B1 change seat — added E2E-MOB018-019 for the تغيير المقعد action that opens the picker in CHANGE mode over the new atomic `POST …/seats/move`).
+Prior `2026-07-25` by `Claude` (D-767 - added E2E-MOB018-018 for the ragged
 read-only render + own-seat number/icon. Implemented and green: the wire/model/tokens
 landed AND `hall_seat_map.dart` render is wired, covered by `my_seat_screen_test.dart`
 and the regenerated golden `my_seat_898-2873.png`). Prior: `2026-06-19` by `SIMF Team`.

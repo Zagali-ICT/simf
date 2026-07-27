@@ -1214,6 +1214,38 @@ class AppL10n {
   String seatPickerSelectedChip(String row, int seat) =>
       _t('المقعد المختار: الصف $row · مقعد $seat', 'Selected: Row $row · Seat $seat');
   String get seatPickerConfirmCta => _t('تأكيد المقعد', 'Confirm my seat');
+  // B1 (owner "change seat") — moving an already-held seat. The picker doubles as
+  // the destination chooser: when the visitor already holds a seat it opens in
+  // CHANGE mode (its own title/hint/CTA) and the confirm step names both seats so
+  // nobody swaps by accident.
+  String get seatChangeCta => _t('تغيير المقعد', 'Change seat');
+  String get seatChangeTitle => _t('تغيير مقعدك', 'Change your seat');
+  String get seatChangeHint => _t(
+        'اضغط على مقعد متاح لنقل حجزك إليه — سيبقى مقعدك الحالي محجوزاً حتى ينجح النقل.',
+        'Tap an available seat to move your booking to it — you keep your current seat unless the move succeeds.',
+      );
+  String get seatChangeConfirmCta => _t('تأكيد التغيير', 'Confirm the change');
+  String get seatChangeConfirmTitle => _t('تغيير المقعد؟', 'Change your seat?');
+  String seatChangeConfirmBody(
+    String fromRow,
+    int fromSeat,
+    String toRow,
+    int toSeat,
+  ) =>
+      _t(
+        'سيتم نقل حجزك من الصف $fromRow · مقعد $fromSeat إلى الصف $toRow · مقعد $toSeat.',
+        'Your booking moves from Row $fromRow · Seat $fromSeat to Row $toRow · Seat $toSeat.',
+      );
+  String seatChangedAlertBody(String row, int seat) => _t(
+        'تم نقل حجزك إلى الصف $row · مقعد $seat.',
+        'Your booking has moved to Row $row · Seat $seat.',
+      );
+  String get seatChangeFailed =>
+      _t('تعذّر تغيير المقعد', "Couldn't change your seat");
+  String get seatChangeTaken => _t(
+        'تم حجز هذا المقعد للتو — لا يزال مقعدك الحالي محجوزاً لك.',
+        'That seat was just taken — you still have your current seat.',
+      );
   // Join-a-session hub.
   String get joinHubTitle => _t('احجز مقعداً', 'Book a seat');
   String get joinHubHint =>

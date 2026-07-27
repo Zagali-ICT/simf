@@ -187,7 +187,10 @@ class SessionDetailBody extends StatelessWidget {
         if (seatMap?.myCell != null) ...<Widget>[
           const SizedBox(height: SimfTokens.space3),
           CancelReservationLink(
-            label: l10n.cancelLabel,
+            // A13 — the control and the dialog it opens must agree: the dialog is
+            // titled "إلغاء الحجز" (cancelBookingConfirmTitle), so the link says
+            // "إلغاء الحجز" too, not the bare "إلغاء".
+            label: l10n.cancelBookingCta,
             busy: busy,
             onCancel: onCancelReservation,
           ),
