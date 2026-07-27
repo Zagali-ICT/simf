@@ -183,7 +183,6 @@ not reused. Each page owns a unique 3–4 letter namespace.
 |------|------|-----------|
 | `/` + `/landing` (marketing landing — live Bootstrap SSR rebuild) | [`web-landing-rebuild.md`](web-landing-rebuild.md) | E2E-WLB-001..013 |
 | `/` (old static landing — retired 2026-07-14) | [`web-landing.md`](web-landing.md) | E2E-WLD-001..008 |
-| `/account` | [`web-home.md`](web-home.md) | E2E-WHM-001..010 |
 | `/programme` | [`web-programme.md`](web-programme.md) | E2E-WPG-001..014 |
 | `/speakers` | [`web-speakers.md`](web-speakers.md) | E2E-WSPK-001..011 |
 | `/sessions/{id}` | [`web-session-detail.md`](web-session-detail.md) | E2E-WSDT-001..013 |
@@ -200,15 +199,21 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/discover` | [`web-discover.md`](web-discover.md) | E2E-WDS-001..007 |
 | `/visit` | [`web-visit.md`](web-visit.md) | E2E-WVS-001..008 |
 | `/archive` | [`web-archive.md`](web-archive.md) | E2E-WAR-001..009 |
-| `/login` | [`web-login.md`](web-login.md) | E2E-WLG-001..017 |
-| `/login/verify` | [`web-otp-verify.md`](web-otp-verify.md) | E2E-WOT-001..010 |
-| `/forgot-password` | [`web-forgot-password.md`](web-forgot-password.md) | E2E-WFP-001..014 |
-| `/reset-password` | [`web-reset-password.md`](web-reset-password.md) | E2E-WRS-001..014 |
-| `/account/profile` | [`web-account-profile.md`](web-account-profile.md) | E2E-WPR-001..016 |
-| `/account/notifications` | [`web-account-notifications.md`](web-account-notifications.md) | E2E-WNT-001..012 |
-| `/account/pending` | [`web-account-pending.md`](web-account-pending.md) | E2E-WPN-001..010 |
-| `/account/rejected` | [`web-account-rejected.md`](web-account-rejected.md) | E2E-WRJ-001..010 |
 | `/meeting/confirm` | [`web-meeting-confirm.md`](web-meeting-confirm.md) | E2E-MAC-001..008 |
+
+**Removed 2026-07-27 (D-774) — the Website login + account area.** Owner decision:
+the public site is information-only, so `/login`, `/login/verify`,
+`/forgot-password`, `/reset-password`, `/account`, `/account/profile`,
+`/account/notifications`, `/account/pending` and `/account/rejected` no longer
+exist. Their catalogue files (`web-login.md`, `web-otp-verify.md`,
+`web-forgot-password.md`, `web-reset-password.md`, `web-home.md`,
+`web-account-profile.md`, `web-account-notifications.md`,
+`web-account-pending.md`, `web-account-rejected.md`) were deleted with the
+pages, and the scenario id prefixes E2E-WLG / WOT / WFP / WRS / WHM / WPR / WNT /
+WPN / WRJ are retired — do not reuse them. Visitor sign-in is now covered only
+by the Flutter app catalogue (`mobile-sign-in.md`) and admin sign-in only by
+`cp-auth-flow.md`. The anonymous, token-addressed `/meeting/confirm` page above
+is NOT part of that removal and is still live.
 
 ### Mobile App (Flutter)
 

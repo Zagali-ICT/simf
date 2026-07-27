@@ -153,13 +153,14 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 
 ## Website (Web) — http://localhost:5115
 
-No public nav per D-064 — every page is reached via direct URL or auth redirect.
+**The public Website is information-only (D-774, owner 2026-07-27): it has no
+login and no account area.** Every route below is anonymous. Visitor sign-in
+lives in the Flutter app; admin sign-in lives in the Control Panel.
 
 | Route | Status | Audience | Doc | Test |
 |-------|--------|----------|-----|------|
 | `/` + `/landing` (marketing landing — Bootstrap SSR rebuild) | ✅ Live at `/` (bilingual AR/EN; cutover 2026-07-14) | Public | [web/landing-rebuild.md](web/landing-rebuild.md) | [e2e/web-landing-rebuild.md](../tests/e2e/web-landing-rebuild.md) |
 | ~~`/` (old static landing)~~ | 🗑️ Retired 2026-07-14 (`index.html` deleted) | Public | [web/landing.md](web/landing.md) | [e2e/web-landing.md](../tests/e2e/web-landing.md) |
-| `/account` | ✅ Real | Any signed-in | [web/home.md](web/home.md) | [e2e/web-home.md](../tests/e2e/web-home.md) |
 | `/programme` | ✅ Real (`ln-` SSR; app-style day strip + type filter + timeline cards, live data; adapted from app Figma 883-2308; supersedes the legacy Simf* page, D-199) | Public | [web/programme.md](web/programme.md) | [e2e/web-programme.md](../tests/e2e/web-programme.md) |
 | `/speakers` | ✅ Real (`ln-` SSR rebuild; Figma 5840-26779; live data) | Public | [web/speakers.md](web/speakers.md) | [e2e/web-speakers.md](../tests/e2e/web-speakers.md) |
 | `/sessions/{id}` | ✅ Real (`ln-` SSR; Figma 5991-85840; live data + public downloads) | Public | [web/session-detail.md](web/session-detail.md) | [e2e/web-session-detail.md](../tests/e2e/web-session-detail.md) |
@@ -176,15 +177,30 @@ No public nav per D-064 — every page is reached via direct URL or auth redirec
 | `/discover` | ✅ Real (`ln-` SSR; Figma 5867-29747; reuses landing destinations band, single-sourced — Visitor cluster) | Public | [web/discover.md](web/discover.md) | [e2e/web-discover.md](../tests/e2e/web-discover.md) |
 | `/visit` | ✅ Real (`ln-` SSR; Figma 5867-24636; supersedes the old MudBlazor visit-entry page — Visitor cluster) | Public | [web/visit.md](web/visit.md) | [e2e/web-visit.md](../tests/e2e/web-visit.md) |
 | `/archive` | ✅ Real (`ln-` SSR; Figma 5840-27997; **live** archive data + static fallback — Media cluster) | Public | [web/archive.md](web/archive.md) | [e2e/web-archive.md](../tests/e2e/web-archive.md) |
-| `/login` | 🔒 Auth-only | Anyone | [web/login.md](web/login.md) | [e2e/web-login.md](../tests/e2e/web-login.md) |
-| `/login/verify` | 🔒 Auth-only | Mid-sign-in | [web/otp-verify.md](web/otp-verify.md) | [e2e/web-otp-verify.md](../tests/e2e/web-otp-verify.md) |
-| `/forgot-password` | 🔒 Auth-only | Anyone | [web/forgot-password.md](web/forgot-password.md) | [e2e/web-forgot-password.md](../tests/e2e/web-forgot-password.md) |
-| `/reset-password` | 🔒 Auth-only | After ForgotPassword | [web/reset-password.md](web/reset-password.md) | [e2e/web-reset-password.md](../tests/e2e/web-reset-password.md) |
-| `/account/profile` | ✅ Real (interactive) | Any signed-in | [web/account-profile.md](web/account-profile.md) | [e2e/web-account-profile.md](../tests/e2e/web-account-profile.md) |
-| `/account/notifications` | ✅ Real | Any signed-in | [web/account-notifications.md](web/account-notifications.md) | [e2e/web-account-notifications.md](../tests/e2e/web-account-notifications.md) |
-| `/account/pending` | 🔒 State-banner | Pending account | [web/account-pending.md](web/account-pending.md) | [e2e/web-account-pending.md](../tests/e2e/web-account-pending.md) |
-| `/account/rejected` | 🔒 State-banner | Rejected account | [web/account-rejected.md](web/account-rejected.md) | [e2e/web-account-rejected.md](../tests/e2e/web-account-rejected.md) |
 | `/meeting/confirm` | ✅ Real (D-717; D-767 — the same anonymous page also redeems the **delegation** confirm link, so an emailed delegate with no app installed can still confirm) | Public (token) | — | [e2e/web-meeting-confirm.md](../tests/e2e/web-meeting-confirm.md) |
+
+### Removed 2026-07-27 — the Website login + account area (D-774)
+
+Owner decision, 2026-07-27: **the public Website carries no login and no account
+area.** Visitor accounts belong to the Flutter app and admin accounts to the
+Control Panel, so a sign-in surface on the public site was unwanted scope and an
+extra authentication attack surface. This **reverses D-018** (which built the
+Website sign-in ahead of SIMF-FDS-001 OI-3, on the explicit condition that the
+pages would be removed if the client decided the site offers no sign-in) and
+supersedes the `/account` landing placeholder introduced by **D-024**.
+
+Deleted routes: `/login`, `/login/verify`, `/forgot-password`,
+`/reset-password`, `/account`, `/account/profile`, `/account/notifications`,
+`/account/pending`, `/account/rejected`. Their page docs (`web/login.md`,
+`web/otp-verify.md`, `web/forgot-password.md`, `web/reset-password.md`,
+`web/home.md`, `web/account-profile.md`, `web/account-notifications.md`,
+`web/account-pending.md`, `web/account-rejected.md`) and E2E catalogue files went
+with them. The Website's cookie authentication, the `/auth/*` and `/account/api/*`
+BFF endpoints and the session-timeout guard were removed with the pages.
+
+`/meeting/confirm` is **kept** — it is anonymous and token-addressed, reached
+from an emailed action link, and is the only way a speaker or delegate without
+the app can confirm a meeting.
 
 ---
 

@@ -2731,6 +2731,30 @@ Scenario: Switching tabs keeps the bar fixed and preserves each tab's state
 
 ## BF-12 — Website smoke + auth flows
 
+> ### ⚠ PARTIALLY RETIRED 2026-07-27 — D-774
+>
+> **Owner decision: the public Website has no login and no account area.** The
+> routes `/login`, `/login/verify`, `/forgot-password`, `/reset-password`,
+> `/account`, `/account/profile`, `/account/notifications`, `/account/pending`
+> and `/account/rejected` were deleted, together with the Website's cookie
+> authentication, the `/auth/complete` + `/auth/sign-out` + `/session/status`
+> endpoints and the `/account/api/*` BFF proxy. The per-page catalogue files this
+> section cites (`web-login.md`, `web-otp-verify.md`, `web-forgot-password.md`,
+> `web-reset-password.md`, `web-home.md`, `web-account-*.md`) were deleted with
+> them.
+>
+> **Still live and still in scope:** the public smoke over `/`, `/programme`,
+> `/visit` and the other anonymous marketing routes, and the anonymous
+> token-addressed `/meeting/confirm` journey.
+>
+> **Retired — do NOT run:** every scenario below that signs a visitor in or
+> asserts an account-area route, i.e. `E2E-BF-12-003` onward wherever it touches
+> `/login`, `/login/verify` or `/account*`, plus the `/account` self-guard clause
+> of `E2E-BF-12-001`. The equivalent visitor journeys are covered by the Flutter
+> app catalogue (`mobile-sign-in.md`) and the admin journeys by `cp-auth-flow.md`.
+> The text below is kept verbatim as the historical record; a clean re-issue of
+> BF-12 as a pure public-site smoke is a tracked follow-up.
+
 This cross-page business flow drives the **Website** surface (SIMF.Web) end-to-end as a production-readiness smoke: every ✅ *Real* Website route from the `web-*.md` catalogue is opened and asserted, then the visitor authentication journeys are run to completion. It exercises the four AllowAnonymous public routes — `/` (marketing landing, `web-landing`, fed by `GET /content/site`), `/programme` (`web-programme`, anonymous `SimfPublicClient` over `GET /api/v1/app/programme/sessions` + `GET /api/v1/app/speakers`), `/visit` (`web-visit`, static SSR), and `/account` (`web-home`, an AllowAnonymous route that self-guards to `/login` when unauthenticated) — plus the auth routes `/login`, `/login/verify`, `/forgot-password`, `/reset-password`, `/account/profile`, `/account/notifications`, `/account/pending`, `/account/rejected` and the public `/meeting/confirm`. The endpoints under test are `POST /api/v1/app/auth/sign-in` (`{ email, password, audience: "Web" }`), `POST /api/v1/app/auth/verify-otp` (`{ otpToken, code }`), the BFF hand-off `/auth/complete?reference=…`, `/auth/sign-out`, and `GET/POST /api/v1/app/meeting-actions/{token}`. The key rules it proves: **D-033** — a Visitor's second factor is an emailed OTP (read at run time from `SIMF_Identity.AccountCodes`, `Purpose = SignInOtp`, latest unconsumed — never a literal), whereas an admin uses TOTP; the **audience gate** — an Administrator account signing in on the Website is rejected by `SignInService.EnforceAudienceAsync` with `AUTH_WRONG_SURFACE_WEB` (the Website is the visitor surface; `/login` is AllowAnonymous, so the gate is audience + account-state routing, not a permission redirect); and, on every route, **page renders, zero console errors, zero broken assets (no 404 `<img>`), `scrollWidth == clientWidth` (no horizontal overflow), and the RTL toggle mirrors the layout**.
 
 ### Coverage matrix

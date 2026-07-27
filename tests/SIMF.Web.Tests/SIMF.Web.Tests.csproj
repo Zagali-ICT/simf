@@ -5,9 +5,8 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
-  <!-- The shared framework — for IMemoryCache (SignInTicketStore), the
-       cookie-auth types (SimfCookieRefreshHandler) and the Blazor
-       component model (bUnit page tests). -->
+  <!-- The shared framework — for IMemoryCache (the cached public-content
+       providers) and the Blazor component model (bUnit page tests). -->
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>

@@ -369,8 +369,19 @@ follow the same template at the per-feature stage.
 | UC-LOG-TAIL-001 | Tail a project log in the browser | [`cp/admin-logs.md`](pages/cp/admin-logs.md) | E2E-LOG-002 |
 | UC-NTF-DISMISS-001 | Dismiss + bulk-dismiss notifications | [`cp/account-notifications.md`](pages/cp/account-notifications.md) | E2E-NTF-004 |
 | UC-PRF-AVATAR-001 | Change my avatar (Cropper.Blazor flow) | [`cp/account-profile.md`](pages/cp/account-profile.md) | E2E-PRF-002 |
-| UC-WEB-PRF-FILL-001 | Visitor fills profile, gets QR | [`web/account-profile.md`](pages/web/account-profile.md) | E2E-WEB-PRF-001 |
-| UC-WEB-NTF-001 | Visitor reads notifications inbox | [`web/account-notifications.md`](pages/web/account-notifications.md) | E2E-WEB-NTF-001 |
+| UC-WEB-PRF-FILL-001 | Visitor fills profile, gets QR | _(page removed — see the D-774 note below)_ | E2E-WEB-PRF-001 |
+| UC-WEB-NTF-001 | Visitor reads notifications inbox | _(page removed — see the D-774 note below)_ | E2E-WEB-NTF-001 |
+
+> **D-774 (owner decision, 2026-07-27) — the public Website carries no login and
+> no account area.** `/login`, `/login/verify`, `/forgot-password`,
+> `/reset-password`, `/account`, `/account/profile`, `/account/notifications`,
+> `/account/pending` and `/account/rejected` were deleted, together with their
+> per-page docs and E2E catalogue files. The two `UC-WEB-*` use cases below, and
+> every `(Web)` route reference in this document, are therefore realised **only
+> by the Flutter app** (and, for administrators, by the Control Panel); the
+> journeys themselves are unchanged. A full re-issue of this controlled document
+> to retire the `(Web)` wording is a tracked follow-up. The anonymous
+> token-addressed `/meeting/confirm` page is NOT affected and is still live.
 
 ## 8. Detailed use cases (slice 8 priority subset)
 
@@ -441,9 +452,9 @@ authoring.
   3. Server always returns success (anti-enumeration). If the email
      exists, server issues a 6-digit `PasswordReset` code (15-min TTL,
      rate-limited 3/min/email/IP) and emails it.
-  4. User retrieves the code from email → opens
-     [`/reset-password`](pages/web/reset-password.md) (Web) OR equivalent
-     CP page.
+  4. User retrieves the code from email → opens the app's reset-password
+     screen OR the equivalent CP page. (The Website's `/reset-password`
+     page was removed by D-774.)
   5. Enters code + new password meeting complexity (12+ chars + digit +
      upper + lower + special).
   6. Server validates, replaces password atomically via
@@ -646,7 +657,7 @@ authoring.
 - **Preconditions:** visitor has an `Approved` account; lands on the
   Website after sign-in.
 - **Main flow:**
-  1. Visitor opens [`/account/profile`](pages/web/account-profile.md).
+  1. Visitor opens `/account/profile` (app screen since D-774).
   2. **QR card** is visible at the top with their QR id + SVG.
   3. Fills Identity (Name EN/AR, DisplayName, DOB, place of birth) →
      Nationality + ID (Saudi or Iqama/Passport) → Contact (mobile, email)
@@ -654,7 +665,7 @@ authoring.
   4. Clicks **Save** → server validates → row updated → toast
      `Account.Profile.Saved`.
   5. (Optional) Clicks **Notifications** in the header → routes to
-     [`/account/notifications`](pages/web/account-notifications.md).
+     `/account/notifications` (app screen since D-774).
 - **Alternate flow — Pending account:** QR card is hidden; profile form
   is editable so the visitor can fill ahead of approval; on approval
   the QR appears next time they load the page (D-046a).
@@ -726,8 +737,9 @@ authoring.
   8. Toast: `Rejected {email}`. Row vanishes from the queue.
 - **Exception — Length gate:** typing < 10 or > 500 chars keeps the
   Submit button disabled (client-side).
-- **Postcondition:** visitor sees the reason on
-  [`/account/rejected`](pages/web/account-rejected.md) on next sign-in.
+- **Postcondition:** visitor sees the reason on the app's rejected-account
+  screen on next sign-in. (The Website's `/account/rejected` page was removed
+  by D-774.)
 
 ### UC-INT-CREATE-001 — Add an interest
 
@@ -848,11 +860,9 @@ authoring.
 - **Actor:** Visitor (Approved).
 - **Preconditions:** signed in.
 - **Main flow:**
-  1. From [`/account/profile`](pages/web/account-profile.md), click the
-     **Notifications** link in the header (added by D-132 to close the
-     orphan-page gap).
-  2. Page renders [`/account/notifications`](pages/web/account-notifications.md)
-     with the visitor's notifications.
+  1. From `/account/profile`, click the **Notifications** link in the header
+     (added by D-132 to close the orphan-page gap).
+  2. Page renders `/account/notifications` with the visitor's notifications.
   3. Visitor may dismiss individual rows, or simply read.
 - **Edge case — Empty inbox:** `SimfEmptyState` renders.
 - **Postcondition:** read-state may have changed (visitor saw the inbox).
