@@ -1,9 +1,13 @@
 ﻿@inherits LayoutComponentBase
+@inject IStringLocalizer<Strings> L
 
 @Body
 
 <div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
-    <span class="dismiss">🗙</span>
+    @* §6.16 (LOC-007) — this bar renders on EVERY CP page, including the Arabic
+       RTL UI, and was hardcoded English. The dismiss glyph is icon-only, so it
+       also needs a title to have any accessible name at all. *@
+    @L["Shell.Error.Unhandled"]
+    <a href="." class="reload">@L["Shell.Error.Reload"]</a>
+    <span class="dismiss" title="@L["Shell.Error.Dismiss"]">🗙</span>
 </div>

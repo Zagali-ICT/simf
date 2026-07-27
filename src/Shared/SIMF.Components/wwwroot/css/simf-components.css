@@ -1324,6 +1324,11 @@
   line-height: 1;
 }
 
+/* Arabic is cursive — inter-letter spacing would pull joined glyphs apart. */
+[dir="rtl"] .simf-nav-item__badge {
+  letter-spacing: normal;
+}
+
 /* -- Page header (in the content region) -- */
 .simf-page-header {
   display: flex;
@@ -1789,6 +1794,11 @@ body.simf-modal-open { overflow: hidden; }
   white-space: nowrap;
 }
 
+/* Arabic is cursive — inter-letter spacing would pull joined glyphs apart. */
+[dir="rtl"] .simf-grid__th {
+  letter-spacing: normal;
+}
+
 .simf-grid__th--actions {
   inline-size: 1%;          /* shrink-to-fit */
   text-align: end;
@@ -2125,6 +2135,11 @@ body.simf-modal-open { overflow: hidden; }
   color: var(--color-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+/* Arabic is cursive — inter-letter spacing would pull joined glyphs apart. */
+[dir="rtl"] .simf-stat__title {
+  letter-spacing: normal;
 }
 .simf-stat__value {
   margin: 0;
@@ -2855,6 +2870,11 @@ h1:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
   text-transform: uppercase;
   font-size: 0.875rem;
 }
+
+/* Arabic is cursive — inter-letter spacing would pull joined glyphs apart. */
+[dir="rtl"] .simf-walkin-badge__type {
+  letter-spacing: normal;
+}
 .simf-walkin-badge__name {
   font-size: 1.25rem;
   font-weight: 600;
@@ -2922,6 +2942,11 @@ h1:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
   color: var(--color-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+/* Arabic is cursive — inter-letter spacing would pull joined glyphs apart. */
+[dir="rtl"] .simf-walkin__id-image h4 {
+  letter-spacing: normal;
 }
 .simf-walkin__id-image img {
   max-inline-size: 100%;

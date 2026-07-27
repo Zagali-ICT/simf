@@ -3278,6 +3278,9 @@
   <data name="Grid.Details" xml:space="preserve"><value>تفاصيل</value></data>
   <data name="Grid.Delete" xml:space="preserve"><value>حذف</value></data>
   <data name="Grid.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Shell.Error.Unhandled" xml:space="preserve"><value>حدث خطأ غير متوقع.</value></data>
+  <data name="Shell.Error.Reload" xml:space="preserve"><value>إعادة التحميل</value></data>
+  <data name="Shell.Error.Dismiss" xml:space="preserve"><value>إغلاق</value></data>
   <data name="Grid.Active" xml:space="preserve"><value>مُفعّل</value></data>
   <data name="Grid.Inactive" xml:space="preserve"><value>غير مُفعّل</value></data>
   <data name="Grid.Export" xml:space="preserve"><value>تصدير</value></data>
