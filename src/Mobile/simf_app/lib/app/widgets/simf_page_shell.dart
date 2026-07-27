@@ -411,9 +411,18 @@ class SimfPullableHost extends StatelessWidget {
 /// The shared trailing action cluster on every in-app page's top nav (owner
 /// 2026-06-27): the notifications bell and the menu ☰ — each a **gold glyph in
 /// a navy rounded box** (frame 758:1136), so the top nav is identical on the
-/// signed-in home greeting header and every [SimfPageShell] sub-page. The
-/// language pill was dropped from this cluster (owner 2026-07-11); language is
-/// still switched from a sub-page's own toggle and the More screen's اللغة row.
+/// signed-in home greeting header and every [SimfPageShell] sub-page.
+///
+/// The language pill is **not a member of this cluster** (owner 2026-07-11): a
+/// sub-page gets its own pill from [SimfPageShell]'s trailing slot instead.
+/// That call assumed every surface had a sub-page header to fall back on, which
+/// the signed-in Home does not — it builds its own greeting header, so Home was
+/// left with no route to the language switch at all (BUG-017). The owner
+/// reversed the Home half of that call on **2026-07-27** ("keep home lang",
+/// D-772):
+/// `GreetingHeader` renders a [SimfLanguageToggle] as a **sibling beside** this
+/// cluster. Every other surface is unchanged — do NOT move the pill back inside
+/// the cluster, or Home would render two of them.
 ///
 /// [showBell] is true on every signed-in surface; the guest home (frame
 /// 758:2910) sets it false — a guest has no personal notifications.

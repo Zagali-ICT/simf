@@ -10,6 +10,9 @@ import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_app_shell.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
+import 'package:simf_app/features/account/data/profile_repository.dart';
+import 'package:simf_app/features/home/widgets/greeting_header.dart';
+import 'package:simf_app/features/notifications/data/notifications_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// Minimal in-memory prefs so a real [LocaleController] can back the
@@ -256,27 +259,64 @@ void main() {
       handle.dispose();
     });
 
-    testWidgets('the action cluster (showHeaderActions:true) is the bell + menu '
-        '— no language pill (owner 2026-07-11)', (tester) async {
+    testWidgets(
+        'the signed-in Home greeting header exposes a WORKING language toggle, '
+        'beside the bell + ☰ cluster rather than inside it '
+        '(owner 2026-07-27 "keep home lang", D-772)', (tester) async {
+      final prefs = _FakePrefs();
       await _pump(
         tester,
-        SimfPageShell(
-          title: 'My page',
-          onBack: () {},
-          showHeaderActions: true,
-          body: const Text('BODY'),
+        Builder(
+          builder: (context) => Scaffold(
+            body: GreetingHeader(l10n: AppL10n.of(context), name: 'Ahmed'),
+          ),
         ),
+        overrides: <Override>[
+          localeControllerProvider.overrideWith(
+            () => LocaleController(prefs: prefs),
+          ),
+          // The greeting header's bell watches the unread count and its avatar
+          // watches the photo bytes — both auth-scoped. Stub them so a header
+          // test does not have to stand up a whole signed-in session.
+          unreadNotificationCountProvider.overrideWith((ref) async => 0),
+          myAvatarBytesProvider.overrideWith((ref) async => null),
+        ],
       );
 
-      // The Home/Main cluster carries the bell + drawer ☰ only; the language
-      // pill was dropped from it (owner 2026-07-11) — language now lives on the
-      // sub-page toggle and the More screen's اللغة row.
+      // The cluster itself is still bell + ☰ only (owner 2026-07-11) …
       expect(find.byIcon(Icons.notifications_none_outlined), findsOneWidget);
       expect(find.byIcon(Icons.menu), findsOneWidget);
       expect(
-        find.byKey(const ValueKey<String>('languageToggle')),
+        find.descendant(
+          of: find.byType(SimfHeaderActions),
+          matching: find.byKey(const ValueKey<String>('languageToggle')),
+        ),
         findsNothing,
       );
+      // … and Home carries the pill as the cluster's SIBLING, so the language
+      // switch is reachable from Home (owner 2026-07-27, reversing the Home
+      // half of 2026-07-11 — see BUG-017 / D-772). Scoping the absence check to
+      // the cluster is the point: an unscoped `findsNothing` used to sit here
+      // and passed only because nothing in this file rendered Home, while the
+      // shipped Home showed the pill all along.
+      expect(
+        find.byKey(const ValueKey<String>('languageToggle')),
+        findsOneWidget,
+      );
+
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(MaterialApp)),
+      );
+      // Arabic is the default when nothing is stored (SIMF-MAA-001 §10).
+      expect(container.read(localeControllerProvider).languageCode, 'ar');
+
+      await tester.tap(find.byKey(const ValueKey<String>('languageToggle')));
+      await tester.pumpAndSettle();
+
+      // The Home pill is wired, not decorative: it flips the locale and
+      // persists the choice, exactly like the sub-page pill below.
+      expect(container.read(localeControllerProvider).languageCode, 'en');
+      expect(prefs.getString(StorageKeys.preferredLanguage), 'en');
     });
 
     testWidgets('tapping the sub-page language pill flips the locale AR → EN '
