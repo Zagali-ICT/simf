@@ -306,4 +306,22 @@ public partial class FaqManager
                 env?.Error?.MessageForCurrentCulture() ?? L["Admin.Faq.LoadFailed"]);
         }
     }
+
+    // §6.16 (F-U5-004) — the row Delete icon fired the destructive call on the
+    // FIRST click, and these deletes CASCADE. Stage the action and make the admin
+    // confirm; SimfConfirm is RequireExplicitClose so a stray backdrop click
+    // cannot confirm it either.
+    private (string Title, string Message, Func<Task> Run)? _pendingDelete;
+
+    private void AskDelete(string title, string message, Func<Task> run) =>
+        _pendingDelete = (title, message, run);
+
+    private void CancelDelete() => _pendingDelete = null;
+
+    private async Task ConfirmDeleteAsync()
+    {
+        var pending = _pendingDelete;
+        _pendingDelete = null;
+        if (pending is not null) await pending.Value.Run();
+    }
 }

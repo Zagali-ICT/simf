@@ -73,7 +73,7 @@
                 @* Page-specific quiet action: revoke this moderator grant. *@
                 <AuthorizedAction Permission="@PermissionCatalog.SessionModerators.Revoke">
                     <SimfToolbarButton Icon="link-off" Title="@L["Admin.SessionModerators.Revoke"]"
-                                       OnClick="@(() => RevokeAsync(context))" />
+                                       OnClick="@(() => AskRevoke(context))" />
                 </AuthorizedAction>
             </RowActions>
             <EmptyTemplate>
@@ -138,3 +138,14 @@
         </Footer>
     </SimfModal>
 }
+
+@* §6.16 (F-U5-010) — Revoke is destructive and used to fire on the first click. *@
+<SimfConfirm Open="@(_revokeTarget is not null)"
+             Danger="true"
+             Busy="_busy"
+             Title="@L["Admin.SessionModerators.Revoke.Confirm.Title"]"
+             Message="@(_revokeTarget is null ? string.Empty : string.Format(L["Admin.SessionModerators.Revoke.Confirm.Message"], _revokeTarget.ModeratorDisplayName, _revokeTarget.SessionTitle))"
+             ConfirmLabel="@L["Admin.SessionModerators.Revoke"]"
+             CancelLabel="@L["Common.Cancel"]"
+             OnConfirm="ConfirmRevokeAsync"
+             OnCancel="CancelRevoke" />

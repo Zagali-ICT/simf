@@ -2143,6 +2143,20 @@
   <data name="Admin.SessionModerators.Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Admin.SessionModerators.Revoke" xml:space="preserve"><value>Revoke</value></data>
   <data name="Admin.SessionModerators.Revoked" xml:space="preserve"><value>Moderator grant revoked.</value></data>
+  <data name="Admin.SessionModerators.Revoke.Confirm.Title" xml:space="preserve"><value>Revoke moderator?</value></data>
+  <data name="Admin.SessionModerators.Revoke.Confirm.Message" xml:space="preserve"><value>This removes {0} as moderator of "{1}". During a live session they lose moderation controls immediately.</value></data>
+  <data name="Common.Confirm" xml:space="preserve"><value>Confirm</value></data>
+  <data name="Admin.Faq.Groups.Delete.Confirm.Title" xml:space="preserve"><value>Delete this FAQ group?</value></data>
+  <data name="Admin.Faq.Groups.Delete.Confirm.Message" xml:space="preserve"><value>"{0}" and every question inside it will be deactivated.</value></data>
+  <data name="Admin.Faq.Entries.Delete.Confirm.Title" xml:space="preserve"><value>Delete this question?</value></data>
+  <data name="Admin.Faq.Entries.Delete.Confirm.Message" xml:space="preserve"><value>"{0}" will be deactivated.</value></data>
+  <data name="Admin.RatingConfig.Types.Delete.Confirm.Title" xml:space="preserve"><value>Delete this rating type?</value></data>
+  <data name="Admin.RatingConfig.Types.Delete.Confirm.Message" xml:space="preserve"><value>"{0}" will be deactivated, together with its question groups and their questions.</value></data>
+  <data name="Admin.RatingConfig.Groups.Delete.Confirm.Title" xml:space="preserve"><value>Delete this question group?</value></data>
+  <data name="Admin.RatingConfig.Groups.Delete.Confirm.Message" xml:space="preserve"><value>"{0}" and every question inside it will be deactivated.</value></data>
+  <data name="Admin.RatingConfig.Questions.Delete.Confirm.Title" xml:space="preserve"><value>Delete this question?</value></data>
+  <data name="Admin.RatingConfig.Questions.Delete.Confirm.Message" xml:space="preserve"><value>"{0}" will be deactivated.</value></data>
+  <data name="Common.Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Admin.SessionModerators.Assigned" xml:space="preserve"><value>Moderator assigned.</value></data>
   <data name="Admin.SessionModerators.Required" xml:space="preserve"><value>A session id and a user id are both required, and each must be a valid id.</value></data>
   <data name="Admin.SessionModerators.Col.Session" xml:space="preserve"><value>Session</value></data>

@@ -39,7 +39,7 @@
                       FilterColumnLabel="@L["Grid.FilterColumn"]"
                       OnAdd="OpenAddGroup"
                       OnEditOne="OpenEditGroup"
-                      OnDeleteOne="DeactivateGroupAsync"
+                      OnDeleteOne="@(g => AskDelete(L["Admin.Faq.Groups.Delete.Confirm.Title"], string.Format(L["Admin.Faq.Groups.Delete.Confirm.Message"], g.NameEn), () => DeactivateGroupAsync(g)))"
                       PrevLabel="@L["Grid.Prev"]"
                       NextLabel="@L["Grid.Next"]"
                       FirstLabel="@L["Grid.First"]"
@@ -111,7 +111,7 @@
                           Caption="@L["Admin.Faq.Entries.Heading"]"
                           OnAdd="OpenAddEntry"
                           OnEditOne="OpenEditEntry"
-                          OnDeleteOne="DeactivateEntryAsync"
+                          OnDeleteOne="@(e => AskDelete(L["Admin.Faq.Entries.Delete.Confirm.Title"], string.Format(L["Admin.Faq.Entries.Delete.Confirm.Message"], e.Question), () => DeactivateEntryAsync(e)))"
                           PrevLabel="@L["Grid.Prev"]"
                           NextLabel="@L["Grid.Next"]"
                           FirstLabel="@L["Grid.First"]"
@@ -242,3 +242,13 @@
         </Footer>
     </SimfModal>
 }
+
+@* §6.16 (F-U5-004) — these deletes cascade; confirm before running them. *@
+<SimfConfirm Open="@(_pendingDelete is not null)"
+             Danger="true"
+             Title="@(_pendingDelete?.Title ?? string.Empty)"
+             Message="@(_pendingDelete?.Message ?? string.Empty)"
+             ConfirmLabel="@L["Grid.Delete"]"
+             CancelLabel="@L["Common.Cancel"]"
+             OnConfirm="ConfirmDeleteAsync"
+             OnCancel="CancelDelete" />

@@ -391,4 +391,22 @@ public partial class RatingConfig
         if (env is { Success: true }) { _toast = new Toast("success", L["Admin.RatingConfig.Deactivated"]); await LoadQuestionsAsync(); await LoadTypesAsync(); }
         else { _toast = new Toast("error", env?.Error?.MessageForCurrentCulture() ?? L["Admin.RatingConfig.LoadFailed"]); }
     }
+
+    // §6.16 (F-U5-004) — the row Delete icon fired the destructive call on the
+    // FIRST click, and these deletes CASCADE. Stage the action and make the admin
+    // confirm; SimfConfirm is RequireExplicitClose so a stray backdrop click
+    // cannot confirm it either.
+    private (string Title, string Message, Func<Task> Run)? _pendingDelete;
+
+    private void AskDelete(string title, string message, Func<Task> run) =>
+        _pendingDelete = (title, message, run);
+
+    private void CancelDelete() => _pendingDelete = null;
+
+    private async Task ConfirmDeleteAsync()
+    {
+        var pending = _pendingDelete;
+        _pendingDelete = null;
+        if (pending is not null) await pending.Value.Run();
+    }
 }

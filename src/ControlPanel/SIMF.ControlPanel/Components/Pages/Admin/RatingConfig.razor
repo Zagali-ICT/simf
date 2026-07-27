@@ -35,7 +35,7 @@
                       Caption="@L["Admin.RatingConfig.Types.Heading"]"
                       OnAdd="OpenAddType"
                       OnEditOne="OpenEditType"
-                      OnDeleteOne="DeactivateTypeAsync"
+                      OnDeleteOne="@(t => AskDelete(L["Admin.RatingConfig.Types.Delete.Confirm.Title"], string.Format(L["Admin.RatingConfig.Types.Delete.Confirm.Message"], t.Name), () => DeactivateTypeAsync(t)))"
                       PrevLabel="@L["Grid.Prev"]" NextLabel="@L["Grid.Next"]"
                       FirstLabel="@L["Grid.First"]" LastLabel="@L["Grid.Last"]"
                       PageSizeLabel="@L["Grid.PageSize"]" PageFormatter="@FormatPage"
@@ -121,7 +121,7 @@
                           Caption="@L["Admin.RatingConfig.Groups.Heading"]"
                           OnAdd="OpenAddGroup"
                           OnEditOne="OpenEditGroup"
-                          OnDeleteOne="DeactivateGroupAsync"
+                          OnDeleteOne="@(g => AskDelete(L["Admin.RatingConfig.Groups.Delete.Confirm.Title"], string.Format(L["Admin.RatingConfig.Groups.Delete.Confirm.Message"], g.Name), () => DeactivateGroupAsync(g)))"
                           PrevLabel="@L["Grid.Prev"]" NextLabel="@L["Grid.Next"]"
                           FirstLabel="@L["Grid.First"]" LastLabel="@L["Grid.Last"]"
                           PageSizeLabel="@L["Grid.PageSize"]" PageFormatter="@FormatPage"
@@ -180,7 +180,7 @@
                           Caption="@L["Admin.RatingConfig.Questions.Heading"]"
                           OnAdd="OpenAddQuestion"
                           OnEditOne="OpenEditQuestion"
-                          OnDeleteOne="DeactivateQuestionAsync"
+                          OnDeleteOne="@(q => AskDelete(L["Admin.RatingConfig.Questions.Delete.Confirm.Title"], string.Format(L["Admin.RatingConfig.Questions.Delete.Confirm.Message"], q.Text), () => DeactivateQuestionAsync(q)))"
                           PrevLabel="@L["Grid.Prev"]" NextLabel="@L["Grid.Next"]"
                           FirstLabel="@L["Grid.First"]" LastLabel="@L["Grid.Last"]"
                           PageSizeLabel="@L["Grid.PageSize"]" PageFormatter="@FormatPage"
@@ -380,3 +380,13 @@
         </Footer>
     </SimfModal>
 }
+
+@* §6.16 (F-U5-004) — these deletes cascade; confirm before running them. *@
+<SimfConfirm Open="@(_pendingDelete is not null)"
+             Danger="true"
+             Title="@(_pendingDelete?.Title ?? string.Empty)"
+             Message="@(_pendingDelete?.Message ?? string.Empty)"
+             ConfirmLabel="@L["Grid.Delete"]"
+             CancelLabel="@L["Common.Cancel"]"
+             OnConfirm="ConfirmDeleteAsync"
+             OnCancel="CancelDelete" />

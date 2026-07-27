@@ -168,6 +168,25 @@ public partial class SessionModeratorsList
         finally { _busy = false; }
     }
 
+    // §6.16 (F-U5-010) — Revoke is a quiet icon sitting beside the other row
+    // actions, and it used to revoke on the FIRST click. One stray click during a
+    // live session strips that person's moderation controls immediately. Stage the
+    // row and make the admin confirm; SimfConfirm is RequireExplicitClose, so a
+    // backdrop click cannot confirm it either.
+    private AdminSessionModeratorRow? _revokeTarget;
+
+    private void AskRevoke(AdminSessionModeratorRow row) => _revokeTarget = row;
+
+    private void CancelRevoke() => _revokeTarget = null;
+
+    private async Task ConfirmRevokeAsync()
+    {
+        if (_revokeTarget is null) return;
+        var row = _revokeTarget;
+        _revokeTarget = null;
+        await RevokeAsync(row);
+    }
+
     private async Task RevokeAsync(AdminSessionModeratorRow row)
     {
         if (_busy) return;

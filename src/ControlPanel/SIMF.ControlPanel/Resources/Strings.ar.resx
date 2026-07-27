@@ -2136,6 +2136,20 @@
   <data name="Admin.SessionModerators.Cancel" xml:space="preserve"><value>إلغاء</value></data>
   <data name="Admin.SessionModerators.Revoke" xml:space="preserve"><value>إلغاء التعيين</value></data>
   <data name="Admin.SessionModerators.Revoked" xml:space="preserve"><value>تم إلغاء تعيين المشرف.</value></data>
+  <data name="Admin.SessionModerators.Revoke.Confirm.Title" xml:space="preserve"><value>إلغاء تعيين المنسّق؟</value></data>
+  <data name="Admin.SessionModerators.Revoke.Confirm.Message" xml:space="preserve"><value>سيؤدي هذا إلى إزالة {0} كمنسّق لجلسة "{1}". وأثناء جلسة مباشرة يفقد صلاحيات الإدارة فوراً.</value></data>
+  <data name="Common.Confirm" xml:space="preserve"><value>تأكيد</value></data>
+  <data name="Admin.Faq.Groups.Delete.Confirm.Title" xml:space="preserve"><value>حذف مجموعة الأسئلة؟</value></data>
+  <data name="Admin.Faq.Groups.Delete.Confirm.Message" xml:space="preserve"><value>سيتم تعطيل "{0}" وجميع الأسئلة التي تحتوي عليها.</value></data>
+  <data name="Admin.Faq.Entries.Delete.Confirm.Title" xml:space="preserve"><value>حذف السؤال؟</value></data>
+  <data name="Admin.Faq.Entries.Delete.Confirm.Message" xml:space="preserve"><value>سيتم تعطيل "{0}".</value></data>
+  <data name="Admin.RatingConfig.Types.Delete.Confirm.Title" xml:space="preserve"><value>حذف نوع التقييم؟</value></data>
+  <data name="Admin.RatingConfig.Types.Delete.Confirm.Message" xml:space="preserve"><value>سيتم تعطيل "{0}" ومعه مجموعات الأسئلة والأسئلة التابعة له.</value></data>
+  <data name="Admin.RatingConfig.Groups.Delete.Confirm.Title" xml:space="preserve"><value>حذف مجموعة الأسئلة؟</value></data>
+  <data name="Admin.RatingConfig.Groups.Delete.Confirm.Message" xml:space="preserve"><value>سيتم تعطيل "{0}" وجميع الأسئلة التي تحتوي عليها.</value></data>
+  <data name="Admin.RatingConfig.Questions.Delete.Confirm.Title" xml:space="preserve"><value>حذف السؤال؟</value></data>
+  <data name="Admin.RatingConfig.Questions.Delete.Confirm.Message" xml:space="preserve"><value>سيتم تعطيل "{0}".</value></data>
+  <data name="Common.Cancel" xml:space="preserve"><value>إلغاء</value></data>
   <data name="Admin.SessionModerators.Assigned" xml:space="preserve"><value>تم تعيين المشرف.</value></data>
   <data name="Admin.SessionModerators.Required" xml:space="preserve"><value>معرّف الجلسة ومعرّف المستخدم مطلوبان معاً، ويجب أن يكون كل منهما معرّفاً صحيحاً.</value></data>
   <data name="Admin.SessionModerators.Col.Session" xml:space="preserve"><value>الجلسة</value></data>
