@@ -412,6 +412,14 @@ Scenario: An approved attendee with no reservation joins, branched by mode
   When the mode is OpenSeating (general admission)
   Then the Join CTA reads "سجل لحضور الجلسة" / "Register to attend the session" (case-1, D-750)
   And tapping it shows a "Join this session?" confirm dialog
+  And (A8 / DEF-SEA-003) that dialog body describes what actually happens -
+    "سيتم تسجيلك لحضور هذه الجلسة فوراً دون الحاجة إلى موافقة. التسجيل لا يحجز
+    مقعداً محدداً، وسيتم تأكيد دخولك عند تسجيل الدخول للجلسة." / "You will be
+    registered for this session right away - no approval needed. This does not
+    reserve a specific seat; your entry is confirmed at session check-in."
+  # It used to promise "سيتم إرسال طلب انضمامك إلى الإدارة للموافقة" / "Your request
+  # to join will be sent to the organisers for approval", describing the approval
+  # queue the owner removed on 2026-07-18.
   And confirming sends the join (created Approved — confirmed immediately, no
     Control Panel approval step)
   And on success a one-button info alert is shown (not a snackbar) carrying
@@ -548,6 +556,12 @@ hall gate on check-in (`CheckedIn`), with a pre-start sweep releasing any hold n
 checked in. No `BookingConfirmed` on reserve; the app shows an inline success message.
 The old CP approval queue is retained but dormant (always empty). Scenarios 016 / 022 /
 025 reworded off the "pending approval" copy.**
+_Last reviewed:_ `2026-07-27` by `Claude` — **A8 / DEF-SEA-003: the join confirm
+dialog no longer promises an approval step. `joinConfirmBody` (AR + EN) now says the
+registration is immediate, does not reserve a specific seat, and is confirmed at
+check-in — matching `joinOpenSuccessBody` and the as-built auto-confirm behaviour.
+Covered by `session_detail_screen_test.dart` (the open-seating join case asserts the
+new copy and the absence of the old one). E2E-MOB017-022 reworded.**
 _Prior:_ `2026-07-14` by `SIMF Team` — **owner state-gating: the two
 header actions (ملخص الجلسة / رابط الجلسة) and the Join CTA now gate on the
 session phase (upcoming/live/ended); a future session's summary button is

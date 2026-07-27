@@ -331,6 +331,14 @@ public static class ErrorCodes
     public const string SeatMoveSameSeat = "SEAT_MOVE_SAME_SEAT";
 
     // Booking approval workflow (P2.2 / D-227 — FDS-005 §5).
+    // A9 (2026-07-27) — the approval queue was removed on 2026-07-18 (bookings
+    // auto-confirm), so BookingNotFound, BookingNotPending and
+    // BookingRejectionReasonRequired are VESTIGIAL: nothing raises them any more,
+    // because there is no approve/reject action left (a missing reservation throws
+    // SEAT_RESERVATION_NOT_FOUND). Kept as reserved codes rather than deleted — they
+    // are published in the API spec and are the landing spot if an approval step
+    // returns — but do not wire new behaviour to them. BookingOverlap /
+    // BookingSessionStarted / BookingSessionEnded are live.
     public const string BookingOverlap = "BOOKING_OVERLAP";
     public const string BookingNotFound = "BOOKING_NOT_FOUND";
     public const string BookingNotPending = "BOOKING_NOT_PENDING";

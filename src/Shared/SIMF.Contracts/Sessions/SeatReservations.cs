@@ -46,8 +46,12 @@ public sealed record SessionSeatMap(
 /// <summary>D-175 — one occupied seat in the grid. D-485: <see cref="RowLabel"/>
 /// and <see cref="SeatNumber"/> are null for an OpenSeating join. D-572 appends
 /// <see cref="Status"/> (append-only wire) so the app's "my seat" card can switch
-/// its hint — Pending → "await approval", Approved → "show your badge at entry";
-/// default Pending keeps older callers safe.
+/// its hint; default Pending keeps older callers safe.
+/// <para>A9 (2026-07-27) — as built, no production path ever writes
+/// <see cref="BookingStatus.Pending"/>: every create path stamps
+/// <see cref="BookingStatus.Approved"/> (bookings auto-confirm — see
+/// <see cref="BookingStatus"/>), so a live cell always reads Approved and the
+/// Pending default is only the safety value for a payload that omits the key.</para>
 /// <para>Wave 2 (2026-07-18) appends <see cref="CheckedIn"/> (append-only wire):
 /// the holder has an OPEN <c>HallAttendance</c> row for this session — they scanned
 /// in at the hall gate ("تم التأكيد" / confirmed). The four app/CP seat states are:
@@ -67,6 +71,44 @@ public sealed record SessionSeatCell(
     // ordinary reservation.
     string? GuestHint = null,
     string? GuestHintArabic = null);
+
+/// <summary>DEF-SEA-001 / A11 (2026-07-27) — one active reservation on the
+/// Control Panel seat plan (<c>POST /admin/sessions/{id}/seats/list</c>). It is a
+/// SEPARATE shape from <see cref="SessionSeatCell"/> on purpose: the seat plan is
+/// an admin surface that must name WHO holds a seat before an administrator
+/// releases it, and keeping that identity off the shared cell makes it impossible
+/// for the app-facing seat map (<c>GET /app/sessions/{id}/seats</c>, which reuses
+/// <see cref="SessionSeatCell"/>) to start carrying attendee names by accident.
+/// <para>A11 — <see cref="Status"/> and <see cref="CheckedIn"/> are REAL values
+/// here, never record defaults: the seat plan's own projection reads the stored
+/// status and resolves the open <c>HallAttendance</c> row, so the four seat
+/// states (available · unavailable · reserved · confirmed) are all decidable from
+/// this row.</para>
+/// <para>Cross-DB safe (D-157): <see cref="HolderUserId"/> is a bare logical
+/// user id and the bilingual holder name comes from the App-side
+/// <c>UserProfile</c> in a second query — no cross-database join and nothing
+/// duplicated.</para></summary>
+public sealed record SeatPlanCell(
+    Guid ReservationId,
+    // Null for an OpenSeating join (general admission — no specific seat).
+    string? RowLabel,
+    int? SeatNumber,
+    SeatReservationKind Kind,
+    BookingStatus Status,
+    // True when the holder has an OPEN HallAttendance row for this session — the
+    // "confirmed" seat state, as opposed to a merely held "reserved" one.
+    bool CheckedIn,
+    // The holder's user id (logical FK to the Identity DB). Null for an admin
+    // row-block / VVIP protocol seat, which has no registration.
+    Guid? HolderUserId,
+    // The holder's bilingual display name, resolved from the App-side UserProfile.
+    // Empty for an admin block / VVIP seat — read the guest hint instead.
+    string HolderName,
+    string HolderNameArabic,
+    // D-771 — the admin-typed VVIP guest note: the occupant record for a seat that
+    // has no registration. Null on an ordinary attendee reservation.
+    string? GuestHint,
+    string? GuestHintArabic);
 
 /// <summary>D-175 — visitor self-pick request. Pass row+seat from
 /// the grid the app rendered against the <see cref="SessionSeatMap"/>.
@@ -169,9 +211,13 @@ public sealed record HallSeatLayoutSnapshot(
 
 /// <summary>D-175 — what the user sees after a successful reservation.
 /// Returned by both self-pick and random-allocate. <see cref="Status"/>
-/// (P2.2 — D-227) is appended: a fresh booking is <c>Pending</c> until the
-/// Control Panel approves it (the field is append-only — the shipped app
-/// ignores unknown JSON keys).</summary>
+/// (P2.2 — D-227) is appended (append-only — the shipped app ignores unknown
+/// JSON keys).
+/// <para>A9 (2026-07-27) — the original D-227 approval queue is gone: a fresh
+/// booking is created <c>Approved</c> (2026-07-18, reservation-only), so this
+/// always returns <c>Approved</c>. The <c>Pending</c> parameter default is the
+/// wire-safety value for a payload that omits the key, not a state the server
+/// produces.</para></summary>
 public sealed record MySeatReservation(
     Guid ReservationId,
     Guid SessionId,

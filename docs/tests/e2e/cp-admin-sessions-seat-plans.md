@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-07-25 (D-767 ragged seat grid) |
+| **Last reviewed** | 2026-07-27 (DEF-SEA-001 / A11 holder + release confirmation) |
 
 > **Page shape (read from `Components/Pages/Admin/SessionSeatPlan.razor`, D-182 + the P1.4/D-215 visual grid).**
 > This is **not** a CRUD grid. It is a **session picker + seat tool**:
@@ -84,6 +84,9 @@
 | E2E-SSP-014 | Legend + seat-tooltip resx keys missing → keys render literally (gap guard) | i18n | P2 | _to author_ |
 | E2E-SSP-015 | VIP seat — tap a free seat → reserved as an admin block; a visitor can't book it; out-of-bounds seat → 400 | happy | P1 | authored ✓ (API `Admin_can_reserve_a_single_seat_for_a_vip` + `Admin_reserve_seat_out_of_bounds_is_400`) |
 | E2E-SSP-016 | Ragged grid (D-767): a variable hall layout renders each row at its own `SeatCounts[i]` width; reserve-row / reserve-seat / release still work per-row; a short-row out-of-bounds seat -> 400 SEAT_OUT_OF_BOUNDS | happy | P1 | _to author_ (CP + service coded) |
+| E2E-SSP-017 | **DEF-SEA-001** - clicking a held seat opens a confirmation naming the seat + holder; it does NOT release on the click | destructive | P1 | authored (bUnit `SessionSeatPlanReleaseConfirmTests`) |
+| E2E-SSP-018 | **DEF-SEA-001** - the plan names every holder (roster + tooltip); a VVIP admin block shows its guest note, a note-less block shows "Admin block (no attendee)" | happy | P1 | authored (API `Seat_plan_list_names_the_holder_...` + `..._vvip_guest_note_...`) |
+| E2E-SSP-019 | **A11** - the State column reads Confirmed for a checked-in holder and Reserved for one who has not scanned in (no longer the record defaults) | happy | P2 | authored (API `Seat_plan_list_names_the_holder_and_ships_the_real_status_and_check_in`) |
 
 ## Scenarios
 
@@ -384,6 +387,98 @@ Scenario: A short-row out-of-bounds seat is still guarded server-side
 
 ---
 
+### E2E-SSP-017 - A held seat asks before it is released (DEF-SEA-001)
+
+```gherkin
+Feature: Releasing a seat on the session seat plan is a confirmed, named action
+  As an Administrator with SeatPlans.Edit
+  I want to be told whose seat I am about to take, and to confirm it
+  So that a single stray click cannot destroy a live attendee reservation
+
+Background:
+  Given an active session "S-SEAT" whose hall has the uniform layout rows "A" x 3 seats
+  And the visitor "Faisal Al-Harbi" / "فيصل الحربي" holds seat A2 (Approved, not checked in)
+  And an Administrator has signed in and landed on /admin/sessions/seat-plans
+  And the administrator has selected session "S-SEAT"
+
+Scenario: Clicking a held seat opens the confirmation instead of releasing it
+  When the administrator clicks the held seat "A2"
+  Then NO DELETE /account/api/admin/sessions/{sessionId}/seats/{reservationId} request is issued
+  And a must-decide dialog opens titled "Release this seat?" / "إلغاء حجز هذا المقعد؟"
+  And its body reads "Seat A2 is held by Faisal Al-Harbi. Releasing it frees the seat for someone else and cannot be undone. The attendee is notified."
+  And the dialog lists Seat = "A2", Held by = "Faisal Al-Harbi", State = "Reserved"
+  And the confirm button is the danger-styled "Release" and the cancel button reads "Keep the seat"
+
+Scenario: Cancelling keeps the seat
+  When the administrator clicks "Keep the seat"
+  Then the dialog closes
+  And NO DELETE request is issued and seat A2 is still held by Faisal Al-Harbi
+
+Scenario: Confirming releases the seat and notifies the attendee
+  When the administrator clicks the held seat "A2" and then "Release"
+  Then DELETE /account/api/admin/sessions/{sessionId}/seats/{reservationId} returns 200
+  And the toast reads "Reservation released." / "تم إلغاء الحجز."
+  And seat A2 returns to free and the roster no longer lists Faisal Al-Harbi
+  And the attendee receives a BookingReleased notification
+
+Scenario: Switching session drops an armed release
+  When the administrator clicks the held seat "A2" and then selects a different session
+  Then the dialog closes and NO DELETE request is issued against either session
+```
+
+**Evidence captured:**
+- bUnit: `tests/SIMF.ControlPanel.Tests/SessionSeatPlanReleaseConfirmTests.cs` - clicking a held seat issues zero `simfAccount.deleteJson` calls and opens `Admin.SessionSeatPlans.Release.Title`; the dialog `[data-testid='release-holder']` reads the holder name; cancel leaves the count at zero. 4/4 passing.
+- Source: `SessionSeatPlan.razor` `OnSeatClickAsync` -> `AskReleaseAsync` (arms only) + the page-level `<SimfConfirm Danger="true">`; `SessionSeatPlan.razor.cs` `ConfirmReleaseAsync` -> `ReleaseAsync`, and `OnSessionChangedAsync` clearing `_releasing`.
+- The release notification is the pre-existing `TryNotifyBookingReleasedAsync` path (`SeatReservationsTests.Admin_release_marks_cancelled_and_notifies`).
+
+---
+
+### E2E-SSP-018 / E2E-SSP-019 - The plan names the holder and reads the real state (DEF-SEA-001 / A11)
+
+```gherkin
+Feature: The seat plan answers who is in this seat and whether they arrived
+  As an Administrator
+  I want the plan to name each holder and show the live seat state
+  So that protocol seating decisions are made on facts, not colours
+
+Background:
+  Given an active session whose hall has the layout rows "A" x 4 seats
+  And an Administrator has signed in and selected that session
+
+Scenario: An attendee booking names the holder and reads Confirmed once they scan in
+  Given the visitor "Faisal Al-Harbi" holds seat A2 (Approved)
+  And that visitor has an OPEN hall-attendance row for the session (scanned in at the gate)
+  When POST /account/api/admin/sessions/{sessionId}/seats/list returns its page
+  Then the row carries holderUserId = the visitor, holderName = "Faisal Al-Harbi", holderNameArabic = "فيصل الحربي"
+  And status = "Approved" and checkedIn = true
+  # A11 - these used to be the record defaults Pending / false
+  And the roster under the grid shows Seat "A2", Held by "Faisal Al-Harbi", State "Confirmed (checked in)"
+  And the seat tooltip reads "Seat A2 - UserBooking - held by Faisal Al-Harbi"
+
+Scenario: A VVIP admin block reads its guest note instead of a name
+  Given the administrator has typed the guest note "Reserved for the Minister" / "محجوز لمعالي الوزير"
+  And has tapped free seat A1 to hold it
+  When the seat list is re-read
+  Then that row carries holderUserId = null, holderName = "" and guestHint = "Reserved for the Minister"
+  And the roster "Held by" cell for A1 reads the guest note, and State reads "Unavailable"
+
+Scenario: An admin block with no guest note is labelled, not blank
+  Given the administrator reserves the whole row "A" with no guest note
+  Then each blocked seat "Held by" cell reads "Admin block (no attendee)" / "حجز إداري (بدون زائر)"
+
+Scenario: The attendee name never reaches a visitor read
+  When a signed-in visitor calls GET /app/sessions/{sessionId}/seats
+  Then the reservedCells carry NO holderName / holderNameArabic / holderUserId key
+  # the app-facing map uses SessionSeatCell; the identity lives only on the admin SeatPlanCell
+```
+
+**Evidence captured:**
+- API: `SeatReservationsTests.Seat_plan_list_names_the_holder_and_ships_the_real_status_and_check_in` and `Seat_plan_list_carries_the_vvip_guest_note_and_no_holder_for_an_admin_block` (both passing in the 57/57 seat + permission run).
+- Contract separation: `SIMF.Contracts/Sessions/SeatReservations.cs` - `SeatPlanCell` (admin) vs `SessionSeatCell` (app); only `ListSessionReservationsAsync` builds the former.
+- Bilingual holder pick + the admin-block fallback: `SessionSeatPlan.razor.cs` `HolderLabel`; the state read-out: `StateLabel`.
+
+---
+
 ## Implementation notes
 
 - **Manual smoke as canonical source-of-truth today.** Until Playwright is
@@ -409,15 +504,21 @@ Scenario: A short-row out-of-bounds seat is still guarded server-side
   server-side; the page only guards empty/whitespace row input and the `_busy`
   re-entrancy flag. Every failure round-trips and surfaces via
   `Error.MessageForCurrentCulture()`.
-- **Open defect (E2E-SSP-014):** the five grid strings
+- **E2E-SSP-014 defect - CLOSED (re-verified 2026-07-27).** The five grid strings
   `Admin.SessionSeatPlans.Legend.{Free,User,Admin,Random}` and
-  `Admin.SessionSeatPlans.Seat.ReservedTitle` are missing from both resx files —
-  raise a fix ticket; this catalogue intentionally asserts the broken state so it
-  is not lost.
+  `Admin.SessionSeatPlans.Seat.ReservedTitle` are present in BOTH resx files. The
+  tooltip key now takes a third placeholder `{2}` - the seat holder (DEF-SEA-001).
+- **Holder identity is admin-only (DEF-SEA-001).** `SeatPlanCell` exists so that the
+  attendee name is returned by `POST /admin/sessions/{id}/seats/list` and nowhere else;
+  the app-facing `GET /app/sessions/{id}/seats` keeps the identity-free
+  `SessionSeatCell`. Any future scenario that asserts a holder name on a visitor read is
+  asserting a defect.
 
 ---
 
-_Last reviewed:_ 2026-07-25 by Claude (D-767 - added E2E-SSP-016 for the ragged seat
+_Last reviewed:_ 2026-07-27 by Claude (DEF-SEA-001 / A11 - added E2E-SSP-017..019 for
+the named holder, the confirmed release, and the real Status/CheckedIn read-out).
+Prior: 2026-07-25 by Claude (D-767 - added E2E-SSP-016 for the ragged seat
 grid: each row drawn at its own SeatCounts[i] via the SeatsInRow index loop, reserve /
 release still per-row, short-row out-of-bounds still 400 SEAT_OUT_OF_BOUNDS; page
 reference doc authored). Prior: 2026-06-02 by Claude (E2E catalogue rebuild).

@@ -2332,14 +2332,15 @@
   <data name="Admin.SessionSeatPlans.Legend.User" xml:space="preserve"><value>Reserved (attendee)</value></data>
   <data name="Admin.SessionSeatPlans.Legend.Admin" xml:space="preserve"><value>Reserved (admin)</value></data>
   <data name="Admin.SessionSeatPlans.Legend.Random" xml:space="preserve"><value>Random</value></data>
-  <data name="Admin.SessionSeatPlans.Seat.ReservedTitle" xml:space="preserve"><value>Seat {0} — {1}</value></data>
+  <!-- DEF-SEA-001 — {0} seat, {1} kind, {2} holder: the tooltip must name whose seat it is. -->
+  <data name="Admin.SessionSeatPlans.Seat.ReservedTitle" xml:space="preserve"><value>Seat {0} — {1} — held by {2}</value></data>
   <data name="Admin.SessionSeatPlans.Seat.FreeTitle" xml:space="preserve"><value>Reserve seat {0} for a VIP</value></data>
   <data name="Admin.SessionSeatPlans.Pick" xml:space="preserve"><value>Select a session</value></data>
   <data name="Admin.SessionSeatPlans.None" xml:space="preserve"><value>No sessions available.</value></data>
   <data name="Admin.SessionSeatPlans.NoReservations" xml:space="preserve"><value>No active reservations on this session.</value></data>
   <data name="Admin.SessionSeatPlans.Loading" xml:space="preserve"><value>Loading…</value></data>
   <data name="Admin.SessionSeatPlans.LoadFailed" xml:space="preserve"><value>Could not load session seat plan.</value></data>
-  <data name="Admin.SessionSeatPlans.Hint" xml:space="preserve"><value>Paint an entire row as admin-reserved (blocks the row from visitor self-pick), tap a free seat to reserve it for a VIP, or tap a reserved seat to release it.</value></data>
+  <data name="Admin.SessionSeatPlans.Hint" xml:space="preserve"><value>Paint an entire row as admin-reserved (blocks the row from visitor self-pick), tap a free seat to reserve it for a VIP, or tap a held seat to release it — you are asked to confirm and shown who holds it first.</value></data>
   <data name="Admin.SessionSeatPlans.ReserveRow.Label" xml:space="preserve"><value>Row to reserve (must exist in the hall layout)</value></data>
   <data name="Admin.SessionSeatPlans.ReserveRow.Action" xml:space="preserve"><value>Reserve row</value></data>
   <data name="Admin.SessionSeatPlans.ReserveRow.Done" xml:space="preserve"><value>Row reserved.</value></data>
@@ -2352,7 +2353,19 @@
   <data name="Admin.SessionSeatPlans.Col.Seat" xml:space="preserve"><value>Seat</value></data>
   <data name="Admin.SessionSeatPlans.Col.Kind" xml:space="preserve"><value>Kind</value></data>
   <data name="Admin.SessionSeatPlans.Col.Actions" xml:space="preserve"><value>Actions</value></data>
+  <!-- DEF-SEA-001 — who holds each seat, and A11's real four-state read-out. -->
+  <data name="Admin.SessionSeatPlans.Col.Holder" xml:space="preserve"><value>Held by</value></data>
+  <data name="Admin.SessionSeatPlans.Col.State" xml:space="preserve"><value>State</value></data>
+  <data name="Admin.SessionSeatPlans.Holder.AdminBlock" xml:space="preserve"><value>Admin block (no attendee)</value></data>
+  <data name="Admin.SessionSeatPlans.OpenSeating" xml:space="preserve"><value>General admission</value></data>
+  <data name="Admin.SessionSeatPlans.State.Unavailable" xml:space="preserve"><value>Unavailable</value></data>
+  <data name="Admin.SessionSeatPlans.State.Reserved" xml:space="preserve"><value>Reserved</value></data>
+  <data name="Admin.SessionSeatPlans.State.Confirmed" xml:space="preserve"><value>Confirmed (checked in)</value></data>
   <data name="Admin.SessionSeatPlans.Release" xml:space="preserve"><value>Release</value></data>
+  <!-- DEF-SEA-001 — the release confirmation: {0} seat, {1} holder. -->
+  <data name="Admin.SessionSeatPlans.Release.Title" xml:space="preserve"><value>Release this seat?</value></data>
+  <data name="Admin.SessionSeatPlans.Release.Message" xml:space="preserve"><value>Seat {0} is held by {1}. Releasing it frees the seat for someone else and cannot be undone. The attendee is notified.</value></data>
+  <data name="Admin.SessionSeatPlans.Release.Cancel" xml:space="preserve"><value>Keep the seat</value></data>
   <data name="Admin.SessionSeatPlans.Released" xml:space="preserve"><value>Reservation released.</value></data>
   <data name="Admin.SessionSeatPlans.Summary" xml:space="preserve"><value>{0} active reservation(s)</value></data>
 

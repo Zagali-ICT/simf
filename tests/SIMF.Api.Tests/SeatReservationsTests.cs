@@ -11,6 +11,7 @@ using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Sessions;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Domain.Programme;
 using SIMF.Domain.SeatReservations;
 using SIMF.Infrastructure.Persistence;
@@ -1205,6 +1206,151 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(new[] { "VIP", "A" }, snapshot.RowLabels);
         Assert.Equal(new[] { 2, 6 }, snapshot.SeatCounts);
         Assert.Equal(8, snapshot.LayoutCapacity);
+
+    [Fact]
+    public async Task Seat_plan_list_names_the_holder_and_ships_the_real_status_and_check_in()
+    {
+        // DEF-SEA-001 — the Control Panel seat plan releases a live attendee's
+        // seat, so its rows must say WHO holds each seat; the projection carried
+        // no identity at all. A11 — the same projection dropped Status and
+        // CheckedIn, putting the record defaults (Pending / false) on the wire
+        // even though the row is Approved and the holder had checked in.
+        var (session, hall) = await SeedSessionWithLayoutAsync(
+            new[] { "A" }, seatsPerRow: 4);
+        var visitor = await SignInApprovedVisitorAsync();
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var pick = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
+            new ReserveSeatRequest { RowLabel = "A", SeatNumber = 2 }, visitor);
+        Assert.Equal(HttpStatusCode.OK, pick.StatusCode);
+
+        Guid holderId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            holderId = (await db.SeatReservations
+                .SingleAsync(r => r.SessionId == session.Id))
+                .ReservedForUserId!.Value;
+            db.UserProfiles.Add(new UserProfile
+            {
+                Id = Guid.NewGuid(),
+                UserId = holderId,
+                Name = "Faisal Al-Harbi",
+                NameArabic = "فيصل الحربي",
+                CreatedAt = DateTimeOffset.UtcNow,
+            });
+            // An OPEN attendance row = the holder scanned in at the hall gate,
+            // which is exactly what "confirmed" means on the seat plan.
+            db.HallAttendances.Add(new HallAttendance
+            {
+                Id = Guid.NewGuid(),
+                SessionId = session.Id,
+                HallId = hall.Id,
+                UserId = holderId,
+                Method = AttendanceMethod.QrScan,
+                Enter = DateTimeOffset.UtcNow,
+                CreatedAt = DateTimeOffset.UtcNow,
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var list = await PostAuthAsync(
+            $"/api/v1/admin/sessions/{session.Id}/seats/list",
+            new GridQuery { Top = 50 }, admin);
+        Assert.Equal(HttpStatusCode.OK, list.StatusCode);
+        var page = (await list.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<SeatPlanCell>>>())!.Data!;
+
+        var cell = Assert.Single(page.Items);
+        Assert.Equal(holderId, cell.HolderUserId);
+        Assert.Equal("Faisal Al-Harbi", cell.HolderName);
+        Assert.Equal("فيصل الحربي", cell.HolderNameArabic);
+        // A11 — real values, not the record defaults.
+        Assert.Equal(BookingStatus.Approved, cell.Status);
+        Assert.True(cell.CheckedIn);
+    }
+
+    [Fact]
+    public async Task Seat_plan_list_carries_the_vvip_guest_note_and_no_holder_for_an_admin_block()
+    {
+        // DEF-SEA-001 — an admin block has no registration, so the plan's
+        // "held by" reads the D-771 guest note instead of an attendee name, and
+        // CheckedIn stays false (nobody to check in).
+        var (session, _) = await SeedSessionWithLayoutAsync(
+            new[] { "A" }, seatsPerRow: 3);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var block = await PostAuthAsync(
+            $"/api/v1/admin/sessions/{session.Id}/seats/reserve-seat",
+            new AdminReserveSeatRequest
+            {
+                RowLabel = "A",
+                SeatNumber = 1,
+                GuestHint = "Reserved for the Minister",
+                GuestHintArabic = "محجوز لمعالي الوزير",
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, block.StatusCode);
+
+        var list = await PostAuthAsync(
+            $"/api/v1/admin/sessions/{session.Id}/seats/list",
+            new GridQuery { Top = 50 }, admin);
+        var page = (await list.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<SeatPlanCell>>>())!.Data!;
+
+        var cell = Assert.Single(page.Items);
+        Assert.Null(cell.HolderUserId);
+        Assert.Equal(string.Empty, cell.HolderName);
+        Assert.Equal("Reserved for the Minister", cell.GuestHint);
+        Assert.Equal("محجوز لمعالي الوزير", cell.GuestHintArabic);
+        Assert.Equal(SeatReservationKind.AdminReservedRow, cell.Kind);
+        Assert.False(cell.CheckedIn);
+    }
+
+    [Fact]
+    public async Task Every_create_path_writes_Approved_and_never_stamps_a_review()
+    {
+        // A9 — the D-227 approval queue is gone (owner, 2026-07-18). Lock the
+        // as-built truth the docs now state: no production path writes Pending or
+        // Rejected, ReviewedBy/ReviewedAt stay null until a RELEASE stamps them,
+        // and RejectionReason is never written at all. If an approval step is
+        // ever restored this test is the thing that must change with it.
+        var (assigned, _) = await SeedSessionWithLayoutAsync(
+            new[] { "A" }, seatsPerRow: 3);
+        var open = await SeedOpenSeatingSessionAsync(capacity: 10);
+        var picker = await SignInApprovedVisitorAsync();
+        var randomPicker = await SignInApprovedVisitorAsync();
+        var joiner = await SignInApprovedVisitorAsync();
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        Assert.Equal(HttpStatusCode.OK, (await PostAuthAsync(
+            $"/api/v1/app/sessions/{assigned.Id}/seats/reserve",
+            new ReserveSeatRequest { RowLabel = "A", SeatNumber = 1 },
+            picker)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await PostAuthAsync(
+            $"/api/v1/app/sessions/{assigned.Id}/seats/reserve-random",
+            new { }, randomPicker)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await PostAuthAsync(
+            $"/api/v1/admin/sessions/{assigned.Id}/seats/reserve-seat",
+            new AdminReserveSeatRequest { RowLabel = "A", SeatNumber = 3 },
+            admin)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await PostAuthAsync(
+            $"/api/v1/app/sessions/{open.Id}/seats/join", new { },
+            joiner)).StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var created = await db.SeatReservations.AsNoTracking()
+            .Where(r => r.SessionId == assigned.Id || r.SessionId == open.Id)
+            .ToListAsync();
+
+        Assert.Equal(4, created.Count);
+        Assert.All(created, r => Assert.Equal(BookingStatus.Approved, r.Status));
+        Assert.All(created, r => Assert.Null(r.ReviewedByUserId));
+        Assert.All(created, r => Assert.Null(r.ReviewedAt));
+        Assert.All(created, r => Assert.Null(r.RejectionReason));
+        Assert.DoesNotContain(created, r => r.Status == BookingStatus.Pending);
+        Assert.DoesNotContain(created, r => r.Status == BookingStatus.Rejected);
     }
 
     // -- Helpers --------------------------------------------------------------

@@ -1020,6 +1020,14 @@ void main() {
       await tester.pumpAndSettle();
       // The confirm dialog, then Join.
       expect(find.text('Join this session?'), findsOneWidget);
+      // A8 / DEF-SEA-003 — the confirm body must describe what actually
+      // happens. Bookings auto-confirm (2026-07-18), so it no longer says the
+      // request goes to the organisers for approval.
+      expect(find.textContaining('no approval'), findsOneWidget);
+      expect(
+        find.textContaining('sent to the organisers for approval'),
+        findsNothing,
+      );
       await tester.tap(find.widgetWithText(FilledButton, 'Join'));
       await tester.pumpAndSettle();
       expect(seatRepoHolder.joinCalls, 1);

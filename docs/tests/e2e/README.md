@@ -79,7 +79,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/speakers` | [`cp-admin-speakers.md`](cp-admin-speakers.md) | E2E-SPK-001..022 |
 | `/admin/speaker-presentations` | [`cp-admin-speaker-presentations.md`](cp-admin-speaker-presentations.md) | E2E-SPP-001..017 |
 | `/admin/sessions` | [`cp-admin-sessions.md`](cp-admin-sessions.md) | E2E-SES-001..030 |
-| `/admin/sessions/seat-plans` | [`cp-admin-sessions-seat-plans.md`](cp-admin-sessions-seat-plans.md) | E2E-SSP-001..016 |
+| `/admin/sessions/seat-plans` | [`cp-admin-sessions-seat-plans.md`](cp-admin-sessions-seat-plans.md) | E2E-SSP-001..019 |
 | `/admin/session-categories` | [`cp-admin-session-categories.md`](cp-admin-session-categories.md) | E2E-SCT-001..021 |
 | `/admin/programme-days` | [`cp-admin-programme-days.md`](cp-admin-programme-days.md) | E2E-PGD-001..018 |
 | `/admin/session-moderators` | [`cp-admin-session-moderators.md`](cp-admin-session-moderators.md) | E2E-SMD-001..018 |
@@ -251,6 +251,8 @@ API endpoints land (D-249). The per-screen design docs live under
 | #17 `sessionDetail` (`GET /app/programme/sessions/{id}` + `…/sessions/{id}/seats`) | [`mobile-session-detail.md`](mobile-session-detail.md) | E2E-MOB017-001..011 |
 | #18 `mySeat` (`GET /app/sessions/{id}/seats` + reserve/**move**/release) | [`mobile-my-seat.md`](mobile-my-seat.md) | E2E-MOB018-001..019 |
 | `seatPicker` (`GET …/seats` + `POST …/seats/reserve` / `reserve-random` / **`move`** — B1 change seat) — D-485 | [`mobile-seat-picker.md`](mobile-seat-picker.md) | E2E-MOBPICK-001..016 |
+| #18 `mySeat` (`GET /app/sessions/{id}/seats` + reserve/release) | [`mobile-my-seat.md`](mobile-my-seat.md) | E2E-MOB018-001..019 |
+| `seatPicker` (`GET …/seats` + `POST …/seats/reserve` / `reserve-random`) — D-485 | [`mobile-seat-picker.md`](mobile-seat-picker.md) | E2E-MOBPICK-001..011 |
 | `joinSessionHub` (`GET /app/programme/sessions`) — D-485 | [`mobile-join-hub.md`](mobile-join-hub.md) | E2E-MOBHUB-001..005 |
 | `savedSessions` (`GET /app/sessions/favourites` ∩ programme) — #8, D-584 | [`mobile-saved-sessions.md`](mobile-saved-sessions.md) | E2E-MOBSAVED-001..007 |
 | #19 `speakers` (`GET /app/speakers`) | [`mobile-speakers.md`](mobile-speakers.md) | E2E-MOB019-001..013 |

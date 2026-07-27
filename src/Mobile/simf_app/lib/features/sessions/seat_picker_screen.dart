@@ -19,11 +19,16 @@ import 'widgets/seat_map_async_view.dart';
 /// An assigned-seat session's selectable hall grid: tap an **available** seat to
 /// SELECT it (a confirmation chip appears), then commit with "Confirm my seat";
 /// or auto-pick one (owner 2026-07-25 — a two-step select→confirm replaces the
-/// former one-tap reserve). The booking is created **Pending** — the Control
-/// Panel approves it, and the approved/rejected notification arrives in the
-/// inbox. Reuses the shipped seat endpoints (`GET …/seats` to draw,
-/// `POST …/seats/reserve` / `…/reserve-random` to hold). On success it pops with
-/// `true` so the session page reloads to show the held reservation.
+/// former one-tap reserve). Reuses the shipped seat endpoints (`GET …/seats`
+/// to draw, `POST …/seats/reserve` / `…/reserve-random` to hold). It pops
+/// with `true` so the session page reloads and shows the reservation.
+///
+/// A8 (2026-07-27) — there is **no approval step**: the owner made bookings
+/// reservation-only on 2026-07-18, so the reservation is created **Approved**
+/// and the seat is held the moment it is confirmed. It stays a provisional
+/// hold — the server's pre-start sweep releases it if the visitor has not
+/// checked in by three minutes before the session starts, which is what the
+/// success dialog says.
 ///
 /// **B1 — change seat (owner request).** The same screen is the destination
 /// chooser for a seat CHANGE: when the seat map says the caller already holds a
