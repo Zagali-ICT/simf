@@ -110,6 +110,8 @@
 | E2E-SMR-029 | Requester cancels an AwaitingSpeaker meeting → the speaker's live action tokens are voided and the speaker is emailed the withdrawal (QA B13) | happy | P1 | authored ✓ (`B13_Cancelling_voids_the_live_speaker_tokens_and_emails_the_speaker`) |
 | E2E-SMR-030 | Requester cancels a still-**Pending** meeting → the speaker (who was never told about it) is emailed nothing — no requester name, no subject leaked (QA B13 r2) | error | P0 | authored ✓ (`B13_Cancelling_a_still_Pending_request_emails_the_speaker_nothing`) |
 | E2E-SMR-031 | The **Reopen request** row action reaches the API — the CP BFF proxy maps `POST /account/api/admin/speaker-meeting-requests/{id}/reopen`, so the button is not a silent 404 (QA B20 r2) | happy | P0 | authored ✓ (`SpeakerMeetingRequestsReopenProxyTests`, CP) |
+| E2E-SMR-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-SMR-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

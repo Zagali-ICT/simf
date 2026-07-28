@@ -34,6 +34,8 @@
 | E2E-AIS-012 | Configure routing — open the modal on a service, change provider + model, Save → "Routing updated." and the grid shows the new provider | happy | P0 | _to author_ |
 | E2E-AIS-013 | Routing auth — an admin without `AiPrompts.Edit` does not see the "Configure routing" action | auth | P1 | _to author_ |
 | E2E-AIS-014 | Routing absent — a service whose only prompt is inactive offers no "Configure routing" action (nothing to retarget) | edge | P2 | _to author_ |
+| E2E-AIS-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-AIS-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

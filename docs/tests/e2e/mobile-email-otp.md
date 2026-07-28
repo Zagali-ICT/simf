@@ -40,6 +40,8 @@
 | E2E-MOB006-006 | Non-digits rejected at input; no request fired for < 6 digits | edge | P1 | authored ✓ (digitsOnly + length gate) |
 | E2E-MOB006-007 | Network / 5xx → generic bilingual message, inputs kept | resilience | P1 | authored ✓ (widget test — NetworkUnavailable branch) |
 | E2E-MOB006-008 | RTL render (Arabic) — labels/subtitle/buttons mirror; the OTP field + email stay LTR | i18n | P1 | authored (screen) |
+| E2E-MOB006-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB006-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

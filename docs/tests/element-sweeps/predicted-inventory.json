@@ -1,0 +1,2174 @@
+[
+  {
+    "route": "/account/notifications",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Account/Notifications.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Delete",
+          "gating": "any-rows",
+          "enabled_at_zero_selection": false
+        }
+      ],
+      "toolbar_button_count": 1,
+      "disabled_at_zero_selection": [
+        "Delete"
+      ],
+      "row_actions": [
+        "Delete",
+        "Details"
+      ],
+      "columns": 4,
+      "sortable_columns": 0,
+      "filterable_columns": 0
+    }
+  },
+  {
+    "route": "/account/profile",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Account/Profile.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/account/totp-pairing",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Account/TotpPairing.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/admin/ai",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/AiDashboard.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/admin/ai/invocations",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/AiInvocationsLog.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [],
+      "toolbar_button_count": 0,
+      "disabled_at_zero_selection": [],
+      "row_actions": [],
+      "columns": 8,
+      "sortable_columns": 6,
+      "filterable_columns": 2
+    }
+  },
+  {
+    "route": "/admin/ai/prompts",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/AiPromptsList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Import",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 4,
+      "disabled_at_zero_selection": [
+        "Edit"
+      ],
+      "row_actions": [
+        "Delete",
+        "Details",
+        "Edit"
+      ],
+      "columns": 8,
+      "sortable_columns": 5,
+      "filterable_columns": 3
+    }
+  },
+  {
+    "route": "/admin/ai/services/{Feature}",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/AiServiceDetail.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/admin/ai/services",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/AiServicesConsole.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [],
+      "toolbar_button_count": 0,
+      "disabled_at_zero_selection": [],
+      "row_actions": [],
+      "columns": 6,
+      "sortable_columns": 3,
+      "filterable_columns": 1
+    }
+  },
+  {
+    "route": "/admin/announcements",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/Announcements.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [],
+      "toolbar_button_count": 0,
+      "disabled_at_zero_selection": [],
+      "row_actions": [],
+      "columns": 6,
+      "sortable_columns": 0,
+      "filterable_columns": 0
+    }
+  },
+  {
+    "route": "/admin/archive",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ArchiveList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Import",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 4,
+      "disabled_at_zero_selection": [
+        "Edit"
+      ],
+      "row_actions": [
+        "Delete",
+        "Details",
+        "Edit"
+      ],
+      "columns": 7,
+      "sortable_columns": 2,
+      "filterable_columns": 2
+    }
+  },
+  {
+    "route": "/admin/attendance",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/AttendanceDashboard.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [],
+      "toolbar_button_count": 0,
+      "disabled_at_zero_selection": [],
+      "row_actions": [],
+      "columns": 6,
+      "sortable_columns": 3,
+      "filterable_columns": 2
+    }
+  },
+  {
+    "route": "/admin/attendees",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/AttendeesList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [],
+      "toolbar_button_count": 0,
+      "disabled_at_zero_selection": [],
+      "row_actions": [],
+      "columns": 7,
+      "sortable_columns": 4,
+      "filterable_columns": 0
+    }
+  },
+  {
+    "route": "/admin/visitors/badge-batches",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/BadgeBatchesPage.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [],
+      "toolbar_button_count": 0,
+      "disabled_at_zero_selection": [],
+      "row_actions": [],
+      "columns": 6,
+      "sortable_columns": 0,
+      "filterable_columns": 0
+    }
+  },
+  {
+    "route": "/admin/badge-requests",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/BadgeRequestsList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [],
+      "toolbar_button_count": 0,
+      "disabled_at_zero_selection": [],
+      "row_actions": [],
+      "columns": 6,
+      "sortable_columns": 4,
+      "filterable_columns": 2
+    }
+  },
+  {
+    "route": "/admin/banners",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/BannersList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Import",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 4,
+      "disabled_at_zero_selection": [
+        "Edit"
+      ],
+      "row_actions": [
+        "Delete",
+        "Details",
+        "Edit"
+      ],
+      "columns": 5,
+      "sortable_columns": 5,
+      "filterable_columns": 1
+    }
+  },
+  {
+    "route": "/admin/bookings",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/BookingsList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 1,
+      "disabled_at_zero_selection": [],
+      "row_actions": [],
+      "columns": 5,
+      "sortable_columns": 4,
+      "filterable_columns": 2
+    }
+  },
+  {
+    "route": "/admin/booths",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/BoothsList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Import",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 4,
+      "disabled_at_zero_selection": [
+        "Edit"
+      ],
+      "row_actions": [
+        "Delete",
+        "Details",
+        "Edit"
+      ],
+      "columns": 7,
+      "sortable_columns": 4,
+      "filterable_columns": 4
+    }
+  },
+  {
+    "route": "/admin/business-meetings",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/BusinessMeetingsList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 2,
+      "disabled_at_zero_selection": [],
+      "row_actions": [
+        "Details"
+      ],
+      "columns": 7,
+      "sortable_columns": 6,
+      "filterable_columns": 3
+    }
+  },
+  {
+    "route": "/admin/configuration",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ConfigurationList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Import",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 4,
+      "disabled_at_zero_selection": [
+        "Edit"
+      ],
+      "row_actions": [
+        "Delete",
+        "Details",
+        "Edit"
+      ],
+      "columns": 4,
+      "sortable_columns": 1,
+      "filterable_columns": 3
+    }
+  },
+  {
+    "route": "/admin/contact-inquiries",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ContactInquiriesList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [],
+      "toolbar_button_count": 0,
+      "disabled_at_zero_selection": [],
+      "row_actions": [],
+      "columns": 5,
+      "sortable_columns": 1,
+      "filterable_columns": 0
+    }
+  },
+  {
+    "route": "/admin/content-blocks",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ContentBlocksList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Import",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 4,
+      "disabled_at_zero_selection": [
+        "Edit"
+      ],
+      "row_actions": [
+        "Delete",
+        "Details",
+        "Edit"
+      ],
+      "columns": 4,
+      "sortable_columns": 3,
+      "filterable_columns": 2
+    }
+  },
+  {
+    "route": "/admin/countries",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/CountriesList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Import",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 4,
+      "disabled_at_zero_selection": [
+        "Edit"
+      ],
+      "row_actions": [
+        "Delete",
+        "Details",
+        "Edit"
+      ],
+      "columns": 7,
+      "sortable_columns": 4,
+      "filterable_columns": 1
+    }
+  },
+  {
+    "route": "/admin/others/new",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/CreateOther.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/admin/admins/new",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/CreateUser.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/admin/visitors/new",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/CreateVisitor.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/admin/delegates",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/DelegatesPage.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/admin/delegation-availability",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/DelegationAvailabilityPage.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/admin/delegation-meetings",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/DelegationMeetingsList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [],
+      "toolbar_button_count": 0,
+      "disabled_at_zero_selection": [],
+      "row_actions": [],
+      "columns": 6,
+      "sortable_columns": 1,
+      "filterable_columns": 1
+    }
+  },
+  {
+    "route": "/admin/document-requests",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/DocumentRequestsList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [],
+      "toolbar_button_count": 0,
+      "disabled_at_zero_selection": [],
+      "row_actions": [],
+      "columns": 6,
+      "sortable_columns": 3,
+      "filterable_columns": 1
+    }
+  },
+  {
+    "route": "/admin/email/templates",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/EmailTemplatesList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [],
+      "toolbar_button_count": 0,
+      "disabled_at_zero_selection": [],
+      "row_actions": [],
+      "columns": 5,
+      "sortable_columns": 0,
+      "filterable_columns": 0
+    }
+  },
+  {
+    "route": "/admin/exhibitors",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ExhibitorsList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Import",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 4,
+      "disabled_at_zero_selection": [
+        "Edit"
+      ],
+      "row_actions": [
+        "Delete",
+        "Details",
+        "Edit"
+      ],
+      "columns": 4,
+      "sortable_columns": 3,
+      "filterable_columns": 2
+    }
+  },
+  {
+    "route": "/admin/faq",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/FaqManager.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        }
+      ],
+      "toolbar_button_count": 2,
+      "disabled_at_zero_selection": [
+        "Edit"
+      ],
+      "row_actions": [
+        "Delete",
+        "Edit"
+      ],
+      "columns": 9,
+      "sortable_columns": 4,
+      "filterable_columns": 0
+    }
+  },
+  {
+    "route": "/admin/gates/operator",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/GateOperatorConsole.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/admin/gates",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/GatesList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Import",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 4,
+      "disabled_at_zero_selection": [
+        "Edit"
+      ],
+      "row_actions": [
+        "Delete",
+        "Details",
+        "Edit"
+      ],
+      "columns": 7,
+      "sortable_columns": 4,
+      "filterable_columns": 3
+    }
+  },
+  {
+    "route": "/admin/gates/dashboard",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/GatesOperationsDashboard.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/admin/hall-arrivals",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/HallArrivalsConsole.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/admin/hall-availability",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/HallAvailabilityPage.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/admin/halls/seat-layouts",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/HallSeatLayoutEditor.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/admin/halls",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/HallsList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Import",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 4,
+      "disabled_at_zero_selection": [
+        "Edit"
+      ],
+      "row_actions": [
+        "Delete",
+        "Details",
+        "Edit"
+      ],
+      "columns": 6,
+      "sortable_columns": 4,
+      "filterable_columns": 4
+    }
+  },
+  {
+    "route": "/admin/interests",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/InterestsList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Import",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 4,
+      "disabled_at_zero_selection": [
+        "Edit"
+      ],
+      "row_actions": [
+        "Delete",
+        "Details",
+        "Edit"
+      ],
+      "columns": 4,
+      "sortable_columns": 3,
+      "filterable_columns": 2
+    }
+  },
+  {
+    "route": "/admin/invitations",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/InvitationsList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 3,
+      "disabled_at_zero_selection": [
+        "Edit"
+      ],
+      "row_actions": [
+        "Delete",
+        "Details",
+        "Edit"
+      ],
+      "columns": 6,
+      "sortable_columns": 2,
+      "filterable_columns": 1
+    }
+  },
+  {
+    "route": "/admin/logs",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/LogsViewer.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/admin/media-library",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/MediaLibraryList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [],
+      "toolbar_button_count": 0,
+      "disabled_at_zero_selection": [],
+      "row_actions": [
+        "Details"
+      ],
+      "columns": 6,
+      "sortable_columns": 0,
+      "filterable_columns": 0
+    }
+  },
+  {
+    "route": "/admin/media",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/MediaList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Import",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 4,
+      "disabled_at_zero_selection": [
+        "Edit"
+      ],
+      "row_actions": [
+        "Delete",
+        "Details",
+        "Edit"
+      ],
+      "columns": 8,
+      "sortable_columns": 4,
+      "filterable_columns": 4
+    }
+  },
+  {
+    "route": "/admin/media-partners",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/MediaPartnersList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Import",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 4,
+      "disabled_at_zero_selection": [
+        "Edit"
+      ],
+      "row_actions": [
+        "Delete",
+        "Details",
+        "Edit"
+      ],
+      "columns": 4,
+      "sortable_columns": 2,
+      "filterable_columns": 1
+    }
+  },
+  {
+    "route": "/admin/meeting-tables",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/MeetingTablesList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 3,
+      "disabled_at_zero_selection": [
+        "Edit"
+      ],
+      "row_actions": [
+        "Delete",
+        "Edit"
+      ],
+      "columns": 8,
+      "sortable_columns": 0,
+      "filterable_columns": 0
+    }
+  },
+  {
+    "route": "/admin/news",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/NewsList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Import",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 4,
+      "disabled_at_zero_selection": [
+        "Edit"
+      ],
+      "row_actions": [
+        "Delete",
+        "Details",
+        "Edit"
+      ],
+      "columns": 7,
+      "sortable_columns": 3,
+      "filterable_columns": 4
+    }
+  },
+  {
+    "route": "/admin/operation-log",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/OperationLogViewer.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [],
+      "toolbar_button_count": 0,
+      "disabled_at_zero_selection": [],
+      "row_actions": [
+        "Details"
+      ],
+      "columns": 5,
+      "sortable_columns": 4,
+      "filterable_columns": 1
+    }
+  },
+  {
+    "route": "/admin/operations",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/OperationsToggles.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/admin/organisations",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/OrganisationsList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Import",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 4,
+      "disabled_at_zero_selection": [
+        "Edit"
+      ],
+      "row_actions": [
+        "Delete",
+        "Details",
+        "Edit"
+      ],
+      "columns": 6,
+      "sortable_columns": 3,
+      "filterable_columns": 5
+    }
+  },
+  {
+    "route": "/admin/organization-profile",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/OrganizationProfilePage.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/admin/others",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/OthersList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Copy",
+          "gating": "any-rows",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Delete",
+          "gating": "any-rows",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Duplicate",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Import",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Paste",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 8,
+      "disabled_at_zero_selection": [
+        "Copy",
+        "Delete",
+        "Duplicate",
+        "Edit"
+      ],
+      "row_actions": [
+        "Copy",
+        "Delete",
+        "Details",
+        "Duplicate",
+        "Edit"
+      ],
+      "columns": 3,
+      "sortable_columns": 3,
+      "filterable_columns": 2
+    }
+  },
+  {
+    "route": "/admin/others/pending",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/PendingOthers.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Approve",
+          "gating": "any-rows",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Reject",
+          "gating": "any-rows",
+          "enabled_at_zero_selection": false
+        }
+      ],
+      "toolbar_button_count": 2,
+      "disabled_at_zero_selection": [
+        "Approve",
+        "Reject"
+      ],
+      "row_actions": [],
+      "columns": 3,
+      "sortable_columns": 2,
+      "filterable_columns": 2
+    }
+  },
+  {
+    "route": "/admin/admins/pending",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/PendingStaff.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Approve",
+          "gating": "any-rows",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Reject",
+          "gating": "any-rows",
+          "enabled_at_zero_selection": false
+        }
+      ],
+      "toolbar_button_count": 2,
+      "disabled_at_zero_selection": [
+        "Approve",
+        "Reject"
+      ],
+      "row_actions": [],
+      "columns": 3,
+      "sortable_columns": 2,
+      "filterable_columns": 2
+    }
+  },
+  {
+    "route": "/admin/visitors/pending",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/PendingVisitors.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Approve",
+          "gating": "any-rows",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Reject",
+          "gating": "any-rows",
+          "enabled_at_zero_selection": false
+        }
+      ],
+      "toolbar_button_count": 2,
+      "disabled_at_zero_selection": [
+        "Approve",
+        "Reject"
+      ],
+      "row_actions": [],
+      "columns": 3,
+      "sortable_columns": 2,
+      "filterable_columns": 2
+    }
+  },
+  {
+    "route": "/admin/print-bag",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/PrintBag.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/admin/profile-types/other",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ProfileTypes/OtherProfileTypesList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        }
+      ],
+      "toolbar_button_count": 2,
+      "disabled_at_zero_selection": [
+        "Edit"
+      ],
+      "row_actions": [
+        "Delete",
+        "Details",
+        "Edit"
+      ],
+      "columns": 6,
+      "sortable_columns": 2,
+      "filterable_columns": 2
+    }
+  },
+  {
+    "route": "/admin/profile-types/visitor",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ProfileTypes/VisitorProfileTypesList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        }
+      ],
+      "toolbar_button_count": 2,
+      "disabled_at_zero_selection": [
+        "Edit"
+      ],
+      "row_actions": [
+        "Delete",
+        "Details",
+        "Edit"
+      ],
+      "columns": 5,
+      "sortable_columns": 2,
+      "filterable_columns": 2
+    }
+  },
+  {
+    "route": "/admin/programme-days",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ProgrammeDaysList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        }
+      ],
+      "toolbar_button_count": 2,
+      "disabled_at_zero_selection": [
+        "Edit"
+      ],
+      "row_actions": [
+        "Delete",
+        "Details",
+        "Edit"
+      ],
+      "columns": 6,
+      "sortable_columns": 4,
+      "filterable_columns": 2
+    }
+  },
+  {
+    "route": "/admin/programme/timeline",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ProgrammeTimeline.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/admin/question-queue",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/QuestionQueueList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 1,
+      "disabled_at_zero_selection": [],
+      "row_actions": [],
+      "columns": 5,
+      "sortable_columns": 4,
+      "filterable_columns": 4
+    }
+  },
+  {
+    "route": "/admin/rating-config",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/RatingConfig.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        }
+      ],
+      "toolbar_button_count": 2,
+      "disabled_at_zero_selection": [
+        "Edit"
+      ],
+      "row_actions": [
+        "Delete",
+        "Edit"
+      ],
+      "columns": 19,
+      "sortable_columns": 6,
+      "filterable_columns": 0
+    }
+  },
+  {
+    "route": "/admin/ratings",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/RatingsList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 1,
+      "disabled_at_zero_selection": [],
+      "row_actions": [],
+      "columns": 7,
+      "sortable_columns": 2,
+      "filterable_columns": 1
+    }
+  },
+  {
+    "route": "/admin/regions",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/RegionsList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        }
+      ],
+      "toolbar_button_count": 2,
+      "disabled_at_zero_selection": [
+        "Edit"
+      ],
+      "row_actions": [
+        "Delete",
+        "Details",
+        "Edit"
+      ],
+      "columns": 4,
+      "sortable_columns": 3,
+      "filterable_columns": 3
+    }
+  },
+  {
+    "route": "/admin/reset-2fa",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ResetTwoFactor.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/admin/roles/{RoleId:guid}/permissions",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/RolePermissionsEditor.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/admin/roles",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/RolesList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Import",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 4,
+      "disabled_at_zero_selection": [
+        "Edit"
+      ],
+      "row_actions": [
+        "Delete",
+        "Details",
+        "Edit"
+      ],
+      "columns": 4,
+      "sortable_columns": 2,
+      "filterable_columns": 1
+    }
+  },
+  {
+    "route": "/admin/ops/services",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ServicesMonitor.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [],
+      "toolbar_button_count": 0,
+      "disabled_at_zero_selection": [],
+      "row_actions": [],
+      "columns": 7,
+      "sortable_columns": 0,
+      "filterable_columns": 0
+    }
+  },
+  {
+    "route": "/admin/session-categories",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionCategoriesList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Import",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 4,
+      "disabled_at_zero_selection": [
+        "Edit"
+      ],
+      "row_actions": [
+        "Delete",
+        "Details",
+        "Edit"
+      ],
+      "columns": 4,
+      "sortable_columns": 4,
+      "filterable_columns": 2
+    }
+  },
+  {
+    "route": "/admin/sessions/live-hall",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionLiveHall.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/sessions/{SessionId:guid}/moderate",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionModerationDesk.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/admin/session-moderators",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionModeratorsList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 2,
+      "disabled_at_zero_selection": [],
+      "row_actions": [],
+      "columns": 4,
+      "sortable_columns": 2,
+      "filterable_columns": 1
+    }
+  },
+  {
+    "route": "/admin/sessions/seat-plans",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionSeatPlan.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/admin/sessions",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionsList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Import",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 4,
+      "disabled_at_zero_selection": [
+        "Edit"
+      ],
+      "row_actions": [
+        "Delete",
+        "Details",
+        "Edit"
+      ],
+      "columns": 9,
+      "sortable_columns": 4,
+      "filterable_columns": 1
+    }
+  },
+  {
+    "route": "/admin/session-summaries",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionSummariesList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 1,
+      "disabled_at_zero_selection": [],
+      "row_actions": [],
+      "columns": 3,
+      "sortable_columns": 1,
+      "filterable_columns": 1
+    }
+  },
+  {
+    "route": "/admin/site-settings",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SiteSettingsPage.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/admin/speaker-availability",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SpeakerAvailabilityPage.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/admin/speaker-meeting-requests",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SpeakerMeetingRequestsList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 1,
+      "disabled_at_zero_selection": [],
+      "row_actions": [],
+      "columns": 6,
+      "sortable_columns": 5,
+      "filterable_columns": 3
+    }
+  },
+  {
+    "route": "/admin/speaker-presentations",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SpeakerPresentationsList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 1,
+      "disabled_at_zero_selection": [],
+      "row_actions": [],
+      "columns": 3,
+      "sortable_columns": 3,
+      "filterable_columns": 2
+    }
+  },
+  {
+    "route": "/admin/speakers",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SpeakersList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Import",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 4,
+      "disabled_at_zero_selection": [
+        "Edit"
+      ],
+      "row_actions": [
+        "Delete",
+        "Details",
+        "Edit"
+      ],
+      "columns": 5,
+      "sortable_columns": 3,
+      "filterable_columns": 1
+    }
+  },
+  {
+    "route": "/admin/sponsors",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SponsorsList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Import",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 4,
+      "disabled_at_zero_selection": [
+        "Edit"
+      ],
+      "row_actions": [
+        "Delete",
+        "Details",
+        "Edit"
+      ],
+      "columns": 5,
+      "sortable_columns": 4,
+      "filterable_columns": 1
+    }
+  },
+  {
+    "route": "/admin/statistics",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/StatisticsDashboard.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/admin/themes",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ThemesList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Import",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 4,
+      "disabled_at_zero_selection": [
+        "Edit"
+      ],
+      "row_actions": [
+        "Delete",
+        "Details",
+        "Edit"
+      ],
+      "columns": 6,
+      "sortable_columns": 3,
+      "filterable_columns": 1
+    }
+  },
+  {
+    "route": "/admin/admins",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/UsersList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Copy",
+          "gating": "any-rows",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Delete",
+          "gating": "any-rows",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Duplicate",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Import",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Paste",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 8,
+      "disabled_at_zero_selection": [
+        "Copy",
+        "Delete",
+        "Duplicate",
+        "Edit"
+      ],
+      "row_actions": [
+        "Copy",
+        "Delete",
+        "Details",
+        "Duplicate",
+        "Edit"
+      ],
+      "columns": 5,
+      "sortable_columns": 3,
+      "filterable_columns": 2
+    }
+  },
+  {
+    "route": "/admin/venue-map",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/VenueMapList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Import",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 4,
+      "disabled_at_zero_selection": [
+        "Edit"
+      ],
+      "row_actions": [
+        "Delete",
+        "Details",
+        "Edit"
+      ],
+      "columns": 4,
+      "sortable_columns": 2,
+      "filterable_columns": 1
+    }
+  },
+  {
+    "route": "/admin/visitors/vip/export",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/VipExport.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [],
+      "toolbar_button_count": 0,
+      "disabled_at_zero_selection": [],
+      "row_actions": [],
+      "columns": 10,
+      "sortable_columns": 2,
+      "filterable_columns": 1
+    }
+  },
+  {
+    "route": "/admin/visitors/vip",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/VipRegistration.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        }
+      ],
+      "toolbar_button_count": 2,
+      "disabled_at_zero_selection": [
+        "Edit"
+      ],
+      "row_actions": [
+        "Edit"
+      ],
+      "columns": 4,
+      "sortable_columns": 0,
+      "filterable_columns": 0
+    }
+  },
+  {
+    "route": "/admin/vips",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/VipsList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 1,
+      "disabled_at_zero_selection": [],
+      "row_actions": [],
+      "columns": 4,
+      "sortable_columns": 0,
+      "filterable_columns": 0
+    }
+  },
+  {
+    "route": "/admin/visitors",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/VisitorsList.razor",
+    "kind": "grid",
+    "predicted": {
+      "toolbar_buttons": [
+        {
+          "action": "Add",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Copy",
+          "gating": "any-rows",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Delete",
+          "gating": "any-rows",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Duplicate",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Edit",
+          "gating": "one-row",
+          "enabled_at_zero_selection": false
+        },
+        {
+          "action": "Export",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Import",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        },
+        {
+          "action": "Paste",
+          "gating": "always",
+          "enabled_at_zero_selection": true
+        }
+      ],
+      "toolbar_button_count": 8,
+      "disabled_at_zero_selection": [
+        "Copy",
+        "Delete",
+        "Duplicate",
+        "Edit"
+      ],
+      "row_actions": [
+        "Copy",
+        "Delete",
+        "Details",
+        "Duplicate",
+        "Edit"
+      ],
+      "columns": 3,
+      "sortable_columns": 3,
+      "filterable_columns": 2
+    }
+  },
+  {
+    "route": "/forgot-password",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Auth/ForgotPassword.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/auth/pending",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Auth/PendingApproval.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/login/recovery",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Auth/RecoveryCodeVerify.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/auth/rejected",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Auth/Rejected.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/reset-password",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Auth/ResetPassword.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/login",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Auth/SignIn.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/login/totp",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Auth/TotpVerify.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/Error",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Error.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Home.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/m/{Module}",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/ModulePlaceholder.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/not-found",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/NotFound.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  },
+  {
+    "route": "/not-permitted",
+    "file": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/NotPermitted.razor",
+    "kind": "bespoke",
+    "predicted": null,
+    "note": "no <SimfDataGrid> — needs a hand-authored expected inventory"
+  }
+]

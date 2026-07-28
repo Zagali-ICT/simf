@@ -73,6 +73,8 @@
 | E2E-DLM-017 | Binding a **meeting table** already booked at that time is a 409; a touching window is allowed (A34) | conflict | P1 | authored ✓ (`A34_binding_a_table_already_booked_at_that_time_is_a_conflict`, API) |
 | E2E-DLM-018 | An unconfirmed (AwaitingConfirmation) delegation meeting is swept back to Pending once its confirm link expires, freeing the hall slot (B10) | edge | P1 | authored ✓ (`DelegationMeetingExpiryWorkerTests`, API) |
 | E2E-DLM-019 | The **target** delegation can DECLINE from the app; the row becomes Rejected and the hall slot is released (B8) | happy | P1 | authored ✓ (`B8_a_target_member_can_decline_an_awaiting_meeting`, API) |
+| E2E-DLM-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-DLM-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

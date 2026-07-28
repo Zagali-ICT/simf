@@ -38,6 +38,8 @@
 | E2E-HAV-006 | Only Meeting/General halls appear in the picker | edge | P1 | authored ✓ (browser) |
 | E2E-HAV-007 | RTL / Arabic render — page + add form mirror | i18n | P1 | authored ✓ (browser) |
 | E2E-HAV-008 | QA A36 — the gate is the hall-scoped `HallAvailability` pair, not the speaker desk | auth | P0 | authored ✓ (HallAvailabilityTests `A36_hall_availability_is_gated_by_its_own_permission_not_the_speaker_desk`) |
+| E2E-HAV-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-HAV-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

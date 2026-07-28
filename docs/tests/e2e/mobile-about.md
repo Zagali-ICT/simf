@@ -28,6 +28,8 @@
 | E2E-MOB037-002 | Unseeded key (404) → static fallback paragraph; themes still render | edge | P1 | authored ✓ (screen `a 404 … falls back to the static paragraph`) |
 | E2E-MOB037-003 | Server error → degrades to static content (no error screen) | edge | P1 | authored ✓ (screen `a server error also degrades to the static content`) |
 | E2E-MOB037-004 | RTL: the theme number sits to the right (inline start) of its title | rtl | P1 | authored ✓ (screen `Arabic: the theme number sits to the right of its title`) |
+| E2E-MOB037-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB037-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

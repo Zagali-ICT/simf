@@ -42,6 +42,8 @@
 | E2E-RPM-013 | RTL / Arabic render — page mirrors, headings + checkboxes + buttons in Arabic | i18n | P1 | _to author_ |
 | E2E-RPM-014 | Security team baseline: editor shows exactly the 8 access-control codes ticked (read-only); a holder sees only gates / attendance nav (D-752) | guard | P1 | _to author_ |
 | E2E-RPM-015 | Scientific team baseline: editor shows exactly the 31 programme codes ticked (read-only); a holder sees only sessions / questions / summaries / ratings nav (D-752) | guard | P1 | _to author_ |
+| E2E-RPM-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-RPM-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

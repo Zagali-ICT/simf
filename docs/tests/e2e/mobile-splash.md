@@ -69,6 +69,8 @@
 | E2E-MOB001-015 | Soft update + snooze — "لاحقاً" continues; the same version stays quiet for 3 days; a newer version prompts again (D-736) | happy | P1 | authored ✓ (checker snooze tests + screen Later/scrim tests) |
 | E2E-MOB001-016 | Fail-open — API stopped/unreachable → normal boot, no dialog (D-736) | resilience | P0 | authored ✓ (`ServerAppUpdateChecker` test) |
 | E2E-MOB001-017 | Anti-brick — `minVersion` set but `storeUrl` EMPTY → no gate, normal boot (D-736) | resilience | P0 | authored ✓ (`ServerAppUpdateChecker` test) |
+| E2E-MOB001-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB001-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

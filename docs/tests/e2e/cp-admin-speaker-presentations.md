@@ -59,6 +59,8 @@
 | E2E-SPP-015 | Per-column filter — typing in the File / Session column filter narrows the grid (client-side, Skip→0) | happy | P1 | _to author_ |
 | E2E-SPP-016 | Column sort toggles — clicking the File column header sorts asc then desc (client-side) | happy | P2 | _to author_ |
 | E2E-SPP-017 | Excel export (D-356) — toolbar Export downloads an .xlsx of the selected speaker's presentations (whole set vs selected rows) | happy | P1 | _to author_ |
+| E2E-SPP-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-SPP-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

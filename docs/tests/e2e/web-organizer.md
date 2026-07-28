@@ -39,6 +39,8 @@
 | E2E-WORG-005 | RTL / Arabic — mirrors right-to-left, hero photo on the LEFT, Arabic card content (وزارة الدفاع / القوات البحرية الملكية السعودية) | i18n | P0 | _to author_ |
 | E2E-WORG-006 | LTR / English mirror — hero photo flips RIGHT; breadcrumb "Home / About / The organizer"; English card content | i18n | P1 | _to author_ |
 | E2E-WORG-007 | Responsive — the two cards stack to one column below 720px; no horizontal overflow at 1440/1024/768/390 in both languages | responsive | P1 | _to author_ |
+| E2E-WORG-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-WORG-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

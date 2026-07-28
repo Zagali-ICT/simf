@@ -29,9 +29,17 @@ namespace SIMF.ControlPanel.Tests;
 
 public sealed class E2eCatalogueIntegrityTests
 {
-    /// <summary>A Coverage-matrix row: the id is the first cell of the row.</summary>
+    /// <summary>A Coverage-matrix row: the id is the first cell of the row.
+    ///
+    /// <para>The namespace may itself contain a hyphen — two-segment ids like
+    /// <c>E2E-BF-01-001</c> (business flows) and the generated element-sweep ids
+    /// <c>E2E-HAL-ELS-001</c>. This pattern deliberately matches
+    /// <c>tools/testbook/build_testbook.py</c>'s <c>ID_RE</c>: if this test reads
+    /// fewer ids than the projector does, it stops guarding exactly the ids the
+    /// projector will silently merge, which is the whole point of the
+    /// check.</para></summary>
     private static readonly Regex MatrixRow =
-        new(@"^\|\s*(E2E-[A-Z0-9]+-\d+)\s*\|", RegexOptions.Compiled);
+        new(@"^\|\s*(E2E-[A-Z0-9][A-Z0-9-]*-\d{3,4})\s*\|", RegexOptions.Compiled);
 
     /// <summary>The index, the template and the execution playbook are not
     /// per-page catalogues and carry ids only as references.</summary>

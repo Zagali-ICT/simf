@@ -45,6 +45,8 @@
 | E2E-MOB034-009 | **Item #35 — only the summary video:** `summaryVideoUrl` set, `recordingUrl` null → only the "ملخص الجلسة (فيديو)" player shows; the recording label is absent | happy | P1 | authored ✓ (on-device) |
 | E2E-MOB034-010 | **Item #35 — neither video:** both null → NO video players; both labels absent and the layout matches the pre-item-35 render (golden unchanged) | edge | P0 | authored ✓ (screen `hides both video players when the summary has no video urls`) |
 | E2E-MOB034-011 | **Item #27 — watch keep-alive:** a signed-in viewer watching a LONG recording / summary video here (no touch) is kept active by the shared player's 60s keep-alive, so the SessionGuard silently refreshes and NO idle "stay signed in / sign out" timeout overlay appears; still bounded by the 24h cap; leaving cancels it | happy | P1 | authored ✓ (unit `live_video_player_test.dart` — mount marks + 60s tick re-marks + dispose cancels; multi-minute watch is device) |
+| E2E-MOB034-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB034-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

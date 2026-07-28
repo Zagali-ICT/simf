@@ -652,6 +652,8 @@ Scenario: binding a gate to a missing/inactive hall is a clean 400
 | E2E-GAT-027 | Assigning an ineligible operator id via the API → `GATE_ASSIGNMENT_INVALID` (400) naming the id | validation | P1 | _to author_ |
 | E2E-GAT-028 | A `Gates.Manage`-only admin sees populated profile-type / hall / operator lists (no silent empties) | auth | P1 | _to author_ |
 | E2E-GAT-029 | The Details view lists the assigned operators by name + email | crud | P2 | _to author_ |
+| E2E-GAT-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-GAT-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ### E2E-GAT-025 — the picker offers app staff, not CP admins
 

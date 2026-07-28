@@ -57,6 +57,8 @@
 | E2E-MOB111-009 | A published summary stays hidden until the session has STARTED (clock-based, S-6 owner) — a future session's summary is not viewable; once it starts it shows | data | P1 | authored ✓ (API `SessionSummaryTests.GetSessionSummaryAsync_BeforeSessionStarts_ReturnsNull` + `.GetSessionSummaryAsync_AfterStart_ReturnsSummary`) |
 | E2E-MOB111-010 | The list shows ONLY sessions with a published summary — a not-yet-summarised session is excluded (owner 2026-07-14) | data | P0 | authored ✓ (screen `excludes a session with no published summary`) |
 | E2E-MOB111-011 | Programme has sessions but none summarised → the "no published summaries yet" empty state | empty | P1 | authored ✓ (screen `shows the "no summaries yet" empty state when the programme has sessions but none are summarised`) |
+| E2E-MOB111-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB111-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

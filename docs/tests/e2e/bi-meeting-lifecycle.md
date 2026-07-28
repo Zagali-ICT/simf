@@ -65,6 +65,8 @@
 | E2E-BML-014 | **15-min reminder** fires once for an Accepted meeting to both parties; not for Cancelled | Both | rule | P0 |
 | E2E-BML-015 | Receiver confirm link is single-use + expires (72h); a used/expired link → neutral invalid | Both | error | P1 |
 | E2E-BML-016 | Home → Meeting page lists ALL my requests with status; two top request buttons | Both | ux | P1 |
+| E2E-BML-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-BML-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

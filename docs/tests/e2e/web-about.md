@@ -58,6 +58,8 @@
 | E2E-WABT-009 | LTR / English mirror — under EN the hero photo flips to the RIGHT with the text on the LEFT; values/pillars/stats read English | i18n | P1 | _to author_ |
 | E2E-WABT-010 | Responsive — values 4→2→1 and pillars 3→2→1 at ≤900/≤520; intro stacks below 980; hero full-width below 720; no horizontal overflow at 1440/1024/768/390 in both languages | responsive | P1 | _to author_ |
 | E2E-WABT-011 | No-JS graceful — with JavaScript disabled every `ln-reveal` section renders at full opacity (content never hidden) | resilience | P2 | _to author_ |
+| E2E-WABT-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-WABT-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

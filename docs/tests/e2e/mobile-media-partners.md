@@ -32,6 +32,8 @@
 | E2E-MOB031-006 | Tab hub: tapping احدث المستجدات navigates to the news screen | nav | P1 | authored ✓ (screen `tapping the Latest-updates tab navigates to the news route`) |
 | E2E-MOB031-007 | Arabic/RTL: tabs lay out partners (right) → latest-updates (left) | rtl | P0 | authored ✓ (screen `lays the tabs partners→latest right-to-left in Arabic`) |
 | E2E-MOB031-008 | Pressing a partner card opens the logo full size (FR-LGO-003) | happy | P1 | authored ✓ (widget test) |
+| E2E-MOB031-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB031-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

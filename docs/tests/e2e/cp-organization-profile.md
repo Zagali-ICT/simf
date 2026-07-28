@@ -35,6 +35,8 @@
 | E2E-ORGP-012 | Hero video upload (D-768) — pick an mp4 → Upload → success toast; `backgroundVideoUrl` becomes the served `…/app/organization/hero-video.mp4` URL; the anonymous `GET …/hero-video.mp4` streams the bytes and honours a `Range` request (`206`); the app + website hero play it on Android | happy | P1 | authored ✓ (`OrganizationHeroVideoTests` upload→served-URL + anonymous stream + Range 206; app `hero_background_video_test` served-URL case) |
 | E2E-ORGP-013 | Hero video remove (D-768) — "Remove uploaded video" clears `backgroundVideoUrl` and the stream `GET …/hero-video.mp4` then returns `404`; a separately-pasted external/YouTube link is left intact | happy | P1 | authored ✓ (`OrganizationHeroVideoTests` remove→404 + URL cleared) |
 | E2E-ORGP-014 | Hero video validation + auth (D-768) — a non-video upload (e.g. `.html`) → `400 ORGANIZATION_PROFILE_INVALID`; a non-admin (no `OrganizationProfile.Manage`) upload → `403` | validation/auth | P1 | authored ✓ (`OrganizationHeroVideoTests` non-video 400 + non-admin 403) |
+| E2E-ORGP-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-ORGP-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

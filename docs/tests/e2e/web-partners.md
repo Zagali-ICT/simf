@@ -43,6 +43,8 @@
 | E2E-WPT-006 | RTL / Arabic ⇄ LTR / English — hero + bands mirror; Arabic content in AR, English in EN | i18n | P1 | _to author_ |
 | E2E-WPT-007 | Responsive — the two band strips scroll internally; no page horizontal overflow at 1440/1280/1024/768/390 both languages | responsive | P1 | _to author_ |
 | E2E-WPT-008 | Inbound wiring — the About-cluster nav "Partnerships" item and the About page CTA open `/partners` (not the old `#partners` anchor) | nav | P1 | _to author_ |
+| E2E-WPT-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-WPT-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

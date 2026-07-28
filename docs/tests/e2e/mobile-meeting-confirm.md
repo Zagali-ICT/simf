@@ -47,6 +47,8 @@
 | E2E-MOBMC-009 | Decline is refused for a non-member (403) / a non-awaiting meeting (409) | auth-gate / conflict | P0 | authored ✓ (`B8_a_member_of_another_delegation_cannot_decline`, `B8_declining_a_pending_meeting_is_a_conflict`, `B8_declining_twice_is_a_conflict`, API) |
 | E2E-MOBMC-010 | A30 — the screen names the DELEGATION meeting, so it is not confused with the website's speaker token page | i18n | P2 | authored ✓ (`meeting_confirm_screen_test.dart`, widget) |
 | E2E-MOBMC-011 | D2 — one member's decline retracts the prompt from the OTHER eligible members of the same delegation; the decliner is skipped | data | P0 | authored ✓ (`DelegationMeetingQaFixesTests.D2_*`, API) |
+| E2E-MOBMC-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOBMC-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

@@ -85,6 +85,8 @@
 | E2E-ATND-012 | Read-only surface — no Add/Edit/Delete/select; no POST/PUT/DELETE beyond the list call | function | P2 | _to author_ |
 | E2E-ATND-013 | RTL / Arabic render — banner, tiles, grid headers and nav mirror | i18n | P1 | _to author_ |
 | E2E-ATND-014 | Counts reflect live state — record an arrival, reload, the session's Live-now + the top-line move | happy | P1 | _to author_ |
+| E2E-ATND-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-ATND-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

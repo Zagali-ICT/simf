@@ -354,3 +354,14 @@ _Last reviewed:_ `2026-07-26` by `Claude` (DEF-MOD-001/002 — persisted `Questi
 _Last reviewed:_ `2026-07-26` by `Claude` (D-771 — `?status=` allow-list (Pending refused) + un-hide restores the prior status; added MOBMOD-008).
 _Last reviewed:_ `2026-07-27` by `Claude` (D-772 — the مرفوض tab returns desk-hidden rows only; Committee rejections and null-provenance rows are no longer readable from the desk; extended MOBMOD-008).
 _Last reviewed:_ `2026-07-27` by `SIMF Team` (FR-MOD-001 — `GET /app/sessions/moderated` + the جلساتي list on the moderator's home, and the session-detail desk action now needs a CONFIRMED per-session grant; FR-MOD-003 — the desk queue is drag-reorderable at last. Added MOBMOD-009/010).
+
+## Element sweep (WS1)
+
+Generated contract — see `tools/qa/element-sweep.js` and
+`docs/tests/element-sweeps/`.
+
+| ID | Scenario | Type | Priority | Status |
+|----|----------|------|----------|--------|
+| E2E-MOBMOD-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOBMOD-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
+

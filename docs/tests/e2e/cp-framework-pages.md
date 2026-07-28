@@ -49,6 +49,8 @@ same `PasswordHash`, `SecurityStamp` and 2FA columns, so it signs in identically
 | E2E-FRM-008 | `/not-found` renders in the shell with a way back | error | P1 | _to author_ |
 | E2E-FRM-009 | `/Error` renders in the shell and leaks no environment guidance | resilience | P2 | _to author_ |
 | E2E-FRM-010 | All three render correctly in Arabic RTL with no horizontal overflow | i18n | P1 | ✅ passed 2026-07-28 (`/not-permitted`) |
+| E2E-FRM-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-FRM-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

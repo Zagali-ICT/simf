@@ -57,6 +57,8 @@
 | E2E-CPBR-008 | RTL render: Arabic toggle mirrors page + Respond modal | i18n | P1 | _to author_ |
 | E2E-CPBR-009 | Decision notifies the requester (R-2) — Accept still applies the job title AND dispatches a BadgeUpdateDecided notification; Reject notifies without changing the title | happy | P1 | authored ✓ |
 | E2E-CPBR-010 | Duplicate-pending guard (R-4) — a second Pending badge request is 409 APP_REQUEST_DUPLICATE_PENDING | conflict | P1 | authored ✓ |
+| E2E-CPBR-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-CPBR-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

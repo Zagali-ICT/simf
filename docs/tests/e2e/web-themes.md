@@ -44,6 +44,8 @@
 | E2E-WTHM-007 | RTL / Arabic — mirrors right-to-left, image on the LEFT, tabs on the RIGHT with the gold bar on their inline-start (right) edge, Arabic theme text | i18n | P0 | _to author_ |
 | E2E-WTHM-008 | LTR / English mirror — image on the RIGHT, tabs on the LEFT with the gold bar on their inline-start (left) edge; breadcrumb "Home / About / Key themes" | i18n | P1 | _to author_ |
 | E2E-WTHM-009 | Responsive — below 860px the explorer stacks + tabs wrap horizontally; no horizontal overflow at 1440/1024/768/390 in both languages | responsive | P1 | _to author_ |
+| E2E-WTHM-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-WTHM-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

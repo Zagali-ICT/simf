@@ -741,6 +741,8 @@ _Last reviewed:_ 2026-07-26 by Claude (session-lifecycle QA package — A37 hall
 | Id | Scenario | Category | Priority | Status |
 |----|----------|----------|----------|--------|
 | E2E-HAL-031 | A "Seat layout" row action deep-links each hall to its seat-layout editor; it is hidden from an admin without `SeatLayouts.View` | happy | P0 | authored ✓ (`HallsListSeatLayoutActionTests`) |
+| E2E-HAL-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-HAL-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ### E2E-HAL-031 — jump from a hall row to its seat layout
 

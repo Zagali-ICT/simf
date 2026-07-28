@@ -48,6 +48,8 @@
 | E2E-DLG-013 | Batch-builder — Add appends a row; adding the same type merges its count; Remove drops a row; Generate disabled while the batch is empty | happy | P1 | authored ✓ (BulkBadgeGeneratorTests) |
 | E2E-DLG-014 | Batch-builder — Add with no type/count shows the "choose a type and a count" message and adds nothing | error | P1 | authored ✓ (BulkBadgeGeneratorTests) |
 | E2E-DLG-015 | Same generator surfaced on `/admin/visitors` "Bulk add" dialog posts the identical `bulk-generate` request | happy | P1 | authored ✓ (BulkBadgeGeneratorTests) |
+| E2E-DLG-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-DLG-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

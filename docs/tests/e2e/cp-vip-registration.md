@@ -38,6 +38,8 @@
 | E2E-VIPR-009 | New VIP opens the registration wizard section; Cancel returns to the list | happy | P1 | _to author_ |
 | E2E-VIPR-010 | Per-row Edit changes name / email / tier / photo / ID / welcome photo | happy | P0 | _to author_ |
 | E2E-VIPR-011 | Add/Edit affordances gated: no `RegisterOnsite`/`Edit` → buttons hidden | auth | P0 | _to author_ |
+| E2E-VIPR-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-VIPR-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

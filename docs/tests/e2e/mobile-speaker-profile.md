@@ -48,6 +48,8 @@
 | E2E-MOB020-020 | Arabic app falls back to the English `rank` in the hero when `rankArabic` is blank — intended, not a bug | i18n | P1 | _to author_ |
 | E2E-MOB020-021 | A failed meeting submit shows the **server's own** bilingual reason (QA A26): a duplicate-pending / slot-taken 409 no longer collapses onto "this speaker does not accept meeting requests"; a network failure still shows localized copy, never the raw dio string | error | P0 | authored ✓ (`meeting_request_sheet_test` — "QA A26 — a 409 surfaces the SERVER reason…" + "…a failure that never reached the server…") |
 | E2E-MOB020-022 | A 403 on meeting submit describes the **real** eligibility rule (QA A28): "Requesting a speaker meeting is not enabled for your account. Contact the SIMF team to enable it." / "طلب مقابلة المتحدّث غير مُفعَّل لحسابك. تواصل مع فريق الملتقى لتفعيله." — the stale VIP-only copy is gone (eligibility is the per-user `AllowsSpeakerMeeting` flag) | i18n | P0 | authored ✓ (`meeting_request_sheet_test` — "QA A28 — a 403 on submit describes the real eligibility rule…") |
+| E2E-MOB020-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB020-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

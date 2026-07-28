@@ -40,6 +40,8 @@
 | E2E-MOB029-009 | Card shows thumbnail (NewsImage asset) · gold date · title; no excerpt | happy | P1 | authored ✓ (screen `renders…a news card` + `…thumbnail from the NewsImage asset route`) |
 | E2E-MOB029-010 | No uploaded NewsImage / fetch fails → icon fall-back | edge | P1 | authored ✓ (thumbnail `errorBuilder` → `_NewsImageFallback`) |
 | E2E-MOB029-011 | Arabic/RTL: thumbnail at inline-end (LEFT), text at inline-start (RIGHT) | i18n | P0 | authored ✓ (screen `lays the thumbnail left of the text in Arabic`) |
+| E2E-MOB029-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB029-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

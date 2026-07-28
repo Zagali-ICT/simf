@@ -48,6 +48,8 @@
 | E2E-OTH-023 | Presentation toggle: switch to full-page + persists across reload (D-353) | happy | P1 | _to author_ |
 | E2E-OTH-024 | Full-page mode: Add (walk-in) / Edit / Details take over the content area, Save returns to grid (D-353) | happy | P1 | _to author_ |
 | E2E-OTH-027 | Edit-email guard on the shared EditAccountForm (Scope=others, D-214 + #24) — duplicate → 409 `ADMIN_EMAIL_ALREADY_REGISTERED` inline SimfAlert (form stays open); a successful change rolls stamp + revokes sessions + marks unverified; bad format → 400 (golden Other email edit is E2E-OTH-005) | error | P1 | _to author_ |
+| E2E-OTH-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-OTH-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

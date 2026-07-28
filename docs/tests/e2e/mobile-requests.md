@@ -68,6 +68,8 @@
 | E2E-REQ-015 | B11 — withdrawing an AwaitingConfirmation delegation meeting sets Cancelled and releases the hall + table | happy | P0 | authored ✓ (`MyRequestsTests`, API) |
 | E2E-REQ-016 | B11 — withdrawing an already-confirmed delegation meeting is 409 and leaves it Accepted; another user's is 404 | conflict / auth | P1 | authored ✓ (`MyRequestsTests`, API) |
 | E2E-REQ-017 | D1 — withdrawing an AwaitingConfirmation delegation meeting retracts the target delegation's "please confirm" card; withdrawing a Pending one tells them nothing | data | P0 | authored ✓ (`DelegationMeetingQaFixesTests.D1_*`, API) |
+| E2E-REQ-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-REQ-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

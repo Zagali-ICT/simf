@@ -29,6 +29,8 @@
 | E2E-SAV-005 | Auth gate — admin lacking `SpeakerMeetingRequests.Manage` → `/not-permitted`; nav item hidden | auth | P0 | _to author_ (gate verified by CpNavigationPermissionTests) |
 | E2E-SAV-006 | RTL / Arabic render — page + add form mirror | i18n | P1 | _to author_ |
 | E2E-SAV-007 | Forum-day bound - a window outside the event days is rejected; the Start/End pickers carry the forum min/max (D-753) | error | P0 | authored ✓ (SpeakerAvailabilityTests, API) |
+| E2E-SAV-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-SAV-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

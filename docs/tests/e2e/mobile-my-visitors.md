@@ -338,3 +338,14 @@ renamed زوار جناحي / My Booth Visitors, added the `SimfPageNote` separa
 from My Contacts, refreshed the empty-state copy and re-locked the golden;
 E2E-MOBMYVIS-008. Earlier: `2026-07-20` (bilingual job title,
 E2E-MOBMYVIS-007) and `2026-07-04` by `SIMF Team`.
+
+## Element sweep (WS1)
+
+Generated contract — see `tools/qa/element-sweep.js` and
+`docs/tests/element-sweeps/`.
+
+| ID | Scenario | Type | Priority | Status |
+|----|----------|------|----------|--------|
+| E2E-MOBMYVIS-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOBMYVIS-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
+

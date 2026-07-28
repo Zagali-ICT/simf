@@ -57,6 +57,8 @@
 | E2E-GOP-015 | DEF-CHK-004 — a scan bound to a live session, and any perimeter-gate scan, carry no advisory | happy | P1 | authored ✓ (API `Hall_door_gate_bound_to_a_live_session_carries_no_notice`, `Perimeter_gate_carries_no_notice`) |
 | E2E-GOP-016 | DEF-CHK-004 — fixed **Out** gate scanned for someone with no open attendance row → Allowed **plus** the amber advisory | edge | P1 | authored ✓ (API `Fixed_out_gate_with_no_open_row_carries_the_advisory_notice`, `Fixed_out_gate_that_closes_an_open_row_carries_no_notice`) |
 | E2E-GOP-017 | DEF-CHK-004 — a check-IN whose attendance insert the store rejects → Allowed, and the chain reports "not recorded" (not success) | resilience | P1 | authored ✓ (API `Gate_door_arrival_that_persisted_no_row_does_not_report_attendance_recorded`) |
+| E2E-GOP-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-GOP-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

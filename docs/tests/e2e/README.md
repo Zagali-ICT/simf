@@ -337,7 +337,10 @@ being quoted in planning as if current.
 - **Pages catalogued:** 183 (93 Control Panel + 70 mobile + 19 Website + 1
   system-wide). One of the 183 — `cp-admin-companies.md` — is **retired**: its
   route was renamed away and it now carries no live scenarios.
-- **Total scenarios:** 2486 Coverage-matrix rows, every id distinct.
+- **Total scenarios:** 2858 Coverage-matrix rows, every id distinct. That
+  includes the **362** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
+  per live page — see `tools/qa/generate_els_rows.py`); the hand-authored
+  functional total is 2496.
 - **Authored:** all pages. The D-133 "pending" stubs are fully authored, and
   every event-module and P2–P5 page added since has its own file.
 - **Execution:** the canonical run today is a Chrome DevTools MCP browser pass

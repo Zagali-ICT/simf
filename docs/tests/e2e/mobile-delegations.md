@@ -74,6 +74,8 @@
 | E2E-DEL-009 | RTL render (Arabic) — header, stats, search hint, cards mirror right-to-left; head label "رئيس الوفد" | i18n | P1 | _to author_ |
 | E2E-DEL-010 | Tap a stats-strip flag → list narrows to that country; tapped flag ringed; active-filter chip appears; tapping the chip (or the flag again) restores every country; flag + search filters compose | happy | P1 | _to author_ |
 | E2E-DEL-011 | Tappable cards — an entitled account (`allowsDelegationMeeting`) taps a card → the delegation request sheet opens with that country fixed; a guest / non-entitled user's cards are plain (not tappable) (bi-meeting rework) | happy | P0 | authored ✓ (`delegations_screen_test.dart`, widget — guest = non-tappable) |
+| E2E-DEL-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-DEL-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

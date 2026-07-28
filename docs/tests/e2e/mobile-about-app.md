@@ -112,3 +112,14 @@ Scenario: Airplane mode / server down yields an honest error, never a fake resul
 ---
 
 _Last reviewed:_ `2026-07-10` by `SIMF Team` (D-736 — real installed version + the manual Check-for-updates row; appended E2E-MOB207-004..006).
+
+## Element sweep (WS1)
+
+Generated contract — see `tools/qa/element-sweep.js` and
+`docs/tests/element-sweeps/`.
+
+| ID | Scenario | Type | Priority | Status |
+|----|----------|------|----------|--------|
+| E2E-MOB207-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB207-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
+

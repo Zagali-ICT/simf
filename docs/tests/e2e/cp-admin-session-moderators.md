@@ -58,6 +58,8 @@
 | E2E-SMD-018 | Excel export — toolbar Export downloads an .xlsx of the grants (whole grid vs selected rows) (D-356) | happy | P1 | _to author_ |
 | E2E-SMD-022 | DEF-MOD-005 — an INELIGIBLE account is never offered and is refused server-side (`SESSION_MODERATOR_NOT_ELIGIBLE`) | error | P0 | _to author_ |
 | E2E-SMD-020 | DEF-MOD-005 — the picker lookup carries the `SessionModerators.Assign` gate | auth | P0 | _to author_ |
+| E2E-SMD-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-SMD-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

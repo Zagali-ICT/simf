@@ -52,6 +52,8 @@
 | E2E-EXH-027 | Link an existing account to an exhibitor — the Others-pipeline lockout fix (D-781) | happy | P0 | authored |
 | E2E-EXH-028 | Link rejections — unknown email / not exhibitor-typed / already linked (D-781) | error | P1 | authored |
 | E2E-EXH-029 | Provision conflict — an already-registered email → 409 `ADMIN_EMAIL_ALREADY_REGISTERED`, no membership created | error | P1 | _to author_ |
+| E2E-EXH-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-EXH-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

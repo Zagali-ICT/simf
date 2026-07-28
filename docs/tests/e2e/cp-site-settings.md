@@ -44,6 +44,8 @@
 | E2E-CPSET-007 | Build #13 - the page loads with the "Meet People Like You" checkbox prefilled from the current `PartnerDirectoryEnabled` state | happy | P0 | authored ✓ (`SiteSettingsAdminTests` GET) |
 | E2E-CPSET-008 | Build #13 - un-tick the toggle → Save → success toast; `GET /app/site-settings` returns `partnerDirectoryEnabled=false` and `GET /app/networking/partner-directory` returns an empty list | happy | P0 | authored ✓ (`SiteSettingsAdminTests` PUT→GET + `PartnerDirectoryServiceTests` off→empty) |
 | E2E-CPSET-009 | Build #13 - re-tick the toggle → Save → `partnerDirectoryEnabled=true`; the partner directory is populated again | happy | P1 | authored ✓ (`PartnerDirectoryServiceTests` on→entries) |
+| E2E-CPSET-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-CPSET-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

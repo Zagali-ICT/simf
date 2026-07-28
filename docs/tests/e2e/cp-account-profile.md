@@ -49,6 +49,8 @@
 | E2E-PRF-014 | Disable 2FA with wrong code → bilingual flash error, 2FA stays on | error | P1 | _to author_ |
 | E2E-PRF-015 | Server 500 resilience — `/account/api/profile` fails → loading copy persists, no crash | resilience | P2 | _to author_ |
 | E2E-PRF-016 | RTL / Arabic render — page + cards + cropper modal mirror | i18n | P1 | _to author_ |
+| E2E-PRF-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-PRF-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

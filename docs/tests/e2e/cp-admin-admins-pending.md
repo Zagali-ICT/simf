@@ -34,6 +34,8 @@
 | E2E-APN-013 | RTL / Arabic render mirrors page + reject modal | i18n | P1 | _to author_ |
 | E2E-APN-014 | Per-column filter narrows the grid (email / Display name) | happy | P1 | _to author_ |
 | E2E-APN-015 | Column sort toggles (Email / Display name) | happy | P2 | _to author_ |
+| E2E-APN-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-APN-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

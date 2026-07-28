@@ -29,6 +29,8 @@
 | E2E-CPA-007 | RTL — Arabic locale renders the panel RTL; the greeting is Arabic | i18n | P1 | _to author_ |
 | E2E-CPA-008 | Auth gate (API) — `POST /admin/ai/assistant` without `Assistant.Use` → HTTP 403 | auth | P0 | _to author_ |
 | E2E-CPA-009 | Close — the X button and Esc both close the panel; the launcher stays | happy | P2 | _to author_ |
+| E2E-CPA-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-CPA-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

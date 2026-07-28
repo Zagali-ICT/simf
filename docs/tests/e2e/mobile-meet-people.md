@@ -44,6 +44,8 @@
 | E2E-MOB035-011 | The My-interests opt-in checkbox is shown only to "Other"-type members and persists `ShowInMeetLikeYou` | happy | P0 | authored ✓ (`sign_up_interests_screen` edit-mode) |
 | E2E-MOB035-012 | RTL render (Arabic) - rows and country tags mirror correctly | i18n | P1 | spec |
 | E2E-MOB035-013 | De-dup - a company that is both a Sponsor and a booth exhibitor appears once, as the sponsor | edge | P1 | authored ✓ (`PartnerDirectoryServiceTests`) |
+| E2E-MOB035-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB035-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

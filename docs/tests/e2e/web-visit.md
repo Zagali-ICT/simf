@@ -38,6 +38,8 @@
 | E2E-WVS-006 | Static/anonymous — no `/api/...` request, no Authorization header, no `/login` or `/not-permitted` redirect | auth | P0 | _to author_ |
 | E2E-WVS-007 | RTL / Arabic ⇄ LTR / English — hero + both bands mirror; Arabic content in AR, English in EN | i18n | P1 | _to author_ |
 | E2E-WVS-008 | Responsive — the destination grid collapses 3→2→1 and the visa 2-col stacks; no horizontal overflow at 1440/1280/1024/768/390 both languages | responsive | P1 | _to author_ |
+| E2E-WVS-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-WVS-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

@@ -43,6 +43,8 @@
 | E2E-LOG-011 | Not-found download — unknown file → API 404, no file saved | error | P1 | _to author_ |
 | E2E-LOG-012 | Server 500 on `/list` → empty state / no rows, no unhandled console error | resilience | P2 | _to author_ |
 | E2E-LOG-013 | RTL / Arabic render — labels mirror, two-row layout reverses | i18n | P1 | _to author_ |
+| E2E-LOG-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-LOG-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

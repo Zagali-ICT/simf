@@ -40,6 +40,8 @@
 | E2E-MAC-006 | An expired token (>72h) → neutral "no longer valid" | error | P1 | authored ✓ (`An_expired_token_is_a_neutral_404`, API) |
 | E2E-MAC-007 | RTL / Arabic render — the preview + confirm mirror | i18n | P1 | authored ✓ (browser) |
 | E2E-MAC-008 | No `?token=` at all → neutral state, no API call | edge | P2 | authored ✓ (browser) |
+| E2E-MAC-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MAC-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

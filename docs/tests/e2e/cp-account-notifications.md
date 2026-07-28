@@ -38,6 +38,8 @@
 | E2E-NTF-010 | Idempotent re-delete — already-dismissed row → 200, no error | resilience | P2 | _to author_ |
 | E2E-NTF-011 | Server 500 on `/list` → no rows render, grid leaves loading state | resilience | P2 | _to author_ |
 | E2E-NTF-012 | RTL / Arabic render mirrors page, grid, pager + Details modal | i18n | P1 | _to author_ |
+| E2E-NTF-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-NTF-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

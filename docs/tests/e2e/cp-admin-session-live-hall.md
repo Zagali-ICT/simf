@@ -71,6 +71,8 @@
 | E2E-SLH-013 | Cross-DB safety — an admin-typed present user with no `UserProfile` → blank profile cells, no error, no Identity join | data | P1 | authored ✓ (API `Present_attendees_are_resolved_from_app_profiles_only`) |
 | E2E-SLH-014 | QA B17 — a door scan appears within one 15 s auto-refresh tick, with no manual Refresh click | happy | P0 | _to author_ |
 | E2E-SLH-015 | QA B17 — the poll starts on selection, stops on clear/switch and is disposed with the page (no leaked timer) | resilience | P0 | authored ✓ (`SessionLiveHallAutoRefreshTests`) |
+| E2E-SLH-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-SLH-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 
