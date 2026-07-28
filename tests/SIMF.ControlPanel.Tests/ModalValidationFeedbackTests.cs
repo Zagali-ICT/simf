@@ -64,7 +64,14 @@ public sealed class ModalValidationFeedbackTests : CpComponentTestBase
         cut.Find(AddButtonSelector).Click();
         cut.Find(DialogSubmitSelector).Click();
 
-        Assert.Equal("Admin.SessionModerators.Required",
+        // The expected key was "Admin.SessionModerators.Required" until
+        // 2026-07-28. DEF-MOD-005 replaced the dialog's two free-text GUID boxes
+        // with real session / moderator pickers, so the message it raises on an
+        // empty submit is no longer "both ids are required and must be valid
+        // ids" but "pick both" — the id-validity half stopped being reachable
+        // once the operator can only choose from a list. The page has said
+        // PickBoth since commit ca333ff4; only this assertion lagged.
+        Assert.Equal("Admin.SessionModerators.PickBoth",
             cut.Find(DialogErrorSelector).TextContent.Trim());
     }
 

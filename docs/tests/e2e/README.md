@@ -176,6 +176,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/account/profile` | [`cp-account-profile.md`](cp-account-profile.md) | E2E-PRF-001..016 |
 | `/account/notifications` | [`cp-account-notifications.md`](cp-account-notifications.md) | E2E-NTF-001..012 |
 | `/account/totp-pairing` | [`cp-account-totp-pairing.md`](cp-account-totp-pairing.md) | E2E-TPP-001..010 |
+| `/not-permitted` + `/not-found` + `/Error` | [`cp-framework-pages.md`](cp-framework-pages.md) | E2E-FRM-001..010 |
 
 ### Website
 
