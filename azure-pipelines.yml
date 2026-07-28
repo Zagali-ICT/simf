@@ -224,7 +224,23 @@ stages:
     #     failing test stops the pipeline. RE-ENABLED 2026-06-21 (had been
     #     temporarily disabled 2026-06-05 for speed). SIMF.Api.Tests runs ~13 min.
     #     TEMPORARILY DISABLED 2026-07-01 (enabled:false) by owner request. Flip
-    #     `enabled` back to true to restore the gate. ---
+    #     `enabled` back to true to restore the gate.
+    #
+    #     WHILE THIS IS OFF, NO TEST GATES ANYTHING IN CI. That now includes the
+    #     QA programme's guards — the E2E-catalogue integrity ratchet, the CP
+    #     permission/nav gates, and the WS4 browser element sweep pass or fail
+    #     only on a developer's machine. It is also how /admin/companies stayed
+    #     marked "Real" in PAGE-INDEX for eight weeks after its page was deleted:
+    #     the check that catches it exists, but nothing runs it.
+    #
+    #     `tests/**/*.csproj` already picks up tests/SIMF.E2E.Tests (WS4,
+    #     Playwright), and that project needs no extra setup here: with no QA
+    #     stack reachable it reports SKIPPED in ~2s instead of failing. To make
+    #     it actually sweep, provision a stack, set SIMF_QA_CP_URL /
+    #     SIMF_QA_WEB_URL / SIMF_QA_API_URL and SIMF_QA_ADMIN_EMAIL / _PASSWORD /
+    #     _TOTP_SECRET as secret variables, and add a browser-install step:
+    #       pwsh tests/SIMF.E2E.Tests/bin/$(buildConfiguration)/net10.0/playwright.ps1 install chromium
+    #     ---
     - task: DotNetCoreCLI@2
       displayName: 'Run all tests'
       enabled: false

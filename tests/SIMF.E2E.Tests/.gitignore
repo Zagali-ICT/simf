@@ -1,0 +1,4 @@
+# Playwright's browser download + its generated driver bootstrap
+.playwright/
+playwright-report/
+test-results/

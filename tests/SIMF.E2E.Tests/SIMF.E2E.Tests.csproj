@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+    <!-- xUnit 2.x can only skip a test statically, via [Fact(Skip=...)]. This
+         suite has to decide at RUN time whether a QA stack is reachable, and
+         the alternative — returning early — reports a green test that did
+         nothing, which is the exact failure mode this programme exists to
+         remove. SkippableFact gives a real "Skipped" in the report. -->
+    <PackageReference Include="Xunit.SkippableFact" Version="1.5.23" />
+    <!-- WS4 — the browser driver for the element sweep. Playwright for .NET,
+         not the Node package: this repo has no JS toolchain outside Flutter and
+         azure-pipelines.yml is entirely DotNetCoreCLI tasks, so a Node runner
+         would be a second toolchain to install and maintain for one purpose.
+         As a .NET project it rides the existing `dotnet test` step. -->
+    <PackageReference Include="Microsoft.Playwright" Version="1.49.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <!-- Shares the sweep source with the interactive Chrome-DevTools runs rather
+       than keeping a second copy: the same file is what the manual pass
+       executes, so the two can never diverge. -->
+  <ItemGroup>
+    <None Include="..\..\tools\qa\element-sweep.js" CopyToOutputDirectory="PreserveNewest" Link="qa\element-sweep.js" />
+  </ItemGroup>
+
+</Project>
