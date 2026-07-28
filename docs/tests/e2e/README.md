@@ -48,7 +48,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/admins/pending` | [`cp-admin-admins-pending.md`](cp-admin-admins-pending.md) | E2E-APN-001..015 |
 | `/admin/others` | [`cp-admin-others.md`](cp-admin-others.md) | E2E-OTH-001..024 |
 | `/admin/others/pending` | [`cp-admin-others-pending.md`](cp-admin-others-pending.md) | E2E-OPN-001..016 |
-| `/admin/visitors` | [`cp-admin-visitors.md`](cp-admin-visitors.md) | E2E-VIS-001..025 |
+| `/admin/visitors` | [`cp-admin-visitors.md`](cp-admin-visitors.md) | E2E-VIS-001..033 |
 | `/admin/visitors/pending` | [`cp-admin-visitors-pending.md`](cp-admin-visitors-pending.md) | E2E-VPN-001..025 |
 | `/admin/visitors/vip` | [`cp-vip-registration.md`](cp-vip-registration.md) | E2E-VIPR-001..011 |
 | `/admin/visitors/vip/export` | [`cp-vip-export.md`](cp-vip-export.md) | E2E-VIPX-001..008 |
@@ -74,21 +74,23 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | Page | File | Scenarios |
 |------|------|-----------|
 | `/admin/themes` | [`cp-admin-themes.md`](cp-admin-themes.md) | E2E-THM-001..024 |
-| `/admin/halls` | [`cp-admin-halls.md`](cp-admin-halls.md) | E2E-HAL-001..022 |
-| `/admin/halls/seat-layouts` | [`cp-admin-halls-seat-layouts.md`](cp-admin-halls-seat-layouts.md) | E2E-HSL-001..022 |
+| `/admin/halls` | [`cp-admin-halls.md`](cp-admin-halls.md) | E2E-HAL-001..031 |
+| `/admin/halls/seat-layouts` | [`cp-admin-halls-seat-layouts.md`](cp-admin-halls-seat-layouts.md) | E2E-HSL-001..030 |
 | `/admin/speakers` | [`cp-admin-speakers.md`](cp-admin-speakers.md) | E2E-SPK-001..022 |
 | `/admin/speaker-presentations` | [`cp-admin-speaker-presentations.md`](cp-admin-speaker-presentations.md) | E2E-SPP-001..017 |
 | `/admin/sessions` | [`cp-admin-sessions.md`](cp-admin-sessions.md) | E2E-SES-001..030 |
-| `/admin/sessions/seat-plans` | [`cp-admin-sessions-seat-plans.md`](cp-admin-sessions-seat-plans.md) | E2E-SSP-001..016 |
+| `/admin/sessions/seat-plans` | [`cp-admin-sessions-seat-plans.md`](cp-admin-sessions-seat-plans.md) | E2E-SSP-001..019 |
 | `/admin/session-categories` | [`cp-admin-session-categories.md`](cp-admin-session-categories.md) | E2E-SCT-001..021 |
 | `/admin/programme-days` | [`cp-admin-programme-days.md`](cp-admin-programme-days.md) | E2E-PGD-001..018 |
 | `/admin/session-moderators` | [`cp-admin-session-moderators.md`](cp-admin-session-moderators.md) | E2E-SMD-001..018 |
 | `/admin/programme/timeline` | [`cp-admin-programme-timeline.md`](cp-admin-programme-timeline.md) | E2E-PTL-001..011 |
 | `/admin/bookings` | [`cp-admin-bookings.md`](cp-admin-bookings.md) | E2E-BKG-001..012 |
-| `/admin/speaker-meeting-requests` | [`cp-admin-speaker-meeting-requests.md`](cp-admin-speaker-meeting-requests.md) | E2E-SMR-001..023 |
+| `/admin/speaker-meeting-requests` | [`cp-admin-speaker-meeting-requests.md`](cp-admin-speaker-meeting-requests.md) | E2E-SMR-001..031 |
 | `/admin/speaker-availability` | [`cp-admin-speaker-availability.md`](cp-admin-speaker-availability.md) | E2E-SAV-001..007 |
-| `/admin/hall-availability` | [`cp-admin-hall-availability.md`](cp-admin-hall-availability.md) | E2E-HAV-001..007 |
+| `/admin/hall-availability` | [`cp-admin-hall-availability.md`](cp-admin-hall-availability.md) | E2E-HAV-001..008 |
 | `/admin/delegation-meetings` | [`cp-admin-delegation-meetings.md`](cp-admin-delegation-meetings.md) | E2E-DLM-001..013 |
+| `/admin/hall-availability` | [`cp-admin-hall-availability.md`](cp-admin-hall-availability.md) | E2E-HAV-001..007 |
+| `/admin/delegation-meetings` | [`cp-admin-delegation-meetings.md`](cp-admin-delegation-meetings.md) | E2E-DLM-001..019 |
 | `/admin/delegation-availability` | [`cp-admin-delegation-availability.md`](cp-admin-delegation-availability.md) | E2E-DAV-001..007 |
 | _(cross-surface bi-meeting lifecycle)_ | [`bi-meeting-lifecycle.md`](bi-meeting-lifecycle.md) | E2E-BML-001..016 |
 | `/admin/document-requests` | [`cp-document-requests.md`](cp-document-requests.md) | E2E-CPDR-001..008 |
@@ -105,6 +107,8 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/ratings` | [`cp-admin-ratings.md`](cp-admin-ratings.md) | E2E-RAT-001..012 |
 | `/admin/rating-config` | [`cp-admin-rating-config.md`](cp-admin-rating-config.md) | E2E-RCFG-001..015 |
 | `/admin/session-summaries` | [`cp-admin-session-summaries.md`](cp-admin-session-summaries.md) | E2E-SUM-001..028 |
+| `/admin/hall-arrivals` | [`cp-admin-hall-arrivals.md`](cp-admin-hall-arrivals.md) | E2E-HAR-001..025 |
+| `/admin/session-summaries` | [`cp-admin-session-summaries.md`](cp-admin-session-summaries.md) | E2E-SUM-001..034 |
 | `/admin/hall-arrivals` | [`cp-admin-hall-arrivals.md`](cp-admin-hall-arrivals.md) | E2E-HAR-001..014 |
 
 ### Control Panel — Exhibition
@@ -112,7 +116,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | Page | File | Scenarios |
 |------|------|-----------|
 | `/admin/companies` | [`cp-admin-companies.md`](cp-admin-companies.md) | E2E-CMP-001..016 |
-| `/admin/exhibitors` | [`cp-admin-exhibitors.md`](cp-admin-exhibitors.md) | E2E-EXH-001..026 |
+| `/admin/exhibitors` | [`cp-admin-exhibitors.md`](cp-admin-exhibitors.md) | E2E-EXH-001..028 (D-781 link an existing account: 027/028) |
 | `/admin/booths` | [`cp-admin-booths.md`](cp-admin-booths.md) | E2E-BTH-001..025 |
 | `/admin/sponsors` | [`cp-admin-sponsors.md`](cp-admin-sponsors.md) | E2E-SPN-001..023 |
 | `/admin/media-partners` | [`cp-admin-media-partners.md`](cp-admin-media-partners.md) | E2E-MPR-001..019 |
@@ -145,8 +149,10 @@ not reused. Each page owns a unique 3–4 letter namespace.
 
 | Page | File | Scenarios |
 |------|------|-----------|
-| `/admin/gates` | [`cp-admin-gates.md`](cp-admin-gates.md) | E2E-GAT-001..021 |
+| `/admin/gates` | [`cp-admin-gates.md`](cp-admin-gates.md) | E2E-GAT-001..029 |
 | `/admin/gates/operator` | [`cp-admin-gates-operator.md`](cp-admin-gates-operator.md) | E2E-GOP-001..013 |
+| `/admin/gates` | [`cp-admin-gates.md`](cp-admin-gates.md) | E2E-GAT-001..021 |
+| `/admin/gates/operator` | [`cp-admin-gates-operator.md`](cp-admin-gates-operator.md) | E2E-GOP-001..015 |
 | `/admin/gates/dashboard` | [`cp-admin-gates-dashboard.md`](cp-admin-gates-dashboard.md) | E2E-GDS-001..011 |
 | `/admin/configuration` | [`cp-admin-configuration.md`](cp-admin-configuration.md) | E2E-CFG-001..024 |
 | `/admin/email/templates` | [`cp-admin-email-templates.md`](cp-admin-email-templates.md) | E2E-EMT-001..013 |
@@ -159,7 +165,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/ops/services` | [`cp-ops-services.md`](cp-ops-services.md) | E2E-SVCM-001..008 |
 | `/admin/statistics` | [`cp-admin-statistics.md`](cp-admin-statistics.md) | E2E-STA-001..012 |
 | `/admin/attendance` | [`cp-admin-attendance.md`](cp-admin-attendance.md) | E2E-ATT-001..014 |
-| `/admin/sessions/live-hall` | [`cp-admin-session-live-hall.md`](cp-admin-session-live-hall.md) | E2E-SLH-001..013 |
+| `/admin/sessions/live-hall` | [`cp-admin-session-live-hall.md`](cp-admin-session-live-hall.md) | E2E-SLH-001..015 |
 | _system-wide_ — Saudi local-time display (CP + app) | [`cp-timezone-display.md`](cp-timezone-display.md) | E2E-TZ-001..006 |
 
 ### Control Panel — Account & auth (not in main nav)
@@ -177,7 +183,6 @@ not reused. Each page owns a unique 3–4 letter namespace.
 |------|------|-----------|
 | `/` + `/landing` (marketing landing — live Bootstrap SSR rebuild) | [`web-landing-rebuild.md`](web-landing-rebuild.md) | E2E-WLB-001..013 |
 | `/` (old static landing — retired 2026-07-14) | [`web-landing.md`](web-landing.md) | E2E-WLD-001..008 |
-| `/account` | [`web-home.md`](web-home.md) | E2E-WHM-001..010 |
 | `/programme` | [`web-programme.md`](web-programme.md) | E2E-WPG-001..014 |
 | `/speakers` | [`web-speakers.md`](web-speakers.md) | E2E-WSPK-001..011 |
 | `/sessions/{id}` | [`web-session-detail.md`](web-session-detail.md) | E2E-WSDT-001..013 |
@@ -194,15 +199,21 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/discover` | [`web-discover.md`](web-discover.md) | E2E-WDS-001..007 |
 | `/visit` | [`web-visit.md`](web-visit.md) | E2E-WVS-001..008 |
 | `/archive` | [`web-archive.md`](web-archive.md) | E2E-WAR-001..009 |
-| `/login` | [`web-login.md`](web-login.md) | E2E-WLG-001..017 |
-| `/login/verify` | [`web-otp-verify.md`](web-otp-verify.md) | E2E-WOT-001..010 |
-| `/forgot-password` | [`web-forgot-password.md`](web-forgot-password.md) | E2E-WFP-001..014 |
-| `/reset-password` | [`web-reset-password.md`](web-reset-password.md) | E2E-WRS-001..014 |
-| `/account/profile` | [`web-account-profile.md`](web-account-profile.md) | E2E-WPR-001..016 |
-| `/account/notifications` | [`web-account-notifications.md`](web-account-notifications.md) | E2E-WNT-001..012 |
-| `/account/pending` | [`web-account-pending.md`](web-account-pending.md) | E2E-WPN-001..010 |
-| `/account/rejected` | [`web-account-rejected.md`](web-account-rejected.md) | E2E-WRJ-001..010 |
 | `/meeting/confirm` | [`web-meeting-confirm.md`](web-meeting-confirm.md) | E2E-MAC-001..008 |
+
+**Removed 2026-07-27 (D-774) — the Website login + account area.** Owner decision:
+the public site is information-only, so `/login`, `/login/verify`,
+`/forgot-password`, `/reset-password`, `/account`, `/account/profile`,
+`/account/notifications`, `/account/pending` and `/account/rejected` no longer
+exist. Their catalogue files (`web-login.md`, `web-otp-verify.md`,
+`web-forgot-password.md`, `web-reset-password.md`, `web-home.md`,
+`web-account-profile.md`, `web-account-notifications.md`,
+`web-account-pending.md`, `web-account-rejected.md`) were deleted with the
+pages, and the scenario id prefixes E2E-WLG / WOT / WFP / WRS / WHM / WPR / WNT /
+WPN / WRJ are retired — do not reuse them. Visitor sign-in is now covered only
+by the Flutter app catalogue (`mobile-sign-in.md`) and admin sign-in only by
+`cp-auth-flow.md`. The anonymous, token-addressed `/meeting/confirm` page above
+is NOT part of that removal and is still live.
 
 ### Mobile App (Flutter)
 
@@ -221,32 +232,44 @@ API endpoints land (D-249). The per-screen design docs live under
 | #7 `signUpVisitor` — **profile data** (Visitor/Other + ProfileType + 3 lookups; Next→interests) | [`mobile-sign-up-visitor.md`](mobile-sign-up-visitor.md) | E2E-MOB007-001..022 |
 | #7‑01 `signUpInterests` — **interests (1–10) + the single `POST /app/account/user-profile` save** | [`mobile-sign-up-interests.md`](mobile-sign-up-interests.md) | E2E-MOB7A-001..008 |
 | #702 `myInterests` — **edit interests after sign-up** (same screen, edit mode) | [`mobile-my-interests.md`](mobile-my-interests.md) | E2E-MYINT-001..007 |
+| #703 `myMobile` — **add / edit the mobile number** (validate only, NO OTP) | [`mobile-my-mobile.md`](mobile-my-mobile.md) | E2E-MYMOB-001..011 |
+| _(cross-surface app logo / photo boxes + the full-size viewer)_ | [`mobile-logo-viewer.md`](mobile-logo-viewer.md) | E2E-LOGO-001..008 |
 | #9 `terms` (`GET /app/content/terms`) | [`mobile-terms.md`](mobile-terms.md) | E2E-MOB009-001..008 |
 | #10 `registrationSuccess` (no API — static confirmation) | [`mobile-registration-success.md`](mobile-registration-success.md) | E2E-MOB010-001..007 |
 | #11 `registrationStatus` (`GET /app/users/me`) | [`mobile-registration-status.md`](mobile-registration-status.md) | E2E-MOB011-001..007 |
-| #13 `home` (`GET /app/bootstrap`) | [`mobile-home.md`](mobile-home.md) | E2E-MOB013-001..022 |
+| #13 `home` (`GET /app/bootstrap`) | [`mobile-home.md`](mobile-home.md) | E2E-MOB013-001..025 |
+| #13 `home` (`GET /app/bootstrap`; Moderator home also `GET /app/sessions/moderated` — FR-MOD-001 جلساتي) | [`mobile-home.md`](mobile-home.md) | E2E-MOB013-001..025 |
 | #14 `myArea` (`GET /app/account/dashboard` + `.ics` + `.vcf`) | [`mobile-my-area.md`](mobile-my-area.md) | E2E-MOB014-001..017 |
 | #103 `identityVerification` (`POST /app/account/avatar`) | [`mobile-identity-verification.md`](mobile-identity-verification.md) | E2E-MOBIDV-001..004 |
-| #104 `sessionModerate` (`GET/PUT /app/sessions/{id}/questions/moderate·push·hide`) | [`mobile-session-moderate.md`](mobile-session-moderate.md) | E2E-MOBMOD-001..004 |
-| #105 `gateScanner` (`GET /app/gates/my-assignments` · `POST /app/gates/{id}/scans`) | [`mobile-gate-scan.md`](mobile-gate-scan.md) | E2E-MOBGATE-000..005 |
+| #104 `sessionModerate` (`GET/PUT /app/sessions/{id}/questions/moderate·push·hide·reorder`; FR-MOD-001 `GET /app/sessions/moderated` discovery + جلساتي on the moderator home; FR-MOD-003 drag-to-reorder the desk queue) | [`mobile-session-moderate.md`](mobile-session-moderate.md) | E2E-MOBMOD-001..010 |
+| #105 `gateScanner` (`GET /app/gates/my-assignments` · `POST /app/gates/{id}/scans`) | [`mobile-gate-scan.md`](mobile-gate-scan.md) | E2E-MOBGATE-000..006 |
 | #114 `staffRegisterVisitor` (`POST /app/staff/visitors/register-onsite` · `…/{id}/id-document` · `…/{id}/avatar`) | [`mobile-staff-register-visitor.md`](mobile-staff-register-visitor.md) | E2E-MOBSTAFFREG-001..004 |
+| #105 `gateScanner` (`GET /app/gates/my-assignments` · `POST /app/gates/{id}/scans`) | [`mobile-gate-scan.md`](mobile-gate-scan.md) | E2E-MOBGATE-000..005 |
+| #114 `staffRegisterVisitor` (`POST /app/staff/visitors/register-onsite` · `…/{id}/id-document` · `…/{id}/avatar`) | [`mobile-staff-register-visitor.md`](mobile-staff-register-visitor.md) | E2E-MOBSTAFFREG-001..006 |
+| #118 `staffSeating` — **guest seating desk** (`POST /app/staff/sessions/{id}/seating/by-badge` · `GET …/seating/seat` · `GET …/seating/occupant/{userId}/photo`) | [`mobile-staff-seating.md`](mobile-staff-seating.md) | E2E-MOBSEATDESK-001..008 |
 | #15 `venueMap` (`GET /app/venue-map` + `/app/booths` + `/{id}`) | [`mobile-venue-map.md`](mobile-venue-map.md) | E2E-MOB015-001..008 |
 | #16 `sessions` (`GET /app/programme/sessions`) | [`mobile-agenda.md`](mobile-agenda.md) | E2E-MOB016-001..019 |
 | #17 `sessionDetail` (`GET /app/programme/sessions/{id}` + `…/sessions/{id}/seats`) | [`mobile-session-detail.md`](mobile-session-detail.md) | E2E-MOB017-001..011 |
-| #18 `mySeat` (`GET /app/sessions/{id}/seats` + reserve/release) | [`mobile-my-seat.md`](mobile-my-seat.md) | E2E-MOB018-001..018 |
+| #18 `mySeat` (`GET /app/sessions/{id}/seats` + reserve/**move**/release) | [`mobile-my-seat.md`](mobile-my-seat.md) | E2E-MOB018-001..019 |
+| `seatPicker` (`GET …/seats` + `POST …/seats/reserve` / `reserve-random` / **`move`** — B1 change seat) — D-485 | [`mobile-seat-picker.md`](mobile-seat-picker.md) | E2E-MOBPICK-001..016 |
+| #18 `mySeat` (`GET /app/sessions/{id}/seats` + reserve/release) | [`mobile-my-seat.md`](mobile-my-seat.md) | E2E-MOB018-001..019 |
 | `seatPicker` (`GET …/seats` + `POST …/seats/reserve` / `reserve-random`) — D-485 | [`mobile-seat-picker.md`](mobile-seat-picker.md) | E2E-MOBPICK-001..011 |
 | `joinSessionHub` (`GET /app/programme/sessions`) — D-485 | [`mobile-join-hub.md`](mobile-join-hub.md) | E2E-MOBHUB-001..005 |
 | `savedSessions` (`GET /app/sessions/favourites` ∩ programme) — #8, D-584 | [`mobile-saved-sessions.md`](mobile-saved-sessions.md) | E2E-MOBSAVED-001..007 |
 | #19 `speakers` (`GET /app/speakers`) | [`mobile-speakers.md`](mobile-speakers.md) | E2E-MOB019-001..013 |
-| #20 `speakerProfile` (`GET /app/speakers/{id}` + meeting-request) | [`mobile-speaker-profile.md`](mobile-speaker-profile.md) | E2E-MOB020-001..020 |
+| #20 `speakerProfile` (`GET /app/speakers/{id}` + meeting-request) | [`mobile-speaker-profile.md`](mobile-speaker-profile.md) | E2E-MOB020-001..022 |
 | #22 `booths` (`GET /app/booths` + `/{id}`) — #9: country name + أرشدني→map | [`mobile-booths.md`](mobile-booths.md) | E2E-MOB022-001..013 |
 | `boothMap` (`/booths/:id/map` → venue map focused on the booth) — #9 | [`mobile-booths.md`](mobile-booths.md) | E2E-MOB022-013 |
 | #23 `sponsors` (`GET /app/sponsors`) | [`mobile-sponsors.md`](mobile-sponsors.md) | E2E-MOB023-001..004 |
 | #21 `delegations` (`GET /app/delegations`) — Wave 4, Figma `1426:10771` (restored from D-277); bi-meeting rework: cards tappable → delegation request sheet for an entitled account | [`mobile-delegations.md`](mobile-delegations.md) | E2E-DEL-001..011 |
 | #220 `exhibitorDetail` (`GET /app/booths/{id}`) — Wave 3, Figma `1439:11881` | [`mobile-exhibitor-detail.md`](mobile-exhibitor-detail.md) | E2E-MOB220-001..007 |
 | #221 `sponsorDetail` (`GET /app/sponsors/{id}`) — Wave 3, Figma `1439:11826` | [`mobile-sponsor-detail.md`](mobile-sponsor-detail.md) | E2E-MOB221-001..007 |
-| `myVisitors` (`GET /app/exhibitor/my-visitors`) — D-426 exhibitor captured-visitor list | [`mobile-my-visitors.md`](mobile-my-visitors.md) | E2E-MOBMYVIS-001..006 |
-| `scanVisitor` (`scanByBadge` — exhibitor lead-capture scan) — D-426 | [`mobile-scan-visitor.md`](mobile-scan-visitor.md) | E2E-MOBSCANVIS-001..006 |
+| `myVisitors` (`GET /app/exhibitor/my-visitors`) — D-426 exhibitor captured-visitor list; DEF-EXH-004 read-path subject eligibility (D-780: any ACTIVE subject lists, only a deactivated one drops out); DEF-EXH-006 current-booth-membership gate | [`mobile-my-visitors.md`](mobile-my-visitors.md) | E2E-MOBMYVIS-001..009 |
+| `scanVisitor` (`scanByBadge` — exhibitor lead-capture scan) — D-426; DEF-EXH-001/002/005/006/007 scan authorisation + current booth membership + capture notice naming the exhibitor + CP-provisioned booth officer; **D-780** ALL badges scannable (reverses DEF-EXH-003); **D-781** link an Others-pipeline account to a booth | [`mobile-scan-visitor.md`](mobile-scan-visitor.md) | E2E-MOBSCANVIS-001..013 |
+| `myVisitors` (`GET /app/exhibitor/visitors` · `DELETE …/{id}` · `GET …/{id}/vcard`) — D-426 exhibitor captured-visitor list; DEF-EXH-004 read-path subject eligibility; DEF-EXH-006 current-booth-membership gate; **FR-EXH-002** remove + vCard export; **FR-EXH-003** the list is scoped to the BOOTH, not the officer | [`mobile-my-visitors.md`](mobile-my-visitors.md) | E2E-MOBMYVIS-001..012 |
+| `scanVisitor` (`scanByBadge` — exhibitor lead-capture scan) — D-426; DEF-EXH-001/002/003/005/006/007 scan authorisation + current booth membership + subject eligibility + capture notice naming the exhibitor + CP-provisioned booth officer | [`mobile-scan-visitor.md`](mobile-scan-visitor.md) | E2E-MOBSCANVIS-001..012 |
+| `myVisitors` (`GET /app/exhibitor/my-visitors`) — D-426 exhibitor booth-visitor list (BUG-025 title + note) | [`mobile-my-visitors.md`](mobile-my-visitors.md) | E2E-MOBMYVIS-001..008 |
+| `scanVisitor` (`scanByBadge` — exhibitor lead-capture scan, BUG-024 lead email) — D-426 | [`mobile-scan-visitor.md`](mobile-scan-visitor.md) | E2E-MOBSCANVIS-001..007 |
 | #24 `archive` (`GET /app/archive` + `/{id}`) | [`mobile-archive.md`](mobile-archive.md) | E2E-MOB024-001..005 |
 | #29 `news` (`GET /app/news` + `/{id}`) | [`mobile-news.md`](mobile-news.md) | E2E-MOB029-001..005 |
 | #30 `gallery` (`GET /app/media`) | [`mobile-gallery.md`](mobile-gallery.md) | E2E-MOB030-001..004 |
@@ -254,22 +277,25 @@ API endpoints land (D-249). The per-screen design docs live under
 | #40 `rate` (`GET/POST /app/feedback/form|submit`) | [`mobile-rate.md`](mobile-rate.md) | E2E-MOB040-001..011 |
 | #31 `mediaPartners` (`GET /app/media-partners`) | [`mobile-media-partners.md`](mobile-media-partners.md) | E2E-MOB031-001..003 |
 | #12 `guestMode` (no API) | [`mobile-guest-mode.md`](mobile-guest-mode.md) | E2E-MOB012-001..004 |
-| #33 `notifications` (`POST /app/account/notifications/list` · `/{id}/read` · `/read-all`) | [`mobile-notifications.md`](mobile-notifications.md) | E2E-MOB033-001..006 |
+| #33 `notifications` (`POST /app/account/notifications/list` · `/{id}/read` · `/read-all`) | [`mobile-notifications.md`](mobile-notifications.md) | E2E-MOB033-001..009 |
 | #35 `meetPeople` (`GET /app/networking/partner-directory`) - Build #13 partner directory | [`mobile-meet-people.md`](mobile-meet-people.md) | E2E-MOB035-001..012 |
 | #38 `accessibility` (no API) | [`mobile-accessibility.md`](mobile-accessibility.md) | E2E-MOB038-001..004 |
 | #41 `more` (no API) | [`mobile-more.md`](mobile-more.md) | E2E-MOB041-001..009 |
 | #34 `aiSummary` (`GET /app/programme/sessions/{id}/summary`) | [`mobile-ai-summary.md`](mobile-ai-summary.md) | E2E-MOB034-001..010 |
 | #111 `sessionSummaryList` (cached programme + favourites/booked overlay) — Wave 2 pixel pass, Figma `1388:8392` | [`mobile-session-summaries.md`](mobile-session-summaries.md) | E2E-MOB111-001..008 |
-| #26 `sendQuestion` (`POST /app/sessions/{id}/questions`) | [`mobile-send-question.md`](mobile-send-question.md) | E2E-MOB026-001..014 |
-| #32 `badge` (`GET /app/account/dashboard`) | [`mobile-badge.md`](mobile-badge.md) | E2E-MOB032-001..005 |
+| #26 `sendQuestion` (`POST /app/sessions/{id}/questions`) | [`mobile-send-question.md`](mobile-send-question.md) | E2E-MOB026-001..015 |
+| #32 `badge` (`GET /app/account/dashboard`) | [`mobile-badge.md`](mobile-badge.md) | E2E-MOB032-001..007 |
 | #25 `liveBroadcast` (`GET /app/programme/sessions/{id}`) | [`mobile-live.md`](mobile-live.md) | E2E-MOB025-001..007 |
+| #32 `badge` (`GET /app/account/dashboard`) | [`mobile-badge.md`](mobile-badge.md) | E2E-MOB032-001..005 |
+| #25 `liveBroadcast` (`GET /app/programme/sessions/{id}`) | [`mobile-live.md`](mobile-live.md) | E2E-MOB025-001..025 |
 | #36 `chatbot` (AI assistant → `/app/ai/assistance`) | [`mobile-chatbot.md`](mobile-chatbot.md) | E2E-MOB036-001..007 |
 | #24-01 `archiveDetail` (`GET /app/archive/{id}`) | [`mobile-archive-detail.md`](mobile-archive-detail.md) | E2E-MOB024D-001..009 |
 | `My Contacts` / `Share my contact` (`/app/account/share-token` + `/app/contacts/*`) | [`mobile-my-contacts.md`](mobile-my-contacts.md) | E2E-MMC-001..014 |
-| `requests` (`GET /app/my-requests` + `POST …/document-requests` · `…/badge-requests` · `…/my-requests/cancel`) — Wave 5 (D-500), retitled **طلباتي** when the meetings page split off (D-745); the full requests history | [`mobile-requests.md`](mobile-requests.md) | E2E-REQ-001..013 |
+| `requests` (`GET /app/my-requests` + `POST …/document-requests` · `…/badge-requests` · `…/my-requests/cancel`) — Wave 5 (D-500), retitled **طلباتي** when the meetings page split off (D-745); the full requests history | [`mobile-requests.md`](mobile-requests.md) | E2E-REQ-001..014 |
+| `requests` (`GET /app/my-requests` + `POST …/document-requests` · `…/badge-requests` · `…/my-requests/cancel`) — Wave 5 (D-500), retitled **طلباتي** when the meetings page split off (D-745); the full requests history | [`mobile-requests.md`](mobile-requests.md) | E2E-REQ-001..016 |
 | `meetings` (`GET /app/my-requests` filtered to approved-upcoming meetings) — **اللقاءات الثنائية** (D-745), Figma `1408:9726`; bi-meeting rework: **flag-gated** (not VIP), **two** request buttons (طلب مقابلة متحدث / طلب اجتماع وفد) + السجل history + speaker/flag cards | [`mobile-meetings.md`](mobile-meetings.md) | E2E-MOBMEET-001..013 |
-| `Delegation meeting request` sheet — bi-meeting rework: the delegation twin of the speaker request sheet; opened from `/meetings` (طلب اجتماع وفد) + a tapped delegation card; `POST /app/delegation-meeting-requests` | [`mobile-delegation-request.md`](mobile-delegation-request.md) | E2E-DELREQ-001..010 |
-| #117 `meetingConfirm` (`/meeting-confirm?requestId=…` → `POST /app/delegation-meeting-requests/{id}/confirm`) — bi-meeting rework: delegation other-party confirm-on-tap, reached from a `MeetingRequested` notification | [`mobile-meeting-confirm.md`](mobile-meeting-confirm.md) | E2E-MOBMC-001..007 |
+| `Delegation meeting request` sheet — bi-meeting rework: the delegation twin of the speaker request sheet; opened from `/meetings` (طلب اجتماع وفد) + a tapped delegation card; `POST /app/delegation-meeting-requests` | [`mobile-delegation-request.md`](mobile-delegation-request.md) | E2E-DELREQ-001..012 |
+| #117 `meetingConfirm` (`/meeting-confirm?requestId=…` → `POST /app/delegation-meeting-requests/{id}/confirm` + `…/decline`) — bi-meeting rework: delegation other-party confirm-on-tap, reached from a `MeetingRequested` notification | [`mobile-meeting-confirm.md`](mobile-meeting-confirm.md) | E2E-MOBMC-001..010 |
 | `myMeetings` (`GET /app/my-requests`, filtered to meetings) — المقابلات (D-587), Figma `1701:9406`; speaker + delegation meetings over status chips; reached from the My-Area "مقابلات" counter | [`mobile-my-meetings.md`](mobile-my-meetings.md) | E2E-MOBMTG-001..007 |
 | `Confirm Face ID` step-up (`POST /app/auth/device-keys/step-up` + gated register) — #7a biometric-enable; **D-738** OS device-credential confirm + sign-in device-PIN fallback | [`mobile-biometric-step-up.md`](mobile-biometric-step-up.md) | E2E-MBSU-001..015 |
 | `Change email` self-service (`POST /app/auth/change-email/send-otp` + `/confirm`) - Build #24 signed-in login-email change; code emailed to the NEW address, confirm rolls the stamp + forces a fresh sign-in; reached from More → Settings | [`mobile-change-email.md`](mobile-change-email.md) | E2E-MCE-001..011 |
@@ -405,3 +431,30 @@ API endpoints land (D-249). The per-screen design docs live under
   NOT yet wired. The new HSL/SSP CP behaviour IS coded, but no `SeatReservationsTests`
   variable-layout xUnit facts back it yet, so those scenarios read `_to author_` and are
   driven manually until the tests land.
+
+### Update - 2026-07-27 (owner decisions D-780 "can scan all badges" + D-781 link an existing account)
+
+- **D-780 - the exhibitor SUBJECT rule is widened to any ACTIVE badge holder.** The owner
+  was asked whether a booth may scan a MEDIA or SPONSOR badge and ruled that **all badges
+  are scannable**, reversing the premise of DEF-EXH-003. `mobile-scan-visitor.md`
+  E2E-MOBSCANVIS-008 was rewritten (media / sponsor / staff / fellow-exhibitor badges now
+  200 and list; only a DEACTIVATED account is refused, with the same 404 as an unknown
+  code), and `mobile-my-visitors.md` E2E-MOBMYVIS-008 with it (an ACTIVE staff subject now
+  lists). The SCANNER-side gates (DEF-EXH-001 role + DEF-EXH-006 current booth membership)
+  are unchanged, so E2E-MOBSCANVIS-007 / -011 stand as written.
+- **D-781 - an existing account can be attached to an exhibitor from the CP.**
+  `POST /admin/exhibitors/{id}/accounts/link`, permission `Exhibitors.LinkAccount`, fixes
+  the lockout DEF-EXH-006 introduced for exhibitor-typed accounts created through the
+  generic Others pipeline (right profile type, no `ExhibitorMembership`, 403 everywhere).
+  `cp-admin-exhibitors.md` E2E-EXH-001..026 -> **001..028** (+027 the golden link path and
+  the "can scan afterwards" proof, +028 the 404 / 409 / 409 / 409 / 400 rejection matrix
+  and the missing-permission gate); `mobile-scan-visitor.md` E2E-MOBSCANVIS-001..012 ->
+  **001..013** (+013 the same journey from the app side). No existing scenario was
+  renumbered.
+- **Backing xUnit:** `tests/SIMF.Api.Tests/ExhibitorVisitorScanTests.cs` (now 17 facts) -
+  `Every_active_badge_is_capturable_whatever_its_profile_type`,
+  `Deactivated_badge_subject_returns_404`,
+  `Legacy_captures_of_deactivated_subjects_are_not_listed`,
+  `Others_pipeline_account_can_scan_once_it_is_linked_to_an_exhibitor`,
+  `Linking_refuses_an_account_that_is_not_exhibitor_typed`,
+  `Linking_refuses_an_unknown_email_and_an_already_linked_account`.

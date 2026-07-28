@@ -1,4 +1,6 @@
 // Tests: SIMF.Api.Tests/SpeakerMeetingRequestsTests.cs
+//        SIMF.Api.Tests/SpeakerMeetingQaTests.cs (QA A25/B12/B20)
+//        SIMF.Api.Tests/SpeakerMeetingLinksUnsetTests.cs (QA A24)
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -372,7 +374,20 @@ internal sealed class SpeakerMeetingRequestService(
         // mints the speaker confirmation link pair. Confirm (bindHall && VerbalConfirmed)
         // means the admin already has the speaker's verbal confirmation, so no link is
         // minted and the meeting goes straight to Accepted (Confirmed) below.
-        var links = bindHall && !request.VerbalConfirmed
+        //
+        // QA A24 / A25 — the Approve path's ONLY exit is the speaker clicking a link in
+        // an email. Refuse it UP FRONT (before a token is minted, before the status
+        // flips) when that email could never be delivered: an unconfigured public base
+        // URL, or a speaker with no contact email on file. Previously both were silent
+        // (a LogWarning / a bare return), so Approve parked the request in
+        // AwaitingSpeaker with valid tokens nobody would ever receive and it sat there
+        // until the 72h expiry worker reverted it.
+        var mintsSpeakerLinks = bindHall && !request.VerbalConfirmed;
+        if (mintsSpeakerLinks)
+        {
+            await EnsureSpeakerConfirmationIsDeliverableAsync(req.SpeakerId, cancellationToken);
+        }
+        var links = mintsSpeakerLinks
             ? meetingActionTokens.StageTokensForRequest(req.Id)
             : null;
 
@@ -559,6 +574,81 @@ internal sealed class SpeakerMeetingRequestService(
             ActorUserId = actorUserId,
             Detail = DetailJson(new { speakerMeetingRequestId = id }),
         }, cancellationToken);
+
+        // QA B12 — check-in used to be a bare status flip: the requester was told
+        // nothing and their card still read "accepted". Tell them the attendance was
+        // recorded (in-app + email, the same convention the other outcomes use).
+        // Best-effort — a notify failure never undoes the committed check-in.
+        var checkedInSpeakerName = await appDbContext.Speakers.AsNoTracking()
+            .Where(s => s.Id == req.SpeakerId).Select(s => s.Name)
+            .SingleOrDefaultAsync(cancellationToken) ?? "the speaker";
+        await notifications.TryDispatchAsync(new NotificationRequest
+        {
+            UserId = req.RequestedByUserId,
+            Kind = NotificationKind.MeetingScheduled,
+            Title = "Meeting attendance recorded",
+            TitleArabic = "تم تسجيل حضور الاجتماع",
+            Body = $"Your meeting with {checkedInSpeakerName} was checked in at the hall.",
+            BodyArabic = $"تم تسجيل حضورك لاجتماعك مع {checkedInSpeakerName} في القاعة.",
+            Severity = NotificationSeverity.Info,
+            RelatedEntityType = nameof(SpeakerMeetingRequest),
+            RelatedEntityId = req.Id,
+            SendEmail = true,
+        }, logger, cancellationToken);
+
+        return await LoadDetailAsync(id, cancellationToken);
+    }
+
+    // QA B20 — a mistaken Decline / a requester's Cancel used to be unrecoverable: the
+    // row carried no actions at all. Reopening puts it back to a clean Pending (the same
+    // shape MeetingAwaitingSpeakerExpiryWorker reverts to) so the admin can decide again.
+    // Only the two CLOSED-without-a-meeting states qualify — Accepted / AwaitingSpeaker /
+    // Done all HOLD a slot (MeetingRequestStatuses.SlotHolding), and reopening one would
+    // silently free a booked hall slot behind the parties' backs.
+    public async Task<AdminSpeakerMeetingRequestDetail> ReopenAsync(
+        Guid actorUserId, Guid id, CancellationToken cancellationToken = default)
+    {
+        var req = await appDbContext.SpeakerMeetingRequests
+            .SingleOrDefaultAsync(r => r.Id == id, cancellationToken)
+            ?? throw new ApiException(
+                ErrorCodes.SpeakerMeetingRequestNotFound, 404,
+                "Speaker meeting request not found.",
+                "لم يتم العثور على طلب مقابلة المتحدّث.");
+        if (req.Status is not (MeetingRequestStatus.Rejected or MeetingRequestStatus.Cancelled))
+        {
+            throw new ApiException(
+                ErrorCodes.SpeakerMeetingRequestStatusInvalid, 409,
+                "Only a declined or cancelled request can be reopened.",
+                "لا يمكن إعادة فتح سوى طلب مرفوض أو ملغى.");
+        }
+
+        var previousStatus = req.Status;
+        req.Status = MeetingRequestStatus.Pending;
+        req.HallId = null;
+        req.MeetingTableId = null;
+        req.SlotStart = null;
+        req.SlotEnd = null;
+        req.AvailabilityWindowId = null;
+        req.SpeakerDecisionAt = null;
+        req.RespondedAt = null;
+        req.RespondedByUserId = null;
+        req.ResponseNote = null;
+        req.CheckedInAt = null;
+        req.CheckedInByUserId = null;
+        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.SpeakerMeetingRequestReopened,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = DetailJson(new
+            {
+                speakerMeetingRequestId = req.Id,
+                previousStatus = previousStatus.ToString(),
+            }),
+        }, cancellationToken);
+
         return await LoadDetailAsync(id, cancellationToken);
     }
 
@@ -583,6 +673,11 @@ internal sealed class SpeakerMeetingRequestService(
                 "Only a request awaiting the speaker's confirmation can be re-sent.",
                 "لا يمكن إعادة الإرسال إلا لطلب بانتظار تأكيد المتحدّث.");
         }
+
+        // QA A24 / A25 — same precondition as Approve: never mint a fresh pair that
+        // cannot be delivered. A re-send whose email would be skipped is exactly the
+        // silent no-op this action exists to fix.
+        await EnsureSpeakerConfirmationIsDeliverableAsync(req.SpeakerId, cancellationToken);
 
         var now = timeProvider.GetUtcNow();
         // Kill any still-live token so only the fresh pair can decide the request.
@@ -611,9 +706,13 @@ internal sealed class SpeakerMeetingRequestService(
     private async Task EmailSpeakerConfirmationLinksAsync(
         SpeakerMeetingRequest req, MeetingActionLinks links, CancellationToken cancellationToken)
     {
+        // QA A24 / A25 — both callers (Approve + Resend) now pre-flight these two
+        // preconditions via EnsureSpeakerConfirmationIsDeliverableAsync, so reaching
+        // either branch means the state changed underneath us. Log at ERROR (it strands
+        // an AwaitingSpeaker request) instead of the old warning / silent return.
         if (!links.HasUrls)
         {
-            logger.LogWarning(
+            logger.LogError(
                 "Meeting request {Id} is AwaitingSpeaker but MeetingLinks:PublicWebBaseUrl "
                 + "is unconfigured — the speaker confirmation email was skipped.", req.Id);
             return;
@@ -621,6 +720,10 @@ internal sealed class SpeakerMeetingRequestService(
         var contactEmail = await ResolveSpeakerContactEmailAsync(req.SpeakerId, cancellationToken);
         if (string.IsNullOrWhiteSpace(contactEmail))
         {
+            logger.LogError(
+                "Meeting request {Id} is AwaitingSpeaker but speaker {SpeakerId} has no "
+                + "contact email — the speaker confirmation email was skipped.",
+                req.Id, req.SpeakerId);
             return;
         }
 
@@ -637,6 +740,42 @@ internal sealed class SpeakerMeetingRequestService(
         await SendSpeakerEmailAsync(
             contactEmail!, "SIMF — please confirm a meeting request", html,
             purpose: "SpeakerMeetingConfirm", cancellationToken);
+    }
+
+    // QA A24 / A25 — the two preconditions the speaker double-opt-in email needs before
+    // the Approve / Resend path is allowed to mint anything. Both are admin-fixable
+    // (a configuration key, a missing speaker email), so they surface as precise
+    // bilingual 409s that name the fix rather than a log line nobody reads.
+    private async Task EnsureSpeakerConfirmationIsDeliverableAsync(
+        Guid speakerId, CancellationToken cancellationToken)
+    {
+        if (!meetingActionTokens.LinksConfigured)
+        {
+            logger.LogError(
+                "Speaker meeting approve refused for speaker {SpeakerId}: "
+                + "MeetingLinks:PublicWebBaseUrl is unconfigured.", speakerId);
+            throw new ApiException(
+                ErrorCodes.MeetingLinksNotConfigured, 409,
+                "The public meeting-confirmation link is not configured, so the speaker "
+                + "cannot be emailed. Set MeetingLinks:PublicWebBaseUrl and try again.",
+                "لم يتم ضبط رابط تأكيد الاجتماع العام، لذا لا يمكن مراسلة المتحدّث. "
+                + "اضبط الإعداد MeetingLinks:PublicWebBaseUrl ثم أعد المحاولة.");
+        }
+
+        var contactEmail = await ResolveSpeakerContactEmailAsync(speakerId, cancellationToken);
+        if (string.IsNullOrWhiteSpace(contactEmail))
+        {
+            logger.LogError(
+                "Speaker meeting approve refused: speaker {SpeakerId} has no contact email.",
+                speakerId);
+            throw new ApiException(
+                ErrorCodes.SpeakerMeetingContactMissing, 409,
+                "This speaker has no contact email, so the confirmation link cannot be "
+                + "sent. Add the speaker's email, or use Confirm when you already have "
+                + "their verbal agreement.",
+                "لا يوجد بريد إلكتروني لهذا المتحدّث، لذا لا يمكن إرسال رابط التأكيد. "
+                + "أضف بريد المتحدّث الإلكتروني، أو استخدم \"تأكيد\" إذا كانت لديك موافقته الشفهية.");
+        }
     }
 
     private static string HtmlEnc(string value) => System.Net.WebUtility.HtmlEncode(value);
@@ -746,6 +885,20 @@ internal sealed class SpeakerMeetingRequestService(
                     "The meeting table was not found in this hall.",
                     "لم يتم العثور على طاولة الاجتماع في هذه القاعة.");
             }
+
+            // D-773 — a meeting TABLE holds one meeting at a time. "Active + in this
+            // hall" was the only check here, and every other guard on this path is
+            // keyed on the HALL or the SPEAKER, so a speaker bind could take a table
+            // already held by a delegation meeting or a business meeting (reachable
+            // once a table is moved between halls after a booking). The shared scan
+            // covers all three families.
+            await MeetingTableOverlapGuard.EnsureTableIsFreeAsync(
+                appDbContext, tableId, start, end,
+                ErrorCodes.SpeakerMeetingRequestInvalid,
+                excludeDelegationRequestId: null,
+                excludeSpeakerRequestId: req.Id,
+                excludeBusinessMeetingId: null,
+                cancellationToken);
             req.MeetingTableId = tableId;
         }
 

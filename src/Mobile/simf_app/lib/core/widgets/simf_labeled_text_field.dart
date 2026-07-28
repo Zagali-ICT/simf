@@ -34,17 +34,24 @@ class SimfLabeledTextField extends StatelessWidget {
       children: <Widget>[
         SimfFieldLabel(label),
         const SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          maxLength: maxLength,
-          keyboardType: keyboardType,
-          textDirection: textDirection,
-          style: simfInputStyle,
-          autovalidateMode:
-              validator != null ? AutovalidateMode.onUserInteraction : null,
-          inputFormatters: inputFormatters,
-          validator: validator,
-          decoration: simfFieldDecoration(counterText: ''),
+        // The visible [SimfFieldLabel] is a sibling Text, not the field's own
+        // name, so a screen reader announced a bare "edit box" (BUG-012).
+        // Attaching the label here names the field without changing the paint.
+        Semantics(
+          label: label,
+          textField: true,
+          child: TextFormField(
+            controller: controller,
+            maxLength: maxLength,
+            keyboardType: keyboardType,
+            textDirection: textDirection,
+            style: simfInputStyle,
+            autovalidateMode:
+                validator != null ? AutovalidateMode.onUserInteraction : null,
+            inputFormatters: inputFormatters,
+            validator: validator,
+            decoration: simfFieldDecoration(counterText: ''),
+          ),
         ),
       ],
     );

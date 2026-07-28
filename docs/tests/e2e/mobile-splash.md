@@ -8,7 +8,7 @@
 > boot decision is unit-tested in
 > `src/Mobile/simf_app/test/features/splash/splash_controller_test.dart`, the
 > cold-start restore in
-> `src/Mobile/packages/simf_auth_pkg/test/auth_controller_restore_test.dart`,
+> `src/Mobile/simf_app/packages/simf_auth_pkg/test/auth_controller_restore_test.dart`,
 > and the server update policy (forced/soft/snooze/fail-open) in
 > `src/Mobile/simf_app/test/core/startup/server_app_update_checker_test.dart`
 > + the dialog glue in

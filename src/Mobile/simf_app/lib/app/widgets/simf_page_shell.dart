@@ -17,6 +17,7 @@ import '../theme/tokens.dart';
 import 'more_drawer.dart';
 import 'simf_app_shell.dart' show SimfShellScope, tabIndex;
 import 'simf_bottom_nav.dart';
+import 'simf_image_viewer.dart';
 import 'simf_language_toggle.dart';
 import 'simf_logo.dart';
 import 'simf_svg_icon.dart';
@@ -313,6 +314,11 @@ class SimfCircledBackButton extends StatelessWidget {
     final flip = mirrorInRtl && Directionality.of(context) == TextDirection.rtl;
     return IconButton(
       onPressed: onBack,
+      // The chevron is an SVG with no text, so without this the control had no
+      // accessible name at all — a screen reader announced a bare "button" on
+      // the ~18 screens that carry the shared header (BUG-003). The localized
+      // Material string keeps it bilingual with no new l10n key.
+      tooltip: MaterialLocalizations.of(context).backButtonTooltip,
       style: IconButton.styleFrom(
         backgroundColor: SimfTokens.navyDeep,
         shape: const CircleBorder(),
@@ -405,9 +411,18 @@ class SimfPullableHost extends StatelessWidget {
 /// The shared trailing action cluster on every in-app page's top nav (owner
 /// 2026-06-27): the notifications bell and the menu ☰ — each a **gold glyph in
 /// a navy rounded box** (frame 758:1136), so the top nav is identical on the
-/// signed-in home greeting header and every [SimfPageShell] sub-page. The
-/// language pill was dropped from this cluster (owner 2026-07-11); language is
-/// still switched from a sub-page's own toggle and the More screen's اللغة row.
+/// signed-in home greeting header and every [SimfPageShell] sub-page.
+///
+/// The language pill is **not a member of this cluster** (owner 2026-07-11): a
+/// sub-page gets its own pill from [SimfPageShell]'s trailing slot instead.
+/// That call assumed every surface had a sub-page header to fall back on, which
+/// the signed-in Home does not — it builds its own greeting header, so Home was
+/// left with no route to the language switch at all (BUG-017). The owner
+/// reversed the Home half of that call on **2026-07-27** ("keep home lang",
+/// D-772):
+/// `GreetingHeader` renders a [SimfLanguageToggle] as a **sibling beside** this
+/// cluster. Every other surface is unchanged — do NOT move the pill back inside
+/// the cluster, or Home would render two of them.
 ///
 /// [showBell] is true on every signed-in surface; the guest home (frame
 /// 758:2910) sets it false — a guest has no personal notifications.
@@ -469,7 +484,9 @@ class SimfHeaderActions extends ConsumerWidget {
           ],
           Builder(
             builder: (ctx) => _box(
-              tooltip: l10n.moreTitle,
+              // BUG-017 — this control opens the side drawer, a different menu
+              // from the Profile "More" hub; both used to announce as "More".
+              tooltip: l10n.menuTitle,
               onTap: () => Scaffold.of(ctx).openDrawer(),
               glyph: const Icon(Icons.menu),
             ),
@@ -643,6 +660,30 @@ class SimfSectionHeader extends StatelessWidget {
   }
 }
 
+/// A short muted explanatory note under a page title — the shared "what is this
+/// screen for" line (BUG-025: My Visitors vs My Contacts). An info glyph plus one
+/// wrapping paragraph, RTL-safe via the surrounding directionality. Distinct from
+/// [SimfSectionHeader] (a bold section title) and [SimfEmptyState] (a centred
+/// empty surface): this sits above real content and is always shown.
+class SimfPageNote extends StatelessWidget {
+  const SimfPageNote({required this.text, super.key});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        // Sized like the shell's other inline glyphs (cf. SimfEmptyState).
+        const Icon(Icons.info_outline, size: 16, color: SimfTokens.beigeBorder),
+        const SizedBox(width: SimfTokens.space2),
+        Expanded(child: Text(text, style: SimfTokens.bodyBeigeSm)),
+      ],
+    );
+  }
+}
+
 /// A bordered single-line link row — the signed-in home's section bars
 /// (frames 758:1207 / 1049:12844 / 758:1211 "عن الملتقى" / "الرعاة" /
 /// "الأخبار والتغطية"): a transparent 48-high box with the beige hairline, the
@@ -736,6 +777,7 @@ class SimfNavTile extends StatelessWidget {
     this.iconAsset,
     this.onTap,
     this.enabled = true,
+    this.disabledHint,
     this.minHeight = 72,
     super.key,
   }) : assert(
@@ -756,6 +798,12 @@ class SimfNavTile extends StatelessWidget {
   final VoidCallback? onTap;
   final bool enabled;
 
+  /// Why the tile is locked, announced as the semantics hint when [enabled] is
+  /// false (e.g. "sign in to unlock"). The locked variant is only a colour
+  /// change, so without it a screen-reader user met a tile that simply did
+  /// nothing and was never told why (BUG-014). Null keeps the plain tile.
+  final String? disabledHint;
+
   /// The tile's minimum height. The frame uses 72 for the "عن الملتقى" row and
   /// 80 for the news + smart-feature rows (758:1216 vs 758:1164).
   final double minHeight;
@@ -769,7 +817,7 @@ class SimfNavTile extends StatelessWidget {
     final Widget top = asset != null
         ? SimfSvgIcon(asset, size: 24, color: foreground)
         : Icon(icon, size: 24, color: foreground);
-    return SimfCard(
+    final Widget tile = SimfCard(
       onTap: enabled ? onTap : null,
       color: enabled ? SimfTokens.navyDeep : SimfTokens.navyDisabled,
       borderColor: enabled
@@ -783,6 +831,13 @@ class SimfNavTile extends StatelessWidget {
         minHeight: minHeight,
       ),
     );
+    final hint = disabledHint;
+    if (enabled || hint == null) {
+      return tile;
+    }
+    // The tile stays intentionally inert (it is a locked affordance, not a
+    // broken button) — only the announcement changes.
+    return Semantics(enabled: false, hint: hint, child: tile);
   }
 }
 
@@ -873,11 +928,18 @@ class _TileBody extends StatelessWidget {
 /// `Image.network` can't load it) and refreshed immediately after an upload via
 /// the avatar bust token. Otherwise — and whenever no photo is available — it
 /// renders the brand-mark fallback. [name] drives the accessibility label only.
+///
+/// Owner 2026-07-26 — set [enableFullScreen] on a DISPLAY-ONLY photo (the badge
+/// card) so tapping it opens the picture full size from the already-fetched
+/// bytes (D-422: the avatar endpoint is bearer-gated, so the viewer paints a
+/// [MemoryImage], never a bare `Image.network`). It stays off where the tap
+/// already means something else (My-Area's change-photo affordance).
 class SimfAvatar extends ConsumerWidget {
   const SimfAvatar({
     required this.name,
     this.currentUser = false,
     this.size = 42,
+    this.enableFullScreen = false,
     super.key,
   });
 
@@ -889,29 +951,39 @@ class SimfAvatar extends ConsumerWidget {
   final bool currentUser;
   final double size;
 
+  /// Opens the photo full size on tap. Only honoured when a real photo is
+  /// shown — the brand-mark fallback has nothing to enlarge.
+  final bool enableFullScreen;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final fallback = _AvatarFallback(size: size);
     Widget child = fallback;
+    MemoryImage? photo;
     if (currentUser) {
       final bytes = ref.watch(myAvatarBytesProvider).asData?.value;
       if (bytes != null && bytes.isNotEmpty) {
-        child = Image.memory(
-          bytes,
+        photo = MemoryImage(bytes);
+        child = Image(
+          image: photo,
           fit: BoxFit.cover,
           gaplessPlayback: true,
           errorBuilder: (_, __, ___) => fallback,
         );
       }
     }
-    return Semantics(
-      image: true,
-      label: name.trim().isEmpty ? null : name,
-      child: ClipRRect(
-        borderRadius:
-            const BorderRadius.all(Radius.circular(SimfTokens.radius)),
-        child: SizedBox(width: size, height: size, child: child),
-      ),
+    final label = name.trim().isEmpty ? null : name;
+    final box = ClipRRect(
+      borderRadius: const BorderRadius.all(Radius.circular(SimfTokens.radius)),
+      child: SizedBox(width: size, height: size, child: child),
+    );
+    if (!enableFullScreen || photo == null) {
+      return Semantics(image: true, label: label, child: box);
+    }
+    return SimfTapToEnlarge(
+      image: photo,
+      label: label ?? '',
+      child: box,
     );
   }
 }
@@ -1075,12 +1147,23 @@ class SimfErrorState extends StatelessWidget {
   }
 }
 
-/// The standard empty / pending surface: a muted icon over the message.
+/// The standard empty / pending surface: a muted icon over the message, with an
+/// optional call-to-action underneath.
 class SimfEmptyState extends StatelessWidget {
-  const SimfEmptyState({required this.icon, required this.message, super.key});
+  const SimfEmptyState({
+    required this.icon,
+    required this.message,
+    this.action,
+    super.key,
+  });
 
   final IconData icon;
   final String message;
+
+  /// An optional action rendered under the message — e.g. the true-guest
+  /// sign-in / create-account pair on the badge and profile tabs
+  /// ([SimfGuestPrompt]). Null keeps the plain empty surface.
+  final Widget? action;
 
   @override
   Widget build(BuildContext context) {
@@ -1097,8 +1180,60 @@ class SimfEmptyState extends StatelessWidget {
               textAlign: TextAlign.center,
               style: const TextStyle(color: SimfTokens.beigeBorder),
             ),
+            if (action != null) ...<Widget>[
+              const SizedBox(height: SimfTokens.space4),
+              action!,
+            ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// The **true-guest** surface for a signed-in-only tab: the empty-state icon and
+/// message over a working sign-in button and a create-account link.
+///
+/// The bottom nav switches tabs INSIDE the shell (no go_router navigation), so
+/// the router's auth redirect never runs and a visitor with no account at all
+/// reaches the badge and profile tabs. Both used to render the PENDING-account
+/// copy ("your account is not approved yet…" / "under review…"), which describes
+/// a submitted registration that does not exist and offered no way out — a dead
+/// end (BUG-013). The pending copy stays for genuinely pending accounts.
+class SimfGuestPrompt extends StatelessWidget {
+  const SimfGuestPrompt({
+    required this.icon,
+    required this.message,
+    required this.signInLabel,
+    required this.createAccountLabel,
+    super.key,
+  });
+
+  final IconData icon;
+
+  /// The true-guest copy — "sign in or create an account to …", never the
+  /// pending-approval wording.
+  final String message;
+  final String signInLabel;
+  final String createAccountLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return SimfEmptyState(
+      icon: icon,
+      message: message,
+      action: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          FilledButton(
+            onPressed: () => context.pushNamed(RouteNames.signIn),
+            child: Text(signInLabel),
+          ),
+          TextButton(
+            onPressed: () => context.pushNamed(RouteNames.signUpForm),
+            child: Text(createAccountLabel),
+          ),
+        ],
       ),
     );
   }

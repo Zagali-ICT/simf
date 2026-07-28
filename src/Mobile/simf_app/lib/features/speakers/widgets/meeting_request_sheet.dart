@@ -7,6 +7,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
+import '../../../core/errors/api_error_l10n.dart';
 import '../../../core/utils/gregorian_month_names.dart';
 import '../../../core/utils/weekday_names.dart';
 import '../data/speaker_models.dart';
@@ -250,17 +251,23 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
     return '$hh:$mm $meridiem';
   }
 
+  /// The inline error for a failed submit.
+  ///
+  /// QA A26 — this used to map EVERY 409 onto "this speaker does not accept
+  /// meeting requests", so a duplicate-pending or a slot-already-taken conflict
+  /// surfaced a flatly wrong reason and the correct bilingual text the API had
+  /// already picked for the active locale was thrown away. Every status except
+  /// 403 now defers to the shared [ApiFailureL10n] mapper, which returns the
+  /// envelope's own message and still localizes the network / timeout codes.
+  ///
+  /// QA A28 — a 403 keeps its own app copy because the server's forbidden text
+  /// is generic: eligibility is the per-user `AllowsSpeakerMeeting` flag (no
+  /// longer the VIP tier), and only the app can say what the user should do.
   String _failureText(ApiFailure failure, AppL10n l10n) {
     if (failure.httpStatus == 403) {
-      return l10n.meetingVipOnly;
+      return l10n.meetingNotEnabled;
     }
-    if (failure.httpStatus == 409) {
-      return l10n.meetingRequestNotAllowed;
-    }
-    if (failure.httpStatus == 400) {
-      return l10n.meetingRequestInvalid;
-    }
-    return l10n.meetingRequestFailed;
+    return failure.localizedMessage(l10n);
   }
 
   @override

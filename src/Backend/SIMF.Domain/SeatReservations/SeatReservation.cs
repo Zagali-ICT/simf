@@ -56,25 +56,38 @@ public sealed class SeatReservation
     /// indexes so the seat is bookable again.</summary>
     public DateTimeOffset? ReleasedAt { get; set; }
 
-    /// <summary>P2.2 — D-227 (FDS-005 §4): the booking-approval state.
-    /// Visitor bookings (UserBooking / RandomAssignment) are created
-    /// <see cref="BookingStatus.Pending"/> and the Control Panel approves or
-    /// rejects them; AdminReservedRow blocks are created
-    /// <see cref="BookingStatus.Approved"/>. Existing rows backfill to
-    /// Approved (the EF default) — they pre-date the approval workflow and
-    /// were already confirmed.</summary>
+    /// <summary>P2.2 — D-227 (FDS-005 §4): the booking lifecycle state.
+    /// <para>A9 (2026-07-27) — as built there is NO approval step: the owner made
+    /// bookings reservation-only on 2026-07-18, so every create path (visitor
+    /// self-pick, random allocation, open-seating join, admin row/seat block)
+    /// writes <see cref="BookingStatus.Approved"/>, and the only other value ever
+    /// written is <see cref="BookingStatus.Cancelled"/>, always together with
+    /// <see cref="ReleasedAt"/>. A live row is therefore always Approved; a
+    /// released row is Cancelled. <see cref="BookingStatus.Pending"/> and
+    /// <see cref="BookingStatus.Rejected"/> have no writer — see
+    /// <see cref="BookingStatus"/> for why they are kept.</para></summary>
     public BookingStatus Status { get; set; }
 
-    /// <summary>P2.2 — the admin (logical FK to SimfUser on the Identity DB)
-    /// who approved or rejected the booking; null while Pending.</summary>
+    /// <summary>P2.2 — originally "the admin who approved or rejected the booking".
+    /// <para>A9 (2026-07-27) — with the approval queue gone this is written by
+    /// exactly one path: an admin RELEASE from the Control Panel seat plan stamps
+    /// the acting admin here. Read it as "who released this reservation", not as a
+    /// review decision. Null on every live row. Logical FK to SimfUser on the
+    /// Identity DB (no constraint — D-157).</para></summary>
     public Guid? ReviewedByUserId { get; set; }
 
-    /// <summary>P2.2 — when the booking was approved or rejected; null while
-    /// Pending.</summary>
+    /// <summary>P2.2 — the timestamp paired with <see cref="ReviewedByUserId"/>.
+    /// A9: written only by an admin RELEASE (alongside <see cref="ReleasedAt"/>);
+    /// null on every live row.</summary>
     public DateTimeOffset? ReviewedAt { get; set; }
 
-    /// <summary>P2.2 — the reason recorded when a booking is rejected
-    /// (required on reject, FDS-005 §8); null otherwise. ≤512 chars.</summary>
+    /// <summary>P2.2 — the reason recorded when a booking is rejected (FDS-005 §8).
+    /// <para>A9 (2026-07-27) — VESTIGIAL: no code path writes it, because the reject
+    /// action it belonged to was removed with the approval queue. The column is kept
+    /// (nullable, ≤512 chars, always NULL) rather than dropped — dropping it is a
+    /// destructive schema change against a frozen baseline, and it is the landing
+    /// spot if an approval step is ever restored. Do not read it expecting a
+    /// value.</para></summary>
     public string? RejectionReason { get; set; }
 
     /// <summary>M-6 — when a Pending, still-held visitor booking auto-expires and
@@ -83,4 +96,18 @@ public sealed class SeatReservation
     /// for an AdminReservedRow block (admin holds never expire). Existing rows and
     /// already-decided bookings carry NULL and are ignored by the expiry worker.</summary>
     public DateTimeOffset? Expires { get; set; }
+
+    /// <summary>D-771 (owner 2026-07-26) — the manual guest HINT an administrator
+    /// types when blocking a VVIP seat from the Control Panel. A VVIP seat has no
+    /// registration, so there is no <see cref="ReservedForUserId"/> to resolve a
+    /// name from: the hint IS the occupant record (e.g. "Reserved for the
+    /// Minister"). Only meaningful on a
+    /// <see cref="SeatReservationKind.AdminReservedRow"/> block; null everywhere
+    /// else. ≤256 chars.</summary>
+    public string? GuestHint { get; set; }
+
+    /// <summary>D-771 — the Arabic twin of <see cref="GuestHint"/> (the surrounding
+    /// entities are all bilingual), e.g. "هذا المقعد محجوز لمعالي الوزير". ≤256
+    /// chars; null when the admin typed only one language.</summary>
+    public string? GuestHintArabic { get; set; }
 }

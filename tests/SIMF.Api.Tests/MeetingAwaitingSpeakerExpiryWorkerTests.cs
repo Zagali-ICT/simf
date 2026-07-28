@@ -4,7 +4,9 @@
 // request that still has a live token, and any decided request, are left untouched.
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
+using SIMF.Application.Notifications;
 using SIMF.Common.Enums;
 using SIMF.Domain.BusinessMeetings;
 using SIMF.Domain.Programme;
@@ -98,8 +100,14 @@ public sealed class MeetingAwaitingSpeakerExpiryWorkerTests : IClassFixture<Simf
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var auditLog = scope.ServiceProvider.GetRequiredService<IAuditLog>();
+        // QA A29 — the scan now also notifies the requester on the revert.
+        var notifications = scope.ServiceProvider
+            .GetRequiredService<INotificationDispatcher>();
+        var logger = scope.ServiceProvider
+            .GetRequiredService<ILoggerFactory>()
+            .CreateLogger(nameof(MeetingAwaitingSpeakerExpiryWorkerTests));
         return await MeetingAwaitingSpeakerExpiryWorker.RunExpiryScanAsync(
-            db, auditLog, now, CancellationToken.None);
+            db, auditLog, notifications, logger, now, CancellationToken.None);
     }
 
     // Seeds a fully hall-bound AwaitingSpeaker request (hall + table + slot + window)

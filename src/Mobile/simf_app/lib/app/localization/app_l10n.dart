@@ -55,6 +55,11 @@ class AppL10n {
             'registration is approved.',
       );
   String get retryLabel => _t('إعادة المحاولة', 'Retry');
+  // Full-size image viewer (owner 2026-07-26) — opened by tapping any logo /
+  // photo box rendered through SimfLogoImage.
+  String get imageViewerCloseLabel => _t('إغلاق الصورة', 'Close image');
+  String get imageViewerLoadFailed =>
+      _t('تعذّر تحميل الصورة.', 'Could not load the image.');
   String get loadingLabel => _t('جارٍ التحميل…', 'Loading…');
   String get lookupLoadError =>
       _t('تعذر تحميل القائمة.', 'Could not load the list.');
@@ -97,8 +102,8 @@ class AppL10n {
         'مرحباً بك في تطبيق الملتقى',
         'Welcome to the SIMF app',
       );
-  // Step bodies — the KSA-Project onboarding copy (Figma 148:22 / 159:942 /
-  // 159:1052, D-362). All three steps share onboardingTitle1 as their title.
+  // Step titles + bodies — the KSA-Project onboarding copy (Figma 148:22 /
+  // 159:942 / 159:1052, D-362). One title per step (DEF-ONB-006).
   String get onboardingBody1 => _t(
         'دليلك المتكامل: الأجندة، المتحدثون، الخريطة التفاعلية، البطاقة الذكية، والبث المباشر في تطبيق واحد.',
         'Your complete guide: the agenda, speakers, interactive map, smart badge and live broadcast in one app.',
@@ -261,6 +266,18 @@ class AppL10n {
   // #14 — edit-mode success toast (My interests screen opened from My-Area).
   String get interestsUpdatedToast =>
       _t('تم تحديث اهتماماتك', 'Your interests were updated');
+  // Owner 2026-07-26 — add / edit the mobile number from the profile. Validation
+  // only: there is deliberately NO OTP / verification step on this screen.
+  String get myMobileTitle => _t('رقم الجوال', 'Mobile number');
+  String get myMobileHelper => _t(
+        'أضف أو عدّل رقم جوالك. يُستخدم للتواصل معك بخصوص الملتقى.',
+        'Add or edit your mobile number. It is used to contact you about the '
+            'forum.',
+      );
+  String get myMobileCurrentLabel => _t('الرقم الحالي', 'Current number');
+  String get myMobileNoneYet => _t('لم يُضف بعد', 'Not added yet');
+  String get myMobileUpdatedToast =>
+      _t('تم تحديث رقم الجوال', 'Your mobile number was updated');
   String get attachIdImageLabel => _t('إرفاق صورة الهوية', 'Attach ID image');
   // KSA-Project profile frame copy (Figma 168:2972, D-368).
   String get createProfileTitle => _t('إنشاء ملف شخصى', 'Create profile');
@@ -270,6 +287,11 @@ class AppL10n {
         'Attachments (ID / Iqama / passport image)',
       );
   String get attachFileLabel => _t('إرفاق ملف', 'Attach file');
+  // BUG-019 / 19f — a walk-in desk has to be able to shoot the document on the
+  // spot, so an attachment offers the camera as well as a file pick.
+  String get attachSourceTitle => _t('إضافة صورة', 'Add an image');
+  String get attachFromCamera => _t('التقاط بالكاميرا', 'Take a photo');
+  String get attachFromFile => _t('اختيار ملف', 'Choose a file');
   String get termsAgreeQuestion => _t(
         'الموافقة على الشروط والأحكام؟',
         'Agree to the terms & conditions?',
@@ -302,9 +324,13 @@ class AppL10n {
       _t('مكان الميلاد مطلوب', 'Place of birth is required');
   String get mobileRequired =>
       _t('رقم الجوال مطلوب', 'Mobile number is required');
+  // BUG-019 / 19m — the validator also applies the Luhn mod-10 check digit
+  // (`isValidNationalId`), so a number that matches the "10 digits starting
+  // with 1" shape can still be rejected. Say so, or the message reads as a lie.
   String get nationalIdInvalid => _t(
-        'رقم الهوية الوطنية غير صحيح (10 أرقام تبدأ بـ 1)',
-        'Invalid national ID (10 digits starting with 1)',
+        'رقم الهوية الوطنية غير صحيح (10 أرقام تبدأ بـ 1 مع رقم تحقق صحيح)',
+        'Invalid national ID (10 digits starting with 1, with a valid check '
+            'digit)',
       );
   String get iqamaInvalid => _t(
         'رقم الإقامة غير صحيح (10 أرقام تبدأ بـ 2)',
@@ -782,6 +808,12 @@ class AppL10n {
       );
   String get tileExhibition => _t('المعرض', 'Exhibition');
   String get tileMyBadgeShort => _t('بطاقتي', 'My badge');
+  // BUG-014 — the locked guest badge tile stays intentionally inert; the hint is
+  // the only cue a screen-reader user gets that it is locked and why.
+  String get guestBadgeLockedHint => _t(
+        'مقفل — سجّل الدخول لفتح بطاقتك الذكية',
+        'Locked — sign in to unlock your smart badge',
+      );
   String get homeOpenInfoSection =>
       _t('معلومات مفتوحة للجميع', 'Open to everyone');
   String get faqRowTitle => _t('الأسئلة الشائعة', 'FAQ');
@@ -893,7 +925,8 @@ class AppL10n {
   String get moderatorChipAccepted => _t('الأسئلة المقبولة', 'Accepted');
   String get moderatorChipAnswered => _t('تمت الإجابة', 'Answered');
   String get moderatorChipRejected => _t('مرفوض', 'Rejected');
-  String get moderatorChipOnStage => _t('يتم الإجابة', 'Being answered');
+  // DEF-MOD-007 — the duplicate `moderatorChipOnStage` was removed: it was a
+  // byte-identical copy of the action label below and was never rendered.
   String get moderatorActionOnStage => _t('يتم الإجابة', 'Being answered');
   String get moderatorActionAnswered => _t('تمت الإجابة', 'Answered');
   String get moderatorActionReject => _t('مرفوض', 'Reject');
@@ -910,6 +943,26 @@ class AppL10n {
       );
   String get moderatorActionFailed =>
       _t('تعذّر تنفيذ الإجراء. حاول مرة أخرى.', 'Action failed. Try again.');
+
+  // FR-MOD-001 — the moderator's own sessions (GET /app/sessions/moderated), so
+  // the desk is offered only where the per-session grant exists instead of being
+  // discovered as a 403 after the tap.
+  String get moderatorMySessions => _t('جلساتي', 'My sessions');
+  String get moderatorMySessionsEmpty => _t(
+        'لم يتم إسنادك إلى أي جلسة بعد.',
+        'You are not assigned to any session yet.',
+      );
+  String get moderatorMySessionsError => _t(
+        'تعذّر تحميل جلساتك. حاول مرة أخرى.',
+        'Could not load your sessions. Try again.',
+      );
+
+  // FR-MOD-003 — drag-to-reorder on the desk queue.
+  String get moderatorReorderHandle => _t('إعادة ترتيب السؤال', 'Reorder question');
+  String get moderatorReorderFailed => _t(
+        'تعذّر حفظ الترتيب. حاول مرة أخرى.',
+        'Could not save the order. Try again.',
+      );
 
   // Staff gate-operator console (Figma 758:4380/4651/4735/4819/4886, D-406/D-509).
   String get gateScannerEntry => _t('مسح البوابة', 'Gate scanner');
@@ -947,6 +1000,16 @@ class AppL10n {
         'لست مشغّلاً لأي بوابة.',
         'You are not assigned to any gate.',
       );
+  // DEF-STF-006 — an inactive gate denies EVERY scan, so it must be marked in
+  // the picker; the operator was left reading red denials with no hint that the
+  // GATE, not the badge, was the problem.
+  String get gateInactiveTag => _t('غير نشطة', 'inactive');
+  String get gateInactiveWarning => _t(
+        'هذه البوابة غير نشطة — سيُرفض كل مسح عليها. اختر بوابة أخرى أو اطلب '
+            'تفعيلها من لوحة التحكم.',
+        'This gate is inactive — every scan on it will be denied. Pick another '
+            'gate, or ask the Control Panel to activate it.',
+      );
   String get gateForbidden => _t(
         'لا تملك صلاحية تشغيل البوابات.',
         'You are not authorised to operate gates.',
@@ -975,14 +1038,20 @@ class AppL10n {
   String get staffEmailLabel => _t('البريد الالكتروني', 'Email');
   String get staffPhoneLabel => _t('رقم الجوال', 'Mobile number');
   String get staffOrganisationLabel => _t('الجهة / المنظمة', 'Organisation');
-  String get staffAttachIdLabel => _t(
-        'المرفقات (صورة الهوية / الإقامة / الجواز)',
-        'Attachments (ID / Iqama / passport image)',
+  // BUG-019 / 19k — the long parenthetical wrapped these two captions onto a
+  // second line while every sibling label was one line. The caption is now
+  // short; the detail moved to the field hint below it.
+  String get staffAttachIdLabel => _t('صورة الهوية', 'ID document');
+  String get staffAttachIdHint => _t(
+        'الهوية الوطنية أو الإقامة أو جواز السفر',
+        'National ID, Iqama or passport',
       );
-  String get staffAttachPhotoLabel =>
-      _t('المرفقات (إرفاق صورة شخصية)', 'Attachments (personal photo)');
+  String get staffAttachPhotoLabel => _t('الصورة الشخصية', 'Personal photo');
+  String get staffAttachOptionalHint => _t('اختياري', 'Optional');
   String get staffAttachFile => _t('إرفاق ملف', 'Attach file');
-  String get staffAttachPhoto => _t('إرفاق صورة شخصية', 'Attach personal photo');
+  // BUG-019 / 19k — "Attach personal photo" overflowed the fixed attach box on
+  // a phone-width column; the field caption above it already says which photo.
+  String get staffAttachPhoto => _t('إرفاق صورة', 'Attach photo');
   String get staffCompletePrompt => _t(
         'أكمل بيانات الزائر المطلوبة.',
         "Complete the visitor's required details.",
@@ -998,6 +1067,31 @@ class AppL10n {
   String get staffProfileTypeUnavailable => _t(
         'تعذّر تحميل تصنيف الزائر.',
         'Could not load the visitor classification.',
+      );
+  // DEF-STF-007 — the classification lookup came back EMPTY, so the operator has
+  // nothing to pick and submit can never pass. Say what to do about it.
+  String get staffProfileTypeEmptyHelp => _t(
+        'لا توجد تصنيفات زوار مفعّلة. اطلب من مسؤول لوحة التحكم إضافة تصنيف زائر ثم أعد المحاولة.',
+        'No active visitor classifications exist. Ask a Control Panel administrator to add one, then retry.',
+      );
+  // DEF-STF-004 — an attachment upload that fails AFTER the visitor was created.
+  // The account exists; only the file is missing, so the operator retries the
+  // UPLOAD instead of registering the person a second time.
+  String get staffUploadFailedTitle => _t(
+        'تم تسجيل الزائر — تعذّر رفع المرفقات',
+        'Visitor registered — attachments not uploaded',
+      );
+  String get staffUploadFailedIntro => _t(
+        'تم إنشاء حساب الزائر (بانتظار الاعتماد)، لكن تعذّر رفع ما يلي:',
+        'The visitor account was created (pending approval), but these could '
+            'not be uploaded:',
+      );
+  String get staffUploadRetryLabel => _t('إعادة رفع المرفقات', 'Retry upload');
+  String get staffUploadSkipLabel =>
+      _t('المتابعة بدون المرفقات', 'Continue without them');
+  String get staffUploadRetrySuccess => _t(
+        'تم رفع المرفقات.',
+        'The attachments were uploaded.',
       );
   String get staffRegisterAnother => _t('تسجيل زائر آخر', 'Register another');
   // The My-Area "الجلسات المحفوظة" counter (D-584) — shows the SAVED (favourited)
@@ -1018,6 +1112,11 @@ class AppL10n {
         'حسابك قيد المراجعة. ستظهر بطاقتك وجدولك بعد الاعتماد.',
         'Your account is under review. Your badge and schedule appear once approved.',
       );
+  // BUG-013 — the TRUE-guest copy (no account at all); see [badgeGuestBody].
+  String get myAreaGuestNote => _t(
+        'سجّل الدخول أو أنشئ حساباً لعرض ملفك الشخصي وجدولك.',
+        'Sign in or create an account to see your profile and schedule.',
+      );
   String get myAreaError =>
       _t('تعذّر تحميل منطقتك.', 'Could not load your area.');
 
@@ -1027,6 +1126,12 @@ class AppL10n {
       _t('تعذّر تحميل الخريطة.', 'Could not load the map.');
   String get venueMapEmpty =>
       _t('لا توجد عناصر على الخريطة بعد', 'No map items yet');
+  // The floating map controls are icon-only, so they carried no accessible name
+  // at all (BUG-012) — a screen-reader user could not zoom or recentre the map.
+  String get venueMapZoomIn => _t('تكبير الخريطة', 'Zoom in');
+  String get venueMapZoomOut => _t('تصغير الخريطة', 'Zoom out');
+  String get venueMapResetView =>
+      _t('إعادة ضبط عرض الخريطة', 'Reset the map view');
   String get legendHall => _t('قاعة', 'Hall');
   String get legendZone => _t('منطقة', 'Zone');
   String get legendBooth => _t('جناح', 'Booth');
@@ -1107,14 +1212,26 @@ class AppL10n {
   // open-seating join is a registration, not a seat reservation.
   String get joinOpenRegisterCta =>
       _t('سجل لحضور الجلسة', 'Register to attend the session');
-  String get joinSeatHint =>
-      _t('اختر مقعدك ثم انتظر موافقة الإدارة', 'Pick your seat, then await approval');
+  // A8 (2026-07-27) — bookings auto-confirm: the owner removed the Control
+  // Panel approval step on 2026-07-18, so the seat is HELD the moment it is
+  // picked. The old copy ("then await approval") described a dead workflow.
+  String get joinSeatHint => _t(
+        'اختر مقعدك ويُحجز لك فوراً',
+        'Pick your seat — it is held for you straight away',
+      );
   String get joinOpenHint =>
       _t('دخول عام — بدون مقعد محدد', 'General admission — no specific seat');
   String get joinConfirmTitle => _t('تأكيد الانضمام', 'Join this session?');
+  // A8 — the open-seating join confirmation. There is no approval request:
+  // the registration is recorded immediately, it does not reserve a specific
+  // seat, and entry is confirmed at check-in (matches joinOpenSuccessBody).
   String get joinConfirmBody => _t(
-        'سيتم إرسال طلب انضمامك إلى الإدارة للموافقة.',
-        'Your request to join will be sent to the organisers for approval.',
+        'سيتم تسجيلك لحضور هذه الجلسة فوراً دون الحاجة إلى موافقة. '
+            'التسجيل لا يحجز مقعداً محدداً، '
+            'وسيتم تأكيد دخولك عند تسجيل الدخول للجلسة.',
+        'You will be registered for this session right away — no approval '
+            'needed. This does not reserve a specific seat; your entry is '
+            'confirmed at session check-in.',
       );
   String get joinConfirmAction => _t('انضمام', 'Join');
   String get joinPendingToast =>
@@ -1164,6 +1281,38 @@ class AppL10n {
   String seatPickerSelectedChip(String row, int seat) =>
       _t('المقعد المختار: الصف $row · مقعد $seat', 'Selected: Row $row · Seat $seat');
   String get seatPickerConfirmCta => _t('تأكيد المقعد', 'Confirm my seat');
+  // B1 (owner "change seat") — moving an already-held seat. The picker doubles as
+  // the destination chooser: when the visitor already holds a seat it opens in
+  // CHANGE mode (its own title/hint/CTA) and the confirm step names both seats so
+  // nobody swaps by accident.
+  String get seatChangeCta => _t('تغيير المقعد', 'Change seat');
+  String get seatChangeTitle => _t('تغيير مقعدك', 'Change your seat');
+  String get seatChangeHint => _t(
+        'اضغط على مقعد متاح لنقل حجزك إليه — سيبقى مقعدك الحالي محجوزاً حتى ينجح النقل.',
+        'Tap an available seat to move your booking to it — you keep your current seat unless the move succeeds.',
+      );
+  String get seatChangeConfirmCta => _t('تأكيد التغيير', 'Confirm the change');
+  String get seatChangeConfirmTitle => _t('تغيير المقعد؟', 'Change your seat?');
+  String seatChangeConfirmBody(
+    String fromRow,
+    int fromSeat,
+    String toRow,
+    int toSeat,
+  ) =>
+      _t(
+        'سيتم نقل حجزك من الصف $fromRow · مقعد $fromSeat إلى الصف $toRow · مقعد $toSeat.',
+        'Your booking moves from Row $fromRow · Seat $fromSeat to Row $toRow · Seat $toSeat.',
+      );
+  String seatChangedAlertBody(String row, int seat) => _t(
+        'تم نقل حجزك إلى الصف $row · مقعد $seat.',
+        'Your booking has moved to Row $row · Seat $seat.',
+      );
+  String get seatChangeFailed =>
+      _t('تعذّر تغيير المقعد', "Couldn't change your seat");
+  String get seatChangeTaken => _t(
+        'تم حجز هذا المقعد للتو — لا يزال مقعدك الحالي محجوزاً لك.',
+        'That seat was just taken — you still have your current seat.',
+      );
   // Join-a-session hub.
   String get joinHubTitle => _t('احجز مقعداً', 'Book a seat');
   String get joinHubHint =>
@@ -1197,6 +1346,10 @@ class AppL10n {
   String get legendMine => _t('مقعدك', 'Your seat');
   String get legendAvailable => _t('متاح', 'Available');
   String get legendReserved => _t('محجوز', 'Reserved');
+  // A12 — the fourth seat state: the holder has scanned in at the hall gate,
+  // so the seat is confirmed rather than merely held. Same wording as the
+  // Control Panel's live-hall map (Admin.SessionLiveHall.Seat.Confirmed).
+  String get legendConfirmed => _t('تم التأكيد', 'Confirmed');
   String seatCapacity(int reserved, int total) =>
       _t('محجوز $reserved من $total', '$reserved of $total reserved');
   String get navigateToSeat => _t('إرشادي إلى مقعدي', 'Guide me to my seat');
@@ -1205,6 +1358,58 @@ class AppL10n {
         'مقعدي في الملتقى: صف $row · مقعد $seat',
         'My SIMF seat: Row $row · Seat $seat',
       );
+
+  // D-771 (owner 2026-07-26) — seat TIERS. The tier is real data on the hall
+  // layout: a VVIP row is protocol seating nobody may book, a VIP row is for VIP
+  // guests only, a Normal row is open to every visitor.
+  String get seatTierVvip => _t('شخصيات بالغة الأهمية', 'VVIP');
+  String get seatTierVip => _t('كبار الشخصيات', 'VIP');
+  String get seatTierNormal => _t('عادي', 'Normal');
+  String get seatTierVvipLocked => _t(
+        'مقعد محجوز لكبار الضيوف — لا يمكن حجزه',
+        'Reserved for protocol guests — cannot be booked',
+      );
+  String get seatTierVipLocked => _t(
+        'مقعد مخصص لكبار الشخصيات',
+        'Reserved for VIP guests',
+      );
+  String get seatTierPickerHint => _t(
+        'المقاعد المقفلة غير متاحة لك: مقاعد الشخصيات بالغة الأهمية يخصّصها المنظّم، ومقاعد كبار الشخصيات لكبار الشخصيات فقط.',
+        'Locked seats are not available to you: VVIP seats are assigned by the organiser, and VIP seats are for VIP guests only.',
+      );
+
+  // D-771 — the staff seating desk (tablet, Staff role only).
+  String get staffSeatingTitle => _t('إرشاد الضيوف للمقاعد', 'Guest seating desk');
+  String get staffSeatingIntro => _t(
+        'امسح بطاقة الضيف لمعرفة مقعده، أو اضغط على أي مقعد لمعرفة صاحبه.',
+        "Scan a guest's badge to find their seat, or tap a seat to see who it belongs to.",
+      );
+  String get staffSeatingScanLabel => _t('رمز البطاقة', 'Badge code');
+  String get staffSeatingScanCta => _t('بحث', 'Look up');
+  String get staffSeatingScanHint => _t(
+        'وجّه الكاميرا نحو رمز QR على بطاقة الضيف',
+        "Point the camera at the QR code on the guest's badge",
+      );
+  String get staffSeatingSessionLabel => _t('الجلسة', 'Session');
+  String get staffSeatingPickSession =>
+      _t('اختر الجلسة أولاً', 'Choose a session first');
+  String get staffSeatingNoSeat =>
+      _t('لا يوجد مقعد لهذا الضيف في هذه الجلسة', 'This guest has no seat in this session');
+  String get staffSeatingSeatEmpty => _t('هذا المقعد شاغر', 'This seat is empty');
+  String get staffSeatingReference => _t('الرقم المرجعي', 'Reference');
+  String get staffSeatingGuest => _t('الضيف', 'Guest');
+  String get staffSeatingSeat => _t('المقعد', 'Seat');
+  String staffSeatingSeatValue(String row, int seat) =>
+      _t('صف $row · مقعد $seat', 'Row $row · Seat $seat');
+  String get staffSeatingCheckedIn => _t('سجّل الدخول', 'Checked in');
+  String get staffSeatingNotCheckedIn =>
+      _t('لم يسجّل الدخول بعد', 'Not checked in yet');
+  String get staffSeatingLookupFailed =>
+      _t('تعذّر تنفيذ البحث.', 'The lookup failed.');
+  String get staffSeatingUnknownBadge =>
+      _t('لم يتم التعرف على هذه البطاقة.', 'That badge was not recognised.');
+  String get staffSeatingGuestPhoto => _t('صورة الضيف', 'Guest photo');
+  String get staffSeatingClear => _t('مسح النتيجة', 'Clear result');
 
   // Speakers list (Page 019).
   String get speakersTitle => _t('المتحدثون', 'Speakers');
@@ -1252,8 +1457,16 @@ class AppL10n {
       _t('الرجاء اختيار التاريخ والوقت', 'Please choose a date and time');
   String get meetingSlotNone =>
       _t('لا توجد فترات متاحة حالياً', 'No meeting slots available right now');
-  String get meetingVipOnly =>
-      _t('حجز فترة اجتماع متاح لضيوف كبار الشخصيات فقط', 'Booking a meeting slot is for VIP guests only');
+  // QA A28 — the old copy ("for VIP guests only") described a rule that no
+  // longer exists: eligibility to request a speaker meeting moved off the VIP
+  // tier onto the per-user, admin-assigned UserProfile.AllowsSpeakerMeeting
+  // flag (bi-meeting rework). This states the real rule and what to do next.
+  String get meetingNotEnabled => _t(
+        'طلب مقابلة المتحدّث غير مُفعَّل لحسابك. '
+            'تواصل مع فريق الملتقى لتفعيله.',
+        'Requesting a speaker meeting is not enabled for your account. '
+            'Contact the SIMF team to enable it.',
+      );
   String get meetingRequestSent =>
       _t('تم إرسال طلب المقابلة', 'Meeting request sent');
   String get meetingRequestInvalid => _t(
@@ -1297,12 +1510,22 @@ class AppL10n {
         'هذا الوفد غير متاح للاجتماعات',
         'This delegation is not available for meetings',
       );
-  String get meetingConfirmTitle => _t('تأكيد الاجتماع', 'Confirm meeting');
+  // A30 — this in-app screen answers a DELEGATION meeting only
+  // (`/meeting-confirm` with a requestId). The website's
+  // `/meeting/confirm?token=` page is the separate emailed-link surface. They
+  // used to share the title "تأكيد الاجتماع / Confirm meeting", so a tester
+  // driving this screen for a SPEAKER meeting hit a spurious 403/409; the copy
+  // now names the delegation explicitly.
+  String get meetingConfirmTitle =>
+      _t('تأكيد اجتماع الوفد', 'Confirm delegation meeting');
   String get meetingConfirmIntro => _t(
-        'اضغط لتأكيد هذا الاجتماع مع الطرف الآخر.',
-        'Tap to confirm this meeting with the other party.',
+        'اضغط لتأكيد اجتماع وفدكم مع الوفد الآخر، '
+            'أو ارفضه إذا تعذّر عقده.',
+        'Confirm your delegation meeting with the other delegation, '
+            'or decline it if it cannot go ahead.',
       );
-  String get meetingConfirmButton => _t('تأكيد الاجتماع', 'Confirm meeting');
+  String get meetingConfirmButton =>
+      _t('تأكيد الاجتماع', 'Confirm the meeting');
   String get meetingConfirmDone => _t('تم تأكيد الاجتماع', 'Meeting confirmed');
   String get meetingConfirmNotAwaiting => _t(
         'هذا الاجتماع ليس بانتظار التأكيد',
@@ -1314,6 +1537,23 @@ class AppL10n {
       );
   String get meetingConfirmMissing =>
       _t('لم يتم العثور على الاجتماع', 'Meeting not found');
+
+  // B8 — the delegation target's DECLINE action on the same screen. Before
+  // this the only exit from an approved meeting they could not attend was an
+  // admin cancel.
+  String get meetingDeclineButton =>
+      _t('رفض الاجتماع', 'Decline the meeting');
+  String get meetingDeclineDone =>
+      _t('تم رفض الاجتماع', 'Meeting declined');
+  String get meetingDeclineIntro => _t(
+        'تم إبلاغ الوفد الطالب بالرفض وتحرير فترة القاعة.',
+        'The requesting delegation has been told, '
+            'and the hall slot is released.',
+      );
+  String get meetingDeclineFailed => _t(
+        'تعذّر رفض الاجتماع. حاول مرة أخرى.',
+        'Could not decline the meeting. Try again.',
+      );
 
   // D-500 (Wave 5, الطلبات 1408:9726) — the unified requests feed (supersedes the
   // D-479 read-only My-meetings screen).
@@ -1343,6 +1583,8 @@ class AppL10n {
   // Status chips. (السجل serves "all"; there is no standalone "All" chip.)
   String get requestStatusPending => _t('قيد المراجعة', 'Under review');
   String get requestStatusAccepted => _t('مقبول', 'Accepted');
+  // QA B12 — an accepted meeting checked in at the hall by an operator.
+  String get requestStatusAttended => _t('تم الحضور', 'Attended');
   String get requestStatusRejected => _t('مرفوض', 'Rejected');
   String get requestStatusCancelled => _t('ملغى', 'Cancelled');
 
@@ -1589,6 +1831,15 @@ class AppL10n {
   String get rateStarsRequired =>
       _t('يرجى اختيار عدد النجوم', 'Please pick a star rating');
 
+  /// The accessible name of one star in a 1–5 star bar (BUG-012): the stars are
+  /// bare glyphs, so without it a screen-reader user met five unnamed tappables
+  /// and could not submit a rating at all.
+  String rateStarLabel(int stars) => switch (stars) {
+        1 => _t('نجمة واحدة', '1 star'),
+        2 => _t('نجمتان', '2 stars'),
+        _ => _t('$stars نجوم', '$stars stars'),
+      };
+
   /// D-713 (item 8) — the "watched" context header on a per-session rating: the
   /// session title + when it was held, so a user arriving from a rate prompt (or
   /// a notification days later) knows which session they are rating. A blank
@@ -1727,6 +1978,11 @@ class AppL10n {
 
   // More hub (Page 041; Figma 1129:17224) — grouped sections + version line.
   String get moreTitle => _t('المزيد', 'More');
+  // BUG-017 — the side drawer (a flat list of every destination) and the
+  // Profile "More" hub (My area / Forum info / Settings / Legal, the only home
+  // of the language row) were BOTH labelled "المزيد" / "More". The drawer is the
+  // app's navigation menu, so it takes its own name; the hub keeps [moreTitle].
+  String get menuTitle => _t('القائمة', 'Menu');
   String get moreAbout => _t('عن الملتقى', 'About the forum');
   String get moreAccessibility => _t('إمكانية الوصول', 'Accessibility');
   String get moreTerms => _t('الشروط والأحكام', 'Terms & conditions');
@@ -2146,17 +2402,28 @@ class AppL10n {
       _t('اكتب سؤالك أولاً', 'Type your question first');
   String get sendQuestionSubmit => _t('إرسال السؤال', 'Send question');
   String get sendQuestionSent => _t('تم إرسال سؤالك', 'Your question was sent');
+  // DEF-MOD-006 — the copy promised a 5-minute pre-start window the server has
+  // never enforced. `SessionQuestionService.SubmitAsync` has NO lower bound (a
+  // future session takes questions ahead of time) and closes them the moment the
+  // session ends; once live, the hall-arrival gate applies. The string now
+  // describes that behaviour instead of inventing a rule.
   String get sendQuestionNotOpen => _t(
-        'الأسئلة مفتوحة فقط من 5 دقائق قبل بدء الجلسة حتى انتهائها.',
-        'Questions are only open from 5 minutes before the session until it ends.',
+        'الأسئلة مغلقة لهذه الجلسة.',
+        'Questions are closed for this session.',
       );
   String get sendQuestionFailed => _t(
         'تعذر إرسال سؤالك. حاول مرة أخرى.',
         'Could not send your question. Try again.',
       );
+  // A17 — the copy promised a review that does not happen for a LIVE question.
+  // `SessionQuestionService.SubmitAsync` only screens (AI, advisory) and
+  // queues for the Scientific Committee when the question is asked BEFORE the
+  // session starts; once it is live the question lands Approved with no AI and
+  // no committee, and the session's moderator alone decides what is pushed on
+  // air. The string now names the gate that is always real — the moderator.
   String get sendQuestionWindowHint => _t(
-        'تتم مراجعة الأسئلة قبل عرضها على الهواء.',
-        'Questions are reviewed before going on air.',
+        'يختار مشرف الجلسة الأسئلة التي تُعرض على الهواء.',
+        'The session moderator picks which questions go on air.',
       );
 
   // (D-605/D-609: the Audience-comments (Page 028) l10n strings were removed
@@ -2176,6 +2443,14 @@ class AppL10n {
         'Your account is not approved yet. Your entry badge will be available '
             'once your account is approved.',
       );
+  // BUG-013 — the TRUE-guest copy (no account at all). The bottom nav switches
+  // tabs inside the shell, so the router's auth redirect never runs and a
+  // signed-out visitor lands on this tab; it used to show the PENDING copy
+  // above, which describes a submitted registration that does not exist.
+  String get badgeGuestBody => _t(
+        'سجّل الدخول أو أنشئ حساباً للحصول على بطاقة الدخول الخاصة بك.',
+        'Sign in or create an account to get your entry badge.',
+      );
   // KSA Wave-2 frame 221:769 copy.
   String get badgeScanToEnter => _t('امسح للدخول', 'Scan to enter');
   String get badgeAddPerson => _t('امسح لإضافة شخص', 'Scan to add a contact');
@@ -2183,14 +2458,37 @@ class AppL10n {
   // D-426 — QR-page role actions + exhibitor lead capture.
   String get badgeScanVisitor =>
       _t('مسح بطاقة زائر', 'Scan visitor badge');
-  String get myVisitorsTitle => _t('زواري', 'My Visitors');
-  String get myVisitorsEmpty => _t(
-        'لم تقم بمسح أي زائر بعد. امسح بطاقة زائر لإضافته هنا.',
-        'No visitors yet. Scan a visitor badge to capture them here.',
+  String get myVisitorsTitle => _t('زوار جناحي', 'My Booth Visitors');
+  // BUG-025 — "My Booth Visitors" (exhibitor lead capture) and "My Contacts"
+  // (visitor-to-visitor card sharing) are two separate lists. This one line
+  // states which is which so the two are never confused.
+  String get myVisitorsNote => _t(
+        'بطاقات الزوار التي مسحتها في جناحك. قائمة منفصلة عن «جهات اتصالي».',
+        'Badges you scanned at your booth. This list is separate from My Contacts.',
       );
+  String get myVisitorsEmpty => _t(
+        'لم تقم بمسح أي زائر بعد. امسح بطاقة زائر في جناحك لإضافته هنا.',
+        'No booth visitors yet. Scan a visitor badge at your booth to capture '
+            'them here.',
+      );
+  // FR-EXH-002 — the lead list gained the remove + vCard export My Contacts has
+  // had since D-286. The wording deliberately mirrors the My-Contacts sheet so
+  // the two card lists behave the same way.
+  String get myVisitorsNoteLabel => _t('ملاحظة', 'Note');
+  String get myVisitorsExportVcard => _t('تصدير vCard', 'Export vCard');
+  String get myVisitorsRemove => _t('إزالة', 'Remove');
+  String get myVisitorsRemoveConfirmTitle =>
+      _t('إزالة هذا الزائر؟', 'Remove this visitor?');
+  String get myVisitorsRemoveConfirmBody => _t(
+        'سيتم حذف هذا الزائر من قائمة جناحي. يمكنك مسح بطاقته مرة أخرى لاحقاً.',
+        "This visitor will be removed from your booth's list. You can scan their "
+            'badge again later.',
+      );
+  String get myVisitorsRemoved =>
+      _t('تمت إزالة الزائر', 'Visitor removed');
   String get scanVisitorTitle => _t('مسح بطاقة زائر', 'Scan visitor badge');
   String get scanVisitorCaptured =>
-      _t('تمت إضافة الزائر إلى زواري', 'Visitor added to My Visitors');
+      _t('تمت إضافة الزائر إلى زوار جناحي', 'Visitor added to My Booth Visitors');
   String get scanVisitorNotFound =>
       _t('لا توجد بطاقة زائر مطابقة', 'No matching visitor badge');
   String get scanVisitorForbidden => _t(
@@ -2216,15 +2514,14 @@ class AppL10n {
   // (Figma 934-3450 / 934-3636 / 947-3764 / 958-2246).
   String get liveNowBroadcasting => _t('يُبث الآن', 'Now broadcasting');
   String get liveSessionLabel => _t('الجلسة', 'Session');
+  // A15 (2026-07-26) — the caption strip renders the admin-typed
+  // `Session.LiveCaptions` note, which never changes during the broadcast. The
+  // old copy promised live AI translation of the spoken audio, which the app
+  // does not do (there is no speech-to-text and no streaming translation), so
+  // the placeholder now names what the strip actually is: an organiser note.
   String get liveCaptionHint => _t(
-        'الترجمة الفورية للنص المنطوق تظهر هنا...',
-        'Live captions of the spoken word appear here…',
-      );
-  String get liveRegionNoticeLabel => _t('إشعار:', 'Notice:');
-  String get liveRegionNoticeBody => _t(
-        'البث المباشر متاح داخل منطقة الرياض فقط حسب لوائح التنظيم.',
-        'Live broadcasting is available only inside the Riyadh region per the '
-            'organising regulations.',
+        'يظهر هنا النص التوضيحي الذي يكتبه المنظّم لهذه الجلسة.',
+        'Caption text written by the organiser for this session appears here.',
       );
   String get liveAskQuestion => _t('اطرح سؤالاً', 'Ask a question');
   String get liveUpcomingSessions => _t('الجلسات القادمة', 'Upcoming sessions');

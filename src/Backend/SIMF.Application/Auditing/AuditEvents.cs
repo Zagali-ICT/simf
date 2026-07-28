@@ -262,6 +262,9 @@ public static class AuditEvents
     public const string SessionQuestionHidden = "SessionQuestion.Hidden";
     public const string SessionQuestionUnhidden = "SessionQuestion.Unhidden";
     public const string SessionQuestionPushed = "SessionQuestion.Pushed";
+    // DEF-MOD-001 — the moderator's "تمت الإجابة" mark, now persisted.
+    public const string SessionQuestionAnswered = "SessionQuestion.Answered";
+    public const string SessionQuestionUnanswered = "SessionQuestion.Unanswered";
     public const string SessionQuestionReordered = "SessionQuestion.Reordered";
     public const string SessionModeratorAssigned = "SessionModerator.Assigned";
     public const string SessionModeratorRevoked = "SessionModerator.Revoked";
@@ -312,6 +315,9 @@ public static class AuditEvents
     // speaker confirmation links.
     public const string SpeakerMeetingRequestReverted = "SpeakerMeetingRequest.Reverted";
     public const string SpeakerMeetingConfirmationResent = "SpeakerMeetingRequest.ConfirmationResent";
+    // QA B20 — an admin reopens a Rejected / Cancelled request back to Pending so a
+    // mistaken decline or cancel is recoverable.
+    public const string SpeakerMeetingRequestReopened = "SpeakerMeetingRequest.Reopened";
     // D-474 (#11, Group G) — speaker availability windows for the VIP-meeting slots.
     public const string SpeakerAvailabilityWindowCreated = "SpeakerAvailabilityWindow.Created";
     public const string SpeakerAvailabilityWindowDeleted = "SpeakerAvailabilityWindow.Deleted";
@@ -327,6 +333,9 @@ public static class AuditEvents
     // D-478 (#11, Group G phase 2) — delegation↔delegation (G2G) meeting requests.
     public const string DelegationMeetingRequestSubmitted = "DelegationMeetingRequest.Submitted";
     public const string DelegationMeetingRequestResponded = "DelegationMeetingRequest.Responded";
+    // B10 — the AwaitingSpeaker->Pending auto-revert for a delegation meeting whose
+    // confirm token expired unused (the delegation twin of SpeakerMeetingRequestReverted).
+    public const string DelegationMeetingRequestReverted = "DelegationMeetingRequest.Reverted";
     public const string AdminDelegationMeetingRequestsListed = "Admin.DelegationMeetingRequestsListed";
     public const string AdminDelegationMeetingRequestViewed = "Admin.DelegationMeetingRequestViewed";
     public const string AdminSpeakerMeetingRequestsListed = "Admin.SpeakerMeetingRequestsListed";
@@ -352,8 +361,13 @@ public static class AuditEvents
 
     // Seat reservations (D-175, gap doc G11 — Mockup page 7)
     public const string HallSeatLayoutUpdated = "HallSeatLayout.Updated";
+    // B15 — the whole grid was removed (the hall reverts to general admission).
+    public const string HallSeatLayoutDeleted = "HallSeatLayout.Deleted";
     public const string SeatReservationCreated = "SeatReservation.Created";
     public const string SeatReservationReleased = "SeatReservation.Released";
+    // B1 — a self-service seat CHANGE: one atomic release-and-re-hold, audited as a
+    // single event carrying both the old and the new seat.
+    public const string SeatReservationMoved = "SeatReservation.Moved";
     public const string SeatRowAdminReserved = "SeatReservation.RowAdminReserved";
     public const string SeatRowAdminReleased = "SeatReservation.RowAdminReleased";
 
@@ -439,6 +453,17 @@ public static class AuditEvents
     public const string ExhibitorUpdated = "Exhibitor.Updated";
     public const string ExhibitorDeactivated = "Exhibitor.Deactivated";
     public const string ExhibitorAccountProvisioned = "Exhibitor.AccountProvisioned";
+
+    // D-781 — an EXISTING account (typically created through the generic Others
+    // pipeline) attached to an exhibitor from the Control Panel. Distinct from
+    // AccountProvisioned: no account is created here, an existing one gains the
+    // booth membership that carries the lead-capture authority.
+    public const string ExhibitorAccountLinked = "Exhibitor.AccountLinked";
+    /// <summary>FR-EXH-002 — a booth officer dropped a captured lead from the
+    /// booth's My Visitors list (soft-delete). Recorded because the row carries
+    /// the visitor's consent trail: the capture notified the visitor that their
+    /// card had been shared, so its removal has to be attributable too.</summary>
+    public const string ExhibitorLeadRemoved = "Exhibitor.LeadRemoved";
 
     // News (D-199 — PR / marketing news. Promoted from AdminNewsService
     // module-local consts; string values are the audit contract and must

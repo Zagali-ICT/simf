@@ -1,4 +1,4 @@
-@* D-134 Sprint B â€” Halls CRUD. SIMF-FDS-004 Â§5.2. Centralized dialog/full-page
+@* D-134 Sprint B — Halls CRUD. SIMF-FDS-004 §5.2. Centralized dialog/full-page
    framing D-353: Add / Edit / View / Delete are hosted by CrudShell, which frames
    the reusable HallsAddEdit and HallsViewDelete forms as a popup or a full page per
    the admin's toolbar choice (persisted in localStorage via CpPreferences). *@
@@ -6,7 +6,7 @@
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Halls.View)]
 
-<PageTitle>@L["Admin.Halls.Title"] Â· SIMF</PageTitle>
+<PageTitle>@L["Admin.Halls.Title"] · SIMF</PageTitle>
 
 @if (!GridHidden)
 {
@@ -16,7 +16,9 @@
         <div class="simf-surface">
             @if (_toast is not null)
             {
-                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                <div class="simf-toast">
+                    <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                </div>
             }
 
             <SimfDataGrid TItem="AdminHallSummary"
@@ -73,7 +75,7 @@
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminHallSummary" Key="floor"
                                         Header="@L["Admin.Halls.Column.Floor"]" Filterable="true">
-                        <CellTemplate>@(context.Floor ?? "â€”")</CellTemplate>
+                        <CellTemplate>@(context.Floor ?? "—")</CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminHallSummary" Key="isActive"
                                         Header="@L["Admin.Halls.Column.Active"]">
@@ -85,6 +87,16 @@
                         </CellTemplate>
                     </SimfDataGridColumn>
                 </Columns>
+                <RowActions>
+                    @* A40 — the seat-layout editor had no way in from this grid, so an
+                       admin looking at a hall could not reach its seat map. Quiet icon
+                       action, same convention as the grid's built-in row buttons. *@
+                    <AuthorizedAction Permission="@PermissionCatalog.SeatLayouts.View">
+                        <SimfToolbarButton Icon="grid"
+                                           Title="@L["Admin.Halls.Action.SeatLayout"]"
+                                           OnClick="@(() => OpenSeatLayout(context))" />
+                    </AuthorizedAction>
+                </RowActions>
                 <EmptyTemplate>
                     <SimfEmptyState Title="@L["Admin.Halls.None"]" />
                 </EmptyTemplate>

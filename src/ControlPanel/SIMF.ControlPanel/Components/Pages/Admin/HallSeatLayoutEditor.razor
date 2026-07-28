@@ -48,7 +48,10 @@
             <div class="simf-form__fields">
                 <label class="simf-field">
                     <span class="simf-field__label">@L["Admin.HallSeatLayouts.Field.RowLabels"]</span>
+                    @* A40 — maxlength mirrors HallSeatLayoutConfiguration's
+                       RowLabels.HasMaxLength(256) exactly (UI = EF = service). *@
                     <input class="simf-field__input" type="text"
+                           maxlength="256"
                            value="@_rowLabelsCsv"
                            @onchange="OnRowLabelsChanged"
                            disabled="@_busy" />
@@ -56,7 +59,9 @@
 
                 @* D-767 — one seat-count input per parsed row (raw input, NOT
                    SimfTextField: a SimfTextField without ValueExpression freezes the
-                   page, D-648). Renaming a label keeps that position's count. *@
+                   page, D-648). Renaming a label keeps that position's count.
+                   D-771 — each row also carries its TIER (Normal / VIP / VVIP); a
+                   NEWLY added row defaults to VVIP-reserved per the owner rule. *@
                 @if (_rows.Count > 0)
                 {
                     <div class="simf-form__fields">
@@ -73,11 +78,46 @@
                             </label>
                         }
                     </div>
+
+                    <div class="simf-form__fields">
+                        <span class="simf-field__label">@L["Admin.HallSeatLayouts.Field.RowTiers"]</span>
+                        <p class="simf-hint">@L["Admin.HallSeatLayouts.TierHint"]</p>
+                        @for (var i = 0; i < _rows.Count; i++)
+                        {
+                            var idx = i;
+                            <label class="simf-field simf-field--inline">
+                                <span class="simf-field__label">@_rows[idx].Label</span>
+                                <select class="simf-field__input"
+                                        value="@((int)_rows[idx].Tier)"
+                                        @onchange="@(e => OnRowTierChanged(idx, e))"
+                                        disabled="@_busy">
+                                    <option value="@((int)SeatTier.Normal)">@L["Admin.HallSeatLayouts.Tier.Normal"]</option>
+                                    <option value="@((int)SeatTier.Vip)">@L["Admin.HallSeatLayouts.Tier.Vip"]</option>
+                                    <option value="@((int)SeatTier.Vvip)">@L["Admin.HallSeatLayouts.Tier.Vvip"]</option>
+                                </select>
+                            </label>
+                        }
+                    </div>
+                }
+
+                @* A40 — every client-side rule violation, mirroring the server's own
+                   checks so the admin is refused while typing rather than by a 400.
+                   The server still re-validates; this only saves the round-trip. *@
+                @if (_showErrors)
+                {
+                    <SimfAlert Variant="error">
+                        <ul class="hsl-errors">
+                            @foreach (var error in _errors)
+                            {
+                                <li class="hsl-errors__item">@error</li>
+                            }
+                        </ul>
+                    </SimfAlert>
                 }
 
                 @* Capacity summary — Hall vs Layout (total seats) with a utilisation
-                   meter. The over-capacity / out-of-range notice is visual only; Save
-                   stays enabled so the server keeps ownership of the capacity rule. *@
+                   meter. It turns amber the moment the layout outgrows the hall or a
+                   row leaves 1–80; the same conditions block Save (A40). *@
                 <section class="hsl-capacity @((_isOverCapacity || _anyOutOfRange) ? "hsl-capacity--over" : null)">
                     <dl class="hsl-capacity__stats">
                         <div class="hsl-capacity__stat">
@@ -118,7 +158,7 @@
                         @foreach (var row in _rows)
                         {
                             var seatsToRender = Math.Clamp(row.Count, 0, 80);
-                            <div class="hsl-preview__row">
+                            <div class="hsl-preview__row hsl-preview__row--@TierModifier(row.Tier)">
                                 <span class="hsl-preview__row-label">@row.Label</span>
                                 @for (var seat = 1; seat <= seatsToRender; seat++)
                                 {
@@ -135,10 +175,33 @@
             </section>
 
             <div class="simf-form__actions">
-                <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy">
-                    @L["Admin.HallSeatLayouts.Save"]
-                </SimfButton>
+                <AuthorizedAction Permission="@PermissionCatalog.SeatLayouts.Edit">
+                    <SimfButton Type="button" OnClick="SaveAsync"
+                                Loading="_busy" Disabled="@(!_canSave)"
+                                LoadingLabel="@L["Grid.Working"]">
+                        @L["Admin.HallSeatLayouts.Save"]
+                    </SimfButton>
+                </AuthorizedAction>
+                @* B15 — remove the whole grid so the hall goes back to general
+                   admission. Only offered once a layout actually exists. *@
+                @if (_hasStoredLayout)
+                {
+                    <AuthorizedAction Permission="@PermissionCatalog.SeatLayouts.Delete">
+                        <SimfButton Type="button" Variant="danger"
+                                    OnClick="OpenDeleteConfirm" Disabled="@_busy">
+                            @L["Admin.HallSeatLayouts.Delete"]
+                        </SimfButton>
+                    </AuthorizedAction>
+                }
             </div>
+
+            <SimfConfirm Open="_confirmingDelete"
+                         Title="@L["Admin.HallSeatLayouts.Delete.Title"]"
+                         Message="@L["Admin.HallSeatLayouts.Delete.Confirm"]"
+                         ConfirmLabel="@L["Admin.HallSeatLayouts.Delete"]"
+                         CancelLabel="@L["Admin.HallSeatLayouts.Delete.Cancel"]"
+                         Danger="true" Busy="_busy"
+                         OnConfirm="DeleteAsync" OnCancel="CancelDeleteConfirm" />
         }
     </div>
 </div>

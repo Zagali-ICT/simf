@@ -13,6 +13,10 @@
 
 > **Note on the third URL.** `simf_web.zagali-ict.com` (as written in the request) **does not resolve** in DNS. The three hosts that resolve are `simf`, `simf_api`, and `simf_app` — all to the same IP behind a Host-header reverse proxy (IIS 10). This report covers those three.
 
+> **🔒 Redaction note (2026-07-27, owner decision).** This report originally quoted three credential values verbatim in findings **C1** and **H1**: the SMTP relay host, the SMTP user / sending address, and the super-admin bootstrap password (twice). Those values were **redacted on 2026-07-27** and replaced in place with the configuration **key path** each one belongs to (`Email:Host`, `Email:User` / `Email:FromAddress`, `SuperAdmin:TempPassword`) plus the `SIMF_`-prefixed environment variable that now supplies it. Every finding keeps its evidence — the file, the line, the key and the impact are unchanged; only the recoverable value is gone.
+>
+> **Redaction is not rotation.** Removing a value from this document revokes nothing. All three credentials remain in git history and in any existing clone or build artifact, so **rotation at the provider is a separate action and is still outstanding** — see the operator items in §7 and §9.
+
 ---
 
 ## 1. Executive summary
@@ -97,12 +101,12 @@ The risk is concentrated in a small number of **high-impact secret-management an
 ### 🔴 C1 — Live secrets committed in `appsettings.Development.json`
 
 **Evidence (verified):** `src/Backend/SIMF.Api/appsettings.Development.json`, git-tracked since the first scaffold commit (`9252a57`), **not** covered by `.gitignore` (which only excludes `appsettings.Production.json` and `*.Local.json`):
-- L18 — SMTP password `uYVD…` for `no-reply@ammn.com.sa` on `smtp.zoho.com:587`
+- L18 — `Email:Password` (SMTP password, `uYVD…`) for the sending mailbox **[value redacted 2026-07-27 — `Email:User` / `Email:FromAddress`]** on a third-party SMTP relay **[host redacted 2026-07-27 — `Email:Host`, port 587]**. All three are now supplied out of the repo via `SIMF_Email__Password` / `SIMF_Email__User` / `SIMF_Email__Host`.
 - L23 — `Jwt:SigningKey` = `vRCV…89Id` (HMAC-SHA256 token-signing key)
 - L29 — `Storage:UserIdDocumentEncryptionKey` = `0YOk…/LQ=` (the AES-256-GCM key protecting **every uploaded national-ID/Iqama image**)
 
 **Impact.** Anyone with repository read access or a build artifact holds three real secrets:
-- The **Zoho SMTP credential** is environment-independent — it authenticates to a third-party mail server regardless of which SIMF environment loads the file. If still valid, an attacker can send mail as `no-reply@ammn.com.sa` (phishing SIMF/RSNF attendees) and read the mailbox if IMAP is on.
+- The **third-party SMTP credential** (`Email:Host` / `Email:User` / `Email:Password`; relay provider **[redacted 2026-07-27]**) is environment-independent — it authenticates to that mail server regardless of which SIMF environment loads the file. If still valid, an attacker can send mail as the SIMF sending address **[redacted 2026-07-27 — `Email:FromAddress`]** (phishing SIMF/RSNF attendees) and read the mailbox if IMAP is on.
 - The **JWT signing key** forges valid tokens (including admin) **if** production ever reused it or was run in Development mode.
 - The **national-ID AES key** decrypts the most sensitive PII in the system **if** production reused it.
 
@@ -111,7 +115,7 @@ Production does **not** load `appsettings.Development.json` (ASPNETCORE_ENVIRONM
 **OWASP** A02 Cryptographic Failures / A05 Security Misconfiguration / A07 Auth Failures · **NCA ECC** 2-8 Cryptography (key management), 2-7 Data Protection, 2-4 Email Protection.
 
 **Remediation (today):**
-1. Treat all three as compromised and **rotate now**: Zoho password; `SIMF_Jwt__SigningKey` (invalidates current sessions — acceptable); the ID-document AES key (requires re-encrypting existing files).
+1. Treat all three as compromised and **rotate now**: the SMTP relay password at the provider (`SIMF_Email__Password`); `SIMF_Jwt__SigningKey` (invalidates current sessions — acceptable); the ID-document AES key (requires re-encrypting existing files).
 2. `git rm --cached src/Backend/SIMF.Api/appsettings.Development.json`, add it to `.gitignore`, and commit a `appsettings.Development.json.template` with empty values.
 3. **Purge from git history** (BFG / `git filter-repo`) — the values are exposed in every clone.
 4. Confirm on the server that prod env vars do **not** equal these committed values.
@@ -132,11 +136,16 @@ Production does **not** load `appsettings.Development.json` (ASPNETCORE_ENVIRONM
 
 ### 🟠 H1 — Super-admin temp password + working TOTP seed committed
 
-**Evidence:** `src/Backend/SIMF.Api/appsettings.json:34-38` — `SuperAdmin.Email = superadmin@zagali-ict.com`, `TempPassword = "Aa@123456789"`, `TotpSecret = "dbji csx7 …"` (a valid base32 authenticator seed). Seeded by `IdentitySeeder.cs` (`CreateSuperAdminAsync` sets `PasswordChangeRequired=true` at first creation; the TOTP secret is re-asserted on deploy while 2FA is enabled). Override path exists: `Program.cs:36` `AddEnvironmentVariables("SIMF_")` lets `SIMF_SuperAdmin__TempPassword`/`__TotpSecret` win, and `deploy/set-env-api.ps1` lists them as required-but-skips-empty.
+**Evidence:** `src/Backend/SIMF.Api/appsettings.json:34-38` — `SuperAdmin.Email = superadmin@zagali-ict.com`, `TempPassword = "[REDACTED - supply via SIMF_SuperAdmin__TempPassword]"`, `TotpSecret = "dbji csx7 …"` (a valid base32 authenticator seed). Seeded by `IdentitySeeder.cs` (`CreateSuperAdminAsync` sets `PasswordChangeRequired=true` at first creation; the TOTP secret is re-asserted on deploy while 2FA is enabled). Override path exists: `Program.cs:36` `AddEnvironmentVariables("SIMF_")` lets `SIMF_SuperAdmin__TempPassword`/`__TotpSecret` win, and `deploy/set-env-api.ps1` lists them as required-but-skips-empty.
 
 **Impact — conditional:**
 - If prod **did** set the `SIMF_SuperAdmin__*` env vars before first boot → the committed values are inert defaults (residual: git exposure of an example). 
-- If prod **did not** (the template skips empty values, so appsettings wins) → the **live super-admin is `superadmin@zagali-ict.com` / `Aa@123456789` with a known TOTP seed**. The committed seed yields valid 6-digit codes, so MFA gives zero protection against a repo-access adversary → full `Administrator` (`perm:*`) compromise. `PasswordChangeRequired=true` only forces a reset *after* a successful first login; it doesn't stop the attacker logging in first.
+- If prod **did not** (the template skips empty values, so appsettings wins) → the **live super-admin is `superadmin@zagali-ict.com` / `[REDACTED - supply via SIMF_SuperAdmin__TempPassword]` with a known TOTP seed**. The committed seed yields valid 6-digit codes, so MFA gives zero protection against a repo-access adversary → full `Administrator` (`perm:*`) compromise. `PasswordChangeRequired=true` only forces a reset *after* a successful first login; it doesn't stop the attacker logging in first.
+**Evidence:** `src/Backend/SIMF.Api/appsettings.json:34-38` — `SuperAdmin.Email = superadmin@zagali-ict.com`, `TempPassword = ` **[value redacted 2026-07-27 — `SuperAdmin:TempPassword`, now supplied via `SIMF_SuperAdmin__TempPassword`]** (a short, guessable-class password), `TotpSecret = "dbji csx7 …"` (a valid base32 authenticator seed). Seeded by `IdentitySeeder.cs` (`CreateSuperAdminAsync` sets `PasswordChangeRequired=true` at first creation; the TOTP secret is re-asserted on deploy while 2FA is enabled). Override path exists: `Program.cs:36` `AddEnvironmentVariables("SIMF_")` lets `SIMF_SuperAdmin__TempPassword`/`__TotpSecret` win, and `deploy/set-env-api.ps1` lists them as required-but-skips-empty.
+
+**Impact — conditional:**
+- If prod **did** set the `SIMF_SuperAdmin__*` env vars before first boot → the committed values are inert defaults (residual: git exposure of an example). 
+- If prod **did not** (the template skips empty values, so appsettings wins) → the **live super-admin is `superadmin@zagali-ict.com` with the committed `SuperAdmin:TempPassword` [value redacted 2026-07-27] and a known TOTP seed**. The committed seed yields valid 6-digit codes, so MFA gives zero protection against a repo-access adversary → full `Administrator` (`perm:*`) compromise. `PasswordChangeRequired=true` only forces a reset *after* a successful first login; it doesn't stop the attacker logging in first.
 
 **This is the single most important thing to verify on the server.** It is rated High but is **Critical** in the un-overridden case.
 

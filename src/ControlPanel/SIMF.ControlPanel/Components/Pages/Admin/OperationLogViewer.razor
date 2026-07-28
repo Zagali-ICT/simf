@@ -15,7 +15,9 @@
     <div class="simf-surface">
         @if (_toast is not null)
         {
-            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            <div class="simf-toast">
+                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            </div>
         }
 
         <div class="simf-form simf-form--inline">
@@ -146,7 +148,8 @@
 @if (_detailsTarget is not null)
 {
     <SimfModal Open="true" Title="@L["Admin.OperationLog.Details.Title"]"
-               OnClose="@(() => _detailsTarget = null)">
+               OnClose="@(() => _detailsTarget = null)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             @if (_detailsLoading)
             {

@@ -7,8 +7,16 @@
 /// the checks run in.
 library;
 
+/// The Arabic name character class, mirroring the server's
+/// `UpsertUserProfileRequestValidator.ArabicNameShape`: Arabic letters and
+/// tatweel (U+0640), the tashkeel marks U+064B-U+0652 (BUG-021 - an ordinary
+/// name carries a SHADDA U+0651, and the old U+0621-U+064A class made the
+/// field silently swallow it as the user typed), and whitespace. Arabic-Indic
+/// digits, Latin letters and punctuation stay out.
+final RegExp arabicNameCharacters = RegExp(r'[\u0621-\u0652\s]');
+
 /// Arabic letters + whitespace only (the whole string).
-final RegExp arabicNameLettersOnly = RegExp(r'^[ء-ي\s]+$');
+final RegExp arabicNameLettersOnly = RegExp(r'^[\u0621-\u0652\s]+$');
 
 /// Latin letters + whitespace only (the whole string).
 final RegExp englishNameLettersOnly = RegExp(r'^[A-Za-z\s]+$');

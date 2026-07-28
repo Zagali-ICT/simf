@@ -20,6 +20,8 @@
                       Multiselect="true"
                       RowKey="@(row => row.Id.ToString())"
                       RowLabel="@(row => row.Name)"
+                      SelectAllLabel="@L["Grid.SelectAll"]"
+                      SelectRowLabel="@L["Grid.SelectRow"]"
                       Caption="@L["Admin.ProfileTypes.Visitor.Title"]"
                       FilterColumnLabel="@L["Admin.Users.FilterColumn"]"
                       OnAdd="OnAddAsync"
@@ -89,7 +91,7 @@
 
 @if (_addOpen)
 {
-    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.ProfileTypes.Add.Title"]" OnClose="@(() => _addOpen = false)">
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.ProfileTypes.Add.Title"]" OnClose="@(() => _addOpen = false)" CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             @* D-186: audience-side form — IsPartnerForm=false sends
                IsVisitor=true on Create. *@
@@ -105,7 +107,8 @@
     <SimfModal Open="true"
                RequireExplicitClose="true"
                Title="@string.Format(L["Admin.ProfileTypes.Edit.TitleFor"], _editTarget.Name)"
-               OnClose="@(() => _editTarget = null)">
+               OnClose="@(() => _editTarget = null)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <ProfileTypeForm Initial="_editTarget"
                              OnSuccess="OnSavedAsync"
@@ -118,7 +121,8 @@
 {
     <SimfModal Open="true"
                Title="@string.Format(L["Admin.ProfileTypes.Details.Title"], _detailsTarget.Name)"
-               OnClose="@(() => _detailsTarget = null)">
+               OnClose="@(() => _detailsTarget = null)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <dl class="simf-dl">
                 <dt>@L["Admin.ProfileTypes.Field.UserType"]</dt>
@@ -147,7 +151,7 @@
 
 @if (_deleteTarget is not null)
 {
-    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.ProfileTypes.Delete.Title"]" OnClose="@(() => _deleteTarget = null)">
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.ProfileTypes.Delete.Title"]" OnClose="@(() => _deleteTarget = null)" CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <p>@string.Format(L["Admin.ProfileTypes.Delete.Confirm"], _deleteTarget.Name)</p>
         </ChildContent>
@@ -158,7 +162,8 @@
             </SimfButton>
             <SimfButton Type="button" Variant="primary"
                         Loading="_busy"
-                        OnClick="ConfirmDeleteAsync">
+                        OnClick="ConfirmDeleteAsync"
+                        LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.ProfileTypes.Delete.Submit"]
             </SimfButton>
         </Footer>

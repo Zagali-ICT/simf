@@ -112,6 +112,7 @@ class GateScanResult {
     required this.direction,
     this.userProfile,
     this.denialMessage,
+    this.noticeMessage,
   });
 
   final int scanId;
@@ -122,6 +123,11 @@ class GateScanResult {
   /// The server's already-localized denial text (the `DenialReasonCode` enum is
   /// not surfaced — the message is what the UI shows).
   final String? denialMessage;
+
+  /// DEF-CHK-004 — the server's already-localized advisory note on a scan that
+  /// was still ALLOWED (today: a hall-door scan with no session running, so no
+  /// hall attendance was recorded). Null on an ordinary scan.
+  final String? noticeMessage;
 
   bool get isAllowed => outcome == ScanOutcome.allowed;
 
@@ -135,5 +141,6 @@ class GateScanResult {
             : ScanDirection.checkIn,
         userProfile: GateScanUserProfile.fromJson(json['userProfile']),
         denialMessage: json['denialMessage'] as String?,
+        noticeMessage: json['noticeMessage'] as String?,
       );
 }

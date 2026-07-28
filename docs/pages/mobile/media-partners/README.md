@@ -57,3 +57,23 @@ logo renders the D-357 asset or the initials fallback. Reads
 
 - **D-630** (this clean-code freeze — data move + shared `MediaCoverageTabs` adoption + `PartnerCard` + first golden; completes the D-629 tab dedup).
 - **D-306** (screen built), **D-199** (public endpoint), **D-357** (unified media-asset route for the logo).
+
+## Logo / photo boxes (owner 2026-07-26)
+
+Every logo / photo box on this page renders through the shared
+[`SimfLogoImage`](../../../../src/Mobile/simf_app/lib/app/widgets/simf_logo_image.dart):
+a brand mark FITS its box (`BoxFit.contain`, replacing the crop-happy
+`BoxFit.cover`), a portrait still fills its frame (`BoxFit.cover`), and — where
+the box is not inside a tappable row — pressing it opens the picture full size
+in [`SimfImageViewer`](../../../../src/Mobile/simf_app/lib/app/widgets/simf_image_viewer.dart)
+(pinch-zoom, named for a screen reader, close / back to dismiss). The rules and
+their scenarios live once in [`e2e/mobile-logo-viewer.md`](../../../tests/e2e/mobile-logo-viewer.md)
+(E2E-LOGO-001..008).
+
+**FR-LGO-003 (2026-07-27).** Media partners have no detail route (the frame
+defines none), which left the card completely inert — only the 48px logo box
+carried the press-to-enlarge. The affordance moved up to the WHOLE card, so
+pressing the partner NAME opens the mark full size too; the inner box sets
+`enableFullScreen: false` so there is one gesture and one target rather than a
+nested pair. A partner with no logo keeps a plain, non-tappable card (there is
+nothing to enlarge but an initials tile).

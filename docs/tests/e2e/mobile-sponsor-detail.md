@@ -68,3 +68,11 @@ about/tier/website detail, unknown→404).
 ---
 
 _Last reviewed:_ `2026-06-26` by `SIMF Team`.
+
+## See also — the logo box (owner 2026-07-26)
+
+The 108x108 identity logo on this page renders through the shared
+`SimfLogoImage`: the mark FITS the box (`BoxFit.contain`, replacing the crop)
+and pressing it opens the logo full size in `SimfImageViewer` (pinch-zoom,
+named, close / back to dismiss). Those rules + their scenarios live once in
+[`mobile-logo-viewer.md`](mobile-logo-viewer.md) (E2E-LOGO-001..008).

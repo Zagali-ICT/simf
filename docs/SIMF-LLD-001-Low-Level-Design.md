@@ -562,7 +562,7 @@ anonymous); the website has no per-page permission policies.
 ### 10.1 Layout and packages
 
 - App: `src/Mobile/simf_app` (Flutter, Riverpod, go_router, Dio).
-- Local packages (`src/Mobile/packages/`, tracked): **`simf_data_pkg`** (single HTTP layer:
+- Local packages (`src/Mobile/simf_app/packages/`, tracked): **`simf_data_pkg`** (single HTTP layer:
   `SimfApiClient`, `ApiResult`, `ApiFailure`, secure/prefs storage) and **`simf_auth_pkg`**
   (auth controller/state, session, `AppRole`, biometric ES256 device keys).
 

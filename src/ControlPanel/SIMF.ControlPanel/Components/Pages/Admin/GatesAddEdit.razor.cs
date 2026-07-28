@@ -25,9 +25,18 @@ public partial class GatesAddEdit
     private bool _busy;
     private string? _error;
 
+    /// <summary>BUG-018 (18-7) — one page of candidate operators. The picker is
+    /// server-searched instead of a blind top-200.</summary>
+    private const int OperatorPageSize = 25;
+
     private IReadOnlyList<ProfileTypeOption> _profileTypes = Array.Empty<ProfileTypeOption>();
     private IReadOnlyList<OperatorOption> _operators = Array.Empty<OperatorOption>();
     private IReadOnlyList<HallOption> _halls = Array.Empty<HallOption>();
+
+    private string _operatorSearch = string.Empty;
+    private int _operatorTotal;
+    private bool _loadingOperators;
+    private string? _lookupError;
 
     protected override async Task OnInitializedAsync()
     {
@@ -46,37 +55,64 @@ public partial class GatesAddEdit
         }
         _editContext = new EditContext(_model);
 
-        // Load active profile types + active admins as candidate operators.
-        var ptEnvelope = await JS.InvokeAsync<ApiResult<GridPage<AdminProfileTypeSummary>>>(
-            "simfAccount.postJson", "/account/api/admin/profile-types/list",
-            new GridQuery { Top = 200, Filters = new Dictionary<string, string> { ["isActive"] = "true" } });
-        if (ptEnvelope is { Success: true, Data.Items: { } items })
+        // BUG-018 (18-4) — the allowed-profile-type + hall options now come from the
+        // gate module's own Gates.Manage-gated lookup, not the ProfileTypes.View /
+        // Halls.View admin lists. A Security-team gate manager used to see two
+        // silently empty dropdowns because those lookups 403'd with no else branch.
+        var optionsEnvelope = await JS.InvokeAsync<ApiResult<AdminGateFormOptions>>(
+            "simfAccount.getJson", "/account/api/admin/gates/form-options");
+        if (optionsEnvelope is { Success: true, Data: { } options })
         {
-            _profileTypes = items.Select(i => new ProfileTypeOption(i.Id, i.Name)).ToList();
+            _profileTypes = options.ProfileTypes
+                .Select(option => new ProfileTypeOption(option.Id, option.Name)).ToList();
+            _halls = options.Halls
+                .Select(option => new HallOption(option.Id, option.Name)).ToList();
+        }
+        else
+        {
+            _lookupError = optionsEnvelope?.Error?.MessageForCurrentCulture()
+                ?? L["Admin.Gates.Lookup.Failed"];
         }
 
-        var opsEnvelope = await JS.InvokeAsync<ApiResult<GridPage<AdminUserSummary>>>(
-            "simfAccount.postJson", "/account/api/admin/admins/list",
-            new GridQuery { Top = 200 });
-        if (opsEnvelope is { Success: true, Data.Items: { } admins })
-        {
-            _operators = admins
-                .Select(a => new OperatorOption(a.Id, a.Email, a.DisplayName ?? string.Empty))
-                .ToList();
-        }
+        await LoadOperatorsAsync();
+    }
 
-        // X-1 — load active halls for the optional hall-door binding, same list
-        // endpoint the Booths/Sessions forms use. Empty option maps to null
-        // (perimeter gate).
-        var hallsEnvelope = await JS.InvokeAsync<ApiResult<GridPage<AdminHallSummary>>>(
-            "simfAccount.postJson", "/account/api/admin/halls/list",
-            new GridQuery { Top = 500 });
-        if (hallsEnvelope is { Success: true, Data.Items: { } halls })
+    /// <summary>BUG-018 (18-1 / 18-7) — the candidate operators are the users who
+    /// can actually work a gate (approved app accounts on an operational profile
+    /// type), NOT Control-Panel admin accounts. Searchable and paged server-side;
+    /// a failure is surfaced instead of leaving an empty list unexplained.</summary>
+    private async Task LoadOperatorsAsync()
+    {
+        if (_loadingOperators) return;
+        _loadingOperators = true;
+        try
         {
-            _halls = halls.Where(h => h.IsActive)
-                .OrderBy(h => h.Name)
-                .Select(h => new HallOption(h.Id, h.Name)).ToList();
+            var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminGateOperatorCandidate>>>(
+                "simfAccount.postJson", "/account/api/admin/gates/operator-candidates/list",
+                new GridQuery
+                {
+                    Top = OperatorPageSize,
+                    Search = string.IsNullOrWhiteSpace(_operatorSearch)
+                        ? null : _operatorSearch.Trim(),
+                });
+            if (envelope is { Success: true, Data: { } page })
+            {
+                _operators = page.Items
+                    .Select(candidate => new OperatorOption(
+                        candidate.UserId, candidate.Email,
+                        candidate.DisplayName, candidate.ProfileTypeName))
+                    .ToList();
+                _operatorTotal = page.Total;
+            }
+            else
+            {
+                _operators = Array.Empty<OperatorOption>();
+                _operatorTotal = 0;
+                _lookupError = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Gates.Lookup.Failed"];
+            }
         }
+        finally { _loadingOperators = false; }
     }
 
     private void OnHallChanged(ChangeEventArgs e)
@@ -181,6 +217,7 @@ public partial class GatesAddEdit
     }
 
     private sealed record ProfileTypeOption(Guid Id, string Name);
-    private sealed record OperatorOption(Guid Id, string Email, string DisplayName);
+    private sealed record OperatorOption(
+        Guid Id, string Email, string DisplayName, string ProfileTypeName);
     private sealed record HallOption(Guid Id, string Name);
 }

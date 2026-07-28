@@ -2805,6 +2805,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<Guid?>("ExhibitorId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid>("ExhibitorUserId")
                         .HasColumnType("uniqueidentifier");
 
@@ -2826,9 +2829,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ExhibitorUserId", "VisitorUserId")
+                    b.HasIndex("ExhibitorId", "VisitorUserId")
                         .IsUnique()
-                        .HasFilter("[IsActive] = 1");
+                        .HasFilter("[IsActive] = 1 AND [ExhibitorId] IS NOT NULL");
+
+                    b.HasIndex("ExhibitorUserId", "VisitorUserId");
 
                     b.ToTable("ExhibitorVisitorScans", (string)null);
                 });
@@ -5488,6 +5493,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
+                    b.Property<string>("SeatTiers")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
                     b.Property<int>("SeatsPerRow")
                         .HasColumnType("int");
 
@@ -5516,6 +5525,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<DateTimeOffset?>("Expires")
                         .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("GuestHint")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("GuestHintArabic")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.Property<int>("Kind")
                         .HasColumnType("int");
@@ -5642,6 +5659,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("StatusBeforeHidden")
                         .HasColumnType("int");
 
                     b.Property<Guid>("SubmittedByUserId")
@@ -6233,6 +6253,16 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasForeignKey("ExhibitorId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Exhibitor");
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Exhibitors.ExhibitorVisitorScan", b =>
+                {
+                    b.HasOne("SIMF.Domain.Exhibitors.Exhibitor", "Exhibitor")
+                        .WithMany()
+                        .HasForeignKey("ExhibitorId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Exhibitor");
                 });

@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/widgets/simf_image_viewer.dart';
 import 'package:simf_app/features/media_partners/media_partners_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
@@ -118,6 +119,42 @@ void main() {
       await _pump(tester, partners: () => _partners);
       expect(find.text('AA'), findsOneWidget);
       expect(find.text('S'), findsOneWidget);
+    });
+
+    testWidgets('FR-LGO-003 — the whole card is a tap target that opens the '
+        'logo full size', (tester) async {
+      await _pump(tester, partners: () => _partners);
+
+      // The card used to be completely inert: no onTap, no detail route, and
+      // only the 48px logo box carried the press-to-enlarge. The tap target is
+      // the CARD now, so pressing its NAME opens the viewer too.
+      expect(find.byType(SimfImageViewer), findsNothing);
+      await tester.tap(find.text('Al Arabiya'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SimfImageViewer), findsOneWidget);
+      final viewer = tester.widget<SimfImageViewer>(
+        find.byType(SimfImageViewer),
+      );
+      expect(viewer.label, 'Al Arabiya');
+      expect(
+        (viewer.image as NetworkImage).url,
+        _partners.first.logoAssetUrl(_testConfig.baseUrl),
+      );
+
+      // The gold close control dismisses it.
+      await tester.tap(find.byKey(const ValueKey<String>('imageViewerClose')));
+      await tester.pumpAndSettle();
+      expect(find.byType(SimfImageViewer), findsNothing);
+    });
+
+    testWidgets('FR-LGO-003 — the logo box does not claim a second, nested '
+        'tap target', (tester) async {
+      await _pump(tester, partners: () => _partners);
+
+      // One gesture, one target: the enlarge affordance lives on the card, so
+      // the inner box must not wrap itself in another one.
+      expect(find.byType(SimfTapToEnlarge), findsNWidgets(_partners.length));
     });
 
     testWidgets('tapping the active Media-partners tab does not navigate away',

@@ -8,31 +8,45 @@ import 'package:simf_app/features/gates/data/gates_repository.dart';
 import 'package:simf_app/features/gates/gate_scan_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-OperatorGate _gate({String id = 'g1', int directionMode = 2}) =>
+OperatorGate _gate({
+  String id = 'g1',
+  int directionMode = 2,
+  String name = 'Main Gate',
+  bool isActive = true,
+}) =>
     OperatorGate.fromJson(<String, dynamic>{
       'gateId': id,
       'code': 'MAIN',
-      'name': 'Main Gate',
+      'name': name,
       'nameArabic': 'البوابة الرئيسية',
       'directionMode': directionMode,
-      'isActive': true,
+      'isActive': isActive,
     });
 
 class _FakeGates implements GatesRepository {
   _FakeGates({
     this.gates = const <OperatorGate>[],
     this.listStatus = 0,
+    this.listMessage = '',
     this.result,
     this.scanStatus = 0,
+    this.scanMessage = '',
     this.offline = false,
   });
 
   List<OperatorGate> gates;
   final int listStatus;
+
+  /// The server's own message on a failed my-assignments call. Blank models a
+  /// bare policy 403 (no envelope body) — the screen then shows its own copy.
+  final String listMessage;
   final GateScanResult? result;
 
   /// A hard HTTP failure the scan surfaces (rethrown), e.g. 429. 0 = success.
   final int scanStatus;
+
+  /// The server's own message on that failure.
+  final String scanMessage;
 
   /// Simulates a no-verdict network failure (null httpStatus): the scan is
   /// queued on-device and `recordScanOrQueue` returns null (G-4).
@@ -53,7 +67,7 @@ class _FakeGates implements GatesRepository {
     if (listStatus != 0) {
       throw ApiFailure(
         code: ApiErrorCodes.clientNetwork,
-        message: 'x',
+        message: listMessage,
         httpStatus: listStatus,
       );
     }
@@ -72,7 +86,7 @@ class _FakeGates implements GatesRepository {
     if (scanStatus != 0) {
       throw ApiFailure(
         code: ApiErrorCodes.clientNetwork,
-        message: 'x',
+        message: scanMessage,
         httpStatus: scanStatus,
       );
     }
@@ -98,7 +112,7 @@ class _FakeGates implements GatesRepository {
     if (scanStatus != 0) {
       throw ApiFailure(
         code: ApiErrorCodes.clientNetwork,
-        message: 'x',
+        message: scanMessage,
         httpStatus: scanStatus,
       );
     }
@@ -316,6 +330,79 @@ void main() {
       expect(find.text('Allowed'), findsNothing);
       expect(find.textContaining('waiting to sync'), findsOneWidget);
       expect(repo.pendingCount(), 1);
+    });
+  });
+
+  group('GateScanScreen — deferred gate-console defects', () {
+    testWidgets('DEF-STF-005 — a 403 on load shows the SERVER\'s reason, not '
+        'the generic permission copy', (tester) async {
+      await _pump(
+        tester,
+        _FakeGates(
+          listStatus: 403,
+          listMessage: 'You are not assigned to this gate.',
+        ),
+      );
+
+      // "no Gates.Operate grant" and "not assigned to this gate" are both 403
+      // but need different operator actions; flattening them made the second
+      // one undiagnosable.
+      expect(find.text('You are not assigned to this gate.'), findsOneWidget);
+      expect(find.textContaining('not authorised to operate'), findsNothing);
+    });
+
+    testWidgets('DEF-STF-005 — a 403 on the scan surfaces the server message',
+        (tester) async {
+      await _pump(
+        tester,
+        _FakeGates(
+          gates: <OperatorGate>[_gate()],
+          scanStatus: 403,
+          scanMessage: 'You are not assigned to this gate.',
+        ),
+      );
+      await _openScanner(tester);
+      await tester.enterText(find.byType(TextField), 'X');
+      await tester.tap(find.text('Check'));
+      await tester.pump();
+
+      expect(find.text('You are not assigned to this gate.'), findsOneWidget);
+    });
+
+    testWidgets('DEF-STF-005 — a 403 with no server body keeps the generic copy',
+        (tester) async {
+      await _pump(tester, _FakeGates(listStatus: 403));
+      expect(find.textContaining('not authorised to operate'), findsOneWidget);
+    });
+
+    testWidgets('DEF-STF-006 — an inactive gate is tagged in the picker and '
+        'warns before the first scan', (tester) async {
+      await _pump(
+        tester,
+        _FakeGates(
+          gates: <OperatorGate>[
+            _gate(name: 'Closed Gate', isActive: false),
+            _gate(id: 'g2', name: 'Working Gate'),
+          ],
+        ),
+      );
+
+      // The list used to render an inactive gate exactly like a working one, so
+      // every scan came back as a red denial with nothing pointing at the gate.
+      expect(find.text('Closed Gate — inactive'), findsWidgets);
+      expect(find.text('Working Gate'), findsNothing);
+      expect(
+        find.textContaining('This gate is inactive'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('DEF-STF-006 — an ACTIVE gate carries no tag and no warning',
+        (tester) async {
+      await _pump(tester, _FakeGates(gates: <OperatorGate>[_gate()]));
+
+      expect(find.text('Main Gate'), findsWidgets);
+      expect(find.textContaining('inactive'), findsNothing);
     });
   });
 }

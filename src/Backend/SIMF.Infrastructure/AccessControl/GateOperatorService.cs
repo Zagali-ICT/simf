@@ -1,4 +1,6 @@
 ﻿// Tests: SIMF.Api.Tests/GateScanTests.cs
+// Tests: SIMF.Api.Tests/GateHallDoorChainTests.cs (DEF-CHK-004 — the hall-attendance
+//        chain and the advisory NoticeMessage an allowed scan can carry)
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -561,25 +563,72 @@ internal sealed class GateOperatorService(
         // FIX C — a Both-mode gate's direction is only an alternation guess, so the
         // chain derives the real action from attendance state (directionInferred);
         // a fixed In/Out gate stays authoritative.
+        // DEF-CHK-004 — a hall-door scan can admit the holder while recording NO
+        // session attendance (no session live in the hall, or an Out scan with no
+        // open row to close). That used to be silent, so the operator saw a plain
+        // "Allowed" while the attendance was lost. Carry an advisory notice on the
+        // (still Allowed) result, resolved to the caller's Accept-Language through
+        // the same helper the denial messages use.
+        string? notice = null;
         if (hallDoorHallId is { } hallId)
         {
             try
             {
-                await hallAttendance.RecordGateDoorScanAsync(
+                var attendanceRecorded = await hallAttendance.RecordGateDoorScanAsync(
                     resolution.UserId, hallId, direction,
                     hallDoorDirectionInferred, context.OperatorUserId, cancellationToken);
+                if (!attendanceRecorded)
+                {
+                    notice = NoticeMessageFor(
+                        GateScanNotice.AttendanceNotRecorded, context.AcceptLanguage);
+                }
             }
             catch (Exception ex)
             {
                 logger.LogError(ex,
                     "Hall-attendance chain failed for scan {ScanId} on gate {GateId} (hall {HallId}).",
                     scan.Id, context.GateId, hallId);
+                notice = NoticeMessageFor(
+                    GateScanNotice.AttendanceChainFailed, context.AcceptLanguage);
             }
         }
 
         return new GateScanResult(GateScanResultKind.Recorded,
-            response with { ScanId = scan.Id }, false, null);
+            response with { ScanId = scan.Id, NoticeMessage = notice }, false, null);
     }
+
+    /// <summary>DEF-CHK-004 — the advisory notes an ALLOWED scan can carry. Kept
+    /// private to this service: the wire contract only ships the already-localized
+    /// <c>GateScanResponse.NoticeMessage</c>, mirroring how the denial reasons
+    /// surface as <c>DenialMessage</c>.</summary>
+    private enum GateScanNotice
+    {
+        /// <summary>The chain ran but recorded nothing — no session live in the
+        /// hall, a check-out that found no open attendance row to close, or an
+        /// arrival whose insert the store rejected. The service reports all of
+        /// them identically (one bool), so the wording must not name a single
+        /// cause; the exact reason is in the server log.</summary>
+        AttendanceNotRecorded,
+        AttendanceChainFailed,
+    }
+
+    private static string NoticeMessageFor(GateScanNotice notice, string? acceptLanguage)
+    {
+        var (en, ar) = NoticeMessages(notice);
+        return string.Equals(acceptLanguage, ArabicLanguageCode, StringComparison.OrdinalIgnoreCase)
+            ? ar : en;
+    }
+
+    private static (string en, string ar) NoticeMessages(GateScanNotice notice) =>
+        notice switch
+        {
+            GateScanNotice.AttendanceNotRecorded =>
+                ("Entry allowed, but no session attendance was recorded for this scan.",
+                 "تم السماح بالدخول، ولكن لم يتم تسجيل حضور الجلسة لهذا المسح."),
+            _ =>
+                ("Entry allowed, but the session attendance could not be recorded.",
+                 "تم السماح بالدخول، ولكن تعذّر تسجيل حضور الجلسة."),
+        };
 
     private async Task<GateScanResult> RecordDenialAsync(
         GateScanContext context,

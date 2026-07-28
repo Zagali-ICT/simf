@@ -472,7 +472,55 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
         Assert.Equal(500, report.Rows.Count);                        // grid still capped
     }
 
+    [Fact]
+    public async Task Inactive_gate_records_a_GATE_INACTIVE_AT_SCAN_denial_at_200()
+    {
+        // DEF-STF-008 — GateScanResultKind.GateInactive (HTTP 503 GATE_INACTIVE)
+        // was dead: NOTHING ever returned it. An inactive gate is denied by
+        // engine step 5 as a RECORDED denial at HTTP 200, which keeps the
+        // append-only GateScan audit row for the attempt and hands the operator
+        // the localised "This gate is currently inactive." The 503 arm has been
+        // removed; this test pins the behaviour that replaced it.
+        var (token, _) = await CreateAdminAsync();
+        var gate = await CreateGateAsync(token, allowedProfileTypeIds: null,
+            ownAsOperator: true, mode: DirectionMode.Both);
+        var qrId = await CreateVisitorWithQrAsync(approved: true);
+
+        // Deactivating keeps the operator's assignment and invalidates the
+        // config-cache snapshot, so the next scan sees IsActive = false.
+        var deactivate = await DeleteAuthAsync(
+            $"/api/v1/admin/gates/{gate.Id}", token);
+        Assert.Equal(HttpStatusCode.OK, deactivate.StatusCode);
+
+        var response = await PostScanAsync(gate.Id, qr: qrId, token,
+            idempotencyKey: null);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<GateScanResponse>>())!.Data!;
+        Assert.Equal(ScanOutcome.Denied, body.Outcome);
+        Assert.Equal(DenialReasonCode.GateInactiveAtScan, body.DenialReasonCode);
+        Assert.False(string.IsNullOrWhiteSpace(body.DenialMessage));
+
+        // The attempt is auditable: the denial is persisted, not discarded with
+        // an envelope failure the way a 503 would have been.
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var recorded = await db.GateScans.AsNoTracking()
+            .Where(s => s.GateId == gate.Id
+                     && s.DenialReasonCode == DenialReasonCode.GateInactiveAtScan)
+            .CountAsync();
+        Assert.Equal(1, recorded);
+    }
+
     // -- Helpers --------------------------------------------------------------
+
+    private Task<HttpResponseMessage> DeleteAuthAsync(string url, string token)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Delete, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(request);
+    }
 
     private async Task<HttpResponseMessage> PostScanAsync(
         Guid gateId, string qr, string token, string? idempotencyKey,

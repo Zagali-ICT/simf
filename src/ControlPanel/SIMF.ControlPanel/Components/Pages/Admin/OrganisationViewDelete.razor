@@ -1,8 +1,8 @@
-@* D-353 â€” reusable Organisation View/Delete form, hosted by CrudShell (as a
+@* D-353 — reusable Organisation View/Delete form, hosted by CrudShell (as a
    popup or a full page) from OrganisationsList.razor. Inherits
    CrudViewDeleteFormBase so it exposes the standard parameter surface
    (IsDelete / Initial / OnDeleted / OnCancel). Read-only details always show
-   (including the contact columns the grid summary omits â€” phone / email /
+   (including the contact columns the grid summary omits — phone / email /
    website); when IsDelete=true a Deactivate button appears and a SimfConfirm
    gates the destructive call (replaces the old native JS confirm() on the
    list). Adds the View path the inline form never had. *@
@@ -20,19 +20,19 @@
         <dt>@L["Admin.Organisations.Col.NameAr"]</dt>
         <dd>@Initial.NameAr</dd>
         <dt>@L["Admin.Organisations.Col.NameEn"]</dt>
-        <dd>@(string.IsNullOrWhiteSpace(Initial.NameEn) ? "â€”" : Initial.NameEn)</dd>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.NameEn) ? "—" : Initial.NameEn)</dd>
         <dt>@L["Admin.Organisations.Col.CommercialRegistration"]</dt>
-        <dd>@(string.IsNullOrWhiteSpace(Initial.CommercialRegistration) ? "â€”" : Initial.CommercialRegistration)</dd>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.CommercialRegistration) ? "—" : Initial.CommercialRegistration)</dd>
         <dt>@L["Admin.Organisations.Col.Sector"]</dt>
-        <dd>@(string.IsNullOrWhiteSpace(Initial.Sector) ? "â€”" : Initial.Sector)</dd>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.Sector) ? "—" : Initial.Sector)</dd>
         <dt>@L["Admin.Organisations.Col.City"]</dt>
-        <dd>@(string.IsNullOrWhiteSpace(Initial.City) ? "â€”" : Initial.City)</dd>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.City) ? "—" : Initial.City)</dd>
         <dt>@L["Admin.Organisations.Field.Phone"]</dt>
-        <dd>@(string.IsNullOrWhiteSpace(Initial.Phone) ? "â€”" : Initial.Phone)</dd>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.Phone) ? "—" : Initial.Phone)</dd>
         <dt>@L["Admin.Organisations.Field.Email"]</dt>
-        <dd>@(string.IsNullOrWhiteSpace(Initial.Email) ? "â€”" : Initial.Email)</dd>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.Email) ? "—" : Initial.Email)</dd>
         <dt>@L["Admin.Organisations.Field.Website"]</dt>
-        <dd>@(string.IsNullOrWhiteSpace(Initial.Website) ? "â€”" : Initial.Website)</dd>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.Website) ? "—" : Initial.Website)</dd>
         <dt>@L["Admin.Organisations.Col.Active"]</dt>
         <dd>@(Initial.IsActive ? L["Grid.Active"] : L["Grid.Inactive"])</dd>
     </dl>

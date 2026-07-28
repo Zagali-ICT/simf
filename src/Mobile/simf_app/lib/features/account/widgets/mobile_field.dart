@@ -4,8 +4,31 @@ import 'package:flutter/services.dart';
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../core/validation/digit_normalization.dart';
+import '../../../core/validation/phone_validation.dart';
 import '../../../core/widgets/simf_field_label.dart';
 import '../../../core/widgets/simf_field_style.dart';
+
+/// The one mobile-number form rule, in the field's own file so no screen writes
+/// a second copy: required (D-723), then the C4 (D-371) standard shape — Saudi
+/// `05XXXXXXXX` / `+9665XXXXXXXX` or E.164 international — mirroring the server's
+/// `UpsertUserProfileRequestValidator`. The shapes themselves live once in
+/// `core/validation/phone_validation.dart`; this adds the localized message.
+String? validateMobile(
+  String? value, {
+  required bool saudi,
+  required AppL10n l10n,
+}) {
+  final phone = value?.trim() ?? '';
+  if (phone.isEmpty) {
+    return l10n.mobileRequired;
+  }
+  final valid =
+      saudi ? isStandardSaudiMobile(phone) : isStandardInternationalMobile(phone);
+  if (valid) {
+    return null;
+  }
+  return saudi ? l10n.saudiMobileInvalid : l10n.internationalMobileInvalid;
+}
 
 /// The mobile-number field. The label, keyboard and [validator] switch on
 /// [saudi]; the screen owns the controllers and validators and passes the

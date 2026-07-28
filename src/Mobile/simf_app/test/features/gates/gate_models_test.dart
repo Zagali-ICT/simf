@@ -53,6 +53,25 @@ void main() {
       expect(r.userProfile?.localizedName(false), 'Raed');
       expect(r.userProfile?.profileTypeName, 'VIP');
       expect(r.denialMessage, isNull);
+      // DEF-CHK-004 — no advisory on an ordinary allowed scan.
+      expect(r.noticeMessage, isNull);
+    });
+
+    test('an allowed scan can carry an advisory notice', () {
+      // DEF-CHK-004 — a hall-door scan taken outside every session window is
+      // still allowed, but the server flags that no attendance was recorded.
+      final r = GateScanResult.fromJson(<String, dynamic>{
+        'scanId': 43,
+        'outcome': 0,
+        'direction': 0,
+        'noticeMessage': 'Entry allowed, but attendance was not recorded.',
+      });
+      expect(r.isAllowed, isTrue);
+      expect(r.denialMessage, isNull);
+      expect(
+        r.noticeMessage,
+        'Entry allowed, but attendance was not recorded.',
+      );
     });
 
     test('a denied scan carries the server message', () {

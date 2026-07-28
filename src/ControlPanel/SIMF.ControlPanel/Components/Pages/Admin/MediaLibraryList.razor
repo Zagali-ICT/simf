@@ -15,7 +15,9 @@
     <div class="simf-surface">
         @if (_toast is not null)
         {
-            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            <div class="simf-toast">
+                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            </div>
         }
 
         <SimfDataGrid TItem="AdminAssetSummary"
@@ -89,7 +91,8 @@
 @if (_detailsTarget is not null)
 {
     <SimfModal Open="true" Title="@L["Admin.MediaLibrary.Details.Title"]"
-               OnClose="@(() => _detailsTarget = null)">
+               OnClose="@(() => _detailsTarget = null)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <div class="simf-image-upload__preview">
                 <SimfImageThumb Src="@PreviewSrc(_detailsTarget)" Alt="@_detailsTarget.OwnerName"
@@ -117,13 +120,13 @@
             <AuthorizedAction Permission="@PermissionCatalog.MediaLibrary.Manage">
                 @if (_detailsTarget.IsActive)
                 {
-                    <SimfButton Type="button" Variant="danger" Loading="_busy" OnClick="DeactivateAsync">
+                    <SimfButton Type="button" Variant="danger" Loading="_busy" OnClick="DeactivateAsync" LoadingLabel="@L["Grid.Working"]">
                         @L["Admin.MediaLibrary.Deactivate"]
                     </SimfButton>
                 }
                 else
                 {
-                    <SimfButton Type="button" Loading="_busy" OnClick="RestoreAsync">
+                    <SimfButton Type="button" Loading="_busy" OnClick="RestoreAsync" LoadingLabel="@L["Grid.Working"]">
                         @L["Admin.MediaLibrary.Restore"]
                     </SimfButton>
                 }

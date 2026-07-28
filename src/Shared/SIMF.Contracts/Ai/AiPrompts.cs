@@ -110,7 +110,15 @@ public class TestAiPromptRequest
 }
 
 /// <summary>D-176 — result of an AI call shown to the admin tester
-/// + the feature endpoints.</summary>
+/// + the feature endpoints.
+///
+/// <para>A18 (2026-07-27) — <c>IsStub</c> is APPENDED (append-only wire
+/// contract) and reports that the answer came from the offline stub provider,
+/// which echoes the prompt instead of answering it. <c>Provider</c> cannot be
+/// used for this: it reports the prompt's CONFIGURED provider, which D-484
+/// routing may have redirected. Server-side callers that must not ship
+/// placeholder content branch on this flag; the mobile / website clients simply
+/// ignore the extra field.</para></summary>
 public sealed record AiCallResult(
     Guid InvocationId,
     string PromptKey,
@@ -120,7 +128,8 @@ public sealed record AiCallResult(
     string OutputText,
     int? TokensInput,
     int? TokensOutput,
-    int LatencyMs);
+    int LatencyMs,
+    bool IsStub = false);
 
 /// <summary>D-176 — admin invocations log row.</summary>
 public sealed record AdminAiInvocationRow(

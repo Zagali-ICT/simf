@@ -111,7 +111,7 @@ public partial class OrganisationAddEdit
         finally { _busy = false; }
     }
 
-    // Optional fields are nullable on the wire â€” send null rather than an empty
+    // Optional fields are nullable on the wire — send null rather than an empty
     // string when the admin leaves them blank.
     private static string? NullIfBlank(string value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();

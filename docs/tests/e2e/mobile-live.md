@@ -13,18 +13,22 @@
 >
 > **Figma parity (D-433):** the screen is now re-skinned to the KSA-Project frame
 > **934:3450** on the shared navy shell — the navy header, the black player
-> surface carrying the LIVE badge + the gold-bordered AI live-caption strip, the
-> "يُبث الآن · {hall}" now-broadcasting block (session title + speakers as gold
-> bullets), the gold region-restriction notice card, the ask-a-question entry,
+> surface carrying the LIVE badge + the gold-bordered organiser caption strip,
+> the "يُبث الآن · {hall}" now-broadcasting block (session title + speakers as
+> gold bullets), the ask-a-question entry,
 > and the "الجلسات القادمة" upcoming-session cards (loaded non-blocking from the
 > agenda list). The hall name, speakers line and upcoming cards render only when
 > the wire carries them; this screen never fabricates the missing rows.
 >
-> **AI live captions (P5 — D-439):** the session detail now carries optional
-> bilingual `LiveCaptions` / `LiveCaptionsArabic` text (an admin-set field — the
-> provider is stubbed, manual entry for the POC). When present the gold-bordered
-> caption strip shows the active-locale text in white; when blank it shows the
-> muted placeholder hint (and YouTube CC supplies captions for a YouTube feed).
+> **Organiser captions (P5 — D-439; re-labelled by A15):** the session detail
+> carries optional bilingual `LiveCaptions` / `LiveCaptionsArabic` text — a
+> STATIC admin-typed field that never changes during the broadcast. When present
+> the gold-bordered caption strip shows the active-locale text in white; when
+> blank it shows the muted placeholder hint (and YouTube CC supplies captions for
+> a YouTube feed). **A15 (2026-07-26)** removed the strip's gold "AI" chip and
+> its "live translation of the spoken word" placeholder: the app has no
+> speech-to-text and no streaming translation, so both were a false capability
+> claim. See also **A20** — the geographic-restriction notice is gone.
 > The strip renders only on the live-feed branch (no stray strip on a
 > recorded/not-live session). Same change fixed a pre-existing bug where editing a
 > session via the admin PUT silently wiped its live feed URLs (regression test
@@ -52,15 +56,16 @@
 | E2E-MOB025-008 | Both feeds set → the البث/لغة الإشارة toggle swaps the source (D-349) | happy | P1 | authored ✓ (screen `both feeds set shows the main / sign-language toggle` + `a single (main-only) feed shows no toggle`) |
 | E2E-MOB025-009 | URL rule (D-349): YouTube (valid 11-char id) + HLS/MP4 accepted; no-id / other rejected; video-id parsing | unit | P1 | authored ✓ (`youtube_url_test.dart`) |
 | E2E-MOB025-010 | A feed that fails to load → error + Retry surface, not an endless spinner (D-349) | resilience | P1 | authored ✓ (screen `an unplayable feed surfaces the error state with a retry`) |
-| E2E-MOB025-011 | Figma 934:3450 re-skin — navy header "البث المباشر", black player surface, LIVE badge, AI-caption strip (D-433) | i18n/layout | P0 | _to author_ |
+| E2E-MOB025-011 | Figma 934:3450 re-skin — navy header "البث المباشر", black player surface, LIVE badge, organiser caption strip (A15: no "AI" chip) | i18n/layout | P0 | _to author_ |
 | E2E-MOB025-012 | Header line "يُبث الآن · {hall}" (now-broadcasting + hall name) (D-433) | happy | P0 | _to author_ |
 | E2E-MOB025-013 | Session title + speakers/participants gold bullet line (D-433) | happy | P1 | _to author_ |
 | E2E-MOB025-014 | "الجلسات القادمة" upcoming-session cards: title + gold HH:mm chip (D-433) | happy | P1 | _to author_ |
 | E2E-MOB025-015 | Upcoming list empty / fails → strip hidden, live screen still works (D-433) | resilience | P1 | _to author_ |
-| E2E-MOB025-016 | Gold region-restriction notice card "إشعار: …" (D-433) | happy | P2 | _to author_ |
+| E2E-MOB025-016 | **A20 —** NO geographic-restriction notice is shown on any live path (the "Riyadh region only" card is removed; nothing checks the viewer's location) | edge | P1 | authored ✓ (screen `A20 — no geographic restriction notice is shown to any viewer`) |
 | E2E-MOB025-017 | Ask-a-question entry "اطرح سؤالاً" → /live/question with sessionId (D-433) | happy | P0 | _to author_ |
 | E2E-MOB025-018 | P5 — session with AI caption text → the strip shows the text (white), not the placeholder hint (D-439) | happy | P1 | authored ✓ (screen `P5 — a session with caption text shows it in the caption strip (white)`) |
 | E2E-MOB025-019 | P5 — live session with no caption → the muted placeholder hint (D-439) | edge | P1 | authored ✓ (screen `P5 — a live session with no caption shows the placeholder hint`) |
+| E2E-MOB025-025 | **A15 —** the caption strip carries no "AI" chip and no live-translation promise; the placeholder names the organiser as the author | edge | P0 | authored ✓ (screen `A15 — the caption strip has no AI chip and no live-translation promise`) |
 | E2E-MOB025-020 | P5 — caption locale fallback: Arabic text under `ar`, English under `en` (D-439) | i18n | P1 | authored ✓ (screen `P5 — the caption renders the Arabic text under the ar locale`) |
 | E2E-MOB025-021 | Login-gate (D-577): a signed-out guest sees the in-screen "need login" prompt + Sign-in button (never the player), and no session is fetched | auth | P0 | authored ✓ (screen `a signed-out guest sees the need-login gate, not the stream (owner, D-577)`) |
 | E2E-MOB025-022 | **Rate-on-live-close (item 8 / D-712, FDS-007 §C.4 GAP-B):** an approved attendee leaving the live screen for a session that carried a live feed opens `/rate?code=Session&targetId={id}` **once**; re-entering + leaving does not re-prompt (shared dedup with the D-690 after-view prompt). A non-live session and a signed-out guest are never prompted | happy | P0 | authored ✓ (screen `D-712 — leaving a watched live session opens the rate screen once` + `… non-live session … does not prompt` + `… guest is never prompted`) |
@@ -261,29 +266,53 @@ Scenario: An upcoming-sessions read failure does not break the screen
   Given the live session read succeeds
   And the upcoming-sessions read fails with an ApiFailure
   Then the failure is swallowed, no error surface is shown
-  And the player, header, notice card and ask-question button still render
+  And the player, header and ask-question button still render
 ```
 
 **Evidence:** `_loadUpcoming` runs unawaited after the main read and catches
 `ApiFailure` silently; the strip renders only when `_upcoming.isNotEmpty`.
 
-### E2E-MOB025-016 — Gold region-restriction notice card
+### E2E-MOB025-016 — A20: no geographic-restriction notice
 
 ```gherkin
-Scenario: The region notice card renders bold label + body
-  Given any session detail has loaded
-  When the screen renders in Arabic
-  Then a solid gold card shows a bold "إشعار:" label followed by
-       "البث المباشر متاح داخل منطقة الرياض فقط حسب لوائح التنظيم."
+Scenario: No region-restriction claim on a live session
+  Given a session with a live feed has loaded
+  When the screen renders in Arabic or English
+  Then no card claims the broadcast is limited to the Riyadh region
+  And the strings "منطقة الرياض" / "Riyadh region" / "Notice:" are absent
 
-Scenario: English region notice
-  Given the device locale is English
-  Then the card reads "Notice:" followed by
-       "Live broadcasting is available only inside the Riyadh region per the …"
+Scenario: No region-restriction claim on the global main-live
+  Given the screen opened with no sessionId and an organisation live URL
+  Then no region-restriction card is rendered
 ```
 
-**Evidence:** `_RegionNoticeCard` (`liveRegionNoticeLabel` + `liveRegionNoticeBody`)
-— frame node 934:3619. Static notice; shown on every loaded state.
+**Evidence:** A20 (2026-07-26) — the app, API, CP and Website never read the
+viewer's location, so the old gold "available only inside the Riyadh region per
+the organising regulations" card (frame node 934:3619) was an unconditional
+false claim. `RegionNoticeCard` and both l10n strings are deleted; whether the
+stream should really be geo-fenced is a product/legal decision (FR-702), not a
+defect fix.
+
+### E2E-MOB025-025 — A15: the caption strip is an organiser note, not live AI translation
+
+```gherkin
+Scenario: No AI branding on the caption strip
+  Given a live session has loaded
+  Then the caption strip shows no gold "AI" chip
+  And no copy promises live translation of the spoken word
+
+Scenario: The placeholder names who writes the caption
+  Given a live session with no admin-typed caption
+  Then the strip reads "Caption text written by the organiser for this session
+       appears here." (EN) / "يظهر هنا النص التوضيحي الذي يكتبه المنظّم لهذه
+       الجلسة." (AR)
+```
+
+**Evidence:** A15 (2026-07-26) — the strip renders the static admin-typed
+`Session.LiveCaptions` string, which never changes during a broadcast. Real
+speech-to-text + streaming translation does not exist in the app (see the dead
+`/app/ai/live-translation/chunk` endpoint, B4), so the AI chip and the
+live-translation placeholder were a false capability claim.
 
 ### E2E-MOB025-017 — Ask-a-question entry → send-question
 

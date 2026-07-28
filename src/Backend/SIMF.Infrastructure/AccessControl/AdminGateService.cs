@@ -1,4 +1,6 @@
 ﻿// Tests: SIMF.Api.Tests/Gates/AdminGatesTests.cs
+//        SIMF.Api.Tests/GateOperatorModelTests.cs (BUG-018 — operator candidates,
+//        operator eligibility validation, gate-form lookups, assignment email)
 using System.Globalization;
 using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
@@ -34,6 +36,16 @@ internal sealed class AdminGateService(
     /// later scan) they are still counted as "currently inside". Bounds the
     /// occupancy view against In-only gates that never emit a CheckOut.</summary>
     private static readonly TimeSpan StalePresenceWindow = TimeSpan.FromHours(16);
+
+    /// <summary>BUG-018 — the <c>ProfileType.MobileAppRole</c> values that actually
+    /// confer gate operation. Derived from the permission catalogue (the roles whose
+    /// operational grant set carries <c>Gates.Operate</c> — Staff and Moderator) so
+    /// the eligibility rule can never drift from the permission model.</summary>
+    private static readonly MobileAppRole[] GateOperatorAppRoles =
+        Enum.GetValues<MobileAppRole>()
+            .Where(role => PermissionCatalog.OperationalPermissionsForAppRole(role)
+                .Contains(PermissionCatalog.Gates.Operate))
+            .ToArray();
 
     public async Task<GridPage<AdminGateSummary>> ListAllAsync(
         GridQuery query, CancellationToken cancellationToken = default)
@@ -289,13 +301,132 @@ internal sealed class AdminGateService(
         var operatorIds = assignments.Select(a => a.UserId).ToHashSet();
         var operatorNames = await userDirectory.GetDisplayNamesAsync(
             operatorIds, cancellationToken);
+        // BUG-018 (18-6) — the CP detail view lists name + email per operator.
+        var operatorEmails = await userDirectory.GetEmailsAsync(
+            operatorIds, cancellationToken);
 
         return assignments
             .Select(a => new AdminGateAssignmentRow(
                 a.Id, a.UserId,
                 operatorNames.TryGetValue(a.UserId, out var name) ? name : string.Empty,
-                a.CreatedAt, a.CreateBy))
+                a.CreatedAt, a.CreateBy,
+                operatorEmails.TryGetValue(a.UserId, out var email) && email is not null
+                    ? email : string.Empty))
             .ToList();
+    }
+
+    /// <summary>BUG-018 (18-1 / 18-7) — the candidate gate operators. Gate scanning
+    /// happens through the mobile app, so a candidate is an approved APP account
+    /// whose profile type is operational (<c>IsForVisitor=false</c>) and carries a
+    /// MobileAppRole that confers <c>Gates.Operate</c>. Deactivated / pending /
+    /// rejected accounts are excluded and the list is searchable + paged.
+    /// Resolved as three reads across the DB split (App → App → Identity), merged
+    /// in memory — never a cross-database JOIN (D-157).</summary>
+    public async Task<GridPage<AdminGateOperatorCandidate>> ListOperatorCandidatesAsync(
+        GridQuery query, CancellationToken cancellationToken = default)
+    {
+        var (skip, top) = query.ClampPage(25, 200);
+
+        // Step 1 (App DB) — the operational profile types that confer gate work.
+        var operatorProfileTypes = await appDbContext.ProfileTypes.AsNoTracking()
+            .Where(profileType => profileType.IsActive
+                && !profileType.IsForVisitor
+                && GateOperatorAppRoles.Contains(profileType.MobileAppRole))
+            .Select(profileType => new
+            {
+                profileType.Id,
+                profileType.Name,
+                profileType.MobileAppRole,
+            })
+            .ToListAsync(cancellationToken);
+        if (operatorProfileTypes.Count == 0)
+        {
+            return GridPage<AdminGateOperatorCandidate>.Of(
+                Array.Empty<AdminGateOperatorCandidate>(), 0, skip, top);
+        }
+
+        // Step 2 (App DB) — the profile rows carrying one of those types.
+        var profileTypeIds = operatorProfileTypes.Select(row => row.Id).ToList();
+        var profileRows = await appDbContext.UserProfiles.AsNoTracking()
+            .Where(profile => profile.ProfileTypeId != null
+                && profileTypeIds.Contains(profile.ProfileTypeId.Value))
+            .Select(profile => new
+            {
+                profile.UserId,
+                ProfileTypeId = profile.ProfileTypeId!.Value,
+            })
+            .ToListAsync(cancellationToken);
+        if (profileRows.Count == 0)
+        {
+            return GridPage<AdminGateOperatorCandidate>.Of(
+                Array.Empty<AdminGateOperatorCandidate>(), 0, skip, top);
+        }
+
+        var profileTypeByUserId = profileRows
+            .GroupBy(row => row.UserId)
+            .ToDictionary(group => group.Key, group => group.First().ProfileTypeId);
+        var profileTypeNames = operatorProfileTypes.ToDictionary(
+            row => row.Id, row => (row.Name, row.MobileAppRole));
+
+        // Step 3 (Identity DB) — only approved app accounts; search + page there so
+        // the totals are server-side and the picker is never a blind top-200.
+        var candidateUserIds = profileTypeByUserId.Keys.ToList();
+        var accounts = identityDbContext.Users.AsNoTracking()
+            .Where(user => candidateUserIds.Contains(user.Id)
+                && user.UserType == UserType.Visitor
+                && user.AccountState == AccountState.Approved);
+
+        if (!string.IsNullOrWhiteSpace(query.Search))
+        {
+            var term = query.Search.Trim();
+            accounts = accounts.Where(user =>
+                (user.Email != null && EF.Functions.Like(user.Email, $"%{term}%"))
+                || EF.Functions.Like(user.DisplayName, $"%{term}%"));
+        }
+
+        var total = await accounts.CountAsync(cancellationToken);
+        var page = await accounts
+            .OrderBy(user => user.DisplayName)
+            .Skip(skip).Take(top)
+            .Select(user => new { user.Id, user.Email, user.DisplayName })
+            .ToListAsync(cancellationToken);
+
+        var rows = page
+            .Select(user =>
+            {
+                var profileTypeId = profileTypeByUserId[user.Id];
+                var (name, role) = profileTypeNames[profileTypeId];
+                return new AdminGateOperatorCandidate(
+                    user.Id, user.Email ?? string.Empty, user.DisplayName, name, role);
+            })
+            .ToList();
+
+        return GridPage<AdminGateOperatorCandidate>.Of(rows, total, skip, top);
+    }
+
+    /// <summary>BUG-018 (18-4) — the gate form's own lookups. The form used to read
+    /// the shared ProfileTypes / Halls admin lists, which need
+    /// <c>ProfileTypes.View</c> / <c>Halls.View</c>; a Security-team gate manager
+    /// holds only <c>Gates.Manage</c> and therefore saw silently empty dropdowns.
+    /// Both lists live in the App DB — one context, no cross-database read.</summary>
+    public async Task<AdminGateFormOptions> GetFormOptionsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var profileTypes = await appDbContext.ProfileTypes.AsNoTracking()
+            .Where(profileType => profileType.IsActive)
+            .OrderBy(profileType => profileType.Name)
+            .Select(profileType => new AdminGateLookupOption(
+                profileType.Id, profileType.Name, profileType.NameArabic))
+            .ToListAsync(cancellationToken);
+
+        var halls = await appDbContext.Halls.AsNoTracking()
+            .Where(hall => hall.IsActive)
+            .OrderBy(hall => hall.Name)
+            .Select(hall => new AdminGateLookupOption(
+                hall.Id, hall.Name, hall.NameArabic))
+            .ToListAsync(cancellationToken);
+
+        return new AdminGateFormOptions(profileTypes, halls);
     }
 
     public async Task<IReadOnlyList<AdminGateScanRow>> ListScansAsync(
@@ -512,20 +643,68 @@ internal sealed class AdminGateService(
         }
     }
 
+    /// <summary>BUG-018 (18-2) — an assigned operator must actually be able to work
+    /// the gate; existence in <c>SIMF_Identity.Users</c> is not enough. Eligible is
+    /// either an approved APP account whose profile type is operational
+    /// (<c>IsForVisitor=false</c>) and carries a MobileAppRole that confers
+    /// <c>Gates.Operate</c> — the owner's app-first model — or an approved
+    /// Control-Panel admin account, which is what the retained CP operator console
+    /// at <c>/admin/gates/operator</c> signs in as. Anything else (unknown id,
+    /// plain visitor, non-operational partner type, deactivated / pending /
+    /// rejected account) is rejected with the offending ids named.
+    /// Two reads across the DB split, merged in memory — never a cross-database
+    /// JOIN (D-157).</summary>
     private async Task ValidateOperatorsAsync(
         IReadOnlyList<Guid> ids, CancellationToken cancellationToken)
     {
         if (ids.Count == 0) { return; }
         var distinct = ids.Distinct().ToList();
-        var known = await identityDbContext.Users.AsNoTracking()
-            .Where(u => distinct.Contains(u.Id))
-            .Select(u => u.Id)
+
+        var accounts = await identityDbContext.Users.AsNoTracking()
+            .Where(user => distinct.Contains(user.Id))
+            .Select(user => new { user.Id, user.UserType, user.AccountState })
             .ToListAsync(cancellationToken);
-        if (known.Count != distinct.Count)
+
+        var approved = accounts
+            .Where(account => account.AccountState == AccountState.Approved)
+            .ToList();
+
+        // CP-console operators — an approved admin account signing in to
+        // /admin/gates/operator (its own Gates.Operate policy is the authority there).
+        var eligible = approved
+            .Where(account => account.UserType == UserType.Admin)
+            .Select(account => account.Id)
+            .ToHashSet();
+
+        var appAccountIds = approved
+            .Where(account => account.UserType == UserType.Visitor)
+            .Select(account => account.Id)
+            .ToList();
+        if (appAccountIds.Count > 0)
         {
+            var operational = await appDbContext.UserProfiles.AsNoTracking()
+                .Where(profile => appAccountIds.Contains(profile.UserId)
+                    && profile.ProfileType != null
+                    && profile.ProfileType.IsActive
+                    && !profile.ProfileType.IsForVisitor
+                    && GateOperatorAppRoles.Contains(profile.ProfileType.MobileAppRole))
+                .Select(profile => profile.UserId)
+                .ToListAsync(cancellationToken);
+            eligible.UnionWith(operational);
+        }
+
+        var rejected = distinct.Where(id => !eligible.Contains(id)).ToList();
+        if (rejected.Count > 0)
+        {
+            var named = string.Join(", ", rejected);
             throw new ApiException(ErrorCodes.GateAssignmentInvalid, 400,
-                "One or more assigned operators are missing or duplicated.",
-                "أحد المشغلين المعينين مفقود أو مكرر.");
+                $"These accounts cannot be assigned as gate operators: {named}. "
+                + "A gate operator must be an approved app account whose profile type is "
+                + "operational (non-visitor) and carries the Staff or Moderator app role, "
+                + "or an approved Control Panel admin account.",
+                $"لا يمكن تعيين هذه الحسابات كمشغّلي بوابة: {named}. "
+                + "يجب أن يكون مشغّل البوابة حساب تطبيق معتمداً بنوع ملف تشغيلي (غير زائر) "
+                + "يحمل دور الموظف أو المشرف، أو حساب مسؤول معتمد في لوحة التحكم.");
         }
     }
 

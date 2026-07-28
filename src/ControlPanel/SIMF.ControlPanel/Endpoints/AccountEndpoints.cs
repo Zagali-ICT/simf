@@ -1293,6 +1293,15 @@ internal static class AccountEndpoints
             return Forward(await api.DeactivateHallAsync(id, token));
         });
 
+        // QA B16 — the hall's occupancy view (sessions assigned to this hall).
+        group.MapGet("/admin/halls/{id:guid}/schedule",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetHallScheduleAsync(id, token));
+        });
+
         // SIMF-FDS-013 (D-248) — meeting tables + hall allocations + business
         // meetings BFF passthroughs (mirrors the Halls block above). Without
         // these the /admin/meeting-tables + /admin/business-meetings pages 400
@@ -1848,6 +1857,14 @@ internal static class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.ListSessionModeratorsAsync(body, token));
         });
+        // DEF-MOD-005 — the assign dialog's pickers (replaces two raw GUID boxes).
+        group.MapGet("/admin/session-moderators/assign-options",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListSessionModeratorAssignOptionsAsync(token));
+        });
         group.MapPost("/admin/session-moderators",
             async (AssignSessionModeratorRequest body, HttpContext http, SimfAdminClient api) =>
         {
@@ -2056,6 +2073,22 @@ internal static class AccountEndpoints
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
             return Forward(await api.ListGateAssignmentsAsync(id, token));
+        });
+        // BUG-018 — the gate form's own lookups (operator candidates + the
+        // profile-type / hall options), both gated on Gates.Manage upstream.
+        group.MapPost("/admin/gates/operator-candidates/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListGateOperatorCandidatesAsync(body, token));
+        });
+        group.MapGet("/admin/gates/form-options",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetGateFormOptionsAsync(token));
         });
         group.MapPost("/admin/gates/reports/scans",
             async (AdminGateScanReportFilter body, HttpContext http, SimfAdminClient api) =>
@@ -2421,6 +2454,15 @@ internal static class AccountEndpoints
             return Forward(await api.SetHallSeatLayoutAsync(hallId, body, token));
         });
 
+        // B15 — remove a hall's seat layout (back to general admission).
+        group.MapDelete("/admin/halls/{hallId:guid}/seat-layout",
+            async (Guid hallId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeleteHallSeatLayoutAsync(hallId, token));
+        });
+
         group.MapPost("/admin/sessions/{sessionId:guid}/seats/list",
             async (Guid sessionId, GridQuery body,
                    HttpContext http, SimfAdminClient api) =>
@@ -2523,6 +2565,15 @@ internal static class AccountEndpoints
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
             return Forward(await api.CheckInSpeakerMeetingAsync(id, token));
+        });
+
+        // QA B20 — reopen a Rejected / Cancelled request back to Pending.
+        group.MapPost("/admin/speaker-meeting-requests/{id:guid}/reopen",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ReopenSpeakerMeetingRequestAsync(id, token));
         });
 
         // D-500 (Wave 5, الطلبات) — participation-document request BFF passthroughs.
@@ -3579,6 +3630,16 @@ internal static class AccountEndpoints
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
             return Forward(await api.ProvisionExhibitorAccountAsync(id, body, token));
+        });
+        // D-781 — attach an EXISTING account to the exhibitor (the Others-pipeline
+        // lockout fix). The API gates it on Exhibitors.LinkAccount.
+        group.MapPost("/admin/exhibitors/{id:guid}/accounts/link",
+            async (Guid id, LinkExhibitorAccountRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.LinkExhibitorAccountAsync(id, body, token));
         });
     }
 

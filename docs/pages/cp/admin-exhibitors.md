@@ -7,7 +7,7 @@
 | **Auth** | `@attribute [RequirePermission(PermissionCatalog.Exhibitors.View)]` (page) + `RequireApprovedAccount` + `RequireRateLimiting("auth")` (mutations) |
 | **Pattern** | D-202 Track-2 CP CRUD + per-exhibitor account provisioning; D-353 CrudShell framing; D-356 Excel export/import. |
 | **Status** | ✅ Real (D-202; D-353 toggle + CrudShell; D-356 Excel) |
-| **Backend endpoints** | `POST /account/api/admin/exhibitors/list`, `GET /account/api/admin/exhibitors/{id}`, `POST /account/api/admin/exhibitors`, `PUT /account/api/admin/exhibitors/{id}`, `DELETE /account/api/admin/exhibitors/{id}`, `GET /account/api/admin/exhibitors/{id}/accounts`, `POST /account/api/admin/exhibitors/{id}/accounts`, `POST /account/api/admin/exhibitors/export`, `POST /account/api/admin/exhibitors/import` (BFF → API `/api/v1/admin/exhibitors/*`) |
+| **Backend endpoints** | `POST /account/api/admin/exhibitors/list`, `GET /account/api/admin/exhibitors/{id}`, `POST /account/api/admin/exhibitors`, `PUT /account/api/admin/exhibitors/{id}`, `DELETE /account/api/admin/exhibitors/{id}`, `GET /account/api/admin/exhibitors/{id}/accounts`, `POST /account/api/admin/exhibitors/{id}/accounts`, `POST /account/api/admin/exhibitors/{id}/accounts/link` (D-781), `POST /account/api/admin/exhibitors/export`, `POST /account/api/admin/exhibitors/import` (BFF → API `/api/v1/admin/exhibitors/*`) |
 | **Source** | [`ExhibitorsList.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ExhibitorsList.razor), [`ExhibitorsAddEdit.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ExhibitorsAddEdit.razor), [`ExhibitorsViewDelete.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ExhibitorsViewDelete.razor), [`ExhibitorEndpoints`](../../../src/Backend/SIMF.Api/Endpoints/Exhibitors/ExhibitorEndpoints.cs), [`ExhibitorsExcelEndpoints`](../../../src/Backend/SIMF.Api/Endpoints/Admin/ExhibitorsExcelEndpoints.cs), [`AdminExhibitorService`](../../../src/Backend/SIMF.Infrastructure/Exhibitors/AdminExhibitorService.cs), [`Exhibitor`](../../../src/Backend/SIMF.Domain/Exhibitors/Exhibitor.cs) |
 | **Backed by** | `dbo.Exhibitors` + `dbo.ExhibitorMemberships` (D-199/D-202 migration `D202_CompaniesAndProvisioning`; renamed in `D274_AuditFoldAndExhibitorRename`). |
 | **Tests** | [`docs/tests/e2e/cp-admin-exhibitors.md`](../../tests/e2e/cp-admin-exhibitors.md) · `tests/SIMF.Api.Tests/ExhibitorsTests.cs` · `tests/SIMF.Api.Tests/ExhibitorsExcelTests.cs` |
@@ -40,9 +40,14 @@ JOIN.
   **Edit** / **Details** / **Delete** quiet icons, plus **Export** /
   **Import**.
 - Per-row **Accounts** quiet icon (user) — opens the account-provisioning
-  `SimfModal`. It is the **only** UI affordance wrapped in
-  `<AuthorizedAction Permission="Exhibitors.Edit">`; the CRUD action
-  buttons are not individually gated in the CP (enforcement is API-side).
+  `SimfModal`, wrapped in `<AuthorizedAction Permission="Exhibitors.Edit">`;
+  the CRUD action buttons are not individually gated in the CP (enforcement
+  is API-side).
+- Inside that modal, the **Link an existing account** block (D-781) is the
+  second `<AuthorizedAction>`-gated affordance, on its own
+  `Exhibitors.LinkAccount` permission — it attaches an account somebody else
+  created to this exhibitor, which is what hands out access to the booth's
+  visitor contact cards.
 - Add/Edit (`ExhibitorsAddEdit`), View/Delete and the read-only Details
   view (`ExhibitorsViewDelete`) are hosted by **`CrudShell`** as a popup
   or a full page (D-353). Delete opens `ExhibitorsViewDelete` with a red
@@ -92,6 +97,14 @@ JOIN.
 | Email | yes | 320 | 1–320 chars; must not already be registered |
 | Role label | no | 128 | ≤128 chars; free text |
 
+### Link an existing account (D-781 — same modal, `Exhibitors.LinkAccount`)
+
+| Field | Required | MaxLength | Validation |
+|-------|----------|-----------|------------|
+| Account email | yes | 320 | 1–320 chars; must already be registered, and the account must carry an **active exhibitor-mapped profile type** |
+| Contact name (optional) | no | 256 | ≤256 chars; defaults to the account's display name, then its email |
+| Role label (optional) | no | 128 | ≤128 chars; free text |
+
 ## 5. Data flow + endpoints
 
 - **List** — `OnInitializedAsync`/`OnQueryChangedAsync` → BFF
@@ -113,14 +126,43 @@ JOIN.
 - **Deactivate** — `DELETE /account/api/admin/exhibitors/{id}` (policy
   `Exhibitors.Delete`, rate-limited "auth"). Soft-delete (`IsActive =
   false`); idempotent (returns early if already inactive). Writes
-  `Exhibitor.Deactivated`.
+  `Exhibitor.Deactivated`. **DEF-EXH-006:** this also revokes the app
+  lead-capture tools for every officer under the exhibitor — the scan and My
+  Visitors endpoints require an active `ExhibitorMembership` of an **active**
+  `Exhibitor`, so closing the booth answers 403 on their existing tokens.
 - **List accounts** — `GET /admin/exhibitors/{id}/accounts` (policy
   `Exhibitors.View`). 404 if the exhibitor id is unknown; resolves the
   account emails cross-context from the Identity DB.
 - **Provision account** — `POST /admin/exhibitors/{id}/accounts` (policy
-  `Exhibitors.Create`, rate-limited "auth"). Reuses `CreateVisitorAsync`
-  (least-privilege Visitor, pending approval) + an `ExhibitorMembership`
-  row. Writes `Exhibitor.AccountProvisioned`.
+  `Exhibitors.Create`, rate-limited "auth"). Reuses `CreateOtherAsync`
+  (least-privilege partner-side account, pending approval) + an
+  `ExhibitorMembership` row. Writes `Exhibitor.AccountProvisioned`.
+  **DEF-EXH-005:** the account is provisioned with the **exhibitor profile
+  type** — resolved by `ProfileType.MobileAppRole == Exhibitor` (D-519), never
+  by a name literal — because the app lead-capture tools (scan a visitor badge
+  / My Visitors) authorise on exactly that column; the earlier "no profile
+  type" account could never scan. Consequence for the desk: a booth officer now
+  lands in the **Others** pending-approval queue, not the Visitors queue. With
+  no active exhibitor-mapped profile type at all, the call answers 409
+  `ADMIN_PROFILE_TYPE_INVALID` instead of minting an unusable account.
+  **DEF-EXH-006:** the `ExhibitorMembership` row is not just a tag — it is half
+  the authorisation. Deactivating it (or the exhibitor) is what takes the
+  lead-capture tools away again; the profile type alone no longer grants them.
+- **Link an existing account** — `POST /admin/exhibitors/{id}/accounts/link`
+  (policy **`Exhibitors.LinkAccount`**, rate-limited "auth"). Writes
+  `Exhibitor.AccountLinked`. **D-781 (owner decision 2026-07-27):** provisioning
+  used to be the ONLY writer of `ExhibitorMembership`, so an exhibitor-typed
+  account created through the generic Others pipeline (`POST /admin/others`) or
+  the Others walk-in desk had the right profile type and no membership — 403 on
+  badge scan and on My Visitors (DEF-EXH-006) with no CP path to attach it to a
+  booth. This action is that path: it resolves the account by email on the
+  Identity DB and writes only the App-DB membership row (D-157 — two contexts,
+  two queries, no cross-database join). It does **not** mutate the account's
+  profile type: the account must already carry an active exhibitor-mapped type
+  (set on the Others page), else it answers 409
+  `EXHIBITOR_ACCOUNT_NOT_ELIGIBLE`. Its own permission — separate from
+  `Exhibitors.Create` — because it creates nothing and instead grants an existing
+  account access to visitor PII.
 - **Export** — `POST /admin/exhibitors/export` (policy
   `Exhibitors.Export`, rate-limited "auth") via
   `ExportExhibitorsEndpoint : AdminGridExportEndpoint<AdminExhibitorSummary>`.
@@ -149,6 +191,13 @@ JOIN.
 - **Invalid provisioning input** (contact name/email/role length): 400
   `EXHIBITOR_ACCOUNT_INVALID`. A duplicate / already-registered account
   email surfaces from the reused `CreateVisitorAsync` pipeline.
+- **Link an existing account (D-781):** blank/over-length email, contact name or
+  role label → 400 `EXHIBITOR_ACCOUNT_INVALID`; no account registered under the
+  email → 404 `EXHIBITOR_ACCOUNT_NOT_FOUND`; the account carries no active
+  exhibitor-mapped profile type → 409 `EXHIBITOR_ACCOUNT_NOT_ELIGIBLE`; the
+  account already holds an active membership → 409
+  `EXHIBITOR_ACCOUNT_ALREADY_LINKED` (an account belongs to at most one booth);
+  linking under a deactivated exhibitor → 409 `EXHIBITOR_INACTIVE`.
 - **Import per-row errors:** a blank name row is reported individually
   ("Both the English and Arabic names are required." /
   "الاسمان بالإنجليزية والعربية كلاهما مطلوبان.") without aborting the batch.
@@ -243,4 +292,18 @@ Category="ExhibitorLogo">` "Logo" field; the grid renders the exhibitor's own lo
 it (`GET /app/assets/ExhibitorLogo/{id}/image`, CompanyLogo fallback). Works with no
 linked Contact. Gated by `Exhibitors.Edit`. E2E-EXH-025 / E2E-EXH-026.
 
-_Last reviewed:_ 2026-07-25 by Claude (D-764 — exhibitor's own logo upload + thumbnail). Prior: 2026-07-14 by Claude (D-357).
+**2026-07-27 (D-781 — owner decision):** the Accounts modal gained a **Link an
+existing account** block on its own `Exhibitors.LinkAccount` permission, posting
+`POST /admin/exhibitors/{id}/accounts/link`. It fixes a lockout: DEF-EXH-006 made
+a current `ExhibitorMembership` half the app lead-capture authorisation, and
+provisioning was the only writer of that row, so an exhibitor-typed account
+created through the generic Others pipeline (`POST /admin/others`) or the Others
+walk-in desk was 403 on badge scan and on My Visitors with no CP path to attach
+it to a booth. Linking does not change the account's profile type — it must
+already carry an active exhibitor-mapped one (409
+`EXHIBITOR_ACCOUNT_NOT_ELIGIBLE` otherwise). Audit `Exhibitor.AccountLinked`.
+E2E-EXH-027.
+
+_Last reviewed:_ 2026-07-27 by Claude (D-781 — link an existing account to an
+exhibitor). Prior: 2026-07-25 by Claude (D-764 — exhibitor's own logo upload +
+thumbnail); 2026-07-14 by Claude (D-357).

@@ -19,9 +19,21 @@
         <h2 class="simf-section-h2">@L["Admin.Operations.RegistrationGate.Heading"]</h2>
         <p class="simf-section-desc">@L["Admin.Operations.RegistrationGate.Desc"]</p>
 
-        @if (_gate is null)
+        @* §6.16 (F-U5-007) — "Loading…" used to key off `_gate is null`, so a
+           FAILED load left this section reading "Loading…" for as long as the
+           admin cared to wait. The three states are now distinct. *@
+        @if (_loading)
         {
             <p>@L["Admin.Operations.Loading"]</p>
+        }
+        else if (_gate is null)
+        {
+            <SimfAlert Variant="error">@(_gateError ?? L["Admin.Operations.LoadFailed"].Value)</SimfAlert>
+            <div class="simf-form__actions">
+                <SimfButton Type="button" Variant="secondary" OnClick="LoadAsync">
+                    @L["Common.Retry"]
+                </SimfButton>
+            </div>
         }
         else
         {
@@ -55,9 +67,18 @@
         <h2 class="simf-section-h2">@L["Admin.Operations.Archive.Heading"]</h2>
         <p class="simf-section-desc">@L["Admin.Operations.Archive.Desc"]</p>
 
-        @if (_archive is null)
+        @if (_loading)
         {
             <p>@L["Admin.Operations.Loading"]</p>
+        }
+        else if (_archive is null)
+        {
+            <SimfAlert Variant="error">@(_archiveError ?? L["Admin.Operations.LoadFailed"].Value)</SimfAlert>
+            <div class="simf-form__actions">
+                <SimfButton Type="button" Variant="secondary" OnClick="LoadAsync">
+                    @L["Common.Retry"]
+                </SimfButton>
+            </div>
         }
         else
         {

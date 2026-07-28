@@ -24,7 +24,9 @@
         <div class="simf-surface">
             @if (_toast is not null)
             {
-                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                <div class="simf-toast">
+                    <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                </div>
             }
 
             <SimfDataGrid TItem="AdminExhibitorSummary"
@@ -141,7 +143,8 @@
     <SimfModal Open="true"
                RequireExplicitClose="true"
                Title="@string.Format(L["Admin.Exhibitors.Accounts.Title"], _accountsExhibitorName)"
-               OnClose="@(() => _accountsOpen = false)">
+               OnClose="@(() => _accountsOpen = false)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <SimfAlert Variant="info">@L["Admin.Exhibitors.Accounts.Hint"]</SimfAlert>
 
@@ -199,12 +202,49 @@
                                MaxLength="128"
                                Disabled="_provisionBusy" />
             </div>
+
+            @* D-781 — attach an EXISTING account (typically one created on the
+               Others page) to this exhibitor. Without it, an exhibitor-typed
+               account created outside this modal has no ExhibitorMembership and is
+               403'd on badge scan + My Visitors with no way to fix it. Its own
+               permission: it hands an existing account access to visitor cards. *@
+            <AuthorizedAction Permission="@PermissionCatalog.Exhibitors.LinkAccount">
+                <h3 class="simf-field__label">@L["Admin.Exhibitors.Link.Heading"]</h3>
+                <SimfAlert Variant="info">@L["Admin.Exhibitors.Link.Hint"]</SimfAlert>
+                <div class="simf-form__fields">
+                    <SimfTextField Label="@L["Admin.Exhibitors.Link.Email"]"
+                                   Value="@_link.Email"
+                                   ValueChanged="@(v => _link.Email = v)"
+                                   ValueExpression="@(() => _link.Email)"
+                                   MaxLength="320"
+                                   Disabled="_linkBusy" />
+                    <SimfTextField Label="@L["Admin.Exhibitors.Link.ContactName"]"
+                                   Value="@_link.ContactName"
+                                   ValueChanged="@(v => _link.ContactName = v)"
+                                   ValueExpression="@(() => _link.ContactName)"
+                                   MaxLength="256"
+                                   Disabled="_linkBusy" />
+                    <SimfTextField Label="@L["Admin.Exhibitors.Link.RoleLabel"]"
+                                   Value="@_link.RoleLabel"
+                                   ValueChanged="@(v => _link.RoleLabel = v)"
+                                   ValueExpression="@(() => _link.RoleLabel)"
+                                   MaxLength="128"
+                                   Disabled="_linkBusy" />
+                </div>
+                <div class="simf-form__actions">
+                    <SimfButton Type="button" OnClick="LinkAsync" Loading="_linkBusy" LoadingLabel="@L["Grid.Working"]">
+                        @L["Admin.Exhibitors.Link.Submit"]
+                    </SimfButton>
+                </div>
+            </AuthorizedAction>
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" Variant="secondary" Disabled="_provisionBusy" OnClick="@(() => _accountsOpen = false)">
+            @* The modal now runs two async actions (provision + D-781 link), so
+               Close stays disabled while either is in flight. *@
+            <SimfButton Type="button" Variant="secondary" Disabled="@(_provisionBusy || _linkBusy)" OnClick="@(() => _accountsOpen = false)">
                 @L["Admin.Exhibitors.Accounts.Close"]
             </SimfButton>
-            <SimfButton Type="button" OnClick="ProvisionAsync" Loading="_provisionBusy">
+            <SimfButton Type="button" OnClick="ProvisionAsync" Loading="_provisionBusy" LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.Exhibitors.Provision.Submit"]
             </SimfButton>
         </Footer>

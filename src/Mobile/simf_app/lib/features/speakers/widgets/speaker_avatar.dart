@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
+import '../../../app/widgets/simf_logo_image.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
 
 /// The speaker profile identity avatar (908:2110 `912:2270`): a 125px white
@@ -9,15 +10,24 @@ import '../../../app/widgets/simf_svg_icon.dart';
 /// `SpeakerPhoto` asset) clipped to the circle, falling back to the gold SIMF
 /// anchor placeholder while it loads or when no photo is uploaded (the route
 /// 404s).
+///
+/// Owner 2026-07-26 — a PORTRAIT keeps `BoxFit.cover` (the circle must stay
+/// filled, never letterboxed) but tapping it now opens the photo full size via
+/// the shared [SimfLogoImage].
 class SpeakerAvatar extends StatelessWidget {
   const SpeakerAvatar({
     required this.imageUrl,
     required this.initials,
+    required this.name,
     super.key,
   });
 
   final String imageUrl;
   final String initials;
+
+  /// The speaker's localized name — the photo's accessible name and the
+  /// full-size viewer's title.
+  final String name;
 
   @override
   Widget build(BuildContext context) {
@@ -48,13 +58,13 @@ class SpeakerAvatar extends StatelessWidget {
             color: SimfTokens.surface,
             shape: BoxShape.circle,
           ),
-          child: Image.network(
-            imageUrl,
+          child: SimfLogoImage(
+            url: imageUrl,
+            placeholder: placeholder,
+            semanticLabel: name,
             fit: BoxFit.cover,
-            gaplessPlayback: true,
-            loadingBuilder: (context, child, progress) =>
-                progress == null ? child : placeholder,
-            errorBuilder: (context, error, stackTrace) => placeholder,
+            width: double.infinity,
+            height: double.infinity,
           ),
         ),
       ),

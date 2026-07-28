@@ -20,6 +20,10 @@ internal sealed class HallSeatLayoutConfiguration : IEntityTypeConfiguration<Hal
         // mirroring the RowLabels(256) convention. Null = uniform SeatsPerRow.
         builder.Property(x => x.SeatCounts).HasMaxLength(256);
 
+        // D-771 — optional per-row seat-tier CSV (nullable → nvarchar(256) NULL),
+        // same convention as SeatCounts. Null = an all-Normal (legacy) grid.
+        builder.Property(x => x.SeatTiers).HasMaxLength(256);
+
         builder.HasOne(x => x.Hall)
             .WithMany()
             .HasForeignKey(x => x.HallId)

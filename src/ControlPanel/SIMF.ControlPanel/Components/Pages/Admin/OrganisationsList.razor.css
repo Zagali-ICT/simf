@@ -27,5 +27,5 @@
     margin: var(--space-2) 0 0;
     padding-inline-start: var(--space-4);
     color: var(--color-text-muted);
-    font-size: 0.85rem;
+    font-size: var(--font-size-body-small);
 }

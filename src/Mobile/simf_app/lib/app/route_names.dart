@@ -28,6 +28,10 @@ class RouteNames {
   /// #14 — the standalone "My interests" edit surface, opened from My-Area. The
   /// same screen as [signUpInterests] rendered in edit mode.
   static const String myInterests = 'myInterests';
+
+  /// Owner 2026-07-26 — the standalone "My mobile number" add / edit surface,
+  /// opened from My-Area. Validation only: no OTP, no verification step.
+  static const String myMobile = 'myMobile';
   static const String terms = 'terms';
   static const String registrationSuccess = 'registrationSuccess';
   static const String registrationStatus = 'registrationStatus';
@@ -118,13 +122,11 @@ class RouteNames {
   // (D-609: myMeetings + myAreaSessions route names removed — their screens are
   // backed up as `.bk` and their routes + My-Area/More entry points are gone.)
 
-  // Owner batch (2026-06-21) — entry points whose feature is not designed/built
-  // yet, so they render the ComingSoon placeholder (sentinel numbers 200+):
-  //   • bilateralMeetings (اللقاءات الثنائية) — home tile, not designed yet (#5).
-  //   • savedMeetings — My Area stat tile, not built yet (#8).
-  //   (D-609: savedSessions removed — screen backed up as `.bk`.)
-  static const String bilateralMeetings = 'bilateralMeetings';
-  static const String savedMeetings = 'savedMeetings';
+  // (B18: bilateralMeetings + savedMeetings removed with routes 204 / 206 —
+  //  ComingSoon sentinels with no screen and no caller left. The Home
+  //  "اللقاءات الثنائية" tile opens the real VIP [meetings] page (D-745); the
+  //  My-Area saved-meetings stat went with the D-609 screen deletion, which had
+  //  already removed savedSessions the same way.)
 
   // FDS-014 visitor contact sharing (D-286 API; additive, not mockup-numbered).
   // Reached from More / My Area; all three require an Approved account.
@@ -146,6 +148,10 @@ class RouteNames {
   // Staff walk-in visitor registration (D-509; additive, drawer entry; role-gated
   // to Staff, server enforces the Visitors.RegisterOnsite grant). Figma 1467:12357.
   static const String staffRegisterVisitor = 'staffRegisterVisitor';
+  // D-771 — the staff seating desk (owner 2026-07-26; additive, role-gated to
+  // Staff, server enforces the Seating.Assist grant). Entered from the session
+  // detail header when the signed-in user is Staff.
+  static const String staffSeating = 'staffSeating';
   // D-485 — the in-app session-join flow (additive, approved Visitor): the seat
   // picker (assigned-seat sessions) + the standalone "Join a session" hub (the
   // owner's "both" entry — the other is the Join CTA on the session page).

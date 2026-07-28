@@ -43,6 +43,16 @@ public sealed class HallSeatLayout
     /// — all validated at the service layer. Max 256 chars.</summary>
     public string? SeatCounts { get; set; }
 
+    /// <summary>D-771 — optional per-row seat TIERS. Null = a layout written before
+    /// D-771, which reads as an all-<see cref="SIMF.Common.Enums.SeatTier.Normal"/>
+    /// grid (unchanged pre-D-771 behaviour — no shipped session loses a bookable
+    /// seat). When set it is a CSV of <see cref="SIMF.Common.Enums.SeatTier"/> ints
+    /// PARALLEL to <see cref="RowLabels"/> (e.g. "2,1,0,0"): its length equals
+    /// <c>RowLabels.Count</c> and each value is a defined tier — validated at the
+    /// service layer. The Control Panel editor always writes it, and defaults a
+    /// NEWLY defined row to <c>Vvip</c> (owner 2026-07-26). Max 256 chars.</summary>
+    public string? SeatTiers { get; set; }
+
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? UpdatedAt { get; set; }
 }

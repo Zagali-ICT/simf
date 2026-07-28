@@ -7,7 +7,6 @@ using Microsoft.Extensions.Options;
 using SIMF.Application.Auditing;
 using SIMF.Application.Email;
 using SIMF.Application.IdentityAccess.Abstractions;
-using SIMF.Application.Notifications;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Common.Options;
@@ -15,7 +14,6 @@ using SIMF.Contracts.Authentication;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Profiles;
-using SIMF.Domain.Notifications;
 
 namespace SIMF.Application.IdentityAccess;
 
@@ -33,7 +31,6 @@ public sealed class SignInService(
     IAccountCodeRepository accountCodeRepository,
     IEmailQueue emailQueue,
     IEmailTemplateResolver emailTemplates,
-    INotificationDispatcher notifications,
     IUserProfileService userProfiles,
     IJwtTokenService jwtTokenService,
     IPermissionResolver permissionResolver,
@@ -244,19 +241,13 @@ public sealed class SignInService(
             auditLog: auditLog,
             logger: logger,
             cancellationToken: cancellationToken);
-        // D-099: in-app trail for the credential email — visible inside
-        // the app after the user completes sign-in.
-        await notifications.TryDispatchAsync(new NotificationRequest
-        {
-            UserId = user.Id,
-            Kind = NotificationKind.CredentialSignInOtpSent,
-            Title = "Sign-in code sent",
-            TitleArabic = "تم إرسال رمز تسجيل الدخول",
-            Body = "A sign-in verification code was sent to your email address.",
-            BodyArabic = "تم إرسال رمز التحقق لتسجيل الدخول إلى بريدك الإلكتروني.",
-            Severity = NotificationSeverity.Info,
-            SendEmail = false,
-        }, logger, cancellationToken);
+        // BUG-015 — no in-app notification is written for a sign-in code. The
+        // D-099 trail row fired on EVERY 2FA sign-in, so the notification centre
+        // filled with "Sign-in code sent" rows and buried the meaningful ones
+        // (account approved + QR, profile submitted). The code itself travels by
+        // email, and the security trail is the SignInSecondFactorIssued audit row
+        // above — neither needs a user-facing row. Security-relevant notices
+        // (password changed / reset completed) are unaffected.
         return new SignInResponse(true, null, ticketValue);
     }
 

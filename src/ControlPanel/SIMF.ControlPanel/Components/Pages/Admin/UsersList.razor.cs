@@ -81,10 +81,19 @@ public partial class UsersList
         {
             var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminUserSummary>>>(
                 "simfAccount.postJson", "/account/api/admin/admins/list", _query);
-            _page = envelope is { Success: true, Data: not null }
-                ? envelope.Data
-                : GridPage<AdminUserSummary>.Of(
-                    Array.Empty<AdminUserSummary>(), 0, _query);
+            // §6.16 (F-U5-002) — a FAILED envelope used to be substituted with an
+            // empty page, so an API 500 / 403 was indistinguishable from "no rows"
+            // and the admin read a working page with no data. Report it instead;
+            // the page already renders a toast surface it never used on this path.
+            if (envelope is { Success: true, Data: not null })
+            {
+                _page = envelope.Data;
+            }
+            else
+            {
+                _page = GridPage<AdminUserSummary>.Of(Array.Empty<AdminUserSummary>(), 0, _query);
+                ShowToast("error", envelope?.Error?.MessageForCurrentCulture() ?? L["Admin.Users.LoadFailed"]);
+            }
         }
         finally { _loading = false; }
     }
@@ -255,9 +264,12 @@ public partial class UsersList
     private async Task OnExportAsync(IReadOnlyList<AdminUserSummary> selected)
     {
         var ids = selected.Select(u => u.Id).ToList();
-        await JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+        // §6.16 (F-U5-005) — a failed export used to return silently, so
+        // the Export button was indistinguishable from an unwired one.
+        var error = await JS.ExportXlsxAsync(
             "/account/api/admin/admins/export",
-            new AdminExportUsersRequest { Ids = ids, Query = ids.Count == 0 ? _query : null });
+            new AdminExportUsersRequest { Ids = ids, Query = ids.Count == 0 ? _query : null }, L);
+        if (error is not null) ShowToast("error", error);
     }
 
     private async Task OnImportAsync() =>

@@ -155,6 +155,13 @@ class MyAreaDashboardBody extends ConsumerWidget {
           onTap: () => context.pushNamed(RouteNames.myInterests),
         ),
         const SizedBox(height: SimfTokens.space4),
+        // Owner 2026-07-26 — add / edit the mobile number (validate only, no
+        // OTP), next to the other self-service profile edits.
+        MyAreaMoreRow(
+          label: l10n.myMobileTitle,
+          onTap: () => context.pushNamed(RouteNames.myMobile),
+        ),
+        const SizedBox(height: SimfTokens.space4),
         // D-485 — the standalone Join-a-session hub (the seat-booking flow; the
         // other entry is the Join CTA on each session page).
         MyAreaMoreRow(

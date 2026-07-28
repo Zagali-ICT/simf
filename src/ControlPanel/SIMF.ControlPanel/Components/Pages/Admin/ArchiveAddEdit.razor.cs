@@ -227,7 +227,7 @@ public partial class ArchiveAddEdit
         public int Sessions { get; set; }
         public int Speakers { get; set; }
         public string? CoverImageRelativePath { get; set; }
-        // Â§9 (screen 24-01) â€” place + date label.
+        // §9 (screen 24-01) — place + date label.
         public string? LocationEn { get; set; }
         public string? LocationAr { get; set; }
         public string? DateLabelEn { get; set; }

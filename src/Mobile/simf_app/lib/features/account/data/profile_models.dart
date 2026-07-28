@@ -331,7 +331,16 @@ class UserProfileResponse {
   /// [showInMeetLikeYou] overrides the loaded opt-in value — Build #13 lets an
   /// "Other"-type user toggle it on the My-interests edit screen; null keeps the
   /// current value.
-  UpsertUserProfileRequest toUpsertRequest({bool? showInMeetLikeYou}) =>
+  ///
+  /// [mobile] overrides the stored mobile number (owner 2026-07-26 — add / edit
+  /// the phone number from the profile, validate only, no OTP). It is written to
+  /// the field the profile's nationality selects — [saudiMobile] for a Saudi
+  /// national, [internationalMobile] otherwise — so the pair never carries two
+  /// numbers at once. Null keeps both stored values.
+  UpsertUserProfileRequest toUpsertRequest({
+    bool? showInMeetLikeYou,
+    String? mobile,
+  }) =>
       UpsertUserProfileRequest(
         interestIds: interestIds,
         arabicName: arabicName,
@@ -346,8 +355,9 @@ class UserProfileResponse {
         nationalId: nationalId,
         iqamaNumber: iqamaNumber,
         passportNumber: passportNumber,
-        saudiMobile: saudiMobile,
-        internationalMobile: internationalMobile,
+        saudiMobile: mobile == null || !isSaudi ? saudiMobile : mobile,
+        internationalMobile:
+            mobile == null || isSaudi ? internationalMobile : mobile,
         plateNumber: plateNumber,
         organisationId: organisationId,
         showInMeetLikeYou: showInMeetLikeYou ?? this.showInMeetLikeYou,

@@ -1231,6 +1231,14 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Delete, $"halls/{id}", content: null,
             accessToken, cancellationToken);
 
+    // QA B16 — the hall's occupancy view: the sessions assigned to this hall.
+    public Task<ApiCallResult<GridPage<AdminSessionSummary>>> GetHallScheduleAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminSessionSummary>>(
+            HttpMethod.Get, $"halls/{id}/schedule", content: null,
+            accessToken, cancellationToken);
+
     // -- SIMF-FDS-013 (D-248) — meeting tables + hall allocations + meetings -
 
     public Task<ApiCallResult<bool>> SetHallPurposeAsync(
@@ -1778,6 +1786,13 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
 
+    // DEF-MOD-005 — the assign dialog's session + eligible-moderator pickers.
+    public Task<ApiCallResult<SessionModeratorAssignOptions>> ListSessionModeratorAssignOptionsAsync(
+        string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<SessionModeratorAssignOptions>(
+            HttpMethod.Get, "session-moderators/assign-options", content: null,
+            accessToken, cancellationToken);
+
     public Task<ApiCallResult<AdminSessionModeratorRow>> AssignSessionModeratorAsync(
         AssignSessionModeratorRequest request, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -1988,6 +2003,25 @@ public sealed class SimfAdminClient(HttpClient http)
         CancellationToken cancellationToken = default) =>
         SendAsync<IReadOnlyList<AdminGateAssignmentRow>>(
             HttpMethod.Get, $"gates/{id}/assignments", content: null,
+            accessToken, cancellationToken);
+
+    // BUG-018 — the gate form's own lookups, both gated on Gates.Manage so a gate
+    // manager no longer needs Admins.View / ProfileTypes.View / Halls.View to fill
+    // the Add/Edit form.
+
+    public Task<ApiCallResult<GridPage<AdminGateOperatorCandidate>>>
+        ListGateOperatorCandidatesAsync(
+            GridQuery query, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminGateOperatorCandidate>>(
+            HttpMethod.Post, "gates/operator-candidates/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminGateFormOptions>> GetGateFormOptionsAsync(
+        string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<AdminGateFormOptions>(
+            HttpMethod.Get, "gates/form-options", content: null,
             accessToken, cancellationToken);
 
     public Task<ApiCallResult<IReadOnlyList<AdminGateScanRow>>> ListGateScansAsync(
@@ -2415,10 +2449,21 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    public Task<ApiCallResult<GridPage<SessionSeatCell>>> ListSessionSeatReservationsAsync(
+    /// <summary>B15 — remove the hall's seat layout (the hall reverts to general
+    /// admission). Returns the now-empty snapshot.</summary>
+    public Task<ApiCallResult<HallSeatLayoutSnapshot>> DeleteHallSeatLayoutAsync(
+        Guid hallId, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<HallSeatLayoutSnapshot>(
+            HttpMethod.Delete, $"halls/{hallId}/seat-layout", content: null,
+            accessToken, cancellationToken);
+
+    /// <summary>DEF-SEA-001 / A11 — the seat plan's active reservations in the ADMIN
+    /// shape: each row names its holder and carries the real status + check-in flag.</summary>
+    public Task<ApiCallResult<GridPage<SeatPlanCell>>> ListSessionSeatReservationsAsync(
         Guid sessionId, GridQuery query, string accessToken,
         CancellationToken cancellationToken = default) =>
-        SendAsync<GridPage<SessionSeatCell>>(
+        SendAsync<GridPage<SeatPlanCell>>(
             HttpMethod.Post, $"sessions/{sessionId}/seats/list",
             JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
@@ -2502,6 +2547,14 @@ public sealed class SimfAdminClient(HttpClient http)
         CancellationToken cancellationToken = default) =>
         SendAsync<AdminSpeakerMeetingRequestDetail>(
             HttpMethod.Post, $"speaker-meeting-requests/{id}/check-in",
+            content: null, accessToken, cancellationToken);
+
+    // QA B20 — an admin reopens a Rejected / Cancelled request back to Pending.
+    public Task<ApiCallResult<AdminSpeakerMeetingRequestDetail>> ReopenSpeakerMeetingRequestAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminSpeakerMeetingRequestDetail>(
+            HttpMethod.Post, $"speaker-meeting-requests/{id}/reopen",
             content: null, accessToken, cancellationToken);
 
     // -- D-500 (Wave 5, الطلبات) — participation-document + badge-update request
@@ -3409,6 +3462,16 @@ public sealed class SimfAdminClient(HttpClient http)
         CancellationToken cancellationToken = default) =>
         SendAsync<ExhibitorAccountSummary>(
             HttpMethod.Post, $"exhibitors/{id}/accounts",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    // D-781 — attach an EXISTING account to the exhibitor (the Others-pipeline
+    // lockout fix). Permission Exhibitors.LinkAccount.
+    public Task<ApiCallResult<ExhibitorAccountSummary>> LinkExhibitorAccountAsync(
+        Guid id, LinkExhibitorAccountRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<ExhibitorAccountSummary>(
+            HttpMethod.Post, $"exhibitors/{id}/accounts/link",
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 

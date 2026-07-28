@@ -128,6 +128,8 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
                 IsSaudi = true,
                 NationalId = "1101798278",
                 OrganisationId = organisationId,
+                // DEF-PHN-004 — the mobile is required on the upsert now.
+                SaudiMobile = "0501234567",
             }),
         };
         upsertRequest.Headers.Authorization =

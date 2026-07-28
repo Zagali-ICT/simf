@@ -22,13 +22,14 @@ else
                     <span class="simf-repeater__index">@IndexLabel @(index + 1)</span>
                     <div class="simf-repeater__row-actions">
                         <button type="button" class="simf-button simf-button--ghost"
-                                title="Move up" @onclick="() => OnMove.InvokeAsync((item, -1))"
-                                disabled="@(Disabled || index == 0)">Up</button>
+                                title="@MoveUpLabel" @onclick="() => OnMove.InvokeAsync((item, -1))"
+                                disabled="@(Disabled || index == 0)">@MoveUpLabel</button>
                         <button type="button" class="simf-button simf-button--ghost"
-                                title="Move down" @onclick="() => OnMove.InvokeAsync((item, 1))"
-                                disabled="@(Disabled || index == Items.Count - 1)">Down</button>
+                                title="@MoveDownLabel" @onclick="() => OnMove.InvokeAsync((item, 1))"
+                                disabled="@(Disabled || index == Items.Count - 1)">@MoveDownLabel</button>
                         <button type="button" class="simf-button simf-button--ghost"
-                                @onclick="() => OnRemove.InvokeAsync(item)" disabled="@Disabled">Remove</button>
+                                title="@RemoveLabel"
+                                @onclick="() => OnRemove.InvokeAsync(item)" disabled="@Disabled">@RemoveLabel</button>
                     </div>
                 </div>
                 <div class="simf-repeater__row-body">
@@ -58,6 +59,18 @@ else
 
     /// <summary>The "+ Add" button label.</summary>
     [Parameter] public string? AddLabel { get; set; }
+
+    // §6.16 — the three row controls were hardcoded English ("Up" / "Down" /
+    // "Remove") and reached the Arabic UI verbatim. Like every other Simf*
+    // label parameter, the host supplies these localised.
+    /// <summary>Label and tooltip for the move-up control.</summary>
+    [Parameter] public string MoveUpLabel { get; set; } = "Up";
+
+    /// <summary>Label and tooltip for the move-down control.</summary>
+    [Parameter] public string MoveDownLabel { get; set; } = "Down";
+
+    /// <summary>Label and tooltip for the remove-row control.</summary>
+    [Parameter] public string RemoveLabel { get; set; } = "Remove";
 
     /// <summary>Disables every control (e.g. while a save is in flight).</summary>
     [Parameter] public bool Disabled { get; set; }

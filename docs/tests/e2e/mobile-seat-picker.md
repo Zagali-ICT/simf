@@ -4,8 +4,8 @@
 |-------|-------|
 | **Route** | `seatPicker` — `/sessions/:sessionId/pick-seat` (approved Visitor) |
 | **Source** | [`seat_picker_screen.dart`](../../../src/Mobile/simf_app/lib/features/sessions/seat_picker_screen.dart) |
-| **API** | `GET /app/sessions/{id}/seats` (draw) · `POST /app/sessions/{id}/seats/reserve` · `POST …/seats/reserve-random` |
-| **Reached from** | The session page's **Select my seat** Join CTA (assigned-seat sessions only) |
+| **API** | `GET /app/sessions/{id}/seats` (draw) · `POST /app/sessions/{id}/seats/reserve` · `POST …/seats/reserve-random` · **`POST …/seats/move`** (B1 change seat) |
+| **Reached from** | The session page's **Select my seat** Join CTA (assigned-seat sessions only) · **the My-Seat page's تغيير المقعد / Change seat action** (B1 — opens the same picker in CHANGE mode) |
 
 The seat picker draws the hall grid for an **assigned-seat** session and lets the
 attendee tap an **available** seat (or auto-pick) to hold it. The reservation is
@@ -17,8 +17,10 @@ No notification is sent on reserving. On success the app shows a **one-button in
 alert** (D-750, `seatReservedAlertBody`) explaining that the hold is released if the
 visitor does not check in by 3 minutes before the session starts, to free the seat
 for others; on **OK** the picker pops back so the session page reloads to show the
-reservation. The old Control Panel approval queue (list-pending / approve / reject)
-is **retained but dormant** — nothing creates a Pending attendee booking, so it is
+reservation. **A8 (2026-07-27):** the screen doc comment and `joinSeatHint` were still
+describing the removed approval step ("then await approval"); both now state that the
+seat is held immediately. The old Control Panel approval queue (list-pending / approve /
+reject) is **retained but dormant** — nothing creates a Pending attendee booking, so it is
 always empty.
 
 > **Reserve-success alert (D-750, 2026-07-20).** The owner's exact reserve-success
@@ -42,6 +44,11 @@ always empty.
 | E2E-MOBPICK-009 | **Concurrent bookings never overbook (M-2)** — when several visitors race `reserve` / `reserve-random`, the server's post-insert backstop guarantees the active count never exceeds the declared capacity (CapacityOverride ?? Hall.Capacity); the losers get `409 SEAT_SESSION_FULL` | conflict | P1 | authored ✓ (API) |
 | E2E-MOBPICK-010 | **A stale pending hold auto-expires (M-6)** — a Pending seat hold the CP never decides is auto-released after its hold window, freeing the seat for others | happy | P2 | authored ✓ (API worker) |
 | E2E-MOBPICK-011 | **Ragged layout + seat numbers + tap->select->confirm (D-767):** the picker renders each row at its own `seatCounts[i]` width, each seat shows its number, tap SELECTS (no reserve yet) and shows the `seatPickerSelectedChip` chip, then "Confirm my seat" (`seatPickerConfirmCta`) reserves | happy | P1 | authored ✓ (widget `hall_seat_map_test.dart` + `seat_picker_screen_test.dart`; regenerated golden `seat_picker.png`) |
+| E2E-MOBPICK-012 | **Change seat — mode switch (B1):** when the seat map carries a seat-specific `myCell`, the picker opens in CHANGE mode — `seatChangeTitle` title, `seatChangeHint` hint, the seat being LEFT named via `seatLocation`, the CTA reads `seatChangeConfirmCta`, and the auto-pick CTA is **absent** | happy | P1 | authored ✓ (widget — `_heldMap()` → change copy, no auto-pick) |
+| E2E-MOBPICK-013 | **Change seat — confirm names both seats then moves (B1):** select a free seat → the CTA opens `SimfConfirmDialog` titled `seatChangeConfirmTitle` whose body is `seatChangeConfirmBody(fromRow, fromSeat, toRow, toSeat)`; confirming calls `POST …/seats/move` ONCE, shows `seatChangedAlertBody(row, seat)` and pops back on OK | happy | P0 | authored ✓ (widget + API `SeatChangeTests.Moving_frees_the_old_seat_and_holds_the_new_one_in_one_step`) |
+| E2E-MOBPICK-014 | **Change seat — cancelling the confirm moves nothing (B1)** | edge | P1 | authored ✓ (widget — dialog dismiss → no move call) |
+| E2E-MOBPICK-015 | **Change seat — a lost race keeps the ORIGINAL seat (B1):** the move is one atomic unit, so a `409 SEAT_ALREADY_RESERVED` rolls the whole thing back; the app says `seatChangeTaken` ("that seat was just taken — you still have your current seat") and the visitor is still on their old seat | conflict | P0 | authored ✓ (widget + API `SeatChangeTests.A_move_to_an_occupied_seat_leaves_the_original_seat_held`) |
+| E2E-MOBPICK-016 | **Change seat — the reservation rules are re-run on the destination (B1):** tier eligibility (`SEAT_TIER_NOT_ELIGIBLE` / `SEAT_TIER_RESERVED`), seat bounds (`SEAT_OUT_OF_BOUNDS`), the no-seat guard (`404 SEAT_RESERVATION_NOT_FOUND`), the same-seat guard (`SEAT_MOVE_SAME_SEAT`) and the timing gate (`409 BOOKING_SESSION_STARTED` once the session has begun) — each refusal leaves the current seat held | error | P0 | authored ✓ (widget backend-reason toast + API `SeatChangeTests` ×6) |
 
 ## Scenarios
 
@@ -151,9 +158,84 @@ Scenario: A ragged layout renders, seats show numbers, and a two-step confirm re
   `seat_picker_screen_test.dart` and the regenerated golden `seat_picker.png`. See
   DECISIONS_LOG D-767.
 
+### E2E-MOBPICK-013 — Change seat: confirm names both seats, then one atomic move
+
+```gherkin
+Scenario: A visitor moves from the seat they hold to a free one
+  Given an approved visitor who already holds seat B1 in an assigned-seat session
+  And the session has not started yet
+  When they open My Seat and tap "تغيير المقعد" / "Change seat"
+  Then the seat picker opens in CHANGE mode: the title reads seatChangeTitle
+    ("تغيير مقعدك" / "Change your seat"), the hint reads seatChangeHint, the seat being
+    left is shown as seatLocation("B", 1), and NO auto-pick CTA is offered
+  When they tap the available seat A2 and then "تأكيد التغيير" / "Confirm the change"
+  Then a confirm dialog titled seatChangeConfirmTitle shows
+    seatChangeConfirmBody("B", 1, "A", 2) — "سيتم نقل حجزك من الصف B · مقعد 1 إلى الصف A ·
+    مقعد 2." / "Your booking moves from Row B · Seat 1 to Row A · Seat 2."
+  And nothing has been moved yet
+  When they confirm with "تغيير المقعد" / "Change seat"
+  Then POST /app/sessions/{id}/seats/move fires once with rowLabel=A, seatNumber=2
+  And the server acquires A2 and releases B1 in ONE serializable transaction
+  And the response carries rowLabel=A, seatNumber=2, status=Approved
+  And GET …/seats now reports myCell = A2 and B1 as free
+  And the old row is closed off (ReleasedAt set, Status = Cancelled), so exactly one
+    active reservation exists for that visitor
+  And the app shows seatChangedAlertBody("A", 2) and pops back on OK
+```
+
+### E2E-MOBPICK-015 — Change seat: a lost race keeps the original seat
+
+```gherkin
+Scenario: The destination is taken between the read and the write
+  Given visitor V1 holds A1 and visitor V2 holds A2 in the same session
+  When V1 tries to move onto A2
+  Then the move is refused with 409 SEAT_ALREADY_RESERVED
+  And the whole move rolls back — V1 still holds A1, Approved and un-released
+  And the app shows seatChangeTaken — "تم حجز هذا المقعد للتو — لا يزال مقعدك الحالي
+    محجوزاً لك." / "That seat was just taken — you still have your current seat."
+  And the picker stays usable (no freeze, no pop)
+```
+
+### E2E-MOBPICK-016 — Change seat: the rules are re-run on the destination
+
+```gherkin
+Scenario Outline: A move must clear every gate an initial reservation clears
+  Given an approved visitor who already holds a seat in the session
+  When they try to move onto <destination>
+  Then the move is refused with <status> <code>
+  And they still hold the seat they had
+
+  Examples:
+    | destination                             | status | code                       |
+    | a VIP row seat, as a non-VIP visitor    | 409    | SEAT_TIER_NOT_ELIGIBLE     |
+    | a VVIP protocol seat, as anyone         | 409    | SEAT_TIER_RESERVED         |
+    | a row that is not in the hall layout    | 400    | SEAT_OUT_OF_BOUNDS         |
+    | the seat they already hold              | 409    | SEAT_MOVE_SAME_SEAT        |
+    | any seat, once the session has STARTED  | 409    | BOOKING_SESSION_STARTED    |
+
+Scenario: A visitor with no seat has nothing to move
+  Given an approved visitor with no reservation in the session
+  When they call POST /app/sessions/{id}/seats/move
+  Then it is refused with 404 SEAT_RESERVATION_NOT_FOUND
+```
+
+> **Timing rule (B1, deliberate).** A self-service seat change is allowed only
+> **before the session starts** — the same boundary the cancel already enforces
+> (D-227 / FR-504), not the looser not-yet-ENDED rule the create paths use. A
+> walk-in may still BOOK a live session, but once it is running the seat plan is
+> what the staff seating desk works from on the floor and the pre-start no-show
+> sweep has already redistributed the un-checked-in holds; letting an attendee
+> reshuffle themselves at that point would desync the desk. A move during a live
+> session goes through staff, not the app.
+
+**Evidence captured:**
+- API integration tests: `tests/SIMF.Api.Tests/SeatChangeTests.cs` (9 facts — atomic move, lost race, tier ×2, timing, same-seat, no-seat, out-of-bounds, unauthenticated).
+- App widget tests: `test/features/sessions/seat_picker_screen_test.dart` (change-mode copy, confirm body, cancel, lost race, backend reason) and `test/features/sessions/my_seat_screen_test.dart` (the CTA opens the picker and re-reads the grid; an open-seating join gets no CTA).
+
 ---
 
-_Last reviewed:_ `2026-07-25` by `Claude` (D-767 - added E2E-MOBPICK-011 for the ragged
+_Last reviewed:_ `2026-07-27` by `Claude` (B1 change seat — added E2E-MOBPICK-012..016 for the picker's CHANGE mode over the new atomic `POST …/seats/move`).
+Prior `2026-07-25` by `Claude` (D-767 - added E2E-MOBPICK-011 for the ragged
 layout + seat numbers + tap->select->confirm chip. Implemented and green: the
 wire/model/tokens/l10n landed AND `hall_seat_map.dart` render + `seat_picker_screen.dart`
 chip are wired, covered by `hall_seat_map_test.dart` + `seat_picker_screen_test.dart` and

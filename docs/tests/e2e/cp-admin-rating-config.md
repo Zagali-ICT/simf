@@ -35,10 +35,11 @@
 | E2E-RCFG-009 | Empty types / groups / questions render `SimfEmptyState` | happy | P1 | _to author_ |
 | E2E-RCFG-010 | Auth gate — admin lacking `RatingConfig.View` → `/not-permitted` | auth | P0 | _to author_ |
 | E2E-RCFG-011 | Action gate — `RatingConfig.View` only → no Add/Edit/Delete buttons | auth | P1 | _to author_ |
-| E2E-RCFG-012 | Validation — blank name / negative order / over-length text → bilingual toast | error | P1 | _to author_ |
+| E2E-RCFG-012 | Validation — blank name / negative order / over-length text → bilingual error **inside the dialog** (BUG-004) | error | P1 | _to author_ |
 | E2E-RCFG-013 | Group delete leaves its questions flat (SetNull, not cascade) | resilience | P2 | _to author_ |
 | E2E-RCFG-014 | Server 500 on `/types/list` → bilingual fallback toast | resilience | P2 | _to author_ |
 | E2E-RCFG-015 | RTL / Arabic render — page + three modals mirror | i18n | P1 | _to author_ |
+| E2E-RCFG-016 | Client validation — empty submit on any of the three dialogs → bilingual error **inside the dialog**, no POST (BUG-004) | error | P1 | _to author_ |
 
 ## Scenarios
 
@@ -174,6 +175,45 @@ Scenario: Arabic toggle mirrors the page and the three modals
     "عام (مرة واحدة لكل مستخدم)" / "لكل جلسة"
 ```
 
+### E2E-RCFG-016 — Client validation (empty submit)
+
+> **BUG-004 (as-built).** The page-level toast is rendered inside
+> `.simf-surface`, which sits under the modal backdrop
+> (`.simf-modal { position: fixed; inset: 0; z-index: 100 }`), so a rejected save
+> was invisible while a dialog was open and Save read as a dead button. All three
+> dialogs now render a dedicated `_error` in the dialog body, and a blank required
+> field is caught client-side before the request goes out. `Code` is required on
+> Create only — it is locked (disabled) in Edit.
+
+```gherkin
+Scenario: Saving the Add-type dialog empty reports, and creates nothing
+  Given the "Add rating type" modal is open with every field empty
+  When the administrator clicks "Save" without typing anything
+  Then a red SimfAlert renders INSIDE the dialog body (.simf-modal__body) reading
+      "A code and both names (English and Arabic) are required." /
+      "الرمز والاسمان (الإنجليزي والعربي) مطلوبة."
+  And the modal stays open
+  And no POST /account/api/admin/ratings/types request fires
+  And the types grid row count is unchanged
+  And closing and re-opening the dialog clears the message
+
+Scenario: Saving the Add-group dialog empty reports, and creates nothing
+  Given a type is selected via "Manage" and the "Add group" modal is open, all fields empty
+  When the administrator clicks "Save"
+  Then a red SimfAlert renders INSIDE the dialog body reading
+      "Both group names (English and Arabic) are required." /
+      "اسما المجموعة (الإنجليزي والعربي) مطلوبان."
+  And no POST /account/api/admin/ratings/groups request fires
+
+Scenario: Saving the Add-question dialog empty reports, and creates nothing
+  Given a type is selected and the "Add question" modal is open, all fields empty
+  When the administrator clicks "Save"
+  Then a red SimfAlert renders INSIDE the dialog body reading
+      "Both question texts (English and Arabic) are required." /
+      "نصّا السؤال (الإنجليزي والعربي) مطلوبان."
+  And no POST /account/api/admin/ratings/questions request fires
+```
+
 ---
 
 ## Implementation notes
@@ -200,3 +240,4 @@ Scenario: Arabic toggle mirrors the page and the three modals
 ---
 
 _Last reviewed:_ 2026-06-25 by Claude (D-496 dynamic ratings).
+_Last reviewed:_ 2026-07-26 by Claude (BUG-004): all three dialogs' validation messages now render inside the dialog body instead of behind the backdrop; reworded E2E-RCFG-012 and added E2E-RCFG-016 (empty submit).

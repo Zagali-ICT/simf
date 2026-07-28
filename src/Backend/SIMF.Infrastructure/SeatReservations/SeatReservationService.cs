@@ -1,4 +1,6 @@
 // Tests: SIMF.Api.Tests/SeatReservationsTests.cs
+// Tests: SIMF.Api.Tests/SeatTierEligibilityTests.cs
+// Tests: SIMF.Api.Tests/SeatChangeTests.cs (B1 — the atomic seat move)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -51,6 +53,10 @@ internal sealed class SeatReservationService(
                 // D-572 — carry the booking status so MyCell can drive the app's
                 // seat-card hint (Pending → await approval / Approved → show badge).
                 r.Status,
+                // D-771 — the admin-typed VVIP guest hint travels with the cell so a
+                // protocol seat shows "reserved for the Minister" instead of a bare
+                // blocked square.
+                r.GuestHint, r.GuestHintArabic,
             })
             .ToListAsync(cancellationToken);
 
@@ -65,7 +71,8 @@ internal sealed class SeatReservationService(
 
         var cells = reservations.Select(r => new SessionSeatCell(
             r.Id, r.RowLabel, r.SeatNumber, r.Kind, r.Status,
-            r.ReservedForUserId is { } holder && checkedInUserIds.Contains(holder)))
+            r.ReservedForUserId is { } holder && checkedInUserIds.Contains(holder),
+            r.GuestHint, r.GuestHintArabic))
             .ToList();
 
         SessionSeatCell? mine = null;
@@ -77,7 +84,8 @@ internal sealed class SeatReservationService(
                 mine = new SessionSeatCell(
                     ownRow.Id, ownRow.RowLabel, ownRow.SeatNumber, ownRow.Kind,
                     ownRow.Status,
-                    ownRow.ReservedForUserId is { } m && checkedInUserIds.Contains(m));
+                    ownRow.ReservedForUserId is { } m && checkedInUserIds.Contains(m),
+                    ownRow.GuestHint, ownRow.GuestHintArabic);
             }
         }
 
@@ -101,6 +109,15 @@ internal sealed class SeatReservationService(
             ? null
             : ExpandSeatCounts(layout, rowLabels);
 
+        // D-771 — always emit ONE tier per row (Normal for a pre-D-771 layout) so the
+        // app can colour the grid and pre-disable ineligible seats, plus whether the
+        // CALLER is VIP-tier. Both are UX hints — the reserve paths re-check.
+        var seatTiers = layout is null
+            ? Array.Empty<SeatTier>()
+            : ExpandSeatTiers(layout, rowLabels);
+        var callerIsVip = actorUserId is { } tierActor
+            && await IsVipVisitorAsync(tierActor, cancellationToken);
+
         return new SessionSeatMap(
             sessionId, session.HallId, hall.Capacity, session.CapacityOverride,
             rowLabels, layout?.SeatsPerRow ?? 0,
@@ -110,7 +127,9 @@ internal sealed class SeatReservationService(
             // D-485 — the effective mode drives the app's Join CTA.
             effectiveMode,
             // D-767 — the ragged per-row counts (null = uniform).
-            seatCounts);
+            seatCounts,
+            // D-771 — the per-row tiers + the caller's own VIP tier.
+            seatTiers, callerIsVip);
     }
 
     /// <summary>D-706 — the mode the app branches its Join CTA on. A session with
@@ -136,6 +155,12 @@ internal sealed class SeatReservationService(
         EnsureSeatPickAllowed(ctx);
         EnsureSessionNotEnded(ctx.End);
         ValidateSeatBounds(ctx, row, seat);
+        // D-771 — the seat TIER gate, enforced on the SERVER (the app only greys the
+        // ineligible seats out): a VVIP seat is never self-reservable, a VIP seat
+        // needs the VIP tier, a Normal seat is open to everyone.
+        EnsureTierEligible(
+            ctx.SeatTiers[RowIndex(ctx.RowLabels, row)],
+            await IsVipVisitorAsync(actorUserId, cancellationToken));
         await EnsureSessionHasCapacityAsync(ctx, cancellationToken);
 
         var existing = await GetMyActiveAsync(sessionId, actorUserId, cancellationToken);
@@ -234,12 +259,16 @@ internal sealed class SeatReservationService(
         // (a deadlock victim re-runs and its re-count sees the committed rival),
         // filling exactly the declared capacity. See InsertHoldWithinCapacityAsync.
         var now = timeProvider.GetUtcNow();
+        // D-771 — the auto-pick must respect the same tier rule as the self-pick, so
+        // resolve the caller's VIP tier ONCE (outside the serializable transaction —
+        // it is a read of admin-curated profile data, not of the seat state).
+        var callerIsVip = await IsVipVisitorAsync(actorUserId, cancellationToken);
         var reservation = await InsertHoldWithinCapacityAsync(
             sessionId, EffectiveCapacity(ctx),
             async ct =>
             {
                 var taken = await LoadHeldSeatsAsync(sessionId, ct);
-                return PickRandomSeat(ctx, taken, actorUserId, now);
+                return PickRandomSeat(ctx, taken, actorUserId, now, callerIsVip);
             },
             cancellationToken);
 
@@ -340,6 +369,162 @@ internal sealed class SeatReservationService(
         return ToMine(reservation);
     }
 
+    public async Task<MySeatReservation> MoveAsync(
+        Guid sessionId, Guid actorUserId,
+        MoveSeatRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var row = (request.RowLabel ?? string.Empty).Trim();
+        var seat = request.SeatNumber;
+        var ctx = await BuildContextAsync(sessionId, cancellationToken);
+        EnsureSeatPickAllowed(ctx);
+        // B1 (owner rule, deliberate) — a self-service change of seat is allowed only
+        // BEFORE the session starts, the SAME boundary the cancel already enforces
+        // (D-227 / FR-504). Once the session is running the seat plan is what the
+        // staff seating desk and the gate flow work from on the floor, and the
+        // pre-start no-show sweep has already redistributed the un-checked-in holds;
+        // a visitor reshuffling themselves at that point would desync the desk. A
+        // move during a live session goes through staff, not the app.
+        EnsureSessionNotStarted(ctx.Start);
+        ValidateSeatBounds(ctx, row, seat);
+        // D-771 — the DESTINATION seat must pass exactly the same tier gate as a
+        // first reservation, via the one shared rule: a VVIP seat is never
+        // self-reservable, a VIP seat needs the VIP tier.
+        EnsureTierEligible(
+            ctx.SeatTiers[RowIndex(ctx.RowLabels, row)],
+            await IsVipVisitorAsync(actorUserId, cancellationToken));
+
+        var moved = await MoveHoldAtomicallyAsync(
+            ctx, actorUserId, row, seat, cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.SeatReservationMoved,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = $"reservationId={moved.Reservation.Id}; sessionId={sessionId}; "
+                + $"fromRow={moved.FromRowLabel}; fromSeat={moved.FromSeatNumber}; "
+                + $"row={row}; seat={seat}; kind=UserBooking; status=Approved",
+        }, cancellationToken);
+
+        logger.LogInformation(
+            "Seat moved from {FromRow}{FromSeat} to {Row}{Seat} on session {SessionId} by user {Actor}",
+            moved.FromRowLabel, moved.FromSeatNumber, row, seat, sessionId, actorUserId);
+
+        return ToMine(moved.Reservation);
+    }
+
+    /// <summary>B1 — the ATOMIC half of the seat change: release the held seat and
+    /// acquire the destination in ONE serializable transaction, so the holder can
+    /// never end up with no seat. Shaped like
+    /// <see cref="InsertHoldWithinCapacityAsync"/> — run through the EF execution
+    /// strategy (a manual transaction under <c>EnableRetryOnFailure</c> throws
+    /// otherwise) and deliberately NOT swallowing <see cref="DbUpdateException"/>, so
+    /// a deadlock victim re-runs the whole unit instead of being reported as a taken
+    /// seat. The "is the destination free?" read happens INSIDE the transaction, where
+    /// its key-range lock stops a concurrent hold slipping in between the read and
+    /// the insert; the filtered unique index on (SessionId, RowLabel, SeatNumber) is
+    /// the backstop, and firing it rolls the release back with it.
+    /// <para>The release is saved BEFORE the insert (two saves, one transaction)
+    /// because the OTHER filtered unique index — one active row per
+    /// (SessionId, ReservedForUserId) — would otherwise reject the new row while the
+    /// old one is still held; statement order inside a single SaveChanges batch is
+    /// an EF implementation detail, so it is made explicit here.</para></summary>
+    private async Task<(SeatReservation Reservation, string? FromRowLabel, int? FromSeatNumber)>
+        MoveHoldAtomicallyAsync(
+            SessionContext ctx, Guid actorUserId, string row, int seat,
+            CancellationToken cancellationToken)
+    {
+        SeatReservation? origin = null;
+        SeatReservation? added = null;
+        (SeatReservation Reservation, string? FromRowLabel, int? FromSeatNumber)? committed = null;
+        var strategy = appDbContext.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
+        {
+            // A retry re-enters here; drop everything a rolled-back attempt left
+            // tracked so the next SaveChanges neither re-inserts a stale row nor
+            // re-applies a release the database has already thrown away.
+            if (added is not null)
+            {
+                appDbContext.Entry(added).State = EntityState.Detached;
+                added = null;
+            }
+            if (origin is not null)
+            {
+                appDbContext.Entry(origin).State = EntityState.Detached;
+                origin = null;
+            }
+            committed = null;
+
+            await using var tx = await appDbContext.Database.BeginTransactionAsync(
+                System.Data.IsolationLevel.Serializable, cancellationToken);
+
+            origin = await appDbContext.SeatReservations
+                .SingleOrDefaultAsync(r => r.SessionId == ctx.SessionId
+                    && r.ReservedForUserId == actorUserId
+                    && r.ReleasedAt == null, cancellationToken)
+                ?? throw new ApiException(
+                    ErrorCodes.SeatReservationNotFound, 404,
+                    "You do not have a seat to change in this session.",
+                    "ليس لديك مقعد لتغييره في هذه الجلسة.");
+
+            if (string.Equals(origin.RowLabel, row, StringComparison.OrdinalIgnoreCase)
+                && origin.SeatNumber == seat)
+            {
+                throw new ApiException(
+                    ErrorCodes.SeatMoveSameSeat, 409,
+                    "You already have that seat — pick a different one.",
+                    "هذا المقعد محجوز لك بالفعل — اختر مقعداً آخر.");
+            }
+
+            var taken = await appDbContext.SeatReservations.AsNoTracking()
+                .AnyAsync(r => r.SessionId == ctx.SessionId
+                    && r.RowLabel == row
+                    && r.SeatNumber == seat
+                    && r.ReleasedAt == null, cancellationToken);
+            if (taken)
+            {
+                throw new ApiException(
+                    ErrorCodes.SeatAlreadyReserved, 409,
+                    "That seat is already reserved.",
+                    "هذا المقعد محجوز بالفعل.");
+            }
+
+            var now = timeProvider.GetUtcNow();
+            var fromRow = origin.RowLabel;
+            var fromSeat = origin.SeatNumber;
+            origin.ReleasedAt = now;
+            origin.Status = BookingStatus.Cancelled;
+            await appDbContext.SaveChangesAsync(cancellationToken);
+
+            var target = new SeatReservation
+            {
+                Id = Guid.NewGuid(),
+                SessionId = ctx.SessionId,
+                RowLabel = row,
+                SeatNumber = seat,
+                // A move is a deliberate self-pick, whatever the seat it replaces was
+                // acquired as (self-pick or auto-pick).
+                Kind = SeatReservationKind.UserBooking,
+                ReservedForUserId = actorUserId,
+                CreatedByUserId = actorUserId,
+                CreatedAt = now,
+                Status = BookingStatus.Approved,
+                // #6/#17 — the moved hold keeps the SAME no-show deadline as the seat
+                // it replaces: 3 minutes before the session starts.
+                Expires = ctx.Start - NoShowReleaseGrace,
+            };
+            appDbContext.SeatReservations.Add(target);
+            added = target;
+            await appDbContext.SaveChangesAsync(cancellationToken);
+            await tx.CommitAsync(cancellationToken);
+            committed = (target, fromRow, fromSeat);
+        });
+
+        return committed ?? throw new InvalidOperationException(
+            "The seat move completed without producing a reservation.");
+    }
+
     public async Task ReleaseMineAsync(
         Guid sessionId, Guid actorUserId,
         CancellationToken cancellationToken = default)
@@ -403,9 +588,14 @@ internal sealed class SeatReservationService(
             ? Array.Empty<int>()
             : ExpandSeatCounts(layout, rowLabels);
         var seatCounts = string.IsNullOrWhiteSpace(layout?.SeatCounts) ? null : expanded;
+        // D-771 — the editor always reads back one tier per row (Normal for a legacy
+        // layout), so the CP tier selects render without a special "unset" case.
+        var seatTiers = layout is null
+            ? Array.Empty<SeatTier>()
+            : ExpandSeatTiers(layout, rowLabels);
         return new HallSeatLayoutSnapshot(
             hallId, rowLabels, seatsPerRow,
-            expanded.Sum(), hall.Capacity, seatCounts);
+            expanded.Sum(), hall.Capacity, seatCounts, seatTiers);
     }
 
     public async Task<HallSeatLayoutSnapshot> SetLayoutAsync(
@@ -490,6 +680,47 @@ internal sealed class SeatReservationService(
 
         var layout = await appDbContext.HallSeatLayouts
             .SingleOrDefaultAsync(l => l.HallId == hallId, cancellationToken);
+
+        // D-771 — resolve the per-row seat TIERS (owner 2026-07-26). Supplied →
+        // AUTHORITATIVE (one defined tier per row). Omitted on an EXISTING layout →
+        // keep what is stored, so an older client cannot silently wipe the tiers.
+        // Omitted when DEFINING a layout for the first time → every row defaults to
+        // VVIP-reserved, per the owner's rule; the admin then downgrades rows.
+        var requestedTiers = request.SeatTiers ?? Array.Empty<SeatTier>();
+        List<SeatTier> seatTiers;
+        if (requestedTiers.Count > 0)
+        {
+            if (requestedTiers.Count != rows.Count)
+            {
+                throw new ApiException(
+                    ErrorCodes.SeatLayoutInvalid, 400,
+                    $"Seat tiers ({requestedTiers.Count}) must match the number of rows ({rows.Count}).",
+                    $"يجب أن يساوي عدد فئات المقاعد ({requestedTiers.Count}) عدد الصفوف ({rows.Count}).");
+            }
+            if (requestedTiers.Any(t => !Enum.IsDefined(typeof(SeatTier), t)))
+            {
+                throw new ApiException(
+                    ErrorCodes.SeatLayoutInvalid, 400,
+                    "Each row's seat tier must be Normal, VIP or VVIP.",
+                    "يجب أن تكون فئة كل صف: عادي أو كبار الشخصيات أو شخصيات بالغة الأهمية.");
+            }
+            seatTiers = requestedTiers.ToList();
+        }
+        else if (layout is null)
+        {
+            seatTiers = Enumerable.Repeat(SeatTier.Vvip, rows.Count).ToList();
+        }
+        else
+        {
+            // Keep the stored tiers, re-aligned POSITIONALLY to the new row set (a
+            // row added at the end inherits the owner's VVIP default).
+            var stored = ExpandSeatTiers(layout, ParseRowLabels(layout.RowLabels));
+            seatTiers = Enumerable.Range(0, rows.Count)
+                .Select(i => i < stored.Count ? stored[i] : SeatTier.Vvip)
+                .ToList();
+        }
+        var tiersCsv = string.Join(',', seatTiers.Select(t => (int)t));
+
         // H-2 — an existing layout may already back active reservations; a change
         // that drops a row or shrinks a row's seat count would strand any seat that
         // now falls outside the grid. Block it (the operator must release those
@@ -511,6 +742,7 @@ internal sealed class SeatReservationService(
                 RowLabels = rowsCsv,
                 SeatsPerRow = seatsPerRow,
                 SeatCounts = countsCsv,
+                SeatTiers = tiersCsv,
                 CreatedAt = now,
             };
             appDbContext.HallSeatLayouts.Add(layout);
@@ -520,6 +752,7 @@ internal sealed class SeatReservationService(
             layout.RowLabels = rowsCsv;
             layout.SeatsPerRow = seatsPerRow;
             layout.SeatCounts = countsCsv;
+            layout.SeatTiers = tiersCsv;
             layout.UpdatedAt = now;
         }
         await appDbContext.SaveChangesAsync(cancellationToken);
@@ -530,12 +763,70 @@ internal sealed class SeatReservationService(
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
             Detail = $"hallId={hallId}; rows={rowsCsv}; seatsPerRow={seatsPerRow}; "
-                + $"seatCounts={countsCsv ?? "(uniform)"}",
+                + $"seatCounts={countsCsv ?? "(uniform)"}; seatTiers={tiersCsv}",
         }, cancellationToken);
 
         return new HallSeatLayoutSnapshot(
             hallId, rows, seatsPerRow, layoutCapacity, hall.Capacity,
-            variable ? seatCounts : null);
+            variable ? seatCounts : null, seatTiers);
+    }
+
+    public async Task<HallSeatLayoutSnapshot> DeleteLayoutAsync(
+        Guid actorUserId, Guid hallId,
+        CancellationToken cancellationToken = default)
+    {
+        var hall = await appDbContext.Halls.AsNoTracking()
+            .Where(h => h.Id == hallId)
+            .Select(h => new { h.Id, h.Capacity })
+            .SingleOrDefaultAsync(cancellationToken)
+            ?? throw new ApiException(
+                ErrorCodes.HallNotFound, 404,
+                "Hall not found.",
+                "لم يتم العثور على القاعة.");
+
+        var layout = await appDbContext.HallSeatLayouts
+            .SingleOrDefaultAsync(l => l.HallId == hallId, cancellationToken)
+            ?? throw new ApiException(
+                ErrorCodes.SeatLayoutMissing, 404,
+                "This hall does not have a seat layout to remove.",
+                "لا يوجد مخطط مقاعد لهذه القاعة لإزالته.");
+
+        // B15 — the same orphan rule SetLayoutAsync enforces (H-2), applied to the
+        // hardest possible shrink: removing the grid strands EVERY active
+        // seat-specific reservation, so any single one blocks the delete and the
+        // error names how many the operator must release first.
+        var blocking = await CountActiveSeatReservationsAsync(hallId, cancellationToken);
+        if (blocking > 0)
+        {
+            throw new ApiException(
+                ErrorCodes.SeatLayoutHasReservations, 409,
+                $"Removing this layout would strand {blocking} active seat reservation(s). "
+                + "Release them before removing the layout.",
+                $"ستؤدي إزالة هذا المخطط إلى إلغاء {blocking} حجز مقعد نشط. "
+                + "يرجى إلغاء هذه الحجوزات قبل إزالة المخطط.");
+        }
+
+        appDbContext.HallSeatLayouts.Remove(layout);
+        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.HallSeatLayoutDeleted,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = $"hallId={hallId}; rows={layout.RowLabels}; "
+                + $"seatsPerRow={layout.SeatsPerRow}; "
+                + $"seatCounts={layout.SeatCounts ?? "(uniform)"}",
+        }, cancellationToken);
+
+        logger.LogInformation(
+            "Seat layout removed for hall {HallId} by user {Actor} — the hall reverts "
+            + "to general admission.", hallId, actorUserId);
+
+        // The hall is now general admission: no rows, no seats, zero layout capacity.
+        return new HallSeatLayoutSnapshot(
+            hallId, Array.Empty<string>(), 0, 0, hall.Capacity,
+            SeatCounts: null, SeatTiers: Array.Empty<SeatTier>());
     }
 
     public async Task AdminReserveRowAsync(
@@ -644,6 +935,10 @@ internal sealed class SeatReservationService(
             CreatedAt = timeProvider.GetUtcNow(),
             // An admin block is confirmed immediately (never enters the queue).
             Status = BookingStatus.Approved,
+            // D-771 — the manual guest hint. A VVIP seat has no registration, so this
+            // free text IS the occupant record the app + the staff seating desk read.
+            GuestHint = NormaliseHint(request.GuestHint),
+            GuestHintArabic = NormaliseHint(request.GuestHintArabic),
         };
         await PersistWithUniquenessGuardAsync(reservation, cancellationToken);
 
@@ -652,8 +947,31 @@ internal sealed class SeatReservationService(
             EventType = AuditEvents.SeatRowAdminReserved,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
-            Detail = $"sessionId={sessionId}; row={row}; seat={seat}; single=true",
+            Detail = $"sessionId={sessionId}; row={row}; seat={seat}; single=true; "
+                + "guestHint="
+                + ((reservation.GuestHint ?? reservation.GuestHintArabic) is null
+                    ? "(none)" : "(set)"),
         }, cancellationToken);
+    }
+
+    /// <summary>D-771 — trim the admin-typed guest hint to null-or-content and reject
+    /// anything past the persisted 256-char column, so an over-long hint fails as a
+    /// caller error rather than a truncation or a DbUpdateException.</summary>
+    private static string? NormaliseHint(string? value)
+    {
+        var trimmed = (value ?? string.Empty).Trim();
+        if (trimmed.Length == 0)
+        {
+            return null;
+        }
+        if (trimmed.Length > 256)
+        {
+            throw new ApiException(
+                ErrorCodes.ValidationFailed, 400,
+                "The guest note must be 256 characters or fewer.",
+                "يجب ألا يتجاوز تنويه الضيف 256 حرفاً.");
+        }
+        return trimmed;
     }
 
     public async Task AdminReleaseAsync(
@@ -673,8 +991,10 @@ internal sealed class SeatReservationService(
         }
         // M-4 — a release must also close the booking's lifecycle. Leaving Status
         // untouched left an Approved row with ReleasedAt set (a stale
-        // "confirmed-but-gone" state the CP/app could still read as active). Mark it
-        // Cancelled and stamp the reviewer (the admin performing the release).
+        // "confirmed-but-gone" state the CP/app could still read as active), so mark
+        // it Cancelled. A9 — the ReviewedBy/ReviewedAt pair records the admin who
+        // performed THIS RELEASE; there is no approval queue left for it to record a
+        // review decision (see BookingStatus), and this is its only writer.
         var now = timeProvider.GetUtcNow();
         reservation.ReleasedAt = now;
         reservation.Status = BookingStatus.Cancelled;
@@ -701,7 +1021,7 @@ internal sealed class SeatReservationService(
         await TryNotifyBookingReleasedAsync(reservation, session, cancellationToken);
     }
 
-    public async Task<GridPage<SessionSeatCell>> ListSessionReservationsAsync(
+    public async Task<GridPage<SeatPlanCell>> ListSessionReservationsAsync(
         Guid sessionId, GridQuery query,
         CancellationToken cancellationToken = default)
     {
@@ -710,13 +1030,58 @@ internal sealed class SeatReservationService(
         var baseQuery = appDbContext.SeatReservations.AsNoTracking()
             .Where(r => r.SessionId == sessionId && r.ReleasedAt == null);
         var total = await baseQuery.CountAsync(cancellationToken);
+        // A11 — project the REAL Status (it used to fall through to the record
+        // default, putting Pending on the wire for rows that are all Approved).
         var rows = await baseQuery
             .OrderBy(r => r.RowLabel).ThenBy(r => r.SeatNumber)
             .Skip(skip).Take(top)
-            .Select(r => new SessionSeatCell(r.Id, r.RowLabel, r.SeatNumber, r.Kind))
+            .Select(r => new
+            {
+                r.Id, r.RowLabel, r.SeatNumber, r.Kind, r.Status,
+                r.ReservedForUserId, r.GuestHint, r.GuestHintArabic,
+            })
             .ToListAsync(cancellationToken);
-        return GridPage<SessionSeatCell>.Of(rows, total,
-            skip, top);
+
+        // A11 — the "confirmed" seat state: the holder has an OPEN HallAttendance
+        // row for this session. Same definition as the app/CP seat map, one query
+        // for the whole page rather than per row.
+        var checkedInUserIds = (await appDbContext.HallAttendances.AsNoTracking()
+            .Where(a => a.SessionId == sessionId && a.Leave == null)
+            .Select(a => a.UserId)
+            .ToListAsync(cancellationToken))
+            .ToHashSet();
+
+        // DEF-SEA-001 — an admin must see WHOSE seat they are about to release, so
+        // resolve the holders' bilingual names in one batch. The names live on the
+        // App-side UserProfile, so there is no cross-database read (D-157).
+        var holderIds = rows
+            .Where(r => r.ReservedForUserId is not null)
+            .Select(r => r.ReservedForUserId!.Value)
+            .Distinct()
+            .ToList();
+        var holders = holderIds.Count == 0
+            ? new Dictionary<Guid, (string Name, string NameArabic)>()
+            : (await appDbContext.UserProfiles.AsNoTracking()
+                .Where(p => holderIds.Contains(p.UserId))
+                .Select(p => new { p.UserId, p.Name, p.NameArabic })
+                .ToListAsync(cancellationToken))
+                .ToDictionary(p => p.UserId, p => (p.Name, p.NameArabic));
+
+        var cells = rows.Select(r =>
+        {
+            var holder = r.ReservedForUserId is { } id
+                && holders.TryGetValue(id, out var found)
+                ? found
+                : (Name: string.Empty, NameArabic: string.Empty);
+            return new SeatPlanCell(
+                r.Id, r.RowLabel, r.SeatNumber, r.Kind, r.Status,
+                r.ReservedForUserId is { } holderId
+                    && checkedInUserIds.Contains(holderId),
+                r.ReservedForUserId, holder.Name, holder.NameArabic,
+                r.GuestHint, r.GuestHintArabic);
+        }).ToList();
+
+        return GridPage<SeatPlanCell>.Of(cells, total, skip, top);
     }
 
     // -- Booking monitor + no-show release (#6/#17 — owner 2026-07-20) --
@@ -890,6 +1255,147 @@ internal sealed class SeatReservationService(
         return released.Count;
     }
 
+    // -- Staff seating desk (D-771 — owner 2026-07-26) --
+
+    public async Task<StaffSeatOccupant> ResolveSeatOccupantAsync(
+        Guid sessionId, string rowLabel, int seatNumber,
+        CancellationToken cancellationToken = default)
+    {
+        var ctx = await BuildContextAsync(sessionId, cancellationToken);
+        var row = (rowLabel ?? string.Empty).Trim();
+        ValidateSeatBounds(ctx, row, seatNumber);
+        var tier = ctx.SeatTiers[RowIndex(ctx.RowLabels, row)];
+
+        var held = await appDbContext.SeatReservations.AsNoTracking()
+            .Where(r => r.SessionId == sessionId
+                && r.RowLabel == row
+                && r.SeatNumber == seatNumber
+                && r.ReleasedAt == null)
+            .Select(r => new
+            {
+                r.Id, r.Kind, r.Status, r.ReservedForUserId,
+                r.GuestHint, r.GuestHintArabic,
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+        if (held is null)
+        {
+            // A free seat is a valid answer, not an error: the desk shows "this seat
+            // is empty" (and, for a VVIP seat, that it is protocol seating).
+            return EmptySeat(sessionId, row, seatNumber, tier);
+        }
+
+        var occupant = await LoadOccupantAsync(
+            sessionId, held.ReservedForUserId, cancellationToken);
+        return new StaffSeatOccupant(
+            true, sessionId, row, seatNumber, tier,
+            held.Id, held.Kind, held.Status, held.ReservedForUserId,
+            occupant.Name, occupant.NameArabic,
+            held.GuestHint, held.GuestHintArabic,
+            occupant.HasPhoto, occupant.QrId, occupant.CheckedIn);
+    }
+
+    public async Task<StaffSeatOccupant> ResolveBadgeSeatAsync(
+        Guid sessionId, string qrId, CancellationToken cancellationToken = default)
+    {
+        var code = (qrId ?? string.Empty).Trim();
+        if (code.Length == 0)
+        {
+            throw new ApiException(
+                ErrorCodes.ValidationFailed, 400,
+                "Scan or type a badge code.",
+                "امسح رمز البطاقة أو اكتبه.");
+        }
+
+        var session = await LoadSessionAsync(sessionId, cancellationToken);
+        var layout = await LoadLayoutAsync(session.HallId, cancellationToken);
+        var rowLabels = ParseRowLabels(layout?.RowLabels);
+        var tiers = layout is null
+            ? Array.Empty<SeatTier>()
+            : ExpandSeatTiers(layout, rowLabels);
+
+        var holder = await appDbContext.UserProfiles.AsNoTracking()
+            .Where(p => p.QrId == code)
+            .Select(p => new { p.UserId, p.Name, p.NameArabic })
+            .FirstOrDefaultAsync(cancellationToken)
+            ?? throw new ApiException(
+                ErrorCodes.AttendeeQrUnknown, 404,
+                "That badge was not recognised.",
+                "لم يتم التعرف على هذه البطاقة.");
+
+        var held = await appDbContext.SeatReservations.AsNoTracking()
+            .Where(r => r.SessionId == sessionId
+                && r.ReservedForUserId == holder.UserId
+                && r.ReleasedAt == null)
+            .Select(r => new
+            {
+                r.Id, r.RowLabel, r.SeatNumber, r.Kind, r.Status,
+                r.GuestHint, r.GuestHintArabic,
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var occupant = await LoadOccupantAsync(
+            sessionId, holder.UserId, cancellationToken);
+        if (held is null)
+        {
+            // The badge is valid but the guest holds no seat in this session — the
+            // desk shows the "no seat" state with the guest's identity so staff can
+            // still help them (Found = false).
+            return new StaffSeatOccupant(
+                false, sessionId, null, null, SeatTier.Normal,
+                null, SeatReservationKind.UserBooking, BookingStatus.Cancelled,
+                holder.UserId, occupant.Name, occupant.NameArabic,
+                null, null, occupant.HasPhoto, code, occupant.CheckedIn);
+        }
+
+        var tierIndex = held.RowLabel is null
+            ? -1
+            : RowIndex(rowLabels, held.RowLabel);
+        var tier = tierIndex >= 0 && tierIndex < tiers.Count
+            ? tiers[tierIndex]
+            : SeatTier.Normal;
+        return new StaffSeatOccupant(
+            true, sessionId, held.RowLabel, held.SeatNumber, tier,
+            held.Id, held.Kind, held.Status, holder.UserId,
+            occupant.Name, occupant.NameArabic,
+            held.GuestHint, held.GuestHintArabic,
+            occupant.HasPhoto, code, occupant.CheckedIn);
+    }
+
+    private static StaffSeatOccupant EmptySeat(
+        Guid sessionId, string rowLabel, int seatNumber, SeatTier tier) =>
+        new(false, sessionId, rowLabel, seatNumber, tier,
+            null, SeatReservationKind.UserBooking, BookingStatus.Cancelled,
+            null, string.Empty, string.Empty, null, null, false, null, false);
+
+    /// <summary>D-771 — the occupant facts the seating desk shows: bilingual name +
+    /// badge id (from the App-side <c>UserProfile</c>), whether an avatar exists in
+    /// the unified file store, and whether they have already checked into this
+    /// session. Everything is on the App DB, so there is no cross-database read and
+    /// nothing is duplicated (D-157). A null <paramref name="userId"/> (a VVIP
+    /// protocol seat or an admin block) yields the empty occupant.</summary>
+    private async Task<(string Name, string NameArabic, bool HasPhoto,
+        string? QrId, bool CheckedIn)> LoadOccupantAsync(
+        Guid sessionId, Guid? userId, CancellationToken cancellationToken)
+    {
+        if (userId is not { } id)
+        {
+            return (string.Empty, string.Empty, false, null, false);
+        }
+        var profile = await appDbContext.UserProfiles.AsNoTracking()
+            .Where(p => p.UserId == id)
+            .Select(p => new { p.Name, p.NameArabic, p.QrId })
+            .FirstOrDefaultAsync(cancellationToken);
+        var hasPhoto = await appDbContext.StoredFiles.AsNoTracking()
+            .AnyAsync(f => f.Service == FileService.Avatar
+                && f.OwnerEntityId == id
+                && f.IsActive, cancellationToken);
+        var checkedIn = await appDbContext.HallAttendances.AsNoTracking()
+            .AnyAsync(a => a.SessionId == sessionId && a.UserId == id,
+                cancellationToken);
+        return (profile?.Name ?? string.Empty, profile?.NameArabic ?? string.Empty,
+            hasPhoto, profile?.QrId, checkedIn);
+    }
+
     // -- internals --
 
     private Task<(string Title, string TitleArabic)> LoadSessionTitleAsync(
@@ -944,7 +1450,8 @@ internal sealed class SeatReservationService(
             session.Id, session.HallId, session.CapacityOverride,
             hall.Capacity, layout, rowLabels,
             session.Title, session.TitleArabic, session.Start, session.End,
-            effectiveMode, ExpandSeatCounts(layout, rowLabels));
+            effectiveMode, ExpandSeatCounts(layout, rowLabels),
+            ExpandSeatTiers(layout, rowLabels));
     }
 
     private async Task<SessionSnapshot> LoadSessionAsync(
@@ -979,10 +1486,7 @@ internal sealed class SeatReservationService(
         Guid hallId, IReadOnlyList<string> newRows, IReadOnlyList<int> newSeatCounts,
         CancellationToken cancellationToken)
     {
-        var sessionIds = await appDbContext.Sessions.AsNoTracking()
-            .Where(s => s.HallId == hallId)
-            .Select(s => s.Id)
-            .ToListAsync(cancellationToken);
+        var sessionIds = await HallSessionIdsAsync(hallId, cancellationToken);
         if (sessionIds.Count == 0)
         {
             return;
@@ -1010,6 +1514,35 @@ internal sealed class SeatReservationService(
                 + "يرجى إلغاء المقاعد المتأثرة قبل تغيير المخطط.");
         }
     }
+
+    /// <summary>B15 — how many ACTIVE (ReleasedAt IS NULL) seat-SPECIFIC reservations
+    /// exist across every session in this hall. Open-seating rows (null row label)
+    /// survive a layout removal untouched — general admission needs no grid — so they
+    /// are excluded. Counted in the database (no rows materialised) because the caller
+    /// only needs the number to put in the refusal message.</summary>
+    private async Task<int> CountActiveSeatReservationsAsync(
+        Guid hallId, CancellationToken cancellationToken)
+    {
+        var sessionIds = await HallSessionIdsAsync(hallId, cancellationToken);
+        if (sessionIds.Count == 0)
+        {
+            return 0;
+        }
+        return await appDbContext.SeatReservations.AsNoTracking()
+            .CountAsync(r => sessionIds.Contains(r.SessionId)
+                && r.ReleasedAt == null
+                && r.RowLabel != null, cancellationToken);
+    }
+
+    /// <summary>Every session held in this hall. One definition shared by the two
+    /// layout guards (the shrink orphan check and the B15 delete count) so they can
+    /// never disagree on which sessions a layout change affects.</summary>
+    private Task<List<Guid>> HallSessionIdsAsync(
+        Guid hallId, CancellationToken cancellationToken) =>
+        appDbContext.Sessions.AsNoTracking()
+            .Where(s => s.HallId == hallId)
+            .Select(s => s.Id)
+            .ToListAsync(cancellationToken);
 
     private static IReadOnlyList<string> ParseRowLabels(string? csv) =>
         string.IsNullOrWhiteSpace(csv)
@@ -1053,6 +1586,104 @@ internal sealed class SeatReservationService(
         }
         return counts;
     }
+
+    /// <summary>D-771 — expand a layout's per-row seat TIERS into a concrete array
+    /// parallel to <paramref name="rowLabels"/>. A null/blank <c>SeatTiers</c> is a
+    /// layout written before D-771, so every row reads
+    /// <see cref="SeatTier.Normal"/> — the exact pre-D-771 behaviour, no shipped
+    /// session loses a bookable seat. A stored CSV whose length differs from the row
+    /// set, or that fails to parse into a defined tier, is corrupt persisted state —
+    /// a deterministic 500, never a silent fallback (§2 no-silent-fallback rule).</summary>
+    private IReadOnlyList<SeatTier> ExpandSeatTiers(
+        HallSeatLayout layout, IReadOnlyList<string> rowLabels)
+    {
+        if (string.IsNullOrWhiteSpace(layout.SeatTiers))
+        {
+            return Enumerable.Repeat(SeatTier.Normal, rowLabels.Count).ToArray();
+        }
+        var parts = layout.SeatTiers.Split(
+            ',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var tiers = new SeatTier[parts.Length];
+        var parsedOk = parts.Length == rowLabels.Count;
+        for (var i = 0; i < parts.Length; i++)
+        {
+            if (int.TryParse(parts[i], out var raw) && Enum.IsDefined(typeof(SeatTier), raw))
+            {
+                tiers[i] = (SeatTier)raw;
+            }
+            else
+            {
+                parsedOk = false;
+            }
+        }
+        if (!parsedOk)
+        {
+            logger.LogError(
+                "Corrupt HallSeatLayout.SeatTiers '{SeatTiers}' for {RowCount} row(s) on layout {LayoutId}",
+                layout.SeatTiers, rowLabels.Count, layout.Id);
+            throw new ApiException(
+                ErrorCodes.SeatLayoutInvalid, 500,
+                "The stored seat layout is invalid.",
+                "مخطط المقاعد المُخزَّن غير صالح.");
+        }
+        return tiers;
+    }
+
+    /// <summary>D-771 — the eligibility rule, in ONE place so the self-pick, the
+    /// random pick and the seat map can never disagree (owner 2026-07-26):
+    /// <list type="bullet">
+    /// <item><see cref="SeatTier.Vvip"/> — never self-reservable by anyone. There is
+    /// no registration for a protocol seat; an administrator blocks it and types the
+    /// guest hint.</item>
+    /// <item><see cref="SeatTier.Vip"/> — only a VIP-tier visitor (their
+    /// <c>ProfileType.AllowsVipMeetingSlots</c>, the seeded VVIP + VIP rows and the
+    /// same flag the app already reads as <c>isVip</c>).</item>
+    /// <item><see cref="SeatTier.Normal"/> — every visitor type, VIP included.</item>
+    /// </list></summary>
+    private static bool IsSelfReservable(SeatTier tier, bool callerIsVip) =>
+        tier switch
+        {
+            SeatTier.Vvip => false,
+            SeatTier.Vip => callerIsVip,
+            _ => true,
+        };
+
+    /// <summary>D-771 — throw the caller-facing eligibility error for the seat's
+    /// tier. Two distinct codes so the app can explain the refusal precisely: a VVIP
+    /// seat is reserved for protocol (nobody may take it), a VIP seat needs the VIP
+    /// tier.</summary>
+    private static void EnsureTierEligible(SeatTier tier, bool callerIsVip)
+    {
+        if (IsSelfReservable(tier, callerIsVip))
+        {
+            return;
+        }
+        if (tier == SeatTier.Vvip)
+        {
+            throw new ApiException(
+                ErrorCodes.SeatTierReserved, 409,
+                "This seat is reserved for protocol guests and cannot be booked.",
+                "هذا المقعد محجوز لكبار الضيوف ولا يمكن حجزه.");
+        }
+        throw new ApiException(
+            ErrorCodes.SeatTierNotEligible, 409,
+            "This seat is reserved for VIP guests.",
+            "هذا المقعد مخصص لكبار الشخصيات.");
+    }
+
+    /// <summary>D-771 — is this visitor a VIP-tier attendee? Reuses the EXISTING
+    /// VIP-tier notion rather than inventing a parallel one:
+    /// <c>UserProfile.ProfileTypeId → UserProfileType.AllowsVipMeetingSlots</c>, which
+    /// the seeder sets on the VVIP + VIP audience tiers (D-611) and the app already
+    /// surfaces as <c>isVip</c> (D-729). Both tables live on the App DB, so this is a
+    /// single local query — no cross-database read.</summary>
+    private async Task<bool> IsVipVisitorAsync(
+        Guid actorUserId, CancellationToken cancellationToken) =>
+        await appDbContext.UserProfiles.AsNoTracking()
+            .Where(p => p.UserId == actorUserId && p.ProfileTypeId != null)
+            .Join(appDbContext.ProfileTypes.AsNoTracking(),
+                p => p.ProfileTypeId, t => (Guid?)t.Id, (p, t) => t.AllowsVipMeetingSlots)
+            .FirstOrDefaultAsync(cancellationToken);
 
     /// <summary>D-767 — index of <paramref name="label"/> within
     /// <paramref name="rowLabels"/> (OrdinalIgnoreCase), or -1 when absent. Used to map a
@@ -1132,6 +1763,23 @@ internal sealed class SeatReservationService(
                 ErrorCodes.BookingSessionEnded, 409,
                 "This session has ended; you can no longer book a seat.",
                 "انتهت هذه الجلسة، ولم يعد بإمكانك حجز مقعد.");
+        }
+    }
+
+    /// <summary>B1 — the self-service seat CHANGE window: only BEFORE the session
+    /// starts. Deliberately the same boundary <see cref="ReleaseMineAsync"/> uses for
+    /// a cancel (D-227 / FR-504) rather than the looser not-yet-ENDED rule the create
+    /// paths use: a walk-in may still book a live session, but reshuffling an
+    /// already-placed attendee mid-session would desync the staff seating desk and the
+    /// pre-start no-show sweep that has already redistributed the free seats.</summary>
+    private void EnsureSessionNotStarted(DateTimeOffset start)
+    {
+        if (timeProvider.GetUtcNow() >= start)
+        {
+            throw new ApiException(
+                ErrorCodes.BookingSessionStarted, 409,
+                "You cannot change your seat after the session has started.",
+                "لا يمكنك تغيير مقعدك بعد بدء الجلسة.");
         }
     }
 
@@ -1256,12 +1904,19 @@ internal sealed class SeatReservationService(
     /// created-at / expiry window.</summary>
     private static SeatReservation? PickRandomSeat(
         SessionContext ctx, IReadOnlySet<(string Row, int Seat)> taken,
-        Guid actorUserId, DateTimeOffset now)
+        Guid actorUserId, DateTimeOffset now, bool callerIsVip)
     {
         // D-767 — index loop so each row's free-seat scan stops at ITS own count
         // (ctx.SeatCounts[i]); a ragged layout never yields a phantom seat on a short row.
         for (var i = 0; i < ctx.RowLabels.Count; i++)
         {
+            // D-771 — skip whole rows the caller may not sit in (a VVIP protocol row,
+            // or a VIP row for a non-VIP visitor), so an auto-pick can never hand out
+            // a seat the self-pick would have refused.
+            if (!IsSelfReservable(ctx.SeatTiers[i], callerIsVip))
+            {
+                continue;
+            }
             var rowLabel = ctx.RowLabels[i];
             for (var seat = 1; seat <= ctx.SeatCounts[i]; seat++)
             {
@@ -1390,5 +2045,9 @@ internal sealed class SeatReservationService(
         // D-767 — the expanded per-row seat counts (one per RowLabels entry; a repeat of
         // SeatsPerRow when the layout is uniform). Every per-seat bound/capacity/random-
         // pick decision reads this array so uniform and variable layouts share one path.
-        IReadOnlyList<int> SeatCounts);
+        IReadOnlyList<int> SeatCounts,
+        // D-771 — the expanded per-row seat TIERS (one per RowLabels entry; all Normal
+        // for a legacy layout that stores none). Every eligibility decision reads this
+        // array so the self-pick, the random pick and the seat map can never disagree.
+        IReadOnlyList<SeatTier> SeatTiers);
 }

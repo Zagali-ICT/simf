@@ -8,10 +8,12 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
+import '../../app/router.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../../app/widgets/simf_confirm_dialog.dart';
 import '../../app/widgets/simf_info_dialog.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../moderation/data/moderation_repository.dart';
 import 'data/seat_map_models.dart';
 import 'data/seat_map_repository.dart';
 import 'data/session_calendar.dart';
@@ -87,28 +89,23 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     try {
       final repo = ref.read(sessionDetailRepositoryProvider);
       final detail = await repo.getDetail(widget.sessionId);
-      final auth = ref.read(authControllerProvider);
-      // The seat map (myCell + effective mode) is approved-account only; a guest
-      // never calls the seat endpoint, and a pending account's 403 leaves the
-      // join section hidden (L-3).
-      final seatMap =
-          auth is AuthStateSignedIn ? await _safeSeatMap() : null;
+      // DEF-MOD-004 — the join / my-seat affordances open the attendee-only
+      // routes (#18 my seat, #109 seat picker), so only an attendee's seat map
+      // is fetched: a guest / pending account has no join section (L-3), and a
+      // Staff / Moderator is not offered one either — the router would bounce
+      // them Home the moment they tapped it.
+      final canJoin = _canJoin;
+      final seatMap = canJoin ? await _safeSeatMap() : null;
       if (!mounted) {
         return;
       }
-      // #18 — the Join affordance is shown to ANY approved signed-in account (the
-      // seat map is fetched for all of them, not only visitor/exhibitor), so any
-      // of them whose map FAILED deserves the retry. A pending account presents
-      // as guest via effectiveAppRole, so it is (correctly) excluded.
-      final isApprovedSignedIn = auth is AuthStateSignedIn &&
-          auth.session.user.effectiveAppRole != AppRole.guest;
       setState(() {
         _detail = detail;
         _seatMap = seatMap;
-        // #18 — a null map for an approved signed-in account means the fetch
-        // FAILED (a success always returns a map), so flag it: the body shows a
-        // retry instead of silently dropping the Join button.
-        _seatMapError = isApprovedSignedIn && seatMap == null;
+        // #18 — a null map for an attendee means the fetch FAILED (a success
+        // always returns a map), so flag it: the body shows a retry instead of
+        // silently dropping the Join button.
+        _seatMapError = canJoin && seatMap == null;
         _loading = false;
       });
     } on ApiFailure catch (failure) {
@@ -121,6 +118,32 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
         _error = failure.httpStatus != 404;
       });
     }
+  }
+
+  /// DEF-MOD-008 — the role the ROUTER gates on. `appRole` and `effectiveAppRole`
+  /// disagree for a signed-in but not-yet-approved account (D-666 presents it as
+  /// a guest), and the router reads the effective one — so a screen that reads
+  /// the raw role offers affordances the router then bounces.
+  static AppRole _roleOf(AuthState auth) => auth is AuthStateSignedIn
+      ? auth.session.user.effectiveAppRole
+      : AppRole.guest;
+
+  AppRole get _role => _roleOf(ref.read(authControllerProvider));
+
+  /// DEF-MOD-004 — join / my-seat are attendee-only routes (#18 and #109 share
+  /// the same allowed set), so the UI offers them only to a role that can
+  /// actually open them. [routeAllowsRole] is the router's own table (D-519), so
+  /// the two can never drift apart.
+  bool get _canJoin => routeAllowsRole(RouteNames.mySeat, _role);
+
+  /// DEF-MOD-003 — the اسأل المحاور card opens the attendee-only send-question
+  /// route (#26). A GUEST (and a pending account, which presents as one) still
+  /// sees the card DISABLED — that is the existing sign-in nudge — but an
+  /// operational role the router would bounce is not offered it at all.
+  bool get _canAsk {
+    final role = _role;
+    return role == AppRole.guest ||
+        routeAllowsRole(RouteNames.sendQuestion, role);
   }
 
   Future<SessionSeatMap?> _safeSeatMap() async {
@@ -283,23 +306,48 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    final auth = ref.watch(authControllerProvider);
-    final role = auth is AuthStateSignedIn
-        ? auth.session.user.appRole
-        : AppRole.guest;
+    // Watched (not read) so the affordances rebuild when the session resolves.
+    // DEF-MOD-008 — the ROUTER gates on effectiveAppRole (D-666: an unapproved
+    // account presents as guest). Reading the raw `appRole` here showed the
+    // moderate action to an unapproved moderator, who was then bounced Home.
+    final role = _roleOf(ref.watch(authControllerProvider));
     // Moderator (محاور) entry to the Q&A desk (D-405). Moderator-EXCLUSIVE
     // (D-519): Staff no longer inherits it (the focused role model dropped the
-    // isAtLeast ladder). UX gate only — the server still enforces the
-    // per-session SessionModerator grant (403).
-    final canModerate = role == AppRole.moderator;
+    // isAtLeast ladder). The server still enforces the per-session
+    // SessionModerator grant (403).
+    //
+    // FR-MOD-001 — the role alone is NOT the gate any more. The grant is
+    // per-session, so the icon used to appear on every session in the programme
+    // and the missing grant was only discoverable as a 403 after the tap. The
+    // action now needs a CONFIRMED grant for this session; while the discovery
+    // call is in flight, or if it failed, no action is offered (an icon that
+    // 403s is worse than none — the moderator's own home lists their sessions
+    // and surfaces the failure there with a retry).
+    final moderatedSessionIds = ref.watch(myModeratedSessionsProvider).maybeWhen(
+          data: (sessions) =>
+              sessions.map((s) => s.sessionId).toSet(),
+          orElse: () => const <String>{},
+        );
+    final canModerate = role == AppRole.moderator &&
+        moderatedSessionIds.contains(widget.sessionId);
+    // D-771 — Staff entry to the seating desk. Staff and Moderator are disjoint
+    // focused roles (D-519), so the two never compete for the header's single
+    // trailing slot. UX gate only — the server enforces Seating.Assist (403).
+    final canAssistSeating = role == AppRole.staff;
     return SimfPageShell(
       tab: SimfTab.sessions,
       // The frame's chrome is the standard circled back + centred title; the
-      // moderator Q&A action is kept as a trailing control on the same row.
+      // moderator Q&A action (or, for Staff, the seating desk) is kept as a
+      // trailing control on the same row.
       header: SessionDetailHeader(
         title: l10n.sessionDetailTitle,
         onBack: () => backOrHome(context),
-        moderateTooltip: canModerate ? l10n.moderatorManageQuestions : null,
+        actionIcon: canAssistSeating
+            ? Icons.event_seat_outlined
+            : Icons.forum_outlined,
+        moderateTooltip: canModerate
+            ? l10n.moderatorManageQuestions
+            : (canAssistSeating ? l10n.staffSeatingTitle : null),
         onModerate: canModerate
             ? () => context.pushNamed(
                   RouteNames.sessionModerate,
@@ -307,7 +355,14 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
                     RouteParams.sessionId: widget.sessionId,
                   },
                 )
-            : null,
+            : (canAssistSeating
+                ? () => context.pushNamed(
+                      RouteNames.staffSeating,
+                      pathParameters: <String, String>{
+                        RouteParams.sessionId: widget.sessionId,
+                      },
+                    )
+                : null),
       ),
       body: _buildBody(l10n),
     );
@@ -360,6 +415,7 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
         busy: _busy,
         l10n: l10n,
         baseUrl: baseUrl,
+        canAsk: _canAsk,
         onAddToCalendar: () => unawaited(_addToCalendar(_detail!, l10n)),
         onRemind: () => _remind(l10n),
         onSessionLink: _openLive,

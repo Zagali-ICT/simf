@@ -58,6 +58,53 @@ Scenario: A valid badge is allowed in
   And "سكان مرة أخرى" returns to the scanner for the next person
 ```
 
+### E2E-MOBGATE-006 — Allowed, but no session attendance recorded (DEF-CHK-004)
+
+```gherkin
+Scenario: A hall-door gate is scanned outside every session window
+  Given the operator's gate is a HALL-DOOR gate (Gate.HallId is set)
+  And no session is running in that hall right now (nor within the 15 min grace)
+  When they scan a valid badge code
+  Then the scan returns outcome=Allowed (HTTP 200) — the holder is still admitted
+  And the response carries noticeMessage (already localized by Accept-Language)
+  And the green "مسموح / Allowed" card shows that advisory in amber under the subtitle
+      "تم السماح بالدخول، ولكن لم يتم تسجيل حضور الجلسة لهذا المسح."
+  And a GateScan row is written; NO HallAttendance row is written
+
+Scenario: A fixed Out gate closes nothing
+  Given the operator's gate has DirectionMode = Out and HallId set
+  And a session IS live in that hall
+  And the badge holder has no open HallAttendance row for it
+  When they scan that badge code
+  Then the scan returns outcome=Allowed and carries the SAME advisory noticeMessage
+  # The check-out closed nothing, so nothing was recorded. The advisory wording
+  # names no single cause because the server reports all cases identically.
+
+Scenario: A check-IN whose attendance insert never lands
+  Given the operator's gate has DirectionMode = In and HallId set
+  And a session IS live in that hall
+  And the store rejects the HallAttendance insert (deadlock / timeout / lost race)
+  When they scan that badge code
+  Then the scan returns outcome=Allowed and carries the SAME advisory noticeMessage
+  And NO HallAttendance row is written
+  # The arrival branch used to report success unconditionally, so the operator
+  # read a plain "Allowed" as "counted" while the attendance was lost.
+
+Scenario: An ordinary scan shows no advisory
+  Given a session IS live in that hall (or the gate is a perimeter gate)
+  When they scan a valid badge code
+  Then noticeMessage is null and the allowed card renders exactly as before
+```
+
+**Evidence:** API `GateHallDoorChainTests.Hall_door_gate_with_no_live_session_returns_an_allowed_scan_carrying_a_notice`
+(+ `..._bound_to_a_live_session_carries_no_notice`, `Perimeter_gate_carries_no_notice`,
+`Fixed_out_gate_with_no_open_row_carries_the_advisory_notice`,
+`Fixed_out_gate_that_closes_an_open_row_carries_no_notice`,
+`Gate_door_arrival_that_persisted_no_row_does_not_report_attendance_recorded`);
+app decode `test/features/gates/gate_models_test.dart` — "an allowed scan can
+carry an advisory notice". `noticeMessage` is an **additive** field on the
+shipped wire contract; an older app build simply ignores it.
+
 ### E2E-MOBGATE-002 — Denied scan (ممنوع)
 
 ```gherkin
@@ -132,6 +179,14 @@ Scenario: A steady badge under the camera fires one scan
   When a badge stays in the viewfinder
   Then POST /app/gates/{gateId}/scans runs ONCE (ScanGate single-flight + dedupe)
   And re-presenting the badge after the result lets the next person be scanned (onNoCode reset)
+
+Scenario: The viewfinder is sized for the device it runs on (BUG-019 / 19e)
+  Given the gate console runs on a phone
+  Then the viewfinder card keeps the Figma 343px width
+  Given the gate console runs on a wide tablet panel
+  Then the viewfinder card scales up (clamped, not stretched edge-to-edge)
+    instead of rendering as a small phone-sized card
+  And on a very narrow window it never exceeds the screen width
 ```
 
 **Evidence:** source-verified — `simf_scanner_body.dart` renders `_CameraErrorCard`
@@ -140,7 +195,74 @@ covers the always-mounted manual field with the camera off; `scan_gate_test`
 (single-flight + same-code dedupe + `onNoCode` reset). Gate scan outcomes remain
 covered by `GateScanTests` + `test/features/gates/`.
 
+### E2E-MOBGATE-007 — A 403 names its own reason (DEF-STF-005)
+
+```gherkin
+Scenario: The operator holds no Gates.Operate grant
+  Given a staff app user WITHOUT the Gates.Operate permission
+  When the console loads GET /app/gates/my-assignments
+  Then the call returns 403 with no envelope message
+  And the console shows its own "لا تملك صلاحية تشغيل البوابات /
+      You are not authorised to operate gates."
+
+Scenario: The operator holds the grant but not this gate's assignment
+  Given the operator scans a gate they are not assigned to
+  When POST /app/gates/{gateId}/scans returns 403 GATE_OPERATOR_NOT_ASSIGNED
+  Then the toast shows the SERVER's bilingual text
+      "أنت غير معيّن لهذه البوابة. / You are not assigned to this gate."
+  And NOT the generic operate-gates copy
+# Both are 403 but need different operator actions (ask for the permission vs
+# ask for the assignment); the console used to flatten them into the first one.
+```
+
+**Evidence:** `gate_scan_screen_test` — "DEF-STF-005 — a 403 on load shows the
+SERVER's reason…", "…a 403 on the scan surfaces the server message",
+"…a 403 with no server body keeps the generic copy". Server text:
+`OperatorGateEndpoints` `GateScanResultKind.NotAssigned` arm.
+
+### E2E-MOBGATE-008 — An inactive gate is marked, and denies at 200 (DEF-STF-006 / DEF-STF-008)
+
+```gherkin
+Scenario: The picker marks an inactive assigned gate
+  Given the operator is assigned to a gate whose IsActive is false
+  When the setup card loads
+  Then that row reads "<gate name> — غير نشطة / — inactive" and is dimmed
+  And a warning under the picker says every scan on it will be denied
+      "هذه البوابة غير نشطة — سيُرفض كل مسح عليها…"
+
+Scenario: An active gate carries no marker
+  Given every assigned gate is active
+  Then no row is tagged and no warning is shown
+
+Scenario: Scanning at an inactive gate is a RECORDED denial, not a 503
+  Given the operator scans a valid badge at an inactive gate
+  When POST /app/gates/{gateId}/scans is sent
+  Then the call returns HTTP 200 with outcome=Denied
+  And denialReasonCode is GATE_INACTIVE_AT_SCAN
+  And denialMessage reads "This gate is currently inactive. /
+      هذه البوابة غير نشطة حالياً."
+  And a GateScan row is written so the attempt stays auditable
+# DEF-STF-008 — GateScanResultKind.GateInactive (503 GATE_INACTIVE) was dead
+# code; nothing ever produced it. The 503 arm was removed and the spec's
+# §7.2.4 / §8.1 rows carry the as-built note.
+```
+
+**Evidence:** `gate_scan_screen_test` — "DEF-STF-006 — an inactive gate is tagged
+in the picker and warns before the first scan", "…an ACTIVE gate carries no tag
+and no warning"; API `GateScanTests.Inactive_gate_records_a_GATE_INACTIVE_AT_SCAN_denial_at_200`.
+
 ---
 
-_Last reviewed:_ `2026-07-11` by `SIMF Team` — D-737 unified scanner
-(SimfScannerBody; `gate_scanner_view.dart` deleted). Earlier: `2026-06-27`.
+_Last reviewed:_ `2026-07-27` by `SIMF Team` — added E2E-MOBGATE-007 (DEF-STF-005,
+the server's own 403 reason) and E2E-MOBGATE-008 (DEF-STF-006 inactive-gate marker
++ DEF-STF-008 the retired 503). Earlier: DEF-CHK-004 advisory
+`noticeMessage` now also covers a check-IN whose attendance insert never lands
+(E2E-MOBGATE-006); `2026-07-27` fixed-Out scan that closes nothing;
+`2026-07-26` DEF-CHK-004 advisory `noticeMessage`;
+`2026-07-11` D-737 unified scanner (SimfScannerBody; `gate_scanner_view.dart`
+deleted); `2026-06-27`.
+_Last reviewed:_ `2026-07-26` by `SIMF Team` — BUG-019 / 19d + 19e: the shared
+viewfinder's raw `Color(0x…)` / `Colors.black|white` moved to `SimfTokens`, and the
+card width is now responsive (`WindowSize`), locked by
+`test/app/widgets/simf_scanner_frame_test.dart`. Earlier: `2026-07-11` (D-737
+unified scanner; `gate_scanner_view.dart` deleted), `2026-06-27`.

@@ -76,7 +76,14 @@ public sealed record AppRequestItem(
     /// (from <c>Speaker.RankArabic</c>), so the المقابلات card shows the speaker's
     /// rank in the active locale. Null for the non-speaker kinds / when unset.
     /// Append-only (D-219): older clients ignore it.</summary>
-    string? SubtitleArabic = null);
+    string? SubtitleArabic = null,
+    /// <summary>QA B12 — true once an operator checked the meeting in at the hall
+    /// (the request is <see cref="MeetingRequestStatus.Done"/> server-side). The
+    /// <see cref="Status"/> itself still folds Done → Accepted so the shipped mobile
+    /// wire contract (values 0–3) is preserved; this append-only flag is how a client
+    /// tells "confirmed" from "attended". Always false for the non-meeting kinds.
+    /// Append-only (D-219): older clients ignore it.</summary>
+    bool CheckedIn = false);
 
 /// <summary>D-500 — body for <c>POST /app/my-requests/cancel</c>: the requester
 /// withdraws one of their own still-pending requests.</summary>

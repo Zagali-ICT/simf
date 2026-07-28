@@ -162,21 +162,11 @@ public sealed class AdminSessionModeratorsTests : IClassFixture<SimfApiFactory>
         return session;
     }
 
-    private async Task<Guid> CreateApprovedUserAsync()
-    {
-        var email = $"mod-{Guid.NewGuid():N}@simf.test";
-        using var scope = _factory.Services.CreateScope();
-        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
-        var user = new SimfUser
-        {
-            UserName = email, Email = email, EmailConfirmed = true,
-            DisplayName = "Mod",
-            AccountState = AccountState.Approved,
-            UserType = UserType.Visitor,
-        };
-        await users.CreateAsync(user, AuthFlow.Password);
-        return user.Id;
-    }
+    /// <summary>An approved account that is ELIGIBLE to moderate (DEF-MOD-005):
+    /// it carries a partner profile type whose mobile app role is Moderator —
+    /// the same fact the JWT's app role is minted from.</summary>
+    private Task<Guid> CreateApprovedUserAsync() =>
+        SessionModeratorSeed.CreateEligibleModeratorAsync(_factory);
 
     private async Task<string> CreateAdministratorAndSignInAsync()
     {

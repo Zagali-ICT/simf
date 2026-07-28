@@ -22,6 +22,7 @@ flow for an attendee who has not yet opened a specific session.
 | E2E-MOBHUB-005 | Approved-only — reached from My Area; the route auth gate (110) sends a signed-out user to sign-in | auth | P2 | covered (router gate 110) |
 | E2E-MOBHUB-006 | **Pull-to-refresh** (list / empty / error) re-fetches the programme (D-601 — the gesture works on every state) | happy | P2 | covered (screen — `SimfPullToRefresh` on all three states) |
 | E2E-MOBHUB-007 | Under **RTL** each row's forward chevron points **left** (the stroked `ic_back.svg` glyph; D-601 fixed the Material-icon double-mirror) | visual | P2 | covered (golden `join_session_hub.png`, crop-verified) |
+| E2E-MOBHUB-008 | **The hub is actually reachable (BUG-016):** `/sessions/join` resolves to the hub, not to session detail with `sessionId="join"`. The route table declared `/sessions/:sessionId` (#17) above the static `/sessions/join` (#110) and go_router matches in declaration order, so the only entry point ("Book a seat" in My Area) landed on a "session not found" screen (`GET /app/programme/sessions/join` → 404) | nav | P0 | authored ✓ (app `router_route_order_test` — `/sessions/join` → `joinSessionHub`, `/sessions/<id>` → `sessionDetail`, plus the no-parameterised-route-before-a-static-one invariant) |
 
 ## Scenarios
 
@@ -36,6 +37,33 @@ Scenario: Browsing to a session from the hub
   Then its session detail page opens (where the Select-my-seat / Join CTA lives)
 ```
 
+### E2E-MOBHUB-008 — "Book a seat" actually opens the hub
+
+```gherkin
+Scenario: The Profile "Book a seat" row reaches the hub
+  Given an approved visitor on the Profile tab
+  When they tap the "Book a seat" row
+  Then the location is /sessions/join
+  And the join-a-session hub is rendered (the programme list)
+  And NOT the session-detail screen with sessionId "join"
+  And no GET /app/programme/sessions/join request is made
+
+Scenario: A real session id still opens the detail screen
+  When the app navigates to /sessions/3f1c9a2e-8d64-4a51-9c7b-0e2f5a6b7c8d
+  Then the session-detail screen is rendered
+```
+
+> go_router matches routes in **declaration order** and keeps the first hit. The
+> table declared `/sessions/:sessionId` above `/sessions/join`, so the dynamic
+> route swallowed the static one. `buildRoutes()` now emits every static path
+> before the parameterised ones, so the shadowing cannot come back when a route
+> is added anywhere in the table.
+
+**Evidence:** `test/app/router_route_order_test.dart`.
+
 ---
 
-_Last reviewed:_ `2026-07-03` by `SIMF Team` (D-601 — pull-to-refresh + RTL chevron).
+_Last reviewed:_ `2026-07-26` by `SIMF Team` (BUG-016 — the hub was unreachable:
+the parameterised session route shadowed `/sessions/join`; the flat route table
+is now emitted static-first — E2E-MOBHUB-008). _Prior:_ `2026-07-03` (D-601 —
+pull-to-refresh + RTL chevron).

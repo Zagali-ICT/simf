@@ -104,15 +104,17 @@
 | E2E-MOB017-017 | CTA row — تذكير (outlined) + أضف إلى تقويمي (gold) order and toasts | happy | P1 | authored ✓ (Figma 897:2872 re-skin) |
 | E2E-MOB017-018 | رابط الجلسة — **state-gated (owner 2026-07-14)**: both header buttons keep their slots, but رابط الجلسة is ACTIVE only while the session is LIVE **and** carries a `liveStreamUrl` (streaming) — greyed/inert otherwise; when active it opens Live (25) | happy | P1 | authored ✓ (`…session link opens the live screen while the session is live + streaming`; body-gate tests future+feed→inactive) |
 | E2E-MOB017-019 | ملخص الجلسة — **state-gated (owner 2026-07-14)**: ACTIVE only once the session has ENDED (a future/live session has no محضر → greyed/inert); when active it opens AI summary (34) | happy | P1 | authored ✓ (`…summary button opens the AI session summary once the session has ended`; body-gate tests future→inactive / ended→active) |
-| E2E-MOB017-020 | اسأل المحاور card — **gated on joining (#3)**: enabled (opens Send question #26) only once the user has **joined** the session (holds a booking, NOT physical check-in); not joined → the card is disabled with a "Join the session to ask a question" hint and the tap is inert | happy/auth | P1 | authored ✓ (Figma 1056:12876; `#3 — a joined user can ask…` + `#3 — pre-ask is gated on joining…`) |
+| E2E-MOB017-020 | اسأل المحاور card — **NO join gate (#7 / D-733 superseded #3)**: enabled (opens Send question #26) for **any approved account** whose seat map has loaded, with or without a booking — the owner dropped the D-485 join/booking requirement for the pre-start ask ("anyone before start"). Only a **guest / pending** account (no seat map) sees it disabled, as the sign-in nudge. The `askHostJoinFirst` ("Join the session to ask a question") string is consequently **unreferenced by design** — see the A21 note below | happy/auth | P1 | authored ✓ (Figma 1056:12876; `#3 — a joined user can ask: the ask card opens send-question` + `#7 — an approved user can ask a FUTURE session without a booking (no join gate)`) |
 | E2E-MOB017-026 | **Pre-session ask label (D-714 GAP-2)** — while the session is **upcoming** (`now < start`) the ask card reads the distinct pre-session label "اطرح سؤالاً قبل الجلسة" / "Ask a question before it starts" (mode B, `Phase=Pre`); once **live/started** it reverts to "اسأل المحاور" / "Ask the host" (mode A). The backend derives the phase + enforces the [start−5min, end] window either way | happy/i18n | P1 | authored ✓ (screen `a live (already started) session shows the "Ask the host" label` + the ask-label tests; golden `session_detail_889-2450` shows the pre-session label) |
 | E2E-MOB017-021 | Speaker country flag — `CountryId` 682 → 🇸🇦 emoji beside the name | happy | P2 | authored ✓ (`…renders its flag emoji`; `core/country_flag.dart`) |
 | E2E-MOB017-022 | **Join CTA (D-485; label + alert D-750)** — an approved user with no reservation sees a Join section, branched by the session's effective mode: assigned-seat → "الانضمام إلى الجلسة" / "Join the session" opens the seat picker; open-seating → the CTA reads "سجل لحضور الجلسة" / "Register to attend the session" and confirms then joins (Approved — confirmed immediately, no CP approval), showing a one-button success **alert** (`joinOpenSuccessBody`: "registering is not a seat reservation … confirmed at check-in") instead of a snackbar | happy | P1 | authored ✓ (widget — assigned→picker / open→register-label+confirm→join+success-alert; `D-750 — signed-in, open-seating …`) |
-| E2E-MOB017-023 | **Cancel booking (D-485)** — the reservation card's Cancel confirms, then releases the held seat (`DELETE …/seats/mine`) and the section returns to the Join CTA | happy | P2 | authored ✓ (widget — `releaseMine`) |
+| E2E-MOB017-023 | **Cancel booking (D-485)** — the cancel line reads **إلغاء الحجز / Cancel booking** (`cancelBookingCta`, A13 — it must match the dialog title إلغاء الحجز, not the bare إلغاء), confirms, then releases the held seat (`DELETE …/seats/mine`) and the section returns to the Join CTA | happy | P2 | authored ✓ (widget — label assertion + `releaseMine`) |
 | E2E-MOB017-024 | **Join is approved-only (D-485)** — a guest / pending account sees no join section (the seat endpoint 401/403s → null) | auth | P1 | authored ✓ (`…a guest sees no join section`) |
 | E2E-MOB017-025 | **No-layout session joins (D-706)** — an assigned-seat session with **no seat layout** (a hall left on the default with no rows laid out) reports its effective mode as **OpenSeating**, so the Join CTA is a one-tap join (not an empty seat picker) and `…/seats/join` is accepted (Approved — confirmed immediately). Fixes "join session not working" | happy | P0 | authored ✓ (API `Join_succeeds_on_an_assigned_seat_session_that_has_no_layout`) |
 | E2E-MOB017-025 | **Public screen (D-750, reverses D-576):** a signed-out guest navigating to `/sessions/{id}` opens the detail (no redirect); the join/ask sections stay hidden for a guest (`seatMap == null`) | auth | P0 | authored ✓ (router-gate `D-750 — a signed-out guest hitting /sessions or a session detail is NOT redirected`; `routePathRequiresAuth('/sessions/:sessionId')` is FALSE) |
 | E2E-MOB017-027 | **Join gate (owner 2026-07-14):** the Join CTA is only offered while the session has NOT ended — an ended session drops the join section ("open now to join" is a live/upcoming state) | happy | P1 | authored ✓ (body-gate `phase != SessionPhase.ended`; screen join tests unaffected on upcoming fixtures) |
+| E2E-MOB017-029 | **DEF-MOD-003/004 — the attendee-only affordances are not offered to an operational role:** the اسأل المحاور card and the Join / my-seat section open routes gated to Visitor+Exhibitor (#26 send-question, #18 my-seat, #109 seat picker), so a signed-in **Staff / Moderator** is shown neither (their seat map is not even fetched). A **guest** still sees the ask card DISABLED — that is the sign-in nudge, not a dead control. The routing rule is unchanged; the UI now matches it (`routeAllowsRole`) | auth | P0 | authored ✓ (screen `DEF-MOD-003/004: a MODERATOR is offered neither the ask card nor the join CTA`; body `DEF-MOD-003: a role that cannot open send-question is not offered the ask card at all`) |
+| E2E-MOB017-030 | **DEF-MOD-008 — the moderate action reads the ROUTER's effective role:** an **unapproved** moderator (D-666: presents as guest via `effectiveAppRole`) is NOT shown the "إدارة الأسئلة" Q&A-desk action; an approved moderator still is. Previously the screen read the raw `appRole` and the router bounced the tap to Home | auth | P0 | authored ✓ (screen `DEF-MOD-008: an UNAPPROVED moderator is not shown the Q&A desk action`) |
 | E2E-MOB017-028 | **Seat-map load failure retry (#18, owner 2026-07-21):** an **approved** attendee whose seat-map fetch FAILS (transport / 5xx) gets a "seat map failed to load" error + a **Retry** where the Join CTA would be — instead of a silently-absent Join button — and Retry re-runs the load. Distinct from E2E-MOB017-024: an approved account reaches the seat endpoint, so a null map means the fetch failed (not the guest/pending 403 that legitimately hides the join). Not offered on an ENDED session. | error | P1 | authored ✓ (screen `#18 — an approved account whose seat map FAILS…`; body `#18 seat-map load failure` ×2) |
 
 ## Scenarios
@@ -386,7 +388,26 @@ Scenario: The ask-the-host card opens send-question for everyone
   When the user taps it
   Then Send question (26) opens at /live/question?sessionId={id}
   And a guest tapping it is routed to sign-in by the auth gate (the route is login-only)
+
+Scenario: No join/booking gate on the pre-start ask (#7 / D-733)
+  Given an APPROVED account on an upcoming session
+  And the account holds NO reservation (the seat map loaded, myCell is null)
+  Then the ask card is ENABLED
+  And no "Join the session to ask a question" hint is shown
 ```
+
+**A21 (2026-07-27) — refuted, no change made.** The QA note read the card's
+`enabled: seatMap != null` as a bug that made the `askHostJoinFirst` hint
+unreachable, and asked for the "join the session first" gate to be restored.
+It is **unreachable by design**: owner batch item **#7 (D-733, 2026-07-10)**
+explicitly dropped the D-485 join/booking requirement for the pre-start ask
+("anyone before start"), and `session_detail_screen_test.dart` guards that with
+`#7 — an approved user can ask a FUTURE session without a booking (no join
+gate)`, which asserts the hint is **not** shown. Re-gating on `seatMap?.myCell`
+reverses D-733 and turns that regression test red. The stale artefact was this
+row's own "gated on joining (#3)" wording, corrected above. The now-unreferenced
+`askHostJoinFirst` string is left in place for the owner to retire or reuse — a
+dead string is not a reason to reverse a shipped decision.
 
 ### E2E-MOB017-021 — Speaker country flag (core/country_flag.dart)
 
@@ -410,6 +431,14 @@ Scenario: An approved attendee with no reservation joins, branched by mode
   When the mode is OpenSeating (general admission)
   Then the Join CTA reads "سجل لحضور الجلسة" / "Register to attend the session" (case-1, D-750)
   And tapping it shows a "Join this session?" confirm dialog
+  And (A8 / DEF-SEA-003) that dialog body describes what actually happens -
+    "سيتم تسجيلك لحضور هذه الجلسة فوراً دون الحاجة إلى موافقة. التسجيل لا يحجز
+    مقعداً محدداً، وسيتم تأكيد دخولك عند تسجيل الدخول للجلسة." / "You will be
+    registered for this session right away - no approval needed. This does not
+    reserve a specific seat; your entry is confirmed at session check-in."
+  # It used to promise "سيتم إرسال طلب انضمامك إلى الإدارة للموافقة" / "Your request
+  # to join will be sent to the organisers for approval", describing the approval
+  # queue the owner removed on 2026-07-18.
   And confirming sends the join (created Approved — confirmed immediately, no
     Control Panel approval step)
   And on success a one-button info alert is shown (not a snackbar) carrying
@@ -431,7 +460,10 @@ Scenario: An approved attendee with no reservation joins, branched by mode
 ```gherkin
 Scenario: Cancelling a held reservation from the session page
   Given an approved visitor whose session detail shows a held reservation card
-  When they tap "Cancel booking" and confirm
+  And the cancel line under the CTA row reads "إلغاء الحجز" / "Cancel booking"
+    (cancelBookingCta — A13: the control and the dialog it opens must agree; the
+    dialog is titled "إلغاء الحجز" / "Cancel booking?")
+  When they tap it and confirm
   Then the held seat is released (DELETE /app/sessions/{id}/seats/mine)
   And the section returns to the Join CTA
 ```
@@ -494,9 +526,38 @@ error + retry`; body `#18 seat-map load failure` (error+retry on upcoming, nothi
 ended). An approved account reaches the seat endpoint, so a null map = a real failure —
 distinct from the guest/pending 403 in E2E-MOB017-024.
 
+### E2E-MOB017-029 / -030 — DEF-MOD-003/004/008 role-gated affordances
+
+```gherkin
+Scenario: A Moderator is offered no attendee-only affordance
+  Given a signed-in APPROVED account whose app role is Moderator
+  When they open /sessions/{id}
+  Then the اسأل المحاور card is NOT rendered
+  And no Join CTA / my-seat card is rendered
+  And the seat map is not even fetched (no GET …/seats)
+  And no "seat map failed to load" retry appears
+  And the "إدارة الأسئلة" Q&A-desk action IS shown (route #104 allows them)
+
+Scenario: A guest still gets the disabled ask nudge
+  Given a signed-out visitor opens /sessions/{id}
+  Then the اسأل المحاور card IS rendered, DISABLED (unchanged behaviour)
+
+Scenario: An unapproved moderator is not offered the desk
+  Given a signed-in moderator whose registration status is Pending
+    (so effectiveAppRole collapses to guest — D-666)
+  When they open /sessions/{id}
+  Then the "إدارة الأسئلة" action is NOT shown
+  # Previously it was shown and the router bounced the tap back to Home.
+```
+
 ---
 
-_Last reviewed:_ `2026-07-21` by `Apexium` — **#18 (owner 2026-07-21): an APPROVED
+_Last reviewed:_ `2026-07-26` by `Claude` — **DEF-MOD-003/004/008: the ask card and
+the join / my-seat section are gated with `routeAllowsRole` (the router's own table)
+so an operational role is never offered a control that bounces; the screen now reads
+`effectiveAppRole` (the router's role) instead of the raw `appRole`. New
+E2E-MOB017-029/-030.**
+_Prior:_ `2026-07-21` by `Apexium` — **#18 (owner 2026-07-21): an APPROVED
 attendee whose seat-map fetch fails now shows a "seat map failed to load" error +
 Retry where the Join CTA would be, instead of a silently-absent Join button
 (`_seatMapError` on the screen drives a body error branch, reusing `l10n.seatMapError`).
@@ -514,6 +575,12 @@ hall gate on check-in (`CheckedIn`), with a pre-start sweep releasing any hold n
 checked in. No `BookingConfirmed` on reserve; the app shows an inline success message.
 The old CP approval queue is retained but dormant (always empty). Scenarios 016 / 022 /
 025 reworded off the "pending approval" copy.**
+_Last reviewed:_ `2026-07-27` by `Claude` — **A8 / DEF-SEA-003: the join confirm
+dialog no longer promises an approval step. `joinConfirmBody` (AR + EN) now says the
+registration is immediate, does not reserve a specific seat, and is confirmed at
+check-in — matching `joinOpenSuccessBody` and the as-built auto-confirm behaviour.
+Covered by `session_detail_screen_test.dart` (the open-seating join case asserts the
+new copy and the absence of the old one). E2E-MOB017-022 reworded.**
 _Prior:_ `2026-07-14` by `SIMF Team` — **owner state-gating: the two
 header actions (ملخص الجلسة / رابط الجلسة) and the Join CTA now gate on the
 session phase (upcoming/live/ended); a future session's summary button is

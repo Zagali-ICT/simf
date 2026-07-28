@@ -6,7 +6,7 @@
 | **Route** | `/admin/admins` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
-| **Auth setup** | `superadmin@zagali-ict.com` / `Aa@123456789` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@zagali-ict.com` / `[REDACTED - supply via SIMF_SuperAdmin__TempPassword]` + TOTP via the `Get-Totp` helper |
 | **Page permission** | `PermissionCatalog.Admins.View` (`@attribute [RequirePermission(PermissionCatalog.Admins.View)]`) |
 | **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 

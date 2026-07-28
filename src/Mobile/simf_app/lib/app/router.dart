@@ -54,6 +54,7 @@ import '../features/gates/gate_scan_screen.dart';
 import '../features/moderation/session_moderate_screen.dart';
 import '../features/myarea/identity_verification_screen.dart';
 import '../features/myarea/my_area_screen.dart';
+import '../features/myarea/my_mobile_screen.dart';
 import '../features/myarea/my_sessions_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/venuemap/venue_map_screen.dart';
@@ -69,6 +70,7 @@ import '../features/sessions/session_detail_screen.dart';
 import '../features/sessions/session_presentations_screen.dart';
 import '../features/sessions/sessions_screen.dart';
 import '../features/staff/register_visitor_screen.dart';
+import '../features/staff/staff_seating_screen.dart';
 import '../features/sponsors/sponsor_detail_screen.dart';
 import '../features/sponsors/sponsors_screen.dart';
 import '../features/speakers/speaker_profile_screen.dart';
@@ -112,6 +114,9 @@ const List<_Route> _routes = <_Route>[
   // same interests page in edit mode. Sentinel 702 (never collides with a
   // mockup screen number); auth-gated.
   _Route(number: 702, name: RouteNames.myInterests, path: '/my-area/interests', labelAr: 'اهتماماتي', labelEn: 'My interests'),
+  // Owner 2026-07-26 — the standalone "My mobile number" add / edit surface
+  // (opened from My-Area). Sentinel 703; auth-gated, validation only (no OTP).
+  _Route(number: 703, name: RouteNames.myMobile, path: '/my-area/mobile', labelAr: 'رقم الجوال', labelEn: 'Mobile number'),
   // Screen 08 (exhibitor self-sign-up) removed — exhibitors are CP-only (D-199 / §9).
   _Route(number: 9, name: RouteNames.terms, path: '/terms', labelAr: 'الشروط والأحكام', labelEn: 'Terms & conditions'),
   _Route(number: 10, name: RouteNames.registrationSuccess, path: '/registration/success', labelAr: 'تم التسجيل بنجاح', labelEn: 'Registration success'),
@@ -173,10 +178,14 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 105, name: RouteNames.gateScanner, path: '/gates/scan', labelAr: 'مسح البوابة', labelEn: 'Gate scanner'),
   // D-426 — exhibitor ("Other") lead capture (approved-only; server 403s visitors).
   _Route(number: 106, name: RouteNames.scanVisitor, path: '/exhibitor/scan', labelAr: 'مسح بطاقة زائر', labelEn: 'Scan visitor badge'),
-  _Route(number: 107, name: RouteNames.myVisitors, path: '/exhibitor/visitors', labelAr: 'زواري', labelEn: 'My Visitors'),
+  // BUG-025 — named for the booth so it is never read as "My Contacts".
+  _Route(number: 107, name: RouteNames.myVisitors, path: '/exhibitor/visitors', labelAr: 'زوار جناحي', labelEn: 'My Booth Visitors'),
   // D-509 — staff walk-in visitor registration (approved Staff; server enforces
   // Visitors.RegisterOnsite). Figma 1467:12357.
   _Route(number: 114, name: RouteNames.staffRegisterVisitor, path: '/staff/register-visitor', labelAr: 'تسجيل زائر', labelEn: 'Register visitor'),
+  // D-771 — the staff seating desk (approved Staff; server enforces
+  // Seating.Assist). Derived from the visitor seat picker (109).
+  _Route(number: 118, name: RouteNames.staffSeating, path: '/staff/seating/:sessionId', labelAr: 'إرشاد الضيوف للمقاعد', labelEn: 'Guest seating desk'),
   // D-500 (Wave 5, الطلبات) — the unified requests feed (approved-only), retitled
   // "طلباتي" once the meetings page split off (D-745).
   _Route(number: 108, name: RouteNames.requests, path: '/requests', labelAr: 'طلباتي', labelEn: 'My requests'),
@@ -184,7 +193,8 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 116, name: RouteNames.meetings, path: '/meetings', labelAr: 'اللقاءات الثنائية', labelEn: 'Bilateral meetings'),
   // Bi-Meeting rework — the other-party confirm screen (deep-link from a notification).
   _Route(number: 117, name: RouteNames.meetingConfirm, path: '/meeting-confirm', labelAr: 'تأكيد الاجتماع', labelEn: 'Confirm meeting'),
-  // (D-609: route 115 My-meetings removed — screen backed up as `.bk`.)
+  // (D-609: route 115 My-meetings removed — the screen was deleted; recover it
+  //  from git history if it is ever needed again.)
   // D-485 — the session-join flow (approved-only): the seat picker + the hub.
   _Route(number: 109, name: RouteNames.seatPicker, path: '/sessions/:sessionId/pick-seat', labelAr: 'اختر مقعدك', labelEn: 'Select your seat'),
   _Route(number: 110, name: RouteNames.joinSessionHub, path: '/sessions/join', labelAr: 'احجز مقعداً', labelEn: 'Book a seat'),
@@ -205,12 +215,13 @@ const List<_Route> _routes = <_Route>[
   // D-668 — About-the-app page (version / release date / organizer + links),
   // reached from the end of the side drawer. Public.
   _Route(number: 207, name: RouteNames.aboutApp, path: '/about-app', labelAr: 'عن التطبيق', labelEn: 'About the app'),
-  // Owner batch (2026-06-21) — entry points for features not yet designed/built;
-  // they fall through to ComingSoonScreen (sentinel numbers 200+). #5 bilateral
-  // meetings (home tile, undesigned); #8 saved meetings (My Area stat).
-  // (D-609: route 205 Saved-sessions removed — screen backed up as `.bk`.)
-  _Route(number: 204, name: RouteNames.bilateralMeetings, path: '/bilateral-meetings', labelAr: 'اللقاءات الثنائية', labelEn: 'Bilateral meetings'),
-  _Route(number: 206, name: RouteNames.savedMeetings, path: '/saved-meetings', labelAr: 'المقابلات المحفوظة', labelEn: 'Saved meetings'),
+  // (B18: routes 204 bilateral-meetings + 206 saved-meetings removed — both
+  //  ComingSoon sentinels with no screen, no inbound navigation and nothing
+  //  persisted behind them. 204's Home tile went to the real VIP meetings page
+  //  (116) with D-745, and 206's My-Area stat tile went with the D-609 screen
+  //  deletion, so the two paths had been unreachable dead declarations since.
+  //  D-609 removed 205 Saved-sessions the same way. Recover from git history
+  //  if a feature ever lands.)
 ];
 
 /// Auxiliary auth routes that aren't numbered in the mockup but live in
@@ -240,6 +251,7 @@ const Set<int> _authenticatedRoutes = <int>{
   7, // Sign up — visitor profile data (AUTH-only, Page_007 L-1)
   701, // Sign up — interests + the single save (AUTH-only, Page_007-01, D-332)
   702, // My interests — edit from My-Area (AUTH-only, #14)
+  703, // My mobile number — add / edit from My-Area (AUTH-only, owner 2026-07-26)
   10, // Registration success (signed-in, pending; Page_010)
   11, // Registration status (signed-in, not-yet-approved gate; Page_011 L-1)
   14, // My area / profile — every signed-in role
@@ -297,18 +309,44 @@ const Map<int, Set<AppRole>> _routeRoles = <int, Set<AppRole>>{
   // 202 (Session presentations — the "الجلسات" list) is PUBLIC (owner 2026-07-22):
   // a guest opens it from the home "Sessions" tile, so it is intentionally NOT
   // gated here. Its reads (`GET /app/presentations[/{id}/file]`) are AllowAnonymous.
-  // (D-609: routes 115 My-meetings, 205 Saved-sessions removed — screens backed
-  // up as `.bk`; 113 My-sessions restored by D-710.)
+  // (D-609: routes 115 My-meetings, 205 Saved-sessions removed — the screens
+  // were deleted, recoverable from git history; 113 My-sessions restored by D-710.)
   // Exhibitor-only — lead capture (D-426).
   106: <AppRole>{AppRole.exhibitor}, // Scan visitor badge
   107: <AppRole>{AppRole.exhibitor}, // My Visitors
   // Staff-only — the gate operations (D-406 / D-509).
   105: <AppRole>{AppRole.staff}, // Gate scanner
   114: <AppRole>{AppRole.staff}, // Walk-in visitor registration
+  118: <AppRole>{AppRole.staff}, // Seating desk (D-771)
   // Moderator-only — the session Q&A desk (D-405). Moderator-EXCLUSIVE now
   // (D-519): Staff no longer inherits it (the old isAtLeast made Staff >= Moderator).
   104: <AppRole>{AppRole.moderator}, // Session Q&A desk
 };
+
+/// The flat routes re-ordered so a **static** path (no `:param` segment) is
+/// always emitted before the parameterised ones; the declared order is
+/// otherwise preserved.
+///
+/// go_router matches in DECLARATION order and keeps the first hit, so a
+/// parameterised route declared above a static sibling swallows it. That is
+/// exactly what happened to the seat-booking hub: `/sessions/:sessionId` (#17)
+/// sits above `/sessions/join` (#110) in [_routes], so `/sessions/join` matched
+/// the detail route with `sessionId = "join"` and the screen rendered
+/// "session not found" (`GET /app/programme/sessions/join` → 404), making the
+/// hub unreachable. Sorting here removes the whole class of bug: a new static
+/// route may be declared anywhere in [_routes] without shadowing risk.
+List<GoRoute> _matchSafeOrder(List<GoRoute> routes) {
+  final staticPaths = <GoRoute>[];
+  final parameterised = <GoRoute>[];
+  for (final route in routes) {
+    if (route.path.contains(':')) {
+      parameterised.add(route);
+    } else {
+      staticPaths.add(route);
+    }
+  }
+  return <GoRoute>[...staticPaths, ...parameterised];
+}
 
 /// The five bottom-nav destinations. They render inside [SimfAppShell]'s
 /// IndexedStack, not as separate GoRouter branches. Tab switching is purely
@@ -350,6 +388,10 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
     // #14 — the same interests page in EDIT mode: self-loads the profile,
     // pre-selects the saved interests, saves in place and pops back.
     return const SignUpInterestsScreen(editMode: true);
+  }
+  if (r.name == RouteNames.myMobile) {
+    // Owner 2026-07-26 — add / edit the mobile number (validate only, no OTP).
+    return const MyMobileScreen();
   }
   if (r.name == RouteNames.terms) {
     // `?consent=1` shows the in-flow accept gate; standalone reads omit it.
@@ -524,6 +566,11 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   if (r.name == RouteNames.staffRegisterVisitor) {
     return const StaffRegisterVisitorScreen();
   }
+  if (r.name == RouteNames.staffSeating) {
+    return StaffSeatingScreen(
+      sessionId: state.pathParameters[RouteParams.sessionId] ?? '',
+    );
+  }
   if (r.name == RouteNames.scanVisitor) {
     return const ScanVisitorScreen();
   }
@@ -653,20 +700,32 @@ GoRouter buildRouter(Ref ref) {
             : null,
       );
     },
-    routes: <RouteBase>[
-      // Shell route — replaces StatefulShellRoute.indexedStack. Renders
-      // SimfAppShell with an IndexedStack of all five tabs. Tab switching is
-      // purely internal (no go_router), so there is only ever ONE page in the
-      // parent Navigator — no key-reservation collision on router.refresh().
-      GoRoute(
-        name: RouteNames.home,
-        path: '/',
-        pageBuilder: (context, state) => NoTransitionPage(
-          key: state.pageKey,
-          child: const SimfAppShell(),
-        ),
+    routes: buildRoutes(),
+  );
+}
+
+/// The router's full route table: the shell home, then the flat (pushed)
+/// screens in [_matchSafeOrder], then the auxiliary auth routes.
+///
+/// Exposed so a test can assert path → screen matching on the real table
+/// without standing up the auth redirect (`test/app/router_route_order_test.dart`).
+List<RouteBase> buildRoutes() {
+  return <RouteBase>[
+    // Shell route — replaces StatefulShellRoute.indexedStack. Renders
+    // SimfAppShell with an IndexedStack of all five tabs. Tab switching is
+    // purely internal (no go_router), so there is only ever ONE page in the
+    // parent Navigator — no key-reservation collision on router.refresh().
+    GoRoute(
+      name: RouteNames.home,
+      path: '/',
+      pageBuilder: (context, state) => NoTransitionPage(
+        key: state.pageKey,
+        child: const SimfAppShell(),
       ),
-      // Flat (pushed) routes — every non-shell screen.
+    ),
+    // Flat (pushed) routes — every non-shell screen plus the auxiliary auth
+    // routes, re-ordered so no parameterised path can shadow a static one.
+    ..._matchSafeOrder(<GoRoute>[
       for (final r in _routes)
         if (r.name != RouteNames.home)
           GoRoute(
@@ -686,8 +745,8 @@ GoRouter buildRouter(Ref ref) {
             child: _auxScreenFor(context, state, r),
           ),
         ),
-    ],
-  );
+    ]),
+  ];
 }
 
 /// Bridges the Riverpod auth state to go_router's [Listenable]-based refresh:

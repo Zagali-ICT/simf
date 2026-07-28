@@ -23,46 +23,54 @@ class SessionsSearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      onChanged: onChanged,
-      textInputAction: TextInputAction.search,
-      style: SimfTokens.bodyWhiteSm,
-      decoration: InputDecoration(
-        isDense: true,
-        filled: true,
-        fillColor: SimfTokens.navyDeep,
-        hintText: l10n.sessionsSearchHint,
-        hintStyle: SimfTokens.bodyWhiteSm,
-        // Frame 883:2316 — the 18px magnifier hugs the inline-start (physical
-        // right under RTL), packed next to the hint (8px from the edge, 8px
-        // before the text); the rest of the field is empty. A prefixIcon lands
-        // at the inline-start in RTL (a suffixIcon would push it to the left).
-        prefixIcon: const Padding(
-          padding: EdgeInsetsDirectional.only(
-            start: SimfTokens.space2,
-            end: SimfTokens.space2,
+    // The placeholder is a separate node that disappears once the user types,
+    // so the field itself had no accessible name (BUG-012) — same fix as the
+    // shared SimfSearchField this frame deliberately does not reuse.
+    return Semantics(
+      label: l10n.sessionsSearchHint,
+      textField: true,
+      child: TextField(
+        onChanged: onChanged,
+        textInputAction: TextInputAction.search,
+        style: SimfTokens.bodyWhiteSm,
+        decoration: InputDecoration(
+          isDense: true,
+          filled: true,
+          fillColor: SimfTokens.navyDeep,
+          hintText: l10n.sessionsSearchHint,
+          hintStyle: SimfTokens.bodyWhiteSm,
+          // Frame 883:2316 — the 18px magnifier hugs the inline-start (physical
+          // right under RTL), packed next to the hint (8px from the edge, 8px
+          // before the text); the rest of the field is empty. A prefixIcon
+          // lands at the inline-start in RTL (a suffixIcon would push it left).
+          prefixIcon: const Padding(
+            padding: EdgeInsetsDirectional.only(
+              start: SimfTokens.space2,
+              end: SimfTokens.space2,
+            ),
+            child: SimfSvgIcon(
+              AppAssets.icSearch,
+              size: 18,
+              color: SimfTokens.surface,
+            ),
           ),
-          child: SimfSvgIcon(
-            AppAssets.icSearch,
-            size: 18,
-            color: SimfTokens.surface,
+          prefixIconConstraints:
+              const BoxConstraints(minWidth: 0, minHeight: 0),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: SimfTokens.space3,
+            vertical: SimfTokens.space3,
           ),
-        ),
-        prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: SimfTokens.space3,
-          vertical: SimfTokens.space3,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(SimfTokens.radius),
-          borderSide: const BorderSide(
-            color: SimfTokens.beigeBorder,
-            width: SimfTokens.hairlineBold,
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(SimfTokens.radius),
+            borderSide: const BorderSide(
+              color: SimfTokens.beigeBorder,
+              width: SimfTokens.hairlineBold,
+            ),
           ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(SimfTokens.radius),
-          borderSide: const BorderSide(color: SimfTokens.accent),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(SimfTokens.radius),
+            borderSide: const BorderSide(color: SimfTokens.accent),
+          ),
         ),
       ),
     );

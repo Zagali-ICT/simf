@@ -31,6 +31,16 @@ public partial class OperationsToggles
     private bool _busy;
     private Toast? _toast;
 
+    /// <summary>§6.16 (F-U5-007) — true only while a load is actually in
+    /// flight. Both sections used to key their "Loading…" text off a null
+    /// state, so a load that FAILED left the page reading "Loading…" forever.</summary>
+    private bool _loading;
+
+    /// <summary>The per-section load error, when the section could not be
+    /// fetched. Rendered in place of the section with a Retry.</summary>
+    private string? _gateError;
+    private string? _archiveError;
+
     protected override async Task OnInitializedAsync()
     {
         await LoadAsync();
@@ -38,8 +48,14 @@ public partial class OperationsToggles
 
     private async Task LoadAsync()
     {
+        _loading = true;
+        _gateError = null;
+        _archiveError = null;
         try
         {
+            // Note: simfReadEnvelope turns a transport/HTTP failure into a
+            // RETURNED ApiResult.Fail rather than a throw, so the catch below
+            // never sees the common failure — each envelope must be checked.
             var gateEnv = await JS.InvokeAsync<ApiResult<RegistrationGateState>>(
                 "simfAccount.getJson", "/account/api/admin/registration-gate");
             if (gateEnv is { Success: true, Data: not null })
@@ -49,6 +65,11 @@ public partial class OperationsToggles
                 _gateAutoCloseInput = _gate.AutoClose?.ToSaudi()
                     .ToString("yyyy-MM-ddTHH:mm") ?? string.Empty;
             }
+            else
+            {
+                _gateError = gateEnv?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Operations.LoadFailed"];
+            }
 
             var archiveEnv = await JS.InvokeAsync<ApiResult<ArchiveVisibilityState>>(
                 "simfAccount.getJson", "/account/api/admin/archive/visibility");
@@ -57,11 +78,18 @@ public partial class OperationsToggles
                 _archive = archiveEnv.Data;
                 _archiveIsVisible = _archive.IsVisible;
             }
+            else
+            {
+                _archiveError = archiveEnv?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Operations.LoadFailed"];
+            }
         }
         catch
         {
-            _toast = new Toast("error", L["Admin.Operations.LoadFailed"]);
+            _gateError ??= L["Admin.Operations.LoadFailed"];
+            _archiveError ??= L["Admin.Operations.LoadFailed"];
         }
+        finally { _loading = false; }
     }
 
     private async Task SaveGateAsync()

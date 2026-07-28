@@ -20,8 +20,10 @@ $ErrorActionPreference = "Stop"
 
 # An empty value is SKIPPED (warned) so the unedited template never sets blanks.
 # Values below are NON-SECRET (loopback URL, flag, log path) - safe to commit.
-# set-env-api.ps1 already sets these at Machine scope; this fills them so the CP
-# script also works standalone.
+# Machine scope is shared, so the API overlay you create from
+# deploy\set-env-api.template.ps1 may already have set some of these; this
+# script fills them so the CP can be provisioned standalone. Running both is
+# fine - the values are identical and the last writer wins.
 $vars = [ordered]@{
     "ASPNETCORE_ENVIRONMENT"                = "Production"                 # [REQUIRED] host-level - NOT prefixed
     "SIMF_Api__BaseUrl"                     = "https://localhost:12340/"   # API loopback binding (avoids NAT hairpin); MUST be HTTPS outside Development

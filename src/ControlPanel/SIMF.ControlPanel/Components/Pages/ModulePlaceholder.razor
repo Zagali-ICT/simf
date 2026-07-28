@@ -8,7 +8,23 @@
 
 <SimfPageHeader Title="@PageTitle" />
 
-<div class="simf-panel">
-    <h2 class="simf-panel__title">@L["Module.ComingSoon.Title"]</h2>
-    <p class="simf-panel__text">@L["Module.ComingSoon.Text"]</p>
-</div>
+@* §6.16 (NAV-011) — this route is a catch-all, and it used to render "Coming
+   soon" for ANY slug, so a mistyped /m/ URL got a convincing page announcing a
+   module that does not exist and is not coming. Only slugs CpNavigation
+   declares are real; everything else is a 404. *@
+@if (IsKnownModule)
+{
+    <div class="simf-panel">
+        <h2 class="simf-panel__title">@L["Module.ComingSoon.Title"]</h2>
+        <p class="simf-panel__text">@L["Module.ComingSoon.Text"]</p>
+    </div>
+}
+else
+{
+    <div class="simf-panel">
+        <p class="simf-panel__text">@L["NotFound.Text"]</p>
+        <p class="simf-panel__action">
+            <SimfLink Href="/">@L["NotFound.Back"]</SimfLink>
+        </p>
+    </div>
+}

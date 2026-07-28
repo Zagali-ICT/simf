@@ -14,12 +14,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- User QR-id render on the /account/profile page (D-046 c, P8). -->
-    <PackageReference Include="QRCoder" Version="1.6.0" />
-    <!-- P11 — D-052: decode account_state + user_type claims from the
-         API's JWT into the cookie at /auth/complete. No signature
-         validation — the API already verified the token. -->
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.18.0" />
+    <!-- D-774 — QRCoder (the /account/profile visitor QR) and
+         System.IdentityModel.Tokens.Jwt (the /auth/complete claim decode) went
+         with the removed login/account area; the public site has no caller left
+         for either, so neither ships with the Website any more. -->
     <!-- P6: per-project log files under {Storage:LogDirectory}/SIMF.Web/ -->
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />

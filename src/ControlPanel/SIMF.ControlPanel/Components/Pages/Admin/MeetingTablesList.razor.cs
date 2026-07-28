@@ -260,9 +260,9 @@ public partial class MeetingTablesList
     // hall's meeting tables. The grid is hall-scoped, so the hall id rides
     // GridQuery.Filters["hallId"]; the API resolves it back to ListTablesAsync.
     // No hall selected → nothing to export.
-    private Task OnExportTablesAsync(IReadOnlyList<MeetingTableRow> selected)
+    private async Task OnExportTablesAsync(IReadOnlyList<MeetingTableRow> selected)
     {
-        if (_hallId is not { } hid) return Task.CompletedTask;
+        if (_hallId is not { } hid) return;
         var query = new GridQuery
         {
             Skip = 0,
@@ -275,13 +275,16 @@ public partial class MeetingTablesList
                 ["hallId"] = hid.ToString(),
             },
         };
-        return JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+        // §6.16 (F-U5-005) — a failed export used to return silently, so
+        // the Export button was indistinguishable from an unwired one.
+        var error = await JS.ExportXlsxAsync(
             "/account/api/admin/meeting-tables/export",
             new AdminGridExportRequest
             {
                 Ids = selected.Select(row => row.Id).ToList(),
                 Query = query,
-            }).AsTask();
+            }, L);
+        if (error is not null) _toast = new Toast("error", error);
     }
 
     private void OnGenerate()

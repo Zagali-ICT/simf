@@ -36,13 +36,14 @@ public sealed class EmailTemplateAdminTests : IClassFixture<SimfApiFactory>
     // -- List ----------------------------------------------------------------
 
     [Fact]
-    public async Task List_returns_all_nine_templates_clean_by_default()
+    public async Task List_returns_all_ten_templates_clean_by_default()
     {
         // Order-independent: every mutating test in this class resets its
         // override so, with parallelism disabled, the DB is clean at every
-        // test boundary and the grid shows the nine catalogue defaults (#24 added
+        // test boundary and the grid shows the ten catalogue defaults (#24 added
         // EmailChangeVerification + EmailChangedNotice; the assertion was stale at
-        // 6 on the base branch after D-751 added BulkBadgeDelivery, the 7th).
+        // 6 on the base branch after D-751 added BulkBadgeDelivery, the 7th;
+        // BUG-024 appended ExhibitorLeadCapture, the 10th).
         var admin = await CreateAdministratorAndSignInAsync();
 
         var response = await PostAuthAsync(
@@ -51,7 +52,7 @@ public sealed class EmailTemplateAdminTests : IClassFixture<SimfApiFactory>
 
         var page = (await response.Content
             .ReadFromJsonAsync<ApiResult<GridPage<AdminEmailTemplateSummary>>>())!.Data!;
-        Assert.Equal(9, page.Items.Count);
+        Assert.Equal(10, page.Items.Count);
         Assert.All(page.Items, row =>
         {
             Assert.False(row.IsOverride);

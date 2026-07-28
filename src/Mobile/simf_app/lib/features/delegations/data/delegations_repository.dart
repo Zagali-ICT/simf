@@ -73,6 +73,21 @@ class DelegationsRepository {
       ),
     );
   }
+
+  /// B8 — `POST /app/delegation-meeting-requests/{id}/decline`, the exact
+  /// mirror of [confirmMeeting]. An eligible member of the TARGET delegation
+  /// may decline an Approved (awaiting) meeting instead of waiting for an
+  /// admin to cancel it. Returns the same summary shape (no requester PII).
+  /// Maps 403 (not the other party) / 409 (not awaiting confirmation).
+  Future<DelegationMeetingSummary> declineMeeting(String requestId) {
+    return _client.post<DelegationMeetingSummary>(
+      '/app/delegation-meeting-requests/$requestId/decline',
+      body: const <String, dynamic>{},
+      decodeData: (data) => DelegationMeetingSummary.fromJson(
+        (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{},
+      ),
+    );
+  }
 }
 
 /// Bi-Meeting rework — one bookable meeting slot offered by a delegation

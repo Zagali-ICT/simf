@@ -20,7 +20,9 @@
     <div class="simf-surface">
         @if (_toast is not null)
         {
-            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            <div class="simf-toast">
+                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            </div>
         }
 
         <h2 class="simf-section__title">@L["Admin.Faq.Groups.Heading"]</h2>
@@ -37,7 +39,7 @@
                       FilterColumnLabel="@L["Grid.FilterColumn"]"
                       OnAdd="OpenAddGroup"
                       OnEditOne="OpenEditGroup"
-                      OnDeleteOne="DeactivateGroupAsync"
+                      OnDeleteOne="@(g => AskDelete(L["Admin.Faq.Groups.Delete.Confirm.Title"], string.Format(L["Admin.Faq.Groups.Delete.Confirm.Message"], g.NameEn), () => DeactivateGroupAsync(g)))"
                       PrevLabel="@L["Grid.Prev"]"
                       NextLabel="@L["Grid.Next"]"
                       FirstLabel="@L["Grid.First"]"
@@ -109,7 +111,7 @@
                           Caption="@L["Admin.Faq.Entries.Heading"]"
                           OnAdd="OpenAddEntry"
                           OnEditOne="OpenEditEntry"
-                          OnDeleteOne="DeactivateEntryAsync"
+                          OnDeleteOne="@(e => AskDelete(L["Admin.Faq.Entries.Delete.Confirm.Title"], string.Format(L["Admin.Faq.Entries.Delete.Confirm.Message"], e.Question), () => DeactivateEntryAsync(e)))"
                           PrevLabel="@L["Grid.Prev"]"
                           NextLabel="@L["Grid.Next"]"
                           FirstLabel="@L["Grid.First"]"
@@ -162,8 +164,15 @@
 @if (_groupModalOpen)
 {
     <SimfModal Open="true" RequireExplicitClose="true" Title="@(_groupEditId is null ? L["Admin.Faq.Group.Add.Title"] : L["Admin.Faq.Group.Edit.Title"])"
-               OnClose="CloseGroupModal">
+               OnClose="CloseGroupModal"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
+            @* The page-level toast sits under the modal backdrop, so a rejected
+               save must report inside the dialog or it reads as a dead button. *@
+            @if (_error is not null)
+            {
+                <SimfAlert Variant="error">@_error</SimfAlert>
+            }
             <div class="simf-form__fields">
                 <SimfTextField Label="@L["Admin.Faq.Field.NameEn"]" MaxLength="128"
                                @bind-Value="_groupNameEn" Disabled="_busy" />
@@ -181,7 +190,7 @@
             </div>
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" OnClick="SaveGroupAsync" Loading="_busy">@L["Admin.Faq.Save"]</SimfButton>
+            <SimfButton Type="button" OnClick="SaveGroupAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">@L["Admin.Faq.Save"]</SimfButton>
             <SimfButton Type="button" Variant="secondary" OnClick="CloseGroupModal" Disabled="_busy">
                 @L["Admin.Faq.Cancel"]
             </SimfButton>
@@ -192,8 +201,13 @@
 @if (_entryModalOpen)
 {
     <SimfModal Open="true" RequireExplicitClose="true" Title="@(_entryEditId is null ? L["Admin.Faq.Entry.Add.Title"] : L["Admin.Faq.Entry.Edit.Title"])"
-               OnClose="CloseEntryModal">
+               OnClose="CloseEntryModal"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
+            @if (_error is not null)
+            {
+                <SimfAlert Variant="error">@_error</SimfAlert>
+            }
             <div class="simf-form__fields">
                 <SimfTextField Label="@L["Admin.Faq.Field.QuestionEn"]" MaxLength="512"
                                @bind-Value="_entryQuestionEn" Disabled="_busy" />
@@ -221,10 +235,20 @@
             </div>
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" OnClick="SaveEntryAsync" Loading="_busy">@L["Admin.Faq.Save"]</SimfButton>
+            <SimfButton Type="button" OnClick="SaveEntryAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">@L["Admin.Faq.Save"]</SimfButton>
             <SimfButton Type="button" Variant="secondary" OnClick="CloseEntryModal" Disabled="_busy">
                 @L["Admin.Faq.Cancel"]
             </SimfButton>
         </Footer>
     </SimfModal>
 }
+
+@* §6.16 (F-U5-004) — these deletes cascade; confirm before running them. *@
+<SimfConfirm Open="@(_pendingDelete is not null)"
+             Danger="true"
+             Title="@(_pendingDelete?.Title ?? string.Empty)"
+             Message="@(_pendingDelete?.Message ?? string.Empty)"
+             ConfirmLabel="@L["Grid.Delete"]"
+             CancelLabel="@L["Common.Cancel"]"
+             OnConfirm="ConfirmDeleteAsync"
+             OnCancel="CancelDelete" />

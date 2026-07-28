@@ -4,6 +4,9 @@
 #   * SimfCP  -> src/ControlPanel/SIMF.ControlPanel (Blazor Server, Web SDK)
 #   * SimfWeb -> src/Website/SIMF.Web            (Blazor SSR, Web SDK)
 #
+# A fourth, NON-deploying stage checks the Flutter app:
+#   * MobileApp -> src/Mobile/simf_app           (Flutter; analyze + test only)
+#
 # Mirrors the V10 ERP pipeline, adapted for SIMF:
 #   * three web apps instead of two (API + Control Panel + Website);
 #   * NO SDK-package / local-NuGet-feed machinery - SIMF has no SDK packages and
@@ -264,6 +267,95 @@ stages:
       inputs:
         PathtoPublish: '$(Build.ArtifactStagingDirectory)'
         ArtifactName: 'drop'
+
+- stage: MobileApp
+  displayName: 'Flutter app (analyze & test)'
+  # BUG-010 — until now NOTHING in CI touched src/Mobile/simf_app, so the only
+  # proof the shippable mobile artefact still compiles lived on one developer
+  # machine. This stage restores from the committed pubspec.lock, analyses the
+  # SIMF-owned Dart, and runs the widget/unit suites.
+  #
+  # dependsOn: [] so it runs in PARALLEL with Build and is NOT a dependency of
+  # Deploy - the pipeline deploys the three WEB apps, and a Flutter/agent problem
+  # must never keep production down. A failure here still turns the run red,
+  # which is the gate we want.
+  dependsOn: []
+  jobs:
+  - job: FlutterJob
+    displayName: 'Flutter analyze & test (src/Mobile/simf_app)'
+    variables:
+      flutterApp: '$(Build.SourcesDirectory)/src/Mobile/simf_app'
+    steps:
+    - checkout: self
+      clean: true
+
+    # The Flutter SDK is NOT installed by a Marketplace task on purpose -
+    # referencing an uninstalled task breaks the whole pipeline (same reason the
+    # SAST/DAST blocks above are scaffolds, not tasks). The self-hosted agent
+    # provisions Flutter on PATH; this step FAILS LOUDLY when it is missing so a
+    # provisioning problem can never masquerade as a passing gate.
+    - powershell: |
+        $ErrorActionPreference = 'Stop'
+        $flutter = Get-Command flutter -ErrorAction SilentlyContinue
+        if (-not $flutter) {
+          throw 'Flutter SDK not found on PATH. Install Flutter 3.44+ (Dart 3.12) on the build agent, add it to PATH, then re-run.'
+        }
+        Write-Host "Using Flutter at: $($flutter.Source)"
+        flutter --version
+        if ($LASTEXITCODE -ne 0) { throw "flutter --version failed (exit $LASTEXITCODE)." }
+      displayName: 'Verify Flutter SDK on the agent'
+
+    # Restore the app AND the two local path packages it resolves
+    # (packages/simf_data_pkg, packages/simf_auth_pkg). pubspec.lock is committed
+    # (BUG-010), so this resolves the exact versions the developer built against.
+    - powershell: |
+        $ErrorActionPreference = 'Stop'
+        $targets = @('.', 'packages/simf_data_pkg', 'packages/simf_auth_pkg')
+        foreach ($t in $targets) {
+          $dir = Join-Path '$(flutterApp)' $t
+          Write-Host "flutter pub get -> $dir"
+          Push-Location $dir
+          flutter pub get
+          $code = $LASTEXITCODE
+          Pop-Location
+          if ($code -ne 0) { throw "flutter pub get failed in $t (exit $code)." }
+        }
+      displayName: 'flutter pub get (app + local packages)'
+
+    # Analyze SIMF-owned Dart only. third_party/video_player_android is a VENDORED
+    # upstream plugin (D-768) whose generated *.mocks.dart carry ~325 analyzer
+    # errors from an upstream mockito mismatch - not ours to fix, so it is not
+    # analysed here. --no-fatal-infos/--no-fatal-warnings keeps the
+    # very_good_analysis ratchet documented in analysis_options.yaml advisory
+    # (repo-wide zero is explicitly NOT the gate yet); a real analyzer ERROR in
+    # our own code still fails the step.
+    - powershell: |
+        $ErrorActionPreference = 'Stop'
+        Set-Location '$(flutterApp)'
+        flutter analyze --no-fatal-infos --no-fatal-warnings lib test integration_test packages
+        if ($LASTEXITCODE -ne 0) { throw "flutter analyze found errors in SIMF Dart sources (exit $LASTEXITCODE)." }
+      displayName: 'flutter analyze (lib + test + integration_test + packages)'
+
+    # Test gate. The two local packages are green (15 + 46 tests as of
+    # 2026-07-26). The app suite runs 1096 tests, of which 2 in
+    # test/features/sessions/my_seat_screen_test.dart are RED on main
+    # (pre-existing, tracked separately) - this step therefore reports the real
+    # state instead of a fake green. Fix those two and the gate goes green.
+    - powershell: |
+        $ErrorActionPreference = 'Stop'
+        $failed = @()
+        $targets = @('.', 'packages/simf_data_pkg', 'packages/simf_auth_pkg')
+        foreach ($t in $targets) {
+          $dir = Join-Path '$(flutterApp)' $t
+          Write-Host "flutter test -> $dir"
+          Push-Location $dir
+          flutter test
+          $code = $LASTEXITCODE
+          Pop-Location
+          if ($code -ne 0) { $failed += "$t (exit $code)" }
+        }
+        if ($failed.Count -gt 0) { throw "flutter test failed in: $($failed -join ', ')." }
+      displayName: 'flutter test (app + local packages)'
 
 - stage: Deploy
   displayName: 'Deploy to IIS'

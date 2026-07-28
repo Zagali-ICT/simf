@@ -2,19 +2,28 @@
 
 | | |
 |--|--|
-| **Audience** | SIMF visitors (Website users + Mobile App users when the App ships) |
-| **Surfaces covered** | Website (`https://simf.local`) + Mobile App (Flutter — deferred) |
-| **Authority** | D-133 (2026-05-28) — extended each release |
+| **Audience** | SIMF visitors |
+| **Surfaces covered** | Mobile App (Flutter) — the account surface. The public Website (`https://simf.local`) is information-only and has no account area (D-774). |
+| **Authority** | D-133 (2026-05-28) — extended each release; account surface re-pointed by D-774 (2026-07-27) |
 | **Bilingual** | Yes — Arabic translations land alongside each chapter (translator pending) |
 | **Companion docs** | [`Admin-Manual.md`](Admin-Manual.md), [`Developer-Guide.md`](Developer-Guide.md), [`PAGE-INDEX.md`](../pages/PAGE-INDEX.md) |
 
 This manual is for **the visitor** — the person attending the Saudi
 International Maritime Forum. It walks you through everything you do
-through the SIMF Website and (when it ships) the Mobile App: register
-your account, fill your profile, get your QR badge, manage notifications,
-recover if you lose access. Every chapter has a Most-common-tasks
-section, screenshots, and a Troubleshooting subsection for the top three
-things that go wrong.
+with your SIMF account: register, fill your profile, get your QR badge,
+manage notifications, recover if you lose access. Every chapter has a
+Most-common-tasks section, screenshots, and a Troubleshooting subsection
+for the top three things that go wrong.
+
+> **Where you do this — updated 2026-07-27 (D-774).** The public SIMF
+> **Website is information-only**: it has no sign-in and no account area.
+> Every account journey in sections 2–9 below is performed in the **SIMF
+> mobile app**; administrators use the Control Panel. The route names shown
+> (`/login`, `/account/profile`, `/account/notifications`, …) name the
+> equivalent app screens. The one page the Website still serves without an
+> account is `/meeting/confirm`, the link emailed to a speaker or delegate
+> to confirm a meeting. Re-writing the screenshots and wording for the app
+> is a tracked follow-up.
 
 ---
 
@@ -87,7 +96,8 @@ in that language.
 
 ### 3.1 Pending approval — `/account/pending`
 
-> Page reference: [`docs/pages/web/account-pending.md`](../pages/web/account-pending.md)
+> Screen reference (D-774 — this is an app screen; the Website page was removed):
+> [`docs/tests/e2e/mobile-sign-in.md`](../tests/e2e/mobile-sign-in.md)
 
 When you sign in for the first time after registering, you may land on a
 page that says **"Your account is awaiting approval."** This is normal —
@@ -105,7 +115,8 @@ an administrator must approve every new account.
 
 ### 3.3 Rejected — `/account/rejected`
 
-> Page reference: [`docs/pages/web/account-rejected.md`](../pages/web/account-rejected.md)
+> Screen reference (D-774 — this is an app screen; the Website page was removed):
+> [`docs/tests/e2e/mobile-sign-in.md`](../tests/e2e/mobile-sign-in.md)
 
 If an administrator rejects your registration, you'll see a page with:
 
@@ -124,7 +135,8 @@ your welcome / rejection notice.
 
 ### 4.1 Filling your profile — `/account/profile`
 
-> Page reference: [`docs/pages/web/account-profile.md`](../pages/web/account-profile.md)
+> Screen reference (D-774 — this is an app screen; the Website page was removed):
+> [`docs/pages/mobile/`](../pages/mobile/)
 
 Once approved, you land on the profile page. Fill every section:
 
@@ -170,7 +182,8 @@ identity. **Do not share** the QR — it's effectively your access key.
 
 ## 5. Sign in (returning visitor) — `/login`
 
-> Page reference: [`docs/pages/web/login.md`](../pages/web/login.md)
+> Screen reference (D-774 — this is an app screen; the Website page was removed):
+> [`docs/tests/e2e/mobile-sign-in.md`](../tests/e2e/mobile-sign-in.md)
 
 1. Email + password → **Sign in**.
 2. If you have an authenticator app paired: enter the current 6-digit
@@ -191,7 +204,9 @@ identity. **Do not share** the QR — it's effectively your access key.
 
 ## 6. Forgot password / reset password
 
-> Pages: [`forgot-password.md`](../pages/web/forgot-password.md), [`reset-password.md`](../pages/web/reset-password.md)
+> Screen reference (D-774 — these are app screens; the Website pages were removed):
+> [`docs/pages/mobile/forgot-password/`](../pages/mobile/forgot-password/README.md),
+> [`docs/pages/mobile/reset-password/`](../pages/mobile/reset-password/README.md)
 
 1. On the sign-in page, click **Forgot password**.
 2. Type your email → **Send code**.
@@ -228,7 +243,8 @@ sign-in.
 
 ## 8. Notifications inbox — `/account/notifications`
 
-> Page reference: [`docs/pages/web/account-notifications.md`](../pages/web/account-notifications.md)
+> Screen reference (D-774 — this is an app screen; the Website page was removed):
+> [`docs/pages/mobile/notifications/`](../pages/mobile/notifications/README.md)
 
 Reachable from the **Notifications** link in your profile header (added
 in D-132).

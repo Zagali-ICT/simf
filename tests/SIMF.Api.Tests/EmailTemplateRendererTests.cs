@@ -105,12 +105,30 @@ public sealed class EmailTemplateRendererTests
     }
 
     [Fact]
-    public void Catalog_all_lists_the_nine_transactional_templates()
+    public void Catalog_all_lists_the_ten_transactional_templates()
     {
         // #24 added EmailChangeVerification (8th) + EmailChangedNotice (9th). NB:
         // this assertion was stale at 6 on the base branch after D-751 added
-        // BulkBadgeDelivery (7th) without updating it; 9 is the true current count.
-        Assert.Equal(9, EmailTemplateCatalog.All.Count);
+        // BulkBadgeDelivery (7th) without updating it. BUG-024 appended
+        // ExhibitorLeadCapture (10th) — 10 is the true current count.
+        Assert.Equal(10, EmailTemplateCatalog.All.Count);
+    }
+
+    [Fact]
+    public void Catalog_default_exhibitor_lead_capture_carries_the_bilingual_lead_tokens()
+    {
+        // BUG-024 — the booth lead card emailed to the exhibitor. Each displayed
+        // field is a bilingual pair so the EN block renders the English value and
+        // the AR block the Arabic one; the scan time is a single shared token.
+        var def = EmailTemplateCatalog.Default(EmailTemplateType.ExhibitorLeadCapture);
+
+        Assert.Contains("{VisitorName}", def.BodyEn, StringComparison.Ordinal);
+        Assert.Contains("{VisitorNameArabic}", def.BodyAr, StringComparison.Ordinal);
+        Assert.Contains("{ScannedAt}", def.BodyEn, StringComparison.Ordinal);
+        Assert.Contains("{ScannedAt}", def.BodyAr, StringComparison.Ordinal);
+        Assert.Contains("{Note}", def.BodyEn, StringComparison.Ordinal);
+        Assert.DoesNotContain("{Code}", def.BodyEn, StringComparison.Ordinal);
+        Assert.Equal(8, def.Tokens.Count);
     }
 
     [Fact]

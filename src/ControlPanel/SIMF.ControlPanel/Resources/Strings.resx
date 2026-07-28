@@ -63,6 +63,12 @@
   <data name="Admin.Edit.ProfileType.None" xml:space="preserve"><value>— none —</value></data>
   <data name="Admin.Edit.ProfileType.Choose" xml:space="preserve"><value>Choose a profile type…</value></data>
   <data name="Admin.Edit.EmailChangeNote" xml:space="preserve"><value>Changing the email signs the account out of all sessions.</value></data>
+  <data name="Admin.Edit.Nationality" xml:space="preserve"><value>Nationality</value></data>
+  <data name="Admin.Edit.Nationality.Keep" xml:space="preserve"><value>Keep the current nationality</value></data>
+  <data name="Admin.Edit.Nationality.Hint" xml:space="preserve"><value>Nationality decides which delegation this account belongs to, so it controls whether they can confirm a delegation meeting. Leave the picker empty to keep the stored value.</value></data>
+  <data name="Admin.Edit.SaudiMobile" xml:space="preserve"><value>Saudi mobile</value></data>
+  <data name="Admin.Edit.InternationalMobile" xml:space="preserve"><value>International mobile</value></data>
+  <data name="Admin.Edit.Mobile.Hint" xml:space="preserve"><value>Saudi 05XXXXXXXX or +9665XXXXXXXX; international +&lt;country code&gt;&lt;number&gt;. Leave empty to keep the stored number.</value></data>
   <data name="Admin.Edit.Photo.Section" xml:space="preserve"><value>Photo &amp; ID</value></data>
   <data name="Admin.Edit.Photo.Current" xml:space="preserve"><value>Current image</value></data>
   <data name="Admin.Edit.Photo.Avatar" xml:space="preserve"><value>Profile photo</value></data>
@@ -181,13 +187,14 @@
   <data name="Admin.Meetings.Cancel" xml:space="preserve"><value>Cancel meeting</value></data>
   <data name="Admin.Meetings.Approve" xml:space="preserve"><value>Approve</value></data>
   <data name="Admin.Meetings.Confirm" xml:space="preserve"><value>Confirm</value></data>
+  <data name="Admin.Meetings.AcceptNoHall" xml:space="preserve"><value>Accept without a hall</value></data>
   <data name="Admin.Meetings.Status.AwaitingConfirmation" xml:space="preserve"><value>Awaiting confirmation</value></data>
   <data name="Admin.Meetings.Status.Done" xml:space="preserve"><value>Done</value></data>
   <data name="Admin.Meetings.Status.Cancelled" xml:space="preserve"><value>Cancelled</value></data>
   <data name="Admin.Meetings.Status.Pending" xml:space="preserve"><value>Pending</value></data>
   <data name="Admin.Meetings.Status.Accepted" xml:space="preserve"><value>Confirmed</value></data>
   <data name="Admin.Meetings.Status.Rejected" xml:space="preserve"><value>Rejected</value></data>
-  <data name="Admin.Meetings.RespondHelp" xml:space="preserve"><value>Approve: email the other party a confirmation link (the meeting is held once they confirm). Confirm: book it now, when you already have their verbal agreement. Decline / Cancel: close the request (a justification is required).</value></data>
+  <data name="Admin.Meetings.RespondHelp" xml:space="preserve"><value>Approve: email the other party a confirmation link (the meeting is held once they confirm). Confirm: book it now, when you already have their verbal agreement. Accept without a hall: agree to the meeting when no hall slot is available — no room is booked and the team arranges the place. Decline / Cancel: close the request (a justification is required).</value></data>
   <data name="Admin.Edit.Meetings.Section" xml:space="preserve"><value>Bi-Meeting access</value></data>
   <data name="Admin.Edit.Meetings.AllowsSpeaker" xml:space="preserve"><value>Can request speaker meetings</value></data>
   <data name="Admin.Edit.Meetings.AllowsDelegation" xml:space="preserve"><value>Can request delegation meetings</value></data>
@@ -270,6 +277,8 @@
   <data name="Admin.Faq.Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Admin.Faq.LoadFailed" xml:space="preserve"><value>Could not complete the request. Please try again.</value></data>
   <data name="Admin.Faq.Saved" xml:space="preserve"><value>Saved.</value></data>
+  <data name="Admin.Faq.Group.Required" xml:space="preserve"><value>An English and an Arabic group name are both required.</value></data>
+  <data name="Admin.Faq.Entry.Required" xml:space="preserve"><value>The question and the answer are required in both English and Arabic.</value></data>
   <data name="Admin.Faq.Deactivated" xml:space="preserve"><value>Deactivated.</value></data>
   <data name="Module.AiDashboard" xml:space="preserve"><value>AI dashboard</value></data>
   <data name="Module.AiServices" xml:space="preserve"><value>AI services</value></data>
@@ -293,6 +302,7 @@
   <data name="Admin.ProfileTypes.Visitor.Title" xml:space="preserve"><value>Visitor profile types</value></data>
   <data name="Admin.ProfileTypes.Other.Title" xml:space="preserve"><value>Other profile types</value></data>
   <data name="Admin.ProfileTypes.None" xml:space="preserve"><value>No profile types yet.</value></data>
+  <data name="Admin.ProfileTypes.LoadFailed" xml:space="preserve"><value>The profile types could not be loaded.</value></data>
   <data name="Admin.ProfileTypes.Column.Name" xml:space="preserve"><value>Name</value></data>
   <data name="Admin.ProfileTypes.Column.NameArabic" xml:space="preserve"><value>Name (Arabic)</value></data>
   <data name="Admin.ProfileTypes.Column.PageColor" xml:space="preserve"><value>Page colour</value></data>
@@ -820,6 +830,7 @@
   <data name="Admin.Halls.Action.Deactivate" xml:space="preserve"><value>Deactivate</value></data>
   <data name="Admin.Halls.Action.SelectAll" xml:space="preserve"><value>Select all</value></data>
   <data name="Admin.Halls.Action.SelectRow" xml:space="preserve"><value>Select row</value></data>
+  <data name="Admin.Halls.Action.SeatLayout" xml:space="preserve"><value>Seat layout</value></data>
   <data name="Admin.Halls.Field.Code" xml:space="preserve"><value>Code</value></data>
   <data name="Admin.Halls.Field.CodeHint" xml:space="preserve"><value>2–16 characters; unique. Venue team's stable identifier (e.g. H1, A201).</value></data>
   <data name="Admin.Halls.Field.CodeInvalid" xml:space="preserve"><value>Code must be between 2 and 16 characters.</value></data>
@@ -857,6 +868,18 @@
   <data name="Admin.Halls.Created" xml:space="preserve"><value>Hall "{0}" was created.</value></data>
   <data name="Admin.Halls.Updated" xml:space="preserve"><value>Hall "{0}" was updated.</value></data>
   <data name="Admin.Halls.Deactivated" xml:space="preserve"><value>Hall "{0}" was deactivated.</value></data>
+  <!-- QA B16 — hall occupancy view (sessions assigned to this hall). -->
+  <data name="Admin.Halls.Schedule.Heading" xml:space="preserve"><value>Sessions in this hall</value></data>
+  <data name="Admin.Halls.Schedule.Loading" xml:space="preserve"><value>Loading the hall schedule…</value></data>
+  <data name="Admin.Halls.Schedule.None" xml:space="preserve"><value>No sessions are assigned to this hall.</value></data>
+  <data name="Admin.Halls.Schedule.LoadFailed" xml:space="preserve"><value>The hall schedule could not be loaded.</value></data>
+  <data name="Admin.Halls.Schedule.Col.Code" xml:space="preserve"><value>Code</value></data>
+  <data name="Admin.Halls.Schedule.Col.Title" xml:space="preserve"><value>Session</value></data>
+  <data name="Admin.Halls.Schedule.Col.Start" xml:space="preserve"><value>Starts</value></data>
+  <data name="Admin.Halls.Schedule.Col.End" xml:space="preserve"><value>Ends</value></data>
+  <data name="Admin.Halls.Schedule.Col.Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Admin.Halls.Schedule.Count" xml:space="preserve"><value>{0} session(s) in this hall.</value></data>
+  <data name="Admin.Halls.Schedule.Capped" xml:space="preserve"><value>Showing the first {0} of {1} sessions. This hall's schedule is longer than one page; open the Sessions list filtered by this hall to see all of them.</value></data>
 
   <!-- D-148 — Gate Module (SIMF-FDS-003 §5.6 / SIMF-API-GATES-001) -->
   <data name="Admin.Gates.Title" xml:space="preserve"><value>Gates</value></data>
@@ -911,7 +934,11 @@
   <data name="Admin.Gates.Field.AllowedProfileTypes" xml:space="preserve"><value>Allowed profile types</value></data>
   <data name="Admin.Gates.Field.AllowedProfileTypesHint" xml:space="preserve"><value>Empty = all profile types allowed (general gate). Pick one or more to restrict the gate.</value></data>
   <data name="Admin.Gates.Field.AssignedOperators" xml:space="preserve"><value>Assigned operators</value></data>
-  <data name="Admin.Gates.Field.AssignedOperatorsHint" xml:space="preserve"><value>Operators who can scan at this gate. Tick each operator to assign them.</value></data>
+  <data name="Admin.Gates.Field.AssignedOperatorsHint" xml:space="preserve"><value>Operators who can scan at this gate from the mobile app. Only approved staff accounts (an operational, non-visitor profile type) can be assigned. Tick each operator to assign them.</value></data>
+  <data name="Admin.Gates.Field.OperatorSearch" xml:space="preserve"><value>Search operators</value></data>
+  <data name="Admin.Gates.Field.OperatorSearchSubmit" xml:space="preserve"><value>Search</value></data>
+  <data name="Admin.Gates.Field.OperatorShowing" xml:space="preserve"><value>Showing {0} of {1} candidates — search to narrow the list.</value></data>
+  <data name="Admin.Gates.Lookup.Failed" xml:space="preserve"><value>A lookup list could not be loaded. Check your permissions and try again.</value></data>
   <data name="Admin.Gates.Field.IsActive" xml:space="preserve"><value>Active — available for scanning</value></data>
   <data name="Admin.Gates.Section.Identification" xml:space="preserve"><value>Identification</value></data>
   <data name="Admin.Gates.Section.Routing" xml:space="preserve"><value>Direction &amp; hall</value></data>
@@ -1034,6 +1061,58 @@
   <data name="Module.EmailTemplates" xml:space="preserve"><value>Email Templates</value></data>
   <data name="Module.OrganizationProfile" xml:space="preserve"><value>Organization Profile</value></data>
   <data name="Admin.OrganizationProfile.Title" xml:space="preserve"><value>Organization Profile</value></data>
+  <data name="Admin.OrganizationProfile.Section.Identity" xml:space="preserve"><value>Identity</value></data>
+  <data name="Admin.OrganizationProfile.Section.IdentityHint" xml:space="preserve"><value>The forum name, title, slogan and biography — each paired English / Arabic.</value></data>
+  <data name="Admin.OrganizationProfile.Section.Edition" xml:space="preserve"><value>Edition</value></data>
+  <data name="Admin.OrganizationProfile.Section.EditionHint" xml:space="preserve"><value>The active year, status and dates shown across the app and website.</value></data>
+  <data name="Admin.OrganizationProfile.Section.Location" xml:space="preserve"><value>Location</value></data>
+  <data name="Admin.OrganizationProfile.Section.LocationHint" xml:space="preserve"><value>The venue text (bilingual) and its map coordinates.</value></data>
+  <data name="Admin.OrganizationProfile.Section.Contact" xml:space="preserve"><value>Contact</value></data>
+  <data name="Admin.OrganizationProfile.Section.Media" xml:space="preserve"><value>Media</value></data>
+  <data name="Admin.OrganizationProfile.Section.MediaHint" xml:space="preserve"><value>A YouTube (or direct MP4/HLS) link; absolute http(s).</value></data>
+  <data name="Admin.OrganizationProfile.Section.Social" xml:space="preserve"><value>Social links</value></data>
+  <data name="Admin.OrganizationProfile.Section.SocialHint" xml:space="preserve"><value>Each an absolute http(s) URL; leave blank to hide the icon.</value></data>
+  <data name="Admin.OrganizationProfile.Section.About" xml:space="preserve"><value>About items</value></data>
+  <data name="Admin.OrganizationProfile.Section.AboutHint" xml:space="preserve"><value>Vision / mission cards — a bilingual title and body each. Order top to bottom.</value></data>
+  <data name="Admin.OrganizationProfile.Section.Details" xml:space="preserve"><value>Details</value></data>
+  <data name="Admin.OrganizationProfile.Section.DetailsHint" xml:space="preserve"><value>Name : value fact rows (e.g. Organiser, Edition, Dates). The label and value are each bilingual; leave Value (AR) blank for a language-neutral value like a year or a URL — the app then shows Value (EN).</value></data>
+  <data name="Admin.OrganizationProfile.Field.NameEn" xml:space="preserve"><value>Name (EN)</value></data>
+  <data name="Admin.OrganizationProfile.Field.NameAr" xml:space="preserve"><value>Name (AR)</value></data>
+  <data name="Admin.OrganizationProfile.Field.TitleEn" xml:space="preserve"><value>Title (EN)</value></data>
+  <data name="Admin.OrganizationProfile.Field.TitleAr" xml:space="preserve"><value>Title (AR)</value></data>
+  <data name="Admin.OrganizationProfile.Field.SloganEn" xml:space="preserve"><value>Slogan (EN)</value></data>
+  <data name="Admin.OrganizationProfile.Field.SloganAr" xml:space="preserve"><value>Slogan (AR)</value></data>
+  <data name="Admin.OrganizationProfile.Field.BioEn" xml:space="preserve"><value>Bio (EN)</value></data>
+  <data name="Admin.OrganizationProfile.Field.BioAr" xml:space="preserve"><value>Bio (AR)</value></data>
+  <data name="Admin.OrganizationProfile.Field.CurrentYear" xml:space="preserve"><value>Current year</value></data>
+  <data name="Admin.OrganizationProfile.Field.Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Admin.OrganizationProfile.Status.Soon" xml:space="preserve"><value>Soon</value></data>
+  <data name="Admin.OrganizationProfile.Status.Open" xml:space="preserve"><value>Open</value></data>
+  <data name="Admin.OrganizationProfile.Status.Archived" xml:space="preserve"><value>Archived (closed)</value></data>
+  <data name="Admin.OrganizationProfile.Field.EventStart" xml:space="preserve"><value>Event start (YYYY-MM-DD)</value></data>
+  <data name="Admin.OrganizationProfile.Field.EventEnd" xml:space="preserve"><value>Event end (YYYY-MM-DD)</value></data>
+  <data name="Admin.OrganizationProfile.Field.Version" xml:space="preserve"><value>Version</value></data>
+  <data name="Admin.OrganizationProfile.Field.SysVersion" xml:space="preserve"><value>System version</value></data>
+  <data name="Admin.OrganizationProfile.Field.LocationEn" xml:space="preserve"><value>Location (EN)</value></data>
+  <data name="Admin.OrganizationProfile.Field.LocationAr" xml:space="preserve"><value>Location (AR)</value></data>
+  <data name="Admin.OrganizationProfile.Field.Latitude" xml:space="preserve"><value>Latitude</value></data>
+  <data name="Admin.OrganizationProfile.Field.Longitude" xml:space="preserve"><value>Longitude</value></data>
+  <data name="Admin.OrganizationProfile.Field.Phone" xml:space="preserve"><value>Phone</value></data>
+  <data name="Admin.OrganizationProfile.Field.Email" xml:space="preserve"><value>Email</value></data>
+  <data name="Admin.OrganizationProfile.Field.Website" xml:space="preserve"><value>Website</value></data>
+  <data name="Admin.OrganizationProfile.Field.LiveStream" xml:space="preserve"><value>Main live-stream link (YouTube)</value></data>
+  <data name="Admin.OrganizationProfile.Field.HeroVideo" xml:space="preserve"><value>Hero background video (YouTube or MP4/HLS link)</value></data>
+  <data name="Admin.OrganizationProfile.Field.HeroVideoFile" xml:space="preserve"><value>Or upload a video file — served from SIMF as an MP4, so it plays on Android (where a YouTube hero cannot render in the band)</value></data>
+  <data name="Admin.OrganizationProfile.About.IndexLabel" xml:space="preserve"><value>Item</value></data>
+  <data name="Admin.OrganizationProfile.About.Empty" xml:space="preserve"><value>No about items yet. Add the mission, the vision, or any about-card.</value></data>
+  <data name="Admin.OrganizationProfile.About.Add" xml:space="preserve"><value>+ Add about item</value></data>
+  <data name="Admin.OrganizationProfile.About.TextEn" xml:space="preserve"><value>Text (EN)</value></data>
+  <data name="Admin.OrganizationProfile.About.TextAr" xml:space="preserve"><value>Text (AR)</value></data>
+  <data name="Admin.OrganizationProfile.Detail.IndexLabel" xml:space="preserve"><value>Detail</value></data>
+  <data name="Admin.OrganizationProfile.Detail.Empty" xml:space="preserve"><value>No details yet. Add a name / value fact row.</value></data>
+  <data name="Admin.OrganizationProfile.Detail.Add" xml:space="preserve"><value>+ Add detail</value></data>
+  <data name="Admin.OrganizationProfile.Detail.ValueEn" xml:space="preserve"><value>Value (EN)</value></data>
+  <data name="Admin.OrganizationProfile.Detail.ValueAr" xml:space="preserve"><value>Value (AR)</value></data>
   <data name="Admin.OrganizationProfile.Loading" xml:space="preserve"><value>Loading…</value></data>
   <data name="Admin.OrganizationProfile.Save" xml:space="preserve"><value>Save</value></data>
   <data name="Admin.OrganizationProfile.Saving" xml:space="preserve"><value>Saving…</value></data>
@@ -1183,6 +1262,7 @@
   <data name="Admin.Users.Title" xml:space="preserve"><value>Admins</value></data>
   <data name="Admin.Users.Fallback" xml:space="preserve"><value>Something went wrong. Please try again.</value></data>
   <data name="Admin.Users.None" xml:space="preserve"><value>No accounts yet.</value></data>
+  <data name="Admin.Users.LoadFailed" xml:space="preserve"><value>The admins could not be loaded.</value></data>
   <data name="Admin.Users.CreateNew" xml:space="preserve"><value>Add user</value></data>
   <data name="Admin.Users.Column.Email" xml:space="preserve"><value>Email</value></data>
   <data name="Admin.Users.Column.DisplayName" xml:space="preserve"><value>Display name</value></data>
@@ -1231,6 +1311,7 @@
 
   <!-- P3: visitor management (sibling of /admin/staff) -->
   <data name="Admin.Visitors.Title" xml:space="preserve"><value>Visitors</value></data>
+  <data name="Admin.Visitors.LoadFailed" xml:space="preserve"><value>The visitors could not be loaded.</value></data>
   <data name="Admin.Visitors.CreateNew" xml:space="preserve"><value>Add visitor</value></data>
   <data name="Admin.Visitors.None" xml:space="preserve"><value>No visitors yet.</value></data>
 
@@ -1271,6 +1352,7 @@
   <data name="Admin.Users.Action.Details" xml:space="preserve"><value>Details</value></data>
   <data name="Admin.Users.Add.Title" xml:space="preserve"><value>Add user</value></data>
   <data name="Admin.Users.Add.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.Users.Add.Saved" xml:space="preserve"><value>The account was created.</value></data>
   <data name="Admin.Users.EditRoles.Title" xml:space="preserve"><value>Edit roles — {0}</value></data>
   <data name="Admin.Users.EditRoles.Intro" xml:space="preserve"><value>Select the roles this user holds. Their access is the combined permissions of the selected roles; changes take effect the next time they sign in.</value></data>
   <data name="Admin.Users.EditRoles.Loading" xml:space="preserve"><value>Loading roles…</value></data>
@@ -1321,6 +1403,13 @@
   <data name="Module.ComingSoon.Text" xml:space="preserve"><value>This module is being prepared and will be available in a later release.</value></data>
 
   <data name="NotPermitted.Title" xml:space="preserve"><value>Not permitted</value></data>
+  <data name="NotFound.Title" xml:space="preserve"><value>Page not found</value></data>
+  <data name="NotFound.Text" xml:space="preserve"><value>The page you are looking for does not exist, or it has moved.</value></data>
+  <data name="NotFound.Back" xml:space="preserve"><value>Back to the dashboard</value></data>
+  <data name="Error.Title" xml:space="preserve"><value>Something went wrong</value></data>
+  <data name="Error.Text" xml:space="preserve"><value>The request could not be completed. Try again, and if it keeps happening quote the reference below to your administrator.</value></data>
+  <data name="Error.RequestId" xml:space="preserve"><value>Reference</value></data>
+  <data name="Error.Back" xml:space="preserve"><value>Back to the dashboard</value></data>
   <data name="NotPermitted.Text" xml:space="preserve"><value>You do not have permission to open this page. If you believe this is a mistake, contact your administrator.</value></data>
   <data name="NotPermitted.Back" xml:space="preserve"><value>Back to the dashboard</value></data>
 
@@ -1337,6 +1426,8 @@
   <data name="Auth.SignIn.Supporting" xml:space="preserve"><value>Access the SIMF Control Panel.</value></data>
   <data name="Auth.SignIn.Email" xml:space="preserve"><value>Email address</value></data>
   <data name="Auth.SignIn.Password" xml:space="preserve"><value>Password</value></data>
+  <data name="Auth.Password.Show" xml:space="preserve"><value>Show password</value></data>
+  <data name="Auth.Password.Hide" xml:space="preserve"><value>Hide password</value></data>
   <data name="Auth.SignIn.ForgotLink" xml:space="preserve"><value>Forgot password?</value></data>
   <data name="Auth.SignIn.Submit" xml:space="preserve"><value>Sign in</value></data>
   <data name="Auth.SignIn.Submitting" xml:space="preserve"><value>Signing in</value></data>
@@ -1528,6 +1619,7 @@
   <data name="Admin.Others.Title" xml:space="preserve"><value>Others</value></data>
   <data name="Admin.Others.CreateNew" xml:space="preserve"><value>Add Other</value></data>
   <data name="Admin.Others.None" xml:space="preserve"><value>No Other accounts yet.</value></data>
+  <data name="Admin.Others.LoadFailed" xml:space="preserve"><value>The other users could not be loaded.</value></data>
   <data name="Admin.Others.New.Title" xml:space="preserve"><value>Add Other user</value></data>
   <data name="Admin.Others.New.Supporting" xml:space="preserve"><value>Create a new Other-typed user. The user receives a 7-day password-set invitation by email.</value></data>
   <data name="Admin.Others.New.Submit" xml:space="preserve"><value>Create Other user</value></data>
@@ -1552,6 +1644,7 @@
   <data name="Admin.Sessions.ClearFilter" xml:space="preserve"><value>Clear filter</value></data>
   <data name="Admin.Sessions.None" xml:space="preserve"><value>No sessions yet.</value></data>
   <data name="Admin.Sessions.LoadFailed" xml:space="preserve"><value>The sessions could not be loaded.</value></data>
+  <data name="Admin.Sessions.LookupsFailed" xml:space="preserve"><value>Some form options could not be loaded. Close the form and open it again to retry.</value></data>
   <data name="Admin.Sessions.Fallback" xml:space="preserve"><value>The operation could not be completed.</value></data>
   <data name="Admin.Sessions.Loading" xml:space="preserve"><value>Loading sessions…</value></data>
   <data name="Admin.Sessions.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
@@ -1808,8 +1901,8 @@
   <data name="Admin.Sessions.Field.HallRequired" xml:space="preserve"><value>Hall is required.</value></data>
   <data name="Admin.Sessions.Field.TypeRequired" xml:space="preserve"><value>A session type is required (Workshop, Session or Event).</value></data>
   <data name="Admin.Sessions.Field.SpeakerRequired" xml:space="preserve"><value>A non-event session must have at least one speaker.</value></data>
-  <data name="Admin.Sessions.Field.StartUtc" xml:space="preserve"><value>Start (Saudi time)</value></data>
-  <data name="Admin.Sessions.Field.EndUtc" xml:space="preserve"><value>End (Saudi time)</value></data>
+  <data name="Admin.Sessions.Field.Start" xml:space="preserve"><value>Start (Saudi time)</value></data>
+  <data name="Admin.Sessions.Field.End" xml:space="preserve"><value>End (Saudi time)</value></data>
   <data name="Admin.Sessions.Field.TimeInvalid" xml:space="preserve"><value>Both start and end times must be valid dates and times.</value></data>
   <data name="Admin.Sessions.Field.TimeWindowInvalid" xml:space="preserve"><value>End time must be after start time.</value></data>
   <data name="Admin.Sessions.Field.CapacityOverride" xml:space="preserve"><value>Capacity override</value></data>
@@ -1844,7 +1937,7 @@
   <data name="Admin.Operations.RegistrationGate.Heading" xml:space="preserve"><value>Registration gate</value></data>
   <data name="Admin.Operations.RegistrationGate.Desc" xml:space="preserve"><value>Open or close public sign-up. When closed, the sign-up endpoint returns a typed 403 and no account row is created.</value></data>
   <data name="Admin.Operations.RegistrationGate.IsOpen" xml:space="preserve"><value>Registration is open</value></data>
-  <data name="Admin.Operations.RegistrationGate.AutoCloseUtc" xml:space="preserve"><value>Auto-close (Saudi time)</value></data>
+  <data name="Admin.Operations.RegistrationGate.AutoClose" xml:space="preserve"><value>Auto-close (Saudi time)</value></data>
   <data name="Admin.Operations.RegistrationGate.AutoCloseHint" xml:space="preserve"><value>Optional. The background worker flips the gate to closed the first minute after this moment. Leave blank for no scheduled close.</value></data>
   <data name="Admin.Operations.RegistrationGate.AutoCloseInvalid" xml:space="preserve"><value>Auto-close must be a valid date and time.</value></data>
   <data name="Admin.Operations.RegistrationGate.LastChangedAt" xml:space="preserve"><value>Last changed</value></data>
@@ -2024,6 +2117,10 @@
   <data name="Admin.SessionSummaries.Approved" xml:space="preserve"><value>Summary approved — ready for the host.</value></data>
   <data name="Admin.SessionSummaries.ReturnedToDraft" xml:space="preserve"><value>Summary returned to draft.</value></data>
   <data name="Admin.SessionSummaries.Unpublished" xml:space="preserve"><value>Summary unpublished.</value></data>
+  <data name="Admin.SessionSummaries.Confirm.Title" xml:space="preserve"><value>Saving will withdraw this summary</value></data>
+  <data name="Admin.SessionSummaries.Confirm.UnpublishOnSave" xml:space="preserve"><value>This summary is published. Saving your edit clears its approval and unpublishes it, so it disappears from the app until the team approves it again and you publish it again. Save anyway?</value></data>
+  <data name="Admin.SessionSummaries.Confirm.UnapproveOnSave" xml:space="preserve"><value>Saving your edit returns this summary to draft and clears its review/approval, so it must be submitted and approved again before it can be published. Save anyway?</value></data>
+  <data name="Admin.SessionSummaries.Confirm.Save" xml:space="preserve"><value>Save and withdraw</value></data>
   <data name="Module.HallArrivals" xml:space="preserve"><value>Hall arrivals</value></data>
   <data name="Admin.HallArrivals.Title" xml:space="preserve"><value>Hall arrivals (door scan)</value></data>
   <data name="Admin.HallArrivals.Loading" xml:space="preserve"><value>Loading sessions…</value></data>
@@ -2044,13 +2141,43 @@
   <data name="Admin.SessionModerators.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
   <data name="Admin.SessionModerators.New" xml:space="preserve"><value>Assign moderator</value></data>
   <data name="Admin.SessionModerators.Add.Title" xml:space="preserve"><value>Assign session moderator</value></data>
-  <data name="Admin.SessionModerators.Field.SessionId" xml:space="preserve"><value>Session id</value></data>
-  <data name="Admin.SessionModerators.Field.UserId" xml:space="preserve"><value>Moderator user id</value></data>
+  <data name="Admin.SessionModerators.Field.Session" xml:space="preserve"><value>Session</value></data>
+  <data name="Admin.SessionModerators.Field.Moderator" xml:space="preserve"><value>Moderator</value></data>
+  <data name="Admin.SessionModerators.PickBoth" xml:space="preserve"><value>Pick a session and a moderator.</value></data>
+  <data name="Admin.SessionModerators.OptionsFailed" xml:space="preserve"><value>The sessions and eligible moderators could not be loaded.</value></data>
+  <data name="Admin.SessionModerators.NoCandidates" xml:space="preserve"><value>No eligible moderator yet. Assign an approved account a profile type whose mobile app role is Moderator first.</value></data>
   <data name="Admin.SessionModerators.Submit" xml:space="preserve"><value>Assign</value></data>
   <data name="Admin.SessionModerators.Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Admin.SessionModerators.Revoke" xml:space="preserve"><value>Revoke</value></data>
   <data name="Admin.SessionModerators.Revoked" xml:space="preserve"><value>Moderator grant revoked.</value></data>
+  <data name="Admin.SessionModerators.Revoke.Confirm.Title" xml:space="preserve"><value>Revoke moderator?</value></data>
+  <data name="Admin.SessionModerators.Revoke.Confirm.Message" xml:space="preserve"><value>This removes {0} as moderator of "{1}". During a live session they lose moderation controls immediately.</value></data>
+  <data name="Common.Confirm" xml:space="preserve"><value>Confirm</value></data>
+  <data name="Admin.Faq.Groups.Delete.Confirm.Title" xml:space="preserve"><value>Delete this FAQ group?</value></data>
+  <data name="Admin.Faq.Groups.Delete.Confirm.Message" xml:space="preserve"><value>"{0}" and every question inside it will be deactivated.</value></data>
+  <data name="Admin.Faq.Entries.Delete.Confirm.Title" xml:space="preserve"><value>Delete this question?</value></data>
+  <data name="Admin.Faq.Entries.Delete.Confirm.Message" xml:space="preserve"><value>"{0}" will be deactivated.</value></data>
+  <data name="Admin.RatingConfig.Types.Delete.Confirm.Title" xml:space="preserve"><value>Delete this rating type?</value></data>
+  <data name="Admin.RatingConfig.Types.Delete.Confirm.Message" xml:space="preserve"><value>"{0}" will be deactivated, together with its question groups and their questions.</value></data>
+  <data name="Admin.RatingConfig.Groups.Delete.Confirm.Title" xml:space="preserve"><value>Delete this question group?</value></data>
+  <data name="Admin.RatingConfig.Groups.Delete.Confirm.Message" xml:space="preserve"><value>"{0}" and every question inside it will be deactivated.</value></data>
+  <data name="Admin.RatingConfig.Questions.Delete.Confirm.Title" xml:space="preserve"><value>Delete this question?</value></data>
+  <data name="Admin.RatingConfig.Questions.Delete.Confirm.Message" xml:space="preserve"><value>"{0}" will be deactivated.</value></data>
+  <data name="Common.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Common.Retry" xml:space="preserve"><value>Try again</value></data>
+  <data name="Admin.BusinessMeetings.Party.KindLabel" xml:space="preserve"><value>Participant type</value></data>
+  <data name="Admin.Sessions.Role.LabelFor" xml:space="preserve"><value>Role for {0}</value></data>
+  <data name="Grid.Export.Failed" xml:space="preserve"><value>The export could not be generated. Please try again.</value></data>
+  <data name="Grid.Import.BusyTitle" xml:space="preserve"><value>Importing</value></data>
+  <data name="Grid.Import.BusyBody" xml:space="preserve"><value>Uploading and reading the spreadsheet. Please do not close this page.</value></data>
+  <data name="Admin.Logs.LoadFailed" xml:space="preserve"><value>The log files could not be listed.</value></data>
+  <data name="Admin.Logs.TailFailed" xml:space="preserve"><value>The log could not be refreshed, so the text below may be out of date.</value></data>
+  <data name="Account.Notifications.LoadFailed" xml:space="preserve"><value>The notifications could not be loaded.</value></data>
+  <data name="Account.Notifications.MarkReadFailed" xml:space="preserve"><value>The notification could not be marked as read.</value></data>
+  <data name="Account.Notifications.DismissFailed" xml:space="preserve"><value>The notification could not be dismissed.</value></data>
+  <data name="Account.Notifications.BulkDismissedPartial" xml:space="preserve"><value>Dismissed {0} of {1} notifications. The rest could not be dismissed.</value></data>
   <data name="Admin.SessionModerators.Assigned" xml:space="preserve"><value>Moderator assigned.</value></data>
+  <data name="Admin.SessionModerators.Required" xml:space="preserve"><value>A session id and a user id are both required, and each must be a valid id.</value></data>
   <data name="Admin.SessionModerators.Col.Session" xml:space="preserve"><value>Session</value></data>
   <data name="Admin.SessionModerators.Col.Moderator" xml:space="preserve"><value>Moderator</value></data>
   <data name="Admin.SessionModerators.Col.AssignedAt" xml:space="preserve"><value>Assigned</value></data>
@@ -2070,6 +2197,7 @@
   <data name="Admin.SessionModeration.Col.Actions" xml:space="preserve"><value>Actions</value></data>
   <data name="Admin.SessionModeration.State.Hidden" xml:space="preserve"><value>Hidden</value></data>
   <data name="Admin.SessionModeration.State.Queued" xml:space="preserve"><value>Queued</value></data>
+  <data name="Admin.SessionModeration.State.Answered" xml:space="preserve"><value>Answered</value></data>
   <data name="Module.ContentBlocks" xml:space="preserve"><value>Content blocks</value></data>
   <data name="Module.Banners" xml:space="preserve"><value>Banners</value></data>
   <data name="Admin.ContentBlocks.Title" xml:space="preserve"><value>Content blocks</value></data>
@@ -2106,8 +2234,8 @@
   <data name="Admin.Banners.Field.BodyAr" xml:space="preserve"><value>Body (Arabic)</value></data>
   <data name="Admin.Banners.Field.ImageUrl" xml:space="preserve"><value>Image URL</value></data>
   <data name="Admin.Banners.Field.LinkUrl" xml:space="preserve"><value>Click-through URL</value></data>
-  <data name="Admin.Banners.Field.StartUtc" xml:space="preserve"><value>Start (Saudi time)</value></data>
-  <data name="Admin.Banners.Field.EndUtc" xml:space="preserve"><value>End (Saudi time)</value></data>
+  <data name="Admin.Banners.Field.Start" xml:space="preserve"><value>Start (Saudi time)</value></data>
+  <data name="Admin.Banners.Field.End" xml:space="preserve"><value>End (Saudi time)</value></data>
   <data name="Admin.Banners.Field.DisplayOrder" xml:space="preserve"><value>Display order</value></data>
   <data name="Admin.Banners.Field.IsActive" xml:space="preserve"><value>Active</value></data>
   <data name="Admin.Banners.Submit" xml:space="preserve"><value>Save</value></data>
@@ -2116,8 +2244,8 @@
   <data name="Admin.Banners.Saved" xml:space="preserve"><value>Banner saved.</value></data>
   <data name="Admin.Banners.Deleted" xml:space="preserve"><value>Banner deleted.</value></data>
   <data name="Admin.Banners.Col.Title" xml:space="preserve"><value>Title</value></data>
-  <data name="Admin.Banners.Col.StartUtc" xml:space="preserve"><value>Start</value></data>
-  <data name="Admin.Banners.Col.EndUtc" xml:space="preserve"><value>End</value></data>
+  <data name="Admin.Banners.Col.Start" xml:space="preserve"><value>Start</value></data>
+  <data name="Admin.Banners.Col.End" xml:space="preserve"><value>End</value></data>
   <data name="Admin.Banners.Col.DisplayOrder" xml:space="preserve"><value>Order</value></data>
   <data name="Admin.Banners.Col.Active" xml:space="preserve"><value>Active</value></data>
   <!-- D-176 (gap doc G12) — AI module CP -->
@@ -2266,12 +2394,30 @@
   <data name="Admin.HallSeatLayouts.Field.RowLabels" xml:space="preserve"><value>Row labels (comma-separated, 1–26 entries, e.g. A,B,C,VIP)</value></data>
   <data name="Admin.HallSeatLayouts.Field.SeatsPerRow" xml:space="preserve"><value>Seats per row (1–80)</value></data>
   <data name="Admin.HallSeatLayouts.Field.RowSeats" xml:space="preserve"><value>Seats in each row (1–80)</value></data>
+  <!-- D-771 (owner 2026-07-26) — per-row seat tiers -->
+  <data name="Admin.HallSeatLayouts.Field.RowTiers" xml:space="preserve"><value>Seat tier of each row</value></data>
+  <data name="Admin.HallSeatLayouts.TierHint" xml:space="preserve"><value>A new row starts as VVIP reserved. VVIP seats cannot be booked by anyone — assign them from the session seat plan with a guest note. VIP seats can only be booked by VIP guests; Normal seats are open to every visitor.</value></data>
+  <data name="Admin.HallSeatLayouts.Tier.Normal" xml:space="preserve"><value>Normal</value></data>
+  <data name="Admin.HallSeatLayouts.Tier.Vip" xml:space="preserve"><value>VIP</value></data>
+  <data name="Admin.HallSeatLayouts.Tier.Vvip" xml:space="preserve"><value>VVIP (reserved)</value></data>
   <data name="Admin.HallSeatLayouts.HallCapacity" xml:space="preserve"><value>Hall capacity</value></data>
   <data name="Admin.HallSeatLayouts.LayoutCapacity" xml:space="preserve"><value>Layout capacity</value></data>
   <data name="Admin.HallSeatLayouts.TotalSeats" xml:space="preserve"><value>Total seats</value></data>
   <data name="Admin.HallSeatLayouts.CapacityExceeded" xml:space="preserve"><value>The total seats exceed the hall capacity, or a row is outside 1–80. Adjust the counts before saving.</value></data>
   <data name="Admin.HallSeatLayouts.Save" xml:space="preserve"><value>Save layout</value></data>
   <data name="Admin.HallSeatLayouts.Saved" xml:space="preserve"><value>Layout saved.</value></data>
+  <data name="Admin.HallSeatLayouts.Delete" xml:space="preserve"><value>Remove layout</value></data>
+  <data name="Admin.HallSeatLayouts.Delete.Title" xml:space="preserve"><value>Remove this seat layout?</value></data>
+  <data name="Admin.HallSeatLayouts.Delete.Confirm" xml:space="preserve"><value>The hall goes back to general admission: every session in it is joined with one tap and no visitor picks a seat. Existing bookings must be released first. You can define a new layout at any time.</value></data>
+  <data name="Admin.HallSeatLayouts.Delete.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.HallSeatLayouts.Deleted" xml:space="preserve"><value>Layout removed. The hall is now general admission.</value></data>
+  <data name="Admin.HallSeatLayouts.DeleteFailed" xml:space="preserve"><value>Could not remove the seat layout.</value></data>
+  <data name="Admin.HallSeatLayouts.Validation.RowCount" xml:space="preserve"><value>Enter between {0} and {1} row labels. To leave the hall with no seat map at all, use Remove layout.</value></data>
+  <data name="Admin.HallSeatLayouts.Validation.RowLabelLength" xml:space="preserve"><value>Each row label must be {0} characters or fewer.</value></data>
+  <data name="Admin.HallSeatLayouts.Validation.RowLabelDuplicate" xml:space="preserve"><value>Row labels must be unique.</value></data>
+  <data name="Admin.HallSeatLayouts.Validation.RowLabelsTooLong" xml:space="preserve"><value>All row labels together must be {0} characters or fewer.</value></data>
+  <data name="Admin.HallSeatLayouts.Validation.SeatCount" xml:space="preserve"><value>Each row's seat count must be between {0} and {1}.</value></data>
+  <data name="Admin.HallSeatLayouts.Validation.Capacity" xml:space="preserve"><value>Layout capacity ({0}) exceeds hall capacity ({1}).</value></data>
   <data name="Admin.HallSeatLayouts.RowsBySeats" xml:space="preserve"><value>{0} rows × {1} seats per row</value></data>
   <data name="Admin.HallSeatLayouts.Capacity.Over" xml:space="preserve"><value>Layout capacity exceeds the hall capacity. Reduce the rows or seats per row before saving.</value></data>
   <data name="Admin.HallSeatLayouts.Preview.Title" xml:space="preserve"><value>Layout preview</value></data>
@@ -2282,23 +2428,40 @@
   <data name="Admin.SessionSeatPlans.Legend.User" xml:space="preserve"><value>Reserved (attendee)</value></data>
   <data name="Admin.SessionSeatPlans.Legend.Admin" xml:space="preserve"><value>Reserved (admin)</value></data>
   <data name="Admin.SessionSeatPlans.Legend.Random" xml:space="preserve"><value>Random</value></data>
-  <data name="Admin.SessionSeatPlans.Seat.ReservedTitle" xml:space="preserve"><value>Seat {0} — {1}</value></data>
+  <!-- DEF-SEA-001 — {0} seat, {1} kind, {2} holder: the tooltip must name whose seat it is. -->
+  <data name="Admin.SessionSeatPlans.Seat.ReservedTitle" xml:space="preserve"><value>Seat {0} — {1} — held by {2}</value></data>
   <data name="Admin.SessionSeatPlans.Seat.FreeTitle" xml:space="preserve"><value>Reserve seat {0} for a VIP</value></data>
   <data name="Admin.SessionSeatPlans.Pick" xml:space="preserve"><value>Select a session</value></data>
   <data name="Admin.SessionSeatPlans.None" xml:space="preserve"><value>No sessions available.</value></data>
   <data name="Admin.SessionSeatPlans.NoReservations" xml:space="preserve"><value>No active reservations on this session.</value></data>
   <data name="Admin.SessionSeatPlans.Loading" xml:space="preserve"><value>Loading…</value></data>
   <data name="Admin.SessionSeatPlans.LoadFailed" xml:space="preserve"><value>Could not load session seat plan.</value></data>
-  <data name="Admin.SessionSeatPlans.Hint" xml:space="preserve"><value>Paint an entire row as admin-reserved (blocks the row from visitor self-pick), tap a free seat to reserve it for a VIP, or tap a reserved seat to release it.</value></data>
+  <data name="Admin.SessionSeatPlans.Hint" xml:space="preserve"><value>Paint an entire row as admin-reserved (blocks the row from visitor self-pick), tap a free seat to reserve it for a VIP, or tap a held seat to release it — you are asked to confirm and shown who holds it first.</value></data>
   <data name="Admin.SessionSeatPlans.ReserveRow.Label" xml:space="preserve"><value>Row to reserve (must exist in the hall layout)</value></data>
   <data name="Admin.SessionSeatPlans.ReserveRow.Action" xml:space="preserve"><value>Reserve row</value></data>
   <data name="Admin.SessionSeatPlans.ReserveRow.Done" xml:space="preserve"><value>Row reserved.</value></data>
   <data name="Admin.SessionSeatPlans.ReserveSeat.Done" xml:space="preserve"><value>Seat reserved for a VIP.</value></data>
+  <!-- D-771 (owner 2026-07-26) — the manual guest note on a VVIP seat -->
+  <data name="Admin.SessionSeatPlans.GuestHint.Arabic" xml:space="preserve"><value>Guest note (Arabic)</value></data>
+  <data name="Admin.SessionSeatPlans.GuestHint.English" xml:space="preserve"><value>Guest note (English)</value></data>
+  <data name="Admin.SessionSeatPlans.GuestHint.Hint" xml:space="preserve"><value>A VVIP seat has no registration. Type the guest note here, then tap the seat on the plan to hold it — the note is what the app and the staff seating desk show for that seat.</value></data>
   <data name="Admin.SessionSeatPlans.Col.Row" xml:space="preserve"><value>Row</value></data>
   <data name="Admin.SessionSeatPlans.Col.Seat" xml:space="preserve"><value>Seat</value></data>
   <data name="Admin.SessionSeatPlans.Col.Kind" xml:space="preserve"><value>Kind</value></data>
   <data name="Admin.SessionSeatPlans.Col.Actions" xml:space="preserve"><value>Actions</value></data>
+  <!-- DEF-SEA-001 — who holds each seat, and A11's real four-state read-out. -->
+  <data name="Admin.SessionSeatPlans.Col.Holder" xml:space="preserve"><value>Held by</value></data>
+  <data name="Admin.SessionSeatPlans.Col.State" xml:space="preserve"><value>State</value></data>
+  <data name="Admin.SessionSeatPlans.Holder.AdminBlock" xml:space="preserve"><value>Admin block (no attendee)</value></data>
+  <data name="Admin.SessionSeatPlans.OpenSeating" xml:space="preserve"><value>General admission</value></data>
+  <data name="Admin.SessionSeatPlans.State.Unavailable" xml:space="preserve"><value>Unavailable</value></data>
+  <data name="Admin.SessionSeatPlans.State.Reserved" xml:space="preserve"><value>Reserved</value></data>
+  <data name="Admin.SessionSeatPlans.State.Confirmed" xml:space="preserve"><value>Confirmed (checked in)</value></data>
   <data name="Admin.SessionSeatPlans.Release" xml:space="preserve"><value>Release</value></data>
+  <!-- DEF-SEA-001 — the release confirmation: {0} seat, {1} holder. -->
+  <data name="Admin.SessionSeatPlans.Release.Title" xml:space="preserve"><value>Release this seat?</value></data>
+  <data name="Admin.SessionSeatPlans.Release.Message" xml:space="preserve"><value>Seat {0} is held by {1}. Releasing it frees the seat for someone else and cannot be undone. The attendee is notified.</value></data>
+  <data name="Admin.SessionSeatPlans.Release.Cancel" xml:space="preserve"><value>Keep the seat</value></data>
   <data name="Admin.SessionSeatPlans.Released" xml:space="preserve"><value>Reservation released.</value></data>
   <data name="Admin.SessionSeatPlans.Summary" xml:space="preserve"><value>{0} active reservation(s)</value></data>
 
@@ -2315,6 +2478,9 @@
   <data name="Admin.SpeakerMeetingRequests.Resend" xml:space="preserve"><value>Resend speaker confirmation</value></data>
   <data name="Admin.SpeakerMeetingRequests.Resend.Done" xml:space="preserve"><value>The speaker confirmation email was re-sent.</value></data>
   <data name="Admin.SpeakerMeetingRequests.Resend.ConfirmMsg" xml:space="preserve"><value>Re-send the confirmation email with fresh 72-hour links?</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Reopen" xml:space="preserve"><value>Reopen request</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Reopen.Done" xml:space="preserve"><value>The request was reopened and is pending again.</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Reopen.ConfirmMsg" xml:space="preserve"><value>Reopen this declined or cancelled request? It goes back to pending and any earlier decision, note and hall booking are cleared.</value></data>
   <data name="Admin.SpeakerMeetingRequests.Filter.Cancelled" xml:space="preserve"><value>Cancelled</value></data>
   <data name="Admin.SpeakerMeetingRequests.Bind.Hall" xml:space="preserve"><value>Bind to hall (optional)</value></data>
   <data name="Admin.SpeakerMeetingRequests.Bind.NoHall" xml:space="preserve"><value>— No hall (accept only) —</value></data>
@@ -2702,6 +2868,9 @@
   <data name="Admin.RatingConfig.Title" xml:space="preserve"><value>Rating configuration</value></data>
   <data name="Admin.RatingConfig.LoadFailed" xml:space="preserve"><value>Could not load rating configuration. Please try again.</value></data>
   <data name="Admin.RatingConfig.Saved" xml:space="preserve"><value>Saved.</value></data>
+  <data name="Admin.RatingConfig.Type.Required" xml:space="preserve"><value>A code and both names (English and Arabic) are required.</value></data>
+  <data name="Admin.RatingConfig.Group.Required" xml:space="preserve"><value>Both group names (English and Arabic) are required.</value></data>
+  <data name="Admin.RatingConfig.Question.Required" xml:space="preserve"><value>Both question texts (English and Arabic) are required.</value></data>
   <data name="Admin.RatingConfig.Deactivated" xml:space="preserve"><value>Deactivated.</value></data>
   <data name="Admin.RatingConfig.Save" xml:space="preserve"><value>Save</value></data>
   <data name="Admin.RatingConfig.Cancel" xml:space="preserve"><value>Cancel</value></data>
@@ -2881,6 +3050,17 @@
   <data name="Admin.Exhibitors.Provision.Done" xml:space="preserve"><value>Account provisioned. It is pending approval.</value></data>
   <data name="Admin.Exhibitors.Provision.Required" xml:space="preserve"><value>The contact name and email are both required.</value></data>
   <data name="Admin.Exhibitors.Provision.Failed" xml:space="preserve"><value>Could not provision the account. Please try again.</value></data>
+
+  <!-- D-781 - attach an EXISTING account to this exhibitor (the Others-pipeline lockout fix). -->
+  <data name="Admin.Exhibitors.Link.Heading" xml:space="preserve"><value>Link an existing account</value></data>
+  <data name="Admin.Exhibitors.Link.Hint" xml:space="preserve"><value>Use this for an account that already exists (for example one created on the Others page). It must already carry an exhibitor profile type.</value></data>
+  <data name="Admin.Exhibitors.Link.Email" xml:space="preserve"><value>Account email</value></data>
+  <data name="Admin.Exhibitors.Link.ContactName" xml:space="preserve"><value>Contact name (optional)</value></data>
+  <data name="Admin.Exhibitors.Link.RoleLabel" xml:space="preserve"><value>Role label (optional)</value></data>
+  <data name="Admin.Exhibitors.Link.Submit" xml:space="preserve"><value>Link account</value></data>
+  <data name="Admin.Exhibitors.Link.Done" xml:space="preserve"><value>Account linked to this exhibitor.</value></data>
+  <data name="Admin.Exhibitors.Link.Required" xml:space="preserve"><value>The account email is required.</value></data>
+  <data name="Admin.Exhibitors.Link.Failed" xml:space="preserve"><value>Could not link the account. Please try again.</value></data>
 
   <!-- Gates operations dashboard (read-only live overview). -->
   <data name="Module.GatesDashboard" xml:space="preserve"><value>Gates dashboard</value></data>
@@ -3124,6 +3304,10 @@
   <data name="Grid.FilterColumn" xml:space="preserve"><value>Filter column</value></data>
   <data name="Grid.FilterPlaceholder" xml:space="preserve"><value>Search</value></data>
   <data name="Grid.Loading" xml:space="preserve"><value>Loading…</value></data>
+  <data name="Grid.Working" xml:space="preserve"><value>Working…</value></data>
+  <data name="Grid.MoveUp" xml:space="preserve"><value>Up</value></data>
+  <data name="Grid.MoveDown" xml:space="preserve"><value>Down</value></data>
+  <data name="Grid.Remove" xml:space="preserve"><value>Remove</value></data>
   <data name="Grid.Empty" xml:space="preserve"><value>No records yet.</value></data>
   <data name="Grid.Prev" xml:space="preserve"><value>Previous</value></data>
   <data name="Grid.Next" xml:space="preserve"><value>Next</value></data>
@@ -3140,6 +3324,9 @@
   <data name="Grid.Details" xml:space="preserve"><value>Details</value></data>
   <data name="Grid.Delete" xml:space="preserve"><value>Delete</value></data>
   <data name="Grid.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Shell.Error.Unhandled" xml:space="preserve"><value>An unhandled error has occurred.</value></data>
+  <data name="Shell.Error.Reload" xml:space="preserve"><value>Reload</value></data>
+  <data name="Shell.Error.Dismiss" xml:space="preserve"><value>Dismiss</value></data>
   <data name="Grid.Active" xml:space="preserve"><value>Active</value></data>
   <data name="Grid.Inactive" xml:space="preserve"><value>Inactive</value></data>
   <data name="Grid.Export" xml:space="preserve"><value>Export</value></data>
@@ -3276,7 +3463,11 @@
   <data name="Admin.Invitations.Saved" xml:space="preserve"><value>Invitation saved.</value></data>
   <data name="Admin.Invitations.Fallback" xml:space="preserve"><value>The operation could not be completed.</value></data>
   <data name="Admin.Sessions.Delete.Title" xml:space="preserve"><value>Deactivate session</value></data>
-  <data name="Admin.Sessions.Delete.Message" xml:space="preserve"><value>Deactivate the session "{0}"? It will be hidden from the public programme.</value></data>
+  <data name="Admin.Sessions.Delete.Message" xml:space="preserve"><value>Deactivate the session "{0}"? It will be hidden from the public programme, and everyone who booked or saved it is told it was cancelled.</value></data>
+  <data name="Admin.Sessions.Release.Title" xml:space="preserve"><value>This change releases every held seat</value></data>
+  <data name="Admin.Sessions.Release.Message" xml:space="preserve"><value>Changing the hall or the start/end time invalidates every seat already held for this session: {0} attendee registration(s) and {1} admin-reserved row block(s) will be released. The attendees are notified by app and email and must book again; the row blocks have to be re-created by hand. Continue?</value></data>
+  <data name="Admin.Sessions.Release.Confirm" xml:space="preserve"><value>Release and save</value></data>
+  <data name="Admin.Sessions.UpdatedWithReleases" xml:space="preserve"><value>Session "{0}" was updated. {1} attendee registration(s) and {2} admin-reserved row block(s) were released — the attendees were notified; re-create the row blocks.</value></data>
   <data name="Module.MediaLibrary" xml:space="preserve"><value>Media library</value></data>
   <data name="Admin.MediaLibrary.Title" xml:space="preserve"><value>Media library</value></data>
   <data name="Admin.MediaLibrary.Col.Category" xml:space="preserve"><value>Category</value></data>

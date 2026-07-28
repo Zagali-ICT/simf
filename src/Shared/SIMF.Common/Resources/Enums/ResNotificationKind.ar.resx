@@ -37,4 +37,6 @@
   <data name="MeetingRequested" xml:space="preserve"><value>لديك طلب اجتماع</value></data>
   <data name="MeetingReminder" xml:space="preserve"><value>يبدأ الاجتماع قريباً</value></data>
   <data name="AdminAnnouncement" xml:space="preserve"><value>إعلان من SIMF</value></data>
+  <data name="ExhibitorLeadCaptured" xml:space="preserve"><value>تمت مشاركة بياناتك مع أحد العارضين</value></data>
+  <data name="SessionCancelled" xml:space="preserve"><value>تم إلغاء الجلسة</value></data>
 </root>

@@ -6,10 +6,21 @@ import '../data/request_models.dart';
 
 /// The localized label for a request [status] (shared by the status chips + the
 /// expanded card detail).
-String requestStatusLabel(AppL10n l10n, AppRequestStatus status) {
+///
+/// QA B12 — an accepted meeting an operator checked in at the hall reads
+/// **attended**, not "accepted": the check-in used to be invisible to the
+/// requester because the server folds its internal `Done` state back onto
+/// `accepted` for the shipped wire contract. [checkedIn] carries it across.
+String requestStatusLabel(
+  AppL10n l10n,
+  AppRequestStatus status, {
+  bool checkedIn = false,
+}) {
   switch (status) {
     case AppRequestStatus.accepted:
-      return l10n.requestStatusAccepted;
+      return checkedIn
+          ? l10n.requestStatusAttended
+          : l10n.requestStatusAccepted;
     case AppRequestStatus.rejected:
       return l10n.requestStatusRejected;
     case AppRequestStatus.cancelled:

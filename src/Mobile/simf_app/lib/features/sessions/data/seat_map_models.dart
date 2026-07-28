@@ -74,6 +74,53 @@ enum SeatSelectionMode {
   }
 }
 
+/// D-771 — the seat TIER of a hall-layout row, mirroring
+/// `SIMF.Common.Enums.SeatTier` (int-backed: Normal=0, Vip=1, Vvip=2). The tier is
+/// real data on the layout, not a label: it decides who may reserve the seat.
+/// [fromJson] decodes tolerantly (int OR name; unknown → [normal], which is also
+/// what a server that predates D-771 implies by omitting the key).
+enum SeatTier {
+  normal(0, 'Normal'),
+  vip(1, 'Vip'),
+  vvip(2, 'Vvip');
+
+  const SeatTier(this.wireValue, this.wireName);
+
+  final int wireValue;
+  final String wireName;
+
+  /// Protocol seating — nobody may self-reserve it; an administrator assigns it
+  /// with a manual guest note.
+  bool get isVvip => this == SeatTier.vvip;
+
+  /// Whether a visitor may self-reserve a seat of this tier. Mirrors the server's
+  /// single rule (`SeatReservationService.IsSelfReservable`) so the grid greys out
+  /// exactly the seats the API would refuse — the server still re-checks.
+  bool selfReservableBy({required bool callerIsVip}) => switch (this) {
+        SeatTier.vvip => false,
+        SeatTier.vip => callerIsVip,
+        SeatTier.normal => true,
+      };
+
+  static SeatTier fromJson(Object? value) {
+    if (value is String) {
+      for (final tier in values) {
+        if (tier.wireName == value) {
+          return tier;
+        }
+      }
+    } else if (value is num) {
+      final asInt = value.toInt();
+      for (final tier in values) {
+        if (tier.wireValue == asInt) {
+          return tier;
+        }
+      }
+    }
+    return SeatTier.normal;
+  }
+}
+
 /// The booking-approval state of a reservation — mirrors
 /// `SIMF.Common.Enums.BookingStatus` (int-backed: Pending=0, Approved=1,
 /// Rejected=2, Cancelled=3). A fresh booking/join is [pending] until the Control
@@ -153,6 +200,9 @@ class SeatCell {
     required this.kind,
     this.reservationId,
     this.status = BookingStatus.pending,
+    this.checkedIn = false,
+    this.guestHint,
+    this.guestHintArabic,
   });
 
   final String? reservationId;
@@ -160,10 +210,37 @@ class SeatCell {
   final int seatNumber;
   final SeatReservationKind kind;
 
+  /// D-771 — the administrator's manual guest note on a VVIP seat (append-only
+  /// wire keys `guestHint` / `guestHintArabic`). A VVIP seat has no registration,
+  /// so this text is the occupant record the seat tooltip shows. Null everywhere
+  /// else.
+  final String? guestHint;
+  final String? guestHintArabic;
+
+  /// The locale-appropriate guest note, falling back to the other language, then
+  /// null when the admin typed neither.
+  String? localizedGuestHint(bool isArabic) {
+    final ar = (guestHintArabic ?? '').trim();
+    final en = (guestHint ?? '').trim();
+    final primary = isArabic ? ar : en;
+    if (primary.isNotEmpty) {
+      return primary;
+    }
+    final fallback = isArabic ? en : ar;
+    return fallback.isEmpty ? null : fallback;
+  }
+
   /// D-572 — the booking's approval state (append-only wire key `status`),
   /// used by the "my seat" card to switch its hint. Defaults to [pending] so an
   /// older server that omits the field reads as awaiting approval.
   final BookingStatus status;
+
+  /// A12 — the holder has an OPEN hall-attendance row for this session: they
+  /// scanned in at the gate, so the seat is **confirmed** (تم التأكيد)
+  /// rather than merely held. Wire key `checkedIn`, shipped since Wave 2 but
+  /// never decoded, which is why the fourth seat state could not render.
+  /// Defaults to false, so a server that omits it reads as "not yet arrived".
+  final bool checkedIn;
 
   /// A stable `row:seat` key for set membership (status derivation, L-2).
   String get key => '$rowLabel:$seatNumber';
@@ -174,6 +251,9 @@ class SeatCell {
         seatNumber: (json['seatNumber'] as num?)?.toInt() ?? 0,
         kind: SeatReservationKind.fromJson(json['kind']),
         status: BookingStatus.fromJson(json['status']),
+        checkedIn: json['checkedIn'] as bool? ?? false,
+        guestHint: json['guestHint'] as String?,
+        guestHintArabic: json['guestHintArabic'] as String?,
       );
 }
 
@@ -204,6 +284,8 @@ class SessionSeatMap {
     this.sessionTitleArabic,
     this.mode = SeatSelectionMode.assignedSeat,
     this.seatCounts = const <int>[],
+    this.seatTiers = const <SeatTier>[],
+    this.callerIsVip = false,
   });
 
   final List<String> rowLabels;
@@ -212,6 +294,18 @@ class SessionSeatMap {
   // `seatCounts`). Empty (or length-mismatched) → the grid stays uniform via
   // [seatsPerRow]; see [seatsInRow].
   final List<int> seatCounts;
+
+  /// D-771 — per-row seat TIERS PARALLEL to [rowLabels] (append-only wire key
+  /// `seatTiers`). Empty (or length-mismatched) → every row reads as
+  /// [SeatTier.normal], which is exactly what a pre-D-771 server implies. Read a
+  /// row's tier through [tierOfRow].
+  final List<SeatTier> seatTiers;
+
+  /// D-771 — whether the SIGNED-IN caller is a VIP-tier visitor (append-only wire
+  /// key `callerIsVip`). Drives which rows the picker offers; the server re-checks
+  /// on every reserve, so this is a UX hint, never the gate.
+  final bool callerIsVip;
+
   final List<SeatCell> reservedCells;
   final SeatCell? myCell;
   final int activeReservedCount;
@@ -249,6 +343,34 @@ class SessionSeatMap {
     return seatsPerRow;
   }
 
+  /// D-771 — the tier of row [i] (0-based). Prefers [seatTiers] only when its
+  /// length matches [rowLabels]; otherwise (absent or length-mismatched) every row
+  /// reads [SeatTier.normal], the pre-D-771 behaviour.
+  SeatTier tierOfRow(int i) {
+    if (seatTiers.length == rowLabels.length &&
+        i >= 0 &&
+        i < seatTiers.length) {
+      return seatTiers[i];
+    }
+    return SeatTier.normal;
+  }
+
+  /// D-771 — whether THIS caller may self-reserve a seat in row [i]. Mirrors the
+  /// server rule so the grid pre-disables exactly what the API would refuse.
+  bool canReserveRow(int i) =>
+      tierOfRow(i).selfReservableBy(callerIsVip: callerIsVip);
+
+  /// True when at least one row carries a tier above Normal — the picker only
+  /// shows the tier legend/explanation for a tiered hall.
+  bool get hasTiers {
+    for (var i = 0; i < rowLabels.length; i++) {
+      if (tierOfRow(i) != SeatTier.normal) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   /// The widest row's seat count — the number of seat COLUMNS the grid sizes to
   /// so every row draws identically-sized squares. Plain loop (no `dart:math`).
   int get maxSeatsPerRow {
@@ -277,6 +399,24 @@ class SessionSeatMap {
   /// The `row:seat` keys of every occupied seat — built once for O(1) lookup.
   Set<String> reservedKeys() =>
       <String>{for (final cell in reservedCells) cell.key};
+
+  /// A12 — every occupied seat by its `row:seat` key, so the grid can read
+  /// the CELL (and therefore [SeatCell.checkedIn]) and not just "is it
+  /// taken". Built once per render, like [reservedKeys].
+  Map<String, SeatCell> reservedByKey() =>
+      <String, SeatCell>{for (final cell in reservedCells) cell.key: cell};
+
+  /// A12 — true when at least one seat is confirmed (its holder checked in).
+  /// The confirmed legend entry only appears for a hall that actually has
+  /// one, mirroring how [hasTiers] gates the tier legend.
+  bool get hasConfirmed {
+    for (final cell in reservedCells) {
+      if (cell.checkedIn) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   bool isMine(String rowLabel, int seatNumber) =>
       myCell != null &&
@@ -307,6 +447,10 @@ class SessionSeatMap {
       sessionTitle: json['sessionTitle'] as String?,
       sessionTitleArabic: json['sessionTitleArabic'] as String?,
       mode: SeatSelectionMode.fromJson(json['mode']),
+      seatTiers: (json['seatTiers'] as List? ?? const <dynamic>[])
+          .map(SeatTier.fromJson)
+          .toList(growable: false),
+      callerIsVip: json['callerIsVip'] as bool? ?? false,
     );
   }
 }

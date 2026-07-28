@@ -1,0 +1,11 @@
+/* BUG-018 (18-6) - the gate detail view lists the assigned operators (name +
+   email) instead of a bare count. Plain list, no bullets, tokens only. */
+
+.gate-details__operators {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}

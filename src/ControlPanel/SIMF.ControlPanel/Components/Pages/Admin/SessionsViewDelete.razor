@@ -93,13 +93,15 @@
             </label>
             <div class="simf-form__actions">
                 <SimfButton Type="button" Loading="_recordingBusy"
-                            OnClick="UploadRecordingAsync">
+                            OnClick="UploadRecordingAsync"
+                            LoadingLabel="@L["Grid.Working"]">
                     @L["Admin.Sessions.Recording.Upload"]
                 </SimfButton>
                 @if (_target.HasRecording)
                 {
                     <SimfButton Type="button" Loading="_recordingBusy"
-                                OnClick="DeleteRecordingAsync">
+                                OnClick="DeleteRecordingAsync"
+                                LoadingLabel="@L["Grid.Working"]">
                         @L["Admin.Sessions.Recording.Delete"]
                     </SimfButton>
                 }

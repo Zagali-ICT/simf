@@ -1,8 +1,20 @@
 <Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(Pages.NotFound)">
     <Found Context="routeData">
         <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
-            <NotAuthorized>
-                <RedirectToLogin />
+            @* §6.16 (NAV-001) — AuthorizeRouteView renders <NotAuthorized> for BOTH
+               the unauthenticated case and the authenticated-but-forbidden case.
+               With no branch here, every permission denial on the 86 gated CP pages
+               force-reloaded a signed-in admin onto /login, which reads as "your
+               session expired" rather than "you may not open this page". *@
+            <NotAuthorized Context="authenticationState">
+                @if (authenticationState.User.Identity?.IsAuthenticated == true)
+                {
+                    <RedirectToNotPermitted />
+                }
+                else
+                {
+                    <RedirectToLogin />
+                }
             </NotAuthorized>
         </AuthorizeRouteView>
         <FocusOnNavigate RouteData="routeData" Selector="h1" />

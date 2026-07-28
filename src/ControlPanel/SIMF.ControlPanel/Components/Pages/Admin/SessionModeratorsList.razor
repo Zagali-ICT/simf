@@ -14,7 +14,9 @@
     <div class="simf-surface">
         @if (_toast is not null)
         {
-            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            <div class="simf-toast">
+                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            </div>
         }
 
         <SimfDataGrid TItem="AdminSessionModeratorRow"
@@ -29,7 +31,7 @@
                       ExportLabel="@L["Grid.Export"]"
                       Caption="@L["Admin.SessionModerators.Title"]"
                       FilterColumnLabel="@L["Grid.FilterColumn"]"
-                      OnAdd="OnAdd"
+                      OnAdd="OnAddAsync"
                       PrevLabel="@L["Grid.Prev"]"
                       NextLabel="@L["Grid.Next"]"
                       FirstLabel="@L["Grid.First"]"
@@ -71,7 +73,7 @@
                 @* Page-specific quiet action: revoke this moderator grant. *@
                 <AuthorizedAction Permission="@PermissionCatalog.SessionModerators.Revoke">
                     <SimfToolbarButton Icon="link-off" Title="@L["Admin.SessionModerators.Revoke"]"
-                                       OnClick="@(() => RevokeAsync(context))" />
+                                       OnClick="@(() => AskRevoke(context))" />
                 </AuthorizedAction>
             </RowActions>
             <EmptyTemplate>
@@ -84,28 +86,66 @@
 @if (_addOpen)
 {
     <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.SessionModerators.Add.Title"]"
-               OnClose="@(() => _addOpen = false)">
+               OnClose="@(() => _addOpen = false)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
+            @* The page-level toast sits under the modal backdrop, so a rejected
+               submit must report inside the dialog or it reads as a dead button. *@
+            @if (_error is not null)
+            {
+                <SimfAlert Variant="error">@_error</SimfAlert>
+            }
+            @* DEF-MOD-005 — real pickers, not free-text GUIDs: the session list is
+               the active sessions and the moderator list is the accounts eligible
+               to moderate (approved + a profile type whose app role is Moderator).
+               The server re-checks both on assign. *@
             <div class="simf-form__fields">
-                <SimfTextField Label="@L["Admin.SessionModerators.Field.SessionId"]"
-                               Value="@_newSessionId"
-                               ValueChanged="@(v => _newSessionId = v)"
-                               ValueExpression="@(() => _newSessionId)"
-                               Disabled="_busy" />
-                <SimfTextField Label="@L["Admin.SessionModerators.Field.UserId"]"
-                               Value="@_newUserId"
-                               ValueChanged="@(v => _newUserId = v)"
-                               ValueExpression="@(() => _newUserId)"
-                               Disabled="_busy" />
+                @if (_optionsError)
+                {
+                    <SimfAlert Variant="error">@L["Admin.SessionModerators.OptionsFailed"]</SimfAlert>
+                }
+                <SimfSelect TValue="SessionModeratorSessionOption"
+                            Label="@L["Admin.SessionModerators.Field.Session"]"
+                            Placeholder="@L["Admin.SessionModerators.Field.Session"]"
+                            Items="_sessionOptions"
+                            ValueFor="@(s => s.Id.ToString())"
+                            LabelFor="@(s => SessionOptionLabel(s))"
+                            Value="_newSession"
+                            ValueChanged="@(s => _newSession = s)"
+                            Disabled="_busy || _optionsLoading" />
+                @if (_candidates.Count == 0 && !_optionsLoading && !_optionsError)
+                {
+                    <SimfAlert Variant="info">@L["Admin.SessionModerators.NoCandidates"]</SimfAlert>
+                }
+                <SimfSelect TValue="SessionModeratorCandidate"
+                            Label="@L["Admin.SessionModerators.Field.Moderator"]"
+                            Placeholder="@L["Admin.SessionModerators.Field.Moderator"]"
+                            Items="_candidates"
+                            ValueFor="@(c => c.UserId.ToString())"
+                            LabelFor="@(c => CandidateLabel(c))"
+                            Value="_newCandidate"
+                            ValueChanged="@(c => _newCandidate = c)"
+                            Disabled="_busy || _optionsLoading || _candidates.Count == 0" />
             </div>
         </ChildContent>
         <Footer>
             <SimfButton Type="button" Variant="secondary" OnClick="@(() => _addOpen = false)">
                 @L["Admin.SessionModerators.Cancel"]
             </SimfButton>
-            <SimfButton Type="button" OnClick="SubmitAssignAsync" Loading="_busy">
+            <SimfButton Type="button" OnClick="SubmitAssignAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.SessionModerators.Submit"]
             </SimfButton>
         </Footer>
     </SimfModal>
 }
+
+@* §6.16 (F-U5-010) — Revoke is destructive and used to fire on the first click. *@
+<SimfConfirm Open="@(_revokeTarget is not null)"
+             Danger="true"
+             Busy="_busy"
+             Title="@L["Admin.SessionModerators.Revoke.Confirm.Title"]"
+             Message="@(_revokeTarget is null ? string.Empty : string.Format(L["Admin.SessionModerators.Revoke.Confirm.Message"], _revokeTarget.ModeratorDisplayName, _revokeTarget.SessionTitle))"
+             ConfirmLabel="@L["Admin.SessionModerators.Revoke"]"
+             CancelLabel="@L["Common.Cancel"]"
+             OnConfirm="ConfirmRevokeAsync"
+             OnCancel="CancelRevoke" />

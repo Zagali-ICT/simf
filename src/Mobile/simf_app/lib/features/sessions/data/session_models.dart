@@ -263,8 +263,8 @@ class SessionListItem {
         hallId: json['hallId'] as String? ?? '',
         hallName: json['hallName'] as String? ?? '',
         hallNameArabic: json['hallNameArabic'] as String? ?? '',
-        start: _parseUtc(json['start']),
-        end: _parseUtc(json['end']),
+        start: parseWireUtc(json['start'], 'start'),
+        end: parseWireUtc(json['end'], 'end'),
         status: SessionStatus.fromJson(json['status']),
         speakers: _decodeSpeakers(json['speakers']),
         description: json['description'] as String?,
@@ -450,8 +450,8 @@ class SessionDetail {
         hallId: json['hallId'] as String? ?? '',
         hallName: json['hallName'] as String? ?? '',
         hallNameArabic: json['hallNameArabic'] as String? ?? '',
-        start: _parseUtc(json['start']),
-        end: _parseUtc(json['end']),
+        start: parseWireUtc(json['start'], 'start'),
+        end: parseWireUtc(json['end'], 'end'),
         speakers: _decodeSpeakers(json['speakers']),
         description: json['description'] as String?,
         descriptionArabic: json['descriptionArabic'] as String?,
@@ -569,19 +569,6 @@ List<SessionSpeaker> _decodeSpeakers(Object? data) =>
         .whereType<Map<dynamic, dynamic>>()
         .map((e) => SessionSpeaker.fromJson(e.cast<String, dynamic>()))
         .toList(growable: false);
-
-/// Parses an ISO-8601 wire timestamp into a UTC [DateTime] (the contract is
-/// always UTC). A missing / unparseable value falls back to the epoch in UTC so
-/// the model never holds a local-zone instant by accident.
-DateTime _parseUtc(Object? value) {
-  if (value is String && value.isNotEmpty) {
-    final parsed = DateTime.tryParse(value);
-    if (parsed != null) {
-      return parsed.toUtc();
-    }
-  }
-  return DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
-}
 
 /// Parses a date-only wire value (`yyyy-MM-dd`, the .NET `DateOnly`
 /// serialisation) into a local-midnight [DateTime] for the day strip / banner.

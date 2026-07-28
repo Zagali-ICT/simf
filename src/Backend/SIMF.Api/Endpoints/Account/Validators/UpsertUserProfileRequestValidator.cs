@@ -1,3 +1,6 @@
+// Tests: SIMF.Api.Tests/UserProfileTests.cs (DEF-PHN-004 — the mobile is
+//        REQUIRED: no-mobile-at-all and blank-an-existing-number are both 400,
+//        international-only satisfies the rule for a Saudi national)
 using FastEndpoints;
 using FluentValidation;
 using SIMF.Api.Endpoints.Auth.Validators;
@@ -38,27 +41,18 @@ public sealed class UpsertUserProfileRequestValidator
         new(@"^\+[1-9]\d{7,14}$",
             System.Text.RegularExpressions.RegexOptions.Compiled);
 
-    /// <summary>Strips the separators users habitually type (spaces and dashes)
-    /// and rewrites a leading international <c>00</c> prefix to <c>+</c> — so
-    /// "+9665 0123-4567", "+966501234567" and "009665..." validate alike,
-    /// mirroring the client's <c>normalizePhone</c> (owner 2026-07-06).</summary>
-    private static string NormalizePhone(string value)
-    {
-        var stripped = value.Replace(" ", string.Empty).Replace("-", string.Empty);
-        return stripped.StartsWith("00", StringComparison.Ordinal)
-            ? string.Concat("+", stripped.AsSpan(2))
-            : stripped;
-    }
-
     /// <summary>C4 (D-371) Saudi-mobile standard check — shared with the
-    /// walk-in registration validator so the rule lives once.</summary>
+    /// walk-in registration validator so the rule lives once. The separator
+    /// stripping is <see cref="MobileNumber.Normalize"/> — DEF-PHN-003 moved it
+    /// to <c>SIMF.Common</c> so the write paths canonicalise with the SAME
+    /// normaliser this rule matches against, instead of a second copy.</summary>
     public static bool IsStandardSaudiMobile(string value)
-        => SaudiMobileShape.IsMatch(NormalizePhone(value.Trim()));
+        => SaudiMobileShape.IsMatch(MobileNumber.Normalize(value));
 
     /// <summary>C4 (D-371) E.164 international-mobile standard check —
     /// shared with the walk-in registration validator.</summary>
     public static bool IsStandardInternationalMobile(string value)
-        => E164Shape.IsMatch(NormalizePhone(value.Trim()));
+        => E164Shape.IsMatch(MobileNumber.Normalize(value));
 
     /// <summary>C6 (D-459) Saudi vehicle-plate standard check — restricted to
     /// the official 17-letter set (Arabic or Latin), 3 letters + 1–4 digits,
@@ -72,8 +66,17 @@ public sealed class UpsertUserProfileRequestValidator
     // script characters), and each must be a full name of at least 2 parts
     // (D-683, relaxed from the short-lived D-674 ≥4 rule). The char restriction
     // guarantees every part is in the field's language.
+    //
+    // BUG-021 — the accepted class runs U+0621..U+0652: the Arabic letters and
+    // tatweel (U+0640) as before, PLUS the tashkeel marks U+064B..U+0652
+    // (fathatan … sukun, which includes the SHADDA U+0651). An ordinary Arabic
+    // name carries a shadda — the product's own seed data does — and the old
+    // U+0621..U+064A ceiling rejected it with "Arabic letters only". Arabic-Indic
+    // digits (U+0660..U+0669), Latin letters and punctuation stay rejected. The
+    // client mirror is `name_validation.dart` (arabicNameLettersOnly /
+    // arabicNameCharacters).
     private static readonly System.Text.RegularExpressions.Regex ArabicNameShape =
-        new(@"^[ء-ي\s]+$",
+        new(@"^[\u0621-\u0652\s]+$",
             System.Text.RegularExpressions.RegexOptions.Compiled);
     private static readonly System.Text.RegularExpressions.Regex EnglishNameShape =
         new(@"^[A-Za-z\s]+$",
@@ -262,6 +265,22 @@ public sealed class UpsertUserProfileRequestValidator
                     "Either Iqama or Passport number is required.",
                     "يجب إدخال رقم الإقامة أو رقم جواز السفر.");
         });
+
+        // DEF-PHN-004 — the mobile is REQUIRED, closing the D-723 backend
+        // follow-up ("the app now blocks an empty mobile … aligning the server is
+        // a backend follow-up"). It was mandatory on the app form and on the
+        // walk-in desk but optional here, so a save could still CLEAR the number
+        // the app then refuses to let the user submit without. The rule is the
+        // walk-in desk's, word for word: at least one mobile, Saudi or
+        // international — which is what the app always sends (exactly one, chosen
+        // by IsSaudi) and what keeps a Saudi national reachable on a foreign
+        // number.
+        RuleFor(request => request)
+            .Must(r => !string.IsNullOrWhiteSpace(r.SaudiMobile)
+                || !string.IsNullOrWhiteSpace(r.InternationalMobile))
+            .Bilingual(
+                "A mobile number is required (Saudi or international).",
+                "رقم الجوال مطلوب (سعودي أو دولي).");
 
         // C4 (D-371) — standard shapes, separators stripped first.
         RuleFor(request => request.SaudiMobile)

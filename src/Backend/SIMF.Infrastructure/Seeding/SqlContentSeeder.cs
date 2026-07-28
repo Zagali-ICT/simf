@@ -2,7 +2,12 @@
 using System.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using SIMF.Application.Files.Abstractions;
 using SIMF.Infrastructure.Persistence;
+// SIMF.Common.Enums is aliased, not imported: its ConnectionState collides with
+// System.Data.ConnectionState, which this seeder uses on the raw ADO.NET connection.
+using FileService = SIMF.Common.Enums.FileService;
+using FileSourceType = SIMF.Common.Enums.FileSourceType;
 
 namespace SIMF.Infrastructure.Seeding;
 
@@ -22,11 +27,41 @@ namespace SIMF.Infrastructure.Seeding;
 /// single command. The folder is located by walking up from the app base
 /// directory; when it is not found (e.g. a published production deployment) the
 /// runner logs and no-ops rather than throwing.</para>
+///
+/// <para><b>BUG-001 — companion file bytes.</b> A content file that seeds
+/// <c>StoredFile</c> rows (today only <c>SIMF_App_SpeakerPhotos.sql</c>) ships its
+/// bytes as a deployable folder next to it (D-718 file-asset pattern). Production
+/// copies that folder into <c>FileStorage:RootPath</c> by hand; nothing did so in
+/// Development / Testing, so every seeded row pointed at a storage key with no
+/// bytes and the image 404'd behind the UI's placeholder. <see cref="RunAsync"/>
+/// now materialises those bytes through <see cref="IFileStorageProvider"/> after
+/// the SQL is applied, and <b>deactivates</b> any seeded row whose bytes cannot be
+/// found — so a seeded asset reference either resolves to real bytes or is gone and
+/// the surface shows its proper empty state. Idempotent: a row whose bytes are
+/// already on disk is left untouched.</para>
 /// </summary>
 public sealed class SqlContentSeeder(
     SimfAppDbContext appDbContext,
+    IFileStorageProvider fileStorage,
     ILogger<SqlContentSeeder> logger)
 {
+    /// <summary>BUG-001 — the seeder actor the content SQL stamps on every row it
+    /// inserts (<c>@sys</c> in <c>docs/migrations/2026/*.sql</c>). The byte
+    /// materialisation only ever touches rows carrying this <c>CreatedBy</c>, so a
+    /// real admin upload is never inspected or deactivated.</summary>
+    private static readonly Guid SeederActorUserId = Guid.Empty;
+
+    /// <summary>BUG-001 — content file → (the file service whose rows it seeds, the
+    /// repo folder holding those rows' bytes, relative to
+    /// <c>docs/migrations/2026</c>). The byte file name is the storage key's leaf,
+    /// so the folder layout mirrors the on-disk store exactly.</summary>
+    private static readonly IReadOnlyDictionary<string, (FileService Service, string SourceFolder)>
+        CompanionFileBytes = new Dictionary<string, (FileService, string)>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["SIMF_App_SpeakerPhotos.sql"] =
+                (FileService.SpeakerPhoto, Path.Combine("speaker-photos", "speakerphoto")),
+        };
+
     /// <summary>The event-roster content files, in dependency order
     /// (speakers before their photos; programme before nothing else here).
     /// This is the set applied in <b>Testing</b>: it deliberately EXCLUDES
@@ -107,6 +142,74 @@ public sealed class SqlContentSeeder(
                 await connection.CloseAsync();
             }
         }
+
+        // BUG-001 — the SQL only wrote the StoredFile ROWS; put their bytes on disk
+        // (and retire any row whose bytes are missing) so no seeded asset reference
+        // is left pointing at nothing.
+        foreach (var fileName in fileNames)
+        {
+            if (!CompanionFileBytes.TryGetValue(fileName, out var companion)) { continue; }
+            await MaterialiseSeededFileBytesAsync(
+                Path.Combine(folder, companion.SourceFolder), companion.Service, cancellationToken);
+        }
+    }
+
+    /// <summary>BUG-001 — copies the repo-shipped bytes of every seeded
+    /// <paramref name="service"/> row into the file-storage root, so
+    /// <c>AssetService.ResolveAsync</c> streams a real image instead of 404-ing
+    /// behind the UI placeholder. Writes through <see cref="IFileStorageProvider"/>,
+    /// which rebuilds the SAME <c>{service}/{id:N}{ext}</c> key the SQL recorded, so
+    /// the row and the blob cannot drift. A row whose bytes are already on disk is
+    /// skipped (idempotent); a row with no source bytes is <b>deactivated</b> rather
+    /// than left as a broken reference. Only rows stamped with
+    /// <see cref="SeederActorUserId"/> are considered.</summary>
+    private async Task MaterialiseSeededFileBytesAsync(
+        string sourceFolder, FileService service, CancellationToken cancellationToken)
+    {
+        var rows = await appDbContext.StoredFiles
+            .Where(file => file.Service == service
+                && file.IsActive
+                && file.SourceType == FileSourceType.Upload
+                && file.CreatedBy == SeederActorUserId
+                && file.StorageKey != null)
+            .ToListAsync(cancellationToken);
+        if (rows.Count == 0) { return; }
+
+        var written = 0;
+        var retired = 0;
+        foreach (var row in rows)
+        {
+            var storageKey = row.StorageKey!;
+            if (await fileStorage.ReadAsync(storageKey, row.IsEncrypted, cancellationToken) is not null)
+            {
+                continue; // bytes already in place — idempotent skip.
+            }
+
+            var leaf = Path.GetFileName(storageKey.Replace('/', Path.DirectorySeparatorChar));
+            var sourcePath = Path.Combine(sourceFolder, leaf);
+            if (!File.Exists(sourcePath))
+            {
+                // No bytes anywhere: retire the row so the surface renders its empty
+                // state instead of a broken image (BUG-001 / root-cause class D-687).
+                row.Deactivate();
+                retired++;
+                continue;
+            }
+
+            var bytes = await File.ReadAllBytesAsync(sourcePath, cancellationToken);
+            await fileStorage.WriteAsync(
+                service, row.Id, Path.GetExtension(leaf), bytes, row.IsEncrypted, cancellationToken);
+            written++;
+        }
+
+        if (retired > 0)
+        {
+            await appDbContext.SaveChangesAsync(cancellationToken);
+        }
+        logger.LogInformation(
+            "Content-seed file bytes for {Service}: {Written} written, {Retired} retired (no source bytes), "
+            + "{Total} row(s) inspected.",
+            service, written, retired, rows.Count);
     }
 
     /// <summary>Walk up from the app base directory to find the repo's

@@ -1,4 +1,5 @@
 // Tests: SIMF.Api.Tests/SeatReservationsTests.cs
+// Tests: SIMF.Api.Tests/SeatChangeTests.cs (B1 — the change-seat endpoint)
 using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
@@ -117,6 +118,47 @@ public sealed class JoinOpenSeatingEndpoint(ISeatReservationService service)
     }
 }
 
+public sealed class MoveSeatRoute : MoveSeatRequest
+{
+    public Guid SessionId { get; set; }
+}
+
+/// <summary>B1 (owner "change seat") — move the caller's already-held seat to a
+/// different seat in the same session in ONE atomic step, so they are never left
+/// seatless by a cancel-then-rebook. 409 <c>SEAT_ALREADY_RESERVED</c> when the
+/// destination was taken first (the original seat stays held), 409
+/// <c>SEAT_MOVE_SAME_SEAT</c> for a no-op move, 409 <c>SEAT_TIER_*</c> when the
+/// destination's tier is out of reach, 409 <c>BOOKING_SESSION_STARTED</c> once the
+/// session has begun, 404 <c>SEAT_RESERVATION_NOT_FOUND</c> with no seat to
+/// move.</summary>
+public sealed class MoveSeatEndpoint(ISeatReservationService service)
+    : Endpoint<MoveSeatRoute, ApiResult<MySeatReservation>>
+{
+    public override void Configure()
+    {
+        Post("/app/sessions/{sessionId:guid}/seats/move");
+        Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Sessions");
+    }
+    public override async Task HandleAsync(MoveSeatRoute req, CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        await Send.OkAsync(ApiResult<MySeatReservation>.Ok(
+            await service.MoveAsync(req.SessionId, actorId,
+                // Re-projected so the route model cannot over-post onto the request.
+                new MoveSeatRequest
+                {
+                    RowLabel = req.RowLabel,
+                    SeatNumber = req.SeatNumber,
+                }, ct)), ct);
+    }
+}
+
 public sealed class ReleaseMySeatRoute { public Guid SessionId { get; set; } }
 
 public sealed class ReleaseMySeatEndpoint(ISeatReservationService service)
@@ -192,7 +234,38 @@ public sealed class SetHallSeatLayoutEndpoint(ISeatReservationService service)
                     // D-767 — carry the optional per-row seat counts through the
                     // over-post-safe re-projection.
                     SeatCounts = req.SeatCounts,
+                    // D-771 — and the per-row seat tiers.
+                    SeatTiers = req.SeatTiers,
                 }, ct)), ct);
+    }
+}
+
+public sealed class DeleteHallSeatLayoutRoute { public Guid HallId { get; set; } }
+
+/// <summary>B15 — remove a hall's seat layout so the hall reverts to general
+/// admission. Refused (409 <c>SEAT_LAYOUT_HAS_RESERVATIONS</c>) while any active
+/// seat-specific reservation would be stranded — the same rule the PUT applies to a
+/// shrinking layout change.</summary>
+public sealed class DeleteHallSeatLayoutEndpoint(ISeatReservationService service)
+    : Endpoint<DeleteHallSeatLayoutRoute, ApiResult<HallSeatLayoutSnapshot>>
+{
+    public override void Configure()
+    {
+        Delete("/admin/halls/{hallId:guid}/seat-layout");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.SeatLayouts.Delete),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Admin");
+    }
+    public override async Task HandleAsync(DeleteHallSeatLayoutRoute req, CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        await Send.OkAsync(ApiResult<HallSeatLayoutSnapshot>.Ok(
+            await service.DeleteLayoutAsync(actorId, req.HallId, ct)), ct);
     }
 }
 
@@ -251,7 +324,13 @@ public sealed class AdminReserveSeatEndpoint(ISeatReservationService service)
         await service.AdminReserveSeatAsync(actorId, req.SessionId,
             new AdminReserveSeatRequest
             {
-                RowLabel = req.RowLabel, SeatNumber = req.SeatNumber,
+                RowLabel = req.RowLabel,
+                SeatNumber = req.SeatNumber,
+                // D-771 — carry the manual VVIP guest hint through the over-post-safe
+                // re-projection (a VVIP seat has no registration; the hint is the
+                // occupant record).
+                GuestHint = req.GuestHint,
+                GuestHintArabic = req.GuestHintArabic,
             }, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -297,8 +376,13 @@ public sealed class ListSessionSeatReservationsRoute
     public Dictionary<string, string> Filters { get; set; } = new();
 }
 
+/// <summary>DEF-SEA-001 / A11 — the Control Panel seat plan's active reservations.
+/// Returns the ADMIN cell shape (<see cref="SeatPlanCell"/>): it names the holder
+/// so the release confirmation can say whose seat is being taken, and carries the
+/// real booking status + check-in flag. Gated <c>SeatPlans.View</c>; the
+/// app-facing seat map keeps the identity-free <see cref="SessionSeatCell"/>.</summary>
 public sealed class ListSessionSeatReservationsEndpoint(ISeatReservationService service)
-    : Endpoint<ListSessionSeatReservationsRoute, ApiResult<GridPage<SessionSeatCell>>>
+    : Endpoint<ListSessionSeatReservationsRoute, ApiResult<GridPage<SeatPlanCell>>>
 {
     public override void Configure()
     {
@@ -309,7 +393,7 @@ public sealed class ListSessionSeatReservationsEndpoint(ISeatReservationService 
     }
     public override async Task HandleAsync(
         ListSessionSeatReservationsRoute req, CancellationToken ct) =>
-        await Send.OkAsync(ApiResult<GridPage<SessionSeatCell>>.Ok(
+        await Send.OkAsync(ApiResult<GridPage<SeatPlanCell>>.Ok(
             await service.ListSessionReservationsAsync(
                 req.SessionId,
                 new GridQuery

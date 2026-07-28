@@ -67,9 +67,8 @@ void main() {
     // "الجلسات" Sessions list from the home tile; reads are AllowAnonymous)
     '/contact-us', // 203
     '/about-app', // 207
-    // Coming-soon sentinels — public even signed-out.
-    '/bilateral-meetings', // 204
-    '/saved-meetings', // 206
+    // (B18: /bilateral-meetings [204] + /saved-meetings [206] dropped with the
+    //  dead routes themselves — no screen, no caller, nothing persisted.)
   ];
 
   const universalAuthPaths = <String>[

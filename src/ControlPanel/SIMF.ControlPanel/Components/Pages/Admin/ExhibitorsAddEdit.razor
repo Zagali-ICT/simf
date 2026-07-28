@@ -149,7 +149,7 @@
 </SimfFormSection>
 
 <div class="simf-form__actions">
-    <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy">
+    <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
         @L["Admin.Exhibitors.Save"]
     </SimfButton>
     @if (OnCancel.HasDelegate)

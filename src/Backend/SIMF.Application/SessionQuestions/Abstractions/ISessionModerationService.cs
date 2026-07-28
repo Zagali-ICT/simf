@@ -1,4 +1,5 @@
 using SIMF.Common;
+using SIMF.Common.Enums;
 using SIMF.Contracts.Sessions;
 
 namespace SIMF.Application.SessionQuestions.Abstractions;
@@ -12,10 +13,36 @@ namespace SIMF.Application.SessionQuestions.Abstractions;
 /// </summary>
 public interface ISessionModerationService
 {
-    /// <summary>Returns the moderator queue for one session — all
-    /// rows including hidden + pushed, ordered by <c>Order</c>.</summary>
+    /// <summary>Returns the moderator queue for one session, ordered by
+    /// <c>Order</c> then <c>CreatedAt</c>.
+    /// <para>DEF-MOD-002 — <paramref name="status"/> selects the desk tab:
+    /// <c>null</c> (the default) returns the WORKING desk — the Committee-approved
+    /// set plus the rows the moderator has already marked
+    /// <see cref="QuestionStatus.Answered"/>; an explicit status returns exactly
+    /// that bucket, which is how the desk retrieves its own rejected
+    /// (<see cref="QuestionStatus.Hidden"/>) rows so a mis-click is recoverable.
+    /// The caller is already authorized as a moderator of this session, so a
+    /// hidden row never leaks to an attendee — attendees have no route to
+    /// this surface.</para>
+    /// <para>The tab is an ALLOW-LIST of the three buckets the desk renders —
+    /// <see cref="QuestionStatus.Approved"/>, <see cref="QuestionStatus.Answered"/>
+    /// and <see cref="QuestionStatus.Hidden"/>. Anything else (notably
+    /// <see cref="QuestionStatus.Pending"/>, which is still inside the Scientific
+    /// Committee's stage-2 gate) throws a 400 — the moderator desk must not be
+    /// able to read a question the Committee has not released.</para>
+    /// <para>D-772 — <see cref="QuestionStatus.Hidden"/> returns only rows hidden
+    /// FROM the desk, i.e. whose <c>StatusBeforeHidden</c> is
+    /// <see cref="QuestionStatus.Approved"/> or <see cref="QuestionStatus.Answered"/>.
+    /// A question the Committee rejected while it was still
+    /// <see cref="QuestionStatus.Pending"/> belongs to the Committee queue, not the
+    /// desk, and its text must not be readable here — the same stage-2 gate the
+    /// allow-list enforces. Rows hidden before <c>StatusBeforeHidden</c> existed
+    /// (null) have unknown provenance and are treated as Committee rows: the desk
+    /// does not expose them.</para></summary>
     Task<IReadOnlyList<SessionQuestionModeratorRow>> ListAsync(
-        Guid sessionId, CancellationToken cancellationToken = default);
+        Guid sessionId,
+        QuestionStatus? status = null,
+        CancellationToken cancellationToken = default);
 
     /// <summary>Hide or unhide one question (idempotent).</summary>
     Task<SessionQuestionModeratorRow> SetHiddenAsync(
@@ -23,6 +50,17 @@ public interface ISessionModerationService
         Guid sessionId,
         Guid questionId,
         bool isHidden,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>DEF-MOD-001 — mark / unmark one question as ANSWERED on stage
+    /// (idempotent). Only an <see cref="QuestionStatus.Approved"/> question can be
+    /// marked answered; un-marking returns it to
+    /// <see cref="QuestionStatus.Approved"/>.</summary>
+    Task<SessionQuestionModeratorRow> SetAnsweredAsync(
+        Guid actorUserId,
+        Guid sessionId,
+        Guid questionId,
+        bool isAnswered,
         CancellationToken cancellationToken = default);
 
     /// <summary>Mark a question as pushed to the speaker (one-way).
@@ -41,6 +79,20 @@ public interface ISessionModerationService
         Guid actorUserId,
         Guid sessionId,
         IReadOnlyList<Guid> orderedQuestionIds,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>FR-MOD-001 — every ACTIVE session the supplied user holds a
+    /// <c>SessionModerator</c> grant on, soonest first. The app uses it to offer
+    /// the Q&amp;A desk only where the grant actually exists (it used to offer it
+    /// on every session and let the user discover the gap as a 403) and to list
+    /// the moderator's own sessions on their operational home.
+    /// <para>Scoped to the caller — there is no "list another user's grants"
+    /// shape here; the admin surface for that is
+    /// <c>IAdminSessionModeratorService</c>. An Administrator may moderate any
+    /// session without a grant, so an empty list is not a statement that they
+    /// cannot open a desk.</para></summary>
+    Task<IReadOnlyList<ModeratedSessionRow>> ListMySessionsAsync(
+        Guid userId,
         CancellationToken cancellationToken = default);
 
     /// <summary>Returns true when the supplied user is a moderator

@@ -1291,7 +1291,7 @@ Scenario: Booking desk, seat picker and my-seat all render correctly in Arabic
 
 ## BF-06 — Meeting requests → CP review desks
 
-This cross-page flow exercises the three physically distinct meeting models SIMF ships and the Control-Panel desks that review them. **(1) Business meetings** are admin-arranged only: there is *no* attendee request queue — an admin schedules a `BusinessMeeting` at a `MeetingTable` (in a Meeting/General hall) for a from–to slot with **two or more** `BusinessMeetingParticipant`s, and the row is created `Confirmed` from `/admin/business-meetings` (create endpoint `POST /admin/business-meetings`, list `POST /admin/business-meetings/list`, detail `GET /admin/business-meetings/{id}`, plus a cancel endpoint); tables live under `/admin/meeting-tables`. **(2) Speaker meeting requests** (`SpeakerMeetingRequest`, D-269) flow attendee → speaker from the app (`meeting_request_sheet.dart` + `meeting_slot_pickers.dart`, reachable from routes `/meet`, `/bilateral-meetings`, `/saved-meetings`) into the **SMR desk** at `/admin/speaker-meeting-requests` (`SimfDataGrid` + Respond modal: Accept/Reject + optional note; D-716 hall binding on Accept moves the row to `AwaitingSpeaker`). **(3) Delegation meeting requests** (`DelegationMeetingRequest`, delegation ↔ delegation) are worked from `/admin/delegation-meetings` (team accept/reject + notify/email). Two sibling desks mirror the SMR pattern (D-500 Wave 5): `/admin/document-requests` and `/admin/badge-requests` — accepting a badge request applies the requested title to `UserProfile.JobTitle`. Speaker free-slots derive from availability windows at `/admin/speaker-availability` (D-474/476) and halls at `/admin/hall-availability` (D-715). Every desk is permission-gated (`SpeakerMeetingRequests.View`/`.Manage`, `DelegationMeetings.View`, `ParticipationDocumentRequests.View`, `BadgeUpdateRequests.View`/`.Manage`, `BusinessMeetings.View`). **Critical invariant this flow guards:** meetings are only ever `Scheduled`/`Confirmed` — there is *no* meeting check-in / arrival / attendance concept anywhere in the system.
+This cross-page flow exercises the three physically distinct meeting models SIMF ships and the Control-Panel desks that review them. **(1) Business meetings** are admin-arranged only: there is *no* attendee request queue — an admin schedules a `BusinessMeeting` at a `MeetingTable` (in a Meeting/General hall) for a from–to slot with **two or more** `BusinessMeetingParticipant`s, and the row is created `Confirmed` from `/admin/business-meetings` (create endpoint `POST /admin/business-meetings`, list `POST /admin/business-meetings/list`, detail `GET /admin/business-meetings/{id}`, plus a cancel endpoint); tables live under `/admin/meeting-tables`. **(2) Speaker meeting requests** (`SpeakerMeetingRequest`, D-269) flow attendee → speaker from the app (`meeting_request_sheet.dart` + `meeting_slot_pickers.dart`, reachable from routes `/meet` and the VIP `/meetings` — B18 deleted the dead `/bilateral-meetings` and `/saved-meetings` sentinels, which never hosted the sheet) into the **SMR desk** at `/admin/speaker-meeting-requests` (`SimfDataGrid` + Respond modal: Accept/Reject + optional note; D-716 hall binding on Accept moves the row to `AwaitingSpeaker`). **(3) Delegation meeting requests** (`DelegationMeetingRequest`, delegation ↔ delegation) are worked from `/admin/delegation-meetings` (team accept/reject + notify/email). Two sibling desks mirror the SMR pattern (D-500 Wave 5): `/admin/document-requests` and `/admin/badge-requests` — accepting a badge request applies the requested title to `UserProfile.JobTitle`. Speaker free-slots derive from availability windows at `/admin/speaker-availability` (D-474/476) and halls at `/admin/hall-availability` (D-715). Every desk is permission-gated (`SpeakerMeetingRequests.View`/`.Manage`, `DelegationMeetings.View`, `ParticipationDocumentRequests.View`, `BadgeUpdateRequests.View`/`.Manage`, `BusinessMeetings.View`). **Critical invariant this flow guards:** meetings are only ever `Scheduled`/`Confirmed` — there is *no* meeting check-in / arrival / attendance concept anywhere in the system.
 
 ### Coverage matrix
 
@@ -2621,8 +2621,9 @@ Scenario: Submitting a question to a closed session shows the not-open toast
   When they submit POST /api/v1/app/sessions/{id}/questions
   Then the server returns HTTP 400 with error code "SESSION_NOT_LIVE_FOR_QUESTIONS"
   And the screen shows a bilingual not-open toast — a SnackBar rendering l10n.sendQuestionNotOpen
-       ("Questions are only open from 5 minutes before the session until it ends." /
-        "الأسئلة مفتوحة فقط من 5 دقائق قبل بدء الجلسة حتى انتهائها.")
+       ("Questions are closed for this session." / "الأسئلة مغلقة لهذه الجلسة.")
+  # DEF-MOD-006 — the old copy claimed a 5-minute pre-start window the server
+  # has never enforced (there is no lower bound; questions close at the End).
   And a 404 for the same submit maps to the same not-open toast
   And the question box keeps the typed text (nothing is lost)
 ```
@@ -2699,9 +2700,12 @@ Scenario: Every navigation target from every surface resolves
        every side-drawer entry, every "More" hub entry, every Home tile, and any deep-link
        (a notification clickUrl, a booth "أرشدني" → "/booths/{boothId}/map", a rate link "/rate?code=...")
   Then each target navigates to a real, matching route (no unmatched-route crash, no white screen)
-  And a screen that legitimately falls through to ComingSoonScreen (an undesigned entry such as
-       Bilateral meetings "/bilateral-meetings" #204 or Saved meetings "/saved-meetings" #206)
-       shows the labelled placeholder — that is expected, NOT a defect
+  # B18 (2026-07-27): the two remaining ComingSoon sentinels — Bilateral meetings
+  # "/bilateral-meetings" #204 and Saved meetings "/saved-meetings" #206 — were DELETED.
+  # Both had no screen, no inbound navigation and nothing persisted behind them: #204's
+  # Home tile went to the real VIP "/meetings" #116 with D-745, and #206's My-Area stat
+  # tile became display-only (D-653) after D-609 retired the drill-down screens.
+  And no declared route falls through to ComingSoonScreen with no inbound caller
   And a role never sees a menu entry that would only bounce it home
 ```
 
@@ -2729,6 +2733,30 @@ Scenario: Switching tabs keeps the bar fixed and preserves each tab's state
 ---
 
 ## BF-12 — Website smoke + auth flows
+
+> ### ⚠ PARTIALLY RETIRED 2026-07-27 — D-774
+>
+> **Owner decision: the public Website has no login and no account area.** The
+> routes `/login`, `/login/verify`, `/forgot-password`, `/reset-password`,
+> `/account`, `/account/profile`, `/account/notifications`, `/account/pending`
+> and `/account/rejected` were deleted, together with the Website's cookie
+> authentication, the `/auth/complete` + `/auth/sign-out` + `/session/status`
+> endpoints and the `/account/api/*` BFF proxy. The per-page catalogue files this
+> section cites (`web-login.md`, `web-otp-verify.md`, `web-forgot-password.md`,
+> `web-reset-password.md`, `web-home.md`, `web-account-*.md`) were deleted with
+> them.
+>
+> **Still live and still in scope:** the public smoke over `/`, `/programme`,
+> `/visit` and the other anonymous marketing routes, and the anonymous
+> token-addressed `/meeting/confirm` journey.
+>
+> **Retired — do NOT run:** every scenario below that signs a visitor in or
+> asserts an account-area route, i.e. `E2E-BF-12-003` onward wherever it touches
+> `/login`, `/login/verify` or `/account*`, plus the `/account` self-guard clause
+> of `E2E-BF-12-001`. The equivalent visitor journeys are covered by the Flutter
+> app catalogue (`mobile-sign-in.md`) and the admin journeys by `cp-auth-flow.md`.
+> The text below is kept verbatim as the historical record; a clean re-issue of
+> BF-12 as a pure public-site smoke is a tracked follow-up.
 
 This cross-page business flow drives the **Website** surface (SIMF.Web) end-to-end as a production-readiness smoke: every ✅ *Real* Website route from the `web-*.md` catalogue is opened and asserted, then the visitor authentication journeys are run to completion. It exercises the four AllowAnonymous public routes — `/` (marketing landing, `web-landing`, fed by `GET /content/site`), `/programme` (`web-programme`, anonymous `SimfPublicClient` over `GET /api/v1/app/programme/sessions` + `GET /api/v1/app/speakers`), `/visit` (`web-visit`, static SSR), and `/account` (`web-home`, an AllowAnonymous route that self-guards to `/login` when unauthenticated) — plus the auth routes `/login`, `/login/verify`, `/forgot-password`, `/reset-password`, `/account/profile`, `/account/notifications`, `/account/pending`, `/account/rejected` and the public `/meeting/confirm`. The endpoints under test are `POST /api/v1/app/auth/sign-in` (`{ email, password, audience: "Web" }`), `POST /api/v1/app/auth/verify-otp` (`{ otpToken, code }`), the BFF hand-off `/auth/complete?reference=…`, `/auth/sign-out`, and `GET/POST /api/v1/app/meeting-actions/{token}`. The key rules it proves: **D-033** — a Visitor's second factor is an emailed OTP (read at run time from `SIMF_Identity.AccountCodes`, `Purpose = SignInOtp`, latest unconsumed — never a literal), whereas an admin uses TOTP; the **audience gate** — an Administrator account signing in on the Website is rejected by `SignInService.EnforceAudienceAsync` with `AUTH_WRONG_SURFACE_WEB` (the Website is the visitor surface; `/login` is AllowAnonymous, so the gate is audience + account-state routing, not a permission redirect); and, on every route, **page renders, zero console errors, zero broken assets (no 404 `<img>`), `scrollWidth == clientWidth` (no horizontal overflow), and the RTL toggle mirrors the layout**.
 

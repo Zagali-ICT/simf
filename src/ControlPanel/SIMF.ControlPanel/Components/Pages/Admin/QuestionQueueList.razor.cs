@@ -119,14 +119,19 @@ public partial class QuestionQueueList
     // audience-submitted and moderated in place (approve / hide / escalate); the
     // queue is not scoped by a parent picked on the page, so an empty selection
     // exports the full cross-session Pending queue the server already lists.
-    private Task OnExportAsync(IReadOnlyList<SessionQuestionQueueRow> selected) =>
-        JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+    private async Task OnExportAsync(IReadOnlyList<SessionQuestionQueueRow> selected)
+    {
+        // §6.16 (F-U5-005) — a failed export used to return silently, so
+        // the Export button was indistinguishable from an unwired one.
+        var error = await JS.ExportXlsxAsync(
             "/account/api/admin/questions/export",
             new AdminGridExportRequest
             {
                 Ids = selected.Select(row => row.Id).ToList(),
                 Query = selected.Count == 0 ? _query : null,
-            }).AsTask();
+            }, L);
+        if (error is not null) _toast = new Toast("error", error);
+    }
 
     private Task ApproveAsync(Guid id) =>
         ActAsync($"/account/api/admin/questions/{id}/approve", L["Admin.QuestionQueue.Approved"]);

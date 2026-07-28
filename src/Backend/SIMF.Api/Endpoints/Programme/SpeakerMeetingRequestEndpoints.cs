@@ -196,3 +196,34 @@ public sealed class CheckInSpeakerMeetingEndpoint(ISpeakerMeetingRequestService 
             await service.CheckInAsync(actorId, req.Id, ct)), ct);
     }
 }
+
+// QA B20 — an admin reopens a Rejected / Cancelled request back to Pending so a
+// mistaken decline or cancel is recoverable. Same Manage permission as the other
+// decisions on the page; 409 for any status that still holds a slot.
+public sealed class ReopenSpeakerMeetingRequestRoute
+{
+    public Guid Id { get; set; }
+}
+
+public sealed class ReopenSpeakerMeetingRequestEndpoint(ISpeakerMeetingRequestService service)
+    : Endpoint<ReopenSpeakerMeetingRequestRoute, ApiResult<AdminSpeakerMeetingRequestDetail>>
+{
+    public override void Configure()
+    {
+        Post("/admin/speaker-meeting-requests/{id:guid}/reopen");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.SpeakerMeetingRequests.Manage),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Admin");
+    }
+    public override async Task HandleAsync(ReopenSpeakerMeetingRequestRoute req, CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        await Send.OkAsync(ApiResult<AdminSpeakerMeetingRequestDetail>.Ok(
+            await service.ReopenAsync(actorId, req.Id, ct)), ct);
+    }
+}

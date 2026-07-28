@@ -15,6 +15,15 @@ version line. The footer version line reads the REAL installed version
 is unresolved), no longer a hardcoded literal. Rows are **role-filtered**
 (D-519) so a focused Staff/Moderator never sees a dead attendee-only link.
 
+**Not the same menu as the side drawer (BUG-017, 2026-07-26).** `MoreDrawer`
+(the shell's ☰ side menu — a flat list of every destination) used to be titled
+`l10n.moreTitle` too, so the app showed two different menus both called
+"المزيد" / "More", and only this one carries the **language** row. The drawer
+now uses its own `l10n.menuTitle` ("القائمة" / "Menu"); this screen keeps
+"المزيد". Separately, the shared `SimfLanguageToggle` was added to the signed-in
+Home greeting header, because the header toggle was on every screen except Home
+— leaving Home with no route to the language switch at all.
+
 ## Structure (post-decomposition)
 
 | File | Holds |

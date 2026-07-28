@@ -37,6 +37,14 @@ class _AuthController extends AuthController {
   AuthState build() => AuthStateSignedIn(_session(status));
 }
 
+/// A TRUE guest — no account at all (BUG-013). The profile tab is reachable
+/// this way because the bottom nav switches tabs inside the shell, so the
+/// router's auth redirect never runs.
+class _SignedOutAuthController extends AuthController {
+  @override
+  AuthState build() => const AuthStateSignedOut();
+}
+
 MyAreaDashboard _dashboard({List<MyAreaScheduleItem>? schedule}) =>
     MyAreaDashboard(
       identity: const MyAreaIdentity(
@@ -130,6 +138,7 @@ Future<void> _pump(
         (RouteNames.sessions, '/sessions', 'SESSIONS'),
         (RouteNames.venueMap, '/map', 'MAP'),
         (RouteNames.signIn, '/sign-in', 'SIGN-IN'),
+        (RouteNames.signUpForm, '/sign-up', 'SIGN-UP'),
       ])
         GoRoute(
           name: name,
@@ -321,6 +330,32 @@ void main() {
       expect(find.text('My smart badge'), findsNothing);
       // No photo-change affordance on the limited card (onAvatarTap is null).
       expect(find.byIcon(Icons.photo_camera_outlined), findsNothing);
+    });
+
+    testWidgets('BUG-013 — a TRUE guest gets the guest copy and a working '
+        'sign-in CTA, never the under-review copy', (tester) async {
+      final repo = _FakeMyAreaRepository(dashboard: _dashboard());
+      await _pump(
+        tester,
+        controller: _SignedOutAuthController(),
+        repo: repo,
+      );
+
+      expect(repo.dashboardCalls, 0);
+      // The "under review" wording describes a registration a guest never
+      // submitted — it must NOT be shown.
+      expect(find.textContaining('under review'), findsNothing);
+      expect(
+        find.text(
+          'Sign in or create an account to see your profile and schedule.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.widgetWithText(TextButton, 'Create account'), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
+      await tester.pumpAndSettle();
+      expect(find.text('SIGN-IN'), findsOneWidget);
     });
 
     testWidgets('a 403 for an approved user falls back to the limited card',

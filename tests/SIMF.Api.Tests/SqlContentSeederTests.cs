@@ -93,6 +93,42 @@ public sealed class SqlContentSeederTests : IClassFixture<SimfApiFactory>
         Assert.Equal("https://x.com/SIMF_RSNF", org.XUrl);
     }
 
+    [Fact]
+    public async Task Every_seeded_asset_reference_resolves_to_stored_file_bytes()
+    {
+        // BUG-001 regression — SIMF_App_SpeakerPhotos.sql seeds StoredFile ROWS whose
+        // bytes ship as a deployable folder that only production copied by hand, so
+        // every seeded speaker photo 404'd behind the UI placeholder. The seeder now
+        // materialises those bytes (and retires any row it cannot back with bytes),
+        // so NO seeded asset reference is left pointing at nothing.
+        await RunRosterAsync();
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var storage = scope.ServiceProvider
+            .GetRequiredService<SIMF.Application.Files.Abstractions.IFileStorageProvider>();
+
+        var seeded = await db.StoredFiles.AsNoTracking()
+            .Where(file => file.IsActive
+                && file.SourceType == SIMF.Common.Enums.FileSourceType.Upload
+                && file.CreatedBy == Guid.Empty
+                && file.StorageKey != null)
+            .Select(file => new { file.Id, file.Service, file.StorageKey, file.IsEncrypted })
+            .ToListAsync();
+
+        // The 23 SIMF-4 speaker headshots the content SQL seeds.
+        Assert.NotEmpty(seeded);
+        Assert.Contains(seeded, file => file.Service == SIMF.Common.Enums.FileService.SpeakerPhoto);
+
+        foreach (var file in seeded)
+        {
+            var bytes = await storage.ReadAsync(file.StorageKey!, file.IsEncrypted);
+            Assert.True(
+                bytes is { Length: > 0 },
+                $"seeded {file.Service} file {file.Id} has no bytes at '{file.StorageKey}'");
+        }
+    }
+
     private async Task RunRosterAsync()
     {
         using var scope = _factory.Services.CreateScope();

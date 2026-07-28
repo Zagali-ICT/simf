@@ -58,6 +58,17 @@ public partial class EditAccountForm
     private bool _allowsSpeakerMeeting;
     private bool _allowsDelegationMeeting;
 
+    // B22 — the nationality picker. `_nationalityCode` is the ISO alpha-2 code sent on
+    // save; empty means "leave the stored nationality alone" (the server treats an
+    // empty/absent code as no change). Prefilled from the loaded profile.
+    private IReadOnlyList<CountryDto> _countries = new List<CountryDto>();
+    private string _nationalityCode = string.Empty;
+
+    // FR-PHN-002 — the mobile correction. Prefilled from the loaded profile;
+    // an empty field sends nothing and leaves the stored number untouched.
+    private string _saudiMobile = string.Empty;
+    private string _internationalMobile = string.Empty;
+
     private bool _loading = true;
     private bool _busy;
     private string? _loadError;
@@ -96,6 +107,31 @@ public partial class EditAccountForm
     private void OnProfileTypeChanged(AdminProfileTypeSummary? selected) =>
         _profileTypeId = selected?.Id;
 
+    // B22 — nationality picker plumbing. Mirrors the walk-in desk's field so the two
+    // admin surfaces label and pick a country identically.
+    private CountryDto? _selectedCountry =>
+        _countries.FirstOrDefault(c => c.Code == _nationalityCode);
+
+    private void OnNationalityPicked(CountryDto? country) =>
+        _nationalityCode = country?.Code ?? string.Empty;
+
+    // Null when nothing is picked, so the server leaves the stored nationality alone.
+    private string? NationalityCodeForSave =>
+        string.IsNullOrWhiteSpace(_nationalityCode) ? null : _nationalityCode;
+
+    // FR-PHN-002 — an empty field means "no change" (the server's contract), so a
+    // desk correcting only the email never wipes the number.
+    private string? SaudiMobileForSave =>
+        string.IsNullOrWhiteSpace(_saudiMobile) ? null : _saudiMobile.Trim();
+
+    private string? InternationalMobileForSave =>
+        string.IsNullOrWhiteSpace(_internationalMobile) ? null : _internationalMobile.Trim();
+
+    private static string CountryLabel(CountryDto c) =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
+            ? $"{c.NameArabic} ({c.Code})"
+            : $"{c.Name} ({c.Code})";
+
     protected override async Task OnInitializedAsync()
     {
         _loading = true;
@@ -103,6 +139,7 @@ public partial class EditAccountForm
         try
         {
             await LoadProfileTypesAsync();
+            await LoadCountriesAsync();
             await LoadAccountAsync();
         }
         catch (Exception)
@@ -127,6 +164,28 @@ public partial class EditAccountForm
         }
     }
 
+    // B22 — the same active-country list the walk-in desk's nationality dropdown uses,
+    // through the existing BFF passthrough (no new proxy route). Nationality is an
+    // OPTIONAL field on this form, so a failed country read must not block the edit:
+    // swallow it, leave the picker empty (which sends no nationality and keeps the
+    // stored value) and let the admin still fix the email / name / tier.
+    private async Task LoadCountriesAsync()
+    {
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<CountryListResponse>>(
+                "simfAccount.getJson", "/account/api/admin/walk-in/countries");
+            if (envelope is { Success: true, Data: not null })
+            {
+                _countries = envelope.Data.Countries;
+            }
+        }
+        catch (Exception)
+        {
+            _countries = new List<CountryDto>();
+        }
+    }
+
     private async Task LoadAccountAsync()
     {
         var envelope = await JS.InvokeAsync<ApiResult<AdminUserProfileView>>(
@@ -140,6 +199,9 @@ public partial class EditAccountForm
             _allowsDelegationMeeting = envelope.Data.AllowsDelegationMeeting;
             _hasAvatar = envelope.Data.HasAvatar;
             _hasIdImage = envelope.Data.HasIdImage;
+            _nationalityCode = envelope.Data.NationalityCode ?? string.Empty;
+            _saudiMobile = envelope.Data.SaudiMobile ?? string.Empty;
+            _internationalMobile = envelope.Data.InternationalMobile ?? string.Empty;
         }
         else
         {
@@ -182,6 +244,9 @@ public partial class EditAccountForm
                     ProfileTypeId = _profileTypeId,
                     AllowsSpeakerMeeting = _allowsSpeakerMeeting,
                     AllowsDelegationMeeting = _allowsDelegationMeeting,
+                    NationalityCode = NationalityCodeForSave,
+                    SaudiMobile = SaudiMobileForSave,
+                    InternationalMobile = InternationalMobileForSave,
                 }
                 : new AdminUpdateOtherRequest
                 {
@@ -190,6 +255,9 @@ public partial class EditAccountForm
                     ProfileTypeId = _profileTypeId ?? Guid.Empty,
                     AllowsSpeakerMeeting = _allowsSpeakerMeeting,
                     AllowsDelegationMeeting = _allowsDelegationMeeting,
+                    NationalityCode = NationalityCodeForSave,
+                    SaudiMobile = SaudiMobileForSave,
+                    InternationalMobile = InternationalMobileForSave,
                 };
 
             var envelope = await JS.InvokeAsync<ApiResult<bool>>(

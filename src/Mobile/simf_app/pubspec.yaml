@@ -161,9 +161,10 @@ flutter:
   uses-material-design: true
   generate: false
   # Login v2 design-preview logo (Figma KSA-Project 168:2800 — D-358).
-  # D-373: assets/videos/ carries the onboarding background clips
-  # (onboard_01..03.mp4 — the same hero clip ×3 until the owner supplies
-  # the real 2nd/3rd videos; replace in place).
+  # D-373: assets/videos/ carries the onboarding background clip
+  # (onboard_01.mp4). It used to ship three byte-identical copies (one per
+  # step); the duplicates were dropped and the carousel now plays the single
+  # clip on one decoder (DEF-ONB-004).
   assets:
     - assets/images/
     - assets/videos/

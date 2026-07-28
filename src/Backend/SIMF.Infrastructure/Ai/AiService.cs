@@ -208,7 +208,11 @@ internal sealed class AiService(
             invocation.Id, prompt.Key, prompt.Feature, prompt.Provider,
             prompt.Model, providerResponse.OutputText,
             providerResponse.TokensInput, providerResponse.TokensOutput,
-            latencyMs);
+            latencyMs,
+            // A18 — carry the provider's own "this is the offline stub" flag out
+            // to the caller. prompt.Provider is the CONFIGURED provider, which
+            // D-484 routing may have redirected, so it cannot answer this.
+            providerResponse.IsStub);
     }
 
     private async Task PersistFailureAsync(

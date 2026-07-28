@@ -82,6 +82,7 @@ class ExhibitorDetailScreen extends ConsumerWidget {
             ? null
             : '$baseUrl/app/assets/CompanyLogo/${booth.exhibitorContactId}/image',
         initials: entityInitials(name),
+        name: name,
       ),
       name: name,
       locationLine: entityLocationLine(

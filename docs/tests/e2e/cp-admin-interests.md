@@ -6,7 +6,7 @@
 | **Route** | `/admin/interests` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
-| **Auth setup** | `superadmin@zagali-ict.com` / `Aa@123456789` + TOTP `dbji csx7 c3mj s2qa sjcl rbcl kiqk ovr3` |
+| **Auth setup** | `superadmin@zagali-ict.com` / `[REDACTED - supply via SIMF_SuperAdmin__TempPassword]` + TOTP `[REDACTED - supply via SIMF_SuperAdmin__TotpSecret]` |
 | **Last reviewed** | 2026-06-09 (D-353 — dialog/full-page framing + delete confirmation) |
 
 ## Coverage matrix

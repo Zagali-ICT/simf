@@ -55,6 +55,10 @@ public static class CpNavigation
             // 2026-07-18 — live per-session hall view: 4-state seat grid + who's
             // currently inside the hall (over HallAttendance + the seat map).
             new("Module.SessionLiveHall", "/admin/sessions/live-hall", RequiredPermission: PermissionCatalog.Attendance.View, Icon: "monitor"),
+            // §6.16 — /admin/statistics was an ORPHAN: a real page rendering live stat
+            // tiles and gated on Statistics.View, but reachable from nowhere in the CP.
+            // Granting that permission was silently inert; only a hand-typed URL opened it.
+            new("Module.Statistics", "/admin/statistics", RequiredPermission: PermissionCatalog.Statistics.View, Icon: "chart-bar"),
         ]),
         new("Nav.People",
         [
@@ -113,7 +117,8 @@ public static class CpNavigation
             // D-474 (#11, Group G) — the team defines speaker availability windows for VIP meeting slots.
             new("Module.AdminSpeakerAvailability", "/admin/speaker-availability", RequiredPermission: PermissionCatalog.SpeakerMeetingRequests.Manage, Icon: "calendar"),
             // D-715 (item 7, FDS-013 §15 GAP-1) — the team defines a hall's meeting time (availability windows).
-            new("Module.AdminHallAvailability", "/admin/hall-availability", RequiredPermission: PermissionCatalog.SpeakerMeetingRequests.Manage, Icon: "calendar"),
+            // QA A36 — hall-scoped code (both meeting desks read the slots it produces).
+            new("Module.AdminHallAvailability", "/admin/hall-availability", RequiredPermission: PermissionCatalog.HallAvailability.Manage, Icon: "calendar"),
             // D-478 (#11, Group G phase 2) — delegation↔delegation meeting requests review desk.
             new("Module.AdminDelegationMeetings", "/admin/delegation-meetings", RequiredPermission: PermissionCatalog.DelegationMeetings.View, Icon: "inbox"),
             // Bi-Meeting rework — the team defines a delegation/country's availability windows.
@@ -211,7 +216,10 @@ public static class CpNavigation
             new("Module.Vips", "/admin/vips", RequiredPermission: PermissionCatalog.Vips.View, Icon: "crown"),
             // D-132 — admin broadcast desk: notify a session's registered attendees
             // or a broad audience (in-app + email), background-processed.
-            new("Module.Announcements", "/admin/announcements", RequiredPermission: PermissionCatalog.Announcements.Send, Icon: "send"),
+            // §6.16 (NAV-007) — the nav gate was Announcements.Send while the page
+            // gate is Announcements.View, so a role granted View alone got no menu
+            // item for a page it was entitled to open.
+            new("Module.Announcements", "/admin/announcements", RequiredPermission: PermissionCatalog.Announcements.View, Icon: "send"),
             // Contact-us inbox (Figma 1388:7567) — triage app-submitted inquiries.
             new("Module.ContactInquiries", "/admin/contact-inquiries", RequiredPermission: PermissionCatalog.ContactInquiries.View, Icon: "inbox"),
         ]),
@@ -245,7 +253,11 @@ public static class CpNavigation
             // former /m/configuration + /m/settings stubs into one real page.
             new("Module.Configuration", "/admin/configuration", RequiredPermission: PermissionCatalog.Configuration.View, Icon: "settings"),
             // D-464 — labelled Site Settings page (registration message + social links).
-            new("Module.SiteSettings", "/admin/site-settings", RequiredPermission: PermissionCatalog.Configuration.View, Icon: "globe"),
+            // §6.16 (NAV-006) — the nav gate was Configuration.View while the page
+            // gate is Configuration.Edit, so a read-only role saw the menu item and
+            // was bounced by the page. The menu now promises exactly what the page
+            // will honour.
+            new("Module.SiteSettings", "/admin/site-settings", RequiredPermission: PermissionCatalog.Configuration.Edit, Icon: "globe"),
             // D-735 — transactional email-template editor (subject/body per identity email).
             new("Module.EmailTemplates", "/admin/email/templates", RequiredPermission: PermissionCatalog.EmailTemplates.View, Icon: "mail"),
             // D-495 — Organization / About profile (edition-generic forum config).

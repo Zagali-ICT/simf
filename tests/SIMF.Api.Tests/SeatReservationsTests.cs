@@ -11,6 +11,7 @@ using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Sessions;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Domain.Programme;
 using SIMF.Domain.SeatReservations;
 using SIMF.Infrastructure.Persistence;
@@ -1068,6 +1069,289 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
             .Content.ReadFromJsonAsync<ApiResult<SessionSeatMap>>())!.Data!;
         Assert.Null(uMap.SeatCounts);
         Assert.Equal(5, uMap.SeatsPerRow);
+    }
+
+    // -- B15: a seat layout can be removed (back to general admission) --------
+
+    [Fact]
+    public async Task Deleting_a_layout_reverts_the_hall_to_general_admission()
+    {
+        // B15 — the layout can be removed entirely: the row is gone from the DB, the
+        // read-back is empty, and the session's seat map now reports OpenSeating, so a
+        // laid-out hall really can be converted back to general admission.
+        var (session, hall) = await SeedSessionWithLayoutAsync(new[] { "A", "B" }, seatsPerRow: 5);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var delete = await DeleteAuthAsync(
+            $"/api/v1/admin/halls/{hall.Id}/seat-layout", admin);
+        Assert.Equal(HttpStatusCode.OK, delete.StatusCode);
+        var after = (await delete.Content
+            .ReadFromJsonAsync<ApiResult<HallSeatLayoutSnapshot>>())!.Data!;
+        Assert.Empty(after.RowLabels);
+        Assert.Equal(0, after.SeatsPerRow);
+        Assert.Equal(0, after.LayoutCapacity);
+        Assert.Equal(hall.Capacity, after.HallCapacity);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            Assert.False(await db.HallSeatLayouts.AnyAsync(l => l.HallId == hall.Id));
+        }
+
+        var reread = (await (await GetAuthAsync(
+                $"/api/v1/admin/halls/{hall.Id}/seat-layout", admin))
+            .Content.ReadFromJsonAsync<ApiResult<HallSeatLayoutSnapshot>>())!.Data!;
+        Assert.Empty(reread.RowLabels);
+
+        // D-706 — no layout means no assignable seats, so the session is now joined
+        // with one tap rather than by picking a seat.
+        var viewer = await SignInApprovedVisitorAsync();
+        var map = (await (await GetAuthAsync(
+                $"/api/v1/app/sessions/{session.Id}/seats", viewer))
+            .Content.ReadFromJsonAsync<ApiResult<SessionSeatMap>>())!.Data!;
+        Assert.Equal(SeatSelectionMode.OpenSeating, map.Mode);
+    }
+
+    [Fact]
+    public async Task Deleting_a_layout_that_would_strand_a_reservation_is_blocked()
+    {
+        // B15 — the H-2 orphan rule applied to the hardest shrink: A2 is actively
+        // reserved, so the delete is refused 409 and the layout survives intact.
+        var (session, hall) = await SeedSessionWithLayoutAsync(new[] { "A" }, seatsPerRow: 5);
+        var visitor = await SignInApprovedVisitorAsync();
+        var pick = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
+            new ReserveSeatRequest { RowLabel = "A", SeatNumber = 2 }, visitor);
+        Assert.Equal(HttpStatusCode.OK, pick.StatusCode);
+
+        var admin = await CreateAdministratorAndSignInAsync();
+        var delete = await DeleteAuthAsync(
+            $"/api/v1/admin/halls/{hall.Id}/seat-layout", admin);
+        Assert.Equal(HttpStatusCode.Conflict, delete.StatusCode);
+        var body = (await delete.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SeatLayoutHasReservations, body.Error!.Code);
+        // The message names how many reservations block it, in both languages.
+        Assert.Contains("1", body.Error!.Message);
+        Assert.Contains("1", body.Error!.MessageArabic);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var rows = await db.HallSeatLayouts.Where(l => l.HallId == hall.Id)
+            .Select(l => l.RowLabels).SingleAsync();
+        Assert.Equal("A", rows);
+    }
+
+    [Fact]
+    public async Task Deleting_a_layout_ignores_released_reservations()
+    {
+        // B15 — only ACTIVE holds block the delete. A released seat is not stranded,
+        // so the removal goes through.
+        var (session, hall) = await SeedSessionWithLayoutAsync(new[] { "A" }, seatsPerRow: 5);
+        var visitor = await SignInApprovedVisitorAsync();
+        var pick = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
+            new ReserveSeatRequest { RowLabel = "A", SeatNumber = 2 }, visitor);
+        Assert.Equal(HttpStatusCode.OK, pick.StatusCode);
+        var release = await DeleteAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/seats/mine", visitor);
+        Assert.Equal(HttpStatusCode.OK, release.StatusCode);
+
+        var admin = await CreateAdministratorAndSignInAsync();
+        var delete = await DeleteAuthAsync(
+            $"/api/v1/admin/halls/{hall.Id}/seat-layout", admin);
+        Assert.Equal(HttpStatusCode.OK, delete.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        Assert.False(await db.HallSeatLayouts.AnyAsync(l => l.HallId == hall.Id));
+    }
+
+    [Fact]
+    public async Task Deleting_a_layout_that_does_not_exist_is_a_404()
+    {
+        // B15 — a hall that was never laid out has nothing to remove; the delete is a
+        // precise 404 rather than a silent success.
+        var hall = await SeedHallAsync(capacity: 30);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var delete = await DeleteAuthAsync(
+            $"/api/v1/admin/halls/{hall.Id}/seat-layout", admin);
+        Assert.Equal(HttpStatusCode.NotFound, delete.StatusCode);
+        Assert.Equal(ErrorCodes.SeatLayoutMissing,
+            (await delete.Content.ReadFromJsonAsync<ApiResult<object>>())!.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Deleting_a_layout_can_be_followed_by_defining_a_new_one()
+    {
+        // B15 — the round trip the operator actually needs: remove the grid, then lay
+        // the hall out again from scratch.
+        var (_, hall) = await SeedSessionWithLayoutAsync(new[] { "A", "B" }, seatsPerRow: 5);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        Assert.Equal(HttpStatusCode.OK, (await DeleteAuthAsync(
+            $"/api/v1/admin/halls/{hall.Id}/seat-layout", admin)).StatusCode);
+
+        var put = await PutAuthAsync(
+            $"/api/v1/admin/halls/{hall.Id}/seat-layout",
+            new SetHallSeatLayoutRequest
+            {
+                RowLabels = new[] { "VIP", "A" },
+                SeatCounts = new[] { 2, 6 },
+                SeatTiers = new[] { SeatTier.Vvip, SeatTier.Normal },
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, put.StatusCode);
+        var snapshot = (await put.Content
+            .ReadFromJsonAsync<ApiResult<HallSeatLayoutSnapshot>>())!.Data!;
+        Assert.Equal(new[] { "VIP", "A" }, snapshot.RowLabels);
+        Assert.Equal(new[] { 2, 6 }, snapshot.SeatCounts);
+        Assert.Equal(8, snapshot.LayoutCapacity);
+    }
+
+    [Fact]
+    public async Task Seat_plan_list_names_the_holder_and_ships_the_real_status_and_check_in()
+    {
+        // DEF-SEA-001 — the Control Panel seat plan releases a live attendee's
+        // seat, so its rows must say WHO holds each seat; the projection carried
+        // no identity at all. A11 — the same projection dropped Status and
+        // CheckedIn, putting the record defaults (Pending / false) on the wire
+        // even though the row is Approved and the holder had checked in.
+        var (session, hall) = await SeedSessionWithLayoutAsync(
+            new[] { "A" }, seatsPerRow: 4);
+        var visitor = await SignInApprovedVisitorAsync();
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var pick = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
+            new ReserveSeatRequest { RowLabel = "A", SeatNumber = 2 }, visitor);
+        Assert.Equal(HttpStatusCode.OK, pick.StatusCode);
+
+        Guid holderId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            holderId = (await db.SeatReservations
+                .SingleAsync(r => r.SessionId == session.Id))
+                .ReservedForUserId!.Value;
+            db.UserProfiles.Add(new UserProfile
+            {
+                Id = Guid.NewGuid(),
+                UserId = holderId,
+                Name = "Faisal Al-Harbi",
+                NameArabic = "فيصل الحربي",
+                CreatedAt = DateTimeOffset.UtcNow,
+            });
+            // An OPEN attendance row = the holder scanned in at the hall gate,
+            // which is exactly what "confirmed" means on the seat plan.
+            db.HallAttendances.Add(new HallAttendance
+            {
+                Id = Guid.NewGuid(),
+                SessionId = session.Id,
+                HallId = hall.Id,
+                UserId = holderId,
+                Method = AttendanceMethod.QrScan,
+                Enter = DateTimeOffset.UtcNow,
+                CreatedAt = DateTimeOffset.UtcNow,
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var list = await PostAuthAsync(
+            $"/api/v1/admin/sessions/{session.Id}/seats/list",
+            new GridQuery { Top = 50 }, admin);
+        Assert.Equal(HttpStatusCode.OK, list.StatusCode);
+        var page = (await list.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<SeatPlanCell>>>())!.Data!;
+
+        var cell = Assert.Single(page.Items);
+        Assert.Equal(holderId, cell.HolderUserId);
+        Assert.Equal("Faisal Al-Harbi", cell.HolderName);
+        Assert.Equal("فيصل الحربي", cell.HolderNameArabic);
+        // A11 — real values, not the record defaults.
+        Assert.Equal(BookingStatus.Approved, cell.Status);
+        Assert.True(cell.CheckedIn);
+    }
+
+    [Fact]
+    public async Task Seat_plan_list_carries_the_vvip_guest_note_and_no_holder_for_an_admin_block()
+    {
+        // DEF-SEA-001 — an admin block has no registration, so the plan's
+        // "held by" reads the D-771 guest note instead of an attendee name, and
+        // CheckedIn stays false (nobody to check in).
+        var (session, _) = await SeedSessionWithLayoutAsync(
+            new[] { "A" }, seatsPerRow: 3);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var block = await PostAuthAsync(
+            $"/api/v1/admin/sessions/{session.Id}/seats/reserve-seat",
+            new AdminReserveSeatRequest
+            {
+                RowLabel = "A",
+                SeatNumber = 1,
+                GuestHint = "Reserved for the Minister",
+                GuestHintArabic = "محجوز لمعالي الوزير",
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, block.StatusCode);
+
+        var list = await PostAuthAsync(
+            $"/api/v1/admin/sessions/{session.Id}/seats/list",
+            new GridQuery { Top = 50 }, admin);
+        var page = (await list.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<SeatPlanCell>>>())!.Data!;
+
+        var cell = Assert.Single(page.Items);
+        Assert.Null(cell.HolderUserId);
+        Assert.Equal(string.Empty, cell.HolderName);
+        Assert.Equal("Reserved for the Minister", cell.GuestHint);
+        Assert.Equal("محجوز لمعالي الوزير", cell.GuestHintArabic);
+        Assert.Equal(SeatReservationKind.AdminReservedRow, cell.Kind);
+        Assert.False(cell.CheckedIn);
+    }
+
+    [Fact]
+    public async Task Every_create_path_writes_Approved_and_never_stamps_a_review()
+    {
+        // A9 — the D-227 approval queue is gone (owner, 2026-07-18). Lock the
+        // as-built truth the docs now state: no production path writes Pending or
+        // Rejected, ReviewedBy/ReviewedAt stay null until a RELEASE stamps them,
+        // and RejectionReason is never written at all. If an approval step is
+        // ever restored this test is the thing that must change with it.
+        var (assigned, _) = await SeedSessionWithLayoutAsync(
+            new[] { "A" }, seatsPerRow: 3);
+        var open = await SeedOpenSeatingSessionAsync(capacity: 10);
+        var picker = await SignInApprovedVisitorAsync();
+        var randomPicker = await SignInApprovedVisitorAsync();
+        var joiner = await SignInApprovedVisitorAsync();
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        Assert.Equal(HttpStatusCode.OK, (await PostAuthAsync(
+            $"/api/v1/app/sessions/{assigned.Id}/seats/reserve",
+            new ReserveSeatRequest { RowLabel = "A", SeatNumber = 1 },
+            picker)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await PostAuthAsync(
+            $"/api/v1/app/sessions/{assigned.Id}/seats/reserve-random",
+            new { }, randomPicker)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await PostAuthAsync(
+            $"/api/v1/admin/sessions/{assigned.Id}/seats/reserve-seat",
+            new AdminReserveSeatRequest { RowLabel = "A", SeatNumber = 3 },
+            admin)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await PostAuthAsync(
+            $"/api/v1/app/sessions/{open.Id}/seats/join", new { },
+            joiner)).StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var created = await db.SeatReservations.AsNoTracking()
+            .Where(r => r.SessionId == assigned.Id || r.SessionId == open.Id)
+            .ToListAsync();
+
+        Assert.Equal(4, created.Count);
+        Assert.All(created, r => Assert.Equal(BookingStatus.Approved, r.Status));
+        Assert.All(created, r => Assert.Null(r.ReviewedByUserId));
+        Assert.All(created, r => Assert.Null(r.ReviewedAt));
+        Assert.All(created, r => Assert.Null(r.RejectionReason));
+        Assert.DoesNotContain(created, r => r.Status == BookingStatus.Pending);
+        Assert.DoesNotContain(created, r => r.Status == BookingStatus.Rejected);
     }
 
     // -- Helpers --------------------------------------------------------------
