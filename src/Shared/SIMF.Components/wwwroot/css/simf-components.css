@@ -357,7 +357,7 @@
 .simf-tabs__tab--active {
   color: var(--color-text);
   border-block-end-color: var(--color-accent-blue);
-  font-weight: 600;
+  font-weight: var(--font-weight-heading);
   cursor: default;
 }
 
@@ -635,7 +635,7 @@
   border-radius: var(--radius-field);
   background-color: var(--color-field-background);
   font-family: inherit;
-  font-size: 1.25rem;          /* 20px — large, per the design spec */
+  font-size: var(--font-size-heading-lg);          /* 20px — large, per the design spec */
   font-weight: var(--font-weight-heading);
   text-align: center;
   letter-spacing: 0.6em;
@@ -894,7 +894,7 @@
   border: var(--border-width) solid var(--color-accent-blue);
   border-radius: var(--radius-md);
   text-decoration: none;
-  font-weight: 600;
+  font-weight: var(--font-weight-heading);
   transform: translateY(-200%);
   transition: transform 120ms ease-out;
 }
@@ -1175,6 +1175,8 @@
 /* Country cell with a flag glyph. On platforms without colour flag emoji the
    glyph falls back to the ISO letters — still a legible country tag. */
 .simf-country { display: inline-flex; align-items: center; gap: var(--space-2); white-space: nowrap; }
+/* §6.16 (D3-003) — `em`, not a scale step: the flag glyph is sized RELATIVE to
+   whatever text it sits beside, so it tracks the surrounding size. */
 .simf-country__flag { font-size: 1.15em; line-height: 1; }
 
 /* Monospace code chip — the programme team's stable speaker identifier. */
@@ -1310,6 +1312,7 @@
 .simf-speaker-card:disabled { opacity: 0.6; cursor: default; }
 .simf-speaker-card__photo { inline-size: 72px; block-size: 72px; border-radius: 50%; }
 .simf-speaker-card__name { font-weight: var(--font-weight-bold); }
+/* §6.16 (D3-003) — `em` for the same reason: relative to the card's own text. */
 .simf-speaker-card__country { color: var(--color-text-muted); font-size: 0.85em; }
 .simf-speaker-selected { font-weight: var(--font-weight-bold); align-self: center; }
 
@@ -1318,8 +1321,8 @@
    items are real and which are not yet built. */
 .simf-nav-item__badge {
   flex: 0 0 auto;
-  font-size: 0.7rem;
-  font-weight: 600;
+  font-size: var(--font-size-micro);
+  font-weight: var(--font-weight-heading);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 2px 6px;
@@ -2191,7 +2194,7 @@ body.simf-modal-open { overflow: hidden; }
 }
 .simf-stat__value {
   margin: 0;
-  font-size: 1.75rem;       /* 28px — bigger than --font-size-title, the headline number */
+  font-size: var(--font-size-display);       /* 28px — bigger than --font-size-title, the headline number */
   line-height: 1;
   font-weight: var(--font-weight-heading);
   color: var(--color-text);
@@ -2306,8 +2309,8 @@ body.simf-modal-open { overflow: hidden; }
   background: var(--color-danger);
   color: var(--color-on-danger, white);
   border-radius: 999px;
-  font-size: 0.65rem;
-  font-weight: 600;
+  font-size: var(--font-size-micro);
+  font-weight: var(--font-weight-heading);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2740,9 +2743,9 @@ h1:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
   align-items: center;
   gap: var(--space-2);
   padding: 0 var(--space-2);
-  font-weight: 600;
+  font-weight: var(--font-weight-heading);
   color: var(--color-primary);
-  font-size: 1.05rem;
+  font-size: var(--font-size-body-large);
 }
 .simf-walkin__section legend::before {
   content: counter(simf-walkin-section);
@@ -2754,7 +2757,7 @@ h1:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
   border-radius: 50%;
   background-color: var(--color-primary);
   color: var(--color-text-on-primary);
-  font-size: 0.8rem;
+  font-size: var(--font-size-body-small);
   font-weight: var(--font-weight-heading);
   line-height: 1;
 }
@@ -2840,7 +2843,7 @@ h1:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
   flex: 0 0 auto;
   box-shadow: 0 0 0 1px var(--color-border) inset;
 }
-.simf-walkin__card-name { font-weight: 600; color: var(--color-text); font-size: 0.95rem; }
+.simf-walkin__card-name { font-weight: var(--font-weight-heading); color: var(--color-text); font-size: var(--font-size-body-large); }
 
 /* Saudi / non-Saudi binary toggle. */
 .simf-walkin__toggle {
@@ -2856,7 +2859,7 @@ h1:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
   padding: var(--space-2) var(--space-5);
   border: 0;
   cursor: pointer;
-  font-weight: 500;
+  font-weight: var(--font-weight-body);
 }
 .simf-walkin__toggle-btn.is-selected {
   background-color: var(--color-primary);
@@ -2914,7 +2917,7 @@ h1:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
   margin-block-end: var(--space-3);
 }
 .simf-walkin-badge__type {
-  font-weight: 600;
+  font-weight: var(--font-weight-heading);
   letter-spacing: 0.05em;
   text-transform: uppercase;
   font-size: var(--font-size-body);
@@ -2925,8 +2928,8 @@ h1:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
   letter-spacing: normal;
 }
 .simf-walkin-badge__name {
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: var(--font-size-heading-lg);
+  font-weight: var(--font-weight-heading);
   color: var(--color-text);
 }
 .simf-walkin-badge__email {
@@ -2943,7 +2946,7 @@ h1:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
 .simf-walkin-badge__qrid {
   font-family: var(--font-mono, monospace);
   letter-spacing: 0.15em;
-  font-size: 1rem;
+  font-size: var(--font-size-body-large);
   color: var(--color-primary);
 }
 
@@ -2987,7 +2990,7 @@ h1:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
 .simf-walkin__id-image h4 {
   margin: 0 0 var(--space-2) 0;
   font-size: var(--font-size-body);
-  font-weight: 600;
+  font-weight: var(--font-weight-heading);
   color: var(--color-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;

@@ -433,6 +433,54 @@ public sealed class SilentFailureTests
             + "it from one with color-mix(): " + string.Join(", ", offenders));
     }
 
+    [Fact]
+    public void No_stylesheet_sets_typography_off_the_scale()
+    {
+        // §6.16 (D3-003) — typography values bypassed the type scale, including
+        // font-weight:600, which is in neither the brand set (300/400/700/800) nor
+        // any token.
+        //
+        // Why 600 mattered: there is no @font-face and no bundled font file, so
+        // "FS Albert Arabic" never loads and the CP actually renders in the
+        // fallback. Segoe UI DOES ship a real 600 Semibold; Arial and Tahoma do
+        // not and synthesize or snap to 700. The same element therefore rendered
+        // differently per platform, and would have shifted again — silently — the
+        // day the brand font landed without a 600 face.
+        //
+        // `em` sizes are exempt: they are deliberately RELATIVE to their parent
+        // (the country flag glyph, the speaker-card country line) and are not
+        // scale steps. theme.tokens.css is exempt because defining the values is
+        // its entire job.
+        var offenders = new List<string>();
+
+        foreach (var root in new[] { "src/ControlPanel", "src/Shared" })
+        {
+            var dir = Path.Combine(RepoRoot, root.Replace('/', Path.DirectorySeparatorChar));
+            foreach (var file in Directory.EnumerateFiles(dir, "*.css", SearchOption.AllDirectories))
+            {
+                if (file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                 || file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                 || Path.GetFileName(file) == "theme.tokens.css")
+                {
+                    continue;
+                }
+
+                var source = File.ReadAllText(file);
+                foreach (Match match in Regex.Matches(source,
+                    @"font-size:\s*[0-9.]+(rem|px)|font-weight:\s*[0-9]+"))
+                {
+                    offenders.Add(
+                        $"{Relative(file)}:~{source.Take(match.Index).Count(c => c == '\n') + 1} {match.Value}");
+                }
+            }
+        }
+
+        Assert.True(offenders.Count == 0,
+            "§6.16 (D3-003): this bypasses the type scale. Use a --font-size-* / "
+            + "--font-weight-* token, and add the step to theme.tokens.css if it is "
+            + "genuinely missing: " + string.Join(", ", offenders));
+    }
+
     // ----------------------------------------------------------------------
 
     private static IEnumerable<string> CpSources() =>

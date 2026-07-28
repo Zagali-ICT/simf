@@ -132,6 +132,22 @@
   --font-size-body-small: 0.8125rem;     /* 13px */
   --font-weight-bold: var(--font-weight-heading);  /* 700 */
 
+  /* §6.16 (D3-003) — the four tiers the component sheet was already using as
+     bare literals. Naming them is the whole point: they were not "extra" sizes
+     invented here, they are the values in the shipped CSS, now on the scale and
+     therefore changeable in one place.
+       micro       — count / "Soon" pills (was 0.65rem and 0.7rem)
+       body-large  — walk-in card names, badge QR id, section legends
+       heading-lg  — the 2FA code input and the printed badge name
+       display     — the dashboard's headline stat number
+     Note the type scale is absolute; the two `em` sizes left in the sheet
+     (.simf-country__flag, .simf-speaker-card__country) are deliberately
+     RELATIVE to their parent and are not scale steps. */
+  --font-size-micro: 0.6875rem;          /* 11px */
+  --font-size-body-large: 1rem;          /* 16px */
+  --font-size-heading-lg: 1.25rem;       /* 20px */
+  --font-size-display: 1.75rem;          /* 28px */
+
   /* Monospace stack — log viewer, code cells (one canonical name + alias). */
   --font-family-mono: ui-monospace, "SFMono-Regular", "Consolas", "Liberation Mono", monospace;
   --font-mono: var(--font-family-mono);

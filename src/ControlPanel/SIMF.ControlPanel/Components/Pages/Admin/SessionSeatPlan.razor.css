@@ -48,7 +48,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.7rem;
+    font-size: var(--font-size-micro);
     border: 1px solid var(--color-seat-free-border);
     border-radius: var(--radius-sm);
     background: var(--color-seat-free);
@@ -98,7 +98,7 @@
     flex-wrap: wrap;
     gap: var(--space-4);
     margin-top: var(--space-3);
-    font-size: 0.85rem;
+    font-size: var(--font-size-body-small);
     color: var(--color-text-muted);
 }
 
