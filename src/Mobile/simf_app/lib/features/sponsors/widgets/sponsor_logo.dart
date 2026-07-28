@@ -57,6 +57,14 @@ class SponsorLogo extends StatelessWidget {
     if (id.isEmpty) {
       return fallback;
     }
+    // MERGE 2026-07-28 — main and this branch fixed the SAME complaint (wide
+    // sponsor logos rendering badly) in incompatible ways. main went
+    // BoxFit.cover -> BoxFit.fill, which stops the cropping but STRETCHES the
+    // mark: a sponsor's logo is a brand asset and distorting it is worse than
+    // the cropping it replaced. This branch's fix routes through the shared
+    // SimfLogoImage, which shows the mark whole, per the Owner 2026-07-26
+    // decision recorded above, and also carries the accessible name and the
+    // tap-to-full-size affordance. Kept this side.
     return SimfLogoImage(
       url: '$baseUrl/app/assets/SponsorLogo/$id/image',
       placeholder: fallback,
