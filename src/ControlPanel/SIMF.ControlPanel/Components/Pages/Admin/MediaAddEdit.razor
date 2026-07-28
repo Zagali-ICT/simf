@@ -72,8 +72,10 @@
 
     @if (_isEditing && _model.Kind == MediaKind.Image)
     {
+        @* §6.16 (LQ-008) — see OrganisationsList: a <span> gives the file input no
+           accessible name, and the hint paragraph between them rules out wrapping. *@
         <div class="simf-field">
-            <span class="simf-field__label">@L["Admin.Media.Field.Image"]</span>
+            <label class="simf-field__label" for="media-image-input">@L["Admin.Media.Field.Image"]</label>
             <p class="simf-walkin__hint">
                 @(_hasImage ? L["Admin.Media.Image.Present"] : L["Admin.Media.Image.None"])
             </p>

@@ -159,8 +159,14 @@
         <ChildContent>
             <div class="simf-form__fields">
                 <p class="simf-walkin__hint">@L["Admin.Organisations.Import.Hint"]</p>
+                @* §6.16 (LQ-008) — a <span> names nothing. The sibling file inputs
+                   elsewhere in the CP are WRAPPED in a <label>, which names them
+                   implicitly; these two sit in a <div> with a bare span between a
+                   hint paragraph, so they had no accessible name at all. An
+                   explicit for= is the right fix here — the hint sits between the
+                   label and the control, so wrapping would swallow it. *@
                 <div class="simf-field">
-                    <span class="simf-field__label">@L["Admin.Organisations.Import.File"]</span>
+                    <label class="simf-field__label" for="organisations-import-input">@L["Admin.Organisations.Import.File"]</label>
                     <input id="organisations-import-input" type="file" class="simf-field__input"
                            accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                            @onchange="OnImportFileSelected"

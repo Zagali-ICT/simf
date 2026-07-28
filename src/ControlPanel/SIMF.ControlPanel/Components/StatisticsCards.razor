@@ -1,0 +1,56 @@
+@* §6.16 (NAV-008) — the eleven live stat cards, in ONE place.
+   They were duplicated verbatim between the Dashboard ("/") and the Statistics
+   page ("/admin/statistics"): the same eleven <SimfStatCard> with the same
+   titles, the same Href targets and the same Count() formatting, in two files.
+   A metric added or relabelled in one would silently disagree with the other.
+
+   Layout note carried over from both originals: .simf-form__actions is reused
+   as the wrapping flex row — there is no dedicated stat-grid class in the
+   component CSS. *@
+@using System.Globalization
+@using SIMF.Contracts.Statistics
+@inject IStringLocalizer<Strings> L
+
+<div class="simf-form__actions">
+    <SimfStatCard Title="@L["Admin.Statistics.Stat.TotalAttendees"]"
+                  Value="@Count(Dashboard.TotalAttendees)"
+                  Href="/admin/attendees" />
+    <SimfStatCard Title="@L["Admin.Statistics.Stat.ApprovedAttendees"]"
+                  Value="@Count(Dashboard.ApprovedAttendees)"
+                  Href="/admin/attendees" />
+    <SimfStatCard Title="@L["Admin.Statistics.Stat.PendingApprovals"]"
+                  Value="@Count(Dashboard.PendingApprovals)"
+                  Href="/admin/visitors/pending" />
+    <SimfStatCard Title="@L["Admin.Statistics.Stat.Sessions"]"
+                  Value="@Count(Dashboard.Sessions)"
+                  Href="/admin/sessions" />
+    <SimfStatCard Title="@L["Admin.Statistics.Stat.Speakers"]"
+                  Value="@Count(Dashboard.Speakers)"
+                  Href="/admin/speakers" />
+    <SimfStatCard Title="@L["Admin.Statistics.Stat.Booths"]"
+                  Value="@Count(Dashboard.Booths)"
+                  Href="/admin/booths" />
+    <SimfStatCard Title="@L["Admin.Statistics.Stat.Sponsors"]"
+                  Value="@Count(Dashboard.Sponsors)"
+                  Href="/admin/sponsors" />
+    <SimfStatCard Title="@L["Admin.Statistics.Stat.NewsArticles"]"
+                  Value="@Count(Dashboard.NewsArticles)"
+                  Href="/admin/news" />
+    <SimfStatCard Title="@L["Admin.Statistics.Stat.MediaItems"]"
+                  Value="@Count(Dashboard.MediaItems)"
+                  Href="/admin/media-library" />
+    <SimfStatCard Title="@L["Admin.Statistics.Stat.RatingsCount"]"
+                  Value="@Count(Dashboard.RatingsCount)"
+                  Href="/admin/ratings" />
+    <SimfStatCard Title="@L["Admin.Statistics.Stat.AverageRating"]"
+                  Value="@Dashboard.AverageRating.ToString("0.0", CultureInfo.InvariantCulture)"
+                  Href="/admin/ratings" />
+</div>
+
+@code {
+    /// <summary>The live aggregate read from GET /account/api/admin/statistics.</summary>
+    [Parameter, EditorRequired]
+    public SIMF.Contracts.Statistics.StatisticsDashboard Dashboard { get; set; } = default!;
+
+    private static string Count(int value) => value.ToString(CultureInfo.InvariantCulture);
+}

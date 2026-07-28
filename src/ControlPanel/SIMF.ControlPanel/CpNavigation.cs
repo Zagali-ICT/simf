@@ -216,7 +216,10 @@ public static class CpNavigation
             new("Module.Vips", "/admin/vips", RequiredPermission: PermissionCatalog.Vips.View, Icon: "crown"),
             // D-132 — admin broadcast desk: notify a session's registered attendees
             // or a broad audience (in-app + email), background-processed.
-            new("Module.Announcements", "/admin/announcements", RequiredPermission: PermissionCatalog.Announcements.Send, Icon: "send"),
+            // §6.16 (NAV-007) — the nav gate was Announcements.Send while the page
+            // gate is Announcements.View, so a role granted View alone got no menu
+            // item for a page it was entitled to open.
+            new("Module.Announcements", "/admin/announcements", RequiredPermission: PermissionCatalog.Announcements.View, Icon: "send"),
             // Contact-us inbox (Figma 1388:7567) — triage app-submitted inquiries.
             new("Module.ContactInquiries", "/admin/contact-inquiries", RequiredPermission: PermissionCatalog.ContactInquiries.View, Icon: "inbox"),
         ]),
@@ -250,7 +253,11 @@ public static class CpNavigation
             // former /m/configuration + /m/settings stubs into one real page.
             new("Module.Configuration", "/admin/configuration", RequiredPermission: PermissionCatalog.Configuration.View, Icon: "settings"),
             // D-464 — labelled Site Settings page (registration message + social links).
-            new("Module.SiteSettings", "/admin/site-settings", RequiredPermission: PermissionCatalog.Configuration.View, Icon: "globe"),
+            // §6.16 (NAV-006) — the nav gate was Configuration.View while the page
+            // gate is Configuration.Edit, so a read-only role saw the menu item and
+            // was bounced by the page. The menu now promises exactly what the page
+            // will honour.
+            new("Module.SiteSettings", "/admin/site-settings", RequiredPermission: PermissionCatalog.Configuration.Edit, Icon: "globe"),
             // D-735 — transactional email-template editor (subject/body per identity email).
             new("Module.EmailTemplates", "/admin/email/templates", RequiredPermission: PermissionCatalog.EmailTemplates.View, Icon: "mail"),
             // D-495 — Organization / About profile (edition-generic forum config).

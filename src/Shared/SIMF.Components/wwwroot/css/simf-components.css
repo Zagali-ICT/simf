@@ -694,13 +694,18 @@
 .simf-button__spinner {
   inline-size: 16px;
   block-size: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.30);
+  /* §6.16 (D3-004) — derived from the token rather than a white literal, so the
+     spinner track tracks the button's own text colour. */
+  border: 2px solid color-mix(in srgb, var(--color-text-on-primary) 30%, transparent);
   border-block-start-color: var(--color-text-on-primary);
   border-radius: 50%;
   animation: simf-spin 700ms linear infinite;
 }
 .simf-button--secondary .simf-button__spinner {
-  border-color: rgba(36, 74, 119, 0.25);
+  /* §6.16 (D3-004) — was the literal #244A77 at 25%, which is --color-action in
+     the LIGHT theme only. In dark theme the action colour is #498FBD, so the
+     spinner ring kept its light-theme navy and did not follow the switch. */
+  border-color: color-mix(in srgb, var(--color-action) 25%, transparent);
   border-block-start-color: var(--color-action);
 }
 
@@ -1423,7 +1428,8 @@
 }
 .simf-button--neutral:active { background-color: var(--color-border); }
 .simf-button--neutral .simf-button__spinner {
-  border-color: rgba(36, 74, 119, 0.20);
+  /* §6.16 (D3-004) — same literal, paired with --color-text; derive from it. */
+  border-color: color-mix(in srgb, var(--color-text) 20%, transparent);
   border-block-start-color: var(--color-text);
 }
 
@@ -1475,7 +1481,8 @@
   align-items: center;
   justify-content: center;
   padding: var(--space-5);
-  background-color: rgba(26, 36, 51, 0.45);
+  /* §6.16 (D3-004) — the scrim is a token now, not a literal. */
+  background-color: var(--color-scrim);
 }
 
 .simf-modal__panel {
@@ -1936,9 +1943,12 @@ body.simf-modal-open { overflow: hidden; }
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: rgba(255, 255, 255, 0.55);
+  /* §6.16 (D3-005) — the busy wash was declared inline here for light and in a
+     [data-theme="dark"] override below, and NOWHERE for the grey theme, so a
+     grid loading over grey surfaces got the white light-theme wash. One token,
+     defined per theme, replaces both. */
+  background-color: var(--color-overlay-wash);
 }
-[data-theme="dark"] .simf-grid__overlay { background-color: rgba(14, 24, 38, 0.55); }
 
 .simf-grid--loading .simf-grid__filter-input,
 .simf-grid--loading .simf-grid__sort { pointer-events: none; }
@@ -2212,7 +2222,8 @@ body.simf-modal-open { overflow: hidden; }
    --color-focus, which is defined for exactly this purpose. */
 .simf-stat--clickable:hover {
   border-color: var(--color-primary);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  /* §6.16 (D3-004) — --shadow-sm exists for exactly this and follows the theme. */
+  box-shadow: var(--shadow-sm);
 }
 .simf-stat--clickable:focus-visible {
   outline: 2px solid var(--color-focus);
@@ -2744,13 +2755,13 @@ h1:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
   background-color: var(--color-primary);
   color: var(--color-text-on-primary);
   font-size: 0.8rem;
-  font-weight: 700;
+  font-weight: var(--font-weight-heading);
   line-height: 1;
 }
 .simf-walkin__section[disabled] { opacity: 0.55; pointer-events: none; }
 .simf-walkin__hint {
   color: var(--color-text-muted);
-  font-size: 0.875rem;
+  font-size: var(--font-size-body);
   margin: 0 0 var(--space-4) 0;
 }
 .simf-walkin__grid {
@@ -2862,7 +2873,7 @@ h1:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
   border: 1px solid var(--color-border);
   border-radius: 999px;
   padding: 6px 14px;
-  font-size: 0.875rem;
+  font-size: var(--font-size-body);
   cursor: pointer;
 }
 .simf-walkin__chip:hover { border-color: var(--color-secondary); }
@@ -2906,7 +2917,7 @@ h1:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  font-size: 0.875rem;
+  font-size: var(--font-size-body);
 }
 
 /* Arabic is cursive — inter-letter spacing would pull joined glyphs apart. */
@@ -2920,7 +2931,7 @@ h1:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
 }
 .simf-walkin-badge__email {
   color: var(--color-text-muted);
-  font-size: 0.875rem;
+  font-size: var(--font-size-body);
   margin-block-end: var(--space-3);
 }
 .simf-walkin-badge__qr {
@@ -2975,7 +2986,7 @@ h1:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
 }
 .simf-walkin__id-image h4 {
   margin: 0 0 var(--space-2) 0;
-  font-size: 0.875rem;
+  font-size: var(--font-size-body);
   font-weight: 600;
   color: var(--color-text-muted);
   text-transform: uppercase;

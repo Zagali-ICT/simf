@@ -173,8 +173,13 @@
                     var entry = _selectedSpeakers[ix];
                     <li class="simf-form__chip">
                         <span>@(ix + 1). @SpeakerLabel(entry.SpeakerId.ToString())</span>
+                        @* §6.16 (LQ-007) — this select had no accessible name, and it
+                           repeats once per speaker chip, so a screen reader announced
+                           a row of identical unlabelled combo boxes with no way to
+                           tell whose role each one set. Named per speaker. *@
                         <select class="simf-field__input"
                                 value="@((int)entry.Role)"
+                                aria-label="@string.Format(L["Admin.Sessions.Role.LabelFor"], SpeakerLabel(entry.SpeakerId.ToString()))"
                                 @onchange="@(e => OnSpeakerRoleChanged(ix, e))"
                                 disabled="@_busy">
                             <option value="0">@L["Admin.Sessions.Role.Speaker"]</option>

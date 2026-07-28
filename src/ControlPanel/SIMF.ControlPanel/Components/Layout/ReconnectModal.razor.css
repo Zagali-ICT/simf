@@ -20,14 +20,17 @@
 }
 
 
+/* §6.16 (D3-006) — this file keeps the framework's own reconnect markup, but the
+   surface colour was already tokenized while the shadow, radii and paddings were
+   still magic literals from the Blazor scaffold. They have dedicated tokens. */
 #components-reconnect-modal {
     background-color: var(--color-reconnect-surface);
     width: 20rem;
     margin: 20vh auto;
-    padding: 2rem;
+    padding: var(--space-7);
     border: 0;
-    border-radius: 0.5rem;
-    box-shadow: 0 3px 6px 2px rgba(0, 0, 0, 0.3);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-reconnect);
     opacity: 0;
     transition: display 0.5s allow-discrete, overlay 0.5s allow-discrete;
     animation: components-reconnect-modal-fadeOutOpacity 0.5s both;
@@ -41,7 +44,7 @@
 }
 
 #components-reconnect-modal::backdrop {
-    background-color: rgba(0, 0, 0, 0.4);
+    background-color: var(--color-scrim-strong);
     animation: components-reconnect-modal-fadeInOpacity 0.5s ease-in-out;
     opacity: 1;
 }
@@ -80,7 +83,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1rem;
+    gap: var(--space-4);
 }
 
 #components-reconnect-modal p {
@@ -92,8 +95,8 @@
     border: 0;
     background-color: var(--color-reconnect-button);
     color: var(--color-text-on-primary);
-    padding: 4px 24px;
-    border-radius: 4px;
+    padding: var(--space-1) var(--space-6);
+    border-radius: var(--radius-sm);
 }
 
     #components-reconnect-modal button:hover {

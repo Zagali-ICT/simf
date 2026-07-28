@@ -165,8 +165,12 @@
                            value="@_endText" @onchange="OnEndChanged" disabled="@_busy" />
                 </label>
 
+                @* §6.16 (LQ-006) — a <fieldset> is named by its <legend>, not by a
+                   <span>: with a span the whole participant group had no accessible
+                   name at all. The three selects below were likewise bare — a screen
+                   reader announced three unlabelled combo boxes in a row. *@
                 <fieldset class="simf-field">
-                    <span class="simf-field__label">@L["Admin.BusinessMeetings.Field.Participants"]</span>
+                    <legend class="simf-field__label">@L["Admin.BusinessMeetings.Field.Participants"]</legend>
                     @if (_participants.Count > 0)
                     {
                         <ul class="simf-list">
@@ -186,6 +190,7 @@
                     }
                     <div class="simf-form__inline">
                         <select class="simf-field__input" value="@((int)_addKind)"
+                                aria-label="@L["Admin.BusinessMeetings.Party.KindLabel"]"
                                 @onchange="OnAddKindChanged" disabled="@_busy">
                             <option value="@((int)MeetingPartyKind.Company)">@L["Admin.BusinessMeetings.Party.Company"]</option>
                             <option value="@((int)MeetingPartyKind.Visitor)">@L["Admin.BusinessMeetings.Party.Visitor"]</option>
@@ -193,6 +198,7 @@
                         @if (_addKind == MeetingPartyKind.Company)
                         {
                             <select class="simf-field__input" value="@(_addCompanyId?.ToString() ?? string.Empty)"
+                                    aria-label="@L["Admin.BusinessMeetings.Party.ChooseCompany"]"
                                     @onchange="OnAddCompanyChanged" disabled="@_busy">
                                 <option value="">@L["Admin.BusinessMeetings.Party.ChooseCompany"]</option>
                                 @foreach (var c in _companies)
@@ -204,6 +210,7 @@
                         else
                         {
                             <select class="simf-field__input" value="@(_addVisitorId?.ToString() ?? string.Empty)"
+                                    aria-label="@L["Admin.BusinessMeetings.Party.ChooseVisitor"]"
                                     @onchange="OnAddVisitorChanged" disabled="@_busy">
                                 <option value="">@L["Admin.BusinessMeetings.Party.ChooseVisitor"]</option>
                                 @foreach (var v in _visitors)

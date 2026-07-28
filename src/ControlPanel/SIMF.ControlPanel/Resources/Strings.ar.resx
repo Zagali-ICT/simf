@@ -2158,6 +2158,8 @@
   <data name="Admin.RatingConfig.Questions.Delete.Confirm.Message" xml:space="preserve"><value>سيتم تعطيل "{0}".</value></data>
   <data name="Common.Cancel" xml:space="preserve"><value>إلغاء</value></data>
   <data name="Common.Retry" xml:space="preserve"><value>إعادة المحاولة</value></data>
+  <data name="Admin.BusinessMeetings.Party.KindLabel" xml:space="preserve"><value>نوع المشارك</value></data>
+  <data name="Admin.Sessions.Role.LabelFor" xml:space="preserve"><value>دور {0}</value></data>
   <data name="Grid.Export.Failed" xml:space="preserve"><value>تعذر إنشاء ملف التصدير. يرجى المحاولة مرة أخرى.</value></data>
   <data name="Grid.Import.BusyTitle" xml:space="preserve"><value>جارٍ الاستيراد</value></data>
   <data name="Grid.Import.BusyBody" xml:space="preserve"><value>يجري رفع الملف وقراءته. يرجى عدم إغلاق هذه الصفحة.</value></data>

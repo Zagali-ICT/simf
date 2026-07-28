@@ -167,6 +167,16 @@
   --shadow-sm: 0 1px 3px rgba(26, 36, 51, 0.12);
   --shadow-2: var(--shadow-card);
 
+  /* §6.16 (D3-004 / D3-005 / D3-006) — overlay + scrim colours that were raw
+     rgba() literals at their use sites. A literal cannot follow a theme switch:
+     the grid's loading overlay hardcoded a white wash for light and a navy wash
+     for dark, and had NO grey-theme value at all, so switching to grey left the
+     white light-theme wash over grey surfaces. These are per-theme tokens. */
+  --color-scrim: rgba(26, 36, 51, 0.45);        /* modal backdrop */
+  --color-overlay-wash: rgba(255, 255, 255, 0.55); /* busy wash over a surface */
+  --color-scrim-strong: rgba(0, 0, 0, 0.40);    /* framework reconnect backdrop */
+  --shadow-reconnect: 0 3px 6px 2px rgba(0, 0, 0, 0.30);
+
   /* Seat-plan states (SessionSeatPlan / SessionLiveHall). Colours match the
      MOBILE APP seat map (owner: same colour per case in app + CP): user/"mine"
      = the app gold, admin/reserved = the app navy, random = a distinct naval
@@ -236,6 +246,9 @@
 
   --pattern-opacity: 0.18;
 
+  /* §6.16 (D3-005) — the busy wash follows the theme instead of staying white. */
+  --color-overlay-wash: rgba(14, 24, 38, 0.55);
+
   /* §6.16 (DT-003) — seat states in the dark theme.
      The seat colours above are the MOBILE APP's, chosen against the app's light
      seat board. --color-seat-free aliases --color-surface-sunken, so in dark
@@ -299,4 +312,9 @@
                  0 4px 14px rgba(31, 39, 49, 0.10);
 
   --pattern-opacity: 0.14;
+
+  /* §6.16 (D3-005) — the grey theme had NO overlay value at all: the busy wash
+     was declared only for light and dark, so a grid loading over grey surfaces
+     got the white light-theme wash. This is the specific gap in that finding. */
+  --color-overlay-wash: rgba(210, 212, 214, 0.60);
 }

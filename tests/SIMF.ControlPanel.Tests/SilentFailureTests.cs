@@ -15,6 +15,9 @@
 // failure — and a non-JSON error page — into a RETURNED ApiResult.Fail rather than
 // throwing. A try/catch alone therefore never sees the common failure.
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Localization;
+using SIMF.ControlPanel;
 using Xunit;
 
 namespace SIMF.ControlPanel.Tests;
@@ -277,6 +280,157 @@ public sealed class SilentFailureTests
         Assert.Contains("--color-seat-random:", dark, StringComparison.Ordinal);
         // Random has to go light enough that a white label stops reading on it.
         Assert.Contains("--color-seat-random-contrast:", dark, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_test_localizer_refuses_a_key_that_exists_in_no_resx()
+    {
+        // §6.16 (LOC-010) — the bUnit localizer reported resourceNotFound:false for
+        // EVERY lookup, so a page referencing a key present in no resx rendered the
+        // raw key on screen in production while every test of that page passed.
+        // Four such defects shipped that way (LOC-001/002/003/004) and were only
+        // caught by driving the pages in a browser.
+        //
+        // Verified through the real DI registration, not a hand-built instance —
+        // otherwise this would pass while the base class handed pages something
+        // else entirely.
+        using var ctx = new LocalizerProbe();
+        var localizer = ctx.Localizer;
+
+        // A key that IS in Strings.resx passes through as its own name.
+        Assert.Equal("Common.Cancel", localizer["Common.Cancel"].Value);
+
+        var thrown = Assert.Throws<KeyNotFoundException>(
+            () => _ = localizer["Admin.ThisKey.DoesNotExist"].Value);
+        Assert.Contains("Admin.ThisKey.DoesNotExist", thrown.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>Reaches the localizer the CP test base actually registers.</summary>
+    private sealed class LocalizerProbe : CpComponentTestBase
+    {
+        public IStringLocalizer<Strings> Localizer =>
+            Services.GetRequiredService<IStringLocalizer<Strings>>();
+    }
+
+    [Fact]
+    public void The_module_catch_all_only_answers_for_modules_that_exist()
+    {
+        // §6.16 (NAV-011) — "/m/{Module}" is a catch-all and it rendered the
+        // "Coming soon" panel for ANY value, so /m/typo produced a confident,
+        // correctly-shelled page announcing a module that does not exist and is
+        // not coming. That is worse than a 404: the admin waits for it.
+        var markup = File.ReadAllText(Path.Combine(
+            RepoRoot, (CpProjectDir + "/Components/Pages/ModulePlaceholder.razor")
+                .Replace('/', Path.DirectorySeparatorChar)));
+
+        Assert.Contains("@if (IsKnownModule)", markup, StringComparison.Ordinal);
+        Assert.Contains("NotFound.Text", markup, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_statistics_cards_are_declared_once()
+    {
+        // §6.16 (NAV-008) — the eleven <SimfStatCard> were duplicated verbatim
+        // between "/" and "/admin/statistics", so a metric added or relabelled in
+        // one would silently disagree with the other.
+        //
+        // Scoped to the STATISTICS set specifically. Seven other dashboards (AI,
+        // Attendance, Gates ops, Programme timeline, Ratings, Services monitor)
+        // legitimately declare their own distinct stat cards; a bare count of
+        // <SimfStatCard> per file flags all of them and means nothing.
+        var offenders = Directory.EnumerateFiles(
+                Path.Combine(RepoRoot, (CpProjectDir + "/Components").Replace('/', Path.DirectorySeparatorChar)),
+                "*.razor", SearchOption.AllDirectories)
+            .Where(f => Regex.Matches(File.ReadAllText(f), @"Admin\.Statistics\.Stat\.").Count > 1)
+            .Select(Relative)
+            .ToList();
+
+        Assert.True(offenders.Count == 1,
+            "§6.16 (NAV-008): the statistics stat-card set must be declared in "
+            + "exactly one file (StatisticsCards.razor) so the Dashboard and the "
+            + "Statistics page cannot drift. Found: " + string.Join(", ", offenders));
+    }
+
+    [Fact]
+    public void No_form_control_is_named_only_by_a_span()
+    {
+        // §6.16 (LQ-006 / LQ-008) — a <span class="simf-field__label"> is not a
+        // label: it names nothing. Most CP controls are WRAPPED in a <label>,
+        // which names them implicitly; the offenders sat in a <div> with a bare
+        // span, so they reached assistive tech with no accessible name at all.
+        // A <fieldset> has the same problem in its own form — it is named by its
+        // <legend>, and a span there leaves the whole group anonymous.
+        var offenders = new List<string>();
+
+        foreach (var file in Directory.EnumerateFiles(
+            Path.Combine(RepoRoot, (CpProjectDir + "/Components").Replace('/', Path.DirectorySeparatorChar)),
+            "*.razor", SearchOption.AllDirectories))
+        {
+            var source = File.ReadAllText(file);
+
+            // A <div class="simf-field"> whose label is a span, directly wrapping a
+            // control. [^<]* — NOT .*? — deliberately: a non-greedy dot under
+            // Singleline runs straight past its own </span> to a later one and
+            // then matches an unrelated control further down the file. That is the
+            // same mistake as the [^>]* label ratchet earlier in this sweep, which
+            // flagged 51 pages against the audit's 2.
+            foreach (Match match in Regex.Matches(source,
+                @"<div class=""simf-field"">\s*<span class=""simf-field__label"">[^<]*</span>\s*<(input|select|textarea)\b",
+                RegexOptions.Singleline))
+            {
+                offenders.Add($"{Relative(file)}:~{source.Take(match.Index).Count(c => c == '\n') + 1}");
+            }
+
+            // A <fieldset> named by a span instead of a <legend>.
+            foreach (Match match in Regex.Matches(source,
+                @"<fieldset[^>]*>\s*<span class=""simf-field__label"">", RegexOptions.Singleline))
+            {
+                offenders.Add($"{Relative(file)}:~{source.Take(match.Index).Count(c => c == '\n') + 1}");
+            }
+        }
+
+        Assert.True(offenders.Count == 0,
+            "§6.16 (LQ-006/LQ-008): use <label for=\"...\"> for a control and "
+            + "<legend> for a fieldset — a span names neither: "
+            + string.Join(", ", offenders));
+    }
+
+    [Fact]
+    public void No_stylesheet_hardcodes_a_colour_that_should_follow_the_theme()
+    {
+        // §6.16 (D3-004 / D3-005 / D3-006) — a raw rgba() literal cannot follow a
+        // theme switch. The grid's busy wash was declared white inline and navy in
+        // a [data-theme="dark"] override, with NO grey-theme value, so a grid
+        // loading over grey surfaces got the white light-theme wash; and two
+        // button spinners hardcoded #244A77, which is --color-action in the LIGHT
+        // theme only.
+        //
+        // Scoped to the two files the finding names. theme.tokens.css is where a
+        // literal is SUPPOSED to live — that is the whole point of a token file.
+        var offenders = new List<string>();
+
+        foreach (var relative in new[]
+        {
+            "src/Shared/SIMF.Components/wwwroot/css/simf-components.css",
+            "src/ControlPanel/SIMF.ControlPanel/Components/Layout/ReconnectModal.razor.css",
+        })
+        {
+            var path = Path.Combine(RepoRoot, relative.Replace('/', Path.DirectorySeparatorChar));
+            var source = File.ReadAllText(path);
+            foreach (Match match in Regex.Matches(source, @"rgba?\([^)]*\)"))
+            {
+                // color-mix() derives from a token — that IS the fix, not a defect.
+                var lineStart = source.LastIndexOf('\n', match.Index) + 1;
+                if (source[lineStart..match.Index].Contains("color-mix", StringComparison.Ordinal)) continue;
+
+                offenders.Add($"{relative}:~{source.Take(match.Index).Count(c => c == '\n') + 1} {match.Value}");
+            }
+        }
+
+        Assert.True(offenders.Count == 0,
+            "§6.16 (D3-004/005/006): this colour is a literal, so it cannot follow "
+            + "a theme switch. Add a per-theme token to theme.tokens.css, or derive "
+            + "it from one with color-mix(): " + string.Join(", ", offenders));
     }
 
     // ----------------------------------------------------------------------
