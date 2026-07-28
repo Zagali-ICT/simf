@@ -8,7 +8,16 @@
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
 | **Required permission** | `Countries.View` (page gate). Create/Edit/Deactivate actions hit endpoints gated by `Countries.Create` / `Countries.Edit` / `Countries.Delete`. |
-| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
+| **Last reviewed** | 2026-07-28 |
+
+> **The three D-353 presentation-toggle scenarios were renumbered 015/016/017 →
+> 022/023/024 on 2026-07-28.** They had been appended re-using ids that already
+> belonged to the not-found / server-500 / RTL rows, so `CTY-015`, `-016` and
+> `-017` each named two different scenarios in one matrix. Only the not-found /
+> 500 / RTL trio is written up in **Scenarios** below, so the toggle rows were the
+> interlopers and moved to the next free numbers. Scenario ids are the testbook
+> projector's grouping key, so a repeated id merges two unrelated rows into one
+> workbook entry. Nothing was deleted: the matrix still carries all 24.
 
 ## Coverage matrix
 
@@ -28,9 +37,6 @@
 | E2E-CTY-012 | Validation: phone prefix > 8 chars / negative display order | error | P2 | _to author_ |
 | E2E-CTY-013 | Conflict: duplicate ISO id → 409 `COUNTRY_ID_DUPLICATE` | error | P1 | _to author_ |
 | E2E-CTY-014 | Conflict: duplicate alpha-2 code → 409 `COUNTRY_CODE_DUPLICATE` | error | P1 | _to author_ |
-| E2E-CTY-015 | Presentation toggle: switch to full page + persists across reload (D-353) | happy | P1 | smoked 2026-06-09 |
-| E2E-CTY-016 | Full-page mode: Add/Edit/View replace the grid; Save returns to grid (D-353) | happy | P1 | _to author_ |
-| E2E-CTY-017 | Deactivate opens View/Delete → SimfConfirm gates the call (D-353) | error | P0 | _to author_ |
 | E2E-CTY-015 | Not found: edit/details of a missing id → 404 `COUNTRY_NOT_FOUND` | error | P2 | _to author_ |
 | E2E-CTY-016 | Server 500 on `/list` → bilingual fallback toast | resilience | P2 | _to author_ |
 | E2E-CTY-017 | RTL render: Arabic toggle mirrors page + Add modal | i18n | P1 | _to author_ |
@@ -38,6 +44,9 @@
 | E2E-CTY-019 | Excel import: upload a workbook → rows created/updated + result modal (D-356) | happy | P1 | _to author_ |
 | E2E-CTY-020 | Excel import: a non-workbook / wrong-sheet upload → bilingual rejection, nothing changed (D-356) | error | P1 | _to author_ |
 | E2E-CTY-021 | Excel round-trip: `IsInvited` + delegation arrival/departure dates survive export → import (D-506) | happy | P1 | _to author_ |
+| E2E-CTY-022 | Presentation toggle: switch to full page + persists across reload (D-353) | happy | P1 | smoked 2026-06-09 |
+| E2E-CTY-023 | Full-page mode: Add/Edit/View replace the grid; Save returns to grid (D-353) | happy | P1 | _to author_ |
+| E2E-CTY-024 | Deactivate opens View/Delete → SimfConfirm gates the call (D-353) | error | P0 | _to author_ |
 
 ## Scenarios
 

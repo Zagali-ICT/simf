@@ -64,7 +64,7 @@
 | E2E-REQ-010 | Server 500 on `GET /app/my-requests` → inline retry surface, no rows | resilience | P2 | _to author_ |
 | E2E-REQ-011 | RTL render (Arabic) — header, طلب جديد button, status chips, cards + Cancel mirror right-to-left | i18n | P1 | _to author_ |
 | E2E-REQ-014 | A checked-in speaker meeting reads **Attended** (QA B12) — the server sets the append-only `checkedIn: true` while `status` still folds Done → Accepted (1), so the card label switches from "Accepted"/"مقبول" to "Attended"/"تم الحضور" without breaking the shipped 0–3 wire contract | happy | P1 | authored ✓ (`SpeakerMeetingQaTests.B12_Check_in_notifies_the_requester_and_surfaces_as_CheckedIn_on_their_feed`, API) |
-| E2E-REQ-014 | B11 — a Pending or AwaitingConfirmation `DelegationMeeting` reports `canCancel = true` (still folded to Pending on the wire) | data | P0 | authored ✓ (`MyRequestsTests`, API) |
+| E2E-REQ-018 | B11 — a Pending or AwaitingConfirmation `DelegationMeeting` reports `canCancel = true` (still folded to Pending on the wire) | data | P0 | authored ✓ (`MyRequestsTests`, API) |
 | E2E-REQ-015 | B11 — withdrawing an AwaitingConfirmation delegation meeting sets Cancelled and releases the hall + table | happy | P0 | authored ✓ (`MyRequestsTests`, API) |
 | E2E-REQ-016 | B11 — withdrawing an already-confirmed delegation meeting is 409 and leaves it Accepted; another user's is 404 | conflict / auth | P1 | authored ✓ (`MyRequestsTests`, API) |
 | E2E-REQ-017 | D1 — withdrawing an AwaitingConfirmation delegation meeting retracts the target delegation's "please confirm" card; withdrawing a Pending one tells them nothing | data | P0 | authored ✓ (`DelegationMeetingQaFixesTests.D1_*`, API) |

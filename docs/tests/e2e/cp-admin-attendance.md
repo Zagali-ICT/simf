@@ -7,7 +7,21 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-05 |
+| **Last reviewed** | 2026-07-28 |
+
+> **Scenario ids were renamespaced `ATT` → `ATND` on 2026-07-28.** This page and
+> the attendees roster ([`cp-admin-attendees.md`](cp-admin-attendees.md)) both
+> used `E2E-ATT-`, and their ranges overlapped completely: `ATT-001..014` here
+> against `ATT-001..016` there. Scenario ids are the primary key the testbook
+> projector (`tools/testbook/build_testbook.py`) groups by, so all fourteen ids
+> on this page collided with a same-numbered scenario on a different page and
+> were silently dropped from the generated workbook — the counts in it read as
+> complete while fourteen scenarios were missing.
+>
+> `ATT` stayed with the **attendees** roster (the closer match); this page's
+> fourteen ids moved to `ATND-001..014`, same numbers, same order. Older
+> references to `E2E-ATT-001..014` in this page's context — notably decision
+> **D-293** — mean these scenarios; the log is append-only and was not rewritten.
 
 > **What this page is.** The session-attendance dashboard
 > (`AttendanceDashboard.razor`, FR-506) is a **read-only** view of the
@@ -57,24 +71,24 @@
 
 | ID | Scenario | Type | Priority | Status |
 |----|----------|------|----------|--------|
-| E2E-ATT-001 | Golden path — admin loads `/admin/attendance`; 3 tiles + per-session grid render | happy | P0 | authored ✓ (`List_returns_distinct_attendee_and_live_now_per_session`) |
-| E2E-ATT-002 | Distinct attendees dedupe re-entry; live-now counts only open rows | function | P0 | authored ✓ (`List_returns_distinct_attendee_and_live_now_per_session`) |
-| E2E-ATT-003 | A session with no arrivals shows 0 / 0 | happy | P1 | authored ✓ (`List_empty_session_has_zero_counts`) |
-| E2E-ATT-004 | Top-line summary reflects live + total arrivals | happy | P0 | authored ✓ (`Summary_lower_bounds_reflect_seeded_arrivals`) |
-| E2E-ATT-005 | Empty grid (no active sessions) renders `SimfEmptyState` (`Admin.Attendance.None`) | happy | P1 | _to author_ |
-| E2E-ATT-006 | Auth gate (API) — caller lacking `Attendance.View` → 403 on summary + list | auth | P0 | authored ✓ (`Summary_is_forbidden_for_a_non_admin`, `List_is_forbidden_for_a_non_admin`) |
-| E2E-ATT-007 | Auth gate (CP) — admin lacking `Attendance.View` → `/not-permitted`; nav item hidden | auth | P0 | _to author_ |
-| E2E-ATT-008 | Per-column filter (code / title) narrows the grid | happy | P1 | _to author_ |
-| E2E-ATT-009 | Column sort toggles (code / title / start ascending↔descending) | happy | P2 | _to author_ |
-| E2E-ATT-010 | Live-now `SimfPill` shows for sessions with people inside, plain "0" otherwise | function | P1 | _to author_ |
-| E2E-ATT-011 | Server 500 on summary or list → red `SimfAlert` (`Admin.Attendance.LoadFailed`) | resilience | P2 | _to author_ |
-| E2E-ATT-012 | Read-only surface — no Add/Edit/Delete/select; no POST/PUT/DELETE beyond the list call | function | P2 | _to author_ |
-| E2E-ATT-013 | RTL / Arabic render — banner, tiles, grid headers and nav mirror | i18n | P1 | _to author_ |
-| E2E-ATT-014 | Counts reflect live state — record an arrival, reload, the session's Live-now + the top-line move | happy | P1 | _to author_ |
+| E2E-ATND-001 | Golden path — admin loads `/admin/attendance`; 3 tiles + per-session grid render | happy | P0 | authored ✓ (`List_returns_distinct_attendee_and_live_now_per_session`) |
+| E2E-ATND-002 | Distinct attendees dedupe re-entry; live-now counts only open rows | function | P0 | authored ✓ (`List_returns_distinct_attendee_and_live_now_per_session`) |
+| E2E-ATND-003 | A session with no arrivals shows 0 / 0 | happy | P1 | authored ✓ (`List_empty_session_has_zero_counts`) |
+| E2E-ATND-004 | Top-line summary reflects live + total arrivals | happy | P0 | authored ✓ (`Summary_lower_bounds_reflect_seeded_arrivals`) |
+| E2E-ATND-005 | Empty grid (no active sessions) renders `SimfEmptyState` (`Admin.Attendance.None`) | happy | P1 | _to author_ |
+| E2E-ATND-006 | Auth gate (API) — caller lacking `Attendance.View` → 403 on summary + list | auth | P0 | authored ✓ (`Summary_is_forbidden_for_a_non_admin`, `List_is_forbidden_for_a_non_admin`) |
+| E2E-ATND-007 | Auth gate (CP) — admin lacking `Attendance.View` → `/not-permitted`; nav item hidden | auth | P0 | _to author_ |
+| E2E-ATND-008 | Per-column filter (code / title) narrows the grid | happy | P1 | _to author_ |
+| E2E-ATND-009 | Column sort toggles (code / title / start ascending↔descending) | happy | P2 | _to author_ |
+| E2E-ATND-010 | Live-now `SimfPill` shows for sessions with people inside, plain "0" otherwise | function | P1 | _to author_ |
+| E2E-ATND-011 | Server 500 on summary or list → red `SimfAlert` (`Admin.Attendance.LoadFailed`) | resilience | P2 | _to author_ |
+| E2E-ATND-012 | Read-only surface — no Add/Edit/Delete/select; no POST/PUT/DELETE beyond the list call | function | P2 | _to author_ |
+| E2E-ATND-013 | RTL / Arabic render — banner, tiles, grid headers and nav mirror | i18n | P1 | _to author_ |
+| E2E-ATND-014 | Counts reflect live state — record an arrival, reload, the session's Live-now + the top-line move | happy | P1 | _to author_ |
 
 ## Scenarios
 
-### E2E-ATT-001 — Golden path (load + render)
+### E2E-ATND-001 — Golden path (load + render)
 
 ```gherkin
 Feature: Session-attendance dashboard
@@ -112,7 +126,7 @@ Scenario: The dashboard renders the live top-line and the per-session grid
 
 **Lower-layer evidence:** `SessionAttendanceTests.List_returns_distinct_attendee_and_live_now_per_session` (green).
 
-### E2E-ATT-002 — Distinct attendees dedupe re-entry; live counts open rows only
+### E2E-ATND-002 — Distinct attendees dedupe re-entry; live counts open rows only
 
 ```gherkin
 Scenario: A re-entered attendee counts once; live-now counts only open rows
@@ -126,7 +140,7 @@ Scenario: A re-entered attendee counts once; live-now counts only open rows
 
 **Lower-layer evidence:** `SessionAttendanceTests.List_returns_distinct_attendee_and_live_now_per_session` (green).
 
-### E2E-ATT-003 — Session with no arrivals
+### E2E-ATND-003 — Session with no arrivals
 
 ```gherkin
 Scenario: An active session that nobody has arrived at shows zero counts
@@ -137,7 +151,7 @@ Scenario: An active session that nobody has arrived at shows zero counts
 
 **Lower-layer evidence:** `SessionAttendanceTests.List_empty_session_has_zero_counts` (green).
 
-### E2E-ATT-004 — Top-line summary
+### E2E-ATND-004 — Top-line summary
 
 ```gherkin
 Scenario: The top-line tiles aggregate across the event
@@ -150,7 +164,7 @@ Scenario: The top-line tiles aggregate across the event
 
 **Lower-layer evidence:** `SessionAttendanceTests.Summary_lower_bounds_reflect_seeded_arrivals` (green).
 
-### E2E-ATT-005 — Empty grid (no active sessions)
+### E2E-ATND-005 — Empty grid (no active sessions)
 
 ```gherkin
 Scenario: With no active sessions the grid shows the empty state
@@ -161,7 +175,7 @@ Scenario: With no active sessions the grid shows the empty state
   And the 3 stat tiles still render (with 0 values)
 ```
 
-### E2E-ATT-006 — Auth gate (API 403)
+### E2E-ATND-006 — Auth gate (API 403)
 
 ```gherkin
 Scenario: A signed-in non-admin without Attendance.View is forbidden by the API
@@ -174,7 +188,7 @@ Scenario: A signed-in non-admin without Attendance.View is forbidden by the API
 **Lower-layer evidence:** `SessionAttendanceTests.Summary_is_forbidden_for_a_non_admin` +
 `SessionAttendanceTests.List_is_forbidden_for_a_non_admin` (green).
 
-### E2E-ATT-007 — Auth gate (CP redirect + nav hide)
+### E2E-ATND-007 — Auth gate (CP redirect + nav hide)
 
 ```gherkin
 Scenario: A signed-in admin without Attendance.View is denied in the CP
@@ -185,7 +199,7 @@ Scenario: A signed-in admin without Attendance.View is denied in the CP
   And the "Attendance" item is hidden from their side nav rail (RequiredPermission = Attendance.View)
 ```
 
-### E2E-ATT-008 — Per-column filter
+### E2E-ATND-008 — Per-column filter
 
 ```gherkin
 Scenario: Typing into the Code / Session column filters narrows the grid
@@ -198,7 +212,7 @@ Scenario: Typing into the Code / Session column filters narrows the grid
   Then the list call carries Filters["title"] and the grid narrows by English title
 ```
 
-### E2E-ATT-009 — Column sort
+### E2E-ATND-009 — Column sort
 
 ```gherkin
 Scenario: Sorting by Start, Code, then Session toggles ascending/descending
@@ -210,7 +224,7 @@ Scenario: Sorting by Start, Code, then Session toggles ascending/descending
   And the Hall, Total attendees and Live now columns stay unsortable
 ```
 
-### E2E-ATT-010 — Live-now pill
+### E2E-ATND-010 — Live-now pill
 
 ```gherkin
 Scenario: Live-now renders a pill only when people are inside
@@ -220,7 +234,7 @@ Scenario: Live-now renders a pill only when people are inside
   And session Y's "Live now" cell shows plain text "0" (no pill)
 ```
 
-### E2E-ATT-011 — Server 500 fallback
+### E2E-ATND-011 — Server 500 fallback
 
 ```gherkin
 Scenario: A 500 on either call shows the bilingual fallback alert
@@ -232,7 +246,7 @@ Scenario: A 500 on either call shows the bilingual fallback alert
   And the page does not crash to the unhandled-exception page
 ```
 
-### E2E-ATT-012 — Read-only surface
+### E2E-ATND-012 — Read-only surface
 
 ```gherkin
 Scenario: The page exposes no write actions
@@ -241,7 +255,7 @@ Scenario: The page exposes no write actions
   And the page makes no PUT / DELETE request, and no POST other than the sessions/list query
 ```
 
-### E2E-ATT-013 — RTL / Arabic render
+### E2E-ATND-013 — RTL / Arabic render
 
 ```gherkin
 Scenario: Arabic toggle mirrors the dashboard
@@ -254,7 +268,7 @@ Scenario: Arabic toggle mirrors the dashboard
   And the grid + nav rail mirror right-to-left
 ```
 
-### E2E-ATT-014 — Counts reflect live state (round-trip)
+### E2E-ATND-014 — Counts reflect live state (round-trip)
 
 ```gherkin
 Scenario: Recording an arrival moves the session's live count and the top-line

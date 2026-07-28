@@ -87,7 +87,8 @@ gates (`mobile-gate-scan.md`, `POST /app/gates/{id}/scans`) and CP hall-arrivals
 **Decision needed:** does "scan session" mean a **new** staff app screen that scans attendees into a
 specific session, or the **existing** CP hall-arrivals door console?
 **Existing tests:** `cp-admin-hall-arrivals.md` E2E-HAR-001..014; `cp-admin-attendance.md`
-E2E-ATT-*; `mobile-gate-scan.md` E2E-MOBGATE-000..004.
+E2E-ATND-* (was `E2E-ATT-*` until the 2026-07-28 renamespace off the attendees roster);
+`mobile-gate-scan.md` E2E-MOBGATE-000..004.
 
 ## 4. Select seat + CP approval + random-not-exceed-max  `BUILT`
 **Current state**

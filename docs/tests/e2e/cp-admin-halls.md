@@ -43,11 +43,14 @@
 | E2E-HAL-022 | Excel import: a non-.xlsx / wrong-sheet upload → bilingual rejection, nothing created (D-356) | error | P1 | _to author_ |
 | E2E-HAL-023 | Edit preserves a re-sent geofence — regression (D-505) | error | P0 | _to author_ |
 | E2E-HAL-024 | Excel round-trip: import a workbook carrying EquipmentNotes / geofence / SeatSelectionMode → fields land on the summary; export header carries them (D-506) | happy | P1 | _to author_ |
-| E2E-HAL-026 | Hall detail lists the sessions assigned to the hall — the occupancy view (QA B16) | happy | P1 | _to author_ |
-| E2E-HAL-027 | A hall with no sessions shows the schedule empty state (QA B16) | happy | P2 | _to author_ |
-| E2E-HAL-028 | The schedule read is gated by `Halls.View` (QA B16) | auth | P1 | _to author_ |
-| E2E-HAL-029 | A soft-deleted session is not shown as occupancy — regression (QA B16) | error | P0 | _to author_ |
-| E2E-HAL-030 | A schedule longer than one page says it was capped (QA B16) | error | P2 | _to author_ |
+
+> `E2E-HAL-025` and `E2E-HAL-026..030` are catalogued in their own sections
+> further down — **On-site remediation (W4)** and **QA B16 — hall occupancy
+> view** — each with its own table and written-up scenarios, which is this
+> file's convention for a later-appended batch. The five B16 rows had *also*
+> been copied into this matrix, so each of them appeared twice in the same
+> document under the same id. The copies were removed on 2026-07-28 and the
+> sections below are authoritative; all 30 ids remain catalogued.
 
 ## Scenarios
 
@@ -485,7 +488,7 @@ Scenario: A bad upload is rejected without creating anything
   `Halls.View` (list/get), `Halls.Create` (POST), `Halls.Edit` (PUT),
   `Halls.Delete` (DELETE). Error codes live in `SIMF.Common/ErrorCodes.cs`
   (`HALL_INVALID`, `HALL_NOT_FOUND`, `HALL_CODE_DUPLICATE`, `HALL_IN_USE` —
-  enforced on deactivation since A37, see E2E-HAL-026 —
+  enforced on deactivation since A37, see E2E-HAL-032 —
   `HALL_GEOFENCE_INVALID`). Audit events: `Hall.Created`, `Hall.Updated`,
   `Hall.Deactivated` (`SIMF.Application/Auditing/AuditEvents.cs`).
 - **API integration tests** that cover the same surface at a lower layer
@@ -695,9 +698,9 @@ Scenario: a capacity reduction below the seat-layout total is blocked
 
 | Id | Scenario | Category | Priority | Status |
 |----|----------|----------|----------|--------|
-| E2E-HAL-026 | Deactivating a hall that active sessions still use → 409 `HALL_IN_USE` naming the count; the hall stays Active; the same guard runs when the edit form clears Active | validation | P1 | authored ✓ (`SessionLifecycleNoticeTests.A37_Deactivating_a_hall_active_sessions_use_is_rejected`) |
+| E2E-HAL-032 | Deactivating a hall that active sessions still use → 409 `HALL_IN_USE` naming the count; the hall stays Active; the same guard runs when the edit form clears Active | validation | P1 | authored ✓ (`SessionLifecycleNoticeTests.A37_Deactivating_a_hall_active_sessions_use_is_rejected`) |
 
-### E2E-HAL-026 — a hall in use cannot be deactivated
+### E2E-HAL-032 — a hall in use cannot be deactivated
 
 ```gherkin
 Feature: Deactivating a hall does not orphan the sessions inside it
@@ -729,7 +732,7 @@ Scenario: re-home the session first and the hall deactivates normally
 ---
 
 _Last reviewed:_ 2026-07-27 by Claude (QA B16 follow-up — the occupancy view now filters `isActive` so a soft-deleted session no longer reads as a live booking, and a capped page says so; E2E-HAL-029/030). Prior: 2026-07-26 by Claude (QA B16 — hall occupancy view; E2E-HAL-026..028). Prior: 2026-07-11 by Claude (W4 on-site remediation — H-3 capacity-shrink guard; E2E-HAL-025). Prior: 2026-06-26 by Claude (D-506 — Excel export/import field-drop fix: EquipmentNotes + geofence triple + SeatSelectionMode now round-trip; scenario E2E-HAL-024 added, E2E-HAL-020/021 column lists reconciled). Prior: 2026-06-10 (D-356 Phase 5 — Excel export/import + D-353 Page<->Popup toggle scenarios E2E-HAL-017..022; E2E-HAL-001 deactivate step reconciled to the CrudShell + SimfConfirm gate).
-_Last reviewed:_ 2026-07-26 by Claude (session-lifecycle QA package — A37 hall in-use deactivation guard, `HALL_IN_USE` now enforced rather than reserved; E2E-HAL-026). Prior: 2026-07-11 by Claude (W4 on-site remediation — H-3 capacity-shrink guard; E2E-HAL-025). Prior: 2026-06-26 by Claude (D-506 — Excel export/import field-drop fix: EquipmentNotes + geofence triple + SeatSelectionMode now round-trip; scenario E2E-HAL-024 added, E2E-HAL-020/021 column lists reconciled). Prior: 2026-06-10 (D-356 Phase 5 — Excel export/import + D-353 Page<->Popup toggle scenarios E2E-HAL-017..022; E2E-HAL-001 deactivate step reconciled to the CrudShell + SimfConfirm gate).
+_Last reviewed:_ 2026-07-26 by Claude (session-lifecycle QA package — A37 hall in-use deactivation guard, `HALL_IN_USE` now enforced rather than reserved; E2E-HAL-032). Prior: 2026-07-11 by Claude (W4 on-site remediation — H-3 capacity-shrink guard; E2E-HAL-025). Prior: 2026-06-26 by Claude (D-506 — Excel export/import field-drop fix: EquipmentNotes + geofence triple + SeatSelectionMode now round-trip; scenario E2E-HAL-024 added, E2E-HAL-020/021 column lists reconciled). Prior: 2026-06-10 (D-356 Phase 5 — Excel export/import + D-353 Page<->Popup toggle scenarios E2E-HAL-017..022; E2E-HAL-001 deactivate step reconciled to the CrudShell + SimfConfirm gate).
 
 ---
 

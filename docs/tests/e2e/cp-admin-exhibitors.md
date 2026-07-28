@@ -51,6 +51,7 @@
 | E2E-EXH-024 | Excel export/import round-trips the Tier (D-503) | happy | P1 | _to author_ |
 | E2E-EXH-027 | Link an existing account to an exhibitor — the Others-pipeline lockout fix (D-781) | happy | P0 | authored |
 | E2E-EXH-028 | Link rejections — unknown email / not exhibitor-typed / already linked (D-781) | error | P1 | authored |
+| E2E-EXH-029 | Provision conflict — an already-registered email → 409 `ADMIN_EMAIL_ALREADY_REGISTERED`, no membership created | error | P1 | _to author_ |
 
 ## Scenarios
 
@@ -754,9 +755,35 @@ gate itself is swept by
   own `SimfModal`, independent of the CrudShell (E2E-EXH-020); the CRUD action buttons are not
   individually gated in the CP — per-action enforcement is API-side only (E2E-EXH-009).
 
+### E2E-EXH-029 — Provision an already-registered email
+
+Ported from the retired `cp-admin-companies.md` (`E2E-CMP-011`) on 2026-07-28.
+`/admin/companies` was renamed to `/admin/exhibitors` by `a05ef82d`, and this was
+the one scenario in that file with no equivalent here: EXH-020 covers the happy
+provisioning path and EXH-028 covers rejections on the **link** flow (D-781), but
+nothing covered a **provision** attempt against an email that already has an
+account.
+
+```gherkin
+Scenario: Provisioning an already-registered email returns 409
+  Given an exhibitor "Saab Maritime" is active
+  And the email "existing.user@simf.example" is already registered as a SIMF account
+  When the administrator opens the Accounts modal
+  And fills Contact name="Dup User" + Email="existing.user@simf.example"
+  And clicks "Provision account"
+  Then POST /account/api/admin/exhibitors/{id}/accounts returns HTTP 409
+  And ApiResult.Error.Code = "ADMIN_EMAIL_ALREADY_REGISTERED"
+      (raised by the reused IAdminUserProvisioningService.CreateVisitorAsync pipeline)
+  And a red SimfAlert surfaces the bilingual server message
+  And no ExhibitorMembership row is created
+```
+
 ---
 
-_Last reviewed:_ 2026-07-27 by Claude — owner decision D-781: the Accounts modal
+_Last reviewed:_ 2026-07-28 by Claude — retired the orphaned
+`cp-admin-companies.md` (the `/admin/companies` route ceased to exist at
+`a05ef82d`) and ported its one uncovered scenario here as E2E-EXH-029.
+Prior: 2026-07-27 by Claude — owner decision D-781: the Accounts modal
 gained a "Link an existing account" block on its own `Exhibitors.LinkAccount`
 permission (`POST /admin/exhibitors/{id}/accounts/link`), fixing the
 Others-pipeline lockout; E2E-EXH-027 / E2E-EXH-028. Prior: 2026-06-10 by Claude

@@ -43,7 +43,7 @@
 | E2E-SMD-005 | Cancel closes the modal without a POST | function | P2 | _to author_ |
 | E2E-SMD-006 | Client validation — non-GUID id → bilingual error **inside the dialog**, no POST (BUG-004) | error | P1 | _to author_ |
 | E2E-SMD-019 | Client validation — empty submit → bilingual error **inside the dialog**, no POST (BUG-004) | error | P1 | _to author_ |
-| E2E-SMD-006 | Client validation — submitting with a picker unset → error toast, no POST | error | P1 | _to author_ |
+| E2E-SMD-021 | Client validation — submitting with a picker unset → error toast, no POST | error | P1 | _to author_ |
 | E2E-SMD-007 | Server validation — unknown SessionId → `SESSION_NOT_FOUND` (404) | error | P1 | _to author_ |
 | E2E-SMD-008 | Server validation — inactive session → `SESSION_INVALID` (400) | error | P1 | _to author_ |
 | E2E-SMD-009 | Server validation — unknown moderator user → `ADMIN_USER_NOT_FOUND` (404) | error | P1 | _to author_ |
@@ -56,7 +56,7 @@
 | E2E-SMD-016 | Per-column filter — typing in "Filter column Session" narrows the grid | function | P1 | _to author_ |
 | E2E-SMD-017 | Column sort — Session / Assigned headers toggle asc↔desc | function | P2 | _to author_ |
 | E2E-SMD-018 | Excel export — toolbar Export downloads an .xlsx of the grants (whole grid vs selected rows) (D-356) | happy | P1 | _to author_ |
-| E2E-SMD-019 | DEF-MOD-005 — an INELIGIBLE account is never offered and is refused server-side (`SESSION_MODERATOR_NOT_ELIGIBLE`) | error | P0 | _to author_ |
+| E2E-SMD-022 | DEF-MOD-005 — an INELIGIBLE account is never offered and is refused server-side (`SESSION_MODERATOR_NOT_ELIGIBLE`) | error | P0 | _to author_ |
 | E2E-SMD-020 | DEF-MOD-005 — the picker lookup carries the `SessionModerators.Assign` gate | auth | P0 | _to author_ |
 
 ## Scenarios
