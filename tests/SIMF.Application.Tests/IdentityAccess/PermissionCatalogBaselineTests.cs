@@ -18,6 +18,29 @@ public sealed class PermissionCatalogBaselineTests
             .Select(permission => permission.Code)
             .ToHashSet(StringComparer.Ordinal);
 
+    // Cross-cutting grants — codes deliberately given to EVERY non-Administrator
+    // CP team (the catalogue's `AllCpTeams` baseline list), so they appear in
+    // every team's set and legitimately overlap between teams. `Assistant.Use`
+    // joined the catalogue on 2026-07-22 with the CP help assistant (d9718315):
+    // any operator may ask the assistant for help, so it is granted to all teams
+    // by design rather than belonging to one team's feature surface.
+    //
+    // Listed here EXPLICITLY rather than derived from the catalogue. Deriving it
+    // ("every code whose baseline covers all teams") would auto-excuse a future
+    // grant that reaches every role by accident — precisely the regression these
+    // tests exist to catch. A new cross-cutting permission must be added here on
+    // purpose.
+    private static readonly HashSet<string> CrossCuttingCodes =
+        new(StringComparer.Ordinal) { PermissionCatalog.Assistant.Use };
+
+    /// <summary>A team's feature surface plus the cross-cutting grants every
+    /// team receives — the full set its baseline should resolve to.</summary>
+    private static HashSet<string> WithCrossCutting(HashSet<string> featureSurface)
+    {
+        featureSurface.UnionWith(CrossCuttingCodes);
+        return featureSurface;
+    }
+
     [Fact]
     public void Both_new_team_roles_are_registered_cp_roles()
     {
@@ -44,7 +67,7 @@ public sealed class PermissionCatalogBaselineTests
             PermissionCatalog.Attendance.View,
         };
 
-        Assert.Equal(expected, BaselineCodesFor(AppRoles.SecurityTeam));
+        Assert.Equal(WithCrossCutting(expected), BaselineCodesFor(AppRoles.SecurityTeam));
     }
 
     [Fact]
@@ -91,16 +114,25 @@ public sealed class PermissionCatalogBaselineTests
             PermissionCatalog.Ratings.Export,
         };
 
-        Assert.Equal(expected, BaselineCodesFor(AppRoles.ScientificCommittee));
+        Assert.Equal(WithCrossCutting(expected), BaselineCodesFor(AppRoles.ScientificCommittee));
     }
 
     [Fact]
-    public void The_two_teams_do_not_overlap()
+    public void The_two_teams_overlap_only_on_cross_cutting_grants()
     {
+        // Was `The_two_teams_do_not_overlap` (Assert.Empty) until 2026-07-28.
+        // That held while every catalogue entry belonged to exactly one team's
+        // feature surface, and stopped holding when `Assistant.Use` was granted
+        // to all CP teams — the teams' SURFACES still must not overlap, but a
+        // deliberately cross-cutting grant is not a surface leak. Asserting
+        // equality (not "is a subset of") keeps the teeth: a shared code that is
+        // NOT on the cross-cutting list still fails.
         var security = BaselineCodesFor(AppRoles.SecurityTeam);
         var scientific = BaselineCodesFor(AppRoles.ScientificCommittee);
 
-        Assert.Empty(security.Intersect(scientific));
+        Assert.Equal(
+            CrossCuttingCodes,
+            security.Intersect(scientific).ToHashSet(StringComparer.Ordinal));
     }
 
     [Fact]

@@ -21,6 +21,13 @@
     <PackageReference Include="bunit" Version="1.40.0" />
   </ItemGroup>
 
+  <!-- DEF-001 — same transitive AngleSharp advisory as SIMF.ControlPanel.Tests;
+       the full assessment lives in that .csproj. Both bUnit projects need the
+       suppression: restore fails on whichever one is left out. -->
+  <ItemGroup>
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-pgww-w46g-26qg" />
+  </ItemGroup>
+
   <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>

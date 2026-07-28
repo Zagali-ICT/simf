@@ -37,20 +37,40 @@ public sealed class SqlContentSeederTests : IClassFixture<SimfApiFactory>
         // The one main hall (SIMF_App_Programme.sql).
         Assert.Equal(1, await db.Halls.CountAsync(h => h.Code == "MAIN"));
 
-        // The three programme days (20-22 Nov 2026).
+        // The three programme days. These were 20-22 Nov 2026 while the seed
+        // carried placeholder content; db9b6f76 (2026-07-21) replaced it with the
+        // REAL SIMF-4 programme on 23-25 Nov and soft-deletes the placeholder
+        // days by (Date, Title) in the same file, so 20-22 must now be gone.
         var days = await db.ProgrammeDays
-            .Where(d => d.Date >= new DateOnly(2026, 11, 20) && d.Date <= new DateOnly(2026, 11, 22))
+            .Where(d => d.IsActive
+                && d.Date >= new DateOnly(2026, 11, 23) && d.Date <= new DateOnly(2026, 11, 25))
             .Select(d => d.Date)
             .ToListAsync();
         Assert.Equal(3, days.Count);
-        Assert.Contains(new DateOnly(2026, 11, 20), days);
-        Assert.Contains(new DateOnly(2026, 11, 22), days);
+        Assert.Contains(new DateOnly(2026, 11, 23), days);
+        Assert.Contains(new DateOnly(2026, 11, 25), days);
 
-        // The five placeholder sessions; the opening one carries the live URL.
-        Assert.Equal(5, await db.Sessions.CountAsync(s => s.Code.StartsWith("S-D")));
-        var opening = await db.Sessions.SingleAsync(s => s.Code == "S-D1-01");
-        Assert.Equal("الجلسة الافتتاحية", opening.TitleArabic);
-        Assert.False(string.IsNullOrWhiteSpace(opening.LiveStreamUrl));
+        // The guarded cleanup half of that swap: no active placeholder day survives.
+        Assert.Empty(await db.ProgrammeDays
+            .Where(d => d.IsActive
+                && d.Date >= new DateOnly(2026, 11, 20) && d.Date <= new DateOnly(2026, 11, 22))
+            .ToListAsync());
+
+        // The real programme: 59 sessions coded D{day}-{nn}, and none of the five
+        // retired S-D* placeholders still active.
+        Assert.Equal(59, await db.Sessions.CountAsync(s => s.IsActive && s.Code.StartsWith("D")));
+        Assert.Equal(0, await db.Sessions.CountAsync(s => s.IsActive && s.Code.StartsWith("S-D")));
+
+        // Day one opens with the arrival + opening ceremony at 07:00 Riyadh.
+        var opening = await db.Sessions.SingleAsync(s => s.Code == "D1-02");
+        Assert.Equal(
+            "وصول معالي رئيس هيئة الأركان العامة وبدء فعاليات افتتاح الملتقى",
+            opening.TitleArabic);
+        Assert.Equal(new DateOnly(2026, 11, 23), DateOnly.FromDateTime(opening.Start.Date));
+
+        // The five محاور / axes and their session links (section 3 + 6 of the SQL).
+        Assert.Equal(5, await db.Themes.CountAsync(t => t.IsActive && t.Code.StartsWith("AXIS-")));
+        Assert.NotEmpty(await db.SessionThemes.ToListAsync());
 
         // The Highlights news item (SIMF_App_News.sql).
         Assert.Equal(1, await db.News.CountAsync(n => n.Category == "Highlights"));
