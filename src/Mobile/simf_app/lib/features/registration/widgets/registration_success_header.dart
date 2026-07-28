@@ -29,6 +29,7 @@ class RegistrationSuccessHeader extends StatelessWidget {
               padding: const EdgeInsets.only(left: SimfTokens.space2),
               child: IconButton(
                 onPressed: onBack,
+                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                 icon: const Icon(
                   Icons.arrow_back_ios_new,
                   color: SimfTokens.surface,
