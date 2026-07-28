@@ -19,6 +19,31 @@
     <PackageReference Include="bunit" Version="1.40.0" />
   </ItemGroup>
 
+  <!-- DEF-001 — a clean `dotnet restore` FAILED on this solution: bUnit 1.40.0
+       pulls AngleSharp 1.2.0 transitively, that version carries
+       GHSA-pgww-w46g-26qg, and NuGetAudit + TreatWarningsAsErrors turn it into
+       error NU1902. CI could not restore at all, which is why the repo had
+       taken to passing `-p:NuGetAudit=false` — a blanket flag that also hides
+       every FUTURE advisory, including ones in shipping code.
+
+       Upgrading is not available here: the advisory is first patched in
+       AngleSharp 1.5.0, and 1.5.0 is binary-incompatible with bUnit 1.40.0
+       (it drops `IHtmlCollection<T>.get_Item`, so bUnit's
+       RefreshableElementCollection throws MissingMethodException — measured:
+       38 CP + 18 Website tests fail). The next bUnit that targets it is 2.x, a
+       major-version rewrite across all 424 bUnit tests — not this change.
+
+       Assessment: the advisory is an mXSS sanitiser bypass, reachable only
+       when AngleSharp parses UNTRUSTED HTML. Here it is test-only
+       (IsPackable=false, no runtime graph references it) and parses only the
+       markup our own components render in-process. Not reachable; suppressed
+       by advisory URL rather than by disabling the auditor, so auditing stays
+       ON and any OTHER advisory still fails the build. Revisit with the bUnit
+       2.x migration. -->
+  <ItemGroup>
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-pgww-w46g-26qg" />
+  </ItemGroup>
+
   <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>

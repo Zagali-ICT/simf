@@ -19,11 +19,15 @@ namespace SIMF.Api.Tests;
 
 public sealed class SpeakerAvailabilityTests : IClassFixture<SimfApiFactory>
 {
-    // D-753 — availability windows are now bounded to the forum days (MIN/MAX over the
-    // active ProgrammeDay rows). The fixture seeds programme days 2026-11-20..22, so the
+    // D-753 — availability windows are bounded to the forum days (MIN/MAX over the
+    // active ProgrammeDay rows). The fixture seeds programme days 2026-11-23..25, so the
     // window sits on day one — inside that window and (relative to the test clock) in the
     // future so the derived slots are still offered.
-    private static readonly DateTimeOffset WindowStart = new(2026, 11, 20, 10, 0, 0, TimeSpan.Zero);
+    //
+    // Was 2026-11-20 until 2026-07-28: db9b6f76 moved the real SIMF-4 programme to
+    // 23-25 Nov and soft-deletes the old 20-22 placeholder days, which put this
+    // window outside the forum bound so the window was refused and no slot existed.
+    private static readonly DateTimeOffset WindowStart = new(2026, 11, 23, 10, 0, 0, TimeSpan.Zero);
 
     private readonly SimfApiFactory _factory;
     private readonly HttpClient _client;

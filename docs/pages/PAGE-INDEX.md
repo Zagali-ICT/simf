@@ -143,11 +143,11 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 
 ### CP framework / error pages
 
-| Route | Status | Notes |
-|-------|--------|-------|
-| `/Error` | ✅ Real | Framework error |
-| `/not-found` | ✅ Real | 404 page |
-| `/not-permitted` | ✅ Real | 403 page (the auth-gate target for every per-page permission) |
+| Route | Status | Notes | Test |
+|-------|--------|-------|------|
+| `/Error` | ✅ Real | Framework error. Rewritten in §6.16 (NAV-004 / LOC-008) — localized, in-shell, and no longer prints ASPNETCORE_ENVIRONMENT guidance to whoever hits it. | [e2e/cp-framework-pages.md](../tests/e2e/cp-framework-pages.md) |
+| `/not-found` | ✅ Real | 404 page. Rewritten in §6.16 (NAV-005) — was a bare `<h3>` outside the CP shell with no way back. Also what an unknown `/m/{module}` slug now renders (NAV-011). | [e2e/cp-framework-pages.md](../tests/e2e/cp-framework-pages.md) |
+| `/not-permitted` | ✅ Real | 403 page (the auth-gate target for every per-page permission). Reachable by page routing since §6.16 (NAV-001); before that a forbidden page redirected to `/login`, so a denial was indistinguishable from a session expiry. | [e2e/cp-framework-pages.md](../tests/e2e/cp-framework-pages.md) |
 
 ---
 

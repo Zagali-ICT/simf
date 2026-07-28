@@ -133,17 +133,51 @@ public sealed class SpeakerMeetingVipSlotTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task A_slot_that_is_not_available_is_409()
+    public async Task A_slot_is_accepted_without_an_availability_recheck_and_resolves_its_window()
     {
+        // Was `A_slot_that_is_not_available_is_409` (asserting 409 on a slot the
+        // scheduler does not offer). Rule R1 of the D-767 bi-meeting rework
+        // deliberately DROPPED the submit-time availability re-check: several
+        // Pending requests may target the same time, the admin approves exactly one
+        // under the Serializable approve guard, and a reserved slot is already
+        // hidden from the picker (R2) — so a requester never sees a same-time
+        // error. Submit now validates only the slot PAIR (both-or-neither,
+        // end > start) and resolves which window the slot came from.
+        //
+        // This asserts that current contract on both sides of the resolve-by-range
+        // lookup, which is the behaviour that actually still exists here.
         var speakerId = await SeedSpeakerWithWindowAsync();
         var (vip, _) = await CreateVisitorAsync(vip: true);
 
-        // A misaligned slot (not one the scheduler offers) → not available.
-        var response = await PostAuthAsync(
+        // Misaligned (09:05-09:35 against 30-minute slots) but still INSIDE the
+        // 09:00-10:00 window: accepted, and linked to that window.
+        var inside = await PostAuthAsync(
             $"/api/v1/app/speakers/{speakerId}/meeting-requests",
             SlotRequest(WindowStart.AddMinutes(5), WindowStart.AddMinutes(35)), vip);
+        Assert.Equal(HttpStatusCode.OK, inside.StatusCode);
 
-        Assert.Equal((HttpStatusCode)409, response.StatusCode);
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var request = await db.SpeakerMeetingRequests
+            .SingleAsync(r => r.SpeakerId == speakerId);
+        Assert.Equal(WindowStart.AddMinutes(5), request.SlotStart);
+        Assert.NotNull(request.AvailabilityWindowId);
+
+        // R8 — a second submission MOVES the same Pending request rather than
+        // duplicating it. A slot beyond the window's end resolves to NO window, so
+        // the link is cleared rather than left pointing at a window that does not
+        // contain the slot.
+        var outside = await PostAuthAsync(
+            $"/api/v1/app/speakers/{speakerId}/meeting-requests",
+            SlotRequest(WindowStart.AddHours(3), WindowStart.AddHours(3).AddMinutes(30)), vip);
+        Assert.Equal(HttpStatusCode.OK, outside.StatusCode);
+
+        using var afterScope = _factory.Services.CreateScope();
+        var afterDb = afterScope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var moved = await afterDb.SpeakerMeetingRequests
+            .SingleAsync(r => r.SpeakerId == speakerId);
+        Assert.Equal(WindowStart.AddHours(3), moved.SlotStart);
+        Assert.Null(moved.AvailabilityWindowId);
     }
 
     [Fact]

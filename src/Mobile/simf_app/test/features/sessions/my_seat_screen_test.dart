@@ -205,9 +205,22 @@ void main() {
       }
     });
 
+    // Both of these assert on the ACTION ROW at the bottom of the page, so both
+    // need the tall surface `_pump` documents — the page's ListView builds
+    // lazily and the row is not in the tree on the default 800x600. They passed
+    // without it only while the page was short enough for the row to fall inside
+    // the default viewport; the content added above it since (D-767 per-row seat
+    // counts, then the B1 "Change seat" CTA) pushed it out, and the finders
+    // started returning 0 widgets. The buttons themselves are unchanged — this
+    // is the test catching up with the page's height, not a screen regression.
     testWidgets('share sends the seat-location text', (tester) async {
       final share = _FakeSeatShare();
-      await _pump(tester, repo: _FakeSeatRepo(map: _map()), share: share);
+      await _pump(
+        tester,
+        repo: _FakeSeatRepo(map: _map()),
+        share: share,
+        surface: const Size(1000, 2600),
+      );
 
       await tester.tap(find.widgetWithText(OutlinedButton, 'Share location'));
       await tester.pumpAndSettle();
@@ -215,7 +228,11 @@ void main() {
     });
 
     testWidgets('navigate opens the venue map', (tester) async {
-      await _pump(tester, repo: _FakeSeatRepo(map: _map()));
+      await _pump(
+        tester,
+        repo: _FakeSeatRepo(map: _map()),
+        surface: const Size(1000, 2600),
+      );
 
       await tester.tap(find.widgetWithText(FilledButton, 'Guide me to my seat'));
       await tester.pumpAndSettle();

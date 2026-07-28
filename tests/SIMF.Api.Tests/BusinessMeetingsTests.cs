@@ -22,14 +22,20 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";
 
-    // D-753 — meeting scheduling is now bounded to the forum days (MIN/MAX over the
-    // active ProgrammeDay rows). The test fixture seeds programme days 2026-11-20..22
-    // (SIMF_App_Programme.sql), so every scheduled slot below is anchored to day one
-    // (09:00 Riyadh) and offset by HOURS to stay inside that window while remaining in
-    // the future relative to the test clock. The two "in the past" tests keep a
+    // D-753 — meeting scheduling is bounded to the forum days (MIN/MAX over the
+    // active ProgrammeDay rows). The fixture seeds those days from
+    // SIMF_App_Programme.sql, so every scheduled slot below is anchored to day one
+    // (09:00 Riyadh) and offset by HOURS to stay inside that window while remaining
+    // in the future relative to the test clock. The two "in the past" tests keep a
     // relative-to-now start so they still trip the not-in-past lower bound.
+    //
+    // The anchor was 2026-11-20 until 2026-07-28. Commit db9b6f76 replaced the
+    // placeholder programme with the real SIMF-4 one — 23-25 Nov 2026 — and
+    // soft-deletes the old 20-22 days, so the old anchor fell OUTSIDE the forum
+    // window: every schedule call 400'd on the D-753 bound before reaching the
+    // behaviour each test was actually asserting.
     private static readonly DateTimeOffset EventStart =
-        new(2026, 11, 20, 9, 0, 0, TimeSpan.FromHours(3));
+        new(2026, 11, 23, 9, 0, 0, TimeSpan.FromHours(3));
 
     private readonly SimfApiFactory _factory;
     private readonly HttpClient _client;
@@ -941,12 +947,12 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Schedule_a_meeting_inside_the_forum_window_succeeds()
     {
-        // The fixture seeds programme days 2026-11-20..22; a slot on day two is inside
+        // The fixture seeds programme days 2026-11-23..25; a slot on day two is inside
         // the window (and in the future) so scheduling is accepted.
         var token = await CreateAdministratorAndSignInAsync();
         var hallId = await SeedHallAsync(HallPurpose.Meeting);
         var tableId = await CreateTableAsync(hallId, token, capacity: 4);
-        var start = new DateTimeOffset(2026, 11, 21, 10, 0, 0, TimeSpan.FromHours(3));
+        var start = new DateTimeOffset(2026, 11, 24, 10, 0, 0, TimeSpan.FromHours(3));
 
         var resp = await ScheduleAsync(tableId, token, start, start.AddHours(1),
             await SeedCompanyAsync(), await SeedCompanyAsync());
@@ -957,7 +963,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
     public async Task Schedule_a_meeting_outside_the_forum_window_is_400()
     {
         // A future slot (so the not-in-past bound passes) but AFTER the last forum day
-        // (2026-11-22) is rejected by the D-753 forum-day bound. The forum check runs
+        // (2026-11-25) is rejected by the D-753 forum-day bound. The forum check runs
         // before the participant checks, so a valid two-company meeting still 400s.
         var token = await CreateAdministratorAndSignInAsync();
         var hallId = await SeedHallAsync(HallPurpose.Meeting);

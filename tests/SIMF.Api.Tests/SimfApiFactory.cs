@@ -81,9 +81,30 @@ public class SimfApiFactory : WebApplicationFactory<Program>
             "ConnectionStrings__SimfAppDb",
             $"Server=(localdb)\\MSSQLLocalDB;Database={_appDatabaseName};" +
             "Trusted_Connection=True;TrustServerCertificate=True");
-        Environment.SetEnvironmentVariable("SuperAdmin__Email", "superadmin@simf.test");
-        Environment.SetEnvironmentVariable("SuperAdmin__TempPassword", "ChangeMe!Test1");
-        Environment.SetEnvironmentVariable("SuperAdmin__TotpSecret", "JBSWY3DPEHPK3PXP");
+        // The super-admin seed settings, pinned so the suite is hermetic.
+        //
+        // Each is set TWICE, unprefixed and `SIMF_`-prefixed, because Program.cs
+        // adds `AddEnvironmentVariables("SIMF_")` AFTER the host's default
+        // unprefixed provider — so for any key that has a `SIMF_` form on the
+        // machine, that form wins and an unprefixed pin here is silently ignored.
+        // A developer box is documented to export
+        // `SIMF_SuperAdmin__PasswordChangeRequired=false` (so the seeded CP login
+        // is not forced to rotate), which overrode the `SuperAdminOptions` default
+        // of true and failed `IdentitySeederTests.SeedAsync_creates_the_super_admin`
+        // — a test whose result depended on whose machine ran it. Pinning both
+        // forms closes that for every one of these settings, not just the one that
+        // happened to be set here.
+        foreach (var (key, value) in new[]
+        {
+            ("SuperAdmin__Email", "superadmin@simf.test"),
+            ("SuperAdmin__TempPassword", "ChangeMe!Test1"),
+            ("SuperAdmin__TotpSecret", "JBSWY3DPEHPK3PXP"),
+            ("SuperAdmin__PasswordChangeRequired", "true"),
+        })
+        {
+            Environment.SetEnvironmentVariable(key, value);
+            Environment.SetEnvironmentVariable("SIMF_" + key, value);
+        }
         Environment.SetEnvironmentVariable("RateLimit__PermitLimit", "100000");
         // H7 — D-062: the new per-email partition (auth-email policy)
         // would otherwise cap test scenarios that intentionally retry
