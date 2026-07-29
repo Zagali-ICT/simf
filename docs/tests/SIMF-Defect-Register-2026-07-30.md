@@ -17,6 +17,35 @@ The defects were spread across seven documents with three different id schemes, 
 
 **96 of 194 were already fixed.** That is the single most important number here: the reports are a historical record, not a worklist. Every ALREADY-FIXED row below names the file or commit that closed it, read first-hand.
 
+## Sequencing correction found while executing Wave 2 (2026-07-30)
+
+**`#2d` must not ship before `#2`. On its own it is worse than the defect it fixes.**
+
+`#2d` reads "force `TwoFactorEnabled` for Admin-typed users". Doing only that locks
+every newly created admin out of the system permanently, at creation:
+
+- `SignInService.cs:175` issues tokens on the password alone **only** when
+  `!user.TwoFactorEnabled`. Setting the flag closes that path — correct, and the
+  point of `#2`.
+- But `SignInService.cs:202` then picks the factor kind as
+  `!string.IsNullOrEmpty(authenticatorKey) || roles.Count > 0 ? Totp : EmailOtp`.
+  A new admin **has a role** and **has no enrolled authenticator key**, so it
+  selects TOTP.
+- The account is therefore challenged for a TOTP code against a secret that does
+  not exist. There is no enrolment path in the sign-in flow to create one. The
+  admin cannot sign in, and no amount of retrying helps.
+
+So the order is fixed, not a preference:
+
+1. **`#2` first** — a CP enrolment challenge: when an admin with `TwoFactorEnabled`
+   and no authenticator key reaches the second-factor step, return an *enrolment*
+   ticket instead of a verification one, and have the CP consume the existing
+   `TotpSetupEndpoint` / `TotpConfirmEndpoint` to enrol before completing sign-in.
+2. **`#2d` after** — only once an unenrolled admin has a way through.
+
+`#2b` and `#2c` were deliberately shipped ahead of both because neither can lock
+anyone out: `#2b` is a boot-time configuration guard, and `#2c` only adds a claim.
+
 ## THE PLAN — what I fix, in this order
 
 Ordered by user impact, not by effort. Waves are sequenced so nothing in a later wave depends on an earlier one being incomplete.
