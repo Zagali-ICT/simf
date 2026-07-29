@@ -144,6 +144,19 @@ public sealed class CommittedSecretsTests
             }
         }
 
+        // Repo-ROOT files too, and they are the reason this line exists. The loop
+        // above only ever walked the named directories, so anything sitting at the
+        // repository root was invisible to the fallback scan — and the root is
+        // exactly where scratch notes get dropped, which makes it the LIKELIEST
+        // place for a credential to land, not the least. A tracked `txt.txt`
+        // carrying the plaintext production super-admin credential (twice) lived
+        // there and this suite never looked at it. Non-recursive: the roots above
+        // already cover the tree.
+        foreach (var file in Directory.EnumerateFiles(root, "*", SearchOption.TopDirectoryOnly))
+        {
+            results.Add(Path.GetFileName(file));
+        }
+
         return results;
     }
 
@@ -388,6 +401,35 @@ public sealed class CommittedSecretsTests
 
     private static readonly CredentialFingerprint[] ForbiddenCredentials =
     {
+        // The two values that were sitting in the repo-root `txt.txt` scratch
+        // file — a plaintext PRODUCTION super-admin password (written twice, once
+        // beside the superadmin@ address) and a second account password. The file
+        // was git-tracked and this suite never scanned it, because the fallback
+        // enumerator only walked src/tests/docs/tools/deploy and the file was at
+        // the root. Both the file and the root blind spot are gone as of
+        // 2026-07-30; these fingerprints make sure the VALUES cannot come back in
+        // some other file.
+        //
+        // Fingerprints only — length, character sum and SHA-256. This test must
+        // never contain the plaintext it is defending against.
+        //
+        // Rotation is the owner's: the values remain in git history, so until the
+        // accounts are re-credentialled they are still live secrets in every
+        // clone. Removing them from the tip does not undo the disclosure.
+        new(
+            "txt.txt scratch — production super-admin password (ROTATE: still in git history)",
+            9,
+            763,
+            "286f5226013be7ef6caed72c3c50bc7a5885890501410f24984720b9801f8815",
+            Array.Empty<string>()),
+
+        new(
+            "txt.txt scratch — secondary account password (ROTATE: still in git history)",
+            11,
+            932,
+            "d86de87544827a8b3f648148ea921eb300bf9e17f9971e851cff27f85da43cce",
+            Array.Empty<string>()),
+
         // Seed:DemoPassword — the D-585 demo-account shared password. Blanked
         // in config (round 1) and removed from the fixture + the two docs
         // (round 2), so nothing may carry it any more.
@@ -403,10 +445,12 @@ public sealed class CommittedSecretsTests
         // Sprint-1 completion record and the seven E2E catalogue sign-in lines
         // now carry the redaction marker + the SIMF_SuperAdmin__TempPassword
         // key path instead of the value, so they left this list. The two
-        // residual occurrences are both OUTSIDE docs/ and both need the
-        // literal: the boot-time deny-list that refuses to start Production on
-        // the committed password, and the smoke script's sign-in line.
-        // Owner ops: rotate the credential, then strip those two as well.
+        // ONE residual occurrence remains, and it needs the literal: the
+        // boot-time deny-list that refuses to start Production on the committed
+        // password. The smoke script left this list on 2026-07-30 -- it now reads
+        // SIMF_SMOKE_EMAIL / _PASSWORD / _TOTP_SECRET from the environment and
+        // fails fast if they are unset.
+        // Owner ops: rotate the credential, then this last one can go too.
         new(
             "SuperAdmin:TempPassword (supply SIMF_SuperAdmin__TempPassword)",
             12,
@@ -416,7 +460,6 @@ public sealed class CommittedSecretsTests
             {
                 // Refuses to boot in Production when the value is still this one.
                 "src/Backend/SIMF.Api/Program.cs",
-                "tools/smoke/smoke.sh",
             }),
 
         // SuperAdmin:TotpSecret — the development TOTP seed, in its two written
@@ -426,7 +469,8 @@ public sealed class CommittedSecretsTests
         // instead of the seed, so they left this list. The residual
         // occurrences are both OUTSIDE docs/ — the myComment #35 regression
         // fixture (which asserts the normalisation of exactly these two written
-        // forms, so the literal IS the test input) and the smoke script.
+        // forms, so the literal IS the test input). The smoke script left this
+        // list on 2026-07-30 when its literals became environment reads.
         // (The FDS and the security assessment quote a TRUNCATED prefix only,
         // so they were never listed — the scan does not match them.)
         new(
@@ -437,7 +481,6 @@ public sealed class CommittedSecretsTests
             new[]
             {
                 "tests/SIMF.Api.Tests/TotpVerifierTests.cs",
-                "tools/smoke/smoke.sh",
             }),
         new(
             "SuperAdmin:TotpSecret, unspaced form (supply SIMF_SuperAdmin__TotpSecret)",
