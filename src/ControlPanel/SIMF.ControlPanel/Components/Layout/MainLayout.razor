@@ -8,6 +8,12 @@
        RTL UI, and was hardcoded English. The dismiss glyph is icon-only, so it
        also needs a title to have any accessible name at all. *@
     @L["Shell.Error.Unhandled"]
-    <a href="." class="reload">@L["Shell.Error.Reload"]</a>
+    @* href="" (Blazor's own template), NOT href=".". A dot resolves to the
+       parent DIRECTORY, so from /admin/halls this navigated to /admin/ — a 404.
+       The single control offered to recover from an unhandled error led to a
+       dead page from every nested CP route. Found by the WS4 browser sweep,
+       which reported it on 61 pages; empty resolves to the current URL, which
+       is what "reload" means. *@
+    <a href="" class="reload">@L["Shell.Error.Reload"]</a>
     <span class="dismiss" title="@L["Shell.Error.Dismiss"]">🗙</span>
 </div>

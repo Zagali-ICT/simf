@@ -39,7 +39,8 @@ public sealed record SweepReport
         }
         foreach (var link in Problems.BadLinks)
         {
-            lines.Add($"  {link.Status}: {link.Path}");
+            lines.Add($"  {link.Status}: {link.Path}"
+                + (link.From is null ? "" : $"  (from \"{link.From}\")"));
         }
         if (OverflowX)
         {
@@ -110,6 +111,10 @@ public sealed record SweepBadLink
 {
     [JsonPropertyName("path")] public string Path { get; init; } = "";
     [JsonPropertyName("status")] public JsonElement Status { get; init; }
+
+    /// <summary>The raw href/src that resolved to this path — without it a
+    /// "/admin/ 404" reported on 61 pages names no anchor to go and fix.</summary>
+    [JsonPropertyName("from")] public string? From { get; init; }
 }
 
 public sealed record SweepCap

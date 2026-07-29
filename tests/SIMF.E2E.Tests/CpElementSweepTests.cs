@@ -17,27 +17,54 @@ using Xunit;
 
 namespace SIMF.E2E.Tests;
 
-public sealed class CpElementSweepTests : IAsyncLifetime
+/// <summary>Launches one browser and signs in ONCE for the whole class.
+///
+/// <para>This is a class fixture, not <c>IAsyncLifetime</c>, and the difference
+/// is not an optimisation. xUnit constructs a fresh instance of a test class for
+/// every case, so `IAsyncLifetime.InitializeAsync` runs per test — roughly 97
+/// sign-ins for this theory. A TOTP code is valid for one 30-second window, and
+/// with the cases running in parallel dozens of them submit the same code at
+/// once; the server rejects the repeats and the page reports "The verification
+/// code is not correct." That reads as a bad credential and is really a broken
+/// test design. Signing in once and replaying the storage state fixes the
+/// correctness problem and removes 96 logins.</para></summary>
+public sealed class CpSessionFixture : IAsyncLifetime
 {
     private IPlaywright? _playwright;
-    private IBrowser? _browser;
+
+    public IBrowser? Browser { get; private set; }
+
+    public string? StorageState { get; private set; }
 
     public async Task InitializeAsync()
     {
-        if (QaStack.SkipReasonFor(QaStack.ControlPanel) is not null)
+        if (QaStack.SkipReasonFor(QaStack.ControlPanel) is not null
+            || QaStack.CredentialSkipReason() is not null)
         {
             return; // every test will skip; do not pay for a browser
         }
         _playwright = await Playwright.CreateAsync();
-        _browser = await _playwright.Chromium.LaunchAsync(
+        Browser = await _playwright.Chromium.LaunchAsync(
             new BrowserTypeLaunchOptions { Headless = true });
+
+        var context = await Browser.NewContextAsync();
+        var page = await context.NewPageAsync();
+        await CpSignIn.SignInAsync(page);
+        StorageState = await context.StorageStateAsync();
+        await context.CloseAsync();
     }
 
     public async Task DisposeAsync()
     {
-        if (_browser is not null) { await _browser.CloseAsync(); }
+        if (Browser is not null) { await Browser.CloseAsync(); }
         _playwright?.Dispose();
     }
+}
+
+public sealed class CpElementSweepTests(CpSessionFixture session)
+    : IClassFixture<CpSessionFixture>
+{
+    private readonly CpSessionFixture _session = session;
 
     /// <summary>Every Control Panel route the predicted-inventory generator
     /// found, so the list cannot drift from the pages that actually exist.</summary>
@@ -60,8 +87,11 @@ public sealed class CpElementSweepTests : IAsyncLifetime
         var missingCredentials = QaStack.CredentialSkipReason();
         Skip.If(missingCredentials is not null, missingCredentials);
 
-        var context = await _browser!.NewContextAsync(
-            new BrowserNewContextOptions { ViewportSize = new() { Width = 1440, Height = 900 } });
+        var context = await _session.Browser!.NewContextAsync(new BrowserNewContextOptions
+        {
+            ViewportSize = new() { Width = 1440, Height = 900 },
+            StorageState = _session.StorageState,
+        });
         var page = await context.NewPageAsync();
 
         var consoleErrors = new List<string>();
@@ -70,7 +100,6 @@ public sealed class CpElementSweepTests : IAsyncLifetime
             if (message.Type == "error") { consoleErrors.Add(message.Text); }
         };
 
-        await CpSignIn.SignInAsync(page);
         await page.GotoAsync(QaStack.ControlPanel + route,
             new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
@@ -135,7 +164,24 @@ public static class PredictedInventory
 
     private static readonly Lazy<Dictionary<string, Entry>> Entries = new(Load);
 
-    public static IEnumerable<string> Routes() => Entries.Value.Keys.OrderBy(r => r, StringComparer.Ordinal);
+    /// <summary>Sweepable routes: those that can be opened by URL alone.
+    ///
+    /// <para>Routes with a path parameter (<c>/sessions/{SessionId:guid}/moderate</c>)
+    /// are excluded. Requesting one literally 404s, and the sweep would then
+    /// grade the not-found page — reporting a clean pass for a page it never
+    /// opened. Giving them a fabricated id is no better: the screen renders its
+    /// not-found state and the result is the same lie. They need seeded data,
+    /// which belongs in a per-page scenario, not in a generic sweep.</para></summary>
+    public static IEnumerable<string> Routes() =>
+        Entries.Value.Keys
+            .Where(route => !route.Contains('{'))
+            // The sign-in pages are excluded from the SIGNED-IN sweep: an
+            // authenticated session is redirected away from them, so the sweep
+            // would either grade the dashboard while believing it was on /login,
+            // or fail for doing the right thing. Their element contract belongs
+            // to the signed-out scenarios in cp-auth-flow.md.
+            .Where(route => !route.StartsWith("/login", StringComparison.OrdinalIgnoreCase))
+            .OrderBy(route => route, StringComparer.Ordinal);
 
     public static Entry? For(string route) =>
         Entries.Value.TryGetValue(route, out var entry) ? entry : null;

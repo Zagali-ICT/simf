@@ -33,8 +33,13 @@
 //      now explicit, configurable, and reported in `capped` so a truncated run
 //      can never read as a clean one.
 // ---------------------------------------------------------------------------
-async (options = {}) => {
-  const MAX_URL_CHECKS = options.maxUrlChecks ?? 250;
+async (options) => {
+  // `options ?? {}` rather than a default parameter: Playwright's evaluate
+  // passes NULL when the caller supplies no argument, and a default parameter
+  // only applies to `undefined`. With `options = {}` the very first line threw
+  // "Cannot read properties of null (reading 'maxUrlChecks')" on every page.
+  const settings = options ?? {};
+  const MAX_URL_CHECKS = settings.maxUrlChecks ?? 250;
 
   // --- accessible name -------------------------------------------------------
   // Approximates the accname algorithm well enough for a defect sweep. Order
@@ -114,11 +119,16 @@ async (options = {}) => {
     capped: null,
   };
 
-  const sameOrigin = new Set();
+  // Resolved path -> the raw href/src that produced it. A bad link reported as
+  // just "/admin/ 404" sends the reader hunting through the markup; reported as
+  // "/admin/ 404 (from href=".")" it names the defect.
+  const sameOrigin = new Map();
   const remember = (raw) => {
     try {
       const url = new URL(raw, location.href);
-      if (url.origin === location.origin) sameOrigin.add(url.pathname + url.search);
+      if (url.origin !== location.origin) return;
+      const key = url.pathname + url.search;
+      if (!sameOrigin.has(key)) sameOrigin.set(key, raw);
     } catch { /* not a resolvable URL — nothing to check */ }
   };
 
@@ -194,20 +204,21 @@ async (options = {}) => {
   }
 
   // --- same-origin link + asset status --------------------------------------
-  const urls = [...sameOrigin];
+  const urls = [...sameOrigin.keys()];
   const checked = urls.slice(0, MAX_URL_CHECKS);
   if (urls.length > checked.length) {
     // Explicit, and it fails the sweep: a partial check must never read as clean.
     report.capped = { found: urls.length, checked: checked.length };
   }
   for (const path of checked) {
+    const from = sameOrigin.get(path);
     try {
       const response = await fetch(path, { credentials: 'include' });
       if (response.status >= 400) {
-        report.problems.badLinks.push({ path, status: response.status });
+        report.problems.badLinks.push({ path, status: response.status, from });
       }
     } catch {
-      report.problems.badLinks.push({ path, status: 'ERR' });
+      report.problems.badLinks.push({ path, status: 'ERR', from });
     }
   }
 
