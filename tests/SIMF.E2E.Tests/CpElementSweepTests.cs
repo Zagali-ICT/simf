@@ -189,6 +189,76 @@ public sealed class CpElementSweepTests(CpSessionFixture session)
         await context.CloseAsync();
     }
 
+    /// <summary>E2E-BF-13-012 — `/not-permitted` renders correctly in Arabic.
+    ///
+    /// <para>This is the page a signed-in admin lands on when their role lacks a
+    /// permission, so it is the one page in the Control Panel that a user only
+    /// ever sees at a bad moment. It must still be a real, readable, mirrored page
+    /// rather than a raw key or a broken layout.</para>
+    ///
+    /// <para><b>Its sibling, E2E-BF-13-008 (a deep-link bypass attempt is bounced
+    /// here), is NOT automated and cannot be from this suite.</b> It needs a
+    /// signed-in admin who LACKS a permission, and the sweep account is the
+    /// super-admin whose wildcard `"*"` satisfies every gate — so it can never be
+    /// redirected and can never exercise the deny path. Creating a restricted
+    /// admin does not help either: `SignInService` forces TOTP for any user with a
+    /// role (`roles.Count > 0`), and a freshly created admin has no enrolled
+    /// authenticator key, so a black-box browser suite cannot complete its
+    /// sign-in. It needs a fixture that seeds a restricted admin WITH a known TOTP
+    /// secret, which means database access this suite deliberately does not have.
+    /// The API half of the same rule is covered — `PermissionEnforcementTests`
+    /// proves the endpoint returns 403 — so what remains unproven is specifically
+    /// the CP's redirect, not the gate itself.</para></summary>
+    [SkippableFact]
+    public async Task Not_permitted_renders_in_Arabic()
+    {
+        var stackDown = QaStack.SkipReasonFor(QaStack.ControlPanel);
+        Skip.If(stackDown is not null, stackDown);
+        var missingCredentials = QaStack.CredentialSkipReason();
+        Skip.If(missingCredentials is not null, missingCredentials);
+
+        var context = await _session.Browser!.NewContextAsync(new BrowserNewContextOptions
+        {
+            ViewportSize = new() { Width = 1440, Height = 900 },
+            StorageState = _session.StorageState,
+            Locale = "ar-SA",
+        });
+        var page = await context.NewPageAsync();
+
+        var consoleErrors = new List<string>();
+        page.Console += (_, message) =>
+        {
+            if (message.Type == "error") { consoleErrors.Add(message.Text); }
+        };
+
+        await page.GotoAsync(
+            $"{QaStack.ControlPanel}/culture?culture=ar"
+            + $"&redirectUri={Uri.EscapeDataString("/not-permitted")}",
+            new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+
+        Assert.Equal("/not-permitted", new Uri(page.Url).AbsolutePath);
+
+        var report = await ElementSweep.RunAsync(page);
+        Assert.Equal("rtl", report.Dir);
+        Assert.True(report.Pass, $"[ar] {report.Describe()}");
+        Assert.True(
+            consoleErrors.Count == 0,
+            "[ar] /not-permitted logged console errors:\n  "
+            + string.Join("\n  ", consoleErrors));
+
+        // A localisation miss on THIS page shows the user a resx key at the exact
+        // moment they are already confused, so assert real copy, not just a render.
+        var heading = await page.TextContentAsync("h1") ?? "";
+        Assert.False(
+            heading.Contains("NotPermitted.", StringComparison.Ordinal),
+            $"/not-permitted rendered a raw resource key as its heading: '{heading}'.");
+        Assert.False(
+            string.IsNullOrWhiteSpace(heading),
+            "/not-permitted rendered an empty heading.");
+
+        await context.CloseAsync();
+    }
+
     /// <summary>The Arabic pass — BF-14's Control Panel half.
     ///
     /// <para>The Website got an RTL sweep with WS2; the CP had none, and it is the

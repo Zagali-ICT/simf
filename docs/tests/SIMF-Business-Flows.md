@@ -3102,8 +3102,8 @@ Scenario: The Arabic toggle mirrors the landing and the sign-in card without ove
 
 ## BF-13 — Permission / security matrix
 
-> **Automated coverage as of 2026-07-29 (WS3).** Ten of the twelve scenarios now
-> execute in CI, across two files:
+> **Automated coverage as of 2026-07-29 (WS3).** Eleven of the twelve scenarios
+> now execute in CI, across three files:
 >
 > | Scenario | Where | State |
 > |---|---|---|
@@ -3117,8 +3117,21 @@ Scenario: The Arabic toggle mirrors the landing and the sign-in card without ove
 > | -009 a grant needs a fresh token mint | `BusinessFlow13PermissionMatrixTests` | executed |
 > | -010 a token this API did not mint → 401 | `BusinessFlow13PermissionMatrixTests` | executed |
 > | -011 build guards fail CI on an ungated surface | `PermissionEnforcementTests` + `CpNavigationPermissionTests` | executed |
-> | -008 deep-link bypass → `/not-permitted` | browser | **not executed** |
-> | -012 `/not-permitted` in Arabic | browser | **not executed** |
+> | -012 `/not-permitted` in Arabic | `CpElementSweepTests` | executed |
+> | -008 deep-link bypass → `/not-permitted` | browser | **not executed — see below** |
+>
+> **-008 cannot be automated from the browser suite, and the reason is concrete.**
+> It needs a signed-in admin who LACKS a permission. The sweep account is the
+> super-admin, whose wildcard `"*"` satisfies every gate, so it can never be
+> redirected and can never exercise the deny path. Creating a restricted admin does
+> not help: `SignInService` forces TOTP for any user holding a role
+> (`roles.Count > 0`), and a freshly created admin has no enrolled authenticator
+> key, so a black-box suite cannot complete its sign-in. It needs a fixture that
+> seeds a restricted admin **with a known TOTP secret** — database access this
+> suite deliberately does not have. Note what is and is not missing: the API half
+> of the same rule IS proven (`PermissionEnforcementTests` returns 403 for an
+> ungranted role), so the unproven part is specifically the Control Panel's
+> redirect, not the gate behind it.
 >
 > **Two corrections to this flow's text came out of executing it.**
 >
