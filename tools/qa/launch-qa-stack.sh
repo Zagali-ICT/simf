@@ -15,6 +15,13 @@
 #   tools/qa/launch-qa-stack.sh web
 #   tools/qa/launch-qa-stack.sh env   # print the exports for another shell
 #
+# Seed the RESTRICTED admin once the API has booted at least once (it clones the
+# super-admin row and needs the seeded PermissionCatalog). Without it the deny-path
+# tests SKIP, and the permission system's deny half goes untested:
+#   sqlcmd -S "(localdb)\MSSQLLocalDB" -d SIMF_QA_Identity -I -i tools/qa/seed-restricted-admin.sql
+# It needs no extra environment: it shares the super-admin's password and TOTP
+# secret by construction (see that script's header for why).
+#
 # Then point the browser suite at it:
 #   export SIMF_QA_ADMIN_EMAIL=superadmin@simf.test
 #   export SIMF_QA_ADMIN_PASSWORD="$SIMF_SuperAdmin__TempPassword"
