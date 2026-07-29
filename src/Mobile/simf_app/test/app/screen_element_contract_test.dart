@@ -254,19 +254,24 @@ const _thirdPartyUnnamedGlyphs = <int>{0xe292};
 /// exemptions** — each is a real problem this sweep found on its first full run
 /// and each needs a decision that is bigger than a test change.
 ///
-///   * `/sessions/join`, `/session-summaries` — "BoxConstraints forces an
-///     infinite height", raised at `simf_page_shell.dart:401`. Both screens
-///     wrap
-///     their list in `SimfPullToRefresh`, and `SimfPageShell` ALSO wraps its
-///     body in a `SingleChildScrollView` (the always-scrollable pull-to-refresh
-///     body). Two nested scroll hosts: the inner list is handed an unbounded
-///     height. The obvious local fix — `shrinkWrap: true` +
-///     `NeverScrollableScrollPhysics` — was tried and REVERTED: it makes the
-///     list non-scrollable, which breaks the pull-to-refresh the owner requires
-///     on every data page. The real fix is in the shared shell (let a screen
-///     opt
-///     out of the shell's scroll host when it brings its own), which is a
-///     design decision across ~40 screens.
+///   * (none — the list is empty; see below.)
+///
+/// `/sessions/join` and `/session-summaries` were on this list with
+/// "BoxConstraints forces an infinite height". FIXED 2026-07-29, and the
+/// diagnosis recorded here was WRONG, which is worth keeping: it blamed
+/// `SimfPageShell` for wrapping its body in a scroll host, and concluded the
+/// real fix was a design decision across ~40 screens. The shell does no such
+/// thing — it lays the body out under `Expanded`, and its own doc says the body
+/// is "not scrollable by itself". The actual cause was a two-line double-wrap at
+/// two call sites: `SimfRefreshableMessage` ALREADY wraps its child in a
+/// `SimfPullableHost`, and both screens' error branches wrapped it in a second
+/// one. Two nested `SingleChildScrollView`s hand the inner `LayoutBuilder`
+/// maxHeight: infinity, which becomes `BoxConstraints(minHeight: infinity)`.
+/// Removing the redundant wrapper fixed both. The lesson is the one this sweep
+/// keeps teaching: a plausible diagnosis written from reading the code is not a
+/// diagnosis. Reading the widget the call site actually used would have taken a
+/// minute and would not have produced a ~40-screen design decision.
+///
 /// `/auth/biometric-step-up` and `/registration/status` were on this list too,
 /// with a LateInitializationError on `AuthController._repository`. Both were
 /// harness-side, not screen defects — the fake overrides `build()`, so the
@@ -284,8 +289,9 @@ const _thirdPartyUnnamedGlyphs = <int>{0xe292};
 /// ignored is worse than an honest, green sweep of 56 routes with two written
 /// down. They must be re-added the moment the shell issue is fixed.
 const _knownRenderIssues = <String>{
-  '/sessions/join',
-  '/session-summaries',
+  // Empty, and it must stay that way: a route here is a screen nobody is
+  // watching. Both former entries were fixed on 2026-07-29 and are back in
+  // [_sweepPaths].
 };
 
 // ---------------------------------------------------------------------------
@@ -376,6 +382,10 @@ const _sweepPaths = <String>[
   '/staff/register-visitor', '/meetings', '/meeting-confirm',
   '/forum-guide', '/faq', '/session-presentations', '/contact-us',
   '/about-app',
+  // Back in the sweep as of 2026-07-29. Both were pulled out entirely for
+  // "BoxConstraints forces an infinite height"; the cause turned out to be a
+  // redundant SimfPullableHost at each screen's error branch, not the shell.
+  '/sessions/join', '/session-summaries',
 ];
 
 /// Where the router actually ended up, which is not always where we asked: a

@@ -78,14 +78,19 @@ class _SessionSummaryListScreenState
           Expanded(
             child: sessions.when(
               loading: () => const SimfLoadingState(),
+              // NO SimfPullableHost here — SimfRefreshableMessage already wraps
+              // its child in one. Nesting two nests a SingleChildScrollView
+              // inside a SingleChildScrollView, so the inner LayoutBuilder is
+              // handed maxHeight: infinity and builds
+              // BoxConstraints(minHeight: infinity) — "BoxConstraints forces an
+              // infinite height", which took the whole screen down whenever the
+              // sessions provider errored.
               error: (_, __) => SimfRefreshableMessage(
                 onRefresh: _refresh,
-                child: SimfPullableHost(
-                  child: SimfErrorState(
-                    message: l10n.aiSummaryError,
-                    retryLabel: l10n.retryLabel,
-                    onRetry: () => ref.invalidate(programmeSessionsProvider),
-                  ),
+                child: SimfErrorState(
+                  message: l10n.aiSummaryError,
+                  retryLabel: l10n.retryLabel,
+                  onRetry: () => ref.invalidate(programmeSessionsProvider),
                 ),
               ),
               data: (items) => _buildList(context, l10n, items),
