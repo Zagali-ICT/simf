@@ -135,7 +135,18 @@ async (options) => {
   const sameOrigin = new Map();
   const remember = (raw) => {
     try {
-      const url = new URL(raw, location.href);
+      // Resolve against document.baseURI, NOT location.href. The Website's
+      // App.razor sets <base href="/">, so the browser resolves a relative
+      // "assets/x.svg" to /assets/x.svg on EVERY route. Resolving against
+      // location.href instead turns it into /about/assets/x.svg, which really
+      // does 404 — and the sweep then reports a fabricated defect on every
+      // nested page. That is exactly what it did on its first Website run:
+      // 12 "404"s per page across 35 asset references that are all correct.
+      // Verified by hand: /assets/figma/footer/icon-location.svg -> 200,
+      // /about/assets/figma/footer/icon-location.svg -> 404, and the browser
+      // requests the former. baseURI equals location.href when there is no
+      // <base>, so this is strictly more correct, never less.
+      const url = new URL(raw, document.baseURI);
       if (url.origin !== location.origin) return;
       const key = url.pathname + url.search;
       if (!sameOrigin.has(key)) sameOrigin.set(key, raw);

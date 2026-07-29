@@ -37,7 +37,7 @@
 | E2E-WGBM-005 | RTL / Arabic ⇄ LTR / English — hero + content mirror; Arabic content in AR, English in EN | i18n | P1 | _to author_ |
 | E2E-WGBM-006 | Responsive — the centred card holds; no horizontal overflow at 1440/1024/768/390 both languages | responsive | P1 | _to author_ |
 | E2E-WGBM-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
-| E2E-WGBM-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
+| E2E-WGBM-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | 2026-07-29 PASS (LTR+RTL) |
 
 ## Scenarios
 

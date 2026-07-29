@@ -67,7 +67,7 @@
 | E2E-WPG-013 | Responsive - day strip scrolls, tabs wrap, cards stack; no overflow at 1440/1280/1024/768/390 both languages | responsive | P1 | _to author_ |
 | E2E-WPG-014 | Reachability - the Programs mega-menu "Full agenda" item opens `/programme` | nav | P1 | _to author_ |
 | E2E-WPG-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
-| E2E-WPG-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
+| E2E-WPG-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | 2026-07-29 PASS (LTR+RTL) |
 
 ## Scenarios
 

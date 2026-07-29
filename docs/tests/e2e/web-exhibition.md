@@ -34,7 +34,7 @@
 | E2E-WEXH-005 | RTL / Arabic ⇄ LTR / English — hero + headers mirror; the map image is the same diagram in both | i18n | P1 | _to author_ |
 | E2E-WEXH-006 | Responsive — the map card scrolls horizontally below 720px while the PAGE never overflows (scrollWidth==clientWidth) at 1440/1024/768/390 | responsive | P0 | _to author_ |
 | E2E-WEXH-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
-| E2E-WEXH-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
+| E2E-WEXH-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | 2026-07-29 PASS (LTR+RTL) |
 
 ## Scenarios
 
