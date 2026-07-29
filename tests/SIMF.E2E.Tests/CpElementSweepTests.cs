@@ -66,6 +66,22 @@ public sealed class CpElementSweepTests(CpSessionFixture session)
 {
     private readonly CpSessionFixture _session = session;
 
+    /// <summary>Routes whose grids only exist after a parent selection, with the
+    /// selection each one needs. Deliberately a hand-maintained list: it is short,
+    /// it documents the gap, and it keeps "unverified" from quietly spreading. Each
+    /// entry is a per-page E2E scenario waiting to be authored — the generic sweep
+    /// cannot drive them because it opens a URL and nothing else.</summary>
+    private static readonly Dictionary<string, string> PagesNeedingPrecondition =
+        new(StringComparer.Ordinal)
+        {
+            ["/admin/meeting-tables"] =
+                "the tables and allocations grids render only once a hall is chosen "
+                + "(@if (_hallId is not null))",
+            ["/admin/speaker-presentations"] =
+                "the presentations grid replaces the speaker picker only once a "
+                + "speaker is chosen (@if (!string.IsNullOrEmpty(_speakerId)))",
+        };
+
     /// <summary>Every Control Panel route the predicted-inventory generator
     /// found, so the list cannot drift from the pages that actually exist.</summary>
     public static TheoryData<string> CpRoutes()
@@ -124,6 +140,30 @@ public sealed class CpElementSweepTests(CpSessionFixture session)
         var predicted = PredictedInventory.For(route);
         if (predicted is { } expected)
         {
+            // A master-detail page keeps its grids behind a parent selection, so
+            // opening the URL alone renders none of them and every prediction
+            // derived from the .razor source is unmeetable. That is NOT a defect,
+            // and it is not a pass either — the controls simply were not exercised.
+            // Skipping (visibly, with a reason) beats both a false red and a silent
+            // green. The route must be named below: any OTHER page that renders no
+            // grid while predicting toolbar buttons falls through to a hard failure,
+            // so a grid that genuinely regressed away still breaks the build.
+            if (expected.ToolbarButtonCount > 0 && report.Counts.Grids == 0)
+            {
+                PagesNeedingPrecondition.TryGetValue(route, out var precondition);
+                Skip.If(
+                    precondition is not null,
+                    $"{route}: {precondition} — its grid controls need a "
+                    + "hand-authored per-page scenario, not the generic sweep.");
+
+                Assert.Fail(
+                    $"{route} rendered no SimfDataGrid, but its .razor source wires "
+                    + $"{expected.ToolbarButtonCount} toolbar button(s) "
+                    + $"({string.Join(", ", expected.ToolbarActions)}). Either the "
+                    + "grid regressed away, or this page needs a precondition — in "
+                    + "which case add it to PagesNeedingPrecondition with the reason.");
+            }
+
             Assert.True(
                 report.Counts.Buttons >= expected.ToolbarButtonCount,
                 $"{route} renders {report.Counts.Buttons} buttons but its wired "

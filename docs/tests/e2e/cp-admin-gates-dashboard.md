@@ -40,10 +40,71 @@
 | E2E-GDS-009 | Server 500 on `/gates/list` → bilingual fallback toast | resilience | P2 | _to author_ |
 | E2E-GDS-010 | Loading state — "Loading…" placeholder shows while both calls are in flight | happy | P2 | _to author_ |
 | E2E-GDS-011 | RTL / Arabic render mirrors the page, headings, columns and pills | i18n | P1 | _to author_ |
+| E2E-GDS-012 | Regression (D-794) — `/currently-inside` returns 200 against the REAL database, not a stubbed one | regression | P0 | 2026-07-29 PASS |
 | E2E-GDS-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-GDS-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
+
+### E2E-GDS-012 — Regression: the report is translatable (D-794)
+
+> **Why this scenario exists.** E2E-GDS-008 already covered "the server returns
+> 500 on `/currently-inside`" — as a *simulated* fault, with a stubbed response.
+> Meanwhile the real endpoint returned 500 on **every** request, because its EF
+> query could not be translated to SQL, and this dashboard had never worked.
+> A resilience scenario that fakes a failure will never notice that the failure
+> is permanent. This one calls the live endpoint and asserts success.
+
+```gherkin
+Feature: The currently-inside report can actually be produced
+  As an Administrator with the Gates.Manage permission
+  I want the dashboard's roster call to succeed against the real database
+  So that the page shows occupancy instead of an error toast
+
+Background:
+  Given the API is reachable and backed by a REAL SQL Server database
+  And an Administrator with the Gates.Manage permission has signed in
+
+Scenario: The report succeeds on an empty scan log
+  Given the GateScans table contains no rows at all
+  When I GET /api/v1/admin/gates/reports/currently-inside
+  Then the response status is 200
+  And the ApiResult envelope reports Success = true
+  And Data is an empty list
+  # Not a data assertion by accident: the defect was at query-TRANSLATION time,
+  # so it reproduced on an empty table. Seeding could never have masked it.
+
+Scenario: A visitor whose latest allowed scan is a check-in appears
+  Given a gate "GCI-1" and an approved visitor with a QR
+  And the visitor has one allowed CheckIn scan 10 minutes ago
+  When I GET /api/v1/admin/gates/reports/currently-inside
+  Then the response status is 200
+  And the visitor appears exactly once
+  And their LastCheckInGateCode is "GCI-1"
+
+Scenario: A later check-out removes the visitor
+  Given the visitor has an allowed CheckIn 10 minutes ago
+  And the visitor has an allowed CheckOut 5 minutes ago
+  When I GET /api/v1/admin/gates/reports/currently-inside
+  Then the visitor does not appear
+  # Seed these rows directly. Posting two scans through the scan endpoint does
+  # NOT work: GateOperatorService absorbs a repeat allowed scan inside a
+  # 5-second DuplicateWindow (G-5), so the second call writes no row.
+
+Scenario: A check-in older than the presence window is treated as departed
+  Given the visitor has one allowed CheckIn 20 hours ago and no later scan
+  When I GET /api/v1/admin/gates/reports/currently-inside
+  Then the visitor does not appear
+  # StalePresenceWindow is 16 hours: an in-only gate never emits a CheckOut.
+
+Scenario: Two scans at the same instant still yield one row
+  Given the visitor has two allowed CheckIn scans with an identical ScannedAt
+  When I GET /api/v1/admin/gates/reports/currently-inside
+  Then the visitor appears exactly once
+```
+
+**Automated by** `tests/SIMF.Api.Tests/AdminGateCurrentlyInsideTests.cs` (5 cases,
+all passing 2026-07-29).
 
 ### E2E-GDS-001 — Golden path
 

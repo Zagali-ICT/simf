@@ -112,7 +112,17 @@ async (options) => {
     lang: document.documentElement.getAttribute('lang') || '',
     // No horizontal overflow — the responsive gate from the delivery checklist.
     overflowX: document.documentElement.scrollWidth > document.documentElement.clientWidth,
-    counts: { buttons: 0, links: 0, inputs: 0, selects: 0, textareas: 0, images: 0 },
+    counts: {
+      buttons: 0, links: 0, inputs: 0, selects: 0, textareas: 0, images: 0,
+      // How many SimfDataGrids actually rendered. The predicted inventory is
+      // derived from the grids in a page's .razor source, but a master-detail
+      // page (e.g. /admin/meeting-tables) keeps its grids behind an `@if` on a
+      // parent selection, so opening the URL alone renders none of them. Without
+      // this count "the grid is behind a precondition" and "the grid regressed
+      // away" look identical, and the caller cannot tell a false failure from a
+      // real one.
+      grids: document.querySelectorAll('.simf-grid').length,
+    },
     disabled: { buttons: 0, inputs: 0 },
     inventory: { buttons: [], links: [] },
     problems: { unnamed: [], brokenImages: [], badLinks: [] },

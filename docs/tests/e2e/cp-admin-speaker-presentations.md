@@ -59,10 +59,47 @@
 | E2E-SPP-015 | Per-column filter — typing in the File / Session column filter narrows the grid (client-side, Skip→0) | happy | P1 | _to author_ |
 | E2E-SPP-016 | Column sort toggles — clicking the File column header sorts asc then desc (client-side) | happy | P2 | _to author_ |
 | E2E-SPP-017 | Excel export (D-356) — toolbar Export downloads an .xlsx of the selected speaker's presentations (whole set vs selected rows) | happy | P1 | _to author_ |
+| E2E-SPP-018 | Regression (D-794) — a speaker with no photo renders the placeholder and issues NO asset request | regression | P1 | 2026-07-29 PASS |
 | E2E-SPP-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-SPP-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
+
+### E2E-SPP-018 — Regression: no asset request for a photoless speaker (D-794)
+
+> **Why this scenario exists.** The speaker picker built the photo URL for every
+> speaker regardless of whether one exists, so each of the 9 photoless speakers
+> (of 32) produced a 404. `SimfImageThumb` degrades so gracefully that nothing was
+> visible on screen — the only symptom was 9 failed requests per page load.
+> `CpAssetUrls.AdminImage`'s own summary states callers must render it "only when
+> they know an asset exists (a `Has…` flag)"; `/admin/speakers` obeys that and
+> this page did not.
+
+```gherkin
+Feature: The speaker picker only asks for photos that exist
+  As an administrator opening the presentations page
+  I want speakers without a headshot to show the placeholder
+  So that the page issues no request that is known in advance to 404
+
+Background:
+  Given an Administrator with the Speakers.View permission has signed in
+  And the roster holds 32 speakers, of which 23 have a SpeakerPhoto asset
+
+Scenario: No failed asset request on first render
+  When I open /admin/speaker-presentations
+  Then 23 requests to /account/api/admin/assets/SpeakerPhoto/{id}/image are issued
+  And every one of them returns 200
+  And no request is issued for any of the 9 speakers whose HasPhoto is false
+  And the network log contains zero 404 responses
+
+Scenario: A photoless speaker still renders a usable card
+  When I open /admin/speaker-presentations
+  Then each photoless speaker's card shows the SimfImageThumb placeholder icon
+  And the card is still clickable and shows the speaker's name and country
+```
+
+**Automated by** the WS4 CP element sweep (`E2E-SPP-ELS-002`), which fails the
+route on any broken image or any same-origin asset returning >= 400.
 
 ### E2E-SPP-001 — Golden round-trip
 

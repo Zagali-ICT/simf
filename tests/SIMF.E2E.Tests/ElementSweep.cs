@@ -63,6 +63,10 @@ public sealed record SweepCounts
     [JsonPropertyName("selects")] public int Selects { get; init; }
     [JsonPropertyName("textareas")] public int Textareas { get; init; }
     [JsonPropertyName("images")] public int Images { get; init; }
+
+    /// <summary>SimfDataGrids actually rendered — lets the caller tell "this page's
+    /// grid sits behind a precondition" from "this page's grid regressed away".</summary>
+    [JsonPropertyName("grids")] public int Grids { get; init; }
 }
 
 public sealed record SweepDisabled
