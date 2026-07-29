@@ -459,6 +459,28 @@ if (app.Environment.IsProduction()
         + "SIMF_SuperAdmin__TempPassword before starting in Production.");
 }
 
+// Held-item #2b — refuse to start in Production without a super-admin TOTP seed.
+//
+// The guard above stops a KNOWN-BAD password reaching production. This one stops
+// the bootstrap super-admin being single-factor at all: with no seed configured,
+// IdentitySeeder writes no AuthenticatorKey, SignInService's second-factor
+// selection has nothing to challenge against, and the most privileged account in
+// the system — the one whose permission claim is the wildcard "*" — is protected
+// by a password alone. A password that, on a fresh deploy, was just read out of a
+// configuration file by whoever set the box up.
+//
+// Deliberately a boot failure and not a warning. A warning at startup is read
+// once, by one person, on the day it is installed; this is a control that has to
+// hold for the life of the deployment.
+if (app.Environment.IsProduction()
+    && string.IsNullOrWhiteSpace(superAdminOptions.TotpSecret))
+{
+    throw new InvalidOperationException(
+        "SuperAdmin:TotpSecret is not configured — the bootstrap super-admin "
+        + "would be single-factor. Set SIMF_SuperAdmin__TotpSecret to a base32 "
+        + "seed before starting in Production.");
+}
+
 // M4 (security) — refuse to start in Production when the AI prompt-hash HMAC
 // secret is unconfigured; the dev-fallback key is publicly derivable.
 SIMF.Infrastructure.DependencyInjection.EnsureAiPromptHashSecretConfigured(

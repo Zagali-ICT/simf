@@ -23,7 +23,7 @@ internal sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider
 
     public AccessToken CreateAccessToken(
         SimfUser user, IEnumerable<string> roles, IEnumerable<string> permissions,
-        MobileAppRole mobileAppRole)
+        MobileAppRole mobileAppRole, bool? secondFactorCompleted = null)
     {
         var settings = options.Value;
         var now = timeProvider.GetUtcNow();
@@ -48,6 +48,14 @@ internal sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider
             // D-161 — the resolved mobile-app role the Flutter app uses to
             // route screens / show or hide gate-operator surfaces.
             new("mobile_app_role", mobileAppRole.ToString()),
+            // Held-item #2c — RFC 8176 `amr`. "mfa" means this token cleared a
+            // second factor (TOTP, recovery code or emailed OTP); "pwd" means it
+            // was minted on the password alone, which SignInService only does for
+            // an account with 2FA turned off. Before this claim existed the two
+            // were indistinguishable downstream, so no policy could require the
+            // stronger one. Derived from TwoFactorEnabled when the caller does not
+            // state it — see IJwtTokenService for why that derivation is sound.
+            new("amr", (secondFactorCompleted ?? user.TwoFactorEnabled) ? "mfa" : "pwd"),
         };
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 

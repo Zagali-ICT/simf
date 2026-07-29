@@ -174,7 +174,8 @@ public sealed class SignInService(
         // to both Control Panel users and visitors.
         if (!user.TwoFactorEnabled)
         {
-            var tokens = await IssueTokensAsync(user, cancellationToken);
+            var tokens = await IssueTokensAsync(
+                user, cancellationToken, secondFactorCompleted: false);
             // P10 — D-051: surface AccountStateInfo on the response when
             // the user is non-Approved, and audit the guest sign-in
             // separately so SOC can spot it. The JWT itself also carries
@@ -303,7 +304,8 @@ public sealed class SignInService(
                 "The sign-in session is not valid.",
                 "جلسة تسجيل الدخول غير صالحة.");
         }
-        return await IssueTokensAsync(user, cancellationToken);
+        return await IssueTokensAsync(
+            user, cancellationToken, secondFactorCompleted: true);
     }
 
     public async Task<AuthTokens> VerifyRecoveryCodeAsync(
@@ -363,7 +365,8 @@ public sealed class SignInService(
 
         await AuditAsync(AuditEvents.TotpRecoveryCodeUsed, AuditOutcome.Success,
             user.Email!, user.Id, cancellationToken: cancellationToken);
-        return await IssueTokensAsync(user, cancellationToken);
+        return await IssueTokensAsync(
+            user, cancellationToken, secondFactorCompleted: true);
     }
 
     public async Task<AuthTokens> VerifyOtpAsync(
@@ -421,7 +424,8 @@ public sealed class SignInService(
         // Single-use the OTP itself (the ticket gate above already decided the
         // mint; this marks the code consumed atomically).
         await accountCodeRepository.TryConsumeAsync(code.Id, now, cancellationToken);
-        return await IssueTokensAsync(user, cancellationToken);
+        return await IssueTokensAsync(
+            user, cancellationToken, secondFactorCompleted: true);
     }
 
     public async Task<ResendOtpResponse> ResendOtpAsync(
@@ -676,12 +680,18 @@ public sealed class SignInService(
         return ticket;
     }
 
-    private async Task<AuthTokens> IssueTokensAsync(SimfUser user, CancellationToken cancellationToken)
+    /// <param name="secondFactorCompleted">Held-item #2c — true on every path
+    /// that cleared TOTP, a recovery code or an emailed OTP; false only on the
+    /// !TwoFactorEnabled fast path. Stated at the call site rather than inferred
+    /// here, so a future issuance path has to answer the question consciously.</param>
+    private async Task<AuthTokens> IssueTokensAsync(
+        SimfUser user, CancellationToken cancellationToken, bool secondFactorCompleted)
     {
         var roles = await accounts.GetRolesAsync(user);
         var permissions = await permissionResolver.ResolveForRolesAsync(roles, cancellationToken);
         var mobileAppRole = await userProfiles.ResolveMobileAppRoleAsync(user.Id, cancellationToken);
-        var accessToken = jwtTokenService.CreateAccessToken(user, roles, permissions, mobileAppRole);
+        var accessToken = jwtTokenService.CreateAccessToken(
+            user, roles, permissions, mobileAppRole, secondFactorCompleted);
 
         var refreshValue = OpaqueToken.Generate();
         var now = timeProvider.GetUtcNow();

@@ -179,7 +179,7 @@ Closing these is as valuable as fixing the real ones: each is a row that would o
 
 - **Severity** critical · **Surface** security · **Effort** S (<1h)
 - **Reported in** `SIMF-QA-Report-2026-07-24.md` (as: open)
-- **Where it still lives** D:/swt-fix/tools/smoke/smoke.sh is still tracked and unchanged. Line 8 sets SUPER_TOTP_SECRET to a literal base32 TOTP seed; line 22 posts {"email":"superadmin@zagali-ict.com","password":"Aa@123456789","audience":1}. That is a complete second factor plus first factor for a super-admin identity, committed. (The script targets http://localhost:5175, not a public host, but the credential triple is real and the email matches the production super-admin.)
+- **Where it still lives** D:/swt-fix/tools/smoke/smoke.sh is still tracked and unchanged. Line 8 sets SUPER_TOTP_SECRET to a literal base32 TOTP seed; line 22 posts {"email":"superadmin@zagali-ict.com","password":"<SIMF_SuperAdmin__TempPassword>","audience":1}. That is a complete second factor plus first factor for a super-admin identity, committed. (The script targets http://localhost:5175, not a public host, but the credential triple is real and the email matches the production super-admin.)
 - **Fix** Delete the three literals and read them from environment variables (SIMF_SMOKE_EMAIL / _PASSWORD / _TOTP_SECRET), or delete the script. Then the owner must rotate the super-admin password AND re-seed the TOTP secret, and purge both from git history — a code-side deletion alone leaves the working credential in every clone.
 
 ### `#2` — Control-Panel sign-in mints a full token on the password alone when 2FA is not enrolled
@@ -235,7 +235,7 @@ Closing these is as valuable as fixing the real ones: each is a row that would o
 
 - **Severity** medium · **Surface** api · **Effort** S (<1h)
 - **Reported in** `SIMF-QA-Report-2026-07-24.md` (as: open)
-- **Where it still lives** Unchanged. D:/swt-fix/src/Backend/SIMF.Infrastructure/Identity/IdentitySeeder.cs lines 595-602: `var result = await accounts.CreateAsync(admin, settings.TempPassword); if (!result.Succeeded) { logger.LogError(...); return null; }` — and the caller at lines 140-143 does `if (admin is null) { return; }`, so seeding is abandoned and the app boots normally with no super-admin. D:/swt-fix/src/Backend/SIMF.Api/Program.cs lines 454-460 DO fail fast in Production, but only for the exact committed default string "Aa@123456789" — a policy-violating custom password sails past that guard and hits the silent path.
+- **Where it still lives** Unchanged. D:/swt-fix/src/Backend/SIMF.Infrastructure/Identity/IdentitySeeder.cs lines 595-602: `var result = await accounts.CreateAsync(admin, settings.TempPassword); if (!result.Succeeded) { logger.LogError(...); return null; }` — and the caller at lines 140-143 does `if (admin is null) { return; }`, so seeding is abandoned and the app boots normally with no super-admin. D:/swt-fix/src/Backend/SIMF.Api/Program.cs lines 454-460 DO fail fast in Production, but only for the exact committed default string "<SIMF_SuperAdmin__TempPassword>" — a policy-violating custom password sails past that guard and hits the silent path.
 - **Fix** In CreateSuperAdminAsync, throw instead of returning null when result.Succeeded is false and the environment is Production (mirroring the existing Program.cs guards at 440-460 for Swagger creds and the AI prompt-hash secret). Include result.Errors in the message so the operator sees which policy rule the password broke.
 
 ### `#29` — Workshop management in CP + app must show workshop title and time only
