@@ -64,6 +64,8 @@ formatted `"0.0"` invariant.
 | E2E-STA-010 | Counts reflect live state — approve a pending attendee, reload, the two tiles move | happy | P1 | _to author_ |
 | E2E-STA-011 | Read-only surface — no buttons / forms / grids / modals on the page | function | P2 | _to author_ |
 | E2E-STA-012 | RTL / Arabic render — banner, tiles and nav rail mirror; Arabic titles | i18n | P1 | _to author_ |
+| E2E-STA-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-STA-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

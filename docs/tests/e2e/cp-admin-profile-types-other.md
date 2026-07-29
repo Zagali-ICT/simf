@@ -44,6 +44,8 @@
 | E2E-OPT-015 | RTL / Arabic render mirrors page + Add modal | i18n | P1 | _to author_ |
 | E2E-OPT-016 | "Show in the app sign-up picker" toggle hides the type from the app (D-725) | happy | P1 | _to author_ |
 | E2E-OPT-017 | "Show in Meet People" toggle hides the whole partner type from the networking directory + recommender (D-760) | happy | P1 | authored ✓ (API twins) |
+| E2E-OPT-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-OPT-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

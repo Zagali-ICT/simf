@@ -46,6 +46,8 @@
 | E2E-DELREQ-010 | RTL render (Arabic) — sheet title "طلب اجتماع وفد", fields + slots mirror | i18n | P1 | _to author_ |
 | E2E-DELREQ-011 | A35 — a server-rejected submit shows the **server's own bilingual reason**, never the speaker copy "this speaker is not accepting meeting requests" | error | P1 | authored ✓ (`delegation_meeting_request_sheet_test.dart`, widget) |
 | E2E-DELREQ-012 | A35 — an offline / never-reached-the-server failure still falls back to the local "تعذّر إرسال الطلب" copy | edge | P2 | authored ✓ (`delegation_meeting_request_sheet_test.dart`, widget) |
+| E2E-DELREQ-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-DELREQ-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

@@ -44,6 +44,8 @@
 | E2E-MOB002-011 | Background media — a device that refuses the clip degrades to the poster and logs the reason in debug (no visitor-facing error) | resilience | P1 | authored ✓ (widget test) |
 | E2E-MOB002-012 | Each step shows its OWN title (DEF-ONB-006) | happy | P1 | authored ✓ (widget test) |
 | E2E-MOB002-013 | One decoder + one bundled clip across all three steps — no restart, no gap, no duplicate APK payload (DEF-ONB-004) | perf | P1 | authored ✓ (widget test) |
+| E2E-MOB002-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB002-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

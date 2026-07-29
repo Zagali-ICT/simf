@@ -9,6 +9,9 @@
 
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
+    @* Same defect as the Control Panel's error bar: href="." resolves to the
+       parent directory, so from a nested route the Reload link 404s. Blazor's
+       own template uses href="". *@
+    <a href="" class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>

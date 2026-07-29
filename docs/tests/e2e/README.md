@@ -61,7 +61,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/profile-types/other` | [`cp-admin-profile-types-other.md`](cp-admin-profile-types-other.md) | E2E-OPT-001..015 |
 | `/admin/organisations` | [`cp-admin-organisations.md`](cp-admin-organisations.md) | E2E-ORG-001..019 |
 | `/admin/regions` | [`cp-admin-regions.md`](cp-admin-regions.md) | E2E-REGION-001..016 |
-| `/admin/countries` | [`cp-admin-countries.md`](cp-admin-countries.md) | E2E-CTY-001..020 |
+| `/admin/countries` | [`cp-admin-countries.md`](cp-admin-countries.md) | E2E-CTY-001..024 |
 | `/admin/vips` | [`cp-admin-vips.md`](cp-admin-vips.md) | E2E-VIP-001..013 |
 | `/admin/invitations` | [`cp-admin-invitations.md`](cp-admin-invitations.md) | E2E-INV-001..018 |
 | `/admin/announcements` | [`cp-announcements.md`](cp-announcements.md) | E2E-ANN-001..015 |
@@ -115,8 +115,8 @@ not reused. Each page owns a unique 3–4 letter namespace.
 
 | Page | File | Scenarios |
 |------|------|-----------|
-| `/admin/companies` | [`cp-admin-companies.md`](cp-admin-companies.md) | E2E-CMP-001..016 |
-| `/admin/exhibitors` | [`cp-admin-exhibitors.md`](cp-admin-exhibitors.md) | E2E-EXH-001..028 (D-781 link an existing account: 027/028) |
+| ~~`/admin/companies`~~ | [`cp-admin-companies.md`](cp-admin-companies.md) | ⛔ **Retired** — renamed to `/admin/exhibitors` by `a05ef82d`. No live scenarios; `E2E-CMP-011` was ported as `E2E-EXH-029`. |
+| `/admin/exhibitors` | [`cp-admin-exhibitors.md`](cp-admin-exhibitors.md) | E2E-EXH-001..029 (D-781 link an existing account: 027/028; 029 ported from the retired CMP file) |
 | `/admin/booths` | [`cp-admin-booths.md`](cp-admin-booths.md) | E2E-BTH-001..025 |
 | `/admin/sponsors` | [`cp-admin-sponsors.md`](cp-admin-sponsors.md) | E2E-SPN-001..023 |
 | `/admin/media-partners` | [`cp-admin-media-partners.md`](cp-admin-media-partners.md) | E2E-MPR-001..019 |
@@ -131,6 +131,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/archive` | [`cp-admin-archive.md`](cp-admin-archive.md) | E2E-ARC-001..023 |
 | `/admin/banners` | [`cp-admin-banners.md`](cp-admin-banners.md) | E2E-BNR-001..022 |
 | `/admin/content-blocks` | [`cp-admin-content-blocks.md`](cp-admin-content-blocks.md) | E2E-CNT-001..020 |
+| `/admin/faq` | [`cp-admin-faq.md`](cp-admin-faq.md) | E2E-FAQ-001..016 |
 | `/admin/media-library` | [`cp-admin-media-library.md`](cp-admin-media-library.md) | E2E-MLIB-001..010 |
 | `/api/v1/files` (centralized file store, D-568) | [`cp-files.md`](cp-files.md) | E2E-FILE-001..012 |
 
@@ -164,7 +165,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/logs` | [`cp-admin-logs.md`](cp-admin-logs.md) | E2E-LOG-001..013 |
 | `/admin/ops/services` | [`cp-ops-services.md`](cp-ops-services.md) | E2E-SVCM-001..008 |
 | `/admin/statistics` | [`cp-admin-statistics.md`](cp-admin-statistics.md) | E2E-STA-001..012 |
-| `/admin/attendance` | [`cp-admin-attendance.md`](cp-admin-attendance.md) | E2E-ATT-001..014 |
+| `/admin/attendance` | [`cp-admin-attendance.md`](cp-admin-attendance.md) | E2E-ATND-001..014 |
 | `/admin/sessions/live-hall` | [`cp-admin-session-live-hall.md`](cp-admin-session-live-hall.md) | E2E-SLH-001..015 |
 | _system-wide_ — Saudi local-time display (CP + app) | [`cp-timezone-display.md`](cp-timezone-display.md) | E2E-TZ-001..006 |
 
@@ -324,18 +325,41 @@ API endpoints land (D-249). The per-screen design docs live under
 6. Cross-link from `docs/pages/PAGE-INDEX.md` (route → doc + test) and the
    per-page reference doc under `docs/pages/{cp|web}/{slug}.md`.
 
-## Coverage status snapshot — 2026-06-02 (D-245)
+## Coverage status snapshot — 2026-07-28
 
-- **Pages catalogued:** 74 (62 Control Panel + 11 Website + 1 mobile-pending).
-- **Total scenarios:** ~1044 across all pages (7–21 per page); +61 added 2026-06-03
-  (D-258) reconciling the SimfDataGrid conversion's per-column filter / sort
-  affordances on the grid-converted CP pages.
-- **Authored:** all pages (the D-133 "pending" stubs are now fully authored, and
-  every event-module + P2–P5 page added since has its own file).
+These two counts are **machine-checked** by
+`tests/SIMF.ControlPanel.Tests/E2eCatalogueIntegrityTests.cs`
+(`The_index_roll_up_matches_the_catalogue_it_describes`), so they cannot drift
+again without failing the build. They had been left at the 2026-06-02 figures —
+"74 pages / ~1044 scenarios" — while the catalogue more than doubled, and were
+being quoted in planning as if current.
+
+- **Pages catalogued:** 183 (93 Control Panel + 70 mobile + 19 Website + 1
+  system-wide). One of the 183 — `cp-admin-companies.md` — is **retired**: its
+  route was renamed away and it now carries no live scenarios.
+- **Total scenarios:** 2861 Coverage-matrix rows, every id distinct. That
+  includes the **362** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
+  per live page — see `tools/qa/generate_els_rows.py`); the hand-authored
+  functional total is 2496.
+- **Authored:** all pages. The D-133 "pending" stubs are fully authored, and
+  every event-module and P2–P5 page added since has its own file.
 - **Execution:** the canonical run today is a Chrome DevTools MCP browser pass
-  driven from these scenarios; many scenarios are also covered at the API layer
-  by `tests/SIMF.Api.Tests/*` (each per-page file's "Implementation notes"
-  cross-reference the covering xUnit cases).
+  driven from these scenarios; many are also covered at the API layer by
+  `tests/SIMF.Api.Tests/*` (each per-page file's "Implementation notes"
+  cross-reference the covering xUnit cases), and the mobile surface additionally
+  by the Flutter widget + golden suites. **Scenario `Status` columns remain the
+  weak point** — most still read `_to author_`, meaning written but never driven,
+  so treat the counts above as *authored* coverage, not *executed* coverage.
+
+### Scenario ids are a primary key — keep them unique
+
+`tools/testbook/build_testbook.py` groups by scenario id when it projects this
+catalogue into the tester workbook, so a repeated id silently merges two
+unrelated scenarios into one row. Before appending a batch: take the next free
+number **for the whole file**, not just the section you are editing — several
+pages carry more than one appended section (`cp-admin-halls.md` has four). Two
+real collisions were found and fixed on 2026-07-28; `E2eCatalogueIntegrityTests`
+now fails the build on either shape.
 
 ### Update — 2026-06-10 (D-356 Phase 5 — Uniform CRUD: Excel + Page⇄Popup toggle)
 

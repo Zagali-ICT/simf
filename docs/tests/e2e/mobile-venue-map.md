@@ -42,6 +42,8 @@
 | E2E-MOB015-008 | Booth fields bind the real wire names (`name`/`nameArabic`/`exhibitorName`/`sector`) | contract | P0 | authored ✓ (model — `BoothSummary.fromJson`) |
 | E2E-MOB015-009 | **Map controls have accessible names (BUG-012):** the three floating gold controls announce "Reset the map view" / "Zoom in" / "Zoom out" (bilingual) instead of three unnamed views, so a screen-reader user can zoom and recentre | a11y | P2 | authored ✓ (`VenueMapControl` takes a required `label` → `Semantics(button: true, label:)`; strings `venueMapResetView` / `venueMapZoomIn` / `venueMapZoomOut`) |
 | E2E-MOB015-010 | The booth info card carries the exhibitor logo badge (FR-LGO-005) | happy | P1 | authored ✓ (widget test) |
+| E2E-MOB015-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB015-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

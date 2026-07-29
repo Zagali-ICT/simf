@@ -94,6 +94,8 @@
 | E2E-HSL-028 | Remove refused (B15): a hall with an active seat reservation → 409 SEAT_LAYOUT_HAS_RESERVATIONS naming how many block it; the layout is untouched | conflict | P0 | authored ✓ |
 | E2E-HSL-029 | Remove permission (B15): an admin without `SeatLayouts.Delete` is not offered the Remove button, and the DELETE is 403 | auth | P1 | authored ✓ |
 | E2E-HSL-030 | Remove is hidden on a hall with no layout (B15), and a DELETE on one is 404 SEAT_LAYOUT_MISSING | error | P2 | authored ✓ |
+| E2E-HSL-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-HSL-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

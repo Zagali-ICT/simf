@@ -15,12 +15,13 @@ namespace SIMF.Infrastructure.Programme;
 /// <summary>
 /// D-153 — admin CRUD over <see cref="Speaker"/>. Built on
 /// <see cref="SimfAppDbContext"/>. <c>CountryId</c> is validated against
-/// the live <c>Country</c> table (same context); <c>UserProfileId</c> is
-/// cross-context (lives on <see cref="SimfIdentityDbContext"/>) and is
-/// stored as a logical FK — existence is not pre-checked here since the
-/// link can be authored before the user's account exists in some
-/// migration / import scenarios, and a stale FK degrades gracefully to
-/// "no linked account" on the public speaker page.
+/// the live <c>Country</c> table (same context), and so is
+/// <c>UserProfileId</c>. NOTE: this comment previously said UserProfileId was
+/// cross-context and deliberately unchecked because "a stale FK degrades
+/// gracefully to no linked account". That has not been true since
+/// <c>UserProfile</c> moved onto <see cref="SimfAppDbContext"/> — it is a real
+/// same-database FK with <c>OnDelete.Restrict</c>, so an unknown id threw at
+/// SaveChanges and surfaced as a 500. Both ids are now validated up front.
 /// </summary>
 internal sealed class AdminSpeakerService(
     SimfAppDbContext dbContext,
@@ -154,6 +155,7 @@ internal sealed class AdminSpeakerService(
             request.InstagramUrl, request.City, request.CityArabic,
             request.Latitude, request.Longitude);
         await EnsureCountryIsValidAsync(request.CountryId, cancellationToken);
+        await EnsureUserProfileIsValidAsync(request.UserProfileId, cancellationToken);
 
         var clash = await dbContext.Speakers
             .AsNoTracking()
@@ -251,6 +253,7 @@ internal sealed class AdminSpeakerService(
             request.InstagramUrl, request.City, request.CityArabic,
             request.Latitude, request.Longitude);
         await EnsureCountryIsValidAsync(request.CountryId, cancellationToken);
+        await EnsureUserProfileIsValidAsync(request.UserProfileId, cancellationToken);
 
         if (!string.Equals(speaker.Code, code, StringComparison.OrdinalIgnoreCase))
         {
@@ -454,6 +457,34 @@ internal sealed class AdminSpeakerService(
                 ErrorCodes.SpeakerInvalid, 400,
                 $"Country id '{countryId}' does not exist or is inactive.",
                 $"رقم البلد '{countryId}' غير موجود أو غير مفعّل.");
+        }
+    }
+
+    /// <summary>Validates the linked-account id BEFORE SaveChanges.
+    ///
+    /// <para>This class's summary used to say existence was deliberately not
+    /// pre-checked because the link is cross-context and "a stale FK degrades
+    /// gracefully to no linked account". That stopped being true when
+    /// <c>UserProfile</c> moved onto <see cref="SimfAppDbContext"/>:
+    /// <c>Speaker.UserProfileId</c> is now a real same-database FK with
+    /// <c>OnDelete.Restrict</c>, so an unknown id no longer degrades — it violates
+    /// the constraint at SaveChanges and reaches the admin as an unhandled
+    /// <b>500</b>. Checking it here turns that into a 400 the caller can act on,
+    /// exactly as <see cref="EnsureCountryIsValidAsync"/> does for the country.
+    /// Found while executing BF-13's over-posting scenario.</para></summary>
+    private async Task EnsureUserProfileIsValidAsync(
+        Guid? userProfileId, CancellationToken cancellationToken)
+    {
+        if (userProfileId is null) { return; }
+        var exists = await dbContext.UserProfiles
+            .AsNoTracking()
+            .AnyAsync(profile => profile.Id == userProfileId.Value, cancellationToken);
+        if (!exists)
+        {
+            throw new ApiException(
+                ErrorCodes.SpeakerInvalid, 400,
+                $"User profile '{userProfileId}' does not exist.",
+                $"الملف الشخصي '{userProfileId}' غير موجود.");
         }
     }
 

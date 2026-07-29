@@ -42,6 +42,8 @@
 | E2E-LOGO-006 | No logo / 404 / offline → the initials (or short-name) fallback, no viewer | resilience | P0 | authored ✓ (widget) |
 | E2E-LOGO-007 | Accessibility — the box and the viewer are both named with the entity name | a11y | P1 | authored ✓ (widget) |
 | E2E-LOGO-008 | RTL — the viewer's close control sits at the inline end under Arabic | i18n | P1 | spec |
+| E2E-LOGO-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-LOGO-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

@@ -43,6 +43,8 @@
 | E2E-BKG-010 | Excel export (D-356) — toolbar Export downloads an .xlsx (whole filtered set vs selected rows) | happy | P1 | _to author_ |
 | E2E-BKG-011 | Admin release closes the lifecycle + notifies (M-4) — releasing a held/confirmed seat is terminal-Cancelled + BookingReleased | happy | P1 | authored ✓ |
 | E2E-BKG-012 | Monitor hint — the info banner explains bookings auto-confirm + the 3-min no-show release | happy | P2 | _to author_ |
+| E2E-BKG-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-BKG-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

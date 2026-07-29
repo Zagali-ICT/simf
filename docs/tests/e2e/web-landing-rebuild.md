@@ -34,6 +34,8 @@
 | E2E-WLB-011 | Culture persistence — after switching language the choice survives a reload (culture cookie) | i18n | P2 | _to author_ |
 | E2E-WLB-012 | Route cutover — `/` returns 200 and serves this landing via the Blazor endpoint (not static-file middleware); `/landing` still returns 200 (same page); the deleted `/index.html` returns 404 | routing | P0 | _to author_ |
 | E2E-WLB-013 | Hero background video (D-756) — with `OrganizationProfile.BackgroundVideoUrl` set to a YouTube link the hero renders a covering muted/loop/no-controls `youtube-nocookie` `<iframe.ln-hero__video--yt>`; a direct MP4/HLS link renders `<video.ln-hero__video src=...>`; unset keeps `assets/hero-video.mp4`; the CSP `frame-src` permits the YouTube host | happy | P1 | authored ✓ (`HeroMediaTests` classification + `LandingHeroTests` bUnit DOM render — all 3 cases) |
+| E2E-WLB-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-WLB-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | 2026-07-29 PASS (LTR+RTL) |
 
 ## Scenarios
 

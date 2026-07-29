@@ -72,6 +72,8 @@
 | E2E-WSDT-011 | Auth: anonymous-by-design — page + downloads load with no Authorization header, no `/login` redirect; a signed-in session changes nothing | auth | P0 | _to author_ |
 | E2E-WSDT-012 | RTL / Arabic render — all sections render Arabic (Arabic-preferred), the page mirrors right-to-left, hero + card icons render in their token colour (never invisible) | i18n | P1 | _to author_ |
 | E2E-WSDT-013 | Responsive — themes/related grids step 3→2→1 (1100/860), the overview + downloads/outcomes two-column layouts stack (900), no horizontal overflow at 1440/1024/768/390 in both languages | responsive | P1 | _to author_ |
+| E2E-WSDT-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-WSDT-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

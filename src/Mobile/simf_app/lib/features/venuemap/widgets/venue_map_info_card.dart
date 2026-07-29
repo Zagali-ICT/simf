@@ -137,6 +137,7 @@ class VenueMapInfoCard extends StatelessWidget {
               // Dismiss control (kept alongside the badge above).
               IconButton(
                 onPressed: onClose,
+                tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
                 icon: const Icon(
                   Icons.close,
                   size: 20,

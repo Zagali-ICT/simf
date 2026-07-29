@@ -39,6 +39,8 @@
 | E2E-MOB010-006 | Auth gate — a signed-out open redirects to sign-in | auth | P1 | authored (route 10 in the auth gate) |
 | E2E-MOB010-007 | RTL render (Arabic) mirrors | i18n | P1 | authored (screen) |
 | E2E-MOB010-008 | The welcome message is the CP-configured value (D-461/D-462); falls back to the bundled copy while loading / offline | validation | P1 | authored ✓ (widget test overrides `siteSettingsProvider`) |
+| E2E-MOB010-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB010-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

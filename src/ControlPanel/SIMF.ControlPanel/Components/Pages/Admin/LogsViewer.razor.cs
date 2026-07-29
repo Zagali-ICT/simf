@@ -2,6 +2,7 @@ using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using SIMF.Common;
 using SIMF.Components.Forms;
@@ -19,6 +20,10 @@ public partial class LogsViewer
     [Inject] private IStringLocalizer<Strings> L { get; set; } = default!;
     [Inject] private IJSRuntime JS { get; set; } = default!;
     [Inject] private NavigationManager Nav { get; set; } = default!;
+
+    /// <summary>Used only by the auto-refresh timer, which must swallow whatever it
+    /// catches (see <see cref="ResetTimer"/>) — so it logs instead of re-throwing.</summary>
+    [Inject] private ILogger<LogsViewer> Logger { get; set; } = default!;
 
     private const int RefreshIntervalMs = 5_000;
 
@@ -186,14 +191,45 @@ public partial class LogsViewer
         _timer = new System.Timers.Timer(RefreshIntervalMs) { AutoReset = true };
         _timer.Elapsed += async (_, _) =>
         {
-            await InvokeAsync(async () =>
+            // THIS HANDLER MUST NOT THROW.
+            //
+            // It is an `async void` (the Elapsed delegate returns void), running on
+            // a timer thread. Anything that escapes it is an unhandled exception on
+            // a thread-pool thread, which TERMINATES THE PROCESS — the whole Control
+            // Panel, every signed-in admin, not just this circuit.
+            //
+            // That is not hypothetical: navigating away from /admin/logs while a
+            // 5-second poll was in flight killed the CP server. The disposed circuit
+            // cancels the pending JS interop call, LoadTailAsync surfaces
+            // TaskCanceledException, and there was no catch between it and the
+            // runtime. Found by the WS4 browser sweep, which lost the Control Panel
+            // mid-run and only then reported it. ServicesMonitor and SessionLiveHall
+            // already guard their PeriodicTimer loops this way; this one did not.
+            try
             {
-                if (!_loadingTail && !string.IsNullOrEmpty(_selectedFile))
+                await InvokeAsync(async () =>
                 {
-                    await LoadTailAsync();
-                    StateHasChanged();
-                }
-            });
+                    if (!_loadingTail && !string.IsNullOrEmpty(_selectedFile))
+                    {
+                        await LoadTailAsync();
+                        StateHasChanged();
+                    }
+                });
+            }
+            catch (Exception ex) when (ex is JSDisconnectedException
+                or OperationCanceledException or ObjectDisposedException)
+            {
+                // Circuit torn down mid-poll. Expected, and there is nothing left to
+                // refresh — stop rather than keep firing into a dead renderer.
+                _timer?.Stop();
+            }
+            catch (Exception ex)
+            {
+                // Anything else is a real fault: report it and stop the poll rather
+                // than re-throwing into the void every 5 seconds.
+                Logger.LogError(ex, "Log tail auto-refresh failed; auto-refresh stopped.");
+                _timer?.Stop();
+            }
         };
         _timer.Start();
     }

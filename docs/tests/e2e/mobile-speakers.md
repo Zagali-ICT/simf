@@ -66,6 +66,8 @@
 | E2E-MOB019-012 | Arabic app renders the speaker's `rankArabic` when populated (CP-entered **or** Excel-imported) | i18n | P1 | _to author_ |
 | E2E-MOB019-013 | Arabic app falls back to the English `rank` when `rankArabic` is blank — intended, not a bug | i18n | P1 | _to author_ |
 | E2E-MOB019-014 | **The search field has an accessible name (BUG-012)** — the shared `SimfSearchField` exposes its placeholder as the field's own semantics label (and keeps it once the user types, when the placeholder is gone). One fix covers every search surface: speakers, exhibition/booths, delegations, agenda, session summaries, notifications, and the `SimfFilterSearchField` variant | a11y | P1 | authored ✓ (app `test/app/widgets/simf_search_field_semantics_test.dart`) |
+| E2E-MOB019-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB019-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

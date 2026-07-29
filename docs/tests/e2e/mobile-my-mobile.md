@@ -35,6 +35,8 @@
 | E2E-MYMOB-009 | RTL render (Arabic) — labels mirror, the NUMBER stays LTR | i18n | P1 | spec |
 | E2E-MYMOB-010 | **DEF-PHN-003** — the SERVER canonicalises on write: separators stripped and a leading `00` rewritten to `+`, so the app's `+966501234567` and the CP/Website `+966-555987654` land in the column as **one** form | validation | P0 | authored ✓ (`UserProfileTests.POST_stores_the_Saudi_mobile_canonicalised` theory + `..._international_mobile_canonicalised`; `AdminAccountMobileTests.Admin_edit_stores_the_mobile_canonicalised`) |
 | E2E-MYMOB-011 | **DEF-PHN-004** — the mobile is required **server-side** too (at least one, Saudi or international), so a save can no longer clear the number the app then refuses to submit without | validation | P0 | authored ✓ (`UserProfileTests.POST_rejects_a_profile_with_no_mobile_at_all`, `..._rejects_a_save_that_blanks_an_existing_mobile`, `..._accepts_an_international_only_mobile_for_a_Saudi`) |
+| E2E-MYMOB-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MYMOB-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

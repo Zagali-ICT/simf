@@ -250,3 +250,14 @@ _Last reviewed:_ `2026-07-27` by `SIMF Team` — added E2E-MOBSTAFFREG-007..009 
 the deferred walk-in items (DEF-STF-003 name-length alignment + server field
 errors, DEF-STF-004 retryable attachment upload, DEF-STF-007 the unavailable
 classification). Earlier: `2026-07-26`.
+
+## Element sweep (WS1)
+
+Generated contract — see `tools/qa/element-sweep.js` and
+`docs/tests/element-sweeps/`.
+
+| ID | Scenario | Type | Priority | Status |
+|----|----------|------|----------|--------|
+| E2E-MOBSTAFFREG-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOBSTAFFREG-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
+

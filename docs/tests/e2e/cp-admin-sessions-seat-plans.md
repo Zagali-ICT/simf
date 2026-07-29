@@ -87,6 +87,8 @@
 | E2E-SSP-017 | **DEF-SEA-001** - clicking a held seat opens a confirmation naming the seat + holder; it does NOT release on the click | destructive | P1 | authored (bUnit `SessionSeatPlanReleaseConfirmTests`) |
 | E2E-SSP-018 | **DEF-SEA-001** - the plan names every holder (roster + tooltip); a VVIP admin block shows its guest note, a note-less block shows "Admin block (no attendee)" | happy | P1 | authored (API `Seat_plan_list_names_the_holder_...` + `..._vvip_guest_note_...`) |
 | E2E-SSP-019 | **A11** - the State column reads Confirmed for a checked-in holder and Reserved for one who has not scanned in (no longer the record defaults) | happy | P2 | authored (API `Seat_plan_list_names_the_holder_and_ships_the_real_status_and_check_in`) |
+| E2E-SSP-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-SSP-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

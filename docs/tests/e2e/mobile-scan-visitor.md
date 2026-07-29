@@ -436,3 +436,14 @@ camera-error state); `2026-07-04`.
 _Last reviewed:_ 2026-07-26 by Claude — BUG-024: a new booth capture now emails
 the lead card to the exhibitor (E2E-MOBSCANVIS-007). Earlier: `2026-07-11` by
 `SIMF Team` (D-737 unified scanner) and `2026-07-04`.
+
+## Element sweep (WS1)
+
+Generated contract — see `tools/qa/element-sweep.js` and
+`docs/tests/element-sweeps/`.
+
+| ID | Scenario | Type | Priority | Status |
+|----|----------|------|----------|--------|
+| E2E-MOBSCANVIS-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOBSCANVIS-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
+

@@ -372,6 +372,8 @@ Scenario: A caller without HallArrivals.Record cannot record a departure
 | E2E-HAR-015 | Session picker only offers currently-live sessions; a stale/future session is rejected with `SESSION_NOT_LIVE` | validation | P0 | _to author_ |
 | E2E-HAR-016 | Recording an arrival when the hall is at its physical capacity → `HALL_AT_CAPACITY` | validation | P1 | _to author_ |
 | E2E-HAR-017 | Door QR of an approved attendee whose profile-type is inactive → `ATTENDEE_NOT_APPROVED` | validation | P1 | _to author_ |
+| E2E-HAR-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-HAR-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ### E2E-HAR-015 — arrival bound to a live session window (± 15 min grace)
 

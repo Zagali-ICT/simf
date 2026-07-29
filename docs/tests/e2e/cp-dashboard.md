@@ -42,6 +42,8 @@
 | E2E-DSH-011 | Rejected account → shell guard redirects to `/auth/rejected` | auth | P1 | _to author_ |
 | E2E-DSH-012 | Resilience — avatar prefetch `/account/api/profile` fails → placeholder icon, page still renders | resilience | P2 | _to author_ |
 | E2E-DSH-013 | RTL / Arabic render — banner + welcome card + nav rail mirror | i18n | P1 | _to author_ |
+| E2E-DSH-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-DSH-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

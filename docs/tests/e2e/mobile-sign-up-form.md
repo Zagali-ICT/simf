@@ -43,6 +43,8 @@
 | E2E-MOB005-012 | Ticking the T&C box clears the error and lets the submit through | happy | P0 | authored ✓ (widget test, D-719) |
 | E2E-MOB005-013 | The terms link opens Page 009 (consent mode); موافق auto-checks the box | happy | P1 | authored ✓ (widget test, D-719) |
 | E2E-MOB005-014 | Declining on Page 009 (back/رفض) leaves the box unchecked → submit still blocked | edge | P2 | authored ✓ (widget test, D-719) |
+| E2E-MOB005-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB005-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

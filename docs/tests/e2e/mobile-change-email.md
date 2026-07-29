@@ -91,6 +91,8 @@
 | E2E-MCE-011 | Attempt cap + no-outstanding-code - a 6th wrong try / a confirm with no live code → 400 `AUTH_CODE_INVALID` (request a new code) | edge | P1 | authored ✓ (backend test) |
 | E2E-MCE-012 | Wrong current password on confirm → 401 `AUTH_INVALID_CREDENTIALS`, code NOT consumed (checked before the code) | security | P0 | authored ✓ (screen + backend tests) |
 | E2E-MCE-013 | Successful confirm emails the OLD address a security alert (`EmailChangedNotice`, "SIMF login email changed") | security | P1 | authored ✓ (backend test) |
+| E2E-MCE-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MCE-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

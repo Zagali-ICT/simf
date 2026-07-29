@@ -58,7 +58,14 @@ public static class CpNavigation
             // §6.16 — /admin/statistics was an ORPHAN: a real page rendering live stat
             // tiles and gated on Statistics.View, but reachable from nowhere in the CP.
             // Granting that permission was silently inert; only a hand-typed URL opened it.
-            new("Module.Statistics", "/admin/statistics", RequiredPermission: PermissionCatalog.Statistics.View, Icon: "chart-bar"),
+            // Icon is "bar-chart", NOT "chart-bar". SimfIcon throws
+            // ArgumentException on an unknown name, and because this nav renders
+            // on EVERY Control Panel page, the transposition introduced with this
+            // row in 4ba30020 raised a render exception on 92 of 97 pages for a
+            // day — invisible on screen, logged to the console. See
+            // CpNavigationIconTests, which now pins every nav icon to the set
+            // SimfIcon actually knows.
+            new("Module.Statistics", "/admin/statistics", RequiredPermission: PermissionCatalog.Statistics.View, Icon: "bar-chart"),
         ]),
         new("Nav.People",
         [

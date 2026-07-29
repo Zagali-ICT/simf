@@ -498,16 +498,37 @@ internal sealed class AdminGateService(
         // window: a check-in older than StalePresenceWindow with no later scan is
         // treated as departed (day/session-boundary reconciliation).
         var presenceCutoff = timeProvider.GetUtcNow() - StalePresenceWindow;
+
+        // "Latest allowed scan per visitor" expressed as a correlated NOT EXISTS,
+        // NOT as a filter over a GroupBy projection. The previous form —
+        //
+        //     .GroupBy(s => s.UserProfileId!.Value)
+        //     .Select(g => new { UserProfileId = g.Key,
+        //                        Last = g.OrderByDescending(s => s.ScannedAt).First() })
+        //     .Where(x => x.Last.Direction == ScanDirection.CheckIn
+        //              && x.Last.ScannedAt >= presenceCutoff)
+        //
+        // cannot be translated: filtering on a member of an entity projected out of
+        // a grouping makes EF throw KeyNotFoundException('EmptyProjectionMember')
+        // while it builds the SQL. That happens at translation time, so the endpoint
+        // returned 500 on EVERY request — an empty GateScans table included, which
+        // is why no amount of seeding would have shown it. It shipped because
+        // nothing executed this method against a relational provider; the regression
+        // test added with this fix does (AdminGateCurrentlyInsideTests).
+        //
+        // The Id tiebreak keeps exactly one row per visitor when two scans share a
+        // ScannedAt — the guarantee OrderByDescending(...).First() gave for free.
         var latest = await appDbContext.GateScans.AsNoTracking()
-            .Where(s => s.Outcome == ScanOutcome.Allowed && s.UserProfileId != null)
-            .GroupBy(s => s.UserProfileId!.Value)
-            .Select(g => new
-            {
-                UserProfileId = g.Key,
-                Last = g.OrderByDescending(s => s.ScannedAt).First(),
-            })
-            .Where(x => x.Last.Direction == ScanDirection.CheckIn
-                && x.Last.ScannedAt >= presenceCutoff)
+            .Where(s => s.Outcome == ScanOutcome.Allowed
+                && s.UserProfileId != null
+                && s.Direction == ScanDirection.CheckIn
+                && s.ScannedAt >= presenceCutoff
+                && !appDbContext.GateScans.Any(later =>
+                    later.UserProfileId == s.UserProfileId
+                    && later.Outcome == ScanOutcome.Allowed
+                    && (later.ScannedAt > s.ScannedAt
+                        || (later.ScannedAt == s.ScannedAt && later.Id > s.Id))))
+            .Select(s => new { UserProfileId = s.UserProfileId!.Value, Last = s })
             .ToListAsync(cancellationToken);
 
         if (latest.Count == 0) { return Array.Empty<AdminCurrentlyInsideRow>(); }

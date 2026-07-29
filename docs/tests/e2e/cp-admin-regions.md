@@ -37,6 +37,8 @@
 | E2E-REGION-014 | Column sort toggles (`Sort` + `SortDescending`); default = SortOrder | function | P2 | _to author_ |
 | E2E-REGION-015 | App picker parity — `GET /app/regions` returns the active rows ordered by SortOrder | function | P1 | _to author_ |
 | E2E-REGION-016 | Delete confirmation gate — View/Delete + SimfConfirm (Cancel = no DELETE; confirm = one DELETE) | error | P0 | _to author_ |
+| E2E-REGION-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-REGION-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

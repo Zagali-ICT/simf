@@ -36,6 +36,8 @@
 | E2E-OPN-014 | RTL / Arabic render — page + reject modal mirror to RTL | i18n | P1 | _to author_ |
 | E2E-OPN-015 | Per-column filter narrows the grid (`Filters["email"]` / `Filters["displayName"]`, Skip reset, debounced) | happy | P1 | _to author_ |
 | E2E-OPN-016 | Column sort toggles (`Sort`/`SortDescending` on email + displayName; Created not sortable) | happy | P2 | _to author_ |
+| E2E-OPN-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-OPN-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 **Server-side permission map (asserted by E2E-OPN-008 / the `PermissionEnforcementTests`):**
 

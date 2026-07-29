@@ -64,6 +64,8 @@
 | E2E-VPT-012 | Deactivate in-use → 409 `PROFILE_TYPE_IN_USE` (bilingual, row stays Active) | error | P0 | _to author_ |
 | E2E-VPT-013 | Server 500 on `/list` → red fallback toast, no rows render | resilience | P2 | _to author_ |
 | E2E-VPT-014 | RTL / Arabic render mirrors page + Add modal | i18n | P1 | _to author_ |
+| E2E-VPT-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-VPT-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

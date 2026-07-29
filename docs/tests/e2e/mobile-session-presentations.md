@@ -66,6 +66,8 @@
 | E2E-MOB202-006 | Anonymous list → 401 | auth | P0 | authored ✓ (API `List_without_a_token_returns_401`) |
 | E2E-MOB202-007 | RTL — Arabic session title / speaker from the same item | rtl | P2 | covered (models `localized*` getters) |
 | E2E-MOB202-008 | `GET /app/presentations` lists a session that has **no** deck (id = session id, empty file) — D-704 | happy | P0 | authored ✓ (API `List_includes_a_session_that_has_no_presentation`) |
+| E2E-MOB202-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB202-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

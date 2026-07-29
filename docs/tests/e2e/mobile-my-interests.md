@@ -35,6 +35,8 @@
 | E2E-MYINT-005 | Load failure → error state + retry; no upsert fired | resilience | P1 | authored ✓ (widget) |
 | E2E-MYINT-006 | Auth gate — anonymous open of `/my-area/interests` redirects to sign-in | auth | P0 | authored ✓ (router-gate matrix) |
 | E2E-MYINT-007 | RTL render (Arabic) — chip grid + counter mirror; title اهتماماتي | i18n | P1 | spec |
+| E2E-MYINT-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MYINT-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

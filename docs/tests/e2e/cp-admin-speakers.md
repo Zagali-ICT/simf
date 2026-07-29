@@ -79,6 +79,8 @@
 | E2E-SPK-025 | Country cell — `SimfCountryTag` renders the flag glyph + name; a speaker with no country renders "—" (redesign) | function | P2 | _authored_ |
 | E2E-SPK-026 | Per-row **Sessions** action deep-links to `/admin/sessions?speakerId={id}` filtered to that speaker (redesign) | function | P1 | _authored_ |
 | E2E-SPK-027 | Add/Edit form renders four titled `SimfFormSection` steps; all fields still save (redesign) | happy | P1 | _authored_ |
+| E2E-SPK-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-SPK-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

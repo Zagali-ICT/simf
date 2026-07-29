@@ -49,6 +49,8 @@
 | E2E-ROL-024 | Excel import rejection — non-.xlsx / wrong-sheet upload → bilingual 400, nothing created (D-356) | error | P1 | _to author_ |
 | E2E-ROL-025 | Security team baseline role is present (Built-in pill, 8 permissions) and is not renamable / deletable (D-752) | happy | P1 | _to author_ |
 | E2E-ROL-026 | Scientific team baseline role is present (Built-in pill, 31 permissions) and is not renamable / deletable (D-752) | happy | P1 | _to author_ |
+| E2E-ROL-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-ROL-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

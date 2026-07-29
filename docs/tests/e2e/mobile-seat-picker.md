@@ -49,6 +49,8 @@ always empty.
 | E2E-MOBPICK-014 | **Change seat — cancelling the confirm moves nothing (B1)** | edge | P1 | authored ✓ (widget — dialog dismiss → no move call) |
 | E2E-MOBPICK-015 | **Change seat — a lost race keeps the ORIGINAL seat (B1):** the move is one atomic unit, so a `409 SEAT_ALREADY_RESERVED` rolls the whole thing back; the app says `seatChangeTaken` ("that seat was just taken — you still have your current seat") and the visitor is still on their old seat | conflict | P0 | authored ✓ (widget + API `SeatChangeTests.A_move_to_an_occupied_seat_leaves_the_original_seat_held`) |
 | E2E-MOBPICK-016 | **Change seat — the reservation rules are re-run on the destination (B1):** tier eligibility (`SEAT_TIER_NOT_ELIGIBLE` / `SEAT_TIER_RESERVED`), seat bounds (`SEAT_OUT_OF_BOUNDS`), the no-seat guard (`404 SEAT_RESERVATION_NOT_FOUND`), the same-seat guard (`SEAT_MOVE_SAME_SEAT`) and the timing gate (`409 BOOKING_SESSION_STARTED` once the session has begun) — each refusal leaves the current seat held | error | P0 | authored ✓ (widget backend-reason toast + API `SeatChangeTests` ×6) |
+| E2E-MOBPICK-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOBPICK-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

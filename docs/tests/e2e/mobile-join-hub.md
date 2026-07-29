@@ -23,6 +23,8 @@ flow for an attendee who has not yet opened a specific session.
 | E2E-MOBHUB-006 | **Pull-to-refresh** (list / empty / error) re-fetches the programme (D-601 — the gesture works on every state) | happy | P2 | covered (screen — `SimfPullToRefresh` on all three states) |
 | E2E-MOBHUB-007 | Under **RTL** each row's forward chevron points **left** (the stroked `ic_back.svg` glyph; D-601 fixed the Material-icon double-mirror) | visual | P2 | covered (golden `join_session_hub.png`, crop-verified) |
 | E2E-MOBHUB-008 | **The hub is actually reachable (BUG-016):** `/sessions/join` resolves to the hub, not to session detail with `sessionId="join"`. The route table declared `/sessions/:sessionId` (#17) above the static `/sessions/join` (#110) and go_router matches in declaration order, so the only entry point ("Book a seat" in My Area) landed on a "session not found" screen (`GET /app/programme/sessions/join` → 404) | nav | P0 | authored ✓ (app `router_route_order_test` — `/sessions/join` → `joinSessionHub`, `/sessions/<id>` → `sessionDetail`, plus the no-parameterised-route-before-a-static-one invariant) |
+| E2E-MOBHUB-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOBHUB-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 
