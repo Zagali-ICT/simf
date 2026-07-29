@@ -183,6 +183,36 @@
   --color-seat-confirmed: var(--color-success);
   --color-seat-contrast: #FFFFFF;      /* label on dark navy/steel seats */
   --color-seat-user-contrast: #01132D; /* navy label on the gold user seat */
+
+  /* -- Chart series palette (dashboard charts) -------------------------------
+     A categorical palette: each slot identifies ONE metric, assigned in fixed
+     order and never cycled. The brand tokens themselves are not usable here —
+     --color-primary is too dark and too low-chroma to sit in the readable band,
+     and the brand gold falls under 3:1 against a white surface — so these are
+     brand-adjacent steps chosen to satisfy the measurable checks:
+
+       lightness band  OKLCH L within 0.43-0.77 (light) / 0.48-0.67 (dark)
+       chroma floor    OKLCH C >= 0.10 (below it a hue reads as grey)
+       CVD separation  worst adjacent OKLab dE >= 8.0 under protan/deutan
+       contrast        >= 3:1 against the chart surface
+
+     Verified: light/grey worst adjacent dE 9.4 (deutan), tritan 31.0, normal
+     25.7; dark worst adjacent dE 9.2 (protan), tritan 30.1, normal 24.0. Every
+     value passes all checks on --color-surface for its theme. Re-run the
+     validation if any value here changes — do not eyeball a replacement.
+
+     The grey theme deliberately has no override: this palette was verified
+     against the grey surface (#E9EAEB) and passes unchanged. */
+  --chart-series-1: #2A6FB5;   /* slot 1 — blue  */
+  --chart-series-2: #C2410C;   /* slot 2 — orange */
+  --chart-series-3: #1B8A63;   /* slot 3 — green  */
+
+  /* Chart furniture — recessive by design: the data carries the ink, the
+     gridlines only orient it. */
+  --chart-grid: var(--color-border);
+  --chart-axis: var(--color-text-muted);
+  --chart-baseline: var(--color-text-muted);
+  --chart-track: var(--color-surface-sunken);
 }
 
 /* ----------------------------------------------------------------------------
@@ -223,6 +253,14 @@
                  0 8px 24px rgba(0, 0, 0, 0.40);
 
   --pattern-opacity: 0.18;
+
+  /* Chart series — SELECTED for the dark surface (#16233A), not an automatic
+     lightening of the light steps: they are re-stepped into the dark lightness
+     band (L 0.48-0.67) and re-verified against that surface.
+     Worst adjacent OKLab dE 9.2 (protan), tritan 30.1, normal 24.0, all >= 3:1. */
+  --chart-series-1: #4A8CD4;
+  --chart-series-2: #D9683C;
+  --chart-series-3: #2E9D74;
 }
 
 /* ----------------------------------------------------------------------------

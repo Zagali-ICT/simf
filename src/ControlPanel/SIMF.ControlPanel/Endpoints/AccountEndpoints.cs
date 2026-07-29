@@ -3513,6 +3513,15 @@ internal static class AccountEndpoints
             return Forward(await api.GetStatisticsAsync(token));
         });
 
+        // Programme dashboard (the day-by-day chart on the CP landing page).
+        group.MapGet("/admin/statistics/programme",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetStatisticsProgrammeAsync(token));
+        });
+
         // FR-506 — session-attendance dashboard BFF passthroughs.
         group.MapGet("/admin/attendance/summary",
             async (HttpContext http, SimfAdminClient api) =>

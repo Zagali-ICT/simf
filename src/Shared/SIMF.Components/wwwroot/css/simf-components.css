@@ -2918,4 +2918,312 @@ h1:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
   background: var(--color-background);
 }
 
+/* ===========================================================================
+   Dashboard: stat grid, charts and gauges
+   ---------------------------------------------------------------------------
+   Added for the programme dashboard. Every colour is a token from
+   theme.tokens.css; nothing here names a colour, so all three themes are
+   covered by the token file alone.
+   ======================================================================== */
+
+/* -- Stat grid ------------------------------------------------------------
+   A real grid for the KPI tiles. Dashboard tiles previously rode on
+   .simf-form__actions, a flex row meant for form buttons, which gave them
+   neither equal widths nor predictable wrapping. auto-fit + minmax keeps the
+   tiles equal and lets the row reflow without a media query. */
+.simf-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-4);
+}
+
+/* -- Chart ---------------------------------------------------------------- */
+.simf-chart {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.simf-chart__head { display: flex; flex-direction: column; gap: var(--space-1); }
+
+.simf-chart__title {
+  margin: 0;
+  font-size: var(--font-size-subtitle);
+  line-height: var(--line-height-subtitle);
+  font-weight: var(--font-weight-heading);
+  color: var(--color-text);
+}
+
+.simf-chart__subtitle {
+  margin: 0;
+  font-size: var(--font-size-caption);
+  line-height: var(--line-height-caption);
+  color: var(--color-text-muted);
+}
+
+.simf-chart__empty {
+  margin: 0;
+  padding: var(--space-7) 0;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-body);
+}
+
+/* Legend — always present for two or more series, so a series is never
+   identified by colour alone. */
+.simf-chart__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.simf-chart__legend-item { display: flex; align-items: center; gap: var(--space-2); }
+
+.simf-chart__swatch {
+  inline-size: 12px;
+  block-size: 12px;
+  border-radius: var(--radius-sm);
+  flex: 0 0 auto;
+}
+
+.simf-chart__swatch--1 { background-color: var(--chart-series-1); }
+.simf-chart__swatch--2 { background-color: var(--chart-series-2); }
+.simf-chart__swatch--3 { background-color: var(--chart-series-3); }
+
+/* Legend text wears a text token, never the series colour. */
+.simf-chart__legend-label {
+  font-size: var(--font-size-caption);
+  line-height: var(--line-height-caption);
+  color: var(--color-text-muted);
+}
+
+/* Plot: the y axis column sits beside the plot area. Both are flex, so an RTL
+   document mirrors them automatically — matching the SVG geometry, which the
+   component mirrors for RTL as well. */
+.simf-chart__body { display: flex; gap: var(--space-3); align-items: stretch; }
+
+.simf-chart__yaxis {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  /* Aligns the first and last tick with the top and the zero baseline, given
+     the x-axis label row below the plot and the label headroom above it. */
+  margin-block-start: var(--space-5);
+  padding-block-end: calc(var(--line-height-caption) + var(--space-2));
+  text-align: end;
+}
+
+.simf-chart__ytick {
+  font-size: var(--font-size-caption);
+  line-height: 1;
+  color: var(--chart-axis);
+  font-variant-numeric: tabular-nums;
+}
+
+.simf-chart__area { flex: 1 1 auto; min-inline-size: 0; }
+
+/* Positioning context for the HTML value-label overlay.
+   MARGIN, not padding: the overlay is inset:0 against this box, and the label
+   offsets are percentages of the PLOT height, so the box must be exactly the
+   SVG's height. Padding would inflate it and every label would drift. The
+   margin instead reserves the room a full-height bar's label needs above the
+   plot, without changing the percentage base. */
+.simf-chart__plot {
+  position: relative;
+  margin-block-start: var(--space-5);
+}
+
+.simf-chart__svg {
+  inline-size: 100%;
+  block-size: 260px;
+  display: block;
+  overflow: visible;
+}
+
+.simf-chart__gridline {
+  stroke: var(--chart-grid);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.simf-chart__baseline {
+  stroke: var(--chart-baseline);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.simf-chart__bar--1 { fill: var(--chart-series-1); }
+.simf-chart__bar--2 { fill: var(--chart-series-2); }
+.simf-chart__bar--3 { fill: var(--chart-series-3); }
+
+/* A surface-coloured hairline between adjacent fills, so two bars never touch
+   even when their values are identical. */
+.simf-chart__bar {
+  stroke: var(--color-surface);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Value labels: HTML positioned over the plot, NOT SVG text.
+   preserveAspectRatio="none" applies a non-uniform transform so the bars fill
+   the width, and that transform scales glyph outlines too — a px font-size
+   inside SVG content resolves to a user unit and stretches with everything
+   else, so an SVG label would render visibly distorted at any container width
+   other than exactly 640px. As HTML they are immune to it, and the component
+   keeps its own rule: the SVG carries geometry, every string is HTML.
+   Text wears a text token; the coloured bar beneath carries the identity. */
+.simf-chart__values {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.simf-chart__value {
+  position: absolute;
+  /* Physical left, deliberately: the RTL mirror is already applied to the bar
+     geometry, so a logical inset property would flip it a second time. */
+  left: var(--simf-bar-x, 0%);
+  bottom: var(--simf-bar-y, 0%);
+  /* Centre on the bar, then lift clear of its top edge. */
+  transform: translate(-50%, -0.25rem);
+  font-size: var(--font-size-caption);
+  line-height: 1;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.simf-chart__xaxis {
+  display: flex;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.simf-chart__xtick {
+  flex: 1 1 0;
+  min-inline-size: 0;
+  text-align: center;
+  font-size: var(--font-size-caption);
+  line-height: var(--line-height-caption);
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+/* -- Gauge (labelled horizontal bar) -------------------------------------- */
+.simf-gauge { display: flex; flex-direction: column; gap: var(--space-1); }
+
+.simf-gauge__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.simf-gauge__label {
+  font-size: var(--font-size-caption);
+  line-height: var(--line-height-caption);
+  color: var(--color-text-muted);
+}
+
+.simf-gauge__value {
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-heading);
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.simf-gauge__track {
+  inline-size: 100%;
+  block-size: 8px;
+  border-radius: var(--radius-sm);
+  background-color: var(--chart-track);
+  overflow: hidden;
+}
+
+/* --simf-gauge-fill is supplied per instance by the component; the rule stays
+   here so the stylesheet keeps control of everything except the datum. */
+.simf-gauge__fill {
+  block-size: 100%;
+  inline-size: var(--simf-gauge-fill, 0%);
+  border-radius: var(--radius-sm);
+  transition: inline-size var(--transition-base);
+}
+
+.simf-gauge__fill--1 { background-color: var(--chart-series-1); }
+.simf-gauge__fill--2 { background-color: var(--chart-series-2); }
+.simf-gauge__fill--3 { background-color: var(--chart-series-3); }
+
+/* -- Programme day cards -------------------------------------------------- */
+.simf-day-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-4);
+}
+
+.simf-day-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  background-color: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+}
+
+.simf-day-card__head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding-block-end: var(--space-3);
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.simf-day-card__title {
+  margin: 0;
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-heading);
+  color: var(--color-text);
+}
+
+.simf-day-card__date {
+  font-size: var(--font-size-caption);
+  line-height: var(--line-height-caption);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.simf-day-card__gauges { display: flex; flex-direction: column; gap: var(--space-3); }
+
+.simf-day-card__sessions {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0;
+  padding-block-start: var(--space-3);
+  border-block-start: var(--border-width) solid var(--color-border);
+  font-size: var(--font-size-caption);
+  color: var(--color-text-muted);
+}
+
+.simf-day-card__sessions-value {
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-heading);
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 639px) {
+  .simf-chart__svg { block-size: 200px; }
+  .simf-chart__yaxis { display: none; }
+}
+
 

@@ -3340,6 +3340,14 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Get, "statistics", content: null,
             accessToken, cancellationToken);
 
+    /// <summary>The programme dashboard: headline participant counts plus the
+    /// per-forum-day figures behind the Control Panel's day-by-day chart.</summary>
+    public Task<ApiCallResult<StatisticsProgramme>> GetStatisticsProgrammeAsync(
+        string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<StatisticsProgramme>(
+            HttpMethod.Get, "statistics/programme", content: null,
+            accessToken, cancellationToken);
+
     // -- FR-506 — session-attendance dashboard (SIMF.Contracts.Attendance) ----
 
     public Task<ApiCallResult<SessionAttendanceSummary>> GetSessionAttendanceSummaryAsync(

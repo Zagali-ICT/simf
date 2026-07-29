@@ -38,7 +38,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 
 | Page | File | Scenarios |
 |------|------|-----------|
-| `/` (Dashboard) | [`cp-dashboard.md`](cp-dashboard.md) | E2E-DSH-001..013 |
+| `/` (Dashboard) - shell chrome + the Wave A programme dashboard (KPI grid + grouped bar chart + per-day cards, gated on `Statistics.View`) | [`cp-dashboard.md`](cp-dashboard.md) | E2E-DSH-001..025 |
 
 ### Control Panel — People & accounts
 
@@ -405,3 +405,36 @@ API endpoints land (D-249). The per-screen design docs live under
   NOT yet wired. The new HSL/SSP CP behaviour IS coded, but no `SeatReservationsTests`
   variable-layout xUnit facts back it yet, so those scenarios read `_to author_` and are
   driven manually until the tests land.
+
+### Update - 2026-07-29 (Wave A - the CP programme dashboard on `/`)
+
+- **Scope:** the Control Panel landing page stopped being a placeholder. For an
+  admin holding `Statistics.View` it now renders a KPI stat grid, a grouped bar
+  chart with one cluster per forum day, and one day card per forum day. Backed by
+  a new read-only aggregate `GET /api/v1/admin/statistics/programme`
+  (`StatisticsProgramme` + `ProgrammeDayStats`) and new shared chart components
+  (`SimfGroupedBarChart`, `SimfBarGauge`, `ChartGeometry`). No schema change, no
+  migration, no new permission - `Statistics.View` is reused and gates both the
+  API and the render.
+- **Range extended:** `cp-dashboard.md` E2E-DSH-001..013 -> **001..025**. The
+  thirteen existing ids keep their meaning; twelve were appended for the Wave A
+  surface (golden path, the permission gate, the KPI grid, chart clusters, the
+  zero-activity day, Arabic RTL mirroring, light/dark/grey themes, the
+  `dd-MM-yyyy` Saudi-local date rule, the API failure path, the hidden data
+  table, the day-card gauges, and the no-programme-days empty state). No scenario
+  was renumbered. The page's front-matter prose was rewritten, since it still
+  described the page as a placeholder.
+- **Lower-layer backing:** `tests/SIMF.ControlPanel.Tests/ChartGeometryTests.cs`
+  (41 tests) and `tests/SIMF.Api.Tests/StatisticsProgrammeTests.cs` (21 tests)
+  are cross-referenced per scenario, including the five Saudi-calendar-day
+  boundary cases behind E2E-DSH-021.
+- **Honesty flag (branch state):** on `feat/cp-dashboard-reporting` the CP **BFF
+  passthrough for the programme call is missing** - `Home.razor.cs` requests
+  `/account/api/admin/statistics/programme`, but `AccountEndpoints.cs` maps only
+  `/admin/statistics` and `SimfAdminClient` has no `GetStatisticsProgrammeAsync`.
+  The unmatched route 404s, `simfAccount.getJson` turns that into a
+  `BAD_RESPONSE` envelope, and the page degrades to the welcome panel plus the
+  four `StatisticsDashboard` tiles. So E2E-DSH-017, -018, -019, -020, -023, -024
+  and -025 (plus the programme half of -014, -016 and -021) are **RED until the
+  passthrough and the client method land**; they are authored as the target spec.
+  E2E-DSH-015 and -022 pass as written today.

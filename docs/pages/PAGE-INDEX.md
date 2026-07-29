@@ -34,7 +34,7 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | Route | Status | Audience | Doc | Test |
 |-------|--------|----------|-----|------|
 | **Overview** | | | | |
-| `/` | ✅ Real | Any signed-in CP user | [cp/dashboard.md](cp/dashboard.md) | [e2e/cp-dashboard.md](../tests/e2e/cp-dashboard.md) |
+| `/` | ✅ Real | Any signed-in CP user (figures need `Statistics.View`) | [cp/dashboard.md](cp/dashboard.md) | [e2e/cp-dashboard.md](../tests/e2e/cp-dashboard.md) |
 | **People & accounts** | | | | |
 | `/admin/admins` | ✅ Real | Administrator | [cp/admin-admins.md](cp/admin-admins.md) | [e2e/cp-admin-admins.md](../tests/e2e/cp-admin-admins.md) |
 | `/admin/admins/pending` | ✅ Real | Administrator | [cp/admin-admins-pending.md](cp/admin-admins-pending.md) | [e2e/cp-admin-admins-pending.md](../tests/e2e/cp-admin-admins-pending.md) |
