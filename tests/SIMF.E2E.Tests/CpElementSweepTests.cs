@@ -188,6 +188,61 @@ public sealed class CpElementSweepTests(CpSessionFixture session)
 
         await context.CloseAsync();
     }
+
+    /// <summary>The Arabic pass — BF-14's Control Panel half.
+    ///
+    /// <para>The Website got an RTL sweep with WS2; the CP had none, and it is the
+    /// surface with far more layout to break: grids with pinned action columns,
+    /// toolbars, pagers, modals. RTL is where a fixed width or an unmirrored
+    /// margin shows up, and `scrollWidth > clientWidth` catches exactly that.</para>
+    ///
+    /// <para>Asserts the sweep contract and a clean console, but NOT the predicted
+    /// inventory — the control set does not change with language, so checking it
+    /// twice would only double the failure noise from one defect.</para></summary>
+    [SkippableTheory]
+    [MemberData(nameof(CpRoutes))]
+    public async Task Page_meets_its_element_contract_in_Arabic(string route)
+    {
+        var stackDown = QaStack.SkipReasonFor(QaStack.ControlPanel);
+        Skip.If(stackDown is not null, stackDown);
+        var missingCredentials = QaStack.CredentialSkipReason();
+        Skip.If(missingCredentials is not null, missingCredentials);
+
+        var context = await _session.Browser!.NewContextAsync(new BrowserNewContextOptions
+        {
+            ViewportSize = new() { Width = 1440, Height = 900 },
+            StorageState = _session.StorageState,
+            Locale = "ar-SA",
+        });
+        var page = await context.NewPageAsync();
+
+        var consoleErrors = new List<string>();
+        page.Console += (_, message) =>
+        {
+            if (message.Type == "error") { consoleErrors.Add(message.Text); }
+        };
+
+        // Switch culture the way the CP's own picker does, landing on the route.
+        await page.GotoAsync(
+            $"{QaStack.ControlPanel}/culture?culture=ar"
+            + $"&redirectUri={Uri.EscapeDataString(route)}",
+            new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+
+        var landed = new Uri(page.Url).AbsolutePath;
+        Assert.False(
+            landed.StartsWith("/login", StringComparison.OrdinalIgnoreCase),
+            $"[ar] {route} bounced to {landed}.");
+
+        var report = await ElementSweep.RunAsync(page);
+        Assert.Equal("rtl", report.Dir);
+        Assert.True(report.Pass, $"[ar] {report.Describe()}");
+        Assert.True(
+            consoleErrors.Count == 0,
+            $"[ar] {route} logged console errors:\n  "
+            + string.Join("\n  ", consoleErrors));
+
+        await context.CloseAsync();
+    }
 }
 
 /// <summary>Reads the committed prediction produced by

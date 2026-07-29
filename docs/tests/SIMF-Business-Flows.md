@@ -2236,6 +2236,19 @@ Scenario: RTL and bilingual render of the archived edition
 
 ## BF-10 — Full Control-Panel smoke — no dead button, no crash, permission gate
 
+> **Automated coverage as of 2026-07-29 (WS2/WS4).** `CpElementSweepTests` drives
+> all 94 sweepable CP routes signed in as an Administrator and asserts each renders
+> without bouncing, with **zero console errors**, no broken image, every same-origin
+> link/asset < 400, and no horizontal overflow — that is **E2E-BF-10-001**, executed:
+> 92 passed, 2 skipped (`/admin/meeting-tables`, `/admin/speaker-presentations` keep
+> their grids behind a parent selection). **E2E-BF-10-003** is covered only in the
+> "present and correctly gated" sense: the run diffs each page against
+> `predicted-inventory.json`, so a toolbar button that vanished or lost its
+> selection-gating fails the build — it does **not** click anything, so "the dialog
+> actually opens" is still unexecuted. **E2E-BF-10-006** is held by the two build
+> guards named above plus the sweep's own no-bounce assertion.
+> **Still unexecuted: -002, -004, -005** — they need interaction, not a page load.
+
 This flow is a systematic **smoke sweep over every ✅ Real Control-Panel route** listed in [`docs/pages/PAGE-INDEX.md`](../../pages/PAGE-INDEX.md) — the `/` dashboard plus the full `/admin/*` catalogue (`/admin/admins`, `/admin/visitors`, `/admin/roles`, `/admin/sessions`, `/admin/speakers`, `/admin/sponsors`, `/admin/organisations`, `/admin/programme-days`, `/admin/configuration`, `/admin/email/templates`, `/admin/statistics`, … through every row marked ✅ Real). It is driven on the CP surface (`http://localhost:5158`) against the admin API (`http://localhost:5175`). The flow exercises four cross-cutting rules that every CP page must honour: **(1)** each page renders with no error boundary and a clean console; **(2)** every list page is a `SimfDataGrid` (`src/Shared/SIMF.Components/Forms/SimfDataGrid.razor` — per-column filter + sort + select-all + row checkbox + quiet icon actions) and an empty list renders `SimfEmptyState` with bilingual copy; **(3)** primary action buttons are enabled and actually do something (open a working dialog / navigate / mutate — never dead); **(4)** the **permission gate** — every CP page carries `@attribute [RequirePermission(PermissionCatalog.X.Y)]` (`src/ControlPanel/SIMF.ControlPanel/Authorization/PermissionAuthorization.cs` — `RequirePermissionAttribute : AuthorizeAttribute`), so a signed-in user whose role lacks the page permission is redirected to `/not-permitted` with **HTTP 200** (the `AccessDeniedPath` wired in `Program.cs`). `PermissionCatalog` (`src/Shared/SIMF.Common/PermissionCatalog.cs`) is the single source of truth — `Administrator` resolves to the wildcard `"*"` (`PermissionCatalog.Wildcard`) and holds every code implicitly; the matching API endpoint gates with `Policies(PermissionCatalog.PolicyFor(code))` → the `perm:{code}` policy. Two build guards, `tests/SIMF.ControlPanel.Tests/CpNavigationPermissionTests.cs` and `tests/SIMF.Api.Tests/PermissionEnforcementTests.cs`, fail the build if any gate is missing. One known render trap is also swept: a CP `SimfTextField` **without** `ValueExpression` (i.e. not `@bind-Value`, or `Numeric=true`) **freezes the page mid-render** (D-648).
 
 ### Coverage matrix
@@ -2468,6 +2481,16 @@ Scenario: Arabic toggle mirrors every swept page with no overflow
 ---
 
 ## BF-11 — Full mobile-App smoke — every screen, every role, no crash
+
+> **Automated coverage as of 2026-07-29 (WS1.4).**
+> `test/app/screen_element_contract_test.dart` drives **56 of 61** parameterless
+> routes by path (5 correctly redirect for the test account) and asserts none throws
+> during render and no icon-only control lacks an accessible name — 0 routes threw.
+> Alongside it: `flutter analyze` 0 errors / 0 warnings, and `flutter test`
+> **1247 passed / 0 failed** including every golden. Two screens remain **excluded
+> and open**: `/sessions/join` and `/session-summaries` throw "BoxConstraints forces
+> an infinite height" (nested scroll hosts; the fix belongs in `SimfPageShell` and
+> touches ~40 screens — D-792, owner decision pending).
 
 A **manual, human-driven** regression over EVERY screen of the SIMF Flutter app (`src/Mobile/simf_app`), one role at a time, proving nothing crashes and no navigation is dead. The authority for what exists is the route table in `lib/app/router.dart` (39 in-app mockup screens + the aux auth + FDS-014/role sentinel routes) and the per-page catalogue files `docs/tests/e2e/mobile-*.md`. The sweep exercises the five persistent bottom-nav tabs (Home `/`, Sessions `/sessions`, Badge `/badge`, Venue map `/map`, My Area `/my-area` — a single `StatefulShellRoute.indexedStack`, D-422), the public anonymous reads (`/speakers`, `/sponsors`, `/booths`, `/delegations`, `/archive`, `/news`, `/media`, `/about`, `/faq`, `/session-summaries`, `/live`, `/ai-summary`), and the role-restricted routes behind `redirectDecision` in `router.dart`. Key rules under test: the **login gate** on Sessions (#16) + session detail (#17) that router-redirects a guest to `/sign-in` (D-576); the **in-screen** login prompt on Live (#25) that never redirects and keeps `GET /api/v1/app/programme/sessions/{id}` `AllowAnonymous` (D-577); the **effective-Guest** collapse of an unapproved account via `CurrentUser.effectiveAppRole` (D-666); the **D-519 role gate** (attendee = Visitor + Exhibitor; Staff and Moderator are focused, not an attendee superset) that sends a wrong-role signed-in user home (`/`); the persistent bottom nav that **never dead-bounces**; pull-to-refresh on every data page (`SimfPullToRefresh` + `SimfPullableHost`, always-scrollable body); flexible/responsive width in portrait (the owner is on a **tablet** — content stretches, icons/avatars/QR stay fixed); authenticated-Dio image bytes with an `errorBuilder` (never `Image.network` for bearer/self-signed, D-422); and correct RTL. Endpoints touched incidentally by the write paths inside the sweep: `POST /api/v1/app/sessions/{sessionId}/questions`, `GET /app/gates/my-assignments`, `POST /app/gates/{gateId}/scans`. **Auth setup (manual):** an approved Visitor session via the email OTP read from `SIMF_Identity.AccountCodes` at run time; Staff/Moderator/admin second factor via the `Get-Totp` helper. No literal secrets — read the OTP/TOTP at run time.
 
@@ -2733,6 +2756,16 @@ Scenario: Switching tabs keeps the bar fixed and preserves each tab's state
 ---
 
 ## BF-12 — Website smoke + auth flows
+
+> **Automated coverage as of 2026-07-29 (WS2).** `WebElementSweepTests` drives all
+> 17 parameterless public routes and asserts HTTP < 400, zero console errors, no
+> broken image, every same-origin link/asset < 400, and no horizontal overflow —
+> **34 passed / 0 failed** (each route in LTR and Arabic). The run found and closed a
+> real defect: `App.razor` linked `SIMF.Web.styles.css`, a scoped-CSS bundle this
+> project can never generate, so every page 404'd it and logged a MIME-type refusal
+> (D-795). **Not covered:** the auth flows in this flow's later scenarios, and
+> `/sessions/{id}` + `/meeting/confirm`, which need seeded data or a token and are
+> not reachable by URL alone.
 
 > ### ⚠ PARTIALLY RETIRED 2026-07-27 — D-774
 >
@@ -3286,6 +3319,17 @@ Scenario: The denial page mirrors correctly in Arabic
 ---
 
 ## BF-14 — Bilingual / RTL sweep
+
+> **Automated coverage as of 2026-07-29 (WS2/WS3).** Both surfaces now run the full
+> element contract a second time under `?culture=ar`:
+> **Control Panel — 94 of 94 routes passed**, each asserting `document.dir == "rtl"`,
+> zero console errors and `scrollWidth == clientWidth` (no horizontal overflow, which
+> is where RTL layout usually breaks: pinned grid action columns, toolbars, pagers).
+> **Website — 17 of 17 routes passed** under the same contract.
+> This is the structural half of the flow. It proves the pages do not break in RTL;
+> it does **not** check that the Arabic *copy* is right, that glyph-level mirroring is
+> correct, or that no string is left untranslated — those still need a reader, and the
+> ~60 Arabic strings awaiting native review are unaffected by this run.
 
 SIMF is **Arabic-first**, so the RTL render is a **P1 acceptance surface on every screen — not an afterthought**. This flow drives one Arabic toggle across all three surfaces and asserts the direction contract end-to-end. On the **Control Panel** it exercises the `SimfDataGrid` list at `/admin/speakers` plus its `SpeakersAddEdit` modal; on the **Website** the public landing `/` (static `wwwroot/index.html` fed by `GET /content/site`) and the visitor sign-in `/login` (`SignIn.razor`, anonymous); on the **Mobile app** the home screen #13 `/` (`GET /api/v1/app/bootstrap`), the delegations list `/delegations` (`GET /app/delegations`, anonymous — the 12 invited countries seeded in D-687/D-691), and the credentials form screen #5 `/sign-up` (`POST /api/v1/app/auth/sign-up`). The language switch itself is a full navigation to the host `GET /culture?culture=ar&redirectUri=<relative>` endpoint (present on both CP and Website — `CultureEndpoint`), driven from `SimfLanguageSwitch` (globe icon + `العربية` / `English`), which writes the `CookieRequestCultureProvider` culture cookie and `LocalRedirect`s back so the whole document re-renders. Both web hosts set `<html lang="@CurrentUICulture.TwoLetterISOLanguageName" dir="@(IsRightToLeft ? "rtl" : "ltr")">` in `App.razor`. Rules under test: no user-facing string is hardcoded (every label via **resx / l10n**); layout must **mirror** and form actions must **reverse**; the LTR-only islands (**email, phone, national id, plate, URLs**) stay LTR *inside* the RTL page; colour is never the only signal of a state; Arabic must not clip inside fixed-width chips; and no page scrolls horizontally (`scrollWidth == clientWidth`). Two known RTL fixes are regression-checked: **D-686** — the session-summary card used physical `.end` where it must use logical `.start` (Figma `1072:13518`), so Arabic now right-aligns; and Arabic copy must not truncate in fixed-width status/tier chips.
 
