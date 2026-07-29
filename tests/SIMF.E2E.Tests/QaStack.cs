@@ -35,6 +35,33 @@ public static class QaStack
     public static string? AdminTotpSecret =>
         Environment.GetEnvironmentVariable("SIMF_QA_ADMIN_TOTP_SECRET");
 
+    /// <summary>A DELIBERATELY UNDER-PRIVILEGED admin, seeded by
+    /// <c>tools/qa/seed-restricted-admin.sql</c>, holding exactly one permission
+    /// (<c>Sessions.View</c>).
+    ///
+    /// <para>It exists because the sweep account cannot test denial. The
+    /// super-admin's permission claim is the wildcard <c>"*"</c>, so it satisfies
+    /// every gate and can never be redirected to <c>/not-permitted</c> — the whole
+    /// deny half of the permission system is unreachable from a browser without a
+    /// second account. Creating one through the API does not work either:
+    /// <c>SignInService</c> forces TOTP for any user holding a role, and a fresh
+    /// admin has no enrolled authenticator key, so its sign-in can never be
+    /// completed by a black-box runner. The seed script sidesteps that by cloning
+    /// the QA super-admin's password hash and authenticator-key token, so this
+    /// account shares BOTH credentials — which is why it reuses
+    /// <see cref="AdminPassword"/> and <see cref="AdminTotpSecret"/> here and adds
+    /// no new secret of its own.</para></summary>
+    public static string RestrictedAdminEmail =>
+        Environment.GetEnvironmentVariable("SIMF_QA_RESTRICTED_EMAIL")
+        ?? "qa-restricted@simf.test";
+
+    /// <summary>The one permission the restricted admin holds. Anything gated on
+    /// a different code must deny it.</summary>
+    public const string RestrictedAdminGrantedRoute = "/admin/sessions";
+
+    /// <summary>A route gated on a permission the restricted admin does NOT hold.</summary>
+    public const string RestrictedAdminDeniedRoute = "/admin/themes";
+
     // Probed ONCE per process, not once per test. The CP sweep is a theory over
     // ~100 routes, and a 2-second TCP timeout per case turned "no stack, skip
     // everything" into a 6m45s step — long enough that someone would take the

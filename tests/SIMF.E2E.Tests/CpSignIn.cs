@@ -8,12 +8,15 @@ namespace SIMF.E2E.Tests;
 
 public static class CpSignIn
 {
-    public static async Task SignInAsync(IPage page)
+    /// <param name="email">Defaults to the sweep's super-admin. The restricted
+    /// fixture (QaStack.RestrictedAdminEmail) shares its password and TOTP secret
+    /// by construction, so only the email differs.</param>
+    public static async Task SignInAsync(IPage page, string? email = null)
     {
         await page.GotoAsync(QaStack.ControlPanel + "/login",
             new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
-        await page.FillAsync("input[type=email], input[name=Email]", QaStack.AdminEmail!);
+        await page.FillAsync("input[type=email], input[name=Email]", email ?? QaStack.AdminEmail!);
         await page.FillAsync("input[type=password]", QaStack.AdminPassword!);
         await page.ClickAsync("button[type=submit]");
 
@@ -30,17 +33,45 @@ public static class CpSignIn
             var field = page.Locator("input.simf-code__input, input[inputmode=numeric]");
             await field.WaitForAsync(new LocatorWaitForOptions { Timeout = 15_000 });
 
-            // Typed key by key, not FillAsync. The field is a Blazor `InputText`
-            // on an interactive circuit; a single value-set + synthetic change
-            // can land before the circuit is listening, leaving the bound model
-            // empty while the box looks filled.
-            await field.ClearAsync();
-            await field.PressSequentiallyAsync(
-                Totp.Now(QaStack.AdminTotpSecret!), new LocatorPressSequentiallyOptions { Delay = 30 });
-            await field.BlurAsync();
+            // Submit, and if the code is refused, WAIT FOR THE NEXT 30-SECOND
+            // WINDOW AND TRY ONCE MORE.
+            //
+            // Two fixtures now sign in per run (the super-admin sweep account and
+            // the restricted deny-path account), they share a TOTP secret by
+            // construction, and xUnit starts their classes in parallel. When the
+            // two submissions land in the same window one can be refused, and the
+            // restricted fixture then records a setup failure and every deny-path
+            // test SKIPS — silently losing the only coverage of the permission
+            // system's deny half. That is worse than a red test, and it was
+            // observed: one full run reported 6 skips where the next reported 2.
+            // A single retry on a fresh window removes the whole class; a code is
+            // valid for one window, so waiting past the boundary guarantees a new
+            // one rather than resubmitting the same digits.
+            for (var attempt = 1; attempt <= 2; attempt++)
+            {
+                if (attempt > 1)
+                {
+                    await WaitForNextTotpWindowAsync();
+                    await field.WaitForAsync(new LocatorWaitForOptions { Timeout = 15_000 });
+                }
 
-            await page.ClickAsync("button[type=submit]");
-            await WaitUntilAwayFromAsync(page, "/login", exact: false);
+                // Typed key by key, not FillAsync. The field is a Blazor `InputText`
+                // on an interactive circuit; a single value-set + synthetic change
+                // can land before the circuit is listening, leaving the bound model
+                // empty while the box looks filled.
+                await field.ClearAsync();
+                await field.PressSequentiallyAsync(
+                    Totp.Now(QaStack.AdminTotpSecret!), new LocatorPressSequentiallyOptions { Delay = 30 });
+                await field.BlurAsync();
+
+                await page.ClickAsync("button[type=submit]");
+                await WaitUntilAwayFromAsync(page, "/login", exact: false);
+
+                if (!page.Url.Contains("/login/totp", StringComparison.OrdinalIgnoreCase))
+                {
+                    break;
+                }
+            }
         }
 
         if (page.Url.Contains("/login", StringComparison.OrdinalIgnoreCase))
@@ -60,6 +91,19 @@ public static class CpSignIn
                 + " Check SIMF_QA_ADMIN_*, that the account is Approved, and that"
                 + " its seeded AuthenticatorKey matches SIMF_QA_ADMIN_TOTP_SECRET.");
         }
+    }
+
+    /// <summary>Blocks until the current 30-second TOTP window has rolled over,
+    /// so the next generated code is guaranteed to differ from the one just
+    /// refused. Sleeps to the boundary plus a small margin rather than a flat
+    /// delay, so the wait is as short as it can be (never more than ~31s).</summary>
+    private static async Task WaitForNextTotpWindowAsync()
+    {
+        const int WindowSeconds = 30;
+        var secondsIntoWindow =
+            DateTimeOffset.UtcNow.ToUnixTimeSeconds() % WindowSeconds;
+        var untilBoundary = WindowSeconds - (int)secondsIntoWindow;
+        await Task.Delay(TimeSpan.FromSeconds(untilBoundary + 1));
     }
 
     /// <summary>The first non-empty text among the given selectors, or null.</summary>
