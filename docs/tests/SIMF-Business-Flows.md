@@ -3102,6 +3102,52 @@ Scenario: The Arabic toggle mirrors the landing and the sign-in card without ove
 
 ## BF-13 — Permission / security matrix
 
+> **Automated coverage as of 2026-07-29 (WS3).** Ten of the twelve scenarios now
+> execute in CI, across two files:
+>
+> | Scenario | Where | State |
+> |---|---|---|
+> | -001 Administrator wildcard | `PermissionEnforcementTests` | executed |
+> | -002 custom role, API half | `PermissionEnforcementTests` | executed |
+> | -003 role-less admin forbidden | `PermissionEnforcementTests` | executed |
+> | -004 app/visitor token on admin endpoint → 403 | `BusinessFlow13PermissionMatrixTests` | executed |
+> | -005 anonymous → 401, **and the anonymous auth set is pinned** | `BusinessFlow13PermissionMatrixTests` | executed |
+> | -006 over-posting an unmapped field is ignored | `BusinessFlow13PermissionMatrixTests` | executed |
+> | -007 baseline grant reaches News, not Sessions | `BusinessFlow13PermissionMatrixTests` | executed |
+> | -009 a grant needs a fresh token mint | `BusinessFlow13PermissionMatrixTests` | executed |
+> | -010 a token this API did not mint → 401 | `BusinessFlow13PermissionMatrixTests` | executed |
+> | -011 build guards fail CI on an ungated surface | `PermissionEnforcementTests` + `CpNavigationPermissionTests` | executed |
+> | -008 deep-link bypass → `/not-permitted` | browser | **not executed** |
+> | -012 `/not-permitted` in Arabic | browser | **not executed** |
+>
+> **Two corrections to this flow's text came out of executing it.**
+>
+> 1. **The anonymous auth surface is 17 endpoints, not 3.** Scenario -005 is
+>    written as "the anonymous auth set is exactly {sign-in, sign-up,
+>    forgot-password}", restating CLAUDE.md §4. The real set also contains
+>    `verify-email`, `resend-code`, `verify-otp`, `verify-totp`, `resend-otp`,
+>    `verify-recovery-code`, `reset-password`, `complete-password-change`,
+>    `refresh`, `resolve-badge`, `badge-sign-in`, `badge-activation/start`,
+>    `badge-activation/complete`, `device-keys/{id}/challenge` and
+>    `sign-in-with-device-key`. **None is a defect** — each carries its own
+>    credential (an emailed code, a reset token, a refresh token, a badge code, a
+>    device-key signature) rather than a bearer token, and gating them on a bearer
+>    would break sign-up, 2FA and password reset outright. The test pins the full
+>    reviewed list, so an 18th still breaks the build. **The §4 wording is stale
+>    and should be corrected by the owner.**
+>
+> 2. **`Code`, `IsActive` and `UserProfileId` are legitimate speaker-update
+>    fields**, not over-posting targets — the over-post surface for -006 is only
+>    what the update DTO does not expose (`id`, `createdAt`).
+>
+> **A real defect fell out of -006:** a speaker create/update carrying an unknown
+> `userProfileId` returned **500**. `Speaker.UserProfileId` is a real same-database
+> FK (`OnDelete.Restrict`), so the unknown id threw at SaveChanges, while the
+> service's own summary claimed the link was cross-context and that a stale id
+> "degrades gracefully" — untrue since `UserProfile` moved onto the App context.
+> Now validated up front and returns 400. Regression tests in the same file.
+
+
 This cross-page flow proves the SIMF **per-page / per-action permission system** (D-207 / D-208) cannot be bypassed on either surface. Assignment is **roles-only**, permission codes are baked into the JWT `perm` claim, and `Administrator` resolves to the wildcard `"*"` at token-mint time (`PermissionCatalog.Wildcard`) so it holds every code implicitly. The single source of truth is `src/Shared/SIMF.Common/PermissionCatalog.cs`. Every CP page carries `@attribute [RequirePermission(PermissionCatalog.X.Y)]` (e.g. `/admin/sessions` → `Sessions.View`, `/admin/themes` → `Themes.View`); a signed-in user who lacks the code is bounced to `/not-permitted`. Every admin endpoint pairs the permission policy with the approval policy — `Policies(PermissionCatalog.PolicyFor(PermissionCatalog.X.Y), nameof(AuthorizationPolicies.RequireApprovedAccount))` — so `perm:Sessions.View` gates `POST /api/v1/admin/sessions/list`, `perm:Themes.View` gates `POST /api/v1/admin/themes/list`, `perm:Speakers.Edit` gates `PUT /api/v1/admin/speakers/{id}`. The flow also exercises the over-posting guard (admin UPDATE endpoints bind their **own** DTO and map explicitly — `UpdateSpeakerRequest` → `AdminUpdateSpeakerRequest`, the D-544 dual-DTO gotcha), the anonymous auth surface (`sign-in` / `sign-up` / `forgot-password`), and the two build-breaking xUnit guards — `tests/SIMF.ControlPanel.Tests/CpNavigationPermissionTests.cs` and `tests/SIMF.Api.Tests/PermissionEnforcementTests.cs` — which fail CI if any admin page/endpoint ships ungated (a security defect: an ungated surface is reachable by **any** signed-in admin regardless of role).
 
 ### Coverage matrix
