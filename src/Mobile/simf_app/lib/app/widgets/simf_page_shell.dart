@@ -21,6 +21,11 @@ import 'simf_language_toggle.dart';
 import 'simf_logo.dart';
 import 'simf_svg_icon.dart';
 
+// One widget group per file (CLAUDE.md §1). Re-exported here so the ~489
+// existing `simf_page_shell.dart` imports across the app keep resolving.
+export 'simf_refresh.dart';
+export 'simf_states.dart';
+
 /// Shared KSA main-shell chrome for the Wave-2 in-app pages (frames
 /// 512:1492 / 203:1236 / 512:1780 / 215:767 / 221:769 / 215:562): the navy
 /// page scaffold with the standard header, plus the card / tile / list-row /
@@ -343,57 +348,6 @@ class SimfMenuButton extends StatelessWidget {
         shape: const CircleBorder(),
       ),
       icon: const Icon(Icons.menu, color: SimfTokens.surface, size: 20),
-    );
-  }
-}
-
-/// Pull-to-refresh wrapper — wrap any data page's scrollable body so a
-/// pull-down-from-top re-fetches it (owner rule 2026-06-28: every data page,
-/// not just home). The [child] must be (or contain) a scrollable that uses
-/// [AlwaysScrollableScrollPhysics] so the gesture fires even when content is
-/// short. Styled with the gold spinner on a navy puck to match the shell.
-class SimfPullToRefresh extends StatelessWidget {
-  const SimfPullToRefresh({required this.onRefresh, required this.child, super.key});
-
-  /// Called when the user pulls to refresh; should re-fetch the page's data.
-  final Future<void> Function() onRefresh;
-
-  /// The scrollable body to refresh.
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return RefreshIndicator(
-      onRefresh: onRefresh,
-      color: SimfTokens.accent,
-      backgroundColor: SimfTokens.navyDeep,
-      child: child,
-    );
-  }
-}
-
-/// Hosts a non-scrolling state (empty / error / a single card) inside a
-/// viewport-tall, always-scrollable box so a wrapping [SimfPullToRefresh] can still
-/// fire its pull-to-refresh gesture on short content. Pair as
-/// `SimfPullToRefresh(onRefresh: …, child: SimfPullableHost(child: SimfEmptyState(…)))`.
-class SimfPullableHost extends StatelessWidget {
-  const SimfPullableHost({required this.child, super.key});
-
-  /// The non-scrolling state widget to host (centred, viewport-tall).
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: child,
-          ),
-        );
-      },
     );
   }
 }
@@ -1012,104 +966,3 @@ class SimfListRow extends StatelessWidget {
   }
 }
 
-/// The standard error surface: the message over a gold retry button — one
-/// home for the retry chrome instead of a per-screen copy.
-class SimfErrorState extends StatelessWidget {
-  const SimfErrorState({
-    required this.message,
-    required this.retryLabel,
-    required this.onRetry,
-    super.key,
-  });
-
-  final String message;
-  final String retryLabel;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: SimfTokens.surface),
-            ),
-            const SizedBox(height: SimfTokens.space4),
-            FilledButton(onPressed: onRetry, child: Text(retryLabel)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// The standard empty / pending surface: a muted icon over the message.
-class SimfEmptyState extends StatelessWidget {
-  const SimfEmptyState({required this.icon, required this.message, super.key});
-
-  final IconData icon;
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Icon(icon, size: 56, color: SimfTokens.beigeBorder),
-            const SizedBox(height: SimfTokens.space3),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: SimfTokens.hintBeige,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// The standard loading surface: the accent spinner, centered — one home for the
-/// loader chrome so screens don't re-emit the raw indicator. Completes the
-/// loading / error / empty triad with [SimfErrorState] and [SimfEmptyState].
-class SimfLoadingState extends StatelessWidget {
-  const SimfLoadingState({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: CircularProgressIndicator(color: SimfTokens.accent),
-    );
-  }
-}
-
-/// A pull-to-refresh host for a short message surface (an error or empty state):
-/// wraps [child] in [SimfPullToRefresh] + [SimfPullableHost] so a one-line
-/// [SimfErrorState] / [SimfEmptyState] stays refreshable and viewport-tall —
-/// the pairing screens would otherwise hand-nest at every list branch.
-class SimfRefreshableMessage extends StatelessWidget {
-  const SimfRefreshableMessage({
-    required this.onRefresh,
-    required this.child,
-    super.key,
-  });
-
-  final Future<void> Function() onRefresh;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return SimfPullToRefresh(
-      onRefresh: onRefresh,
-      child: SimfPullableHost(child: child),
-    );
-  }
-}
