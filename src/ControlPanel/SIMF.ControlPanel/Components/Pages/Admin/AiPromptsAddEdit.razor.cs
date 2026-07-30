@@ -62,63 +62,45 @@ public partial class AiPromptsAddEdit
         _busy = true;
         try
         {
-            ApiResult<AdminAiPromptDetail>? envelope;
-            if (IsEdit)
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminAiPromptDetail>>(
-                    "simfAccount.putJson",
-                    $"/account/api/admin/ai/prompts/{Initial!.Id}",
-                    new UpdateAiPromptRequest
-                    {
-                        Feature = AiEnumOptions.ParseFeature(_featureInput),
-                        DisplayName = _model.DisplayName.Trim(),
-                        DisplayNameArabic = _model.DisplayNameArabic.Trim(),
-                        Description = _model.Description,
-                        DescriptionArabic = _model.DescriptionArabic,
-                        Provider = AiEnumOptions.ParseProvider(_providerInput),
-                        Model = _model.Model,
-                        SystemPrompt = _model.SystemPrompt,
-                        UserPromptTemplate = _model.UserPromptTemplate,
-                        Temperature = _model.Temperature,
-                        MaxOutputTokens = _model.MaxOutputTokens,
-                        IsActive = _model.IsActive,
-                    });
-            }
-            else
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminAiPromptDetail>>(
-                    "simfAccount.postJson",
-                    "/account/api/admin/ai/prompts",
-                    new CreateAiPromptRequest
-                    {
-                        Key = _model.Key.Trim(),
-                        Feature = AiEnumOptions.ParseFeature(_featureInput),
-                        DisplayName = _model.DisplayName.Trim(),
-                        DisplayNameArabic = _model.DisplayNameArabic.Trim(),
-                        Description = _model.Description,
-                        DescriptionArabic = _model.DescriptionArabic,
-                        Provider = AiEnumOptions.ParseProvider(_providerInput),
-                        Model = _model.Model,
-                        SystemPrompt = _model.SystemPrompt,
-                        UserPromptTemplate = _model.UserPromptTemplate,
-                        Temperature = _model.Temperature,
-                        MaxOutputTokens = _model.MaxOutputTokens,
-                    });
-            }
+            var result = await SendAsync(
+                JS,
+                "/account/api/admin/ai/prompts",
+                $"/account/api/admin/ai/prompts/{Initial?.Id}",
+                new CreateAiPromptRequest
+                {
+                    Key = _model.Key.Trim(),
+                    Feature = AiEnumOptions.ParseFeature(_featureInput),
+                    DisplayName = _model.DisplayName.Trim(),
+                    DisplayNameArabic = _model.DisplayNameArabic.Trim(),
+                    Description = _model.Description,
+                    DescriptionArabic = _model.DescriptionArabic,
+                    Provider = AiEnumOptions.ParseProvider(_providerInput),
+                    Model = _model.Model,
+                    SystemPrompt = _model.SystemPrompt,
+                    UserPromptTemplate = _model.UserPromptTemplate,
+                    Temperature = _model.Temperature,
+                    MaxOutputTokens = _model.MaxOutputTokens,
+                },
+                new UpdateAiPromptRequest
+                {
+                    Feature = AiEnumOptions.ParseFeature(_featureInput),
+                    DisplayName = _model.DisplayName.Trim(),
+                    DisplayNameArabic = _model.DisplayNameArabic.Trim(),
+                    Description = _model.Description,
+                    DescriptionArabic = _model.DescriptionArabic,
+                    Provider = AiEnumOptions.ParseProvider(_providerInput),
+                    Model = _model.Model,
+                    SystemPrompt = _model.SystemPrompt,
+                    UserPromptTemplate = _model.UserPromptTemplate,
+                    Temperature = _model.Temperature,
+                    MaxOutputTokens = _model.MaxOutputTokens,
+                    IsActive = _model.IsActive,
+                });
 
-            if (envelope is { Success: true, Data: not null })
+            if (!result.Succeeded)
             {
-                await OnSuccess.InvokeAsync(envelope.Data);
+                _error = result.ServerMessage ?? L["Admin.AiPrompts.LoadFailed"];
             }
-            else
-            {
-                _error = envelope?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.AiPrompts.LoadFailed"];
-            }
-        }
-        catch (Exception)
-        {
-            _error = L["Admin.AiPrompts.LoadFailed"];
         }
         finally { _busy = false; }
     }

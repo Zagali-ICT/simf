@@ -99,57 +99,16 @@ public partial class ArchiveAddEdit
         _busy = true;
         try
         {
-            ApiResult<AdminArchiveEditionDetail>? envelope;
-            if (!IsEdit)
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminArchiveEditionDetail>>(
-                    "simfAccount.postJson", "/account/api/admin/archive",
-                    new CreateArchiveEditionRequest
-                    {
-                        Year = _model.Year,
-                        TitleEn = _model.TitleEn.Trim(),
-                        TitleAr = _model.TitleAr.Trim(),
-                        SummaryEn = _model.SummaryEn,
-                        SummaryAr = _model.SummaryAr,
-                        Attendees = _model.Attendees,
-                        Sessions = _model.Sessions,
-                        Speakers = _model.Speakers,
-                        CoverImageRelativePath = _model.CoverImageRelativePath,
-                        LocationEn = _model.LocationEn,
-                        LocationAr = _model.LocationAr,
-                        DateLabelEn = _model.DateLabelEn,
-                        DateLabelAr = _model.DateLabelAr,
-                        Gallery = ParseGallery(_model.GalleryText),
-                        SessionTitles = ParseSessionTitles(_model.SessionTitlesText),
-                        PastSpeakers = ParsePastSpeakers(_model.PastSpeakersText),
-                    });
-            }
-            else
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminArchiveEditionDetail>>(
+            // SendAsync on the base is not usable here: OnSuccess carries the
+            // grid SUMMARY while the API answers with the DETAIL, so the result
+            // has to be mapped through ToSummary before it is raised.
+            var envelope = IsEdit
+                ? await JS.InvokeAsync<ApiResult<AdminArchiveEditionDetail>>(
                     "simfAccount.putJson", $"/account/api/admin/archive/{Initial!.Id}",
-                    new UpdateArchiveEditionRequest
-                    {
-                        Year = _model.Year,
-                        TitleEn = _model.TitleEn.Trim(),
-                        TitleAr = _model.TitleAr.Trim(),
-                        SummaryEn = _model.SummaryEn,
-                        SummaryAr = _model.SummaryAr,
-                        Attendees = _model.Attendees,
-                        Sessions = _model.Sessions,
-                        Speakers = _model.Speakers,
-                        CoverImageRelativePath = _model.CoverImageRelativePath,
-                        LocationEn = _model.LocationEn,
-                        LocationAr = _model.LocationAr,
-                        DateLabelEn = _model.DateLabelEn,
-                        DateLabelAr = _model.DateLabelAr,
-                        // Null when the detail fetch failed → keep existing rows.
-                        Gallery = _listsLoaded ? ParseGallery(_model.GalleryText) : null,
-                        SessionTitles = _listsLoaded ? ParseSessionTitles(_model.SessionTitlesText) : null,
-                        PastSpeakers = _listsLoaded ? ParsePastSpeakers(_model.PastSpeakersText) : null,
-                        IsActive = _model.IsActive,
-                    });
-            }
+                    BuildUpdateRequest())
+                : await JS.InvokeAsync<ApiResult<AdminArchiveEditionDetail>>(
+                    "simfAccount.postJson", "/account/api/admin/archive",
+                    BuildCreateRequest());
 
             if (envelope is { Success: true, Data: not null })
             {
@@ -167,6 +126,48 @@ public partial class ArchiveAddEdit
         }
         finally { _busy = false; }
     }
+
+    private CreateArchiveEditionRequest BuildCreateRequest() => new()
+    {
+        Year = _model.Year,
+        TitleEn = _model.TitleEn.Trim(),
+        TitleAr = _model.TitleAr.Trim(),
+        SummaryEn = _model.SummaryEn,
+        SummaryAr = _model.SummaryAr,
+        Attendees = _model.Attendees,
+        Sessions = _model.Sessions,
+        Speakers = _model.Speakers,
+        CoverImageRelativePath = _model.CoverImageRelativePath,
+        LocationEn = _model.LocationEn,
+        LocationAr = _model.LocationAr,
+        DateLabelEn = _model.DateLabelEn,
+        DateLabelAr = _model.DateLabelAr,
+        Gallery = ParseGallery(_model.GalleryText),
+        SessionTitles = ParseSessionTitles(_model.SessionTitlesText),
+        PastSpeakers = ParsePastSpeakers(_model.PastSpeakersText),
+    };
+
+    private UpdateArchiveEditionRequest BuildUpdateRequest() => new()
+    {
+        Year = _model.Year,
+        TitleEn = _model.TitleEn.Trim(),
+        TitleAr = _model.TitleAr.Trim(),
+        SummaryEn = _model.SummaryEn,
+        SummaryAr = _model.SummaryAr,
+        Attendees = _model.Attendees,
+        Sessions = _model.Sessions,
+        Speakers = _model.Speakers,
+        CoverImageRelativePath = _model.CoverImageRelativePath,
+        LocationEn = _model.LocationEn,
+        LocationAr = _model.LocationAr,
+        DateLabelEn = _model.DateLabelEn,
+        DateLabelAr = _model.DateLabelAr,
+        // Null when the detail fetch failed → keep existing rows.
+        Gallery = _listsLoaded ? ParseGallery(_model.GalleryText) : null,
+        SessionTitles = _listsLoaded ? ParseSessionTitles(_model.SessionTitlesText) : null,
+        PastSpeakers = _listsLoaded ? ParsePastSpeakers(_model.PastSpeakersText) : null,
+        IsActive = _model.IsActive,
+    };
 
     // The save endpoint returns the detail; the host grid is keyed on the
     // summary, so project the saved row back to a summary for OnSuccess.
