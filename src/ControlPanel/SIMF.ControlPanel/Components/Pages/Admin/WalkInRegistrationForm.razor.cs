@@ -129,27 +129,7 @@ public partial class WalkInRegistrationForm : IDisposable
                 "simfAccount.getJson", "/account/api/interests").AsTask();
         }
 
-        var ptEnvelope = await profileTypesTask;
-        if (ptEnvelope is { Success: true, Data: not null })
-        {
-            // D-395 — show only the profile types valid for this desk: audience
-            // types (IsVisitor=true) for the Visitor desk, partner types
-            // (IsVisitor=false) for the Other desk. Mirrors the server rule
-            // (expectedIsVisitor) + the approve modal's own filter, so the picker
-            // can no longer offer a type the server would reject.
-            var visitorDesk = string.Equals(Kind, "Visitor", StringComparison.OrdinalIgnoreCase);
-            _profileTypes = ptEnvelope.Data
-                .Where(p => p.IsActive && p.IsVisitor == visitorDesk)
-                // V-1 (D-429) — the VIP page only registers VVIP / VIP tiers.
-                .Where(p => !VipMode || VipTierNames.Contains(p.Name))
-                .OrderBy(p => p.Name).ToArray();
-            // V-1 — preselect the tier when the picker is down to a single choice
-            // (e.g. only VIP seeded), so the desk doesn't have to click it.
-            if (VipMode && _profileTypes.Length == 1)
-            {
-                _model.ProfileTypeId = _profileTypes[0].Id;
-            }
-        }
+        ApplyProfileTypes(await profileTypesTask);
 
         var cEnvelope = await countriesTask;
         if (cEnvelope is { Success: true, Data: not null })
@@ -163,30 +143,7 @@ public partial class WalkInRegistrationForm : IDisposable
             _orgResults = oEnvelope.Data.ToArray();
         }
 
-        // D-547 — swap the birth-region options to the DB-backed lookup. Keep the
-        // offline SaudiRegions fallback (already seeded into _regions) if the fetch
-        // fails or comes back empty, so the picker is never empty.
-        try
-        {
-            var rEnvelope = await regionsTask;
-            if (rEnvelope is { Success: true, Data: not null }
-                && rEnvelope.Data.Items.Count > 0)
-            {
-                _regions = rEnvelope.Data.Items
-                    .Where(r => r.IsActive)
-                    .Select(r => new RegionOption(r.Code, r.NameArabic, r.Name))
-                    .ToArray();
-                if (_regions.Length == 0)
-                {
-                    _regions = FallbackRegions;
-                }
-            }
-        }
-        catch (Exception)
-        {
-            // Network / JS-interop failure — keep the offline fallback.
-            _regions = FallbackRegions;
-        }
+        await ApplyRegionsAsync(regionsTask);
 
         if (interestsTask is not null)
         {
@@ -195,6 +152,64 @@ public partial class WalkInRegistrationForm : IDisposable
             {
                 _interests = iEnvelope.Data.Interests.ToArray();
             }
+        }
+    }
+
+    /// <summary>
+    /// D-395 — shows only the profile types valid for this desk: audience types
+    /// (IsVisitor=true) for the Visitor desk, partner types (IsVisitor=false) for
+    /// the Other desk. Mirrors the server rule (expectedIsVisitor) + the approve
+    /// modal's own filter, so the picker can no longer offer a type the server
+    /// would reject.
+    /// </summary>
+    private void ApplyProfileTypes(ApiResult<IReadOnlyList<AdminProfileTypeSummary>>? envelope)
+    {
+        if (envelope is not { Success: true, Data: not null }) { return; }
+
+        var visitorDesk = string.Equals(Kind, "Visitor", StringComparison.OrdinalIgnoreCase);
+        _profileTypes = envelope.Data
+            .Where(p => p.IsActive && p.IsVisitor == visitorDesk)
+            // V-1 (D-429) — the VIP page only registers VVIP / VIP tiers.
+            .Where(p => !VipMode || VipTierNames.Contains(p.Name))
+            .OrderBy(p => p.Name).ToArray();
+
+        // V-1 — preselect the tier when the picker is down to a single choice
+        // (e.g. only VIP seeded), so the desk doesn't have to click it.
+        if (VipMode && _profileTypes.Length == 1)
+        {
+            _model.ProfileTypeId = _profileTypes[0].Id;
+        }
+    }
+
+    /// <summary>
+    /// D-547 — swaps the birth-region options to the DB-backed lookup. Keeps the
+    /// offline SaudiRegions fallback (already seeded into <c>_regions</c>) if the
+    /// fetch fails or comes back empty, so the picker is never empty.
+    /// </summary>
+    private async Task ApplyRegionsAsync(Task<ApiResult<GridPage<AdminRegionSummary>>> regionsTask)
+    {
+        try
+        {
+            var envelope = await regionsTask;
+            if (envelope is not { Success: true, Data: not null }
+                || envelope.Data.Items.Count == 0)
+            {
+                return;
+            }
+
+            _regions = envelope.Data.Items
+                .Where(r => r.IsActive)
+                .Select(r => new RegionOption(r.Code, r.NameArabic, r.Name))
+                .ToArray();
+            if (_regions.Length == 0)
+            {
+                _regions = FallbackRegions;
+            }
+        }
+        catch (Exception)
+        {
+            // Network / JS-interop failure — keep the offline fallback.
+            _regions = FallbackRegions;
         }
     }
 
