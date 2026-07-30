@@ -2,7 +2,6 @@ using SIMF.Common;
 using SIMF.Components.Forms;
 using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
-using SIMF.ControlPanel.Components.Pages.Admin.ProfileTypes;
 using Microsoft.JSInterop;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;

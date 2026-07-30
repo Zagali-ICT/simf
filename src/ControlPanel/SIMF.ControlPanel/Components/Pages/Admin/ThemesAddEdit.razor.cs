@@ -1,18 +1,9 @@
-using System.Globalization;
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
-using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
-using SIMF.Contracts.Sessions;
-using SIMF.Contracts.Logs;
-using SIMF.Contracts.UserProfile;
-using SIMF.Contracts.Gates;
-using SIMF.Contracts.Ai;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
@@ -42,7 +33,7 @@ public partial class ThemesAddEdit
         }
         else
         {
-            _model.PageColor = "#244A77";
+            _model.PageColor = AdminFormDefaults.PageColor;
         }
         _editContext = new EditContext(_model);
     }
@@ -76,55 +67,42 @@ public partial class ThemesAddEdit
         _busy = true;
         try
         {
-            ApiResult<AdminThemeDetail>? envelope;
-            if (!IsEdit)
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminThemeDetail>>(
-                    "simfAccount.postJson", "/account/api/admin/themes",
-                    new AdminCreateThemeRequest
-                    {
-                        Code = _model.Code.Trim().ToUpperInvariant(),
-                        Name = _model.Name.Trim(),
-                        NameArabic = _model.NameArabic.Trim(),
-                        Description = string.IsNullOrWhiteSpace(_model.Description) ? null : _model.Description.Trim(),
-                        DescriptionArabic = string.IsNullOrWhiteSpace(_model.DescriptionArabic) ? null : _model.DescriptionArabic.Trim(),
-                        DisplayOrder = order,
-                        PageColor = _model.PageColor.Trim(),
-                    });
-            }
-            else
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminThemeDetail>>(
-                    "simfAccount.putJson", $"/account/api/admin/themes/{Initial!.Id}",
-                    new AdminUpdateThemeRequest
-                    {
-                        Code = _model.Code.Trim().ToUpperInvariant(),
-                        Name = _model.Name.Trim(),
-                        NameArabic = _model.NameArabic.Trim(),
-                        Description = string.IsNullOrWhiteSpace(_model.Description) ? null : _model.Description.Trim(),
-                        DescriptionArabic = string.IsNullOrWhiteSpace(_model.DescriptionArabic) ? null : _model.DescriptionArabic.Trim(),
-                        DisplayOrder = order,
-                        PageColor = _model.PageColor.Trim(),
-                        IsActive = _model.IsActive,
-                    });
-            }
+            var result = await SendAsync(
+                JS,
+                "/account/api/admin/themes",
+                $"/account/api/admin/themes/{Initial?.Id}",
+                new AdminCreateThemeRequest
+                {
+                    Code = _model.Code.Trim().ToUpperInvariant(),
+                    Name = _model.Name.Trim(),
+                    NameArabic = _model.NameArabic.Trim(),
+                    Description = NullIfBlank(_model.Description),
+                    DescriptionArabic = NullIfBlank(_model.DescriptionArabic),
+                    DisplayOrder = order,
+                    PageColor = _model.PageColor.Trim(),
+                },
+                new AdminUpdateThemeRequest
+                {
+                    Code = _model.Code.Trim().ToUpperInvariant(),
+                    Name = _model.Name.Trim(),
+                    NameArabic = _model.NameArabic.Trim(),
+                    Description = NullIfBlank(_model.Description),
+                    DescriptionArabic = NullIfBlank(_model.DescriptionArabic),
+                    DisplayOrder = order,
+                    PageColor = _model.PageColor.Trim(),
+                    IsActive = _model.IsActive,
+                });
 
-            if (envelope is { Success: true, Data: not null })
+            if (!result.Succeeded)
             {
-                await OnSuccess.InvokeAsync(envelope.Data);
+                _error = result.ServerMessage ?? L["Admin.Themes.Fallback"];
             }
-            else
-            {
-                _error = envelope?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.Themes.Fallback"];
-            }
-        }
-        catch (Exception)
-        {
-            _error = L["Admin.Themes.Fallback"];
         }
         finally { _busy = false; }
     }
+
+    private static string? NullIfBlank(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     private sealed class Model
     {

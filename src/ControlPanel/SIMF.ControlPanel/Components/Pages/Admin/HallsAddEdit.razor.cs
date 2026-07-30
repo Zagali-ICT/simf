@@ -1,17 +1,10 @@
-using System.Globalization;
+﻿using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
-using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
-using SIMF.Contracts.Sessions;
-using SIMF.Contracts.Logs;
-using SIMF.Contracts.UserProfile;
-using SIMF.Contracts.Gates;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
@@ -70,58 +63,42 @@ public partial class HallsAddEdit
         _busy = true;
         try
         {
-            ApiResult<AdminHallDetail>? envelope;
-            if (!IsEdit)
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminHallDetail>>(
-                    "simfAccount.postJson", "/account/api/admin/halls",
-                    new AdminCreateHallRequest
-                    {
-                        Code = _model.Code.Trim().ToUpperInvariant(),
-                        Name = _model.Name.Trim(),
-                        NameArabic = _model.NameArabic.Trim(),
-                        Capacity = capacity,
-                        Floor = string.IsNullOrWhiteSpace(_model.Floor) ? null : _model.Floor.Trim(),
-                        EquipmentNotes = string.IsNullOrWhiteSpace(_model.EquipmentNotes) ? null : _model.EquipmentNotes.Trim(),
-                        GeofenceCenterLat = geoLat,
-                        GeofenceCenterLon = geoLon,
-                        GeofenceRadiusMeters = geoRadius,
-                        SeatSelectionMode = SeatModeValue(),
-                    });
-            }
-            else
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminHallDetail>>(
-                    "simfAccount.putJson", $"/account/api/admin/halls/{Initial!.Id}",
-                    new AdminUpdateHallRequest
-                    {
-                        Code = _model.Code.Trim().ToUpperInvariant(),
-                        Name = _model.Name.Trim(),
-                        NameArabic = _model.NameArabic.Trim(),
-                        Capacity = capacity,
-                        Floor = string.IsNullOrWhiteSpace(_model.Floor) ? null : _model.Floor.Trim(),
-                        EquipmentNotes = string.IsNullOrWhiteSpace(_model.EquipmentNotes) ? null : _model.EquipmentNotes.Trim(),
-                        IsActive = _model.IsActive,
-                        GeofenceCenterLat = geoLat,
-                        GeofenceCenterLon = geoLon,
-                        GeofenceRadiusMeters = geoRadius,
-                        SeatSelectionMode = SeatModeValue(),
-                    });
-            }
+            var result = await SendAsync(
+                JS,
+                "/account/api/admin/halls",
+                $"/account/api/admin/halls/{Initial?.Id}",
+                new AdminCreateHallRequest
+                {
+                    Code = _model.Code.Trim().ToUpperInvariant(),
+                    Name = _model.Name.Trim(),
+                    NameArabic = _model.NameArabic.Trim(),
+                    Capacity = capacity,
+                    Floor = string.IsNullOrWhiteSpace(_model.Floor) ? null : _model.Floor.Trim(),
+                    EquipmentNotes = string.IsNullOrWhiteSpace(_model.EquipmentNotes) ? null : _model.EquipmentNotes.Trim(),
+                    GeofenceCenterLat = geoLat,
+                    GeofenceCenterLon = geoLon,
+                    GeofenceRadiusMeters = geoRadius,
+                    SeatSelectionMode = SeatModeValue(),
+                },
+                new AdminUpdateHallRequest
+                {
+                    Code = _model.Code.Trim().ToUpperInvariant(),
+                    Name = _model.Name.Trim(),
+                    NameArabic = _model.NameArabic.Trim(),
+                    Capacity = capacity,
+                    Floor = string.IsNullOrWhiteSpace(_model.Floor) ? null : _model.Floor.Trim(),
+                    EquipmentNotes = string.IsNullOrWhiteSpace(_model.EquipmentNotes) ? null : _model.EquipmentNotes.Trim(),
+                    IsActive = _model.IsActive,
+                    GeofenceCenterLat = geoLat,
+                    GeofenceCenterLon = geoLon,
+                    GeofenceRadiusMeters = geoRadius,
+                    SeatSelectionMode = SeatModeValue(),
+                });
 
-            if (envelope is { Success: true, Data: not null })
+            if (!result.Succeeded)
             {
-                await OnSuccess.InvokeAsync(envelope.Data);
+                _error = result.ServerMessage ?? L["Admin.Halls.Fallback"];
             }
-            else
-            {
-                _error = envelope?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.Halls.Fallback"];
-            }
-        }
-        catch (Exception)
-        {
-            _error = L["Admin.Halls.Fallback"];
         }
         finally { _busy = false; }
     }

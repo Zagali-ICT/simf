@@ -1,4 +1,4 @@
-@* §6.16 (NAV-008) — the eleven live stat cards, in ONE place.
+﻿@* §6.16 (NAV-008) — the eleven live stat cards, in ONE place.
    They were duplicated verbatim between the Dashboard ("/") and the Statistics
    page ("/admin/statistics"): the same eleven <SimfStatCard> with the same
    titles, the same Href targets and the same Count() formatting, in two files.
@@ -46,11 +46,3 @@
                   Value="@Dashboard.AverageRating.ToString("0.0", CultureInfo.InvariantCulture)"
                   Href="/admin/ratings" />
 </div>
-
-@code {
-    /// <summary>The live aggregate read from GET /account/api/admin/statistics.</summary>
-    [Parameter, EditorRequired]
-    public SIMF.Contracts.Statistics.StatisticsDashboard Dashboard { get; set; } = default!;
-
-    private static string Count(int value) => value.ToString(CultureInfo.InvariantCulture);
-}

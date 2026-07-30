@@ -4,13 +4,7 @@ using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
-using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
-using SIMF.Contracts.Sessions;
-using SIMF.Contracts.Logs;
-using SIMF.Contracts.UserProfile;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
@@ -86,83 +80,19 @@ public partial class CountryAddEdit
         if (_busy) return;
         _error = null;
 
-        int countryId = Initial?.Id ?? 0;
-        if (!IsEdit)
-        {
-            // Create mode — admin types the ISO 3166-1 numeric.
-            if (!int.TryParse(_idInput, out countryId) || countryId is <= 0 or > 999)
-            {
-                _error = L["Admin.Countries.Field.IdInvalid"]; return;
-            }
-        }
-        if (string.IsNullOrWhiteSpace(_model.Code) || _model.Code.Trim().Length != 2)
-        {
-            _error = L["Admin.Countries.Field.CodeInvalid"]; return;
-        }
-        if (string.IsNullOrWhiteSpace(_model.Name) || _model.Name.Length > 128)
-        {
-            _error = L["Admin.Countries.Field.NameEnInvalid"]; return;
-        }
-        if (string.IsNullOrWhiteSpace(_model.NameArabic) || _model.NameArabic.Length > 128)
-        {
-            _error = L["Admin.Countries.Field.NameArInvalid"]; return;
-        }
-        if (!int.TryParse(_displayOrderInput, out var order) || order < 0)
-        {
-            _error = L["Admin.Countries.Field.DisplayOrderInvalid"]; return;
-        }
-
-        // D-499 — parse the optional delegation date range (HTML date inputs post
-        // an invariant yyyy-MM-dd string) and resolve the head pointer.
-        var arrival = ParseDate(_model.ArrivalDate);
-        var departure = ParseDate(_model.DepartureDate);
-        if (arrival is not null && departure is not null && departure < arrival)
-        {
-            _error = L["Admin.Countries.Field.DelegationDatesInvalid"]; return;
-        }
-        var headId = _selectedHead is { } head && head.UserProfileId != Guid.Empty
-            ? head.UserProfileId : (Guid?)null;
+        var form = ReadForm();
+        if (form is null) { return; }
 
         _busy = true;
         try
         {
-            ApiResult<AdminCountryDetail>? envelope;
-            if (!IsEdit)
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminCountryDetail>>(
-                    "simfAccount.postJson", "/account/api/admin/countries",
-                    new AdminCreateCountryRequest
-                    {
-                        Id = countryId,
-                        Code = _model.Code.Trim().ToUpperInvariant(),
-                        Name = _model.Name.Trim(),
-                        NameArabic = _model.NameArabic.Trim(),
-                        PhonePrefix = NullIfBlank(_model.PhonePrefix),
-                        DisplayOrder = order,
-                        IsInvited = _model.IsInvited,
-                        DelegationArrivalDate = arrival,
-                        DelegationDepartureDate = departure,
-                        HeadOfDelegationUserProfileId = headId,
-                    });
-            }
-            else
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminCountryDetail>>(
+            var envelope = IsEdit
+                ? await JS.InvokeAsync<ApiResult<AdminCountryDetail>>(
                     "simfAccount.putJson", $"/account/api/admin/countries/{Initial!.Id}",
-                    new AdminUpdateCountryRequest
-                    {
-                        Code = _model.Code.Trim().ToUpperInvariant(),
-                        Name = _model.Name.Trim(),
-                        NameArabic = _model.NameArabic.Trim(),
-                        PhonePrefix = NullIfBlank(_model.PhonePrefix),
-                        DisplayOrder = order,
-                        IsActive = _model.IsActive,
-                        IsInvited = _model.IsInvited,
-                        DelegationArrivalDate = arrival,
-                        DelegationDepartureDate = departure,
-                        HeadOfDelegationUserProfileId = headId,
-                    });
-            }
+                    BuildUpdateRequest(form))
+                : await JS.InvokeAsync<ApiResult<AdminCountryDetail>>(
+                    "simfAccount.postJson", "/account/api/admin/countries",
+                    BuildCreateRequest(form));
 
             if (envelope is { Success: true, Data: not null })
             {
@@ -180,6 +110,90 @@ public partial class CountryAddEdit
         }
         finally { _busy = false; }
     }
+
+    /// <summary>Validates the form and returns its parsed values, or null after
+    /// setting <see cref="_error"/> to the first problem found.</summary>
+    private FormValues? ReadForm()
+    {
+        var countryId = Initial?.Id ?? 0;
+        // Create mode — admin types the ISO 3166-1 numeric.
+        if (!IsEdit && (!int.TryParse(_idInput, out countryId) || countryId is <= 0 or > 999))
+        {
+            _error = L["Admin.Countries.Field.IdInvalid"];
+            return null;
+        }
+        if (string.IsNullOrWhiteSpace(_model.Code) || _model.Code.Trim().Length != 2)
+        {
+            _error = L["Admin.Countries.Field.CodeInvalid"];
+            return null;
+        }
+        if (string.IsNullOrWhiteSpace(_model.Name) || _model.Name.Length > 128)
+        {
+            _error = L["Admin.Countries.Field.NameEnInvalid"];
+            return null;
+        }
+        if (string.IsNullOrWhiteSpace(_model.NameArabic) || _model.NameArabic.Length > 128)
+        {
+            _error = L["Admin.Countries.Field.NameArInvalid"];
+            return null;
+        }
+        if (!int.TryParse(_displayOrderInput, out var order) || order < 0)
+        {
+            _error = L["Admin.Countries.Field.DisplayOrderInvalid"];
+            return null;
+        }
+
+        // D-499 — the optional delegation date range (HTML date inputs post an
+        // invariant yyyy-MM-dd string) and the head pointer.
+        var arrival = ParseDate(_model.ArrivalDate);
+        var departure = ParseDate(_model.DepartureDate);
+        if (arrival is not null && departure is not null && departure < arrival)
+        {
+            _error = L["Admin.Countries.Field.DelegationDatesInvalid"];
+            return null;
+        }
+        var headId = _selectedHead is { } head && head.UserProfileId != Guid.Empty
+            ? head.UserProfileId : (Guid?)null;
+
+        return new FormValues(countryId, order, arrival, departure, headId);
+    }
+
+    private AdminCreateCountryRequest BuildCreateRequest(FormValues form) => new()
+    {
+        Id = form.CountryId,
+        Code = _model.Code.Trim().ToUpperInvariant(),
+        Name = _model.Name.Trim(),
+        NameArabic = _model.NameArabic.Trim(),
+        PhonePrefix = NullIfBlank(_model.PhonePrefix),
+        DisplayOrder = form.DisplayOrder,
+        IsInvited = _model.IsInvited,
+        DelegationArrivalDate = form.Arrival,
+        DelegationDepartureDate = form.Departure,
+        HeadOfDelegationUserProfileId = form.HeadOfDelegationId,
+    };
+
+    private AdminUpdateCountryRequest BuildUpdateRequest(FormValues form) => new()
+    {
+        Code = _model.Code.Trim().ToUpperInvariant(),
+        Name = _model.Name.Trim(),
+        NameArabic = _model.NameArabic.Trim(),
+        PhonePrefix = NullIfBlank(_model.PhonePrefix),
+        DisplayOrder = form.DisplayOrder,
+        IsActive = _model.IsActive,
+        IsInvited = _model.IsInvited,
+        DelegationArrivalDate = form.Arrival,
+        DelegationDepartureDate = form.Departure,
+        HeadOfDelegationUserProfileId = form.HeadOfDelegationId,
+    };
+
+    /// <summary>The form's validated, parsed values — everything the two request
+    /// builders need that is not read straight off <see cref="_model"/>.</summary>
+    private sealed record FormValues(
+        int CountryId,
+        int DisplayOrder,
+        DateOnly? Arrival,
+        DateOnly? Departure,
+        Guid? HeadOfDelegationId);
 
     private static string? NullIfBlank(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
