@@ -63,71 +63,11 @@ public partial class MediaAddEdit
         {
             if (_isEditing)
             {
-                var env = await JS.InvokeAsync<ApiResult<AdminMediaDetail>>(
-                    "simfAccount.putJson",
-                    $"/account/api/admin/media/{_editingId}",
-                    new AdminUpdateMediaRequest
-                    {
-                        Kind = _model.Kind,
-                        Title = NullIfBlank(_model.Title),
-                        TitleArabic = NullIfBlank(_model.TitleArabic),
-                        Album = NullIfBlank(_model.Album),
-                        AlbumArabic = NullIfBlank(_model.AlbumArabic),
-                        Url = NullIfBlank(_model.Url),
-                        DisplayOrder = _model.DisplayOrder,
-                        IsActive = _model.IsActive,
-                    });
-                if (env is { Success: true, Data: not null })
-                {
-                    await OnSuccess.InvokeAsync(env.Data);
-                }
-                else
-                {
-                    _error = env?.Error?.MessageForCurrentCulture()
-                        ?? L["Admin.Media.LoadFailed"];
-                }
+                await UpdateExistingAsync();
             }
             else
             {
-                var env = await JS.InvokeAsync<ApiResult<AdminMediaDetail>>(
-                    "simfAccount.postJson",
-                    "/account/api/admin/media",
-                    new AdminCreateMediaRequest
-                    {
-                        Kind = _model.Kind,
-                        Title = NullIfBlank(_model.Title),
-                        TitleArabic = NullIfBlank(_model.TitleArabic),
-                        Album = NullIfBlank(_model.Album),
-                        AlbumArabic = NullIfBlank(_model.AlbumArabic),
-                        Url = NullIfBlank(_model.Url),
-                        DisplayOrder = _model.DisplayOrder,
-                    });
-                if (env is { Success: true, Data: not null })
-                {
-                    // Image items have no bytes yet — keep the form open in
-                    // Edit mode so the admin can attach the bitmap now. Video
-                    // items are complete on create, so close the shell.
-                    if (_model.Kind == MediaKind.Image)
-                    {
-                        var d = env.Data;
-                        _isEditing = true;
-                        _editingId = d.Id;
-                        _hasImage = d.HasImage;
-                        _imageName = null;
-                        _model.DisplayOrder = d.DisplayOrder;
-                        _model.IsActive = d.IsActive;
-                        _error = null;
-                    }
-                    else
-                    {
-                        await OnSuccess.InvokeAsync(env.Data);
-                    }
-                }
-                else
-                {
-                    _error = env?.Error?.MessageForCurrentCulture()
-                        ?? L["Admin.Media.LoadFailed"];
-                }
+                await CreateNewAsync();
             }
         }
         catch (Exception)
@@ -135,6 +75,74 @@ public partial class MediaAddEdit
             _error = L["Admin.Media.LoadFailed"];
         }
         finally { _busy = false; }
+    }
+
+    private async Task UpdateExistingAsync()
+    {
+        var env = await JS.InvokeAsync<ApiResult<AdminMediaDetail>>(
+            "simfAccount.putJson",
+            $"/account/api/admin/media/{_editingId}",
+            new AdminUpdateMediaRequest
+            {
+                Kind = _model.Kind,
+                Title = NullIfBlank(_model.Title),
+                TitleArabic = NullIfBlank(_model.TitleArabic),
+                Album = NullIfBlank(_model.Album),
+                AlbumArabic = NullIfBlank(_model.AlbumArabic),
+                Url = NullIfBlank(_model.Url),
+                DisplayOrder = _model.DisplayOrder,
+                IsActive = _model.IsActive,
+            });
+
+        if (env is { Success: true, Data: not null })
+        {
+            await OnSuccess.InvokeAsync(env.Data);
+        }
+        else
+        {
+            _error = env?.Error?.MessageForCurrentCulture() ?? L["Admin.Media.LoadFailed"];
+        }
+    }
+
+    /// <summary>Creates the row. A Video item is complete on create and closes
+    /// the shell; an Image item has no bytes yet, so the form stays open in Edit
+    /// mode for the admin to attach the bitmap.</summary>
+    private async Task CreateNewAsync()
+    {
+        var env = await JS.InvokeAsync<ApiResult<AdminMediaDetail>>(
+            "simfAccount.postJson",
+            "/account/api/admin/media",
+            new AdminCreateMediaRequest
+            {
+                Kind = _model.Kind,
+                Title = NullIfBlank(_model.Title),
+                TitleArabic = NullIfBlank(_model.TitleArabic),
+                Album = NullIfBlank(_model.Album),
+                AlbumArabic = NullIfBlank(_model.AlbumArabic),
+                Url = NullIfBlank(_model.Url),
+                DisplayOrder = _model.DisplayOrder,
+            });
+
+        if (env is not { Success: true, Data: not null })
+        {
+            _error = env?.Error?.MessageForCurrentCulture() ?? L["Admin.Media.LoadFailed"];
+            return;
+        }
+
+        if (_model.Kind != MediaKind.Image)
+        {
+            await OnSuccess.InvokeAsync(env.Data);
+            return;
+        }
+
+        var created = env.Data;
+        _isEditing = true;
+        _editingId = created.Id;
+        _hasImage = created.HasImage;
+        _imageName = null;
+        _model.DisplayOrder = created.DisplayOrder;
+        _model.IsActive = created.IsActive;
+        _error = null;
     }
 
     private async Task OnImageSelected(ChangeEventArgs _)

@@ -141,74 +141,18 @@ public partial class ProfileTypeForm
         _success = null;
         _error = null;
 
-        if (string.IsNullOrWhiteSpace(_model.Name) || _model.Name.Length > 128)
-        {
-            _error = L["Admin.ProfileTypes.Field.NameInvalid"];
-            return;
-        }
-        if (string.IsNullOrWhiteSpace(_model.NameArabic) || _model.NameArabic.Length > 128)
-        {
-            _error = L["Admin.ProfileTypes.Field.NameArabicInvalid"];
-            return;
-        }
-        if (string.IsNullOrWhiteSpace(_model.PageColor) || _model.PageColor.Length > 32)
-        {
-            _error = L["Admin.ProfileTypes.Field.PageColorInvalid"];
-            return;
-        }
+        if (!ValidateForm()) { return; }
 
         _busy = true;
         try
         {
-            ApiResult<AdminProfileTypeSummary>? envelope;
-            // D-161 — only send MobileAppRole when the picker was shown
-            // (UserType=Other). Sending it for Visitor rows would be
-            // wire noise: the backend defaults to None anyway, and the
-            // claim is resolved from UserType regardless.
-            var mobileAppRolePayload = ShowMobileAppRolePicker ? _model.MobileAppRole : null;
-            if (_isEdit && Initial is not null)
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminProfileTypeSummary>>(
+            var envelope = _isEdit && Initial is not null
+                ? await JS.InvokeAsync<ApiResult<AdminProfileTypeSummary>>(
                     "simfAccount.putJson", $"/account/api/admin/profile-types/{Initial.Id}",
-                    new AdminUpdateProfileTypeRequest
-                    {
-                        Name = _model.Name.Trim(),
-                        NameArabic = _model.NameArabic.Trim(),
-                        PageColor = _model.PageColor.Trim(),
-                        MobileAppRole = mobileAppRolePayload,
-                        IsActive = _model.IsActive,
-                        // D-186: IsVisitor is mutable on update — keeps
-                        // the row's existing audience/partner flag
-                        // unless the host explicitly changes it.
-                        IsVisitor = Initial.IsVisitor,
-                        // D-725: app sign-up picker visibility toggle.
-                        IsAppRegisterable = _model.IsAppRegisterable,
-                        // D-760: Meet-People networking visibility toggle.
-                        ShowInPartnerDirectory = _model.ShowInPartnerDirectory,
-                    });
-            }
-            else
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminProfileTypeSummary>>(
+                    BuildUpdateRequest(Initial))
+                : await JS.InvokeAsync<ApiResult<AdminProfileTypeSummary>>(
                     "simfAccount.postJson", "/account/api/admin/profile-types",
-                    new AdminCreateProfileTypeRequest
-                    {
-                        // D-186: only the Visitor scope is accepted for
-                        // non-admin profile types. The audience-vs-
-                        // partner split rides on IsVisitor.
-                        UserType = "Visitor",
-                        Name = _model.Name.Trim(),
-                        NameArabic = _model.NameArabic.Trim(),
-                        PageColor = _model.PageColor.Trim(),
-                        MobileAppRole = mobileAppRolePayload,
-                        IsActive = _model.IsActive,
-                        IsVisitor = !IsPartnerForm,
-                        // D-725: app sign-up picker visibility toggle.
-                        IsAppRegisterable = _model.IsAppRegisterable,
-                        // D-760: Meet-People networking visibility toggle.
-                        ShowInPartnerDirectory = _model.ShowInPartnerDirectory,
-                    });
-            }
+                    BuildCreateRequest());
 
             if (envelope is { Success: true, Data: not null })
             {
@@ -225,6 +169,68 @@ public partial class ProfileTypeForm
         }
         finally { _busy = false; }
     }
+
+    /// <summary>Validates the form, setting <see cref="_error"/> to the first
+    /// problem found.</summary>
+    private bool ValidateForm()
+    {
+        if (string.IsNullOrWhiteSpace(_model.Name) || _model.Name.Length > 128)
+        {
+            _error = L["Admin.ProfileTypes.Field.NameInvalid"];
+            return false;
+        }
+        if (string.IsNullOrWhiteSpace(_model.NameArabic) || _model.NameArabic.Length > 128)
+        {
+            _error = L["Admin.ProfileTypes.Field.NameArabicInvalid"];
+            return false;
+        }
+        if (string.IsNullOrWhiteSpace(_model.PageColor) || _model.PageColor.Length > 32)
+        {
+            _error = L["Admin.ProfileTypes.Field.PageColorInvalid"];
+            return false;
+        }
+        return true;
+    }
+
+    /// <summary>D-161 — MobileAppRole is only sent when the picker was shown
+    /// (UserType=Other). Sending it for Visitor rows would be wire noise: the
+    /// backend defaults to None anyway, and the claim is resolved from UserType
+    /// regardless.</summary>
+    private string? MobileAppRolePayload =>
+        ShowMobileAppRolePicker ? _model.MobileAppRole : null;
+
+    private AdminCreateProfileTypeRequest BuildCreateRequest() => new()
+    {
+        // D-186: only the Visitor scope is accepted for non-admin profile types.
+        // The audience-vs-partner split rides on IsVisitor.
+        UserType = "Visitor",
+        Name = _model.Name.Trim(),
+        NameArabic = _model.NameArabic.Trim(),
+        PageColor = _model.PageColor.Trim(),
+        MobileAppRole = MobileAppRolePayload,
+        IsActive = _model.IsActive,
+        IsVisitor = !IsPartnerForm,
+        // D-725: app sign-up picker visibility toggle.
+        IsAppRegisterable = _model.IsAppRegisterable,
+        // D-760: Meet-People networking visibility toggle.
+        ShowInPartnerDirectory = _model.ShowInPartnerDirectory,
+    };
+
+    private AdminUpdateProfileTypeRequest BuildUpdateRequest(AdminProfileTypeSummary initial) => new()
+    {
+        Name = _model.Name.Trim(),
+        NameArabic = _model.NameArabic.Trim(),
+        PageColor = _model.PageColor.Trim(),
+        MobileAppRole = MobileAppRolePayload,
+        IsActive = _model.IsActive,
+        // D-186: IsVisitor is mutable on update — keeps the row's existing
+        // audience/partner flag unless the host explicitly changes it.
+        IsVisitor = initial.IsVisitor,
+        // D-725: app sign-up picker visibility toggle.
+        IsAppRegisterable = _model.IsAppRegisterable,
+        // D-760: Meet-People networking visibility toggle.
+        ShowInPartnerDirectory = _model.ShowInPartnerDirectory,
+    };
 
     private sealed class Model
     {
