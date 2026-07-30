@@ -43,15 +43,41 @@ Gate after: analyze errors+warnings **6 = the pre-existing baseline (all in
 test/)**; `flutter test` **1108 pass / 0 fail** (was 1094/2); every golden held
 WITHOUT `--update`.
 
+Second run, same day (after the push):
+`b207e698` + `7438200b` shell decomposition — `simf_page_shell.dart` **1142 -> 566**,
+split into `simf_states` / `simf_refresh` / `simf_cards` / `simf_tiles`, with the
+shell re-EXPORTING every group so the ~489 imports across the app never changed ·
+`1007b235` all 38 `directives_ordering` violations (scoped `dart fix`) ·
+`00560d4a` `SimfTokens.labelDangerSm` (the inline field error was hand-spelled 18x).
+
+**Figma:** node `1116-16448` is **About the FORUM** (`about_screen.dart`) and is
+already bound + at parity — verified 2026-07-28 by rendering the node against the
+golden. `about_app_screen.dart` (About the APP) is a DIFFERENT screen and is still
+unbound, as are `change_email`, `meetings`, `meeting_confirm`, `badge_password`.
+Parity check found one open question for the owner: Figma shows **3** main themes,
+the app ships **4**. The header language pill is a **documented deliberate
+deviation** (owner 2026-07-05, noted in `simf_page_shell.dart`) — do not "fix" it.
+
 **Still open (the honest remainder):**
-1. **148 inline TextStyles** with no exact token match — each needs its Figma
-   node checked, not a guess. The 91 that matched exactly are done.
-2. **Structural decomposition (S1)** — `sign_up_visitor_screen` 1711 lines,
-   `simf_page_shell` 1142, `register_visitor_screen` 1075, plus ~117 S1 findings.
-   Untouched: this is a multi-session job and every split needs a baseline-then-hold
-   golden.
+1. **130 inline TextStyles** left (was 239). A near-match pass (one differing
+   property) identified ~85 more that could become a new named token or a
+   `.copyWith`; the top remaining shapes are `labelBeigeMedium+color:surface` (7),
+   `bodyInkMuted+color:surface` (7), `labelWhiteMediumLg+fontSize:24` (6). Prefer
+   a NEW NAMED TOKEN over `base.copyWith(color:)` when the base name would lie
+   about the role — that is how labelDangerSm was decided.
+2. **Structural decomposition (S1)** — the shell is DONE (1142 -> 566). Still
+   oversized: `sign_up_visitor_screen` 1711, `register_visitor_screen` 1075.
+   **Do NOT decompose the sign-up screen from goldens alone** — its field builders
+   are coupled to 13 controllers and the face-capture path, and this repo already
+   banked that a green golden did NOT catch the D-666 face-capture regression.
+   That one needs on-device verification of the sign-up flow.
+   The barrel-re-export trick used on the shell is the safe pattern to reuse.
 3. **S16 duplication** (117 findings / 180 occurrences), **S11** business logic in
-   `build()` (41), **S14** missing doc headers (48), **S9** dead code (34).
+   `build()` (41), **S14** missing doc headers (48), **S9** dead code (34, import
+   ordering now cleared).
+   **OWNER-GATED (§7):** `lib/features/requests/new_request_sheet.dart` — the
+   ENTIRE 396-line file is unreachable; `showNewRequestSheet` has zero call sites.
+   Reported, NOT deleted — dead-page deletion needs owner confirmation.
 4. **Figma nodes MISSING** for `change_email`, `meetings`, `meeting_confirm`,
    `badge_password`, `about_app` — Level 4 is BLOCKED on the owner for these five
    (per §13.5, ask, never guess).
