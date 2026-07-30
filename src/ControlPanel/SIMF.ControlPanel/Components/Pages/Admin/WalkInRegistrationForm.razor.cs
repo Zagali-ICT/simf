@@ -431,10 +431,47 @@ public partial class WalkInRegistrationForm : IDisposable
     {
         if (_busy) return;
 
-        // Client-side gate — the server-side FluentValidation owns the canonical
-        // rule set; this is the friendly inline UX layer. Field-level failures
-        // render next to the field (ValidationMessageStore); the card / picker /
-        // phone group errors surface in the top alert.
+        if (!ValidateForm()) { return; }
+
+        var basePath = string.Equals(Kind, "Other", StringComparison.OrdinalIgnoreCase)
+            ? "/account/api/admin/others"
+            : "/account/api/admin/visitors";
+
+        _busy = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<AdminWalkInRegistrationResponse>>(
+                "simfAccount.postJson", $"{basePath}/register-onsite", BuildRegistrationRequest());
+
+            if (envelope is { Success: true, Data: not null })
+            {
+                await UploadPickedFilesAsync(basePath, envelope.Data.UserId);
+                await OnSuccess.InvokeAsync(envelope.Data);
+                ResetForm();
+            }
+            else
+            {
+                _error = envelope?.Error?.DetailedMessageForCurrentCulture()
+                    ?? L["Admin.WalkIn.Error.Fallback"];
+            }
+        }
+        catch (Exception)
+        {
+            _error = L["Admin.WalkIn.Error.Fallback"];
+        }
+        finally { _busy = false; }
+    }
+
+    /// <summary>
+    /// The friendly inline UX layer — server-side FluentValidation owns the
+    /// canonical rule set. Field-level failures render next to the field
+    /// (ValidationMessageStore); card / picker / phone-group errors surface in
+    /// the top alert.
+    /// </summary>
+    /// <remarks>Every guard runs: the desk sees ALL of its mistakes at once
+    /// rather than one per submit, so this must not early-return.</remarks>
+    private bool ValidateForm()
+    {
         _messages.Clear();
         _error = null;
         _orgError = null;
@@ -464,6 +501,26 @@ public partial class WalkInRegistrationForm : IDisposable
         {
             _orgError = L["Admin.WalkIn.Error.OrganisationRequired"]; ok = false;
         }
+
+        var identityOk = ValidateIdentityDocument();
+        ok = ok && identityOk;
+
+        if (string.IsNullOrWhiteSpace(_model.SaudiMobile) && string.IsNullOrWhiteSpace(_model.InternationalMobile))
+        {
+            _error = L["Admin.WalkIn.Error.MobileRequired"]; ok = false;
+        }
+
+        _editContext.NotifyValidationStateChanged();
+        return ok;
+    }
+
+    /// <summary>Validates the identity document for the Saudi / non-Saudi branch
+    /// and clears whichever number the chosen branch does not use, so a value
+    /// typed then switched away from is never submitted.</summary>
+    private bool ValidateIdentityDocument()
+    {
+        var ok = true;
+
         if (_model.IsSaudi)
         {
             if (string.IsNullOrWhiteSpace(_model.NationalId)
@@ -474,141 +531,101 @@ public partial class WalkInRegistrationForm : IDisposable
             }
             // Force nationality to SA — the picker is hidden in this branch.
             _model.NationalityCode = "SA";
+            return ok;
+        }
+
+        if (string.IsNullOrWhiteSpace(_model.NationalityCode))
+        {
+            _error = L["Admin.WalkIn.Error.NationalityRequired"]; ok = false;
+        }
+        if (_idKind == "Iqama")
+        {
+            if (string.IsNullOrWhiteSpace(_model.IqamaNumber)
+                || !IqamaPattern.IsMatch(_model.IqamaNumber))
+            {
+                _messages.Add(_editContext.Field(nameof(_model.IqamaNumber)),
+                    L["Admin.WalkIn.Error.IqamaInvalid"]); ok = false;
+            }
+            _model.PassportNumber = null;
         }
         else
         {
-            if (string.IsNullOrWhiteSpace(_model.NationalityCode))
+            if (string.IsNullOrWhiteSpace(_model.PassportNumber)
+                || _model.PassportNumber.Length > 20)
             {
-                _error = L["Admin.WalkIn.Error.NationalityRequired"]; ok = false;
+                _messages.Add(_editContext.Field(nameof(_model.PassportNumber)),
+                    L["Admin.WalkIn.Error.PassportRequired"]); ok = false;
             }
-            if (_idKind == "Iqama")
-            {
-                if (string.IsNullOrWhiteSpace(_model.IqamaNumber)
-                    || !IqamaPattern.IsMatch(_model.IqamaNumber))
-                {
-                    _messages.Add(_editContext.Field(nameof(_model.IqamaNumber)),
-                        L["Admin.WalkIn.Error.IqamaInvalid"]); ok = false;
-                }
-                _model.PassportNumber = null;
-            }
-            else
-            {
-                if (string.IsNullOrWhiteSpace(_model.PassportNumber)
-                    || _model.PassportNumber.Length > 20)
-                {
-                    _messages.Add(_editContext.Field(nameof(_model.PassportNumber)),
-                        L["Admin.WalkIn.Error.PassportRequired"]); ok = false;
-                }
-                _model.IqamaNumber = null;
-            }
+            _model.IqamaNumber = null;
         }
-        if (string.IsNullOrWhiteSpace(_model.SaudiMobile) && string.IsNullOrWhiteSpace(_model.InternationalMobile))
+        return ok;
+    }
+
+    private AdminWalkInRegistrationRequest BuildRegistrationRequest() => new()
+    {
+        Email = NullIfBlank(_model.Email),
+        DisplayName = _model.DisplayName.Trim(),
+        ArabicName = _model.ArabicName.Trim(),
+        EnglishName = _model.EnglishName.Trim(),
+        JobTitle = NullIfBlank(_model.JobTitle),
+        JobTitleArabic = NullIfBlank(_model.JobTitleArabic),
+        // V-1 (D-429) — VIP موج extras (null unless the VIP page set them).
+        MawjId = NullIfBlank(_model.MawjId),
+        Honorific = NullIfBlank(_model.Honorific),
+        HonorificArabic = NullIfBlank(_model.HonorificArabic),
+        PreferredLanguage = NullIfBlank(_model.PreferredLanguage),
+        ProfileTypeId = _model.ProfileTypeId,
+        NationalityCode = _model.NationalityCode.Trim().ToUpperInvariant(),
+        DateOfBirth = _model.DateOfBirth,
+        PlaceOfBirth = NullIfBlank(_model.PlaceOfBirth),
+        Gender = _model.Gender,
+        PlateNumber = NullIfBlank(_model.PlateNumber)?.ToUpperInvariant(),
+        IsSaudi = _model.IsSaudi,
+        NationalId = _model.IsSaudi ? _model.NationalId : null,
+        IqamaNumber = _model.IsSaudi ? null : _model.IqamaNumber,
+        PassportNumber = _model.IsSaudi ? null : _model.PassportNumber,
+        SaudiMobile = NullIfBlank(_model.SaudiMobile),
+        InternationalMobile = NullIfBlank(_model.InternationalMobile),
+        OrganisationId = _model.OrganisationId,
+        InterestIds = _model.InterestIds.ToList(),
+        // D-473 (#10) — when hosted by the delegates page, mark the visitor as a
+        // delegation member (the API then requires an invited nationality).
+        IsDelegate = IsDelegate,
+    };
+
+    /// <summary>
+    /// Uploads whichever optional files the desk picked, now that the new user
+    /// id exists. Each upload is deliberately best-effort: the registration has
+    /// already succeeded and a failed file must not undo it.
+    /// </summary>
+    private async Task UploadPickedFilesAsync(string basePath, Guid userId)
+    {
+        // A failure surfaces as HasIdImage=false in the View modal.
+        await TryUploadAsync(_idDocumentName, $"{basePath}/{userId}/id-document", _idDocUpload.ElementId);
+        // D-427 (CS-3) — optional profile photo.
+        await TryUploadAsync(_avatarName, $"{basePath}/{userId}/avatar", _avatarUpload.ElementId);
+        // V-1 (D-429) — optional VIP welcome photo (VIP page only).
+        if (VipMode)
         {
-            _error = L["Admin.WalkIn.Error.MobileRequired"]; ok = false;
+            await TryUploadAsync(_vipPhotoName, $"{basePath}/{userId}/vip-photo", _vipPhotoUpload.ElementId);
         }
+    }
 
-        _editContext.NotifyValidationStateChanged();
-        if (!ok) return;
-
-        var basePath = string.Equals(Kind, "Other", StringComparison.OrdinalIgnoreCase)
-            ? "/account/api/admin/others"
-            : "/account/api/admin/visitors";
-
-        _busy = true;
+    private async Task TryUploadAsync(string? pickedName, string url, string elementId)
+    {
+        if (string.IsNullOrEmpty(pickedName)) { return; }
         try
         {
-            var envelope = await JS.InvokeAsync<ApiResult<AdminWalkInRegistrationResponse>>(
-                "simfAccount.postJson", $"{basePath}/register-onsite",
-                new AdminWalkInRegistrationRequest
-                {
-                    Email = string.IsNullOrWhiteSpace(_model.Email) ? null : _model.Email.Trim(),
-                    DisplayName = _model.DisplayName.Trim(),
-                    ArabicName = _model.ArabicName.Trim(),
-                    EnglishName = _model.EnglishName.Trim(),
-                    JobTitle = string.IsNullOrWhiteSpace(_model.JobTitle) ? null : _model.JobTitle.Trim(),
-                    JobTitleArabic = string.IsNullOrWhiteSpace(_model.JobTitleArabic) ? null : _model.JobTitleArabic.Trim(),
-                    // V-1 (D-429) — VIP موج extras (null unless the VIP page set them).
-                    MawjId = string.IsNullOrWhiteSpace(_model.MawjId) ? null : _model.MawjId.Trim(),
-                    Honorific = string.IsNullOrWhiteSpace(_model.Honorific) ? null : _model.Honorific.Trim(),
-                    HonorificArabic = string.IsNullOrWhiteSpace(_model.HonorificArabic) ? null : _model.HonorificArabic.Trim(),
-                    PreferredLanguage = string.IsNullOrWhiteSpace(_model.PreferredLanguage) ? null : _model.PreferredLanguage.Trim(),
-                    ProfileTypeId = _model.ProfileTypeId,
-                    NationalityCode = _model.NationalityCode.Trim().ToUpperInvariant(),
-                    DateOfBirth = _model.DateOfBirth,
-                    PlaceOfBirth = string.IsNullOrWhiteSpace(_model.PlaceOfBirth) ? null : _model.PlaceOfBirth.Trim(),
-                    Gender = _model.Gender,
-                    PlateNumber = string.IsNullOrWhiteSpace(_model.PlateNumber) ? null : _model.PlateNumber.Trim().ToUpperInvariant(),
-                    IsSaudi = _model.IsSaudi,
-                    NationalId = _model.IsSaudi ? _model.NationalId : null,
-                    IqamaNumber = _model.IsSaudi ? null : _model.IqamaNumber,
-                    PassportNumber = _model.IsSaudi ? null : _model.PassportNumber,
-                    SaudiMobile = string.IsNullOrWhiteSpace(_model.SaudiMobile) ? null : _model.SaudiMobile.Trim(),
-                    InternationalMobile = string.IsNullOrWhiteSpace(_model.InternationalMobile) ? null : _model.InternationalMobile.Trim(),
-                    OrganisationId = _model.OrganisationId,
-                    InterestIds = _model.InterestIds.ToList(),
-                    // D-473 (#10) — when hosted by the delegates page, mark the
-                    // visitor as a delegation member (the API then requires an
-                    // invited nationality).
-                    IsDelegate = IsDelegate,
-                });
-
-            if (envelope is { Success: true, Data: not null })
-            {
-                // If staff picked an ID-document file, upload it now that
-                // we have the new user id. The upload is fire-and-forget —
-                // a failed upload doesn't undo the registration, but the
-                // failure surfaces as a soft warning on the success view.
-                if (!string.IsNullOrEmpty(_idDocumentName))
-                {
-                    try
-                    {
-                        await JS.InvokeAsync<object?>(
-                            "simfAccount.uploadFile",
-                            $"{basePath}/{envelope.Data.UserId}/id-document",
-                            _idDocUpload.ElementId);
-                    }
-                    catch (Exception) { /* surfaces as HasIdImage=false in the View modal */ }
-                }
-                // D-427 (CS-3) — optional profile photo, same deferred upload.
-                if (!string.IsNullOrEmpty(_avatarName))
-                {
-                    try
-                    {
-                        await JS.InvokeAsync<object?>(
-                            "simfAccount.uploadFile",
-                            $"{basePath}/{envelope.Data.UserId}/avatar",
-                            _avatarUpload.ElementId);
-                    }
-                    catch (Exception) { /* avatar is optional; failure is non-fatal */ }
-                }
-                // V-1 (D-429) — optional VIP welcome photo, same deferred upload
-                // to the dedicated vip-photo endpoint (VIP page only).
-                if (VipMode && !string.IsNullOrEmpty(_vipPhotoName))
-                {
-                    try
-                    {
-                        await JS.InvokeAsync<object?>(
-                            "simfAccount.uploadFile",
-                            $"{basePath}/{envelope.Data.UserId}/vip-photo",
-                            _vipPhotoUpload.ElementId);
-                    }
-                    catch (Exception) { /* VIP photo is optional; failure is non-fatal */ }
-                }
-                await OnSuccess.InvokeAsync(envelope.Data);
-                ResetForm();
-            }
-            else
-            {
-                _error = envelope?.Error?.DetailedMessageForCurrentCulture()
-                    ?? L["Admin.WalkIn.Error.Fallback"];
-            }
+            await JS.InvokeAsync<object?>("simfAccount.uploadFile", url, elementId);
         }
         catch (Exception)
         {
-            _error = L["Admin.WalkIn.Error.Fallback"];
+            // Optional file; the registration stands either way.
         }
-        finally { _busy = false; }
     }
+
+    private static string? NullIfBlank(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     /// <summary>Clears the model to defaults so the desk can immediately
     /// register the next walk-in. Preserves the selected ProfileTypeId and the
