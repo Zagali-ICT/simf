@@ -38,7 +38,8 @@ not reused. Each page owns a unique 3–4 letter namespace.
 
 | Page | File | Scenarios |
 |------|------|-----------|
-| `/` (Dashboard) | [`cp-dashboard.md`](cp-dashboard.md) | E2E-DSH-001..013 |
+| `/` (Dashboard) - shell chrome + the Wave A programme dashboard (KPI grid + grouped bar chart + per-day cards, gated on `Statistics.View`) | [`cp-dashboard.md`](cp-dashboard.md) | E2E-DSH-001..025 |
+| `/admin/reports*` - the reporting module (hub + attendance, registrations, gate activity; Saudi date range, XLSX export) | [`cp-reports.md`](cp-reports.md) | E2E-RPT-001..025 |
 
 ### Control Panel — People & accounts
 
@@ -92,7 +93,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/hall-availability` | [`cp-admin-hall-availability.md`](cp-admin-hall-availability.md) | E2E-HAV-001..007 |
 | `/admin/delegation-meetings` | [`cp-admin-delegation-meetings.md`](cp-admin-delegation-meetings.md) | E2E-DLM-001..019 |
 | `/admin/delegation-availability` | [`cp-admin-delegation-availability.md`](cp-admin-delegation-availability.md) | E2E-DAV-001..007 |
-| _(cross-surface bi-meeting lifecycle)_ | [`bi-meeting-lifecycle.md`](bi-meeting-lifecycle.md) | E2E-BML-001..016 (+ 013b / 013c — G3 no-availability, D-801) |
+| _(cross-surface bi-meeting lifecycle)_ | [`bi-meeting-lifecycle.md`](bi-meeting-lifecycle.md) | E2E-BML-001..016 (+ 013b / 013c — G3 no-availability, D-812) |
 | `/admin/document-requests` | [`cp-document-requests.md`](cp-document-requests.md) | E2E-CPDR-001..008 |
 | `/admin/badge-requests` | [`cp-badge-requests.md`](cp-badge-requests.md) | E2E-CPBR-001..008 |
 | `/admin/meeting-tables` | [`cp-meeting-tables.md`](cp-meeting-tables.md) | E2E-MHT-001..013 |
@@ -263,7 +264,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #22 `booths` (`GET /app/booths` + `/{id}`) — #9: country name + أرشدني→map | [`mobile-booths.md`](mobile-booths.md) | E2E-MOB022-001..013 |
 | `boothMap` (`/booths/:id/map` → venue map focused on the booth) — #9 | [`mobile-booths.md`](mobile-booths.md) | E2E-MOB022-013 |
 | #23 `sponsors` (`GET /app/sponsors`) | [`mobile-sponsors.md`](mobile-sponsors.md) | E2E-MOB023-001..004 |
-| #21 `delegations` (`GET /app/delegations`) — Wave 4, Figma `1426:10771` (restored from D-277); bi-meeting rework: cards tappable → delegation request sheet for an entitled account; G2 (D-800) the list is per-viewer — a signed-in caller's OWN country is excluded server-side, a guest sees all | [`mobile-delegations.md`](mobile-delegations.md) | E2E-DEL-001..013 |
+| #21 `delegations` (`GET /app/delegations`) — Wave 4, Figma `1426:10771` (restored from D-277); bi-meeting rework: cards tappable → delegation request sheet for an entitled account; G2 (D-811) the list is per-viewer — a signed-in caller's OWN country is excluded server-side, a guest sees all | [`mobile-delegations.md`](mobile-delegations.md) | E2E-DEL-001..013 |
 | #220 `exhibitorDetail` (`GET /app/booths/{id}`) — Wave 3, Figma `1439:11881` | [`mobile-exhibitor-detail.md`](mobile-exhibitor-detail.md) | E2E-MOB220-001..007 |
 | #221 `sponsorDetail` (`GET /app/sponsors/{id}`) — Wave 3, Figma `1439:11826` | [`mobile-sponsor-detail.md`](mobile-sponsor-detail.md) | E2E-MOB221-001..007 |
 | `myVisitors` (`GET /app/exhibitor/my-visitors`) — D-426 exhibitor captured-visitor list; DEF-EXH-004 read-path subject eligibility (D-780: any ACTIVE subject lists, only a deactivated one drops out); DEF-EXH-006 current-booth-membership gate | [`mobile-my-visitors.md`](mobile-my-visitors.md) | E2E-MOBMYVIS-001..009 |
@@ -273,7 +274,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | `myVisitors` (`GET /app/exhibitor/my-visitors`) — D-426 exhibitor booth-visitor list (BUG-025 title + note) | [`mobile-my-visitors.md`](mobile-my-visitors.md) | E2E-MOBMYVIS-001..008 |
 | `scanVisitor` (`scanByBadge` — exhibitor lead-capture scan, BUG-024 lead email) — D-426 | [`mobile-scan-visitor.md`](mobile-scan-visitor.md) | E2E-MOBSCANVIS-001..007 |
 | #24 `archive` (`GET /app/archive` + `/{id}`) | [`mobile-archive.md`](mobile-archive.md) | E2E-MOB024-001..005 |
-| #29 `news` (`GET /app/news` + `/{id}`) | [`mobile-news.md`](mobile-news.md) | E2E-MOB029-001..005 |
+| #29 `news` (`GET /app/news` + `/{id}`) + #29a `newsArticle` `/news/:newsId` | [`mobile-news.md`](mobile-news.md) | E2E-MOB029-001..013 |
 | #30 `gallery` (`GET /app/media`) | [`mobile-gallery.md`](mobile-gallery.md) | E2E-MOB030-001..004 |
 | #37 `aboutForum` (`GET /app/content/about`) | [`mobile-about.md`](mobile-about.md) | E2E-MOB037-001..003 |
 | #40 `rate` (`GET/POST /app/feedback/form|submit`) | [`mobile-rate.md`](mobile-rate.md) | E2E-MOB040-001..011 |
@@ -334,13 +335,13 @@ again without failing the build. They had been left at the 2026-06-02 figures �
 "74 pages / ~1044 scenarios" — while the catalogue more than doubled, and were
 being quoted in planning as if current.
 
-- **Pages catalogued:** 182 (93 Control Panel + 69 mobile + 19 Website + 1
-  system-wide). One of the 182 — `cp-admin-companies.md` — is **retired**: its
+- **Pages catalogued:** 183 (94 Control Panel + 69 mobile + 19 Website + 1
+  system-wide). One of the 183 — `cp-admin-companies.md` — is **retired**: its
   route was renamed away and it now carries no live scenarios.
-- **Total scenarios:** 2848 Coverage-matrix rows, every id distinct. That
+- **Total scenarios:** 2882 Coverage-matrix rows, every id distinct. That
   includes the **360** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
   per live page — see `tools/qa/generate_els_rows.py`); the hand-authored
-  functional total is 2488.
+  functional total is 2522.
 - **Authored:** all pages. The D-133 "pending" stubs are fully authored, and
   every event-module and P2–P5 page added since has its own file.
 - **Execution:** the canonical run today is a Chrome DevTools MCP browser pass
@@ -490,6 +491,39 @@ now fails the build on either shape.
   `Others_pipeline_account_can_scan_once_it_is_linked_to_an_exhibitor`,
   `Linking_refuses_an_account_that_is_not_exhibitor_typed`,
   `Linking_refuses_an_unknown_email_and_an_already_linked_account`.
+
+### Update - 2026-07-29 (Wave A - the CP programme dashboard on `/`)
+
+- **Scope:** the Control Panel landing page stopped being a placeholder. For an
+  admin holding `Statistics.View` it now renders a KPI stat grid, a grouped bar
+  chart with one cluster per forum day, and one day card per forum day. Backed by
+  a new read-only aggregate `GET /api/v1/admin/statistics/programme`
+  (`StatisticsProgramme` + `ProgrammeDayStats`) and new shared chart components
+  (`SimfGroupedBarChart`, `SimfBarGauge`, `ChartGeometry`). No schema change, no
+  migration, no new permission - `Statistics.View` is reused and gates both the
+  API and the render.
+- **Range extended:** `cp-dashboard.md` E2E-DSH-001..013 -> **001..025**. The
+  thirteen existing ids keep their meaning; twelve were appended for the Wave A
+  surface (golden path, the permission gate, the KPI grid, chart clusters, the
+  zero-activity day, Arabic RTL mirroring, light/dark/grey themes, the
+  `dd-MM-yyyy` Saudi-local date rule, the API failure path, the hidden data
+  table, the day-card gauges, and the no-programme-days empty state). No scenario
+  was renumbered. The page's front-matter prose was rewritten, since it still
+  described the page as a placeholder.
+- **Lower-layer backing:** `tests/SIMF.ControlPanel.Tests/ChartGeometryTests.cs`
+  (41 tests) and `tests/SIMF.Api.Tests/StatisticsProgrammeTests.cs` (21 tests)
+  are cross-referenced per scenario, including the five Saudi-calendar-day
+  boundary cases behind E2E-DSH-021.
+- **Honesty flag (branch state):** on `feat/cp-dashboard-reporting` the CP **BFF
+  passthrough for the programme call is missing** - `Home.razor.cs` requests
+  `/account/api/admin/statistics/programme`, but `AccountEndpoints.cs` maps only
+  `/admin/statistics` and `SimfAdminClient` has no `GetStatisticsProgrammeAsync`.
+  The unmatched route 404s, `simfAccount.getJson` turns that into a
+  `BAD_RESPONSE` envelope, and the page degrades to the welcome panel plus the
+  four `StatisticsDashboard` tiles. So E2E-DSH-017, -018, -019, -020, -023, -024
+  and -025 (plus the programme half of -014, -016 and -021) are **RED until the
+  passthrough and the client method land**; they are authored as the target spec.
+  E2E-DSH-015 and -022 pass as written today.
 
 ### Update - 2026-07-30 (G1 - the self-service change-email feature is REMOVED)
 

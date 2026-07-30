@@ -172,6 +172,20 @@ Future<void> _pump(
   await tester.pumpAndSettle();
 }
 
+/// The action row is the last child of a lazy [ListView], and the hall grid is
+/// tall enough that it is never built at the default surface size — so it has to
+/// be scrolled into view before it can be tapped. `.first` is the screen's own
+/// ListView; the hall card nests two more scrollables below it.
+Future<void> _tapAction(WidgetTester tester, Finder action) async {
+  await tester.scrollUntilVisible(
+    action,
+    300,
+    scrollable: find.byType(Scrollable).first,
+  );
+  await tester.tap(action);
+  await tester.pumpAndSettle();
+}
+
 void main() {
   group('MySeatScreen (Page 018)', () {
     testWidgets('renders the session card + grid + legend', (tester) async {
@@ -222,8 +236,10 @@ void main() {
         surface: const Size(1000, 2600),
       );
 
-      await tester.tap(find.widgetWithText(OutlinedButton, 'Share location'));
-      await tester.pumpAndSettle();
+      await _tapAction(
+        tester,
+        find.widgetWithText(OutlinedButton, 'Share location'),
+      );
       expect(share.shared, 'My SIMF seat: Row B · Seat 2');
     });
 
@@ -234,8 +250,10 @@ void main() {
         surface: const Size(1000, 2600),
       );
 
-      await tester.tap(find.widgetWithText(FilledButton, 'Guide me to my seat'));
-      await tester.pumpAndSettle();
+      await _tapAction(
+        tester,
+        find.widgetWithText(FilledButton, 'Guide me to my seat'),
+      );
       expect(find.text('MAP'), findsOneWidget);
     });
 

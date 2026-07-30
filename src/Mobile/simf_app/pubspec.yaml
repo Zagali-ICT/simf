@@ -88,7 +88,6 @@ dependencies:
   simf_auth_pkg:
     path: packages/simf_auth_pkg
   pretty_dio_logger: ^1.4.0
-  firebase_core: ^4.12.1
 
 # D-768 — vendored copy of video_player_android 2.12.0, patched so the hero
 # background video plays on Huawei/HiSilicon devices. Their hardware AVC decoder

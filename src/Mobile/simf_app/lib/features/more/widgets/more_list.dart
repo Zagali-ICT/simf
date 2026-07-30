@@ -20,11 +20,7 @@ class MoreSection extends StatelessWidget {
           child: Text(
             title,
             textAlign: TextAlign.start,
-            style: const TextStyle(
-              color: SimfTokens.surface,
-              fontSize: SimfTokens.textLg,
-              fontWeight: FontWeight.w600,
-            ),
+            style: SimfTokens.labelWhiteSemiboldLg,
           ),
         ),
         for (final (index, row) in rows.indexed) ...<Widget>[
@@ -81,10 +77,7 @@ class MoreRow extends StatelessWidget {
                   const SizedBox(width: SimfTokens.space2),
                   Text(
                     trailingValue!,
-                    style: const TextStyle(
-                      color: SimfTokens.beigeBorder,
-                      fontSize: SimfTokens.textSm,
-                    ),
+                    style: SimfTokens.labelBeigeSm,
                   ),
                 ],
                 const SizedBox(width: SimfTokens.space2),

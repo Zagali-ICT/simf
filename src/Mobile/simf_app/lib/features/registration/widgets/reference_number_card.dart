@@ -26,20 +26,13 @@ class ReferenceNumberCard extends StatelessWidget {
         children: <Widget>[
           Text(
             label,
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textMd,
-            ),
+            style: SimfTokens.bodyBeigeMd,
           ),
           const SizedBox(height: SimfTokens.space2),
           Text(
             reference,
             textDirection: TextDirection.ltr,
-            style: const TextStyle(
-              color: SimfTokens.accent,
-              fontSize: SimfTokens.textLg,
-              fontWeight: FontWeight.w700,
-            ),
+            style: SimfTokens.labelGoldBoldLg,
           ),
         ],
       ),

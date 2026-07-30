@@ -1,6 +1,9 @@
-// Tests: SIMF.Api.Tests/StatisticsTests.cs
+// Tests: SIMF.Api.Tests/StatisticsProgrammeTests.cs
+// (the previously referenced StatisticsTests.cs does not exist — GetDashboardAsync
+//  has no direct coverage; noted rather than silently left pointing at nothing.)
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Statistics.Abstractions;
+using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Statistics;
 using SIMF.Infrastructure.Persistence;
@@ -85,5 +88,141 @@ internal sealed class StatisticsService(
             mediaItems,
             ratingsCount,
             averageRating);
+    }
+
+    public async Task<StatisticsProgramme> GetProgrammeAsync(
+        CancellationToken cancellationToken = default)
+    {
+        // ---- Headline participant counts -----------------------------------
+        var currentUsers = await identityDbContext.Users.AsNoTracking()
+            .CountAsync(cancellationToken);
+
+        // Role counts resolve through UserProfile -> UserProfileType. Both
+        // tables live in the App DB, so this is a single-database join and
+        // never a cross-context query (D-157). Which profile type counts as
+        // staff / exhibitor is admin-curated data (ProfileType.MobileAppRole,
+        // ProfileType.IsForVisitor) — never a hardcoded role name.
+        var profiles = appDbContext.UserProfiles.AsNoTracking().Where(p => p.IsActive);
+
+        // A profile with no type assigned counts as a visitor: IsForVisitor
+        // itself defaults to true ("audience-side until an admin says
+        // otherwise"), and ExhibitorVisitorService already reads an absent type
+        // the same way. Requiring a non-null type here would quietly undercount
+        // every account that has not been categorised yet.
+        var visitors = await profiles.CountAsync(
+            p => p.ProfileType == null || p.ProfileType.IsForVisitor, cancellationToken);
+
+        var staff = await profiles.CountAsync(
+            p => p.ProfileType != null
+                && p.ProfileType.MobileAppRole == MobileAppRole.Staff,
+            cancellationToken);
+
+        var moderators = await profiles.CountAsync(
+            p => p.ProfileType != null
+                && p.ProfileType.MobileAppRole == MobileAppRole.Moderator,
+            cancellationToken);
+
+        var exhibitorAccounts = await profiles.CountAsync(
+            p => p.ProfileType != null
+                && p.ProfileType.MobileAppRole == MobileAppRole.Exhibitor,
+            cancellationToken);
+
+        // Exhibitors / sponsors are the CP-managed organisations, not accounts.
+        var exhibitors = await appDbContext.Exhibitors.AsNoTracking()
+            .CountAsync(e => e.IsActive, cancellationToken);
+
+        var sponsors = await appDbContext.Sponsors.AsNoTracking()
+            .CountAsync(s => s.IsActive, cancellationToken);
+
+        var speakers = await appDbContext.Speakers.AsNoTracking()
+            .CountAsync(s => s.IsActive, cancellationToken);
+
+        var booths = await appDbContext.Booths.AsNoTracking()
+            .CountAsync(b => b.IsActive, cancellationToken);
+
+        var totalAttended = await appDbContext.HallAttendances.AsNoTracking()
+            .Select(a => a.UserId)
+            .Distinct()
+            .CountAsync(cancellationToken);
+
+        // ---- Per-forum-day figures -----------------------------------------
+        // Sessions are matched to a day BY DATE, mirroring ProgrammeDay's
+        // deliberate no-FK design — the app groups them the same way, so the
+        // two surfaces cannot disagree about which session belongs to a day.
+        var days = await appDbContext.ProgrammeDays.AsNoTracking()
+            .Where(d => d.IsActive)
+            .OrderBy(d => d.DisplayOrder)
+            .ThenBy(d => d.Date)
+            .Select(d => new { d.Id, d.Date, d.Title, d.TitleArabic, d.DisplayOrder })
+            .ToListAsync(cancellationToken);
+
+        var dayStats = new List<ProgrammeDayStats>(days.Count);
+
+        foreach (var day in days)
+        {
+            // The Saudi calendar day expressed as an explicit UTC half-open
+            // window [start, end). Instants are stored as UTC, so a record at
+            // 22:00 UTC belongs to the NEXT Saudi day — bucketing on the stored
+            // value directly would misfile every evening record. Reusing
+            // SaudiTime.FromSaudiWallClock keeps the single +03:00 conversion
+            // point, and a plain range predicate stays an index-friendly seek
+            // rather than relying on a translated date-shift expression.
+            var startUtc = SaudiTime.FromSaudiWallClock(
+                day.Date.ToDateTime(TimeOnly.MinValue));
+            var endUtc = startUtc.AddDays(1);
+
+            var registered = await identityDbContext.Users.AsNoTracking()
+                .CountAsync(
+                    u => u.UserType == UserType.Visitor
+                        && u.CreatedAt >= startUtc && u.CreatedAt < endUtc,
+                    cancellationToken);
+
+            // Distinct people who were let in through a gate that day. A visitor
+            // scanning twice counts once.
+            var present = await appDbContext.GateScans.AsNoTracking()
+                .Where(s => s.Outcome == ScanOutcome.Allowed
+                    && s.Direction == ScanDirection.CheckIn
+                    && s.UserProfileId != null
+                    && s.ScannedAt >= startUtc && s.ScannedAt < endUtc)
+                .Select(s => s.UserProfileId!.Value)
+                .Distinct()
+                .CountAsync(cancellationToken);
+
+            var sessions = await appDbContext.Sessions.AsNoTracking()
+                .CountAsync(
+                    s => s.IsActive && s.Start >= startUtc && s.Start < endUtc,
+                    cancellationToken);
+
+            // Distinct people who arrived at any hall that day.
+            var attended = await appDbContext.HallAttendances.AsNoTracking()
+                .Where(a => a.Enter >= startUtc && a.Enter < endUtc)
+                .Select(a => a.UserId)
+                .Distinct()
+                .CountAsync(cancellationToken);
+
+            dayStats.Add(new ProgrammeDayStats(
+                day.Id,
+                day.Date,
+                day.Title,
+                day.TitleArabic,
+                day.DisplayOrder,
+                registered,
+                present,
+                sessions,
+                attended));
+        }
+
+        return new StatisticsProgramme(
+            currentUsers,
+            visitors,
+            staff,
+            moderators,
+            exhibitors,
+            exhibitorAccounts,
+            sponsors,
+            speakers,
+            booths,
+            totalAttended,
+            dayStats);
     }
 }

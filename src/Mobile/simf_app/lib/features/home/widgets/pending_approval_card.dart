@@ -72,11 +72,7 @@ class PendingApprovalCard extends ConsumerWidget {
                 child: Text(
                   l10n.homePendingApprovalNote,
                   textAlign: TextAlign.start,
-                  style: const TextStyle(
-                    color: SimfTokens.beigeBorder,
-                    fontSize: SimfTokens.textMd,
-                    height: 1.5,
-                  ),
+                  style: SimfTokens.bodyBeige,
                 ),
               ),
             ],

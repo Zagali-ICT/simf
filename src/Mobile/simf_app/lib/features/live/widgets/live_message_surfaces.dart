@@ -45,7 +45,7 @@ class _MessageSurface extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: Colors.black,
+      color: SimfTokens.black,
       child: Padding(
         padding: const EdgeInsets.all(SimfTokens.space4),
         child: AspectRatio(

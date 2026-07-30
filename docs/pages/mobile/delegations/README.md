@@ -71,7 +71,7 @@ The **host** country is never on this screen: Saudi Arabia is the OWNER of the
 forum, not a visiting delegation, so it is deliberately not flagged
 `Country.IsInvited` (D-768).
 
-## Own delegation excluded (G2 — D-800, owner 2026-07-30)
+## Own delegation excluded (G2 — D-811, owner 2026-07-30)
 
 A **signed-in** viewer never sees their **own** delegation. The country whose `Id`
 equals the caller's `UserProfile.NationalityId` is dropped **server-side** in
@@ -99,7 +99,7 @@ screen and the strip can never disagree with the list.
 Viewer opens /delegations → GET /api/v1/app/delegations (anonymous; bearer sent when signed in)
   → resolve the caller's UserProfile.NationalityId from `sub` (null for a guest)
   → select Country where IsInvited && IsActive
-     → and Id != the caller's nationality (skipped for a guest)   ← G2 / D-800
+     → and Id != the caller's nationality (skipped for a guest)   ← G2 / D-811
      → resolve head from Country.HeadOfDelegationUserProfileId (UserProfile)
      → count active delegates (IsDelegate && IsActive) by NationalityId
   → ApiResult<AppDelegations> → stats + cards render (stats derived from the filtered set)
@@ -151,19 +151,19 @@ active-filter chip aligns to the inline-start via `AlignmentDirectional`).
 the delegations feature tests — including the **flag-filter** widget test
 (`delegations_screen_test.dart`: tap a stats-strip flag → list narrows to that
 country; the active-filter chip clears it). Backend: `DelegationsTests.cs` covers
-the G2 (D-800) per-viewer exclusion — the signed-in viewer's own country is absent
+the G2 (D-811) per-viewer exclusion — the signed-in viewer's own country is absent
 while the guest read still contains it, and both stats track the filtered list.
 E2E: `docs/tests/e2e/mobile-delegations.md` (`E2E-DEL-001..013`).
 
 ## Related decisions
 
-- **D-800** (G2 — the list is per-viewer: the caller's own country is excluded server-side, stats recompute, guests see all).
+- **D-811** (G2 — the list is per-viewer: the caller's own country is excluded server-side, stats recompute, guests see all).
 - **D-624** (this clean-code freeze — decomposition + gold-alpha tokens).
 - **D-499** (originating build — this screen + the public endpoint + the all-on-`Country` schema choice + additive migration D499). Related: **D-613** (the shared `SimfFilterSearchField` extracted from this screen + the summaries list), **D-157** (member count derived on read), **D-473** (delegate = visitor + `IsDelegate` + invited country), **D-768** (the host country is never `IsInvited`), **D-277** (the earlier removal of screen #21).
 
 ---
 
-_Last reviewed: 2026-07-30 — G2 (D-800): a signed-in viewer no longer sees their
+_Last reviewed: 2026-07-30 — G2 (D-811): a signed-in viewer no longer sees their
 **own** delegation; the exclusion is server-side and both stats recompute over the
 filtered set; guests still see the full list. Prior: 2026-07-13 — added the
 stats-strip **flag filter** (tap a country flag to narrow the list; removable

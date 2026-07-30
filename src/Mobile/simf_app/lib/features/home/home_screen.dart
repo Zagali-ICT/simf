@@ -114,8 +114,36 @@ class HomeScreen extends ConsumerWidget {
           data: (s) => s.partnerDirectoryEnabled,
           orElse: () => true,
         );
+    // Owner rule: every data page pulls to refresh. Home renders six
+    // independent reads, so the gesture re-fetches all of them and holds the
+    // spinner until the slowest settles.
+    Future<void> onRefresh() async {
+      ref
+        ..invalidate(newsListProvider)
+        ..invalidate(homeProfileProvider)
+        ..invalidate(bannersProvider)
+        ..invalidate(currentUserMeetingAccessProvider)
+        ..invalidate(siteSettingsProvider);
+      try {
+        await Future.wait<void>(<Future<void>>[
+          ref.read(orgProfileProvider.notifier).warm(),
+          ref.read(newsListProvider.future),
+          ref.read(homeProfileProvider.future),
+          ref.read(bannersProvider.future),
+          ref.read(currentUserMeetingAccessProvider.future),
+          ref.read(siteSettingsProvider.future),
+        ]);
+      } on Object {
+        // Every section above reads through `maybeWhen(orElse:)` and renders
+        // its own fallback, so a failed section must not reject the refresh
+        // future — that would surface as an unhandled error rather than an
+        // empty section.
+      }
+    }
+
     return VisitorHome(
       l10n: l10n,
+      onRefresh: onRefresh,
       name: _greetingName(
         profile?.identity.localizedName(l10n.isArabic),
         user?.displayName,

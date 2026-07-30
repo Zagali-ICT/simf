@@ -172,9 +172,12 @@ class _SendQuestionScreenState extends ConsumerState<SendQuestionScreen> {
   }
 
   Widget _empty(AppL10n l10n) {
-    return SimfEmptyState(
-      icon: Icons.live_help_outlined,
-      message: l10n.sendQuestionNoSession,
+    return SimfRefreshableMessage(
+      onRefresh: _loadDetail,
+      child: SimfEmptyState(
+        icon: Icons.live_help_outlined,
+        message: l10n.sendQuestionNoSession,
+      ),
     );
   }
 
@@ -189,48 +192,52 @@ class _SendQuestionScreenState extends ConsumerState<SendQuestionScreen> {
     return Column(
       children: <Widget>[
         Expanded(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(
-              SimfTokens.space4,
-              SimfTokens.space5,
-              SimfTokens.space4,
-              SimfTokens.space4,
-            ),
-            children: <Widget>[
-              // Frame 1049:12590 — the "بيانات الجلسة" session-data block over
-              // the composer. Hidden until the optional detail read lands.
-              if (dataLines.isNotEmpty) ...<Widget>[
-                SessionDataBlock(
-                  label: l10n.sessionDataLabel,
-                  lines: dataLines,
+          child: SimfPullToRefresh(
+            onRefresh: _loadDetail,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(
+                SimfTokens.space4,
+                SimfTokens.space5,
+                SimfTokens.space4,
+                SimfTokens.space4,
+              ),
+              children: <Widget>[
+                // Frame 1049:12590 — the "بيانات الجلسة" session-data block over
+                // the composer. Hidden until the optional detail read lands.
+                if (dataLines.isNotEmpty) ...<Widget>[
+                  SessionDataBlock(
+                    label: l10n.sessionDataLabel,
+                    lines: dataLines,
+                  ),
+                  const SizedBox(height: SimfTokens.space6),
+                ],
+                // B7 — the recipient choice sits above the composer, as in the
+                // D-174 mockup's two pills.
+                SendQuestionRecipientPicker(
+                  label: l10n.sendQuestionRecipientLabel,
+                  speakerLabel: l10n.sendQuestionToSpeaker,
+                  hostLabel: l10n.sendQuestionToHost,
+                  hostSelected: _recipient == QuestionRecipient.host,
+                  onSpeaker: () =>
+                      setState(() => _recipient = QuestionRecipient.speaker),
+                  onHost: () =>
+                      setState(() => _recipient = QuestionRecipient.host),
                 ),
                 const SizedBox(height: SimfTokens.space6),
+                SendQuestionComposer(
+                  sectionLabel: l10n.sendQuestionSectionLabel,
+                  hint: l10n.sendQuestionHint,
+                  controller: _question,
+                  errorText: _inlineError,
+                  onChanged: (_) {
+                    if (_inlineError != null) {
+                      setState(() => _inlineError = null);
+                    }
+                  },
+                ),
               ],
-              // B7 — the recipient choice sits above the composer, as in the
-              // D-174 mockup's two pills.
-              SendQuestionRecipientPicker(
-                label: l10n.sendQuestionRecipientLabel,
-                speakerLabel: l10n.sendQuestionToSpeaker,
-                hostLabel: l10n.sendQuestionToHost,
-                hostSelected: _recipient == QuestionRecipient.host,
-                onSpeaker: () =>
-                    setState(() => _recipient = QuestionRecipient.speaker),
-                onHost: () =>
-                    setState(() => _recipient = QuestionRecipient.host),
-              ),
-              const SizedBox(height: SimfTokens.space6),
-              SendQuestionComposer(
-                sectionLabel: l10n.sendQuestionSectionLabel,
-                hint: l10n.sendQuestionHint,
-                controller: _question,
-                errorText: _inlineError,
-                onChanged: (_) {
-                  if (_inlineError != null) {
-                    setState(() => _inlineError = null);
-                  }
-                },
-              ),
-            ],
+            ),
           ),
         ),
         // Frame 943:3751 — the bottom-pinned submit + reviewed-before-air note.

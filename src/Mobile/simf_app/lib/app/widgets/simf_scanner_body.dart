@@ -198,10 +198,7 @@ class _SimfScannerBodyState extends State<SimfScannerBody> {
         if (widget.hint != null) ...<Widget>[
           Text(
             widget.hint!,
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textSm,
-            ),
+            style: SimfTokens.labelBeigeSm,
           ),
           const SizedBox(height: SimfTokens.space4),
         ],
@@ -296,10 +293,7 @@ class _SimfScannerBodyState extends State<SimfScannerBody> {
           Text(
             widget.bottomHint!,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textSm,
-            ),
+            style: SimfTokens.labelBeigeSm,
           ),
         ],
       ],
@@ -312,10 +306,7 @@ class _SimfScannerBodyState extends State<SimfScannerBody> {
       children: <Widget>[
         Text(
           l10n.qrManualLabel,
-          style: const TextStyle(
-            color: SimfTokens.beigeBorder,
-            fontSize: SimfTokens.textSm,
-          ),
+          style: SimfTokens.labelBeigeSm,
         ),
         const SizedBox(height: SimfTokens.space2),
         TextField(
@@ -354,10 +345,7 @@ class _OrDivider extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space3),
           child: Text(
             label,
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textSm,
-            ),
+            style: SimfTokens.labelBeigeSm,
           ),
         ),
         const Expanded(child: Divider(color: SimfTokens.accent)),
@@ -401,7 +389,7 @@ class _CameraErrorCard extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: SimfTokens.beigeBorder),
+              style: SimfTokens.hintBeige,
             ),
             const SizedBox(height: SimfTokens.space3),
             TextButton.icon(

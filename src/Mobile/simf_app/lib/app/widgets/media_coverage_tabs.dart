@@ -66,7 +66,7 @@ class _MediaTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: active ? SimfTokens.accent : Colors.transparent,
+      color: active ? SimfTokens.accent : SimfTokens.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(SimfTokens.radius),
         side: active
@@ -93,7 +93,7 @@ class _MediaTab extends StatelessWidget {
                   fontSize: SimfTokens.textSm,
                   fontWeight: FontWeight.w600,
                   // Figma 1049 — the active gold pill carries white text.
-                  color: active ? Colors.white : SimfTokens.beigeBorder,
+                  color: active ? SimfTokens.surface : SimfTokens.beigeBorder,
                 ),
               ),
             ),

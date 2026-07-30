@@ -7,6 +7,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../../core/utils/refresh.dart';
 import '../sessions/data/session_models.dart';
 import '../sessions/data/sessions_repository.dart';
 import '../sessions/widgets/session_filter_tabs.dart';
@@ -146,22 +147,29 @@ class _AiSummaryScreenState extends ConsumerState<AiSummaryScreen> {
     return SimfPageShell(
       title: l10n.aiSummaryTitle,
       onBack: () => backOrHome(context),
-      body: sessions.when(
-        loading: () => const SimfLoadingState(),
-        error: (_, __) => SimfEmptyState(
-          icon: Icons.event_busy_outlined,
-          message: l10n.aiSummaryNoSessions,
-        ),
-        data: (list) {
-          if (list.isEmpty) {
-            return SimfEmptyState(
+      body: SimfPullToRefresh(
+        onRefresh: () => refreshAsync(ref, programmeSessionsProvider.future),
+        child: sessions.when(
+          loading: () => const SimfLoadingState(),
+          error: (_, __) => SimfPullableHost(
+            child: SimfEmptyState(
               icon: Icons.event_busy_outlined,
               message: l10n.aiSummaryNoSessions,
-            );
-          }
-          _ensureSelection(list);
-          return _body(l10n, list);
-        },
+            ),
+          ),
+          data: (list) {
+            if (list.isEmpty) {
+              return SimfPullableHost(
+                child: SimfEmptyState(
+                  icon: Icons.event_busy_outlined,
+                  message: l10n.aiSummaryNoSessions,
+                ),
+              );
+            }
+            _ensureSelection(list);
+            return _body(l10n, list);
+          },
+        ),
       ),
     );
   }
@@ -170,6 +178,7 @@ class _AiSummaryScreenState extends ConsumerState<AiSummaryScreen> {
     final isArabic = l10n.isArabic;
     final selected = _selectedSession;
     return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(SimfTokens.space4),
       children: <Widget>[
         if (selected != null)

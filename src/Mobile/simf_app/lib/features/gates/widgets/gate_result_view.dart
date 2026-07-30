@@ -72,7 +72,7 @@ class GateResultView extends StatelessWidget {
                       ? result.denialMessage!
                       : l10n.gateDeniedSub),
               textAlign: TextAlign.center,
-              style: TextStyle(color: accent),
+              style: SimfTokens.textAccent,
             ),
             // DEF-CHK-004 — allowed, but the server flagged something the
             // operator has to know (today: no session running in this hall,

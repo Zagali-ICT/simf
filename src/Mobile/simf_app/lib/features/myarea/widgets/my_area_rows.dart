@@ -42,11 +42,7 @@ class MyAreaScheduleRow extends StatelessWidget {
             Text(
               time,
               textDirection: TextDirection.ltr,
-              style: const TextStyle(
-                color: SimfTokens.beigeBorder,
-                fontWeight: FontWeight.w700,
-                fontSize: SimfTokens.textSm,
-              ),
+              style: SimfTokens.labelBeigeBoldSm,
             ),
             const SizedBox(width: SimfTokens.space3),
             Expanded(
@@ -65,10 +61,7 @@ class MyAreaScheduleRow extends StatelessWidget {
                     const SizedBox(height: SimfTokens.space1),
                     Text(
                       hall,
-                      style: const TextStyle(
-                        color: SimfTokens.beigeBorder,
-                        fontSize: SimfTokens.textXs,
-                      ),
+                      style: SimfTokens.bodyBeigeXs,
                     ),
                   ],
                 ],
@@ -100,11 +93,7 @@ class MyAreaScheduleGroupHeader extends StatelessWidget {
       alignment: AlignmentDirectional.centerStart,
       child: Text(
         label,
-        style: const TextStyle(
-          color: SimfTokens.accent,
-          fontSize: SimfTokens.textSm,
-          fontWeight: FontWeight.w600,
-        ),
+        style: SimfTokens.labelGoldSemiboldSm,
       ),
     );
   }
@@ -183,11 +172,7 @@ class MyAreaShareTile extends StatelessWidget {
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: SimfTokens.surface,
-                    fontSize: SimfTokens.textSm,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: SimfTokens.labelWhiteSemiboldSm,
                 ),
               ),
             ],

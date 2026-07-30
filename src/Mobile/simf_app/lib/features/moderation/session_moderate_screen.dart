@@ -338,17 +338,25 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
         child: CircularProgressIndicator(color: SimfTokens.accent),
       );
     }
+    // The 403 branch too: a moderator assigned to the session after this
+    // screen opened would otherwise be stuck on it with no way to re-check.
     if (_forbidden) {
-      return SimfEmptyState(
-        icon: Icons.lock_outline,
-        message: l10n.moderatorForbidden,
+      return SimfRefreshableMessage(
+        onRefresh: _load,
+        child: SimfEmptyState(
+          icon: Icons.lock_outline,
+          message: l10n.moderatorForbidden,
+        ),
       );
     }
     if (_error) {
-      return SimfErrorState(
-        message: l10n.moderatorError,
-        retryLabel: l10n.retryLabel,
-        onRetry: () => unawaited(_load()),
+      return SimfRefreshableMessage(
+        onRefresh: _load,
+        child: SimfErrorState(
+          message: l10n.moderatorError,
+          retryLabel: l10n.retryLabel,
+          onRetry: () => unawaited(_load()),
+        ),
       );
     }
     final rows = filterModeratorQueue(_desk, _filter, rejected: _rejected);

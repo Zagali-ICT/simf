@@ -14,7 +14,7 @@ namespace SIMF.Api.Endpoints.Public;
 /// a member count are exposed, no member PII — consistent with the speakers /
 /// booths / sponsors directories.
 ///
-/// <para>G2 (D-800) — the list is per-viewer: a signed-in caller does not see their
+/// <para>G2 (D-811) — the list is per-viewer: a signed-in caller does not see their
 /// OWN delegation (the country matching their profile nationality), and the two
 /// aggregate stats are recomputed over what is shown. The endpoint stays anonymous —
 /// with no bearer token there is no <c>sub</c> claim, so a guest gets the full

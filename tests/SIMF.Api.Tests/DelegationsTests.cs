@@ -1,7 +1,7 @@
 // Tests: D-499 (الوفود, Figma 1426:10771) — the public delegations view
 // (GET /app/delegations) + the CP head-of-delegation / dates on the country form
 // (PublicDelegationService, AdminCountryService, CountryEndpoints).
-// Tests: G2 (D-800) — the per-viewer exclusion of the caller's own country.
+// Tests: G2 (D-811) — the per-viewer exclusion of the caller's own country.
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -24,7 +24,7 @@ namespace SIMF.Api.Tests;
 /// <summary>
 /// D-499 (الوفود) — the public delegations view groups the invited countries with
 /// their head of delegation, date range and member count; the CP country form
-/// sets the dates + head (an active delegate of that country). G2 (D-800) adds the
+/// sets the dates + head (an active delegate of that country). G2 (D-811) adds the
 /// per-viewer rule: a signed-in caller never sees their own country, and the two
 /// aggregate stats are recomputed over the filtered list.
 /// </summary>
@@ -53,7 +53,7 @@ public sealed class DelegationsTests : IClassFixture<SimfApiFactory>
         // A VISITING delegation (Japan), invited, with a designated head + two more
         // delegates. Deliberately not Saudi Arabia: KSA is the OWNER of the forum, not
         // a visiting delegation, so it is never flagged Country.IsInvited (D-768) —
-        // and under G2 (D-800) the host's own visitors would not see it anyway.
+        // and under G2 (D-811) the host's own visitors would not see it anyway.
         await EnsureCountryAsync("JP", 392);
         var headId = await SeedDelegateAsync(
             392,
@@ -85,7 +85,7 @@ public sealed class DelegationsTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task A_signed_in_viewer_does_not_see_their_own_delegation_but_a_guest_sees_all()
     {
-        // G2 (D-800) — the viewer's OWN country (their UserProfile.NationalityId) is
+        // G2 (D-811) — the viewer's OWN country (their UserProfile.NationalityId) is
         // filtered out server-side, and both stats are recomputed over what is shown.
         // South Korea = the viewer's nationality; Singapore = another delegation.
         await EnsureCountryAsync("KR", 410);
@@ -122,7 +122,7 @@ public sealed class DelegationsTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task A_signed_in_caller_with_no_profile_sees_every_invited_delegation()
     {
-        // G2 (D-800) — an Admin / CP user carries no UserProfile, so there is no
+        // G2 (D-811) — an Admin / CP user carries no UserProfile, so there is no
         // nationality to exclude and the full list is returned (no over-filtering).
         await EnsureCountryAsync("ID", 360);
         await SeedDelegateAsync(360);
@@ -282,7 +282,7 @@ public sealed class DelegationsTests : IClassFixture<SimfApiFactory>
     // -- helpers --------------------------------------------------------------
 
     /// <summary>Reads the public delegations view — anonymously by default, or as the
-    /// signed-in holder of <paramref name="token"/> (G2 / D-800 per-viewer filter).</summary>
+    /// signed-in holder of <paramref name="token"/> (G2 / D-811 per-viewer filter).</summary>
     private async Task<AppDelegations> GetDelegationsAsync(string? token = null)
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/app/delegations");
@@ -296,7 +296,7 @@ public sealed class DelegationsTests : IClassFixture<SimfApiFactory>
     }
 
     /// <summary>Creates an approved visitor whose profile carries
-    /// <paramref name="nationalityId"/> and signs them in — the G2 (D-800) exclusion
+    /// <paramref name="nationalityId"/> and signs them in — the G2 (D-811) exclusion
     /// keys off exactly that nationality.</summary>
     private async Task<string> CreateVisitorWithNationalityAsync(int nationalityId)
     {

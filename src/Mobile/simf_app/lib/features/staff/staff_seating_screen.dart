@@ -12,6 +12,7 @@ import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_scanner_body.dart';
 import '../../core/responsive/breakpoints.dart';
 import '../../core/responsive/max_width_body.dart';
+import '../../core/utils/refresh.dart';
 import '../sessions/data/seat_map_models.dart';
 import '../sessions/data/seat_map_repository.dart';
 import '../sessions/widgets/hall_seat_map.dart';
@@ -136,7 +137,8 @@ class _StaffSeatingScreenState extends ConsumerState<StaffSeatingScreen> {
       tab: SimfTab.sessions,
       body: SeatMapAsyncView(
         value: value,
-        onRetry: () => ref.invalidate(seatMapProvider(widget.sessionId)),
+        onRefresh: () =>
+            refreshAsync(ref, seatMapProvider(widget.sessionId).future),
         builder: (map) => _desk(l10n, map),
       ),
     );

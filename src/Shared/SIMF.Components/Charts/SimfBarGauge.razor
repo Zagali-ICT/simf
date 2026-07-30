@@ -1,0 +1,54 @@
+@* SimfBarGauge — one labelled horizontal bar: a label, a track, a proportional
+   fill and the value. Used on the programme day cards to show each day's figure
+   against the highest day, so three cards can be compared at a glance without
+   re-reading the numbers.
+
+   Pure HTML + CSS (no SVG): the fill width is the only geometry, and it is set
+   through a CSS custom property rather than an inline style rule, so the
+   stylesheet keeps full control of the presentation. The series colour comes
+   from theme.tokens.css via .simf-gauge__fill--N; this component names no
+   colour. *@
+@namespace SIMF.Components.Charts
+@using System.Globalization
+
+<div class="simf-gauge">
+    <div class="simf-gauge__head">
+        <span class="simf-gauge__label">@Label</span>
+        <span class="simf-gauge__value">@FormattedValue</span>
+    </div>
+    <div class="simf-gauge__track"
+         role="meter"
+         aria-valuenow="@Value.ToString("0.##", CultureInfo.InvariantCulture)"
+         aria-valuemin="0"
+         aria-valuemax="@Max.ToString("0.##", CultureInfo.InvariantCulture)"
+         aria-label="@Label">
+        <div class="simf-gauge__fill simf-gauge__fill--@Series"
+             style="--simf-gauge-fill:@Percent"></div>
+    </div>
+</div>
+
+@code {
+    /// <summary>The metric name shown above the track.</summary>
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+
+    /// <summary>The value this gauge represents.</summary>
+    [Parameter, EditorRequired] public double Value { get; set; }
+
+    /// <summary>The value that fills the track completely — normally the highest
+    /// value across the set being compared, so the gauges share one scale.</summary>
+    [Parameter, EditorRequired] public double Max { get; set; }
+
+    /// <summary>Series slot 1..3, selecting the token colour. Matches the series
+    /// order used by <see cref="SimfGroupedBarChart" /> so the same metric wears
+    /// the same colour in both — colour follows the entity, never its rank.</summary>
+    [Parameter] public int Series { get; set; } = 1;
+
+    private string FormattedValue => Value.ToString("#,##0", CultureInfo.CurrentUICulture);
+
+    /// <summary>The fill width as a percentage string. Invariant culture: an
+    /// Arabic culture would emit a decimal comma, which is not a valid CSS
+    /// length and would collapse the bar to zero width.</summary>
+    private string Percent =>
+        (ChartGeometry.GaugeFraction(Value, Max) * 100d)
+            .ToString("0.##", CultureInfo.InvariantCulture) + "%";
+}

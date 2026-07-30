@@ -93,7 +93,7 @@ Selecting a speaker loads their **real availability** day-cards + time-slots
 (D-709); with a subject and a picked slot the request is sent
 (`POST …/meeting-requests`). Booking a slot is VIP-only server-side.
 
-**G3 (D-801, owner 2026-07-30) — a slot is now mandatory.** When the chosen target
+**G3 (D-812, owner 2026-07-30) — a slot is now mandatory.** When the chosen target
 has **no free slot** — no active future availability window, or every slot already
 past or taken — the sheet shows the "لا توجد فترات متاحة حالياً" notice **and the
 Send button is disabled**; the subject-only request D-767 R1 allowed is gone. The
@@ -167,7 +167,7 @@ state, both VIP gates (tile hidden + in-screen), server-500, and RTL.
 |------|----------|--------|
 | 2026-07-11 | D-745 | Split the Home "اللقاءات الثنائية" tile into a VIP-only meetings page (Figma `1408:9726`); the requests feed retitled **طلباتي** and kept in My-Area. Added append-only `AppRequestItem.speakerId` + `countryId` for the card photo + flag (no migration — enriched the existing speaker join). The create-sheet speaker picker became a photo/name/country list. Home tile hidden for non-VIP. |
 | 2026-07-11 | D-746 | Added a **type-to-filter search** above the create-sheet speaker picker (name/rank, mirroring the المتحدثون list; shared "لا نتائج مطابقة" hint). App-only; no wire/schema change. |
-| 2026-07-30 | D-801 (G3) | A meeting request **cannot** be sent when the target has no free slot — supersedes D-767 R1's subject-only request. Both sheets require a picked slot and disable Send on an empty slot list; the API 409s `SPEAKER_MEETING_NO_AVAILABILITY` / `DELEGATION_MEETING_NO_AVAILABILITY`. A failed slot fetch now shows a load error + Retry instead of the no-availability notice. No schema/wire change (additive error codes). |
+| 2026-07-30 | D-812 (G3) | A meeting request **cannot** be sent when the target has no free slot — supersedes D-767 R1's subject-only request. Both sheets require a picked slot and disable Send on an empty slot list; the API 409s `SPEAKER_MEETING_NO_AVAILABILITY` / `DELEGATION_MEETING_NO_AVAILABILITY`. A failed slot fetch now shows a load error + Retry instead of the no-availability notice. No schema/wire change (additive error codes). |
 
 ---
 

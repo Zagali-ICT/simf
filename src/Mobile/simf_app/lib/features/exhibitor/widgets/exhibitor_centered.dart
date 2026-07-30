@@ -18,7 +18,7 @@ class ExhibitorCentered extends StatelessWidget {
         child: Text(
           text,
           textAlign: TextAlign.center,
-          style: const TextStyle(color: SimfTokens.beigeBorder),
+          style: SimfTokens.hintBeige,
         ),
       ),
     );

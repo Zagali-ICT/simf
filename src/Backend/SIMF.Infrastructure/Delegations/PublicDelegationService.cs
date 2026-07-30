@@ -12,7 +12,7 @@ namespace SIMF.Infrastructure.Delegations;
 /// plus the two aggregate stats. All reads stay on <c>SimfAppDbContext</c> — Country
 /// + UserProfile both live there, so there is no cross-DB join (D-157).
 ///
-/// <para>G2 (D-800) — the view is per-viewer: a signed-in caller never sees their
+/// <para>G2 (D-811) — the view is per-viewer: a signed-in caller never sees their
 /// OWN delegation, i.e. the country whose id equals the caller's
 /// <c>UserProfile.NationalityId</c> is dropped. An anonymous caller passes a null
 /// viewer id and gets the full list.</para></summary>
@@ -27,7 +27,7 @@ internal sealed class PublicDelegationService(SimfAppDbContext appDbContext)
         var invitedCountries = appDbContext.Countries.AsNoTracking()
             .Where(country => country.IsInvited && country.IsActive);
 
-        // G2 (D-800) — drop the viewer's own country BEFORE anything else reads the
+        // G2 (D-811) — drop the viewer's own country BEFORE anything else reads the
         // set, so the member-count group-by and both aggregate stats below are
         // computed over exactly the countries the viewer is shown.
         if (viewerCountryId is { } excludedCountryId)
@@ -115,7 +115,7 @@ internal sealed class PublicDelegationService(SimfAppDbContext appDbContext)
         return new AppDelegations(items.Count, items.Sum(i => i.MemberCount), items);
     }
 
-    /// <summary>G2 (D-800) — the country id to hide from this viewer: their profile's
+    /// <summary>G2 (D-811) — the country id to hide from this viewer: their profile's
     /// nationality. Null for an anonymous caller and for a signed-in caller with no
     /// profile row (an Admin / CP user), who both see the full list. Same-database
     /// read — UserProfile is on <c>SimfAppDbContext</c> alongside Country, so D-157

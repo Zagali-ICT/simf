@@ -86,31 +86,35 @@ class _ContactUsScreenState extends ConsumerState<ContactUsScreen> {
     return SimfPageShell(
       title: l10n.contactUsTitle,
       onBack: () => backOrHome(context),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          SimfTokens.space4,
-          SimfTokens.space4,
-          SimfTokens.space4,
-          SimfTokens.space6,
-        ),
-        children: <Widget>[
-          ContactSendMessageCard(
-            formKey: _formKey,
-            name: _name,
-            email: _email,
-            message: _message,
-            sending: _sending,
-            onSend: () => unawaited(_send()),
+      body: SimfPullToRefresh(
+        onRefresh: () => ref.read(orgProfileProvider.notifier).warm(),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(
+            SimfTokens.space4,
+            SimfTokens.space4,
+            SimfTokens.space4,
+            SimfTokens.space6,
           ),
-          if (profile != null) ...<Widget>[
-            const SizedBox(height: SimfTokens.space6), // gap-24
-            ContactInfoCard(profile: profile, isArabic: isArabic),
-            if (_hasAnySocial(profile.social)) ...<Widget>[
+          children: <Widget>[
+            ContactSendMessageCard(
+              formKey: _formKey,
+              name: _name,
+              email: _email,
+              message: _message,
+              sending: _sending,
+              onSend: () => unawaited(_send()),
+            ),
+            if (profile != null) ...<Widget>[
               const SizedBox(height: SimfTokens.space6), // gap-24
-              ContactSocialCard(social: profile.social),
+              ContactInfoCard(profile: profile, isArabic: isArabic),
+              if (_hasAnySocial(profile.social)) ...<Widget>[
+                const SizedBox(height: SimfTokens.space6), // gap-24
+                ContactSocialCard(social: profile.social),
+              ],
             ],
           ],
-        ],
+        ),
       ),
     );
   }
