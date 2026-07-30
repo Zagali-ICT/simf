@@ -1,11 +1,7 @@
-﻿using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Common.Enums;
-using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
 
 namespace SIMF.ControlPanel.Components.Pages.Account;

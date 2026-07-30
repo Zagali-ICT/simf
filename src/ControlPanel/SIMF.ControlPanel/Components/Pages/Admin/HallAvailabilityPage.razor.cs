@@ -5,7 +5,6 @@ using Microsoft.JSInterop;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Programme;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;

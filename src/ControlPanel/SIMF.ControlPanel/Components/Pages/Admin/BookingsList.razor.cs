@@ -3,7 +3,6 @@ using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Sessions;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;

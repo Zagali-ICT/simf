@@ -1,18 +1,9 @@
-using System.Globalization;
+﻿using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
-using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
-using SIMF.Contracts.Sessions;
-using SIMF.Contracts.Logs;
-using SIMF.Contracts.UserProfile;
-using SIMF.Contracts.Gates;
-using SIMF.Contracts.Ai;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
@@ -62,46 +53,30 @@ public partial class ProgrammeDaysAddEdit
         _busy = true;
         try
         {
-            ApiResult<AdminProgrammeDayDetail>? envelope;
-            if (!IsEdit)
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminProgrammeDayDetail>>(
-                    "simfAccount.postJson", "/account/api/admin/programme-days",
-                    new AdminCreateProgrammeDayRequest
-                    {
-                        Date = _model.Date,
-                        Title = _model.Title.Trim(),
-                        TitleArabic = _model.TitleArabic.Trim(),
-                        DisplayOrder = _model.DisplayOrder,
-                    });
-            }
-            else
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminProgrammeDayDetail>>(
-                    "simfAccount.putJson", $"/account/api/admin/programme-days/{Initial!.Id}",
-                    new AdminUpdateProgrammeDayRequest
-                    {
-                        Date = _model.Date,
-                        Title = _model.Title.Trim(),
-                        TitleArabic = _model.TitleArabic.Trim(),
-                        DisplayOrder = _model.DisplayOrder,
-                        IsActive = _model.IsActive,
-                    });
-            }
+            var result = await SendAsync(
+                JS,
+                "/account/api/admin/programme-days",
+                $"/account/api/admin/programme-days/{Initial?.Id}",
+                new AdminCreateProgrammeDayRequest
+                {
+                    Date = _model.Date,
+                    Title = _model.Title.Trim(),
+                    TitleArabic = _model.TitleArabic.Trim(),
+                    DisplayOrder = _model.DisplayOrder,
+                },
+                new AdminUpdateProgrammeDayRequest
+                {
+                    Date = _model.Date,
+                    Title = _model.Title.Trim(),
+                    TitleArabic = _model.TitleArabic.Trim(),
+                    DisplayOrder = _model.DisplayOrder,
+                    IsActive = _model.IsActive,
+                });
 
-            if (envelope is { Success: true, Data: not null })
+            if (!result.Succeeded)
             {
-                await OnSuccess.InvokeAsync(envelope.Data);
+                _error = result.ServerMessage ?? L["Admin.ProgrammeDays.LoadFailed"];
             }
-            else
-            {
-                _error = envelope?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.ProgrammeDays.LoadFailed"];
-            }
-        }
-        catch (Exception)
-        {
-            _error = L["Admin.ProgrammeDays.LoadFailed"];
         }
         finally { _busy = false; }
     }
