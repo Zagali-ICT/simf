@@ -6,6 +6,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/media_coverage_tabs.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../../core/utils/refresh.dart';
 import 'data/media_partners_repository.dart';
 import 'widgets/partner_card.dart';
 
@@ -39,10 +40,7 @@ class MediaPartnersScreen extends ConsumerWidget {
     // `{base}/app/assets/MediaPartnerLogo/{id}/image` from it.
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
     // Pull-to-refresh — re-fetch the media partners (invalidate + await next).
-    Future<void> onRefresh() async {
-      ref.invalidate(mediaPartnersProvider);
-      await ref.read(mediaPartnersProvider.future);
-    }
+    Future<void> onRefresh() => refreshAsync(ref, mediaPartnersProvider.future);
 
     return SimfPageShell(
       // Frame header — the container is "التغطية الإعلامية" (Media coverage),

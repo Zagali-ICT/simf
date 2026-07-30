@@ -3393,6 +3393,139 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Get, "statistics", content: null,
             accessToken, cancellationToken);
 
+    /// <summary>The programme dashboard: headline participant counts plus the
+    /// per-forum-day figures behind the Control Panel's day-by-day chart.</summary>
+    public Task<ApiCallResult<StatisticsProgramme>> GetStatisticsProgrammeAsync(
+        string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<StatisticsProgramme>(
+            HttpMethod.Get, "statistics/programme", content: null,
+            accessToken, cancellationToken);
+
+    // -- Reporting module (SIMF.Contracts.Reporting) --------------------------
+    // One list + one export per report. Each list POSTs its ReportQuery (a
+    // nested grid query plus a Saudi date range); each export returns raw XLSX
+    // bytes and so bypasses the ApiResult envelope.
+
+    public Task<ApiCallResult<SIMF.Contracts.Reporting.ReportPage<
+        SIMF.Contracts.Reporting.AttendanceReportRow>>> ListAttendanceReportAsync(
+        SIMF.Contracts.Reporting.ReportQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<SIMF.Contracts.Reporting.ReportPage<
+            SIMF.Contracts.Reporting.AttendanceReportRow>>(
+            HttpMethod.Post, "reports/attendance/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<(int StatusCode, byte[] Bytes)> ExportAttendanceReportAsync(
+        SIMF.Contracts.Reporting.ReportQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        PostForBytesAsync("reports/attendance/export", query, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<SIMF.Contracts.Reporting.ReportPage<
+        SIMF.Contracts.Reporting.RegistrationReportRow>>> ListRegistrationsReportAsync(
+        SIMF.Contracts.Reporting.ReportQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<SIMF.Contracts.Reporting.ReportPage<
+            SIMF.Contracts.Reporting.RegistrationReportRow>>(
+            HttpMethod.Post, "reports/registrations/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<(int StatusCode, byte[] Bytes)> ExportRegistrationsReportAsync(
+        SIMF.Contracts.Reporting.ReportQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        PostForBytesAsync("reports/registrations/export", query, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<SIMF.Contracts.Reporting.ReportPage<
+        SIMF.Contracts.Reporting.GateActivityReportRow>>> ListGateActivityReportAsync(
+        SIMF.Contracts.Reporting.ReportQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<SIMF.Contracts.Reporting.ReportPage<
+            SIMF.Contracts.Reporting.GateActivityReportRow>>(
+            HttpMethod.Post, "reports/gates/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<(int StatusCode, byte[] Bytes)> ExportGateActivityReportAsync(
+        SIMF.Contracts.Reporting.ReportQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        PostForBytesAsync("reports/gates/export", query, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<SIMF.Contracts.Reporting.ReportPage<
+        SIMF.Contracts.Reporting.SessionsReportRow>>> ListSessionsReportAsync(
+        SIMF.Contracts.Reporting.ReportQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<SIMF.Contracts.Reporting.ReportPage<
+            SIMF.Contracts.Reporting.SessionsReportRow>>(
+            HttpMethod.Post, "reports/sessions/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<(int StatusCode, byte[] Bytes)> ExportSessionsReportAsync(
+        SIMF.Contracts.Reporting.ReportQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        PostForBytesAsync("reports/sessions/export", query, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<SIMF.Contracts.Reporting.ReportPage<
+        SIMF.Contracts.Reporting.RatingsReportRow>>> ListRatingsReportAsync(
+        SIMF.Contracts.Reporting.ReportQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<SIMF.Contracts.Reporting.ReportPage<
+            SIMF.Contracts.Reporting.RatingsReportRow>>(
+            HttpMethod.Post, "reports/ratings/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<(int StatusCode, byte[] Bytes)> ExportRatingsReportAsync(
+        SIMF.Contracts.Reporting.ReportQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        PostForBytesAsync("reports/ratings/export", query, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<SIMF.Contracts.Reporting.ReportPage<
+        SIMF.Contracts.Reporting.PartnersReportRow>>> ListPartnersReportAsync(
+        SIMF.Contracts.Reporting.ReportQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<SIMF.Contracts.Reporting.ReportPage<
+            SIMF.Contracts.Reporting.PartnersReportRow>>(
+            HttpMethod.Post, "reports/partners/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<(int StatusCode, byte[] Bytes)> ExportPartnersReportAsync(
+        SIMF.Contracts.Reporting.ReportQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        PostForBytesAsync("reports/partners/export", query, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<SIMF.Contracts.Reporting.ReportPage<
+        SIMF.Contracts.Reporting.MeetingsReportRow>>> ListMeetingsReportAsync(
+        SIMF.Contracts.Reporting.ReportQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<SIMF.Contracts.Reporting.ReportPage<
+            SIMF.Contracts.Reporting.MeetingsReportRow>>(
+            HttpMethod.Post, "reports/meetings/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<(int StatusCode, byte[] Bytes)> ExportMeetingsReportAsync(
+        SIMF.Contracts.Reporting.ReportQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        PostForBytesAsync("reports/meetings/export", query, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<SIMF.Contracts.Reporting.ReportPage<
+        SIMF.Contracts.Reporting.EngagementReportRow>>> ListEngagementReportAsync(
+        SIMF.Contracts.Reporting.ReportQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<SIMF.Contracts.Reporting.ReportPage<
+            SIMF.Contracts.Reporting.EngagementReportRow>>(
+            HttpMethod.Post, "reports/engagement/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<(int StatusCode, byte[] Bytes)> ExportEngagementReportAsync(
+        SIMF.Contracts.Reporting.ReportQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        PostForBytesAsync("reports/engagement/export", query, accessToken, cancellationToken);
+
     // -- FR-506 — session-attendance dashboard (SIMF.Contracts.Attendance) ----
 
     public Task<ApiCallResult<SessionAttendanceSummary>> GetSessionAttendanceSummaryAsync(

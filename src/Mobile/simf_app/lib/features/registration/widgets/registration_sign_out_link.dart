@@ -25,10 +25,7 @@ class RegistrationSignOutLink extends StatelessWidget {
       child: Text(
         label,
         textAlign: TextAlign.center,
-        style: const TextStyle(
-          color: SimfTokens.beigeBorder,
-          fontSize: SimfTokens.textSm, // 12–14
-        ),
+        style: SimfTokens.labelBeigeSm,
       ),
     );
   }

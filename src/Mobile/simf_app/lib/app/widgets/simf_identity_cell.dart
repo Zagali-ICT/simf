@@ -72,11 +72,7 @@ class SimfIdentityCell extends StatelessWidget {
                           textAlign: TextAlign.start,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: SimfTokens.textLg,
-                          ),
+                          style: SimfTokens.labelWhiteSemiboldLg,
                         ),
                       ),
                       if (flag != null) ...<Widget>[
@@ -99,10 +95,7 @@ class SimfIdentityCell extends StatelessWidget {
                       textAlign: TextAlign.start,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: SimfTokens.beigeBorder,
-                        fontSize: SimfTokens.textSm,
-                      ),
+                      style: SimfTokens.labelBeigeSm,
                     ),
                   ],
                 ],
@@ -193,11 +186,7 @@ class _InitialsAvatar extends StatelessWidget {
       child: Text(
         initials,
         textDirection: TextDirection.ltr,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: SimfTokens.textMd,
-          fontWeight: FontWeight.w700,
-        ),
+        style: SimfTokens.labelWhiteBoldMd,
       ),
     );
   }

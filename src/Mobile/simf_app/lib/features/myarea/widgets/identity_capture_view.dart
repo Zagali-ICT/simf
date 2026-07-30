@@ -67,7 +67,7 @@ class LiveCaptureView extends StatelessWidget {
               humanCheckLabel,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: Colors.white70,
+                color: SimfTokens.white70,
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
               ),

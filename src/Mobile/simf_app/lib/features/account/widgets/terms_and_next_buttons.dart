@@ -68,10 +68,7 @@ class TermsAndNextButtons extends StatelessWidget {
                   )
                 : Text(
                     l10n.nextLabel,
-                    style: const TextStyle(
-                      fontSize: SimfTokens.textLg,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: SimfTokens.titleBold,
                   ),
           ),
         ),

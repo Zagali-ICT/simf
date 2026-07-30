@@ -58,11 +58,7 @@ class RegistrationSuccessBody extends StatelessWidget {
               Text(
                 welcomeMessage,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: SimfTokens.beigeBorder,
-                  fontSize: SimfTokens.textMd,
-                  height: 1.5,
-                ),
+                style: SimfTokens.bodyBeige,
               ),
               const SizedBox(height: SimfTokens.space6),
               ReferenceNumberCard(

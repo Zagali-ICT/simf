@@ -1,0 +1,79 @@
+@* Reports hub — the landing page for the reporting module. Each card links to
+   one report and is shown only to an operator who holds that report's own
+   permission, so the hub never advertises a page the visitor cannot open. *@
+@page "/admin/reports"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Reports.View)]
+
+<PageTitle>@L["Admin.Reports.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Reports.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        <h2 class="simf-panel__title">@L["Admin.Reports.Hub.Heading"]</h2>
+        <p class="simf-panel__text">@L["Admin.Reports.Hub.Intro"]</p>
+    </div>
+
+    <div class="simf-day-grid">
+        <AuthorizedAction Permission="@PermissionCatalog.Reports.Attendance">
+            <a class="simf-day-card simf-report-card" href="/admin/reports/attendance">
+                <h3 class="simf-day-card__title">@L["Admin.Reports.Attendance.Title"]</h3>
+                <p class="simf-report-card__text">@L["Admin.Reports.Attendance.Intro"]</p>
+            </a>
+        </AuthorizedAction>
+
+        <AuthorizedAction Permission="@PermissionCatalog.Reports.Registrations">
+            <a class="simf-day-card simf-report-card" href="/admin/reports/registrations">
+                <h3 class="simf-day-card__title">@L["Admin.Reports.Registrations.Title"]</h3>
+                <p class="simf-report-card__text">@L["Admin.Reports.Registrations.Intro"]</p>
+            </a>
+        </AuthorizedAction>
+
+        <AuthorizedAction Permission="@PermissionCatalog.Reports.Gates">
+            <a class="simf-day-card simf-report-card" href="/admin/reports/gates">
+                <h3 class="simf-day-card__title">@L["Admin.Reports.Gates.Title"]</h3>
+                <p class="simf-report-card__text">@L["Admin.Reports.Gates.Intro"]</p>
+            </a>
+        </AuthorizedAction>
+
+        <AuthorizedAction Permission="@PermissionCatalog.Reports.Sessions">
+            <a class="simf-day-card simf-report-card" href="/admin/reports/sessions">
+                <h3 class="simf-day-card__title">@L["Admin.Reports.Sessions.Title"]</h3>
+                <p class="simf-report-card__text">@L["Admin.Reports.Sessions.Intro"]</p>
+            </a>
+        </AuthorizedAction>
+
+        <AuthorizedAction Permission="@PermissionCatalog.Reports.Ratings">
+            <a class="simf-day-card simf-report-card" href="/admin/reports/ratings">
+                <h3 class="simf-day-card__title">@L["Admin.Reports.Ratings.Title"]</h3>
+                <p class="simf-report-card__text">@L["Admin.Reports.Ratings.Intro"]</p>
+            </a>
+        </AuthorizedAction>
+
+        <AuthorizedAction Permission="@PermissionCatalog.Reports.Partners">
+            <a class="simf-day-card simf-report-card" href="/admin/reports/partners">
+                <h3 class="simf-day-card__title">@L["Admin.Reports.Partners.Title"]</h3>
+                <p class="simf-report-card__text">@L["Admin.Reports.Partners.Intro"]</p>
+            </a>
+        </AuthorizedAction>
+
+        <AuthorizedAction Permission="@PermissionCatalog.Reports.Meetings">
+            <a class="simf-day-card simf-report-card" href="/admin/reports/meetings">
+                <h3 class="simf-day-card__title">@L["Admin.Reports.Meetings.Title"]</h3>
+                <p class="simf-report-card__text">@L["Admin.Reports.Meetings.Intro"]</p>
+            </a>
+        </AuthorizedAction>
+
+        <AuthorizedAction Permission="@PermissionCatalog.Reports.Engagement">
+            <a class="simf-day-card simf-report-card" href="/admin/reports/engagement">
+                <h3 class="simf-day-card__title">@L["Admin.Reports.Engagement.Title"]</h3>
+                <p class="simf-report-card__text">@L["Admin.Reports.Engagement.Intro"]</p>
+            </a>
+        </AuthorizedAction>
+    </div>
+</div>
+
+@code {
+    [Inject] private IStringLocalizer<Strings> L { get; set; } = default!;
+}

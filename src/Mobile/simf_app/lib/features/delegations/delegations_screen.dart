@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../../core/utils/refresh.dart';
 import '../account/data/profile_repository.dart';
 import 'data/delegation_models.dart';
 import 'data/delegations_repository.dart';
@@ -69,10 +70,7 @@ class _DelegationsScreenState extends ConsumerState<DelegationsScreen> {
     final canRequestDelegation =
         ref.watch(currentUserMeetingAccessProvider).value?.delegation ?? false;
 
-    Future<void> onRefresh() async {
-      ref.invalidate(delegationsProvider);
-      await ref.read(delegationsProvider.future);
-    }
+    Future<void> onRefresh() => refreshAsync(ref, delegationsProvider.future);
 
     return SimfPageShell(
       title: l10n.delegationsTitle,

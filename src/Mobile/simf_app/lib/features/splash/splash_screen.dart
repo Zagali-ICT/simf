@@ -102,6 +102,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     String? location,
   ) async {
     await _showUpdateDialog(hard: false);
+    // ref is unusable once this State is disposed, and _routeOut would no-op
+    // anyway, so bail rather than throw.
+    if (!mounted) {
+      return;
+    }
     // D-736 — however the prompt was dismissed, snooze this version so it
     // doesn't re-nag on every launch (the About manual check still surfaces it).
     unawaited(ref.read(appUpdateCheckerProvider).snoozeOptionalUpdate());

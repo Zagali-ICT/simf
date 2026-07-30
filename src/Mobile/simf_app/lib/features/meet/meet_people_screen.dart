@@ -8,6 +8,7 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_identity_cell.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../../core/utils/refresh.dart';
 import 'data/meet_repository.dart';
 import 'data/partner_directory_models.dart';
 
@@ -36,10 +37,7 @@ class MeetPeopleScreen extends ConsumerWidget {
     final directory = ref.watch(partnerDirectoryProvider);
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
 
-    Future<void> onRefresh() async {
-      ref.invalidate(partnerDirectoryProvider);
-      await ref.read(partnerDirectoryProvider.future);
-    }
+    Future<void> onRefresh() => refreshAsync(ref, partnerDirectoryProvider.future);
 
     return SimfPageShell(
       title: l10n.meetPeopleTitle,

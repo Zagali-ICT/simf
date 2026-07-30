@@ -120,16 +120,26 @@ class SimfTokens {
   // widgets never reference `Colors.transparent` directly (#16 sweep).
   static const Color transparent = Color(0x00000000);
 
-  // Framework colour alias — pure black. Only a live camera surface sits on
-  // this (there is no design colour behind a preview), so widgets reference the
-  // token instead of `Colors.black` (BUG-019 / 19d).
+  // Opaque black — the letterbox behind video/camera surfaces (the live player
+  // band, the scanner viewfinder). Its own token so no widget reaches for
+  // `Colors.black`; it is a surface colour, not a scrim.
   static const Color black = Color(0xFF000000);
 
-  // QR-scanner scrims (Figma 758:4566 / 758:4735) — the card's drop shadow, the
-  // viewfinder's dimming overlay and the busy overlay drawn over the preview.
-  static const Color scrimBlack25 = Color(0x40000000); // black 25% — scanner-card shadow
-  static const Color scrimBlack35 = Color(0x59000000); // black 35% — viewfinder dimming
-  static const Color scrimBlack40 = Color(0x66000000); // black 40% — scanner busy overlay
+  // White at 70% — the secondary label on a photo/camera surface where the
+  // on-navy [txtSecondary] would wash out.
+  static const Color white70 = Color(0xB3FFFFFF);
+
+  // Black scrims over photo / video / camera surfaces, by opacity. Named the
+  // same way as [scrimBlack55] so the set reads as one scale.
+  static const Color scrimBlack25 = Color(0x40000000); // scanner card shadow
+  static const Color scrimBlack35 = Color(0x59000000); // scanner viewfinder mask
+  static const Color scrimBlack40 = Color(0x66000000); // scanner busy overlay
+  static const Color scrimBlack50 = Color(0x80000000); // home hero image scrim
+  static const Color scrimWhite90 = Color(0xE6FFFFFF); // radio pill on beige
+
+  // [accent] at zero alpha — the fade-out stop of the scanner sweep gradient.
+  // A token, not `accent.withValues(alpha: 0)`, because the gradient is const.
+  static const Color accentFade = Color(0x00C9A84C);
   // D-771 — seat TIER colours (Normal / VIP / VVIP). The tier belongs to a hall
   // ROW, so these tint the row's start-edge band, never the seat square (which
   // keeps its reservation-state colour). The two values match the seeded VVIP /
@@ -681,6 +691,14 @@ class SimfTokens {
     color: navy,
     fontWeight: FontWeight.w700,
   );
+
+  /// Gold bold with NO size — for a span inside a richer line that should keep
+  /// the parent's size (the OTP resend countdown). Sized siblings live above as
+  /// labelGoldBold / labelGoldBoldLg / labelGoldBoldXl.
+  static const TextStyle labelGoldBoldInherit = TextStyle(
+    color: accent,
+    fontWeight: FontWeight.w700,
+  );
   static const TextStyle bodyInkMutedSm = TextStyle(
     color: inkMuted,
     fontSize: textSm,
@@ -691,7 +709,7 @@ class SimfTokens {
     fontWeight: FontWeight.w700,
   );
   static const TextStyle bodyWhite70 = TextStyle(
-    color: Colors.white70,
+    color: white70,
   );
   // ai_summary (Figma 1072:14628 / 1388:8392) — list card title/category, day
   // header, session label, agenda rows, section heading, bullets + paragraph.
@@ -731,6 +749,23 @@ class SimfTokens {
   );
   static const TextStyle bodyDanger = TextStyle(
     color: danger,
+  );
+
+  /// Colour-only bodies for text inside a sized parent (list tiles, inline
+  /// hints) — the size comes from the surrounding style, as with [bodyInkMuted].
+  static const TextStyle bodyGrey = TextStyle(
+    color: greyText,
+  );
+  static const TextStyle bodyHeadlineInk = TextStyle(
+    color: headlineInk,
+  );
+
+  /// The small inline validation error under a form field — the single most
+  /// repeated hand-rolled style in the app (18 sites across the auth, sign-up
+  /// and badge screens all spelled it out).
+  static const TextStyle labelDangerSm = TextStyle(
+    color: danger,
+    fontSize: textSm,
   );
   // home (Figma 758:1239) — highlights carousel slide title. Most home text
   // reuses S3 tokens (labelWhiteMediumSm, labelGoldSemiboldLg, bodyWhiteSm,

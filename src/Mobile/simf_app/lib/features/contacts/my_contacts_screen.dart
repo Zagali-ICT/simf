@@ -110,17 +110,23 @@ class _MyContactsScreenState extends ConsumerState<MyContactsScreen> {
       return const Center(child: CircularProgressIndicator());
     }
     if (_error) {
-      return _ErrorState(
-        message: l10n.myContactsError,
-        onRetry: () => unawaited(_load()),
+      return SimfRefreshableMessage(
+        onRefresh: _load,
+        child: _ErrorState(
+          message: l10n.myContactsError,
+          onRetry: () => unawaited(_load()),
+        ),
       );
     }
     if (_rows.isEmpty) {
-      return ContactsEmptyState(
-        title: l10n.myContactsEmpty,
-        hint: l10n.myContactsEmptyHint,
-        actionLabel: l10n.contactScanAdd,
-        onAction: () => unawaited(_openScanner()),
+      return SimfRefreshableMessage(
+        onRefresh: _load,
+        child: ContactsEmptyState(
+          title: l10n.myContactsEmpty,
+          hint: l10n.myContactsEmptyHint,
+          actionLabel: l10n.contactScanAdd,
+          onAction: () => unawaited(_openScanner()),
+        ),
       );
     }
     final isArabic = l10n.isArabic;

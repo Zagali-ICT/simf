@@ -59,11 +59,7 @@ class GuestModeScreen extends StatelessWidget {
               Text(
                 l10n.guestModeHeadline,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: SimfTokens.surface,
-                  fontSize: SimfTokens.textXl,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: SimfTokens.labelWhiteBoldXl,
               ),
               const SizedBox(height: SimfTokens.space5),
               Container(

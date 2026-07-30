@@ -105,7 +105,7 @@ class MyAreaDashboardBody extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(vertical: SimfTokens.space4),
             child: Text(
               l10n.scheduleEmpty,
-              style: const TextStyle(color: SimfTokens.beigeBorder),
+              style: SimfTokens.hintBeige,
             ),
           )
         else

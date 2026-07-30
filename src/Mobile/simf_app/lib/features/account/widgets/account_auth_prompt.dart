@@ -28,7 +28,7 @@ class AccountAuthPrompt extends StatelessWidget {
         Flexible(
           child: Text(
             question,
-            style: const TextStyle(fontSize: SimfTokens.textSm, color: SimfTokens.greyText),
+            style: SimfTokens.bodyGreySm,
           ),
         ),
         const SizedBox(width: 6),
@@ -38,10 +38,7 @@ class AccountAuthPrompt extends StatelessWidget {
             style: authLinkButtonStyle(SimfTokens.linkNavy),
             child: Text(
               linkLabel,
-              style: const TextStyle(
-                fontSize: SimfTokens.textSm,
-                fontWeight: FontWeight.w600,
-              ),
+              style: SimfTokens.labelSemiboldSm,
             ),
           ),
         ),

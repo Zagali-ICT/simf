@@ -92,11 +92,7 @@ class OtpCodeBoxes extends StatelessWidget {
                       alignment: Alignment.center,
                       child: Text(
                         i < digits.length ? digits[i] : '',
-                        style: const TextStyle(
-                          color: SimfTokens.surface,
-                          fontSize: SimfTokens.textXl,
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: SimfTokens.labelWhiteBoldXl,
                       ),
                     ),
                   ),

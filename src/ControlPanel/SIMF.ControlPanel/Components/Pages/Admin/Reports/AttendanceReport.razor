@@ -1,0 +1,93 @@
+@* Attendance report — one row per session over a Saudi date range, with the
+   distinct attendee count and how many are still inside.
+
+   All the query/paging/export behaviour lives in ReportPageBase; this file is
+   the report's identity: its slug, its columns, and its labels. *@
+@page "/admin/reports/attendance"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Reports.Attendance)]
+@inherits ReportPageBase<AttendanceReportRow>
+@using SIMF.Contracts.Reporting
+
+<PageTitle>@L["Admin.Reports.Attendance.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Reports.Attendance.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        <ReportToolbar From="From"
+                       FromChanged="@(v => From = v)"
+                       To="To"
+                       ToChanged="@(v => To = v)"
+                       Totals="Totals"
+                       Error="@Error"
+                       OnApply="OnRangeAppliedAsync"
+                       OnClear="OnRangeAppliedAsync"
+                       OnExport="ExportAsync"
+                       TotalLabelResolver="TotalLabel" />
+
+        <SimfDataGrid TItem="AttendanceReportRow"
+                      Query="Query.Grid"
+                      Page="Page"
+                      Loading="Loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Caption="@L["Admin.Reports.Attendance.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.Reports.Loading"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AttendanceReportRow" Key="code"
+                                    Header="@L["Admin.Reports.Col.Code"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.Code</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AttendanceReportRow" Key="title"
+                                    Header="@L["Admin.Reports.Col.Session"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.Title</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AttendanceReportRow" Key="hall"
+                                    Header="@L["Admin.Reports.Col.Hall"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.HallName</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AttendanceReportRow" Key="start"
+                                    Header="@L["Admin.Reports.Col.Start"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.StartDisplay</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AttendanceReportRow" Key="attendees"
+                                    Header="@L["Admin.Reports.Col.Attendees"]">
+                    <CellTemplate>@context.Attendees</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AttendanceReportRow" Key="live"
+                                    Header="@L["Admin.Reports.Col.InsideNow"]">
+                    <CellTemplate>
+                        @if (context.LiveNow > 0)
+                        {
+                            <SimfPill Variant="on">@context.LiveNow</SimfPill>
+                        }
+                        else
+                        {
+                            <span>0</span>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.Reports.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
+    </div>
+</div>
+
+@code {
+    protected override string Slug => "attendance";
+}

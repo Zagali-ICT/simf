@@ -43,11 +43,7 @@ class RegistrationStatusHeader extends StatelessWidget {
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: SimfTokens.textTitle,
-                  fontWeight: FontWeight.w600,
-                  color: SimfTokens.surface,
-                ),
+                style: SimfTokens.labelWhiteSemiboldTitle,
               ),
             ),
             const SizedBox(width: 48), // balances the back button; keeps title centred

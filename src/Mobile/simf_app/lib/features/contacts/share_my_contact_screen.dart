@@ -119,13 +119,16 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
     if (_sharingVcard) return;
     setState(() => _sharingVcard = true);
     final l10n = AppL10n.of(context);
+    // Anchor rect read before the await — the iPad share sheet must point at the
+    // button as it was at tap time, and this element may be gone by then.
+    final origin = shareOriginFromContext(context);
     try {
       final vcf = await ref.read(myAreaRepositoryProvider).getContactCardVcf();
       await shareTextContent(
         content: vcf,
         filename: 'simf.vcf',
         mimeType: 'text/vcard',
-        sharePositionOrigin: shareOriginFromContext(context),
+        sharePositionOrigin: origin,
       );
     } on Object catch (_) {
       if (!mounted) return;
@@ -144,7 +147,10 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
       title: l10n.shareMyContactTitle,
       onBack: () => backOrHome(context),
       showSweep: true,
-      body: _buildBody(l10n),
+      body: SimfPullToRefresh(
+        onRefresh: _load,
+        child: _buildBody(l10n),
+      ),
     );
   }
 
@@ -154,14 +160,17 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
     }
     final vcard = _vcard;
     if (_error || vcard == null) {
-      return SimfErrorState(
-        message: l10n.shareMyContactError,
-        retryLabel: l10n.retryLabel,
-        onRetry: () => unawaited(_load()),
+      return SimfPullableHost(
+        child: SimfErrorState(
+          message: l10n.shareMyContactError,
+          retryLabel: l10n.retryLabel,
+          onRetry: () => unawaited(_load()),
+        ),
       );
     }
     return Center(
       child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(SimfTokens.space6),
         child: Column(
           mainAxisSize: MainAxisSize.min,

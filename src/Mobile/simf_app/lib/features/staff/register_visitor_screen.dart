@@ -11,6 +11,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_form_scaffold.dart';
+import '../../app/widgets/simf_refresh.dart';
 import '../../core/responsive/breakpoints.dart';
 import '../../core/responsive/max_width_body.dart';
 import '../../core/validation/digit_normalization.dart';
@@ -673,24 +674,31 @@ class _StaffRegisterVisitorScreenState
     );
   }
 
+  /// Only the failed-lookup branch is pull-to-refreshable — _load()
+  /// repopulates the country / profile-type / organisation lookups, and
+  /// re-running it over a part-filled registration would reset the desk
+  /// agent's entries.
   Widget _buildLoadError(AppL10n l10n) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(
-              l10n.staffRegisterError,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: SimfTokens.txtSecondary),
-            ),
-            const SizedBox(height: SimfTokens.space4),
-            FilledButton(
-              onPressed: () => unawaited(_load()),
-              child: Text(l10n.retryLabel),
-            ),
-          ],
+    return SimfRefreshableMessage(
+      onRefresh: _load,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(SimfTokens.space6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                l10n.staffRegisterError,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: SimfTokens.txtSecondary),
+              ),
+              const SizedBox(height: SimfTokens.space4),
+              FilledButton(
+                onPressed: () => unawaited(_load()),
+                child: Text(l10n.retryLabel),
+              ),
+            ],
+          ),
         ),
       ),
     );

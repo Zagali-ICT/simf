@@ -32,7 +32,7 @@ class SimfRadioPill extends StatelessWidget {
       child: Container(
         height: 48,
         decoration: const BoxDecoration(
-          color: Color(0xE6FFFFFF), // white at 90% over the beige card
+          color: SimfTokens.scrimWhite90, // white at 90% over the beige card
           borderRadius: SimfTokens.borderRadiusSmall,
         ),
         child: Row(
