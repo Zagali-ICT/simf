@@ -21,4 +21,12 @@ public enum QuestionStatus
     /// <summary>Hidden by the Committee or the moderator — retained for audit
     /// but never displayed.</summary>
     Hidden = 2,
+
+    /// <summary>DEF-MOD-001 — the per-session moderator marked the question
+    /// ANSWERED on stage. A terminal desk state reached only from
+    /// <see cref="Approved"/> (and reversible back to it): the question stays on
+    /// the moderator desk under the "تمت الإجابة" tab instead of living in a
+    /// screen-local set that died on screen exit. Appended value — the column is
+    /// a plain <c>int</c> with no check constraint, so no migration is needed.</summary>
+    Answered = 3,
 }

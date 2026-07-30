@@ -32,6 +32,8 @@
 | E2E-FILE-010 | Delete soft-deletes → later download 404 | happy | P1 | ✅ automated |
 | E2E-FILE-011 | Retention hold — `IdDocument` delete → 409, still downloadable | error | P1 | ✅ automated |
 | E2E-FILE-012 | Infected upload rejected; unscannable upload fail-closed in Production | security | P1 | _unit (`ClamAvResponseParsingTests`) + manual w/ clamd_ |
+| E2E-FILE-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-FILE-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

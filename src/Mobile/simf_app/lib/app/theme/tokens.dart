@@ -48,6 +48,7 @@ class SimfTokens {
   static const Color navyFill80 = Color(0xCC01132D); // navy #01132D @ 80% — reference-number card fill (registration success 505:1525)
   static const Color navyFill70 = Color(0xB301132D); // navy #01132D @ 70% — gallery video play-circle fill (Figma 949:4059)
   static const Color navyFill90 = Color(0xE601132D); // navy #01132D @ 90% — onboarding photo overlay (Figma 148:22)
+  static const Color navyFill60 = Color(0x9901132D); // navy #01132D @ 60% — onboarding VIDEO scrim (owner 2026-07-26: the 90% photo overlay hid the moving footage; 60% keeps white/beige copy legible)
   static const Color chipBorderNavy = Color(0xFF2A4066); // muted navy border on unselected pills (interests grid, Figma 505:1222)
   static const Color tileBorderNavy = Color(0xFF253660); // contact-tile border (registration success, Figma 522:2223)
   static const Color scannerCard = Color(0xFF0F2044); // QR-scanner card fill (Figma 758:4566)
@@ -139,6 +140,18 @@ class SimfTokens {
   // [accent] at zero alpha — the fade-out stop of the scanner sweep gradient.
   // A token, not `accent.withValues(alpha: 0)`, because the gradient is const.
   static const Color accentFade = Color(0x00C9A84C);
+  // D-771 — seat TIER colours (Normal / VIP / VVIP). The tier belongs to a hall
+  // ROW, so these tint the row's start-edge band, never the seat square (which
+  // keeps its reservation-state colour). The two values match the seeded VVIP /
+  // VIP profile-type badge colours and the Control Panel's --color-seat-tier-*
+  // tokens, so a tier reads identically on a badge, a CP seat plan and the app.
+  static const Color seatTierVvip = Color(0xFFB91C1C); // deep red — protocol
+  static const Color seatTierVip = Color(0xFF0E7490); // deep teal — VIP
+  // A12 — the CONFIRMED seat square: the holder scanned in at the hall gate,
+  // so the seat is no longer just held. Mirrors the Control Panel's
+  // --color-seat-confirmed (= --color-success, dark #4FA37D) so a confirmed
+  // seat reads the same green on the CP seat map and in the app.
+  static const Color seatConfirmed = Color(0xFF4FA37D);
 
   // Spacing scale.
   static const double space1 = 4;
@@ -865,6 +878,10 @@ class SimfTokens {
       340; // seat-map viewport height before the grid scrolls vertically
   static const double seatSwatchSm = 14; // my-seat legend swatch
   static const double seatSwatchLg = 16; // picker + available legend swatch
+  // D-771 — the staff seating desk (tablet): the body's reading-width cap and the
+  // guest-photo square on the result card.
+  static const double staffSeatingMaxWidth = 960;
+  static const double staffSeatingPhotoSize = 64;
   static const double seatRowLabelWidth = 12; // seat-map row column (1 letter)
   static const double seatRowLabelCharWidth =
       10; // row column grows this-per-char for multi-char labels (VVIP/A001)

@@ -163,7 +163,7 @@ Start-Process dotnet -ArgumentList "run","-c","Release","--no-build","--no-launc
 
 # 2. Drive the browser via MCP
 #    - navigate /login → fill email + password → click Sign in
-#    - generate TOTP via Get-Totp 'dbji csx7 c3mj s2qa sjcl rbcl kiqk ovr3'
+#    - generate TOTP via Get-Totp '[REDACTED - supply via SIMF_SuperAdmin__TotpSecret]'
 #    - fill code → click Verify
 #    - walk the scenario steps, screenshot each state into docs/screenshots/
 

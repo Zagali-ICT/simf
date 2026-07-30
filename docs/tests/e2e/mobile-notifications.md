@@ -28,6 +28,9 @@
 | E2E-MOB033-006 | String `kind`/`severity` decode tolerantly (unknown → Info) | contract | P1 | authored ✓ (models `decodes the string kind/severity…`, `an unknown or missing severity falls back to info`) |
 | E2E-MOB033-007 | Tapping an actionable notification deep-links: a server **`clickUrl`** (allowlisted path) is pushed verbatim; otherwise the kind fallback (`SessionRatingRequest` → rate form, `BookingConfirmed` → entry-badge QR); a foreign `clickUrl` is ignored | happy | P1 | authored ✓ (screen `tapping a clickUrl notification pushes…`, `tapping a read SessionRatingRequest deep-links…`, `tapping a BookingConfirmed notification opens the badge QR`) |
 | E2E-MOB033-008 | Chips filter by the server **`group`** (with a kind→group fallback for pre-migration rows): the جلسات chip covers Sessions/Bookings/Meetings/Ratings, VIP covers Vip | happy | P1 | authored ✓ (screen `the Sessions chip includes the new Ratings group`) |
+| E2E-MOB033-009 | Every meeting-lifecycle tile is navigable (QA A27): `MeetingScheduled` / `MeetingCancelled` / `MeetingRequestConfirmed` / `MeetingReminder` carry `clickUrl = /meetings` and `/meetings` is on the allowlist, so tapping opens the bilateral-meetings page instead of doing nothing | happy | P1 | authored ✓ (`NotificationKindCatalogTests.ClickUrlFor_every_meeting_lifecycle_kind_opens_the_meetings_page` + `..._covers_every_kind_in_the_Meetings_group`) |
+| E2E-MOB033-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB033-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 
@@ -123,4 +126,27 @@ Both run through `_maybeDeepLink`; every other kind only marks-read.
 
 ---
 
-_Last reviewed:_ `2026-07-07` by `SIMF Team`.
+### E2E-MOB033-009 — Meeting notifications open the meetings page (QA A27)
+
+```gherkin
+Scenario: Tapping any meeting-lifecycle notification opens the bilateral meetings page
+  Given a notification of kind MeetingScheduled, MeetingCancelled,
+        MeetingRequestConfirmed or MeetingReminder
+  Then its server clickUrl is "/meetings"
+  When I tap the card
+  Then the app opens the bilateral-meetings page
+  # Before the fix NotificationKindCatalog.ClickUrlFor had no arm for these four
+  # kinds, so clickUrl was null and every speaker/delegation meeting tile was
+  # inert. The app's _allowedClickPaths guard also had to learn "/meetings" —
+  # a clickUrl outside that set is ignored, so the server arm alone is not enough.
+```
+
+**Evidence:** `NotificationKindCatalogTests.ClickUrlFor_every_meeting_lifecycle_kind_opens_the_meetings_page`
+(both with and without a related id) and
+`ClickUrlFor_covers_every_kind_in_the_Meetings_group` (a new Meetings kind added
+without an arm fails the build). App side: `/meetings` added to
+`_allowedClickPaths` in `notifications_screen.dart`.
+
+---
+
+_Last reviewed:_ `2026-07-26` by `Claude` — QA A27: the four meeting-lifecycle kinds are navigable (E2E-MOB033-009). Earlier: `2026-07-07` by `SIMF Team`.

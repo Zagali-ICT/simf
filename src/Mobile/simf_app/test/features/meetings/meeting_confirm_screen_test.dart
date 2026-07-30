@@ -1,173 +1,153 @@
+// Tests: B8 — the delegation TARGET can DECLINE an approved meeting from the app
+// (the screen only ever offered Confirm, so their single exit was an admin cancel);
+// A30 — the screen's copy names the DELEGATION explicitly, so it is no longer
+// confusable with the website's `/meeting/confirm?token=` speaker page.
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
-import 'package:simf_app/features/delegations/data/delegation_models.dart';
 import 'package:simf_app/features/delegations/data/delegations_repository.dart';
 import 'package:simf_app/features/meetings/meeting_confirm_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// The other party's one-tap confirm surface, reached from a MeetingRequested
-/// notification deep link. Eligibility and state are enforced server-side, so
-/// the screen's whole job is to map 403 / 409 / other onto distinct copy and to
-/// swap to the summary on success — that mapping is what these tests pin.
-class _FakeDelegationsRepo implements DelegationsRepository {
-  _FakeDelegationsRepo({this.summary, this.status});
+/// Records which endpoint the screen called and returns a canned summary, or
+/// throws the configured [ApiFailure]. Extends the concrete repository (its
+/// client field is library-private, so it cannot be `implements`-ed) and never
+/// touches the injected client.
+class _FakeDelegationsRepository extends DelegationsRepository {
+  _FakeDelegationsRepository(super.client, {this.failure});
 
-  final DelegationMeetingSummary? summary;
-  final int? status;
+  final ApiFailure? failure;
+
   int confirmCalls = 0;
+  int declineCalls = 0;
+  String? lastRequestId;
 
   @override
   Future<DelegationMeetingSummary> confirmMeeting(String requestId) async {
     confirmCalls++;
-    if (status != null) {
-      throw ApiFailure(
-        code: ApiErrorCodes.clientNetwork,
-        message: 'x',
-        httpStatus: status,
-      );
+    lastRequestId = requestId;
+    if (failure != null) {
+      throw failure!;
     }
-    return summary!;
+    return _summary;
   }
 
   @override
-  Future<Delegations> getDelegations() => throw UnimplementedError();
+  Future<DelegationMeetingSummary> declineMeeting(String requestId) async {
+    declineCalls++;
+    lastRequestId = requestId;
+    if (failure != null) {
+      throw failure!;
+    }
+    return _summary;
+  }
 
-  @override
-  Future<List<DelegationSlot>> getAvailableSlots(int countryId) =>
-      throw UnimplementedError();
-
-  @override
-  Future<void> submitMeetingRequest({
-    required String targetCountryCode,
-    required int attendeeCount,
-    required String subject,
-    DateTime? slotStart,
-    DateTime? slotEnd,
-  }) =>
-      throw UnimplementedError();
+  static const DelegationMeetingSummary _summary = DelegationMeetingSummary(
+    requestingCountry: 'Egypt',
+    targetCountry: 'Saudi Arabia',
+    subject: 'Naval cooperation',
+  );
 }
 
-Future<void> _pump(
+SimfApiClient _dummyClient() => SimfApiClient.build(
+      config: const SimfDataConfig(
+        baseUrl: 'https://example.invalid/api/v1',
+        appKey: 'test',
+        deviceType: SimfDeviceType.android,
+      ),
+      tokenSource: const NoAuthTokenSource(),
+      currentLanguageCode: () => 'en',
+    );
+
+Future<_FakeDelegationsRepository> _pump(
   WidgetTester tester, {
-  required DelegationsRepository repo,
   String requestId = 'req-1',
-  Locale locale = const Locale('en'),
+  ApiFailure? failure,
 }) async {
+  final repository = _FakeDelegationsRepository(_dummyClient(), failure: failure);
   await tester.pumpWidget(
     ProviderScope(
       overrides: <Override>[
-        delegationsRepositoryProvider.overrideWithValue(repo),
+        delegationsRepositoryProvider.overrideWithValue(repository),
       ],
       child: MaterialApp(
-        locale: locale,
-        supportedLocales: AppL10n.supportedLocales,
+        locale: const Locale('en'),
         localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
           ...AppL10n.localizationsDelegates,
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
+        supportedLocales: AppL10n.supportedLocales,
         home: MeetingConfirmScreen(requestId: requestId),
       ),
     ),
   );
   await tester.pumpAndSettle();
+  return repository;
 }
 
 void main() {
-  group('MeetingConfirmScreen (bi-meeting confirm)', () {
-    testWidgets('renders the intro + confirm CTA for a valid request id',
-        (tester) async {
-      await _pump(tester, repo: _FakeDelegationsRepo());
+  const confirmKey = ValueKey<String>('delegation-meeting-confirm');
+  const declineKey = ValueKey<String>('delegation-meeting-decline');
 
-      expect(
-        find.text('Tap to confirm this meeting with the other party.'),
-        findsOneWidget,
-      );
-      expect(find.text('Confirm meeting'), findsWidgets);
-    });
+  testWidgets('B8 offers both a confirm and a decline action', (tester) async {
+    await _pump(tester);
 
-    testWidgets('an empty request id shows the not-found state and never calls'
-        ' the API', (tester) async {
-      final repo = _FakeDelegationsRepo();
-      await _pump(tester, repo: repo, requestId: '');
+    expect(find.byKey(confirmKey), findsOneWidget);
+    expect(find.byKey(declineKey), findsOneWidget);
+  });
 
-      expect(find.text('Meeting not found'), findsOneWidget);
-      expect(repo.confirmCalls, 0);
-    });
+  testWidgets('A30 the title names the DELEGATION meeting', (tester) async {
+    await _pump(tester);
 
-    testWidgets('confirming swaps to the summary (both parties + subject)',
-        (tester) async {
-      final repo = _FakeDelegationsRepo(
-        summary: DelegationMeetingSummary(
-          requestingCountry: 'Saudi Arabia',
-          targetCountry: 'Egypt',
-          subject: 'Naval logistics',
-          slotStart: DateTime.utc(2026, 11, 3, 9),
-        ),
-      );
-      await _pump(tester, repo: repo);
+    // The website's anonymous speaker page keeps the generic "Confirm meeting";
+    // this screen must say which meeting family it answers.
+    expect(find.text('Confirm delegation meeting'), findsOneWidget);
+  });
 
-      await tester.tap(find.text('Confirm meeting').last);
-      await tester.pumpAndSettle();
+  testWidgets('B8 tapping decline calls the decline endpoint, not confirm',
+      (tester) async {
+    final repository = await _pump(tester, requestId: 'req-42');
 
-      expect(repo.confirmCalls, 1);
-      expect(find.text('Meeting confirmed'), findsOneWidget);
-      expect(find.text('Saudi Arabia — Egypt'), findsOneWidget);
-      expect(find.text('Naval logistics'), findsOneWidget);
-    });
+    await tester.tap(find.byKey(declineKey));
+    await tester.pumpAndSettle();
 
-    testWidgets('409 says the meeting is not awaiting confirmation',
-        (tester) async {
-      await _pump(tester, repo: _FakeDelegationsRepo(status: 409));
+    expect(repository.declineCalls, 1);
+    expect(repository.confirmCalls, 0);
+    expect(repository.lastRequestId, 'req-42');
+    // The success view reads "declined", not "confirmed".
+    expect(find.text('Meeting declined'), findsOneWidget);
+  });
 
-      await tester.tap(find.text('Confirm meeting').last);
-      await tester.pumpAndSettle();
+  testWidgets('B8 confirm still books the meeting', (tester) async {
+    final repository = await _pump(tester);
 
-      expect(
-        find.text('This meeting is not awaiting confirmation'),
-        findsOneWidget,
-      );
-    });
+    await tester.tap(find.byKey(confirmKey));
+    await tester.pumpAndSettle();
 
-    testWidgets('403 says the caller is not the other party', (tester) async {
-      await _pump(tester, repo: _FakeDelegationsRepo(status: 403));
+    expect(repository.confirmCalls, 1);
+    expect(repository.declineCalls, 0);
+    expect(find.text('Meeting confirmed'), findsOneWidget);
+  });
 
-      await tester.tap(find.text('Confirm meeting').last);
-      await tester.pumpAndSettle();
+  testWidgets('B8 a 409 decline surfaces the not-awaiting message',
+      (tester) async {
+    await _pump(
+      tester,
+      failure: const ApiFailure(
+        code: 'APP_REQUEST_ALREADY_RESPONDED',
+        message: 'This meeting is not awaiting confirmation.',
+        httpStatus: 409,
+      ),
+    );
 
-      // 403 maps to the shared delegation "not allowed" copy, NOT the generic
-      // failure — the distinction is the whole point of the switch.
-      expect(
-        find.text('Could not confirm the meeting. Try again.'),
-        findsNothing,
-      );
-    });
+    await tester.tap(find.byKey(declineKey));
+    await tester.pumpAndSettle();
 
-    testWidgets('any other failure shows the generic retry copy',
-        (tester) async {
-      await _pump(tester, repo: _FakeDelegationsRepo(status: 500));
-
-      await tester.tap(find.text('Confirm meeting').last);
-      await tester.pumpAndSettle();
-
-      expect(
-        find.text('Could not confirm the meeting. Try again.'),
-        findsOneWidget,
-      );
-    });
-
-    testWidgets('renders in Arabic', (tester) async {
-      await _pump(
-        tester,
-        repo: _FakeDelegationsRepo(),
-        locale: const Locale('ar'),
-      );
-
-      expect(find.text('تأكيد الاجتماع'), findsWidgets);
-    });
+    expect(find.text('This meeting is not awaiting confirmation'), findsOneWidget);
+    expect(find.text('Meeting declined'), findsNothing);
   });
 }

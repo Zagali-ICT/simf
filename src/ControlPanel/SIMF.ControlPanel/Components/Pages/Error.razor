@@ -1,26 +1,32 @@
-﻿@page "/Error"
+@* §6.16 (NAV-004) — this is what a Control Panel admin actually lands on for any
+   unhandled exception in production: UseExceptionHandler targets it from the
+   non-Development branch. It was the untouched Blazor scaffold — unlocalized, in
+   Bootstrap `text-danger` rather than the CP's own styles, outside the shell, and
+   it printed a paragraph of ASPNETCORE_ENVIRONMENT instructions telling the reader
+   how to turn on Development mode. That text is addressed to a developer, not to
+   the admin who hit the error, and it advertises how to make the deployment leak
+   exception detail. Removed; the reference id stays, because that is the one thing
+   worth quoting to support. *@
+@page "/Error"
+@layout CpShellLayout
 @attribute [AllowAnonymous]
-@using System.Diagnostics
+@inject IStringLocalizer<Strings> L
 
-<PageTitle>Error</PageTitle>
+<PageTitle>@L["Error.Title"] · SIMF</PageTitle>
 
-<h1 class="text-danger">Error.</h1>
-<h2 class="text-danger">An error occurred while processing your request.</h2>
+<SimfPageHeader Title='@L["Error.Title"]' />
 
-@if (ShowRequestId)
-{
-    <p>
-        <strong>Request ID:</strong> <code>@RequestId</code>
+<div class="simf-panel">
+    <p class="simf-panel__text">@L["Error.Text"]</p>
+
+    @if (ShowRequestId)
+    {
+        <p class="simf-panel__text">
+            <strong>@L["Error.RequestId"]:</strong> <code>@RequestId</code>
+        </p>
+    }
+
+    <p class="simf-panel__action">
+        <SimfLink Href="/">@L["Error.Back"]</SimfLink>
     </p>
-}
-
-<h3>Development Mode</h3>
-<p>
-    Swapping to <strong>Development</strong> environment will display more detailed information about the error that occurred.
-</p>
-<p>
-    <strong>The Development environment shouldn't be enabled for deployed applications.</strong>
-    It can result in displaying sensitive information from exceptions to end users.
-    For local debugging, enable the <strong>Development</strong> environment by setting the <strong>ASPNETCORE_ENVIRONMENT</strong> environment variable to <strong>Development</strong>
-    and restarting the app.
-</p>
+</div>

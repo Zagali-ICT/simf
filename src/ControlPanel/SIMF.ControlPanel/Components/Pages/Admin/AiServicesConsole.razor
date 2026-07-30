@@ -16,7 +16,9 @@
     <div class="simf-surface">
         @if (_toast is not null)
         {
-            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            <div class="simf-toast">
+                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            </div>
         }
 
         <SimfDataGrid TItem="ServiceRow"
@@ -111,7 +113,7 @@
 
 @if (_routingPromptId is not null)
 {
-    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.AiServices.Routing.Title"]" OnClose="CloseRouting">
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.AiServices.Routing.Title"]" OnClose="CloseRouting" CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <AiRoutingEditor PromptId="_routingPromptId.Value"
                              OnSaved="OnRoutingSavedAsync" OnCancel="CloseRouting" />

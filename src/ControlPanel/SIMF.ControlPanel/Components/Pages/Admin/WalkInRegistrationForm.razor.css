@@ -47,7 +47,7 @@
 .simf-walkin__org-empty {
     padding: var(--space-2) var(--space-3);
     color: var(--color-text-muted);
-    font-size: 0.875rem;
+    font-size: var(--font-size-body);
 }
 
 /* C6 — D-459 — standard Saudi-plate entry: three letter dropdowns + a digit

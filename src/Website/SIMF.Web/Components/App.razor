@@ -30,7 +30,15 @@
     <link rel="stylesheet" href="@Assets["_content/SIMF.Components/css/theme.tokens.css"]" />
     <link rel="stylesheet" href="@Assets["app.css"]" />
     <link rel="stylesheet" href="@Assets["_content/SIMF.Components/css/simf-components.css"]" />
-    <link rel="stylesheet" href="@Assets["SIMF.Web.styles.css"]" />
+    @* No <link> to SIMF.Web.styles.css. That is the Razor SDK's SCOPED-CSS bundle,
+       and the SDK only emits it when the project HAS scoped CSS. This one
+       deliberately has none — CLAUDE.md §8, "No scoped .razor.css in Web project,
+       centralize in Theme" — and the project contains zero *.razor.css files, so
+       the bundle is never generated in any configuration. The link therefore 404'd
+       on every page of the public site: the SPA fallback answered with HTML and
+       every visitor's console logged "Refused to apply style ... MIME type
+       ('text/html') is not a supported stylesheet MIME type". Found by the WS4
+       Website sweep, which failed all 17 public routes on it. *@
     <script src="@Assets["_content/SIMF.Components/js/simf-theme.js"]"></script>
     <ImportMap />
     <HeadOutlet />
@@ -39,9 +47,6 @@
 <body>
     <Routes />
     <script src="@Assets["_framework/blazor.web.js"]"></script>
-    <script src="@Assets["js/simf-account.js"]"></script>
-    @* D-443 — token-driven session-expiry guard (config emitted by SessionTimeoutGuard). *@
-    <script src="@Assets["js/session-timeout.js"]"></script>
 </body>
 
 </html>

@@ -1,10 +1,10 @@
-@* D-353 â€” reusable Media View/Delete form, hosted by CrudShell (popup or full
+@* D-353 — reusable Media View/Delete form, hosted by CrudShell (popup or full
    page) from MediaList.razor. Inherits CrudViewDeleteFormBase so it exposes the
    standard surface (IsDelete / Initial / OnDeleted / OnCancel). Read-only
    details always show; when IsDelete=true a Delete button appears and a
    SimfConfirm gates the destructive call (replaces the old native JS confirm()
    on the list). The image state (an attached bitmap on an Image item) is shown
-   as a presence indicator â€” the raw bytes are server-internal (no public
+   as a presence indicator — the raw bytes are server-internal (no public
    image-preview endpoint exists to embed), matching the prior Edit-modal
    behaviour. Adds the View path the inline form never had. *@
 @inherits CrudViewDeleteFormBase<AdminMediaDetail>
@@ -21,17 +21,17 @@
         <dt>@L["Admin.Media.Col.Kind"]</dt>
         <dd>@KindLabel(Initial.Kind)</dd>
         <dt>@L["Admin.Media.Col.TitleEn"]</dt>
-        <dd>@(string.IsNullOrWhiteSpace(Initial.Title) ? "â€”" : Initial.Title)</dd>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.Title) ? "—" : Initial.Title)</dd>
         <dt>@L["Admin.Media.Col.TitleAr"]</dt>
-        <dd>@(string.IsNullOrWhiteSpace(Initial.TitleArabic) ? "â€”" : Initial.TitleArabic)</dd>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.TitleArabic) ? "—" : Initial.TitleArabic)</dd>
         <dt>@L["Admin.Media.Col.AlbumEn"]</dt>
-        <dd>@(string.IsNullOrWhiteSpace(Initial.Album) ? "â€”" : Initial.Album)</dd>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.Album) ? "—" : Initial.Album)</dd>
         <dt>@L["Admin.Media.Col.AlbumAr"]</dt>
-        <dd>@(string.IsNullOrWhiteSpace(Initial.AlbumArabic) ? "â€”" : Initial.AlbumArabic)</dd>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.AlbumArabic) ? "—" : Initial.AlbumArabic)</dd>
         @if (Initial.Kind == MediaKind.Video)
         {
             <dt>@L["Admin.Media.Field.VideoUrl"]</dt>
-            <dd>@(string.IsNullOrWhiteSpace(Initial.Url) ? "â€”" : Initial.Url)</dd>
+            <dd>@(string.IsNullOrWhiteSpace(Initial.Url) ? "—" : Initial.Url)</dd>
         }
         else
         {

@@ -15,15 +15,19 @@ import 'package:simf_app/features/staff/register_visitor_screen.dart';
 
 import 'golden_fonts.dart';
 
-/// Golden render of the staff walk-in registration against Figma frame
-/// **1467:12357** (إنشاء ملف زائر · iPad Pro 12.9" 1024×1314). Regenerate:
+/// Golden render of the staff walk-in registration (إنشاء ملف زائر · iPad Pro
+/// 12.9" 1024×1314). Regenerate:
 ///   flutter test --update-goldens test/golden/staff_register_visitor_golden_test.dart
 ///
-/// Frame parity: the navy header (back + globe + forum crest), the beige "Input"
-/// card with the two-column field grid (default Saudi nationality → the
-/// national-ID field), the gender + document toggles, the attachments row, the
-/// terms link and the full-width gold التالي CTA. Locks the layout, typography,
-/// colour, spacing and RTL of the clean-code-frozen tablet screen (D-559).
+/// **Re-locked after the BUG-019 design-system rebuild (2026-07-26).** The
+/// screen now renders the shared account chrome ([SimfFormScaffold]: back
+/// chevron + the shared EN/ع language pill + the crest header) over the beige
+/// card, with the two-column field grid built from the shared field widgets
+/// (`simfFieldDecoration` inputs, [SimfPickerField] lookups, the gender pills,
+/// the beige document tabs, the attachment fields and the terms + gold التالي
+/// CTA). Locks the layout, typography, colour, spacing and RTL of the rebuilt
+/// tablet screen — the previous golden captured the hand-rolled header, the
+/// filled fields and the raw Material dropdowns the owner reported.
 class _FakeProfileRepo implements ProfileRepository {
   @override
   Future<List<CountryItem>> getCountries() async => const <CountryItem>[

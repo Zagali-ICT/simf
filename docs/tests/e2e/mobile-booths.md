@@ -62,6 +62,8 @@
 | E2E-MOB022-011 | P6 — booth logo wired to the D-357 CompanyLogo route via `exhibitorContactId`; initials when unlinked (D-440) | display | P1 | authored ✓ (screen `P6 — a booth with a linked exhibitor wires the CompanyLogo route` + `…no linked exhibitor shows no logo image`); API `PublicBoothsTests.Public_booth_carries_the_exhibitor_contact_id_for_the_logo` |
 | E2E-MOB022-012 | **Show country (#9):** the booth shows its country (flag emoji + name) under the company on the card, and on the detail-sheet sub-line. The name is resolved server-side from the `Country` lookup on the exhibitor's `Contact.CountryId` (not just the numeric id); an unknown code → name with no flag | display | P1 | authored ✓ (screen `#9 — shows the booth country`); API `PublicBoothsTests.Public_booth_carries_the_resolved_country_name` |
 | E2E-MOB022-013 | **أرشدني → map (#9):** tapping the booth's gold "أرشدني إلى الجناح" CTA opens the venue map **focused** on that booth — a pushed map (route `boothMap`, `/booths/:id/map`) that selects + centres the booth's node; the inner tap does not also open the detail sheet | happy | P1 | authored ✓ (screen `#9 — tapping أرشدني opens the venue map for that booth`) |
+| E2E-MOB022-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB022-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 
@@ -244,6 +246,25 @@ per D-764; it no longer reads `exhibitorContactId`), else the errorBuilder shows
 short-name. `booths_screen_test` (`wires its OWN BoothLogo route`, `falls back to the
 short-name initials`) + API `Upload_booth_logo_then_public_app_image_streams`.
 
+### E2E-MOB022-014 — The logo tile never crops a square mark (DEF-LGO-002)
+
+```gherkin
+Scenario: A square booth logo fits its tile
+  Given a booth whose BoothLogo is a square image
+  When the guest opens /booths
+  Then the logo tile is the Figma 48x48 square
+  And the mark is painted into a SQUARE 40x40 box (the tile minus a 4px inset
+      on ALL four sides)
+  And no part of the mark is clipped
+# The inset used to be horizontal-only, leaving a 40x48 content box while the
+# image still asked for 48x48 — the tile's clip then shaved 4px off each side
+# of even a perfectly square logo.
+```
+
+**Evidence:** `booths_screen_test` — "DEF-LGO-002 — the logo tile paints into a
+SQUARE box, so a square logo is never cropped".
+
 ---
 
-_Last reviewed:_ `2026-06-16` by `SIMF Team`.
+_Last reviewed:_ `2026-07-27` by `SIMF Team` — added E2E-MOB022-014 for DEF-LGO-002
+(the square logo-tile box). _Prior:_ `2026-06-16` by `SIMF Team`.

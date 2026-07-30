@@ -34,6 +34,8 @@
 | E2E-MOB038-004 | Screen-reader assist defaults off, persists on | happy | P1 | authored ✓ (screen `screen-reader assist defaults off and persists on`) |
 | E2E-MOB038-005 | Captions default on, persist off → live strip hidden | happy | P1 | authored ✓ (screen `captions default on and persist off`) + live-broadcast strip gating |
 | E2E-MOB038-006 | Choices persisted to prefs + applied app-wide (scale / contrast / motion) | happy | P1 | covered (controller test persists; app applies via root MediaQuery + theme) |
+| E2E-MOB038-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB038-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

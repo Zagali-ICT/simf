@@ -44,6 +44,8 @@
 | E2E-MMC-013 | Scan a foreign / old contact vCard (no token) → offered to save to the phone's contacts (D-744) | edge | P1 | authored ✓ (`scan_contact_screen_test` save-to-phone) |
 | E2E-MMC-014 | Camera-permission-denied on the scanner → error card + manual entry still works | resilience | P1 | source-verified (`simf_scanner_body` error card; manual path in `simf_scanner_body_test`) |
 | E2E-MMC-015 | **Bilingual job title (2026-07-20):** a resolved / saved contact whose subject has an Arabic job title shows it under the Arabic toggle (English fallback when absent, null when neither is set); `VisitorCard.jobTitleArabic` / `SavedContactRow.jobTitleArabic` localize like name + organisation | i18n | P1 | authored ✓ (`VisitorContactSharingTests` bilingual assert + `contact_models_test.localizedJobTitle`) |
+| E2E-MMC-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MMC-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

@@ -45,7 +45,7 @@
                     }
                     @if (_dashboard is not null)
                     {
-                        <SimfStatCard Title="@L["Admin.Statistics.Stat.PendingApprovals"]"
+                        <SimfStatCard Title="@L["Dashboard.Stat.PendingApprovals"]"
                                       Value="@Count(_dashboard.PendingApprovals)"
                                       Href="/admin/visitors/pending" />
                     }
@@ -57,13 +57,13 @@
                         <SimfStatCard Title="@L["Dashboard.Stat.Moderators"]"
                                       Value="@Count(_programme.Moderators)"
                                       Href="/admin/others" />
-                        <SimfStatCard Title="@L["Admin.Statistics.Stat.Speakers"]"
+                        <SimfStatCard Title="@L["Dashboard.Stat.Speakers"]"
                                       Value="@Count(_programme.Speakers)"
                                       Href="/admin/speakers" />
                     }
                     @if (_dashboard is not null)
                     {
-                        <SimfStatCard Title="@L["Admin.Statistics.Stat.Sessions"]"
+                        <SimfStatCard Title="@L["Dashboard.Stat.Sessions"]"
                                       Value="@Count(_dashboard.Sessions)"
                                       Href="/admin/sessions" />
                     }
@@ -72,10 +72,10 @@
                         <SimfStatCard Title="@L["Dashboard.Stat.Exhibitors"]"
                                       Value="@Count(_programme.Exhibitors)"
                                       Href="/admin/exhibitors" />
-                        <SimfStatCard Title="@L["Admin.Statistics.Stat.Sponsors"]"
+                        <SimfStatCard Title="@L["Dashboard.Stat.Sponsors"]"
                                       Value="@Count(_programme.Sponsors)"
                                       Href="/admin/sponsors" />
-                        <SimfStatCard Title="@L["Admin.Statistics.Stat.Booths"]"
+                        <SimfStatCard Title="@L["Dashboard.Stat.Booths"]"
                                       Value="@Count(_programme.Booths)"
                                       Href="/admin/booths" />
                         <SimfStatCard Title="@L["Dashboard.Stat.TotalAttended"]"
@@ -84,10 +84,10 @@
                     }
                     @if (_dashboard is not null)
                     {
-                        <SimfStatCard Title="@L["Admin.Statistics.Stat.RatingsCount"]"
+                        <SimfStatCard Title="@L["Dashboard.Stat.RatingsCount"]"
                                       Value="@Count(_dashboard.RatingsCount)"
                                       Href="/admin/ratings" />
-                        <SimfStatCard Title="@L["Admin.Statistics.Stat.AverageRating"]"
+                        <SimfStatCard Title="@L["Dashboard.Stat.AverageRating"]"
                                       Value="@Average(_dashboard.AverageRating)"
                                       Href="/admin/ratings" />
                     }
@@ -137,7 +137,7 @@
                                metrics, so it is a number here rather than a
                                fourth bar sharing their axis. *@
                             <p class="simf-day-card__sessions">
-                                <span>@L["Admin.Statistics.Stat.Sessions"]</span>
+                                <span>@L["Dashboard.Stat.Sessions"]</span>
                                 <span class="simf-day-card__sessions-value">@Count(day.Sessions)</span>
                             </p>
                         </article>

@@ -37,6 +37,29 @@ public interface IDelegationMeetingRequestService
     Task<AdminDelegationMeetingRequestDetail> ConfirmByOtherPartyAsync(
         Guid callerUserId, Guid id, CancellationToken cancellationToken = default);
 
+    /// <summary>B8 — the OTHER PARTY DECLINES an Approved (AwaitingSpeaker) meeting from
+    /// the app. The exact mirror of <see cref="ConfirmByOtherPartyAsync"/>: same
+    /// authorization model (an eligible member of the target delegation), same audit
+    /// event, same notification treatment. Flips AwaitingSpeaker →
+    /// <see cref="MeetingRequestStatus.Rejected"/> via a race-safe conditional update and
+    /// releases the held hall slot, so the target is no longer trapped between confirming
+    /// and waiting for an admin cancel. 403 when the caller is not an eligible member;
+    /// 409 when the request is not awaiting confirmation.</summary>
+    Task<AdminDelegationMeetingRequestDetail> DeclineByOtherPartyAsync(
+        Guid callerUserId, Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>B11 — retract the target delegation's live "please confirm" prompt for a
+    /// meeting that is now dead. Every eligible member of the target delegation received a
+    /// <c>MeetingRequested</c> card deep-linking to the confirm screen plus an emailed
+    /// confirm link at approve time; once the meeting is off, those all 409, so each member
+    /// is sent a cancelled notice instead. Called by the REQUESTER's own withdraw
+    /// (<c>IMyRequestsService.CancelAsync</c>), which owns the status flip but has no
+    /// delegation-notification surface of its own. Best-effort and idempotent-safe: a
+    /// missing request is a no-op, never a throw, so a notification failure cannot undo an
+    /// already-committed cancel.</summary>
+    Task RetractTargetMemberPromptsAsync(
+        Guid requestId, CancellationToken cancellationToken = default);
+
     /// <summary>Bi-Meeting rework — an operator checks the meeting in at the hall,
     /// flipping a confirmed (Accepted) meeting to <see cref="MeetingRequestStatus.Done"/>
     /// and stamping <c>CheckedInAt</c>/<c>CheckedInByUserId</c>. 409 when the meeting is

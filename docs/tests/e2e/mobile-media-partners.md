@@ -31,6 +31,9 @@
 | E2E-MOB031-005 | No uploaded logo / fetch fails → initials fall-back | edge | P1 | authored ✓ (logo `errorBuilder` → initials tile) |
 | E2E-MOB031-006 | Tab hub: tapping احدث المستجدات navigates to the news screen | nav | P1 | authored ✓ (screen `tapping the Latest-updates tab navigates to the news route`) |
 | E2E-MOB031-007 | Arabic/RTL: tabs lay out partners (right) → latest-updates (left) | rtl | P0 | authored ✓ (screen `lays the tabs partners→latest right-to-left in Arabic`) |
+| E2E-MOB031-008 | Pressing a partner card opens the logo full size (FR-LGO-003) | happy | P1 | authored ✓ (widget test) |
+| E2E-MOB031-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB031-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 
@@ -62,6 +65,31 @@ Scenario: Arabic right-to-left tab order
 **Evidence:** `media_partners_screen_test.dart` (8) + `MediaPartnersTests` (API list) +
 `AssetEndpointsTests` (the anonymous logo serve).
 
+### E2E-MOB031-008 — The partner card is a tap target (FR-LGO-003)
+
+```gherkin
+Scenario: Pressing a partner card opens its logo full size
+  Given the media-partners grid lists "Al Arabiya"
+  When the guest presses anywhere on that card — including its NAME
+  Then the shared full-size viewer opens with the partner's logo
+      ({base}/app/assets/MediaPartnerLogo/{id}/image)
+  And the viewer is titled with the partner name
+  And pinch / double-tap zooms it
+  When the guest taps the gold close control
+  Then the viewer dismisses back to the grid
+
+Scenario: One target, not two nested ones
+  Given each card carries the press-to-enlarge affordance
+  Then the inner 48px logo box does NOT carry a second one
+# Media partners have no detail route (the frame defines none), so the card
+# used to be completely inert: no onTap at all.
+```
+
+**Evidence:** `media_partners_screen_test` — "FR-LGO-003 — the whole card is a tap
+target that opens the logo full size", "FR-LGO-003 — the logo box does not claim a
+second, nested tap target".
+
 ---
 
-_Last reviewed:_ `2026-06-19` by `SIMF Team`.
+_Last reviewed:_ `2026-07-27` by `SIMF Team` — added E2E-MOB031-008 for FR-LGO-003
+(the card-wide press-to-enlarge). _Prior:_ `2026-06-19` by `SIMF Team`.

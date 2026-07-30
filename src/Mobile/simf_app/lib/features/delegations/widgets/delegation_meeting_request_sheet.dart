@@ -233,17 +233,23 @@ class _DelegationMeetingRequestSheetState
     return '$hh:$mm $meridiem';
   }
 
+  // A35 — the server's own bilingual message wins. The old map hard-coded one
+  // client string per status, so a 409 surfaced the SPEAKER copy ("this
+  // speaker is not accepting meeting requests") on a DELEGATION sheet, and
+  // every distinct 400 (subject too long, bad attendee count, invalid slot,
+  // own delegation) read as "this delegation is not available for meetings".
+  // The envelope already carries the message in the active language
+  // (`ApiFailure.message`); the l10n strings stay as the fallback for a
+  // failure that never reached the server (network / timeout, httpStatus null).
   String _failureText(ApiFailure failure, AppL10n l10n) {
-    if (failure.httpStatus == 403) {
-      return l10n.delegationNotAllowed;
+    if (failure.httpStatus != null && failure.message.trim().isNotEmpty) {
+      return failure.message;
     }
-    if (failure.httpStatus == 400) {
-      return l10n.delegationTargetNotInvited;
-    }
-    if (failure.httpStatus == 409) {
-      return l10n.meetingRequestNotAllowed;
-    }
-    return l10n.meetingRequestFailed;
+    return switch (failure.httpStatus) {
+      403 => l10n.delegationNotAllowed,
+      400 => l10n.delegationTargetNotInvited,
+      _ => l10n.meetingRequestFailed,
+    };
   }
 
   @override

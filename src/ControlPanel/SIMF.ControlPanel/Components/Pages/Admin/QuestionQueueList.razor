@@ -20,7 +20,9 @@
     <div class="simf-surface">
         @if (_toast is not null)
         {
-            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            <div class="simf-toast">
+                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            </div>
         }
 
         <SimfDataGrid TItem="SessionQuestionQueueRow"
@@ -111,13 +113,14 @@
 @if (_escalateId is not null)
 {
     <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.QuestionQueue.Escalate.Title"]"
-               OnClose="@(() => _escalateId = null)">
+               OnClose="@(() => _escalateId = null)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <SimfTextField Label="@L["Admin.QuestionQueue.Escalate.Role"]"
                            @bind-Value="_escalateRole" Disabled="_busy" />
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" Loading="_busy" OnClick="EscalateAsync">
+            <SimfButton Type="button" Loading="_busy" OnClick="EscalateAsync" LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.QuestionQueue.Escalate.Submit"]
             </SimfButton>
             <SimfButton Type="button" Variant="secondary" OnClick="@(() => _escalateId = null)">

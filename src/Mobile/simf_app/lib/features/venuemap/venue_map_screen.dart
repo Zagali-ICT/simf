@@ -313,12 +313,21 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
           top: SimfTokens.space4,
           child: Column(
             children: <Widget>[
-              VenueMapControl(icon: Icons.my_location, onTap: _resetView),
+              VenueMapControl(
+                icon: Icons.my_location,
+                label: l10n.venueMapResetView,
+                onTap: _resetView,
+              ),
               const SizedBox(height: SimfTokens.space2),
-              VenueMapControl(icon: Icons.add, onTap: () => _zoomBy(_zoomStep)),
+              VenueMapControl(
+                icon: Icons.add,
+                label: l10n.venueMapZoomIn,
+                onTap: () => _zoomBy(_zoomStep),
+              ),
               const SizedBox(height: SimfTokens.space2),
               VenueMapControl(
                 icon: Icons.remove,
+                label: l10n.venueMapZoomOut,
                 onTap: () => _zoomBy(1 / _zoomStep),
               ),
             ],
@@ -333,6 +342,10 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
               l10n: l10n,
               node: selected,
               booth: selectedBooth,
+              // FR-LGO-005 — the badge builds
+              // `{base}/app/assets/BoothLogo/{id}/image` (the D-357 anonymous
+              // asset route), exactly like the booths list.
+              baseUrl: ref.watch(simfDataConfigProvider).baseUrl,
               onDirect: () => _centreOn(selected),
               onDetails: selected.isBooth
                   ? () => _openDetails(selected, selectedBooth)

@@ -41,6 +41,12 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
   bool _loading = true;
   bool _forbidden = false;
   bool _error = false;
+
+  /// DEF-STF-005 — the server's own bilingual 403 text, when it sent one. A
+  /// missing `Gates.Operate` grant and "you are not assigned to this gate" are
+  /// both 403 but need DIFFERENT operator actions, so the specific message must
+  /// not be flattened into the generic one.
+  String? _forbiddenMessage;
   // The console has two stages: the setup card (gate + movement) and, once the
   // operator taps "Scan code", the live camera / manual-entry scanner.
   bool _scanning = false;
@@ -66,6 +72,7 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
     setState(() {
       _loading = true;
       _forbidden = false;
+      _forbiddenMessage = null;
       _error = false;
     });
     try {
@@ -91,6 +98,7 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
       }
       setState(() {
         _forbidden = e.httpStatus == 403;
+        _forbiddenMessage = _serverMessage(e);
         _error = e.httpStatus != 403;
         _loading = false;
       });
@@ -159,21 +167,32 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
       if (!mounted) {
         return;
       }
-      messenger.showSnackBar(
-        SnackBar(content: Text(_failureText(l10n, e.httpStatus))),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(_failureText(l10n, e))));
     }
   }
 
-  String _failureText(AppL10n l10n, int? status) {
-    switch (status) {
+  /// DEF-STF-005 — a 403 carries the reason the operator has to act on: either
+  /// "you do not have permission to operate gates" (ask an admin for the
+  /// `Gates.Operate` grant) or "you are not assigned to this gate" (ask for the
+  /// assignment, or pick a gate you DO hold). The console used to render both
+  /// as the first one, so the second was undiagnosable. The server's own
+  /// bilingual text wins; the generic copy is the fallback when it sent none.
+  String _failureText(AppL10n l10n, ApiFailure failure) {
+    switch (failure.httpStatus) {
       case 403:
-        return l10n.gateForbidden;
+        return _serverMessage(failure) ?? l10n.gateForbidden;
       case 429:
         return l10n.gateRateLimited;
       default:
         return l10n.gateError;
     }
+  }
+
+  /// The server's message when it actually sent one — `ApiFailure.message` is
+  /// already picked for the app's locale by the envelope decoder.
+  static String? _serverMessage(ApiFailure failure) {
+    final message = failure.message.trim();
+    return message.isEmpty ? null : message;
   }
 
   /// Drains the offline scan backlog (G-4): retries each queued scan with its
@@ -312,7 +331,7 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
         onRefresh: _loadGates,
         child: SimfEmptyState(
           icon: Icons.lock_outline,
-          message: l10n.gateForbidden,
+          message: _forbiddenMessage ?? l10n.gateForbidden,
         ),
       );
     }

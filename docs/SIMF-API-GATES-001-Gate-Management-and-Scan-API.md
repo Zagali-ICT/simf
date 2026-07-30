@@ -19,6 +19,7 @@
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-29 | SIMF Engineering Team | First issue. Build-ready contract for the Gate Management and Scan API increment. |
 | 1.1 | 2026-05-29 | SIMF Engineering Team | D-160 — added §7.4 `POST /gates/{gateId}/visitors/list`: cursor-paged staff-app view of scans at a single gate, backed by the D-158 snapshot columns. |
+| 1.2 | 2026-07-26 | SIMF Engineering Team | BUG-018 — corrected §4 to the owner's app-first operator model (a gate operator is an approved app account on an operational ProfileType carrying Staff/Moderator, not a CP RBAC-role holder); tightened the §6.3 `assignedOperatorUserIds` rule to that eligibility with a named-id 400; added §6.7a operator-candidates and §6.7b gate-form lookups; appended `userEmail` to the §6.7 assignment row. |
 
 ---
 
@@ -81,10 +82,18 @@ The conventions from SIMF-API-001 apply in full and are not restated:
 | `POST /api/v1/gates/{gateId}/scans` | Bearer | `Gates.Operate` |
 | `/api/v1/gates/my-reports/*` | Bearer | `Gates.ViewOwnReports` |
 
-The `GateOperator` baseline role carries `Gates.Operate` and
-`Gates.ViewOwnReports`. `Administrator` carries `Gates.Manage` plus the two
-operator permissions (so an admin can also operate a gate from the CP
-console for testing).
+**Who a gate operator is (BUG-018, owner ruling).** Gate scanning happens
+**through the mobile app**, not the Control Panel. A gate operator is therefore an
+operational **non-admin app account**: an approved account whose `ProfileType` is a
+partner/operational type (`IsForVisitor = false`) carrying a `MobileAppRole` that
+confers `Gates.Operate` — `Staff` or `Moderator`. That grant flows from the
+profile type alone (`PermissionCatalog.OperationalPermissionsForAppRole`), never
+from a Control-Panel RBAC role, so a gate operator never needs a CP account.
+
+The `GateOperator` and `SecurityTeam` baseline CP roles carry `Gates.Operate` and
+`Gates.ViewOwnReports` for the **CP operator console** (`/admin/gates/operator`),
+which is retained as a fallback/observation desk. `Administrator` carries
+`Gates.Manage` plus the two operator permissions via the `*` wildcard.
 
 A request that lacks authentication returns **401**. A request that is
 authenticated but lacks the permission returns **403**.
@@ -199,7 +208,7 @@ Validation:
 | `description`, `descriptionArabic` | 0…1024 chars; trimmed null-if-blank |
 | `directionMode` | `In` / `Out` / `Both` |
 | `allowedProfileTypeIds` | Optional; each must be an active `ProfileType` |
-| `assignedOperatorUserIds` | Optional; each must be a `GateOperator` or `Administrator` |
+| `assignedOperatorUserIds` | Optional; each id must be an **eligible gate operator** (see §4): an approved app account on an operational `ProfileType` (`IsForVisitor=false`) whose `MobileAppRole` confers `Gates.Operate`, or an approved Control-Panel admin account for the CP operator console. An ineligible id is rejected with **400 GATE_ASSIGNMENT_INVALID**, and the message names the offending id(s). |
 
 Returns **201** with `AdminGateDetail`. Duplicate code → **409 GATE_CODE_DUPLICATE**.
 
@@ -235,18 +244,75 @@ Returns `Guid[]` of `ProfileTypeId`s. (Convenience companion to §6.2.)
 GET /api/v1/admin/gates/{id}/assignments
 ```
 
-Returns the active `GateAssignment` list:
+Returns the active `GateAssignment` list. `userEmail` was appended by BUG-018 so
+the CP detail view can list **who** is assigned instead of a bare count:
 
 ```json
 {
   "success": true,
   "data": [
-    { "userId": "...", "userDisplayName": "Ahmed Al-Rashid", "assignedAt": "...", "assignedByUserId": "..." }
+    { "userId": "...", "userDisplayName": "Ahmed Al-Rashid", "userEmail": "ahmed@example.sa", "assignedAt": "...", "assignedByUserId": "..." }
   ],
   "error": null,
   "meta": null
 }
 ```
+
+### 6.7a Gate-operator candidates (BUG-018)
+
+```
+POST /api/v1/admin/gates/operator-candidates/list
+```
+
+Permission: `Gates.Manage`. Body: the standard `GridQuery` (`skip`, `top`,
+`search`). Returns `ApiResult<GridPage<AdminGateOperatorCandidate>>` — the accounts
+that may be assigned as gate operators per §4:
+
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      { "userId": "...", "email": "ops1@example.sa", "displayName": "Ahmed Al-Rashid", "profileTypeName": "Gate Staff", "mobileAppRole": "Staff" }
+    ],
+    "total": 1, "skip": 0, "top": 25
+  },
+  "error": null,
+  "meta": null
+}
+```
+
+Scoped to **approved** accounts only (deactivated / pending / rejected accounts are
+never offered) and searched server-side on email + display name, so the CP picker
+is not a blind top-200. Resolved as separate reads on `SIMF_App` then
+`SIMF_Identity` and merged in memory — never a cross-database join (D-157).
+
+### 6.7b Gate-form lookups (BUG-018)
+
+```
+GET /api/v1/admin/gates/form-options
+```
+
+Permission: `Gates.Manage`. Returns `ApiResult<AdminGateFormOptions>` — the active
+`ProfileType` options for the allow-list and the active `Hall` options for the
+hall-door binding:
+
+```json
+{
+  "success": true,
+  "data": {
+    "profileTypes": [ { "id": "...", "name": "VIP", "nameArabic": "كبار الشخصيات" } ],
+    "halls": [ { "id": "...", "name": "Hall A", "nameArabic": "القاعة أ" } ]
+  },
+  "error": null,
+  "meta": null
+}
+```
+
+The gate form previously read the shared `ProfileTypes.View` / `Halls.View` admin
+lists, so a `Gates.Manage`-only holder (the Security team) saw silently empty
+dropdowns. Serving both lookups under `Gates.Manage` keeps the gate form usable by
+its own permission holder without widening the ProfileTypes / Halls surface.
 
 ### 6.8 Reports
 
@@ -406,11 +472,22 @@ Same `(Idempotency-Key, GateId)` posted a second time. HTTP **200**.
 | 409 | `IDEMPOTENCY_KEY_CONFLICT` | Same key, **different** payload (qr / gateId mismatch) |
 | 429 | `RATE_LIMIT_EXCEEDED` | Standard rate-limiter |
 | 429 | `GATE_FAILURE_CIRCUIT_OPEN` | Failure-rate circuit fired; `X-Gate-Failure-Circuit: open` |
-| 503 | `GATE_INACTIVE` | The gate itself is `IsActive = false` |
+| ~~503~~ | ~~`GATE_INACTIVE`~~ | **Retired — see the as-built note below** |
 
 A denial recorded in `GateScan` is **not** in this table — denials use the
 HTTP 200 success-envelope path of §7.2.2 because the system did record the
 event the operator asked for.
+
+**As-built (DEF-STF-008).** `POST /scans` never returns `503 GATE_INACTIVE`.
+A scan aimed at a gate with `IsActive = false` is denied by engine step 5 as a
+**recorded** `GATE_INACTIVE_AT_SCAN` denial at HTTP **200** (§7.2.2 / §8.2), so
+the attempt still lands in the append-only `GateScan` audit trail and the
+operator gets the localised denial card rather than an envelope failure. The
+inactive-gate check reads the same cached gate snapshot the rest of the engine
+uses, so there is no separate "pre-engine" moment for a 503 to occupy; the
+endpoint arm that handled that result kind was unreachable and has been removed.
+`ErrorCodes.GateInactive` stays in the published vocabulary (marked obsolete)
+but nothing emits it.
 
 ### 7.3 My report — today
 
@@ -543,7 +620,7 @@ These are *envelope failures* (`success: false`).
 | `GATE_INVALID` | 400 | Validation of a gate-management payload failed (code length, name length, direction mode, …) |
 | `GATE_NOT_FOUND` | 404 | The addressed gate does not exist |
 | `GATE_CODE_DUPLICATE` | 409 | Create or update would collide with an existing gate code |
-| `GATE_INACTIVE` | 503 | Scan target gate is `IsActive = false` |
+| ~~`GATE_INACTIVE`~~ | ~~503~~ | **Retired (DEF-STF-008)** — an inactive scan target is denied at HTTP 200 with `GATE_INACTIVE_AT_SCAN` (§7.2.4 as-built note, §8.2) |
 | `GATE_OPERATOR_NOT_ASSIGNED` | 403 | Caller has no active assignment for the addressed gate |
 | `GATE_ASSIGNMENT_INVALID` | 400 | Assignment add/remove payload invalid |
 | `GATE_PROFILE_TYPE_INVALID` | 400 | Allowed-profile-type id is missing, duplicated, or refers to a non-existent / inactive `ProfileType` |
@@ -559,7 +636,7 @@ emits exactly one of these on a denial.
 | Code | Meaning | Emitted by engine step |
 |------|---------|------------------------|
 | `QR_UNKNOWN` | The QR resolved to no `UserProfile` | 3 |
-| `GATE_INACTIVE_AT_SCAN` | Gate became inactive between request and validation. Recorded for forensic completeness; the HTTP path also returns 503 if reached pre-engine. | 5 |
+| `GATE_INACTIVE_AT_SCAN` | The scan target gate is `IsActive = false`. This is the ONLY outcome for an inactive gate (DEF-STF-008): recorded, so the attempt keeps its audit row, and localised so the operator sees "This gate is currently inactive." | 5 |
 | `HOLDER_NOT_APPROVED` | The visitor's account is not in `Approved` state | 6 |
 | `HOLDER_DISABLED` | The visitor's account is `Disabled` | 7 |
 | `HOLDER_LOCKED` | The visitor's account is `Locked` | 8 |

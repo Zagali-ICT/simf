@@ -40,6 +40,8 @@
 | E2E-PTL-009 | Permission asymmetry — has `ProgrammeTimeline.View` but not `Sessions.View` → list 403 → error toast | error | P1 | _to author_ |
 | E2E-PTL-010 | Server 500 on `/sessions/list` → bilingual fallback toast, no tables | resilience | P2 | _to author_ |
 | E2E-PTL-011 | RTL / Arabic render — page + headings + table mirror, Arabic titles/halls, Arabic day headings | i18n | P1 | _to author_ |
+| E2E-PTL-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-PTL-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

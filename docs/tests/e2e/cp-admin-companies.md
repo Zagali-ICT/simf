@@ -1,13 +1,29 @@
-# E2E test catalogue — Companies CRUD + account provisioning (`/admin/companies`)
+# RETIRED — Companies CRUD (`/admin/companies`) → see [`cp-admin-exhibitors.md`](cp-admin-exhibitors.md)
 
-| | |
-|--|--|
-| **Page** | [`cp/companies.md`](../../pages/cp/companies.md) _(page reference doc not yet authored)_ |
-| **Route** | `/admin/companies` |
-| **Surface** | Control Panel |
-| **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-03 |
+> ## ⛔ This route no longer exists. Do not execute these scenarios.
+>
+> Commit `a05ef82d` (2026-06-04) renamed **Company → Exhibitor** throughout:
+> `CompaniesList.razor` → `ExhibitorsList.razor`, `/admin/companies` →
+> `/admin/exhibitors`, the `Companies.*` permission codes → `Exhibitors.*`, and
+> the `Companies` table → `Exhibitors`. The code moved; this file did not. It sat
+> for eight weeks describing a page that cannot be opened, while
+> `docs/pages/PAGE-INDEX.md` still marked the route **"✅ Real"** — so anyone
+> planning a test round from the index would have scheduled sixteen scenarios
+> against a 404.
+>
+> **The live catalogue is [`cp-admin-exhibitors.md`](cp-admin-exhibitors.md)
+> (`E2E-EXH-001..029`).** It covers everything below and more. The one scenario
+> with no equivalent there — `E2E-CMP-011`, provisioning an already-registered
+> email — was ported on 2026-07-28 as **`E2E-EXH-029`**.
+>
+> The content is kept, not deleted, because the Gherkin below is still the most
+> detailed written record of the account-provisioning sub-flow and is useful when
+> authoring against its successor. The Coverage matrix was converted from a table
+> to a **list** so these ids are no longer counted as live coverage by
+> `E2eCatalogueIntegrityTests` or by the testbook projector. Read every mention
+> of "company" below as "exhibitor".
+
+## Historical detail (as at 2026-06-03, route `/admin/companies`)
 
 > **Permission gate.** The page carries `@attribute [RequirePermission(PermissionCatalog.Companies.View)]`
 > (`"Companies.View"`). Each API action is gated independently:
@@ -43,22 +59,22 @@
 
 | ID | Scenario | Type | Priority | Status |
 |----|----------|------|----------|--------|
-| E2E-CMP-001 | Golden CRUD round-trip — Add → Edit → Delete (soft-delete) | happy | P0 | _to author_ |
-| E2E-CMP-002 | Provision an account on a company (Accounts modal sub-flow) | happy | P0 | _to author_ |
-| E2E-CMP-003 | Add company — modal opens with empty defaults (Exhibitor, no Active checkbox) | happy | P1 | _to author_ |
-| E2E-CMP-004 | Edit company — full detail pre-fill incl. Active checkbox + GET-by-id round-trip | happy | P1 | _to author_ |
-| E2E-CMP-005 | Delete company — confirm() dialog cancel path fires no DELETE | happy | P1 | _to author_ |
-| E2E-CMP-006 | Accounts modal — list provisioned accounts + empty state | happy | P1 | _to author_ |
-| E2E-CMP-007 | Empty list renders `SimfEmptyState` ("No companies yet.") | happy | P1 | _to author_ |
-| E2E-CMP-008 | Auth gate — signed-in admin lacking `Companies.View` → `/not-permitted` | auth | P0 | _to author_ |
-| E2E-CMP-009 | Validation — blank EN/AR name → client guard toast, no POST | error | P1 | _to author_ |
-| E2E-CMP-010 | Validation — server length rule (name > 256) → `COMPANY_INVALID` 400 | error | P1 | _to author_ |
-| E2E-CMP-011 | Provision conflict — duplicate email → `ADMIN_EMAIL_ALREADY_REGISTERED` 409 | error | P1 | _to author_ |
-| E2E-CMP-012 | Provision on inactive company → `COMPANY_INACTIVE` 409 | error | P1 | _to author_ |
-| E2E-CMP-013 | Server 500 on `/list` → bilingual fallback toast, no rows | resilience | P2 | _to author_ |
-| E2E-CMP-014 | RTL / Arabic render — page + both modals mirror | i18n | P1 | _to author_ |
-| E2E-CMP-015 | Per-column filter narrows the grid (Name English / Name Arabic) | grid | P1 | _to author_ |
-| E2E-CMP-016 | Column sort toggles (Name English asc → desc) | grid | P2 | _to author_ |
+- `E2E-CMP-001` — Golden CRUD round-trip — Add → Edit → Delete (soft-delete)
+- `E2E-CMP-002` — Provision an account on a company (Accounts modal sub-flow)
+- `E2E-CMP-003` — Add company — modal opens with empty defaults (Exhibitor, no Active checkbox)
+- `E2E-CMP-004` — Edit company — full detail pre-fill incl. Active checkbox + GET-by-id round-trip
+- `E2E-CMP-005` — Delete company — confirm() dialog cancel path fires no DELETE
+- `E2E-CMP-006` — Accounts modal — list provisioned accounts + empty state
+- `E2E-CMP-007` — Empty list renders `SimfEmptyState` ("No companies yet.")
+- `E2E-CMP-008` — Auth gate — signed-in admin lacking `Companies.View` → `/not-permitted`
+- `E2E-CMP-009` — Validation — blank EN/AR name → client guard toast, no POST
+- `E2E-CMP-010` — Validation — server length rule (name > 256) → `COMPANY_INVALID` 400
+- `E2E-CMP-011` — Provision conflict — duplicate email → `ADMIN_EMAIL_ALREADY_REGISTERED` 409
+- `E2E-CMP-012` — Provision on inactive company → `COMPANY_INACTIVE` 409
+- `E2E-CMP-013` — Server 500 on `/list` → bilingual fallback toast, no rows
+- `E2E-CMP-014` — RTL / Arabic render — page + both modals mirror
+- `E2E-CMP-015` — Per-column filter narrows the grid (Name English / Name Arabic)
+- `E2E-CMP-016` — Column sort toggles (Name English asc → desc)
 
 ## Scenarios
 

@@ -32,6 +32,8 @@
                                        Type="email" Icon="mail" InputMode="email"
                                        Autocomplete="username" Disabled="_loading" />
                         <SimfPasswordField Label="@L["Auth.SignIn.Password"]" @bind-Value="_model.Password"
+                                           ShowLabel="@L["Auth.Password.Show"]"
+                                           HideLabel="@L["Auth.Password.Hide"]"
                                            Autocomplete="current-password" Disabled="_loading" />
                     </div>
                     <SimfLink Href="/forgot-password" Block="true">@L["Auth.SignIn.ForgotLink"]</SimfLink>

@@ -144,6 +144,29 @@ public sealed class AdminUpdateVisitorRequest
     /// <summary>Bi-Meeting rework — the admin-assigned per-user flag that lets this
     /// account request a delegation (وفد) meeting. Independent of the delegate flag.</summary>
     public bool AllowsDelegationMeeting { get; set; }
+
+    /// <summary>B22 — the ISO alpha-2 nationality code (the same wire shape the
+    /// self-service profile upsert and <see cref="AdminUserProfileView.NationalityCode"/>
+    /// use). Optional: null / empty leaves the stored nationality untouched, so every
+    /// existing caller keeps working. When supplied it must match an ACTIVE
+    /// <c>Countries</c> row — the same rule the self-service path enforces. This is the
+    /// only admin path that can correct a wrong nationality, and nationality gates
+    /// delegation-meeting confirm eligibility.</summary>
+    public string? NationalityCode { get; set; }
+
+    /// <summary>FR-PHN-002 — an optional Saudi-mobile correction
+    /// (<c>05XXXXXXXX</c> / <c>+9665XXXXXXXX</c>). Optional: null / empty leaves
+    /// the stored number untouched, so every existing caller keeps working. When
+    /// supplied it must pass the SAME shape rule as the self-service upsert and
+    /// the walk-in desk, and it is stored canonicalised (DEF-PHN-003). Until this
+    /// existed, every admin surface showed the mobile read-only and only the
+    /// walk-in CREATE desk could type one — a wrong number could never be
+    /// corrected.</summary>
+    public string? SaudiMobile { get; set; }
+
+    /// <summary>FR-PHN-002 — an optional international-mobile (E.164) correction.
+    /// Same optional-means-unchanged semantics as <see cref="SaudiMobile"/>.</summary>
+    public string? InternationalMobile { get; set; }
 }
 
 /// <summary>
@@ -173,6 +196,18 @@ public sealed class AdminUpdateOtherRequest
     /// <summary>Bi-Meeting rework — the admin-assigned per-user delegation-meeting flag
     /// (see <see cref="AdminUpdateVisitorRequest.AllowsDelegationMeeting"/>).</summary>
     public bool AllowsDelegationMeeting { get; set; }
+
+    /// <summary>B22 — the ISO alpha-2 nationality code
+    /// (see <see cref="AdminUpdateVisitorRequest.NationalityCode"/>). Optional.</summary>
+    public string? NationalityCode { get; set; }
+
+    /// <summary>FR-PHN-002 — an optional Saudi-mobile correction
+    /// (see <see cref="AdminUpdateVisitorRequest.SaudiMobile"/>). Optional.</summary>
+    public string? SaudiMobile { get; set; }
+
+    /// <summary>FR-PHN-002 — an optional international-mobile correction
+    /// (see <see cref="AdminUpdateVisitorRequest.InternationalMobile"/>). Optional.</summary>
+    public string? InternationalMobile { get; set; }
 }
 
 /// <summary>

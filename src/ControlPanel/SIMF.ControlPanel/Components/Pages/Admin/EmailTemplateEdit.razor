@@ -59,7 +59,10 @@
 
             <label class="simf-field">
                 <span class="simf-field__label">@L["Admin.EmailTemplates.Field.BodyEn"]</span>
-                <textarea id="@BodyEnId" class="simf-field__input" rows="8"
+                @* §6.16 (RTL-003) — pin LTR the way the Arabic twin below pins RTL.
+                   Without it the root dir="rtl" cascades into this box in the Arabic
+                   CP, so the English template body is authored right-to-left. *@
+                <textarea id="@BodyEnId" class="simf-field__input" rows="8" dir="ltr"
                           maxlength="8000"
                           value="@_bodyEn"
                           @onfocus="@(() => { _lastFocused = BodyEnId; })"

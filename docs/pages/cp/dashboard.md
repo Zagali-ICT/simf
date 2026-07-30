@@ -8,7 +8,7 @@
 | **Audience** | Any signed-in, Approved CP user. The figures render only for holders of `Statistics.View`. |
 | **Auth** | `@attribute [Authorize]` on the page (so the welcome panel is ungated); the statistics block is gated in code on `PermissionCatalog.Statistics.View`, and both APIs carry `Policies(PolicyFor(Statistics.View), RequireApprovedAccount)` |
 | **Pattern** | `SimfBanner` (D-132) + welcome surface + KPI stat grid + one inline-SVG grouped bar chart + one card per programme day. **Not a list page:** no grid, no CRUD, no forms, no mutations. |
-| **Status** | Real (D-771 to D-775, 2026-07-29) |
+| **Status** | Real (D-799 to D-803, 2026-07-29) |
 | **Backend endpoints** | `GET /account/api/admin/statistics` -> `GET /api/v1/admin/statistics`; `GET /account/api/admin/statistics/programme` -> `GET /api/v1/admin/statistics/programme` |
 | **Backed by** | Read-only aggregates computed on demand over `SimfIdentityDbContext` + `SimfAppDbContext`. **No schema change, no migration, no new permission, no seeding.** |
 | **Source** | [`StatisticsEndpoints.cs`](../../../src/Backend/SIMF.Api/Endpoints/Statistics/StatisticsEndpoints.cs), [`StatisticsService.cs`](../../../src/Backend/SIMF.Infrastructure/Statistics/StatisticsService.cs), [`StatisticsContracts.cs`](../../../src/Shared/SIMF.Contracts/Statistics/StatisticsContracts.cs), [`ChartGeometry.cs`](../../../src/Shared/SIMF.Components/Charts/ChartGeometry.cs), [`SimfGroupedBarChart.razor`](../../../src/Shared/SIMF.Components/Charts/SimfGroupedBarChart.razor), [`SimfBarGauge.razor`](../../../src/Shared/SIMF.Components/Charts/SimfBarGauge.razor) |
@@ -31,12 +31,12 @@ The split is deliberate and is the page's main design rule. The chart carries
 only the three metrics that share the unit "people", so one axis is honest.
 Sessions-per-day counts a different thing on a different scale (single digits
 against hundreds or thousands of people) and is rendered as a **number on the
-day card**, never as a fourth bar (D-774).
+day card**, never as a fourth bar (D-802).
 
 ## 2. Permission gate
 
 One existing permission covers the whole surface: **`PermissionCatalog.Statistics.View`**.
-No new code was minted, so there is nothing to seed and no migration (D-772).
+No new code was minted, so there is nothing to seed and no migration (D-800).
 
 | Layer | Gate |
 |-------|------|
@@ -70,7 +70,7 @@ Both API routes are declared **relative** (`Get("/admin/statistics/programme")`)
 the FastEndpoints `RoutePrefix` supplies `api/v1` (the D-568 gotcha). The
 programme read is a **new, additive** contract rather than a widening of
 `StatisticsDashboard`: the existing record is byte-identical, so no existing
-consumer changed (D-772).
+consumer changed (D-800).
 
 The figures are a **snapshot taken at page load**. There is no refresh button
 and no polling; reload the page to re-read.
@@ -119,7 +119,7 @@ Notes on the sourcing:
 
 One cluster per programme day, in `DisplayOrder` then `Date` order. Hand-rolled
 inline SVG in `SIMF.Components`, not a JS charting library and not a NuGet
-package (D-771): the deployment is on-premises under an NCA posture, so a CDN
+package (D-799): the deployment is on-premises under an NCA posture, so a CDN
 fetch is unavailable and every third-party runtime component is a fresh patching
 obligation.
 
@@ -142,7 +142,7 @@ from different tables keyed on **different identifiers** (a gate scan resolves a
 `UserProfile.Id`, a hall arrival records the Identity `UserId`), so neither is a
 subset of the other. That is why this is a **grouped** bar chart and never a
 stacked one: stacking would assert that the parts sum to a whole, and their sum
-has no meaning (D-774).
+has no meaning (D-802).
 
 Chart mechanics, all delivered by the pure static `ChartGeometry`:
 
@@ -195,9 +195,9 @@ One `<article>` per day, rendered only when `Days` is non-empty:
   directly comparable with the same gauge on day 3.
 - **Sessions** is the last line: the label plus the count of active sessions
   whose `Start` falls in that day, as a **number**. Not a fourth gauge, and not
-  a fourth bar on the chart (D-774).
+  a fourth bar on the chart (D-802).
 
-## 5. The Saudi-day bucketing rule (D-773)
+## 5. The Saudi-day bucketing rule (D-801)
 
 Instants are stored as **UTC**. Saudi Arabia is **UTC+03:00 with no DST**, and
 the forum's days are **Saudi calendar days**. Grouping on the stored value's own
@@ -250,7 +250,7 @@ grey inherits the light triple.
 | Light and grey | `#2A6FB5` | `#C2410C` | `#1B8A63` |
 | Dark | `#4A8CD4` | `#D9683C` | `#2E9D74` |
 
-These were chosen by **computational validation, not by eye** (D-775). Candidate
+These were chosen by **computational validation, not by eye** (D-803). Candidate
 triples were screened on four numeric gates: a bounded lightness band, a chroma
 floor, a colour-vision-deficiency separation floor measured as OKLab dE between
 adjacent series under simulated CVD, and a contrast floor against the surface
@@ -362,12 +362,12 @@ Saudi-day boundary cases).
 
 ## 12. Related docs
 
-- Decisions: **D-771** (hand-rolled inline-SVG charts in `SIMF.Components`, and
+- Decisions: **D-799** (hand-rolled inline-SVG charts in `SIMF.Components`, and
   the `SimfSvgText` workaround for Razor reserving the literal tag name `text`,
-  compiler error RZ1023), **D-772** (additive `GET /admin/statistics/programme`
+  compiler error RZ1023), **D-800** (additive `GET /admin/statistics/programme`
   rather than widening `StatisticsDashboard`, and the reuse of
-  `Statistics.View`), **D-773** (Saudi-day bucketing to explicit UTC windows),
-  **D-774** (three series only, sessions as a number), **D-775** (computationally
+  `Statistics.View`), **D-801** (Saudi-day bucketing to explicit UTC windows),
+  **D-802** (three series only, sessions as a number), **D-803** (computationally
   validated chart colours as tokens). Context: **D-770** (local time everywhere,
   `dd-MM-yyyy`), **D-157** (App and Identity database separation), **D-132**
   (banner swap).
@@ -382,7 +382,7 @@ Saudi-day boundary cases).
 
 | Date | Decision | Change |
 |------|----------|--------|
-| 2026-07-29 | D-771 to D-775 | Wave A. Placeholder replaced by the real dashboard: KPI stat grid, grouped bar chart of Registered / Present / Attended per programme day, and one card per day. New additive contracts `ProgrammeDayStats` + `StatisticsProgramme`, new read-only endpoint `GET /admin/statistics/programme` on the existing `Statistics.View` gate, new `SIMF.Components/Charts` (`ChartGeometry`, `SimfGroupedBarChart`, `SimfBarGauge`, `SimfSvgText`), new `--chart-*` tokens. Per-day counts bucketed on Saudi calendar days via explicit UTC windows. No schema change, no migration, no new permission. |
+| 2026-07-29 | D-799 to D-803 | Wave A. Placeholder replaced by the real dashboard: KPI stat grid, grouped bar chart of Registered / Present / Attended per programme day, and one card per day. New additive contracts `ProgrammeDayStats` + `StatisticsProgramme`, new read-only endpoint `GET /admin/statistics/programme` on the existing `Statistics.View` gate, new `SIMF.Components/Charts` (`ChartGeometry`, `SimfGroupedBarChart`, `SimfBarGauge`, `SimfSvgText`), new `--chart-*` tokens. Per-day counts bucketed on Saudi calendar days via explicit UTC windows. No schema change, no migration, no new permission. |
 | 2026-05-28 | D-132 | Banner swapped from `SimfPageHeader` to `SimfBanner`. Page was a placeholder (welcome card only) pending D-134. |
 
 _Last reviewed:_ 2026-07-29 by Claude (Wave A, the CP programme dashboard).

@@ -5,9 +5,8 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
-  <!-- The shared framework — for IMemoryCache (SignInTicketStore), the
-       cookie-auth types (SimfCookieRefreshHandler) and the Blazor
-       component model (bUnit page tests). -->
+  <!-- The shared framework — for IMemoryCache (the cached public-content
+       providers) and the Blazor component model (bUnit page tests). -->
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
@@ -20,6 +19,13 @@
     <!-- D-194 — bUnit harness for the Website Razor pages, mirroring the
          D-191 SIMF.ControlPanel.Tests setup. -->
     <PackageReference Include="bunit" Version="1.40.0" />
+  </ItemGroup>
+
+  <!-- DEF-001 — same transitive AngleSharp advisory as SIMF.ControlPanel.Tests;
+       the full assessment lives in that .csproj. Both bUnit projects need the
+       suppression: restore fails on whichever one is left out. -->
+  <ItemGroup>
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-pgww-w46g-26qg" />
   </ItemGroup>
 
   <ItemGroup>

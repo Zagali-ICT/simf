@@ -40,7 +40,7 @@
 | | |
 |--|--|
 | **Page** | [`Page_018`](../../App/Page_018/README.md) (App page docs) |
-| **Route** | `GET /api/v1/app/sessions/{id}/seats` (grid, approved) · `POST …/seats/reserve` · `…/reserve-random` · `DELETE …/seats/mine` · app screen #18 `/sessions/:sessionId/my-seat` (auth-gated) |
+| **Route** | `GET /api/v1/app/sessions/{id}/seats` (grid, approved) · `POST …/seats/reserve` · `…/reserve-random` · **`POST …/seats/move`** (B1 change seat) · `DELETE …/seats/mine` · app screen #18 `/sessions/:sessionId/my-seat` (auth-gated) |
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
 | **Auth setup** | An **approved Visitor** token (the page is login-only); an **Admin** token only to seed the session, the seat layout and a blocked row. **No literal secrets** (admin TOTP via the `Get-Totp` helper). |
@@ -68,6 +68,10 @@
 | E2E-MOB018-016 | Stage band shows "المسرح · STAGE" above the A–H grid | happy | P2 | authored ✓ (frame 905:1584 — `_StageBar`) |
 | E2E-MOB018-017 | Legend reads محجوز · متاح · مقعدك (LTR, not mirrored); seat fills — available = beige-outline transparent, reserved = darker filled, mine = gold; seats are squares with no h-scroll | i18n/visual | P2 | authored ✓ (frame 907:1591 — `_Legend` forced LTR; `_SeatBox` fills; `_SeatRow` square clamp) |
 | E2E-MOB018-018 | **Ragged read-only render (D-767):** a variable hall layout draws each row at its own `seatCounts[i]` width and highlights the viewer's own seat with its number + state icon | visual | P1 | authored ✓ (widget `my_seat_screen_test.dart` via the shared `hall_seat_map`; regenerated golden `my_seat_898-2873.png`) |
+| E2E-MOB018-019 | **Change seat (B1):** a seat-specific hold shows a full-width **تغيير المقعد / Change seat** action under the frame's two CTAs; it opens the seat picker (109) in CHANGE mode, and a successful move (`true` pop) re-reads the grid so the new seat is drawn. An **open-seating** join (general admission) gets **no** such action | happy | P0 | authored ✓ (widget `my_seat_screen_test.dart` — CTA → picker → re-read; open-seating → no CTA; regenerated golden `my_seat_898-2873.png`) |
+| E2E-MOB018-020 | **A12 / DEF-SEA-002 - the fourth seat state.** A held seat whose holder has scanned in at the hall gate draws CONFIRMED (green fill + `how_to_reg`, announced "Confirmed A1") and is visually distinct from a merely reserved seat (navy fill + close, "Reserved A2"); the تم التأكيد legend entry appears only while the hall holds one | visual | P1 | authored (widget `hall_seat_map_test.dart` + model `seat_map_models_test.dart`) |
+| E2E-MOB018-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB018-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 
@@ -303,9 +307,76 @@ Scenario: A variable layout renders ragged and my seat shows its number + state 
   shared `HallSeatMapCard`. Covered by the app widget test `my_seat_screen_test.dart`
   and the regenerated golden `my_seat_898-2873.png`. See DECISIONS_LOG D-767.
 
+### E2E-MOB018-019 - Change seat (B1)
+
+```gherkin
+Scenario: Changing seat from the My-Seat page
+  Given an approved visitor whose myCell is the seat-specific reservation B2
+  When the My-Seat page renders
+  Then a full-width "تغيير المقعد" / "Change seat" action shows under the
+    إرشادي إلى مقعدي / مشاركة الموقع row, its visible label being its accessible name
+  When they tap it
+  Then the seat picker route (109) opens for the same session, in CHANGE mode
+  And when the picker pops `true` (the move landed) the seat map is re-read so the
+    page redraws on the NEW seat
+
+Scenario: General admission has no seat to move
+  Given an approved visitor whose myCell.kind is OpenSeating (no row/seat)
+  When the My-Seat page renders
+  Then the share/navigate actions still show
+  And NO "تغيير المقعد" / "Change seat" action is offered
+```
+
+**Evidence:**
+- App widget tests: `my_seat_screen_test.dart` — "B1 — the change-seat action opens the picker and re-reads the grid when the move lands" and "B1 — an open-seating join offers no change-seat action" (both on a surface tall enough to build the lazily-built action area).
+- Server side + the move rules: `docs/tests/e2e/mobile-seat-picker.md` E2E-MOBPICK-012..016 and `tests/SIMF.Api.Tests/SeatChangeTests.cs`.
+- Golden `my_seat_898-2873.png` regenerated to include the new action.
+
+
 ---
 
-_Last reviewed:_ `2026-07-25` by `Claude` (D-767 - added E2E-MOB018-018 for the ragged
+_Last reviewed:_ `2026-07-27` by `Claude` (B1 change seat — added E2E-MOB018-019 for the تغيير المقعد action that opens the picker in CHANGE mode over the new atomic `POST …/seats/move`).
+Prior `2026-07-25` by `Claude` (D-767 - added E2E-MOB018-018 for the ragged
+### E2E-MOB018-019 - The fourth seat state renders (A12 / DEF-SEA-002)
+
+```gherkin
+Feature: A confirmed seat is visible in the app, not just in the Control Panel
+  As an attendee (or a staff member at the seating desk)
+  I want a seat whose holder has already arrived to look different from one merely held
+  So that the hall map means the same thing in the app as it does on the CP live-hall page
+
+Background:
+  Given a session whose hall layout is rows "A" x 3 seats
+  And seat A1 is held by an attendee who has an OPEN hall-attendance row (scanned in)
+  And seat A2 is held by an attendee who has NOT scanned in
+
+Scenario: The two held seats read differently
+  When GET /api/v1/app/sessions/{id}/seats returns 200 with reservedCells
+    [{rowLabel:"A",seatNumber:1,checkedIn:true},{rowLabel:"A",seatNumber:2,checkedIn:false}]
+  And the hall card renders
+  Then seat A1 draws the CONFIRMED state - the seatConfirmed green fill and the how_to_reg glyph
+  And its Semantics announce "تم التأكيد A1" / "Confirmed A1"
+  And seat A2 keeps the RESERVED state - the navy fill and the close glyph - announcing "محجوز A2" / "Reserved A2"
+  And the legend gains a fourth entry "تم التأكيد" / "Confirmed" with the green swatch
+
+Scenario: A hall nobody has entered keeps the shipped three-item legend
+  When every reservedCell carries checkedIn = false (or omits the key entirely)
+  Then no confirmed seat is drawn and the legend still reads محجوز · متاح · مقعدك only
+
+Scenario: An older server that omits the key is safe
+  When a reservedCell has no "checkedIn" key at all
+  Then the seat decodes as not-yet-arrived and draws RESERVED (never confirmed)
+```
+
+**Evidence:**
+- Root cause: `SeatCell.fromJson` never read the `checkedIn` wire key (shipped since Wave 2), so the app could not tell the two states apart even though `SessionSeatCell.CheckedIn` was on the response and the CP live-hall map rendered all four states.
+- Fix: `seat_map_models.dart` decodes `checkedIn` and adds `reservedByKey()` + `hasConfirmed`; `hall_seat_map.dart` adds `_SeatStatus.confirmed` (fill `SimfTokens.seatConfirmed`, glyph `Icons.how_to_reg`, its own Semantics label) and the conditional legend entry; token `SimfTokens.seatConfirmed = #4FA37D` mirrors the CP `--color-seat-confirmed`.
+- Tests: `test/features/sessions/widgets/hall_seat_map_test.dart` (two new cases - proven red before the fix: "Found 0 widgets with a semantics label named Confirmed A1") and `test/features/sessions/seat_map_models_test.dart` (four new cases). Both green; the whole `test/features/sessions` run is 154 passed with the 2 pre-existing `my_seat_screen_test.dart` failures.
+- The same card serves the seat picker and the staff seating desk, so all three surfaces gain the state.
+
+---
+
+_Last reviewed:_ `2026-07-27` by `Claude` (A12 / DEF-SEA-002 - added E2E-MOB018-019 for the confirmed seat state, the fourth state the app could not render because `checkedIn` was dropped on decode). Prior: `2026-07-25` by `Claude` (D-767 - added E2E-MOB018-018 for the ragged
 read-only render + own-seat number/icon. Implemented and green: the wire/model/tokens
 landed AND `hall_seat_map.dart` render is wired, covered by `my_seat_screen_test.dart`
 and the regenerated golden `my_seat_898-2873.png`). Prior: `2026-06-19` by `SIMF Team`.

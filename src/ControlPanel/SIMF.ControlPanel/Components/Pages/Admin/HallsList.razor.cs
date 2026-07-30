@@ -20,6 +20,7 @@ public partial class HallsList
     [Inject] private IStringLocalizer<Strings> L { get; set; } = default!;
     [Inject] private IJSRuntime JS { get; set; } = default!;
     [Inject] private CpPreferences Prefs { get; set; } = default!;
+    [Inject] private NavigationManager Nav { get; set; } = default!;
 
     private record Toast(string Variant, string Message);
 
@@ -121,6 +122,12 @@ public partial class HallsList
         _isDelete = true;
         _target = detail;
     }
+
+    // A40 — open the seat-layout editor already focused on THIS hall. The editor
+    // reads ?hallId= from the query string, so the admin lands on the hall's grid
+    // instead of an empty picker they have to re-find the hall in.
+    private void OpenSeatLayout(AdminHallSummary row) =>
+        Nav.NavigateTo($"/admin/halls/seat-layouts?hallId={row.Id}");
 
     // Edit / View / Delete all work against the full detail (the grid carries
     // a summary). Returns null and surfaces a toast on failure.

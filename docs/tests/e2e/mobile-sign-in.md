@@ -8,7 +8,7 @@
 > `src/Mobile/simf_app/test/features/account/sign_in_screen_test.dart` + the golden
 > `test/golden/sign_in_screen_golden_test.dart` (168:2800); the auth controller
 > (sign-in hydration, email-OTP, refresh) in
-> `src/Mobile/packages/simf_auth_pkg/test/auth_controller_signin_test.dart`.
+> `src/Mobile/simf_app/packages/simf_auth_pkg/test/auth_controller_signin_test.dart`.
 
 | | |
 |--|--|
@@ -52,7 +52,10 @@
 | E2E-MOB003-017 | **Post-sign-in Face-ID enrol nudge (D-442/D-445; #7a):** when the device has a usable biometric and Face-ID is not yet enabled, a notification-style SnackBar with an "Enable" action appears after **every** sign-in (both the password and OTP paths); tapping Enable now **routes to the emailed-OTP step-up** (`biometricStepUp`, see [`mobile-biometric-step-up.md`](mobile-biometric-step-up.md)) instead of a one-tap enrol; never shows when already-enabled or unavailable; the captured GoRouter is lifetime-safe after the screen routes away | happy | P1 | authored ✓ (`biometric_auth_test` — show / no-show + routes-to-step-up) |
 | E2E-MOB003-018 | A malformed email → inline "Invalid email" / "بريد إلكتروني غير صالح" and the sign-in round-trip is blocked (no `signIn` call), #7 | edge | P0 | authored ✓ (widget `a malformed email shows the inline error and does not sign in`) |
 | E2E-MOB003-019 | Server error messages render in the app's language — the envelope carries `message`+`messageArabic` and the data layer picks by locale (#8/#11; fixes the whole error surface, not just sign-in) | i18n | P0 | authored ✓ (data-pkg `picks the localized message by isArabic`, `decodes the Arabic message alongside the English one`) |
+| E2E-MOB003-021 | **The form controls have accessible names (BUG-012)** — the email box, the password box and the "remember me" checkbox each expose their visible caption as their own semantics label. The captions are separate `SimfFieldLabel` / `Text` siblings, so the controls previously announced as an unnamed "edit box" / "checkbox". Fixed on the shared `AccountEmailField` / `AccountPasswordField` / `AccountRememberForgot`, so every auth form benefits | a11y | P1 | authored ✓ (pattern covered by `simf_search_field_semantics_test`; the same `Semantics(label:, textField: true)` wrap + `Checkbox.semanticLabel`) |
 | E2E-MOB003-020 | **Verify-OTP "Resend" re-issues the code IN PLACE (#12)** — once the 60s countdown ends, "إعادة الإرسال" calls `POST /app/auth/resend-otp` (keyed by the ticket, no password), emails a fresh code, restarts the countdown, and toasts; it no longer bounces to sign-in. The ticket is unchanged; a wrong/expired ticket → `AUTH_OTP_TOKEN_INVALID`; the 6th request/hour → `RATE_LIMIT_EXCEEDED` (429) shown inline | happy | P0 | authored ✓ (backend `ResendOtpTests` 4/4 + `auth_controller_signin_test` resendOtp) |
+| E2E-MOB003-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB003-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 
@@ -292,4 +295,6 @@ password-manager save/offer is the owner's device test.
 
 ---
 
-_Last reviewed:_ `2026-07-11` by `SIMF Team`.
+_Last reviewed:_ `2026-07-26` by `SIMF Team` — BUG-012: the email / password /
+remember-me controls now carry their own accessible names (E2E-MOB003-021).
+_Prior:_ `2026-07-11` by `SIMF Team`.

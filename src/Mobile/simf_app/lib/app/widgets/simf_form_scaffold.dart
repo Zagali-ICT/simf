@@ -65,6 +65,14 @@ class SimfFormScaffold extends ConsumerWidget {
         children: <Widget>[
           IconButton(
             onPressed: busy ? null : onBack,
+            // The glyph carries no text, so without this a screen reader
+            // announced a bare "button" on every screen using this shared
+            // header — all the auth / sign-up / profile forms, ~18 of them.
+            // Same defect and same fix as SimfCircledBackButton (DEF-SWEEP-003,
+            // e26eb507); this header was simply never swept, because the sweep
+            // reached seven screens and none of them used it. The localized
+            // Material string keeps it bilingual with no new l10n key.
+            tooltip: MaterialLocalizations.of(context).backButtonTooltip,
             icon: const Icon(
               Icons.arrow_back_ios_new,
               color: SimfTokens.surface,

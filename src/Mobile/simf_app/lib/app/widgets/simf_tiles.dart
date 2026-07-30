@@ -39,6 +39,7 @@ class SimfNavTile extends StatelessWidget {
     this.iconAsset,
     this.onTap,
     this.enabled = true,
+    this.disabledHint,
     this.minHeight = 72,
     super.key,
   }) : assert(
@@ -59,6 +60,12 @@ class SimfNavTile extends StatelessWidget {
   final VoidCallback? onTap;
   final bool enabled;
 
+  /// Why the tile is locked, announced as the semantics hint when [enabled] is
+  /// false (e.g. "sign in to unlock"). The locked variant is only a colour
+  /// change, so without it a screen-reader user met a tile that simply did
+  /// nothing and was never told why (BUG-014). Null keeps the plain tile.
+  final String? disabledHint;
+
   /// The tile's minimum height. The frame uses 72 for the "عن الملتقى" row and
   /// 80 for the news + smart-feature rows (758:1216 vs 758:1164).
   final double minHeight;
@@ -72,7 +79,7 @@ class SimfNavTile extends StatelessWidget {
     final Widget top = asset != null
         ? SimfSvgIcon(asset, size: 24, color: foreground)
         : Icon(icon, size: 24, color: foreground);
-    return SimfCard(
+    final Widget tile = SimfCard(
       onTap: enabled ? onTap : null,
       color: enabled ? SimfTokens.navyDeep : SimfTokens.navyDisabled,
       borderColor: enabled
@@ -86,6 +93,13 @@ class SimfNavTile extends StatelessWidget {
         minHeight: minHeight,
       ),
     );
+    final hint = disabledHint;
+    if (enabled || hint == null) {
+      return tile;
+    }
+    // The tile stays intentionally inert (it is a locked affordance, not a
+    // broken button) — only the announcement changes.
+    return Semantics(enabled: false, hint: hint, child: tile);
   }
 }
 

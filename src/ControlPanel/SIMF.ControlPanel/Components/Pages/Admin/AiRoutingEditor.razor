@@ -40,7 +40,7 @@ else
         </label>
     </div>
     <div class="simf-form__actions">
-        <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy">
+        <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
             @L["Admin.AiServices.Routing.Save"]
         </SimfButton>
         @if (OnCancel.HasDelegate)

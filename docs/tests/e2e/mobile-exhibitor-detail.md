@@ -47,6 +47,8 @@
 | E2E-MOB220-005 | Missing tier / city / about / website hide their elements | data | P1 | covered (each element is conditional on a non-empty value) |
 | E2E-MOB220-006 | Unknown booth id → 404 | error | P1 | authored ✓ (API `Public_detail_unknown_id_returns_404`) |
 | E2E-MOB220-007 | RTL — Arabic name / city / about | rtl | P2 | covered (models `localized*` getters) |
+| E2E-MOB220-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB220-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 
@@ -84,3 +86,11 @@ append-only `PublicBoothDetail.ExhibitorId` (the ExhibitorLogo owner).
 ---
 
 _Last reviewed:_ `2026-06-26` by `SIMF Team`.
+
+## See also — the logo box (owner 2026-07-26)
+
+The 108x108 identity logo on this page renders through the shared
+`SimfLogoImage`: the mark FITS the box (`BoxFit.contain`, replacing the crop)
+and pressing it opens the logo full size in `SimfImageViewer` (pinch-zoom,
+named, close / back to dismiss). Those rules + their scenarios live once in
+[`mobile-logo-viewer.md`](mobile-logo-viewer.md) (E2E-LOGO-001..008).

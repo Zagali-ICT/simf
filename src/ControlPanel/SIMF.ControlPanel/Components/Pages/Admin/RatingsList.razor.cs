@@ -53,14 +53,19 @@ public partial class RatingsList
 
     // Excel export (selected rows, or the current filtered set). Export only —
     // responses are owned by the attendees who submit them (read-only view).
-    private Task OnExportAsync(IReadOnlyList<AdminRatingResponseSummary> selected) =>
-        JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+    private async Task OnExportAsync(IReadOnlyList<AdminRatingResponseSummary> selected)
+    {
+        // §6.16 (F-U5-005) — a failed export used to return silently, so
+        // the Export button was indistinguishable from an unwired one.
+        var error = await JS.ExportXlsxAsync(
             "/account/api/admin/ratings/export",
             new AdminGridExportRequest
             {
                 Ids = selected.Select(row => row.Id).ToList(),
                 Query = selected.Count == 0 ? _query : null,
-            }).AsTask();
+            }, L);
+        if (error is not null) _toast = new Toast("error", error);
+    }
 
     private async Task LoadAsync()
     {

@@ -31,6 +31,34 @@ void main() {
       expect(q.recipient, QuestionRecipient.speaker);
       expect(q.isPushed, isFalse);
       expect(q.isOnStage, isFalse);
+      // A row with no `status` on the wire is the desk's approved bucket.
+      expect(q.status, ModeratorQuestionStatus.approved);
+      expect(q.isAnswered, isFalse);
+      expect(q.isRejected, isFalse);
+    });
+
+    // DEF-MOD-001 / DEF-MOD-002 — the desk state is PERSISTED, so the wire
+    // carries it: Pending=0, Approved=1, Hidden=2, Answered=3.
+    test('DEF-MOD-001: status maps the persisted QuestionStatus', () {
+      ModeratorQuestion withStatus(int s) =>
+          ModeratorQuestion.fromJson(<String, dynamic>{'id': 'q', 'status': s});
+
+      expect(withStatus(0).status, ModeratorQuestionStatus.pending);
+      expect(withStatus(1).status, ModeratorQuestionStatus.approved);
+      expect(withStatus(2).status, ModeratorQuestionStatus.hidden);
+      expect(withStatus(2).isRejected, isTrue);
+      expect(withStatus(3).status, ModeratorQuestionStatus.answered);
+      expect(withStatus(3).isAnswered, isTrue);
+    });
+
+    test('DEF-MOD-001: an answered question is no longer on stage', () {
+      final q = ModeratorQuestion.fromJson(<String, dynamic>{
+        'id': 'q',
+        'isPushed': true,
+        'status': 3,
+      });
+      expect(q.isPushed, isTrue);
+      expect(q.isOnStage, isFalse);
     });
 
     test('listFromData maps a bare list', () {
@@ -44,54 +72,73 @@ void main() {
   });
 
   group('filterModeratorQueue (Figma 1461:12227, five chips)', () {
-    ModeratorQuestion q(String id, {bool pushed = false}) =>
-        ModeratorQuestion.fromJson(<String, dynamic>{'id': id, 'isPushed': pushed});
-    final approved = <ModeratorQuestion>[
+    ModeratorQuestion q(String id, {bool pushed = false, int status = 1}) =>
+        ModeratorQuestion.fromJson(<String, dynamic>{
+          'id': id,
+          'isPushed': pushed,
+          'status': status,
+        });
+    // The working desk as the server returns it: Approved + Answered.
+    final desk = <ModeratorQuestion>[
       q('a'),
       q('b', pushed: true),
       q('c'),
     ];
 
-    test('all returns the live queue plus the rejected rows', () {
-      expect(filterModeratorQueue(approved, ModeratorQueueFilter.all), hasLength(3));
+    test('all returns the desk plus the rejected rows', () {
+      expect(filterModeratorQueue(desk, ModeratorQueueFilter.all), hasLength(3));
+      expect(
+        filterModeratorQueue(desk, ModeratorQueueFilter.all,
+            rejected: <ModeratorQuestion>[q('r', status: 2)]).map((q) => q.id),
+        <String>['a', 'b', 'c', 'r'],
+      );
     });
 
-    test('fresh = approved, not on stage, not answered/rejected', () {
-      final fresh = filterModeratorQueue(approved, ModeratorQueueFilter.fresh);
+    test('fresh = approved, not on stage, not answered', () {
+      final fresh = filterModeratorQueue(desk, ModeratorQueueFilter.fresh);
       expect(fresh.map((q) => q.id), <String>['a', 'c']);
     });
 
     test('accepted = on stage (pushed)', () {
       final accepted =
-          filterModeratorQueue(approved, ModeratorQueueFilter.accepted);
+          filterModeratorQueue(desk, ModeratorQueueFilter.accepted);
       expect(accepted.map((q) => q.id), <String>['b']);
     });
 
-    test('answered uses the session-local answered set, drops from fresh', () {
+    // DEF-MOD-001 — answered is read from the PERSISTED status, not a
+    // session-local set, so the bucket survives a reload of the screen.
+    test('DEF-MOD-001: answered comes from the wire status and drops from fresh',
+        () {
+      final withAnswered = <ModeratorQuestion>[
+        q('a', status: 3),
+        q('b', pushed: true),
+        q('c'),
+      ];
       expect(
-        filterModeratorQueue(approved, ModeratorQueueFilter.answered,
-            answeredIds: <String>{'a'}).map((q) => q.id),
+        filterModeratorQueue(withAnswered, ModeratorQueueFilter.answered)
+            .map((q) => q.id),
         <String>['a'],
       );
       expect(
-        filterModeratorQueue(approved, ModeratorQueueFilter.fresh,
-            answeredIds: <String>{'a'}).map((q) => q.id),
+        filterModeratorQueue(withAnswered, ModeratorQueueFilter.fresh)
+            .map((q) => q.id),
         <String>['c'],
       );
     });
 
-    test('rejected lists the rejected rows and excludes them from live buckets',
-        () {
-      final rejected = <ModeratorQuestion>[q('a')];
+    // DEF-MOD-002 — the rejected bucket is its own server read (?status=Hidden);
+    // it is never mixed into the working desk.
+    test('DEF-MOD-002: rejected lists the separately fetched hidden rows', () {
+      final rejected = <ModeratorQuestion>[q('r', status: 2)];
       expect(
-        filterModeratorQueue(approved, ModeratorQueueFilter.rejected,
+        filterModeratorQueue(desk, ModeratorQueueFilter.rejected,
             rejected: rejected).map((q) => q.id),
-        <String>['a'],
+        <String>['r'],
       );
       expect(
-        filterModeratorQueue(approved, ModeratorQueueFilter.fresh,
+        filterModeratorQueue(desk, ModeratorQueueFilter.fresh,
             rejected: rejected).map((q) => q.id),
-        <String>['c'],
+        <String>['a', 'c'],
       );
     });
   });

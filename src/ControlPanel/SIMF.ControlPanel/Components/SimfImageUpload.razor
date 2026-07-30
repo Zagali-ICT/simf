@@ -44,7 +44,7 @@
                 <input id="@_inputId" type="file" class="simf-field__input"
                        accept="image/png,image/jpeg,image/webp,application/pdf" disabled="@_busy" />
             </label>
-            <SimfButton Type="button" Loading="_busy" OnClick="UploadAsync">@UploadButtonText</SimfButton>
+            <SimfButton Type="button" Loading="_busy" OnClick="UploadAsync" LoadingLabel="@L["Grid.Working"]">@UploadButtonText</SimfButton>
         }
         else
         {
@@ -61,7 +61,7 @@
                 <input type="url" class="simf-field__input" placeholder="https://..."
                        @bind="_url" disabled="@_busy" />
             </label>
-            <SimfButton Type="button" Loading="_busy" OnClick="SaveLinkAsync">@SaveLinkButtonText</SimfButton>
+            <SimfButton Type="button" Loading="_busy" OnClick="SaveLinkAsync" LoadingLabel="@L["Grid.Working"]">@SaveLinkButtonText</SimfButton>
         }
     }
 </div>

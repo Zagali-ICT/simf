@@ -286,6 +286,66 @@ public sealed class IdentitySeederTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task SeedAsync_makes_every_demo_account_profile_complete()
+    {
+        // BUG-022 regression — the Moderator and Exhibitor demo accounts could NEVER
+        // be used in the app: EnsureDemoVisitorInterestsAsync only linked interests
+        // for visitor@ / vip@ / vvip@ / staff@, and IsProfileCompleteAsync demands
+        // >= 1 interest, so those accounts stayed profileComplete=false no matter
+        // what the tester uploaded. The same pass now also seeds the ID document and
+        // the face photo (avatar) every demo profile needs, so ALL eight
+        // profile-carrying demo accounts are usable straight after a fresh seed.
+        using var scope = _factory.Services.CreateScope();
+        var seeder = scope.ServiceProvider.GetRequiredService<IdentitySeeder>();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+        var database = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var profiles = scope.ServiceProvider
+            .GetRequiredService<SIMF.Application.IdentityAccess.IUserProfileService>();
+
+        await seeder.SeedAsync();
+
+        string[] demoProfileEmails =
+        [
+            "vvip@simf.local", "vip@simf.local", "visitor@simf.local", "staff@simf.local",
+            "moderator@simf.local", "exhibitor@simf.local", "media@simf.local",
+            "sponsor@simf.local",
+        ];
+
+        foreach (var email in demoProfileEmails)
+        {
+            var user = await users.FindByEmailAsync(email);
+            Assert.NotNull(user);
+            Assert.False(
+                string.IsNullOrEmpty(user!.AvatarRelativePath),
+                $"{email} must carry a seeded face photo");
+
+            var profile = await database.UserProfiles
+                .Include(p => p.Interests)
+                .SingleAsync(p => p.UserId == user.Id);
+            Assert.False(
+                string.IsNullOrEmpty(profile.IdImageRelativePath),
+                $"{email} must carry a seeded ID document");
+            Assert.NotEmpty(profile.Interests);
+
+            Assert.True(
+                await profiles.IsProfileCompleteAsync(user.Id),
+                $"{email} must be profileComplete out of the box");
+        }
+
+        // Idempotent — a re-seed uploads nothing new (the pointers stay put).
+        var pointersBefore = await database.UserProfiles
+            .Where(p => p.NationalId!.StartsWith("100000000"))
+            .Select(p => p.IdImageRelativePath)
+            .ToListAsync();
+        await seeder.SeedAsync();
+        var pointersAfter = await database.UserProfiles
+            .Where(p => p.NationalId!.StartsWith("100000000"))
+            .Select(p => p.IdImageRelativePath)
+            .ToListAsync();
+        Assert.Equal(pointersBefore, pointersAfter);
+    }
+
+    [Fact]
     public async Task SeedAsync_seeds_the_security_and_scientific_team_roles_with_their_baseline_grants()
     {
         // D-752 — the two new CP team roles (SecurityTeam / ScientificCommittee)

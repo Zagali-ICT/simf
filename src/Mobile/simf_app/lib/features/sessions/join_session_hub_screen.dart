@@ -36,14 +36,19 @@ class JoinSessionHubScreen extends ConsumerWidget {
       tab: SimfTab.sessions,
       body: sessions.when(
         loading: () => const SimfLoadingState(),
+        // NO SimfPullableHost here — SimfRefreshableMessage already wraps its
+        // child in one. Nesting two nests a SingleChildScrollView inside a
+        // SingleChildScrollView, so the inner LayoutBuilder is handed
+        // maxHeight: infinity and builds BoxConstraints(minHeight: infinity) —
+        // "BoxConstraints forces an infinite height", which took the whole
+        // screen down whenever the sessions provider errored. The empty branch
+        // below was always correct; only this one double-wrapped.
         error: (_, __) => SimfRefreshableMessage(
           onRefresh: () => _refresh(ref),
-          child: SimfPullableHost(
-            child: SimfErrorState(
-              message: l10n.sessionsError,
-              retryLabel: l10n.retryLabel,
-              onRetry: () => ref.invalidate(programmeSessionsProvider),
-            ),
+          child: SimfErrorState(
+            message: l10n.sessionsError,
+            retryLabel: l10n.retryLabel,
+            onRetry: () => ref.invalidate(programmeSessionsProvider),
           ),
         ),
         data: (items) => items.isEmpty

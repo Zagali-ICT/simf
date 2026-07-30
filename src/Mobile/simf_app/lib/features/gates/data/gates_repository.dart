@@ -27,10 +27,11 @@ class GatesRepository {
   }
 
   /// `POST /app/gates/{gateId}/scans` — records a scan and returns the verdict.
-  /// A denial is a 200 with `outcome == denied`; infra failures throw
-  /// [ApiFailure] (404 gate-not-found, 403 not-assigned, 503 inactive, 409
-  /// idempotency conflict, 429 circuit-open). [idempotencyKey] dedupes a rapid
-  /// double-scan of the same code.
+  /// A denial is a 200 with `outcome == denied` — INCLUDING a scan at an
+  /// inactive gate (DEF-STF-008); infra failures throw [ApiFailure] (404
+  /// gate-not-found, 403 not-assigned, 409 idempotency conflict, 429
+  /// circuit-open). [idempotencyKey] dedupes a rapid double-scan of the same
+  /// code.
   Future<GateScanResult> recordScan({
     required String gateId,
     required String qr,
@@ -57,8 +58,8 @@ class GatesRepository {
   /// Records a scan, or — when the server never returned a verdict (network
   /// down / timeout) — queues it on-device for automatic retry and returns
   /// `null`. Any response that DID reach the server (a 4xx rejection, a 429
-  /// throttle, or a deterministic 5xx like a switched-off gate) is rethrown for
-  /// the caller to surface. The [idempotencyKey] (a fresh per-scan UUIDv4, G-1)
+  /// throttle, or a deterministic 5xx) is rethrown for the caller to surface.
+  /// The [idempotencyKey] (a fresh per-scan UUIDv4, G-1)
   /// is reused on every retry so a scan the server already recorded replays
   /// instead of double-counting the person (G-4).
   Future<GateScanResult?> recordScanOrQueue({
@@ -97,7 +98,7 @@ class GatesRepository {
   /// Retries every queued scan oldest-first with its original idempotency key.
   /// A scan that lands (allowed OR denied — both are HTTP 200) or is rejected
   /// for good (any response the server returned, e.g. a 409 replay of one
-  /// already recorded, or a switched-off-gate 503) is dropped; the first attempt
+  /// already recorded, or a 404 for a deleted gate) is dropped; the first attempt
   /// that still never reaches the server (or is 429-throttled) stops the drain
   /// and leaves the rest for the next call. Returns the remaining backlog size.
   Future<int> flushPending() async {
@@ -122,8 +123,8 @@ class GatesRepository {
 
   /// True only when the call never returned a verdict — no response at all
   /// (network down / timeout -> null status). A response that DID arrive (any
-  /// HTTP status, including a deterministic 503 for a switched-off gate) is a
-  /// decision a blind retry can't change, so it is NOT queued (G-4 correction).
+  /// HTTP status, including a deterministic 5xx) is a decision a blind retry
+  /// can't change, so it is NOT queued (G-4 correction).
   static bool _isServerUnreachable(ApiFailure failure) =>
       failure.httpStatus == null;
 }

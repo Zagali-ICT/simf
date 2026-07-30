@@ -126,6 +126,27 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Sending_the_emailed_code_writes_no_in_app_notification()
+    {
+        // BUG-015 — every 2FA sign-in used to write a "Sign-in code sent" row, so
+        // the notification centre filled with OTP notices and buried the
+        // meaningful ones. The code travels by email; the trail is the
+        // SignIn.SecondFactorIssued audit row, not a user-facing notification.
+        var email = await RegisterVerifiedVisitorAsync();
+
+        var challenge = await ExpectChallengeAsync(email, Password);
+        Assert.True(challenge.MfaRequired);
+        Assert.NotNull(challenge.OtpToken);
+
+        using var scope = _factory.Services.CreateScope();
+        var database = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var userId = database.Users.Single(candidate => candidate.Email == email).Id;
+        Assert.Empty(database.Notifications.Where(notification =>
+            notification.UserId == userId
+            && notification.Kind == NotificationKind.CredentialSignInOtpSent));
+    }
+
+    [Fact]
     public async Task Verify_otp_with_a_wrong_code_returns_400()
     {
         var email = await RegisterVerifiedVisitorAsync();

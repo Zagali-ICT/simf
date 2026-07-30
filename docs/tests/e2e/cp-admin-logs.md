@@ -43,8 +43,54 @@
 | E2E-LOG-011 | Not-found download — unknown file → API 404, no file saved | error | P1 | _to author_ |
 | E2E-LOG-012 | Server 500 on `/list` → empty state / no rows, no unhandled console error | resilience | P2 | _to author_ |
 | E2E-LOG-013 | RTL / Arabic render — labels mirror, two-row layout reverses | i18n | P1 | _to author_ |
+| E2E-LOG-014 | Regression (D-794) — leaving the page while the 5s poll is in flight must not kill the Control Panel process | regression | P0 | 2026-07-29 PASS |
+| E2E-LOG-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-LOG-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
+
+### E2E-LOG-014 — Regression: navigating away must not take the server down (D-794)
+
+> **Why this scenario exists.** The auto-refresh timer called JS interop from an
+> unguarded `async` lambda on `System.Timers.Timer.Elapsed`. That is `async void`:
+> an exception escaping it is unhandled on a thread-pool thread and terminates the
+> **process** — the whole Control Panel, for every signed-in admin, not just the
+> circuit that caused it. Closing the tab while a poll was in flight cancelled the
+> pending interop call and did exactly that. The symptom is easy to misread as a
+> flaky environment, because what you observe is every OTHER page becoming
+> unreachable.
+
+```gherkin
+Feature: The log viewer's auto-refresh cannot crash the Control Panel
+  As an administrator
+  I want to leave the log viewer at any moment
+  So that the Control Panel keeps serving everyone else
+
+Background:
+  Given the Control Panel is running as a single process
+  And an Administrator with the Logs.View permission has signed in
+
+Scenario: Closing the page mid-poll leaves the server healthy
+  Given I am on /admin/logs with auto-refresh ON and a log file selected
+  And a 5-second tail poll is in flight
+  When I navigate away to /admin/gates and close the circuit
+  And I wait longer than one refresh interval
+  Then GET /login still returns 200
+  And the Control Panel process is still running
+  And its log contains no "Unhandled exception" entry
+
+Scenario: Auto-refresh stops rather than firing into a dead renderer
+  Given the circuit for /admin/logs has been torn down
+  When the next timer tick would fire
+  Then no further tail request is issued for that circuit
+```
+
+**Automated by** `tests/SIMF.ControlPanel.Tests/TimerCallbackSafetyTests.cs` — a
+structural guard: every async `Elapsed` handler in the Control Panel must open a
+`try` before it awaits. Reproducing the crash directly would crash the test host,
+so the shape is checked instead; the guard was verified to FAIL on the pre-fix
+source. The live half is covered by the WS4 sweep, which visits `/admin/logs`
+and then 90-odd further routes in one process.
 
 ### E2E-LOG-001 — Golden path (pick → tail → live poll → download)
 

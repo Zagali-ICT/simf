@@ -190,6 +190,8 @@ public sealed class UserProfileRollbackTests : IClassFixture<ThrowingRefreshToke
                 IsSaudi = true,
                 NationalId = "1101798278",
                 OrganisationId = organisationId,
+                // DEF-PHN-004 — the mobile is required on the upsert now.
+                SaudiMobile = "0501234567",
             }),
         };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);

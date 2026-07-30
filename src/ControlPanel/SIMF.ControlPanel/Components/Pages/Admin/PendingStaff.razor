@@ -17,7 +17,9 @@
 
         @if (_toast is not null)
         {
-            <SimfAlert Variant="@_toastVariant">@_toast</SimfAlert>
+            <div class="simf-toast">
+                <SimfAlert Variant="@_toastVariant">@_toast</SimfAlert>
+            </div>
         }
 
         <SimfDataGrid TItem="AdminPendingUserSummary"
@@ -85,7 +87,8 @@
     <SimfModal Open="true"
                RequireExplicitClose="true"
                Title="@L["Admin.Pending.Reject.Title"]"
-               OnClose="@(() => _rejectTarget = null)">
+               OnClose="@(() => _rejectTarget = null)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <p>@string.Format(L["Admin.Pending.Reject.Confirm"], _rejectTarget.Email)</p>
             <SimfTextarea Label="@L["Admin.Pending.Reject.Reason"]"
@@ -102,7 +105,8 @@
             <SimfButton Type="button" Variant="primary"
                         Loading="_busy"
                         Disabled="@(_rejectReason.Length is < 10 or > 500)"
-                        OnClick="ConfirmRejectAsync">
+                        OnClick="ConfirmRejectAsync"
+                        LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.Pending.Reject.Submit"]
             </SimfButton>
         </Footer>
@@ -115,7 +119,8 @@
     <SimfModal Open="true"
                RequireExplicitClose="true"
                Title="@L["Admin.Pending.BulkReject.Title"]"
-               OnClose="@(() => _bulkRejectSelected = null)">
+               OnClose="@(() => _bulkRejectSelected = null)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <p>@string.Format(L["Admin.Pending.BulkReject.Confirm"], _bulkRejectSelected.Count)</p>
             <SimfTextarea Label="@L["Admin.Pending.Reject.Reason"]"
@@ -132,7 +137,8 @@
             <SimfButton Type="button" Variant="primary"
                         Loading="_busy"
                         Disabled="@(_bulkRejectReason.Length is < 10 or > 500)"
-                        OnClick="ConfirmBulkRejectAsync">
+                        OnClick="ConfirmBulkRejectAsync"
+                        LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.Pending.BulkReject.Submit"]
             </SimfButton>
         </Footer>

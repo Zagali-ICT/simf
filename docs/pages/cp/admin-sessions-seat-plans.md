@@ -11,8 +11,8 @@
 | **Backend endpoints** | BFF `/account/api/admin/sessions/*` + `/account/api/admin/halls/*` -> API: `POST /admin/sessions/list`, `GET /admin/halls/{hallId}/seat-layout`, `POST /admin/sessions/{id}/seats/list`, `POST .../seats/reserve-row`, `POST .../seats/reserve-seat`, `DELETE .../seats/{reservationId}`. |
 | **Backed by** | `dbo.SeatReservations` (one row per reserved seat) + `dbo.HallSeatLayouts` (the grid; **D-767** `SeatCounts`). No new table. |
 | **Source** | [`SessionSeatPlan.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionSeatPlan.razor) + [`.razor.cs`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionSeatPlan.razor.cs), the read-only twin [`SessionLiveHall.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionLiveHall.razor) + [`.razor.cs`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionLiveHall.razor.cs), [`SeatReservationEndpoints.cs`](../../../src/Backend/SIMF.Api/Endpoints/Sessions/SeatReservationEndpoints.cs), [`SeatReservationService.cs`](../../../src/Backend/SIMF.Infrastructure/SeatReservations/SeatReservationService.cs), [`SeatReservations.cs`](../../../src/Shared/SIMF.Contracts/Sessions/SeatReservations.cs) |
-| **Tests** | [`docs/tests/e2e/cp-admin-sessions-seat-plans.md`](../../tests/e2e/cp-admin-sessions-seat-plans.md) (E2E-SSP-001..016) |
-| **Last reviewed** | 2026-07-25 |
+| **Tests** | [`docs/tests/e2e/cp-admin-sessions-seat-plans.md`](../../tests/e2e/cp-admin-sessions-seat-plans.md) (E2E-SSP-001..019) + [`tests/SIMF.ControlPanel.Tests/SessionSeatPlanReleaseConfirmTests.cs`](../../../tests/SIMF.ControlPanel.Tests/SessionSeatPlanReleaseConfirmTests.cs) |
+| **Last reviewed** | 2026-07-27 |
 
 ## 1. Purpose
 
@@ -44,11 +44,15 @@ live-hall twin (`SessionLiveHall`). See DECISIONS_LOG **D-767**.
   **Reserve row** button (`ReserveRowAsync`). Visible once a session is picked.
 - **One of three seat views:**
   - **Visual seat grid** (the hall has a layout) - one `<button>` per seat. A **free**
-    seat is clickable to reserve it for a VIP; a **reserved** seat is clickable to
-    release it. A **legend** (Free / User / Admin / Random) + an "{N} active
-    reservation(s)" summary follow. **D-767:** each row draws `SeatsInRow(r)` seats.
-  - **Fallback table** (Row / Seat / Kind / Actions, per-row "Release") - when the hall
-    has no layout but reservations exist.
+    seat is clickable to reserve it for a VIP; a **held** seat is clickable to
+    **ask** to release it (DEF-SEA-001 - see below). A **legend** (Free / User / Admin /
+    Random) + an "{N} active reservation(s)" summary follow. **D-767:** each row draws
+    `SeatsInRow(r)` seats.
+  - **Holder roster** (DEF-SEA-001) - under the grid, a table of Seat / Held by / Kind /
+    State for every active reservation, so an admin can read who is where without
+    hovering each square.
+  - **Fallback table** (Row / Seat / Held by / Kind / State / Actions, per-row "Release")
+    - when the hall has no layout but reservations exist.
   - **`SimfEmptyState`** ("No active reservations on this session.") - no layout and no
     reservations.
 - A top `SimfAlert` toast carries every outcome and is cleared on session change.
@@ -62,7 +66,7 @@ CP page -> JS `simfAccount.*` -> CP BFF passthroughs -> API endpoints in
 |-----------|-----------|------|---------|--------|
 | `POST /account/api/admin/sessions/list` | `POST /admin/sessions/list` | `GridQuery { Top = 200 }` | `ApiResult<GridPage<AdminSessionSummary>>` | `SeatPlans.View` |
 | `GET /account/api/admin/halls/{hallId}/seat-layout` | `GET /admin/halls/{hallId}/seat-layout` | - | `ApiResult<HallSeatLayoutSnapshot>` (a 404 / missing layout -> table / empty fallback) | `SeatLayouts.View` |
-| `POST /account/api/admin/sessions/{id}/seats/list` | `POST /admin/sessions/{id}/seats/list` | `GridQuery { Top = 500 }` | `ApiResult<GridPage<SessionSeatCell>>` | `SeatPlans.View` |
+| `POST /account/api/admin/sessions/{id}/seats/list` | `POST /admin/sessions/{id}/seats/list` | `GridQuery { Top = 500 }` | `ApiResult<GridPage<SeatPlanCell>>` (**DEF-SEA-001 / A11** - the admin-only cell shape) | `SeatPlans.View` |
 | `POST /account/api/admin/sessions/{id}/seats/reserve-row` | `POST /admin/sessions/{id}/seats/reserve-row` | `{ rowLabel }` | `ApiResult<bool>` | `SeatPlans.Edit`; `auth` limiter |
 | `POST /account/api/admin/sessions/{id}/seats/reserve-seat` | `POST /admin/sessions/{id}/seats/reserve-seat` | `{ rowLabel, seatNumber }` | `ApiResult<bool>` | `SeatPlans.Edit`; `auth` limiter |
 | `DELETE /account/api/admin/sessions/{id}/seats/{reservationId}` | `DELETE /admin/sessions/{id}/seats/{reservationId}` | - | `ApiResult<bool>` | `SeatPlans.Edit`; `auth` limiter |
@@ -84,6 +88,7 @@ All rules are server-side; the page only guards an empty/whitespace row input an
 | **D-767** reserve a seat number past that row's count (e.g. VIP seat 5 in a 4-seat row) | `SEAT_OUT_OF_BOUNDS` 400 | "Seat number must be between 1 and {n}." / "يجب أن يكون رقم المقعد بين 1 و {n}." |
 | Reserve an already-held seat | `SEAT_ALREADY_RESERVED` 409 | (a visitor cannot then book it) |
 | Release a reservation id that does not exist / wrong session | `SEAT_RESERVATION_NOT_FOUND` 404 | "Seat reservation not found." / "لم يتم العثور على حجز المقعد." |
+| **DEF-SEA-001** release is guarded client-side by a `SimfConfirm` naming the seat + holder | - | "Seat {0} is held by {1}. Releasing it frees the seat for someone else and cannot be undone. The attendee is notified." / "المقعد {0} محجوز لـ {1}. إلغاء الحجز يتيح المقعد لشخص آخر ولا يمكن التراجع عنه، وسيتم إشعار الزائر." |
 | Seat-list load failure | fallback | "Could not load session seat plan." toast |
 
 **D-767 note:** the per-row seat bound now reads `ctx.SeatCounts[i]` in
@@ -101,11 +106,16 @@ row's real width (4 for a 4-seat VIP row).
   max(counts)` on the wire, so an un-upgraded app renders max-width rows; a tap on a
   phantom short-row seat fails safe with 400 `SEAT_OUT_OF_BOUNDS` (no corruption). The CP
   grid itself is ragged (uses `SeatsInRow`).
-- **Known localization gap (E2E-SSP-014).** The four legend strings
+- **Localization gap (E2E-SSP-014) - CLOSED.** The four legend strings
   (`Admin.SessionSeatPlans.Legend.{Free,User,Admin,Random}`) and the reserved-seat
-  tooltip (`Admin.SessionSeatPlans.Seat.ReservedTitle`) are referenced in the `.razor`
-  but missing from both resx files, so they render the raw key text. Tracked, not fixed
-  here.
+  tooltip (`Admin.SessionSeatPlans.Seat.ReservedTitle`) are present in both resx files
+  (EN + AR). Re-verified 2026-07-27 while `Seat.ReservedTitle` gained its third
+  placeholder `{2}` (the holder).
+- **Holder identity is ADMIN-ONLY (DEF-SEA-001).** The holder name lives on
+  `SeatPlanCell`, returned by `POST /admin/sessions/{id}/seats/list` alone. The
+  app-facing `GET /app/sessions/{id}/seats` keeps the identity-free `SessionSeatCell`;
+  the two shapes are deliberately separate so an attendee's name can never be projected
+  onto a visitor read.
 
 ## 8. i18n + RTL
 
@@ -136,6 +146,34 @@ incl. the per-row short-row bound `Variable_layout_bounds_each_row_by_its_own_se
 suite 44/44 passing). E2E-SSP-016 adds the browser-level ragged-grid run on top of that
 xUnit coverage.
 
+## 9. DEF-SEA-001 / A11 - naming the holder and confirming the release (2026-07-27)
+
+A held seat used to be released on a **single click**: no confirmation, and no holder
+name anywhere on the page, so an admin could not tell whose seat they were about to take
+and had no way to undo it. Three changes close it:
+
+1. **The projection carries the holder.** `POST /admin/sessions/{id}/seats/list` now
+   returns `SeatPlanCell` - a dedicated ADMIN record (`ReservationId`, `RowLabel`,
+   `SeatNumber`, `Kind`, `Status`, `CheckedIn`, `HolderUserId`, `HolderName`,
+   `HolderNameArabic`, `GuestHint`, `GuestHintArabic`). The names come from the App-side
+   `UserProfile` in one batched second query, so there is no cross-database read (D-157).
+   The app-facing seat map keeps the identity-free `SessionSeatCell`.
+2. **The page shows it.** The seat tooltip appends the holder, and a **holder roster**
+   under the grid lists Seat / Held by / Kind / State. A VVIP admin block has no
+   registration, so its "held by" reads the D-771 guest note; an admin block with no note
+   reads "Admin block (no attendee)".
+3. **The release is confirmed.** Clicking a held seat (or the fallback table's Release
+   button) only ARMS the release: the shared `SimfConfirm` opens - the same must-decide
+   dialog every CRUD delete uses - showing the seat, the holder and the state, with a
+   danger-styled "Release" and a "Keep the seat" cancel. Switching session drops an armed
+   release so it can never fire against the wrong session.
+
+**A11** - the same projection previously dropped `Status` and `CheckedIn`, shipping the
+record defaults (`Pending` / `false`) on the wire even for an Approved, checked-in
+booking. It now reads the stored status and resolves the open `HallAttendance` row, so
+the plan's **State** column shows the real Unavailable / Reserved / Confirmed, matching
+the read-only live-hall twin.
+
 ## 12. Related docs
 
 - Related pages: [`cp/admin-halls-seat-layouts.md`](admin-halls-seat-layouts.md) (defines
@@ -145,15 +183,19 @@ xUnit coverage.
 - Decisions: **D-767** (per-row variable seat counts), D-215 (visual seat grid), D-182
   (CP editor for D-175), 2026-07-18 (per-seat VIP reserve), D-219 (append-only mobile
   wire), D-157 (App / Identity DB separation).
-- Wire contracts: `SeatReservations.cs` (`SessionSeatCell`, `HallSeatLayoutSnapshot`,
-  `AdminReserveRowRequest`, `AdminReserveSeatRequest`).
+- Wire contracts: `SeatReservations.cs` (`SeatPlanCell` - admin-only; `SessionSeatCell`
+  - app-facing; `HallSeatLayoutSnapshot`, `AdminReserveRowRequest`,
+  `AdminReserveSeatRequest`).
 
 ## 13. Changelog
 
 | Date | Decision | Change |
 |------|----------|--------|
 | 2026-07-25 | D-767 | **First authored page reference doc** (was `-` in `PAGE-INDEX.md`). Documents the D-767 ragged grid: `SessionSeatPlan` (and the `SessionLiveHall` twin) render each row at its own `SeatsInRow(r) = SeatCounts[r] ?? SeatsPerRow` width; reserve-row / reserve-seat / release are unchanged (per-seat); the per-row seat bound now reports the real short-row width in the `SEAT_OUT_OF_BOUNDS` message. |
+| 2026-07-26 | D-771 | **VVIP guest note + tier bands.** A VVIP seat has no registration, so the page gained two free-text fields above the grid — "Guest note (Arabic)" / "Guest note (English)", ≤256 chars — that travel with the per-seat block (`AdminReserveSeatRequest.GuestHint` / `GuestHintArabic`, persisted on `SeatReservation`, migration `App/D771_AddSeatTiersAndVvipGuestHint`). The workflow is: type the note, then tap the seat to hold it; the fields clear on success. Each grid row now shows its `SeatTier` as a start-edge colour band (`--color-seat-tier-vvip` / `-vip` / `-normal`) with the tier name on the row-label tooltip, and a blocked seat's tooltip appends its guest note. `SessionSeatCell` appends `GuestHint` / `GuestHintArabic` (append-only wire). The reserve-row action is now wrapped in `<AuthorizedAction Permission="SeatPlans.Edit">`. The same note is what the mobile app and the new staff seating desk (`mobile-staff-seating.md`) display for that seat. |
 
-_Last reviewed:_ 2026-07-25 by Claude (D-767 - authored from live source:
+| 2026-07-27 | DEF-SEA-001 / A11 | **Holder named + release confirmed.** The seat-plan list endpoint returns the new admin-only `SeatPlanCell` (holder id + bilingual holder name + real `Status`/`CheckedIn` + the VVIP guest note) instead of the shared `SessionSeatCell`; the page gained a holder roster, a holder-bearing seat tooltip, a State column, and a `SimfConfirm` that names the seat + holder before the destructive DELETE. New resx keys `Admin.SessionSeatPlans.{Col.Holder,Col.State,Holder.AdminBlock,OpenSeating,State.*,Release.Title,Release.Message,Release.Cancel}` (EN + AR); `Seat.ReservedTitle` gained a `{2}` holder placeholder. No schema change. |
+
+_Last reviewed:_ 2026-07-27 by Claude (DEF-SEA-001 / A11). Prior review 2026-07-25 (D-767 - authored from live source:
 `SessionSeatPlan.razor(.cs)`, `SessionLiveHall.razor(.cs)`, `SeatReservationService`,
 `SeatReservationEndpoints`, contracts).

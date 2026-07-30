@@ -104,6 +104,8 @@ Derived values the assertions depend on:
 | E2E-DSH-023 | The visually-hidden data table exposes the same numbers to screen readers | a11y | P0 | _to author_ |
 | E2E-DSH-024 | Day cards - three gauges on one shared scale, and sessions as a number rather than a fourth bar | happy | P1 | authored ✓ (`ChartGeometryTests.GaugeFraction_clamps_between_zero_and_one`, `GaugeFraction_never_returns_NaN`) |
 | E2E-DSH-025 | Empty state - no programme days configured, the chart shows `Dashboard.Programme.None` and no day cards render | happy | P1 | authored ✓ (`ChartGeometryTests.No_groups_produces_no_bars`, `NiceMax_falls_back_to_one_for_unusable_input`) |
+| E2E-DSH-ELS-001 | Element inventory - every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-DSH-ELS-002 | Element health - no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

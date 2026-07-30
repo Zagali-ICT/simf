@@ -40,6 +40,10 @@
 | E2E-MOB015-006 | Arabic: chrome mirrors (RTL) but the map canvas geometry stays LTR (venue orientation) | i18n | P1 | authored ✓ (screen — RTL chrome / LTR canvas) |
 | E2E-MOB015-007 | `kind` decodes tolerantly (int or name; unknown → a generic marker) | resilience | P2 | authored ✓ (model — `VenueMapNodeKind.fromJson`) |
 | E2E-MOB015-008 | Booth fields bind the real wire names (`name`/`nameArabic`/`exhibitorName`/`sector`) | contract | P0 | authored ✓ (model — `BoothSummary.fromJson`) |
+| E2E-MOB015-009 | **Map controls have accessible names (BUG-012):** the three floating gold controls announce "Reset the map view" / "Zoom in" / "Zoom out" (bilingual) instead of three unnamed views, so a screen-reader user can zoom and recentre | a11y | P2 | authored ✓ (`VenueMapControl` takes a required `label` → `Semantics(button: true, label:)`; strings `venueMapResetView` / `venueMapZoomIn` / `venueMapZoomOut`) |
+| E2E-MOB015-010 | The booth info card carries the exhibitor logo badge (FR-LGO-005) | happy | P1 | authored ✓ (widget test) |
+| E2E-MOB015-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB015-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 
@@ -150,6 +154,35 @@ Scenario: The popup binds the real booth field names
 
 **Evidence:** model test `BoothSummary / BoothDetail.fromJson binds the real wire field names`.
 
+### E2E-MOB015-010 — The info card carries the exhibitor logo badge (FR-LGO-005)
+
+```gherkin
+Scenario: A booth node's card shows its logo
+  Given the guest taps a booth node whose booth id is "b1"
+  Then the white info card opens with a 60x60 logo badge at its inline start
+  And the badge loads {base}/app/assets/BoothLogo/b1/image
+  And while it loads (or when the booth has no logo) it shows the booth
+      short name on the navy tile
+  And the dismiss control keeps its own place beside it
+
+Scenario: A hall / zone node has no badge
+  Given the guest taps a non-booth node
+  Then no logo badge is rendered (there is no exhibitor to badge)
+```
+
+> Reality note: the badge was previously listed as an owner-accepted deviation
+> ("close-X instead of the logo badge") because booths had no logo assets. They
+> do now (BoothLogo, D-357 / D-764), so the frame's badge is rendered and the
+> deviation is closed.
+
+**Evidence:** `venue_map_screen_test` — "FR-LGO-005 — a booth card carries the
+exhibitor logo badge from the BoothLogo asset route", "FR-LGO-005 — a non-booth
+node has no logo badge".
+
 ---
 
-_Last reviewed:_ `2026-06-05` by `SIMF Team`.
+_Last reviewed:_ `2026-07-27` by `SIMF Team` — added E2E-MOB015-010 for FR-LGO-005
+(the exhibitor logo badge is rendered; the "no logo assets" deviation is closed).
+_Prior:_ `2026-07-26` BUG-012: the three floating map
+controls were bare icon views with no accessible name; each now carries a
+bilingual semantics label (E2E-MOB015-009). `2026-06-05` by `SIMF Team`.

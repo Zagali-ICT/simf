@@ -804,7 +804,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     // Arabic letters + spaces only — block other scripts at
                     // the keystroke so the field can never hold mixed text.
                     inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.allow(RegExp(r'[ء-ي\s]')),
+                      FilteringTextInputFormatter.allow(arabicNameCharacters),
                     ],
                     validator: _validateArabicName,
                   ),
@@ -858,7 +858,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     // Arabic letters + spaces only — mirror the Arabic name
                     // field so the Arabic job title can never hold Latin text.
                     inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.allow(RegExp(r'[ء-ي\s]')),
+                      FilteringTextInputFormatter.allow(arabicNameCharacters),
                     ],
                   ),
                   const SizedBox(height: SimfTokens.space4),

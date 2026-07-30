@@ -9,8 +9,17 @@ namespace SIMF.Domain.Exhibitors;
 /// physical databases separate, so there is NO navigation property and NO
 /// DB-level FK constraint across the database boundary — the link is by Guid
 /// only). The account itself is provisioned through the existing admin
-/// provisioning pipeline (a least-privilege Visitor account); this row tags it
-/// to its exhibitor. Soft-deleted via <see cref="IsActive"/>.
+/// provisioning pipeline as a partner-side account carrying the exhibitor
+/// profile type (DEF-EXH-005 — the lead-capture tools authorise on
+/// <c>ProfileType.MobileAppRole == Exhibitor</c>, D-519, so a type-less account
+/// could never scan); this row tags it to its exhibitor. Soft-deleted via
+/// <see cref="IsActive"/>.
+/// <para>DEF-EXH-006 — this row is <b>half the authorisation</b>, not only a
+/// tag: the profile type lives on the person and outlives the booth, so
+/// <c>ExhibitorVisitorService</c> requires an ACTIVE membership of an ACTIVE
+/// <see cref="Exhibitor"/> alongside the role. Deactivating this row (or the
+/// exhibitor) is what revokes the officer's badge scanning and their access to
+/// the booth's captured contact cards.</para>
 /// </summary>
 public sealed class ExhibitorMembership : BaseAuditEntity
 {

@@ -53,9 +53,14 @@ analyzer:
     - "**/*.g.dart"
     - "**/*.freezed.dart"
     - "build/**"
-    # Vendored upstream plugin (D-768 HiSilicon decoder fallback). Its own tests
-    # raise 183 analyzer errors against our stricter config, which would bury a
-    # real error introduced in lib/ and make the "0 errors" gate unreadable.
+    # D-768 vendored `video_player_android` (patched for the faulty HiSilicon
+    # decoder). It is upstream code we do not author, own the style of, or run
+    # the tests of — and its checked-in generated mocks
+    # (`test/*.mocks.dart`) were built against a different mockito, so they
+    # alone contributed 325 analyzer errors + warnings: every real error in our
+    # own code was buried, and "analyze clean" was unreachable by construction.
+    # Excluding it makes `flutter analyze` report OUR code again. The plugin
+    # still builds and ships; only static analysis of it is skipped.
     - "third_party/**"
     # NOTE: this repo uses hand-written Riverpod + a hand-written router (no codegen),
     # and has no `_legacy_mockup/` folder. Removed the *.gr.dart and _legacy_mockup

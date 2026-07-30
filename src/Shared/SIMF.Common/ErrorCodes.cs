@@ -245,6 +245,9 @@ public static class ErrorCodes
     public const string SessionNotLiveForQuestions = "SESSION_NOT_LIVE_FOR_QUESTIONS";
     public const string SessionModeratorNotAssigned = "SESSION_MODERATOR_NOT_ASSIGNED";
     public const string SessionModeratorAlreadyAssigned = "SESSION_MODERATOR_ALREADY_ASSIGNED";
+    // DEF-MOD-005 — the target account is not eligible to moderate (its profile
+    // type does not carry MobileAppRole.Moderator).
+    public const string SessionModeratorNotEligible = "SESSION_MODERATOR_NOT_ELIGIBLE";
 
     // Venue self-assert (D-171, gap doc G7 — PDF §2.10; G-OI-2 resolved
     // to the self-assert toggle as input source).
@@ -270,6 +273,15 @@ public static class ErrorCodes
     /// awaiting the speaker. Deliberately NEUTRAL — the same code for every reason
     /// so the response never leaks which one it was (§15.7).</summary>
     public const string MeetingActionTokenInvalid = "MEETING_ACTION_TOKEN_INVALID";
+    /// <summary>QA A25 — the speaker has no contact email on file, so the
+    /// double-opt-in Approve/Reject links could never be delivered. The approve /
+    /// resend path fails LOUDLY with this code instead of silently stranding the
+    /// request in <c>AwaitingSpeaker</c> with tokens nobody will ever receive.</summary>
+    public const string SpeakerMeetingContactMissing = "SPEAKER_MEETING_CONTACT_MISSING";
+    /// <summary>QA A24 — <c>MeetingLinks:PublicWebBaseUrl</c> is unconfigured, so the
+    /// speaker confirmation link cannot be built. Missing link configuration is a hard
+    /// failure on the approve / resend path, never a silent skip.</summary>
+    public const string MeetingLinksNotConfigured = "MEETING_LINKS_NOT_CONFIGURED";
 
     // Unified requests (D-500, Wave 5 — الطلبات 1408:9726).
     public const string ParticipationDocumentRequestInvalid = "PARTICIPATION_DOCUMENT_REQUEST_INVALID";
@@ -307,8 +319,26 @@ public static class ErrorCodes
     // effective mode (Session.SeatSelectionModeOverride ?? Hall.SeatSelectionMode).
     public const string SeatSelectionRequired = "SEAT_SELECTION_REQUIRED";
     public const string OpenSeatingOnly = "OPEN_SEATING_ONLY";
+    // D-771 — seat TIER eligibility. NOT_ELIGIBLE: the visitor's profile tier does
+    // not reach the seat's tier (a non-VIP visitor picked a VIP seat). RESERVED: a
+    // VVIP protocol seat, which nobody may self-reserve — an administrator assigns
+    // it manually with a guest hint.
+    public const string SeatTierNotEligible = "SEAT_TIER_NOT_ELIGIBLE";
+    public const string SeatTierReserved = "SEAT_TIER_RESERVED";
+    // B1 — a CHANGE-SEAT request whose destination is the seat the caller already
+    // holds. Distinct from SEAT_ALREADY_RESERVED (someone else has it) so the app
+    // can say "you are already sitting there" instead of "that seat is taken".
+    public const string SeatMoveSameSeat = "SEAT_MOVE_SAME_SEAT";
 
     // Booking approval workflow (P2.2 / D-227 — FDS-005 §5).
+    // A9 (2026-07-27) — the approval queue was removed on 2026-07-18 (bookings
+    // auto-confirm), so BookingNotFound, BookingNotPending and
+    // BookingRejectionReasonRequired are VESTIGIAL: nothing raises them any more,
+    // because there is no approve/reject action left (a missing reservation throws
+    // SEAT_RESERVATION_NOT_FOUND). Kept as reserved codes rather than deleted — they
+    // are published in the API spec and are the landing spot if an approval step
+    // returns — but do not wire new behaviour to them. BookingOverlap /
+    // BookingSessionStarted / BookingSessionEnded are live.
     public const string BookingOverlap = "BOOKING_OVERLAP";
     public const string BookingNotFound = "BOOKING_NOT_FOUND";
     public const string BookingNotPending = "BOOKING_NOT_PENDING";
@@ -430,6 +460,13 @@ public static class ErrorCodes
     public const string GateInvalid = "GATE_INVALID";
     public const string GateNotFound = "GATE_NOT_FOUND";
     public const string GateCodeDuplicate = "GATE_CODE_DUPLICATE";
+    // DEF-STF-008 — GATE_INACTIVE (503) is retired: a scan at an inactive gate
+    // is a RECORDED denial at HTTP 200 (DenialReasonCode.GateInactiveAtScan),
+    // never an envelope failure, so no endpoint ever emitted this code. Kept in
+    // the published vocabulary so an older client that still branches on it
+    // keeps compiling / decoding; nothing produces it.
+    [Obsolete("Never emitted — an inactive gate is denied at HTTP 200 with " +
+              "GATE_INACTIVE_AT_SCAN (DEF-STF-008).")]
     public const string GateInactive = "GATE_INACTIVE";
     public const string GateOperatorNotAssigned = "GATE_OPERATOR_NOT_ASSIGNED";
     public const string GateAssignmentInvalid = "GATE_ASSIGNMENT_INVALID";
@@ -445,6 +482,20 @@ public static class ErrorCodes
     public const string ExhibitorNotFound = "EXHIBITOR_NOT_FOUND";
     public const string ExhibitorInactive = "EXHIBITOR_INACTIVE";
     public const string ExhibitorAccountInvalid = "EXHIBITOR_ACCOUNT_INVALID";
+
+    // D-781 — attaching an EXISTING account to an exhibitor
+    // (POST /admin/exhibitors/{id}/accounts/link). No account is registered under
+    // the supplied email (404).
+    public const string ExhibitorAccountNotFound = "EXHIBITOR_ACCOUNT_NOT_FOUND";
+
+    // D-781 — the account exists but does not carry an active exhibitor-mapped
+    // profile type, so linking it would hand it booth tools it cannot use (409).
+    public const string ExhibitorAccountNotEligible = "EXHIBITOR_ACCOUNT_NOT_ELIGIBLE";
+
+    // D-781 — the account already holds an active ExhibitorMembership; an account
+    // belongs to at most one booth at a time (409, mirrors the filtered unique
+    // index on ExhibitorMembership.UserId).
+    public const string ExhibitorAccountAlreadyLinked = "EXHIBITOR_ACCOUNT_ALREADY_LINKED";
 
     // Organisations (B3 / D-220 — Saudi-companies lookup, government Excel
     // bulk-import; the visitor الجهة picker reads from this table).

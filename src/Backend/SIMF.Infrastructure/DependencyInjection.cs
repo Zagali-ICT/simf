@@ -514,6 +514,12 @@ public static class DependencyInjection
         // (docs/migrations/2026/*.sql) so a fresh dev/test DB is not empty.
         // Production never invokes it — content is applied by hand there.
         services.AddScoped<SIMF.Infrastructure.Seeding.SqlContentSeeder>();
+        // BUG-023 — the demo OPERATIONAL configuration (gates + operator
+        // assignment, per-session moderator grants, the main hall's seat grid)
+        // the demo accounts need before the scanner / moderation-desk / seat-picker
+        // journeys can be exercised. Self-gated to Development or an explicit
+        // Seed:EnableDemoAccounts, exactly like the demo accounts themselves.
+        services.AddScoped<SIMF.Infrastructure.Seeding.DemoOperationalConfigSeeder>();
         services.AddScoped<SIMF.Application.Sponsors.Abstractions.IPublicSponsorService,
             SIMF.Infrastructure.Sponsors.PublicSponsorService>();
         // D-499 (الوفود) — anonymous public delegations view (invited countries).

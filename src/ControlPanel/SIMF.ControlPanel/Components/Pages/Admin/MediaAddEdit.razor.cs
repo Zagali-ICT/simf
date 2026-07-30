@@ -27,7 +27,7 @@ public partial class MediaAddEdit
     // _isEditing tracks Edit mode locally: it starts from IsEdit but flips to
     // true after a successful Image create so the upload control appears
     // in-place (the shell stays open). _editingId is the row the PUT/upload
-    // targets â€” Initial!.Id in Edit, or the just-created id after an Image POST.
+    // targets — Initial!.Id in Edit, or the just-created id after an Image POST.
     private bool _isEditing;
     private Guid _editingId;
 
@@ -112,7 +112,7 @@ public partial class MediaAddEdit
                     });
                 if (env is { Success: true, Data: not null })
                 {
-                    // Image items have no bytes yet â€” keep the form open in
+                    // Image items have no bytes yet — keep the form open in
                     // Edit mode so the admin can attach the bitmap now. Video
                     // items are complete on create, so close the shell.
                     if (_model.Kind == MediaKind.Image)

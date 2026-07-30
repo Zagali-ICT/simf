@@ -61,6 +61,8 @@ public sealed class ExportQuestionQueueEndpoint(ISessionQuestionCommitteeService
     {
         QuestionStatus.Approved => "Approved",
         QuestionStatus.Hidden => "Hidden",
+        // DEF-MOD-001 — the moderator's persisted "answered on stage" state.
+        QuestionStatus.Answered => "Answered",
         _ => "Pending",
     };
 }

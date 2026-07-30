@@ -36,6 +36,8 @@
 | E2E-RAT-010 | Export gate — admin lacking `Ratings.Export` is forbidden | auth | P1 | _to author_ |
 | E2E-RAT-011 | Server 500 on `/feedback/ratings` → bilingual fallback toast | resilience | P2 | _to author_ |
 | E2E-RAT-012 | RTL / Arabic render — page mirrors, headers translate | i18n | P1 | _to author_ |
+| E2E-RAT-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-RAT-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

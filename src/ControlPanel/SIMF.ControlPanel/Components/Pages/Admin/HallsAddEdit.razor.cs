@@ -126,8 +126,8 @@ public partial class HallsAddEdit
         finally { _busy = false; }
     }
 
-    // P5.1 â€” D-240: parse the geofence inputs. All three together (a valid
-    // coordinate + positive radius â‰¤ 100 km), or all three empty (no geofence).
+    // P5.1 — D-240: parse the geofence inputs. All three together (a valid
+    // coordinate + positive radius ≤ 100 km), or all three empty (no geofence).
     private bool TryParseGeofence(out double? lat, out double? lon, out double? radius)
     {
         lat = lon = radius = null;

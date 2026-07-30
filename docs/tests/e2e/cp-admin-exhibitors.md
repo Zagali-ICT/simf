@@ -15,9 +15,11 @@
 > open the page sees them — but the API enforces the finer-grained `Exhibitors.Create` /
 > `Exhibitors.Edit` / `Exhibitors.Delete` policies on the underlying endpoints (`POST
 > /admin/exhibitors`, `PUT /admin/exhibitors/{id}`, `DELETE /admin/exhibitors/{id}`). The
-> **only** individually `<AuthorizedAction>`-gated affordance is the per-row "Accounts"
-> (account-provisioning) icon, wrapped in `<AuthorizedAction Permission="Exhibitors.Edit">`.
-> E2E-EXH-009 covers the per-action API gate.
+> individually `<AuthorizedAction>`-gated affordances are the per-row "Accounts"
+> (account-provisioning) icon, wrapped in `<AuthorizedAction Permission="Exhibitors.Edit">`,
+> and — inside that modal — the "Link an existing account" block, wrapped in
+> `<AuthorizedAction Permission="Exhibitors.LinkAccount">` (D-781).
+> E2E-EXH-009 covers the per-action API gate; E2E-EXH-028 covers the link gate.
 
 ## Coverage matrix
 
@@ -47,6 +49,11 @@
 | E2E-EXH-022 | Excel import — Import → workbook → result modal "N created…" + per-row error (D-356) | happy | P1 | _to author_ |
 | E2E-EXH-023 | Excel import rejection — non-.xlsx / wrong-sheet → 400 + bilingual toast, nothing created (D-356) | error | P1 | _to author_ |
 | E2E-EXH-024 | Excel export/import round-trips the Tier (D-503) | happy | P1 | _to author_ |
+| E2E-EXH-027 | Link an existing account to an exhibitor — the Others-pipeline lockout fix (D-781) | happy | P0 | authored |
+| E2E-EXH-028 | Link rejections — unknown email / not exhibitor-typed / already linked (D-781) | error | P1 | authored |
+| E2E-EXH-029 | Provision conflict — an already-registered email → 409 `ADMIN_EMAIL_ALREADY_REGISTERED`, no membership created | error | P1 | _to author_ |
+| E2E-EXH-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-EXH-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 
@@ -449,10 +456,13 @@ Scenario: List and provision a per-exhibitor login account
   And the grid's "Accounts" column for that exhibitor increments by one (LoadAsync is re-run)
   And an OperationLog row with Event='Exhibitor.AccountProvisioned' records the actor id and
       the new SubjectUserId / SubjectEmail
-  And note: the provisioned account is a least-privilege Visitor created in the
-      pending-approval state through the existing admin provisioning pipeline
-      (CreateVisitorAsync), linked by an ExhibitorMembership row (Data↔Identity stays
-      separated: UserId is a logical FK resolved cross-context on read)
+  And note: the provisioned account is a least-privilege PARTNER-side account created
+      in the pending-approval state through the existing admin provisioning pipeline
+      (CreateOtherAsync), carrying the exhibitor profile type (DEF-EXH-005 — resolved
+      by ProfileType.MobileAppRole == Exhibitor, so the booth officer can actually use
+      the app's scan / My Visitors tools), linked by an ExhibitorMembership row
+      (Data↔Identity stays separated: UserId is a logical FK resolved cross-context on
+      read); it therefore appears in the Others pending-approval queue, not Visitors
 
   When they click "Provision account" with the Contact name OR Email blank
   Then no POST fires and a red toast reads "The contact name and email are both required."
@@ -596,6 +606,90 @@ Scenario: upload a logo for an exhibitor in the CP
 
 ---
 
+### E2E-EXH-027 — Link an existing account to an exhibitor (D-781)
+
+```gherkin
+Scenario: An Others-pipeline account is attached to a booth and can then scan
+  # Owner decision, 2026-07-27. DEF-EXH-006 made a CURRENT ExhibitorMembership
+  # half the app lead-capture authorisation, and POST /admin/exhibitors/{id}/accounts
+  # was the ONLY writer of that row — so an exhibitor-typed account created on the
+  # Others page had the right profile type, no membership, and 403 on both booth
+  # endpoints, with nothing in the CP able to attach it.
+  Given an Administrator holding Exhibitors.View + Exhibitors.LinkAccount
+  And an exhibitor "Naval Defence Systems" exists and is Active
+  And an account "officer@navaldefence.example" was created on /admin/others with
+      the "Exhibitor" profile type (MobileAppRole = Exhibitor), and is Approved
+  And that account is 403 on POST /api/v1/app/exhibitor/visitors/scan today
+  When the administrator clicks the exhibitor row's "Accounts" (user) icon
+  Then the SimfModal opens and shows the "Link an existing account" block
+       (rendered only for holders of Exhibitors.LinkAccount)
+  And an info alert reads "Use this for an account that already exists (for
+      example one created on the Others page). It must already carry an exhibitor
+      profile type." / "استخدم هذا لحساب موجود مسبقاً…"
+  When they fill Account email = "officer@navaldefence.example"
+  And optionally Contact name = "Captain Khalid" and Role label = "Booth lead"
+  And they click "Link account"
+  Then the BFF fires POST /account/api/admin/exhibitors/{id}/accounts/link
+  And the API returns HTTP 200 (policy Exhibitors.LinkAccount, rate-limited "auth")
+  And a green toast reads "Account linked to this exhibitor." /
+      "تم ربط الحساب بهذا العارض."
+  And the accounts table now lists the row (Contact name / Email / Role / Active ✓);
+      with Contact name left blank it shows the account's display name
+  And the grid's "Accounts" column for that exhibitor increments by one
+  And an OperationLog row with Event='Exhibitor.AccountLinked' records the actor id
+      and the linked SubjectUserId / SubjectEmail
+  And the same account now answers 200 on the app badge scan and on My Visitors
+
+  When they click "Link account" with the Account email blank
+  Then no POST fires and a red toast reads "The account email is required."
+      (the Admin.Exhibitors.Link.Required client guard)
+```
+
+### E2E-EXH-028 — Link rejections (D-781)
+
+```gherkin
+Scenario Outline: The link action refuses what it must
+  Given the administrator has the "Accounts" modal open for an exhibitor
+  When they submit <case> under "Link an existing account"
+  Then the API returns <status> with ApiResult.Error.Code = <code>
+  And the bilingual message is surfaced in a red toast
+  And no ExhibitorMembership row is written
+
+  Examples:
+    | case                                                  | status | code                             |
+    | an email no account is registered under               | 404    | EXHIBITOR_ACCOUNT_NOT_FOUND      |
+    | an account whose profile type is Media (not exhibitor)| 409    | EXHIBITOR_ACCOUNT_NOT_ELIGIBLE   |
+    | an account that already belongs to an exhibitor       | 409    | EXHIBITOR_ACCOUNT_ALREADY_LINKED |
+    | any account while the exhibitor is deactivated        | 409    | EXHIBITOR_INACTIVE               |
+    | a blank / >320-char email                             | 400    | EXHIBITOR_ACCOUNT_INVALID        |
+
+Scenario: An admin without Exhibitors.LinkAccount cannot link
+  Given a signed-in admin holding Exhibitors.View + Exhibitors.Edit but NOT
+        Exhibitors.LinkAccount (and not the Administrator wildcard "*")
+  When they open the "Accounts" modal
+  Then the "Link an existing account" block is not rendered
+       (it is wrapped in <AuthorizedAction Permission="Exhibitors.LinkAccount">)
+  And a direct POST /admin/exhibitors/{id}/accounts/link answers HTTP 403
+```
+
+> The 409 `EXHIBITOR_ACCOUNT_NOT_ELIGIBLE` is deliberate: linking does NOT mutate
+> the account's profile type, because that silently changes the app role another
+> admin assigned. The message tells the administrator to set the exhibitor profile
+> type on the Others page first. `EXHIBITOR_ACCOUNT_ALREADY_LINKED` mirrors the
+> filtered unique index on `ExhibitorMembership.UserId` (one active booth per
+> account) so the admin sees a clean conflict rather than a database error.
+
+**Evidence (API layer):** `tests/SIMF.Api.Tests/ExhibitorVisitorScanTests.cs` —
+`Others_pipeline_account_can_scan_once_it_is_linked_to_an_exhibitor` (403 before
+the link → 200 after, and the linked row appears under
+`GET /admin/exhibitors/{id}/accounts`),
+`Linking_refuses_an_account_that_is_not_exhibitor_typed`,
+`Linking_refuses_an_unknown_email_and_an_already_linked_account`. The permission
+gate itself is swept by
+`tests/SIMF.Api.Tests/PermissionEnforcementTests.Every_admin_endpoint_is_permission_and_approval_gated`.
+
+---
+
 ## Implementation notes
 
 - **Manual smoke is canonical today.** Until Playwright is adopted, the canonical
@@ -627,6 +721,8 @@ Scenario: upload a logo for an exhibitor in the CP
   - `DELETE /admin/exhibitors/{id}` — policy `Exhibitors.Delete` (soft-deactivate), rate-limited "auth"
   - `GET /admin/exhibitors/{id}/accounts` — policy `Exhibitors.View`
   - `POST /admin/exhibitors/{id}/accounts` — policy `Exhibitors.Create`, rate-limited "auth"
+  - `POST /admin/exhibitors/{id}/accounts/link` — policy `Exhibitors.LinkAccount`,
+    rate-limited "auth" (D-781; attaches an EXISTING exhibitor-typed account)
   - `POST /admin/exhibitors/export` — policy `Exhibitors.Export`, rate-limited "auth"; columns
     NameEn, NameAr, ContactEmail, ContactPhone, Website, AccountCount, IsActive,
     Tier (display name, D-503); sheet
@@ -638,8 +734,11 @@ Scenario: upload a logo for an exhibitor in the CP
     error, D-503); 5 MB + ZIP-magic upload gate (400/`AdminImportEmpty` for >5 MB → 413),
     5000-row cap; blank name = per-row error (`ImportExhibitorsEndpoint` over `AdminGridImportEndpoint`)
   - Error codes: `EXHIBITOR_INVALID` (400), `EXHIBITOR_NOT_FOUND` (404),
-    `EXHIBITOR_INACTIVE` (409 — provisioning under an inactive exhibitor),
-    `EXHIBITOR_ACCOUNT_INVALID` (400 — bad contact name/email/role length)
+    `EXHIBITOR_INACTIVE` (409 — provisioning/linking under an inactive exhibitor),
+    `EXHIBITOR_ACCOUNT_INVALID` (400 — bad contact name/email/role length),
+    `EXHIBITOR_ACCOUNT_NOT_FOUND` (404 — link: no account under that email),
+    `EXHIBITOR_ACCOUNT_NOT_ELIGIBLE` (409 — link: not exhibitor-typed),
+    `EXHIBITOR_ACCOUNT_ALREADY_LINKED` (409 — link: already in a booth)
   - Field limits: NameEn/NameAr 1–256, ContactEmail ≤320, ContactPhone ≤32, Website ≤512;
     provisioning ContactName 1–256, Email 1–320, RoleLabel ≤128
   - Audit events: `Exhibitor.Created`, `Exhibitor.Updated`, `Exhibitor.Deactivated`,
@@ -658,6 +757,36 @@ Scenario: upload a logo for an exhibitor in the CP
   own `SimfModal`, independent of the CrudShell (E2E-EXH-020); the CRUD action buttons are not
   individually gated in the CP — per-action enforcement is API-side only (E2E-EXH-009).
 
+### E2E-EXH-029 — Provision an already-registered email
+
+Ported from the retired `cp-admin-companies.md` (`E2E-CMP-011`) on 2026-07-28.
+`/admin/companies` was renamed to `/admin/exhibitors` by `a05ef82d`, and this was
+the one scenario in that file with no equivalent here: EXH-020 covers the happy
+provisioning path and EXH-028 covers rejections on the **link** flow (D-781), but
+nothing covered a **provision** attempt against an email that already has an
+account.
+
+```gherkin
+Scenario: Provisioning an already-registered email returns 409
+  Given an exhibitor "Saab Maritime" is active
+  And the email "existing.user@simf.example" is already registered as a SIMF account
+  When the administrator opens the Accounts modal
+  And fills Contact name="Dup User" + Email="existing.user@simf.example"
+  And clicks "Provision account"
+  Then POST /account/api/admin/exhibitors/{id}/accounts returns HTTP 409
+  And ApiResult.Error.Code = "ADMIN_EMAIL_ALREADY_REGISTERED"
+      (raised by the reused IAdminUserProvisioningService.CreateVisitorAsync pipeline)
+  And a red SimfAlert surfaces the bilingual server message
+  And no ExhibitorMembership row is created
+```
+
 ---
 
-_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5).
+_Last reviewed:_ 2026-07-28 by Claude — retired the orphaned
+`cp-admin-companies.md` (the `/admin/companies` route ceased to exist at
+`a05ef82d`) and ported its one uncovered scenario here as E2E-EXH-029.
+Prior: 2026-07-27 by Claude — owner decision D-781: the Accounts modal
+gained a "Link an existing account" block on its own `Exhibitors.LinkAccount`
+permission (`POST /admin/exhibitors/{id}/accounts/link`), fixing the
+Others-pipeline lockout; E2E-EXH-027 / E2E-EXH-028. Prior: 2026-06-10 by Claude
+(D-356 Phase 5).

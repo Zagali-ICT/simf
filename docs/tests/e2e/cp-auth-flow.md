@@ -22,6 +22,8 @@
 | E2E-AUTH-010 | RTL toggle on login page works | login | P2 |
 | E2E-AUTH-011 | D-443 idle warning: modal → "Stay signed in" silently refreshes; ignore → auto sign-out | (CP shell) | P1 |
 | E2E-AUTH-012 | D-443 absolute 24h cap: a continuously active session is still forced to re-sign-in after 24h | (CP shell) | P1 |
+| E2E-AUTH-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-AUTH-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 
@@ -36,10 +38,10 @@ Feature: Administrator sign-in
   Scenario: Super-admin signs in (password + TOTP)
     Given an administrator opens /login
     When they fill Email="superadmin@zagali-ict.com"
-    And they fill Password="Aa@123456789"
+    And they fill Password="[REDACTED - supply via SIMF_SuperAdmin__TempPassword]"
     And they click "Sign in"
     Then they land on /login/totp
-    When they generate a TOTP via Get-Totp 'dbji csx7 c3mj s2qa sjcl rbcl kiqk ovr3'
+    When they generate a TOTP via Get-Totp '[REDACTED - supply via SIMF_SuperAdmin__TotpSecret]'
     And they fill that 6-digit code
     And they click "Verify"
     Then they land on /

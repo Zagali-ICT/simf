@@ -17,6 +17,7 @@ import '../theme/tokens.dart';
 import 'more_drawer.dart';
 import 'simf_app_shell.dart' show SimfShellScope, tabIndex;
 import 'simf_bottom_nav.dart';
+import 'simf_image_viewer.dart';
 import 'simf_language_toggle.dart';
 import 'simf_logo.dart';
 import 'simf_svg_icon.dart';
@@ -316,6 +317,11 @@ class SimfCircledBackButton extends StatelessWidget {
     final flip = mirrorInRtl && Directionality.of(context) == TextDirection.rtl;
     return IconButton(
       onPressed: onBack,
+      // The chevron is an SVG with no text, so without this the control had no
+      // accessible name at all — a screen reader announced a bare "button" on
+      // the ~18 screens that carry the shared header (BUG-003). The localized
+      // Material string keeps it bilingual with no new l10n key.
+      tooltip: MaterialLocalizations.of(context).backButtonTooltip,
       style: IconButton.styleFrom(
         backgroundColor: SimfTokens.navyDeep,
         shape: const CircleBorder(),
@@ -357,9 +363,18 @@ class SimfMenuButton extends StatelessWidget {
 /// The shared trailing action cluster on every in-app page's top nav (owner
 /// 2026-06-27): the notifications bell and the menu ☰ — each a **gold glyph in
 /// a navy rounded box** (frame 758:1136), so the top nav is identical on the
-/// signed-in home greeting header and every [SimfPageShell] sub-page. The
-/// language pill was dropped from this cluster (owner 2026-07-11); language is
-/// still switched from a sub-page's own toggle and the More screen's اللغة row.
+/// signed-in home greeting header and every [SimfPageShell] sub-page.
+///
+/// The language pill is **not a member of this cluster** (owner 2026-07-11): a
+/// sub-page gets its own pill from [SimfPageShell]'s trailing slot instead.
+/// That call assumed every surface had a sub-page header to fall back on, which
+/// the signed-in Home does not — it builds its own greeting header, so Home was
+/// left with no route to the language switch at all (BUG-017). The owner
+/// reversed the Home half of that call on **2026-07-27** ("keep home lang",
+/// D-772):
+/// `GreetingHeader` renders a [SimfLanguageToggle] as a **sibling beside** this
+/// cluster. Every other surface is unchanged — do NOT move the pill back inside
+/// the cluster, or Home would render two of them.
 ///
 /// [showBell] is true on every signed-in surface; the guest home (frame
 /// 758:2910) sets it false — a guest has no personal notifications.
@@ -421,7 +436,9 @@ class SimfHeaderActions extends ConsumerWidget {
           ],
           Builder(
             builder: (ctx) => _box(
-              tooltip: l10n.moreTitle,
+              // BUG-017 — this control opens the side drawer, a different menu
+              // from the Profile "More" hub; both used to announce as "More".
+              tooltip: l10n.menuTitle,
               onTap: () => Scaffold.of(ctx).openDrawer(),
               glyph: const Icon(Icons.menu),
             ),
@@ -499,11 +516,18 @@ class SimfSweepBackground extends StatelessWidget {
 /// `Image.network` can't load it) and refreshed immediately after an upload via
 /// the avatar bust token. Otherwise — and whenever no photo is available — it
 /// renders the brand-mark fallback. [name] drives the accessibility label only.
+///
+/// Owner 2026-07-26 — set [enableFullScreen] on a DISPLAY-ONLY photo (the badge
+/// card) so tapping it opens the picture full size from the already-fetched
+/// bytes (D-422: the avatar endpoint is bearer-gated, so the viewer paints a
+/// [MemoryImage], never a bare `Image.network`). It stays off where the tap
+/// already means something else (My-Area's change-photo affordance).
 class SimfAvatar extends ConsumerWidget {
   const SimfAvatar({
     required this.name,
     this.currentUser = false,
     this.size = 42,
+    this.enableFullScreen = false,
     super.key,
   });
 
@@ -515,29 +539,39 @@ class SimfAvatar extends ConsumerWidget {
   final bool currentUser;
   final double size;
 
+  /// Opens the photo full size on tap. Only honoured when a real photo is
+  /// shown — the brand-mark fallback has nothing to enlarge.
+  final bool enableFullScreen;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final fallback = _AvatarFallback(size: size);
     Widget child = fallback;
+    MemoryImage? photo;
     if (currentUser) {
       final bytes = ref.watch(myAvatarBytesProvider).asData?.value;
       if (bytes != null && bytes.isNotEmpty) {
-        child = Image.memory(
-          bytes,
+        photo = MemoryImage(bytes);
+        child = Image(
+          image: photo,
           fit: BoxFit.cover,
           gaplessPlayback: true,
           errorBuilder: (_, __, ___) => fallback,
         );
       }
     }
-    return Semantics(
-      image: true,
-      label: name.trim().isEmpty ? null : name,
-      child: ClipRRect(
-        borderRadius:
-            const BorderRadius.all(Radius.circular(SimfTokens.radius)),
-        child: SizedBox(width: size, height: size, child: child),
-      ),
+    final label = name.trim().isEmpty ? null : name;
+    final box = ClipRRect(
+      borderRadius: const BorderRadius.all(Radius.circular(SimfTokens.radius)),
+      child: SizedBox(width: size, height: size, child: child),
+    );
+    if (!enableFullScreen || photo == null) {
+      return Semantics(image: true, label: label, child: box);
+    }
+    return SimfTapToEnlarge(
+      image: photo,
+      label: label ?? '',
+      child: box,
     );
   }
 }

@@ -38,7 +38,7 @@
 | E2E-MOB020-010 | RTL render; hero, back chevron and tabs right-to-left | i18n | P1 | authored ✓ (screen) |
 | E2E-MOB020-011 | 125px gold-ringed avatar renders the speaker initials | happy | P1 | _to author_ |
 | E2E-MOB020-012 | **VIP slot picker (D-474/D-477; real slots restored by D-709):** when the speaker has availability windows, the meeting sheet shows the real free slots (from `GET …/available-slots`); picking one sends it. VIP-only is server-enforced (403 → "VIP guests only"); **no slots** = the no-slots notice + a subject-only request (the team arranges a time) | happy | P0 | authored ✓ (`meeting_request_sheet_test` real-slot submit + no-slots subject-only + API `SpeakerMeetingVipSlotTests`) |
-| E2E-MOB020-012 | Tapping a CV tab pill swaps the navy bio card content | happy | P0 | _to author_ |
+| E2E-MOB020-023 | Tapping a CV tab pill swaps the navy bio card content | happy | P0 | _to author_ |
 | E2E-MOB020-013 | Active tab pill is gold-filled; the rest are navy with a beige hairline | happy | P1 | _to author_ |
 | E2E-MOB020-014 | Only CV sections with content render a pill (1–4 pills) | edge | P1 | _to author_ |
 | E2E-MOB020-015 | Speaker with no CV content shows no tabs and no bio card | edge | P1 | _to author_ |
@@ -46,6 +46,10 @@
 | E2E-MOB020-017 | Meeting form (D-589, Figma 1776:4958/5036): light sheet — the VIP slot is chosen from a row of **day cards** then that day's **time-slot chips**, both sourced from the speaker's **real** available slots (D-709 restored this after the D-703 free-picker interlude); the chips appear only after a day is tapped | happy | P2 | authored ✓ (`meeting_request_sheet_test` — "presents the speaker's REAL available days + that day's slots") |
 | E2E-MOB020-019 | Arabic app renders the profile-hero `rankArabic` when populated (CP-entered **or** Excel-imported) | i18n | P1 | _to author_ |
 | E2E-MOB020-020 | Arabic app falls back to the English `rank` in the hero when `rankArabic` is blank — intended, not a bug | i18n | P1 | _to author_ |
+| E2E-MOB020-021 | A failed meeting submit shows the **server's own** bilingual reason (QA A26): a duplicate-pending / slot-taken 409 no longer collapses onto "this speaker does not accept meeting requests"; a network failure still shows localized copy, never the raw dio string | error | P0 | authored ✓ (`meeting_request_sheet_test` — "QA A26 — a 409 surfaces the SERVER reason…" + "…a failure that never reached the server…") |
+| E2E-MOB020-022 | A 403 on meeting submit describes the **real** eligibility rule (QA A28): "Requesting a speaker meeting is not enabled for your account. Contact the SIMF team to enable it." / "طلب مقابلة المتحدّث غير مُفعَّل لحسابك. تواصل مع فريق الملتقى لتفعيله." — the stale VIP-only copy is gone (eligibility is the per-user `AllowsSpeakerMeeting` flag) | i18n | P0 | authored ✓ (`meeting_request_sheet_test` — "QA A28 — a 403 on submit describes the real eligibility rule…") |
+| E2E-MOB020-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB020-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

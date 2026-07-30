@@ -182,9 +182,26 @@ public partial class SessionsList
     {
         var wasEdit = _isEdit;
         CloseForm();
-        _toast = new Toast("success",
-            string.Format(wasEdit ? L["Admin.Sessions.Updated"] : L["Admin.Sessions.Created"], saved.Title));
+        _toast = new Toast("success", SavedToastMessage(wasEdit, saved));
         await LoadAsync();
+    }
+
+    // A1 / A6 — a hall or start/end change cascade-releases every seat held for the
+    // session. The generic "was updated" toast hid that completely, so the admin never
+    // learned the room had been emptied (and admin row-blocks vanished with no trace
+    // at all). When the API reports releases, spell out what was destroyed — the row
+    // blocks especially, since nothing and nobody else reports those.
+    private string SavedToastMessage(bool wasEdit, AdminSessionDetail saved)
+    {
+        var released = saved.ReleasedReservationCount + saved.ReleasedAdminBlockCount;
+        if (wasEdit && released > 0)
+        {
+            return string.Format(
+                L["Admin.Sessions.UpdatedWithReleases"],
+                saved.Title, saved.ReleasedReservationCount, saved.ReleasedAdminBlockCount);
+        }
+        return string.Format(
+            wasEdit ? L["Admin.Sessions.Updated"] : L["Admin.Sessions.Created"], saved.Title);
     }
 
     private async Task OnDeletedAsync(AdminSessionDetail deleted)

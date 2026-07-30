@@ -1,7 +1,11 @@
 // Tests: SIMF.Api.Tests/AdminUpdateUserTests.cs
+//        SIMF.Api.Tests/AdminAccountMobileTests.cs (FR-PHN-002 — the optional
+//        SaudiMobile / InternationalMobile correction: correct, canonicalise,
+//        omit-means-unchanged, malformed rolls the whole edit back, permission)
 using System.Security.Claims;
 using FastEndpoints;
 using FluentValidation;
+using SIMF.Api.Endpoints.Account.Validators;
 using SIMF.Api.Endpoints.Auth.Validators;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
@@ -22,6 +26,16 @@ public sealed class UpdateVisitorRouteRequest
     /// <summary>Bi-Meeting rework — the admin-assigned speaker/delegation meeting flags.</summary>
     public bool AllowsSpeakerMeeting { get; set; }
     public bool AllowsDelegationMeeting { get; set; }
+
+    /// <summary>B22 — optional ISO alpha-2 nationality correction; null / empty leaves
+    /// the stored nationality untouched. See
+    /// <see cref="AdminUpdateVisitorRequest.NationalityCode"/>.</summary>
+    public string? NationalityCode { get; set; }
+
+    /// <summary>FR-PHN-002 — optional mobile correction; null / empty leaves the
+    /// stored number untouched. See <see cref="AdminUpdateVisitorRequest.SaudiMobile"/>.</summary>
+    public string? SaudiMobile { get; set; }
+    public string? InternationalMobile { get; set; }
 }
 
 /// <summary>P1.3 (D-214) — the route id + body for the Other edit endpoint.</summary>
@@ -35,6 +49,15 @@ public sealed class UpdateOtherRouteRequest
     /// <summary>Bi-Meeting rework — the admin-assigned speaker/delegation meeting flags.</summary>
     public bool AllowsSpeakerMeeting { get; set; }
     public bool AllowsDelegationMeeting { get; set; }
+
+    /// <summary>B22 — optional ISO alpha-2 nationality correction; null / empty leaves
+    /// the stored nationality untouched.</summary>
+    public string? NationalityCode { get; set; }
+
+    /// <summary>FR-PHN-002 — optional mobile correction; null / empty leaves the
+    /// stored number untouched.</summary>
+    public string? SaudiMobile { get; set; }
+    public string? InternationalMobile { get; set; }
 }
 
 /// <summary>Validates the visitor edit (Email + DisplayName; tier optional).</summary>
@@ -57,6 +80,29 @@ public sealed class UpdateVisitorRouteRequestValidator : Validator<UpdateVisitor
             .MaximumLength(128).Bilingual(
                 "Display name must be at most 128 characters.",
                 "يجب ألا يتجاوز الاسم المعروض 128 حرفًا.");
+
+        // FR-PHN-002 — the optional mobile correction validates IDENTICALLY to
+        // the self-service rule: the shapes are the shared
+        // UpsertUserProfileRequestValidator predicates (one source of truth), and
+        // an omitted value means "leave the stored number alone", so a desk that
+        // only edits the email never has to re-send the phone.
+        When(request => !string.IsNullOrWhiteSpace(request.SaudiMobile), () =>
+        {
+            RuleFor(request => request.SaudiMobile!)
+                .Must(UpsertUserProfileRequestValidator.IsStandardSaudiMobile)
+                .Bilingual(
+                    "The Saudi mobile must be 05XXXXXXXX or +9665XXXXXXXX.",
+                    "يجب أن يكون رقم الجوال السعودي بصيغة 05XXXXXXXX أو +9665XXXXXXXX.");
+        });
+
+        When(request => !string.IsNullOrWhiteSpace(request.InternationalMobile), () =>
+        {
+            RuleFor(request => request.InternationalMobile!)
+                .Must(UpsertUserProfileRequestValidator.IsStandardInternationalMobile)
+                .Bilingual(
+                    "The international mobile must be in the +<country code><number> (E.164) format.",
+                    "يجب أن يكون رقم الجوال الدولي بالصيغة الدولية ‎+‎ يليها رمز الدولة والرقم (E.164).");
+        });
     }
 }
 
@@ -85,6 +131,25 @@ public sealed class UpdateOtherRouteRequestValidator : Validator<UpdateOtherRout
             .NotEqual(Guid.Empty).Bilingual(
                 "A profile type is required.",
                 "نوع الملف الشخصي مطلوب.");
+
+        // FR-PHN-002 — same optional mobile correction as the visitor desk.
+        When(request => !string.IsNullOrWhiteSpace(request.SaudiMobile), () =>
+        {
+            RuleFor(request => request.SaudiMobile!)
+                .Must(UpsertUserProfileRequestValidator.IsStandardSaudiMobile)
+                .Bilingual(
+                    "The Saudi mobile must be 05XXXXXXXX or +9665XXXXXXXX.",
+                    "يجب أن يكون رقم الجوال السعودي بصيغة 05XXXXXXXX أو +9665XXXXXXXX.");
+        });
+
+        When(request => !string.IsNullOrWhiteSpace(request.InternationalMobile), () =>
+        {
+            RuleFor(request => request.InternationalMobile!)
+                .Must(UpsertUserProfileRequestValidator.IsStandardInternationalMobile)
+                .Bilingual(
+                    "The international mobile must be in the +<country code><number> (E.164) format.",
+                    "يجب أن يكون رقم الجوال الدولي بالصيغة الدولية ‎+‎ يليها رمز الدولة والرقم (E.164).");
+        });
     }
 }
 
@@ -121,6 +186,12 @@ public sealed class UpdateVisitorEndpoint(IAdminUserProvisioningService service)
                 ProfileTypeId = req.ProfileTypeId,
                 AllowsSpeakerMeeting = req.AllowsSpeakerMeeting,
                 AllowsDelegationMeeting = req.AllowsDelegationMeeting,
+                // B22 — carry the optional nationality correction through the
+                // route DTO -> contract DTO hand-off.
+                NationalityCode = req.NationalityCode,
+                // FR-PHN-002 — and the optional mobile correction.
+                SaudiMobile = req.SaudiMobile,
+                InternationalMobile = req.InternationalMobile,
             }, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -157,6 +228,12 @@ public sealed class UpdateOtherEndpoint(IAdminUserProvisioningService service)
                 ProfileTypeId = req.ProfileTypeId,
                 AllowsSpeakerMeeting = req.AllowsSpeakerMeeting,
                 AllowsDelegationMeeting = req.AllowsDelegationMeeting,
+                // B22 — carry the optional nationality correction through the
+                // route DTO -> contract DTO hand-off.
+                NationalityCode = req.NationalityCode,
+                // FR-PHN-002 — and the optional mobile correction.
+                SaudiMobile = req.SaudiMobile,
+                InternationalMobile = req.InternationalMobile,
             }, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

@@ -43,9 +43,31 @@ Setup golden `test/golden/goldens/gate_setup_758-4651.png` (@375×812) overlay-v
 against 758:4651 — back button, gold QR tile, dropdown, movement pills, hint all match.
 Result frames 4819/4886 covered by the green allowed/denied tests (built D-509).
 
+## Gate state + 403 handling (DEF-STF-005 / DEF-STF-006 / DEF-STF-008)
+
+- **A 403 shows the SERVER's own reason.** "You do not hold `Gates.Operate`" and
+  "you are not assigned to this gate" are both 403 and need different operator
+  actions, so the console renders `ApiFailure.message` (already picked for the
+  app locale by the envelope decoder) whenever the server sent one, and falls
+  back to `gateForbidden` only for a bare policy 403 with no body. 429 keeps its
+  own rate-limit copy.
+- **An inactive assigned gate is marked.** `GatePicker` tags it
+  `"<name> — غير نشطة / — inactive"` in a muted colour, and the setup card shows a
+  warning under the picker. It is marked rather than excluded so an operator whose
+  only assignment went inactive still sees it (and the reason) instead of an
+  empty console.
+- **An inactive gate denies at HTTP 200, not 503.** `GateScanResultKind.GateInactive`
+  (503 `GATE_INACTIVE`) was dead code — nothing produced it. The engine denies at
+  step 5 with `DenialReasonCode.GateInactiveAtScan`, which keeps the append-only
+  `GateScan` audit row for the attempt and gives the operator the designed red
+  denial card carrying "This gate is currently inactive." The 503 arm was removed
+  and `SIMF-API-GATES-001` §7.2.4 / §8.1 / §8.2 carry the as-built note.
+
 ## Tests
 
-`test/features/gates/gate_scan_screen_test.dart` (9) + `gate_models_test.dart` (5) —
+`test/features/gates/gate_scan_screen_test.dart` (14) + `gate_models_test.dart` (5) —
 Both-gate movement gating, allowed/denied results, direction sent, scan-again,
-not-assigned, 403 not-authorised, retry, 429 rate-limit. Golden:
+not-assigned, 403 (server reason + generic fallback), inactive-gate marker + warning,
+retry, 429 rate-limit. Server: `tests/SIMF.Api.Tests/GateScanTests.cs`
+(`Inactive_gate_records_a_GATE_INACTIVE_AT_SCAN_denial_at_200`). Golden:
 `test/golden/gate_setup_golden_test.dart`. E2E: `docs/tests/e2e/mobile-gate-scan.md`.

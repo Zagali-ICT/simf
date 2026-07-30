@@ -10,16 +10,20 @@ namespace SIMF.Api.Endpoints.Programme;
 
 /// <summary>D-715 (item 7, FDS-013 §15 GAP-1) — the team defines hall availability
 /// windows (the "hall time" for meetings); the admin meeting-review flow (GAP-2)
-/// binds an accepted request to a free hall slot. Gated by the same
-/// <c>SpeakerMeetingRequests.Manage</c>/<c>.View</c> permission as the sibling
-/// speaker-availability admin surface — one meeting-management area.</summary>
+/// binds an accepted request to a free hall slot.
+/// <para>QA A36 — gated by the hall-scoped <c>HallAvailability.Manage</c> /
+/// <c>.View</c> pair, NOT by <c>SpeakerMeetingRequests.*</c>: the windows are a
+/// property of the hall and their free slots are read by BOTH meeting desks
+/// (speaker <i>and</i> delegation), so borrowing the speaker desk's code locked a
+/// delegation-only or halls-only operator out of a surface they legitimately
+/// run.</para></summary>
 public sealed class CreateHallAvailabilityWindowEndpoint(IHallAvailabilityService service)
     : Endpoint<CreateHallAvailabilityWindowRequest, ApiResult<AdminHallAvailabilityWindow>>
 {
     public override void Configure()
     {
         Post("/admin/halls/{hallId:guid}/availability-windows");
-        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.SpeakerMeetingRequests.Manage),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.HallAvailability.Manage),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -45,7 +49,7 @@ public sealed class ListHallAvailabilityWindowsEndpoint(IHallAvailabilityService
     public override void Configure()
     {
         Get("/admin/halls/{hallId:guid}/availability-windows");
-        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.SpeakerMeetingRequests.View),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.HallAvailability.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -61,7 +65,7 @@ public sealed class DeleteHallAvailabilityWindowEndpoint(IHallAvailabilityServic
     public override void Configure()
     {
         Delete("/admin/hall-availability-windows/{id:guid}");
-        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.SpeakerMeetingRequests.Manage),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.HallAvailability.Manage),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -81,14 +85,18 @@ public sealed class DeleteHallAvailabilityWindowEndpoint(IHallAvailabilityServic
 
 /// <summary>D-715 — the free meeting slots for a hall (the admin review flow reads
 /// these before binding an accepted request to a hall slot, GAP-2). Empty when the
-/// hall has no future windows.</summary>
+/// hall has no future windows.
+/// <para>QA A36 — read by the speaker-meeting AND the delegation-meeting Approve
+/// modals, so it carries the shared <c>HallAvailability.View</c> code: a
+/// meeting-desk role needs that one grant instead of the unrelated
+/// <c>SpeakerMeetingRequests.View</c>.</para></summary>
 public sealed class GetHallAvailableSlotsEndpoint(IHallAvailabilityService service)
     : EndpointWithoutRequest<ApiResult<IReadOnlyList<HallAvailableSlot>>>
 {
     public override void Configure()
     {
         Get("/admin/halls/{hallId:guid}/available-slots");
-        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.SpeakerMeetingRequests.View),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.HallAvailability.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }

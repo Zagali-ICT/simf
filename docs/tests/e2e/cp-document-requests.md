@@ -56,6 +56,8 @@
 | E2E-CPDR-008 | RTL render: Arabic toggle mirrors page + Respond modal | i18n | P1 | _to author_ |
 | E2E-CPDR-009 | Decision notifies the requester (R-2) — Accept or Reject dispatches a ParticipationDocumentDecided in-app notification | happy | P1 | authored ✓ |
 | E2E-CPDR-010 | Duplicate-pending guard (R-4) — a second Pending request for the same document type is 409 APP_REQUEST_DUPLICATE_PENDING; a different type is allowed | conflict | P1 | authored ✓ |
+| E2E-CPDR-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-CPDR-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

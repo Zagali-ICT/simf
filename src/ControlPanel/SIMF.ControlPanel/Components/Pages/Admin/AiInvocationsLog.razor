@@ -15,7 +15,9 @@
     <div class="simf-surface">
         @if (_toast is not null)
         {
-            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            <div class="simf-toast">
+                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            </div>
         }
 
         <SimfDataGrid TItem="AdminAiInvocationRow"
@@ -112,7 +114,7 @@
 
 @if (_detail is not null)
 {
-    <SimfModal Open="true" Title="@L["Admin.AiInvocations.Detail.Title"]" OnClose="CloseDetail">
+    <SimfModal Open="true" Title="@L["Admin.AiInvocations.Detail.Title"]" OnClose="CloseDetail" CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <dl class="simf-dl">
                 <dt>@L["Admin.AiInvocations.Col.PromptKey"]</dt>

@@ -142,12 +142,18 @@ class _AttachBox extends StatelessWidget {
             children: <Widget>[
               Icon(icon, size: 24, color: SimfTokens.accent),
               const SizedBox(width: SimfTokens.space2),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: SimfTokens.inputInk,
-                  fontSize: SimfTokens.textMd,
-                  fontWeight: FontWeight.w500,
+              // BUG-019 — the box has a fixed height and sits in a half-width
+              // tablet column, so a longer attach label must ellipsize instead
+              // of overflowing. Loose fit: an already-fitting label is unmoved.
+              Flexible(
+                child: Text(
+                  label,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: SimfTokens.inputInk,
+                    fontSize: SimfTokens.textMd,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ],

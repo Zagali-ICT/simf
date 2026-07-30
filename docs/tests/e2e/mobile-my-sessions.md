@@ -60,6 +60,8 @@
 | E2E-MOB113-006 | Anonymous read → 401 | auth | P0 | authored ✓ (API `My_sessions_without_a_token_returns_401`) |
 | E2E-MOB113-007 | RTL — Arabic title / category / speaker from the same item | rtl | P2 | covered (models `localized*` getters) |
 | E2E-MOB113-008 | **State chips (owner 2026-07-14):** each card shows a state chip from its phase + status — `مباشر الآن` (live) / `مسجّل` (recorded); my-sessions carries no published-summary flag, so `الملخص متاح` is not shown here; an upcoming card shows none | visual | P1 | authored ✓ (shared `SessionStateChipRow`; `session_state_chip_test.dart` unit + golden `session_state_chips.png`) |
+| E2E-MOB113-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB113-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

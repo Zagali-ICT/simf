@@ -1,4 +1,4 @@
-@* D-353 â€” reusable Media-Partner View/Delete form, hosted by CrudShell (popup
+@* D-353 — reusable Media-Partner View/Delete form, hosted by CrudShell (popup
    or full page) from MediaPartnersList.razor. Inherits CrudViewDeleteFormBase so
    it exposes the standard surface (IsDelete / Initial / OnDeleted / OnCancel).
    Read-only details always show (including the logo path); when IsDelete=true a
@@ -27,9 +27,9 @@
         <dt>@L["Admin.MediaPartners.Col.NameAr"]</dt>
         <dd>@Initial.NameArabic</dd>
         <dt>@L["Admin.MediaPartners.Col.Logo"]</dt>
-        <dd>@(string.IsNullOrWhiteSpace(Initial.LogoRelativePath) ? "â€”" : Initial.LogoRelativePath)</dd>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.LogoRelativePath) ? "—" : Initial.LogoRelativePath)</dd>
         <dt>@L["Admin.MediaPartners.Col.Url"]</dt>
-        <dd>@(string.IsNullOrWhiteSpace(Initial.Url) ? "â€”" : Initial.Url)</dd>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.Url) ? "—" : Initial.Url)</dd>
         <dt>@L["Admin.MediaPartners.Col.DisplayOrder"]</dt>
         <dd>@Initial.DisplayOrder</dd>
         <dt>@L["Admin.MediaPartners.Col.Active"]</dt>

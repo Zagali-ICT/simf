@@ -6,7 +6,7 @@
 | **Route** | `/admin/halls` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
-| **Auth setup** | `superadmin@zagali-ict.com` / `Aa@123456789` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@zagali-ict.com` / `[REDACTED - supply via SIMF_SuperAdmin__TempPassword]` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **Permission gate:** the page is `@attribute [RequirePermission(PermissionCatalog.Halls.View)]`
@@ -43,6 +43,14 @@
 | E2E-HAL-022 | Excel import: a non-.xlsx / wrong-sheet upload → bilingual rejection, nothing created (D-356) | error | P1 | _to author_ |
 | E2E-HAL-023 | Edit preserves a re-sent geofence — regression (D-505) | error | P0 | _to author_ |
 | E2E-HAL-024 | Excel round-trip: import a workbook carrying EquipmentNotes / geofence / SeatSelectionMode → fields land on the summary; export header carries them (D-506) | happy | P1 | _to author_ |
+
+> `E2E-HAL-025` and `E2E-HAL-026..030` are catalogued in their own sections
+> further down — **On-site remediation (W4)** and **QA B16 — hall occupancy
+> view** — each with its own table and written-up scenarios, which is this
+> file's convention for a later-appended batch. The five B16 rows had *also*
+> been copied into this matrix, so each of them appeared twice in the same
+> document under the same id. The copies were removed on 2026-07-28 and the
+> sections below are authoritative; all 30 ids remain catalogued.
 
 ## Scenarios
 
@@ -479,7 +487,8 @@ Scenario: A bad upload is rejected without creating anything
   `src/Backend/SIMF.Api/Endpoints/Admin/HallEndpoints.cs`. Permissions:
   `Halls.View` (list/get), `Halls.Create` (POST), `Halls.Edit` (PUT),
   `Halls.Delete` (DELETE). Error codes live in `SIMF.Common/ErrorCodes.cs`
-  (`HALL_INVALID`, `HALL_NOT_FOUND`, `HALL_CODE_DUPLICATE`, `HALL_IN_USE`,
+  (`HALL_INVALID`, `HALL_NOT_FOUND`, `HALL_CODE_DUPLICATE`, `HALL_IN_USE` —
+  enforced on deactivation since A37, see E2E-HAL-032 —
   `HALL_GEOFENCE_INVALID`). Audit events: `Hall.Created`, `Hall.Updated`,
   `Hall.Deactivated` (`SIMF.Application/Auditing/AuditEvents.cs`).
 - **API integration tests** that cover the same surface at a lower layer
@@ -552,6 +561,126 @@ land on the grid summary after import) and `Export_includes_the_extra_columns`
 |----|----------|----------|----------|--------|
 | E2E-HAL-025 | Reducing Capacity below the committed seat-layout total / active reservations → `HALL_CAPACITY_BELOW_USAGE` | validation | P1 | _to author_ |
 
+## QA B16 — hall occupancy view (sessions in this hall)
+
+| Id | Scenario | Category | Priority | Status |
+|----|----------|----------|----------|--------|
+| E2E-HAL-026 | Hall detail lists the sessions assigned to the hall with local times + status | happy | P1 | _to author_ |
+| E2E-HAL-027 | A hall with no sessions shows the schedule empty state | happy | P2 | _to author_ |
+| E2E-HAL-028 | The schedule read is gated by `Halls.View` (same as the page) | auth | P1 | _to author_ |
+| E2E-HAL-029 | A soft-deleted session is not shown as occupancy (matches the overlap guard) | error | P0 | _to author_ |
+| E2E-HAL-030 | A schedule longer than one page says it was capped | error | P2 | _to author_ |
+
+### E2E-HAL-026 — hall occupancy view
+
+```gherkin
+Scenario: The hall detail shows what the hall is doing
+  # QA B16: before this there was no hall schedule / calendar / session list on
+  # any hall surface, so the one-session-per-hall rule only ever surfaced as a
+  # 409 SESSION_HALL_TIME_OVERLAP from the Sessions editor.
+  Given a hall "Main Auditorium" (Code="H1") exists
+  And session "SES-1" / "Opening Plenary" is assigned to it, 11:00 AM–12:00 PM
+      on 05-01-2026 Saudi time, status Scheduled
+  When the administrator clicks the "Details" icon on the H1 row
+  Then a GET /account/api/admin/halls/{id} fires (HTTP 200)
+  And a GET /account/api/admin/halls/{id}/schedule fires (HTTP 200)
+  And below the read-only <dl> a section headed "Sessions in this hall"
+      / "الجلسات في هذه القاعة" renders a table with the columns
+      Code | Session | Starts | Ends | Status
+  And the row reads SES-1 | Opening Plenary | 05-01-2026 11:00 AM | 05-01-2026 12:00 PM
+      and a "Scheduled" status pill
+  And every time is Saudi local, 12-hour — no UTC stamp appears anywhere
+  And the summary line reads "1 session(s) in this hall."
+```
+
+**Evidence:** `tests/SIMF.ControlPanel.Tests/HallsViewDeleteTests.cs` →
+`B16_schedule_lists_the_sessions_assigned_to_this_hall` (asserts the schedule URL
++ the rendered row) and `B16_schedule_times_are_local_never_utc` (asserts
+`11:00 AM` / `12:00 PM` render and the raw `08:00` UTC hour never does).
+
+### E2E-HAL-027 — unbooked hall
+
+```gherkin
+Scenario: A hall with no sessions shows the empty state
+  Given a hall "Annex" exists with no session assigned to it
+  When the administrator opens its Details form
+  Then GET /account/api/admin/halls/{id}/schedule returns HTTP 200 with an empty page
+  And the "Sessions in this hall" section renders the SimfEmptyState
+      "No sessions are assigned to this hall." / "لا توجد جلسات مسندة إلى هذه القاعة."
+  And no table renders
+```
+
+**Evidence:** `tests/SIMF.ControlPanel.Tests/HallsViewDeleteTests.cs` →
+`B16_schedule_shows_the_empty_state_for_an_unbooked_hall`.
+
+### E2E-HAL-028 — schedule auth gate
+
+```gherkin
+Scenario: The hall schedule carries the hall page's own permission
+  Given an admin holds PermissionCatalog.Halls.View (and is not Administrator "*")
+  When they open a hall's Details form
+  Then GET /admin/halls/{id}/schedule returns HTTP 200
+  # It deliberately does NOT require Sessions.View: the schedule is part of the
+  # hall surface, so whoever can view the hall can see what the hall is doing.
+
+  Given an admin holds no Halls.* permission
+  When the same request is made directly against the API
+  Then it returns HTTP 403
+```
+
+**Evidence:** `tests/SIMF.Api.Tests/PermissionEnforcementTests.cs` →
+`Every_admin_endpoint_is_permission_and_approval_gated` sweeps every mapped
+`/admin/*` route, so an ungated schedule endpoint fails the build.
+
+### E2E-HAL-029 — a deactivated session is not occupancy
+
+```gherkin
+Scenario: The occupancy view agrees with the overlap guard
+  # The schedule exists to expose SESSION_HALL_TIME_OVERLAP up front, and that
+  # guard matches on other.IsActive. The Status column shows the SessionStatus
+  # lifecycle (Scheduled/Held/Recorded/Published), NOT IsActive, so a leaked
+  # soft-deleted row would be indistinguishable from a live booking.
+  Given a hall "Main Auditorium" exists
+  And session "SES-1" is assigned to it and is active
+  And session "SES-2" is assigned to the same hall and has been deactivated
+  When the administrator opens the hall's Details form
+  Then the "Sessions in this hall" table lists SES-1
+  And it does NOT list SES-2
+  And creating a new session in that hall over SES-2's window succeeds
+      (no SESSION_HALL_TIME_OVERLAP), so the view and the guard agree
+
+  Given the hall's only session has been deactivated
+  When the administrator opens the hall's Details form
+  Then the schedule renders the empty state, not a phantom booking
+```
+
+**Evidence:** `tests/SIMF.Api.Tests/HallScheduleTests.cs` →
+`Schedule_lists_only_the_active_sessions_in_this_hall` and
+`Schedule_of_a_hall_whose_only_session_is_deleted_is_empty`.
+
+### E2E-HAL-030 — a schedule longer than one page says it was capped
+
+```gherkin
+Scenario: A capped schedule is not shown as if it were complete
+  # The endpoint asks for 200 rows, which is also the ClampPage ceiling, so a
+  # hall with more active sessions than that WOULD be truncated silently.
+  Given a hall has more active sessions than the schedule page holds
+  When the administrator opens its Details form
+  Then the table renders the first page of rows
+  And an info alert reads "Showing the first {shown} of {total} sessions..."
+      / "يتم عرض أول {shown} من أصل {total} جلسة..."
+  And it points the administrator at the Sessions list filtered by this hall
+
+  Given the hall's schedule fits in one page
+  Then no capped notice renders
+```
+
+**Evidence:** `tests/SIMF.ControlPanel.Tests/HallsViewDeleteTests.cs` →
+`B16_a_capped_schedule_says_so_instead_of_reading_as_complete` and
+`B16_a_complete_schedule_shows_no_capped_notice`.
+
+---
+
 ### E2E-HAL-025 — capacity cannot drop below committed seats
 
 ```gherkin
@@ -565,6 +694,83 @@ Scenario: a capacity reduction below the seat-layout total is blocked
   # layout and no active reservations may shrink freely.
 ```
 
+## Session-lifecycle QA package (A37 — hall in-use guard)
+
+| Id | Scenario | Category | Priority | Status |
+|----|----------|----------|----------|--------|
+| E2E-HAL-032 | Deactivating a hall that active sessions still use → 409 `HALL_IN_USE` naming the count; the hall stays Active; the same guard runs when the edit form clears Active | validation | P1 | authored ✓ (`SessionLifecycleNoticeTests.A37_Deactivating_a_hall_active_sessions_use_is_rejected`) |
+
+### E2E-HAL-032 — a hall in use cannot be deactivated
+
+```gherkin
+Feature: Deactivating a hall does not orphan the sessions inside it
+  As an Administrator
+  I want the refusal at the moment I make the mistake
+  So that it does not resurface later as SESSION_HALL_NOT_FOUND on an unrelated edit
+
+Scenario: the Deactivate action is refused while an active session uses the hall
+  Given the hall "Auditorium A" (code "AUD-A") is Active
+  And one active session "SES-001" is scheduled in it
+  When the admin clicks Deactivate on AUD-A and confirms
+  Then the API responds 409 with error code HALL_IN_USE
+  And the message reads "This hall is still used by 1 active session(s) - move or
+      deactivate them before deactivating the hall." with its Arabic pair
+  And AUD-A is still Active in the grid
+
+Scenario: clearing the Active checkbox on the edit form takes the same guard
+  When the admin opens Edit on AUD-A, unticks Active and saves
+  Then the API responds 409 HALL_IN_USE and AUD-A is still Active
+
+Scenario: re-home the session first and the hall deactivates normally
+  When the admin deactivates SES-001 (or moves it to another hall)
+  And then deactivates AUD-A
+  Then the API responds 200 and AUD-A shows the grey Inactive pill
+  # Before A37 the flip always succeeded here; the damage surfaced later, as a
+  # 400 SESSION_HALL_NOT_FOUND the next time anyone edited an orphaned session.
+```
+
 ---
 
-_Last reviewed:_ 2026-07-11 by Claude (W4 on-site remediation — H-3 capacity-shrink guard; E2E-HAL-025). Prior: 2026-06-26 by Claude (D-506 — Excel export/import field-drop fix: EquipmentNotes + geofence triple + SeatSelectionMode now round-trip; scenario E2E-HAL-024 added, E2E-HAL-020/021 column lists reconciled). Prior: 2026-06-10 (D-356 Phase 5 — Excel export/import + D-353 Page<->Popup toggle scenarios E2E-HAL-017..022; E2E-HAL-001 deactivate step reconciled to the CrudShell + SimfConfirm gate).
+_Last reviewed:_ 2026-07-27 by Claude (QA B16 follow-up — the occupancy view now filters `isActive` so a soft-deleted session no longer reads as a live booking, and a capped page says so; E2E-HAL-029/030). Prior: 2026-07-26 by Claude (QA B16 — hall occupancy view; E2E-HAL-026..028). Prior: 2026-07-11 by Claude (W4 on-site remediation — H-3 capacity-shrink guard; E2E-HAL-025). Prior: 2026-06-26 by Claude (D-506 — Excel export/import field-drop fix: EquipmentNotes + geofence triple + SeatSelectionMode now round-trip; scenario E2E-HAL-024 added, E2E-HAL-020/021 column lists reconciled). Prior: 2026-06-10 (D-356 Phase 5 — Excel export/import + D-353 Page<->Popup toggle scenarios E2E-HAL-017..022; E2E-HAL-001 deactivate step reconciled to the CrudShell + SimfConfirm gate).
+_Last reviewed:_ 2026-07-26 by Claude (session-lifecycle QA package — A37 hall in-use deactivation guard, `HALL_IN_USE` now enforced rather than reserved; E2E-HAL-032). Prior: 2026-07-11 by Claude (W4 on-site remediation — H-3 capacity-shrink guard; E2E-HAL-025). Prior: 2026-06-26 by Claude (D-506 — Excel export/import field-drop fix: EquipmentNotes + geofence triple + SeatSelectionMode now round-trip; scenario E2E-HAL-024 added, E2E-HAL-020/021 column lists reconciled). Prior: 2026-06-10 (D-356 Phase 5 — Excel export/import + D-353 Page<->Popup toggle scenarios E2E-HAL-017..022; E2E-HAL-001 deactivate step reconciled to the CrudShell + SimfConfirm gate).
+
+---
+
+## QA A40 — the seat-layout row action
+
+| Id | Scenario | Category | Priority | Status |
+|----|----------|----------|----------|--------|
+| E2E-HAL-031 | A "Seat layout" row action deep-links each hall to its seat-layout editor; it is hidden from an admin without `SeatLayouts.View` | happy | P0 | authored ✓ (`HallsListSeatLayoutActionTests`) |
+| E2E-HAL-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-HAL-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
+
+### E2E-HAL-031 — jump from a hall row to its seat layout
+
+```gherkin
+Scenario: The row action opens the seat-layout editor on that hall
+  Given the administrator holds "Halls.View" and "SeatLayouts.View"
+  And they are on "/admin/halls" with hall "H-01" (Main Hall, cap 120) listed
+  When they click the "Seat layout" row action on the "Main Hall" row
+  Then the browser navigates to "/admin/halls/seat-layouts?hallId=<H-01 id>"
+  And the editor's hall picker already shows "H-01 - Main Hall (cap 120)"
+  And H-01's stored rows and per-row seat counts are loaded for editing
+  # Before A40 the editor was reachable only from the side-menu item, which opens
+  # on a blank picker — there was no route from a hall to its own seat map.
+
+Scenario: The row action is hidden without the seat-layout permission
+  Given the administrator holds "Halls.View" but NOT "SeatLayouts.View"
+  When they open "/admin/halls"
+  Then the hall rows render with Details / Edit / Deactivate
+  And no "Seat layout" row action is offered on any row
+```
+
+**Evidence captured:**
+- bUnit: `tests/SIMF.ControlPanel.Tests/HallsListSeatLayoutActionTests.cs` — the action
+  renders, navigates to `?hallId=`, and is absent without the permission.
+- The editor side of the same journey is E2E-HSL-024 / 025 in
+  [`cp-admin-halls-seat-layouts.md`](cp-admin-halls-seat-layouts.md).
+
+---
+
+_Last reviewed:_ 2026-07-27 by Claude (QA A40 — the "Seat layout" row action on the
+Halls grid + its permission gate; E2E-HAL-031).

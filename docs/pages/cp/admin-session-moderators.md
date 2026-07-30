@@ -18,8 +18,9 @@
 The admin desk for **per-session moderator grants** — assigning a specific
 user to moderate a specific session's Q&A (D-169, gap doc G6, PDF §2.7.2).
 A grant is a composite-key `(SessionId, UserId)` row in `dbo.SessionModerators`;
-the page lists every existing grant, lets an admin **assign** a new one (by raw
-`SessionId` + `UserId` GUIDs) and **revoke** an existing one from the row.
+the page lists every existing grant, lets an admin **assign** a new one (picking
+a session and an *eligible* moderator from two dropdowns — DEF-MOD-005) and
+**revoke** an existing one from the row.
 
 This is deliberately distinct from two adjacent things and the source comments
 call out the collision:
@@ -46,8 +47,13 @@ Admins assign; moderators do not self-promote (the assign/revoke endpoints are
   - **Assigned by** — `AssignedByDisplayName`.
   - **Assigned** — `AssignedAt` rendered `yyyy-MM-dd HH:mm 'UTC'`; **sortable**.
 - **Assign moderator** toolbar button (grid `OnAdd`) opens a `SimfModal`
-  (`Admin.SessionModerators.Add.Title`) with two `SimfTextField` inputs —
-  **Session id** and **Moderator user id** — plus Cancel / Submit footer buttons.
+  (`Admin.SessionModerators.Add.Title`) with two `SimfSelect` pickers —
+  **Session** and **Moderator** — plus Cancel / Submit footer buttons.
+  Opening the modal loads both option lists from
+  `GET /account/api/admin/session-moderators/assign-options` (DEF-MOD-005). When
+  no account is eligible yet, an info `SimfAlert`
+  (`Admin.SessionModerators.NoCandidates`) explains how to make one and the
+  Moderator picker is disabled.
 - Per-row **Revoke** quiet icon action (`link-off` icon) in `RowActions`,
   wrapped in `<AuthorizedAction Permission="SessionModerators.Revoke">`.
 - `SimfEmptyState` (`Admin.SessionModerators.None`) when there are no grants.
@@ -64,13 +70,29 @@ Admins assign; moderators do not self-promote (the assign/revoke endpoints are
 
 | Field | Required | Type | Validation |
 |-------|----------|------|------------|
-| Session id | yes | GUID text | client-side `Guid.TryParse`; must resolve to an active session (server) |
-| Moderator user id | yes | GUID text | client-side `Guid.TryParse`; must resolve to an **Approved** Identity user (server) |
+| Session | yes | `SimfSelect` over the **active** sessions | must be picked; must still resolve to an active session (server) |
+| Moderator | yes | `SimfSelect` over the **eligible** accounts | must be picked; must still be Approved **and** eligible (server) |
 
 The page takes **raw GUIDs**, not pickers — there is no in-page lookup, so the
-admin captures the GUIDs from the Sessions grid / Users list beforehand. A
-non-GUID value fails the client guard and surfaces the page's `LoadFailed`
-fallback toast with no POST fired.
+admin captures the GUIDs from the Sessions grid / Users list beforehand. A blank
+or non-GUID value fails the client guard and surfaces
+`Admin.SessionModerators.Required` **inside the dialog** with no POST fired
+(BUG-004 — see §6).
+**DEF-MOD-005 — pickers, not GUIDs.** The dialog used to take the session id and
+the user id as free-text GUIDs with only a `Guid.TryParse` guard, so a typo
+silently handed a moderation desk to whichever account the GUID happened to name
+and there was no way to look the right person up. Both lists now come from
+`GET /admin/session-moderators/assign-options` (gated by the same
+`SessionModerators.Assign` permission as the write it feeds). Submitting without
+both picks shows `Admin.SessionModerators.PickBoth` and fires no POST.
+
+**Eligibility (server-side, DEF-MOD-005).** An account may moderate only when it
+is Approved (Identity DB) **and** carries a partner profile type
+(`IsForVisitor = false`) whose `MobileAppRole` is `Moderator` (App DB) — exactly
+the fact `UserProfileService.ResolveMobileAppRoleAsync` mints the app's moderator
+role from, so a grant can never outrun the role that opens the desk. The two
+facts are read with one query per database and joined in memory (no cross-DB
+JOIN, D-157).
 
 ## 5. Data flow + endpoints
 
@@ -119,14 +141,36 @@ Server-side in `AdminSessionModeratorService.AssignAsync` (verified order):
 - **Un-approved moderator** (`AccountState != Approved`) → 400
   `AUTH_ACCOUNT_NOT_APPROVED` ("Moderator must be an approved account." / "يجب
   أن يكون المُشرف حساباً معتمداً.").
+- **Not eligible to moderate** (no partner profile type carrying
+  `MobileAppRole.Moderator`) → 400 `SESSION_MODERATOR_NOT_ELIGIBLE` ("The account
+  is not eligible to moderate — assign it a profile type whose mobile app role is
+  Moderator first." / "الحساب غير مؤهل للمحاورة — عيّن له نوع ملف شخصي دوره في
+  التطبيق \"محاوِر\" أولاً.") — DEF-MOD-005.
 - **Duplicate grant** `(SessionId, UserId)` → 409
   `SESSION_MODERATOR_ALREADY_ASSIGNED` ("This user is already a moderator of the
   session." / "هذا المستخدم مشرف على الجلسة بالفعل.").
 
-Client-side, a non-GUID `Session id` / `Moderator user id` fails the page's
-`Guid.TryParse` guard and shows the `LoadFailed` fallback toast with no POST.
-A failed `/list` (e.g. server 500) leaves the grid empty and shows the
-bilingual `LoadFailed` toast.
+Client-side, a blank or non-GUID `Session id` / `Moderator user id` fails the
+page's `Guid.TryParse` guard and shows `Admin.SessionModerators.Required` ("A
+session id and a user id are both required, and each must be a valid id." /
+"معرّف الجلسة ومعرّف المستخدم مطلوبان معاً، ويجب أن يكون كل منهما معرّفاً
+صحيحاً.") with no POST.
+
+**Where the message renders (BUG-004).** The page-level `_toast` `SimfAlert`
+lives inside `.simf-surface`, which sits **under** the modal backdrop
+(`.simf-modal { position: fixed; inset: 0; z-index: 100 }`). While the Assign
+dialog is open a toast is therefore invisible, and the submit read as a dead
+button. The dialog now carries its own `_error`, rendered as a
+`SimfAlert Variant="error"` in the dialog body — the same shape the canonical
+CRUD forms (e.g. `SessionCategoriesAddEdit`) use. Every server rejection above
+lands there too while the dialog is open; `_error` is cleared when the dialog is
+re-opened. A failed `/list` (e.g. server 500) happens with no dialog open, so it
+still shows the bilingual `LoadFailed` toast on the page.
+Client-side, submitting with either picker unset shows the
+`Admin.SessionModerators.PickBoth` toast with no POST. A failed `/list` (e.g.
+server 500) leaves the grid empty and shows the bilingual `LoadFailed` toast; a
+failed `/assign-options` shows `Admin.SessionModerators.OptionsFailed` inside the
+modal and leaves both pickers empty.
 
 ## 7. Excel export (D-356) — export only
 
@@ -154,8 +198,12 @@ bilingual `LoadFailed` toast.
 
 ## 7b. Edge cases + known limitations
 
-- **Raw-GUID entry, no pickers.** Assign requires hand-entered GUIDs; mistyped
-  values are caught client-side (format) then server-side (existence/approval).
+- **Eligible-moderator list can be empty on a fresh DB.** Make an account
+  eligible by assigning it the seeded "Moderator" profile type
+  (`MobileAppRole = Moderator`) from `/admin/profile-types` first; the modal says
+  so when the list is empty.
+- **The picker lists ACTIVE sessions only.** The inactive-session guard is now a
+  server-side backstop rather than a reachable UI path.
 - **Revoke is idempotent.** Revoking a grant another admin already removed still
   returns 200 with the success toast.
 - **Identity columns not server-sortable/filterable.** Moderator and
@@ -185,17 +233,20 @@ the source of truth.)_
 
 See [`docs/tests/e2e/cp-admin-session-moderators.md`](../../tests/e2e/cp-admin-session-moderators.md):
 E2E-SMD-001 golden assign → revoke round-trip, 002 empty state, 003 auth gate,
-004–005 assign modal open / cancel, 006 client non-GUID guard, 007 unknown
+004–005 assign modal open / cancel, 006 client both-pickers guard, 007 unknown
 session 404, 008 inactive session 400, 009 unknown user 404, 010 un-approved
 user 400, 011 duplicate 409, 012 revoke idempotency, 013 list 500 fallback,
 014 pager summary, 015 RTL, 016 per-column filter, 017 column sort,
-**018 Excel export (D-356)**.
+**018 Excel export (D-356)**, **019 DEF-MOD-005 eligibility (not offered +
+`SESSION_MODERATOR_NOT_ELIGIBLE`)**, **020 DEF-MOD-005 the picker lookup carries
+the `SessionModerators.Assign` gate**.
 
 ## 12. Related docs
 
 - E2E catalogue: `docs/tests/e2e/cp-admin-session-moderators.md`.
 - Decisions: D-169 (admin moderator-grants desk), D-256 (raw-table → grid),
-  D-157 (Data ↔ Identity separation), D-356 (grid Excel export wave).
+  D-157 (Data ↔ Identity separation), D-356 (grid Excel export wave),
+  DEF-MOD-005 (GUID boxes → pickers + server-side eligibility).
 - Authority: PDF §2.7.2 (admin desk), §4.2 (moderator naming-collision rule).
 - Adjacent: the live moderation desk `/sessions/{id}/moderate`
   (`SessionModeration.Moderate`); the Scientific-Committee Q&A queue
@@ -210,3 +261,4 @@ user 400, 011 duplicate 409, 012 revoke idempotency, 013 list 500 fallback,
 | 2026-06-11 | D-356 | Excel **export only** added — toolbar Export → `POST /account/api/admin/session-moderators/export` (sheet "SessionModerators", 7-column workbook, 5000-row cap) via `simfAccount.downloadXlsx`. New `SessionModerators.Export` permission (AdminOnly). No import (grant lifecycle is assign/revoke). E2E catalogue extended with E2E-SMD-018. |
 
 _Last reviewed:_ 2026-06-11 by Claude (D-356 Excel export-only documentation pass).
+_Last reviewed:_ 2026-07-26 by Claude (BUG-004 — the Assign dialog's validation message moved from the hidden page toast into the dialog body).

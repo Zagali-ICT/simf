@@ -66,6 +66,25 @@ class SeatMapRepository {
     );
   }
 
+  /// B1 — `POST /app/sessions/{id}/seats/move` → change the caller's already-held
+  /// seat to [rowLabel]+[seatNumber] in ONE atomic step (the server acquires the
+  /// destination and releases the source in a single transaction, so a lost race
+  /// leaves the original seat held). Throws [ApiFailure] on 409
+  /// `SEAT_ALREADY_RESERVED` (someone took it first) / `SEAT_MOVE_SAME_SEAT` /
+  /// `SEAT_TIER_RESERVED` / `SEAT_TIER_NOT_ELIGIBLE` / `BOOKING_SESSION_STARTED`,
+  /// or 404 `SEAT_RESERVATION_NOT_FOUND` when there is no seat to move.
+  Future<MyReservation> moveSeat(
+    String sessionId, {
+    required String rowLabel,
+    required int seatNumber,
+  }) {
+    return _client.post<MyReservation>(
+      '/app/sessions/$sessionId/seats/move',
+      body: <String, dynamic>{'rowLabel': rowLabel, 'seatNumber': seatNumber},
+      decodeData: _decodeReservation,
+    );
+  }
+
   /// D-485 — `DELETE /app/sessions/{id}/seats/mine` → cancel the caller's own
   /// held reservation (before the session starts). A 404 means there was none.
   Future<void> releaseMine(String sessionId) {

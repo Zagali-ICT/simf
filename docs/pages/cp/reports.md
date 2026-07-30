@@ -154,9 +154,9 @@ dark and grey are covered by the token file alone.
 
 ## 11. Decisions
 
-D-776 (reporting module: additive, read-only, per-report permissions with a
-separate export gate), D-777 (inclusive Saudi date range resolved to a UTC
-half-open window), D-778 (report rows carry pre-formatted Saudi date strings
-because the shared XLSX exporter writes UTC), D-779 (the five later reports;
+D-804 (reporting module: additive, read-only, per-report permissions with a
+separate export gate), D-805 (inclusive Saudi date range resolved to a UTC
+half-open window), D-806 (report rows carry pre-formatted Saudi date strings
+because the shared XLSX exporter writes UTC), D-807 (the five later reports;
 cross-table reports concatenate in memory; ratings and engagement withhold the
 person).

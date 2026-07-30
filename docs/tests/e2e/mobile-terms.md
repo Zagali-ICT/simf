@@ -38,6 +38,8 @@
 | E2E-MOB009-006 | Transport / 5xx → error message + single retry that reloads | resilience | P1 | authored ✓ (widget test) |
 | E2E-MOB009-007 | Localized body — Arabic primary, English fallback when one side is blank | i18n | P1 | authored ✓ (model test) |
 | E2E-MOB009-008 | RTL render (Arabic) — title, body, gate mirror | i18n | P1 | authored (screen) |
+| E2E-MOB009-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB009-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

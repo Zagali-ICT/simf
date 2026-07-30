@@ -14,7 +14,9 @@
     <div class="simf-surface">
         @if (_toast is not null)
         {
-            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            <div class="simf-toast">
+                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            </div>
         }
 
         <SimfDataGrid TItem="AdminVipSummary"
@@ -75,7 +77,8 @@
 @if (_notifyOpen)
 {
     <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.Vips.Notify.Title"]"
-               OnClose="@(() => _notifyOpen = false)">
+               OnClose="@(() => _notifyOpen = false)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <div class="simf-form__fields">
                 <SimfTextField Label="@L["Admin.Vips.Notify.TitleField"]"
@@ -105,7 +108,8 @@
                 @L["Admin.Vips.Notify.Cancel"]
             </SimfButton>
             <SimfButton Type="button" OnClick="SubmitNotifyAsync"
-                        Loading="_busy">
+                        Loading="_busy"
+                        LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.Vips.Notify.Submit"]
             </SimfButton>
         </Footer>

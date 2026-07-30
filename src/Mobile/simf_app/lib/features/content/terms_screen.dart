@@ -137,6 +137,8 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
                           padding: const EdgeInsets.only(left: SimfTokens.space2),
                           child: IconButton(
                             onPressed: _back,
+                            tooltip: MaterialLocalizations.of(context)
+                                .backButtonTooltip,
                             icon: const Icon(
                               Icons.arrow_back_ios_new,
                               color: SimfTokens.surface,

@@ -1,4 +1,4 @@
-@* D-353 â€” reusable Archive (Past Editions) Add/Edit form, hosted by CrudShell
+@* D-353 — reusable Archive (Past Editions) Add/Edit form, hosted by CrudShell
    (as a popup or a full page) from ArchiveList.razor. Inherits
    CrudAddEditFormBase so it exposes the standard CRUD-form parameter surface
    (IsEdit / Initial / OnSuccess / OnCancel). IsEdit=false runs Create (POST);
@@ -65,7 +65,7 @@
         </label>
         <SimfTextField Label="@L["Admin.Archive.Field.CoverImageRelativePath"]"
                        @bind-Value="_model.CoverImageRelativePath" Disabled="_busy" />
-        @* Â§9 (screen 24-01) â€” place + date label for the edition detail.
+        @* §9 (screen 24-01) — place + date label for the edition detail.
            MaxLength mirrors EF HasMaxLength + FluentValidation (256/128). *@
         <SimfTextField Label="@L["Admin.Archive.Field.LocationEn"]"
                        MaxLength="256"

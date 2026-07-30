@@ -38,6 +38,9 @@ class AccountRememberForgot extends StatelessWidget {
                 height: 19,
                 child: Checkbox(
                   value: rememberMe,
+                  // The caption is a sibling Text, so the box itself announced
+                  // as an unnamed checkbox (BUG-012).
+                  semanticLabel: rememberLabel,
                   onChanged: enabled
                       ? (v) => onRememberChanged(v ?? true)
                       : null,

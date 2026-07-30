@@ -1,0 +1,2 @@
+*.json
+!predicted-inventory.json

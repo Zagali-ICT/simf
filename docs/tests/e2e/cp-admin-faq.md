@@ -35,13 +35,16 @@
 | E2E-FAQ-006 | Entry count column updates after add/deactivate | happy | P2 | _to author_ |
 | E2E-FAQ-007 | Auth gate — signed-in admin lacking `Faq.View` → `/not-permitted` | auth | P0 | _to author_ |
 | E2E-FAQ-008 | Action gate — admin with `Faq.View` but not Create/Edit/Delete sees no action buttons | auth | P1 | _to author_ |
-| E2E-FAQ-009 | Group validation — blank English name → bilingual error toast | error | P1 | _to author_ |
-| E2E-FAQ-010 | Group validation — negative display order → bilingual error toast | error | P1 | _to author_ |
-| E2E-FAQ-011 | Entry validation — blank answer / over-length question → bilingual error toast | error | P1 | _to author_ |
+| E2E-FAQ-009 | Group validation — blank English name → bilingual error **inside the dialog** (BUG-004) | error | P1 | _to author_ |
+| E2E-FAQ-010 | Group validation — negative display order → bilingual error **inside the dialog** | error | P1 | _to author_ |
+| E2E-FAQ-011 | Entry validation — blank answer / over-length question → bilingual error **inside the dialog** | error | P1 | _to author_ |
 | E2E-FAQ-012 | Not-found — edit a group/entry deactivated in another tab → 404 toast | error | P2 | _to author_ |
 | E2E-FAQ-013 | Server 500 on groups `/list` → bilingual fallback toast | resilience | P2 | _to author_ |
 | E2E-FAQ-014 | Idempotent deactivate — re-deactivate an already-hidden group is a no-op success | resilience | P2 | _to author_ |
 | E2E-FAQ-015 | RTL / Arabic render — page + both modals mirror | i18n | P1 | _to author_ |
+| E2E-FAQ-016 | Client validation — empty submit on either dialog → bilingual error **inside the dialog**, no POST (BUG-004) | error | P1 | _to author_ |
+| E2E-FAQ-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-FAQ-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 
@@ -251,8 +254,17 @@ Scenario: Blank English name returns 400 with bilingual message
   And the API returns HTTP 400 with ApiResult.Error.Code = "FAQ_INVALID"
   And the error message is "FAQ English name is required." / "الاسم الإنجليزي مطلوب."
   And the modal stays open
-  And a red SimfAlert toast surfaces the bilingual MessageForCurrentCulture()
+  And a red SimfAlert surfaces the bilingual MessageForCurrentCulture() INSIDE the
+      dialog body (.simf-modal__body), not on the page behind the backdrop
 ```
+
+> **BUG-004 (as-built).** The page-level toast is rendered inside
+> `.simf-surface`, which sits under the modal backdrop
+> (`.simf-modal { position: fixed; inset: 0; z-index: 100 }`), so a rejected save
+> was invisible while the dialog was open and Save read as a dead button. Both
+> dialogs now render a dedicated `_error` in the dialog body, and a blank
+> required field is caught client-side before the request goes out — the same
+> shape the canonical CRUD forms (e.g. `SessionCategoriesAddEdit`) use.
 
 ### E2E-FAQ-010 — Group validation: negative display order
 
@@ -265,7 +277,7 @@ Scenario: Negative display order returns 400 with bilingual message
   Then POST /account/api/admin/faq/groups returns HTTP 400 with Error.Code = "FAQ_INVALID"
   And the message is "Display order must be zero or a positive integer."
     / "يجب أن يكون ترتيب العرض صفراً أو عدداً صحيحاً موجباً."
-  And the modal stays open and the red toast shows the bilingual text
+  And the modal stays open and the red SimfAlert in the dialog body shows the bilingual text
 ```
 
 ### E2E-FAQ-011 — Entry validation: blank / over-length text
@@ -278,7 +290,7 @@ Scenario: Blank answer returns 400 with bilingual message
   And clicks "Save"
   Then POST /account/api/admin/faq/entries returns HTTP 400 with Error.Code = "FAQ_INVALID"
   And the message is "FAQ Arabic answer is required." / "الإجابة العربية مطلوب."
-  And the modal stays open and the red toast shows the bilingual text
+  And the modal stays open and the red SimfAlert in the dialog body shows the bilingual text
 
 Scenario: Question over 512 characters returns 400
   Given the "Add FAQ entry" modal is open with all other fields valid
@@ -355,6 +367,30 @@ Scenario: Arabic toggle mirrors the page and both modals
   And the answer textareas are right-aligned
 ```
 
+### E2E-FAQ-016 — Client validation (empty submit)
+
+```gherkin
+Scenario: Saving the Add-group dialog empty reports, and creates nothing
+  Given the "Add FAQ group" modal is open with every field empty
+  When the administrator clicks "Save" without typing anything
+  Then a red SimfAlert renders INSIDE the dialog body (.simf-modal__body) reading
+      "An English and an Arabic group name are both required." /
+      "اسم المجموعة بالإنجليزية والعربية مطلوبان معاً."
+  And the modal stays open
+  And no POST /account/api/admin/faq/groups request fires
+  And the groups grid row count is unchanged
+  And closing and re-opening the dialog clears the message
+
+Scenario: Saving the Add-entry dialog empty reports, and creates nothing
+  Given a group is selected and the "Add FAQ entry" modal is open with every field empty
+  When the administrator clicks "Save" without typing anything
+  Then a red SimfAlert renders INSIDE the dialog body reading
+      "The question and the answer are required in both English and Arabic." /
+      "السؤال والإجابة مطلوبان بالإنجليزية والعربية."
+  And the modal stays open
+  And no POST /account/api/admin/faq/entries request fires
+```
+
 ---
 
 ## Implementation notes
@@ -389,3 +425,4 @@ Scenario: Arabic toggle mirrors the page and both modals
 ---
 
 _Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-07-26 by Claude (BUG-004): both dialogs' validation messages now render inside the dialog body instead of behind the backdrop; reworded E2E-FAQ-009/010/011 and added E2E-FAQ-016 (empty submit).

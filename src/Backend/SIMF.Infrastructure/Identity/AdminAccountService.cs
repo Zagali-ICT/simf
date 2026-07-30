@@ -470,8 +470,13 @@ internal sealed partial class AdminAccountService(
             NationalIdHash = nationalIdHash,
             IqamaNumberHash = iqamaNumberHash,
             PassportNumberHash = passportNumberHash,
-            SaudiMobile = NormaliseOptional(request.SaudiMobile),
-            InternationalMobile = NormaliseOptional(request.InternationalMobile),
+            // DEF-PHN-003 — store the canonical number, exactly like the plate
+            // above and the self-service path (UserProfileService): a desk-typed
+            // "+966-55 598 7654" must land in the column as the same string the
+            // app would have written for that number.
+            SaudiMobile = MobileNumber.NormalizeOptional(request.SaudiMobile),
+            InternationalMobile =
+                MobileNumber.NormalizeOptional(request.InternationalMobile),
             // B3 — D-221 (الجهة): the desk-required organisation pick.
             OrganisationId = organisationId,
             // D-473 (#10) — delegation-member flag (a delegate is a normal visitor).

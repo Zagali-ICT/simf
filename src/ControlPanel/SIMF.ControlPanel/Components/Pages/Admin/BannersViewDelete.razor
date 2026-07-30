@@ -1,4 +1,4 @@
-@* D-353 â€” reusable Banner View/Delete form, hosted by CrudShell (popup or
+@* D-353 — reusable Banner View/Delete form, hosted by CrudShell (popup or
    full page) from BannersList. Inherits CrudViewDeleteFormBase so it exposes
    the standard surface (IsDelete / Initial / OnDeleted / OnCancel). Read-only
    details always show (including a preview of the optional image asset); when
@@ -27,7 +27,7 @@
         <dd>
             @if (string.IsNullOrWhiteSpace(Initial.ImageUrl))
             {
-                <span>â€”</span>
+                <span>—</span>
             }
             else
             {
@@ -35,7 +35,7 @@
             }
         </dd>
         <dt>@L["Admin.Banners.Field.LinkUrl"]</dt>
-        <dd>@(string.IsNullOrWhiteSpace(Initial.LinkUrl) ? "â€”" : Initial.LinkUrl)</dd>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.LinkUrl) ? "—" : Initial.LinkUrl)</dd>
         <dt>@L["Admin.Banners.Field.Start"]</dt>
         <dd>@Initial.Start.FormatSaudi("dd-MM-yyyy hh:mm tt")</dd>
         <dt>@L["Admin.Banners.Field.End"]</dt>

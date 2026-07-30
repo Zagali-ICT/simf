@@ -38,6 +38,7 @@ class AccountTopControls extends StatelessWidget {
             IconButton(
               key: const ValueKey<String>('accountBack'),
               onPressed: busy ? null : onBack,
+              tooltip: MaterialLocalizations.of(context).backButtonTooltip,
               icon: const SimfSvgIcon(
                 AppAssets.authBack,
                 size: 24,

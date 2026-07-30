@@ -15,11 +15,27 @@
     <div class="simf-surface">
         <p>@L["Admin.Logs.Supporting"]</p>
 
+    @* §6.16 (F-U5-009) — a FAILED list used to fall into the same branch as an
+       empty one, so "I could not reach the log service" was rendered as
+       "there are no log files". They are opposite facts on an incident desk. *@
+    @if (_error is not null)
+    {
+        <SimfAlert Variant="error">@_error</SimfAlert>
+    }
+
     @if (_loadingList)
     {
         <p>@L["Admin.Logs.Loading"]</p>
     }
-    else if (_list is null || _list.Projects.Count == 0)
+    else if (_list is null)
+    {
+        <div class="simf-logs__row simf-logs__row--actions">
+            <SimfButton Type="button" Variant="secondary" OnClick="RefreshAsync">
+                @L["Common.Retry"]
+            </SimfButton>
+        </div>
+    }
+    else if (_list.Projects.Count == 0)
     {
         <SimfEmptyState Title="@L["Admin.Logs.Empty"]" />
     }

@@ -85,7 +85,8 @@ else
 @if (_editOpen)
 {
     <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.Vips.Edit.Title"]"
-               OnClose="@(() => _editOpen = false)">
+               OnClose="@(() => _editOpen = false)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <EditAccountForm AccountId="_editUserId" Scope="visitors" IsVisitorScope="true"
                              ShowVipPhoto="true"

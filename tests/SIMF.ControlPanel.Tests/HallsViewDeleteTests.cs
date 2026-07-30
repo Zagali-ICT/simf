@@ -66,4 +66,122 @@ public sealed class HallsViewDeleteTests : CpComponentTestBase
 
         Assert.Empty(deleteHandler.Invocations);
     }
+
+    // -- QA B16: the hall-side occupancy view -------------------------------
+    //
+    // Before B16 no hall surface listed what the hall was doing, so the
+    // session/booking overlap rule only ever surfaced as a 409. The detail form
+    // now reads the hall-gated schedule endpoint and renders the assigned
+    // sessions with their LOCAL (Saudi, 12-hour) times and status.
+
+    // 08:00Z on the forum's opening day → 11:00 AM Saudi (+3).
+    private static readonly DateTimeOffset ScheduleStartUtc =
+        new(2026, 1, 5, 8, 0, 0, TimeSpan.Zero);
+
+    private static AdminSessionSummary ScheduledSession(Guid hallId) => new(
+        Guid.NewGuid(), "SES-1", "Opening Plenary", "SES-1-AR",
+        hallId, "Main Hall", "MAIN-HALL-AR",
+        ScheduleStartUtc, ScheduleStartUtc.AddHours(1),
+        Capacity: 250, IsActive: true, CreatedAt: DateTimeOffset.UnixEpoch);
+
+    // Plans the schedule read; returns the handler so a test can assert the URL.
+    private static ApiResult<GridPage<AdminSessionSummary>> SchedulePage(
+        params AdminSessionSummary[] sessions) =>
+        ApiResult<GridPage<AdminSessionSummary>>.Ok(
+            GridPage<AdminSessionSummary>.Of(sessions, sessions.Length, 0, 200));
+
+    [Fact]
+    public void B16_schedule_lists_the_sessions_assigned_to_this_hall()
+    {
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        var row = Detail();
+        var schedule = JSInterop.Setup<ApiResult<GridPage<AdminSessionSummary>>>(
+            "simfAccount.getJson", _ => true)
+            .SetResult(SchedulePage(ScheduledSession(row.Id)));
+
+        var cut = RenderComponent<HallsViewDelete>(p => p
+            .Add(x => x.IsDelete, false)
+            .Add(x => x.Initial, row));
+
+        // It reads the hall's own schedule endpoint (Halls.View-gated), not the
+        // sessions grid.
+        var call = Assert.Single(schedule.Invocations);
+        Assert.Equal($"/account/api/admin/halls/{row.Id}/schedule",
+            (string)call.Arguments[0]!);
+
+        Assert.Contains("Admin.Halls.Schedule.Heading", cut.Markup);
+        Assert.Contains("SES-1", cut.Markup);
+        Assert.Contains("Opening Plenary", cut.Markup);
+        Assert.Contains("Admin.Sessions.Status.Scheduled", cut.Markup);
+    }
+
+    [Fact]
+    public void B16_schedule_times_are_local_never_utc()
+    {
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        var row = Detail();
+        JSInterop.Setup<ApiResult<GridPage<AdminSessionSummary>>>(
+            "simfAccount.getJson", _ => true)
+            .SetResult(SchedulePage(ScheduledSession(row.Id)));
+
+        var cut = RenderComponent<HallsViewDelete>(p => p
+            .Add(x => x.IsDelete, false)
+            .Add(x => x.Initial, row));
+
+        // Saudi +3, 12-hour: 08:00Z renders as 11:00 AM, never the raw UTC stamp.
+        Assert.Contains("05-01-2026 11:00 AM", cut.Markup);
+        Assert.Contains("05-01-2026 12:00 PM", cut.Markup);
+        Assert.DoesNotContain("08:00", cut.Markup);
+    }
+
+    [Fact]
+    public void B16_schedule_shows_the_empty_state_for_an_unbooked_hall()
+    {
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        var row = Detail();
+        JSInterop.Setup<ApiResult<GridPage<AdminSessionSummary>>>(
+            "simfAccount.getJson", _ => true)
+            .SetResult(SchedulePage());
+
+        var cut = RenderComponent<HallsViewDelete>(p => p
+            .Add(x => x.IsDelete, false)
+            .Add(x => x.Initial, row));
+
+        Assert.Contains("Admin.Halls.Schedule.None", cut.Markup);
+    }
+
+    [Fact]
+    public void B16_a_capped_schedule_says_so_instead_of_reading_as_complete()
+    {
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        var row = Detail();
+        // The endpoint caps the page at 200 rows; Total is the unclamped count.
+        JSInterop.Setup<ApiResult<GridPage<AdminSessionSummary>>>(
+            "simfAccount.getJson", _ => true)
+            .SetResult(ApiResult<GridPage<AdminSessionSummary>>.Ok(
+                GridPage<AdminSessionSummary>.Of(
+                    [ScheduledSession(row.Id)], total: 213, skip: 0, top: 200)));
+
+        var cut = RenderComponent<HallsViewDelete>(p => p
+            .Add(x => x.IsDelete, false)
+            .Add(x => x.Initial, row));
+
+        Assert.Contains("Admin.Halls.Schedule.Capped", cut.Markup);
+    }
+
+    [Fact]
+    public void B16_a_complete_schedule_shows_no_capped_notice()
+    {
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        var row = Detail();
+        JSInterop.Setup<ApiResult<GridPage<AdminSessionSummary>>>(
+            "simfAccount.getJson", _ => true)
+            .SetResult(SchedulePage(ScheduledSession(row.Id)));
+
+        var cut = RenderComponent<HallsViewDelete>(p => p
+            .Add(x => x.IsDelete, false)
+            .Add(x => x.Initial, row));
+
+        Assert.DoesNotContain("Admin.Halls.Schedule.Capped", cut.Markup);
+    }
 }

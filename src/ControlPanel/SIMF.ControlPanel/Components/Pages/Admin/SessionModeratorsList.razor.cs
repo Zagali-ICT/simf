@@ -30,8 +30,22 @@ public partial class SessionModeratorsList
     private Toast? _toast;
 
     private bool _addOpen;
-    private string _newSessionId = string.Empty;
-    private string _newUserId = string.Empty;
+    // DEF-MOD-005 — the assign dialog picks from real option lists instead of two
+    // free-text GUID boxes (a typo used to hand a moderation desk to whichever
+    // account the GUID happened to name).
+    private IReadOnlyList<SessionModeratorSessionOption> _sessionOptions =
+        Array.Empty<SessionModeratorSessionOption>();
+    private IReadOnlyList<SessionModeratorCandidate> _candidates =
+        Array.Empty<SessionModeratorCandidate>();
+    private SessionModeratorSessionOption? _newSession;
+    private SessionModeratorCandidate? _newCandidate;
+    private bool _optionsLoading;
+    private bool _optionsError;
+
+    /// <summary>The in-dialog error. Separate from <c>_toast</c> because the
+    /// page-level alert renders under the modal backdrop and is invisible while
+    /// the Add dialog is open.</summary>
+    private string? _error;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
@@ -44,14 +58,19 @@ public partial class SessionModeratorsList
     // D-356 — Excel export (selected rows, or the current filtered set). Direct
     // download via the generic /export proxy. Export only — grants are managed
     // in place via assign/revoke; the row's UserId is the selectable id.
-    private Task OnExportAsync(IReadOnlyList<AdminSessionModeratorRow> selected) =>
-        JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+    private async Task OnExportAsync(IReadOnlyList<AdminSessionModeratorRow> selected)
+    {
+        // §6.16 (F-U5-005) — a failed export used to return silently, so
+        // the Export button was indistinguishable from an unwired one.
+        var error = await JS.ExportXlsxAsync(
             "/account/api/admin/session-moderators/export",
             new AdminGridExportRequest
             {
                 Ids = selected.Select(row => row.UserId).ToList(),
                 Query = selected.Count == 0 ? _query : null,
-            }).AsTask();
+            }, L);
+        if (error is not null) _toast = new Toast("error", error);
+    }
 
     private string FormatSummary(int skip, int taken, int total) =>
         string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
@@ -80,20 +99,51 @@ public partial class SessionModeratorsList
         finally { _loading = false; }
     }
 
-    private void OnAdd()
+    private async Task OnAddAsync()
     {
         _addOpen = true;
-        _newSessionId = string.Empty;
-        _newUserId = string.Empty;
+        _error = null;
+        _newSession = null;
+        _newCandidate = null;
+        await LoadAssignOptionsAsync();
+    }
+
+    /// <summary>DEF-MOD-005 — loads the two pickers. Gated API-side by
+    /// <c>SessionModerators.Assign</c>, the same permission as the write.</summary>
+    private async Task LoadAssignOptionsAsync()
+    {
+        _optionsLoading = true;
+        _optionsError = false;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<SessionModeratorAssignOptions>>(
+                "simfAccount.getJson",
+                "/account/api/admin/session-moderators/assign-options");
+            if (env is { Success: true, Data: not null })
+            {
+                _sessionOptions = env.Data.Sessions;
+                _candidates = env.Data.Candidates;
+            }
+            else
+            {
+                _optionsError = true;
+                _sessionOptions = Array.Empty<SessionModeratorSessionOption>();
+                _candidates = Array.Empty<SessionModeratorCandidate>();
+            }
+        }
+        finally { _optionsLoading = false; }
     }
 
     private async Task SubmitAssignAsync()
     {
         if (_busy) return;
-        if (!Guid.TryParse(_newSessionId, out var sessionId)
-            || !Guid.TryParse(_newUserId, out var userId))
+        _error = null;
+        if (_newSession is null || _newCandidate is null)
         {
-            _toast = new Toast("error", L["Admin.SessionModerators.LoadFailed"]);
+            // MERGE (BUG-004 + DEF-MOD-005): the pickers come from DEF-MOD-005, but the
+            // message must render INSIDE the dialog. A page-level toast sits under the
+            // modal backdrop, which is the dead-button symptom BUG-004 was filed for.
+            _error = L["Admin.SessionModerators.PickBoth"];
             return;
         }
         _busy = true;
@@ -104,8 +154,8 @@ public partial class SessionModeratorsList
                 "simfAccount.postJson", "/account/api/admin/session-moderators",
                 new AssignSessionModeratorRequest
                 {
-                    SessionId = sessionId,
-                    UserId = userId,
+                    SessionId = _newSession.Id,
+                    UserId = _newCandidate.UserId,
                 });
             if (env is { Success: true })
             {
@@ -115,12 +165,31 @@ public partial class SessionModeratorsList
             }
             else
             {
-                _toast = new Toast("error",
-                    env?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.SessionModerators.LoadFailed"]);
+                // Dialog still open — report in it, not behind it.
+                _error = env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.SessionModerators.LoadFailed"];
             }
         }
         finally { _busy = false; }
+    }
+
+    // §6.16 (F-U5-010) — Revoke is a quiet icon sitting beside the other row
+    // actions, and it used to revoke on the FIRST click. One stray click during a
+    // live session strips that person's moderation controls immediately. Stage the
+    // row and make the admin confirm; SimfConfirm is RequireExplicitClose, so a
+    // backdrop click cannot confirm it either.
+    private AdminSessionModeratorRow? _revokeTarget;
+
+    private void AskRevoke(AdminSessionModeratorRow row) => _revokeTarget = row;
+
+    private void CancelRevoke() => _revokeTarget = null;
+
+    private async Task ConfirmRevokeAsync()
+    {
+        if (_revokeTarget is null) return;
+        var row = _revokeTarget;
+        _revokeTarget = null;
+        await RevokeAsync(row);
     }
 
     private async Task RevokeAsync(AdminSessionModeratorRow row)
@@ -148,8 +217,23 @@ public partial class SessionModeratorsList
         finally { _busy = false; }
     }
 
+    private static bool IsArabic =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
+
     private static string SessionLabel(AdminSessionModeratorRow row) =>
-        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
+        IsArabic
             ? $"{row.SessionCode} — {row.SessionTitleArabic}"
             : $"{row.SessionCode} — {row.SessionTitle}";
+
+    private static string SessionOptionLabel(SessionModeratorSessionOption option) =>
+        IsArabic
+            ? $"{option.Code} — {option.TitleArabic}"
+            : $"{option.Code} — {option.Title}";
+
+    private static string CandidateLabel(SessionModeratorCandidate candidate)
+    {
+        var type = IsArabic ? candidate.ProfileTypeNameArabic : candidate.ProfileTypeName;
+        var email = string.IsNullOrWhiteSpace(candidate.Email) ? "—" : candidate.Email;
+        return $"{candidate.DisplayName} ({email}) — {type}";
+    }
 }

@@ -849,6 +849,11 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
             Name = "Capt. Rashid Al-Subaie", NameArabic = "راشد بن طلال السبيعي",
             Rank = "Naval Captain",
             AllowsMeetingRequests = allowsMeetings,
+            // QA A25 — Approve (accept-with-hall) now REFUSES when the speaker has no
+            // contact email, because the double-opt-in link could never be delivered.
+            // The flow tests here exercise the happy path, so give the speaker one; the
+            // missing-email refusal has its own coverage in SpeakerMeetingQaTests.
+            Email = $"speaker-{Guid.NewGuid():N}@simf.test",
             IsActive = true,
             DisplayOrder = 0,
             CreatedAt = DateTimeOffset.UtcNow,

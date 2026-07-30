@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme/tokens.dart';
+import '../../../app/widgets/simf_logo_image.dart';
 import '../../../core/country_flag.dart';
 import '../../venuemap/data/venue_map_models.dart';
 
@@ -105,8 +106,21 @@ class _CountryFlagTile extends StatelessWidget {
 
 /// The square booth-logo tile (frame node 922:2560): a 48×48 navy square with a
 /// beige hairline. Renders the booth's own BoothLogo (the D-357 asset owned by
-/// [boothId]) clipped to fill, falling back to the booth **short name** (centred,
-/// as the frame shows "SAMI") while it loads or when the booth has no logo.
+/// [boothId]) shown **whole** inside the tile, falling back to the booth **short
+/// name** (centred, as the frame shows "SAMI") while it loads or when the booth
+/// has no logo.
+///
+/// Owner 2026-07-26 — the mark now FITS its tile (the old `BoxFit.cover` cropped
+/// wide company logos), via the shared [SimfLogoImage]. Full-size-on-tap is OFF
+/// here on purpose: the tile sits inside the tappable booth card, whose tap owns
+/// the navigation to the exhibitor detail — where the 108px identity logo IS
+/// tappable to full size.
+///
+/// DEF-LGO-002 — the inset used to be horizontal-only, which left a 40x48 (NOT
+/// square) content box inside the 48x48 tile while the image still asked for
+/// 48x48: the clip then shaved 4px off each side of even a perfectly square
+/// logo. The inset is square now and the mark is painted at the box's real
+/// [_markSize], so nothing is cropped.
 class _LogoTile extends StatelessWidget {
   const _LogoTile({
     required this.boothId,
@@ -117,6 +131,13 @@ class _LogoTile extends StatelessWidget {
   final String boothId;
   final String baseUrl;
   final String fallback;
+
+  /// Frame 922:2560 — the logo tile is 48×48 ('Size/Square' token).
+  static const double _tileSize = 48;
+
+  /// The square box the mark is painted into: the tile minus its inset on all
+  /// four sides, so a square logo stays square and whole.
+  static const double _markSize = _tileSize - (SimfTokens.space1 * 2);
 
   @override
   Widget build(BuildContext context) {
@@ -129,11 +150,10 @@ class _LogoTile extends StatelessWidget {
     );
     final id = boothId.trim();
     return Container(
-      // Frame 922:2560 — the logo tile is 48×48 ('Size/Square' token).
-      width: 48,
-      height: 48,
+      width: _tileSize,
+      height: _tileSize,
       alignment: Alignment.center,
-      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space1),
+      padding: const EdgeInsets.all(SimfTokens.space1),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: SimfTokens.navyDeep,
@@ -145,19 +165,18 @@ class _LogoTile extends StatelessWidget {
       ),
       child: id.isEmpty
           ? fallbackText
-          : Image.network(
-              '$baseUrl/app/assets/BoothLogo/$id/image',
-              width: 48,
-              height: 48,
-              // Decode-cap to the tile size (§4): 48px at up to 2x DPR, so a
+          : SimfLogoImage(
+              url: '$baseUrl/app/assets/BoothLogo/$id/image',
+              placeholder: fallbackText,
+              semanticLabel: fallback,
+              width: _markSize,
+              height: _markSize,
+              // Decode-cap to the painted size (§4) at up to 2x DPR, so a
               // full-res logo never decodes into this per-list-item thumbnail.
-              cacheWidth: 96,
-              cacheHeight: 96,
-              fit: BoxFit.cover,
-              gaplessPlayback: true,
-              loadingBuilder: (context, child, progress) =>
-                  progress == null ? child : fallbackText,
-              errorBuilder: (context, error, stackTrace) => fallbackText,
+              // The full-size viewer paints the uncapped image.
+              cacheWidth: (_markSize * 2).round(),
+              cacheHeight: (_markSize * 2).round(),
+              enableFullScreen: false,
             ),
     );
   }

@@ -23,6 +23,9 @@ public sealed class GatesViewDeleteTests : CpComponentTestBase
     [Fact]
     public void View_mode_shows_details_and_no_delete_button()
     {
+        // BUG-018 — the form now loads the gate's assignments on init.
+        JSInterop.Mode = JSRuntimeMode.Loose;
+
         var cut = RenderComponent<GatesViewDelete>(p => p
             .Add(x => x.IsDelete, false)
             .Add(x => x.Initial, Detail()));
@@ -30,6 +33,30 @@ public sealed class GatesViewDeleteTests : CpComponentTestBase
         Assert.Contains("North Gate", cut.Markup);
         Assert.Empty(cut.FindAll(".simf-button--danger"));
         Assert.Empty(cut.FindAll(".simf-modal"));
+    }
+
+    // BUG-018 (18-6) — the detail view used to render only the operator COUNT, so
+    // an assignment could not be audited from the CP. It must name each operator.
+    [Fact]
+    public void View_mode_lists_the_assigned_operators_by_name_and_email()
+    {
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        var row = Detail();
+        JSInterop.Setup<ApiResult<IReadOnlyList<AdminGateAssignmentRow>>>(
+            "simfAccount.getJson",
+            $"/account/api/admin/gates/{row.Id}/assignments")
+            .SetResult(ApiResult<IReadOnlyList<AdminGateAssignmentRow>>.Ok(
+            [
+                new(Guid.NewGuid(), Guid.NewGuid(), "Ahmed Al-Rashid",
+                    DateTimeOffset.UnixEpoch, Guid.NewGuid(), "ahmed@simf.test"),
+            ]));
+
+        var cut = RenderComponent<GatesViewDelete>(p => p
+            .Add(x => x.IsDelete, false)
+            .Add(x => x.Initial, row));
+
+        Assert.Contains("Ahmed Al-Rashid", cut.Markup);
+        Assert.Contains("ahmed@simf.test", cut.Markup);
     }
 
     [Fact]

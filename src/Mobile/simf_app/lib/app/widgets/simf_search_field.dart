@@ -31,52 +31,60 @@ class SimfSearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      onChanged: onChanged,
-      style: const TextStyle(color: SimfTokens.surface),
-      decoration: InputDecoration(
-        hintText: hint,
-        // Muted beige placeholder (matches the Figma search frames 908/922/758).
-        hintStyle: SimfTokens.labelBeigeSm,
-        prefixIcon: const SimfSvgIcon(
-          'assets/icons/ic_search.svg',
-          // Figma search frames (1341:3565 etc.) — 14px magnifier.
-          size: 14,
-          color: SimfTokens.beigeBorder,
-        ),
-        prefixIconConstraints:
-            const BoxConstraints(minWidth: 44, minHeight: 44),
-        suffixIcon: showTuningIcon
-            ? const SimfSvgIcon(
-                'assets/icons/ic_tuning.svg',
-                size: 18,
-                color: SimfTokens.beigeBorder,
-              )
-            : null,
-        suffixIconConstraints:
-            const BoxConstraints(minWidth: 44, minHeight: 44),
-        // Figma search frames (908/922/758) — an unfilled box with a 0.2px
-        // beige hairline; the navy page shows through (no card-like fill).
-        filled: false,
-        contentPadding: const EdgeInsets.symmetric(vertical: 4),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(SimfTokens.radius),
-          borderSide: const BorderSide(
+    // The visible placeholder is a separate node that disappears the moment the
+    // user types, so the field itself had no accessible name — a screen reader
+    // announced a bare "edit box" on every search surface (BUG-012). Attaching
+    // [hint] as the field's semantics label names it; the paint is unchanged.
+    return Semantics(
+      label: hint,
+      textField: true,
+      child: TextField(
+        controller: controller,
+        onChanged: onChanged,
+        style: const TextStyle(color: SimfTokens.surface),
+        decoration: InputDecoration(
+          hintText: hint,
+          // Muted beige placeholder (matches the Figma search frames 908/922/758).
+          hintStyle: SimfTokens.labelBeigeSm,
+          prefixIcon: const SimfSvgIcon(
+            'assets/icons/ic_search.svg',
+            // Figma search frames (1341:3565 etc.) — 14px magnifier.
+            size: 14,
             color: SimfTokens.beigeBorder,
-            width: SimfTokens.hairline,
           ),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(SimfTokens.radius),
-          borderSide: const BorderSide(
-            color: SimfTokens.beigeBorder,
-            width: SimfTokens.hairline,
+          prefixIconConstraints:
+              const BoxConstraints(minWidth: 44, minHeight: 44),
+          suffixIcon: showTuningIcon
+              ? const SimfSvgIcon(
+                  'assets/icons/ic_tuning.svg',
+                  size: 18,
+                  color: SimfTokens.beigeBorder,
+                )
+              : null,
+          suffixIconConstraints:
+              const BoxConstraints(minWidth: 44, minHeight: 44),
+          // Figma search frames (908/922/758) — an unfilled box with a 0.2px
+          // beige hairline; the navy page shows through (no card-like fill).
+          filled: false,
+          contentPadding: const EdgeInsets.symmetric(vertical: 4),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(SimfTokens.radius),
+            borderSide: const BorderSide(
+              color: SimfTokens.beigeBorder,
+              width: SimfTokens.hairline,
+            ),
           ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(SimfTokens.radius),
-          borderSide: const BorderSide(color: SimfTokens.accent, width: 1),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(SimfTokens.radius),
+            borderSide: const BorderSide(
+              color: SimfTokens.beigeBorder,
+              width: SimfTokens.hairline,
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(SimfTokens.radius),
+            borderSide: const BorderSide(color: SimfTokens.accent, width: 1),
+          ),
         ),
       ),
     );

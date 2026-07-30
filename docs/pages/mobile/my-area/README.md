@@ -24,6 +24,15 @@ Signed-in Visitor. An **Approved** account loads the dashboard; a
 pending/rejected account gets the limited cached-identity view (no dashboard
 call — it would 403, L-5).
 
+A **true guest** (no account at all) also reaches this screen: the bottom nav
+switches tabs **inside** `SimfAppShell`'s IndexedStack, so no go_router
+navigation happens and the router's auth gate on route 14 never runs. It used to
+fall through to the limited view and show `myAreaPendingNote` ("your account is
+under review") — describing a registration the guest never submitted, with no way
+out (**BUG-013**, 2026-07-26). A signed-out user now gets the shared
+`SimfGuestPrompt` — `myAreaGuestNote` plus **Sign in** / **Create account**
+actions; the pending copy is unchanged for a genuinely pending/rejected account.
+
 ## 3. Button / action audit (Level F, 2026-07-04)
 | Control | Handler | Backend |
 |---|---|---|

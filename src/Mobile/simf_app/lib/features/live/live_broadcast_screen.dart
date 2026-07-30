@@ -40,8 +40,8 @@ import 'widgets/live_player_surface.dart';
 ///
 /// **Frame mapping (934:3450):** the navy header (circled back chevron + centred
 /// title), a **black player surface** carrying the LIVE badge + the gold-bordered
-/// "AI live-caption" strip, then the **"يُبث الآن" now-broadcasting** block (the
-/// session title as a gold bullet), the gold **region-restriction notice card**,
+/// organiser caption strip, then the **"يُبث الآن" now-broadcasting** block (the
+/// session title as a gold bullet)
 /// and the **ask-a-question** entry to Page 026 (`/live/question`). The player
 /// surface + its media engine live in `widgets/live_player_surface.dart` +
 /// `live_video_player.dart` + `live_badges.dart`; the non-live black bands in
@@ -438,12 +438,12 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
                 SignLanguageNote(label: l10n.liveSignLanguageAvailable),
               ],
 
-              const SizedBox(height: SimfTokens.space5),
-              // The gold region-restriction notice card (frame 934:3619).
-              RegionNoticeCard(
-                noticeLabel: l10n.liveRegionNoticeLabel,
-                noticeBody: l10n.liveRegionNoticeBody,
-              ),
+              // A20 (2026-07-26) — the gold "available only inside the Riyadh
+              // region per regulations" card (frame 934:3619) is gone. Nothing
+              // anywhere checked the viewer's location, so every viewer was told
+              // about a restriction that does not exist. Whether the stream
+              // should actually be geo-fenced is a product/legal decision, not a
+              // defect fix, so the claim is removed rather than implemented.
 
               // Ask-a-question entry → Page 026 (the frame's L-3 Q&A affordance).
               // Session-specific — only for a real session, not the global main-live.

@@ -33,6 +33,10 @@ const Set<String> _allowedClickPaths = <String>{
   '/badge',
   // Bi-Meeting rework — the other-party confirm deep-link (?requestId=…).
   '/meeting-confirm',
+  // QA A27 — the meeting-lifecycle tiles (scheduled / cancelled / confirmed /
+  // 15-minute reminder) open the bilateral-meetings page. Without this entry
+  // the server clickUrl was rejected here and every such tile stayed inert.
+  '/meetings',
 };
 
 /// The group for [item]: the server `group`, or a client fallback derived from

@@ -6,17 +6,43 @@
 ## Purpose
 
 The first-run three-step carousel: a looping muted background video per step
-(D-373) under a 90%-navy overlay (step-1 world-map photo / plain navy fallback),
-the brand mark, one welcome title + per-step body, pill page dots, the gold التالي
-button, a تخطي skip (hidden on the last step) and a back chevron (steps 2–3).
-Finishing or skipping sets `onboardingCompleted` and routes to sign-in.
+(D-373) under a navy scrim, over the world-map poster, the brand mark, one
+welcome title + per-step body, pill page dots, the gold التالي button, a تخطي
+skip (hidden on the last step) and a back chevron (steps 2–3). Finishing or
+skipping sets `onboardingCompleted` and routes to sign-in.
+
+## Background — the owner "video not working" fix (2026-07-26)
+
+The owner reported the onboarding background video as *"not exist / not
+working"*. Verified on this base: the three clips **do** ship
+(`assets/videos/onboard_01..03.mp4`, all three the same hero clip per D-373),
+they **are** declared in `pubspec.yaml` (`assets/videos/`), and the screen loads
+them muted + looping + autoplaying with `BoxFit.cover`. Two real defects made the
+background read as empty, both fixed here:
+
+1. **No poster on steps 2–3.** The fallback was gated on `index == 0`, so any
+   step whose decoder failed (a device that refuses the codec, or the test
+   runtime) painted **plain navy** with nothing behind the copy. The world-map
+   poster now backs **every** step and is always painted underneath the video —
+   which also removes the navy flash while a step's decoder warms up.
+2. **The video sat under the 90% photo overlay.** `SimfTokens.navyFill90` left
+   roughly a tenth of the footage visible, so the motion read as "not there". A
+   **playing** video now uses the new **`SimfTokens.navyFill60`** scrim; the
+   still poster keeps the design's 90% (`navyFill90`), so the Figma 148:22 state
+   is unchanged whenever no video is playing.
+
+The silent `catch (_)` around `_loadVideo` also hid the reason a device refused
+the clip; it now `debugPrint`s the asset + error (debug only — a decorative
+background must never surface an error to a visitor). Android decode on
+Huawei/HiSilicon parts is already covered by the vendored
+`third_party/video_player_android` decoder-fallback patch (D-768).
 
 ## Structure (post-decomposition)
 
 | File | Holds |
 |------|-------|
 | `onboarding_screen.dart` (241) | `OnboardingScreen` + State — the single-decoder video lifecycle (`_loadVideo` follows the active step), the `PageController` + next/back/skip/complete nav, and the `build` (background + top bar + logo + PageView step + dots + next). Keeps the `_videoAssets` list. |
-| `widgets/onboarding_background.dart` (`OnboardingBackground`) | The per-step media layer (video `FittedBox` / step-1 world-map image) under the navy overlay — a `StackFit.expand` Stack rendered inside the screen's `Positioned.fill`. Owns the `_worldMapAsset` const. |
+| `widgets/onboarding_background.dart` (`OnboardingBackground`) | The per-step media layer — the world-map poster on EVERY step, the video `FittedBox` over it when playing, then the navy scrim (60% over video / 90% over the poster) — a `StackFit.expand` Stack rendered inside the screen's `Positioned.fill`. Owns the `_worldMapAsset` const. |
 | `widgets/onboarding_top_bar.dart` (`OnboardingTopBar`) | The forced-LTR top bar — back chevron (steps 2–3) + تخطي skip (not the last step). |
 | `widgets/onboarding_dots.dart` (`OnboardingDots`) | The forced-LTR pill page dots (active 32×8 beige, inactive 16×8 soft-gold). |
 
@@ -40,16 +66,37 @@ back-chevron (hidden on step 1), and complete-on-third-next — all pass unchang
 ## Level-F
 
 Wired: next/back paging, skip → complete, third next → complete (sets
-`onboardingCompleted` → sign-in); best-effort per-step video with graceful
-image/navy fallback. No SIMF API.
+`onboardingCompleted` → sign-in); each step renders its OWN title + body
+(`onboardingTitle1..3` / `onboardingBody1..3`); a single best-effort background
+clip on a single decoder, with the world-map poster as the graceful fallback.
+No SIMF API.
+
+**Background media (DEF-ONB-004).** The carousel plays ONE asset
+(`AppAssets.onboardVideo` → `assets/videos/onboard_01.mp4`) on ONE
+`VideoPlayerController`, opened in `initState` and kept across swipes. It used to
+open a fresh controller per step against three byte-identical placeholder files
+(`onboard_01..03.mp4`), so every swipe tore the background down for about a
+second, restarted the footage at 0:00, and shipped ~13.8 MB of the same 4.6 MB
+clip in the APK. The duplicates are deleted. When the owner supplies genuinely
+different step clips, add them back as new `AppAssets` constants and restore the
+per-step list.
 
 ## Tests
 
 `test/features/onboarding/onboarding_screen_test.dart` (third-next completes, skip
-hides on last, back-chevron steps back / hidden on step 1). E2E:
+hides on last, back-chevron steps back / hidden on step 1, per-step titles, one
+bundled clip) and `test/features/onboarding/onboarding_background_test.dart` (the
+poster backs every step; the still-poster scrim stays at 90%; the PLAYING branch
+paints the video cover-fitted under the 60% scrim). E2E:
 `docs/tests/e2e/mobile-onboarding.md`.
 
 ## Related decisions
 
 - **D-636** (this clean-code freeze — background/top-bar/dots widgets + 2 tokens).
-- **D-362** (KSA static-panels redesign), **D-373** (per-step background video).
+- **D-362** (KSA static-panels redesign), **D-373** (background video).
+- **Owner 2026-07-26** — the "background video not working" fix (poster on every
+  step, 60% video scrim, debug-visible decode failure).
+- **DEF-ONB-004 / DEF-ONB-005 / DEF-ONB-006 (2026-07-27)** — one controller + one
+  de-duplicated clip; the playing branch has real test coverage; each step renders
+  its own title. **DEF-ONB-003** (a still fallback on every step, plus an
+  `errorBuilder` on the poster) was already fixed in the 2026-07-26 wave.

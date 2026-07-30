@@ -1,4 +1,5 @@
 // Tests: SIMF.Api.Tests/Gates/AdminGatesTests.cs
+//        SIMF.Api.Tests/GateOperatorModelTests.cs (BUG-018)
 using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Application.AccessControl.Abstractions;
@@ -153,6 +154,44 @@ public sealed class ListGateAssignmentsEndpoint(IAdminGateService service)
     public override async Task HandleAsync(ListGateAssignmentsRequest req, CancellationToken ct) =>
         await Send.OkAsync(ApiResult<IReadOnlyList<AdminGateAssignmentRow>>.Ok(
             await service.ListAssignmentsAsync(req.Id, ct)), ct);
+}
+
+/// <summary>BUG-018 — the CP gate form's operator picker. Lists the accounts that
+/// can actually work a gate (approved app accounts on an operational profile type),
+/// searchable + paged. Gated on <c>Gates.Manage</c> like the rest of the gate admin
+/// surface, so a gate manager no longer needs <c>Admins.View</c> to fill the picker.
+/// </summary>
+public sealed class ListGateOperatorCandidatesEndpoint(IAdminGateService service)
+    : Endpoint<GridQuery, ApiResult<GridPage<AdminGateOperatorCandidate>>>
+{
+    public override void Configure()
+    {
+        Post("/admin/gates/operator-candidates/list");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Gates.Manage),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Tags("Admin");
+    }
+    public override async Task HandleAsync(GridQuery req, CancellationToken ct) =>
+        await Send.OkAsync(ApiResult<GridPage<AdminGateOperatorCandidate>>.Ok(
+            await service.ListOperatorCandidatesAsync(req, ct)), ct);
+}
+
+/// <summary>BUG-018 — the gate form's allowed-profile-type + hall lookups under
+/// <c>Gates.Manage</c>, so a Security-team gate manager stops seeing empty
+/// dropdowns fed by the ProfileTypes.View / Halls.View admin lists.</summary>
+public sealed class GetGateFormOptionsEndpoint(IAdminGateService service)
+    : EndpointWithoutRequest<ApiResult<AdminGateFormOptions>>
+{
+    public override void Configure()
+    {
+        Get("/admin/gates/form-options");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Gates.Manage),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Tags("Admin");
+    }
+    public override async Task HandleAsync(CancellationToken ct) =>
+        await Send.OkAsync(ApiResult<AdminGateFormOptions>.Ok(
+            await service.GetFormOptionsAsync(ct)), ct);
 }
 
 public sealed class GateScansReportEndpoint(IAdminGateService service)

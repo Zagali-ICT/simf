@@ -8,6 +8,7 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
 using SIMF.Domain.Programme;
+using SIMF.Infrastructure.Ai;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Programme;
@@ -21,6 +22,15 @@ namespace SIMF.Infrastructure.Programme;
 /// change. The محضر is advisory until the Committee publishes it; the public
 /// read (<see cref="ProgrammeSessionService.GetSessionSummaryAsync"/>) gates on
 /// the publish stamp.
+///
+/// <para>A18 (2026-07-26, revised 2026-07-27) — because that shipped provider
+/// only echoes the prompt back, this desk (a) stamps
+/// <see cref="StubDraftBanner"/> onto any draft the provider reports as stub
+/// output, and (b) refuses via <see cref="EnsureNotStubContent"/> to approve or
+/// publish a summary that still carries stub text, so placeholder output can
+/// never reach the app or the host read. The stamp lives HERE and not in the
+/// shared provider: the same provider answers the visitor chatbot, and a
+/// reviewer instruction must never be rendered in a chat bubble.</para>
 /// </summary>
 internal sealed class AdminSessionSummaryService(
     SimfAppDbContext appDbContext,
@@ -38,6 +48,20 @@ internal sealed class AdminSessionSummaryService(
 
     /// <summary>The seeded prompt key the AI draft routes through (D-238).</summary>
     private const string SummaryPromptKey = "session-summary";
+
+    /// <summary>A18 — the bilingual notice this desk stamps on a draft the AI seam
+    /// reported as stub output (<c>AiCallResult.IsStub</c>). It opens with the
+    /// machine-checkable <see cref="EchoAiProvider.StubMarker"/> so
+    /// <see cref="EnsureNotStubContent"/> can find it again at approve / publish
+    /// time, and reads in both languages so a reviewer opening the editor cannot
+    /// mistake the text for real minutes. It is stored only on the summary row —
+    /// no visitor-facing AI surface ever sees it.</summary>
+    private const string StubDraftBanner =
+        EchoAiProvider.StubMarker
+        + " NOT REAL AI OUTPUT — produced by the offline stub provider; "
+        + "it only echoes the prompt. Do not review, approve or publish it. "
+        + "ليست مخرجات ذكاء اصطناعي حقيقية — من المزوّد التجريبي غير المتصل؛ "
+        + "لا تراجعها أو توافق عليها أو تنشرها.\n";
 
     public async Task<IReadOnlyList<AdminSessionSummaryRow>> ListAsync(
         CancellationToken cancellationToken = default)
@@ -139,12 +163,22 @@ internal sealed class AdminSessionSummaryService(
         var summary = await appDbContext.SessionSummaries
             .SingleOrDefaultAsync(s => s.SessionId == sessionId && s.IsActive, cancellationToken);
         var now = timeProvider.GetUtcNow();
+        // A19 — a re-draft that lands the same Arabic text as the stored one has
+        // not changed what the app serves, so it must not unpublish the محضر.
+        var previousFullTextArabic = summary?.FullTextArabic;
         // The seeded `session-summary` prompt produces ARABIC minutes, so the
         // draft lands in the Arabic full-text column only — the English column
         // stays for the Committee to fill (or the app falls back to Arabic per
         // the bilingual contract). Writing one language into both columns would
         // surface the wrong language once a real Arabic provider replaces Echo.
-        var draft = Truncate(result.OutputText, FullTextMax);
+        // A18 — a draft the seam reports as stub output is stamped with the
+        // bilingual "not real AI output" notice + the sentinel, so the reviewer
+        // sees what it is and approve / publish can refuse it. The echoed body is
+        // capped so the notice can never be truncated away.
+        var draft = result.IsStub
+            ? StubDraftBanner
+                + Truncate(result.OutputText, FullTextMax - StubDraftBanner.Length)
+            : Truncate(result.OutputText, FullTextMax);
 
         if (summary is null)
         {
@@ -186,7 +220,12 @@ internal sealed class AdminSessionSummaryService(
         }
         // A (re)generated draft changes the content, so it returns to the review
         // workflow's Draft state — any prior submit/approval is cleared (D-472).
-        ResetReviewState(summary);
+        // A19 — unless the re-draft produced exactly the stored text, in which
+        // case nothing the app serves changed and the محضر stays online.
+        if (!string.Equals(previousFullTextArabic, draft, StringComparison.Ordinal))
+        {
+            ResetReviewState(summary);
+        }
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await WriteAuditAsync(
@@ -235,6 +274,11 @@ internal sealed class AdminSessionSummaryService(
             appDbContext.SessionSummaries.Add(summary);
         }
 
+        // A19 — read the change BEFORE the assignments overwrite the stored values.
+        var contentChanged = ChangesPersistedContent(
+            summary, keyPoints, keyPointsAr, recommendations, recommendationsAr,
+            speakers, speakersAr, fullText, fullTextAr, summaryVideoUrl);
+
         summary.KeyPoints = keyPoints;
         summary.KeyPointsArabic = keyPointsAr;
         summary.Recommendations = recommendations;
@@ -247,8 +291,13 @@ internal sealed class AdminSessionSummaryService(
         summary.IsActive = true;
         summary.UpdatedAt = now;
         summary.UpdatedByUserId = actorUserId;
-        // An edit invalidates any prior review/approval — back to Draft (D-472).
-        ResetReviewState(summary);
+        // A real edit invalidates any prior review/approval — back to Draft
+        // (D-472). A19 — a save that changes nothing does not, so re-opening the
+        // editor and pressing Save can no longer unpublish a live محضر.
+        if (contentChanged)
+        {
+            ResetReviewState(summary);
+        }
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await WriteAuditAsync(
@@ -295,6 +344,15 @@ internal sealed class AdminSessionSummaryService(
                 ErrorCodes.SessionSummaryInvalid, 400,
                 "This summary must be reviewed and approved by the scientific team before it can be published.",
                 "يجب أن يراجع الفريق العلمي هذا الملخّص ويوافق عليه قبل نشره.");
+        }
+
+        // A18 — the shipped AI provider is the offline Echo stub, which only
+        // echoes the prompt back. Publishing that verbatim would put placeholder
+        // text in front of every app user, so it is refused. Retracting is
+        // unaffected.
+        if (publish)
+        {
+            EnsureNotStubContent(summary);
         }
 
         summary.PublishedAt = publish ? now : null;
@@ -352,6 +410,11 @@ internal sealed class AdminSessionSummaryService(
                 "أرسل الملخّص للمراجعة قبل الموافقة عليه.");
         }
 
+        // A18 — approval is the human sign-off that also unlocks the host /
+        // moderator read, so raw stub text must not get past it either. The
+        // reviewer has to replace the placeholder with real minutes first.
+        EnsureNotStubContent(summary);
+
         var now = timeProvider.GetUtcNow();
         summary.ApprovedAt = now;
         summary.ApprovedByUserId = actorUserId;
@@ -395,12 +458,92 @@ internal sealed class AdminSessionSummaryService(
             "No summary exists for this session yet.",
             "لا يوجد ملخّص لهذه الجلسة بعد.");
 
+    /// <summary>A18 — refuses to sign off / expose content that came out of the
+    /// offline Echo stub provider. Stub text survives copy/paste between the
+    /// summary's fields, so every text column is checked, not just the one the
+    /// draft landed in.</summary>
+    private static void EnsureNotStubContent(SessionSummary summary)
+    {
+        var carriesStubText =
+            IsStubText(summary.FullText)
+            || IsStubText(summary.FullTextArabic)
+            || IsStubText(summary.KeyPoints)
+            || IsStubText(summary.KeyPointsArabic)
+            || IsStubText(summary.Recommendations)
+            || IsStubText(summary.RecommendationsArabic)
+            || IsStubText(summary.Speakers)
+            || IsStubText(summary.SpeakersArabic);
+        if (!carriesStubText)
+        {
+            return;
+        }
+        throw new ApiException(
+            ErrorCodes.SessionSummaryInvalid, 400,
+            "This summary still contains placeholder text from the offline AI stub provider. "
+                + "Replace it with the real minutes before approving or publishing it.",
+            "لا يزال هذا الملخّص يحتوي على نص مؤقّت من مزوّد الذكاء الاصطناعي التجريبي. "
+                + "استبدله بالمحضر الحقيقي قبل الموافقة عليه أو نشره.");
+    }
+
+    /// <summary>A18 — true when this field still holds stub output. Two shapes
+    /// count, because the guard has to cover data written before it existed:
+    /// <list type="bullet">
+    /// <item>the sentinel <see cref="EchoAiProvider.StubMarker"/> anywhere in the
+    /// text — what <see cref="StubDraftBanner"/> stamps today, and what survives a
+    /// copy/paste into another column;</item>
+    /// <item>a LEADING <c>"[echo:…] "</c> / <c>"[echo] "</c> — every draft
+    /// generated before the sentinel existed opens with it, and those rows are on
+    /// every QA / production database that ever pressed Generate. Leading-only, so
+    /// real minutes that merely quote the token are not blocked.</item>
+    /// </list></summary>
+    private static bool IsStubText(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return false;
+        }
+        if (value.Contains(EchoAiProvider.StubMarker, StringComparison.Ordinal))
+        {
+            return true;
+        }
+        var text = value.TrimStart();
+        return text.StartsWith(EchoAiProvider.EchoModelPrefix, StringComparison.Ordinal)
+            || text.StartsWith(EchoAiProvider.EchoPrefix, StringComparison.Ordinal);
+    }
+
+    /// <summary>A19 — true when this save actually changes something that is
+    /// persisted with the summary. Reopening the editor and pressing Save without
+    /// touching a field used to clear the review + publish stamps and pull a live
+    /// محضر out of the app, which no one asked for and no one was told about.</summary>
+    private static bool ChangesPersistedContent(
+        SessionSummary summary,
+        string keyPoints, string keyPointsAr,
+        string recommendations, string recommendationsAr,
+        string speakers, string speakersAr,
+        string fullText, string fullTextAr,
+        string? summaryVideoUrl) =>
+        !string.Equals(summary.KeyPoints, keyPoints, StringComparison.Ordinal)
+        || !string.Equals(summary.KeyPointsArabic, keyPointsAr, StringComparison.Ordinal)
+        || !string.Equals(summary.Recommendations, recommendations, StringComparison.Ordinal)
+        || !string.Equals(summary.RecommendationsArabic, recommendationsAr, StringComparison.Ordinal)
+        || !string.Equals(summary.Speakers, speakers, StringComparison.Ordinal)
+        || !string.Equals(summary.SpeakersArabic, speakersAr, StringComparison.Ordinal)
+        || !string.Equals(summary.FullText, fullText, StringComparison.Ordinal)
+        || !string.Equals(summary.FullTextArabic, fullTextAr, StringComparison.Ordinal)
+        || !string.Equals(summary.SummaryVideoUrl, summaryVideoUrl, StringComparison.Ordinal);
+
     /// <summary>Clears the review + approval stamps (back to Draft) AND takes the
     /// summary offline. Called on every content edit and by the explicit
     /// return-to-draft (D-472). Owner 2026-07-19 — because Publish is hard-gated on
     /// approval, invalidating the approval must also clear <c>PublishedAt</c>: an
     /// edited (now-unapproved) summary can never stay visible to the app, so it must
-    /// be re-approved and re-published. Keeps the invariant PublishedAt ⇒ ApprovedAt.</summary>
+    /// be re-approved and re-published. Keeps the invariant PublishedAt ⇒ ApprovedAt.
+    ///
+    /// <para>A19 — this is deliberately NOT called for a save or a re-draft that
+    /// leaves the persisted content byte-identical. A real edit still resets (the
+    /// approval was of the old text, and the app must never serve unapproved
+    /// minutes), and the CP now warns before that save; a no-op save must not
+    /// silently take a published محضر offline.</para></summary>
     private static void ResetReviewState(SessionSummary summary)
     {
         summary.ReviewSubmittedAt = null;

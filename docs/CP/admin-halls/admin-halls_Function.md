@@ -120,6 +120,6 @@ a server 409 surfaced in the form's alert. Every message has an Arabic pair.
   Hall`), so deactivating/keeping a hall affects what the map can point at.
 
 Deactivating a hall removes it from new Session assignment (the picker reads
-active halls), but does **not** currently block deactivation of a hall an active
-session already uses (`HALL_IN_USE` is reserved, not enforced — see
-[Logic](admin-halls_Logic.md) L-7).
+active halls), and is **refused** while any active session still sits in it —
+409 `HALL_IN_USE`, naming the session count (A37; see
+[Logic](admin-halls_Logic.md) L-7). Re-home or deactivate those sessions first.

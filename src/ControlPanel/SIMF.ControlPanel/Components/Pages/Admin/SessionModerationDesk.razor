@@ -57,6 +57,16 @@
                                 {
                                     <span>@L["Admin.SessionModeration.State.Hidden"]</span>
                                 }
+                                else if (row.Status == QuestionStatus.Answered)
+                                {
+                                    @* DEF-MOD-001 — the desk list now carries the
+                                       moderator's persisted "answered" mark; it is
+                                       the terminal desk state, so it wins over the
+                                       pushed marker (an answered question was
+                                       pushed first). Without this branch the row
+                                       rendered as "Queued". *@
+                                    <span>@L["Admin.SessionModeration.State.Answered"]</span>
+                                }
                                 else if (row.IsPushed)
                                 {
                                     <span>@L["Admin.SessionModeration.Pushed"]</span>

@@ -65,6 +65,16 @@ class _FakeSeatRepo implements SeatMapRepository {
 
   @override
   Future<void> releaseMine(String sessionId) => throw UnimplementedError();
+
+  // B1 — the change-seat action opens the picker, which owns the move call; the
+  // My-Seat screen itself never calls it.
+  @override
+  Future<MyReservation> moveSeat(
+    String sessionId, {
+    required String rowLabel,
+    required int seatNumber,
+  }) =>
+      throw UnimplementedError();
 }
 
 /// Flattens an [InlineSpan] tree to its non-blank text leaves (Text.rich wraps
@@ -96,7 +106,17 @@ Future<void> _pump(
   required SeatMapRepository repo,
   SeatShare? share,
   Locale locale = const Locale('en'),
+  // The page's ListView builds lazily, so anything under the hall card is not in
+  // the tree on the default 800x600 surface. A test that asserts on the action
+  // row asks for a surface tall enough to build it.
+  Size? surface,
 }) async {
+  if (surface != null) {
+    tester.view.physicalSize = surface;
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+  }
   final router = GoRouter(
     initialLocation: '/sessions/s1/my-seat',
     routes: <RouteBase>[
@@ -111,6 +131,21 @@ Future<void> _pump(
         path: '/map',
         name: RouteNames.venueMap,
         builder: (_, __) => const Scaffold(body: Text('MAP')),
+      ),
+      // B1 — the change-seat action pushes the real seat-picker route; the stub
+      // stands in for it and pops `true` (a successful move) so the My-Seat
+      // screen's re-read can be asserted.
+      GoRoute(
+        path: '/sessions/:sessionId/pick-seat',
+        name: RouteNames.seatPicker,
+        builder: (context, __) => Scaffold(
+          body: Center(
+            child: ElevatedButton(
+              onPressed: () => context.pop(true),
+              child: const Text('MOVED'),
+            ),
+          ),
+        ),
       ),
     ],
   );
@@ -184,9 +219,22 @@ void main() {
       }
     });
 
+    // Both of these assert on the ACTION ROW at the bottom of the page, so both
+    // need the tall surface `_pump` documents — the page's ListView builds
+    // lazily and the row is not in the tree on the default 800x600. They passed
+    // without it only while the page was short enough for the row to fall inside
+    // the default viewport; the content added above it since (D-767 per-row seat
+    // counts, then the B1 "Change seat" CTA) pushed it out, and the finders
+    // started returning 0 widgets. The buttons themselves are unchanged — this
+    // is the test catching up with the page's height, not a screen regression.
     testWidgets('share sends the seat-location text', (tester) async {
       final share = _FakeSeatShare();
-      await _pump(tester, repo: _FakeSeatRepo(map: _map()), share: share);
+      await _pump(
+        tester,
+        repo: _FakeSeatRepo(map: _map()),
+        share: share,
+        surface: const Size(1000, 2600),
+      );
 
       await _tapAction(
         tester,
@@ -196,13 +244,62 @@ void main() {
     });
 
     testWidgets('navigate opens the venue map', (tester) async {
-      await _pump(tester, repo: _FakeSeatRepo(map: _map()));
+      await _pump(
+        tester,
+        repo: _FakeSeatRepo(map: _map()),
+        surface: const Size(1000, 2600),
+      );
 
       await _tapAction(
         tester,
         find.widgetWithText(FilledButton, 'Guide me to my seat'),
       );
       expect(find.text('MAP'), findsOneWidget);
+    });
+
+    testWidgets('B1 — the change-seat action opens the picker and re-reads the '
+        'grid when the move lands', (tester) async {
+      final repo = _FakeSeatRepo(map: _map());
+      await _pump(tester, repo: repo, surface: const Size(1000, 2600));
+
+      final before = repo.calls;
+      final cta = find.widgetWithText(OutlinedButton, 'Change seat');
+      expect(cta, findsOneWidget);
+      await tester.tap(cta);
+      await tester.pumpAndSettle();
+      // The picker route is now on top; popping it with `true` (a successful
+      // move) must invalidate the seat map so the new seat is shown.
+      expect(find.text('MOVED'), findsOneWidget);
+      await tester.tap(find.text('MOVED'));
+      await tester.pumpAndSettle();
+      expect(repo.calls, greaterThan(before));
+    });
+
+    testWidgets('B1 — an open-seating join offers no change-seat action',
+        (tester) async {
+      // General admission has no seat to move, so the CTA must not appear.
+      const openSeating = SessionSeatMap(
+        rowLabels: <String>['A'],
+        seatsPerRow: 3,
+        reservedCells: <SeatCell>[],
+        myCell: SeatCell(
+          rowLabel: '',
+          seatNumber: 0,
+          kind: SeatReservationKind.openSeating,
+        ),
+        activeReservedCount: 1,
+        hallCapacity: 3,
+      );
+      await _pump(
+        tester,
+        repo: _FakeSeatRepo(map: openSeating),
+        surface: const Size(1000, 2600),
+      );
+
+      // The surface is tall enough to build the whole page, so this absence is
+      // real and not an artefact of lazy list building.
+      expect(find.widgetWithText(OutlinedButton, 'Share location'), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, 'Change seat'), findsNothing);
     });
 
     testWidgets('renders a ragged variable-width grid (per-row counts)',

@@ -195,19 +195,22 @@ public partial class SpeakerPresentationsList
     // selected speaker). This grid is master-detail: the export endpoint has no
     // GridQuery list, so the chosen speaker id rides Query.Filters["speakerId"]
     // (the endpoint lists that speaker's files, then honours any selected ids).
-    private Task OnExportAsync(IReadOnlyList<AdminSpeakerPresentationRow> selected)
+    private async Task OnExportAsync(IReadOnlyList<AdminSpeakerPresentationRow> selected)
     {
         var query = new GridQuery
         {
             Filters = new Dictionary<string, string> { ["speakerId"] = _speakerId },
         };
-        return JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+        // §6.16 (F-U5-005) — a failed export used to return silently, so
+        // the Export button was indistinguishable from an unwired one.
+        var error = await JS.ExportXlsxAsync(
             "/account/api/admin/speaker-presentations/export",
             new AdminGridExportRequest
             {
                 Ids = selected.Select(row => row.Id).ToList(),
                 Query = query,
-            }).AsTask();
+            }, L);
+        if (error is not null) _toast = new Toast("error", error);
     }
 
     private async Task UploadAsync()

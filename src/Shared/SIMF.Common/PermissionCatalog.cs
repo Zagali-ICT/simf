@@ -277,6 +277,11 @@ public static class PermissionCatalog
     {
         public const string View = "SeatLayouts.View";
         public const string Edit = "SeatLayouts.Edit";
+
+        /// <summary>B15 — remove a hall's seat layout entirely (convert the hall back
+        /// to general admission). Separate from <see cref="Edit"/> because it is
+        /// destructive: it discards the whole grid, not one row of it.</summary>
+        public const string Delete = "SeatLayouts.Delete";
     }
 
     /// <summary>Per-session seat plan / reservations.</summary>
@@ -284,6 +289,17 @@ public static class PermissionCatalog
     {
         public const string View = "SeatPlans.View";
         public const string Edit = "SeatPlans.Edit";
+    }
+
+    /// <summary>D-771 (owner 2026-07-26) — the on-ground SEATING DESK: staff help a
+    /// guest find their seat (scan a badge → where do they sit; tap a seat → who
+    /// sits there). This is an OPERATIONAL capability, not a Control-Panel page: it
+    /// is granted to the app's Staff / Moderator roles via
+    /// <see cref="OperationalPermissionsForAppRole"/> so a partner-side staff
+    /// attendee reaches it without any admin RBAC role.</summary>
+    public static class Seating
+    {
+        public const string Assist = "Seating.Assist";
     }
 
     /// <summary>#6/#17 (owner 2026-07-20) — the read-only booking monitor. There is
@@ -311,6 +327,20 @@ public static class PermissionCatalog
     {
         public const string View = "HallAllocations.View";
         public const string Edit = "HallAllocations.Edit";
+    }
+
+    /// <summary>QA A36 — the hall's meeting-time windows (D-715, FDS-013 §15
+    /// GAP-1) and the free slots derived from them. Its own code because the
+    /// resource is hall-scoped and read by BOTH meeting desks (speaker
+    /// <i>and</i> delegation): gating it on <see cref="SpeakerMeetingRequests"/>
+    /// locked a delegation-only or halls-only operator out of the windows every
+    /// meeting Approve modal depends on. <c>View</c> reads the windows + free
+    /// slots (grant it to any meeting-desk role); <c>Manage</c> creates and
+    /// deletes windows.</summary>
+    public static class HallAvailability
+    {
+        public const string View = "HallAvailability.View";
+        public const string Manage = "HallAvailability.Manage";
     }
 
     /// <summary>SIMF-FDS-013 (D-248) — admin-arranged B2B/B2C business meetings.</summary>
@@ -417,10 +447,15 @@ public static class PermissionCatalog
 
     /// <summary>P5.1d — D-244 (FDS-003 §5.4): the hall-door arrival console — an
     /// operator scans an attendee's badge QR to record hall arrival
-    /// (<c>Method = QrScan</c>). View the console; Record an arrival.</summary>
+    /// (<c>Method = QrScan</c>). View the console; Record a door movement.</summary>
     public static class HallArrivals
     {
         public const string View = "HallArrivals.View";
+
+        /// <summary>FR-CHK-003 — record a hall door movement in EITHER direction:
+        /// the arrival (check-in) and the departure (check-out) endpoints and both
+        /// console buttons share this one code. The operator population is identical
+        /// for the two directions, so they are deliberately not split.</summary>
         public const string Record = "HallArrivals.Record";
     }
 
@@ -434,6 +469,14 @@ public static class PermissionCatalog
         public const string Delete = "Exhibitors.Delete";
         public const string Export = "Exhibitors.Export";
         public const string Import = "Exhibitors.Import";
+
+        /// <summary>D-781 — attach an EXISTING account to an exhibitor
+        /// (<c>POST /admin/exhibitors/{id}/accounts/link</c>). Held separately from
+        /// <see cref="Create"/> because it does not create anything: it grants the
+        /// booth lead-capture tools (badge scan + the visitors' contact cards) to
+        /// an account somebody else created, so it is the one exhibitor action that
+        /// hands out access to visitor PII.</summary>
+        public const string LinkAccount = "Exhibitors.LinkAccount";
     }
 
     public static class Booths
@@ -901,9 +944,14 @@ public static class PermissionCatalog
 
         new(SeatLayouts.View, "SeatLayouts", "View", "View hall seat layouts", AdminOnly),
         new(SeatLayouts.Edit, "SeatLayouts", "Edit", "Edit hall seat layouts", AdminOnly),
+        new(SeatLayouts.Delete, "SeatLayouts", "Delete", "Delete hall seat layouts", AdminOnly),
 
         new(SeatPlans.View, "SeatPlans", "View", "View session seat plans", AdminOnly),
         new(SeatPlans.Edit, "SeatPlans", "Edit", "Edit session seat plans", AdminOnly),
+
+        // D-771 — the staff seating desk (app-side operational capability; also
+        // grantable to a Control-Panel role so a desk supervisor can hold it).
+        new(Seating.Assist, "Seating", "Assist", "Assist guests with seating (staff seating desk)", AdminOnly),
 
         // #6/#17 — read-only booking monitor (approve/reject retired: no approval step).
         new(Bookings.View, "Bookings", "View", "View the booking monitor", AdminOnly),
@@ -915,6 +963,9 @@ public static class PermissionCatalog
         new(MeetingTables.Export, "MeetingTables", "Export", "Export meeting tables", AdminOnly),
         new(HallAllocations.View, "HallAllocations", "View", "View hall allocations", AdminOnly),
         new(HallAllocations.Edit, "HallAllocations", "Edit", "Reserve / release hall allocations", AdminOnly),
+        // QA A36 — hall meeting-time windows: hall-scoped, read by both meeting desks.
+        new(HallAvailability.View, "HallAvailability", "View", "View hall availability windows & free slots", AdminOnly),
+        new(HallAvailability.Manage, "HallAvailability", "Manage", "Define / delete hall availability windows", AdminOnly),
         new(BusinessMeetings.View, "BusinessMeetings", "View", "View business meetings", AdminOnly),
         new(BusinessMeetings.Schedule, "BusinessMeetings", "Schedule", "Schedule business meetings", AdminOnly),
         new(BusinessMeetings.Cancel, "BusinessMeetings", "Cancel", "Cancel business meetings", AdminOnly),
@@ -967,7 +1018,10 @@ public static class PermissionCatalog
         // P5.1d — D-244: hall-door arrival console (operator QR scan).
         // D-752 — part of the Security team's access-control surface.
         new(HallArrivals.View, "HallArrivals", "View", "View the hall-arrival console", SecurityTeam),
-        new(HallArrivals.Record, "HallArrivals", "Record", "Record a hall arrival by badge scan", SecurityTeam),
+        // FR-CHK-003 — the one code gates BOTH door actions (the arrivals AND the
+        // departures endpoint, and both console buttons); the old wording named only
+        // the arrival, so an admin granting it could not tell it also allows check-out.
+        new(HallArrivals.Record, "HallArrivals", "Record", "Record a hall arrival or departure by badge scan", SecurityTeam),
 
         // Exhibition
         new(Exhibitors.View, "Exhibitors", "View", "View exhibitors", AdminOnly),
@@ -976,6 +1030,10 @@ public static class PermissionCatalog
         new(Exhibitors.Delete, "Exhibitors", "Delete", "Delete exhibitors", AdminOnly),
         new(Exhibitors.Export, "Exhibitors", "Export", "Export exhibitors", AdminOnly),
         new(Exhibitors.Import, "Exhibitors", "Import", "Import exhibitors", AdminOnly),
+        // D-781 — attach an existing account to an exhibitor (grants the booth
+        // lead-capture tools to an account the admin did not create here).
+        new(Exhibitors.LinkAccount, "Exhibitors", "LinkAccount",
+            "Link an existing account to an exhibitor", AdminOnly),
 
         new(Booths.View, "Booths", "View", "View booths", AdminOnly),
         new(Booths.Create, "Booths", "Create", "Create booths", AdminOnly),
@@ -1164,6 +1222,7 @@ public static class PermissionCatalog
         Gates.Operate,           // /app/gates scans + my-assignments
         Gates.ViewOwnReports,    // /app/gates visitor list + my reports
         Visitors.RegisterOnsite, // /app/staff/visitors/register-onsite
+        Seating.Assist,          // D-771 — /app/staff/sessions/{id}/seating/*
     ];
 
     /// <summary>Moderator = Staff + content/user moderation.</summary>
@@ -1172,6 +1231,7 @@ public static class PermissionCatalog
         Gates.Operate,
         Gates.ViewOwnReports,
         Visitors.RegisterOnsite,
+        Seating.Assist,          // D-771 — the seating desk (Moderator = Staff + …)
         Questions.View,
         Questions.Moderate,
         SessionModeration.Moderate,

@@ -220,12 +220,7 @@ void main() {
       expect(find.text('Sign in to watch the live stream.'), findsOneWidget);
       expect(find.widgetWithText(FilledButton, 'Sign in'), findsOneWidget);
       // The stream/content is not shown, and the session is never fetched.
-      expect(
-        find.textContaining(
-          'Live broadcasting is available only inside the Riyadh region',
-        ),
-        findsNothing,
-      );
+      expect(find.text('Now broadcasting'), findsNothing);
       expect(repo.calls, 0);
     });
 
@@ -263,7 +258,7 @@ void main() {
         profile: _orgProfile(
           liveStreamUrl: 'https://www.youtube.com/watch?v=simf',
         ),
-        // The player can't init headless — the region notice + title still render.
+        // The player can't init headless — the info column still renders.
         settle: false,
       );
 
@@ -274,13 +269,6 @@ void main() {
       );
       // The forum name is the now-broadcasting title.
       expect(find.text('The Forum'), findsOneWidget);
-      // The static region-restriction notice still renders.
-      expect(
-        find.textContaining(
-          'Live broadcasting is available only inside the Riyadh region',
-        ),
-        findsOneWidget,
-      );
       // The session-specific ask-question entry is hidden for the global live.
       expect(find.text('Ask a question'), findsNothing);
       // No session id → never fetched a session.
@@ -304,25 +292,63 @@ void main() {
       );
     });
 
-    testWidgets('a not-live session renders the region notice but HIDES the '
-        'ask-question entry (#7)', (tester) async {
+    testWidgets('a not-live session HIDES the ask-question entry (#7)',
+        (tester) async {
       await _pump(
         tester,
         repo: _FakeLiveRepo(session: _liveSession()),
         sessionId: 's1',
       );
 
-      // The static region-restriction notice card (frame 934:3619) always shows.
-      expect(
-        find.textContaining(
-          'Live broadcasting is available only inside the Riyadh region',
-        ),
-        findsOneWidget,
-      );
       // #7 (owner) — the ask entry shows only while the session is actually LIVE;
       // a not-live / recording view (a YouTube archive) offers no ask. (A live
       // session WITH the ask entry is locked by the live-broadcast golden.)
       expect(find.text('Ask a question'), findsNothing);
+    });
+
+    // A20 — the screen used to render an unconditional "the broadcast is only
+    // available inside the Riyadh region per regulations" card even though
+    // nothing anywhere checks the viewer's location. The claim is gone.
+    testWidgets('A20 — no geographic restriction notice is shown to any viewer',
+        (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeLiveRepo(
+          session: _liveSession(
+            liveStreamUrl: 'https://www.youtube.com/watch?v=simf',
+          ),
+        ),
+        sessionId: 's1',
+        settle: false,
+      );
+
+      expect(find.textContaining('Riyadh region'), findsNothing);
+      expect(find.textContaining('Notice:'), findsNothing);
+      expect(find.textContaining('منطقة الرياض'), findsNothing);
+    });
+
+    // A15 — the caption strip renders a STATIC admin-typed string, so it must
+    // not carry AI branding or promise live translation of the spoken audio.
+    testWidgets('A15 — the caption strip has no AI chip and no '
+        'live-translation promise', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeLiveRepo(
+          session: _liveSession(
+            liveStreamUrl: 'https://www.youtube.com/watch?v=simf',
+          ),
+        ),
+        sessionId: 's1',
+        settle: false,
+      );
+
+      expect(find.text('AI'), findsNothing);
+      expect(find.textContaining('Live captions of the spoken word'), findsNothing);
+      // The honest placeholder names who wrote the caption instead.
+      expect(
+        find.textContaining('written by the organiser'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('no stream but a recording shows the recording note',
@@ -500,7 +526,9 @@ void main() {
       expect(caption, findsOneWidget);
       // The placeholder hint is NOT shown when a real caption is present.
       expect(
-        find.text('Live captions of the spoken word appear here…'),
+        find.text(
+          'Caption text written by the organiser for this session appears here.',
+        ),
         findsNothing,
       );
       // Real caption text reads in the surface (white) token — not the muted
@@ -521,7 +549,9 @@ void main() {
         settle: false,
       );
 
-      final hint = find.text('Live captions of the spoken word appear here…');
+      final hint = find.text(
+        'Caption text written by the organiser for this session appears here.',
+      );
       expect(hint, findsOneWidget);
       // The placeholder reads in the frame's soft caption colour (#DDE4F0,
       // 934:3613) — assert the token so a re-tint can't silently pass.

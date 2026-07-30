@@ -31,10 +31,29 @@ import 'widgets/seat_map_async_view.dart';
 /// band, the A–H seat grid and the محجوز/متاح/مقعدك legend, then the two gold
 /// action buttons (share location / guide me to my seat). Navigate opens the
 /// venue map (15); share opens the native sheet (E3).
+///
+/// **B1 — change seat (owner request).** A visitor holding a seat-specific
+/// reservation also gets a **تغيير المقعد** action here: it opens the existing
+/// seat picker (109) as the destination chooser, which confirms the old→new pair
+/// and calls the atomic `POST …/seats/move`. On a successful move the picker pops
+/// `true` and this screen re-reads the grid.
 class MySeatScreen extends ConsumerWidget {
   const MySeatScreen({required this.sessionId, super.key});
 
   final String sessionId;
+
+  /// Opens the seat picker in change mode; a `true` pop means the move landed, so
+  /// the seat map is re-read. Only `ref` is used after the await — the context is
+  /// not touched across the async gap.
+  Future<void> _changeSeat(BuildContext context, WidgetRef ref) async {
+    final moved = await context.pushNamed<bool>(
+      RouteNames.seatPicker,
+      pathParameters: <String, String>{RouteParams.sessionId: sessionId},
+    );
+    if (moved ?? false) {
+      ref.invalidate(seatMapProvider(sessionId));
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -61,6 +80,12 @@ class MySeatScreen extends ConsumerWidget {
                           ),
                         ),
                   ),
+          // B1 — offered only against a seat-specific hold; an open-seating join
+          // (general admission) has no seat to move.
+          onChangeSeat: map.myCell == null ||
+                  map.myCell!.kind == SeatReservationKind.openSeating
+              ? null
+              : () => unawaited(_changeSeat(context, ref)),
         ),
       ),
     );
@@ -73,12 +98,16 @@ class _SeatMapView extends StatelessWidget {
     required this.l10n,
     required this.onNavigate,
     this.onShare,
+    this.onChangeSeat,
   });
 
   final SessionSeatMap map;
   final AppL10n l10n;
   final VoidCallback onNavigate;
   final VoidCallback? onShare;
+
+  /// B1 — null when there is no seat-specific hold to move.
+  final VoidCallback? onChangeSeat;
 
   @override
   Widget build(BuildContext context) {
@@ -103,6 +132,12 @@ class _SeatMapView extends StatelessWidget {
           HallSeatMapCard(map: map, l10n: l10n),
           const SizedBox(height: SimfTokens.space10),
           _Actions(l10n: l10n, onNavigate: onNavigate, onShare: onShare),
+          // B1 — the change-seat CTA sits on its own full-width line below the
+          // frame's two actions, so the shipped 908:1733 row is untouched.
+          if (onChangeSeat != null) ...<Widget>[
+            const SizedBox(height: SimfTokens.space4),
+            _ChangeSeatButton(l10n: l10n, onChangeSeat: onChangeSeat!),
+          ],
         ],
       ),
     );
@@ -222,6 +257,38 @@ class _SeatChip extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
+    );
+  }
+}
+
+/// B1 — the "change seat" action: a full-width gold-outlined button under the
+/// frame's action row. Its visible label IS its accessible name, and the leading
+/// icon is decorative (no `semanticLabel`), so a screen reader announces exactly
+/// "تغيير المقعد" / "Change seat" once.
+class _ChangeSeatButton extends StatelessWidget {
+  const _ChangeSeatButton({required this.l10n, required this.onChangeSeat});
+
+  final AppL10n l10n;
+  final VoidCallback onChangeSeat;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: onChangeSeat,
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size.fromHeight(SimfTokens.controlHeight),
+        foregroundColor: SimfTokens.surface,
+        side: const BorderSide(color: SimfTokens.accent),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        ),
+        padding: const EdgeInsets.symmetric(
+          horizontal: SimfTokens.space4,
+          vertical: SimfTokens.space3,
+        ),
+      ),
+      icon: const Icon(Icons.swap_horiz, size: 18),
+      label: Text(l10n.seatChangeCta, style: SimfTokens.labelSemiboldSm),
     );
   }
 }

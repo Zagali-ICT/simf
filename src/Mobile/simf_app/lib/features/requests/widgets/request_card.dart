@@ -146,7 +146,11 @@ class _RequestCardState extends State<RequestCard> {
               ),
               const SizedBox(width: SimfTokens.space2),
               Text(
-                requestStatusLabel(l10n, item.status),
+                requestStatusLabel(
+                  l10n,
+                  item.status,
+                  checkedIn: item.checkedIn,
+                ),
                 style: TextStyle(
                   color: statusColor,
                   fontSize: SimfTokens.textSm,

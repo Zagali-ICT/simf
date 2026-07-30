@@ -32,6 +32,8 @@
 | E2E-AISD-009 | Unknown feature — `/admin/ai/services/NotAFeature` shows the "Unknown AI service" state | error | P1 | _to author_ |
 | E2E-AISD-010 | Auth gate — an admin without `AiPrompts.View` cannot reach the route | auth | P0 | _to author_ |
 | E2E-AISD-011 | RTL — Arabic locale renders the tabs + panels RTL | rtl | P2 | _to author_ |
+| E2E-AISD-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-AISD-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

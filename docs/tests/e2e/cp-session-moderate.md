@@ -46,6 +46,8 @@
 | E2E-MOD-011 | Server 500 on `/moderate` load → bilingual fallback toast, no rows | resilience | P2 | _to author_ |
 | E2E-MOD-012 | RTL / Arabic render — page, table and action buttons mirror | i18n | P1 | _to author_ |
 | E2E-MOD-013 | Two-path — a LIVE question appears on the desk directly, with no Committee step | happy | P0 | authored ✓ (API `SessionQuestionsTests.Live_question_skips_AI_and_lands_directly_on_the_moderator_desk`) |
+| E2E-MOD-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOD-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

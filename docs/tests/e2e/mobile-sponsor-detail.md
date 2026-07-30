@@ -45,6 +45,8 @@
 | E2E-MOB221-005 | Missing about / city / website hide their elements | data | P1 | authored ✓ (model `optional fields fall back / decode to null`) |
 | E2E-MOB221-006 | Unknown sponsor id → 404 | error | P1 | authored ✓ (API `Public_sponsor_detail_for_an_unknown_id_returns_404`) |
 | E2E-MOB221-007 | RTL — Arabic name / city / about | rtl | P2 | covered (model `localized*` getters) |
+| E2E-MOB221-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB221-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 
@@ -68,3 +70,11 @@ about/tier/website detail, unknown→404).
 ---
 
 _Last reviewed:_ `2026-06-26` by `SIMF Team`.
+
+## See also — the logo box (owner 2026-07-26)
+
+The 108x108 identity logo on this page renders through the shared
+`SimfLogoImage`: the mark FITS the box (`BoxFit.contain`, replacing the crop)
+and pressing it opens the logo full size in `SimfImageViewer` (pinch-zoom,
+named, close / back to dismiss). Those rules + their scenarios live once in
+[`mobile-logo-viewer.md`](mobile-logo-viewer.md) (E2E-LOGO-001..008).

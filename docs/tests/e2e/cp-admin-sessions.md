@@ -78,7 +78,16 @@
 | E2E-SES-043 | Key outcomes ("أبرز المخرجات") add / edit / reorder / remove — repeatable bilingual list, renumbered 0..n-1; one-language-only → 400; blank row dropped; remove-all clears (RemoveRange re-sync) | happy | P1 | _to author_ |
 | E2E-SES-044 | Required session Type (#3) — create with no type → 400 `SESSION_TYPE_REQUIRED` + client marker; a legacy untyped row still saves an unrelated edit (grandfathered); clearing a set type → 400 | error | P1 | authored ✓ (`AdminSessionsTests.Create_without_a_type_is_400_SESSION_TYPE_REQUIRED` + `.Update_legacy_untyped_speakerless_row_is_grandfathered` + `.Update_clearing_a_set_type_is_400_SESSION_TYPE_REQUIRED`) |
 | E2E-SES-045 | Min-1 speaker unless Event (#4) — non-Event create with no speaker → 400 `SESSION_SPEAKER_REQUIRED`; an Event saves with none; a legacy speakerless non-Event row still saves (grandfathered); dropping the last speaker of a non-Event → 400 | error | P1 | authored ✓ (`AdminSessionsTests.Create_non_event_with_no_speakers_is_400_SESSION_SPEAKER_REQUIRED` + `.Create_event_with_no_speakers_succeeds` + `.Update_dropping_the_last_speaker_of_a_non_event_is_400`) |
+| E2E-SES-047 | Seat-release warning (A1/A6) — an edit that moves the Hall or the Start/End window opens a `SimfConfirm` naming the exact registration + admin-row-block counts before it submits; Cancel leaves the form untouched | error | P0 | authored ✓ (`SessionLifecycleNoticeTests.A1_Get_stamps_the_holding_a_hall_or_time_change_would_release`) |
+| E2E-SES-048 | Seat-release reporting (A1/A6) — after confirming, the toast names what was released and a `SeatReservation.Released` audit row records `reason=HallChanged\|Rescheduled; reservations=N; adminBlocks=M`; a slot-preserving edit reports nothing | happy/regression | P0 | authored ✓ (`SessionLifecycleNoticeTests.A1_A6_Hall_change_reports_and_audits_what_it_released` + `.A1_An_edit_that_leaves_the_slot_alone_reports_no_releases`) |
+| E2E-SES-049 | Release notice reaches the inbox (A2) — the affected attendee gets the in-app row **and** an email, bilingual, quoting the new start on the Saudi wall clock with no UTC anywhere | happy/regression | P1 | authored ✓ (`SessionLifecycleNoticeTests.A2_Released_seat_notice_is_emailed_not_only_in_app`) |
+| E2E-SES-050 | Reschedule re-arms the workers (A4) — moving Start/End clears `ReminderSent` + `RatingPromptSent` so the reminder fires for the new time; a title-only edit leaves both stamped | happy/regression | P1 | authored ✓ (`SessionLifecycleNoticeTests.A4_Moving_the_window_rearms_the_reminder_and_rating_prompt` + `.A4_An_edit_that_keeps_the_window_does_not_rearm_the_reminder`) |
+| E2E-SES-051 | Booking-conflict copy (A5) — the 409 `SESSION_HAS_ACTIVE_BOOKINGS` message names `/admin/sessions/seat-plans` (bilingual) and never the read-only `/admin/bookings` monitor | error | P1 | authored ✓ (`SessionLifecycleNoticeTests.A5_Active_booking_conflict_points_at_the_seat_plans_page`) |
+| E2E-SES-052 | Cancellation notice (B2) — deactivating a session dispatches `SessionCancelled` (in-app + email, bilingual, Saudi wall clock) to everyone holding a seat or who favourited it; the audit row carries `notified=N`; a session nobody saved notifies nobody | happy/regression | P0 | authored ✓ (`SessionLifecycleNoticeTests.B2_Deactivating_a_session_notifies_everyone_who_saved_it` + `.B2_A_session_nobody_saved_is_cancelled_without_notifying_anyone`) |
+| E2E-SES-053 | Cancellation notice on the edit-form path (B2) — clearing the **Active** checkbox and saving announces exactly like Deactivate (`SessionCancelled` in-app + email + `Session.Deactivated` audit with `notified=N`); an edit that leaves Active ticked announces nothing | happy/regression | P0 | authored ✓ (`SessionLifecycleNoticeTests.B2_Unticking_Active_on_the_edit_form_notifies_exactly_like_Deactivate` + `.B2_An_edit_that_leaves_Active_ticked_announces_no_cancellation`) |
 | E2E-SES-046 | Excel import Speakers column (#3/#4) — a `Speakers` cell of speaker codes attaches the roster in order; a non-Event row with no speakers, an unknown speaker code, or a blank Type each become a per-row error | error | P1 | authored ✓ (`SessionsExcelTests.Import_attaches_the_speakers_column_in_order` + `.Import_non_event_row_without_speakers_is_a_per_row_error` + `.Import_unknown_speaker_code_is_a_per_row_error` + `.Import_row_without_a_type_is_a_per_row_error`) |
+| E2E-SES-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-SES-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 
@@ -937,6 +946,122 @@ Scenario: A blank Type is a per-row error
 # no export→import round-trip for the roster.
 ```
 
+### E2E-SES-047 / 048 / 049 — Moving the hall or the time destroys the room, loudly
+
+```gherkin
+Feature: A hall or time change never silently cancels the registrations
+  As an Administrator
+  I want to be told, with a number, what a reschedule is about to destroy
+  So that nudging an end time by 30 minutes cannot wipe a booked room unnoticed
+
+Background:
+  Given an Administrator has signed in and landed on /admin/sessions
+  And an active session "Future of Naval Logistics" (code "SES-001") runs
+      2026-11-10 09:00 AM - 10:30 AM in "Auditorium A"
+  And 12 approved attendees hold a seat for it
+  And an administrator has blocked row "VIP" (3 seats) on its seat plan
+
+Scenario: The warning names the real counts before anything is saved
+  When the administrator opens Edit on SES-001
+  And they change End (Saudi time) to "2026-11-10T11:00"
+  And they click "Save changes"
+  Then NO request is sent yet
+  And a must-decide dialog opens titled "This change releases every held seat"
+  And its message reads "... 12 attendee registration(s) and 3 admin-reserved row block(s) will be released ..."
+  And its buttons are "Release and save" (danger) and "Cancel"
+  When they click "Cancel"
+  Then the dialog closes, no request was sent, and the form still shows End="2026-11-10T11:00"
+
+Scenario: Confirming reports what was destroyed
+  When they click "Save changes" again and then "Release and save"
+  Then the BFF PUTs /account/api/admin/sessions/{id} and the API returns 200
+  And the response carries releasedReservationCount=12 and releasedAdminBlockCount=3
+  And the toast reads 'Session "Future of Naval Logistics" was updated. 12 attendee
+      registration(s) and 3 admin-reserved row block(s) were released - the attendees
+      were notified; re-create the row blocks.'
+  And an OperationLog row exists with EventType="SeatReservation.Released" and Detail
+      containing "reason=Rescheduled; reservations=12; adminBlocks=3"
+
+Scenario: An edit that leaves the slot alone never warns and never releases
+  When the administrator opens Edit and changes only Title (English)
+  And they click "Save changes"
+  Then no dialog opens, the save returns 200 with both released counts 0
+  And the 12 seats are still held and no SeatReservation.Released row is written
+
+Scenario: The attendee is told by app AND email, in local time
+  Given attendee "visitor@simf.test" held one of the released seats
+  Then they have an in-app notification of kind BookingRejected
+  And its English body quotes the new start as "10-11-2026 09:00 AM" (Saudi wall clock)
+  And its Arabic body carries the same, and neither body contains "UTC"
+  And an email addressed to visitor@simf.test was queued
+```
+
+### E2E-SES-050 / 051 / 052 — Reschedule re-arms the reminder; cancellation tells people
+
+```gherkin
+Feature: A moved session is still remindable, and a cancelled one is announced
+
+Scenario: Moving the window clears the worker stamps (A4)
+  Given session SES-001 has already had its "starting soon" reminder sent
+      (Session.ReminderSent is stamped) and its rating prompt sent
+  When the administrator moves Start/End by 3 hours and saves
+  Then Session.ReminderSent and Session.RatingPromptSent are both null again
+  And SessionReminderWorker picks the session up for the NEW start time
+
+Scenario: An unrelated save does not resend an already-delivered reminder (A4)
+  Given the same stamped session
+  When the administrator edits only the Title and saves
+  Then both stamps are unchanged and no second reminder is dispatched
+
+Scenario: The booking conflict names a page that can do the work (A5)
+  Given session SES-001 has 12 active attendee bookings
+  When the administrator clicks Deactivate and confirms
+  Then the API returns 409 SESSION_HAS_ACTIVE_BOOKINGS
+  And the bilingual message names "/admin/sessions/seat-plans"
+  And it does NOT name "/admin/bookings" (a read-only monitor with no row actions)
+  And the session is still Active
+
+Scenario: Cancelling a session finally tells the attendees (B2)
+  Given session SES-002 has no active bookings
+  And attendee "saver@simf.test" has favourited it
+  When the administrator clicks Deactivate and confirms
+  Then the API returns 200 and the session leaves the public agenda
+  And saver@simf.test has an in-app notification of kind SessionCancelled
+      whose body names the session and its Saudi-wall-clock start, with no "UTC"
+  And an email addressed to saver@simf.test was queued
+  And the Session.Deactivated OperationLog row carries "notified=1"
+
+Scenario: A session nobody booked or saved is cancelled quietly
+  Given session SES-003 has no bookings and no favourites
+  When the administrator deactivates it
+  Then no SessionCancelled notification is written for it
+```
+
+### E2E-SES-053 — The edit form's Active checkbox is the same cancellation
+
+```gherkin
+Feature: Unticking Active cancels a session exactly as Deactivate does
+
+Scenario: Clearing Active on the edit form announces the cancellation (B2)
+  Given session SES-004 has no active bookings
+  And attendee "saver@simf.test" has favourited it
+  When the administrator opens Edit on SES-004
+  And they untick "Active"
+  And they click "Save changes"
+  Then the API returns 200 and the session leaves the public agenda
+  And saver@simf.test has an in-app notification of kind SessionCancelled
+      whose body names the session and its Saudi-wall-clock start, with no "UTC"
+  And an email addressed to saver@simf.test was queued
+  And a Session.Deactivated OperationLog row carries "notified=1"
+      (alongside the ordinary Session.Updated row)
+
+Scenario: An ordinary edit that leaves Active ticked announces nothing
+  Given the same favourited session, still Active
+  When the administrator edits only the Title and saves
+  Then no SessionCancelled notification is written for it
+  And no Session.Deactivated OperationLog row is written for it
+```
+
 ---
 
 ## Implementation notes
@@ -983,3 +1108,7 @@ Scenario: A blank Type is a per-row error
 _Last reviewed:_ 2026-07-11 by Claude (on-site ops — booking guards on delete/edit + capacity (S-1), same-hall time-overlap guard (S-2), lifecycle clock + recording guards (S-7): SES-033..041).
 
 _Last reviewed:_ 2026-07-22 by Claude (#3 required session Type + #4 min-1-speaker-unless-Event with no-regression grandfathering on edit, and the Excel-import Speakers column: SES-044..046).
+
+_Last reviewed:_ 2026-07-26 by Claude (session-lifecycle QA package — A1/A6 seat-release confirmation + counts + audit, A2 release email, A4 reminder re-arm, A5 corrected conflict copy, B2 session-cancelled notice: SES-047..052; covered by `tests/SIMF.Api.Tests/SessionLifecycleNoticeTests.cs`).
+
+_Last reviewed:_ 2026-07-27 by Claude (B2 completed on the second cancellation path — clearing the Active checkbox on the edit form now runs the same announce step as Deactivate: SES-053).

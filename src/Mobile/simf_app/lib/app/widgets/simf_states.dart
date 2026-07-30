@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
+import '../route_names.dart';
 import '../theme/tokens.dart';
 
 /// The shared loading / error / empty triad every data screen composes.
@@ -44,10 +46,20 @@ class SimfErrorState extends StatelessWidget {
 
 /// The standard empty / pending surface: a muted icon over the message.
 class SimfEmptyState extends StatelessWidget {
-  const SimfEmptyState({required this.icon, required this.message, super.key});
+  const SimfEmptyState({
+    required this.icon,
+    required this.message,
+    this.action,
+    super.key,
+  });
 
   final IconData icon;
   final String message;
+
+  /// An optional action rendered under the message — e.g. the true-guest
+  /// sign-in / create-account pair on the badge and profile tabs
+  /// ([SimfGuestPrompt]). Null keeps the plain empty surface.
+  final Widget? action;
 
   @override
   Widget build(BuildContext context) {
@@ -64,8 +76,60 @@ class SimfEmptyState extends StatelessWidget {
               textAlign: TextAlign.center,
               style: SimfTokens.hintBeige,
             ),
+            if (action != null) ...<Widget>[
+              const SizedBox(height: SimfTokens.space4),
+              action!,
+            ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// The **true-guest** surface for a signed-in-only tab: the empty-state icon and
+/// message over a working sign-in button and a create-account link.
+///
+/// The bottom nav switches tabs INSIDE the shell (no go_router navigation), so
+/// the router's auth redirect never runs and a visitor with no account at all
+/// reaches the badge and profile tabs. Both used to render the PENDING-account
+/// copy ("your account is not approved yet…" / "under review…"), which describes
+/// a submitted registration that does not exist and offered no way out — a dead
+/// end (BUG-013). The pending copy stays for genuinely pending accounts.
+class SimfGuestPrompt extends StatelessWidget {
+  const SimfGuestPrompt({
+    required this.icon,
+    required this.message,
+    required this.signInLabel,
+    required this.createAccountLabel,
+    super.key,
+  });
+
+  final IconData icon;
+
+  /// The true-guest copy — "sign in or create an account to …", never the
+  /// pending-approval wording.
+  final String message;
+  final String signInLabel;
+  final String createAccountLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return SimfEmptyState(
+      icon: icon,
+      message: message,
+      action: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          FilledButton(
+            onPressed: () => context.pushNamed(RouteNames.signIn),
+            child: Text(signInLabel),
+          ),
+          TextButton(
+            onPressed: () => context.pushNamed(RouteNames.signUpForm),
+            child: Text(createAccountLabel),
+          ),
+        ],
       ),
     );
   }
