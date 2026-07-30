@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
+import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/media_coverage_tabs.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import '../../core/utils/refresh.dart';
 import 'data/news_repository.dart';
-import 'news_article_screen.dart';
 import 'widgets/news_card.dart';
 
 // `newsListProvider` lives in `data/news_repository.dart`; re-exported so the
@@ -110,10 +111,11 @@ class NewsScreen extends ConsumerWidget {
                         item: item,
                         isArabic: isArabic,
                         baseUrl: baseUrl,
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => NewsArticleScreen(newsId: item.id),
-                          ),
+                        onTap: () => context.pushNamed(
+                          RouteNames.newsArticle,
+                          pathParameters: <String, String>{
+                            RouteParams.newsId: item.id,
+                          },
                         ),
                       );
                     },

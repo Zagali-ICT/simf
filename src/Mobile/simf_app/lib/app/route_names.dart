@@ -67,6 +67,11 @@ class RouteNames {
 
   // Section 5 — Media coverage (3 screens)
   static const String news = 'news';
+
+  /// The single news article, opened from the news list or the home highlights
+  /// carousel. Routed (not an imperative push) so it deep-links like every other
+  /// detail screen and appears in the page index.
+  static const String newsArticle = 'newsArticle';
   static const String gallery = 'gallery';
   static const String mediaPartners = 'mediaPartners';
 
@@ -193,4 +198,5 @@ class RouteParams {
   static const String boothId = 'boothId';
   static const String sponsorId = 'sponsorId';
   static const String liveUrl = 'liveUrl';
+  static const String newsId = 'newsId';
 }

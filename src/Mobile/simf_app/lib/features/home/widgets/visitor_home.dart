@@ -13,7 +13,6 @@ import '../../../core/organization_profile/organization_profile.dart';
 import '../../banners/data/banner_models.dart';
 import '../../live/data/current_live_session.dart';
 import '../../news/data/news_models.dart';
-import '../../news/news_article_screen.dart';
 import 'discover_saudi_row.dart';
 import 'follow_us_section.dart';
 import 'greeting_header.dart';
@@ -292,10 +291,11 @@ class VisitorHome extends StatelessWidget {
                 l10n: l10n,
                 items: highlights,
                 baseUrl: baseUrl,
-                onTap: (post) => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => NewsArticleScreen(newsId: post.id),
-                  ),
+                onTap: (post) => context.pushNamed(
+                  RouteNames.newsArticle,
+                  pathParameters: <String, String>{
+                    RouteParams.newsId: post.id,
+                  },
                 ),
               ),
             ],

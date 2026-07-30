@@ -249,7 +249,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | `myVisitors` (`GET /app/exhibitor/my-visitors`) — D-426 exhibitor captured-visitor list | [`mobile-my-visitors.md`](mobile-my-visitors.md) | E2E-MOBMYVIS-001..006 |
 | `scanVisitor` (`scanByBadge` — exhibitor lead-capture scan) — D-426 | [`mobile-scan-visitor.md`](mobile-scan-visitor.md) | E2E-MOBSCANVIS-001..006 |
 | #24 `archive` (`GET /app/archive` + `/{id}`) | [`mobile-archive.md`](mobile-archive.md) | E2E-MOB024-001..005 |
-| #29 `news` (`GET /app/news` + `/{id}`) | [`mobile-news.md`](mobile-news.md) | E2E-MOB029-001..005 |
+| #29 `news` (`GET /app/news` + `/{id}`) + #29a `newsArticle` `/news/:newsId` | [`mobile-news.md`](mobile-news.md) | E2E-MOB029-001..013 |
 | #30 `gallery` (`GET /app/media`) | [`mobile-gallery.md`](mobile-gallery.md) | E2E-MOB030-001..004 |
 | #37 `aboutForum` (`GET /app/content/about`) | [`mobile-about.md`](mobile-about.md) | E2E-MOB037-001..003 |
 | #40 `rate` (`GET/POST /app/feedback/form|submit`) | [`mobile-rate.md`](mobile-rate.md) | E2E-MOB040-001..011 |

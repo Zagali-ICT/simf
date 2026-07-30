@@ -29,6 +29,7 @@ import '../features/forum_guide/forum_guide_screen.dart';
 import '../features/gallery/gallery_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/media_partners/media_partners_screen.dart';
+import '../features/news/news_article_screen.dart';
 import '../features/news/news_screen.dart';
 import '../features/accessibility/accessibility_screen.dart';
 import '../features/ai_summary/session_summary_list_screen.dart';
@@ -144,6 +145,7 @@ const List<_Route> _routes = <_Route>[
 
   // Section 5 — Media coverage (3 screens)
   _Route(number: 29, name: RouteNames.news, path: '/news', labelAr: 'الأخبار', labelEn: 'News'),
+  _Route(number: 290, name: RouteNames.newsArticle, path: '/news/:newsId', labelAr: 'الخبر', labelEn: 'News article'),
   _Route(number: 30, name: RouteNames.gallery, path: '/media', labelAr: 'معرض الصور والفيديوهات', labelEn: 'Media gallery'),
   _Route(number: 31, name: RouteNames.mediaPartners, path: '/media-partners', labelAr: 'الشركاء الإعلاميون', labelEn: 'Media partners'),
 
@@ -444,6 +446,11 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.news) {
     return const NewsScreen();
+  }
+  if (r.name == RouteNames.newsArticle) {
+    return NewsArticleScreen(
+      newsId: state.pathParameters[RouteParams.newsId] ?? '',
+    );
   }
   if (r.name == RouteNames.gallery) {
     return const GalleryScreen();
