@@ -696,7 +696,7 @@ class SimfTokens {
     fontWeight: FontWeight.w700,
   );
   static const TextStyle bodyWhite70 = TextStyle(
-    color: Colors.white70,
+    color: white70,
   );
   // ai_summary (Figma 1072:14628 / 1388:8392) — list card title/category, day
   // header, session label, agenda rows, section heading, bullets + paragraph.
@@ -736,6 +736,15 @@ class SimfTokens {
   );
   static const TextStyle bodyDanger = TextStyle(
     color: danger,
+  );
+
+  /// Colour-only bodies for text inside a sized parent (list tiles, inline
+  /// hints) — the size comes from the surrounding style, as with [bodyInkMuted].
+  static const TextStyle bodyGrey = TextStyle(
+    color: greyText,
+  );
+  static const TextStyle bodyHeadlineInk = TextStyle(
+    color: headlineInk,
   );
 
   /// The small inline validation error under a form field — the single most
