@@ -407,7 +407,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       firstDate: earliest,
       lastDate: latest,
     );
-    if (picked != null) {
+    if (picked != null && mounted) {
       setState(() => _dateOfBirth = picked);
     }
   }

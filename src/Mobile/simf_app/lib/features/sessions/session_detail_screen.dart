@@ -189,6 +189,11 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     if (registered && mounted) {
       await SimfInfoDialog.show(context, title: l10n.joinOpenSuccessBody);
     }
+    // _load() opens with an unguarded setState, so leaving while the dialog is up
+    // would throw "setState after dispose".
+    if (!mounted) {
+      return;
+    }
     await _load();
   }
 
@@ -226,6 +231,9 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
       if (mounted) {
         setState(() => _busy = false);
       }
+    }
+    if (!mounted) {
+      return;
     }
     await _load();
   }

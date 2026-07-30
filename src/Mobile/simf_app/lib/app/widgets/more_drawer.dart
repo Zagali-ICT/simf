@@ -197,6 +197,10 @@ class MoreDrawer extends ConsumerWidget {
   ) async {
     final messenger = ScaffoldMessenger.of(context);
     final repo = ref.read(myAreaRepositoryProvider);
+    // Read the anchor rect BEFORE popping and awaiting — this element is gone by
+    // the time the fetch returns, and the iPad share sheet must point at the row
+    // the user actually tapped.
+    final origin = shareOriginFromContext(context);
     Navigator.of(context).pop();
     try {
       final ics = await repo.getCalendarIcs();
@@ -204,7 +208,7 @@ class MoreDrawer extends ConsumerWidget {
         content: ics,
         filename: 'simf.ics',
         mimeType: 'text/calendar',
-        sharePositionOrigin: shareOriginFromContext(context),
+        sharePositionOrigin: origin,
       );
     } on ApiFailure {
       messenger.showSnackBar(SnackBar(content: Text(l10n.shareFailed)));

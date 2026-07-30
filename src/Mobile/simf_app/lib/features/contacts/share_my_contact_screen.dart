@@ -119,13 +119,16 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
     if (_sharingVcard) return;
     setState(() => _sharingVcard = true);
     final l10n = AppL10n.of(context);
+    // Anchor rect read before the await — the iPad share sheet must point at the
+    // button as it was at tap time, and this element may be gone by then.
+    final origin = shareOriginFromContext(context);
     try {
       final vcf = await ref.read(myAreaRepositoryProvider).getContactCardVcf();
       await shareTextContent(
         content: vcf,
         filename: 'simf.vcf',
         mimeType: 'text/vcard',
-        sharePositionOrigin: shareOriginFromContext(context),
+        sharePositionOrigin: origin,
       );
     } on Object catch (_) {
       if (!mounted) return;

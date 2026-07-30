@@ -94,6 +94,10 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
   Future<void> _push(ModeratorQuestion q) async {
     if (_isRejected(q)) {
       await _restore(q);
+      // _restore awaits a network round-trip and _act reads context on entry.
+      if (!mounted) {
+        return;
+      }
     }
     await _act(
       () => ref.read(moderationRepositoryProvider).push(widget.sessionId, q.id),

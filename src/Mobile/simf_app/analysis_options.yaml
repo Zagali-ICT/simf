@@ -53,6 +53,10 @@ analyzer:
     - "**/*.g.dart"
     - "**/*.freezed.dart"
     - "build/**"
+    # Vendored upstream plugin (D-768 HiSilicon decoder fallback). Its own tests
+    # raise 183 analyzer errors against our stricter config, which would bury a
+    # real error introduced in lib/ and make the "0 errors" gate unreadable.
+    - "third_party/**"
     # NOTE: this repo uses hand-written Riverpod + a hand-written router (no codegen),
     # and has no `_legacy_mockup/` folder. Removed the *.gr.dart and _legacy_mockup
     # excludes (dead config). Re-add a codegen exclude only if codegen is introduced.

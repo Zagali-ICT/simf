@@ -249,8 +249,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     // biometric path mirrors the password path (D-441).
     if (mounted && ref.read(authControllerProvider) is AuthStateSignedIn) {
       if (unexpectedError != null) {
+        // The localized generic message, not '$unexpectedError' — a raw Dart
+        // toString is untranslated and leaks internal type detail to the user.
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$unexpectedError')),
+          SnackBar(content: Text(l10n.errorGenericBody)),
         );
       }
       routeAfterAuth(context, ref);
