@@ -269,6 +269,11 @@ public static class CpNavigation
             new("Module.ReportsAttendance", "/admin/reports/attendance", RequiredPermission: PermissionCatalog.Reports.Attendance, Icon: "user-check"),
             new("Module.ReportsRegistrations", "/admin/reports/registrations", RequiredPermission: PermissionCatalog.Reports.Registrations, Icon: "users"),
             new("Module.ReportsGates", "/admin/reports/gates", RequiredPermission: PermissionCatalog.Reports.Gates, Icon: "shield"),
+            new("Module.ReportsSessions", "/admin/reports/sessions", RequiredPermission: PermissionCatalog.Reports.Sessions, Icon: "presentation"),
+            new("Module.ReportsRatings", "/admin/reports/ratings", RequiredPermission: PermissionCatalog.Reports.Ratings, Icon: "star"),
+            new("Module.ReportsPartners", "/admin/reports/partners", RequiredPermission: PermissionCatalog.Reports.Partners, Icon: "handshake"),
+            new("Module.ReportsMeetings", "/admin/reports/meetings", RequiredPermission: PermissionCatalog.Reports.Meetings, Icon: "calendar"),
+            new("Module.ReportsEngagement", "/admin/reports/engagement", RequiredPermission: PermissionCatalog.Reports.Engagement, Icon: "message-circle"),
         ]),
     ];
 

@@ -1364,6 +1364,56 @@
   <data name="Admin.Reports.Col.Direction" xml:space="preserve"><value>Direction</value></data>
   <data name="Admin.Reports.Col.Outcome" xml:space="preserve"><value>Outcome</value></data>
   <data name="Admin.Reports.Col.DenialReason" xml:space="preserve"><value>Denial reason</value></data>
+  <data name="Module.ReportsSessions" xml:space="preserve"><value>Sessions report</value></data>
+  <data name="Module.ReportsRatings" xml:space="preserve"><value>Ratings report</value></data>
+  <data name="Module.ReportsPartners" xml:space="preserve"><value>Partners report</value></data>
+  <data name="Module.ReportsMeetings" xml:space="preserve"><value>Meetings report</value></data>
+  <data name="Module.ReportsEngagement" xml:space="preserve"><value>Engagement report</value></data>
+  <data name="Admin.Reports.Sessions.Title" xml:space="preserve"><value>Sessions report</value></data>
+  <data name="Admin.Reports.Sessions.Intro" xml:space="preserve"><value>Programme sessions with speakers, attendance, audience questions and score.</value></data>
+  <data name="Admin.Reports.Ratings.Title" xml:space="preserve"><value>Ratings report</value></data>
+  <data name="Admin.Reports.Ratings.Intro" xml:space="preserve"><value>Submitted ratings and their comments. The respondent is not reported.</value></data>
+  <data name="Admin.Reports.Partners.Title" xml:space="preserve"><value>Partners report</value></data>
+  <data name="Admin.Reports.Partners.Intro" xml:space="preserve"><value>Exhibitors, sponsors and booths as one contact directory.</value></data>
+  <data name="Admin.Reports.Meetings.Title" xml:space="preserve"><value>Meetings report</value></data>
+  <data name="Admin.Reports.Meetings.Intro" xml:space="preserve"><value>Speaker and delegation meeting requests, with status and check-in.</value></data>
+  <data name="Admin.Reports.Engagement.Title" xml:space="preserve"><value>Engagement report</value></data>
+  <data name="Admin.Reports.Engagement.Intro" xml:space="preserve"><value>Audience questions and their moderation state. Hidden questions are included.</value></data>
+  <data name="Admin.Reports.Col.Speakers" xml:space="preserve"><value>Speakers</value></data>
+  <data name="Admin.Reports.Col.Questions" xml:space="preserve"><value>Questions</value></data>
+  <data name="Admin.Reports.Col.AverageRating" xml:space="preserve"><value>Average rating</value></data>
+  <data name="Admin.Reports.Col.RatingType" xml:space="preserve"><value>Rating type</value></data>
+  <data name="Admin.Reports.Col.Scope" xml:space="preserve"><value>Scope</value></data>
+  <data name="Admin.Reports.Col.Stars" xml:space="preserve"><value>Stars</value></data>
+  <data name="Admin.Reports.Col.Comment" xml:space="preserve"><value>Comment</value></data>
+  <data name="Admin.Reports.Col.Submitted" xml:space="preserve"><value>Submitted</value></data>
+  <data name="Admin.Reports.Col.Kind" xml:space="preserve"><value>Kind</value></data>
+  <data name="Admin.Reports.Col.Tier" xml:space="preserve"><value>Tier</value></data>
+  <data name="Admin.Reports.Col.Phone" xml:space="preserve"><value>Phone</value></data>
+  <data name="Admin.Reports.Col.Website" xml:space="preserve"><value>Website</value></data>
+  <data name="Admin.Reports.Col.Requester" xml:space="preserve"><value>Requester</value></data>
+  <data name="Admin.Reports.Col.Target" xml:space="preserve"><value>Target</value></data>
+  <data name="Admin.Reports.Col.Subject" xml:space="preserve"><value>Subject</value></data>
+  <data name="Admin.Reports.Col.Slot" xml:space="preserve"><value>Slot</value></data>
+  <data name="Admin.Reports.Col.Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Admin.Reports.Col.Requested" xml:space="preserve"><value>Requested</value></data>
+  <data name="Admin.Reports.Col.Question" xml:space="preserve"><value>Question</value></data>
+  <data name="Admin.Reports.Col.Recipient" xml:space="preserve"><value>Recipient</value></data>
+  <data name="Admin.Reports.Col.Phase" xml:space="preserve"><value>Phase</value></data>
+  <data name="Admin.Reports.Col.Asked" xml:space="preserve"><value>Asked</value></data>
+  <data name="Admin.Reports.Total.Questions" xml:space="preserve"><value>Questions</value></data>
+  <data name="Admin.Reports.Total.Ratings" xml:space="preserve"><value>Ratings</value></data>
+  <data name="Admin.Reports.Total.AverageRating" xml:space="preserve"><value>Average rating</value></data>
+  <data name="Admin.Reports.Total.WithComment" xml:space="preserve"><value>With a comment</value></data>
+  <data name="Admin.Reports.Total.Partners" xml:space="preserve"><value>Partners</value></data>
+  <data name="Admin.Reports.Total.Exhibitors" xml:space="preserve"><value>Exhibitors</value></data>
+  <data name="Admin.Reports.Total.Sponsors" xml:space="preserve"><value>Sponsors</value></data>
+  <data name="Admin.Reports.Total.Booths" xml:space="preserve"><value>Booths</value></data>
+  <data name="Admin.Reports.Total.Meetings" xml:space="preserve"><value>Meeting requests</value></data>
+  <data name="Admin.Reports.Total.PendingMeetings" xml:space="preserve"><value>Pending</value></data>
+  <data name="Admin.Reports.Total.CheckedIn" xml:space="preserve"><value>Checked in</value></data>
+  <data name="Admin.Reports.Total.HiddenQuestions" xml:space="preserve"><value>Hidden</value></data>
+  <data name="Admin.Reports.Total.PushedQuestions" xml:space="preserve"><value>Pushed to speaker</value></data>
   <data name="Dashboard.Stats.Heading" xml:space="preserve"><value>Event at a glance</value></data>
   <data name="Dashboard.Stats.Unavailable" xml:space="preserve"><value>The live figures could not be loaded. Refresh the page to try again.</value></data>
   <data name="Dashboard.Stat.CurrentUsers" xml:space="preserve"><value>Current users</value></data>

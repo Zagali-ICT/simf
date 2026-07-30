@@ -1,0 +1,81 @@
+@* Partners report - Exhibitors, sponsors and booths as one contact directory.
+
+   Behaviour comes from ReportPageBase; this file is the report's identity:
+   its slug, its columns and its labels. *@
+@page "/admin/reports/partners"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Reports.Partners)]
+@inherits ReportPageBase<PartnersReportRow>
+@using SIMF.Contracts.Reporting
+
+<PageTitle>@L["Admin.Reports.Partners.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Reports.Partners.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        <ReportToolbar From="From"
+                       FromChanged="@(v => From = v)"
+                       To="To"
+                       ToChanged="@(v => To = v)"
+                       Totals="Totals"
+                       Error="@Error"
+                       OnApply="OnRangeAppliedAsync"
+                       OnClear="OnRangeAppliedAsync"
+                       OnExport="ExportAsync"
+                       TotalLabelResolver="TotalLabel" />
+
+        <SimfDataGrid TItem="PartnersReportRow"
+                      Query="Query.Grid"
+                      Page="Page"
+                      Loading="Loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Caption="@L["Admin.Reports.Partners.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.Reports.Loading"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="PartnersReportRow" Key="kind"
+                                    Header="@L["Admin.Reports.Col.Kind"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.Kind</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="PartnersReportRow" Key="name"
+                                    Header="@L["Admin.Reports.Col.Name"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.Name</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="PartnersReportRow" Key="tier"
+                                    Header="@L["Admin.Reports.Col.Tier"]">
+                    <CellTemplate>@context.Tier</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="PartnersReportRow" Key="email"
+                                    Header="@L["Admin.Reports.Col.Email"]">
+                    <CellTemplate>@context.ContactEmail</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="PartnersReportRow" Key="phone"
+                                    Header="@L["Admin.Reports.Col.Phone"]">
+                    <CellTemplate>@context.ContactPhone</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="PartnersReportRow" Key="website"
+                                    Header="@L["Admin.Reports.Col.Website"]">
+                    <CellTemplate>@context.Website</CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.Reports.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
+    </div>
+</div>
+
+@code {
+    protected override string Slug => "partners";
+}

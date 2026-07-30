@@ -1355,6 +1355,56 @@
   <data name="Admin.Reports.Col.Direction" xml:space="preserve"><value>الاتجاه</value></data>
   <data name="Admin.Reports.Col.Outcome" xml:space="preserve"><value>النتيجة</value></data>
   <data name="Admin.Reports.Col.DenialReason" xml:space="preserve"><value>سبب الرفض</value></data>
+  <data name="Module.ReportsSessions" xml:space="preserve"><value>تقرير الجلسات</value></data>
+  <data name="Module.ReportsRatings" xml:space="preserve"><value>تقرير التقييمات</value></data>
+  <data name="Module.ReportsPartners" xml:space="preserve"><value>تقرير الشركاء</value></data>
+  <data name="Module.ReportsMeetings" xml:space="preserve"><value>تقرير الاجتماعات</value></data>
+  <data name="Module.ReportsEngagement" xml:space="preserve"><value>تقرير التفاعل</value></data>
+  <data name="Admin.Reports.Sessions.Title" xml:space="preserve"><value>تقرير الجلسات</value></data>
+  <data name="Admin.Reports.Sessions.Intro" xml:space="preserve"><value>جلسات البرنامج مع المتحدثين والحضور وأسئلة الجمهور والتقييم.</value></data>
+  <data name="Admin.Reports.Ratings.Title" xml:space="preserve"><value>تقرير التقييمات</value></data>
+  <data name="Admin.Reports.Ratings.Intro" xml:space="preserve"><value>التقييمات المقدمة وتعليقاتها. لا يتم عرض هوية المُقيِّم.</value></data>
+  <data name="Admin.Reports.Partners.Title" xml:space="preserve"><value>تقرير الشركاء</value></data>
+  <data name="Admin.Reports.Partners.Intro" xml:space="preserve"><value>العارضون والرعاة والأجنحة في دليل تواصل واحد.</value></data>
+  <data name="Admin.Reports.Meetings.Title" xml:space="preserve"><value>تقرير الاجتماعات</value></data>
+  <data name="Admin.Reports.Meetings.Intro" xml:space="preserve"><value>طلبات اجتماعات المتحدثين والوفود، مع الحالة وتسجيل الحضور.</value></data>
+  <data name="Admin.Reports.Engagement.Title" xml:space="preserve"><value>تقرير التفاعل</value></data>
+  <data name="Admin.Reports.Engagement.Intro" xml:space="preserve"><value>أسئلة الجمهور وحالة مراجعتها. تشمل الأسئلة المخفية.</value></data>
+  <data name="Admin.Reports.Col.Speakers" xml:space="preserve"><value>المتحدثون</value></data>
+  <data name="Admin.Reports.Col.Questions" xml:space="preserve"><value>الأسئلة</value></data>
+  <data name="Admin.Reports.Col.AverageRating" xml:space="preserve"><value>متوسط التقييم</value></data>
+  <data name="Admin.Reports.Col.RatingType" xml:space="preserve"><value>نوع التقييم</value></data>
+  <data name="Admin.Reports.Col.Scope" xml:space="preserve"><value>النطاق</value></data>
+  <data name="Admin.Reports.Col.Stars" xml:space="preserve"><value>النجوم</value></data>
+  <data name="Admin.Reports.Col.Comment" xml:space="preserve"><value>التعليق</value></data>
+  <data name="Admin.Reports.Col.Submitted" xml:space="preserve"><value>تاريخ الإرسال</value></data>
+  <data name="Admin.Reports.Col.Kind" xml:space="preserve"><value>النوع</value></data>
+  <data name="Admin.Reports.Col.Tier" xml:space="preserve"><value>الفئة</value></data>
+  <data name="Admin.Reports.Col.Phone" xml:space="preserve"><value>الهاتف</value></data>
+  <data name="Admin.Reports.Col.Website" xml:space="preserve"><value>الموقع الإلكتروني</value></data>
+  <data name="Admin.Reports.Col.Requester" xml:space="preserve"><value>مقدم الطلب</value></data>
+  <data name="Admin.Reports.Col.Target" xml:space="preserve"><value>الجهة المطلوبة</value></data>
+  <data name="Admin.Reports.Col.Subject" xml:space="preserve"><value>الموضوع</value></data>
+  <data name="Admin.Reports.Col.Slot" xml:space="preserve"><value>الموعد</value></data>
+  <data name="Admin.Reports.Col.Status" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Admin.Reports.Col.Requested" xml:space="preserve"><value>تاريخ الطلب</value></data>
+  <data name="Admin.Reports.Col.Question" xml:space="preserve"><value>السؤال</value></data>
+  <data name="Admin.Reports.Col.Recipient" xml:space="preserve"><value>الموجَّه إلى</value></data>
+  <data name="Admin.Reports.Col.Phase" xml:space="preserve"><value>المرحلة</value></data>
+  <data name="Admin.Reports.Col.Asked" xml:space="preserve"><value>وقت السؤال</value></data>
+  <data name="Admin.Reports.Total.Questions" xml:space="preserve"><value>الأسئلة</value></data>
+  <data name="Admin.Reports.Total.Ratings" xml:space="preserve"><value>التقييمات</value></data>
+  <data name="Admin.Reports.Total.AverageRating" xml:space="preserve"><value>متوسط التقييم</value></data>
+  <data name="Admin.Reports.Total.WithComment" xml:space="preserve"><value>مع تعليق</value></data>
+  <data name="Admin.Reports.Total.Partners" xml:space="preserve"><value>الشركاء</value></data>
+  <data name="Admin.Reports.Total.Exhibitors" xml:space="preserve"><value>العارضون</value></data>
+  <data name="Admin.Reports.Total.Sponsors" xml:space="preserve"><value>الرعاة</value></data>
+  <data name="Admin.Reports.Total.Booths" xml:space="preserve"><value>الأجنحة</value></data>
+  <data name="Admin.Reports.Total.Meetings" xml:space="preserve"><value>طلبات الاجتماعات</value></data>
+  <data name="Admin.Reports.Total.PendingMeetings" xml:space="preserve"><value>قيد الانتظار</value></data>
+  <data name="Admin.Reports.Total.CheckedIn" xml:space="preserve"><value>تم تسجيل حضورهم</value></data>
+  <data name="Admin.Reports.Total.HiddenQuestions" xml:space="preserve"><value>المخفية</value></data>
+  <data name="Admin.Reports.Total.PushedQuestions" xml:space="preserve"><value>المرسلة للمتحدث</value></data>
   <data name="Dashboard.Stats.Heading" xml:space="preserve"><value>نظرة سريعة على الفعالية</value></data>
   <data name="Dashboard.Stats.Unavailable" xml:space="preserve"><value>تعذر تحميل الأرقام المباشرة. حدّث الصفحة للمحاولة مرة أخرى.</value></data>
   <data name="Dashboard.Stat.CurrentUsers" xml:space="preserve"><value>المستخدمون الحاليون</value></data>

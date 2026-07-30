@@ -1,0 +1,78 @@
+@* Ratings report - Submitted ratings and their comments. The respondent is not reported.
+
+   Behaviour comes from ReportPageBase; this file is the report's identity:
+   its slug, its columns and its labels. *@
+@page "/admin/reports/ratings"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Reports.Ratings)]
+@inherits ReportPageBase<RatingsReportRow>
+@using SIMF.Contracts.Reporting
+
+<PageTitle>@L["Admin.Reports.Ratings.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Reports.Ratings.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        <ReportToolbar From="From"
+                       FromChanged="@(v => From = v)"
+                       To="To"
+                       ToChanged="@(v => To = v)"
+                       Totals="Totals"
+                       Error="@Error"
+                       OnApply="OnRangeAppliedAsync"
+                       OnClear="OnRangeAppliedAsync"
+                       OnExport="ExportAsync"
+                       TotalLabelResolver="TotalLabel" />
+
+        <SimfDataGrid TItem="RatingsReportRow"
+                      Query="Query.Grid"
+                      Page="Page"
+                      Loading="Loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Caption="@L["Admin.Reports.Ratings.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.Reports.Loading"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="RatingsReportRow" Key="type"
+                                    Header="@L["Admin.Reports.Col.RatingType"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.RatingTypeName</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="RatingsReportRow" Key="scope"
+                                    Header="@L["Admin.Reports.Col.Scope"]">
+                    <CellTemplate>@context.Scope</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="RatingsReportRow" Key="stars"
+                                    Header="@L["Admin.Reports.Col.Stars"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.OverallStars</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="RatingsReportRow" Key="comment"
+                                    Header="@L["Admin.Reports.Col.Comment"]">
+                    <CellTemplate>@context.Comment</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="RatingsReportRow" Key="submitted"
+                                    Header="@L["Admin.Reports.Col.Submitted"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.SubmittedDisplay</CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.Reports.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
+    </div>
+</div>
+
+@code {
+    protected override string Slug => "ratings";
+}

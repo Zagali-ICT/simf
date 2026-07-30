@@ -643,6 +643,11 @@ public static class PermissionCatalog
         public const string Attendance = "Reports.Attendance";
         public const string Registrations = "Reports.Registrations";
         public const string Gates = "Reports.Gates";
+        public const string Sessions = "Reports.Sessions";
+        public const string Ratings = "Reports.Ratings";
+        public const string Partners = "Reports.Partners";
+        public const string Meetings = "Reports.Meetings";
+        public const string Engagement = "Reports.Engagement";
     }
 
     /// <summary>FR-506 (SRS §3.5; FDS-003 §5.5) — read-only session-attendance
@@ -1094,6 +1099,11 @@ public static class PermissionCatalog
         new(Reports.Attendance, "Reports", "Attendance", "View the attendance report", AdminOnly),
         new(Reports.Registrations, "Reports", "Registrations", "View the registrations report", AdminOnly),
         new(Reports.Gates, "Reports", "Gates", "View the gate-activity report", AdminOnly),
+        new(Reports.Sessions, "Reports", "Sessions", "View the sessions report", AdminOnly),
+        new(Reports.Ratings, "Reports", "Ratings", "View the ratings report", AdminOnly),
+        new(Reports.Partners, "Reports", "Partners", "View the partners report", AdminOnly),
+        new(Reports.Meetings, "Reports", "Meetings", "View the meetings report", AdminOnly),
+        new(Reports.Engagement, "Reports", "Engagement", "View the engagement report", AdminOnly),
 
         // D-752 — the Security team monitors session attendance.
         new(Attendance.View, "Attendance", "View", "View the session-attendance dashboard", SecurityTeam),

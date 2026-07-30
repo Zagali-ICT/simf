@@ -2,9 +2,9 @@
 
 | | |
 |--|--|
-| **Routes** | `/admin/reports` (hub), `/admin/reports/attendance`, `/admin/reports/registrations`, `/admin/reports/gates` |
+| **Routes** | `/admin/reports` (hub) plus `/admin/reports/{attendance,registrations,gates,sessions,ratings,partners,meetings,engagement}` |
 | **Surface** | Control Panel |
-| **Permissions** | `Reports.View` (hub), `Reports.Attendance`, `Reports.Registrations`, `Reports.Gates`, `Reports.Export` |
+| **Permissions** | `Reports.View` (hub), one per report (`Reports.Attendance`, `Registrations`, `Gates`, `Sessions`, `Ratings`, `Partners`, `Meetings`, `Engagement`), plus `Reports.Export` |
 | **Backend** | `POST /api/v1/admin/reports/{slug}/list` and `/export` |
 | **Writes** | None. Every report is read-only. |
 | **Schema** | No new table, no new column, no migration. |
@@ -13,15 +13,21 @@
 
 ## 1. What the module is
 
-Three date-ranged views over records the other contexts own, each with an Excel
+Eight date-ranged views over records the other contexts own, each with an Excel
 export. Reporting stores nothing of its own: it reads sessions, hall arrivals,
-accounts and gate scans, and presents them.
+accounts, gate scans, ratings, partners, meeting requests and audience
+questions, and presents them.
 
 | Report | Route | Answers |
 |--------|-------|---------|
 | Attendance | `/admin/reports/attendance` | Which sessions were attended, by how many distinct people, and how many are still inside |
 | Registrations | `/admin/reports/registrations` | Who registered in the period, with profile type and approval state |
 | Gate activity | `/admin/reports/gates` | Every recorded scan, allowed and denied, with the reason for each refusal |
+| Sessions | `/admin/reports/sessions` | How each session did: speakers, attendance, questions and audience score |
+| Ratings | `/admin/reports/ratings` | Submitted ratings and their comments |
+| Partners | `/admin/reports/partners` | Exhibitors, sponsors and booths as one contact directory |
+| Meetings | `/admin/reports/meetings` | Speaker and delegation meeting requests, with status and check-in |
+| Engagement | `/admin/reports/engagement` | Audience questions and their moderation state |
 
 ## 2. Permissions
 
@@ -115,7 +121,7 @@ with the grid silently empty.
 
 ## 8. Structure
 
-`ReportPageBase<TRow>` holds everything the three pages share: the query, the
+`ReportPageBase<TRow>` holds everything the eight pages share: the query, the
 load, the grid callback, the range-applied reset and the export trigger. Each
 page supplies only its slug, its columns and its labels. `ReportToolbar` is the
 shared strip above every grid (range, totals, export, error). The service is one
@@ -123,8 +129,8 @@ partial class per report so no single file carries every query.
 
 ## 9. i18n, RTL and themes
 
-Fifty `Admin.Reports.*` / `Nav.Reports` / `Module.Reports*` keys were added to
-both `Strings.resx` and `Strings.ar.resx`. Dates render `dd-MM-yyyy hh:mm tt`
+One hundred `Admin.Reports.*` / `Nav.Reports` / `Module.Reports*` keys were added
+to both `Strings.resx` and `Strings.ar.resx`. Dates render `dd-MM-yyyy hh:mm tt`
 Saudi local; no UTC value reaches the UI. The date inputs carry ISO
 `yyyy-MM-dd` values because that is a wire format, and only the browser's
 rendering of it is localised. All colour comes from `theme.tokens.css`, so light,
@@ -136,12 +142,21 @@ dark and grey are covered by the token file alone.
 - **The grid's per-column filters are not applied server-side** for these
   reports; the free-text search and the date range are. Column filters therefore
   affect only sorting and paging state.
-- **Five further reports are specified but not built**: sessions, ratings,
-  partners, meetings and engagement.
+- **Partners and meetings concatenate in memory.** Neither underlying set shares
+  a base type, and both are tens to low hundreds of rows rather than an audit
+  log. If the exhibition grew to thousands of partners these should become a
+  real SQL UNION with server-side paging.
+- **The partners report ignores the date range.** A partner directory is a
+  snapshot of who is participating, not a log of events in a period.
+- **Two reports withhold the person on purpose.** Ratings does not report the
+  respondent and engagement does not report the asker: both carry free text, and
+  attaching a name would turn an anonymous channel into an attributed one.
 
 ## 11. Decisions
 
 D-776 (reporting module: additive, read-only, per-report permissions with a
 separate export gate), D-777 (inclusive Saudi date range resolved to a UTC
 half-open window), D-778 (report rows carry pre-formatted Saudi date strings
-because the shared XLSX exporter writes UTC).
+because the shared XLSX exporter writes UTC), D-779 (the five later reports;
+cross-table reports concatenate in memory; ratings and engagement withhold the
+person).

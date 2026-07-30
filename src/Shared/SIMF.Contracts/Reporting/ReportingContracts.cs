@@ -64,6 +64,80 @@ public sealed record GateActivityReportRow(
     string? VisitorName,
     string? ProfileTypeName);
 
+/// <summary>
+/// One programme session with its speakers, attendance and audience score.
+/// <c>Speakers</c> is a pre-joined display string rather than a collection: a
+/// report row is a spreadsheet row, and a nested list has no cell to live in.
+/// </summary>
+public sealed record SessionsReportRow(
+    Guid SessionId,
+    string Code,
+    string Title,
+    string HallName,
+    string StartDisplay,
+    string Speakers,
+    int Attendees,
+    int Questions,
+    string AverageRating);
+
+/// <summary>
+/// One submitted rating. <c>TargetId</c> is deliberately left as an opaque id:
+/// what it points at depends on the rating type's scope (a session, a day, the
+/// whole forum), and resolving it per scope would mean a join per row.
+/// </summary>
+public sealed record RatingsReportRow(
+    Guid ResponseId,
+    string RatingTypeName,
+    string Scope,
+    Guid TargetId,
+    int? OverallStars,
+    string? Comment,
+    string SubmittedDisplay);
+
+/// <summary>
+/// One partner organisation, flattened across the three kinds the Control Panel
+/// manages separately (exhibitor, sponsor, booth) so an organiser can read the
+/// whole partner surface in one contact list instead of three pages.
+/// </summary>
+public sealed record PartnersReportRow(
+    Guid Id,
+    string Kind,
+    string Name,
+    string NameArabic,
+    string? Tier,
+    string? ContactEmail,
+    string? ContactPhone,
+    string? Website,
+    bool IsActive);
+
+/// <summary>
+/// One meeting request, flattened across the speaker and delegation kinds. Both
+/// carry the same operational shape (who asked, of whom, for when, and how it
+/// was answered), so they belong in one report.
+/// </summary>
+public sealed record MeetingsReportRow(
+    Guid Id,
+    string Kind,
+    string Requester,
+    string Target,
+    string Subject,
+    string SlotDisplay,
+    string Status,
+    string RequestedDisplay,
+    bool CheckedIn);
+
+/// <summary>One audience question asked in a session.</summary>
+public sealed record EngagementReportRow(
+    Guid QuestionId,
+    string SessionCode,
+    string SessionTitle,
+    string QuestionText,
+    string Recipient,
+    string Status,
+    string Phase,
+    bool IsHidden,
+    string AskedDisplay);
+
 /// <summary>A report page plus the totals that describe the whole filtered set,
 /// not just the visible page. The header figures must not change when the
 /// operator turns the page.</summary>

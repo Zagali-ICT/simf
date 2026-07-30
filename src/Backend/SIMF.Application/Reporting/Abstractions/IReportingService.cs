@@ -33,4 +33,34 @@ public interface IReportingService
 
     Task<byte[]> ExportGateActivityAsync(
         ReportQuery query, CancellationToken cancellationToken = default);
+
+    Task<ReportPage<SessionsReportRow>> GetSessionsAsync(
+        ReportQuery query, CancellationToken cancellationToken = default);
+
+    Task<byte[]> ExportSessionsAsync(
+        ReportQuery query, CancellationToken cancellationToken = default);
+
+    Task<ReportPage<RatingsReportRow>> GetRatingsAsync(
+        ReportQuery query, CancellationToken cancellationToken = default);
+
+    Task<byte[]> ExportRatingsAsync(
+        ReportQuery query, CancellationToken cancellationToken = default);
+
+    Task<ReportPage<PartnersReportRow>> GetPartnersAsync(
+        ReportQuery query, CancellationToken cancellationToken = default);
+
+    Task<byte[]> ExportPartnersAsync(
+        ReportQuery query, CancellationToken cancellationToken = default);
+
+    Task<ReportPage<MeetingsReportRow>> GetMeetingsAsync(
+        ReportQuery query, CancellationToken cancellationToken = default);
+
+    Task<byte[]> ExportMeetingsAsync(
+        ReportQuery query, CancellationToken cancellationToken = default);
+
+    Task<ReportPage<EngagementReportRow>> GetEngagementAsync(
+        ReportQuery query, CancellationToken cancellationToken = default);
+
+    Task<byte[]> ExportEngagementAsync(
+        ReportQuery query, CancellationToken cancellationToken = default);
 }

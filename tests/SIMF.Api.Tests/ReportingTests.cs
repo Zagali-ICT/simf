@@ -331,6 +331,129 @@ public sealed class ReportingTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    // -- The five later reports ----------------------------------------------
+
+    [Theory]
+    [InlineData("sessions")]
+    [InlineData("ratings")]
+    [InlineData("partners")]
+    [InlineData("meetings")]
+    [InlineData("engagement")]
+    public async Task Every_report_lists_without_error(string slug)
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+
+        var response = await PostAuthAsync(
+            $"/api/v1/admin/reports/{slug}/list", new ReportQuery(), token);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("sessions")]
+    [InlineData("ratings")]
+    [InlineData("partners")]
+    [InlineData("meetings")]
+    [InlineData("engagement")]
+    public async Task Every_report_exports_a_valid_workbook(string slug)
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+
+        var response = await PostAuthAsync(
+            $"/api/v1/admin/reports/{slug}/export", new ReportQuery(), token);
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True(bytes.Length > 0, $"the {slug} workbook was empty");
+        Assert.Equal(ZipMagic, bytes[..2]);
+    }
+
+    [Theory]
+    [InlineData("sessions")]
+    [InlineData("ratings")]
+    [InlineData("partners")]
+    [InlineData("meetings")]
+    [InlineData("engagement")]
+    public async Task Every_report_refuses_an_anonymous_caller(string slug)
+    {
+        var list = await _client.PostAsJsonAsync(
+            $"/api/v1/admin/reports/{slug}/list", new ReportQuery());
+        var export = await _client.PostAsJsonAsync(
+            $"/api/v1/admin/reports/{slug}/export", new ReportQuery());
+
+        Assert.Equal(HttpStatusCode.Unauthorized, list.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, export.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("sessions")]
+    [InlineData("ratings")]
+    [InlineData("partners")]
+    [InlineData("meetings")]
+    [InlineData("engagement")]
+    public async Task Every_report_refuses_a_non_admin_caller(string slug)
+    {
+        var tokens = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
+
+        var response = await PostAuthAsync(
+            $"/api/v1/admin/reports/{slug}/list", new ReportQuery(), tokens.AccessToken);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task The_sessions_report_counts_attendees_and_questions_per_session()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var day = NextBlock();
+        var hallId = await SeedHallAsync();
+        var sessionId = await SeedSessionAsync(hallId, SaudiAt(day, 10), "SESRPT");
+
+        await SeedArrivalAsync(sessionId, hallId, Guid.NewGuid(), SaudiAt(day, 10), left: true);
+        await SeedArrivalAsync(sessionId, hallId, Guid.NewGuid(), SaudiAt(day, 10), left: false);
+
+        var page = await ListAsync<SessionsReportRow>(
+            token, "/api/v1/admin/reports/sessions/list", day, day);
+        var row = page.Rows.Single(r => r.Code == "SESRPT");
+
+        Assert.Equal(2, row.Attendees);
+        Assert.Equal(0, row.Questions);
+        // No ratings seeded: the score must be blank, not a misleading "0.0".
+        Assert.Equal(string.Empty, row.AverageRating);
+    }
+
+    [Fact]
+    public async Task The_partners_report_flattens_the_three_partner_kinds()
+    {
+        // The report exists so an organiser reads one contact list, not three.
+        var token = await CreateAdministratorAndSignInAsync();
+
+        var page = await ListAsync<PartnersReportRow>(
+            token, "/api/v1/admin/reports/partners/list", from: null, to: null, top: 200);
+
+        Assert.All(page.Rows, r =>
+            Assert.Contains(r.Kind, new[] { "Exhibitor", "Sponsor", "Booth" }));
+        Assert.Contains(page.Totals, t => t.LabelKey == "Admin.Reports.Total.Exhibitors");
+        Assert.Contains(page.Totals, t => t.LabelKey == "Admin.Reports.Total.Sponsors");
+        Assert.Contains(page.Totals, t => t.LabelKey == "Admin.Reports.Total.Booths");
+    }
+
+    [Fact]
+    public async Task The_partners_report_ignores_the_date_range()
+    {
+        // A partner directory is a snapshot of who is participating, not a log
+        // of events in a period, so a range must not empty it.
+        var token = await CreateAdministratorAndSignInAsync();
+
+        var unbounded = await ListAsync<PartnersReportRow>(
+            token, "/api/v1/admin/reports/partners/list", from: null, to: null, top: 200);
+        var ranged = await ListAsync<PartnersReportRow>(
+            token, "/api/v1/admin/reports/partners/list",
+            from: new DateOnly(2031, 1, 1), to: new DateOnly(2031, 1, 2), top: 200);
+
+        Assert.Equal(unbounded.Total, ranged.Total);
+    }
+
     // -- Paging --------------------------------------------------------------
 
     [Fact]

@@ -125,6 +125,11 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/reports/attendance` | ✅ Real | Reports.Attendance | [cp/reports.md](cp/reports.md) | [e2e/cp-reports.md](../tests/e2e/cp-reports.md) |
 | `/admin/reports/registrations` | ✅ Real | Reports.Registrations | [cp/reports.md](cp/reports.md) | [e2e/cp-reports.md](../tests/e2e/cp-reports.md) |
 | `/admin/reports/gates` | ✅ Real | Reports.Gates | [cp/reports.md](cp/reports.md) | [e2e/cp-reports.md](../tests/e2e/cp-reports.md) |
+| `/admin/reports/sessions` | ✅ Real | Reports.Sessions | [cp/reports.md](cp/reports.md) | [e2e/cp-reports.md](../tests/e2e/cp-reports.md) |
+| `/admin/reports/ratings` | ✅ Real | Reports.Ratings | [cp/reports.md](cp/reports.md) | [e2e/cp-reports.md](../tests/e2e/cp-reports.md) |
+| `/admin/reports/partners` | ✅ Real | Reports.Partners | [cp/reports.md](cp/reports.md) | [e2e/cp-reports.md](../tests/e2e/cp-reports.md) |
+| `/admin/reports/meetings` | ✅ Real | Reports.Meetings | [cp/reports.md](cp/reports.md) | [e2e/cp-reports.md](../tests/e2e/cp-reports.md) |
+| `/admin/reports/engagement` | ✅ Real | Reports.Engagement | [cp/reports.md](cp/reports.md) | [e2e/cp-reports.md](../tests/e2e/cp-reports.md) |
 | `/admin/operation-log` | ✅ Real | Administrator | [cp/admin-operation-log.md](cp/admin-operation-log.md) | [e2e/cp-admin-operation-log.md](../tests/e2e/cp-admin-operation-log.md) |
 | `/admin/logs` | ✅ Real | Administrator | [cp/admin-logs.md](cp/admin-logs.md) | [e2e/cp-admin-logs.md](../tests/e2e/cp-admin-logs.md) |
 | `/admin/ops/services` | ✅ Real | Administrator | [cp/ops-services.md](cp/ops-services.md) | [e2e/cp-ops-services.md](../tests/e2e/cp-ops-services.md) |

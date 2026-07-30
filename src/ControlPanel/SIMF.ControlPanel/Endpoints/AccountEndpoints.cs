@@ -3563,6 +3563,66 @@ internal static class AccountEndpoints
                 await ForwardReportExportAsync(http, "gate-activity",
                     (token) => api.ExportGateActivityReportAsync(body, token)));
 
+        group.MapPost("/admin/reports/sessions/list",
+            async (ReportQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListSessionsReportAsync(body, token));
+        });
+        group.MapPost("/admin/reports/sessions/export",
+            async (ReportQuery body, HttpContext http, SimfAdminClient api) =>
+                await ForwardReportExportAsync(http, "sessions",
+                    (token) => api.ExportSessionsReportAsync(body, token)));
+
+        group.MapPost("/admin/reports/ratings/list",
+            async (ReportQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListRatingsReportAsync(body, token));
+        });
+        group.MapPost("/admin/reports/ratings/export",
+            async (ReportQuery body, HttpContext http, SimfAdminClient api) =>
+                await ForwardReportExportAsync(http, "ratings",
+                    (token) => api.ExportRatingsReportAsync(body, token)));
+
+        group.MapPost("/admin/reports/partners/list",
+            async (ReportQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListPartnersReportAsync(body, token));
+        });
+        group.MapPost("/admin/reports/partners/export",
+            async (ReportQuery body, HttpContext http, SimfAdminClient api) =>
+                await ForwardReportExportAsync(http, "partners",
+                    (token) => api.ExportPartnersReportAsync(body, token)));
+
+        group.MapPost("/admin/reports/meetings/list",
+            async (ReportQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListMeetingsReportAsync(body, token));
+        });
+        group.MapPost("/admin/reports/meetings/export",
+            async (ReportQuery body, HttpContext http, SimfAdminClient api) =>
+                await ForwardReportExportAsync(http, "meetings",
+                    (token) => api.ExportMeetingsReportAsync(body, token)));
+
+        group.MapPost("/admin/reports/engagement/list",
+            async (ReportQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListEngagementReportAsync(body, token));
+        });
+        group.MapPost("/admin/reports/engagement/export",
+            async (ReportQuery body, HttpContext http, SimfAdminClient api) =>
+                await ForwardReportExportAsync(http, "engagement",
+                    (token) => api.ExportEngagementReportAsync(body, token)));
+
         // FR-506 — session-attendance dashboard BFF passthroughs.
         group.MapGet("/admin/attendance/summary",
             async (HttpContext http, SimfAdminClient api) =>
