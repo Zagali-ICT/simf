@@ -1353,30 +1353,13 @@ class AppL10n {
 
   // New-request flow.
   String get requestNew => _t('طلب جديد', 'New request');
-  String get requestNewTitle => _t('نوع الطلب', 'Request type');
-  String get requestNewDocument => _t('طلب وثيقة المشاركة', 'Participation document');
-  String get requestNewBadge => _t('طلب تحديث البادج', 'Badge update');
-
-  // Document form.
-  String get requestDocTypeLabel => _t('نوع الوثيقة', 'Document type');
-  String get requestDocTypeAttendance =>
-      _t('شهادة حضور رسمية', 'Official attendance certificate');
-  String get requestDocTypeParticipation => _t('خطاب مشاركة', 'Participation letter');
-  String get requestDocTypeInvitation => _t('خطاب دعوة', 'Invitation letter');
-  String get requestNoteLabel => _t('ملاحظة (اختيارية)', 'Note (optional)');
-
-  // Badge form.
-  String get requestBadgeTitleLabel =>
-      _t('المسمى الوظيفي الجديد', 'New job title');
-  String get requestBadgeTitleRequired =>
-      _t('أدخل المسمى الوظيفي', 'Enter a job title');
-  String get requestBadgeReasonLabel => _t('السبب (اختياري)', 'Reason (optional)');
+  // The نوع الطلب type-picker sheet and its document / badge forms were deleted
+  // with new_request_sheet.dart (D-703 flagged it orphaned on 2026-07-08; owner
+  // confirmed deletion 2026-07-28), so their 14 strings went with them. The feed
+  // still RENDERS existing document/badge requests via requestKindDocument /
+  // requestKindBadge below — only the creation UI is gone.
 
   // Actions / toasts.
-  String get requestSubmit => _t('إرسال الطلب', 'Submit request');
-  String get requestSubmitted => _t('تم إرسال طلبك', 'Your request was submitted');
-  String get requestSubmitFailed =>
-      _t('تعذّر إرسال الطلب', 'Could not submit the request');
   String get requestCancel => _t('إلغاء الطلب', 'Cancel request');
   String get requestCancelConfirm =>
       _t('هل تريد إلغاء هذا الطلب؟', 'Cancel this request?');
