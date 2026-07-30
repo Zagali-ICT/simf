@@ -2,8 +2,6 @@
 using Microsoft.Extensions.Caching.Memory;
 using SIMF.Contracts.Authentication;
 
-using SIMF.Common.Enums;
-
 namespace SIMF.ControlPanel;
 
 /// <summary>

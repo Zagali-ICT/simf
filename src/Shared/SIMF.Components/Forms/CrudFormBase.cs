@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
+using SIMF.Common;
 
 namespace SIMF.Components.Forms;
 
@@ -43,6 +45,54 @@ public abstract class CrudAddEditFormBase<T> : CrudFormBase<T>
     /// <summary>Raised after a successful create or update, carrying the saved
     /// row. The host closes the shell and reloads the grid in response.</summary>
     [Parameter] public EventCallback<T> OnSuccess { get; set; }
+
+    /// <summary>What <see cref="SendAsync"/> did, so the caller can show the
+    /// right message. On success the row has already been handed to
+    /// <see cref="OnSuccess"/>.</summary>
+    /// <param name="Succeeded">True when the row was saved.</param>
+    /// <param name="ServerMessage">The server's culture-appropriate message on
+    /// failure, or null when the call did not produce one (an interop or
+    /// transport fault) — the form supplies its own fallback text.</param>
+    protected readonly record struct SubmitResult(bool Succeeded, string? ServerMessage);
+
+    /// <summary>
+    /// POSTs or PUTs the form and dispatches the envelope — the block every
+    /// Add/Edit form used to repeat verbatim: pick the verb from
+    /// <see cref="IsEdit"/>, unwrap <see cref="ApiResult{T}"/>, raise
+    /// <see cref="OnSuccess"/> on success, and turn anything else into a message.
+    /// </summary>
+    /// <remarks>
+    /// Deliberately narrow: the form still owns its validation, its request
+    /// objects and its own wording. This only removes the round-trip plumbing.
+    /// </remarks>
+    protected async Task<SubmitResult> SendAsync(
+        IJSRuntime js,
+        string createUrl,
+        string updateUrl,
+        object createRequest,
+        object updateRequest)
+    {
+        try
+        {
+            var envelope = IsEdit
+                ? await js.InvokeAsync<ApiResult<T>>("simfAccount.putJson", updateUrl, updateRequest)
+                : await js.InvokeAsync<ApiResult<T>>("simfAccount.postJson", createUrl, createRequest);
+
+            if (envelope is { Success: true, Data: not null })
+            {
+                await OnSuccess.InvokeAsync(envelope.Data);
+                return new SubmitResult(true, null);
+            }
+            return new SubmitResult(false, envelope?.Error?.MessageForCurrentCulture());
+        }
+        catch (Exception)
+        {
+            // Matches the long-standing per-form behaviour: an interop or
+            // transport fault shows the form's own fallback, never a raw
+            // exception message.
+            return new SubmitResult(false, null);
+        }
+    }
 }
 
 /// <summary>Base for the combined View / Delete form (D-353).</summary>

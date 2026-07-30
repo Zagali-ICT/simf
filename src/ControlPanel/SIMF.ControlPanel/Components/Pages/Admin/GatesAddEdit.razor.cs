@@ -1,17 +1,10 @@
-using System.Globalization;
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
-using SIMF.Contracts.Sessions;
-using SIMF.Contracts.Logs;
-using SIMF.Contracts.UserProfile;
-using SIMF.Contracts.Gates;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
@@ -149,55 +142,40 @@ public partial class GatesAddEdit
         _busy = true;
         try
         {
-            ApiResult<AdminGateDetail>? envelope;
-            if (!IsEdit)
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminGateDetail>>(
-                    "simfAccount.postJson", "/account/api/admin/gates",
-                    new AdminCreateGateRequest
-                    {
-                        Code = _model.Code.Trim().ToUpperInvariant(),
-                        Name = _model.Name.Trim(),
-                        NameArabic = _model.NameArabic.Trim(),
-                        Description = string.IsNullOrWhiteSpace(_model.Description) ? null : _model.Description.Trim(),
-                        DescriptionArabic = string.IsNullOrWhiteSpace(_model.DescriptionArabic) ? null : _model.DescriptionArabic.Trim(),
-                        DirectionMode = _model.DirectionMode,
-                        HallId = _model.HallId,
-                        AllowedProfileTypeIds = _model.AllowedProfileTypeIds.ToList(),
-                        AssignedOperatorUserIds = _model.AssignedOperatorUserIds.ToList(),
-                    });
-            }
-            else
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminGateDetail>>(
-                    "simfAccount.putJson", $"/account/api/admin/gates/{Initial!.Id}",
-                    new AdminUpdateGateRequest
-                    {
-                        Code = _model.Code.Trim().ToUpperInvariant(),
-                        Name = _model.Name.Trim(),
-                        NameArabic = _model.NameArabic.Trim(),
-                        Description = string.IsNullOrWhiteSpace(_model.Description) ? null : _model.Description.Trim(),
-                        DescriptionArabic = string.IsNullOrWhiteSpace(_model.DescriptionArabic) ? null : _model.DescriptionArabic.Trim(),
-                        DirectionMode = _model.DirectionMode,
-                        IsActive = _model.IsActive,
-                        HallId = _model.HallId,
-                        AllowedProfileTypeIds = _model.AllowedProfileTypeIds.ToList(),
-                        AssignedOperatorUserIds = _model.AssignedOperatorUserIds.ToList(),
-                    });
-            }
+            var result = await SendAsync(
+                JS,
+                "/account/api/admin/gates",
+                $"/account/api/admin/gates/{Initial?.Id}",
+                new AdminCreateGateRequest
+                {
+                    Code = _model.Code.Trim().ToUpperInvariant(),
+                    Name = _model.Name.Trim(),
+                    NameArabic = _model.NameArabic.Trim(),
+                    Description = string.IsNullOrWhiteSpace(_model.Description) ? null : _model.Description.Trim(),
+                    DescriptionArabic = string.IsNullOrWhiteSpace(_model.DescriptionArabic) ? null : _model.DescriptionArabic.Trim(),
+                    DirectionMode = _model.DirectionMode,
+                    HallId = _model.HallId,
+                    AllowedProfileTypeIds = _model.AllowedProfileTypeIds.ToList(),
+                    AssignedOperatorUserIds = _model.AssignedOperatorUserIds.ToList(),
+                },
+                new AdminUpdateGateRequest
+                {
+                    Code = _model.Code.Trim().ToUpperInvariant(),
+                    Name = _model.Name.Trim(),
+                    NameArabic = _model.NameArabic.Trim(),
+                    Description = string.IsNullOrWhiteSpace(_model.Description) ? null : _model.Description.Trim(),
+                    DescriptionArabic = string.IsNullOrWhiteSpace(_model.DescriptionArabic) ? null : _model.DescriptionArabic.Trim(),
+                    DirectionMode = _model.DirectionMode,
+                    IsActive = _model.IsActive,
+                    HallId = _model.HallId,
+                    AllowedProfileTypeIds = _model.AllowedProfileTypeIds.ToList(),
+                    AssignedOperatorUserIds = _model.AssignedOperatorUserIds.ToList(),
+                });
 
-            if (envelope is { Success: true, Data: not null })
+            if (!result.Succeeded)
             {
-                await OnSuccess.InvokeAsync(envelope.Data);
+                _error = result.ServerMessage ?? L["Admin.Gates.Fallback"];
             }
-            else
-            {
-                _error = envelope?.Error?.MessageForCurrentCulture() ?? L["Admin.Gates.Fallback"];
-            }
-        }
-        catch (Exception)
-        {
-            _error = L["Admin.Gates.Fallback"];
         }
         finally { _busy = false; }
     }

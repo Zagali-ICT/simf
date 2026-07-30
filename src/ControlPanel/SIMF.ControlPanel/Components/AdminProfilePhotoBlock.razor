@@ -1,4 +1,4 @@
-@* D-727 (owner item 5) — a labelled subject-photo block for the CP admin
+﻿@* D-727 (owner item 5) — a labelled subject-photo block for the CP admin
    view / pending-review pages: a heading + the streamed image, matching the
    existing `simf-walkin__id-image` block styling. Extracted so the profile
    photo (avatar) is rendered from ONE place across the Others / Visitors view
@@ -9,12 +9,3 @@
     <h4>@Heading</h4>
     <img src="@Src" alt="@Heading" />
 </div>
-
-@code {
-    /// <summary>The block heading (e.g. the localised "Profile photo").</summary>
-    [Parameter, EditorRequired] public string Heading { get; set; } = string.Empty;
-
-    /// <summary>The resolved image URL (the admin avatar-fetch route + a cache
-    /// buster). The caller gates rendering on the photo's existence.</summary>
-    [Parameter, EditorRequired] public string Src { get; set; } = string.Empty;
-}

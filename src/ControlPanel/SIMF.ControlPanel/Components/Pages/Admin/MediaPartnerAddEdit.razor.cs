@@ -1,19 +1,10 @@
-using System.Globalization;
+﻿using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
-using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
-using SIMF.Contracts.Sessions;
-using SIMF.Contracts.Logs;
-using SIMF.Contracts.UserProfile;
-using SIMF.Contracts.Gates;
-using SIMF.Contracts.Ai;
-using SIMF.Contracts.Notifications;
 using SIMF.Contracts.PublicRelations;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
@@ -101,98 +92,19 @@ public partial class MediaPartnerAddEdit
         if (_busy) return;
         _error = null;
 
-        if (string.IsNullOrWhiteSpace(_model.Name) || string.IsNullOrWhiteSpace(_model.NameArabic))
-        {
-            _error = L["Admin.MediaPartners.NameRequired"]; return;
-        }
-        if (!int.TryParse(_displayOrderInput, out var order) || order < 0)
-        {
-            order = 0;
-        }
-
-        int? countryId = null;
-        if (!string.IsNullOrWhiteSpace(_countryIdInput))
-        {
-            if (!int.TryParse(_countryIdInput, out var parsed) || parsed <= 0)
-            {
-                _error = L["Admin.ContactField.CountryInvalid"]; return;
-            }
-            countryId = parsed;
-        }
-
-        // Latitude/longitude are an all-or-nothing pair; the service enforces
-        // the real-world ranges and returns a bilingual 400 if out of bounds.
-        double? latitude = null, longitude = null;
-        var hasLat = !string.IsNullOrWhiteSpace(_latitudeInput);
-        var hasLong = !string.IsNullOrWhiteSpace(_longitudeInput);
-        if (hasLat != hasLong)
-        {
-            _error = L["Admin.ContactField.LatLongHint"]; return;
-        }
-        if (hasLat)
-        {
-            if (!double.TryParse(_latitudeInput, NumberStyles.Float, CultureInfo.InvariantCulture, out var lat)
-                || !double.TryParse(_longitudeInput, NumberStyles.Float, CultureInfo.InvariantCulture, out var lng))
-            {
-                _error = L["Admin.ContactField.LatLongInvalid"]; return;
-            }
-            latitude = lat;
-            longitude = lng;
-        }
+        var form = ReadForm();
+        if (form is null) { return; }
 
         _busy = true;
         try
         {
-            ApiResult<AdminMediaPartnerDetail>? envelope;
-            if (!IsEdit)
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminMediaPartnerDetail>>(
-                    "simfAccount.postJson", "/account/api/admin/media-partners",
-                    new AdminCreateMediaPartnerRequest(
-                        _model.Name.Trim(),
-                        _model.NameArabic.Trim(),
-                        NullIfBlank(_model.LogoRelativePath),
-                        NullIfBlank(_model.Url),
-                        order,
-                        Email: NullIfBlank(_model.Email),
-                        PhonePrimary: NullIfBlank(_model.PhonePrimary),
-                        PhoneSecondary: NullIfBlank(_model.PhoneSecondary),
-                        FacebookUrl: NullIfBlank(_model.FacebookUrl),
-                        XUrl: NullIfBlank(_model.XUrl),
-                        LinkedInUrl: NullIfBlank(_model.LinkedInUrl),
-                        InstagramUrl: NullIfBlank(_model.InstagramUrl),
-                        City: NullIfBlank(_model.City),
-                        CityArabic: NullIfBlank(_model.CityArabic),
-                        CountryId: countryId,
-                        Latitude: latitude,
-                        Longitude: longitude));
-            }
-            else
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminMediaPartnerDetail>>(
+            var envelope = IsEdit
+                ? await JS.InvokeAsync<ApiResult<AdminMediaPartnerDetail>>(
                     "simfAccount.putJson", $"/account/api/admin/media-partners/{Initial!.Id}",
-                    new AdminUpdateMediaPartnerRequest
-                    {
-                        Name = _model.Name.Trim(),
-                        NameArabic = _model.NameArabic.Trim(),
-                        LogoRelativePath = NullIfBlank(_model.LogoRelativePath),
-                        Url = NullIfBlank(_model.Url),
-                        DisplayOrder = order,
-                        IsActive = _model.IsActive,
-                        Email = NullIfBlank(_model.Email),
-                        PhonePrimary = NullIfBlank(_model.PhonePrimary),
-                        PhoneSecondary = NullIfBlank(_model.PhoneSecondary),
-                        FacebookUrl = NullIfBlank(_model.FacebookUrl),
-                        XUrl = NullIfBlank(_model.XUrl),
-                        LinkedInUrl = NullIfBlank(_model.LinkedInUrl),
-                        InstagramUrl = NullIfBlank(_model.InstagramUrl),
-                        City = NullIfBlank(_model.City),
-                        CityArabic = NullIfBlank(_model.CityArabic),
-                        CountryId = countryId,
-                        Latitude = latitude,
-                        Longitude = longitude,
-                    });
-            }
+                    BuildUpdateRequest(form))
+                : await JS.InvokeAsync<ApiResult<AdminMediaPartnerDetail>>(
+                    "simfAccount.postJson", "/account/api/admin/media-partners",
+                    BuildCreateRequest(form));
 
             if (envelope is { Success: true, Data: not null })
             {
@@ -210,6 +122,94 @@ public partial class MediaPartnerAddEdit
         }
         finally { _busy = false; }
     }
+
+    /// <summary>Validates the form and returns its parsed values, or null after
+    /// setting <see cref="_error"/> to the first problem found.</summary>
+    private FormValues? ReadForm()
+    {
+        if (string.IsNullOrWhiteSpace(_model.Name) || string.IsNullOrWhiteSpace(_model.NameArabic))
+        {
+            _error = L["Admin.MediaPartners.NameRequired"];
+            return null;
+        }
+
+        // An unreadable display order is not worth blocking a save over — it
+        // falls back to the front of the list, as it always has.
+        if (!int.TryParse(_displayOrderInput, out var order) || order < 0)
+        {
+            order = 0;
+        }
+
+        int? countryId = null;
+        if (!string.IsNullOrWhiteSpace(_countryIdInput))
+        {
+            if (!int.TryParse(_countryIdInput, out var parsed) || parsed <= 0)
+            {
+                _error = L["Admin.ContactField.CountryInvalid"];
+                return null;
+            }
+            countryId = parsed;
+        }
+
+        var coordinateError = CoordinateInput.Read(
+            _latitudeInput, _longitudeInput, out var latitude, out var longitude);
+        if (coordinateError is not null)
+        {
+            _error = L[coordinateError];
+            return null;
+        }
+
+        return new FormValues(order, countryId, latitude, longitude);
+    }
+
+    private AdminCreateMediaPartnerRequest BuildCreateRequest(FormValues form) => new(
+        _model.Name.Trim(),
+        _model.NameArabic.Trim(),
+        NullIfBlank(_model.LogoRelativePath),
+        NullIfBlank(_model.Url),
+        form.DisplayOrder,
+        Email: NullIfBlank(_model.Email),
+        PhonePrimary: NullIfBlank(_model.PhonePrimary),
+        PhoneSecondary: NullIfBlank(_model.PhoneSecondary),
+        FacebookUrl: NullIfBlank(_model.FacebookUrl),
+        XUrl: NullIfBlank(_model.XUrl),
+        LinkedInUrl: NullIfBlank(_model.LinkedInUrl),
+        InstagramUrl: NullIfBlank(_model.InstagramUrl),
+        City: NullIfBlank(_model.City),
+        CityArabic: NullIfBlank(_model.CityArabic),
+        CountryId: form.CountryId,
+        Latitude: form.Latitude,
+        Longitude: form.Longitude);
+
+    private AdminUpdateMediaPartnerRequest BuildUpdateRequest(FormValues form) => new()
+    {
+        Name = _model.Name.Trim(),
+        NameArabic = _model.NameArabic.Trim(),
+        LogoRelativePath = NullIfBlank(_model.LogoRelativePath),
+        Url = NullIfBlank(_model.Url),
+        DisplayOrder = form.DisplayOrder,
+        IsActive = _model.IsActive,
+        Email = NullIfBlank(_model.Email),
+        PhonePrimary = NullIfBlank(_model.PhonePrimary),
+        PhoneSecondary = NullIfBlank(_model.PhoneSecondary),
+        FacebookUrl = NullIfBlank(_model.FacebookUrl),
+        XUrl = NullIfBlank(_model.XUrl),
+        LinkedInUrl = NullIfBlank(_model.LinkedInUrl),
+        InstagramUrl = NullIfBlank(_model.InstagramUrl),
+        City = NullIfBlank(_model.City),
+        CityArabic = NullIfBlank(_model.CityArabic),
+        CountryId = form.CountryId,
+        Latitude = form.Latitude,
+        Longitude = form.Longitude,
+    };
+
+    /// <summary>The form's validated, parsed values — everything the two request
+    /// builders need that is not read straight off <see cref="_model"/>.</summary>
+    private sealed record FormValues(
+        int DisplayOrder,
+        int? CountryId,
+        double? Latitude,
+        double? Longitude);
 
     private static string? NullIfBlank(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
