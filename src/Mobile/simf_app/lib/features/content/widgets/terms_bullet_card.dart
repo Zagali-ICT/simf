@@ -38,11 +38,7 @@ class TermsBulletCard extends StatelessWidget {
           Expanded(
             child: SelectableText(
               text,
-              style: const TextStyle(
-                color: SimfTokens.beigeBorder,
-                fontSize: SimfTokens.textMd,
-                height: 1.5,
-              ),
+              style: SimfTokens.bodyBeige,
             ),
           ),
         ],

@@ -32,11 +32,7 @@ class ContactUsSection extends StatelessWidget {
         Text(
           title,
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: SimfTokens.surface,
-            fontSize: SimfTokens.textLg,
-            fontWeight: FontWeight.w500,
-          ),
+          style: SimfTokens.labelWhiteMediumLg,
         ),
         const SizedBox(height: SimfTokens.space4),
         Row(
@@ -80,11 +76,7 @@ class ContactUsSection extends StatelessWidget {
         Text(
           socialFooter,
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: SimfTokens.beigeBorder,
-            fontSize: SimfTokens.textSm,
-            fontWeight: FontWeight.w500,
-          ),
+          style: SimfTokens.labelBeigeMediumSm,
         ),
       ],
     );

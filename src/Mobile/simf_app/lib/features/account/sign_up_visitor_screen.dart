@@ -975,10 +975,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                 const SizedBox(width: SimfTokens.space3),
                 Text(
                   l10n.loadingLabel,
-                  style: const TextStyle(
-                    color: SimfTokens.greyText,
-                    fontSize: SimfTokens.textMd,
-                  ),
+                  style: SimfTokens.bodyGreyMd,
                 ),
               ],
             ),

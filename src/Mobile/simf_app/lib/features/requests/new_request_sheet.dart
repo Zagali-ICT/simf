@@ -131,17 +131,13 @@ class _NewRequestSheetState extends ConsumerState<_NewRequestSheet> {
               const SizedBox(height: SimfTokens.space4),
               Text(
                 _step == _Step.pick ? l10n.requestNewTitle : l10n.requestNew,
-                style: const TextStyle(
-                  color: SimfTokens.surface,
-                  fontSize: SimfTokens.textLg,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: SimfTokens.labelWhiteBoldLg,
               ),
               const SizedBox(height: SimfTokens.space4),
               if (_error != null) ...<Widget>[
                 Text(
                   _error!,
-                  style: const TextStyle(color: SimfTokens.danger),
+                  style: SimfTokens.bodyDanger,
                 ),
                 const SizedBox(height: SimfTokens.space3),
               ],
@@ -173,10 +169,7 @@ class _NewRequestSheetState extends ConsumerState<_NewRequestSheet> {
         return <Widget>[
           Text(
             l10n.requestDocTypeLabel,
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textSm,
-            ),
+            style: SimfTokens.labelBeigeSm,
           ),
           const SizedBox(height: SimfTokens.space2),
           for (final type in ParticipationDocumentType.values)
@@ -262,11 +255,7 @@ class _PickTile extends StatelessWidget {
             Expanded(
               child: Text(
                 label,
-                style: const TextStyle(
-                  color: SimfTokens.surface,
-                  fontSize: SimfTokens.textMd,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: SimfTokens.labelWhiteSemibold,
               ),
             ),
             const Icon(Icons.chevron_left, color: SimfTokens.beigeBorder),
@@ -305,10 +294,7 @@ class _RadioRow extends StatelessWidget {
             Expanded(
               child: Text(
                 label,
-                style: const TextStyle(
-                  color: SimfTokens.surface,
-                  fontSize: SimfTokens.textMd,
-                ),
+                style: SimfTokens.bodyWhiteMd,
               ),
             ),
           ],
@@ -337,7 +323,7 @@ class _SheetField extends StatelessWidget {
       style: const TextStyle(color: SimfTokens.surface),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: SimfTokens.beigeBorder),
+        labelStyle: SimfTokens.hintBeige,
         filled: true,
         fillColor: SimfTokens.navy,
         enabledBorder: OutlineInputBorder(
@@ -388,7 +374,7 @@ class _SubmitButton extends StatelessWidget {
               )
             : Text(
                 label,
-                style: const TextStyle(fontWeight: FontWeight.w700),
+                style: SimfTokens.emphasisBold,
               ),
       ),
     );

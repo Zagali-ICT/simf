@@ -203,10 +203,7 @@ class MoreScreen extends ConsumerWidget {
                   onPressed: () => unawaited(confirmAndSignOut(context, ref, l10n)),
                   child: Text(
                     l10n.signOutLink,
-                    style: const TextStyle(
-                      color: SimfTokens.beigeBorder,
-                      fontSize: SimfTokens.textMd,
-                    ),
+                    style: SimfTokens.bodyBeigeMd,
                   ),
                 ),
               ),
@@ -216,10 +213,7 @@ class MoreScreen extends ConsumerWidget {
               child: Text(
                 // D-736 — the real installed version (package_info_plus).
                 l10n.moreVersionLine(ref.watch(installedAppVersionProvider)),
-                style: const TextStyle(
-                  color: SimfTokens.inkMuted,
-                  fontSize: SimfTokens.textSm,
-                ),
+                style: SimfTokens.bodyInkMutedSm,
               ),
             ),
           ],

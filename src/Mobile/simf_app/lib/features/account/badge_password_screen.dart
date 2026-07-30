@@ -152,11 +152,7 @@ class _BadgePasswordScreenState extends ConsumerState<BadgePasswordScreen> {
                 Text(
                   l10n.badgeWelcomeName(name),
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: SimfTokens.surface,
-                    fontSize: SimfTokens.textXxl,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: SimfTokens.labelWhiteBoldXxl,
                 ),
                 const SizedBox(height: SimfTokens.space2),
               ],

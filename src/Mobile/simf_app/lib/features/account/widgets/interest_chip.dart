@@ -39,11 +39,7 @@ class InterestChip extends StatelessWidget {
           label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            color: SimfTokens.surface,
-            fontSize: SimfTokens.textMd,
-            fontWeight: FontWeight.w700,
-          ),
+          style: SimfTokens.labelWhiteBoldMd,
         ),
       ),
     );

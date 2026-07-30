@@ -372,11 +372,7 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
                   Text(
                     l10n.interestsCounter(_selected.length),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: SimfTokens.beigeBorder,
-                      fontSize: SimfTokens.textMd,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: SimfTokens.labelBeigeMedium,
                   ),
                   if (_submitError != null) ...<Widget>[
                     const SizedBox(height: SimfTokens.space3),

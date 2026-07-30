@@ -455,7 +455,7 @@ class _StaffRegisterVisitorScreenState
                 Text(
                   l10n.staffRegisterError,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: SimfTokens.beigeBorder),
+                  style: SimfTokens.hintBeige,
                 ),
                 const SizedBox(height: SimfTokens.space4),
                 FilledButton(

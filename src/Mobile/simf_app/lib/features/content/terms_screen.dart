@@ -226,11 +226,7 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
                   alignment: AlignmentDirectional.centerStart,
                   child: Text(
                     l10n.termsImportantInfoTitle,
-                    style: const TextStyle(
-                      color: SimfTokens.surface,
-                      fontSize: SimfTokens.textLg,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: SimfTokens.labelWhiteBoldLg,
                   ),
                 ),
                 const SizedBox(height: SimfTokens.space4),
@@ -258,10 +254,7 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
               onPressed: _accept,
               child: Text(
                 l10n.termsAcceptButton,
-                style: const TextStyle(
-                  fontSize: SimfTokens.textLg,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: SimfTokens.titleBold,
               ),
             ),
           ),

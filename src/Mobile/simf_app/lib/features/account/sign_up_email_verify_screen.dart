@@ -232,31 +232,20 @@ class _SignUpEmailVerifyScreenState
             const SizedBox(height: SimfTokens.space6),
             Text(
               l10n.enterOtpTitle,
-              style: const TextStyle(
-                color: SimfTokens.surface,
-                fontSize: SimfTokens.textXl,
-                fontWeight: FontWeight.w700,
-              ),
+              style: SimfTokens.labelWhiteBoldXl,
             ),
             const SizedBox(height: SimfTokens.space6),
             Text(
               l10n.emailVerifySentTo,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: SimfTokens.beigeBorder,
-                fontSize: SimfTokens.textMd,
-              ),
+              style: SimfTokens.bodyBeigeMd,
             ),
             const SizedBox(height: SimfTokens.space2),
             Text(
               widget.email,
               textDirection: TextDirection.ltr,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: SimfTokens.accent,
-                fontSize: SimfTokens.textMd,
-                fontWeight: FontWeight.w500,
-              ),
+              style: SimfTokens.labelGoldMedium,
             ),
             const SizedBox(height: 48),
             OtpCodeBoxes(
@@ -302,11 +291,7 @@ class _SignUpEmailVerifyScreenState
         Text(
           _formatCooldown(_cooldown),
           textDirection: TextDirection.ltr,
-          style: const TextStyle(
-            color: SimfTokens.accent,
-            fontSize: SimfTokens.textMd,
-            fontWeight: FontWeight.w700,
-          ),
+          style: SimfTokens.labelGoldBold,
         ),
       ],
     );

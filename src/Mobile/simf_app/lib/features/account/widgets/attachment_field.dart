@@ -91,10 +91,7 @@ class AttachmentField extends StatelessWidget {
                   child: Text(
                     attachedName,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: SimfTokens.inputInk,
-                      fontSize: SimfTokens.textMd,
-                    ),
+                    style: SimfTokens.bodyInputMd,
                   ),
                 ),
                 TextButton(

@@ -48,17 +48,11 @@ class SimfFilterSearchField extends StatelessWidget {
             child: TextField(
               controller: controller,
               onChanged: onChanged,
-              style: const TextStyle(
-                color: SimfTokens.surface,
-                fontSize: SimfTokens.textMd,
-              ),
+              style: SimfTokens.bodyWhiteMd,
               cursorColor: SimfTokens.accent,
               decoration: InputDecoration(
                 hintText: hint,
-                hintStyle: const TextStyle(
-                  color: SimfTokens.beigeBorder,
-                  fontSize: SimfTokens.textMd,
-                ),
+                hintStyle: SimfTokens.bodyBeigeMd,
                 isDense: true,
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(

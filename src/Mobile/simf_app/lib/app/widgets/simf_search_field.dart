@@ -38,10 +38,7 @@ class SimfSearchField extends StatelessWidget {
       decoration: InputDecoration(
         hintText: hint,
         // Muted beige placeholder (matches the Figma search frames 908/922/758).
-        hintStyle: const TextStyle(
-          color: SimfTokens.beigeBorder,
-          fontSize: SimfTokens.textSm,
-        ),
+        hintStyle: SimfTokens.labelBeigeSm,
         prefixIcon: const SimfSvgIcon(
           'assets/icons/ic_search.svg',
           // Figma search frames (1341:3565 etc.) — 14px magnifier.

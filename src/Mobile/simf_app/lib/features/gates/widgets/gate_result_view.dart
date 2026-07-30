@@ -69,7 +69,7 @@ class GateResultView extends StatelessWidget {
                       ? result.denialMessage!
                       : l10n.gateDeniedSub),
               textAlign: TextAlign.center,
-              style: TextStyle(color: accent),
+              style: SimfTokens.textAccent,
             ),
             const SizedBox(height: SimfTokens.space4),
             Container(

@@ -206,11 +206,7 @@ class SimfPageShell extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               // Figma sub-page headers: 18px / SemiBold (was 20 / w500).
-              style: const TextStyle(
-                fontSize: SimfTokens.textTitle,
-                fontWeight: FontWeight.w600,
-                color: SimfTokens.surface,
-              ),
+              style: SimfTokens.labelWhiteSemiboldTitle,
             ),
           ),
           // The shared trailing action cluster (bell + language + drawer ☰)
@@ -610,11 +606,7 @@ class SimfSectionHeader extends StatelessWidget {
         Expanded(
           child: Text(
             title,
-            style: const TextStyle(
-              fontSize: SimfTokens.textLg,
-              fontWeight: FontWeight.w500,
-              color: SimfTokens.surface,
-            ),
+            style: SimfTokens.labelWhiteMediumLg,
           ),
         ),
         if (onMore != null && moreLabel != null)
@@ -630,11 +622,7 @@ class SimfSectionHeader extends StatelessWidget {
               child: Text(
                 moreLabel!,
                 // Frame 758:1134 — the "more" link is white, Medium.
-                style: const TextStyle(
-                  fontSize: SimfTokens.textSm,
-                  fontWeight: FontWeight.w500,
-                  color: SimfTokens.surface,
-                ),
+                style: SimfTokens.labelWhiteMediumSm,
               ),
             ),
           ),
@@ -675,11 +663,7 @@ class SimfLinkRow extends StatelessWidget {
                   textAlign: TextAlign.start,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: SimfTokens.textLg,
-                    fontWeight: FontWeight.w500,
-                    color: SimfTokens.surface,
-                  ),
+                  style: SimfTokens.labelWhiteMediumLg,
                 ),
               ),
               const SizedBox(width: SimfTokens.space2),
@@ -810,11 +794,7 @@ class SimfStatTile extends StatelessWidget {
       child: _TileBody(
         top: Text(
           '$value',
-          style: const TextStyle(
-            fontSize: SimfTokens.textXl,
-            fontWeight: FontWeight.w700,
-            color: SimfTokens.accent,
-          ),
+          style: SimfTokens.labelGoldBoldXl,
         ),
         label: label,
         labelColor: SimfTokens.surface,
@@ -999,20 +979,13 @@ class SimfListRow extends StatelessWidget {
                 children: <Widget>[
                   Text(
                     title,
-                    style: const TextStyle(
-                      fontSize: SimfTokens.textLg,
-                      fontWeight: FontWeight.w600,
-                      color: SimfTokens.surface,
-                    ),
+                    style: SimfTokens.labelWhiteSemiboldLg,
                   ),
                   if (subtitle != null) ...<Widget>[
                     const SizedBox(height: SimfTokens.space2),
                     Text(
                       subtitle!,
-                      style: const TextStyle(
-                        fontSize: SimfTokens.textMd,
-                        color: SimfTokens.beigeBorder,
-                      ),
+                      style: SimfTokens.bodyBeigeMd,
                     ),
                   ],
                 ],
@@ -1095,7 +1068,7 @@ class SimfEmptyState extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: SimfTokens.beigeBorder),
+              style: SimfTokens.hintBeige,
             ),
           ],
         ),

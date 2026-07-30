@@ -15,11 +15,7 @@ class AccessibilitySectionHeading extends StatelessWidget {
     return Text(
       text,
       textAlign: TextAlign.start,
-      style: const TextStyle(
-        color: SimfTokens.surface,
-        fontWeight: FontWeight.w600,
-        fontSize: SimfTokens.textLg,
-      ),
+      style: SimfTokens.labelWhiteSemiboldLg,
     );
   }
 }
