@@ -9,6 +9,7 @@ import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_svg_icon.dart';
+import '../../core/utils/refresh.dart';
 import 'data/session_models.dart';
 import 'data/sessions_repository.dart';
 
@@ -22,10 +23,8 @@ class JoinSessionHubScreen extends ConsumerWidget {
 
   /// Pull-to-refresh — re-fetch the programme list (every data page supports
   /// the gesture, D-520/D-532; this screen was missing it — added D-601).
-  Future<void> _refresh(WidgetRef ref) async {
-    ref.invalidate(programmeSessionsProvider);
-    await ref.read(programmeSessionsProvider.future);
-  }
+  Future<void> _refresh(WidgetRef ref) =>
+      refreshAsync(ref, programmeSessionsProvider.future);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

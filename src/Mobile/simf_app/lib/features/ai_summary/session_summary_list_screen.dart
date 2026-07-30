@@ -5,6 +5,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_filter_search_field.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../../core/utils/refresh.dart';
 import '../myarea/data/my_sessions_repository.dart';
 import '../sessions/data/session_favourites.dart';
 import '../sessions/data/session_models.dart';
@@ -35,10 +36,7 @@ class _SessionSummaryListScreenState
   String _query = '';
 
   /// Pull-to-refresh — re-fetch the programme (invalidate + await next).
-  Future<void> _refresh() async {
-    ref.invalidate(programmeSessionsProvider);
-    await ref.read(programmeSessionsProvider.future);
-  }
+  Future<void> _refresh() => refreshAsync(ref, programmeSessionsProvider.future);
 
   @override
   Widget build(BuildContext context) {

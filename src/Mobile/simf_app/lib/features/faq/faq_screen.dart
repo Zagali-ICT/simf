@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../../core/utils/refresh.dart';
 import 'data/faq_repository.dart';
 import 'widgets/faq_tile.dart';
 
@@ -25,10 +26,7 @@ class FaqScreen extends ConsumerWidget {
     final faq = ref.watch(faqProvider);
 
     // Pull-to-refresh — re-fetch the FAQ catalogue (invalidate + await next).
-    Future<void> onRefresh() async {
-      ref.invalidate(faqProvider);
-      await ref.read(faqProvider.future);
-    }
+    Future<void> onRefresh() => refreshAsync(ref, faqProvider.future);
 
     return SimfPageShell(
       title: l10n.faqRowTitle,

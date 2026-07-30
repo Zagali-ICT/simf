@@ -6,6 +6,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/media_coverage_tabs.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../../core/utils/refresh.dart';
 import 'data/news_repository.dart';
 import 'news_article_screen.dart';
 import 'widgets/news_card.dart';
@@ -30,10 +31,8 @@ class NewsScreen extends ConsumerWidget {
   /// Pull-to-refresh handler — re-fetch the news list by invalidating
   /// [newsListProvider] and awaiting its next value so the gold spinner stays
   /// until the new data has loaded.
-  Future<void> _refresh(WidgetRef ref) async {
-    ref.invalidate(newsListProvider);
-    await ref.read(newsListProvider.future);
-  }
+  Future<void> _refresh(WidgetRef ref) =>
+      refreshAsync(ref, newsListProvider.future);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

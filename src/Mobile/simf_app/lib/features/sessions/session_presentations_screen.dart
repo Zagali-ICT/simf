@@ -6,6 +6,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../../core/utils/refresh.dart';
 import 'data/presentation_models.dart';
 import 'data/presentation_repository.dart';
 import 'data/session_models.dart';
@@ -39,10 +40,7 @@ class _SessionPresentationsScreenState
   int _dayTab = 0;
 
   /// Pull-to-refresh — re-fetch the presentations (invalidate + await next).
-  Future<void> _refresh() async {
-    ref.invalidate(presentationsProvider);
-    await ref.read(presentationsProvider.future);
-  }
+  Future<void> _refresh() => refreshAsync(ref, presentationsProvider.future);
 
   @override
   Widget build(BuildContext context) {
