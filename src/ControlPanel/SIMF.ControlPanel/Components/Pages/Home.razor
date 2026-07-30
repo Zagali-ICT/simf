@@ -1,10 +1,16 @@
 @* Control Panel — the Dashboard (the Overview landing). Shows a welcome panel
-   for every signed-in admin and, for those who hold Statistics.View, the full
-   set of live event stat cards (D-339, D-202). The cards are clickable and
-   navigate to each module's admin list. *@
+   for every signed-in admin and, for those who hold Statistics.View, the live
+   event figures (D-339, D-202).
+
+   Two halves, by owner direction: the standing totals stay plain NUMBERS on a
+   stat grid, and the programme — the forum's days — is the graphic. The chart
+   carries only the three people-metrics, which share one scale; sessions-per-day
+   is a different scale and sits on the day cards instead, because putting two
+   scales on one axis is the classic way to make a chart lie. *@
 @page "/"
 @layout CpShellLayout
 @attribute [Authorize]
+@using SIMF.Components.Charts
 
 <PageTitle>@L["Dashboard.Title"] · SIMF</PageTitle>
 
@@ -16,13 +22,128 @@
         <p class="simf-panel__text">@L["Dashboard.Intro"]</p>
     </div>
 
-    @if (_canViewStats && _dashboard is not null)
+    @if (_canViewStats)
     {
         <div class="simf-surface">
             <h2 class="simf-panel__title">@L["Dashboard.Stats.Heading"]</h2>
-            @* §6.16 (NAV-008) — shared with /admin/statistics; the eleven cards
-               were duplicated verbatim between the two pages. *@
-            <StatisticsCards Dashboard="_dashboard" />
+
+            @if (_dashboard is null && _programme is null)
+            {
+                <p class="simf-panel__text">@L["Dashboard.Stats.Unavailable"]</p>
+            }
+            else
+            {
+                <div class="simf-stat-grid">
+                    @if (_programme is not null)
+                    {
+                        <SimfStatCard Title="@L["Dashboard.Stat.CurrentUsers"]"
+                                      Value="@Count(_programme.CurrentUsers)"
+                                      Href="/admin/attendees" />
+                        <SimfStatCard Title="@L["Dashboard.Stat.Visitors"]"
+                                      Value="@Count(_programme.Visitors)"
+                                      Href="/admin/visitors" />
+                    }
+                    @if (_dashboard is not null)
+                    {
+                        <SimfStatCard Title="@L["Dashboard.Stat.PendingApprovals"]"
+                                      Value="@Count(_dashboard.PendingApprovals)"
+                                      Href="/admin/visitors/pending" />
+                    }
+                    @if (_programme is not null)
+                    {
+                        <SimfStatCard Title="@L["Dashboard.Stat.Staff"]"
+                                      Value="@Count(_programme.Staff)"
+                                      Href="/admin/others" />
+                        <SimfStatCard Title="@L["Dashboard.Stat.Moderators"]"
+                                      Value="@Count(_programme.Moderators)"
+                                      Href="/admin/others" />
+                        <SimfStatCard Title="@L["Dashboard.Stat.Speakers"]"
+                                      Value="@Count(_programme.Speakers)"
+                                      Href="/admin/speakers" />
+                    }
+                    @if (_dashboard is not null)
+                    {
+                        <SimfStatCard Title="@L["Dashboard.Stat.Sessions"]"
+                                      Value="@Count(_dashboard.Sessions)"
+                                      Href="/admin/sessions" />
+                    }
+                    @if (_programme is not null)
+                    {
+                        <SimfStatCard Title="@L["Dashboard.Stat.Exhibitors"]"
+                                      Value="@Count(_programme.Exhibitors)"
+                                      Href="/admin/exhibitors" />
+                        <SimfStatCard Title="@L["Dashboard.Stat.Sponsors"]"
+                                      Value="@Count(_programme.Sponsors)"
+                                      Href="/admin/sponsors" />
+                        <SimfStatCard Title="@L["Dashboard.Stat.Booths"]"
+                                      Value="@Count(_programme.Booths)"
+                                      Href="/admin/booths" />
+                        <SimfStatCard Title="@L["Dashboard.Stat.TotalAttended"]"
+                                      Value="@Count(_programme.TotalAttended)"
+                                      Href="/admin/attendance" />
+                    }
+                    @if (_dashboard is not null)
+                    {
+                        <SimfStatCard Title="@L["Dashboard.Stat.RatingsCount"]"
+                                      Value="@Count(_dashboard.RatingsCount)"
+                                      Href="/admin/ratings" />
+                        <SimfStatCard Title="@L["Dashboard.Stat.AverageRating"]"
+                                      Value="@Average(_dashboard.AverageRating)"
+                                      Href="/admin/ratings" />
+                    }
+                </div>
+            }
         </div>
+
+        @if (_programme is not null)
+        {
+            <div class="simf-surface">
+                <SimfGroupedBarChart Title="@L["Dashboard.Programme.Heading"]"
+                                     Subtitle="@ProgrammeSubtitle"
+                                     Groups="_chartGroups"
+                                     SeriesLabels="_seriesLabels"
+                                     CategoryLabel="@L["Dashboard.Programme.Day"]"
+                                     EmptyLabel="@L["Dashboard.Programme.None"]"
+                                     Description="@L["Dashboard.Programme.Description"]" />
+            </div>
+
+            @if (_programme.Days.Count > 0)
+            {
+                <div class="simf-day-grid">
+                    @foreach (var day in _programme.Days)
+                    {
+                        <article class="simf-day-card">
+                            <header class="simf-day-card__head">
+                                <h3 class="simf-day-card__title">@DayTitle(day)</h3>
+                                <span class="simf-day-card__date">@DayDate(day)</span>
+                            </header>
+
+                            <div class="simf-day-card__gauges">
+                                <SimfBarGauge Label="@L["Dashboard.Series.Registered"]"
+                                              Value="@day.Registered"
+                                              Max="_gaugeMax"
+                                              Series="1" />
+                                <SimfBarGauge Label="@L["Dashboard.Series.Present"]"
+                                              Value="@day.Present"
+                                              Max="_gaugeMax"
+                                              Series="2" />
+                                <SimfBarGauge Label="@L["Dashboard.Series.Attended"]"
+                                              Value="@day.Attended"
+                                              Max="_gaugeMax"
+                                              Series="3" />
+                            </div>
+
+                            @* Sessions is a different scale from the people
+                               metrics, so it is a number here rather than a
+                               fourth bar sharing their axis. *@
+                            <p class="simf-day-card__sessions">
+                                <span>@L["Dashboard.Stat.Sessions"]</span>
+                                <span class="simf-day-card__sessions-value">@Count(day.Sessions)</span>
+                            </p>
+                        </article>
+                    }
+                </div>
+            }
+        }
     }
 </div>

@@ -1,0 +1,115 @@
+@* SimfDateRange — the report period picker: a From and a To date, both
+   optional, plus Apply and Clear.
+
+   Composes two SimfDatePickers rather than its own inputs, so the field shell,
+   the label wiring, the aria-invalid/aria-describedby handling and the error
+   styling all come from the existing component instead of being re-implemented.
+   This adds exactly what a range needs on top: the two ends bound to each
+   other's min/max, one validation rule, and the two actions.
+
+   Both ends are INCLUSIVE Saudi calendar dates, which is what an operator
+   picking "6 to 8 November" means; the service converts each end to the right
+   UTC instant. The values travel as ISO yyyy-MM-dd because that is a wire
+   format; only the browser's rendering of it is localised. *@
+@namespace SIMF.Components.Forms
+@using System.Globalization
+
+<div class="simf-daterange">
+    <SimfDatePicker Label="@FromLabel"
+                    Value="@Machine(From)"
+                    Max="@Machine(To)"
+                    Error="@_error"
+                    ValueChanged="OnFromChangedAsync" />
+
+    <SimfDatePicker Label="@ToLabel"
+                    Value="@Machine(To)"
+                    Min="@Machine(From)"
+                    ValueChanged="OnToChangedAsync" />
+
+    <div class="simf-daterange__actions">
+        <SimfButton Variant="primary" Type="button" OnClick="OnApplyAsync">@ApplyLabel</SimfButton>
+        @if (From is not null || To is not null)
+        {
+            <SimfButton Variant="neutral" Type="button" OnClick="OnClearAsync">@ClearLabel</SimfButton>
+        }
+    </div>
+</div>
+
+@code {
+    /// <summary>First included Saudi day. Null means no lower bound.</summary>
+    [Parameter] public DateOnly? From { get; set; }
+
+    /// <summary>Last included Saudi day. Null means no upper bound.</summary>
+    [Parameter] public DateOnly? To { get; set; }
+
+    [Parameter] public EventCallback<DateOnly?> FromChanged { get; set; }
+    [Parameter] public EventCallback<DateOnly?> ToChanged { get; set; }
+
+    /// <summary>Raised when the operator applies a valid range.</summary>
+    [Parameter] public EventCallback OnApply { get; set; }
+
+    /// <summary>Raised after both ends are cleared.</summary>
+    [Parameter] public EventCallback OnClear { get; set; }
+
+    [Parameter, EditorRequired] public string FromLabel { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string ToLabel { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string ApplyLabel { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string ClearLabel { get; set; } = string.Empty;
+
+    /// <summary>Shown when From is later than To.</summary>
+    [Parameter, EditorRequired] public string InvalidRangeLabel { get; set; } = string.Empty;
+
+    private string? _error;
+
+    /// <summary>The machine value an <c>&lt;input type="date"&gt;</c> expects:
+    /// invariant ISO yyyy-MM-dd. This is a wire format, so it deliberately does
+    /// not follow the dd-MM-yyyy display convention.</summary>
+    private static string Machine(DateOnly? value) =>
+        value?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? string.Empty;
+
+    /// <summary>Empty clears the end; anything unparseable is treated as cleared
+    /// rather than silently keeping a stale bound.</summary>
+    private static DateOnly? Parse(string? raw) =>
+        DateOnly.TryParseExact(
+            raw, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsed)
+            ? parsed
+            : null;
+
+    private async Task OnFromChangedAsync(string raw)
+    {
+        From = Parse(raw);
+        await FromChanged.InvokeAsync(From);
+        Validate();
+    }
+
+    private async Task OnToChangedAsync(string raw)
+    {
+        To = Parse(raw);
+        await ToChanged.InvokeAsync(To);
+        Validate();
+    }
+
+    /// <summary>An inverted range returns zero rows, which an operator reads as
+    /// "no data" rather than "you picked the dates backwards" — so say so.</summary>
+    private void Validate() =>
+        _error = From is { } from && To is { } to && from > to ? InvalidRangeLabel : null;
+
+    private async Task OnApplyAsync()
+    {
+        Validate();
+        if (_error is null)
+        {
+            await OnApply.InvokeAsync();
+        }
+    }
+
+    private async Task OnClearAsync()
+    {
+        From = null;
+        To = null;
+        _error = null;
+        await FromChanged.InvokeAsync(null);
+        await ToChanged.InvokeAsync(null);
+        await OnClear.InvokeAsync();
+    }
+}

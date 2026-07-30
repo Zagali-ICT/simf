@@ -8,6 +8,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/confirm_external_link.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../../core/utils/refresh.dart';
 import '../exhibition/entity_detail_helpers.dart';
 import '../exhibition/entity_detail_scaffold.dart';
 import '../exhibition/entity_logo_image.dart';
@@ -50,10 +51,14 @@ class SponsorDetailScreen extends ConsumerWidget {
       error: (_, __) => SimfPageShell(
         title: l10n.sponsorDetailTitle,
         onBack: () => backOrHome(context),
-        body: SimfErrorState(
-          message: l10n.entityDetailError,
-          retryLabel: l10n.retryLabel,
-          onRetry: () => ref.invalidate(sponsorDetailProvider(sponsorId)),
+        body: SimfRefreshableMessage(
+          onRefresh: () =>
+              refreshAsync(ref, sponsorDetailProvider(sponsorId).future),
+          child: SimfErrorState(
+            message: l10n.entityDetailError,
+            retryLabel: l10n.retryLabel,
+            onRetry: () => ref.invalidate(sponsorDetailProvider(sponsorId)),
+          ),
         ),
       ),
       data: (sponsor) => _build(context, ref, l10n, sponsor),
@@ -71,6 +76,8 @@ class SponsorDetailScreen extends ConsumerWidget {
     final name = sponsor.localizedName(isArabic);
 
     return EntityDetailScaffold(
+      onRefresh: () =>
+          refreshAsync(ref, sponsorDetailProvider(sponsor.id).future),
       headerTitle: l10n.sponsorDetailTitle,
       aboutHeader: l10n.sponsorAboutHeader,
       websiteLabel: l10n.websiteLabel,

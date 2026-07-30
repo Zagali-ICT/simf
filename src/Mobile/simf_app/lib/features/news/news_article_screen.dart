@@ -67,7 +67,10 @@ class _NewsArticleScreenState extends ConsumerState<NewsArticleScreen> {
     return SimfPageShell(
       title: l10n.newsTitle,
       onBack: () => backOrHome(context),
-      body: _buildBody(l10n),
+      body: SimfPullToRefresh(
+        onRefresh: _load,
+        child: _buildBody(l10n),
+      ),
     );
   }
 
@@ -76,27 +79,31 @@ class _NewsArticleScreenState extends ConsumerState<NewsArticleScreen> {
       return const Center(child: CircularProgressIndicator());
     }
     if (_notFound) {
-      return Center(
-        child: Text(
-          l10n.newsNotFound,
-          style: SimfTokens.bodyInkMuted,
+      return SimfPullableHost(
+        child: Center(
+          child: Text(
+            l10n.newsNotFound,
+            style: SimfTokens.bodyInkMuted,
+          ),
         ),
       );
     }
     if (_error || _article == null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(SimfTokens.space6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text(l10n.newsError, textAlign: TextAlign.center),
-              const SizedBox(height: SimfTokens.space4),
-              FilledButton(
-                onPressed: () => unawaited(_load()),
-                child: Text(l10n.retryLabel),
-              ),
-            ],
+      return SimfPullableHost(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(SimfTokens.space6),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(l10n.newsError, textAlign: TextAlign.center),
+                const SizedBox(height: SimfTokens.space4),
+                FilledButton(
+                  onPressed: () => unawaited(_load()),
+                  child: Text(l10n.retryLabel),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -104,6 +111,7 @@ class _NewsArticleScreenState extends ConsumerState<NewsArticleScreen> {
     final article = _article!;
     final isArabic = l10n.isArabic;
     return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(SimfTokens.space4),
       children: <Widget>[
         Text(

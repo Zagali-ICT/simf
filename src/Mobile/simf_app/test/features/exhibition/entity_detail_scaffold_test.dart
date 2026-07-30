@@ -61,6 +61,7 @@ EntityDetailScaffold _exhibitor({
   String? locationLine = 'الظهران، المملكة العربية السعودية',
 }) =>
     EntityDetailScaffold(
+      onRefresh: () async {},
       headerTitle: 'العارض',
       aboutHeader: 'نبذة عن العارض',
       websiteLabel: 'الموقع الإلكتروني',
@@ -142,6 +143,7 @@ void main() {
       await _pump(
         tester,
         child: EntityDetailScaffold(
+          onRefresh: () async {},
           headerTitle: 'العارض',
           aboutHeader: 'نبذة عن العارض',
           websiteLabel: 'الموقع الإلكتروني',

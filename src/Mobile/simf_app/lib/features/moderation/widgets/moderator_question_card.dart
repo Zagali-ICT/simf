@@ -149,7 +149,7 @@ class ModeratorQuestionCard extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(SimfTokens.space5),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(
+              color: SimfTokens.black.withValues(
                 alpha: SimfTokens.moderatorScrimOpacity,
               ),
               border: Border.all(

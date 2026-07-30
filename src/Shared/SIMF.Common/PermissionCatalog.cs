@@ -671,6 +671,28 @@ public static class PermissionCatalog
         public const string View = "Statistics.View";
     }
 
+    /// <summary>
+    /// The reporting module — date-ranged, exportable read-only views. Each
+    /// report gates independently so an operator can be given the gate log
+    /// without the attendee roster, and <see cref="Export"/> is separate from
+    /// viewing (the same split as <c>OperationLog.View</c> / <c>Export</c>):
+    /// taking a spreadsheet of attendees off the premises is a bigger act than
+    /// reading a page of them on screen.
+    /// </summary>
+    public static class Reports
+    {
+        public const string View = "Reports.View";
+        public const string Export = "Reports.Export";
+        public const string Attendance = "Reports.Attendance";
+        public const string Registrations = "Reports.Registrations";
+        public const string Gates = "Reports.Gates";
+        public const string Sessions = "Reports.Sessions";
+        public const string Ratings = "Reports.Ratings";
+        public const string Partners = "Reports.Partners";
+        public const string Meetings = "Reports.Meetings";
+        public const string Engagement = "Reports.Engagement";
+    }
+
     /// <summary>FR-506 (SRS §3.5; FDS-003 §5.5) — read-only session-attendance
     /// dashboard over the HallAttendance arrival records (D-241).</summary>
     public static class Attendance
@@ -1128,6 +1150,19 @@ public static class PermissionCatalog
 
         // System & operations
         new(Statistics.View, "Statistics", "View", "View the statistics dashboard", AdminOnly),
+
+        // Reporting module — one gate per report, plus a separate export gate.
+        new(Reports.View, "Reports", "View", "Open the reports hub", AdminOnly),
+        new(Reports.Export, "Reports", "Export", "Export a report as XLSX", AdminOnly),
+        new(Reports.Attendance, "Reports", "Attendance", "View the attendance report", AdminOnly),
+        new(Reports.Registrations, "Reports", "Registrations", "View the registrations report", AdminOnly),
+        new(Reports.Gates, "Reports", "Gates", "View the gate-activity report", AdminOnly),
+        new(Reports.Sessions, "Reports", "Sessions", "View the sessions report", AdminOnly),
+        new(Reports.Ratings, "Reports", "Ratings", "View the ratings report", AdminOnly),
+        new(Reports.Partners, "Reports", "Partners", "View the partners report", AdminOnly),
+        new(Reports.Meetings, "Reports", "Meetings", "View the meetings report", AdminOnly),
+        new(Reports.Engagement, "Reports", "Engagement", "View the engagement report", AdminOnly),
+
         // D-752 — the Security team monitors session attendance.
         new(Attendance.View, "Attendance", "View", "View the session-attendance dashboard", SecurityTeam),
 

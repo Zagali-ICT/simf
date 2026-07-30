@@ -4,6 +4,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../../core/utils/refresh.dart';
 import 'data/archive_models.dart';
 import 'widgets/archive_body.dart';
 
@@ -63,10 +64,9 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
   // (the whole detail family, so whichever edition is shown — tapped or the
   // default most-recent — re-fetches its summary/gallery/sessions too), then
   // await the list re-fetch so the gold spinner stays until it arrives.
-  Future<void> _refresh() async {
-    ref.invalidate(archiveEditionsProvider);
+  Future<void> _refresh() {
     ref.invalidate(archiveEditionDetailProvider);
-    await ref.read(archiveEditionsProvider.future);
+    return refreshAsync(ref, archiveEditionsProvider.future);
   }
 
   @override

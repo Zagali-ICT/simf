@@ -233,32 +233,21 @@ class _BiometricStepUpScreenState extends ConsumerState<BiometricStepUpScreen> {
             Text(
               l10n.biometricStepUpHeading,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: SimfTokens.surface,
-                fontSize: SimfTokens.textXl,
-                fontWeight: FontWeight.w700,
-              ),
+              style: SimfTokens.labelWhiteBoldXl,
             ),
             const SizedBox(height: SimfTokens.space6),
             if (_maskedEmail != null && _maskedEmail!.isNotEmpty) ...<Widget>[
               Text(
                 l10n.otpSentToPrefix,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: SimfTokens.beigeBorder,
-                  fontSize: SimfTokens.textMd,
-                ),
+                style: SimfTokens.bodyBeigeMd,
               ),
               const SizedBox(height: SimfTokens.space2),
               Text(
                 _maskedEmail!,
                 textAlign: TextAlign.center,
                 textDirection: TextDirection.ltr,
-                style: const TextStyle(
-                  color: SimfTokens.accent,
-                  fontSize: SimfTokens.textMd,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: SimfTokens.labelGoldMedium,
               ),
             ],
             const SizedBox(height: 48),
@@ -287,20 +276,14 @@ class _BiometricStepUpScreenState extends ConsumerState<BiometricStepUpScreen> {
                   ),
                 ],
               ),
-              style: const TextStyle(
-                color: SimfTokens.beigeBorder,
-                fontSize: SimfTokens.textMd,
-              ),
+              style: SimfTokens.bodyBeigeMd,
             ),
             if (_error != null) ...<Widget>[
               const SizedBox(height: SimfTokens.space3),
               Text(
                 _error!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: SimfTokens.danger,
-                  fontSize: SimfTokens.textSm,
-                ),
+                style: SimfTokens.labelDangerSm,
               ),
             ],
             const SizedBox(height: SimfTokens.space6),
@@ -353,10 +336,7 @@ class _BiometricStepUpScreenState extends ConsumerState<BiometricStepUpScreen> {
         ],
       ),
       textAlign: TextAlign.center,
-      style: const TextStyle(
-        color: SimfTokens.surface,
-        fontSize: SimfTokens.textMd,
-      ),
+      style: SimfTokens.bodyWhiteMd,
     );
   }
 }

@@ -246,9 +246,9 @@ class _ScanLine extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: <Color>[
-            Color(0x00C9A84C),
+            SimfTokens.accentFade,
             SimfTokens.accent,
-            Color(0x00C9A84C),
+            SimfTokens.accentFade,
           ],
         ),
         boxShadow: const <BoxShadow>[

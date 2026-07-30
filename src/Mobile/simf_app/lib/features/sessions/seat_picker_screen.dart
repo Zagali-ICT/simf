@@ -10,6 +10,7 @@ import '../../app/widgets/simf_bottom_nav.dart';
 import '../../app/widgets/simf_confirm_dialog.dart';
 import '../../app/widgets/simf_info_dialog.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../../core/utils/refresh.dart';
 import 'data/seat_map_models.dart';
 import 'data/seat_map_repository.dart';
 import 'widgets/hall_seat_map.dart';
@@ -203,7 +204,8 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
       tab: SimfTab.sessions,
       body: SeatMapAsyncView(
         value: value,
-        onRetry: () => ref.invalidate(seatMapProvider(widget.sessionId)),
+        onRefresh: () =>
+            refreshAsync(ref, seatMapProvider(widget.sessionId).future),
         builder: (map) => _picker(l10n, map),
       ),
     );
@@ -214,6 +216,7 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(
           SimfTokens.space4,
           SimfTokens.space2,

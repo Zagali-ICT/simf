@@ -55,6 +55,16 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
     }
   }
 
+  /// Owner rule: every data page pulls to refresh. The page renders the CMS
+  /// block AND the edition config, so both are re-read. Each swallows its own
+  /// failure (the static fallback covers it), so the gesture always completes.
+  Future<void> _refresh() async {
+    await Future.wait<void>(<Future<void>>[
+      _load(),
+      ref.read(orgProfileProvider.notifier).warm(),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
@@ -129,33 +139,40 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
     return SimfPageShell(
       title: l10n.aboutTitle,
       onBack: () => backOrHome(context),
-      body: ListView(
-        padding: const EdgeInsets.all(SimfTokens.space4),
-        children: <Widget>[
-          AboutHeader(
-            forumName: forumName,
-            forumTitle: forumTitle,
-            statusBadge: statusBadge,
-          ),
-          const SizedBox(height: SimfTokens.space5),
-          ...aboutCards,
-          const SizedBox(height: SimfTokens.space4),
-          AboutDetailsCard(title: l10n.aboutDetailsTitle, rows: detailRows),
-          // D-495 — contact + version cards (shown only when set).
-          if (contactRows.isNotEmpty) ...<Widget>[
-            const SizedBox(height: SimfTokens.space4),
-            AboutDetailsCard(title: l10n.aboutContactTitle, rows: contactRows),
-          ],
-          if (profile?.version != null && profile!.version!.isNotEmpty) ...<Widget>[
-            const SizedBox(height: SimfTokens.space4),
-            AboutDetailsCard(
-              title: l10n.aboutVersionTitle,
-              rows: <(String, String)>[(l10n.aboutVersionLabel, profile.version!)],
+      body: SimfPullToRefresh(
+        onRefresh: _refresh,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(SimfTokens.space4),
+          children: <Widget>[
+            AboutHeader(
+              forumName: forumName,
+              forumTitle: forumTitle,
+              statusBadge: statusBadge,
             ),
+            const SizedBox(height: SimfTokens.space5),
+            ...aboutCards,
+            const SizedBox(height: SimfTokens.space4),
+            AboutDetailsCard(title: l10n.aboutDetailsTitle, rows: detailRows),
+            // D-495 — contact + version cards (shown only when set).
+            if (contactRows.isNotEmpty) ...<Widget>[
+              const SizedBox(height: SimfTokens.space4),
+              AboutDetailsCard(
+                title: l10n.aboutContactTitle,
+                rows: contactRows,
+              ),
+            ],
+            if (profile?.version != null && profile!.version!.isNotEmpty) ...<Widget>[
+              const SizedBox(height: SimfTokens.space4),
+              AboutDetailsCard(
+                title: l10n.aboutVersionTitle,
+                rows: <(String, String)>[(l10n.aboutVersionLabel, profile.version!)],
+              ),
+            ],
+            const SizedBox(height: SimfTokens.space4),
+            AboutThemesCard(title: l10n.aboutThemesTitle, themes: themes),
           ],
-          const SizedBox(height: SimfTokens.space4),
-          AboutThemesCard(title: l10n.aboutThemesTitle, themes: themes),
-        ],
+        ),
       ),
     );
   }

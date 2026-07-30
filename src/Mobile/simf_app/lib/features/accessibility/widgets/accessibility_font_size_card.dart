@@ -86,7 +86,7 @@ class _SizeChip extends StatelessWidget {
           height: 36,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: selected ? SimfTokens.accent : Colors.transparent,
+            color: selected ? SimfTokens.accent : SimfTokens.transparent,
             border: selected
                 ? null
                 : Border.all(
@@ -100,7 +100,7 @@ class _SizeChip extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              color: selected ? Colors.white : SimfTokens.beigeBorder,
+              color: selected ? SimfTokens.surface : SimfTokens.beigeBorder,
               fontSize: SimfTokens.textSm,
               fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
             ),

@@ -20,6 +20,7 @@ class EntityDetailScaffold extends StatelessWidget {
     required this.logo,
     required this.name,
     required this.websiteLabel,
+    required this.onRefresh,
     this.locationLine,
     this.countryId,
     this.tierPill,
@@ -31,6 +32,11 @@ class EntityDetailScaffold extends StatelessWidget {
     this.onWebsite,
     super.key,
   });
+
+  /// Re-fetches the detail this scaffold renders. Owner rule: every data page
+  /// pulls to refresh — and both callers reach here from a list, so a stale
+  /// logo/stand after a CP edit is the common case.
+  final Future<void> Function() onRefresh;
 
   /// The page header (العارض / الراعي).
   final String headerTitle;
@@ -70,48 +76,52 @@ class EntityDetailScaffold extends StatelessWidget {
     return SimfPageShell(
       title: headerTitle,
       onBack: () => backOrHome(context),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          SimfTokens.space4,
-          SimfTokens.space4,
-          SimfTokens.space4,
-          SimfTokens.space6,
-        ),
-        children: <Widget>[
-          EntityIdentityCard(
-            logo: logo,
-            name: name,
-            locationLine: locationLine,
-            countryId: countryId,
-            tierPill: tierPill,
-            standLabel: standLabel,
-            standCode: standCode,
-            onMap: onMap,
+      body: SimfPullToRefresh(
+        onRefresh: onRefresh,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(
+            SimfTokens.space4,
+            SimfTokens.space4,
+            SimfTokens.space4,
+            SimfTokens.space6,
           ),
-          if ((about ?? '').trim().isNotEmpty) ...<Widget>[
-            const SizedBox(height: SimfTokens.space4),
-            EntityAboutCard(header: aboutHeader, body: about!.trim()),
-          ],
-          if ((website ?? '').trim().isNotEmpty) ...<Widget>[
-            const SizedBox(height: SimfTokens.space4),
-            EntityLinkRow(
-              label: websiteLabel,
-              value: website!.trim(),
-              icon: Icons.public,
-              // Figma 1439:11927 — the website glyph is the simple stroked globe
-              // (circle + meridian + equator), the same asset the auth screens use.
-              iconAsset: AppAssets.authGlobe,
-              onTap: onWebsite,
-              // Website row (Figma 1439:11917): navyDeep fill, label above value,
-              // label Bold-12, value SemiBold-14.
-              background: SimfTokens.navyDeep,
-              valueOnTop: false,
-              valueSize: SimfTokens.textMd,
-              valueWeight: FontWeight.w600,
-              labelWeight: FontWeight.w700,
+          children: <Widget>[
+            EntityIdentityCard(
+              logo: logo,
+              name: name,
+              locationLine: locationLine,
+              countryId: countryId,
+              tierPill: tierPill,
+              standLabel: standLabel,
+              standCode: standCode,
+              onMap: onMap,
             ),
+            if ((about ?? '').trim().isNotEmpty) ...<Widget>[
+              const SizedBox(height: SimfTokens.space4),
+              EntityAboutCard(header: aboutHeader, body: about!.trim()),
+            ],
+            if ((website ?? '').trim().isNotEmpty) ...<Widget>[
+              const SizedBox(height: SimfTokens.space4),
+              EntityLinkRow(
+                label: websiteLabel,
+                value: website!.trim(),
+                icon: Icons.public,
+                // Figma 1439:11927 — the website glyph is the simple stroked globe
+                // (circle + meridian + equator), the same asset the auth screens use.
+                iconAsset: AppAssets.authGlobe,
+                onTap: onWebsite,
+                // Website row (Figma 1439:11917): navyDeep fill, label above value,
+                // label Bold-12, value SemiBold-14.
+                background: SimfTokens.navyDeep,
+                valueOnTop: false,
+                valueSize: SimfTokens.textMd,
+                valueWeight: FontWeight.w600,
+                labelWeight: FontWeight.w700,
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

@@ -6,16 +6,19 @@ namespace SIMF.ControlPanel.Tests;
 public sealed class CpNavigationTests
 {
     [Fact]
-    public void There_are_thirteen_navigation_groups()
+    public void There_are_fourteen_navigation_groups()
     {
         // The former 23-item "System" junk drawer was split into coherent groups:
         // People absorbed the Visitor/Other accounts (+ pending), and four new
         // groups were carved out — Scientific committee, Public relations,
-        // Gates & arrivals, Reference data — leaving a slim System group. The
-        // canonical count is 13: Overview, People, Access control, Programme,
-        // Scientific committee, Exhibition, Engagement, Knowledge, Content,
-        // Public relations, Gates & arrivals, Reference data, System.
-        Assert.Equal(13, CpNavigation.Groups.Count);
+        // Gates & arrivals, Reference data — leaving a slim System group.
+        // Reports was added as its own group rather than folded into System,
+        // because it is an operator-facing destination and System is
+        // configuration. The canonical count is 14: Overview, People, Access
+        // control, Programme, Scientific committee, Exhibition, Engagement,
+        // Knowledge, Content, Public relations, Gates & arrivals, Reference
+        // data, System, Reports.
+        Assert.Equal(14, CpNavigation.Groups.Count);
     }
 
     [Fact]

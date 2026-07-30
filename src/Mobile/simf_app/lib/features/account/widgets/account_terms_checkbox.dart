@@ -102,7 +102,7 @@ class AccountTermsCheckbox extends StatelessWidget {
             padding: const EdgeInsetsDirectional.only(start: 27),
             child: Text(
               l10n.termsMustAccept,
-              style: const TextStyle(color: SimfTokens.danger, fontSize: SimfTokens.textSm),
+              style: SimfTokens.labelDangerSm,
             ),
           ),
         ],

@@ -275,7 +275,7 @@ class _PlayerLoading extends StatelessWidget {
       aspectRatio: SimfTokens.videoAspectRatio,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: Colors.black,
+          color: SimfTokens.black,
           borderRadius: BorderRadius.circular(SimfTokens.radius),
         ),
         child: Center(
@@ -318,7 +318,7 @@ class _PlayerError extends StatelessWidget {
       aspectRatio: SimfTokens.videoAspectRatio,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: Colors.black,
+          color: SimfTokens.black,
           borderRadius: BorderRadius.circular(SimfTokens.radius),
         ),
         // Centred + scrollable so the icon + message + button never overflow
