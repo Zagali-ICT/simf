@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
@@ -63,7 +63,7 @@ public partial class PrintBag
             if (envelope is { Success: true, Data: not null })
             {
                 _result = envelope.Data;
-                _qrSvg = BuildQrSvg(_result.QrId);
+                _qrSvg = BadgeQrCode.ToSvg(_result.QrId);
             }
             else
             {
@@ -93,14 +93,4 @@ public partial class PrintBag
         StateHasChanged();
     }
 
-    private static string BuildQrSvg(string qrId)
-    {
-        using var generator = new QRCoder.QRCodeGenerator();
-        using var data = generator.CreateQrCode(qrId, QRCoder.QRCodeGenerator.ECCLevel.Q);
-        return new QRCoder.SvgQRCode(data).GetGraphic(
-            pixelsPerModule: 6,
-            darkColorHex: "#0B2545",
-            lightColorHex: "#FFFFFF",
-            drawQuietZones: true);
-    }
 }

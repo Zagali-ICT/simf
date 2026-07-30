@@ -33,7 +33,7 @@ public partial class ThemesAddEdit
         }
         else
         {
-            _model.PageColor = "#244A77";
+            _model.PageColor = AdminFormDefaults.PageColor;
         }
         _editContext = new EditContext(_model);
     }

@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using SIMF.Contracts.Authentication;
@@ -33,7 +33,7 @@ public partial class WalkInSuccessModal
     {
         if (Response is not null && !string.IsNullOrEmpty(Response.QrId))
         {
-            _qrSvg = BuildQrSvg(Response.QrId);
+            _qrSvg = BadgeQrCode.ToSvg(Response.QrId);
         }
         else
         {
@@ -66,14 +66,4 @@ public partial class WalkInSuccessModal
         }
     }
 
-    private static string BuildQrSvg(string qrId)
-    {
-        using var generator = new QRCoder.QRCodeGenerator();
-        using var data = generator.CreateQrCode(qrId, QRCoder.QRCodeGenerator.ECCLevel.Q);
-        return new QRCoder.SvgQRCode(data).GetGraphic(
-            pixelsPerModule: 6,
-            darkColorHex: "#0B2545",
-            lightColorHex: "#FFFFFF",
-            drawQuietZones: true);
-    }
 }

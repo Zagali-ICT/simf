@@ -9,6 +9,19 @@ namespace SIMF.ControlPanel.Components.Layout;
 
 public partial class CpShellLayout
 {
+    // The notification bell is refreshed from pages that change read-state, via
+    // the BellRefresh cascade below.
+    private SIMF.Components.Controls.SimfNotificationBell? _bell;
+
+    private async Task RefreshBellAsync()
+    {
+        if (_bell is not null)
+        {
+            await _bell.RefreshUnreadAsync();
+            StateHasChanged();
+        }
+    }
+
     [Inject] private IStringLocalizer<Strings> L { get; set; } = default!;
     [Inject] private NavigationManager Nav { get; set; } = default!;
     [Inject] private IJSRuntime JS { get; set; } = default!;

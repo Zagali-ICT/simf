@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
@@ -104,7 +104,7 @@ public partial class ProfileTypeForm
         new("^#[0-9A-Fa-f]{6}$", System.Text.RegularExpressions.RegexOptions.Compiled);
 
     private string PageColorAsHex =>
-        HexSixPattern.IsMatch(_model.PageColor) ? _model.PageColor : "#244A77";
+        HexSixPattern.IsMatch(_model.PageColor) ? _model.PageColor : AdminFormDefaults.PageColor;
 
     // D-725 — mirror the seeder default in the CP create path: selecting an
     // operational app role (Staff / Moderator) auto-hides the type from the
@@ -236,7 +236,7 @@ public partial class ProfileTypeForm
     {
         public string Name { get; set; } = string.Empty;
         public string NameArabic { get; set; } = string.Empty;
-        public string PageColor { get; set; } = "#244A77";
+        public string PageColor { get; set; } = AdminFormDefaults.PageColor;
         // D-161 — defaults to "None" (the safe baseline); admin opts in
         // by picking Staff or Moderator.
         public string MobileAppRole { get; set; } = "None";
