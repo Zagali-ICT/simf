@@ -12,6 +12,16 @@ import '../more/widgets/more_list.dart';
 import 'widgets/about_cards.dart';
 import 'widgets/check_for_updates_row.dart';
 
+/// About the app — عن التطبيق · route: [RouteNames.aboutApp]
+/// Purpose: the APP's own about page — version, release date, organizer, a
+///   manual update check, and the edition's support contacts.
+/// Data: [installedAppVersionProvider], [orgProfileProvider], and the version
+///   policy behind the check-for-updates row (`GET /app/version-policy`, D-736).
+/// Figma: no bound node. NOTE `1116-16448` is About the FORUM ([AboutScreen]) —
+///   a different screen; do not bind it here.
+/// Perf: one short static ListView; pull-to-refresh re-warms the org profile.
+/// Contract: only the contact fields the admin actually set are rendered.
+///
 /// عن التطبيق · About the app (D-668, `/about-app`, public).
 ///
 /// The app's own about page (distinct from [AboutScreen] "عن الملتقى", which is

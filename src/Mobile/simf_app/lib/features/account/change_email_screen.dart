@@ -20,6 +20,8 @@ import 'widgets/auth_chrome.dart';
 import 'widgets/navi_form_field.dart';
 import 'widgets/navy_password_toggle.dart';
 import 'widgets/otp_code_boxes.dart';
+import 'widgets/otp_countdown_line.dart';
+import 'widgets/otp_sent_to.dart';
 
 /// Change email — تغيير البريد الإلكتروني · route: [RouteNames.changeEmail]
 /// Purpose: signed-in self-service change of the login email (#24). Two phases in
@@ -332,20 +334,10 @@ class _ChangeEmailScreenState extends ConsumerState<ChangeEmailScreen> {
               style: SimfTokens.labelWhiteBoldXl,
             ),
             const SizedBox(height: SimfTokens.space6),
-            if (_maskedEmail.isNotEmpty) ...<Widget>[
-              Text(
-                l10n.otpSentToPrefix,
-                textAlign: TextAlign.center,
-                style: SimfTokens.bodyBeigeMd,
-              ),
-              const SizedBox(height: SimfTokens.space2),
-              Text(
-                _maskedEmail,
-                textAlign: TextAlign.center,
-                textDirection: TextDirection.ltr,
-                style: SimfTokens.labelGoldMedium,
-              ),
-            ],
+            OtpSentTo(
+              prefix: l10n.otpSentToPrefix,
+              recipient: _maskedEmail,
+            ),
             const SizedBox(height: 48),
             OtpCodeBoxes(
               controller: _code,
@@ -380,20 +372,9 @@ class _ChangeEmailScreenState extends ConsumerState<ChangeEmailScreen> {
               },
             ),
             const SizedBox(height: SimfTokens.space4),
-            Text.rich(
-              TextSpan(
-                children: <InlineSpan>[
-                  TextSpan(text: '${l10n.otpResendCountdown} '),
-                  TextSpan(
-                    text: _countdownLabel,
-                    style: const TextStyle(
-                      color: SimfTokens.accent,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-              style: SimfTokens.bodyBeigeMd,
+            OtpCountdownLine(
+              prefix: l10n.otpResendCountdown,
+              remaining: _countdownLabel,
             ),
             if (_error != null) ...<Widget>[
               const SizedBox(height: SimfTokens.space3),

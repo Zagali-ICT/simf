@@ -19,6 +19,16 @@ import 'widgets/account_sub_header.dart';
 import 'widgets/auth_chrome.dart';
 import 'widgets/navy_password_toggle.dart';
 
+/// Badge password — إكمال تسجيل الدخول · route: [RouteNames.badgePassword]
+/// Purpose: the password step that completes a badge-QR sign-in.
+/// Data: [authControllerProvider].signInWithBadge — `POST /app/auth/badge-sign-in`.
+/// Figma: no bound node — built on the navy auth family (D-659), like its
+///   sibling [BadgeActivationScreen].
+/// Perf: one short form, no lists.
+/// Contract: the badge NEVER bypasses the password (D-430) — the server runs the
+///   full password + 2FA pipeline, so a 2FA account continues to the shared
+///   email-OTP screen rather than landing signed in here.
+///
 /// D-738 — the password step of badge-QR sign-in. A returning holder who scanned
 /// their badge (an account that already has a password) finishes here with ONLY
 /// their password: the resolved name + masked email are shown so no email is

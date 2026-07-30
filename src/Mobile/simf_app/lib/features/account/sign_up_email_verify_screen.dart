@@ -16,6 +16,7 @@ import '../../core/widgets/simf_auth_sweep.dart';
 import 'widgets/account_sub_header.dart';
 import 'widgets/auth_chrome.dart';
 import 'widgets/otp_code_boxes.dart';
+import 'widgets/otp_sent_to.dart';
 
 /// Page 006 — التحقق بالبريد · Email verification. The KSA-Project Figma
 /// design (node 505:837 — D-364): navy surface with the decorative sweep, a
@@ -235,17 +236,9 @@ class _SignUpEmailVerifyScreenState
               style: SimfTokens.labelWhiteBoldXl,
             ),
             const SizedBox(height: SimfTokens.space6),
-            Text(
-              l10n.emailVerifySentTo,
-              textAlign: TextAlign.center,
-              style: SimfTokens.bodyBeigeMd,
-            ),
-            const SizedBox(height: SimfTokens.space2),
-            Text(
-              widget.email,
-              textDirection: TextDirection.ltr,
-              textAlign: TextAlign.center,
-              style: SimfTokens.labelGoldMedium,
+            OtpSentTo(
+              prefix: l10n.emailVerifySentTo,
+              recipient: widget.email,
             ),
             const SizedBox(height: 48),
             OtpCodeBoxes(

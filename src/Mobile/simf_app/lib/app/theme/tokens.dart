@@ -678,6 +678,14 @@ class SimfTokens {
     color: navy,
     fontWeight: FontWeight.w700,
   );
+
+  /// Gold bold with NO size — for a span inside a richer line that should keep
+  /// the parent's size (the OTP resend countdown). Sized siblings live above as
+  /// labelGoldBold / labelGoldBoldLg / labelGoldBoldXl.
+  static const TextStyle labelGoldBoldInherit = TextStyle(
+    color: accent,
+    fontWeight: FontWeight.w700,
+  );
   static const TextStyle bodyInkMutedSm = TextStyle(
     color: inkMuted,
     fontSize: textSm,

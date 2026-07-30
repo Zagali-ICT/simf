@@ -17,6 +17,8 @@ import 'post_auth_route.dart';
 import 'widgets/account_sub_header.dart';
 import 'widgets/auth_chrome.dart';
 import 'widgets/otp_code_boxes.dart';
+import 'widgets/otp_countdown_line.dart';
+import 'widgets/otp_sent_to.dart';
 
 /// Page 003 — email-OTP second factor (Logic L-5), restyled to the KSA OTP
 /// frame (D-369, reusing the D-364 pattern via [OtpCodeBoxes]/[OtpMark]; the
@@ -228,25 +230,11 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
             // Frame 758:2616 — "أرسلنا رمزاً الى" + the recipient
             // email on a gold line (falls back to the generic
             // sentence when no address is carried).
-            if (email != null && email.isNotEmpty) ...<Widget>[
-              Text(
-                l10n.otpSentToPrefix,
-                textAlign: TextAlign.center,
-                style: SimfTokens.bodyBeigeMd,
-              ),
-              const SizedBox(height: SimfTokens.space2),
-              Text(
-                email,
-                textAlign: TextAlign.center,
-                textDirection: TextDirection.ltr,
-                style: SimfTokens.labelGoldMedium,
-              ),
-            ] else
-              Text(
-                l10n.otpBody,
-                textAlign: TextAlign.center,
-                style: SimfTokens.bodyBeigeMd,
-              ),
+            OtpSentTo(
+              prefix: l10n.otpSentToPrefix,
+              recipient: email,
+              fallback: l10n.otpBody,
+            ),
             const SizedBox(height: 64),
             OtpCodeBoxes(
               controller: _code,
@@ -261,20 +249,9 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
             ),
             const SizedBox(height: SimfTokens.space4),
             // The resend countdown (frame 758:2616).
-            Text.rich(
-              TextSpan(
-                children: <InlineSpan>[
-                  TextSpan(text: '${l10n.otpResendCountdown} '),
-                  TextSpan(
-                    text: _countdownLabel,
-                    style: const TextStyle(
-                      color: SimfTokens.accent,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-              style: SimfTokens.bodyBeigeMd,
+            OtpCountdownLine(
+              prefix: l10n.otpResendCountdown,
+              remaining: _countdownLabel,
             ),
             if (_error != null) ...<Widget>[
               const SizedBox(height: SimfTokens.space3),

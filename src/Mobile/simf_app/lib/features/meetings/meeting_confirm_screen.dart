@@ -10,6 +10,17 @@ import '../../app/widgets/simf_page_shell.dart';
 import '../../core/utils/saudi_time.dart';
 import '../delegations/data/delegations_repository.dart';
 
+/// Confirm meeting — تأكيد الاجتماع · route: [RouteNames.meetingConfirm]
+/// Purpose: the OTHER party's one-tap confirm of a bilateral meeting.
+/// Data: [delegationsRepositoryProvider].confirmMeeting —
+///   `POST /app/delegation-meeting-requests/{id}/confirm`.
+/// Figma: no bound node — built on the shared [SimfPageShell] chrome.
+/// Perf: two short non-scrolling ListViews; no pagination, one write.
+/// Contract: eligibility + state are enforced SERVER-side and the screen only
+///   maps the outcome — 403 = not the other party, 409 = not awaiting
+///   confirmation, anything else = generic retry. The success summary carries no
+///   requester PII (stripped server-side).
+///
 /// Bi-Meeting rework — the other-party confirm screen (route `/meeting-confirm`),
 /// reached by tapping a "MeetingRequested" notification (deep-link
 /// `?requestId=…`). An eligible member of the TARGET delegation confirms the
