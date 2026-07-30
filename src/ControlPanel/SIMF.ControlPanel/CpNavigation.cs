@@ -260,6 +260,16 @@ public static class CpNavigation
             // singleton toggles (PDF §2.3, §2.4).
             new("Module.OperationsToggles", "/admin/operations", RequiredPermission: PermissionCatalog.Operations.View, Icon: "sliders"),
         ]),
+        // Reporting module — date-ranged, exportable read-only reports. Each
+        // report gates on its own permission so an operator can be given the
+        // gate log without the attendee roster.
+        new("Nav.Reports",
+        [
+            new("Module.ReportsHub", "/admin/reports", RequiredPermission: PermissionCatalog.Reports.View, Icon: "table"),
+            new("Module.ReportsAttendance", "/admin/reports/attendance", RequiredPermission: PermissionCatalog.Reports.Attendance, Icon: "user-check"),
+            new("Module.ReportsRegistrations", "/admin/reports/registrations", RequiredPermission: PermissionCatalog.Reports.Registrations, Icon: "users"),
+            new("Module.ReportsGates", "/admin/reports/gates", RequiredPermission: PermissionCatalog.Reports.Gates, Icon: "shield"),
+        ]),
     ];
 
     /// <summary>The label key for a module route, or <c>null</c> if it is not a known module.</summary>

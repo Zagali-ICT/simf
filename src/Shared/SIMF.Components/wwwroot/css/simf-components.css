@@ -3226,4 +3226,70 @@ h1:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
   .simf-chart__yaxis { display: none; }
 }
 
+/* ===========================================================================
+   Reporting module
+   ======================================================================== */
+
+/* -- Date range ----------------------------------------------------------- */
+.simf-daterange {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-4);
+}
+
+/* The two pickers keep a usable width but still wrap on a narrow screen. */
+.simf-daterange > .simf-field {
+  flex: 0 1 180px;
+  min-inline-size: 150px;
+}
+
+.simf-daterange__actions {
+  display: flex;
+  gap: var(--space-2);
+  /* Sits on the same baseline as the field controls, clear of their labels. */
+  padding-block-end: var(--space-1);
+}
+
+/* -- Report toolbar ------------------------------------------------------- */
+.simf-report-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-4);
+  margin-block-end: var(--space-5);
+}
+
+/* Pushes the export action to the far end on a wide screen and collapses to
+   nothing once the strip wraps. */
+.simf-report-toolbar__spacer { flex: 1 1 auto; }
+
+.simf-report-totals { margin-block-end: var(--space-5); }
+
+/* -- Report hub cards ----------------------------------------------------- */
+.simf-report-card {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: border-color var(--transition-fast),
+              box-shadow var(--transition-fast);
+}
+
+.simf-report-card:hover {
+  border-color: var(--color-secondary);
+  box-shadow: var(--shadow-sm);
+}
+
+.simf-report-card:focus-visible {
+  outline: var(--border-width-focus) solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.simf-report-card__text {
+  margin: 0;
+  font-size: var(--font-size-caption);
+  line-height: var(--line-height-caption);
+  color: var(--color-text-muted);
+}
+
 

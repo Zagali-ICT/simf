@@ -121,6 +121,10 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/organization-profile` | ✅ Real (D-495; hero-video upload D-768) | Administrator | [cp/organization-profile.md](cp/organization-profile.md) | [e2e/cp-organization-profile.md](../tests/e2e/cp-organization-profile.md) |
 | `/admin/contact-inquiries` | ✅ Real (D-464; BFF wired D-649) | Administrator | — | [e2e/cp-contact-inquiries.md](../tests/e2e/cp-contact-inquiries.md) |
 | `/admin/operations` | ✅ Real (D-166) | Administrator | — | [e2e/cp-admin-operations.md](../tests/e2e/cp-admin-operations.md) |
+| `/admin/reports` | ✅ Real | Reports.View | [cp/reports.md](cp/reports.md) | [e2e/cp-reports.md](../tests/e2e/cp-reports.md) |
+| `/admin/reports/attendance` | ✅ Real | Reports.Attendance | [cp/reports.md](cp/reports.md) | [e2e/cp-reports.md](../tests/e2e/cp-reports.md) |
+| `/admin/reports/registrations` | ✅ Real | Reports.Registrations | [cp/reports.md](cp/reports.md) | [e2e/cp-reports.md](../tests/e2e/cp-reports.md) |
+| `/admin/reports/gates` | ✅ Real | Reports.Gates | [cp/reports.md](cp/reports.md) | [e2e/cp-reports.md](../tests/e2e/cp-reports.md) |
 | `/admin/operation-log` | ✅ Real | Administrator | [cp/admin-operation-log.md](cp/admin-operation-log.md) | [e2e/cp-admin-operation-log.md](../tests/e2e/cp-admin-operation-log.md) |
 | `/admin/logs` | ✅ Real | Administrator | [cp/admin-logs.md](cp/admin-logs.md) | [e2e/cp-admin-logs.md](../tests/e2e/cp-admin-logs.md) |
 | `/admin/ops/services` | ✅ Real | Administrator | [cp/ops-services.md](cp/ops-services.md) | [e2e/cp-ops-services.md](../tests/e2e/cp-ops-services.md) |

@@ -576,6 +576,9 @@ public static class DependencyInjection
         // Exhibitor provisioning.
         services.AddScoped<SIMF.Application.Statistics.Abstractions.IStatisticsService,
             SIMF.Infrastructure.Statistics.StatisticsService>();
+        // Reporting module — date-ranged read-only reports with XLSX export.
+        services.AddScoped<SIMF.Application.Reporting.Abstractions.IReportingService,
+            SIMF.Infrastructure.Reporting.ReportingService>();
         // FR-506 — read-only session-attendance dashboard over HallAttendance (D-241).
         services.AddScoped<SIMF.Application.Attendance.Abstractions.ISessionAttendanceService,
             SIMF.Infrastructure.Attendance.SessionAttendanceService>();
