@@ -64,3 +64,9 @@ set-env-*.local.ps1
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Repo-root scratch notes. txt.txt was tracked and carried a plaintext
+# production super-admin credential (twice) plus demo passwords; removed
+# 2026-07-30. Scratch files do not belong in the repo at all.
+txt.txt
+/*.scratch.txt

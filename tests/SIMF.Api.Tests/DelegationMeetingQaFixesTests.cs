@@ -660,8 +660,34 @@ public sealed class DelegationMeetingQaFixesTests
         country.IsActive = true;
         country.IsInvited = invited;
         await db.SaveChangesAsync();
+
+        // G3 (owner 2026-07-30) — a submit now REQUIRES the TARGET delegation to have
+        // a free slot, so every invited fixture delegation gets one wide future
+        // window (added once — this helper is called repeatedly for the same code).
+        // The no-availability refusal has its own coverage in MeetingNoAvailabilityTests.
+        if (invited && !await db.DelegationAvailabilityWindows
+                .AnyAsync(w => w.CountryId == country.Id))
+        {
+            db.DelegationAvailabilityWindows.Add(new DelegationAvailabilityWindow
+            {
+                Id = Guid.NewGuid(),
+                CountryId = country.Id,
+                Start = FixtureWindowStart,
+                End = FixtureWindowStart.AddHours(12),
+                SlotMinutes = 60,
+                IsActive = true,
+                CreatedAt = DateTimeOffset.UtcNow,
+            });
+            await db.SaveChangesAsync();
+        }
         return country.Id;
     }
+
+    /// <summary>G3 — far enough in the future that a past slot can never be why a
+    /// fixture delegation looks unavailable, and long enough (12 one-hour slots) that
+    /// the meetings these tests accept never empty it.</summary>
+    private static readonly DateTimeOffset FixtureWindowStart =
+        new(2035, 9, 1, 9, 0, 0, TimeSpan.Zero);
 
     private async Task<(string Token, Guid UserId)> CreateDelegateAsync(
         string countryCode, int countryId)

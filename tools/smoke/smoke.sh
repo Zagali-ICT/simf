@@ -3,9 +3,21 @@
 # Drives the live API on :5175. Captures evidence in /tmp/smoke-*.json.
 set -e
 
-API=http://localhost:5175
-TOTP_TOOL_DIR="d:/SIMF/System/V1.0.0/tools/totp"
-SUPER_TOTP_SECRET="dbji csx7 c3mj s2qa sjcl rbcl kiqk ovr3"
+API=${SIMF_SMOKE_API:-http://localhost:5175}
+TOTP_TOOL_DIR="${SIMF_SMOKE_TOTP_TOOL_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../totp" && pwd)}"
+
+# Credentials come from the ENVIRONMENT. They used to be three literals right
+# here: a super-admin email, its password, and its TOTP seed -- a complete first
+# AND second factor for the production super-admin identity, committed to a
+# tracked file in every clone of this repository. Removed 2026-07-30.
+#
+# Fail loudly and immediately if they are absent. A smoke script that silently
+# runs unauthenticated reports green while proving nothing, which is worse than
+# not running at all.
+: "${SIMF_SMOKE_EMAIL:?set SIMF_SMOKE_EMAIL (do not hardcode it -- see the header of this script)}"
+: "${SIMF_SMOKE_PASSWORD:?set SIMF_SMOKE_PASSWORD (do not hardcode it)}"
+: "${SIMF_SMOKE_TOTP_SECRET:?set SIMF_SMOKE_TOTP_SECRET (do not hardcode it)}"
+SUPER_TOTP_SECRET="$SIMF_SMOKE_TOTP_SECRET"
 RUN_ID=$(date -u +%Y%m%d-%H%M%S)
 LOG="/tmp/smoke-$RUN_ID.log"
 
@@ -19,7 +31,7 @@ totp() { cd "$TOTP_TOOL_DIR" && dotnet run --no-build -- "$1" 2>/dev/null | tail
 super_jwt() {
   local body mfa code
   body=$(curl -s -X POST "$API/api/v1/auth/sign-in" -H 'Content-Type: application/json' \
-    -d '{"email":"superadmin@zagali-ict.com","password":"Aa@123456789","audience":1}')
+    -d "$(python -c 'import json,os; print(json.dumps({"email":os.environ["SIMF_SMOKE_EMAIL"],"password":os.environ["SIMF_SMOKE_PASSWORD"],"audience":1}))')")
   mfa=$(echo "$body" | python -c "import sys,json; print(json.load(sys.stdin)['data']['mfaToken'])")
   code=$(totp "$SUPER_TOTP_SECRET")
   body=$(curl -s -X POST "$API/api/v1/auth/verify-totp" -H 'Content-Type: application/json' \

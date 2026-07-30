@@ -162,16 +162,6 @@ class MoreScreen extends ConsumerWidget {
                       },
                     ),
                   ),
-                // #24 — change email: emails a code to the new address, then
-                // confirms + forces a re-login (security stamp rolls). Gated to an
-                // APPROVED account (role != guest) because both endpoints
-                // require
-                // RequireApprovedAccount — a pending account would dead-end on a 403.
-                if (role != AppRole.guest)
-                  MoreRow(
-                    title: l10n.moreChangeEmail,
-                    onTap: () => context.pushNamed(RouteNames.changeEmail),
-                  ),
               ],
             ),
             const SizedBox(height: SimfTokens.space5),

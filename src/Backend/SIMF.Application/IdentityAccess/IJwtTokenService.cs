@@ -16,9 +16,21 @@ public interface IJwtTokenService
     /// permission codes (or the single wildcard for an Administrator),
     /// minted as <c>perm</c> claims so the authorization handler can gate
     /// per page-and-action without a per-request database lookup.</para></summary>
+    /// <para>Held-item #2c — <paramref name="secondFactorCompleted"/> drives the
+    /// <c>amr</c> claim (<c>mfa</c> vs <c>pwd</c>), so an authorization policy can
+    /// tell a token that actually cleared a second factor from one minted on a
+    /// password alone. Without it every token looks identical to the authorization
+    /// layer and a "require MFA" policy is impossible to express.</para>
+    /// <para>Pass <c>null</c> to DERIVE it from <c>user.TwoFactorEnabled</c>. That
+    /// is sound rather than a guess: SignInService issues tokens without a second
+    /// factor only on the <c>!TwoFactorEnabled</c> fast path, so for an enrolled
+    /// account a token can only exist if a second factor was cleared. Refresh and
+    /// device-key issuance use the derivation because neither re-runs the
+    /// challenge itself.</para>
     AccessToken CreateAccessToken(
         SimfUser user, IEnumerable<string> roles, IEnumerable<string> permissions,
-        SIMF.Common.Enums.MobileAppRole mobileAppRole);
+        SIMF.Common.Enums.MobileAppRole mobileAppRole,
+        bool? secondFactorCompleted = null);
 
     /// <summary>P3.2b — D-232 (D-213): mints a short-lived token scoped to ONE
     /// session recording, for the range-streaming endpoint. Distinct audience

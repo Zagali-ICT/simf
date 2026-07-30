@@ -46,9 +46,6 @@ public static class ErrorCodes
     public const string AuthResetCodeInvalid = "AUTH_RESET_CODE_INVALID";
     public const string AuthResetCodeExpired = "AUTH_RESET_CODE_EXPIRED";
     public const string AuthPasswordChangeRequired = "AUTH_PASSWORD_CHANGE_REQUIRED";
-    // #24 — self-service change-email: the new address is the account's current
-    // one, so there is nothing to change (no code is sent).
-    public const string AuthEmailUnchanged = "AUTH_EMAIL_UNCHANGED";
     // Part B — badge-QR activation: the resolved account already has a password,
     // so it must use the normal sign-in rather than the set-password flow.
     public const string BadgeAlreadyActivated = "BADGE_ALREADY_ACTIVATED";
@@ -268,6 +265,15 @@ public static class ErrorCodes
     public const string DelegationMeetingRequestNotFound = "DELEGATION_MEETING_REQUEST_NOT_FOUND";
     public const string SpeakerMeetingRequestsNotAllowed = "SPEAKER_MEETING_REQUESTS_NOT_ALLOWED";
     public const string SpeakerMeetingRequestStatusInvalid = "SPEAKER_MEETING_REQUEST_STATUS_INVALID";
+    /// <summary>G3 (owner 2026-07-30 — SUPERSEDES D-767 R1) — the speaker has no free
+    /// meeting slot left, so the request cannot be sent. Covers BOTH reasons at once:
+    /// the speaker has no active future availability window at all, and every slot the
+    /// windows offer is already past or taken.</summary>
+    public const string SpeakerMeetingNoAvailability = "SPEAKER_MEETING_NO_AVAILABILITY";
+    /// <summary>G3 (owner 2026-07-30 — SUPERSEDES D-767 R1) — the target delegation has
+    /// no free meeting slot left (no active future window, or every slot is past or
+    /// taken), so the request cannot be sent.</summary>
+    public const string DelegationMeetingNoAvailability = "DELEGATION_MEETING_NO_AVAILABILITY";
     /// <summary>D-717 (item 7, FDS-013 §15.7 GAP-3) — a speaker action-link token
     /// is unusable: not found, expired, already used, or its request is no longer
     /// awaiting the speaker. Deliberately NEUTRAL — the same code for every reason

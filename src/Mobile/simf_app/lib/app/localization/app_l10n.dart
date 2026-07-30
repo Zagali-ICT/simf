@@ -1975,34 +1975,6 @@ class AppL10n {
       _t('إعادة تعيين كلمة المرور', 'Reset password');
   String get moreMediaPartners => _t('الشركاء الإعلاميون', 'Media partners');
 
-  // #24 — self-service change-email flow (More → الإعدادات; no bound Figma node,
-  // reuses the navy auth chrome).
-  String get moreChangeEmail =>
-      _t('تغيير البريد الإلكتروني', 'Change email');
-  String get changeEmailTitle =>
-      _t('تغيير البريد الإلكتروني', 'Change email');
-  String get changeEmailHeading => _t(
-        'أدخل بريدك الإلكتروني الجديد. سنرسل رمز تحقق إليه لتأكيده.',
-        'Enter your new email address. We\'ll send a verification code to it to confirm.',
-      );
-  String get changeEmailCurrentLabel =>
-      _t('البريد الإلكتروني الحالي', 'Current email');
-  String get changeEmailNewLabel =>
-      _t('البريد الإلكتروني الجديد', 'New email');
-  String get changeEmailSameAsCurrent => _t(
-        'هذا هو بريدك الإلكتروني الحالي بالفعل.',
-        'This is already your email address.',
-      );
-  String get changeEmailSendButton => _t('إرسال الرمز', 'Send code');
-  String get changeEmailVerifyHeading =>
-      _t('تأكيد البريد الجديد', 'Confirm new email');
-  String get changeEmailPasswordLabel =>
-      _t('كلمة المرور الحالية', 'Current password');
-  String get changeEmailSuccessToast => _t(
-        'تم تغيير بريدك الإلكتروني. يرجى تسجيل الدخول مرة أخرى.',
-        'Your email was changed. Please sign in again.',
-      );
-
   // Section headers (Figma 1129:17224).
   String get moreSectionForumInfo => _t('معلومات الملتقى', 'Forum information');
   String get moreSectionSettings => _t('الإعدادات', 'Settings');

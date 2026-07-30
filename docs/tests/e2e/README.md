@@ -93,7 +93,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/hall-availability` | [`cp-admin-hall-availability.md`](cp-admin-hall-availability.md) | E2E-HAV-001..007 |
 | `/admin/delegation-meetings` | [`cp-admin-delegation-meetings.md`](cp-admin-delegation-meetings.md) | E2E-DLM-001..019 |
 | `/admin/delegation-availability` | [`cp-admin-delegation-availability.md`](cp-admin-delegation-availability.md) | E2E-DAV-001..007 |
-| _(cross-surface bi-meeting lifecycle)_ | [`bi-meeting-lifecycle.md`](bi-meeting-lifecycle.md) | E2E-BML-001..016 |
+| _(cross-surface bi-meeting lifecycle)_ | [`bi-meeting-lifecycle.md`](bi-meeting-lifecycle.md) | E2E-BML-001..016 (+ 013b / 013c — G3 no-availability, D-812) |
 | `/admin/document-requests` | [`cp-document-requests.md`](cp-document-requests.md) | E2E-CPDR-001..008 |
 | `/admin/badge-requests` | [`cp-badge-requests.md`](cp-badge-requests.md) | E2E-CPBR-001..008 |
 | `/admin/meeting-tables` | [`cp-meeting-tables.md`](cp-meeting-tables.md) | E2E-MHT-001..013 |
@@ -264,7 +264,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #22 `booths` (`GET /app/booths` + `/{id}`) — #9: country name + أرشدني→map | [`mobile-booths.md`](mobile-booths.md) | E2E-MOB022-001..013 |
 | `boothMap` (`/booths/:id/map` → venue map focused on the booth) — #9 | [`mobile-booths.md`](mobile-booths.md) | E2E-MOB022-013 |
 | #23 `sponsors` (`GET /app/sponsors`) | [`mobile-sponsors.md`](mobile-sponsors.md) | E2E-MOB023-001..004 |
-| #21 `delegations` (`GET /app/delegations`) — Wave 4, Figma `1426:10771` (restored from D-277); bi-meeting rework: cards tappable → delegation request sheet for an entitled account | [`mobile-delegations.md`](mobile-delegations.md) | E2E-DEL-001..011 |
+| #21 `delegations` (`GET /app/delegations`) — Wave 4, Figma `1426:10771` (restored from D-277); bi-meeting rework: cards tappable → delegation request sheet for an entitled account; G2 (D-811) the list is per-viewer — a signed-in caller's OWN country is excluded server-side, a guest sees all | [`mobile-delegations.md`](mobile-delegations.md) | E2E-DEL-001..013 |
 | #220 `exhibitorDetail` (`GET /app/booths/{id}`) — Wave 3, Figma `1439:11881` | [`mobile-exhibitor-detail.md`](mobile-exhibitor-detail.md) | E2E-MOB220-001..007 |
 | #221 `sponsorDetail` (`GET /app/sponsors/{id}`) — Wave 3, Figma `1439:11826` | [`mobile-sponsor-detail.md`](mobile-sponsor-detail.md) | E2E-MOB221-001..007 |
 | `myVisitors` (`GET /app/exhibitor/my-visitors`) — D-426 exhibitor captured-visitor list; DEF-EXH-004 read-path subject eligibility (D-780: any ACTIVE subject lists, only a deactivated one drops out); DEF-EXH-006 current-booth-membership gate | [`mobile-my-visitors.md`](mobile-my-visitors.md) | E2E-MOBMYVIS-001..009 |
@@ -301,7 +301,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #117 `meetingConfirm` (`/meeting-confirm?requestId=…` → `POST /app/delegation-meeting-requests/{id}/confirm` + `…/decline`) — bi-meeting rework: delegation other-party confirm-on-tap, reached from a `MeetingRequested` notification | [`mobile-meeting-confirm.md`](mobile-meeting-confirm.md) | E2E-MOBMC-001..010 |
 | `myMeetings` (`GET /app/my-requests`, filtered to meetings) — المقابلات (D-587), Figma `1701:9406`; speaker + delegation meetings over status chips; reached from the My-Area "مقابلات" counter | [`mobile-my-meetings.md`](mobile-my-meetings.md) | E2E-MOBMTG-001..007 |
 | `Confirm Face ID` step-up (`POST /app/auth/device-keys/step-up` + gated register) — #7a biometric-enable; **D-738** OS device-credential confirm + sign-in device-PIN fallback | [`mobile-biometric-step-up.md`](mobile-biometric-step-up.md) | E2E-MBSU-001..015 |
-| `Change email` self-service (`POST /app/auth/change-email/send-otp` + `/confirm`) - Build #24 signed-in login-email change; code emailed to the NEW address, confirm rolls the stamp + forces a fresh sign-in; reached from More → Settings | [`mobile-change-email.md`](mobile-change-email.md) | E2E-MCE-001..011 |
+| ~~`Change email` self-service (`POST /app/auth/change-email/send-otp` + `/confirm`) - Build #24~~ — **REMOVED 2026-07-30 (G1, owner decision).** Screen + both endpoints deleted; email changes are administrator-only on the CP account-edit form, covered by `cp-admin-visitors.md` (E2E-VIS-001) and `cp-admin-others.md` (E2E-OTH-005) | _(withdrawn)_ | ~~E2E-MCE-001..011~~ (**retired**, do not reuse the MCE namespace) |
 | `Badge activation` + **badge sign-in** (`resolve-badge` · `badge-sign-in` · `badge-activation/{start,complete}`) — Part B passwordless activation **+ D-738 password step + D-737 unified scanner** | [`mobile-badge-activation.md`](mobile-badge-activation.md) | E2E-MOBBADGE-001..013 |
 | `Badge password` step (`POST /app/auth/badge-sign-in`) — D-738 returning has-password holder; doc [`mobile/badge-password/`](../../pages/mobile/badge-password/README.md) | [`mobile-badge-activation.md`](mobile-badge-activation.md) | E2E-MOBBADGE-008..013 |
 | #200 `forumGuide` (no API — static guide) — built from ComingSoon, Figma `1388:7493` | [`mobile-forum-guide.md`](mobile-forum-guide.md) | E2E-MOB200-001..005 |
@@ -335,13 +335,13 @@ again without failing the build. They had been left at the 2026-06-02 figures �
 "74 pages / ~1044 scenarios" — while the catalogue more than doubled, and were
 being quoted in planning as if current.
 
-- **Pages catalogued:** 184 (94 Control Panel + 70 mobile + 19 Website + 1
-  system-wide). One of the 184 — `cp-admin-companies.md` — is **retired**: its
+- **Pages catalogued:** 183 (94 Control Panel + 69 mobile + 19 Website + 1
+  system-wide). One of the 183 — `cp-admin-companies.md` — is **retired**: its
   route was renamed away and it now carries no live scenarios.
-- **Total scenarios:** 2897 Coverage-matrix rows, every id distinct. That
-  includes the **362** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
+- **Total scenarios:** 2884 Coverage-matrix rows, every id distinct. That
+  includes the **360** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
   per live page — see `tools/qa/generate_els_rows.py`); the hand-authored
-  functional total is 2535.
+  functional total is 2524.
 - **Authored:** all pages. The D-133 "pending" stubs are fully authored, and
   every event-module and P2–P5 page added since has its own file.
 - **Execution:** the canonical run today is a Chrome DevTools MCP browser pass
@@ -418,12 +418,19 @@ now fails the build on either shape.
 
 ### Update - 2026-07-22 (Build #24 - self-service change-email + CP edit tighten)
 
+> **SUPERSEDED 2026-07-30 by G1 (owner decision).** The self-service change-email
+> screen and both endpoints were removed; `mobile-change-email.md`,
+> `docs/pages/mobile/change-email.md` and the whole **MCE** namespace are
+> withdrawn. The CP-edit half of this entry (the second bullet) still stands - it
+> is now the ONLY email-change path. See the 2026-07-30 update below. The
+> paragraph is kept verbatim as history.
+
 - **New mobile catalogue:** `Change email` (`mobile-change-email.md`,
   E2E-MCE-001..011) - the signed-in self-service login-email change. Two phases in
   one screen (enter the new address → a 6-digit code is emailed TO it → confirm);
   the confirm rolls the security stamp + revokes sessions, so the app forces a fresh
-  sign-in. New per-page doc [`docs/pages/mobile/change-email.md`](../../pages/mobile/change-email.md).
-  Fresh namespace **MCE**.
+  sign-in. New per-page doc `docs/pages/mobile/change-email.md`.
+  Fresh namespace **MCE**. _(Withdrawn 2026-07-30 - both files deleted.)_
 - **CP note (no new scenario):** the existing account-edit path now sets
   `EmailConfirmed=false` when it changes an email. A short note was added to the Edit
   scenarios of `cp-admin-visitors.md` (E2E-VIS-001) and `cp-admin-others.md`
@@ -517,3 +524,33 @@ now fails the build on either shape.
   and -025 (plus the programme half of -014, -016 and -021) are **RED until the
   passthrough and the client method land**; they are authored as the target spec.
   E2E-DSH-015 and -022 pass as written today.
+
+### Update - 2026-07-30 (G1 - the self-service change-email feature is REMOVED)
+
+- **Owner decision (2026-07-30):** a user may no longer change their own login
+  email. The Flutter `changeEmail` screen, the `More -> Settings` row that reached
+  it, **and both API endpoints** (`POST /app/auth/change-email/send-otp` +
+  `/confirm`) are deleted, together with `EmailChangeService` and the `EmailChange`
+  contracts. Deleting only the screen would have hidden the feature while leaving
+  it callable: neither endpoint declared a `PermissionCatalog` policy, only
+  `RequireApprovedAccount`, so **any** approved bearer token could drive it.
+- **Retired catalogue:** `mobile-change-email.md` and the **MCE** namespace
+  (E2E-MCE-001..011) are withdrawn along with
+  `docs/pages/mobile/change-email.md`. Do not reuse the MCE prefix.
+- **The remaining path is administrator-only.** An email is changed on the CP
+  account-edit form, gated on `Visitors.Edit` / `Others.Edit` (both
+  `BaselineRoles = AdminOnly`). No new permission code was added. That path keeps
+  its re-verify behaviour (`EmailConfirmed=false`, security-stamp roll, refresh
+  tokens revoked) and is already covered by `cp-admin-visitors.md` **E2E-VIS-001**
+  and `cp-admin-others.md` **E2E-OTH-005** - those scenarios are unchanged and now
+  carry the whole feature.
+- **Backing xUnit:** `tests/SIMF.Api.Tests/ChangeEmailRemovedTests.cs` replaces the
+  deleted `ChangeEmailTests.cs`. It asserts both routes return **404 Not Found**
+  (unmapped) for an approved bearer token AND anonymously - a 200/401/403 would
+  mean the endpoints had been reinstated - and that no
+  `AccountCodePurpose.EmailChangeVerification` code is ever issued.
+- **Deliberately NOT removed:** `AccountCodePurpose.EmailChangeVerification` and
+  `EmailTemplateType.EmailChangeVerification` / `EmailChangedNotice` stay (D-110
+  frozen, persisted BY NAME - removing them is a data migration, not a code
+  deletion), and their two `EmailTemplateCatalog` entries stay dormant so existing
+  admin-edited template rows are not orphaned.

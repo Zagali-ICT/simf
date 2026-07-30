@@ -1,5 +1,6 @@
 // Tests: SIMF.Api.Tests/DelegationMeetingRequestsTests.cs
 // Tests: SIMF.Api.Tests/DelegationMeetingQaFixesTests.cs
+// Tests: SIMF.Api.Tests/MeetingNoAvailabilityTests.cs (G3)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -24,6 +25,7 @@ internal sealed class DelegationMeetingRequestService(
     SimfAppDbContext appDbContext,
     IIdentityUserDirectory userDirectory,
     INotificationDispatcher notifications,
+    IDelegationAvailabilityService delegationAvailability,
     IHallAvailabilityService hallAvailability,
     IMeetingActionTokenService meetingActionTokens,
     IEmailQueue emailQueue,
@@ -118,6 +120,21 @@ internal sealed class DelegationMeetingRequestService(
             throw new ApiException(ErrorCodes.DelegationMeetingRequestInvalid, 400,
                 "A delegation cannot request a meeting with itself.",
                 "لا يمكن للوفد طلب اجتماع مع نفسه.");
+        }
+
+        // G3 (owner 2026-07-30) — SUPERSEDES the "topic-only request" half of R1 (D-767):
+        // a meeting request may no longer be sent when the target delegation has nothing
+        // left to offer. GetAvailableSlotsAsync returns an empty list for BOTH reasons —
+        // the delegation has no active future window at all, and every slot the windows
+        // offer is past or already taken — so this one call covers both. The app disables
+        // the send button on the same signal; this is the server-side backstop.
+        var freeSlots = await delegationAvailability.GetAvailableSlotsAsync(
+            targetCountry.Id, cancellationToken);
+        if (freeSlots.Count == 0)
+        {
+            throw new ApiException(ErrorCodes.DelegationMeetingNoAvailability, 409,
+                "This delegation has no available meeting slots.",
+                "لا توجد فترات متاحة لدى هذا الوفد.");
         }
 
         // R8 (bi-meeting rules, D-767) — a requester keeps ONE open request per target
