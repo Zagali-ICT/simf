@@ -215,3 +215,9 @@ Identical canonical shape — see [`admin-interests.md`](admin-interests.md) §8
 ---
 
 _Last reviewed:_ 2026-07-27 by Claude (FR-PHN-002 — mobile numbers on the Edit account form). Earlier: 2026-07-26 by Claude (B22 — nationality on the Edit account form). Earlier: 2026-07-14 by Claude (D-568 — profile-photo thumbnail in the list). Earlier: 2026-07-09 by SIMF Team (D-728 — change-account-type action); 2026-06-10 (D-356 Phase 5 — D-353 Page↔Popup toggle note; Excel N/A for this account page).
+
+## D-799 — changing the account type confirms first
+
+The shared `ChangeAccountTypeBlock` scope flip moves the account to the other
+desk and changes what the holder can do. It used to commit on the first click;
+it now opens a `SimfConfirm` naming the target type.

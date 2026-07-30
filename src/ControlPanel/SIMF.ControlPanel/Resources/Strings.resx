@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -1237,6 +1237,10 @@
   <data name="Admin.Pending.BulkApproved.Toast" xml:space="preserve"><value>Approved {0} user(s). Skipped {1}.</value></data>
   <data name="Admin.Pending.Action.BulkReject" xml:space="preserve"><value>Reject selected</value></data>
   <data name="Admin.Pending.BulkReject.Title" xml:space="preserve"><value>Reject selected accounts</value></data>
+  <data name="Admin.Pending.Approve.Confirm.Title" xml:space="preserve"><value>Approve administrator account</value></data>
+  <data name="Admin.Pending.Approve.Confirm.Message" xml:space="preserve"><value>You are about to approve {0} ({1}). Approving grants Control Panel access and mints the QR badge.</value></data>
+  <data name="Admin.Pending.BulkApprove.Confirm.Title" xml:space="preserve"><value>Approve selected accounts</value></data>
+  <data name="Admin.Pending.BulkApprove.Confirm.Message" xml:space="preserve"><value>You are about to approve {0} pending account(s). Each approved account can sign in and receives a QR badge.</value></data>
   <data name="Admin.Pending.BulkReject.Confirm" xml:space="preserve"><value>You are about to reject {0} pending account(s). The reason below is recorded and shown to each user.</value></data>
   <data name="Admin.Pending.BulkReject.Submit" xml:space="preserve"><value>Reject selected</value></data>
   <data name="Admin.Pending.BulkRejected.Toast" xml:space="preserve"><value>Rejected {0} user(s). Skipped {1}.</value></data>
@@ -1589,6 +1593,10 @@
   <data name="Account.Notifications.Column.Severity" xml:space="preserve"><value>Type</value></data>
   <data name="Account.Notifications.Column.CreatedAt" xml:space="preserve"><value>Received</value></data>
   <data name="Account.Notifications.Column.Actions" xml:space="preserve"><value>Actions</value></data>
+  <data name="Account.Notifications.Dismiss.Confirm.Title" xml:space="preserve"><value>Dismiss notification</value></data>
+  <data name="Account.Notifications.Dismiss.Confirm.Message" xml:space="preserve"><value>Dismiss "{0}"? It is removed from your inbox and cannot be restored.</value></data>
+  <data name="Account.Notifications.BulkDismiss.Confirm.Title" xml:space="preserve"><value>Dismiss selected notifications</value></data>
+  <data name="Account.Notifications.BulkDismiss.Confirm.Message" xml:space="preserve"><value>Dismiss {0} selected notification(s)? They are removed from your inbox and cannot be restored.</value></data>
   <data name="Account.Notifications.Action.Delete" xml:space="preserve"><value>Delete</value></data>
   <data name="Account.Notifications.FilterColumn" xml:space="preserve"><value>Filter column</value></data>
   <data name="Account.Notifications.FilterPlaceholder" xml:space="preserve"><value>Search</value></data>
@@ -3580,4 +3588,12 @@
   <data name="Admin.Delegates.Bulk.Remove" xml:space="preserve"><value>Remove {0}</value></data>
   <data name="Admin.Delegates.Bulk.PickType" xml:space="preserve"><value>Choose a profile type and a count above zero.</value></data>
   <data name="Module.AdminVisitorsVipExport" xml:space="preserve"><value>VIP welcome export</value></data>
+  <data name="Profile.Avatar.Remove.Confirm.Title" xml:space="preserve"><value>Remove profile photo</value></data>
+  <data name="Profile.Avatar.Remove.Confirm.Message" xml:space="preserve"><value>Remove your profile photo? The stored image is deleted and cannot be restored.</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoRemove.Confirm.Title" xml:space="preserve"><value>Remove hero video</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoRemove.Confirm.Message" xml:space="preserve"><value>Remove the hero video? The public site and the mobile app stop showing it immediately.</value></data>
+  <data name="Admin.ChangeType.Confirm.Title" xml:space="preserve"><value>Change account type</value></data>
+  <data name="Admin.ChangeType.Confirm.Message" xml:space="preserve"><value>Change this account to "{0}"? It moves to the other desk and its available actions change.</value></data>
+  <data name="Admin.MediaLibrary.Deactivate.Confirm.Title" xml:space="preserve"><value>Deactivate asset</value></data>
+  <data name="Admin.MediaLibrary.Deactivate.Confirm.Message" xml:space="preserve"><value>Deactivate the asset for "{0}"? It stops appearing on the public site until it is restored.</value></data>
 </root>

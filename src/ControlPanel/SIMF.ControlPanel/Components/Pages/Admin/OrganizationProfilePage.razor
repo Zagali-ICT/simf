@@ -1,4 +1,4 @@
-@* D-495 — CP "Organization Profile" page: edit the edition-generic forum config
+﻿@* D-495 — CP "Organization Profile" page: edit the edition-generic forum config
    (name / title / slogan / bio, version + dates, status + year, location + GPS,
    contact, live-stream link, social links, and the about-items + details lists).
    Reads / writes via /admin/organization-profile; the app + website consume it
@@ -115,7 +115,7 @@
                                 @if (HasUploadedHeroVideo)
                                 {
                                     <AuthorizedAction Permission="@PermissionCatalog.OrganizationProfile.Manage">
-                                        <SimfButton Type="button" Variant="danger" OnClick="RemoveHeroVideoAsync"
+                                        <SimfButton Type="button" Variant="danger" OnClick="@(() => _confirmingHeroVideoRemove = true)"
                                                     Disabled="@(_busy || _videoBusy)">
                                             @L["Admin.OrganizationProfile.HeroVideoRemove"]
                                         </SimfButton>
@@ -199,3 +199,13 @@
         }
     </div>
 </div>
+
+@* D-799 — removing the hero video changes the public site landing page. *@
+<SimfConfirm Open="_confirmingHeroVideoRemove"
+             Danger="true"
+             Title="@L["Admin.OrganizationProfile.HeroVideoRemove.Confirm.Title"]"
+             Message="@L["Admin.OrganizationProfile.HeroVideoRemove.Confirm.Message"]"
+             ConfirmLabel="@L["Admin.OrganizationProfile.HeroVideoRemove"]"
+             CancelLabel="@L["Common.Cancel"]"
+             OnConfirm="ConfirmRemoveHeroVideoAsync"
+             OnCancel="@(() => _confirmingHeroVideoRemove = false)" />

@@ -1,6 +1,8 @@
-@* Control Panel — pending staff approval queue (P4b). Administrator-only.
-   Each row gets an Approve button (one-click) and a Reject button that
-   opens a reason modal (10–500 chars). Approval mints the QR id; both
+﻿@* Control Panel — pending staff approval queue (P4b). Administrator-only.
+   Each row gets an Approve button and a Reject button that opens a reason
+   modal (10–500 chars). Approval grants Control Panel access and mints the
+   QR id, so it confirms first (D-799 — this queue has no profile-review
+   modal to stage it, unlike the visitors/others queues under D-128). Both
    actions audit one row per click (P4a backend). *@
 @page "/admin/admins/pending"
 @layout CpShellLayout
@@ -66,7 +68,7 @@
             <RowActions Context="user">
                 <SimfButton Type="button" Variant="primary"
                             Disabled="_busy"
-                            OnClick="@(() => ApproveAsync(user))">
+                            OnClick="@(() => OpenApprove(user))">
                     @L["Admin.Pending.Action.Approve"]
                 </SimfButton>
                 <SimfButton Type="button" Variant="secondary"
@@ -81,6 +83,28 @@
         </SimfDataGrid>
     </div>
 </div>
+
+@* D-799 — approving grants Control Panel access to an administrator-typed
+   account, so it must not commit on a single click. *@
+<SimfConfirm Open="@(_approveTarget is not null)"
+             Title="@L["Admin.Pending.Approve.Confirm.Title"]"
+             Message="@(_approveTarget is null ? string.Empty
+                        : string.Format(L["Admin.Pending.Approve.Confirm.Message"],
+                                        _approveTarget.DisplayName, _approveTarget.Email))"
+             ConfirmLabel="@L["Admin.Pending.ApproveReview.Confirm"]"
+             CancelLabel="@L["Common.Cancel"]"
+             OnConfirm="ConfirmApproveAsync"
+             OnCancel="CancelApprove" />
+
+<SimfConfirm Open="@(_bulkApproveSelected is not null)"
+             Title="@L["Admin.Pending.BulkApprove.Confirm.Title"]"
+             Message="@(_bulkApproveSelected is null ? string.Empty
+                        : string.Format(L["Admin.Pending.BulkApprove.Confirm.Message"],
+                                        _bulkApproveSelected.Count))"
+             ConfirmLabel="@L["Admin.Pending.ApproveReview.Confirm"]"
+             CancelLabel="@L["Common.Cancel"]"
+             OnConfirm="ConfirmBulkApproveAsync"
+             OnCancel="CancelBulkApprove" />
 
 @if (_rejectTarget is not null)
 {

@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
@@ -276,8 +276,18 @@ public partial class Profile
     // D-119 — shape of simfAccount.readFileAsDataUrl's JSON response.
     private sealed record FileReadResult(bool Ok, string? DataUrl, string? FileName, string? MimeType, string? Reason);
 
+    // D-799 — the avatar delete used to fire on the first click.
+    private bool _confirmingAvatarRemove;
+
+    private async Task ConfirmRemoveAvatarAsync()
+    {
+        _confirmingAvatarRemove = false;
+        await RemoveAvatarAsync();
+    }
+
     private async Task RemoveAvatarAsync()
     {
+        if (_busy) return;
         _avatarError = null;
         _avatarOk = null;
         _busy = true;

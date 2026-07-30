@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
@@ -33,6 +33,10 @@ public partial class Notifications
     private bool _loading;
     private Toast? _toast;
     private NotificationDto? _detailsTarget;
+
+    // D-799 — the grid's trash icon and bulk-dismiss button both used to delete on
+    // the first click. One dialog serves both, so it carries the action to run.
+    private (string Title, string Message, Func<Task> Run)? _pendingDismiss;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
@@ -95,6 +99,22 @@ public partial class Notifications
             }
         }
         _detailsTarget = row;
+    }
+
+    private void AskDismiss(string title, string message, Func<Task> run)
+    {
+        _pendingDismiss = (title, message, run);
+        _toast = null;
+    }
+
+    private void CancelDismiss() => _pendingDismiss = null;
+
+    /// <summary>Closes the dialog before running so the resulting toast is visible.</summary>
+    private async Task ConfirmDismissAsync()
+    {
+        var pending = _pendingDismiss;
+        _pendingDismiss = null;
+        if (pending is not null) await pending.Value.Run();
     }
 
     private async Task OnDeleteAsync(NotificationDto row)

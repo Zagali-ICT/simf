@@ -1,4 +1,4 @@
-// Tests: SIMF.ControlPanel.Tests/ChangeAccountTypeBlockTests.cs
+﻿// Tests: SIMF.ControlPanel.Tests/ChangeAccountTypeBlockTests.cs
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
@@ -58,6 +58,15 @@ public partial class ChangeAccountTypeBlock
         {
             _error = L["Admin.ChangeType.LoadFailed"];
         }
+    }
+
+    // D-799 — the scope flip used to commit on the first click.
+    private bool _confirming;
+
+    private async Task ConfirmChangeAsync()
+    {
+        _confirming = false;
+        await ChangeAsync();
     }
 
     private async Task ChangeAsync()

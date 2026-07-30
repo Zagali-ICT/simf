@@ -50,3 +50,8 @@ press, contractors) in `PendingApproval`. Same View / Approve-with-review
 
 _Last reviewed:_ 2026-07-14 by Claude (D-353 parity — popup/full-page toggle on the review modal).
 _Earlier:_ 2026-05-28 by Claude (D-133 slice 3).
+
+## D-799 — bulk approve confirms first
+
+Row approve still opens the D-128 profile-review modal. **Bulk** approve now
+confirms the selected count before posting (shared `PendingApprovalPageBase`).

@@ -88,6 +88,9 @@ Scenario: Page loads, shows status + roles, then a full avatar round-trip
   And the top-bar chrome avatar refreshes to the same image
 
   When the user clicks "Remove avatar"
+  Then a SimfConfirm dialog opens titled "Remove profile photo" (D-799)
+  And no DELETE has been sent yet
+  When they click "Remove avatar" in the dialog
   Then DELETE /account/api/avatar returns HTTP 200
   And a green SimfAlert reads "Avatar removed." / "تمت إزالة الصورة الشخصية."
   And the avatar card falls back to the placeholder icon

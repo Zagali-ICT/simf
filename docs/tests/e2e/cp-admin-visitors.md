@@ -497,6 +497,9 @@ Scenario: An admin converts a visitor into a partner (Other) account
   And its "New type" dropdown lists ONLY active partner-scope types
       (no visitor types, no inactive types — the opposite scope only)
   When they pick a partner type and click "Change type"
+  Then a SimfConfirm dialog opens titled "Change account type" naming the target type (D-799)
+  And no request has been sent yet
+  When they click "Change type" in the dialog
   Then POST /account/api/admin/accounts/{id}/change-type returns 200
   And the block shows the green "The account type was changed..." success alert
   And the account's ProfileTypeId is now the picked partner type

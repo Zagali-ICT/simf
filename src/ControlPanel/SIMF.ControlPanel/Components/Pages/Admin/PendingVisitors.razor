@@ -1,4 +1,4 @@
-@* Control Panel — pending visitor approval queue (P4b). Any CP role:
+﻿@* Control Panel — pending visitor approval queue (P4b). Any CP role:
    Administrator / Staff / Scientific / Security. Approve mints the QR
    id so the visitor's QR badge becomes available. Reject opens a
    reason modal (10–500 chars). *@
@@ -136,6 +136,17 @@
         </Footer>
     </SimfModal>
 }
+
+@* D-799 — bulk approve commits many accounts at once; confirm the count first. *@
+<SimfConfirm Open="@(_bulkApproveSelected is not null)"
+             Title="@L["Admin.Pending.BulkApprove.Confirm.Title"]"
+             Message="@(_bulkApproveSelected is null ? string.Empty
+                        : string.Format(L["Admin.Pending.BulkApprove.Confirm.Message"],
+                                        _bulkApproveSelected.Count))"
+             ConfirmLabel="@L["Admin.Pending.ApproveReview.Confirm"]"
+             CancelLabel="@L["Common.Cancel"]"
+             OnConfirm="ConfirmBulkApproveAsync"
+             OnCancel="CancelBulkApprove" />
 
 @* D-209 — bulk reject: shared-reason modal for the selected pending rows. *@
 @if (_bulkRejectSelected is not null)

@@ -1,4 +1,4 @@
-@* CP — full notification list page (P12 — D-053, migrated to the canonical
+﻿@* CP — full notification list page (P12 — D-053, migrated to the canonical
    D-117 grid pattern in D-132). The bell links here via "View all".
    Mark-read on click, delete on the row action, bulk-dismiss via the
    toolbar checkbox + Delete. The "Mark all read" button stays outside
@@ -29,8 +29,12 @@
                       RowKey="@(r => r.Id.ToString())"
                       RowLabel="@(r => TitleFor(r))"
                       OnDetailsOne="OnDetailsAsync"
-                      OnDeleteOne="OnDeleteAsync"
-                      OnDeleteSelected="OnBulkDeleteAsync"
+                      OnDeleteOne="@(r => AskDismiss(L["Account.Notifications.Dismiss.Confirm.Title"],
+                                                     string.Format(L["Account.Notifications.Dismiss.Confirm.Message"], TitleFor(r)),
+                                                     () => OnDeleteAsync(r)))"
+                      OnDeleteSelected="@(rows => AskDismiss(L["Account.Notifications.BulkDismiss.Confirm.Title"],
+                                                             string.Format(L["Account.Notifications.BulkDismiss.Confirm.Message"], rows.Count),
+                                                             () => OnBulkDeleteAsync(rows)))"
                       Caption="@L["Account.Notifications.Title"]"
                       FilterColumnLabel="@L["Account.Notifications.FilterColumn"]"
                       PrevLabel="@L["Account.Notifications.Prev"]"
@@ -83,6 +87,17 @@
         </div>
     </div>
 </div>
+
+@* D-799 — the grid has no built-in confirmation, so dismissing a notification
+   (single or bulk) used to commit on the first click. *@
+<SimfConfirm Open="@(_pendingDismiss is not null)"
+             Danger="true"
+             Title="@(_pendingDismiss?.Title ?? string.Empty)"
+             Message="@(_pendingDismiss?.Message ?? string.Empty)"
+             ConfirmLabel="@L["Account.Notifications.Action.Delete"]"
+             CancelLabel="@L["Common.Cancel"]"
+             OnConfirm="ConfirmDismissAsync"
+             OnCancel="CancelDismiss" />
 
 @if (_detailsTarget is not null)
 {

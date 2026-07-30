@@ -141,3 +141,9 @@ UC-VIS-PENDING-LIST, UC-VIS-PENDING-VIEW, UC-VIS-APPROVE-WITH-REVIEW
 
 _Last reviewed:_ 2026-06-13 by Claude (D-385/386/387 doc DoD).
 _Earlier:_ 2026-05-28 by Claude (D-133 slice 3).
+
+## D-799 — bulk approve confirms first
+
+Row approve still opens the D-128 profile-review modal. **Bulk** approve now
+confirms the selected count before posting — the guard lives in the shared
+`PendingApprovalPageBase`, so all three pending queues behave the same.

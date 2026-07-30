@@ -89,3 +89,9 @@ UC-OTH-DUPLICATE, UC-OTH-IMPORT, UC-OTH-EXPORT _(pending UCS)_.
 | 2026-07-14 | D-568 | **Photo thumbnail in the list.** The name column renders the shared `SimfIdentityCell` — the account's profile-photo thumbnail (streamed from `/account/api/admin/others/{id}/avatar` when `AdminUserSummary.HasAvatar`) or an initials tile when there is no photo. Column key unchanged so server-side sort/filter is unaffected. E2E-OTH-026. |
 
 _Last reviewed:_ 2026-07-14 by Claude (D-568 — profile-photo thumbnail in the list). Earlier: 2026-07-09 by SIMF Team (D-728 — change-account-type action); 2026-06-10 (D-356 Phase 5 — Excel + toggle).
+
+## D-799 — changing the account type confirms first
+
+The shared `ChangeAccountTypeBlock` scope flip moves the account to the other
+desk and changes what the holder can do. It used to commit on the first click;
+it now opens a `SimfConfirm` naming the target type.
