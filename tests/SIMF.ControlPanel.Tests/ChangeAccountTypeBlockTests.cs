@@ -1,4 +1,4 @@
-// D-728 (owner item 9) — bUnit tests for the shared ChangeAccountTypeBlock used
+﻿// D-728 (owner item 9) — bUnit tests for the shared ChangeAccountTypeBlock used
 // to flip an account between the audience (Visitor) and partner (Other) scope
 // from the Others / Visitors detail views. Verifies the target list is filtered
 // to the OPPOSITE scope's active types, and that a change POSTs the flip.
@@ -56,6 +56,9 @@ public sealed class ChangeAccountTypeBlockTests : CpComponentTestBase
                 new List<AdminProfileTypeSummary> { partnerType }));
         JSInterop.Setup<ApiResult<bool>>("simfAccount.postJson", _ => true)
             .SetResult(ApiResult<bool>.Ok(true));
+        // D-809 — the flip now opens a SimfConfirm, and SimfModal binds its
+        // focus trap through JS on open.
+        JSInterop.SetupVoid("simfModal.bind", _ => true).SetVoidResult();
 
         var changed = false;
         var cut = RenderComponent<ChangeAccountTypeBlock>(p => p
@@ -64,9 +67,19 @@ public sealed class ChangeAccountTypeBlockTests : CpComponentTestBase
             .Add(c => c.OnChanged,
                 EventCallback.Factory.Create(this, () => changed = true)));
 
-        // Pick the partner type, then trigger the flip.
+        // Pick the partner type, then trigger the flip. D-809 — the action button
+        // stages a confirmation; nothing is posted until the admin accepts it.
         cut.Find("select").Change(partnerType.Id.ToString());
-        cut.Find("button").Click();
+        cut.FindAll("button")
+           .First(b => b.TextContent.Contains("Admin.ChangeType.Action"))
+           .Click();
+
+        Assert.Contains("Admin.ChangeType.Confirm.Title", cut.Markup);
+        Assert.Empty(JSInterop.Invocations["simfAccount.postJson"]);
+
+        // Structural selector, not the label — a ConfirmLabel edit must not
+        // masquerade as a broken guard.
+        cut.FindAll(".simf-modal__footer .simf-button--primary")[^1].Click();
 
         var invocation = JSInterop.VerifyInvoke("simfAccount.postJson");
         Assert.Equal(

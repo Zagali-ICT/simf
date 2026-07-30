@@ -272,8 +272,18 @@ public partial class Profile
     // D-119 — shape of simfAccount.readFileAsDataUrl's JSON response.
     private sealed record FileReadResult(bool Ok, string? DataUrl, string? FileName, string? MimeType, string? Reason);
 
+    // D-809 — the avatar delete used to fire on the first click.
+    private bool _confirmingAvatarRemove;
+
+    private async Task ConfirmRemoveAvatarAsync()
+    {
+        _confirmingAvatarRemove = false;
+        await RemoveAvatarAsync();
+    }
+
     private async Task RemoveAvatarAsync()
     {
+        if (_busy) return;
         _avatarError = null;
         _avatarOk = null;
         _busy = true;

@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
@@ -225,6 +225,15 @@ public partial class OrganizationProfilePage
             _toastMessage = L["Admin.OrganizationProfile.HeroVideoFailed"];
         }
         finally { _videoBusy = false; }
+    }
+
+    // D-809 — the hero-video delete used to fire on the first click.
+    private bool _confirmingHeroVideoRemove;
+
+    private async Task ConfirmRemoveHeroVideoAsync()
+    {
+        _confirmingHeroVideoRemove = false;
+        await RemoveHeroVideoAsync();
     }
 
     private async Task RemoveHeroVideoAsync()

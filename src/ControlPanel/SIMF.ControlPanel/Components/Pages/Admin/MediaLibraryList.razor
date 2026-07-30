@@ -1,4 +1,4 @@
-@* D-357 — central Media Library: manage every unified media Asset across all
+﻿@* D-357 — central Media Library: manage every unified media Asset across all
    entities (speaker photos, company / sponsor / media-partner logos, archive
    covers, news images). Lists active + soft-deleted rows; preview + deactivate /
    restore. Gated by MediaLibrary.View; manage actions by MediaLibrary.Manage. *@
@@ -120,7 +120,7 @@
             <AuthorizedAction Permission="@PermissionCatalog.MediaLibrary.Manage">
                 @if (_detailsTarget.IsActive)
                 {
-                    <SimfButton Type="button" Variant="danger" Loading="_busy" OnClick="DeactivateAsync" LoadingLabel="@L["Grid.Working"]">
+                    <SimfButton Type="button" Variant="danger" Loading="_busy" OnClick="AskDeactivate" LoadingLabel="@L["Grid.Working"]">
                         @L["Admin.MediaLibrary.Deactivate"]
                     </SimfButton>
                 }
@@ -137,3 +137,16 @@
         </Footer>
     </SimfModal>
 }
+
+@* D-809 — deactivating hides a live asset from the public site. *@
+<SimfConfirm Open="@(_deactivateTarget is not null)"
+             Danger="true"
+             Title="@L["Admin.MediaLibrary.Deactivate.Confirm.Title"]"
+             Message="@(_deactivateTarget is null ? string.Empty
+                        : string.Format(L["Admin.MediaLibrary.Deactivate.Confirm.Message"],
+                                        _deactivateTarget.OwnerName ?? _deactivateTarget.OwnerId.ToString()))"
+             ConfirmLabel="@L["Admin.MediaLibrary.Deactivate"]"
+             CancelLabel="@L["Common.Cancel"]"
+             Busy="_busy"
+             OnConfirm="DeactivateAsync"
+             OnCancel="CancelDeactivate" />
