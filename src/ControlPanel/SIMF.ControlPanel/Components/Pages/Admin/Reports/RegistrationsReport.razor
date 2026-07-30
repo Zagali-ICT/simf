@@ -1,0 +1,78 @@
+@* Registrations report — attendee accounts created inside a Saudi date range,
+   with the profile type resolved from the App database (never a cross-database
+   join: see ReportingService.Registrations). *@
+@page "/admin/reports/registrations"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Reports.Registrations)]
+@inherits ReportPageBase<RegistrationReportRow>
+@using SIMF.Contracts.Reporting
+
+<PageTitle>@L["Admin.Reports.Registrations.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Reports.Registrations.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        <ReportToolbar From="From"
+                       FromChanged="@(v => From = v)"
+                       To="To"
+                       ToChanged="@(v => To = v)"
+                       Totals="Totals"
+                       Error="@Error"
+                       OnApply="OnRangeAppliedAsync"
+                       OnClear="OnRangeAppliedAsync"
+                       OnExport="ExportAsync"
+                       TotalLabelResolver="TotalLabel" />
+
+        <SimfDataGrid TItem="RegistrationReportRow"
+                      Query="Query.Grid"
+                      Page="Page"
+                      Loading="Loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Caption="@L["Admin.Reports.Registrations.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.Reports.Loading"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="RegistrationReportRow" Key="name"
+                                    Header="@L["Admin.Reports.Col.Name"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.DisplayName</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="RegistrationReportRow" Key="email"
+                                    Header="@L["Admin.Reports.Col.Email"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.Email</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="RegistrationReportRow" Key="profileType"
+                                    Header="@L["Admin.Reports.Col.ProfileType"]">
+                    <CellTemplate>@context.ProfileTypeName</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="RegistrationReportRow" Key="state"
+                                    Header="@L["Admin.Reports.Col.AccountState"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.AccountState</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="RegistrationReportRow" Key="registered"
+                                    Header="@L["Admin.Reports.Col.Registered"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.RegisteredDisplay</CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.Reports.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
+    </div>
+</div>
+
+@code {
+    protected override string Slug => "registrations";
+}

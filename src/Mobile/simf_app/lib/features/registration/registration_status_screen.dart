@@ -223,7 +223,7 @@ class _RegistrationStatusScreenState
             Text(
               l10n.regStatusError,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: SimfTokens.beigeBorder),
+              style: SimfTokens.hintBeige,
             ),
             const SizedBox(height: SimfTokens.space4),
             RegistrationPrimaryButton(

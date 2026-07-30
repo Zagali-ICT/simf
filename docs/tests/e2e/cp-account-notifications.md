@@ -72,7 +72,7 @@ Scenario: View a notification, delete one, then mark all read
   Then the modal closes
 
   When the user clicks the per-row "Delete" (🗑) action on that same row
-  Then a SimfConfirm dialog opens titled "Dismiss notification" naming the row (D-799)
+  Then a SimfConfirm dialog opens titled "Dismiss notification" naming the row (D-809)
   And no request has been sent yet
   When they click "Delete" in the dialog
   Then a DELETE /account/api/notifications/{id} request fires and returns 200
@@ -120,7 +120,7 @@ Scenario: Details modal renders all four read-only fields
 Scenario: Single Delete removes the row
   Given the grid shows {N} rows
   When the user clicks the "Delete" (🗑) action on a target row
-  Then a SimfConfirm dialog opens titled "Dismiss notification" (D-799)
+  Then a SimfConfirm dialog opens titled "Dismiss notification" (D-809)
   And no DELETE has been sent yet
   When they click "Delete" in the dialog
   Then DELETE /account/api/notifications/{id} fires and returns 200 with ApiResult.Data = true
@@ -138,7 +138,7 @@ Scenario: Select multiple rows and bulk-dismiss
   When the user ticks the row checkbox on 3 distinct rows
   Then the grid toolbar surfaces a "Delete" bulk action
   When they click the toolbar "Delete"
-  Then a SimfConfirm dialog opens titled "Dismiss selected notifications" naming the count (D-799)
+  Then a SimfConfirm dialog opens titled "Dismiss selected notifications" naming the count (D-809)
   And no DELETE has been sent yet
   When they click "Delete" in the dialog
   Then 3 sequential DELETE /account/api/notifications/{id} requests fire (one per selected row), each 200

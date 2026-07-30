@@ -26,3 +26,55 @@ public sealed record StatisticsDashboard(
     int MediaItems,
     int RatingsCount,
     double AverageRating);
+
+/// <summary>
+/// One forum day of the Control Panel programme dashboard — the figures the
+/// organisers watch per day, keyed to a <c>ProgrammeDay</c> row.
+///
+/// <para>Every count is bucketed on the <b>Saudi calendar day</b>, not the UTC
+/// day. Instants are persisted as UTC (see <c>SaudiTime</c>), so a scan at
+/// 22:00 UTC belongs to the <i>next</i> Saudi day; bucketing on the stored value
+/// directly would misfile every evening record. The service resolves each day to
+/// an explicit UTC half-open window <c>[start, end)</c> before counting.</para>
+///
+/// <para><see cref="Present"/> and <see cref="Attended"/> are <b>distinct</b>
+/// person counts and use different identifiers (a gate scan resolves a
+/// <c>UserProfile.Id</c>; a hall arrival records the Identity <c>UserId</c>), so
+/// they are sibling figures — one is not a subset of the other.</para>
+/// </summary>
+public sealed record ProgrammeDayStats(
+    Guid DayId,
+    DateOnly Date,
+    string Title,
+    string TitleArabic,
+    int DisplayOrder,
+    int Registered,
+    int Present,
+    int Sessions,
+    int Attended);
+
+/// <summary>
+/// The Control Panel programme dashboard: the headline participant counts plus
+/// one <see cref="ProgrammeDayStats"/> per active forum day, in display order.
+/// Served by <c>GET /api/v1/admin/statistics/programme</c>.
+///
+/// <para>Additive to <see cref="StatisticsDashboard"/> rather than folded into
+/// it, so the existing dashboard contract and its consumers stay untouched.</para>
+///
+/// <para>Role counts are resolved through <c>UserProfile</c> →
+/// <c>UserProfileType</c>, which both live in the App database — the mapping is
+/// admin-curated data (<c>ProfileType.MobileAppRole</c> / <c>IsForVisitor</c>),
+/// never hardcoded, and never a cross-database join (D-157).</para>
+/// </summary>
+public sealed record StatisticsProgramme(
+    int CurrentUsers,
+    int Visitors,
+    int Staff,
+    int Moderators,
+    int Exhibitors,
+    int ExhibitorAccounts,
+    int Sponsors,
+    int Speakers,
+    int Booths,
+    int TotalAttended,
+    IReadOnlyList<ProgrammeDayStats> Days);

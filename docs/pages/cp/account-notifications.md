@@ -65,11 +65,11 @@ selection, and mark all as read. New (unread) notifications carry a small
 | 2026-?? | D-053 | Original implementation. |
 | 2026-05-28 | D-132 | Banner / Multiselect / Details modal / EmptyTemplate / full pager added; OnDeleteSelected wired as loop-dismiss. |
 
-## D-799 — dismiss confirms first
+## D-809 — dismiss confirms first
 
 The grid trash icon and the bulk-dismiss toolbar button both used to delete on
 the first click (`SimfDataGrid` carries no built-in confirmation). Both now
 stage a `SimfConfirm`: the single dialog names the notification, the bulk one
 names the count. Nothing is sent until the operator accepts.
 
-_Last reviewed:_ 2026-07-30 by Claude (D-799 destructive-action safety).
+_Last reviewed:_ 2026-07-30 by Claude (D-809 destructive-action safety).

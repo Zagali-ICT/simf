@@ -5,7 +5,7 @@ namespace SIMF.ControlPanel.Components.Pages.Admin;
 /// <summary>P4b — the pending-staff (admin-typed) approval queue. All grid /
 /// approve / reject / bulk logic lives in <see cref="PendingApprovalPageBase"/>;
 /// this partial pins the <c>admins</c> API user-type segment (D-641) and owns the
-/// single-approve confirmation, which is this queue's alone (D-799): the
+/// single-approve confirmation, which is this queue's alone (D-809): the
 /// visitors/others queues stage a single approval through their D-128
 /// profile-review modal, and an administrator candidate has no profile to show.</summary>
 public partial class PendingStaff

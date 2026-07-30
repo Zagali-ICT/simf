@@ -38,7 +38,8 @@ not reused. Each page owns a unique 3–4 letter namespace.
 
 | Page | File | Scenarios |
 |------|------|-----------|
-| `/` (Dashboard) | [`cp-dashboard.md`](cp-dashboard.md) | E2E-DSH-001..013 |
+| `/` (Dashboard) - shell chrome + the Wave A programme dashboard (KPI grid + grouped bar chart + per-day cards, gated on `Statistics.View`) | [`cp-dashboard.md`](cp-dashboard.md) | E2E-DSH-001..025 |
+| `/admin/reports*` - the reporting module (hub + attendance, registrations, gate activity; Saudi date range, XLSX export) | [`cp-reports.md`](cp-reports.md) | E2E-RPT-001..025 |
 
 ### Control Panel — People & accounts
 
@@ -273,7 +274,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | `myVisitors` (`GET /app/exhibitor/my-visitors`) — D-426 exhibitor booth-visitor list (BUG-025 title + note) | [`mobile-my-visitors.md`](mobile-my-visitors.md) | E2E-MOBMYVIS-001..008 |
 | `scanVisitor` (`scanByBadge` — exhibitor lead-capture scan, BUG-024 lead email) — D-426 | [`mobile-scan-visitor.md`](mobile-scan-visitor.md) | E2E-MOBSCANVIS-001..007 |
 | #24 `archive` (`GET /app/archive` + `/{id}`) | [`mobile-archive.md`](mobile-archive.md) | E2E-MOB024-001..005 |
-| #29 `news` (`GET /app/news` + `/{id}`) | [`mobile-news.md`](mobile-news.md) | E2E-MOB029-001..005 |
+| #29 `news` (`GET /app/news` + `/{id}`) + #29a `newsArticle` `/news/:newsId` | [`mobile-news.md`](mobile-news.md) | E2E-MOB029-001..013 |
 | #30 `gallery` (`GET /app/media`) | [`mobile-gallery.md`](mobile-gallery.md) | E2E-MOB030-001..004 |
 | #37 `aboutForum` (`GET /app/content/about`) | [`mobile-about.md`](mobile-about.md) | E2E-MOB037-001..003 |
 | #40 `rate` (`GET/POST /app/feedback/form|submit`) | [`mobile-rate.md`](mobile-rate.md) | E2E-MOB040-001..011 |
@@ -334,13 +335,13 @@ again without failing the build. They had been left at the 2026-06-02 figures �
 "74 pages / ~1044 scenarios" — while the catalogue more than doubled, and were
 being quoted in planning as if current.
 
-- **Pages catalogued:** 183 (93 Control Panel + 70 mobile + 19 Website + 1
-  system-wide). One of the 183 — `cp-admin-companies.md` — is **retired**: its
+- **Pages catalogued:** 184 (94 Control Panel + 70 mobile + 19 Website + 1
+  system-wide). One of the 184 — `cp-admin-companies.md` — is **retired**: its
   route was renamed away and it now carries no live scenarios.
-- **Total scenarios:** 2863 Coverage-matrix rows, every id distinct. That
+- **Total scenarios:** 2897 Coverage-matrix rows, every id distinct. That
   includes the **362** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
   per live page — see `tools/qa/generate_els_rows.py`); the hand-authored
-  functional total is 2496.
+  functional total is 2535.
 - **Authored:** all pages. The D-133 "pending" stubs are fully authored, and
   every event-module and P2–P5 page added since has its own file.
 - **Execution:** the canonical run today is a Chrome DevTools MCP browser pass
@@ -483,3 +484,36 @@ now fails the build on either shape.
   `Others_pipeline_account_can_scan_once_it_is_linked_to_an_exhibitor`,
   `Linking_refuses_an_account_that_is_not_exhibitor_typed`,
   `Linking_refuses_an_unknown_email_and_an_already_linked_account`.
+
+### Update - 2026-07-29 (Wave A - the CP programme dashboard on `/`)
+
+- **Scope:** the Control Panel landing page stopped being a placeholder. For an
+  admin holding `Statistics.View` it now renders a KPI stat grid, a grouped bar
+  chart with one cluster per forum day, and one day card per forum day. Backed by
+  a new read-only aggregate `GET /api/v1/admin/statistics/programme`
+  (`StatisticsProgramme` + `ProgrammeDayStats`) and new shared chart components
+  (`SimfGroupedBarChart`, `SimfBarGauge`, `ChartGeometry`). No schema change, no
+  migration, no new permission - `Statistics.View` is reused and gates both the
+  API and the render.
+- **Range extended:** `cp-dashboard.md` E2E-DSH-001..013 -> **001..025**. The
+  thirteen existing ids keep their meaning; twelve were appended for the Wave A
+  surface (golden path, the permission gate, the KPI grid, chart clusters, the
+  zero-activity day, Arabic RTL mirroring, light/dark/grey themes, the
+  `dd-MM-yyyy` Saudi-local date rule, the API failure path, the hidden data
+  table, the day-card gauges, and the no-programme-days empty state). No scenario
+  was renumbered. The page's front-matter prose was rewritten, since it still
+  described the page as a placeholder.
+- **Lower-layer backing:** `tests/SIMF.ControlPanel.Tests/ChartGeometryTests.cs`
+  (41 tests) and `tests/SIMF.Api.Tests/StatisticsProgrammeTests.cs` (21 tests)
+  are cross-referenced per scenario, including the five Saudi-calendar-day
+  boundary cases behind E2E-DSH-021.
+- **Honesty flag (branch state):** on `feat/cp-dashboard-reporting` the CP **BFF
+  passthrough for the programme call is missing** - `Home.razor.cs` requests
+  `/account/api/admin/statistics/programme`, but `AccountEndpoints.cs` maps only
+  `/admin/statistics` and `SimfAdminClient` has no `GetStatisticsProgrammeAsync`.
+  The unmatched route 404s, `simfAccount.getJson` turns that into a
+  `BAD_RESPONSE` envelope, and the page degrades to the welcome panel plus the
+  four `StatisticsDashboard` tiles. So E2E-DSH-017, -018, -019, -020, -023, -024
+  and -025 (plus the programme half of -014, -016 and -021) are **RED until the
+  passthrough and the client method land**; they are authored as the target spec.
+  E2E-DSH-015 and -022 pass as written today.

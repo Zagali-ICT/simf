@@ -41,7 +41,7 @@ public sealed class PendingApprovalQueueTests : CpComponentTestBase
             Assert.Contains("Admin.Pending.Action.Approve", cut.Markup);
             Assert.Contains("Admin.Pending.Action.Reject", cut.Markup);
             // The staff queue confirms instead of reviewing — the profile-review
-            // View action is others/visitors only (D-128 / D-799).
+            // View action is others/visitors only (D-128 / D-809).
             Assert.DoesNotContain("Admin.Pending.Action.View", cut.Markup);
         });
     }
@@ -96,7 +96,7 @@ public sealed class PendingApprovalQueueTests : CpComponentTestBase
             Assert.Contains("Admin.Pending.Reject.Title", cut.Markup));
     }
 
-    // D-799 regression — approving an administrator-typed account grants Control
+    // D-809 regression — approving an administrator-typed account grants Control
     // Panel access and mints the QR badge. It used to commit on the first click,
     // while rejecting had always demanded a typed reason. These two tests pin the
     // guard: the approve POST must not leave the browser until the admin confirms.
@@ -143,7 +143,7 @@ public sealed class PendingApprovalQueueTests : CpComponentTestBase
         Assert.False(PostedTo("bulk-approve"),
             "bulk approve must not post before the admin confirms");
 
-        // The commit path was REWRITTEN by D-799 (OnBulkApproveAsync now stages,
+        // The commit path was REWRITTEN by D-809 (OnBulkApproveAsync now stages,
         // ConfirmBulkApproveAsync does the work). Assert the worker is reachable,
         // or a guard wired to Cancel would leave this test green.
         cut.FindAll(".simf-modal__footer .simf-button--primary")[^1].Click();

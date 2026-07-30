@@ -1,0 +1,91 @@
+@* Sessions report - Programme sessions with speakers, attendance, questions and audience score.
+
+   Behaviour comes from ReportPageBase; this file is the report's identity:
+   its slug, its columns and its labels. *@
+@page "/admin/reports/sessions"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Reports.Sessions)]
+@inherits ReportPageBase<SessionsReportRow>
+@using SIMF.Contracts.Reporting
+
+<PageTitle>@L["Admin.Reports.Sessions.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Reports.Sessions.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        <ReportToolbar From="From"
+                       FromChanged="@(v => From = v)"
+                       To="To"
+                       ToChanged="@(v => To = v)"
+                       Totals="Totals"
+                       Error="@Error"
+                       OnApply="OnRangeAppliedAsync"
+                       OnClear="OnRangeAppliedAsync"
+                       OnExport="ExportAsync"
+                       TotalLabelResolver="TotalLabel" />
+
+        <SimfDataGrid TItem="SessionsReportRow"
+                      Query="Query.Grid"
+                      Page="Page"
+                      Loading="Loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Caption="@L["Admin.Reports.Sessions.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.Reports.Loading"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="SessionsReportRow" Key="code"
+                                    Header="@L["Admin.Reports.Col.Code"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.Code</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="SessionsReportRow" Key="title"
+                                    Header="@L["Admin.Reports.Col.Session"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.Title</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="SessionsReportRow" Key="hall"
+                                    Header="@L["Admin.Reports.Col.Hall"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.HallName</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="SessionsReportRow" Key="start"
+                                    Header="@L["Admin.Reports.Col.Start"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.StartDisplay</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="SessionsReportRow" Key="speakers"
+                                    Header="@L["Admin.Reports.Col.Speakers"]">
+                    <CellTemplate>@context.Speakers</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="SessionsReportRow" Key="attendees"
+                                    Header="@L["Admin.Reports.Col.Attendees"]">
+                    <CellTemplate>@context.Attendees</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="SessionsReportRow" Key="questions"
+                                    Header="@L["Admin.Reports.Col.Questions"]">
+                    <CellTemplate>@context.Questions</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="SessionsReportRow" Key="rating"
+                                    Header="@L["Admin.Reports.Col.AverageRating"]">
+                    <CellTemplate>@context.AverageRating</CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.Reports.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
+    </div>
+</div>
+
+@code {
+    protected override string Slug => "sessions";
+}

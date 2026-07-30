@@ -78,7 +78,7 @@ public partial class MediaLibraryList
         }
     }
 
-    // D-799 — deactivating takes a live asset (a speaker photo, a sponsor logo)
+    // D-809 — deactivating takes a live asset (a speaker photo, a sponsor logo)
     // off the public site and used to commit on the first click. Staging the
     // target closes the details modal, so the confirm is never a stacked dialog.
     private AdminAssetSummary? _deactivateTarget;

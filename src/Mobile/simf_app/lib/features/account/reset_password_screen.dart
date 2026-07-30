@@ -84,10 +84,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
             padding: const EdgeInsets.only(top: 2),
             child: Text(
               _passwordRequirementMessage(req, l10n),
-              style: const TextStyle(
-                color: SimfTokens.danger,
-                fontSize: SimfTokens.textSm,
-              ),
+              style: SimfTokens.labelDangerSm,
             ),
           ),
       ],
@@ -268,10 +265,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 const SizedBox(height: SimfTokens.space3),
                 Text(
                   _error!,
-                  style: const TextStyle(
-                    color: SimfTokens.danger,
-                    fontSize: SimfTokens.textSm,
-                  ),
+                  style: SimfTokens.labelDangerSm,
                 ),
               ],
               const SizedBox(height: SimfTokens.space6),

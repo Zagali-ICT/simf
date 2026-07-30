@@ -29,7 +29,7 @@ public abstract class PendingApprovalPageBase : ComponentBase
     // Popup/full-page presentation for the profile-review "View" modal, extending
     // the D-353 CRUD framing to the pending queues so it matches /admin/visitors.
     // Only the visitors + others queues have a review modal; the admins queue
-    // has no profile to review and confirms instead (D-799). A queue opts in
+    // has no profile to review and confirms instead (D-809). A queue opts in
     // via PresentationPageKey (null = dialog only).
     protected CrudPresentation _presentation = CrudPresentation.Dialog;
 
@@ -46,7 +46,7 @@ public abstract class PendingApprovalPageBase : ComponentBase
     protected IReadOnlyList<AdminPendingUserSummary>? _bulkRejectSelected;
     protected string _bulkRejectReason = string.Empty;
 
-    // D-799 — bulk approve confirms on every queue. (Single-approve confirmation
+    // D-809 — bulk approve confirms on every queue. (Single-approve confirmation
     // is the admins queue's alone and lives in PendingStaff: the visitors/others
     // queues stage a single approval through their D-128 profile-review modal.)
     protected IReadOnlyList<AdminPendingUserSummary>? _bulkApproveSelected;

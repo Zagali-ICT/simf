@@ -1,0 +1,230 @@
+@* SimfGroupedBarChart — a grouped (clustered) bar chart drawn as inline SVG.
+
+   The SVG carries GEOMETRY ONLY. Every piece of text — the title, the legend,
+   the axis ticks and the category labels — is HTML around it. That keeps all
+   copy localisable, selectable and screen-reader addressable, and makes RTL a
+   pure CSS flip of the surrounding flex rows rather than a transform that would
+   also mirror the lettering.
+
+   Accessibility, per the data-visualisation rules:
+     - role="img" + aria-label, plus <title>/<desc> inside the SVG;
+     - a legend whenever there are two or more series, so identity is never
+       carried by colour alone;
+     - direct value labels above each bar;
+     - a visually-hidden data table carrying the same numbers;
+     - bars are anchored to a zero baseline (enforced in ChartGeometry).
+
+   Series colours come from theme.tokens.css (--chart-series-N) via the
+   .simf-chart__bar--N classes; this component never names a colour. *@
+@namespace SIMF.Components.Charts
+@using System.Globalization
+
+<figure class="simf-chart">
+    <figcaption class="simf-chart__head">
+        <h3 class="simf-chart__title">@Title</h3>
+        @if (!string.IsNullOrWhiteSpace(Subtitle))
+        {
+            <p class="simf-chart__subtitle">@Subtitle</p>
+        }
+    </figcaption>
+
+    @if (SeriesLabels.Count >= 2)
+    {
+        <ul class="simf-chart__legend">
+            @for (var s = 0; s < SeriesLabels.Count; s++)
+            {
+                <li class="simf-chart__legend-item">
+                    <span class="simf-chart__swatch simf-chart__swatch--@(s + 1)" aria-hidden="true"></span>
+                    <span class="simf-chart__legend-label">@SeriesLabels[s]</span>
+                </li>
+            }
+        </ul>
+    }
+
+    @if (Groups.Count == 0)
+    {
+        <p class="simf-chart__empty">@EmptyLabel</p>
+    }
+    else
+    {
+        <div class="simf-chart__body">
+            @* Y axis: highest tick first, so column order reads top-to-bottom. *@
+            <ul class="simf-chart__yaxis" aria-hidden="true">
+                @foreach (var tick in _ticks.Reverse())
+                {
+                    <li class="simf-chart__ytick">@Format(tick)</li>
+                }
+            </ul>
+
+            <div class="simf-chart__area">
+              <div class="simf-chart__plot">
+                <svg class="simf-chart__svg"
+                     viewBox="@($"0 0 {PlotWidth} {PlotHeight}")"
+                     preserveAspectRatio="none"
+                     role="img"
+                     aria-label="@AriaLabel">
+                    <title>@Title</title>
+                    <desc>@AriaLabel</desc>
+
+                    @* Recessive gridlines — one per axis tick. *@
+                    @foreach (var tick in _ticks)
+                    {
+                        var y = PlotHeight - (tick / _max * PlotHeight);
+                        <line class="simf-chart__gridline"
+                              x1="0" x2="@PlotWidth"
+                              y1="@Coord(y)" y2="@Coord(y)" />
+                    }
+
+                    @foreach (var bar in _bars)
+                    {
+                        <rect class="simf-chart__bar simf-chart__bar--@(bar.SeriesIndex + 1)"
+                              x="@Coord(bar.X)"
+                              y="@Coord(bar.Y)"
+                              width="@Coord(bar.Width)"
+                              height="@Coord(bar.Height)"
+                              rx="4">
+                            <title>@Groups[bar.GroupIndex].Label — @SeriesLabelAt(bar.SeriesIndex): @Format(bar.Value)</title>
+                        </rect>
+                    }
+
+                    @* The zero baseline sits on top of the fills. *@
+                    <line class="simf-chart__baseline"
+                          x1="0" x2="@PlotWidth"
+                          y1="@Coord(PlotHeight)" y2="@Coord(PlotHeight)" />
+                </svg>
+
+                @* Direct labels, as HTML over the plot rather than SVG text.
+                   The SVG uses preserveAspectRatio="none" so the bars stretch to
+                   fill the available width; that same non-uniform transform would
+                   stretch any glyph drawn inside it (a px font-size resolves to a
+                   user unit and is scaled with everything else). Positioning them
+                   as HTML keeps the lettering undistorted at any container width,
+                   and keeps this component to its own rule: the SVG carries
+                   geometry, every string is HTML.
+
+                   They sit ABOVE each bar, never on top of the fill — muted text
+                   on a saturated series colour is around 1.1:1 contrast.
+
+                   aria-hidden: the visually-hidden table below already exposes
+                   every one of these numbers to assistive technology. *@
+                <div class="simf-chart__values" aria-hidden="true">
+                    @foreach (var bar in _bars)
+                    {
+                        <span class="simf-chart__value"
+                              style="--simf-bar-x:@Percent(bar.X + (bar.Width / 2), PlotWidth);--simf-bar-y:@Percent(bar.Height, PlotHeight)">@Format(bar.Value)</span>
+                    }
+                </div>
+              </div>
+
+                <ul class="simf-chart__xaxis">
+                    @foreach (var group in Groups)
+                    {
+                        <li class="simf-chart__xtick">@group.Label</li>
+                    }
+                </ul>
+            </div>
+        </div>
+
+        @* Table alternative — the same numbers for assistive technology and for
+           anyone who cannot separate the series by colour. *@
+        <table class="simf-visually-hidden">
+            <caption>@Title</caption>
+            <thead>
+                <tr>
+                    <th scope="col">@CategoryLabel</th>
+                    @foreach (var label in SeriesLabels)
+                    {
+                        <th scope="col">@label</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var group in Groups)
+                {
+                    <tr>
+                        <th scope="row">@group.Label</th>
+                        @for (var s = 0; s < SeriesLabels.Count; s++)
+                        {
+                            <td>@Format(s < group.Values.Count ? group.Values[s] : 0d)</td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</figure>
+
+@code {
+    /// <summary>Plot width in viewBox units. The SVG scales to its container.</summary>
+    private const double PlotWidth = 640d;
+
+    /// <summary>Plot height in viewBox units.</summary>
+    private const double PlotHeight = 260d;
+
+    /// <summary>The chart heading.</summary>
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+
+    /// <summary>Optional supporting line under the title — the date range, the
+    /// filter in force, or the insight the chart shows.</summary>
+    [Parameter] public string? Subtitle { get; set; }
+
+    /// <summary>The category groups in display order — one cluster each.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<ChartGroup> Groups { get; set; } = [];
+
+    /// <summary>Series names, in the chart's fixed series order. The count
+    /// decides how many bars each group holds; colours are assigned by index and
+    /// never cycled.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<string> SeriesLabels { get; set; } = [];
+
+    /// <summary>Header for the category column of the hidden data table.</summary>
+    [Parameter] public string CategoryLabel { get; set; } = string.Empty;
+
+    /// <summary>Shown in place of the plot when there are no groups.</summary>
+    [Parameter] public string EmptyLabel { get; set; } = string.Empty;
+
+    /// <summary>Sentence describing what the chart shows, used as the SVG's
+    /// accessible name. Falls back to the title.</summary>
+    [Parameter] public string? Description { get; set; }
+
+    /// <summary>Mirrors the plot horizontally. Defaults to the current UI
+    /// culture's direction, so Arabic reads right-to-left without the caller
+    /// having to pass anything.</summary>
+    [Parameter] public bool? Rtl { get; set; }
+
+    private IReadOnlyList<ChartBar> _bars = [];
+    private IReadOnlyList<double> _ticks = [];
+    private double _max = 1d;
+
+    private string AriaLabel => Description ?? Title;
+
+    private bool IsRtl => Rtl ?? CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft;
+
+    protected override void OnParametersSet()
+    {
+        _max = ChartGeometry.NiceMax(ChartGeometry.MaxValue(Groups));
+        // Whole-number ticks only: these are counts, and a fractional tick
+        // formatted as an integer would repeat the same label down the axis.
+        _ticks = ChartGeometry.AxisTicks(_max, ChartGeometry.PreferredDivisions(_max));
+        _bars = ChartGeometry.GroupedBars(
+            Groups, SeriesLabels.Count, PlotWidth, PlotHeight, _max, IsRtl);
+    }
+
+    private string SeriesLabelAt(int index) =>
+        index >= 0 && index < SeriesLabels.Count ? SeriesLabels[index] : string.Empty;
+
+    /// <summary>SVG coordinates are culture-neutral — an Arabic culture would
+    /// otherwise emit a decimal comma and silently break the geometry.</summary>
+    private static string Coord(double value) =>
+        value.ToString("0.##", CultureInfo.InvariantCulture);
+
+    /// <summary>A viewBox length as a percentage of the plot, for positioning the
+    /// HTML label overlay. Invariant for the same reason as
+    /// <see cref="Coord"/>: a decimal comma is not a valid CSS length.</summary>
+    private static string Percent(double value, double extent) =>
+        (extent <= 0 ? 0d : value / extent * 100d)
+            .ToString("0.###", CultureInfo.InvariantCulture) + "%";
+
+    /// <summary>Whole numbers with thousands separators, in the UI culture.</summary>
+    private static string Format(double value) =>
+        value.ToString("#,##0", CultureInfo.CurrentUICulture);
+}

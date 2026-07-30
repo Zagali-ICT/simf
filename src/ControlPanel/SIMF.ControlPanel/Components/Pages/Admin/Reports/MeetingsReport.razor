@@ -1,0 +1,85 @@
+@* Meetings report - Speaker and delegation meeting requests, with their status.
+
+   Behaviour comes from ReportPageBase; this file is the report's identity:
+   its slug, its columns and its labels. *@
+@page "/admin/reports/meetings"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Reports.Meetings)]
+@inherits ReportPageBase<MeetingsReportRow>
+@using SIMF.Contracts.Reporting
+
+<PageTitle>@L["Admin.Reports.Meetings.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Reports.Meetings.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        <ReportToolbar From="From"
+                       FromChanged="@(v => From = v)"
+                       To="To"
+                       ToChanged="@(v => To = v)"
+                       Totals="Totals"
+                       Error="@Error"
+                       OnApply="OnRangeAppliedAsync"
+                       OnClear="OnRangeAppliedAsync"
+                       OnExport="ExportAsync"
+                       TotalLabelResolver="TotalLabel" />
+
+        <SimfDataGrid TItem="MeetingsReportRow"
+                      Query="Query.Grid"
+                      Page="Page"
+                      Loading="Loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Caption="@L["Admin.Reports.Meetings.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.Reports.Loading"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="MeetingsReportRow" Key="kind"
+                                    Header="@L["Admin.Reports.Col.Kind"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.Kind</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="MeetingsReportRow" Key="requester"
+                                    Header="@L["Admin.Reports.Col.Requester"]">
+                    <CellTemplate>@context.Requester</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="MeetingsReportRow" Key="target"
+                                    Header="@L["Admin.Reports.Col.Target"]">
+                    <CellTemplate>@context.Target</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="MeetingsReportRow" Key="subject"
+                                    Header="@L["Admin.Reports.Col.Subject"]">
+                    <CellTemplate>@context.Subject</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="MeetingsReportRow" Key="slot"
+                                    Header="@L["Admin.Reports.Col.Slot"]">
+                    <CellTemplate>@context.SlotDisplay</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="MeetingsReportRow" Key="status"
+                                    Header="@L["Admin.Reports.Col.Status"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.Status</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="MeetingsReportRow" Key="requested"
+                                    Header="@L["Admin.Reports.Col.Requested"]">
+                    <CellTemplate>@context.RequestedDisplay</CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.Reports.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
+    </div>
+</div>
+
+@code {
+    protected override string Slug => "meetings";
+}

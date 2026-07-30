@@ -360,7 +360,7 @@ class _IdentityVerificationScreenState
       appBar: AppBar(
         leading: const SimfBackButton(),
         backgroundColor: SimfTokens.navy,
-        foregroundColor: Colors.white,
+        foregroundColor: SimfTokens.surface,
         elevation: 0,
         centerTitle: true,
         title: Text(l10n.identityVerificationTitle),
@@ -390,7 +390,7 @@ class _IdentityVerificationScreenState
 
   Widget _previewView(Uint8List bytes, AppL10n l10n) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: SimfTokens.black,
       body: Stack(
         fit: StackFit.expand,
         children: <Widget>[

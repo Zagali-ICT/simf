@@ -59,10 +59,7 @@ class AccountRememberForgot extends StatelessWidget {
               Flexible(
                 child: Text(
                   rememberLabel,
-                  style: const TextStyle(
-                    fontSize: SimfTokens.textSm,
-                    color: SimfTokens.greyText,
-                  ),
+                  style: SimfTokens.bodyGreySm,
                 ),
               ),
             ],

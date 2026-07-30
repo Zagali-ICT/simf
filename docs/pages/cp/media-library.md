@@ -157,11 +157,11 @@ All strings from `Strings.resx` / `Strings.ar.resx` via `IStringLocalizer<String
 
 ---
 
-## D-799 — deactivate confirms first
+## D-809 — deactivate confirms first
 
 Deactivating takes a live asset (a speaker photo, a sponsor logo) off the
 public site. It used to commit straight from the details modal footer. It now
 stages a `SimfConfirm` naming the owner; staging closes the details modal so
 the two dialogs never stack.
 
-_Last reviewed:_ 2026-07-30 by Claude (D-799 destructive-action safety).
+_Last reviewed:_ 2026-07-30 by Claude (D-809 destructive-action safety).

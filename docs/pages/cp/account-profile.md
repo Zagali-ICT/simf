@@ -48,9 +48,9 @@ Per-user profile self-service. View / edit display name, change avatar
 - Decisions: D-116 (cropper visuals), D-120 (PageColor swatch — unrelated but same Cropper era), D-122 (Cropper DI), D-123 (cropperjs load order).
 - Companion: [`account-totp-pairing.md`](account-totp-pairing.md).
 
-## D-799 — removing the avatar confirms first
+## D-809 — removing the avatar confirms first
 
 "Remove" under the profile photo deleted the stored image on the first click.
 It now opens a `SimfConfirm` stating the image cannot be restored.
 
-_Last reviewed:_ 2026-07-30 by Claude (D-799 destructive-action safety).
+_Last reviewed:_ 2026-07-30 by Claude (D-809 destructive-action safety).

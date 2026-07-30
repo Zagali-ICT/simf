@@ -105,11 +105,7 @@ class AuthSubmitButton extends StatelessWidget {
             )
           : Text(
               label,
-              style: const TextStyle(
-                fontSize: SimfTokens.textLg,
-                fontWeight: FontWeight.w700,
-                color: SimfTokens.surface,
-              ),
+              style: SimfTokens.labelWhiteBoldLg,
             ),
     );
   }

@@ -34,7 +34,7 @@ public partial class Notifications
     private Toast? _toast;
     private NotificationDto? _detailsTarget;
 
-    // D-799 — the grid's trash icon and bulk-dismiss button both used to delete on
+    // D-809 — the grid's trash icon and bulk-dismiss button both used to delete on
     // the first click. One dialog serves both, so it carries the action to run.
     private (string Title, string Message, Func<Task> Run)? _pendingDismiss;
 

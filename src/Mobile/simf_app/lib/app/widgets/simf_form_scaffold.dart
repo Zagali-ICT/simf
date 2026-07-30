@@ -75,7 +75,7 @@ class SimfFormScaffold extends ConsumerWidget {
             tooltip: MaterialLocalizations.of(context).backButtonTooltip,
             icon: const Icon(
               Icons.arrow_back_ios_new,
-              color: Colors.white,
+              color: SimfTokens.surface,
               size: 20,
               textDirection: TextDirection.ltr,
             ),
@@ -102,7 +102,7 @@ class SimfFormScaffold extends ConsumerWidget {
             style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.w500,
-              color: Colors.white,
+              color: SimfTokens.surface,
             ),
           ),
         ),

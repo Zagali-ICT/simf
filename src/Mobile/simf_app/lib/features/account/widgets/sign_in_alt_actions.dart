@@ -47,10 +47,7 @@ class SignInAltActions extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
               child: Text(
                 l10n.orDividerLabel,
-                style: const TextStyle(
-                  fontSize: SimfTokens.textSm,
-                  color: SimfTokens.greyText,
-                ),
+                style: SimfTokens.bodyGreySm,
               ),
             ),
             const Expanded(

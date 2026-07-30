@@ -1,4 +1,4 @@
-﻿// Tests: D-799 — destructive Control Panel actions must not commit on the first
+﻿// Tests: D-809 — destructive Control Panel actions must not commit on the first
 // click. SimfDataGrid deliberately carries no built-in confirmation (its trash
 // icon and bulk-delete button invoke their callback directly), so each page owns
 // the guard. These tests pin the guard where it was missing: the notification

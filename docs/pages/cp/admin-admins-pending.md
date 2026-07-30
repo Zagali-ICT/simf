@@ -19,7 +19,7 @@ Approval queue for self-registered admin candidates in `PendingApproval`.
 This queue confirms rather than reviews. `PendingVisitors` / `PendingOthers`
 open the D-128 profile-review modal before approving, because those accounts
 carry a profile worth reading (tier, ID images). An administrator candidate
-has no such profile, so **D-799** gives this queue a `SimfConfirm` naming the
+has no such profile, so **D-809** gives this queue a `SimfConfirm` naming the
 candidate instead — closing the D-132 parity gap without inventing a review
 surface with nothing to show.
 
@@ -44,6 +44,6 @@ Identical to the visitors pending queue: reason modal, 10–500 chars, audited.
 ## Cross-references
 
 The D-132 parity gap with `PendingVisitors` / `PendingOthers` is **closed** by
-D-799 — as a confirmation rather than a review modal, for the reason above.
+D-809 — as a confirmation rather than a review modal, for the reason above.
 
-_Last reviewed:_ 2026-07-30 by Claude (D-799 destructive-action safety).
+_Last reviewed:_ 2026-07-30 by Claude (D-809 destructive-action safety).

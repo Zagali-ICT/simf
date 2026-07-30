@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../../core/utils/refresh.dart';
 import 'data/ai_chat_history_repository.dart';
 import 'data/chat_message.dart';
 import 'data/chatbot_responder.dart';
@@ -140,11 +141,15 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Expanded(
-            child: ListView.builder(
-              controller: _scroll,
-              padding: const EdgeInsets.all(SimfTokens.space4),
-              itemCount: messages.length,
-              itemBuilder: (_, index) => ChatBubble(message: messages[index]),
+            child: SimfPullToRefresh(
+              onRefresh: () => refreshAsync(ref, aiChatHistoryProvider.future),
+              child: ListView.builder(
+                controller: _scroll,
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(SimfTokens.space4),
+                itemCount: messages.length,
+                itemBuilder: (_, index) => ChatBubble(message: messages[index]),
+              ),
             ),
           ),
           QuickReplies(

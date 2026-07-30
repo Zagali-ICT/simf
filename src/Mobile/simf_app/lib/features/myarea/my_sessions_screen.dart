@@ -6,6 +6,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../../core/utils/refresh.dart';
 import '../sessions/data/session_lifecycle.dart';
 import '../sessions/widgets/favourite_heart_button.dart';
 import '../sessions/widgets/session_card_meta.dart';
@@ -44,10 +45,7 @@ class _MySessionsScreenState extends ConsumerState<MySessionsScreen> {
       l10n.mySessionsTabArchive,
     ];
 
-    Future<void> onRefresh() async {
-      ref.invalidate(mySessionsProvider);
-      await ref.read(mySessionsProvider.future);
-    }
+    Future<void> onRefresh() => refreshAsync(ref, mySessionsProvider.future);
 
     return SimfPageShell(
       title: l10n.mySessionsTitle,

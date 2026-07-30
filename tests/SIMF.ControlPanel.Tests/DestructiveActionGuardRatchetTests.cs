@@ -1,4 +1,4 @@
-// Tests: D-799 — a source-scan ratchet over the CP .razor sources, in the same
+// Tests: D-809 — a source-scan ratchet over the CP .razor sources, in the same
 // shape as CpMarkupHygieneTests / AccessibilityMarkupTests.
 //
 // WHY THIS EXISTS. SimfDataGrid deliberately has no built-in confirmation: its
@@ -7,7 +7,7 @@
 // OnDeleteOne sites route to a D-353 ViewDelete page which confirms there, and a
 // grid-level dialog would double-confirm every one of them. The cost of that design
 // is that EVERY page owns its own guard, and a page that forgets one ships a silent
-// one-click delete. Seven pages had forgotten (D-799).
+// one-click delete. Seven pages had forgotten (D-809).
 //
 // Fixing those seven does not stop the eighth. This does. The rule it enforces:
 //
@@ -110,7 +110,7 @@ public sealed class DestructiveActionGuardRatchetTests
         }
 
         Assert.True(offenders.Count == 0,
-            "D-799: a destructive grid action must stage a confirmation, never commit on the "
+            "D-809: a destructive grid action must stage a confirmation, never commit on the "
             + "first click. SimfDataGrid has no built-in confirm, so the page owns the guard. "
             + "Offenders:\n  " + string.Join("\n  ", offenders));
     }

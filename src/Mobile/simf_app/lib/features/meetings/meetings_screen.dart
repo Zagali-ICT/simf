@@ -10,6 +10,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../../core/utils/refresh.dart';
 import '../account/data/profile_repository.dart';
 import '../delegations/widgets/delegation_meeting_request_sheet.dart';
 import '../requests/data/request_models.dart';
@@ -95,9 +96,9 @@ class _MeetingsScreenState extends ConsumerState<MeetingsScreen> {
   }
 
   /// Pull-to-refresh — re-fetch the shared feed the meetings view derives from.
-  Future<void> _refresh() async {
+  Future<void> _refresh() {
     ref.invalidate(myRequestsProvider);
-    await ref.read(myMeetingRequestsProvider.future);
+    return refreshAsync(ref, myMeetingRequestsProvider.future);
   }
 
   @override

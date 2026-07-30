@@ -27,10 +27,7 @@ class RegistrationSuccessActions extends StatelessWidget {
           onPressed: onStatus,
           child: Text(
             statusLabel,
-            style: const TextStyle(
-              fontSize: SimfTokens.textLg,
-              fontWeight: FontWeight.w700,
-            ),
+            style: SimfTokens.titleBold,
           ),
         ),
         const SizedBox(height: SimfTokens.space4),
@@ -46,10 +43,7 @@ class RegistrationSuccessActions extends StatelessWidget {
           ),
           child: Text(
             homeLabel,
-            style: const TextStyle(
-              fontSize: SimfTokens.textLg,
-              fontWeight: FontWeight.w700,
-            ),
+            style: SimfTokens.titleBold,
           ),
         ),
       ],

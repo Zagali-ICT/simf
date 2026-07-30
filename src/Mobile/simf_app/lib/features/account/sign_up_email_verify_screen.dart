@@ -16,6 +16,7 @@ import '../../core/widgets/simf_auth_sweep.dart';
 import 'widgets/account_sub_header.dart';
 import 'widgets/auth_chrome.dart';
 import 'widgets/otp_code_boxes.dart';
+import 'widgets/otp_sent_to.dart';
 
 /// Page 006 — التحقق بالبريد · Email verification. The KSA-Project Figma
 /// design (node 505:837 — D-364): navy surface with the decorative sweep, a
@@ -232,31 +233,12 @@ class _SignUpEmailVerifyScreenState
             const SizedBox(height: SimfTokens.space6),
             Text(
               l10n.enterOtpTitle,
-              style: const TextStyle(
-                color: SimfTokens.surface,
-                fontSize: SimfTokens.textXl,
-                fontWeight: FontWeight.w700,
-              ),
+              style: SimfTokens.labelWhiteBoldXl,
             ),
             const SizedBox(height: SimfTokens.space6),
-            Text(
-              l10n.emailVerifySentTo,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: SimfTokens.beigeBorder,
-                fontSize: SimfTokens.textMd,
-              ),
-            ),
-            const SizedBox(height: SimfTokens.space2),
-            Text(
-              widget.email,
-              textDirection: TextDirection.ltr,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: SimfTokens.accent,
-                fontSize: SimfTokens.textMd,
-                fontWeight: FontWeight.w500,
-              ),
+            OtpSentTo(
+              prefix: l10n.emailVerifySentTo,
+              recipient: widget.email,
             ),
             const SizedBox(height: 48),
             OtpCodeBoxes(
@@ -277,10 +259,7 @@ class _SignUpEmailVerifyScreenState
               Text(
                 _error!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: SimfTokens.danger,
-                  fontSize: SimfTokens.textSm,
-                ),
+                style: SimfTokens.labelDangerSm,
               ),
             ],
             const SizedBox(height: SimfTokens.space6),
@@ -302,11 +281,7 @@ class _SignUpEmailVerifyScreenState
         Text(
           _formatCooldown(_cooldown),
           textDirection: TextDirection.ltr,
-          style: const TextStyle(
-            color: SimfTokens.accent,
-            fontSize: SimfTokens.textMd,
-            fontWeight: FontWeight.w700,
-          ),
+          style: SimfTokens.labelGoldBold,
         ),
       ],
     );

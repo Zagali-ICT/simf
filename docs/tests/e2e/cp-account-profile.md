@@ -88,7 +88,7 @@ Scenario: Page loads, shows status + roles, then a full avatar round-trip
   And the top-bar chrome avatar refreshes to the same image
 
   When the user clicks "Remove avatar"
-  Then a SimfConfirm dialog opens titled "Remove profile photo" (D-799)
+  Then a SimfConfirm dialog opens titled "Remove profile photo" (D-809)
   And no DELETE has been sent yet
   When they click "Remove avatar" in the dialog
   Then DELETE /account/api/avatar returns HTTP 200

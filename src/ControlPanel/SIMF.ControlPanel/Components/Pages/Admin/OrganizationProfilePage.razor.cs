@@ -226,7 +226,7 @@ public partial class OrganizationProfilePage
         finally { _videoBusy = false; }
     }
 
-    // D-799 — the hero-video delete used to fire on the first click.
+    // D-809 — the hero-video delete used to fire on the first click.
     private bool _confirmingHeroVideoRemove;
 
     private async Task ConfirmRemoveHeroVideoAsync()

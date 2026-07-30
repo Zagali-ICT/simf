@@ -1,0 +1,86 @@
+@* Engagement report - Audience questions and their moderation state. Hidden questions are included.
+
+   Behaviour comes from ReportPageBase; this file is the report's identity:
+   its slug, its columns and its labels. *@
+@page "/admin/reports/engagement"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Reports.Engagement)]
+@inherits ReportPageBase<EngagementReportRow>
+@using SIMF.Contracts.Reporting
+
+<PageTitle>@L["Admin.Reports.Engagement.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Reports.Engagement.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        <ReportToolbar From="From"
+                       FromChanged="@(v => From = v)"
+                       To="To"
+                       ToChanged="@(v => To = v)"
+                       Totals="Totals"
+                       Error="@Error"
+                       OnApply="OnRangeAppliedAsync"
+                       OnClear="OnRangeAppliedAsync"
+                       OnExport="ExportAsync"
+                       TotalLabelResolver="TotalLabel" />
+
+        <SimfDataGrid TItem="EngagementReportRow"
+                      Query="Query.Grid"
+                      Page="Page"
+                      Loading="Loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Caption="@L["Admin.Reports.Engagement.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.Reports.Loading"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="EngagementReportRow" Key="sessionCode"
+                                    Header="@L["Admin.Reports.Col.Code"]">
+                    <CellTemplate>@context.SessionCode</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="EngagementReportRow" Key="session"
+                                    Header="@L["Admin.Reports.Col.Session"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.SessionTitle</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="EngagementReportRow" Key="question"
+                                    Header="@L["Admin.Reports.Col.Question"]">
+                    <CellTemplate>@context.QuestionText</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="EngagementReportRow" Key="recipient"
+                                    Header="@L["Admin.Reports.Col.Recipient"]">
+                    <CellTemplate>@context.Recipient</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="EngagementReportRow" Key="status"
+                                    Header="@L["Admin.Reports.Col.Status"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.Status</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="EngagementReportRow" Key="phase"
+                                    Header="@L["Admin.Reports.Col.Phase"]">
+                    <CellTemplate>@context.Phase</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="EngagementReportRow" Key="asked"
+                                    Header="@L["Admin.Reports.Col.Asked"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.AskedDisplay</CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.Reports.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
+    </div>
+</div>
+
+@code {
+    protected override string Slug => "engagement";
+}

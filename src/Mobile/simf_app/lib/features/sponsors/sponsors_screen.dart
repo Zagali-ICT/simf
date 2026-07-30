@@ -7,6 +7,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../../core/utils/refresh.dart';
 import 'data/sponsor_models.dart';
 import 'widgets/sponsor_card.dart';
 import 'widgets/sponsor_grid.dart';
@@ -42,13 +43,9 @@ class SponsorsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppL10n.of(context);
     final groups = ref.watch(sponsorGroupsProvider);
-    // Pull-to-refresh — re-fetch the tier-grouped sponsors. Invalidate the
-    // FutureProvider then await its next value so the spinner shows until the
-    // new read completes.
-    Future<void> onRefresh() async {
-      ref.invalidate(sponsorGroupsProvider);
-      await ref.read(sponsorGroupsProvider.future);
-    }
+    // Pull-to-refresh — re-fetch the tier-grouped sponsors, holding the spinner
+    // until the new read completes.
+    Future<void> onRefresh() => refreshAsync(ref, sponsorGroupsProvider.future);
 
     return SimfPageShell(
       title: l10n.sponsorsTitle,

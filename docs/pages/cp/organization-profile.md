@@ -103,7 +103,7 @@ hero video, content-type is pinned and `nosniff` is set; upload/remove stay gate
   multi-line textareas for the long bilingual bodies.
 - **2026-06-24 (D-495):** new page.
 
-## D-799 — removing the hero video confirms first
+## D-809 — removing the hero video confirms first
 
 The hero video drives the public site landing page and the mobile app hero.
 Removing it used to commit on the first click; it now confirms.

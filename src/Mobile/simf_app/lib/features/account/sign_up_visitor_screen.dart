@@ -11,6 +11,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_form_scaffold.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../../core/errors/api_error_l10n.dart';
 import '../../core/responsive/max_width_body.dart';
 import '../../core/validation/digit_normalization.dart';
@@ -20,7 +21,6 @@ import '../../core/validation/plate_validation.dart';
 import '../../core/validation/saudi_id_validation.dart';
 import '../../core/widgets/simf_auth_sweep.dart';
 import '../../core/widgets/simf_field_label.dart';
-import '../../core/widgets/simf_field_style.dart';
 import '../../core/widgets/simf_labeled_text_field.dart';
 import '../../core/widgets/simf_picker_field.dart';
 import '../myarea/identity_verification_screen.dart' show CapturedSelfie;
@@ -34,6 +34,10 @@ import 'widgets/date_of_birth_field.dart';
 import 'widgets/gender_pills_field.dart';
 import 'widgets/lookup_search_sheet.dart';
 import 'widgets/mobile_field.dart';
+import 'widgets/organisation_typeahead_field.dart';
+import 'widgets/place_of_birth_field.dart';
+import 'widgets/plate_number_field.dart';
+import 'widgets/profile_type_field.dart';
 import 'widgets/sign_up_visitor_header_avatar.dart';
 import 'widgets/terms_and_next_buttons.dart';
 
@@ -407,7 +411,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       firstDate: earliest,
       lastDate: latest,
     );
-    if (picked != null) {
+    if (picked != null && mounted) {
       setState(() => _dateOfBirth = picked);
     }
   }
@@ -911,153 +915,55 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     );
   }
 
+  /// Kept local rather than swapped for the shared [SimfErrorState]: that one
+  /// draws white text, which is invisible on this screen's beige form card.
+  ///
+  /// Only this branch is pull-to-refreshable. The loaded form must NOT be —
+  /// `_load()` runs `_applyProfile`, which overwrites every text controller, so
+  /// a stray pull on a half-filled form would silently discard the input.
+  /// The rule exists so nobody is stranded with no way to re-fetch, and
+  /// that can only happen here.
   Widget _buildLoadError(AppL10n l10n) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(
-              l10n.profileLoadError,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: SimfTokens.txtSecondary),
-            ),
-            const SizedBox(height: SimfTokens.space4),
-            FilledButton(
-              onPressed: () => unawaited(_load()),
-              child: Text(l10n.retryLabel),
-            ),
-          ],
+    return SimfRefreshableMessage(
+      onRefresh: _load,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(SimfTokens.space6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                l10n.profileLoadError,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: SimfTokens.txtSecondary),
+              ),
+              const SizedBox(height: SimfTokens.space4),
+              FilledButton(
+                onPressed: () => unawaited(_load()),
+                child: Text(l10n.retryLabel),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildProfileTypeField(AppL10n l10n) {
-    // C5 (D-371) — Visitor is locked to "Normal": no picker rendered, the
-    // id is auto-assigned by _lockVisitorProfileType.
+    // C5 (D-371) — Visitor is locked to "Normal": no picker rendered, the id is
+    // auto-assigned by _lockVisitorProfileType.
     if (_isVisitorType) {
       return const SizedBox.shrink();
     }
-    // D-375 — under "Other" the field is ALWAYS visible: loading, inline
-    // retry on failure/empty, or the loaded dropdown. Never silently hidden.
-    if (_profileTypesLoading) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          SimfFieldLabel(l10n.profileTypeLabel),
-          const SizedBox(height: SimfTokens.space2),
-          InputDecorator(
-            decoration: simfFieldDecoration(),
-            child: Row(
-              children: <Widget>[
-                const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: SimfTokens.accent,
-                  ),
-                ),
-                const SizedBox(width: SimfTokens.space3),
-                Text(
-                  l10n.loadingLabel,
-                  style: const TextStyle(
-                    color: SimfTokens.greyText,
-                    fontSize: SimfTokens.textMd,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      );
-    }
-    if (_profileTypesFailed || _profileTypes.isEmpty) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          SimfFieldLabel(l10n.profileTypeLabel),
-          const SizedBox(height: SimfTokens.space2),
-          InputDecorator(
-            decoration: simfFieldDecoration(),
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text(
-                    l10n.lookupLoadError,
-                    style: const TextStyle(
-                      color: SimfTokens.danger,
-                      fontSize: SimfTokens.textSm,
-                    ),
-                  ),
-                ),
-                TextButton(
-                  key: const ValueKey<String>('profileTypeRetry'),
-                  onPressed: () => unawaited(_fetchProfileTypes()),
-                  style:
-                      TextButton.styleFrom(foregroundColor: SimfTokens.accent),
-                  child: Text(l10n.retryLabel),
-                ),
-              ],
-            ),
-          ),
-        ],
-      );
-    }
-    // D-722 (owner batch item 3) — profile types are few, so this field is a
-    // simple dropdown/select instead of the shared full-screen searchable sheet
-    // (nationality / birth-region / plate keep the sheet — those lists are long).
-    // Still not gated by the form validator; the required check stays in _next()
-    // (the value can be null until the user picks). Mirrors the register-visitor
-    // dropdowns' idiom (explicit style + chevron, initialValue + onChanged).
-    final showError = _triedSubmit && _profileTypeId == null;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        SimfFieldLabel(l10n.profileTypeLabel),
-        const SizedBox(height: SimfTokens.space2),
-        DropdownButtonFormField<String>(
-          key: const ValueKey<String>('profileTypeDropdown'),
-          initialValue: _profileTypeId,
-          isExpanded: true,
-          style: simfInputStyle,
-          icon: const Icon(
-            Icons.keyboard_arrow_down,
-            color: SimfTokens.inputInk,
-          ),
-          decoration: simfFieldDecoration(
-            errorText: showError ? l10n.profileTypeRequired : null,
-          ).copyWith(
-            // A DropdownButton's dense content floor is a fixed 24px (vs a text
-            // field's ~21px line box), so with the shared 15px vertical inset
-            // this field renders ~4px taller than the sibling standard fields.
-            // Trim the vertical inset so the field lands at their 50px height
-            // (24 + 2*13); the 14px horizontal inset is the shared field inset.
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 13,
-            ),
-          ),
-          dropdownColor: SimfTokens.surface,
-          hint: Text(
-            l10n.profileTypeLabel,
-            style: simfInputStyle.copyWith(color: SimfTokens.greyText),
-          ),
-          items: <DropdownMenuItem<String>>[
-            for (final ProfileTypeItem t in _profileTypes)
-              DropdownMenuItem<String>(
-                value: t.id,
-                child: Text(
-                  l10n.isArabic ? t.nameArabic : t.name,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-          ],
-          onChanged: (String? id) => setState(() => _profileTypeId = id),
-        ),
-      ],
+    return ProfileTypeField(
+      l10n: l10n,
+      loading: _profileTypesLoading,
+      failed: _profileTypesFailed,
+      items: _profileTypes,
+      selectedId: _profileTypeId,
+      showError: _triedSubmit && _profileTypeId == null,
+      onRetry: () => unawaited(_fetchProfileTypes()),
+      onChanged: (String? id) => setState(() => _profileTypeId = id),
     );
   }
 
@@ -1258,167 +1164,53 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     ];
   }
 
-  /// D-469 — birth location: a Saudi registrant picks one of the 13 official
-  /// regions from a dropdown; everyone else types it free-form "as in passport".
-  /// The selection's localized name is kept in [_placeOfBirth] (the submitted
-  /// value), so storage stays the existing free-text field.
   Widget _buildPlaceOfBirthField(AppL10n l10n) {
     final bool isArabic = l10n.isArabic;
-    // Keep the stored name in the active locale when a region is selected, so a
-    // language toggle re-syncs the submitted value (the dropdown is code-keyed).
-    if (_isSaudi && _birthRegionCode != null) {
-      final String name =
-          _birthRegionByCode(_birthRegionCode)?.name(isArabic: isArabic) ?? '';
-      if (_placeOfBirth.text != name) {
-        _placeOfBirth.text = name;
-      }
+    final String? regionName = _birthRegionCode == null
+        ? null
+        : _birthRegionByCode(_birthRegionCode)?.name(isArabic: isArabic);
+    // Keep the stored name in the active locale while a region is selected, so a
+    // language toggle re-syncs the submitted value (the picker is code-keyed).
+    if (_isSaudi && _birthRegionCode != null && _placeOfBirth.text != (regionName ?? '')) {
+      _placeOfBirth.text = regionName ?? '';
     }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        SimfFieldLabel(l10n.placeOfBirthLabel),
-        const SizedBox(height: SimfTokens.space2),
-        if (_isSaudi)
-          SimfPickerField(
-            fieldKey: 'birthRegionPicker',
-            displayText: _birthRegionCode == null
-                ? l10n.placeOfBirthRegionHint
-                : (_birthRegionByCode(_birthRegionCode)
-                        ?.name(isArabic: isArabic) ??
-                    l10n.placeOfBirthRegionHint),
-            isPlaceholder: _birthRegionCode == null,
-            onTap: () => unawaited(_pickBirthRegion(l10n, isArabic)),
-            errorText: (_triedSubmit && _birthRegionCode == null)
-                ? l10n.placeOfBirthRequired
-                : null,
-          )
-        else
-          TextFormField(
-            controller: _placeOfBirth,
-            maxLength: 128,
-            style: simfInputStyle,
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            // D-723 — place of birth is required for non-Saudi registrants too.
-            validator: (String? v) => (v == null || v.trim().isEmpty)
-                ? l10n.placeOfBirthRequired
-                : null,
-            decoration: simfFieldDecoration(
-              counterText: '',
-              hintText: l10n.placeOfBirthPassportHint,
-            ),
-          ),
-      ],
+    return PlaceOfBirthField(
+      l10n: l10n,
+      isSaudi: _isSaudi,
+      controller: _placeOfBirth,
+      regionDisplayName: regionName,
+      hasRegion: _birthRegionCode != null,
+      showRegionError: _triedSubmit && _birthRegionCode == null,
+      onPickRegion: () => unawaited(_pickBirthRegion(l10n, isArabic)),
     );
   }
 
-  /// C6 (D-371/D-459) — رقم اللوحة: optional. Rendered as three letter
-  /// dropdowns (the official 17 Saudi plate letters, shown "Arabic · Latin")
-  /// plus a 1–4 digit field; the picks are assembled into [_plate] and
-  /// validated against the shared `isStandardPlateNumber`.
   Widget _buildPlateField(AppL10n l10n) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        SimfFieldLabel(l10n.plateNumberLabel),
-        const SizedBox(height: SimfTokens.space2),
-        Row(
-          textDirection: TextDirection.ltr,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Expanded(
-              child: _plateLetterField(
-                l10n,
-                _plateLetter1,
-                (String? v) => _plateLetter1 = v,
-                position: 1,
-              ),
-            ),
-            const SizedBox(width: SimfTokens.space2),
-            Expanded(
-              child: _plateLetterField(
-                l10n,
-                _plateLetter2,
-                (String? v) => _plateLetter2 = v,
-                position: 2,
-              ),
-            ),
-            const SizedBox(width: SimfTokens.space2),
-            Expanded(
-              child: _plateLetterField(
-                l10n,
-                _plateLetter3,
-                (String? v) => _plateLetter3 = v,
-                position: 3,
-              ),
-            ),
-            const SizedBox(width: SimfTokens.space2),
-            SizedBox(
-              // Sized for exactly the 4 digits, so the three letter pickers
-              // (Expanded) absorb the freed width and show the picked letter.
-              width: 92,
-              // a11y: name the digit field (its hint vanishes on input).
-              child: Semantics(
-                label: l10n.plateDigitsLabel,
-                textField: true,
-                child: TextFormField(
-                  controller: _plateDigits,
-                  textDirection: TextDirection.ltr,
-                  maxLength: 4,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: <TextInputFormatter>[
-                    const WesternDigitsFormatter(),
-                    FilteringTextInputFormatter.digitsOnly,
-                  ],
-                  style: simfInputStyle,
-                  autovalidateMode: AutovalidateMode.onUserInteraction,
-                  onChanged: (_) => setState(_syncPlate),
-                  validator: (_) => _validatePlate(_plate.text),
-                  decoration: simfFieldDecoration(
-                    counterText: '',
-                    hintText: l10n.plateDigitsHint,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  /// One of the three plate-letter pickers: the 17 letters, each shown as
-  /// "Arabic · Latin", stored by its Latin [SaudiPlateLetter.code]. Uses the
-  /// same searchable sheet as the nationality + region fields (D-470). [position]
-  /// (1–3) gives each field a distinct accessible name ("Letter 1/2/3") so a
-  /// screen reader can tell them apart (a11y).
-  Widget _plateLetterField(
-    AppL10n l10n,
-    String? value,
-    ValueChanged<String?> onPicked, {
-    required int position,
-  }) {
-    final letter = value == null ? null : _plateLetterByCode(value);
-    return Semantics(
-      label: '${l10n.plateLetterHint} $position',
-      child: SimfPickerField(
-        fieldKey: 'plateLetter$position',
-        displayText: letter == null
-            ? l10n.plateLetterHint
-            : '${letter.arabic} · ${letter.english}',
-        isPlaceholder: letter == null,
-        onTap: () => unawaited(_pickPlateLetter(l10n, position, onPicked)),
-        showChevron: false,
+    return PlateNumberField(
+      l10n: l10n,
+      letter1: _plateLetter1,
+      letter2: _plateLetter2,
+      letter3: _plateLetter3,
+      digits: _plateDigits,
+      onPickLetter: (int position) => unawaited(
+        _pickPlateLetter(l10n, position, _plateLetterSetter(position)),
       ),
+      onDigitsChanged: () => setState(_syncPlate),
+      validateDigits: (_) => _validatePlate(_plate.text),
     );
   }
 
-  static SaudiPlateLetter? _plateLetterByCode(String code) {
-    for (final SaudiPlateLetter letter in saudiPlateLetters) {
-      if (letter.code == code) {
-        return letter;
-      }
+  /// Routes a picked letter to the right slot — the three pickers differ only by
+  /// position, so the field takes the position and the screen owns the storage.
+  ValueChanged<String?> _plateLetterSetter(int position) {
+    switch (position) {
+      case 1:
+        return (String? v) => _plateLetter1 = v;
+      case 2:
+        return (String? v) => _plateLetter2 = v;
+      default:
+        return (String? v) => _plateLetter3 = v;
     }
-    return null;
   }
 
   /// Opens the shared searchable sheet over the 17 official plate letters (shown
@@ -1534,135 +1326,21 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   }
 
   Widget _buildOrganisationField(AppL10n l10n) {
-    if (_organisationId != null) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          SimfFieldLabel(l10n.organisationLabel),
-          const SizedBox(height: SimfTokens.space2),
-          InputDecorator(
-            decoration: simfFieldDecoration(),
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text(
-                    _organisationLabel ?? l10n.organisationSelected,
-                    style: simfInputStyle,
-                  ),
-                ),
-                TextButton(
-                  onPressed: _clearOrganisation,
-                  style:
-                      TextButton.styleFrom(foregroundColor: SimfTokens.accent),
-                  child: Text(l10n.clearLabel),
-                ),
-              ],
-            ),
-          ),
-        ],
-      );
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        SimfFieldLabel(l10n.organisationLabel),
-        const SizedBox(height: SimfTokens.space2),
-        TextField(
-          controller: _organisationSearch,
-          style: simfInputStyle,
-          decoration: simfFieldDecoration(
-            hintText: l10n.organisationSearchHint,
-            prefixIcon:
-                const Icon(Icons.search, color: SimfTokens.greyText, size: 18),
-            // B3 — D-221: required — flag the empty pick after a submit attempt.
-            errorText: (_triedSubmit && _organisationId == null)
-                ? l10n.organisationRequired
-                : null,
-          ),
-          onChanged: _onOrganisationSearchChanged,
-        ),
-        if (_organisationSearch.text.trim().isNotEmpty) ...<Widget>[
-          const SizedBox(height: SimfTokens.space2),
-          // D-375 — fetch state first: spinner while searching, retry on
-          // failure; "no matches" only describes a COMPLETED empty search.
-          if (_organisationSearching)
-            Padding(
-              padding: const EdgeInsets.all(SimfTokens.space2),
-              child: Row(
-                children: <Widget>[
-                  const SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: SimfTokens.accent,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    l10n.loadingLabel,
-                    style: const TextStyle(color: SimfTokens.greyText),
-                  ),
-                ],
-              ),
-            )
-          else if (_organisationSearchFailed)
-            Padding(
-              padding: const EdgeInsets.all(SimfTokens.space2),
-              child: Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Text(
-                      l10n.lookupLoadError,
-                      style: const TextStyle(
-                        color: SimfTokens.danger,
-                        fontSize: SimfTokens.textSm,
-                      ),
-                    ),
-                  ),
-                  TextButton(
-                    key: const ValueKey<String>('organisationRetry'),
-                    onPressed: () => unawaited(
-                      _runOrganisationSearch(_organisationSearch.text.trim()),
-                    ),
-                    style: TextButton.styleFrom(
-                      foregroundColor: SimfTokens.accent,
-                    ),
-                    child: Text(l10n.retryLabel),
-                  ),
-                ],
-              ),
-            )
-          else if (_organisationResults.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(SimfTokens.space2),
-              child: Text(
-                l10n.organisationEmpty,
-                style: const TextStyle(color: SimfTokens.greyText),
-              ),
-            )
-          else
-            ..._organisationResults.take(8).map(
-                  (organisation) => ListTile(
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(
-                      l10n.isArabic
-                          ? organisation.nameAr
-                          : (organisation.nameEn ?? organisation.nameAr),
-                      style: const TextStyle(color: SimfTokens.headlineInk),
-                    ),
-                    subtitle: organisation.city == null
-                        ? null
-                        : Text(
-                            organisation.city!,
-                            style: const TextStyle(color: SimfTokens.greyText),
-                          ),
-                    onTap: () => _selectOrganisation(organisation, l10n),
-                  ),
-                ),
-        ],
-      ],
+    return OrganisationTypeaheadField(
+      l10n: l10n,
+      controller: _organisationSearch,
+      selectedId: _organisationId,
+      selectedLabel: _organisationLabel,
+      searching: _organisationSearching,
+      searchFailed: _organisationSearchFailed,
+      results: _organisationResults,
+      showError: _triedSubmit && _organisationId == null,
+      onSearchChanged: _onOrganisationSearchChanged,
+      onRetry: () => unawaited(
+        _runOrganisationSearch(_organisationSearch.text.trim()),
+      ),
+      onSelected: (organisation) => _selectOrganisation(organisation, l10n),
+      onCleared: _clearOrganisation,
     );
   }
 

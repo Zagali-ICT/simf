@@ -3,7 +3,7 @@
    simfModal (window.simfModal) so the component code stays tiny and the
    keydown handler fires regardless of where focus is.
 
-   NOT STACKABLE (D-799). simfModal.bind installs ONE focus trap per panel with
+   NOT STACKABLE (D-809). simfModal.bind installs ONE focus trap per panel with
    no depth or stack notion, and every .simf-modal shares z-index 100 — so a
    second modal opened over an open one has undefined focus and Escape
    behaviour. If you need a confirmation over an open dialog, close the first

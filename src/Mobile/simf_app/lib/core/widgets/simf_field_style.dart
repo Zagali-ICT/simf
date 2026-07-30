@@ -20,7 +20,7 @@ const TextStyle simfInputStyle = TextStyle(
 const TextStyle simfInputStyleOnNavy = TextStyle(
   fontSize: 14,
   fontWeight: FontWeight.w500,
-  color: Colors.white,
+  color: SimfTokens.surface,
 );
 
 // Radius left at OutlineInputBorder's default (circular 4 ==

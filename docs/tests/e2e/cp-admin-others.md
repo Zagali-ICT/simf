@@ -486,7 +486,7 @@ Scenario: An admin converts a partner (Other) account back into a visitor
   And its "New type" dropdown lists ONLY active Visitor-scope types
       (no partner types, no inactive types — the opposite scope only)
   When they pick a Visitor-scope type and click "Change type"
-  Then a SimfConfirm dialog opens titled "Change account type" naming the target type (D-799)
+  Then a SimfConfirm dialog opens titled "Change account type" naming the target type (D-809)
   And no request has been sent yet
   When they click "Change type" in the dialog
   Then POST /account/api/admin/accounts/{id}/change-type returns 200

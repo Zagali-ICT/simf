@@ -56,7 +56,7 @@ public sealed class ChangeAccountTypeBlockTests : CpComponentTestBase
                 new List<AdminProfileTypeSummary> { partnerType }));
         JSInterop.Setup<ApiResult<bool>>("simfAccount.postJson", _ => true)
             .SetResult(ApiResult<bool>.Ok(true));
-        // D-799 — the flip now opens a SimfConfirm, and SimfModal binds its
+        // D-809 — the flip now opens a SimfConfirm, and SimfModal binds its
         // focus trap through JS on open.
         JSInterop.SetupVoid("simfModal.bind", _ => true).SetVoidResult();
 
@@ -67,7 +67,7 @@ public sealed class ChangeAccountTypeBlockTests : CpComponentTestBase
             .Add(c => c.OnChanged,
                 EventCallback.Factory.Create(this, () => changed = true)));
 
-        // Pick the partner type, then trigger the flip. D-799 — the action button
+        // Pick the partner type, then trigger the flip. D-809 — the action button
         // stages a confirmation; nothing is posted until the admin accepts it.
         cut.Find("select").Change(partnerType.Id.ToString());
         cut.FindAll("button")
