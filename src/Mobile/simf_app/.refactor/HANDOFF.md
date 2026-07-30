@@ -58,6 +58,24 @@ Parity check found one open question for the owner: Figma shows **3** main theme
 the app ships **4**. The header language pill is a **documented deliberate
 deviation** (owner 2026-07-05, noted in `simf_page_shell.dart`) — do not "fix" it.
 
+Third run (owner items 1+2+3):
+`1a326140` **new_request_sheet.dart DELETED** (D-780) — the D-703 orphan, +14 dead
+l10n strings. Backend endpoints for document/badge creation are now unreachable
+from the app: retiring them is a SEPARATE backend decision, do not assume it ·
+`97290abb` OTP frame de-duplicated (`OtpSentTo` + `OtpCountdownLine` shared by
+change_email / email_otp_verify / sign_up_email_verify) + §9 doc headers on
+meeting_confirm / badge_password / about_app ·
+`e0a2f7dc` **sign_up_visitor_screen 1714 -> 1389** — four field widgets extracted
+(profile-type, organisation type-ahead, plate, place-of-birth).
+
+**sign_up_visitor decomposition — the rule that made it safe:** the four widgets
+are PRESENTATION ONLY. The screen kept all 13 controllers, every piece of lookup
+state and every `setState`; nothing about state ownership, face capture or submit
+moved. Proof is the **144 account behaviour tests** (D-371 lock, D-373 gate + SA
+fallback, D-375 retry, load-failure retry) plus the golden — NOT the golden alone.
+Reuse that constraint if you take more out of it.
+**OPEN:** smoke-test sign-up end to end incl. face capture on the tablet before merge.
+
 **Still open (the honest remainder):**
 1. **130 inline TextStyles** left (was 239). A near-match pass (one differing
    property) identified ~85 more that could become a new named token or a
