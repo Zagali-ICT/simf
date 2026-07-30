@@ -5,7 +5,8 @@
 | Document | Reviewer clarification response |
 | Responds to | `SIMF-HLD-002-MoD-HLD-External-v0.07.docx`, `SIMF-LLD-002-Solution-Design-Document.docx` |
 | Date | 2026-07-30 |
-| Status | Answers prepared for incorporation into HLD-002 v0.08 |
+| Status | **Superseded in part by SIMF-HLD-003 v1.0 (2026-07-30).** Retained as the working evidence file |
+| Superseding note | The owner decided on 2026-07-30 that **no AI runs in the cloud**. Every statement in this file about cloud AI providers, hybrid routing, provider retention, training exclusion, residency, sub-processors or data-processing agreements is therefore **obsolete**: there is no cloud AI call and no third-party AI processor. See HLD-003 section 2.4.2 and Annex A. The file-encryption table in section 6.2 was corrected on the same date. Issue HLD-003 to the reviewer, not this file |
 | Basis | The two MoD deliverables above, plus the as-built source tree on branch `feat/cp-dashboard-reporting` |
 
 Every answer below is grounded in the delivered source. Where the reviewer's
@@ -368,7 +369,7 @@ auditable rather than inferred (NCA ECC 2-7-2).
 | `Avatar` | User | Confidential | Owner or admin | Yes |
 | `VipPhoto` | User | Confidential | Admin only | Yes |
 | `SpeakerPresentation` | SpeakerPresentation | Internal | Any signed-in approved account, served as an attachment | Yes |
-| `SessionRecording` | Session | Internal | Any signed-in approved account, range-streamed | Yes |
+| `SessionRecording` | Session | Internal | Any signed-in approved account, range-streamed | **No.** Corrected 2026-07-30: seekable plaintext is required for HTTP 206 range streaming, and the file holds no PII |
 | `MediaGalleryImage` | MediaItem | Public | Public | No |
 | `SpeakerPhoto` | Speaker | Public | Public | No |
 | `NewsImage` | News | Public | Public | No |
@@ -394,10 +395,14 @@ or reordered, and a new category takes the next free integer.
   (`Storage:UserIdDocumentEncryptionKey`, a 32-byte operator-supplied value, via
   `IPiiEncryptor`). There is no dependency on SQL Server TDE, so the protection
   survives a raw file-system copy of the store.
-- **Two files are deliberately plaintext**: `OrganizationHeroVideo` and the
-  publicly readable images, because they are public content and the video must
-  stay byte-seekable for HTTP 206 range requests. This is a conscious decision,
-  recorded in the enum documentation.
+- **Only four of the eighteen categories are encrypted** (`IdDocument`, `Avatar`,
+  `VipPhoto`, `SpeakerPresentation`). `SessionRecording` and
+  `OrganizationHeroVideo` are deliberately plaintext because AES-GCM is not
+  seekable and both are range-streamed over HTTP 206; the twelve public image
+  categories are plaintext because they are public content. Each is a conscious
+  decision recorded in the policy registry.
+- **Retention is currently indefinite for every category.** No retention or
+  disposal schedule is implemented. See HLD-003 open item OI-3.
 - **Upload allow-list and scanning** per category.
 - **Reachable only from the application servers.** No client and no user ever
   touches the SMB share; every read is an authorised API call that resolves the
