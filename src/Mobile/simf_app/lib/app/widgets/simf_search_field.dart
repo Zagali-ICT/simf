@@ -34,7 +34,7 @@ class SimfSearchField extends StatelessWidget {
     return TextField(
       controller: controller,
       onChanged: onChanged,
-      style: const TextStyle(color: Colors.white),
+      style: const TextStyle(color: SimfTokens.surface),
       decoration: InputDecoration(
         hintText: hint,
         // Muted beige placeholder (matches the Figma search frames 908/922/758).

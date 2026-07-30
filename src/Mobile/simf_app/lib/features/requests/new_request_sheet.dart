@@ -132,7 +132,7 @@ class _NewRequestSheetState extends ConsumerState<_NewRequestSheet> {
               Text(
                 _step == _Step.pick ? l10n.requestNewTitle : l10n.requestNew,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: SimfTokens.surface,
                   fontSize: SimfTokens.textLg,
                   fontWeight: FontWeight.w700,
                 ),
@@ -263,7 +263,7 @@ class _PickTile extends StatelessWidget {
               child: Text(
                 label,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: SimfTokens.surface,
                   fontSize: SimfTokens.textMd,
                   fontWeight: FontWeight.w600,
                 ),
@@ -306,7 +306,7 @@ class _RadioRow extends StatelessWidget {
               child: Text(
                 label,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: SimfTokens.surface,
                   fontSize: SimfTokens.textMd,
                 ),
               ),
@@ -334,7 +334,7 @@ class _SheetField extends StatelessWidget {
     return TextField(
       controller: controller,
       maxLines: maxLines,
-      style: const TextStyle(color: Colors.white),
+      style: const TextStyle(color: SimfTokens.surface),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: SimfTokens.beigeBorder),

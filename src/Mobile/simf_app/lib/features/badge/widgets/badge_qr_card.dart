@@ -88,11 +88,11 @@ class BadgeQrCard extends StatelessWidget {
                   // content/data is unchanged.
                   eyeStyle: const QrEyeStyle(
                     eyeShape: QrEyeShape.square,
-                    color: Colors.black,
+                    color: SimfTokens.black,
                   ),
                   dataModuleStyle: const QrDataModuleStyle(
                     dataModuleShape: QrDataModuleShape.square,
-                    color: Colors.black,
+                    color: SimfTokens.black,
                   ),
                 );
               },

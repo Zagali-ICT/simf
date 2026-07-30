@@ -133,7 +133,7 @@ class _ScannerHeader extends StatelessWidget {
                   onPressed: onBack,
                   icon: const Icon(
                     Icons.arrow_back_ios_new,
-                    color: Colors.white,
+                    color: SimfTokens.surface,
                     size: 20,
                     textDirection: TextDirection.ltr,
                   ),
@@ -144,7 +144,7 @@ class _ScannerHeader extends StatelessWidget {
           Text(
             title,
             style: const TextStyle(
-              color: Colors.white,
+              color: SimfTokens.surface,
               fontSize: 24,
               fontWeight: FontWeight.w500,
             ),

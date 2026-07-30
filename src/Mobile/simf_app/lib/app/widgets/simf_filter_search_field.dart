@@ -49,7 +49,7 @@ class SimfFilterSearchField extends StatelessWidget {
               controller: controller,
               onChanged: onChanged,
               style: const TextStyle(
-                color: Colors.white,
+                color: SimfTokens.surface,
                 fontSize: SimfTokens.textMd,
               ),
               cursorColor: SimfTokens.accent,

@@ -44,9 +44,9 @@ class AccessibilityToggleRow extends StatelessWidget {
             child: Switch(
               value: value,
               onChanged: onChanged,
-              activeThumbColor: Colors.white,
+              activeThumbColor: SimfTokens.surface,
               activeTrackColor: SimfTokens.accent,
-              inactiveThumbColor: Colors.white,
+              inactiveThumbColor: SimfTokens.surface,
               inactiveTrackColor: SimfTokens.navy,
               trackOutlineColor:
                   WidgetStateProperty.all(SimfTokens.beigeBorder),

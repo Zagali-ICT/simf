@@ -85,7 +85,7 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
         borderRadius: BorderRadius.circular(24),
         boxShadow: const <BoxShadow>[
           BoxShadow(
-            color: Color(0x40000000),
+            color: SimfTokens.scrimBlack25,
             blurRadius: 60,
             offset: Offset(0, 24),
           ),
@@ -115,8 +115,8 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
         child: Stack(
           fit: StackFit.expand,
           children: <Widget>[
-            ColoredBox(color: Colors.black, child: widget.camera),
-            const ColoredBox(color: Color(0x59000000)), // black @ 35% overlay
+            ColoredBox(color: SimfTokens.black, child: widget.camera),
+            const ColoredBox(color: SimfTokens.scrimBlack35), // black @ 35% overlay
             const Positioned(top: 16, left: 16, child: _Bracket(top: true, left: true)),
             const Positioned(top: 16, right: 16, child: _Bracket(top: true, left: false)),
             const Positioned(bottom: 16, left: 16, child: _Bracket(top: false, left: true)),
@@ -198,9 +198,9 @@ class _ScanLine extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: <Color>[
-            Color(0x00C9A84C),
+            SimfTokens.accentFade,
             SimfTokens.accent,
-            Color(0x00C9A84C),
+            SimfTokens.accentFade,
           ],
         ),
         boxShadow: const <BoxShadow>[

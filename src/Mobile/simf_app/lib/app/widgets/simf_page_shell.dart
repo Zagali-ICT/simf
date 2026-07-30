@@ -209,7 +209,7 @@ class SimfPageShell extends StatelessWidget {
               style: const TextStyle(
                 fontSize: SimfTokens.textTitle,
                 fontWeight: FontWeight.w600,
-                color: Colors.white,
+                color: SimfTokens.surface,
               ),
             ),
           ),
@@ -323,7 +323,7 @@ class SimfCircledBackButton extends StatelessWidget {
         child: const SimfSvgIcon(
           'assets/icons/ic_back.svg',
           size: 24,
-          color: Colors.white,
+          color: SimfTokens.surface,
         ),
       ),
     );
@@ -346,7 +346,7 @@ class SimfMenuButton extends StatelessWidget {
         backgroundColor: SimfTokens.navyDeep,
         shape: const CircleBorder(),
       ),
-      icon: const Icon(Icons.menu, color: Colors.white, size: 20),
+      icon: const Icon(Icons.menu, color: SimfTokens.surface, size: 20),
     );
   }
 }
@@ -613,7 +613,7 @@ class SimfSectionHeader extends StatelessWidget {
             style: const TextStyle(
               fontSize: SimfTokens.textLg,
               fontWeight: FontWeight.w500,
-              color: Colors.white,
+              color: SimfTokens.surface,
             ),
           ),
         ),
@@ -633,7 +633,7 @@ class SimfSectionHeader extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: SimfTokens.textSm,
                   fontWeight: FontWeight.w500,
-                  color: Colors.white,
+                  color: SimfTokens.surface,
                 ),
               ),
             ),
@@ -660,7 +660,7 @@ class SimfLinkRow extends StatelessWidget {
     final flip = !AppL10n.of(context).isArabic;
     return SimfCard(
       onTap: onTap,
-      color: Colors.transparent,
+      color: SimfTokens.transparent,
       borderColor: SimfTokens.beigeBorder,
       borderWidth: SimfTokens.hairline,
       child: SizedBox(
@@ -678,7 +678,7 @@ class SimfLinkRow extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: SimfTokens.textLg,
                     fontWeight: FontWeight.w500,
-                    color: Colors.white,
+                    color: SimfTokens.surface,
                   ),
                 ),
               ),
@@ -693,7 +693,7 @@ class SimfLinkRow extends StatelessWidget {
                 flipX: flip,
                 child: const SimfSvgIcon(
                   'assets/icons/ic_caret_left.svg',
-                  color: Colors.white,
+                  color: SimfTokens.surface,
                   size: 24,
                 ),
               ),
@@ -764,7 +764,7 @@ class SimfNavTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final foreground =
         enabled ? SimfTokens.accent : SimfTokens.navyDisabledText;
-    final labelColor = enabled ? Colors.white : SimfTokens.navyDisabledText;
+    final labelColor = enabled ? SimfTokens.surface : SimfTokens.navyDisabledText;
     final asset = iconAsset;
     final Widget top = asset != null
         ? SimfSvgIcon(asset, size: 24, color: foreground)
@@ -817,7 +817,7 @@ class SimfStatTile extends StatelessWidget {
           ),
         ),
         label: label,
-        labelColor: Colors.white,
+        labelColor: SimfTokens.surface,
       ),
     );
   }
@@ -1002,7 +1002,7 @@ class SimfListRow extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: SimfTokens.textLg,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: SimfTokens.surface,
                     ),
                   ),
                   if (subtitle != null) ...<Widget>[
@@ -1064,7 +1064,7 @@ class SimfErrorState extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: SimfTokens.surface),
             ),
             const SizedBox(height: SimfTokens.space4),
             FilledButton(onPressed: onRetry, child: Text(retryLabel)),

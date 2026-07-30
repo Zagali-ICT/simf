@@ -119,6 +119,27 @@ class SimfTokens {
   // widgets never reference `Colors.transparent` directly (#16 sweep).
   static const Color transparent = Color(0x00000000);
 
+  // Opaque black — the letterbox behind video/camera surfaces (the live player
+  // band, the scanner viewfinder). Its own token so no widget reaches for
+  // `Colors.black`; it is a surface colour, not a scrim.
+  static const Color black = Color(0xFF000000);
+
+  // White at 70% — the secondary label on a photo/camera surface where the
+  // on-navy [txtSecondary] would wash out.
+  static const Color white70 = Color(0xB3FFFFFF);
+
+  // Black scrims over photo / video / camera surfaces, by opacity. Named the
+  // same way as [scrimBlack55] so the set reads as one scale.
+  static const Color scrimBlack25 = Color(0x40000000); // scanner card shadow
+  static const Color scrimBlack35 = Color(0x59000000); // scanner viewfinder mask
+  static const Color scrimBlack40 = Color(0x66000000); // scanner busy overlay
+  static const Color scrimBlack50 = Color(0x80000000); // home hero image scrim
+  static const Color scrimWhite90 = Color(0xE6FFFFFF); // radio pill on beige
+
+  // [accent] at zero alpha — the fade-out stop of the scanner sweep gradient.
+  // A token, not `accent.withValues(alpha: 0)`, because the gradient is const.
+  static const Color accentFade = Color(0x00C9A84C);
+
   // Spacing scale.
   static const double space1 = 4;
   static const double space2 = 8;

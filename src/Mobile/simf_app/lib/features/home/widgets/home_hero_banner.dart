@@ -132,7 +132,7 @@ class _HomeHeroBannerState extends State<HomeHeroBanner> {
                   fallbackUrl: banners[i].imageUrl,
                 ),
               ),
-            const ColoredBox(color: Color(0x80000000)),
+            const ColoredBox(color: SimfTokens.scrimBlack50),
             Material(
               color: SimfTokens.transparent,
               child: InkWell(

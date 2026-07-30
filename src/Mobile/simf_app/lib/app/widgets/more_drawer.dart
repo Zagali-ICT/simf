@@ -51,7 +51,7 @@ class MoreDrawer extends ConsumerWidget {
               child: Text(
                 l10n.moreTitle,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: SimfTokens.surface,
                   fontSize: SimfTokens.textXl,
                   fontWeight: FontWeight.w600,
                 ),
@@ -255,8 +255,8 @@ class _DrawerTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(icon, color: Colors.white),
-      title: Text(title, style: const TextStyle(color: Colors.white)),
+      leading: Icon(icon, color: SimfTokens.surface),
+      title: Text(title, style: const TextStyle(color: SimfTokens.surface)),
       onTap: onTap,
     );
   }

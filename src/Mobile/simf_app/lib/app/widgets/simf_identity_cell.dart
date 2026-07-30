@@ -73,7 +73,7 @@ class SimfIdentityCell extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: SimfTokens.surface,
                             fontWeight: FontWeight.w600,
                             fontSize: SimfTokens.textLg,
                           ),
@@ -194,7 +194,7 @@ class _InitialsAvatar extends StatelessWidget {
         initials,
         textDirection: TextDirection.ltr,
         style: const TextStyle(
-          color: Colors.white,
+          color: SimfTokens.surface,
           fontSize: SimfTokens.textMd,
           fontWeight: FontWeight.w700,
         ),

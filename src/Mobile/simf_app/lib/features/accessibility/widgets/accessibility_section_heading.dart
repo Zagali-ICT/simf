@@ -16,7 +16,7 @@ class AccessibilitySectionHeading extends StatelessWidget {
       text,
       textAlign: TextAlign.start,
       style: const TextStyle(
-        color: Colors.white,
+        color: SimfTokens.surface,
         fontWeight: FontWeight.w600,
         fontSize: SimfTokens.textLg,
       ),
