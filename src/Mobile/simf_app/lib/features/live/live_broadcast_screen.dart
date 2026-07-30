@@ -215,6 +215,17 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
     }
   }
 
+  /// Owner rule: every data page pulls to refresh. Re-reads the session and the
+  /// upcoming strip together; the org profile backs the id-less global feed, so
+  /// it is warmed too.
+  Future<void> _refresh() async {
+    await Future.wait<void>(<Future<void>>[
+      if (_hasId) _load(),
+      _loadUpcoming(),
+      ref.read(orgProfileProvider.notifier).warm(),
+    ]);
+  }
+
   void _askQuestion() {
     context.pushNamed(
       RouteNames.sendQuestion,
@@ -247,7 +258,10 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
       title: l10n.liveBroadcastTitle,
       onBack: () => backOrHome(context),
       tab: SimfTab.sessions,
-      body: _buildBody(l10n),
+      body: SimfPullToRefresh(
+        onRefresh: _refresh,
+        child: _buildBody(l10n),
+      ),
     );
   }
 
@@ -287,25 +301,31 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
       if (profile != null && globalUrl != null && globalUrl.isNotEmpty) {
         return _content(l10n, _globalLiveSession(profile, globalUrl));
       }
-      return SimfEmptyState(
-        icon: Icons.live_tv_outlined,
-        message: l10n.liveNoSessionSelected,
+      return SimfPullableHost(
+        child: SimfEmptyState(
+          icon: Icons.live_tv_outlined,
+          message: l10n.liveNoSessionSelected,
+        ),
       );
     }
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
     if (_notFound) {
-      return SimfEmptyState(
-        icon: Icons.live_tv_outlined,
-        message: l10n.sessionNotFound,
+      return SimfPullableHost(
+        child: SimfEmptyState(
+          icon: Icons.live_tv_outlined,
+          message: l10n.sessionNotFound,
+        ),
       );
     }
     if (_error || _session == null) {
-      return SimfErrorState(
-        message: l10n.liveBroadcastError,
-        retryLabel: l10n.retryLabel,
-        onRetry: () => unawaited(_load()),
+      return SimfPullableHost(
+        child: SimfErrorState(
+          message: l10n.liveBroadcastError,
+          retryLabel: l10n.retryLabel,
+          onRetry: () => unawaited(_load()),
+        ),
       );
     }
     return _content(l10n, _session!);
@@ -338,6 +358,7 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
 
     return ListView(
       padding: EdgeInsets.zero,
+      physics: const AlwaysScrollableScrollPhysics(),
       children: <Widget>[
         // The black player surface (frame 934:3614) — full-bleed, edge to edge.
         if (mainUrl != null)
