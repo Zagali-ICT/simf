@@ -11,6 +11,57 @@ Full plan: `C:\Users\LOQ\.claude\plans\based-on-app-clean-prancy-pudding.md` (ow
 
 ## Program state (supersedes older handoffs)
 
+### 2026-07-28 re-audit — the "code-complete" claim below is STALE
+
+A 15-agent read-only audit of all 41 feature folders found **644 standards
+violations across 245 files (175 high)**. 80 new Dart files and 6 new screens
+landed after this branch closed, and the frozen state drifted. Corrections to
+what is written further down:
+
+- **Pull-to-refresh had regressed to 25 of 69 screens**, not "repo-wide". The
+  2026-06-28 grep audit was wrong: `SimfPageShell` only DEFINES
+  `SimfPullToRefresh`/`SimfPullableHost` — applying them is opt-in per screen, and
+  **Home had none at all**. Restored across all 27 missing screens.
+- **The refresh idiom itself was buggy repo-wide.** `ref.invalidate(p); await
+  ref.read(p.future);` RETHROWS on a failing endpoint, rejecting the
+  RefreshIndicator's future as an unhandled error on top of the error state the
+  user can already see. 15 files had it. Use
+  **`refreshAsync(ref, p.future)`** (`lib/core/utils/refresh.dart`) — never the
+  raw idiom again.
+- **`third_party/` was never excluded from analysis**, so 183 vendored errors
+  buried anything real in `lib/`. Now excluded; the gate is readable.
+
+Landed 2026-07-28 (branch `feat/badge-profile-type-color`):
+`d6829c19` gate hygiene + 8 async-context crash paths + 2 red tests ·
+`94c2e0c6` + `d929ad04` pull-to-refresh on all 27 screens ·
+`b0ad65fc` refreshAsync retrofit (13 screens) ·
+`c551bc0e` zero raw colours (59 -> 0) ·
+`d2f8c2c1` 91 inline TextStyles tokenized (exact-match only) ·
+`c1194895` news article routed + meeting_confirm / sponsor_detail widget tests.
+
+Gate after: analyze errors+warnings **6 = the pre-existing baseline (all in
+test/)**; `flutter test` **1108 pass / 0 fail** (was 1094/2); every golden held
+WITHOUT `--update`.
+
+**Still open (the honest remainder):**
+1. **148 inline TextStyles** with no exact token match — each needs its Figma
+   node checked, not a guess. The 91 that matched exactly are done.
+2. **Structural decomposition (S1)** — `sign_up_visitor_screen` 1711 lines,
+   `simf_page_shell` 1142, `register_visitor_screen` 1075, plus ~117 S1 findings.
+   Untouched: this is a multi-session job and every split needs a baseline-then-hold
+   golden.
+3. **S16 duplication** (117 findings / 180 occurrences), **S11** business logic in
+   `build()` (41), **S14** missing doc headers (48), **S9** dead code (34).
+4. **Figma nodes MISSING** for `change_email`, `meetings`, `meeting_confirm`,
+   `badge_password`, `about_app` — Level 4 is BLOCKED on the owner for these five
+   (per §13.5, ask, never guess).
+5. Pre-existing: 6 `test/` warnings (4 unused imports + 2 unused params).
+
+**Verification gotcha banked:** `grep -E '^\s+(error|warning)'` silently matches
+NOTHING (POSIX ERE has no `\s`). Use `grep -E '^ *(error|warning) - '`. A whole
+run of per-module "0 errors" checks in this session was meaningless until caught.
+
+
 **✅ THE CLEAN-CODE SWEEP IS CODE-COMPLETE (2026-07-04).** Every routed app screen
 is now clean-code frozen. All commits are pushed to `origin/refactor/clean-code-2`
 (branch 0 ahead, working tree clean). Next decision number: **D-648**.
