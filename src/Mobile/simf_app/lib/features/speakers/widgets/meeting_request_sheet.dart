@@ -1,5 +1,4 @@
 import 'dart:async';
-import '../../../core/utils/saudi_time.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +7,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../core/utils/gregorian_month_names.dart';
+import '../../../core/utils/saudi_time.dart';
 import '../../../core/utils/weekday_names.dart';
 import '../data/speaker_models.dart';
 import '../data/speakers_repository.dart';

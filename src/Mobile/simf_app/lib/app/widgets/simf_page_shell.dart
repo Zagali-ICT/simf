@@ -6,10 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/accessibility/data/accessibility_controller.dart';
-import '../../features/notifications/data/notifications_repository.dart'
-    show unreadNotificationCountProvider;
 import '../../features/account/data/profile_repository.dart'
     show myAvatarBytesProvider;
+import '../../features/notifications/data/notifications_repository.dart'
+    show unreadNotificationCountProvider;
 import '../localization/app_l10n.dart';
 import '../localization/locale_controller.dart';
 import '../route_names.dart';
@@ -25,8 +25,8 @@ import 'simf_svg_icon.dart';
 // existing `simf_page_shell.dart` imports across the app keep resolving.
 export 'simf_cards.dart';
 export 'simf_refresh.dart';
-export 'simf_tiles.dart';
 export 'simf_states.dart';
+export 'simf_tiles.dart';
 
 /// Shared KSA main-shell chrome for the Wave-2 in-app pages (frames
 /// 512:1492 / 203:1236 / 512:1780 / 215:767 / 221:769 / 215:562): the navy
