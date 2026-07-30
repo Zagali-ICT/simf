@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
@@ -111,24 +111,12 @@ public partial class MediaPartnerAddEdit
             countryId = parsed;
         }
 
-        // Latitude/longitude are an all-or-nothing pair; the service enforces
-        // the real-world ranges and returns a bilingual 400 if out of bounds.
-        double? latitude = null, longitude = null;
-        var hasLat = !string.IsNullOrWhiteSpace(_latitudeInput);
-        var hasLong = !string.IsNullOrWhiteSpace(_longitudeInput);
-        if (hasLat != hasLong)
+        var coordinateError = CoordinateInput.Read(
+            _latitudeInput, _longitudeInput, out var latitude, out var longitude);
+        if (coordinateError is not null)
         {
-            _error = L["Admin.ContactField.LatLongHint"]; return;
-        }
-        if (hasLat)
-        {
-            if (!double.TryParse(_latitudeInput, NumberStyles.Float, CultureInfo.InvariantCulture, out var lat)
-                || !double.TryParse(_longitudeInput, NumberStyles.Float, CultureInfo.InvariantCulture, out var lng))
-            {
-                _error = L["Admin.ContactField.LatLongInvalid"]; return;
-            }
-            latitude = lat;
-            longitude = lng;
+            _error = L[coordinateError];
+            return;
         }
 
         _busy = true;

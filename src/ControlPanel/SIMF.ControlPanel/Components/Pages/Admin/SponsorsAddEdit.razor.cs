@@ -108,105 +108,19 @@ public partial class SponsorsAddEdit
         if (_busy) return;
         _error = null;
 
-        if (string.IsNullOrWhiteSpace(_model.NameEn) || string.IsNullOrWhiteSpace(_model.NameAr))
-        {
-            _error = L["Admin.Sponsors.NameRequired"]; return;
-        }
-
-        // The picker only ever supplies valid numeric ids; anything else is
-        // treated as "no country" and the service re-checks a real id.
-        int? countryId = null;
-        if (!string.IsNullOrWhiteSpace(_countryIdInput)
-            && int.TryParse(_countryIdInput, out var parsedCountry) && parsedCountry > 0)
-        {
-            countryId = parsedCountry;
-        }
-
-        // Latitude/longitude are an all-or-nothing pair; the service enforces
-        // the real-world ranges and returns a bilingual 400 if out of bounds.
-        double? latitude = null, longitude = null;
-        var hasLat = !string.IsNullOrWhiteSpace(_latitudeInput);
-        var hasLong = !string.IsNullOrWhiteSpace(_longitudeInput);
-        if (hasLat != hasLong)
-        {
-            _error = L["Admin.ContactField.LatLongHint"]; return;
-        }
-        if (hasLat)
-        {
-            if (!double.TryParse(_latitudeInput, NumberStyles.Float, CultureInfo.InvariantCulture, out var lat)
-                || !double.TryParse(_longitudeInput, NumberStyles.Float, CultureInfo.InvariantCulture, out var lng))
-            {
-                _error = L["Admin.ContactField.LatLongInvalid"]; return;
-            }
-            latitude = lat;
-            longitude = lng;
-        }
+        var form = ReadForm();
+        if (form is null) { return; }
 
         _busy = true;
         try
         {
-            ApiResult<AdminSponsorDetail>? envelope;
-            if (!IsEdit)
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminSponsorDetail>>(
-                    "simfAccount.postJson", "/account/api/admin/sponsors",
-                    new AdminCreateSponsorRequest
-                    {
-                        NameEn = _model.NameEn.Trim(),
-                        NameAr = _model.NameAr.Trim(),
-                        Tier = _model.Tier,
-                        LogoRelativePath = NullIfBlank(_model.LogoRelativePath),
-                        Url = NullIfBlank(_model.Url),
-                        DisplayOrder = _model.DisplayOrder,
-                        Tagline = NullIfBlank(_model.Tagline),
-                        TaglineArabic = NullIfBlank(_model.TaglineAr),
-                        About = NullIfBlank(_model.About),
-                        AboutArabic = NullIfBlank(_model.AboutAr),
-                        CountryId = countryId,
-                        Email = NullIfBlank(_model.Email),
-                        PhonePrimary = NullIfBlank(_model.PhonePrimary),
-                        PhoneSecondary = NullIfBlank(_model.PhoneSecondary),
-                        FacebookUrl = NullIfBlank(_model.FacebookUrl),
-                        XUrl = NullIfBlank(_model.XUrl),
-                        LinkedInUrl = NullIfBlank(_model.LinkedInUrl),
-                        InstagramUrl = NullIfBlank(_model.InstagramUrl),
-                        City = NullIfBlank(_model.City),
-                        CityArabic = NullIfBlank(_model.CityArabic),
-                        Latitude = latitude,
-                        Longitude = longitude,
-                    });
-            }
-            else
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminSponsorDetail>>(
+            var envelope = IsEdit
+                ? await JS.InvokeAsync<ApiResult<AdminSponsorDetail>>(
                     "simfAccount.putJson", $"/account/api/admin/sponsors/{Initial!.Id}",
-                    new AdminUpdateSponsorRequest
-                    {
-                        NameEn = _model.NameEn.Trim(),
-                        NameAr = _model.NameAr.Trim(),
-                        Tier = _model.Tier,
-                        LogoRelativePath = NullIfBlank(_model.LogoRelativePath),
-                        Url = NullIfBlank(_model.Url),
-                        DisplayOrder = _model.DisplayOrder,
-                        Tagline = NullIfBlank(_model.Tagline),
-                        TaglineArabic = NullIfBlank(_model.TaglineAr),
-                        About = NullIfBlank(_model.About),
-                        AboutArabic = NullIfBlank(_model.AboutAr),
-                        CountryId = countryId,
-                        Email = NullIfBlank(_model.Email),
-                        PhonePrimary = NullIfBlank(_model.PhonePrimary),
-                        PhoneSecondary = NullIfBlank(_model.PhoneSecondary),
-                        FacebookUrl = NullIfBlank(_model.FacebookUrl),
-                        XUrl = NullIfBlank(_model.XUrl),
-                        LinkedInUrl = NullIfBlank(_model.LinkedInUrl),
-                        InstagramUrl = NullIfBlank(_model.InstagramUrl),
-                        City = NullIfBlank(_model.City),
-                        CityArabic = NullIfBlank(_model.CityArabic),
-                        Latitude = latitude,
-                        Longitude = longitude,
-                        IsActive = _model.IsActive,
-                    });
-            }
+                    BuildUpdateRequest(form))
+                : await JS.InvokeAsync<ApiResult<AdminSponsorDetail>>(
+                    "simfAccount.postJson", "/account/api/admin/sponsors",
+                    BuildCreateRequest(form));
 
             if (envelope is { Success: true, Data: not null })
             {
@@ -224,6 +138,93 @@ public partial class SponsorsAddEdit
         }
         finally { _busy = false; }
     }
+
+    /// <summary>Validates the form and returns its parsed values, or null after
+    /// setting <see cref="_error"/> to the first problem found.</summary>
+    private FormValues? ReadForm()
+    {
+        if (string.IsNullOrWhiteSpace(_model.NameEn) || string.IsNullOrWhiteSpace(_model.NameAr))
+        {
+            _error = L["Admin.Sponsors.NameRequired"];
+            return null;
+        }
+
+        // The picker only ever supplies valid numeric ids; anything else is
+        // treated as "no country" and the service re-checks a real id.
+        int? countryId = null;
+        if (!string.IsNullOrWhiteSpace(_countryIdInput)
+            && int.TryParse(_countryIdInput, out var parsedCountry) && parsedCountry > 0)
+        {
+            countryId = parsedCountry;
+        }
+
+        var coordinateError = CoordinateInput.Read(
+            _latitudeInput, _longitudeInput, out var latitude, out var longitude);
+        if (coordinateError is not null)
+        {
+            _error = L[coordinateError];
+            return null;
+        }
+
+        return new FormValues(countryId, latitude, longitude);
+    }
+
+    private AdminCreateSponsorRequest BuildCreateRequest(FormValues form) => new()
+    {
+        NameEn = _model.NameEn.Trim(),
+        NameAr = _model.NameAr.Trim(),
+        Tier = _model.Tier,
+        LogoRelativePath = NullIfBlank(_model.LogoRelativePath),
+        Url = NullIfBlank(_model.Url),
+        DisplayOrder = _model.DisplayOrder,
+        Tagline = NullIfBlank(_model.Tagline),
+        TaglineArabic = NullIfBlank(_model.TaglineAr),
+        About = NullIfBlank(_model.About),
+        AboutArabic = NullIfBlank(_model.AboutAr),
+        CountryId = form.CountryId,
+        Email = NullIfBlank(_model.Email),
+        PhonePrimary = NullIfBlank(_model.PhonePrimary),
+        PhoneSecondary = NullIfBlank(_model.PhoneSecondary),
+        FacebookUrl = NullIfBlank(_model.FacebookUrl),
+        XUrl = NullIfBlank(_model.XUrl),
+        LinkedInUrl = NullIfBlank(_model.LinkedInUrl),
+        InstagramUrl = NullIfBlank(_model.InstagramUrl),
+        City = NullIfBlank(_model.City),
+        CityArabic = NullIfBlank(_model.CityArabic),
+        Latitude = form.Latitude,
+        Longitude = form.Longitude,
+    };
+
+    private AdminUpdateSponsorRequest BuildUpdateRequest(FormValues form) => new()
+    {
+        NameEn = _model.NameEn.Trim(),
+        NameAr = _model.NameAr.Trim(),
+        Tier = _model.Tier,
+        LogoRelativePath = NullIfBlank(_model.LogoRelativePath),
+        Url = NullIfBlank(_model.Url),
+        DisplayOrder = _model.DisplayOrder,
+        Tagline = NullIfBlank(_model.Tagline),
+        TaglineArabic = NullIfBlank(_model.TaglineAr),
+        About = NullIfBlank(_model.About),
+        AboutArabic = NullIfBlank(_model.AboutAr),
+        CountryId = form.CountryId,
+        Email = NullIfBlank(_model.Email),
+        PhonePrimary = NullIfBlank(_model.PhonePrimary),
+        PhoneSecondary = NullIfBlank(_model.PhoneSecondary),
+        FacebookUrl = NullIfBlank(_model.FacebookUrl),
+        XUrl = NullIfBlank(_model.XUrl),
+        LinkedInUrl = NullIfBlank(_model.LinkedInUrl),
+        InstagramUrl = NullIfBlank(_model.InstagramUrl),
+        City = NullIfBlank(_model.City),
+        CityArabic = NullIfBlank(_model.CityArabic),
+        Latitude = form.Latitude,
+        Longitude = form.Longitude,
+        IsActive = _model.IsActive,
+    };
+
+    /// <summary>The form's validated, parsed values — everything the two request
+    /// builders need that is not read straight off <see cref="_model"/>.</summary>
+    private sealed record FormValues(int? CountryId, double? Latitude, double? Longitude);
 
     private void OnTierChanged(ChangeEventArgs e)
     {

@@ -103,133 +103,19 @@ public partial class SpeakersAddEdit
         if (_busy) return;
         _error = null;
 
-        if (string.IsNullOrWhiteSpace(_model.Code) || _model.Code.Length is < 2 or > 16)
-        {
-            _error = L["Admin.Speakers.Field.CodeInvalid"]; return;
-        }
-        if (string.IsNullOrWhiteSpace(_model.Name) || _model.Name.Length > 128)
-        {
-            _error = L["Admin.Speakers.Field.NameInvalid"]; return;
-        }
-        if (string.IsNullOrWhiteSpace(_model.NameArabic) || _model.NameArabic.Length > 128)
-        {
-            _error = L["Admin.Speakers.Field.NameArabicInvalid"]; return;
-        }
-        if (!int.TryParse(_displayOrderInput, out var order) || order < 0)
-        {
-            _error = L["Admin.Speakers.Field.DisplayOrderInvalid"]; return;
-        }
-
-        int? countryId = null;
-        if (!string.IsNullOrWhiteSpace(_countryIdInput))
-        {
-            if (!int.TryParse(_countryIdInput, out var parsed) || parsed <= 0)
-            {
-                _error = L["Admin.Speakers.Field.CountryInvalid"]; return;
-            }
-            countryId = parsed;
-        }
-
-        // Latitude/longitude are an all-or-nothing pair; the service enforces
-        // the real-world ranges and returns a bilingual 400 if out of bounds.
-        double? latitude = null, longitude = null;
-        var hasLat = !string.IsNullOrWhiteSpace(_latitudeInput);
-        var hasLong = !string.IsNullOrWhiteSpace(_longitudeInput);
-        if (hasLat != hasLong)
-        {
-            _error = L["Admin.ContactField.LatLongHint"]; return;
-        }
-        if (hasLat)
-        {
-            if (!double.TryParse(_latitudeInput, NumberStyles.Float, CultureInfo.InvariantCulture, out var lat)
-                || !double.TryParse(_longitudeInput, NumberStyles.Float, CultureInfo.InvariantCulture, out var lng))
-            {
-                _error = L["Admin.ContactField.LatLongInvalid"]; return;
-            }
-            latitude = lat;
-            longitude = lng;
-        }
+        var form = ReadForm();
+        if (form is null) { return; }
 
         _busy = true;
         try
         {
-            ApiResult<AdminSpeakerDetail>? envelope;
-            if (!IsEdit)
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminSpeakerDetail>>(
-                    "simfAccount.postJson", "/account/api/admin/speakers",
-                    new AdminCreateSpeakerRequest
-                    {
-                        Code = _model.Code.Trim().ToUpperInvariant(),
-                        Name = _model.Name.Trim(),
-                        NameArabic = _model.NameArabic.Trim(),
-                        Rank = NullIfBlank(_model.Rank),
-                        RankArabic = NullIfBlank(_model.RankArabic),
-                        CountryId = countryId,
-                        Bio = NullIfBlank(_model.Bio),
-                        BioArabic = NullIfBlank(_model.BioArabic),
-                        Qualifications = NullIfBlank(_model.Qualifications),
-                        QualificationsArabic = NullIfBlank(_model.QualificationsArabic),
-                        TrainingExperience = NullIfBlank(_model.TrainingExperience),
-                        TrainingExperienceArabic = NullIfBlank(_model.TrainingExperienceArabic),
-                        Awards = NullIfBlank(_model.Awards),
-                        AwardsArabic = NullIfBlank(_model.AwardsArabic),
-                        AllowsMeetingRequests = _model.AllowsMeetingRequests,
-                        AllowsDataSharing = _model.AllowsDataSharing,
-                        FacebookUrl = NullIfBlank(_model.FacebookUrl),
-                        LinkedInUrl = NullIfBlank(_model.LinkedInUrl),
-                        XUrl = NullIfBlank(_model.XUrl),
-                        WebsiteUrl = NullIfBlank(_model.WebsiteUrl),
-                        Email = NullIfBlank(_model.Email),
-                        PhonePrimary = NullIfBlank(_model.PhonePrimary),
-                        PhoneSecondary = NullIfBlank(_model.PhoneSecondary),
-                        InstagramUrl = NullIfBlank(_model.InstagramUrl),
-                        City = NullIfBlank(_model.City),
-                        CityArabic = NullIfBlank(_model.CityArabic),
-                        Latitude = latitude,
-                        Longitude = longitude,
-                        DisplayOrder = order,
-                    });
-            }
-            else
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminSpeakerDetail>>(
+            var envelope = IsEdit
+                ? await JS.InvokeAsync<ApiResult<AdminSpeakerDetail>>(
                     "simfAccount.putJson", $"/account/api/admin/speakers/{Initial!.Id}",
-                    new AdminUpdateSpeakerRequest
-                    {
-                        Code = _model.Code.Trim().ToUpperInvariant(),
-                        Name = _model.Name.Trim(),
-                        NameArabic = _model.NameArabic.Trim(),
-                        Rank = NullIfBlank(_model.Rank),
-                        RankArabic = NullIfBlank(_model.RankArabic),
-                        CountryId = countryId,
-                        UserProfileId = Initial.UserProfileId, // preserved (not editable in this form yet)
-                        Bio = NullIfBlank(_model.Bio),
-                        BioArabic = NullIfBlank(_model.BioArabic),
-                        Qualifications = NullIfBlank(_model.Qualifications),
-                        QualificationsArabic = NullIfBlank(_model.QualificationsArabic),
-                        TrainingExperience = NullIfBlank(_model.TrainingExperience),
-                        TrainingExperienceArabic = NullIfBlank(_model.TrainingExperienceArabic),
-                        Awards = NullIfBlank(_model.Awards),
-                        AwardsArabic = NullIfBlank(_model.AwardsArabic),
-                        AllowsMeetingRequests = _model.AllowsMeetingRequests,
-                        AllowsDataSharing = _model.AllowsDataSharing,
-                        FacebookUrl = NullIfBlank(_model.FacebookUrl),
-                        LinkedInUrl = NullIfBlank(_model.LinkedInUrl),
-                        XUrl = NullIfBlank(_model.XUrl),
-                        WebsiteUrl = NullIfBlank(_model.WebsiteUrl),
-                        Email = NullIfBlank(_model.Email),
-                        PhonePrimary = NullIfBlank(_model.PhonePrimary),
-                        PhoneSecondary = NullIfBlank(_model.PhoneSecondary),
-                        InstagramUrl = NullIfBlank(_model.InstagramUrl),
-                        City = NullIfBlank(_model.City),
-                        CityArabic = NullIfBlank(_model.CityArabic),
-                        Latitude = latitude,
-                        Longitude = longitude,
-                        DisplayOrder = order,
-                        IsActive = _model.IsActive,
-                    });
-            }
+                    BuildUpdateRequest(form))
+                : await JS.InvokeAsync<ApiResult<AdminSpeakerDetail>>(
+                    "simfAccount.postJson", "/account/api/admin/speakers",
+                    BuildCreateRequest(form));
 
             if (envelope is { Success: true, Data: not null })
             {
@@ -247,6 +133,129 @@ public partial class SpeakersAddEdit
         }
         finally { _busy = false; }
     }
+
+    /// <summary>Validates the form and returns its parsed values, or null after
+    /// setting <see cref="_error"/> to the first problem found.</summary>
+    private FormValues? ReadForm()
+    {
+        if (string.IsNullOrWhiteSpace(_model.Code) || _model.Code.Length is < 2 or > 16)
+        {
+            _error = L["Admin.Speakers.Field.CodeInvalid"];
+            return null;
+        }
+        if (string.IsNullOrWhiteSpace(_model.Name) || _model.Name.Length > 128)
+        {
+            _error = L["Admin.Speakers.Field.NameInvalid"];
+            return null;
+        }
+        if (string.IsNullOrWhiteSpace(_model.NameArabic) || _model.NameArabic.Length > 128)
+        {
+            _error = L["Admin.Speakers.Field.NameArabicInvalid"];
+            return null;
+        }
+        if (!int.TryParse(_displayOrderInput, out var order) || order < 0)
+        {
+            _error = L["Admin.Speakers.Field.DisplayOrderInvalid"];
+            return null;
+        }
+
+        int? countryId = null;
+        if (!string.IsNullOrWhiteSpace(_countryIdInput))
+        {
+            if (!int.TryParse(_countryIdInput, out var parsed) || parsed <= 0)
+            {
+                _error = L["Admin.Speakers.Field.CountryInvalid"];
+                return null;
+            }
+            countryId = parsed;
+        }
+
+        var coordinateError = CoordinateInput.Read(
+            _latitudeInput, _longitudeInput, out var latitude, out var longitude);
+        if (coordinateError is not null)
+        {
+            _error = L[coordinateError];
+            return null;
+        }
+
+        return new FormValues(order, countryId, latitude, longitude);
+    }
+
+    private AdminCreateSpeakerRequest BuildCreateRequest(FormValues form) => new()
+    {
+        Code = _model.Code.Trim().ToUpperInvariant(),
+        Name = _model.Name.Trim(),
+        NameArabic = _model.NameArabic.Trim(),
+        Rank = NullIfBlank(_model.Rank),
+        RankArabic = NullIfBlank(_model.RankArabic),
+        CountryId = form.CountryId,
+        Bio = NullIfBlank(_model.Bio),
+        BioArabic = NullIfBlank(_model.BioArabic),
+        Qualifications = NullIfBlank(_model.Qualifications),
+        QualificationsArabic = NullIfBlank(_model.QualificationsArabic),
+        TrainingExperience = NullIfBlank(_model.TrainingExperience),
+        TrainingExperienceArabic = NullIfBlank(_model.TrainingExperienceArabic),
+        Awards = NullIfBlank(_model.Awards),
+        AwardsArabic = NullIfBlank(_model.AwardsArabic),
+        AllowsMeetingRequests = _model.AllowsMeetingRequests,
+        AllowsDataSharing = _model.AllowsDataSharing,
+        FacebookUrl = NullIfBlank(_model.FacebookUrl),
+        LinkedInUrl = NullIfBlank(_model.LinkedInUrl),
+        XUrl = NullIfBlank(_model.XUrl),
+        WebsiteUrl = NullIfBlank(_model.WebsiteUrl),
+        Email = NullIfBlank(_model.Email),
+        PhonePrimary = NullIfBlank(_model.PhonePrimary),
+        PhoneSecondary = NullIfBlank(_model.PhoneSecondary),
+        InstagramUrl = NullIfBlank(_model.InstagramUrl),
+        City = NullIfBlank(_model.City),
+        CityArabic = NullIfBlank(_model.CityArabic),
+        Latitude = form.Latitude,
+        Longitude = form.Longitude,
+        DisplayOrder = form.DisplayOrder,
+    };
+
+    private AdminUpdateSpeakerRequest BuildUpdateRequest(FormValues form) => new()
+    {
+        Code = _model.Code.Trim().ToUpperInvariant(),
+        Name = _model.Name.Trim(),
+        NameArabic = _model.NameArabic.Trim(),
+        Rank = NullIfBlank(_model.Rank),
+        RankArabic = NullIfBlank(_model.RankArabic),
+        CountryId = form.CountryId,
+        UserProfileId = Initial!.UserProfileId, // preserved (not editable in this form yet)
+        Bio = NullIfBlank(_model.Bio),
+        BioArabic = NullIfBlank(_model.BioArabic),
+        Qualifications = NullIfBlank(_model.Qualifications),
+        QualificationsArabic = NullIfBlank(_model.QualificationsArabic),
+        TrainingExperience = NullIfBlank(_model.TrainingExperience),
+        TrainingExperienceArabic = NullIfBlank(_model.TrainingExperienceArabic),
+        Awards = NullIfBlank(_model.Awards),
+        AwardsArabic = NullIfBlank(_model.AwardsArabic),
+        AllowsMeetingRequests = _model.AllowsMeetingRequests,
+        AllowsDataSharing = _model.AllowsDataSharing,
+        FacebookUrl = NullIfBlank(_model.FacebookUrl),
+        LinkedInUrl = NullIfBlank(_model.LinkedInUrl),
+        XUrl = NullIfBlank(_model.XUrl),
+        WebsiteUrl = NullIfBlank(_model.WebsiteUrl),
+        Email = NullIfBlank(_model.Email),
+        PhonePrimary = NullIfBlank(_model.PhonePrimary),
+        PhoneSecondary = NullIfBlank(_model.PhoneSecondary),
+        InstagramUrl = NullIfBlank(_model.InstagramUrl),
+        City = NullIfBlank(_model.City),
+        CityArabic = NullIfBlank(_model.CityArabic),
+        Latitude = form.Latitude,
+        Longitude = form.Longitude,
+        DisplayOrder = form.DisplayOrder,
+        IsActive = _model.IsActive,
+    };
+
+    /// <summary>The form's validated, parsed values — everything the two request
+    /// builders need that is not read straight off <see cref="_model"/>.</summary>
+    private sealed record FormValues(
+        int DisplayOrder,
+        int? CountryId,
+        double? Latitude,
+        double? Longitude);
 
     private static string? NullIfBlank(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();

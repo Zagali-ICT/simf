@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
@@ -177,22 +177,12 @@ public partial class BoothsAddEdit
             officerCountryId = parsedCountry;
         }
 
-        double? officerLatitude = null, officerLongitude = null;
-        var hasLat = !string.IsNullOrWhiteSpace(_officerLatitudeInput);
-        var hasLong = !string.IsNullOrWhiteSpace(_officerLongitudeInput);
-        if (hasLat != hasLong)
+        var coordinateError = CoordinateInput.Read(
+            _officerLatitudeInput, _officerLongitudeInput, out var officerLatitude, out var officerLongitude);
+        if (coordinateError is not null)
         {
-            _error = L["Admin.ContactField.LatLongHint"]; return;
-        }
-        if (hasLat)
-        {
-            if (!double.TryParse(_officerLatitudeInput, NumberStyles.Float, CultureInfo.InvariantCulture, out var lat)
-                || !double.TryParse(_officerLongitudeInput, NumberStyles.Float, CultureInfo.InvariantCulture, out var lng))
-            {
-                _error = L["Admin.ContactField.LatLongInvalid"]; return;
-            }
-            officerLatitude = lat;
-            officerLongitude = lng;
+            _error = L[coordinateError];
+            return;
         }
 
         _busy = true;
