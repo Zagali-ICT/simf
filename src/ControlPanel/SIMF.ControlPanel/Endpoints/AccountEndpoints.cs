@@ -17,7 +17,6 @@ using SIMF.Contracts.Email;
 using SIMF.Contracts.Faq;
 using SIMF.Contracts.Feedback;
 using SIMF.Contracts.Organisations;
-using SIMF.Contracts.Logs;
 using SIMF.Contracts.Media;
 using SIMF.Contracts.Programme;
 using SIMF.Contracts.Requests;
