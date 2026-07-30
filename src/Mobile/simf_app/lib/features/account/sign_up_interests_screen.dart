@@ -8,6 +8,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../../core/errors/api_error_l10n.dart';
 import '../../core/responsive/max_width_body.dart';
 import '../../core/widgets/simf_auth_sweep.dart';
@@ -414,25 +415,30 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
     );
   }
 
+  /// Only this branch is pull-to-refreshable — re-running the load on the
+  /// populated grid would discard the chips the user has already picked.
   Widget _buildLoadError(AppL10n l10n) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(
-              _loadError!,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: SimfTokens.txtSecondary),
-            ),
-            const SizedBox(height: SimfTokens.space4),
-            FilledButton(
-              onPressed: () =>
-                  unawaited(widget.editMode ? _loadForEdit() : _load()),
-              child: Text(l10n.retryLabel),
-            ),
-          ],
+    return SimfRefreshableMessage(
+      onRefresh: () => widget.editMode ? _loadForEdit() : _load(),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(SimfTokens.space6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                _loadError!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: SimfTokens.txtSecondary),
+              ),
+              const SizedBox(height: SimfTokens.space4),
+              FilledButton(
+                onPressed: () =>
+                    unawaited(widget.editMode ? _loadForEdit() : _load()),
+                child: Text(l10n.retryLabel),
+              ),
+            ],
+          ),
         ),
       ),
     );

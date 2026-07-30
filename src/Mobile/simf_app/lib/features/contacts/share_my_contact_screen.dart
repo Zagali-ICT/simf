@@ -147,7 +147,10 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
       title: l10n.shareMyContactTitle,
       onBack: () => backOrHome(context),
       showSweep: true,
-      body: _buildBody(l10n),
+      body: SimfPullToRefresh(
+        onRefresh: _load,
+        child: _buildBody(l10n),
+      ),
     );
   }
 
@@ -157,14 +160,17 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
     }
     final vcard = _vcard;
     if (_error || vcard == null) {
-      return SimfErrorState(
-        message: l10n.shareMyContactError,
-        retryLabel: l10n.retryLabel,
-        onRetry: () => unawaited(_load()),
+      return SimfPullableHost(
+        child: SimfErrorState(
+          message: l10n.shareMyContactError,
+          retryLabel: l10n.retryLabel,
+          onRetry: () => unawaited(_load()),
+        ),
       );
     }
     return Center(
       child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(SimfTokens.space6),
         child: Column(
           mainAxisSize: MainAxisSize.min,

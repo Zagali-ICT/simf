@@ -185,7 +185,17 @@ class _RateScreenState extends ConsumerState<RateScreen> {
               child: CircularProgressIndicator(color: SimfTokens.accent),
             )
           : _loadFailed || form == null
-              ? RateLoadError(message: l10n.rateLoadFailed, onRetry: _loadForm)
+              // Only the failed-load branch is pull-to-refreshable: _loadForm
+              // prefills _overall/_answers from any existing submission, so
+              // re-running it over a part-scored form would reset the user's
+              // stars.
+              ? SimfRefreshableMessage(
+                  onRefresh: _loadForm,
+                  child: RateLoadError(
+                    message: l10n.rateLoadFailed,
+                    onRetry: _loadForm,
+                  ),
+                )
               : _buildForm(l10n, form),
     );
   }

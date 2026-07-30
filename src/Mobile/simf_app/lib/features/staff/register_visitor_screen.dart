@@ -12,6 +12,7 @@ import '../../app/localization/locale_controller.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_logo.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../../core/validation/digit_normalization.dart';
 import '../../core/validation/phone_validation.dart';
 import '../../core/validation/required_validation.dart';
@@ -439,23 +440,30 @@ class _StaffRegisterVisitorScreenState
       );
     }
     if (_loadError != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(SimfTokens.space6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text(
-                l10n.staffRegisterError,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: SimfTokens.beigeBorder),
-              ),
-              const SizedBox(height: SimfTokens.space4),
-              FilledButton(
-                onPressed: () => unawaited(_load()),
-                child: Text(l10n.retryLabel),
-              ),
-            ],
+      // Only the failed-lookup branch is pull-to-refreshable — _load()
+      // repopulates the country / profile-type / organisation lookups, and
+      // re-running it over a part-filled registration would reset the desk
+      // agent's entries.
+      return SimfRefreshableMessage(
+        onRefresh: _load,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(SimfTokens.space6),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  l10n.staffRegisterError,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: SimfTokens.beigeBorder),
+                ),
+                const SizedBox(height: SimfTokens.space4),
+                FilledButton(
+                  onPressed: () => unawaited(_load()),
+                  child: Text(l10n.retryLabel),
+                ),
+              ],
+            ),
           ),
         ),
       );

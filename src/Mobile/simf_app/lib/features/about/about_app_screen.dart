@@ -45,41 +45,48 @@ class AboutAppScreen extends ConsumerWidget {
     return SimfPageShell(
       title: l10n.aboutAppTitle,
       onBack: () => backOrHome(context),
-      body: ListView(
-        padding: const EdgeInsets.all(SimfTokens.space4),
-        children: <Widget>[
-          AboutDetailsCard(
-            title: l10n.aboutAppInfoTitle,
-            rows: <(String, String)>[
-              (
-                l10n.aboutVersionLabel,
-                installedVersion.isEmpty ? '—' : installedVersion,
+      body: SimfPullToRefresh(
+        onRefresh: () => ref.read(orgProfileProvider.notifier).warm(),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(SimfTokens.space4),
+          children: <Widget>[
+            AboutDetailsCard(
+              title: l10n.aboutAppInfoTitle,
+              rows: <(String, String)>[
+                (
+                  l10n.aboutVersionLabel,
+                  installedVersion.isEmpty ? '—' : installedVersion,
+                ),
+                (l10n.aboutAppReleaseDateLabel, l10n.aboutAppReleaseDate),
+                (l10n.aboutAppOrganizerLabel, l10n.aboutAppOrganizerValue),
+              ],
+            ),
+            const SizedBox(height: SimfTokens.space3),
+            const CheckForUpdatesRow(),
+            if (contactRows.isNotEmpty) ...<Widget>[
+              const SizedBox(height: SimfTokens.space4),
+              AboutDetailsCard(
+                title: l10n.aboutContactTitle,
+                rows: contactRows,
               ),
-              (l10n.aboutAppReleaseDateLabel, l10n.aboutAppReleaseDate),
-              (l10n.aboutAppOrganizerLabel, l10n.aboutAppOrganizerValue),
             ],
-          ),
-          const SizedBox(height: SimfTokens.space3),
-          const CheckForUpdatesRow(),
-          if (contactRows.isNotEmpty) ...<Widget>[
             const SizedBox(height: SimfTokens.space4),
-            AboutDetailsCard(title: l10n.aboutContactTitle, rows: contactRows),
+            MoreSection(
+              title: l10n.aboutAppLinksTitle,
+              rows: <Widget>[
+                MoreRow(
+                  title: l10n.contactUsTitle,
+                  onTap: () => context.pushNamed(RouteNames.contactUs),
+                ),
+                MoreRow(
+                  title: l10n.moreTerms,
+                  onTap: () => context.pushNamed(RouteNames.terms),
+                ),
+              ],
+            ),
           ],
-          const SizedBox(height: SimfTokens.space4),
-          MoreSection(
-            title: l10n.aboutAppLinksTitle,
-            rows: <Widget>[
-              MoreRow(
-                title: l10n.contactUsTitle,
-                onTap: () => context.pushNamed(RouteNames.contactUs),
-              ),
-              MoreRow(
-                title: l10n.moreTerms,
-                onTap: () => context.pushNamed(RouteNames.terms),
-              ),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }

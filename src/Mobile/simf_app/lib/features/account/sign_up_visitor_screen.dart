@@ -11,6 +11,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_form_scaffold.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../../core/errors/api_error_l10n.dart';
 import '../../core/responsive/max_width_body.dart';
 import '../../core/validation/digit_normalization.dart';
@@ -911,24 +912,35 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     );
   }
 
+  /// Kept local rather than swapped for the shared [SimfErrorState]: that one
+  /// draws white text, which is invisible on this screen's beige form card.
+  ///
+  /// Only this branch is pull-to-refreshable. The loaded form must NOT be —
+  /// `_load()` runs `_applyProfile`, which overwrites every text controller, so
+  /// a stray pull on a half-filled form would silently discard the input.
+  /// The rule exists so nobody is stranded with no way to re-fetch, and
+  /// that can only happen here.
   Widget _buildLoadError(AppL10n l10n) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(
-              l10n.profileLoadError,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: SimfTokens.txtSecondary),
-            ),
-            const SizedBox(height: SimfTokens.space4),
-            FilledButton(
-              onPressed: () => unawaited(_load()),
-              child: Text(l10n.retryLabel),
-            ),
-          ],
+    return SimfRefreshableMessage(
+      onRefresh: _load,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(SimfTokens.space6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                l10n.profileLoadError,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: SimfTokens.txtSecondary),
+              ),
+              const SizedBox(height: SimfTokens.space4),
+              FilledButton(
+                onPressed: () => unawaited(_load()),
+                child: Text(l10n.retryLabel),
+              ),
+            ],
+          ),
         ),
       ),
     );

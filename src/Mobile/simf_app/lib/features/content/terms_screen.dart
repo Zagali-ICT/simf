@@ -157,7 +157,12 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
                     ],
                   ),
                 ),
-                Expanded(child: _buildBody(l10n)),
+                Expanded(
+                  child: SimfPullToRefresh(
+                    onRefresh: _load,
+                    child: _buildBody(l10n),
+                  ),
+                ),
               ],
             ),
           ),
@@ -173,20 +178,24 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
       );
     }
     if (_error != null) {
-      return SimfErrorState(
-        message: _error!,
-        retryLabel: l10n.retryLabel,
-        onRetry: _load,
+      return SimfPullableHost(
+        child: SimfErrorState(
+          message: _error!,
+          retryLabel: l10n.retryLabel,
+          onRetry: _load,
+        ),
       );
     }
     if (_empty) {
       // A missing/inactive block is empty, not broken — but the design still
       // offers a retry here, so the shared error surface (which carries the
       // retry) is the right shared widget, not the icon-only SimfEmptyState.
-      return SimfErrorState(
-        message: l10n.termsEmpty,
-        retryLabel: l10n.retryLabel,
-        onRetry: _load,
+      return SimfPullableHost(
+        child: SimfErrorState(
+          message: l10n.termsEmpty,
+          retryLabel: l10n.retryLabel,
+          onRetry: _load,
+        ),
       );
     }
     return _buildContent(l10n);
@@ -205,6 +214,7 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
       children: <Widget>[
         Expanded(
           child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
             // Full-width content (owner 2026-06-20): the cards stretch to the
             // page width instead of the old 400-wide centred column.

@@ -14,7 +14,10 @@ Future<void> refreshAsync<T>(
   Refreshable<Future<T>> future,
 ) async {
   try {
-    await ref.refresh(future);
+    // Assigned before awaiting: ref.refresh is @useResult, and awaiting the
+    // expression inline does not count as using it.
+    final reread = ref.refresh(future);
+    await reread;
   } on Object {
     // Surfaced by the screen's error branch, not by the gesture.
   }

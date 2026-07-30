@@ -78,18 +78,29 @@ class _MyVisitorsScreenState extends ConsumerState<MyVisitorsScreen> {
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
+    // The 403 branch especially: an exhibitor whose booth link lands after the
+    // first load would otherwise be stuck on it with no way to re-check.
     if (_forbidden) {
-      return ExhibitorCentered(text: l10n.scanVisitorForbidden);
+      return SimfRefreshableMessage(
+        onRefresh: _load,
+        child: ExhibitorCentered(text: l10n.scanVisitorForbidden),
+      );
     }
     if (_error) {
-      return SimfErrorState(
-        message: l10n.scanVisitorError,
-        retryLabel: l10n.retryLabel,
-        onRetry: () => unawaited(_load()),
+      return SimfRefreshableMessage(
+        onRefresh: _load,
+        child: SimfErrorState(
+          message: l10n.scanVisitorError,
+          retryLabel: l10n.retryLabel,
+          onRetry: () => unawaited(_load()),
+        ),
       );
     }
     if (_visitors.isEmpty) {
-      return ExhibitorCentered(text: l10n.myVisitorsEmpty);
+      return SimfRefreshableMessage(
+        onRefresh: _load,
+        child: ExhibitorCentered(text: l10n.myVisitorsEmpty),
+      );
     }
     final isArabic = l10n.isArabic;
     return SimfPullToRefresh(

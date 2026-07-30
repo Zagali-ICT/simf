@@ -305,23 +305,34 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
         child: CircularProgressIndicator(color: SimfTokens.accent),
       );
     }
+    // Both gate-less branches: a staff member granted the gate assignment
+    // after this screen opened must be able to re-check without restarting.
     if (_forbidden) {
-      return SimfEmptyState(
-        icon: Icons.lock_outline,
-        message: l10n.gateForbidden,
+      return SimfRefreshableMessage(
+        onRefresh: _loadGates,
+        child: SimfEmptyState(
+          icon: Icons.lock_outline,
+          message: l10n.gateForbidden,
+        ),
       );
     }
     if (_error) {
-      return SimfErrorState(
-        message: l10n.gateError,
-        retryLabel: l10n.retryLabel,
-        onRetry: () => unawaited(_loadGates()),
+      return SimfRefreshableMessage(
+        onRefresh: _loadGates,
+        child: SimfErrorState(
+          message: l10n.gateError,
+          retryLabel: l10n.retryLabel,
+          onRetry: () => unawaited(_loadGates()),
+        ),
       );
     }
     if (_gate == null) {
-      return SimfEmptyState(
-        icon: Icons.sensor_door_outlined,
-        message: l10n.gateNotAssigned,
+      return SimfRefreshableMessage(
+        onRefresh: _loadGates,
+        child: SimfEmptyState(
+          icon: Icons.sensor_door_outlined,
+          message: l10n.gateNotAssigned,
+        ),
       );
     }
     final result = _result;

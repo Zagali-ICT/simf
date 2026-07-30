@@ -244,16 +244,28 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
     return _buildMap(l10n);
   }
 
+  /// Only the error and empty branches are pull-to-refreshable. The map itself
+  /// is pan/zoom, and a RefreshIndicator over it would swallow every downward
+  /// drag — the gesture belongs where the user is otherwise stuck.
   Widget _buildError(AppL10n l10n) {
-    return SimfErrorState(
-      message: l10n.venueMapError,
-      retryLabel: l10n.retryLabel,
-      onRetry: () => unawaited(_load()),
+    return SimfRefreshableMessage(
+      onRefresh: _load,
+      child: SimfErrorState(
+        message: l10n.venueMapError,
+        retryLabel: l10n.retryLabel,
+        onRetry: () => unawaited(_load()),
+      ),
     );
   }
 
   Widget _buildEmpty(AppL10n l10n) {
-    return SimfEmptyState(icon: Icons.map_outlined, message: l10n.venueMapEmpty);
+    return SimfRefreshableMessage(
+      onRefresh: _load,
+      child: SimfEmptyState(
+        icon: Icons.map_outlined,
+        message: l10n.venueMapEmpty,
+      ),
+    );
   }
 
   Widget _buildMap(AppL10n l10n) {
