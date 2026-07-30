@@ -99,88 +99,22 @@ public partial class ExhibitorsAddEdit
     {
         if (_busy) return;
 
-        // Required-field client guards (the server validator is authoritative;
-        // these stop a no-op round-trip and give an immediate message).
-        if (string.IsNullOrWhiteSpace(_form.NameEn)
-            || string.IsNullOrWhiteSpace(_form.NameAr))
-        {
-            _error = L["Admin.Exhibitors.NameRequired"];
-            return;
-        }
-
-        // The picker only ever yields valid country ids; parse defensively and
-        // fall back to "no country" if it somehow does not.
-        int? countryId = null;
-        if (!string.IsNullOrWhiteSpace(_countryIdInput)
-            && int.TryParse(_countryIdInput, out var parsedCountry) && parsedCountry > 0)
-        {
-            countryId = parsedCountry;
-        }
-
-        var coordinateError = CoordinateInput.Read(
-            _latitudeInput, _longitudeInput, out var latitude, out var longitude);
-        if (coordinateError is not null)
-        {
-            _error = L[coordinateError];
-            return;
-        }
+        var values = ReadForm();
+        if (values is null) { return; }
 
         _busy = true;
         _error = null;
         try
         {
-            ApiResult<AdminExhibitorDetail>? env;
-            if (!IsEdit)
-            {
-                env = await JS.InvokeAsync<ApiResult<AdminExhibitorDetail>>(
-                    "simfAccount.postJson",
-                    "/account/api/admin/exhibitors",
-                    new CreateExhibitorRequest
-                    {
-                        NameEn = _form.NameEn,
-                        NameAr = _form.NameAr,
-                        ContactEmail = NullIfBlank(_form.ContactEmail),
-                        ContactPhone = NullIfBlank(_form.ContactPhone),
-                        Website = NullIfBlank(_form.Website),
-                        Tier = _form.Tier is null ? null : (ExhibitorTier)_form.Tier.Value,
-                        CountryId = countryId,
-                        PhoneSecondary = NullIfBlank(_form.PhoneSecondary),
-                        FacebookUrl = NullIfBlank(_form.FacebookUrl),
-                        XUrl = NullIfBlank(_form.XUrl),
-                        LinkedInUrl = NullIfBlank(_form.LinkedInUrl),
-                        InstagramUrl = NullIfBlank(_form.InstagramUrl),
-                        City = NullIfBlank(_form.City),
-                        CityArabic = NullIfBlank(_form.CityArabic),
-                        Latitude = latitude,
-                        Longitude = longitude,
-                    });
-            }
-            else
-            {
-                env = await JS.InvokeAsync<ApiResult<AdminExhibitorDetail>>(
+            var env = IsEdit
+                ? await JS.InvokeAsync<ApiResult<AdminExhibitorDetail>>(
                     "simfAccount.putJson",
                     $"/account/api/admin/exhibitors/{Initial!.Id}",
-                    new UpdateExhibitorRequest
-                    {
-                        NameEn = _form.NameEn,
-                        NameAr = _form.NameAr,
-                        ContactEmail = NullIfBlank(_form.ContactEmail),
-                        ContactPhone = NullIfBlank(_form.ContactPhone),
-                        Website = NullIfBlank(_form.Website),
-                        Tier = _form.Tier is null ? null : (ExhibitorTier)_form.Tier.Value,
-                        CountryId = countryId,
-                        PhoneSecondary = NullIfBlank(_form.PhoneSecondary),
-                        FacebookUrl = NullIfBlank(_form.FacebookUrl),
-                        XUrl = NullIfBlank(_form.XUrl),
-                        LinkedInUrl = NullIfBlank(_form.LinkedInUrl),
-                        InstagramUrl = NullIfBlank(_form.InstagramUrl),
-                        City = NullIfBlank(_form.City),
-                        CityArabic = NullIfBlank(_form.CityArabic),
-                        Latitude = latitude,
-                        Longitude = longitude,
-                        IsActive = _form.IsActive,
-                    });
-            }
+                    BuildUpdateRequest(values))
+                : await JS.InvokeAsync<ApiResult<AdminExhibitorDetail>>(
+                    "simfAccount.postJson",
+                    "/account/api/admin/exhibitors",
+                    BuildCreateRequest(values));
 
             if (env is { Success: true, Data: not null })
             {
@@ -198,6 +132,84 @@ public partial class ExhibitorsAddEdit
         }
         finally { _busy = false; }
     }
+
+    /// <summary>Validates the form and returns its parsed values, or null after
+    /// setting <see cref="_error"/> to the first problem found. The server
+    /// validator is authoritative; these guards stop a no-op round-trip and give
+    /// an immediate message.</summary>
+    private FormValues? ReadForm()
+    {
+        if (string.IsNullOrWhiteSpace(_form.NameEn)
+            || string.IsNullOrWhiteSpace(_form.NameAr))
+        {
+            _error = L["Admin.Exhibitors.NameRequired"];
+            return null;
+        }
+
+        // The picker only ever yields valid country ids; parse defensively and
+        // fall back to "no country" if it somehow does not.
+        int? countryId = null;
+        if (!string.IsNullOrWhiteSpace(_countryIdInput)
+            && int.TryParse(_countryIdInput, out var parsedCountry) && parsedCountry > 0)
+        {
+            countryId = parsedCountry;
+        }
+
+        var coordinateError = CoordinateInput.Read(
+            _latitudeInput, _longitudeInput, out var latitude, out var longitude);
+        if (coordinateError is not null)
+        {
+            _error = L[coordinateError];
+            return null;
+        }
+
+        return new FormValues(countryId, latitude, longitude);
+    }
+
+    private CreateExhibitorRequest BuildCreateRequest(FormValues values) => new()
+    {
+        NameEn = _form.NameEn,
+        NameAr = _form.NameAr,
+        ContactEmail = NullIfBlank(_form.ContactEmail),
+        ContactPhone = NullIfBlank(_form.ContactPhone),
+        Website = NullIfBlank(_form.Website),
+        Tier = _form.Tier is null ? null : (ExhibitorTier)_form.Tier.Value,
+        CountryId = values.CountryId,
+        PhoneSecondary = NullIfBlank(_form.PhoneSecondary),
+        FacebookUrl = NullIfBlank(_form.FacebookUrl),
+        XUrl = NullIfBlank(_form.XUrl),
+        LinkedInUrl = NullIfBlank(_form.LinkedInUrl),
+        InstagramUrl = NullIfBlank(_form.InstagramUrl),
+        City = NullIfBlank(_form.City),
+        CityArabic = NullIfBlank(_form.CityArabic),
+        Latitude = values.Latitude,
+        Longitude = values.Longitude,
+    };
+
+    private UpdateExhibitorRequest BuildUpdateRequest(FormValues values) => new()
+    {
+        NameEn = _form.NameEn,
+        NameAr = _form.NameAr,
+        ContactEmail = NullIfBlank(_form.ContactEmail),
+        ContactPhone = NullIfBlank(_form.ContactPhone),
+        Website = NullIfBlank(_form.Website),
+        Tier = _form.Tier is null ? null : (ExhibitorTier)_form.Tier.Value,
+        CountryId = values.CountryId,
+        PhoneSecondary = NullIfBlank(_form.PhoneSecondary),
+        FacebookUrl = NullIfBlank(_form.FacebookUrl),
+        XUrl = NullIfBlank(_form.XUrl),
+        LinkedInUrl = NullIfBlank(_form.LinkedInUrl),
+        InstagramUrl = NullIfBlank(_form.InstagramUrl),
+        City = NullIfBlank(_form.City),
+        CityArabic = NullIfBlank(_form.CityArabic),
+        Latitude = values.Latitude,
+        Longitude = values.Longitude,
+        IsActive = _form.IsActive,
+    };
+
+    /// <summary>The form's validated, parsed values — everything the two request
+    /// builders need that is not read straight off <c>_form</c>.</summary>
+    private sealed record FormValues(int? CountryId, double? Latitude, double? Longitude);
 
     private void OnTierChanged(ChangeEventArgs e)
     {
