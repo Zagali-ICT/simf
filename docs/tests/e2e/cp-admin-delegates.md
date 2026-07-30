@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-07-22 (batch-builder redesign; reusable `BulkBadgeGenerator`, also on `/admin/visitors`) |
+| **Last reviewed** | 2026-07-30 (G2 / D-800: corrected the invited-country fixture — the host country is never `IsInvited`, D-768). Prior: 2026-07-22 (batch-builder redesign; reusable `BulkBadgeGenerator`, also on `/admin/visitors`) |
 
 > **What this page does (grounded in `DelegatesPage.razor`, D-473 / #10).** A delegate
 > (وفد) is an **ordinary visitor** with the `IsDelegate` flag set and a nationality
@@ -27,7 +27,12 @@
 >   on `/admin/visitors` via a gated "Bulk add" toolbar button (see `cp-admin-visitors.md`).
 >
 > **Invited countries** are marked in the Countries admin (`/admin/countries` →
-> Add/Edit → "Invited to send a delegation" toggle, `Country.IsInvited`).
+> Add/Edit → "Invited to send a delegation" toggle, `Country.IsInvited`). The **host**
+> country (Saudi Arabia) is the OWNER of the forum, not a visiting delegation, so it is
+> deliberately **never** flagged `IsInvited` (D-768) — its flagged visitors can still
+> request meetings WITH an invited delegation. On the app side the public list also hides
+> the **viewer's own** country (G2 / D-800), so an admin marking a country invited here is
+> publishing it to every viewer **except** that country's own nationals.
 
 ## Coverage matrix
 
@@ -59,12 +64,16 @@
 Feature: Delegate registration is constrained to invited countries
 Background:
   Given an Administrator has signed in to the Control Panel
-  And the country "Saudi Arabia" is marked Invited (Country.IsInvited = true) via /admin/countries
+  And the country "Japan" is marked Invited (Country.IsInvited = true) via /admin/countries
   And the country "United States" is NOT invited
+  # NOTE (D-768): the host country (Saudi Arabia) is the OWNER of the forum, not a
+  # visiting delegation, so it is deliberately NEVER marked Country.IsInvited. Use a
+  # visiting country in this fixture — an earlier draft of this file used "Saudi Arabia"
+  # and contradicted the product rule.
 
 Scenario: A delegate from an invited country registers
   Given the administrator is on /admin/delegates
-  When they fill the "Register a delegate" form with a Saudi nationality and submit
+  When they fill the "Register a delegate" form with a Japanese nationality and submit
   Then POST /account/api/admin/visitors/register-onsite returns 200
   And the created UserProfile has IsDelegate = true
 

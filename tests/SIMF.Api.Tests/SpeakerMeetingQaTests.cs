@@ -535,9 +535,28 @@ public sealed class SpeakerMeetingQaTests : IClassFixture<SpeakerMeetingQaApiFac
             CreatedAt = DateTimeOffset.UtcNow,
         };
         db.Speakers.Add(speaker);
+        // G3 (owner 2026-07-30) — a submit now REQUIRES the speaker to have a free
+        // slot, so every QA fixture speaker gets one wide future window. The
+        // no-availability refusal has its own coverage in MeetingNoAvailabilityTests.
+        db.SpeakerAvailabilityWindows.Add(new SpeakerAvailabilityWindow
+        {
+            Id = Guid.NewGuid(),
+            SpeakerId = speaker.Id,
+            Start = FixtureWindowStart,
+            End = FixtureWindowStart.AddHours(4),
+            SlotMinutes = 30,
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        });
         await db.SaveChangesAsync();
         return speaker;
     }
+
+    /// <summary>G3 — far enough in the future that a past slot can never be why a
+    /// fixture speaker looks unavailable, and clear of the hall windows this class
+    /// books, so an accepted meeting never empties the window.</summary>
+    private static readonly DateTimeOffset FixtureWindowStart =
+        new(2035, 9, 1, 9, 0, 0, TimeSpan.Zero);
 
     private async Task<Guid> SeedMeetingHallAsync()
     {

@@ -3542,7 +3542,9 @@ Scenario: The delegations list shows the 12 invited countries mirrored, Arabic u
   Given GET /app/delegations (anonymous) returns the seeded invited countries (D-687/D-691)
   When the /delegations screen renders in Arabic (TextDirection.rtl)
   Then the stats strip shows the participating-country count and total participants
-  And there is one card per invited country (12 countries: e.g. Saudi Arabia, France, India, United Kingdom)
+  And there is one card per invited country (12 countries: e.g. France, India, United Kingdom,
+      United Arab Emirates — NOT Saudi Arabia: the host is never marked Country.IsInvited, D-768,
+      and the seeded set is AE, BH, KW, OM, QA, EG, GB, US, FR, PK, IN, TR)
   And each card shows the flag, the bilingual country name (Arabic shown, un-clipped in its cell),
       the head of delegation with an initial avatar, an arrival→departure date range, and a member count
   And the card content order is mirrored: flag/name lead the right edge, the count trails the left

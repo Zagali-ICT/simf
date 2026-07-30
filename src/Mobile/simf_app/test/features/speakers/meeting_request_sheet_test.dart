@@ -32,12 +32,22 @@ final List<SpeakerSlot> _twoDaySlots = <SpeakerSlot>[
 class _FakeRepo implements SpeakersRepository {
   _FakeRepo({
     this.slots = const <SpeakerSlot>[],
+    this.failSlots = false,
     this.failSubmitStatus,
     this.failSubmitCode = 'x',
     this.failSubmitMessage = 'fail',
   });
 
   final List<SpeakerSlot> slots;
+  // G3 — the availability fetch itself fails (network / server). Distinct from an
+  // empty [slots] list, which means the speaker genuinely has no free slot.
+  // NOT final: a test flips it between calls to simulate the network recovering,
+  // which is the only way to prove Retry actually re-fetches.
+  bool failSlots;
+
+  // G3 — how many times the availability fetch was attempted. Without this a
+  // no-op Retry button would satisfy a test that only checks the button renders.
+  int slotFetchCalls = 0;
   // When set, submitMeetingRequest throws an ApiFailure with this HTTP status
   // (e.g. 403 for the eligibility gate) so the failure mapping can be tested.
   final int? failSubmitStatus;
@@ -74,7 +84,16 @@ class _FakeRepo implements SpeakersRepository {
       ];
 
   @override
-  Future<List<SpeakerSlot>> getAvailableSlots(String speakerId) async => slots;
+  Future<List<SpeakerSlot>> getAvailableSlots(String speakerId) async {
+    slotFetchCalls++;
+    if (failSlots) {
+      throw const ApiFailure(
+        code: ApiErrorCodes.clientNetwork,
+        message: 'Network is unreachable.',
+      );
+    }
+    return slots;
+  }
 
   @override
   Future<SpeakerDetail> getSpeaker(String id) => throw UnimplementedError();
@@ -235,13 +254,17 @@ void main() {
       expect(find.byType(MeetingTimeChip), findsNWidgets(2));
     });
 
-    testWidgets('no availability → shows the no-slots notice and can still send '
-        'the request subject-only', (tester) async {
+    testWidgets(
+        'G3 — no availability shows the no-slots notice AND disables send, so no '
+        'subject-only request is sent (supersedes D-767 R1)', (tester) async {
       final repo = _FakeRepo();
       await _pump(tester, speakerId: 's1', repo: repo);
 
       expect(find.text('No meeting slots available right now'), findsOneWidget);
       expect(find.byType(MeetingDayCard), findsNothing);
+      // The load succeeded and returned nothing — that is NOT a load error, so
+      // there is no retry offered here.
+      expect(find.text('Retry'), findsNothing);
 
       await tester.enterText(
         find.byKey(const ValueKey<String>('meeting-subject')),
@@ -250,11 +273,65 @@ void main() {
       await tester.tap(find.text('Send request'));
       await tester.pumpAndSettle();
 
+      // The send button is disabled: the server would 409
+      // SPEAKER_MEETING_NO_AVAILABILITY, so the tap must not reach the repo.
+      expect(repo.submitCalls, 0);
+      expect(repo.lastSubject, isNull);
+    });
+
+    testWidgets(
+        'G3 — a FAILED slot fetch shows a load error + Retry, not the '
+        '"no availability" notice', (tester) async {
+      final repo = _FakeRepo(failSlots: true);
+      await _pump(tester, speakerId: 's1', repo: repo);
+
+      // A transient network failure must never be presented as the speaker
+      // having no availability — that would be untrue and unactionable.
+      expect(find.text('No meeting slots available right now'), findsNothing);
+      expect(find.text('Could not load the list.'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('meeting-slots-retry')),
+        findsOneWidget,
+      );
+
+      // Sending is still blocked (there is no slot to send).
+      await tester.enterText(
+        find.byKey(const ValueKey<String>('meeting-subject')),
+        'Naval cooperation',
+      );
+      await tester.tap(find.text('Send request'));
+      await tester.pumpAndSettle();
+      expect(repo.submitCalls, 0);
+    });
+
+    testWidgets(
+        'G3 — tapping Retry after a failed fetch re-loads the slots and '
+        'un-blocks Send', (tester) async {
+      // The catalogue (bi-meeting-lifecycle.md E2E-BML-013c) scripts this
+      // recovery, so it needs a test that TAPS the button: asserting the button
+      // merely renders would pass against a no-op or mis-wired onPressed.
+      final repo = _FakeRepo(failSlots: true, slots: _twoDaySlots);
+      await _pump(tester, speakerId: 's1', repo: repo);
+
+      expect(repo.slotFetchCalls, 1);
+      expect(find.text('Could not load the list.'), findsOneWidget);
+      expect(find.byType(MeetingDayCard), findsNothing);
+
+      // The network comes back, then the user taps Retry.
+      repo.failSlots = false;
+      await tester.tap(find.byKey(const ValueKey<String>('meeting-slots-retry')));
+      await tester.pumpAndSettle();
+
+      // It genuinely re-fetched, and the error state cleared.
+      expect(repo.slotFetchCalls, 2);
+      expect(find.text('Could not load the list.'), findsNothing);
+      expect(find.byType(MeetingDayCard), findsWidgets);
+
+      // And Send now works, which is the point of recovering.
+      await _submitWithFirstSlot(tester);
+
       expect(repo.submitCalls, 1);
       expect(repo.lastSubject, 'Naval cooperation');
-      // No slot picked (none offered) → the request carries no slot.
-      expect(repo.lastSlotStart, isNull);
-      expect(repo.lastSlotEnd, isNull);
     });
 
     testWidgets("submitting a picked real slot sends that slot's start + end",

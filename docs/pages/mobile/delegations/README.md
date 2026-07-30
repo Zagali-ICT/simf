@@ -2,7 +2,7 @@
 
 - **Route:** `/delegations` (route name `delegations`) — mockup screen **#21** (restored; removed in D-277).
 - **Surface / audience:** Mobile App (Flutter) · Guest+ (public).
-- **Auth:** **None** — `GET /app/delegations` is `AllowAnonymous` (same as the public booths / sponsors / speakers reads); reached from a home tile + the direct `/delegations` route.
+- **Auth:** **None** — `GET /app/delegations` is `AllowAnonymous` (same as the public booths / sponsors / speakers reads); reached from a home tile + the direct `/delegations` route. The bearer token is **optional but meaningful**: when the app sends one, the response is filtered for that viewer (see "Own delegation excluded" below).
 - **Figma:** **1426:10771** (الوفود). **Clean-code freeze:** D-624 (2026-07-04). Originating build: D-499 (Figma `1426:10771`, screen #21 restored from D-277).
 
 ## Purpose
@@ -67,14 +67,42 @@ The **member count** is **not** stored — it is **derived on read** from the ac
 delegate `UserProfile`s (`IsDelegate && IsActive`) whose `NationalityId` is the
 country (per the D-157 "no duplicated data — resolve on read" rule).
 
+The **host** country is never on this screen: Saudi Arabia is the OWNER of the
+forum, not a visiting delegation, so it is deliberately not flagged
+`Country.IsInvited` (D-768).
+
+## Own delegation excluded (G2 — D-800, owner 2026-07-30)
+
+A **signed-in** viewer never sees their **own** delegation. The country whose `Id`
+equals the caller's `UserProfile.NationalityId` is dropped **server-side** in
+`PublicDelegationService.GetAsync`, before the member-count group-by, so the two
+stats (`countryCount`, `totalParticipants`) are computed over exactly the cards on
+screen and the strip can never disagree with the list.
+
+- The endpoint stays `AllowAnonymous`. A **guest** (no bearer token) has no `sub`
+  claim, so nothing is excluded and the full list is returned.
+- A signed-in caller with **no profile row** (an Admin / CP user) has no nationality
+  to exclude — also the full list.
+- Resolving the nationality is a **same-database** read: `UserProfile` and `Country`
+  both live on `SimfAppDbContext`, so D-157 is not engaged (no cross-DB join).
+- No output cache is configured on this endpoint, so per-caller filtering poisons
+  no shared cache entry.
+- The **delegation meeting-request sheet** uses this same feed as its target-country
+  picker, so it inherits the exclusion with **no Flutter change** — a viewer can no
+  longer pick their own country as the meeting target. The server-side self-target
+  guard (`400`, "A delegation cannot request a meeting with itself." / "لا يمكن
+  للوفد طلب اجتماع مع نفسه.") is unchanged and remains the authoritative check.
+
 ## Data flow
 
 ```
-Guest opens /delegations → GET /api/v1/app/delegations (anonymous)
+Viewer opens /delegations → GET /api/v1/app/delegations (anonymous; bearer sent when signed in)
+  → resolve the caller's UserProfile.NationalityId from `sub` (null for a guest)
   → select Country where IsInvited && IsActive
+     → and Id != the caller's nationality (skipped for a guest)   ← G2 / D-800
      → resolve head from Country.HeadOfDelegationUserProfileId (UserProfile)
      → count active delegates (IsDelegate && IsActive) by NationalityId
-  → ApiResult<AppDelegations> → stats + cards render
+  → ApiResult<AppDelegations> → stats + cards render (stats derived from the filtered set)
 ```
 
 `AppDelegations { countryCount, totalParticipants, items[] }`, each
@@ -122,17 +150,22 @@ active-filter chip aligns to the inline-start via `AlignmentDirectional`).
 `test/golden/delegations_golden_test.dart` (frame 1426:10771, @375×1075, ar) +
 the delegations feature tests — including the **flag-filter** widget test
 (`delegations_screen_test.dart`: tap a stats-strip flag → list narrows to that
-country; the active-filter chip clears it). E2E:
-`docs/tests/e2e/mobile-delegations.md` (`E2E-DEL-001..010`).
+country; the active-filter chip clears it). Backend: `DelegationsTests.cs` covers
+the G2 (D-800) per-viewer exclusion — the signed-in viewer's own country is absent
+while the guest read still contains it, and both stats track the filtered list.
+E2E: `docs/tests/e2e/mobile-delegations.md` (`E2E-DEL-001..013`).
 
 ## Related decisions
 
+- **D-800** (G2 — the list is per-viewer: the caller's own country is excluded server-side, stats recompute, guests see all).
 - **D-624** (this clean-code freeze — decomposition + gold-alpha tokens).
-- **D-499** (originating build — this screen + the public endpoint + the all-on-`Country` schema choice + additive migration D499). Related: **D-613** (the shared `SimfFilterSearchField` extracted from this screen + the summaries list), **D-157** (member count derived on read), **D-473** (delegate = visitor + `IsDelegate` + invited country), **D-277** (the earlier removal of screen #21).
+- **D-499** (originating build — this screen + the public endpoint + the all-on-`Country` schema choice + additive migration D499). Related: **D-613** (the shared `SimfFilterSearchField` extracted from this screen + the summaries list), **D-157** (member count derived on read), **D-473** (delegate = visitor + `IsDelegate` + invited country), **D-768** (the host country is never `IsInvited`), **D-277** (the earlier removal of screen #21).
 
 ---
 
-_Last reviewed: 2026-07-13 — added the stats-strip **flag filter** (tap a country
-flag to narrow the list; removable active-filter chip; composes with search;
-default golden unchanged). Prior: 2026-07-04 (D-624 — clean-code freeze).
-Originating doc D-499._
+_Last reviewed: 2026-07-30 — G2 (D-800): a signed-in viewer no longer sees their
+**own** delegation; the exclusion is server-side and both stats recompute over the
+filtered set; guests still see the full list. Prior: 2026-07-13 — added the
+stats-strip **flag filter** (tap a country flag to narrow the list; removable
+active-filter chip; composes with search; default golden unchanged); 2026-07-04
+(D-624 — clean-code freeze). Originating doc D-499._

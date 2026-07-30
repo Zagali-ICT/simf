@@ -1,6 +1,7 @@
 // Tests: SIMF.Api.Tests/SpeakerMeetingRequestsTests.cs
 //        SIMF.Api.Tests/SpeakerMeetingQaTests.cs (QA A25/B12/B20)
 //        SIMF.Api.Tests/SpeakerMeetingLinksUnsetTests.cs (QA A24)
+//        SIMF.Api.Tests/MeetingNoAvailabilityTests.cs (G3)
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -26,6 +27,7 @@ namespace SIMF.Infrastructure.MeetingRequests;
 internal sealed class SpeakerMeetingRequestService(
     SimfAppDbContext appDbContext,
     IIdentityUserDirectory userDirectory,
+    ISpeakerAvailabilityService speakerAvailability,
     IHallAvailabilityService hallAvailability,
     IMeetingActionTokenService meetingActionTokens,
     INotificationDispatcher notifications,
@@ -100,16 +102,33 @@ internal sealed class SpeakerMeetingRequestService(
                 "طلب مقابلة المتحدّث غير مُفعَّل لحسابك.");
         }
 
+        // G3 (owner 2026-07-30) — SUPERSEDES the "topic-only request" half of R1 (D-767):
+        // a meeting request may no longer be sent when the speaker has nothing left to
+        // offer. GetAvailableSlotsAsync returns an empty list for BOTH reasons — the
+        // speaker has no active future window at all, and every slot the windows offer is
+        // past or already taken — so this one call covers both. The app disables the send
+        // button on the same signal (the sheet's empty slot list); this is the backstop.
+        var freeSlots = await speakerAvailability.GetAvailableSlotsAsync(
+            speakerId, cancellationToken);
+        if (freeSlots.Count == 0)
+        {
+            throw new ApiException(
+                ErrorCodes.SpeakerMeetingNoAvailability, 409,
+                "This speaker has no available meeting slots.",
+                "لا توجد فترات متاحة لدى هذا المتحدّث.");
+        }
+
         // R8 (D-767) — the one-open-request-per-(requester, speaker) rule is applied as an
         // in-place MOVE of the existing Pending request after the slot is resolved (see
         // below), not a duplicate 409.
 
         // Slot flow (D-474 #11): validate the picked slot pair (both-or-neither, end >
-        // start). R1 (D-767) — the slot is NOT re-checked for availability at submit:
-        // several Pending requests may target the same time; the admin approves only one
-        // (Serializable approve guard), and a reserved slot is already hidden from the
-        // picker (R2), so a requester never sees a same-time error. A null slot is the
-        // legacy topic-only request.
+        // start). R1 (D-767) still holds for the PICKED slot: it is NOT re-checked for
+        // membership at submit — several Pending requests may target the same time; the
+        // admin approves only one (Serializable approve guard), and a reserved slot is
+        // already hidden from the picker (R2), so a requester never sees a same-time
+        // error. What R1 no longer permits (G3, above) is a request against a speaker
+        // with NO free slot at all.
         DateTimeOffset? slotStart = null;
         DateTimeOffset? slotEnd = null;
         Guid? availabilityWindowId = null;

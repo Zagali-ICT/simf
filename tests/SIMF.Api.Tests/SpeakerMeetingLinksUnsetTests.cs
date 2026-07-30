@@ -12,6 +12,7 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Programme;
+using SIMF.Domain.BusinessMeetings;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Profiles;
 using SIMF.Domain.Programme;
@@ -95,6 +96,19 @@ public sealed class SpeakerMeetingLinksUnsetTests
             CreatedAt = DateTimeOffset.UtcNow,
         };
         db.Speakers.Add(speaker);
+        // G3 (owner 2026-07-30) — a submit now REQUIRES the speaker to have a free
+        // slot, so this fixture speaker gets one wide future window. The
+        // no-availability refusal has its own coverage in MeetingNoAvailabilityTests.
+        db.SpeakerAvailabilityWindows.Add(new SpeakerAvailabilityWindow
+        {
+            Id = Guid.NewGuid(),
+            SpeakerId = speaker.Id,
+            Start = new DateTimeOffset(2035, 9, 1, 9, 0, 0, TimeSpan.Zero),
+            End = new DateTimeOffset(2035, 9, 1, 13, 0, 0, TimeSpan.Zero),
+            SlotMinutes = 30,
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        });
         await db.SaveChangesAsync();
         return speaker;
     }

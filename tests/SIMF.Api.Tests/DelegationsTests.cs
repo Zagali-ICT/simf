@@ -1,6 +1,7 @@
 // Tests: D-499 (الوفود, Figma 1426:10771) — the public delegations view
 // (GET /app/delegations) + the CP head-of-delegation / dates on the country form
 // (PublicDelegationService, AdminCountryService, CountryEndpoints).
+// Tests: G2 (D-800) — the per-viewer exclusion of the caller's own country.
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -23,7 +24,9 @@ namespace SIMF.Api.Tests;
 /// <summary>
 /// D-499 (الوفود) — the public delegations view groups the invited countries with
 /// their head of delegation, date range and member count; the CP country form
-/// sets the dates + head (an active delegate of that country).
+/// sets the dates + head (an active delegate of that country). G2 (D-800) adds the
+/// per-viewer rule: a signed-in caller never sees their own country, and the two
+/// aggregate stats are recomputed over the filtered list.
 /// </summary>
 public sealed class DelegationsTests : IClassFixture<SimfApiFactory>
 {
@@ -47,33 +50,89 @@ public sealed class DelegationsTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Lists_an_invited_country_with_its_head_dates_and_member_count()
     {
-        // Saudi Arabia, invited, with a designated head + two more delegates.
-        await EnsureCountryAsync("SA", 682);
+        // A VISITING delegation (Japan), invited, with a designated head + two more
+        // delegates. Deliberately not Saudi Arabia: KSA is the OWNER of the forum, not
+        // a visiting delegation, so it is never flagged Country.IsInvited (D-768) —
+        // and under G2 (D-800) the host's own visitors would not see it anyway.
+        await EnsureCountryAsync("JP", 392);
         var headId = await SeedDelegateAsync(
-            682,
-            name: "Prince Abdulaziz",
-            nameArabic: "سمو الأمير عبدالعزيز",
-            jobTitle: "نائب وزير الدفاع");
-        await SeedDelegateAsync(682);
-        await SeedDelegateAsync(682);
+            392,
+            name: "Admiral Kenji Sato",
+            nameArabic: "الأدميرال كينجي ساتو",
+            jobTitle: "قائد القوات البحرية");
+        await SeedDelegateAsync(392);
+        await SeedDelegateAsync(392);
         await SetCountryDelegationAsync(
-            682,
+            392,
             invited: true,
             arrival: new DateOnly(2026, 1, 12),
             departure: new DateOnly(2026, 1, 15),
             headProfileId: headId);
 
         var data = await GetDelegationsAsync();
-        var item = Assert.Single(data.Items, i => i.CountryId == 682);
+        var item = Assert.Single(data.Items, i => i.CountryId == 392);
         Assert.Equal(3, item.MemberCount);
-        Assert.Equal("Prince Abdulaziz", item.HeadName);
-        Assert.Equal("سمو الأمير عبدالعزيز", item.HeadNameArabic);
-        Assert.Equal("نائب وزير الدفاع", item.HeadTitle);
+        Assert.Equal("Admiral Kenji Sato", item.HeadName);
+        Assert.Equal("الأدميرال كينجي ساتو", item.HeadNameArabic);
+        Assert.Equal("قائد القوات البحرية", item.HeadTitle);
         Assert.Equal(new DateOnly(2026, 1, 12), item.ArrivalDate);
         Assert.Equal(new DateOnly(2026, 1, 15), item.DepartureDate);
-        Assert.Equal("SA", item.CountryCode);
+        Assert.Equal("JP", item.CountryCode);
         Assert.True(data.CountryCount >= 1);
         Assert.True(data.TotalParticipants >= 3);
+    }
+
+    [Fact]
+    public async Task A_signed_in_viewer_does_not_see_their_own_delegation_but_a_guest_sees_all()
+    {
+        // G2 (D-800) — the viewer's OWN country (their UserProfile.NationalityId) is
+        // filtered out server-side, and both stats are recomputed over what is shown.
+        // South Korea = the viewer's nationality; Singapore = another delegation.
+        await EnsureCountryAsync("KR", 410);
+        await EnsureCountryAsync("SG", 702);
+        await SeedDelegateAsync(410);
+        await SeedDelegateAsync(410);
+        await SeedDelegateAsync(702);
+        await SetCountryDelegationAsync(410, invited: true);
+        await SetCountryDelegationAsync(702, invited: true);
+        var viewerToken = await CreateVisitorWithNationalityAsync(410);
+
+        // (c) an anonymous caller sees the full list — nothing is excluded.
+        var guest = await GetDelegationsAsync();
+        var ownCountry = Assert.Single(guest.Items, i => i.CountryId == 410);
+        Assert.Contains(guest.Items, i => i.CountryId == 702);
+        // (d) the guest's stats match the full list.
+        Assert.Equal(guest.Items.Count, guest.CountryCount);
+        Assert.Equal(guest.Items.Sum(i => i.MemberCount), guest.TotalParticipants);
+
+        var viewer = await GetDelegationsAsync(viewerToken);
+        // (a) the viewer's own delegation is gone...
+        Assert.DoesNotContain(viewer.Items, i => i.CountryId == 410);
+        // (b) ...and every other invited delegation is still there.
+        Assert.Contains(viewer.Items, i => i.CountryId == 702);
+        // (d) the viewer's stats match the FILTERED list — exactly one country and
+        // its members dropped out relative to the guest view.
+        Assert.Equal(viewer.Items.Count, viewer.CountryCount);
+        Assert.Equal(viewer.Items.Sum(i => i.MemberCount), viewer.TotalParticipants);
+        Assert.Equal(guest.CountryCount - 1, viewer.CountryCount);
+        Assert.Equal(
+            guest.TotalParticipants - ownCountry.MemberCount, viewer.TotalParticipants);
+    }
+
+    [Fact]
+    public async Task A_signed_in_caller_with_no_profile_sees_every_invited_delegation()
+    {
+        // G2 (D-800) — an Admin / CP user carries no UserProfile, so there is no
+        // nationality to exclude and the full list is returned (no over-filtering).
+        await EnsureCountryAsync("ID", 360);
+        await SeedDelegateAsync(360);
+        await SetCountryDelegationAsync(360, invited: true);
+        var adminToken = await CreateAdministratorAndSignInAsync();
+
+        var data = await GetDelegationsAsync(adminToken);
+        Assert.Contains(data.Items, i => i.CountryId == 360);
+        Assert.Equal(data.Items.Count, data.CountryCount);
+        Assert.Equal(data.Items.Sum(i => i.MemberCount), data.TotalParticipants);
     }
 
     [Fact]
@@ -222,11 +281,59 @@ public sealed class DelegationsTests : IClassFixture<SimfApiFactory>
 
     // -- helpers --------------------------------------------------------------
 
-    private async Task<AppDelegations> GetDelegationsAsync()
+    /// <summary>Reads the public delegations view — anonymously by default, or as the
+    /// signed-in holder of <paramref name="token"/> (G2 / D-800 per-viewer filter).</summary>
+    private async Task<AppDelegations> GetDelegationsAsync(string? token = null)
     {
-        var response = await _client.GetAsync("/api/v1/app/delegations");
+        var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/app/delegations");
+        if (token is not null)
+        {
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        }
+        var response = await _client.SendAsync(request);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         return (await response.Content.ReadFromJsonAsync<ApiResult<AppDelegations>>())!.Data!;
+    }
+
+    /// <summary>Creates an approved visitor whose profile carries
+    /// <paramref name="nationalityId"/> and signs them in — the G2 (D-800) exclusion
+    /// keys off exactly that nationality.</summary>
+    private async Task<string> CreateVisitorWithNationalityAsync(int nationalityId)
+    {
+        var email = $"deleg-viewer-{Guid.NewGuid():N}@simf.test";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+            var user = new SimfUser
+            {
+                UserName = email,
+                Email = email,
+                EmailConfirmed = true,
+                DisplayName = "Delegation Viewer",
+                AccountState = AccountState.Approved,
+                UserType = UserType.Visitor,
+            };
+            await users.CreateAsync(user, AuthFlow.Password);
+
+            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            appDb.UserProfiles.Add(new UserProfile
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                Name = "Delegation Viewer",
+                NameArabic = "زائر الوفود",
+                NationalityId = nationalityId,
+                IsDelegate = true,
+                IsActive = true,
+                CreatedAt = DateTimeOffset.UtcNow,
+            });
+            await appDb.SaveChangesAsync();
+        }
+        var sign = await _client.PostAsJsonAsync(
+            "/api/v1/app/auth/sign-in",
+            new SignInRequest { Email = email, Password = AuthFlow.Password });
+        return (await sign.Content
+            .ReadFromJsonAsync<ApiResult<SignInResponse>>())!.Data!.Tokens!.AccessToken;
     }
 
     private async Task EnsureCountryAsync(string code, int id)

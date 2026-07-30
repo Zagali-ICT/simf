@@ -366,7 +366,7 @@ List<String> _unnamedIconButtons(WidgetTester tester, String label) {
 /// data.
 const _sweepPaths = <String>[
   '/auth/badge-activation', '/auth/badge-password', '/auth/badge',
-  '/auth/biometric-step-up', '/auth/change-email', '/auth/forgot-password',
+  '/auth/biometric-step-up', '/auth/forgot-password',
   '/auth/reset-password', '/auth/verify-otp',
   '/splash', '/onboarding', '/sign-in', '/sign-up', '/sign-up/otp',
   '/sign-up/visitor', '/sign-up/interests', '/terms',

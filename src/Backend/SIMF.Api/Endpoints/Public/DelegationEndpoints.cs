@@ -1,4 +1,5 @@
 // Tests: SIMF.Api.Tests/DelegationsTests.cs
+using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Application.Delegations.Abstractions;
 using SIMF.Common;
@@ -11,7 +12,14 @@ namespace SIMF.Api.Endpoints.Public;
 /// member count) plus the two aggregate stats (participating countries + total
 /// participants). Public / anonymous — only the designated head (a public figure) +
 /// a member count are exposed, no member PII — consistent with the speakers /
-/// booths / sponsors directories.</summary>
+/// booths / sponsors directories.
+///
+/// <para>G2 (D-800) — the list is per-viewer: a signed-in caller does not see their
+/// OWN delegation (the country matching their profile nationality), and the two
+/// aggregate stats are recomputed over what is shown. The endpoint stays anonymous —
+/// with no bearer token there is no <c>sub</c> claim, so a guest gets the full
+/// list. No output cache is configured here, so per-caller filtering poisons
+/// nothing.</para></summary>
 public sealed class ListPublicDelegationsEndpoint(IPublicDelegationService service)
     : EndpointWithoutRequest<ApiResult<AppDelegations>>
 {
@@ -24,6 +32,14 @@ public sealed class ListPublicDelegationsEndpoint(IPublicDelegationService servi
             "Delegations: invited countries with head of delegation, dates and member count.");
     }
 
-    public override async Task HandleAsync(CancellationToken ct) =>
-        await Send.OkAsync(ApiResult<AppDelegations>.Ok(await service.GetAsync(ct)), ct);
+    public override async Task HandleAsync(CancellationToken ct)
+    {
+        // The bearer token is optional here: authentication still runs on an
+        // anonymous endpoint, so a signed-in caller carries `sub` and an anonymous
+        // one does not (same pattern as SubmitContactInquiryEndpoint).
+        Guid? viewerUserId =
+            Guid.TryParse(User.FindFirstValue("sub"), out var callerId) ? callerId : null;
+        var delegations = await service.GetAsync(viewerUserId, ct);
+        await Send.OkAsync(ApiResult<AppDelegations>.Ok(delegations), ct);
+    }
 }
