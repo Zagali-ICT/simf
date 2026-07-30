@@ -290,10 +290,7 @@ class _ChangeEmailScreenState extends ConsumerState<ChangeEmailScreen> {
                 const SizedBox(height: SimfTokens.space3),
                 Text(
                   _error!,
-                  style: const TextStyle(
-                    color: SimfTokens.danger,
-                    fontSize: SimfTokens.textSm,
-                  ),
+                  style: SimfTokens.labelDangerSm,
                 ),
               ],
               const SizedBox(height: SimfTokens.space6),
@@ -403,10 +400,7 @@ class _ChangeEmailScreenState extends ConsumerState<ChangeEmailScreen> {
               Text(
                 _error!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: SimfTokens.danger,
-                  fontSize: SimfTokens.textSm,
-                ),
+                style: SimfTokens.labelDangerSm,
               ),
             ],
             const SizedBox(height: SimfTokens.space6),

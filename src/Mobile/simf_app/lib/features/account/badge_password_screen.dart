@@ -203,10 +203,7 @@ class _BadgePasswordScreenState extends ConsumerState<BadgePasswordScreen> {
                 const SizedBox(height: SimfTokens.space3),
                 Text(
                   _error!,
-                  style: const TextStyle(
-                    color: SimfTokens.danger,
-                    fontSize: SimfTokens.textSm,
-                  ),
+                  style: SimfTokens.labelDangerSm,
                 ),
               ],
               const SizedBox(height: SimfTokens.space6),

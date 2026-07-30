@@ -266,10 +266,7 @@ class _SignUpEmailVerifyScreenState
               Text(
                 _error!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: SimfTokens.danger,
-                  fontSize: SimfTokens.textSm,
-                ),
+                style: SimfTokens.labelDangerSm,
               ),
             ],
             const SizedBox(height: SimfTokens.space6),

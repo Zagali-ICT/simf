@@ -996,10 +996,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                 Expanded(
                   child: Text(
                     l10n.lookupLoadError,
-                    style: const TextStyle(
-                      color: SimfTokens.danger,
-                      fontSize: SimfTokens.textSm,
-                    ),
+                    style: SimfTokens.labelDangerSm,
                   ),
                 ),
                 TextButton(
@@ -1623,10 +1620,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                   Expanded(
                     child: Text(
                       l10n.lookupLoadError,
-                      style: const TextStyle(
-                        color: SimfTokens.danger,
-                        fontSize: SimfTokens.textSm,
-                      ),
+                      style: SimfTokens.labelDangerSm,
                     ),
                   ),
                   TextButton(

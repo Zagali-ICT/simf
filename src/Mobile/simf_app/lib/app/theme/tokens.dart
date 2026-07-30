@@ -729,6 +729,14 @@ class SimfTokens {
   static const TextStyle bodyDanger = TextStyle(
     color: danger,
   );
+
+  /// The small inline validation error under a form field — the single most
+  /// repeated hand-rolled style in the app (18 sites across the auth, sign-up
+  /// and badge screens all spelled it out).
+  static const TextStyle labelDangerSm = TextStyle(
+    color: danger,
+    fontSize: textSm,
+  );
   // home (Figma 758:1239) — highlights carousel slide title. Most home text
   // reuses S3 tokens (labelWhiteMediumSm, labelGoldSemiboldLg, bodyWhiteSm,
   // labelGoldBoldLg, labelGoldBold, labelWhiteSemibold, bodyWhiteMd, bodyBeige).
