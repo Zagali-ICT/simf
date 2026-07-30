@@ -46,7 +46,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | Page | File | Scenarios |
 |------|------|-----------|
 | `/admin/admins` | [`cp-admin-admins.md`](cp-admin-admins.md) | E2E-USR-001..024 |
-| `/admin/admins/pending` | [`cp-admin-admins-pending.md`](cp-admin-admins-pending.md) | E2E-APN-001..015 |
+| `/admin/admins/pending` | [`cp-admin-admins-pending.md`](cp-admin-admins-pending.md) | E2E-APN-001..017 |
 | `/admin/others` | [`cp-admin-others.md`](cp-admin-others.md) | E2E-OTH-001..024 |
 | `/admin/others/pending` | [`cp-admin-others-pending.md`](cp-admin-others-pending.md) | E2E-OPN-001..016 |
 | `/admin/visitors` | [`cp-admin-visitors.md`](cp-admin-visitors.md) | E2E-VIS-001..033 |
@@ -338,10 +338,10 @@ being quoted in planning as if current.
 - **Pages catalogued:** 184 (94 Control Panel + 70 mobile + 19 Website + 1
   system-wide). One of the 184 — `cp-admin-companies.md` — is **retired**: its
   route was renamed away and it now carries no live scenarios.
-- **Total scenarios:** 2895 Coverage-matrix rows, every id distinct. That
+- **Total scenarios:** 2897 Coverage-matrix rows, every id distinct. That
   includes the **362** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
   per live page — see `tools/qa/generate_els_rows.py`); the hand-authored
-  functional total is 2533.
+  functional total is 2535.
 - **Authored:** all pages. The D-133 "pending" stubs are fully authored, and
   every event-module and P2–P5 page added since has its own file.
 - **Execution:** the canonical run today is a Chrome DevTools MCP browser pass

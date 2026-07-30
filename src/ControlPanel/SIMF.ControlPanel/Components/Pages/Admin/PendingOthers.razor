@@ -1,4 +1,4 @@
-@* Control Panel — pending Other-typed approval queue (P7e — D-055).
+﻿@* Control Panel — pending Other-typed approval queue (P7e — D-055).
    Mirrors PendingAdmins (P4b); each row gets Approve + Reject buttons
    wired to the /admin/others/{id}/{approve,reject} API. *@
 @page "/admin/others/pending"
@@ -130,6 +130,17 @@
         </Footer>
     </SimfModal>
 }
+
+@* D-809 — bulk approve commits many accounts at once; confirm the count first. *@
+<SimfConfirm Open="@(_bulkApproveSelected is not null)"
+             Title="@L["Admin.Pending.BulkApprove.Confirm.Title"]"
+             Message="@(_bulkApproveSelected is null ? string.Empty
+                        : string.Format(L["Admin.Pending.BulkApprove.Confirm.Message"],
+                                        _bulkApproveSelected.Count))"
+             ConfirmLabel="@L["Admin.Pending.ApproveReview.Confirm"]"
+             CancelLabel="@L["Common.Cancel"]"
+             OnConfirm="ConfirmBulkApproveAsync"
+             OnCancel="CancelBulkApprove" />
 
 @* D-209 — bulk reject: shared-reason modal for the selected pending rows. *@
 @if (_bulkRejectSelected is not null)

@@ -1,4 +1,4 @@
-@* Control Panel — the signed-in user's profile (myComment item #11). Four
+﻿@* Control Panel — the signed-in user's profile (myComment item #11). Four
    sections: two-factor authentication enrolment, change password, my roles,
    my avatar. Every action goes through CP-side proxy endpoints
    (/account/api/…) so the access token never reaches the page. *@
@@ -201,7 +201,7 @@ else
             <div class="simf-form__actions">
                 @if (!string.IsNullOrEmpty(_profile.AvatarUrl))
                 {
-                    <SimfButton Type="button" Variant="secondary" OnClick="RemoveAvatarAsync"
+                    <SimfButton Type="button" Variant="secondary" OnClick="@(() => _confirmingAvatarRemove = true)"
                                 Disabled="_busy">@L["Profile.Avatar.Remove"]</SimfButton>
                 }
             </div>
@@ -235,3 +235,13 @@ else
                        Title="@L["Profile.Avatar.Crop.Title"]"
                        OnCropped="OnAvatarCroppedAsync"
                        OnCancel="OnAvatarCropCancelAsync" />
+
+@* D-809 — removing the avatar deletes the stored file; confirm first. *@
+<SimfConfirm Open="_confirmingAvatarRemove"
+             Danger="true"
+             Title="@L["Profile.Avatar.Remove.Confirm.Title"]"
+             Message="@L["Profile.Avatar.Remove.Confirm.Message"]"
+             ConfirmLabel="@L["Profile.Avatar.Remove"]"
+             CancelLabel="@L["Common.Cancel"]"
+             OnConfirm="ConfirmRemoveAvatarAsync"
+             OnCancel="@(() => _confirmingAvatarRemove = false)" />

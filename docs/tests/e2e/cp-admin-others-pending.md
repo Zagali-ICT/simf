@@ -146,6 +146,9 @@ Scenario: Select multiple pending rows and approve them in one batch
   Given the grid shows at least 3 pending Other rows
   When the administrator ticks the select-row checkbox on 3 rows
   And clicks "Approve selected"
+  Then a SimfConfirm dialog opens titled "Approve selected accounts" naming the count (D-809)
+  And no request has been sent yet
+  When they click "Confirm approval"
   Then a POST /account/api/admin/others/bulk-approve fires with body { "Ids": [<3 guids>] }
   And the API returns 200 with ApiResult.Data = { Approved: 3, Skipped: 0, Failures: [] }
   And a green toast reads "Approved 3 user(s). Skipped 0."
@@ -272,6 +275,7 @@ Scenario: API 500 on /others/pending/list degrades gracefully
 Scenario: Bulk approve over a mix of valid and stale ids reports the skipped count
   Given the administrator selects 5 rows, one of which was approved/rejected in another session
   When they click "Approve selected"
+  And they accept the "Approve selected accounts" confirmation (D-809)
   Then POST /account/api/admin/others/bulk-approve returns 200
   And ApiResult.Data = { Approved: 4, Skipped: 1, Failures: [ { UserId, Email, ReasonCode, ... } ] }
   And an amber/warning toast reads "Approved 4 user(s). Skipped 1."

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -1227,6 +1227,10 @@
   <data name="Admin.Pending.BulkApproved.Toast" xml:space="preserve"><value>تم اعتماد {0} مستخدم/ين. تم تخطي {1}.</value></data>
   <data name="Admin.Pending.Action.BulkReject" xml:space="preserve"><value>رفض المحدد</value></data>
   <data name="Admin.Pending.BulkReject.Title" xml:space="preserve"><value>رفض الحسابات المحددة</value></data>
+  <data name="Admin.Pending.Approve.Confirm.Title" xml:space="preserve"><value>الموافقة على حساب مسؤول</value></data>
+  <data name="Admin.Pending.Approve.Confirm.Message" xml:space="preserve"><value>أنت على وشك اعتماد {0} ({1}). يمنح الاعتماد صلاحية الدخول إلى لوحة التحكم ويُصدر شارة QR.</value></data>
+  <data name="Admin.Pending.BulkApprove.Confirm.Title" xml:space="preserve"><value>اعتماد الحسابات المحددة</value></data>
+  <data name="Admin.Pending.BulkApprove.Confirm.Message" xml:space="preserve"><value>أنت على وشك اعتماد {0} حساب معلّق. كل حساب معتمد يمكنه تسجيل الدخول ويحصل على شارة QR.</value></data>
   <data name="Admin.Pending.BulkReject.Confirm" xml:space="preserve"><value>أنت على وشك رفض {0} حساب معلّق. السبب أدناه يُسجَّل ويُعرض لكل مستخدم.</value></data>
   <data name="Admin.Pending.BulkReject.Submit" xml:space="preserve"><value>رفض المحدد</value></data>
   <data name="Admin.Pending.BulkRejected.Toast" xml:space="preserve"><value>تم رفض {0} مستخدم/ين. تم تخطي {1}.</value></data>
@@ -1702,6 +1706,10 @@
   <data name="Account.Notifications.Column.Severity" xml:space="preserve"><value>النوع</value></data>
   <data name="Account.Notifications.Column.CreatedAt" xml:space="preserve"><value>التاريخ</value></data>
   <data name="Account.Notifications.Column.Actions" xml:space="preserve"><value>الإجراءات</value></data>
+  <data name="Account.Notifications.Dismiss.Confirm.Title" xml:space="preserve"><value>حذف الإشعار</value></data>
+  <data name="Account.Notifications.Dismiss.Confirm.Message" xml:space="preserve"><value>هل تريد حذف "{0}"؟ سيُزال من صندوق الوارد ولا يمكن استرجاعه.</value></data>
+  <data name="Account.Notifications.BulkDismiss.Confirm.Title" xml:space="preserve"><value>حذف الإشعارات المحددة</value></data>
+  <data name="Account.Notifications.BulkDismiss.Confirm.Message" xml:space="preserve"><value>هل تريد حذف {0} إشعار محدد؟ ستُزال من صندوق الوارد ولا يمكن استرجاعها.</value></data>
   <data name="Account.Notifications.Action.Delete" xml:space="preserve"><value>حذف</value></data>
   <data name="Account.Notifications.FilterColumn" xml:space="preserve"><value>تصفية العمود</value></data>
   <data name="Account.Notifications.FilterPlaceholder" xml:space="preserve"><value>بحث</value></data>
@@ -3692,4 +3700,12 @@
   <data name="Admin.Delegates.Bulk.Remove" xml:space="preserve"><value>إزالة {0}</value></data>
   <data name="Admin.Delegates.Bulk.PickType" xml:space="preserve"><value>اختر نوع الملف وعدداً أكبر من صفر.</value></data>
   <data name="Module.AdminVisitorsVipExport" xml:space="preserve"><value>تصدير ترحيب كبار الشخصيات</value></data>
+  <data name="Profile.Avatar.Remove.Confirm.Title" xml:space="preserve"><value>إزالة صورة الملف الشخصي</value></data>
+  <data name="Profile.Avatar.Remove.Confirm.Message" xml:space="preserve"><value>هل تريد إزالة صورة ملفك الشخصي؟ سيتم حذف الصورة المحفوظة ولا يمكن استرجاعها.</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoRemove.Confirm.Title" xml:space="preserve"><value>إزالة فيديو الواجهة</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoRemove.Confirm.Message" xml:space="preserve"><value>هل تريد إزالة فيديو الواجهة؟ سيتوقف عرضه فوراً في الموقع العام وتطبيق الجوال.</value></data>
+  <data name="Admin.ChangeType.Confirm.Title" xml:space="preserve"><value>تغيير نوع الحساب</value></data>
+  <data name="Admin.ChangeType.Confirm.Message" xml:space="preserve"><value>هل تريد تغيير هذا الحساب إلى "{0}"؟ سينتقل إلى المكتب الآخر وستتغير الإجراءات المتاحة له.</value></data>
+  <data name="Admin.MediaLibrary.Deactivate.Confirm.Title" xml:space="preserve"><value>إلغاء تفعيل الملف</value></data>
+  <data name="Admin.MediaLibrary.Deactivate.Confirm.Message" xml:space="preserve"><value>هل تريد إلغاء تفعيل ملف "{0}"؟ سيتوقف ظهوره في الموقع العام حتى تتم استعادته.</value></data>
 </root>

@@ -55,6 +55,9 @@ Scenario: List assets, open details, deactivate
   When the administrator opens the details of the SpeakerPhoto row
   Then the details modal shows a preview image and an enabled "Deactivate" button
   When the administrator clicks "Deactivate"
+  Then the details modal closes and a SimfConfirm opens titled "Deactivate asset" naming the owner (D-809)
+  And no DELETE has been sent yet
+  When they click "Deactivate" in the dialog
   Then a success toast "Asset deactivated." appears
   And the row's Active column becomes "no"
   And a later GET of /app/assets/SpeakerPhoto/{ownerId}/image returns 404
