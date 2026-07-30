@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
@@ -68,56 +68,40 @@ public partial class BannersAddEdit
         _busy = true;
         try
         {
-            ApiResult<AdminBannerDetail>? envelope;
-            if (!IsEdit)
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminBannerDetail>>(
-                    "simfAccount.postJson", "/account/api/admin/banners",
-                    new CreateBannerRequest
-                    {
-                        Title = _model.TitleEn.Trim(),
-                        TitleArabic = _model.TitleAr.Trim(),
-                        Body = _model.BodyEn.Trim(),
-                        BodyArabic = _model.BodyAr.Trim(),
-                        ImageUrl = NullIfBlank(_model.ImageUrl),
-                        LinkUrl = NullIfBlank(_model.LinkUrl),
-                        Start = start,
-                        End = end,
-                        DisplayOrder = order,
-                    });
-            }
-            else
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminBannerDetail>>(
-                    "simfAccount.putJson", $"/account/api/admin/banners/{Initial!.Id}",
-                    new UpdateBannerRequest
-                    {
-                        Title = _model.TitleEn.Trim(),
-                        TitleArabic = _model.TitleAr.Trim(),
-                        Body = _model.BodyEn.Trim(),
-                        BodyArabic = _model.BodyAr.Trim(),
-                        ImageUrl = NullIfBlank(_model.ImageUrl),
-                        LinkUrl = NullIfBlank(_model.LinkUrl),
-                        Start = start,
-                        End = end,
-                        DisplayOrder = order,
-                        IsActive = _model.IsActive,
-                    });
-            }
+            var result = await SendAsync(
+                JS,
+                "/account/api/admin/banners",
+                $"/account/api/admin/banners/{Initial?.Id}",
+                new CreateBannerRequest
+                {
+                    Title = _model.TitleEn.Trim(),
+                    TitleArabic = _model.TitleAr.Trim(),
+                    Body = _model.BodyEn.Trim(),
+                    BodyArabic = _model.BodyAr.Trim(),
+                    ImageUrl = NullIfBlank(_model.ImageUrl),
+                    LinkUrl = NullIfBlank(_model.LinkUrl),
+                    Start = start,
+                    End = end,
+                    DisplayOrder = order,
+                },
+                new UpdateBannerRequest
+                {
+                    Title = _model.TitleEn.Trim(),
+                    TitleArabic = _model.TitleAr.Trim(),
+                    Body = _model.BodyEn.Trim(),
+                    BodyArabic = _model.BodyAr.Trim(),
+                    ImageUrl = NullIfBlank(_model.ImageUrl),
+                    LinkUrl = NullIfBlank(_model.LinkUrl),
+                    Start = start,
+                    End = end,
+                    DisplayOrder = order,
+                    IsActive = _model.IsActive,
+                });
 
-            if (envelope is { Success: true, Data: not null })
+            if (!result.Succeeded)
             {
-                await OnSuccess.InvokeAsync(envelope.Data);
+                _error = result.ServerMessage ?? L["Admin.Banners.LoadFailed"];
             }
-            else
-            {
-                _error = envelope?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.Banners.LoadFailed"];
-            }
-        }
-        catch (Exception)
-        {
-            _error = L["Admin.Banners.LoadFailed"];
         }
         finally { _busy = false; }
     }

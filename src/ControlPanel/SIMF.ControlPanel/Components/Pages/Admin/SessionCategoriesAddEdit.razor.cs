@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
@@ -48,44 +48,28 @@ public partial class SessionCategoriesAddEdit
         _busy = true;
         try
         {
-            ApiResult<AdminSessionCategoryDetail>? envelope;
-            if (!IsEdit)
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminSessionCategoryDetail>>(
-                    "simfAccount.postJson", "/account/api/admin/session-categories",
-                    new AdminCreateSessionCategoryRequest
-                    {
-                        Name = _model.Name.Trim(),
-                        NameArabic = _model.NameArabic.Trim(),
-                        DisplayOrder = order,
-                    });
-            }
-            else
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminSessionCategoryDetail>>(
-                    "simfAccount.putJson", $"/account/api/admin/session-categories/{Initial!.Id}",
-                    new AdminUpdateSessionCategoryRequest
-                    {
-                        Name = _model.Name.Trim(),
-                        NameArabic = _model.NameArabic.Trim(),
-                        DisplayOrder = order,
-                        IsActive = _model.IsActive,
-                    });
-            }
+            var result = await SendAsync(
+                JS,
+                "/account/api/admin/session-categories",
+                $"/account/api/admin/session-categories/{Initial?.Id}",
+                new AdminCreateSessionCategoryRequest
+                {
+                    Name = _model.Name.Trim(),
+                    NameArabic = _model.NameArabic.Trim(),
+                    DisplayOrder = order,
+                },
+                new AdminUpdateSessionCategoryRequest
+                {
+                    Name = _model.Name.Trim(),
+                    NameArabic = _model.NameArabic.Trim(),
+                    DisplayOrder = order,
+                    IsActive = _model.IsActive,
+                });
 
-            if (envelope is { Success: true, Data: not null })
+            if (!result.Succeeded)
             {
-                await OnSuccess.InvokeAsync(envelope.Data);
+                _error = result.ServerMessage ?? L["Admin.SessionCategories.LoadFailed"];
             }
-            else
-            {
-                _error = envelope?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.SessionCategories.LoadFailed"];
-            }
-        }
-        catch (Exception)
-        {
-            _error = L["Admin.SessionCategories.LoadFailed"];
         }
         finally { _busy = false; }
     }

@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
@@ -53,43 +53,27 @@ public partial class ConfigurationAddEdit
         _busy = true;
         try
         {
-            ApiResult<AdminSystemSettingDetail>? envelope;
-            if (!IsEdit)
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminSystemSettingDetail>>(
-                    "simfAccount.postJson", "/account/api/admin/system-settings",
-                    new AdminCreateSystemSettingRequest
-                    {
-                        Key = _model.Key.Trim(),
-                        Value = _model.Value.Trim(),
-                        Description = NullIfBlank(_model.Description),
-                    });
-            }
-            else
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminSystemSettingDetail>>(
-                    "simfAccount.putJson", $"/account/api/admin/system-settings/{Initial!.Id}",
-                    new AdminUpdateSystemSettingRequest
-                    {
-                        Value = _model.Value.Trim(),
-                        Description = NullIfBlank(_model.Description),
-                        IsActive = _model.IsActive,
-                    });
-            }
+            var result = await SendAsync(
+                JS,
+                "/account/api/admin/system-settings",
+                $"/account/api/admin/system-settings/{Initial?.Id}",
+                new AdminCreateSystemSettingRequest
+                {
+                    Key = _model.Key.Trim(),
+                    Value = _model.Value.Trim(),
+                    Description = NullIfBlank(_model.Description),
+                },
+                new AdminUpdateSystemSettingRequest
+                {
+                    Value = _model.Value.Trim(),
+                    Description = NullIfBlank(_model.Description),
+                    IsActive = _model.IsActive,
+                });
 
-            if (envelope is { Success: true, Data: not null })
+            if (!result.Succeeded)
             {
-                await OnSuccess.InvokeAsync(envelope.Data);
+                _error = result.ServerMessage ?? L["Admin.Configuration.Fallback"];
             }
-            else
-            {
-                _error = envelope?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.Configuration.Fallback"];
-            }
-        }
-        catch (Exception)
-        {
-            _error = L["Admin.Configuration.Fallback"];
         }
         finally { _busy = false; }
     }

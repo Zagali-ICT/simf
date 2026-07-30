@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
@@ -62,60 +62,44 @@ public partial class NewsAddEdit
         _busy = true;
         try
         {
-            ApiResult<AdminNewsDetail>? envelope;
-            if (!IsEdit)
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminNewsDetail>>(
-                    "simfAccount.postJson", "/account/api/admin/news",
-                    new CreateNewsRequest
-                    {
-                        Title = _model.Title,
-                        TitleArabic = _model.TitleArabic,
-                        Excerpt = NullIfBlank(_model.Excerpt),
-                        ExcerptArabic = NullIfBlank(_model.ExcerptArabic),
-                        Body = _model.Body,
-                        BodyArabic = _model.BodyArabic,
-                        Category = _model.Category,
-                        CategoryArabic = _model.CategoryArabic,
-                        ImageRelativePath = NullIfBlank(_model.ImageRelativePath),
-                        PublishedAt = _model.PublishedAt,
-                        DisplayOrder = _model.DisplayOrder,
-                    });
-            }
-            else
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminNewsDetail>>(
-                    "simfAccount.putJson", $"/account/api/admin/news/{Initial!.Id}",
-                    new UpdateNewsRequest
-                    {
-                        Title = _model.Title,
-                        TitleArabic = _model.TitleArabic,
-                        Excerpt = NullIfBlank(_model.Excerpt),
-                        ExcerptArabic = NullIfBlank(_model.ExcerptArabic),
-                        Body = _model.Body,
-                        BodyArabic = _model.BodyArabic,
-                        Category = _model.Category,
-                        CategoryArabic = _model.CategoryArabic,
-                        ImageRelativePath = NullIfBlank(_model.ImageRelativePath),
-                        PublishedAt = _model.PublishedAt,
-                        DisplayOrder = _model.DisplayOrder,
-                        IsActive = _model.IsActive,
-                    });
-            }
+            var result = await SendAsync(
+                JS,
+                "/account/api/admin/news",
+                $"/account/api/admin/news/{Initial?.Id}",
+                new CreateNewsRequest
+                {
+                    Title = _model.Title,
+                    TitleArabic = _model.TitleArabic,
+                    Excerpt = NullIfBlank(_model.Excerpt),
+                    ExcerptArabic = NullIfBlank(_model.ExcerptArabic),
+                    Body = _model.Body,
+                    BodyArabic = _model.BodyArabic,
+                    Category = _model.Category,
+                    CategoryArabic = _model.CategoryArabic,
+                    ImageRelativePath = NullIfBlank(_model.ImageRelativePath),
+                    PublishedAt = _model.PublishedAt,
+                    DisplayOrder = _model.DisplayOrder,
+                },
+                new UpdateNewsRequest
+                {
+                    Title = _model.Title,
+                    TitleArabic = _model.TitleArabic,
+                    Excerpt = NullIfBlank(_model.Excerpt),
+                    ExcerptArabic = NullIfBlank(_model.ExcerptArabic),
+                    Body = _model.Body,
+                    BodyArabic = _model.BodyArabic,
+                    Category = _model.Category,
+                    CategoryArabic = _model.CategoryArabic,
+                    ImageRelativePath = NullIfBlank(_model.ImageRelativePath),
+                    PublishedAt = _model.PublishedAt,
+                    DisplayOrder = _model.DisplayOrder,
+                    IsActive = _model.IsActive,
+                });
 
-            if (envelope is { Success: true, Data: not null })
+            if (!result.Succeeded)
             {
-                await OnSuccess.InvokeAsync(envelope.Data);
+                _error = result.ServerMessage ?? L["Admin.News.LoadFailed"];
             }
-            else
-            {
-                _error = envelope?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.News.LoadFailed"];
-            }
-        }
-        catch (Exception)
-        {
-            _error = L["Admin.News.LoadFailed"];
         }
         finally { _busy = false; }
     }

@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
@@ -51,46 +51,30 @@ public partial class RegionAddEdit
         _busy = true;
         try
         {
-            ApiResult<AdminRegionDetail>? envelope;
-            if (!IsEdit)
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminRegionDetail>>(
-                    "simfAccount.postJson", "/account/api/admin/regions",
-                    new CreateRegionRequest
-                    {
-                        Code = _model.Code.Trim(),
-                        Name = NullIfBlank(_model.Name),
-                        NameArabic = _model.NameArabic.Trim(),
-                        SortOrder = order,
-                    });
-            }
-            else
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminRegionDetail>>(
-                    "simfAccount.putJson", $"/account/api/admin/regions/{Initial!.Id}",
-                    new UpdateRegionRequest
-                    {
-                        Code = _model.Code.Trim(),
-                        Name = NullIfBlank(_model.Name),
-                        NameArabic = _model.NameArabic.Trim(),
-                        SortOrder = order,
-                        IsActive = _model.IsActive,
-                    });
-            }
+            var result = await SendAsync(
+                JS,
+                "/account/api/admin/regions",
+                $"/account/api/admin/regions/{Initial?.Id}",
+                new CreateRegionRequest
+                {
+                    Code = _model.Code.Trim(),
+                    Name = NullIfBlank(_model.Name),
+                    NameArabic = _model.NameArabic.Trim(),
+                    SortOrder = order,
+                },
+                new UpdateRegionRequest
+                {
+                    Code = _model.Code.Trim(),
+                    Name = NullIfBlank(_model.Name),
+                    NameArabic = _model.NameArabic.Trim(),
+                    SortOrder = order,
+                    IsActive = _model.IsActive,
+                });
 
-            if (envelope is { Success: true, Data: not null })
+            if (!result.Succeeded)
             {
-                await OnSuccess.InvokeAsync(envelope.Data);
+                _error = result.ServerMessage ?? L["Admin.Regions.LoadFailed"];
             }
-            else
-            {
-                _error = envelope?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.Regions.LoadFailed"];
-            }
-        }
-        catch (Exception)
-        {
-            _error = L["Admin.Regions.LoadFailed"];
         }
         finally { _busy = false; }
     }

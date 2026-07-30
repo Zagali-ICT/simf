@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
@@ -49,54 +49,38 @@ public partial class OrganisationAddEdit
         _busy = true;
         try
         {
-            ApiResult<AdminOrganisationDetail>? envelope;
-            if (!IsEdit)
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminOrganisationDetail>>(
-                    "simfAccount.postJson", "/account/api/admin/organisations",
-                    new CreateOrganisationRequest
-                    {
-                        NameAr = _model.NameAr.Trim(),
-                        NameEn = NullIfBlank(_model.NameEn),
-                        CommercialRegistration = NullIfBlank(_model.CommercialRegistration),
-                        Sector = NullIfBlank(_model.Sector),
-                        City = NullIfBlank(_model.City),
-                        Phone = NullIfBlank(_model.Phone),
-                        Email = NullIfBlank(_model.Email),
-                        Website = NullIfBlank(_model.Website),
-                    });
-            }
-            else
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminOrganisationDetail>>(
-                    "simfAccount.putJson", $"/account/api/admin/organisations/{Initial!.Id}",
-                    new UpdateOrganisationRequest
-                    {
-                        NameAr = _model.NameAr.Trim(),
-                        NameEn = NullIfBlank(_model.NameEn),
-                        CommercialRegistration = NullIfBlank(_model.CommercialRegistration),
-                        Sector = NullIfBlank(_model.Sector),
-                        City = NullIfBlank(_model.City),
-                        Phone = NullIfBlank(_model.Phone),
-                        Email = NullIfBlank(_model.Email),
-                        Website = NullIfBlank(_model.Website),
-                        IsActive = _model.IsActive,
-                    });
-            }
+            var result = await SendAsync(
+                JS,
+                "/account/api/admin/organisations",
+                $"/account/api/admin/organisations/{Initial?.Id}",
+                new CreateOrganisationRequest
+                {
+                    NameAr = _model.NameAr.Trim(),
+                    NameEn = NullIfBlank(_model.NameEn),
+                    CommercialRegistration = NullIfBlank(_model.CommercialRegistration),
+                    Sector = NullIfBlank(_model.Sector),
+                    City = NullIfBlank(_model.City),
+                    Phone = NullIfBlank(_model.Phone),
+                    Email = NullIfBlank(_model.Email),
+                    Website = NullIfBlank(_model.Website),
+                },
+                new UpdateOrganisationRequest
+                {
+                    NameAr = _model.NameAr.Trim(),
+                    NameEn = NullIfBlank(_model.NameEn),
+                    CommercialRegistration = NullIfBlank(_model.CommercialRegistration),
+                    Sector = NullIfBlank(_model.Sector),
+                    City = NullIfBlank(_model.City),
+                    Phone = NullIfBlank(_model.Phone),
+                    Email = NullIfBlank(_model.Email),
+                    Website = NullIfBlank(_model.Website),
+                    IsActive = _model.IsActive,
+                });
 
-            if (envelope is { Success: true, Data: not null })
+            if (!result.Succeeded)
             {
-                await OnSuccess.InvokeAsync(envelope.Data);
+                _error = result.ServerMessage ?? L["Admin.Organisations.LoadFailed"];
             }
-            else
-            {
-                _error = envelope?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.Organisations.LoadFailed"];
-            }
-        }
-        catch (Exception)
-        {
-            _error = L["Admin.Organisations.LoadFailed"];
         }
         finally { _busy = false; }
     }
