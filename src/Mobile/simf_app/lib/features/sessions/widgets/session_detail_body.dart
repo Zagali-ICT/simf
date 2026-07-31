@@ -38,8 +38,16 @@ class SessionDetailBody extends StatelessWidget {
     required this.onCancelReservation,
     required this.onViewSeat,
     required this.onSpeaker,
+    this.header,
     super.key,
   });
+
+  /// Optional strip pinned above the first card — today the gate check-in status.
+  /// It is rendered as the ListView's first CHILD rather than stacked above the
+  /// list, because a widget outside the scrollable emits no ScrollNotification
+  /// and `RefreshIndicator` would therefore ignore a pull that started on it,
+  /// breaking pull-to-refresh at the very top of the page.
+  final Widget? header;
 
   final SessionDetail detail;
   // D-485 — the seat map (null for a guest / pending account): drives the join
@@ -99,6 +107,10 @@ class SessionDetailBody extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: _padding,
       children: <Widget>[
+        if (header != null) ...<Widget>[
+          header!,
+          const SizedBox(height: SimfTokens.space3),
+        ],
         SessionHeaderCard(
           detail: detail,
           isArabic: isArabic,

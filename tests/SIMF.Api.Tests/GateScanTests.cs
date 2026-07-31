@@ -659,16 +659,7 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
 
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return (body.Data!.Tokens!.AccessToken, email);
+        return (await AuthFlow.SignInControlPanelAsync(_client, _factory, email), email);
     }
 
     private Task<HttpResponseMessage> GetAuthAsync(string url, string token)

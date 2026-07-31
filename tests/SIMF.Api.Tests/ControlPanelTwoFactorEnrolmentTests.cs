@@ -15,8 +15,11 @@
 // bricked.
 //
 // The gate is ON in this class (ControlPanelTwoFactorApiFactory), which is the
-// production default. The general suite pins it off because ~150 admin fixtures
-// there predate enrolment-first; the shipping posture is proved here.
+// production default — and, since 2026-07-31, in the general suite too: the
+// ~150 admin fixtures there enrol through AuthFlow.SignInControlPanelAsync and
+// complete a real TOTP step instead of relying on a pinned-off gate. The
+// enrolment CONTRACT (challenge shape, ticket single-use, wrong-code refusal)
+// is still proved only here.
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;

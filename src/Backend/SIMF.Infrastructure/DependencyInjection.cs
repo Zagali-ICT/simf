@@ -462,6 +462,11 @@ public static class DependencyInjection
         // speaker meetings + confirmed business meetings + identity card).
         services.AddScoped<SIMF.Application.MyArea.IMyAreaService,
             SIMF.Infrastructure.MyArea.MyAreaService>();
+        // `accessibility-server-sync` — the app's five accessibility choices as
+        // account preferences (GET / PUT /app/account/preferences), so they follow
+        // the user to a second device and survive a reinstall.
+        services.AddScoped<SIMF.Application.Preferences.IAccountPreferencesService,
+            SIMF.Infrastructure.Preferences.AccountPreferencesService>();
         // D-199 — event modules (freeze lift): programme/speaker public reads,
         // news, media + media-partners, booths, sponsors, archive, ratings.
         services.AddScoped<SIMF.Application.Programme.Abstractions.IPublicSpeakerService,

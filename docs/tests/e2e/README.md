@@ -195,6 +195,7 @@ endpoint or the hosted worker that owns the behaviour.
 | Recommendation match push (≥80% threshold) — FR-803 | [`api-match-recommendation-push.md`](api-match-recommendation-push.md) | E2E-MRP-001..009 |
 | `INotificationChannel` delivery seam — FR/EIR-02 | [`api-notification-channels.md`](api-notification-channels.md) | E2E-NCH-001..006 |
 | Device-position pings, dwell aggregation + route projection — FR-1103 | [`api-movement-tracking.md`](api-movement-tracking.md) | E2E-MOV-001..011 |
+| `GET`/`PUT /app/account/preferences` — the account's five accessibility choices (`accessibility-server-sync`); the app half is [`mobile-accessibility.md`](mobile-accessibility.md) | [`api-account-preferences.md`](api-account-preferences.md) | E2E-ACP-001..013 |
 
 ### Website
 
@@ -268,7 +269,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #118 `staffSeating` — **guest seating desk** (`POST /app/staff/sessions/{id}/seating/by-badge` · `GET …/seating/seat` · `GET …/seating/occupant/{userId}/photo`) | [`mobile-staff-seating.md`](mobile-staff-seating.md) | E2E-MOBSEATDESK-001..008 |
 | #15 `venueMap` (`GET /app/venue-map` + `/app/booths` + `/{id}`) | [`mobile-venue-map.md`](mobile-venue-map.md) | E2E-MOB015-001..008 |
 | #16 `sessions` (`GET /app/programme/sessions`) | [`mobile-agenda.md`](mobile-agenda.md) | E2E-MOB016-001..019 |
-| #17 `sessionDetail` (`GET /app/programme/sessions/{id}` + `…/sessions/{id}/seats`) | [`mobile-session-detail.md`](mobile-session-detail.md) | E2E-MOB017-001..011 |
+| #17 `sessionDetail` (`GET /app/programme/sessions/{id}` + `…/sessions/{id}/seats` + `…/sessions/{id}/attendance` — the read-only gate-scan hall check-in status) | [`mobile-session-detail.md`](mobile-session-detail.md) | E2E-MOB017-001..040 |
 | #18 `mySeat` (`GET /app/sessions/{id}/seats` + reserve/**move**/release) | [`mobile-my-seat.md`](mobile-my-seat.md) | E2E-MOB018-001..019 |
 | `seatPicker` (`GET …/seats` + `POST …/seats/reserve` / `reserve-random` / **`move`** — B1 change seat) — D-485 | [`mobile-seat-picker.md`](mobile-seat-picker.md) | E2E-MOBPICK-001..016 |
 | #18 `mySeat` (`GET /app/sessions/{id}/seats` + reserve/release) | [`mobile-my-seat.md`](mobile-my-seat.md) | E2E-MOB018-001..019 |
@@ -298,7 +299,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #12 `guestMode` (no API) | [`mobile-guest-mode.md`](mobile-guest-mode.md) | E2E-MOB012-001..004 |
 | #33 `notifications` (`POST /app/account/notifications/list` · `/{id}/read` · `/read-all`) | [`mobile-notifications.md`](mobile-notifications.md) | E2E-MOB033-001..009 |
 | #35 `meetPeople` (`GET /app/networking/partner-directory`) - Build #13 partner directory | [`mobile-meet-people.md`](mobile-meet-people.md) | E2E-MOB035-001..012 |
-| #38 `accessibility` (no API) | [`mobile-accessibility.md`](mobile-accessibility.md) | E2E-MOB038-001..004 |
+| #38 `accessibility` (`GET`/`PUT /app/account/preferences` — `accessibility-server-sync`; the server half is [`api-account-preferences.md`](api-account-preferences.md)) | [`mobile-accessibility.md`](mobile-accessibility.md) | E2E-MOB038-001..012 |
 | #41 `more` (no API) | [`mobile-more.md`](mobile-more.md) | E2E-MOB041-001..009 |
 | #34 `aiSummary` (`GET /app/programme/sessions/{id}/summary`) | [`mobile-ai-summary.md`](mobile-ai-summary.md) | E2E-MOB034-001..010 |
 | #111 `sessionSummaryList` (cached programme + favourites/booked overlay) — Wave 2 pixel pass, Figma `1388:8392` | [`mobile-session-summaries.md`](mobile-session-summaries.md) | E2E-MOB111-001..008 |
@@ -342,7 +343,7 @@ API endpoints land (D-249). The per-screen design docs live under
 6. Cross-link from `docs/pages/PAGE-INDEX.md` (route → doc + test) and the
    per-page reference doc under `docs/pages/{cp|web}/{slug}.md`.
 
-## Coverage status snapshot — 2026-07-28
+## Coverage status snapshot — 2026-07-31
 
 These two counts are **machine-checked** by
 `tests/SIMF.ControlPanel.Tests/E2eCatalogueIntegrityTests.cs`
@@ -351,13 +352,13 @@ again without failing the build. They had been left at the 2026-06-02 figures �
 "74 pages / ~1044 scenarios" — while the catalogue more than doubled, and were
 being quoted in planning as if current.
 
-- **Pages catalogued:** 191 (95 Control Panel + 69 mobile + 19 Website + 7
-  API-only surfaces + 1 system-wide). One of the 191 — `cp-admin-companies.md` —
+- **Pages catalogued:** 192 (95 Control Panel + 69 mobile + 19 Website + 8
+  API-only surfaces + 1 system-wide). One of the 192 — `cp-admin-companies.md` —
   is **retired**: its route was renamed away and it now carries no live scenarios.
-- **Total scenarios:** 2973 Coverage-matrix rows, every id distinct. That
+- **Total scenarios:** 2992 Coverage-matrix rows, every id distinct. That
   includes the **360** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
   per live page — see `tools/qa/generate_els_rows.py`); the hand-authored
-  functional total is 2613.
+  functional total is 2632.
 - **Authored:** all pages. The D-133 "pending" stubs are fully authored, and
   every event-module and P2–P5 page added since has its own file.
 - **Execution:** the canonical run today is a Chrome DevTools MCP browser pass
@@ -570,3 +571,60 @@ now fails the build on either shape.
   frozen, persisted BY NAME - removing them is a data migration, not a code
   deletion), and their two `EmailTemplateCatalog` entries stay dormant so existing
   admin-edited template rows are not orphaned.
+
+### Update - 2026-07-31 (gate-scan hall check-in + the accessibility-preferences endpoint)
+
+Two register items closed, one new catalogue file, +19 scenarios (2973 -> 2992),
++1 page (191 -> 192). No scenario was renumbered and no namespace retired.
+
+- **`geofence-self-checkin` - owner decision: the GATE SCAN establishes a session
+  arrival, not GPS.** The chain already existed end to end
+  (`GateOperatorService.RecordGateDoorScanAsync` opens and closes the
+  `HallAttendance` row for the session live in that hall; the CP reports it on
+  `/admin/hall-arrivals` and `/admin/gates/operator`), so the app only has to read
+  it back. `SessionArrivalAction` is now a **read-only** status card fed by
+  `GET /app/sessions/{id}/attendance`, composed into `session_detail_screen.dart`
+  above the body - the previous round built the widget and never rendered it. The
+  "أنا هنا / I'm here" button and its `POST …/arrival` device-position payload are
+  gone, and with them the location plugin and the `ACCESS_FINE_LOCATION` /
+  `NSLocationWhenInUseUsageDescription` permissions it would have needed, which
+  were the store-review and NCA-disclosure surface the previous round declined to
+  take on its own authority.
+  - `mobile-session-detail.md` E2E-MOB017-001..035 -> **001..040**.
+    **E2E-MOB017-035 was rewritten in place** off the GPS behaviour (same widget,
+    same slot, new contract); +036 the departure line under the arrival, +037 the
+    calm "not checked in yet" instruction, +038 the failed-read/retry state kept
+    distinct from it, +039 where the strip is offered (attendee roles only, never
+    a `Workshop`, never an `upcoming` session) plus pull-to-refresh, +040 RTL.
+  - Backing Flutter: `session_arrival_action_test.dart` - 6 widget cases + 3 wire
+    -decode cases. Its fake repository **throws** from `recordArrival` /
+    `recordDeparture`, so a regression that gives the card a write path fails the
+    suite rather than shipping quietly.
+  - The geofence endpoints and error codes are **retained, not deleted** (the
+    deferred FR-1103 movement work, still blocked on G-OI-2); no app screen calls
+    them.
+- **`accessibility-server-sync` - the server half shipped.**
+  `GET`/`PUT /api/v1/app/account/preferences` stores the five accessibility
+  choices (`textSize`, `highContrast`, `reduceMotion`, `screenReaderAssist`,
+  `captions`) on five **additive** `UserProfile` columns, gated on
+  `RequireApprovedAccount` and the caller's own `sub` - an app-user surface, so no
+  `PermissionCatalog` code. The app half landed on 2026-07-30 with nothing to
+  call, which is why every sync scenario passed: both directions swallow their
+  failures by contract.
+  - **New catalogue + new namespace ACP:** `api-account-preferences.md`,
+    E2E-ACP-001..013 (round trip, defaults-not-404, idempotent replace, the stub
+    profile that stays incomplete, the bilingual `VALIDATION_FAILED` on an unknown
+    `textSize`, 401 + 403 on both verbs, the frozen camelCase wire shape, the
+    legacy blank-text-size degrade, cross-device replay, a 5xx the app absorbs,
+    RTL, and the `auth` rate limit on the write path).
+  - `mobile-accessibility.md` E2E-MOB038-001..011 -> **001..012** (+012, the live
+    round trip that could not previously be asserted) and its stale "until it
+    exists" contract note corrected.
+  - Backing xUnit: `tests/SIMF.Api.Tests/AccountPreferencesTests.cs` (8 facts),
+    including the direct `SimfAppDbContext` read proving `textSize` is stored as
+    the **name** and the `HasSentinel` case where a first save turning captions
+    **off** would otherwise come back on from the column default.
+- **New API-only reference doc:** `docs/pages/api/account-preferences.md`, and
+  `docs/pages/PAGE-INDEX.md` gained an **API-only surfaces** section - the six
+  `docs/pages/api/*` docs claimed to be "indexed from PAGE-INDEX exactly like a
+  page" and none of them actually were.

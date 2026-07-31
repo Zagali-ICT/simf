@@ -227,7 +227,7 @@ public sealed class AdminAccountNationalityTests : IClassFixture<SimfApiFactory>
             await users.CreateAsync(user, AuthFlow.Password);
             await users.AddToRoleAsync(user, AppRoles.Administrator);
         }
-        return await SignInAsync(email, SignInAudience.Cp);
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private async Task<string> SignInAsync(

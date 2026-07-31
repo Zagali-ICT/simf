@@ -5,12 +5,12 @@
 | Route | `/sessions/:sessionId` (`RouteNames.sessionDetail`, page #17) · public / Guest+ |
 | Surface | Mobile (Flutter) |
 | Screen | `lib/features/sessions/session_detail_screen.dart` (`SessionDetailScreen`) |
-| Widgets | `lib/features/sessions/widgets/` — `session_detail_header` · `session_detail_body` · `session_header_card` · `session_text_sections` · `session_speaker_card` · `ask_host_card` · `session_reservation_card` · `session_booking_actions` |
+| Widgets | `lib/features/sessions/widgets/` — `session_detail_header` · `session_detail_body` · `session_header_card` · `session_text_sections` · `session_speaker_card` · `ask_host_card` · `session_reservation_card` · `session_booking_actions` · `session_arrival_action` (read-only hall check-in status, §4b) |
 | Figma node | `889:2450` (KSA-Project, file `PSXHhY0UVTAPSaIOf9uNKd`); sub-frames 889:2716 header card · 889:2715 action buttons · 1056:12876 ask-host · 894:2779 seat marker · 897:2872 CTA row |
 | Shell | `SimfPageShell` (`SimfTab.sessions`) with a custom header (`SessionDetailHeader`: circled back + centred title + moderator Q&A action) |
-| API | `GET /app/programme/sessions/{id}` (anonymous) · `GET /app/programme/sessions/{id}/seats` (approved only) · `POST …/seats/join` · `DELETE …/seats/mine` (D-485) |
-| Providers | `sessionDetailRepositoryProvider` · `seatMapRepositoryProvider` · `sessionCalendarProvider` · `authControllerProvider` |
-| Tests | `test/features/sessions/session_detail_screen_test.dart` (+ `session_detail_body_test.dart`, `session_detail_models_test.dart`, `seat_map_models_test.dart`, `widgets/session_header_card_test.dart`, `widgets/session_speaker_card_test.dart`); golden `test/golden/session_detail_golden_test.dart` (`goldens/session_detail_889-2450.png`); E2E [`mobile-session-detail.md`](../../../tests/e2e/mobile-session-detail.md) |
+| API | `GET /app/programme/sessions/{id}` (anonymous) · `GET /app/programme/sessions/{id}/seats` (approved only) · `POST …/seats/join` · `DELETE …/seats/mine` (D-485) · `GET /app/sessions/{id}/attendance` (approved; **read-only** hall check-in status — §4b) |
+| Providers | `sessionDetailRepositoryProvider` · `seatMapRepositoryProvider` · `sessionCalendarProvider` · `authControllerProvider` · `hallAttendanceStatusProvider` |
+| Tests | `test/features/sessions/session_detail_screen_test.dart` (+ `session_detail_body_test.dart`, `session_detail_models_test.dart`, `seat_map_models_test.dart`, `widgets/session_header_card_test.dart`, `widgets/session_speaker_card_test.dart`, `widgets/session_arrival_action_test.dart`); golden `test/golden/session_detail_golden_test.dart` (`goldens/session_detail_889-2450.png`); E2E [`mobile-session-detail.md`](../../../tests/e2e/mobile-session-detail.md) |
 | Legacy detail | `docs/App/Page_017/` (Function / Logic / API / Design) — retained as the detailed historical spec |
 | Status | ✅ Real — D-300 (built) → D-485 (join/cancel) → D-567/D-572/D-593 (Figma parity) → **clean-code frozen (D-597)** |
 
@@ -105,37 +105,65 @@ is no longer offered a desk entry that bounces.
 
 All data on the page is repo-backed; no hardcoded content.
 
-## 4b. Geofence self check-in (`geofence-self-checkin`, 2026-07-30)
+## 4b. Hall check-in status — the GATE SCAN records it (owner 2026-07-31)
 
-The attendee-facing half of D-241 (FR-305/506). The backend shipped the arrival
-/ departure / status endpoints with D-241 and **nothing in the app ever called
-them**; this closes that.
+**Owner decision, 2026-07-31: an attendee's arrival at a session is established
+by the operator's badge scan at the hall door, never by device GPS.** That chain
+already existed end to end — `GateOperatorService.RecordGateDoorScanAsync` opens
+and closes the `HallAttendance` row for the session live in that hall, and the CP
+reports it on `/admin/hall-arrivals` and `/admin/gates/operator`. The session
+detail's job is therefore only to **report** it back to the attendee.
+
+`SessionArrivalAction` is consequently a **read-only status card**, and it is now
+actually rendered — the previous round built the widget but never composed it
+into a screen. It replaced the "أنا هنا / I'm here" self check-in button that
+posted a device position to `POST /app/sessions/{id}/arrival`, and with it the
+location plugin and the runtime location permission that button needed
+(`ACCESS_FINE_LOCATION` + `NSLocationWhenInUseUsageDescription` — store-review
+and NCA-disclosure surface the previous round flagged and would not take on its
+own authority). This closes the `geofence-self-checkin` register item.
 
 | Piece | File |
 |---|---|
-| Repository | `lib/features/sessions/data/hall_attendance_repository.dart` — `getStatus` / `recordArrival(lat, lon)` / `recordDeparture`, the `HallAttendanceStatus` decode, and the three error codes the UI branches on |
-| Action widget | `lib/features/sessions/widgets/session_arrival_action.dart` — `SessionArrivalAction` ("أنا هنا / I'm here" ↔ "تسجيل المغادرة / Check out" + the recorded arrival time on the Saudi clock) |
-| Location seam | `lib/core/location/device_location.dart` — `DeviceLocation` / `deviceLocationProvider` |
-| API | `POST /app/sessions/{id}/arrival` · `POST /app/sessions/{id}/departure` · `GET /app/sessions/{id}/attendance` (all `RequireApprovedAccount`; self-service, no admin permission) |
-| Tests | `test/features/sessions/widgets/session_arrival_action_test.dart` (8 widget + 3 decode cases); E2E `E2E-MOB017-035` |
+| Status card | `lib/features/sessions/widgets/session_arrival_action.dart` — `SessionArrivalAction`, three states on one navy `SimfCard` strip |
+| Composition | `session_detail_screen.dart` — `_showArrivalStatus(detail)` above `_detailBody(...)`; `_load()` invalidates `hallAttendanceStatusProvider` so a pull refreshes it too |
+| Repository | `lib/features/sessions/data/hall_attendance_repository.dart` — `getStatus` + the `HallAttendanceStatus` decode; `hallAttendanceStatusProvider` (`autoDispose.family`) |
+| API | `GET /app/sessions/{id}/attendance` (`RequireApprovedAccount`; the caller's own row, no admin permission) — **read only** |
+| Strings | `sessionArrivalCheckedIn` · `sessionArrivalDeparted` · `sessionArrivalNotYet` · `sessionArrivalStatusError` (+ shared `retryLabel`) |
+| Tests | `test/features/sessions/widgets/session_arrival_action_test.dart` (6 widget + 3 decode cases); E2E `E2E-MOB017-035..040` |
 
-- The **server decides**: it checks the reported point against the hall geofence
-  and either opens an attendance row or refuses with a coded error. The raw
-  coordinates are never persisted (FDS-003 §10) — only enter/leave instants.
-- **Inert until a hall has a boundary.** `HALL_GEOFENCE_NOT_CONFIGURED` renders
-  as a plain "no boundary set yet" message, not an error. That is the expected
-  state until the CP geofence page is populated (owner Q6, 2026-07-30).
-- `NOT_AT_VENUE` reads "outside the hall boundary"; every other refusal (e.g.
-  `SESSION_NOT_LIVE`) shows the server's own bilingual message verbatim.
-- **Two follow-ups, reported rather than silently shipped:** (1)
-  `SessionArrivalAction` needs one line in `widgets/session_detail_body.dart` to
-  appear — that file belongs to another track this round; (2) this build carries
-  **no** location plugin, so `DeviceLocation` answers `unavailable` and the
-  action takes the "location required" path on a device. Supplying a real reader
-  is a single `deviceLocationProvider` override, but it also adds
-  `ACCESS_FINE_LOCATION` to the Android manifest and
-  `NSLocationWhenInUseUsageDescription` to `Info.plist` — store-review and
-  NCA-disclosure surface, so an owner decision, not a code one.
+**Three states, kept deliberately distinct:**
+
+- **Checked in** — `how_to_reg` glyph + "تم تسجيل حضورك في القاعة · 10:30 AM" /
+  "Your hall arrival is recorded · 10:30 AM", rendered through
+  `formatSaudiTime12` (Latin AM/PM in both locales, matching the backend
+  `SaudiTime.TimeFormat`). Once the door scans the attendee back out, the
+  departure line joins it underneath. A closed row is still an attendance and
+  must never fall back to the instruction below.
+- **Not checked in yet** — `badge` glyph (not a scanner one: the attendee
+  presents the badge, the operator scans) + "أبرز بطاقتك عند باب القاعة…" /
+  "Show your badge at the hall door to be checked in." A normal state, not an
+  error, so no Retry is offered.
+- **Could not load** — the shared `SimfErrorState` + Retry. A failed read is
+  **never** collapsed into "not checked in": the two mean different things and
+  only one of them is fixed by trying again. While the read is in flight the
+  strip renders nothing, so nothing is claimed and nothing shifts the page.
+
+**Where it is offered** (`_showArrivalStatus`) — three gates, each for its own
+reason: an **attendee** role only (`routeAllowsRole(mySeat, effectiveAppRole)`,
+so a guest / Staff / Moderator, and a D-666 unapproved account, never see it and
+never hit the bearer-gated read); **not a Workshop** (#29 reduces that detail to
+title + time); and **not `upcoming`** (the door cannot scan anyone into a session
+that has not started, so there is no attendance to report — the same phase gate
+the summary / live / join affordances already use).
+
+**The geofence path is retained, not deleted.** `recordArrival` /
+`recordDeparture` and the `HALL_GEOFENCE_NOT_CONFIGURED` / `NOT_AT_VENUE` /
+`SESSION_NOT_LIVE` codes stay on the repository, and the server keeps
+`POST …/arrival` and `POST …/departure`, for the deferred FR-1103 movement work
+(still blocked on G-OI-2). **No app screen calls them**, and the widget test's
+fake repository throws from both, so a regression that gives the card a write
+path fails the suite instead of shipping quietly.
 
 ## 5. Clean-code freeze (D-597)
 1,375 → 346-line screen + 8 widget files (all <400): state/composition stays in

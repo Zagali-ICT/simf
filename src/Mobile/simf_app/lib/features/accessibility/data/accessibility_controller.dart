@@ -190,8 +190,21 @@ class AccessibilitySync {
 
   Future<void> hydrate() async {
     try {
-      final remote =
-          await _ref.read(accessibilityPreferencesRepositoryProvider).fetch();
+      final repository =
+          _ref.read(accessibilityPreferencesRepositoryProvider);
+      final remote = await repository.fetch();
+      if (remote == null) {
+        // The account has never saved a choice. Do NOT apply the server's
+        // defaults over the device — that would reset a user who had already
+        // picked extraLarge + high contrast here (chosen before this endpoint
+        // existed, or chosen offline so the write-through failed silently).
+        // Seed the account from the device instead, so the first sign-in
+        // migrates the local choices up rather than destroying them.
+        await repository.save(
+          _ref.read(accessibilityControllerProvider),
+        );
+        return;
+      }
       await _ref
           .read(accessibilityControllerProvider.notifier)
           .applyRemote(remote);

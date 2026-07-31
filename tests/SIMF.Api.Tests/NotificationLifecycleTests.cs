@@ -339,16 +339,7 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
     private async Task<string> CreateAdministratorAndSignInAsync()
     {
         var (email, _) = await CreateAdminAsync();
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private async Task<Guid> CreateStaffSubjectAsync(string adminToken)

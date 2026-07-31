@@ -6,16 +6,118 @@ _Built 2026-07-30. Seven QA reports were read end to end by one agent each, and 
 
 The defects were spread across seven documents with three different id schemes, and their status columns had drifted badly. Working from any one of them would have meant re-fixing what is already fixed while missing what is not.
 
-| Verified status | Count | Meaning |
-|---|---:|---|
-| **STILL-OPEN** | **42** | The defective code is still there. This is the work. |
-| OWNER-ACTION | 37 | Real, but only you can do it (rotate a credential, procure a provider, flip CI). |
-| ALREADY-FIXED | 96 | Fixed since the report; the fixing code was read. **Do not re-do.** |
-| NOT-A-DEFECT | 12 | On inspection, intended behaviour or a mistaken report. |
-| CANNOT-VERIFY | 7 | Needs a running stack, a device, or provider access. |
-| **Total reported** | **194** | across 7 documents |
+> **STATUS CORRECTED 2026-07-31 — read [§ Status correction (2026-07-31)](#status-correction-2026-07-31) before working from this document.** The "42 STILL-OPEN" figure below was accurate when the register was built on 2026-07-30 and is **wrong now**. Commit `5418ed34` cleared the great majority, `bc30bafd` + `abf87841` cleared the time-storage item, and the 2026-07-31 round closed the three the fix-all run had explicitly not delivered. **3 of the 42 remain open**, all three blocked on an owner decision. The counts in the table below are left at their as-built values so the delta is visible; the corrected column is the authority.
 
-**96 of 194 were already fixed.** That is the single most important number here: the reports are a historical record, not a worklist. Every ALREADY-FIXED row below names the file or commit that closed it, read first-hand.
+| Verified status | Count (2026-07-30) | Count (2026-07-31) | Meaning |
+|---|---:|---:|---|
+| **STILL-OPEN** | **42** | **3** | The defective code is still there. All three now need an owner decision, not code. |
+| OWNER-ACTION | 37 | 37 | Real, but only you can do it (rotate a credential, procure a provider, flip CI). |
+| ALREADY-FIXED | 96 | 96 (+38 closed since) | Fixed since the report; the fixing code was read. **Do not re-do.** |
+| NOT-A-DEFECT | 12 | 12 (+1: `PAR-P1a`) | On inspection, intended behaviour or a mistaken report. |
+| CANNOT-VERIFY | 7 | 7 | Needs a running stack, a device, or provider access. |
+| **Total reported** | **194** | **194** | across 7 documents |
+
+**96 of 194 were already fixed when this was written.** That was the single most important number here: the reports are a historical record, not a worklist. Every ALREADY-FIXED row below names the file or commit that closed it, read first-hand. **A further 38 have closed since** — see the status correction below, where each one names the code that was re-read to confirm it.
+
+## Status correction (2026-07-31)
+
+The line "STILL-OPEN | 42 | The defective code is still there. This is the work."
+described the tree on **2026-07-30**. It is no longer true, and a register that
+overstates its own open count is as harmful as one that understates it: the next
+round re-investigates 39 closed items and buries the 3 that actually need a
+decision.
+
+**How this correction was made.** Every row below was re-checked **against the
+code on this branch**, not against the commit messages that claim to have closed
+it and not against the per-item notes under `docs/decisions/fix-all-2026-07-31/`.
+Where a claim and the code disagreed, the code won — that is why `PAR-P1a` is
+recorded as not-a-defect rather than fixed, why `sev-1-1-domain-purity` and
+`sev-1-6-service-placement` are recorded as *documentation* corrections with the
+code state unchanged, and why the three security items are split into a closed
+code half and an open owner half.
+
+**Row arithmetic.** 42 STILL-OPEN rows → **3 open**, 38 fixed, 1 not-a-defect.
+Three refs appear twice in the register (`OA-D1`, `OA-D5`, `OA-D6` were each
+reported by two source documents), so the 42 rows are 39 distinct refs and the
+3 that remain open are 3 distinct refs.
+
+### Closed by `5418ed34` (the fix-all run), re-verified 2026-07-31
+
+| Ref | Verified against |
+|---|---|
+| `DEF-SEC-001-txt` · `no-literal-secrets-txt` · `SEC-NOTES` | `git ls-files txt.txt myComment.txt` returns nothing (both untracked); `.gitignore:77,85` lists both with the rationale. **Code half only** — rotating the credential the file carried is still `DEF-SEC-001-rotate` / `committed-secrets-rotation` under OWNER-ACTION, and history is not purged. |
+| `SEC-SMOKE` | `tools/smoke/smoke.sh:17-20,34` reads `SIMF_SMOKE_EMAIL` / `_PASSWORD` / `_TOTP_SECRET` and fails fast if unset; no literal remains. Rotation + history purge stay OWNER-ACTION. |
+| `#2` | `SignInService.cs:200-223` — a `SignInAudience.Cp` password step under `RequireControlPanelTwoFactorEnrolment` mints a `SecondFactorKind.TotpEnrolment` ticket (15-minute lifetime, `EnrolmentTicketLifetime:52`) and returns **no tokens**; `StartTwoFactorEnrolmentAsync:418` completes it. `ControlPanelTwoFactorEnrolmentTests` covers it. See the residual closed this round, below. |
+| `#2b` | `Program.cs:476-481` — production boot fails when `SuperAdmin:TotpSecret` is blank, alongside the five existing guards. |
+| `#2c` | `JwtTokenService.cs:51-58` — RFC 8176 `amr`, `"mfa"` when the second factor completed, `"pwd"` otherwise. |
+| `#2d` | `AdminAccountService.cs:670-674` — `SetTwoFactorEnabledAsync(user, true)` for `UserType.Admin`, **conditional on `RequireControlPanelTwoFactorEnrolment`**. The condition is the `#2` dependency expressed in code: with the enrolment path off, forcing the flag would lock every new admin out at creation. |
+| `exit-gate-no-open-high` | The sum of `#2` / `#2b` / `#2c` / `#2d` above; the suite now runs the shipping posture (see below). |
+| `#10-phase4` | `BadgeAuth.cs:112-127` — `EnglishName`, `ArabicName`, `NationalityCode`, `InterestIds` on `BadgeActivationCompleteRequest`; `BadgeSelfClaimProfileTests` + E2E `api-badge-self-claim-profile.md`. |
+| `OP-SUPERADMIN-SEED` | `IdentitySeeder.cs:598-621` — throws `InvalidOperationException` naming the policy reasons instead of returning null and booting with no super-admin. |
+| `#29` | `session_detail_body.dart:83` returns `_workshopBody()` on `SessionType.workshop`; E2E-MOB017-032. |
+| `#40-residual` | `splash_screen.dart:84-86` renders `profile.eventDateRange(isArabic)` with `splashEventLine` only as the fallback; `src/Website/SIMF.Web/wwwroot/speakers.html` is deleted. |
+| `OA-D1` (×2 rows) | `greeting_header.dart` — the `split(' ').first` is gone; the full trimmed name is greeted, with the existing `maxLines: 1` + ellipsis handling length. |
+| `FR-1103-movement-dwell` | `DevicePositionPing` entity + `MovementTrackingEndpoints.cs` (`POST /app/movement/pings`, `GET /admin/movement/dwell`, `GET /admin/movement/route/{userId}`) + `MovementTrackingService`; E2E `api-movement-tracking.md`. The D6 metric list stays OWNER-ACTION. |
+| `FR-803-80pct-push` | `NotificationKind.MatchRecommended = 60` (additive) + the push worker; E2E `api-match-recommendation-push.md`. |
+| `FR-903-not-attended-reminder` | `NotificationKind.SessionNotAttended = 59` (additive) + the worker; E2E `api-session-not-attended-reminder.md`. |
+| `OA-D5` (×2 rows) | `SpeakerMeetingRequestsExcelEndpoints.cs:45-48` — `CheckedInAt` + `CheckedInBy` columns; E2E `api-meeting-checkin-export.md`. |
+| `OA-D6` (×2 rows) | `PublicSessionEndpoints.cs:33,69` — `Guid? CategoryId` threaded into `service.ListAsync(day, req.CategoryId, ct)`; E2E `api-programme-category-filter.md`. |
+| `sms-whatsapp-channels` | `INotificationChannel` + `InAppNotificationChannel` + `EmailNotificationChannel` behind `NotificationDispatcher`; E2E `api-notification-channels.md`. **The seam is the deliverable** — the SMS / WhatsApp gateways themselves stay OWNER-ACTION (procurement). |
+| `#16` | Exactly **one** `Colors.white` remains under `src/Mobile/simf_app/lib`, at `app/theme/tokens.dart:267` where the token is defined. That is the sweep's target state, not a residue. |
+| `PAR-B4` | `booth_company_header.dart:34-36` — the exhibitor line is dropped when `exhibitor.trim() == name.trim()`. |
+| `PAR-D3` | `session_header_card.dart:62` builds the pill from `detail.localizedCategory(isArabic)`; E2E-MOB017-033. |
+| `PAR-P4a` | `session_speaker_card.dart:104` renders `Icons.star_rounded` in gold beside المضيف for a `Host` role; E2E-MOB017-034. |
+| `STALE-GOLDEN-ARTIFACTS` | `git ls-files src/Mobile/simf_app/test/golden/failures/` returns **0**; `.gitignore:44` covers the directory. |
+| `itokenissuer-extraction` | `SIMF.Application/IdentityAccess/ITokenIssuer.cs` + `TokenIssuer.cs` exist and `SignInService` consumes them. |
+| `QA-LIVE-001` | `wwwroot/favicon.png` exists and `App.razor:31` declares `<link rel="icon" type="image/png" href="@Assets["favicon.png"]" />`. |
+| `cp-stub-modules` | `CpNavigation.cs:191` — the sole `IsStub` entry now carries `RequiredPermission: PermissionCatalog.Sessions.View`, and `ModulePlaceholder.razor` carries the matching `[RequirePermission]`. The register's headline count (8 of 22) was already stale; the live defect was the **null gate**, and that is what closed. Per owner Q4 no Live Sessions console was built, so the entry is still a stub. |
+| `catalogue-count-drift` | The Round-1 charter no longer states a catalogue size; the counts live in `docs/tests/e2e/README.md` and are machine-checked by `E2eCatalogueIntegrityTests.The_index_roll_up_matches_the_catalogue_it_describes`. |
+| `FR-1203-markdown-render` | Option (b): the "markdown allowed" claim is gone from `ContentBlock`'s XML doc and `ContentBlockPlainTextContractTests` pins the plain-text behaviour. **No renderer was built** — that was the decision, not an omission. |
+
+### Closed by `bc30bafd` + `abf87841`
+
+| Ref | Verified against |
+|---|---|
+| `#8` | `src/Shared/SIMF.Common/SimfClock.cs` is the single Saudi wall-clock seam (`SimfClock.Now`, `timeProvider.SimfNow()`); `BaseEntity.CreatedAt` is a `DateTime` defaulted to `SimfClock.Now`; and a `GetUtcNow()` search across `src/Backend/**/*.cs` (build output excluded) returns **0** — the 318 call sites the register recorded are all converted. `abf87841` carried the existing rows across. |
+
+### Closed by this round (2026-07-31)
+
+These are the three the fix-all run explicitly did **not** deliver.
+
+| Ref | What closed it | Verified against |
+|---|---|---|
+| `geofence-self-checkin` | **Owner decision: the GATE SCAN establishes a session arrival, not GPS.** The whole server chain already existed (`GateOperatorService.RecordGateDoorScanAsync` opens and closes the `HallAttendance` row for the session live in that hall; the CP reports it on `/admin/hall-arrivals` and `/admin/gates/operator`), so the app only has to read it back. `SessionArrivalAction` is now a **read-only** status card fed by `GET /app/sessions/{id}/attendance`, and is composed into the screen — the previous round built the widget and never rendered it, which it flagged as a follow-up. | `session_arrival_action.dart` (three states: recorded arrival + departure line, "show your badge at the hall door", failed-read + retry; no write path); `session_detail_screen.dart` `_showArrivalStatus` + the `hallAttendanceStatusProvider` invalidate in `_load()`; `session_arrival_action_test.dart` (6 widget + 3 decode cases, its fake repository **throwing** from `recordArrival` / `recordDeparture`). E2E-MOB017-035..040. |
+| `accessibility-server-sync` | **The server half shipped.** The app half landed on 2026-07-30 with nothing to call — both sync directions swallow their failures by contract, so its tests passed while the feature did nothing. `GET`/`PUT /api/v1/app/account/preferences` now stores the five choices on the account. | `AccountPreferencesEndpoints.cs` (`RequireApprovedAccount`, own `sub`, no admin permission); `AccountPreferences` + `UpdateAccountPreferencesRequest`; `AccountPreferencesService` (five-column `AsNoTracking` projection, full-replace write, bilingual 400 on an unknown `textSize`); five additive `UserProfile` columns with two load-bearing `HasSentinel` calls; `AccountPreferencesTests.cs` (8 facts). E2E-ACP-001..013 + E2E-MOB038-012. |
+| `#2` **residual** — the `SimfApiFactory` 2FA test posture | `#2` shipped the enrolment-first branch, but `SimfApiFactory` pinned `IdentityLifecycle__RequireControlPanelTwoFactorEnrolment` to **`false`** for the whole assembly, because ~150 admin fixtures read `Tokens.AccessToken` off a Cp-audience password sign-in. So the general suite exercised the **pre-fix** path and only one dedicated test class ever ran the shipping posture. That is a green suite proving the wrong thing. | `SimfApiFactory.cs` now pins the value to **`true`** (the production default), and the fixtures go through `AuthFlow.SignInControlPanelAsync`, which enrols the fixture admin and completes a real TOTP step. `ControlPanelTwoFactorApiFactory` is kept as the explicit statement that `ControlPanelTwoFactorEnrolmentTests` depends on the gate being on. |
+
+### Reclassified, not fixed
+
+| Ref | Verified status |
+|---|---|
+| `PAR-P1a` | **NOT-A-DEFECT.** `media_coverage_tabs.dart:90` still sets `maxLines: 1`, and that is correct: frame `1049:12629` was re-read on 2026-07-30 and shows a **one-line** tab label. The item allowed re-confirming against the frame first; the frame said no change. |
+| `sev-1-1-domain-purity` | **Documentation defect closed; the code state is unchanged by decision (owner Q15).** `SimfUser : IdentityUser<Guid>` and `SimfRole : IdentityRole<Guid>` are still in `SIMF.Domain`, and `SIMF.Domain.csproj` still references `Microsoft.Extensions.Identity.Stores`. What was actually wrong was the refactor plan asserting "Arch SEV-1.1 fully closed"; that is corrected, and `tests/SIMF.Api.Tests/DomainPurityTests.cs` pins the real state with **inverted** facts (`Domain_SimfUser_still_derives_from_AspNet_Identity`) so the day someone does the POCO split, the test fails and tells them to flip it. The architectural work itself is still outstanding. |
+| `sev-1-6-service-placement` | **Deferral re-confirmed in writing (owner Q13).** `AdminAccountService` is still under `SIMF.Infrastructure/Identity/` (3,452 lines across six partials). The defect was a deferral that lived only in a table cell and was being inherited by silence; the reasoning is now recorded where the next round will read it. The move itself is still outstanding, past the event. |
+
+### Genuinely still open (3)
+
+All three are blocked on an owner decision, not on engineering time. None of them
+can be closed by writing code today.
+
+| Ref | Sev | Where it still lives (re-verified 2026-07-31) | Blocked on |
+|---|---|---|---|
+| `#33` — Control Panel user manual not delivered | high | `docs/manuals/Admin-Manual.md` is still **1,118 lines with 14 `_(planned)_` markers**, unchanged: the contents list marks Registration requests (line 32), Attendees (33), Roles & permissions (35), Halls & seating (39), Speakers (40) and Bookings (42) as unwritten, all of Exhibition / Engagement / Knowledge & AI / Content (43–46) likewise, and chapter stubs remain at 204, 446 and 585. | **Q5** — the stated due date (19-07-2026) is long past and the real one is unconfirmed. |
+| `FR-702-riyadh-georestriction` — live-stream Riyadh-region restriction | low | No region gate exists. A repo-wide search across `src/Backend` for `georestrict` / `GeoRestrict` / `RegionRestrict` returns nothing, and the live URL is selected on session timing and role only. | **Q9** — worth re-confirming the requirement at all: the feed is public YouTube, which makes a server-side restriction largely unenforceable. |
+| `FR-1203-brand-colour-tokens` — brand-colour editing from the CP | low | No brand-colour surface. Searching the Control Panel for `brandColour` / `brandColor` / `brand-colour` returns nothing; `SiteSettingsPage.razor` is still scoped to the bilingual registration welcome message. | **Q12** — either accept `theme.tokens.css` as the single source of truth (which the project's own CSS rules already mandate) or fund a `SystemSettings`-backed section. |
+
+### What did NOT change
+
+The **37 OWNER-ACTION** rows, the **7 CANNOT-VERIFY** rows and the **12
+NOT-A-DEFECT** rows are untouched by this correction — no code closes any of
+them. In particular the three security items above closed only their *code*
+half: the credentials they exposed are still in git history and still unrotated
+(`DEF-SEC-001-rotate`, `committed-secrets-rotation`, `SEC-APPSET`, `SEC-AIKEY`),
+and `PROC-CI` / `entry-gate-ci-tests` still leave the .NET test gate switched off
+in the pipeline, so none of the green suites cited above is enforced by CI.
 
 ## Sequencing correction found while executing Wave 2 (2026-07-30)
 
@@ -49,6 +151,12 @@ anyone out: `#2b` is a boot-time configuration guard, and `#2c` only adds a clai
 ## THE PLAN — what I fix, in this order
 
 Ordered by user impact, not by effort. Waves are sequenced so nothing in a later wave depends on an earlier one being incomplete.
+
+> **Executed. Kept as the record of what was planned and why.** Every wave below
+> has since run: 39 of the 42 rows are closed and 3 remain open (`#33`,
+> `FR-702-riyadh-georestriction`, `FR-1203-brand-colour-tokens`), all three
+> waiting on an owner decision. Per-row status and the evidence for it are in
+> [§ Status correction (2026-07-31)](#status-correction-2026-07-31).
 
 ### Wave 1 — security and crashes — 2 item(s) (2xS)
 
@@ -196,6 +304,13 @@ Closing these is as valuable as fixing the real ones: each is a row that would o
 | `website-post-login` | **Public Website post-login experience is a 'You're signed in' placeholder at /account** — The Website no longer has an authenticated surface at all: src/Website/SIMF.Web/Components/Pages/ holds 29 public marketing/programme pages (About, Programme, Speakers, Themes, Venue, Visit, Exhibition, Archive, SessionDetail and so on) with no Home.razor, no /account route and no sign-in page — a g |
 
 ## Full detail — every STILL-OPEN item with its evidence
+
+> **This section is a snapshot of 2026-07-30 and is kept verbatim as the
+> historical evidence trail — it is NOT the current status.** 39 of the 42
+> entries below have since closed and 3 remain open; each one's present state,
+> and the file re-read to establish it, is in
+> [§ Status correction (2026-07-31)](#status-correction-2026-07-31). Do not plan
+> work from this section without reading that one first.
 
 ### `DEF-SEC-001-txt` — Plaintext PRODUCTION super-admin credential still committed and tracked in repo scratch file txt.txt
 

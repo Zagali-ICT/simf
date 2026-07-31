@@ -126,11 +126,7 @@ public sealed class AdminVipPhotoAuditTests : IClassFixture<SimfApiFactory>
             adminId = user.Id;
         }
 
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest { Email = email, Password = AuthFlow.Password, Audience = SignInAudience.Cp });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return (body.Data!.Tokens!.AccessToken, adminId);
+        return (await AuthFlow.SignInControlPanelAsync(_client, _factory, email), adminId);
     }
 
     private async Task<(Guid Id, string Email)> CreateVisitorWithProfileAsync()

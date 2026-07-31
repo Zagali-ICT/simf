@@ -274,13 +274,7 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
             await users.CreateAsync(user, Password);
             await users.AddToRoleAsync(user, AppRoles.Administrator);
         }
-        var signIn = await _client.PostAsJsonAsync("/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = adminEmail, Password = Password, Audience = SignInAudience.Cp,
-            });
-        var body = (await signIn.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, adminEmail, Password);
     }
 
     private async Task<HttpResponseMessage> PostAuthAsync<TBody>(

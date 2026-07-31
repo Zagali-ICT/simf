@@ -2615,25 +2615,31 @@ class AppL10n {
   /// carries no edition ordinal).
   String get splashEditionLine => _t('النسخة الرابعة', '4th Edition');
 
-  /// Session detail — the geofence self check-in action and its outcomes.
-  String get sessionArrivalAction => _t('أنا هنا', "I'm here");
+  /// Session detail — what the hall door recorded. The five strings that drove
+  /// the old GPS self check-in (the "أنا هنا / I'm here" button, the
+  /// outside-the-boundary, no-boundary-configured and permission-denied
+  /// outcomes, and the "Check out" toggle) went with it on 2026-07-31: arrival
+  /// is established by the gate scan, so the app neither claims an arrival nor
+  /// asks for a location permission.
   String get sessionArrivalCheckedIn =>
       _t('تم تسجيل حضورك في القاعة', 'Your hall arrival is recorded');
-  String get sessionArrivalOutsideHall => _t(
-        'أنت خارج نطاق القاعة. اقترب من القاعة ثم أعد المحاولة.',
-        'You are outside the hall boundary. Move closer and try again.',
-      );
-  String get sessionArrivalNoBoundary => _t(
-        'لم يتم ضبط نطاق هذه القاعة بعد.',
-        'This hall has no boundary configured yet.',
-      );
-  String get sessionArrivalLocationDenied => _t(
-        'يلزم إذن الموقع لتسجيل الحضور.',
-        'Location permission is required to check in.',
-      );
-  String get sessionArrivalDepart => _t('تسجيل المغادرة', 'Check out');
   String get sessionArrivalDeparted =>
       _t('تم تسجيل مغادرتك', 'Your departure is recorded');
+
+  /// Session detail — the read-only hall check-in STATUS (owner 2026-07-31:
+  /// arrival is established by the gate scan at the hall door, not by GPS). The
+  /// "not yet" line is an instruction, not an error; the error line is only for
+  /// a failed read of the status itself.
+  String get sessionArrivalNotYet => _t(
+        'لم يُسجَّل حضورك في القاعة بعد. أبرز بطاقتك عند باب القاعة لتسجيل '
+            'الحضور.',
+        'You are not checked in yet. Show your badge at the hall door to be '
+            'checked in.',
+      );
+  String get sessionArrivalStatusError => _t(
+        'تعذّر تحميل حالة حضورك في القاعة.',
+        'Could not load your hall check-in status.',
+      );
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

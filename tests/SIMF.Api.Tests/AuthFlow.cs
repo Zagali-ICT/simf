@@ -1,5 +1,7 @@
 using System.Net.Http.Json;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
+using OtpNet;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
@@ -62,6 +64,154 @@ internal static class AuthFlow
         user.TwoFactorEnabled = false;
         database.SaveChanges();
     }
+
+    /// <summary>
+    /// Mints a Control Panel access token for an account the caller has already
+    /// created, the way a real operator gets one.
+    /// </summary>
+    /// <remarks>
+    /// #2 (Q1) — mandatory Control-Panel two-factor enrolment
+    /// (<c>IdentityLifecycle:RequireControlPanelTwoFactorEnrolment</c>, ON by
+    /// default and the production posture) means a Cp-audience password step
+    /// NEVER hands back a session on its own: an account with no authenticator
+    /// secret is answered with an enrolment ticket, an enrolled one with a TOTP
+    /// challenge. So this helper enrols the account FIRST
+    /// (<see cref="EnrolAuthenticatorAsync"/> — the same two UserManager calls the
+    /// real enrolment path makes) and then answers the challenge with a genuine
+    /// code computed from that secret. Every admin fixture in this assembly goes
+    /// through here, so the ~150 admin tests exercise the shipping gate instead of
+    /// a pinned-off one.
+    /// </remarks>
+    public static async Task<string> SignInControlPanelAsync(
+        HttpClient client,
+        SimfApiFactory factory,
+        string email,
+        string password = Password)
+    {
+        var secret = await EnrolAuthenticatorAsync(factory, email);
+
+        var signIn = await client.PostAsJsonAsync(
+            "/api/v1/app/auth/sign-in",
+            new SignInRequest
+            {
+                Email = email,
+                Password = password,
+                Audience = SignInAudience.Cp,
+            });
+        var challenge = (await signIn.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
+        if (challenge.Data is null)
+        {
+            throw new InvalidOperationException(
+                $"The Control Panel password step failed for {email}: "
+                + $"{(int)signIn.StatusCode} {challenge.Error?.Code}.");
+        }
+
+        // Tokens on the password step mean the enrolment gate is OFF. NO factory in
+        // this assembly turns it off any more, so this is not a supported mode — it
+        // is the regression this helper exists to prevent. Accepting the tokens here
+        // (as an earlier draft did) would silently return every admin fixture to the
+        // single-factor path and the whole suite would stay green while proving
+        // nothing, so it fails loudly instead.
+        if (challenge.Data.Tokens is not null)
+        {
+            throw new InvalidOperationException(
+                $"The Control Panel password step for {email} returned tokens without a "
+                + "second factor, so IdentityLifecycle:RequireControlPanelTwoFactorEnrolment "
+                + "is OFF. That is the pre-fix path; see ControlPanelTwoFactorGatePinTests.");
+        }
+
+        var mfaToken = challenge.Data.MfaToken
+            ?? throw new InvalidOperationException(
+                $"The Control Panel password step for {email} returned neither tokens "
+                + "nor a TOTP challenge, so the account was not enrolled as expected.");
+
+        var verify = await client.PostAsJsonAsync(
+            "/api/v1/app/auth/verify-totp",
+            new VerifyTotpRequest { MfaToken = mfaToken, Code = ComputeTotpCode(secret) });
+        var verified = (await verify.Content.ReadFromJsonAsync<ApiResult<AuthTokens>>())!;
+        return verified.Data?.AccessToken
+            ?? throw new InvalidOperationException(
+                $"The TOTP step failed for {email}: "
+                + $"{(int)verify.StatusCode} {verified.Error?.Code}.");
+    }
+
+    /// <summary>
+    /// Pairs a fresh authenticator secret with the account and turns two-factor
+    /// on — the same <c>UserManager</c> pair the real enrolment path and the
+    /// super-admin seeder use — and returns the base32 secret so the caller can
+    /// compute codes from it.
+    /// </summary>
+    /// <remarks>
+    /// The TOTP replay guard is cleared alongside, exactly as the admin-driven
+    /// 2FA reset does (<c>AdminAccountService</c>), because the secret handed back
+    /// here is newly issued: without that, signing the SAME account in twice
+    /// inside one 30-second time-step would read the second code as a replay of
+    /// the first and fail. Replay itself is covered by
+    /// <c>SignInTests.A_TOTP_code_cannot_be_used_twice</c>.
+    /// </remarks>
+    public static async Task<string> EnrolAuthenticatorAsync(
+        SimfApiFactory factory,
+        string email)
+    {
+        using var scope = factory.Services.CreateScope();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+        var user = await users.FindByEmailAsync(email)
+            ?? throw new InvalidOperationException(
+                $"No account exists for {email}, so it cannot be enrolled.");
+
+        await users.ResetAuthenticatorKeyAsync(user);
+        // Set before SetTwoFactorEnabledAsync — that call persists the tracked
+        // entity, so the cleared guard is saved with the flag.
+        user.LastUsedTotpTimestep = null;
+        await users.SetTwoFactorEnabledAsync(user, true);
+        return (await users.GetAuthenticatorKeyAsync(user))!;
+    }
+
+    /// <summary>
+    /// Completes a mandatory Control-Panel two-factor enrolment from the ticket
+    /// the password step handed back — start, compute the first code, confirm —
+    /// and returns the session the password step withheld. This is the ceremony a
+    /// first-time Control Panel operator actually performs.
+    /// </summary>
+    public static async Task<AuthTokens> CompleteTwoFactorEnrolmentAsync(
+        HttpClient client,
+        string enrolmentToken)
+    {
+        var start = await client.PostAsJsonAsync(
+            "/api/v1/app/auth/totp/enrolment/start",
+            new StartTwoFactorEnrolmentRequest { EnrolmentToken = enrolmentToken });
+        var setup = (await start.Content.ReadFromJsonAsync<ApiResult<TotpSetupResponse>>())!;
+        if (setup.Data is null)
+        {
+            throw new InvalidOperationException(
+                "Two-factor enrolment could not be started: "
+                + $"{(int)start.StatusCode} {setup.Error?.Code}.");
+        }
+
+        var complete = await client.PostAsJsonAsync(
+            "/api/v1/app/auth/totp/enrolment/complete",
+            new CompleteTwoFactorEnrolmentRequest
+            {
+                EnrolmentToken = enrolmentToken,
+                Code = ComputeTotpCode(setup.Data.Secret),
+            });
+        var completed = (await complete.Content
+            .ReadFromJsonAsync<ApiResult<CompleteTwoFactorEnrolmentResponse>>())!;
+        return completed.Data?.Tokens
+            ?? throw new InvalidOperationException(
+                "Two-factor enrolment could not be completed: "
+                + $"{(int)complete.StatusCode} {completed.Error?.Code}.");
+    }
+
+    /// <summary>The current authenticator code for a base32 secret.</summary>
+    /// <remarks>
+    /// TOTP counts 30-second steps from the UNIX epoch, so this is deliberately
+    /// UTC. The rest of SIMF stores Saudi local wall-clock through
+    /// <see cref="SimfClock"/>; using that here would put every code three hours
+    /// out and no code would ever verify.
+    /// </remarks>
+    public static string ComputeTotpCode(string base32Secret) =>
+        new Totp(Base32Encoding.ToBytes(base32Secret)).ComputeTotp(DateTime.UtcNow);
 
     /// <summary>
     /// Signs a brand-new visitor up, verifies the email and signs in with 2FA

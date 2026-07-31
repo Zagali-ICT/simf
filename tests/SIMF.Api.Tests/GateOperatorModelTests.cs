@@ -532,7 +532,7 @@ public sealed class GateOperatorModelTests : IClassFixture<SimfApiFactory>
     }
 
     private async Task<string> SignInCpAsync(string email) =>
-        await SignInAsync(email, SignInAudience.Cp);
+        await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
 
     private async Task<string> SignInAppAsync(string email) =>
         await SignInAsync(email, SignInAudience.App);

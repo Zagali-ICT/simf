@@ -172,27 +172,9 @@ public sealed class AdminResetTwoFactorTests : IClassFixture<SimfApiFactory>
     private async Task<string> CreateAdministratorAndSignInAsync()
     {
         var (email, _) = await CreateAdministratorAsync();
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,   // P2 — CP-only surface
-            });
-        var challenge =
-            (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!.Data!;
-
-        // The admin in this helper has TwoFactorEnabled=true but no
-        // authenticator key paired (we created the user via UserManager
-        // directly, no enrolment). Sign-in returns an Mfa ticket; the
-        // selector at SignInService (D-040) routes to TOTP only when an
-        // authenticator key exists, so this admin actually gets the email-OTP
-        // path. Force-enable TwoFactor via the existing helper isn't enough;
-        // we set up a real TOTP secret instead.
-        return challenge.Tokens?.AccessToken
-            ?? throw new InvalidOperationException(
-                "Test admin should sign in without 2FA — make sure TwoFactorEnabled is off.");
+        // #2 — the acting admin is enrolled and completes a real TOTP step; the
+        // Control Panel issues no session on the password alone.
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private async Task<(string Email, Guid UserId)> CreateAdministratorAsync()

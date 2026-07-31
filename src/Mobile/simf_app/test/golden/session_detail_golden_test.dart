@@ -14,6 +14,7 @@ import 'package:simf_app/features/sessions/data/seat_map_repository.dart';
 import 'package:simf_app/features/sessions/data/session_calendar.dart';
 import 'package:simf_app/features/sessions/data/session_detail_repository.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/data/hall_attendance_repository.dart';
 import 'package:simf_app/features/sessions/session_detail_screen.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
@@ -142,6 +143,26 @@ class _FakeDetailRepo implements SessionDetailRepository {
 
 /// Returns the populated seat map; the mutating methods are never invoked in a
 /// static render (no taps).
+/// Answers the gate check-in strip with "no scan recorded" so the golden never
+/// reaches the network.
+class _FakeAttendance implements HallAttendanceRepository {
+  @override
+  Future<HallAttendanceStatus> getStatus(String sessionId) async =>
+      const HallAttendanceStatus(arrived: false);
+
+  @override
+  Future<HallAttendanceStatus> recordArrival(
+    String sessionId, {
+    required double lat,
+    required double lon,
+  }) async =>
+      throw StateError('the session detail must never post an arrival');
+
+  @override
+  Future<HallAttendanceStatus> recordDeparture(String sessionId) async =>
+      throw StateError('the session detail must never post a departure');
+}
+
 class _FakeSeatRepo implements SeatMapRepository {
   @override
   Future<SessionSeatMap> getSeatMap(String sessionId) async => _seatMap();
@@ -243,6 +264,12 @@ void main() {
       ProviderScope(
         overrides: <Override>[
           simfDataConfigProvider.overrideWithValue(_config),
+          // Keeps the golden off the network. The fixture session is upcoming, so
+          // the check-in strip is gated out and the image is unchanged — but that
+          // is a property of the fixture date, not of the wiring, and an
+          // un-overridden provider would reach for the real client the moment the
+          // fixture (or the clock) moved.
+          hallAttendanceRepositoryProvider.overrideWithValue(_FakeAttendance()),
           sessionDetailRepositoryProvider
               .overrideWithValue(_FakeDetailRepo()),
           seatMapRepositoryProvider.overrideWithValue(_FakeSeatRepo()),

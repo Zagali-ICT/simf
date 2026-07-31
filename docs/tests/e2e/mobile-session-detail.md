@@ -71,15 +71,27 @@
 > live→live active / future+feed→live inactive); the golden
 > `session_detail_889-2450` renders an upcoming session, so both actions show
 > greyed. Covered by E2E-MOB017-018/019/027.
+>
+> **Hall check-in comes from the GATE SCAN (owner 2026-07-31, replaces the GPS
+> self check-in):** a **read-only** status strip now sits above the scrolling
+> body, reading `GET /app/sessions/{id}/attendance` and reporting what the door
+> recorded — the arrival on the Saudi 12-hour clock, the departure once the
+> attendee has been scanned back out, or a plain instruction to present the badge
+> at the hall door. It posts nothing. It replaced the "أنا هنا / I'm here" button
+> that posted a device position to `POST /app/sessions/{id}/arrival`, and with it
+> the location plugin and the runtime location permission that button needed.
+> The strip is offered only to an attendee role, only off an `upcoming` session,
+> and never on a `Workshop` (#29). Scenarios E2E-MOB017-035..040; the write side
+> of the same data is `cp-admin-gates-operator.md` / `cp-admin-hall-arrivals.md`.
 
 | | |
 |--|--|
 | **Page** | [`Page_017`](../../App/Page_017/README.md) (App page docs) |
-| **Route** | `GET /api/v1/app/programme/sessions/{id}` (detail, anon) · `GET /api/v1/app/sessions/{id}/seats` (my-seat, approved) · app screen #17 `/sessions/:sessionId` |
+| **Route** | `GET /api/v1/app/programme/sessions/{id}` (detail, anon) · `GET /api/v1/app/sessions/{id}/seats` (my-seat, approved) · `GET /api/v1/app/sessions/{id}/attendance` (hall check-in status, approved — read-only) · app screen #17 `/sessions/:sessionId` |
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
 | **Auth setup** | **Public screen (D-750, reverses D-576)** — the Session-detail screen is open to a signed-out guest; the join/ask sections stay hidden until an **approved Visitor** token is used (the my-seat / reservation card + the Join CTA need a held reservation on an approved account). An **Admin** token only to seed the session + seat layout. **No literal secrets** (admin TOTP via the `Get-Totp` helper). |
-| **Last reviewed** | 2026-07-20 (D-750 — screen public again; case-1 register label + registered alert) |
+| **Last reviewed** | 2026-07-31 (gate-scan hall check-in status strip replaces the GPS self check-in) |
 
 ## Coverage matrix
 
@@ -119,7 +131,12 @@
 | E2E-MOB017-032 | **Workshop detail is title + time ONLY (#29, owner Q10 2026-07-30):** when the detail's `type` is `Workshop` the body renders the header card reduced to its title + time meta — no description, no speakers, no اسأل المحاور card, no seat/join section, no CTA row and no ملخص الجلسة / رابط الجلسة actions. Any other type (or a `null` type from an older API) renders the full detail unchanged | happy | P0 | authored ✓ (body `#29 workshop reduction` ×3; header card `titleAndTimeOnly drops the pill and the action row`; model `the session type decodes from the int OR the name wire form`) |
 | E2E-MOB017-033 | **Category tag pill (PAR-D3):** a small gold-hairline pill under the header-card title carrying `localizedCategory(isArabic)`; rendered only when the session carries a category (the `SessionCategory` lookup ships empty pending the client's list, OI-2 / D-226), so an uncategorised session keeps the pre-PAR-D3 layout. Suppressed on the #29 workshop reduction | happy/i18n | P1 | authored ✓ (header card `SessionHeaderCard category pill (PAR-D3)` ×5) |
 | E2E-MOB017-034 | **Host star glyph (PAR-P4a):** a speaker whose per-session role is `Host` shows the gold star glyph beside the المضيف / Host marker on the speaker card's rank line; a plain speaker shows neither. Fulfils the promise the speakers-LIST card's own doc comment already made (D-432: the host star appears on the session detail) | happy | P1 | authored ✓ (`SessionSpeakerCard host marker (PAR-P4a)` ×4) |
-| E2E-MOB017-035 | **Geofence self check-in — "أنا هنا / I'm here" (`geofence-self-checkin`, FR-305/506, D-241; owner Q6 2026-07-30):** the action posts the device position to `POST /app/sessions/{id}/arrival` and renders the returned `HallAttendanceStatus` — an arrival flips the control to "تسجيل المغادرة / Check out" and shows the recorded arrival time on the Saudi clock; `HALL_GEOFENCE_NOT_CONFIGURED` reads as "no boundary set yet" (the expected state until a hall is given one in the CP), `NOT_AT_VENUE` as "outside the hall boundary", and every other refusal shows the server's own bilingual message. With no location capability nothing is posted and the message says so — never "outside the hall" | happy/edge | P1 | authored ✓ (widget — `session_arrival_action_test.dart`, 8 widget cases + 3 decode cases) |
+| E2E-MOB017-035 | **Hall check-in status — the GATE SCAN records the arrival (owner 2026-07-31; REPLACES the GPS "أنا هنا" self check-in):** a read-only strip above the body reads `GET /app/sessions/{id}/attendance` and shows "تم تسجيل حضورك في القاعة · 10:30 AM" / "Your hall arrival is recorded · 10:30 AM" on the Saudi 12-hour clock (`formatSaudiTime12`, Latin AM/PM in both locales). It posts **nothing** — no arrival, no departure, no device position | happy | P0 | authored ✓ (widget — `session_arrival_action_test.dart`, `a door scan renders the recorded arrival on the Saudi clock`) |
+| E2E-MOB017-036 | **Checked out again** — once the door scans the attendee back out, the departure line sits under the arrival ("تم تسجيل مغادرتك · 11:45 AM" / "Your departure is recorded · 11:45 AM"); a closed attendance is still an attendance and must never fall back to the "show your badge" instruction | happy | P1 | authored ✓ (widget — `a closed row shows the departure under the arrival`) |
+| E2E-MOB017-037 | **Empty state — not checked in yet** is an instruction, not an error: "لم يُسجَّل حضورك في القاعة بعد. أبرز بطاقتك عند باب القاعة لتسجيل الحضور." / "You are not checked in yet. Show your badge at the hall door to be checked in." — with a badge glyph (not a scanner one), no Retry, and no claimed arrival | happy/edge | P0 | authored ✓ (widget — `no attendance row reads as a calm instruction, not an error`) |
+| E2E-MOB017-038 | **A FAILED read is never collapsed into "not checked in"** — a transport error / 5xx shows "تعذّر تحميل حالة حضورك في القاعة." / "Could not load your hall check-in status." plus **إعادة المحاولة / Retry**; the retry re-reads and renders the recovered state. While the read is in flight nothing is rendered, so nothing is claimed and nothing shifts the page | error/resilience | P0 | authored ✓ (widget — `a FAILED read is never collapsed into "not checked in"` + `retry re-reads the status and renders the recovered state`) |
+| E2E-MOB017-039 | **Where the strip is offered** — attendee roles only (a guest / Staff / Moderator never sees it), never on a `Workshop` detail (#29 reduction), and never on an **upcoming** session (the door cannot scan anyone into a session that has not started). A pull-to-refresh re-reads the status as well as the detail | auth/edge | P0 | authored ✓ (screen `_showArrivalStatus` gate + `_load()` invalidating `hallAttendanceStatusProvider`) |
+| E2E-MOB017-040 | **RTL** — the Arabic card renders the Arabic wording right-to-left, the gold glyph sits at the inline start, and the recorded time reads left-to-right inside the Arabic line (`formatSaudiTime12` emits Latin `10:30 AM` in Arabic too, by design — it matches the backend `SaudiTime.TimeFormat`) | i18n | P1 | authored ✓ (widget — `the Arabic card renders the Arabic wording`) |
 | E2E-MOB017-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-MOB017-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -635,7 +652,11 @@ distinction is per-session, and its doc comment already promised the star lives 
 
 ---
 
-_Last reviewed:_ `2026-07-30` by `Claude` — **#29 / PAR-D3 / PAR-P4a: a Workshop's
+> **Interior review-log fragment, not this file's current status.** A later batch
+> appended scenarios below this block instead of above it, so the chain runs on.
+> The file's live review log is the one at the **end** of the file.
+
+_Reviewed:_ `2026-07-30` by `Claude` — **#29 / PAR-D3 / PAR-P4a: a Workshop's
 detail is reduced to its title + time block (owner Q10 — the CP half reuses the
 existing session admin); the category tag pill is restored under the header-card
 title (reversing the D-449 "tag pills removed" note on the parity audit's finding);
@@ -666,75 +687,175 @@ hall gate on check-in (`CheckedIn`), with a pre-start sweep releasing any hold n
 checked in. No `BookingConfirmed` on reserve; the app shows an inline success message.
 The old CP approval queue is retained but dormant (always empty). Scenarios 016 / 022 /
 025 reworded off the "pending approval" copy.**
-### E2E-MOB017-035 — Geofence self check-in (`geofence-self-checkin`)
+### E2E-MOB017-035..040 — Hall check-in status (the gate scan records the arrival)
+
+**Owner decision, 2026-07-31 — this REPLACES the GPS self check-in.** An
+attendee's arrival at a session is established by the **operator's badge scan at
+the hall door**, never by a position reported from the attendee's own phone. That
+chain already existed end to end: `GateOperatorService.RecordGateDoorScanAsync`
+opens and closes the `HallAttendance` row for the session live in that hall, and
+the CP surfaces it on `/admin/hall-arrivals` (E2E-HAR-*) and
+`/admin/gates/operator` (E2E-GOP-*). The app's job is only to **report** it.
+
+So `SessionArrivalAction` became a read-only status card fed by
+`GET /app/sessions/{id}/attendance`. It replaced the "أنا هنا / I'm here" button
+that posted a device fix to `POST /app/sessions/{id}/arrival` — and with it the
+location plugin and the runtime location permission that button would have
+needed, which is the store-review and NCA-disclosure surface the previous round
+flagged and declined to take on its own authority.
+
+The three states are kept deliberately distinct, because the one mistake that
+keeps being made here is collapsing "we could not read your status" into "you are
+not checked in": they mean different things and only one of them is fixed by
+trying again.
 
 ```gherkin
-Feature: Attendee hall self check-in
-  As an attendee standing in the session hall
-  I want to record my own arrival from my phone
-  So that attendance does not depend on finding a door operator
+Feature: Hall check-in status on the session detail
+  As an attendee who has just had my badge scanned at the hall door
+  I want the session page to tell me my arrival was recorded
+  So that I know I am counted without asking the operator
 
 Background:
-  Given a signed-in, approved attendee on a session detail
-  And the session is inside its arrival window
+  Given "Naval Defence Innovations" is a LIVE session in "القاعة الرئيسية"
+  And a signed-in APPROVED visitor whose role may join sessions
+  And they are on /sessions/{id}
 
-Scenario: Arrival inside the hall boundary is recorded
-  Given the session's hall has a geofence and the device is inside it
-  When the attendee taps "I'm here"
-  Then the device position is posted to POST /app/sessions/{id}/arrival
-  And the response's arrival state is rendered
-  And the control becomes "Check out"
-  And the recorded arrival time is shown on the Saudi wall clock (UTC+3)
+# --- E2E-MOB017-035 — golden path -------------------------------------------
+Scenario: A door scan shows as a recorded arrival
+  Given the gate operator scanned the attendee IN at 10:30 on 23 Nov 2026
+    (HallAttendance enter = 2026-11-23T10:30, leave = null, method = QrScan)
+  When the session detail renders
+  Then GET /app/sessions/{id}/attendance is called exactly once
+  And the strip above the body reads
+    "Your hall arrival is recorded · 10:30 AM"
+    (AR: "تم تسجيل حضورك في القاعة · 10:30 AM")
+  And it carries the how_to_reg glyph in gold
+  And there is NO button on the card
+  And NOTHING is posted — not an arrival, not a departure, not a position
 
-Scenario: Checking out closes the attendance row
-  Given the attendee has an open arrival on this session
-  When the attendee taps "Check out"
-  Then POST /app/sessions/{id}/departure is called
-  And the control returns to "I'm here"
+# --- E2E-MOB017-036 — checked out again -------------------------------------
+Scenario: A closed attendance shows both instants
+  Given the same attendee was scanned back OUT at 11:45
+    (enter = 10:30, leave = 11:45, arrived = false)
+  When the session detail renders
+  Then the card shows "Your hall arrival is recorded · 10:30 AM"
+  And under it "Your departure is recorded · 11:45 AM"
+    (AR: "تم تسجيل مغادرتك · 11:45 AM")
+  And it does NOT show "Show your badge at the hall door"
+  # arrived=false means "not currently inside", not "never arrived" — a closed
+  # row must never degrade to the never-checked-in instruction.
 
-Scenario: A hall with no boundary is not an error
-  Given the session's hall has no lat/lon/radius configured
-  When the attendee taps "I'm here"
-  Then the server answers HALL_GEOFENCE_NOT_CONFIGURED
-  And the message reads "This hall has no boundary configured yet."
-  And the "I'm here" control stays available
-  # The feature is deliberately inert until a hall is given a boundary in the
-  # Control Panel — this is the expected state, not a defect (owner Q6).
+# --- E2E-MOB017-037 — empty state -------------------------------------------
+Scenario: No attendance row is an instruction, not an error
+  Given the attendee has not been scanned at the hall door
+    (the endpoint returns arrived = false with enter = null)
+  When the session detail renders
+  Then the card reads
+    "You are not checked in yet. Show your badge at the hall door to be checked in."
+    (AR: "لم يُسجَّل حضورك في القاعة بعد. أبرز بطاقتك عند باب القاعة لتسجيل الحضور.")
+  And it carries the BADGE glyph, not a scanner glyph
+    # the attendee presents the badge, the operator scans — the card is not a control
+  And NO "Retry" is offered
+  And no arrival is claimed
 
-Scenario: Standing outside the radius says so
-  Given the device is outside the hall radius
-  When the attendee taps "I'm here"
-  Then the server answers 403 NOT_AT_VENUE
-  And the message reads "You are outside the hall boundary. Move closer and try again."
+# --- E2E-MOB017-038 — the read itself fails ---------------------------------
+Scenario: A failed read says so, and offers a retry
+  Given GET /app/sessions/{id}/attendance fails (transport error or 5xx)
+  When the session detail renders
+  Then the card reads "Could not load your hall check-in status."
+    (AR: "تعذّر تحميل حالة حضورك في القاعة.")
+  And a "Retry" (AR "إعادة المحاولة") action is offered
+  And the "Show your badge at the hall door" wording is NOT shown
+  When the attendee taps Retry
+  Then the status is read a second time
+  And the recovered state renders ("Your hall arrival is recorded · 10:30 AM")
+  And the Retry disappears
 
-Scenario: Outside the session window shows the server's own message
-  When the attendee taps "I'm here" outside the session's arrival window
-  Then the server answers 409 SESSION_NOT_LIVE
-  And the server's bilingual message is shown verbatim
+Scenario: Nothing is claimed while the read is in flight
+  Given the status read has not completed
+  Then the strip renders nothing at all
+  # rendering "not checked in yet" here would be the same collapse the error
+  # branch avoids, and it would shift the page under the reader when it resolved
 
-Scenario: No location capability never reads as "outside the hall"
-  Given the device location read returns unavailable or denied
-  When the attendee taps "I'm here"
-  Then NO position is posted
-  And the message reads "Location permission is required to check in."
+# --- E2E-MOB017-039 — where the strip is offered ----------------------------
+Scenario Outline: The strip is offered only where an attendance can exist
+  When "<who>" opens a "<type>" session that is "<phase>"
+  Then the hall check-in strip is "<shown>"
+
+  Examples:
+    | who                  | type     | phase    | shown     |
+    | approved visitor     | Session  | live     | shown     |
+    | approved visitor     | Session  | ended    | shown     |
+    | approved visitor     | Session  | upcoming | not shown |
+    | approved visitor     | Workshop | live     | not shown |
+    | signed-out guest     | Session  | live     | not shown |
+    | Staff / Moderator    | Session  | live     | not shown |
+    | PENDING moderator    | Session  | live     | not shown |
+
+  # upcoming  → the door cannot scan anyone into a session that has not started,
+  #             so there is no attendance to report (same phase gate the summary
+  #             / live / join affordances already use, owner 2026-07-14)
+  # Workshop  → #29 reduces the detail to title + time only
+  # guest / operational role → the read is bearer-gated and attendee-scoped
+  #             (D-576/D-577; D-666 presents an unapproved account as a guest),
+  #             so they would only ever see the failed-read state
+
+Scenario: Pull-to-refresh re-reads the check-in state too
+  Given the strip shows "You are not checked in yet"
+  And the operator then scans the attendee in
+  When the attendee pulls the session detail down to refresh
+  Then hallAttendanceStatusProvider is invalidated alongside the detail fetch
+  And the strip re-reads and shows the recorded arrival
+  # owner rule: a pull refreshes the WHOLE page. The strip feeds off its own
+  # provider, so without the explicit invalidate it would keep a stale answer.
+
+# --- E2E-MOB017-040 — RTL ----------------------------------------------------
+Scenario: The Arabic card renders right-to-left
+  Given the device locale is Arabic
+  When the strip renders the not-checked-in state
+  Then the text reads "…أبرز بطاقتك عند باب القاعة…" right-to-left
+  And the gold glyph sits at the inline start (physical right)
+  And a recorded time renders left-to-right as "10:30 AM"
+    # formatSaudiTime12 emits Latin AM/PM in both locales, matching the backend
+    # SaudiTime.TimeFormat and the app's other 12-hour rows
 ```
 
-**Evidence:** `test/features/sessions/widgets/session_arrival_action_test.dart`
-— eight widget cases (arrival, check-out, already-arrived mount, the three
-server refusals, the two location-unavailable cases, Arabic wording) plus three
-`HallAttendanceStatus` wire-decode cases (int form, name form, unknown → null).
+**Evidence:** `test/features/sessions/widgets/session_arrival_action_test.dart` —
+six widget cases (recorded arrival on the Saudi clock; the closed row showing the
+departure and NOT the instruction; the calm not-checked-in instruction; the
+failed read kept distinct from it; retry re-reading and recovering; the Arabic
+wording) plus three `HallAttendanceStatus` wire-decode cases (method as int, as
+name, absent/unknown → null). The fake repository **throws** from `recordArrival`
+and `recordDeparture`, so a regression that gives the card a write path fails the
+suite rather than shipping quietly. The offering rules in E2E-MOB017-039 are the
+`_showArrivalStatus(detail)` gate on `session_detail_screen.dart`, and the
+pull-to-refresh case is the `ref.invalidate(hallAttendanceStatusProvider(...))`
+at the top of `_load()`.
 
-**Known gap (reported, not silently shipped):** this build carries **no
-location plugin**, so `DeviceLocation` (`lib/core/location/device_location.dart`)
-answers `unavailable` and the action always takes the "location required" path
-on a real device. Adding a real reader is a one-provider override — but it also
-adds `ACCESS_FINE_LOCATION` to the Android manifest and an
-`NSLocationWhenInUseUsageDescription` to `Info.plist`, which is store-review and
-NCA-disclosure surface, so it is an owner decision rather than a code one.
+**Cross-surface:** the write side of this data is the gate operator's scan —
+`cp-admin-gates-operator.md` (E2E-GOP-*) for the desk, `cp-admin-hall-arrivals.md`
+(E2E-HAR-*) for the resulting arrivals report. This card only reads it back.
+
+**What is deliberately NOT here any more.** `HallAttendanceRepository` keeps
+`recordArrival` / `recordDeparture` and the `HALL_GEOFENCE_NOT_CONFIGURED` /
+`NOT_AT_VENUE` / `SESSION_NOT_LIVE` codes, and the server keeps
+`POST /app/sessions/{id}/arrival` and `…/departure` — the geofence path is
+retained for the deferred FR-1103 movement work (G-OI-2), but **no app screen
+calls it**. Nothing in the app now needs a location permission for check-in.
 
 ---
 
-_Last reviewed:_ `2026-07-30` by `SIMF Team` — **`geofence-self-checkin`: the
+_Last reviewed:_ `2026-07-31` by `SIMF Team` — **owner decision: session arrival
+is established by the GATE SCAN at the hall door, not by GPS.
+`SessionArrivalAction` is now a read-only status card fed by
+`GET /app/sessions/{id}/attendance` and wired into the screen above the body
+(where the previous round left it unrendered), the "أنا هنا" self check-in and
+its device-position post are gone, and no location permission is required. This
+closes the `geofence-self-checkin` register item. E2E-MOB017-035 rewritten off
+the GPS behaviour; E2E-MOB017-036..040 added (departure line, the calm empty
+state, the failed-read/retry distinction, the offering rules + pull-to-refresh,
+RTL).**
+_Prior:_ `2026-07-30` by `SIMF Team` — **`geofence-self-checkin`: the
 attendee-facing arrival/departure half of D-241 is built (repository + action
 widget + tests); added E2E-MOB017-035.**
 _Prior:_ `2026-07-27` by `Claude` — **A8 / DEF-SEA-003: the join confirm

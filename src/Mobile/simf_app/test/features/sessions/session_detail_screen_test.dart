@@ -19,6 +19,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../accessibility/_fake_prefs.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
+import 'package:simf_app/features/sessions/data/hall_attendance_repository.dart';
 
 SessionDetail _detail({
   String? liveStreamUrl,
@@ -216,6 +217,27 @@ class _FakeDetailRepo implements SessionDetailRepository {
   Future<MySeat?> getMySeat(String sessionId) async => null;
 }
 
+/// Answers the gate check-in strip with "no scan recorded" so these tests never
+/// reach the network. The card is read-only, so both writes throw: a POST from
+/// this screen would be the GPS self-check-in coming back.
+class _FakeAttendance implements HallAttendanceRepository {
+  @override
+  Future<HallAttendanceStatus> getStatus(String sessionId) async =>
+      const HallAttendanceStatus(arrived: false);
+
+  @override
+  Future<HallAttendanceStatus> recordArrival(
+    String sessionId, {
+    required double lat,
+    required double lon,
+  }) async =>
+      throw StateError('the session detail must never post an arrival');
+
+  @override
+  Future<HallAttendanceStatus> recordDeparture(String sessionId) async =>
+      throw StateError('the session detail must never post a departure');
+}
+
 class _FakeSeatRepo implements SeatMapRepository {
   _FakeSeatRepo({this.map, this.releaseFailure});
 
@@ -383,6 +405,12 @@ Future<void> _pump(
     ProviderScope(
       overrides: <Override>[
         simfDataConfigProvider.overrideWithValue(_testConfig),
+        // The check-in strip mounts on any session at or past its arrival window,
+        // so without this a widget test would resolve the REAL SimfApiClient and
+        // fire a live GET at test.local. flutter_test's mock HttpClient happens to
+        // short-circuit it today, which made the omission invisible rather than
+        // harmless.
+        hallAttendanceRepositoryProvider.overrideWithValue(_FakeAttendance()),
         sessionDetailRepositoryProvider.overrideWithValue(repo),
         seatMapRepositoryProvider
             .overrideWithValue(seatRepo ?? _FakeSeatRepo(map: seatMap)),
