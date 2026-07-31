@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
@@ -273,11 +273,11 @@ public partial class OrganizationProfilePage
         }
     }
 
-    private static string DateString(DateTimeOffset? value) =>
+    private static string DateString(DateTime? value) =>
         value?.ToString("yyyy-MM-dd") ?? string.Empty;
 
-    private static DateTimeOffset? ParseDate(string? raw) =>
-        DateTimeOffset.TryParse(raw, out var d) ? d : null;
+    private static DateTime? ParseDate(string? raw) =>
+        DateTime.TryParse(raw, out var d) ? d : null;
 
     private static decimal? ParseDecimal(string? raw) =>
         decimal.TryParse(raw, NumberStyles.Number, CultureInfo.InvariantCulture, out var v) ? v : null;

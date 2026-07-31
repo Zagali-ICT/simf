@@ -121,7 +121,7 @@ internal sealed class AdminCmsService(
                 "لا يمكن أن يتجاوز المحتوى 8000 حرف.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var existing = await appDbContext.ContentBlocks
             .SingleOrDefaultAsync(b => b.Key == key, cancellationToken);
 
@@ -182,7 +182,7 @@ internal sealed class AdminCmsService(
             return; // idempotent
         }
         existing.IsActive = false;
-        existing.LastUpdatedAt = timeProvider.GetUtcNow();
+        existing.LastUpdatedAt = timeProvider.SimfNow();
         existing.LastUpdatedByUserId = actorUserId;
         await appDbContext.SaveChangesAsync(cancellationToken);
 
@@ -273,7 +273,7 @@ internal sealed class AdminCmsService(
             request.Body, request.BodyArabic, request.Start, request.End,
             request.DisplayOrder);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var banner = new Banner
         {
             Id = Guid.NewGuid(),
@@ -328,7 +328,7 @@ internal sealed class AdminCmsService(
         banner.End = request.End;
         banner.DisplayOrder = request.DisplayOrder;
         banner.IsActive = request.IsActive;
-        banner.UpdatedAt = timeProvider.GetUtcNow();
+        banner.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -357,7 +357,7 @@ internal sealed class AdminCmsService(
             return; // idempotent
         }
         banner.IsActive = false;
-        banner.UpdatedAt = timeProvider.GetUtcNow();
+        banner.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -379,7 +379,7 @@ internal sealed class AdminCmsService(
 
     private static void ValidateBanner(
         string title, string titleArabic, string body, string bodyArabic,
-        DateTimeOffset start, DateTimeOffset end, int displayOrder)
+        DateTime start, DateTime end, int displayOrder)
     {
         if (string.IsNullOrWhiteSpace(title) || title.Length > 256
             || string.IsNullOrWhiteSpace(titleArabic) || titleArabic.Length > 256)

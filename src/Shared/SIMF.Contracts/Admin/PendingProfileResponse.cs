@@ -35,7 +35,7 @@ public sealed record PendingProfileResponse(
     string? InternationalMobile,
     bool HasIdImage,
     IReadOnlyList<Guid> InterestIds,
-    DateTimeOffset CreatedAt,
+    DateTime CreatedAt,
     // CS-C (D-385) — the remaining captured profile columns, surfaced on the
     // approval screen so the admin sees ALL data. No schema change.
     string Gender = "Unspecified",

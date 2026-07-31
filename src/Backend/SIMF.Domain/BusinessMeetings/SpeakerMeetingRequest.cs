@@ -40,8 +40,8 @@ public sealed class SpeakerMeetingRequest
     /// availability windows. Null for a legacy topic-only request (D-269); set
     /// for a VIP slot request. The pair is validated to fall inside an active
     /// window and to be free at submit time.</summary>
-    public DateTimeOffset? SlotStart { get; set; }
-    public DateTimeOffset? SlotEnd { get; set; }
+    public DateTime? SlotStart { get; set; }
+    public DateTime? SlotEnd { get; set; }
 
     /// <summary>D-611 (Wave B) — the <see cref="SpeakerAvailabilityWindow"/> the
     /// picked slot belongs to, now persisted as a real FK (OnDelete SetNull)
@@ -70,28 +70,28 @@ public sealed class SpeakerMeetingRequest
     /// <summary>D-716 — when the speaker confirmed (or declined) the bound meeting
     /// via the double-opt-in link. Null while <see cref="MeetingRequestStatus.AwaitingSpeaker"/>;
     /// set by Slice C's public token flow. Persisted now as an additive column.</summary>
-    public DateTimeOffset? SpeakerDecisionAt { get; set; }
+    public DateTime? SpeakerDecisionAt { get; set; }
 
     /// <summary>Optional admin response note shown to the requester.</summary>
     public string? ResponseNote { get; set; }
 
     /// <summary>Bi-Meeting rework — once-only dedup stamp for the 15-minute reminder
     /// worker (mirrors <c>Session.ReminderSent</c>). Null until the reminder fires.</summary>
-    public DateTimeOffset? ReminderSent { get; set; }
+    public DateTime? ReminderSent { get; set; }
 
     /// <summary>Bi-Meeting rework — when an operator checked the meeting in at the hall
     /// (flips it to <see cref="MeetingRequestStatus.Done"/>). Null until checked in.</summary>
-    public DateTimeOffset? CheckedInAt { get; set; }
+    public DateTime? CheckedInAt { get; set; }
 
     /// <summary>Bi-Meeting rework — the operator who checked it in. Logical FK
     /// (Identity); no cross-DB relation (D-157).</summary>
     public Guid? CheckedInByUserId { get; set; }
 
-    public DateTimeOffset CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 
     /// <summary>When the admin moved the row off Pending. Null while still
     /// Pending.</summary>
-    public DateTimeOffset? RespondedAt { get; set; }
+    public DateTime? RespondedAt { get; set; }
 
     /// <summary>The admin who responded. Null while still Pending.</summary>
     public Guid? RespondedByUserId { get; set; }

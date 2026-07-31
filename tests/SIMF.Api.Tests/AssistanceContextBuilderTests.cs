@@ -24,8 +24,8 @@ public sealed class AssistanceContextBuilderTests
             new FakeSessions(new PublicSessionListItem(
                 Guid.NewGuid(), "S1", "Opening Session", "جلسة الافتتاح",
                 Guid.NewGuid(), "Main Hall", "القاعة الرئيسية",
-                new DateTimeOffset(2027, 1, 20, 8, 0, 0, TimeSpan.Zero),
-                new DateTimeOffset(2027, 1, 20, 9, 0, 0, TimeSpan.Zero),
+                new DateTime(2027, 1, 20, 8, 0, 0),
+                new DateTime(2027, 1, 20, 9, 0, 0),
                 null, null, null)),
             new FakeFaq(new PublicFaqEntry(
                 Guid.NewGuid(), "Where is parking?", "أين موقف السيارات؟",

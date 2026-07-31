@@ -108,7 +108,7 @@ public sealed class AdminHallCapacityTests : IClassFixture<SimfApiFactory>
             HallId = hallId,
             RowLabels = rowLabels,
             SeatsPerRow = seatsPerRow,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
     }

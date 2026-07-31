@@ -67,8 +67,8 @@ internal sealed class SpeakerAvailabilityService(
         var forum = await forumWindow.GetForumDaysAsync(cancellationToken);
         if (forum is { } bounds)
         {
-            var startDate = DateOnly.FromDateTime(request.Start.ToOffset(EventOffset).DateTime);
-            var endDate = DateOnly.FromDateTime(request.End.ToOffset(EventOffset).DateTime);
+            var startDate = DateOnly.FromDateTime(request.Start);
+            var endDate = DateOnly.FromDateTime(request.End);
             if (startDate < bounds.MinDate || endDate > bounds.MaxDate)
             {
                 throw new ApiException(ErrorCodes.ValidationFailed, 400,
@@ -79,7 +79,7 @@ internal sealed class SpeakerAvailabilityService(
             }
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var window = new SpeakerAvailabilityWindow
         {
             Id = Guid.NewGuid(),
@@ -126,7 +126,7 @@ internal sealed class SpeakerAvailabilityService(
             ?? throw new ApiException(ErrorCodes.SpeakerAvailabilityWindowNotFound, 404,
                 "The availability window was not found.", "لم يتم العثور على فترة التوفّر.");
         window.IsActive = false;
-        window.UpdatedAt = timeProvider.GetUtcNow();
+        window.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -141,7 +141,7 @@ internal sealed class SpeakerAvailabilityService(
     public async Task<IReadOnlyList<SpeakerAvailableSlot>> GetAvailableSlotsAsync(
         Guid speakerId, CancellationToken cancellationToken = default)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var windows = await appDbContext.SpeakerAvailabilityWindows.AsNoTracking()
             .Where(w => w.SpeakerId == speakerId && w.IsActive && w.End > now)
             .OrderBy(w => w.Start)

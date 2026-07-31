@@ -135,7 +135,7 @@ public sealed class SessionLifecycleTests : IClassFixture<SimfApiFactory>
     public async Task SetStatusAsync_MarkHeldBeforeStart_ReturnsBadRequest()
     {
         var token = await CreateAdministratorAndSignInAsync();
-        var future = DateTimeOffset.UtcNow.AddHours(2);
+        var future = SimfClock.Now.AddHours(2);
         var session = await CreateSessionAsync(token, future, future.AddHours(1));
 
         var response = await SetStatusAsync(session.Id, SessionStatus.Held, token);
@@ -203,7 +203,7 @@ public sealed class SessionLifecycleTests : IClassFixture<SimfApiFactory>
             new SetSessionStatusRequest { Status = status }, token);
 
     private async Task<AdminSessionDetail> CreateSessionAsync(
-        string token, DateTimeOffset? start = null, DateTimeOffset? end = null)
+        string token, DateTime? start = null, DateTime? end = null)
     {
         var hall = await SeedHallAsync(capacity: 100);
         var response = await PostAuthAsync(
@@ -218,8 +218,8 @@ public sealed class SessionLifecycleTests : IClassFixture<SimfApiFactory>
                 Type = SessionType.Event,
                 // S-7 — default to a past start so the Held lifecycle guard passes;
                 // callers testing the pre-start guard pass an explicit future start.
-                Start = start ?? DateTimeOffset.UtcNow.AddHours(-1),
-                End = end ?? DateTimeOffset.UtcNow.AddHours(1),
+                Start = start ?? SimfClock.Now.AddHours(-1),
+                End = end ?? SimfClock.Now.AddHours(1),
             },
             token);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -251,7 +251,7 @@ public sealed class SessionLifecycleTests : IClassFixture<SimfApiFactory>
             NameArabic = "قاعة دورة الحياة",
             Capacity = capacity,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         await db.SaveChangesAsync();

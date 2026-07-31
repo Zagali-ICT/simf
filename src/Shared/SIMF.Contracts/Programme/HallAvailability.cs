@@ -7,22 +7,22 @@ namespace SIMF.Contracts.Programme;
 public sealed record AdminHallAvailabilityWindow(
     Guid Id,
     Guid HallId,
-    DateTimeOffset Start,
-    DateTimeOffset End,
+    DateTime Start,
+    DateTime End,
     int SlotMinutes,
     bool IsActive,
-    DateTimeOffset CreatedAt);
+    DateTime CreatedAt);
 
 /// <summary>D-715 — create a hall availability window.</summary>
 public sealed class CreateHallAvailabilityWindowRequest
 {
-    public DateTimeOffset Start { get; set; }
-    public DateTimeOffset End { get; set; }
+    public DateTime Start { get; set; }
+    public DateTime End { get; set; }
     public int SlotMinutes { get; set; } = 30;
 }
 
 /// <summary>D-715 — one bookable slot derived from a hall's windows: a
 /// fixed-length time range that is not yet taken by a bound meeting.</summary>
 public sealed record HallAvailableSlot(
-    DateTimeOffset Start,
-    DateTimeOffset End);
+    DateTime Start,
+    DateTime End);

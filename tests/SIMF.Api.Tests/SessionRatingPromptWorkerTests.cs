@@ -10,6 +10,7 @@ using SIMF.Domain.SeatReservations;
 using SIMF.Infrastructure.Operations;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
+using SIMF.Common;
 
 namespace SIMF.Api.Tests;
 
@@ -32,7 +33,7 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
     [Fact]
     public async Task Scan_prompts_attendees_of_a_just_ended_session_exactly_once()
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var visitorId = await SeedVisitorAsync();
         // Ended five minutes ago — inside the back-fill window.
         var sessionId = await SeedEndedSessionWithAttendanceAsync(now.AddMinutes(-5), visitorId);
@@ -75,7 +76,7 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
         // D-713 (GAP-A) — the attendee left the hall (prompted once already);
         // the clock-end worker must not send a second rating prompt, though it
         // still stamps the session so it stops scanning it.
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var visitorId = await SeedVisitorAsync();
         var sessionId = await SeedEndedSessionWithAttendanceAsync(now.AddMinutes(-5), visitorId);
         await SeedExistingRatingPromptAsync(sessionId, visitorId);
@@ -103,7 +104,7 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
         // a seat but never checked in to the hall must NOT get the rating prompt
         // (matching the submit gate). The session is still stamped so the worker
         // stops re-scanning it.
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var visitorId = await SeedVisitorAsync();
         var sessionId = await SeedEndedSessionWithBookingOnlyAsync(now.AddMinutes(-5), visitorId);
 
@@ -128,7 +129,7 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
     [Fact]
     public async Task Scan_ignores_a_session_that_ended_before_the_backfill_window()
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var visitorId = await SeedVisitorAsync();
         // Ended eight hours ago — beyond the 6-hour back-fill window.
         var sessionId = await SeedEndedSessionWithAttendanceAsync(now.AddHours(-8), visitorId);
@@ -144,7 +145,7 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
     [Fact]
     public async Task Scan_ignores_a_session_that_has_not_ended_yet()
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var visitorId = await SeedVisitorAsync();
         // Ends in an hour — not yet over.
         var sessionId = await SeedEndedSessionWithAttendanceAsync(now.AddHours(1), visitorId);
@@ -164,7 +165,7 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
         // deactivates the "Session" rating type (RatingConfig), the end-of-session
         // worker sends no prompt and does not stamp the session, so re-enabling
         // later resumes prompts for sessions still in the back-fill window.
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var visitorId = await SeedVisitorAsync();
         var sessionId = await SeedEndedSessionWithAttendanceAsync(now.AddMinutes(-5), visitorId);
         await SetSessionRatingTypeActiveAsync(false);
@@ -207,7 +208,7 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
         await db.SaveChangesAsync();
     }
 
-    private async Task<int> RunScanAsync(DateTimeOffset now)
+    private async Task<int> RunScanAsync(DateTime now)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -256,7 +257,7 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
 
     // Seeds a just-/long-ended session plus a HallAttendance (hall check-in) for
     // the visitor — the attendance the rating prompt is now gated on.
-    private async Task<Guid> SeedEndedSessionWithAttendanceAsync(DateTimeOffset end, Guid visitorId)
+    private async Task<Guid> SeedEndedSessionWithAttendanceAsync(DateTime end, Guid visitorId)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -271,7 +272,7 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
             UserId = visitorId,
             Method = AttendanceMethod.QrScan,
             Enter = session.Start,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
         return session.Id;
@@ -279,7 +280,7 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
 
     // Seeds a just-ended session with only a SEAT BOOKING (no hall check-in) for
     // the visitor — the "booked but absent" case that must NOT be prompted.
-    private async Task<Guid> SeedEndedSessionWithBookingOnlyAsync(DateTimeOffset end, Guid visitorId)
+    private async Task<Guid> SeedEndedSessionWithBookingOnlyAsync(DateTime end, Guid visitorId)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -295,13 +296,13 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
             Kind = SeatReservationKind.UserBooking,
             ReservedForUserId = visitorId,
             CreatedByUserId = visitorId,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
         return session.Id;
     }
 
-    private static (Hall Hall, Session Session) BuildEndedSession(DateTimeOffset end)
+    private static (Hall Hall, Session Session) BuildEndedSession(DateTime end)
     {
         var hall = new Hall
         {
@@ -311,7 +312,7 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
             NameArabic = "قاعة",
             Capacity = 10,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         var session = new Session
         {
@@ -323,7 +324,7 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
             Start = end.AddHours(-1),
             End = end,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         return (hall, session);
     }

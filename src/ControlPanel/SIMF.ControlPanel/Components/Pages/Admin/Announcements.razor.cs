@@ -231,7 +231,7 @@ public partial class Announcements
             : row.Title;
 
     // Saudi wall-clock (the CP's datetime convention, D-765), not the server TZ.
-    private static string FormatWhen(DateTimeOffset when) => when.FormatSaudi();
+    private static string FormatWhen(DateTime when) => when.FormatSaudi();
 
     private string FormatSummary(int skip, int taken, int total) =>
         string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);

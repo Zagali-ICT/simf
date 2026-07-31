@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SIMF.Infrastructure.Persistence.Migrations.Identity
 {
     /// <inheritdoc />
-    public partial class _20260712001 : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -38,14 +38,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     AccountState = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
                     UserType = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
                     PasswordChangeRequired = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     LastUsedTotpTimestep = table.Column<long>(type: "bigint", nullable: true),
                     AvatarRelativePath = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    StateChangedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    StateChangedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     StateChangedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    PasswordChangedAtUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    LastSuccessfulSignInAtUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    PasswordChangedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    LastSuccessfulSignInAtUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -88,7 +88,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    OccurredAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    OccurredAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     TableName = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     EntityType = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     Operation = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
@@ -134,9 +134,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Purpose = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
                     Code = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
-                    ExpiresAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    ConsumedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    ExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ConsumedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     AttemptCount = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -244,11 +244,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     PublicKey = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
                     Algorithm = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
                     Label = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    LastUsedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    RevokedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    LastUsedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RevokedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CurrentChallenge = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
-                    ChallengeExpiresAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    ChallengeExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -273,8 +273,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     Body = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
                     BodyArabic = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
                     Severity = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
-                    ReadAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    ReadAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     RelatedEntityType = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
                     RelatedEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     ClickUrl = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
@@ -298,7 +298,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PasswordHash = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: false),
-                    CreatedAtUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                    CreatedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -318,9 +318,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     TokenHash = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
-                    ExpiresAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    RevokedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    ExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    RevokedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     RotatedFromId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
@@ -342,9 +342,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     TokenHash = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     Kind = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    ExpiresAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    ConsumedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ConsumedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     AttemptCount = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -365,8 +365,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CodeHash = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    ConsumedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ConsumedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {

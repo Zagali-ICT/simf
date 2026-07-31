@@ -7,6 +7,7 @@ using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Common;
 
 namespace SIMF.Application.IdentityAccess;
 
@@ -36,7 +37,7 @@ public sealed class TokenIssuer(
             user, roles, permissions, mobileAppRole, secondFactorCompleted);
 
         var refreshValue = OpaqueToken.Generate();
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         await refreshTokenRepository.AddAsync(
             new RefreshToken
             {

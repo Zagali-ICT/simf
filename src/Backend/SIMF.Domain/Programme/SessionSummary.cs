@@ -93,12 +93,12 @@ public sealed class SessionSummary
     /// <summary>When the pristine <see cref="AiDraftFullTextArabic"/> snapshot was
     /// last captured; each generate / re-generate refreshes both. Null when no AI
     /// draft has been generated.</summary>
-    public DateTimeOffset? AiDraftGeneratedAt { get; set; }
+    public DateTime? AiDraftGeneratedAt { get; set; }
 
     /// <summary>Stamped when the Committee publishes the summary; cleared when
     /// it is un-published. Null while it is a draft. The app read requires a
     /// non-null value.</summary>
-    public DateTimeOffset? PublishedAt { get; set; }
+    public DateTime? PublishedAt { get; set; }
 
     /// <summary>Bare <c>Guid</c> of the admin who published — cross-context
     /// (Identity DB), no FK (D-157). Null while unpublished.</summary>
@@ -113,7 +113,7 @@ public sealed class SessionSummary
 
     /// <summary>Stamped when a team member submits the draft for approval
     /// (Draft → InReview). Cleared by any content edit or a return-to-draft.</summary>
-    public DateTimeOffset? ReviewSubmittedAt { get; set; }
+    public DateTime? ReviewSubmittedAt { get; set; }
 
     /// <summary>Bare <c>Guid</c> of the team member who submitted it for review —
     /// cross-context (Identity DB), no FK (D-157).</summary>
@@ -122,7 +122,7 @@ public sealed class SessionSummary
     /// <summary>Stamped when the team approves the summary (InReview → Approved);
     /// the approved محضر then becomes readable by the session's host / moderator
     /// ("ready for المحاور"). Cleared by any content edit or a return-to-draft.</summary>
-    public DateTimeOffset? ApprovedAt { get; set; }
+    public DateTime? ApprovedAt { get; set; }
 
     /// <summary>Bare <c>Guid</c> of the team member who approved — cross-context
     /// (Identity DB), no FK (D-157).</summary>
@@ -131,8 +131,8 @@ public sealed class SessionSummary
     /// <summary>Soft-delete flag — hides the summary without losing the row.</summary>
     public bool IsActive { get; set; } = true;
 
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset? UpdatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 
     /// <summary>Bare <c>Guid</c> of the admin who last edited — cross-context,
     /// no FK (D-157).</summary>

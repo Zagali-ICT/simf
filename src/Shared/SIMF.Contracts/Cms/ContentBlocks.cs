@@ -6,7 +6,7 @@ public sealed record PublicContentBlock(
     string Key,
     string Content,
     string ContentArabic,
-    DateTimeOffset LastUpdatedAt);
+    DateTime LastUpdatedAt);
 
 /// <summary>D-173 — batch read response.</summary>
 public sealed record PublicContentBlockBatch(
@@ -27,8 +27,8 @@ public sealed record PublicBanner(
     string BodyArabic,
     string? ImageUrl,
     string? LinkUrl,
-    DateTimeOffset Start,
-    DateTimeOffset End,
+    DateTime Start,
+    DateTime End,
     int DisplayOrder);
 
 /// <summary>D-173 — list-of-banners response.</summary>

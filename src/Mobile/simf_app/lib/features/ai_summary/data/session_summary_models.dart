@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// One published session summary — mirrors `SIMF.Contracts.*.PublicSessionSummary`
 /// (`GET /app/programme/sessions/{id}/summary`, `AllowAnonymous`).
@@ -82,7 +83,7 @@ class SessionSummary {
     if (raw == null || raw.isEmpty) {
       return null;
     }
-    return DateTime.tryParse(raw)?.toUtc();
+    return parseWireOrNull(raw);
   }
 
   static SessionSummary fromJson(Map<String, dynamic> json) => SessionSummary(

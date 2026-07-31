@@ -177,8 +177,8 @@ public sealed class ProgrammeDaysTests : IClassFixture<SimfApiFactory>
                 {
                     new(speakerId, "", "", 0),
                 },
-                Start = DateTimeOffset.UtcNow.AddHours(1),
-                End = DateTimeOffset.UtcNow.AddHours(2),
+                Start = SimfClock.Now.AddHours(1),
+                End = SimfClock.Now.AddHours(2),
             },
             token);
         Assert.Equal(HttpStatusCode.OK, create.StatusCode);
@@ -207,7 +207,7 @@ public sealed class ProgrammeDaysTests : IClassFixture<SimfApiFactory>
         // 08:00 UTC on the date → 11:00 KSA (+3), still the same calendar day,
         // so the session buckets onto the authored day.
         var speakerId = await SeedSpeakerAsync();
-        var start = new DateTimeOffset(date.Year, date.Month, date.Day, 8, 0, 0, TimeSpan.Zero);
+        var start = new DateTime(date.Year, date.Month, date.Day, 8, 0, 0);
         var sessionCreate = await PostAuthAsync(
             "/api/v1/admin/sessions",
             new AdminCreateSessionRequest
@@ -251,7 +251,7 @@ public sealed class ProgrammeDaysTests : IClassFixture<SimfApiFactory>
             Name = "Hall PD", NameArabic = "قاعة",
             Capacity = 100,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         await db.SaveChangesAsync();
@@ -270,7 +270,7 @@ public sealed class ProgrammeDaysTests : IClassFixture<SimfApiFactory>
             Name = "PD Speaker", NameArabic = "متحدّث",
             DisplayOrder = 0,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Speakers.Add(speaker);
         await db.SaveChangesAsync();

@@ -125,7 +125,7 @@ internal sealed class BadgeAuthService(
             ?? throw BadgeNotFound();
         EnsureNotAlreadyActivated(user);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         string targetEmail;
         string code;
 
@@ -195,7 +195,7 @@ internal sealed class BadgeAuthService(
             ?? throw BadgeNotFound();
         EnsureNotAlreadyActivated(user);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var code = await accountCodeRepository.GetLatestUnconsumedAsync(
             user.Id, AccountCodePurpose.BadgeActivationOtp, cancellationToken);
 
@@ -378,7 +378,7 @@ internal sealed class BadgeAuthService(
         BadgeActivationCompleteRequest request,
         int? nationalityId,
         IReadOnlyList<Guid> interestIds,
-        DateTimeOffset now,
+        DateTime now,
         CancellationToken cancellationToken)
     {
         var englishName = FirstNonBlank(request.EnglishName);
@@ -461,7 +461,7 @@ internal sealed class BadgeAuthService(
 
     /// <summary>Consumes any prior unconsumed activation code and issues a fresh
     /// one. Returns the new code's value so the caller can email it.</summary>
-    private async Task<string> IssueCodeAsync(Guid userId, DateTimeOffset now, CancellationToken cancellationToken)
+    private async Task<string> IssueCodeAsync(Guid userId, DateTime now, CancellationToken cancellationToken)
     {
         var previous = await accountCodeRepository.GetLatestUnconsumedAsync(
             userId, AccountCodePurpose.BadgeActivationOtp, cancellationToken);

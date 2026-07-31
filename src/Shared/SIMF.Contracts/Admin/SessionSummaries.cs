@@ -11,17 +11,17 @@ public sealed record AdminSessionSummaryRow(
     string SessionCode,
     string SessionTitle,
     string SessionTitleArabic,
-    DateTimeOffset SessionStart,
+    DateTime SessionStart,
     bool HasSummary,
     bool GeneratedByAi,
     bool IsPublished,
-    DateTimeOffset? PublishedAt,
-    DateTimeOffset? UpdatedAt,
+    DateTime? PublishedAt,
+    DateTime? UpdatedAt,
     // D-472 (#9) — the team review/approval state, derived from the timestamps:
     // InReview = submitted but not yet approved; Approved = ready for المحاور.
     bool IsInReview,
     bool IsApproved,
-    DateTimeOffset? ApprovedAt);
+    DateTime? ApprovedAt);
 
 /// <summary>P4.1 — D-238: the full summary detail for the editor. Bilingual
 /// content sections + the session header (read-only context) + provenance and
@@ -44,13 +44,13 @@ public sealed record AdminSessionSummaryDetail(
     string FullTextArabic,
     string? AiModel,
     bool IsPublished,
-    DateTimeOffset? PublishedAt,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt,
+    DateTime? PublishedAt,
+    DateTime CreatedAt,
+    DateTime? UpdatedAt,
     // D-472 (#9) — team review/approval state (derived from the timestamps).
     bool IsInReview,
     bool IsApproved,
-    DateTimeOffset? ApprovedAt,
+    DateTime? ApprovedAt,
     // Slice D (2026-07-19) — AI-transparency read-only sources shown in the
     // editor: Subtitle / SubtitleArabic = the raw session captions the AI
     // drafted from (Session.LiveCaptions*); AiDraftFullTextArabic = the pristine
@@ -60,7 +60,7 @@ public sealed record AdminSessionSummaryDetail(
     string? Subtitle,
     string? SubtitleArabic,
     string? AiDraftFullTextArabic,
-    DateTimeOffset? AiDraftGeneratedAt,
+    DateTime? AiDraftGeneratedAt,
     // Item #35 (2026-07-20) — the OPTIONAL team summary-video URL the editor
     // shows/saves (a YouTube or HLS/MP4 feed, LiveStreamUrlPolicy-validated).
     // Appended (defaulted) so the wire stays append-only. Null = no summary video.

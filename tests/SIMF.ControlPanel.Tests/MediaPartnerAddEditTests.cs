@@ -13,7 +13,7 @@ public sealed class MediaPartnerAddEditTests : CpComponentTestBase
     private static AdminMediaPartnerDetail Detail() => new(
         Guid.NewGuid(), "Maritime Times", "Ø£ÙˆÙ‚Ø§Øª Ø¨Ø­Ø±ÙŠØ©",
         "media/partners/mt.png", "https://example.com", 3,
-        IsActive: true, DateTimeOffset.UnixEpoch, UpdatedAt: null);
+        IsActive: true, DateTime.UnixEpoch, UpdatedAt: null);
 
     [Fact]
     public void Add_mode_hides_the_Active_checkbox()
@@ -37,7 +37,7 @@ public sealed class MediaPartnerAddEditTests : CpComponentTestBase
         JSInterop.Mode = JSRuntimeMode.Loose;
         var created = new AdminMediaPartnerDetail(
             Guid.NewGuid(), "New Partner", "Ø´Ø±ÙŠÙƒ Ø¬Ø¯ÙŠØ¯", null, null, 0,
-            true, DateTimeOffset.UnixEpoch, null, null);
+            true, DateTime.UnixEpoch, null, null);
         var handler = JSInterop.Setup<ApiResult<AdminMediaPartnerDetail>>(
             "simfAccount.postJson", _ => true)
             .SetResult(ApiResult<AdminMediaPartnerDetail>.Ok(created));

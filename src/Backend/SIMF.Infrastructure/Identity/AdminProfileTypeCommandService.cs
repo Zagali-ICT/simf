@@ -1,4 +1,4 @@
-﻿// Tests: SIMF.Api.Tests/AdminProfileTypeTests.cs
+// Tests: SIMF.Api.Tests/AdminProfileTypeTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -138,7 +138,7 @@ internal sealed class AdminProfileTypeCommandService(
 
         var mobileAppRole = ParseMobileAppRole(request.MobileAppRole);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var profileType = new UserProfileType
         {
             Id = Guid.NewGuid(),
@@ -227,7 +227,7 @@ internal sealed class AdminProfileTypeCommandService(
         profileType.IsAppRegisterable = request.IsAppRegisterable;
         // D-760: Meet-People networking visibility.
         profileType.ShowInPartnerDirectory = request.ShowInPartnerDirectory;
-        profileType.UpdatedAt = timeProvider.GetUtcNow();
+        profileType.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var isVisitorChanged = oldIsVisitor != profileType.IsForVisitor;
@@ -290,7 +290,7 @@ internal sealed class AdminProfileTypeCommandService(
         }
 
         profileType.IsActive = false;
-        profileType.UpdatedAt = timeProvider.GetUtcNow();
+        profileType.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry

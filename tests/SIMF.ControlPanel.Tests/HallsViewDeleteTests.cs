@@ -13,7 +13,7 @@ public sealed class HallsViewDeleteTests : CpComponentTestBase
     private static AdminHallDetail Detail() => new(
         Guid.NewGuid(), "HALL-A", "Main Hall", "Ø§Ù„Ù‚Ø§Ø¹Ø© Ø§Ù„Ø±Ø¦ÙŠØ³ÙŠØ©", 250, "Ground",
         EquipmentNotes: "Projector + PA", IsActive: true,
-        DateTimeOffset.UnixEpoch, UpdatedAt: null);
+        DateTime.UnixEpoch, UpdatedAt: null);
 
     [Fact]
     public void View_mode_shows_details_and_no_delete_button()
@@ -74,15 +74,17 @@ public sealed class HallsViewDeleteTests : CpComponentTestBase
     // now reads the hall-gated schedule endpoint and renders the assigned
     // sessions with their LOCAL (Saudi, 12-hour) times and status.
 
-    // 08:00Z on the forum's opening day → 11:00 AM Saudi (+3).
-    private static readonly DateTimeOffset ScheduleStartUtc =
-        new(2026, 1, 5, 8, 0, 0, TimeSpan.Zero);
+    // 11:00 on the forum's opening day. Stored AND rendered as 11:00 — owner
+    // decision 2026-07-31, Saudi local storage with no conversion on the way out.
+    // This constant used to be 08:00Z precisely because the render added +3.
+    private static readonly DateTime ScheduleStart =
+        new(2026, 1, 5, 11, 0, 0);
 
     private static AdminSessionSummary ScheduledSession(Guid hallId) => new(
         Guid.NewGuid(), "SES-1", "Opening Plenary", "SES-1-AR",
         hallId, "Main Hall", "MAIN-HALL-AR",
-        ScheduleStartUtc, ScheduleStartUtc.AddHours(1),
-        Capacity: 250, IsActive: true, CreatedAt: DateTimeOffset.UnixEpoch);
+        ScheduleStart, ScheduleStart.AddHours(1),
+        Capacity: 250, IsActive: true, CreatedAt: DateTime.UnixEpoch);
 
     // Plans the schedule read; returns the handler so a test can assert the URL.
     private static ApiResult<GridPage<AdminSessionSummary>> SchedulePage(
@@ -128,10 +130,14 @@ public sealed class HallsViewDeleteTests : CpComponentTestBase
             .Add(x => x.IsDelete, false)
             .Add(x => x.Initial, row));
 
-        // Saudi +3, 12-hour: 08:00Z renders as 11:00 AM, never the raw UTC stamp.
+        // 12-hour Saudi render of the stored value, verbatim. The DoesNotContain
+        // is the load-bearing half: 08:00 is what a reintroduced UTC-to-Saudi
+        // conversion would produce from an 11:00 stored value, so its absence is
+        // what proves nothing shifts on the way to the page.
         Assert.Contains("05-01-2026 11:00 AM", cut.Markup);
         Assert.Contains("05-01-2026 12:00 PM", cut.Markup);
         Assert.DoesNotContain("08:00", cut.Markup);
+        Assert.DoesNotContain("02:00 PM", cut.Markup);
     }
 
     [Fact]

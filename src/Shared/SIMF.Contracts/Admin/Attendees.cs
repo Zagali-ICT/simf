@@ -14,4 +14,4 @@ public sealed record AdminAttendeeSummary(
     string? ProfileTypeNameArabic,
     string AccountState,
     string? QrId,
-    DateTimeOffset CreatedAt);
+    DateTime CreatedAt);

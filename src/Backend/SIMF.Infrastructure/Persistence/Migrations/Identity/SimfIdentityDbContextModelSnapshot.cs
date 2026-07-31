@@ -156,8 +156,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     b.Property<string>("NewValuesJson")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTimeOffset>("OccurredAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("OccurredAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("OldValuesJson")
                         .HasColumnType("nvarchar(max)");
@@ -202,14 +202,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                         .HasMaxLength(16)
                         .HasColumnType("nvarchar(16)");
 
-                    b.Property<DateTimeOffset?>("ConsumedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("ConsumedAt")
+                        .HasColumnType("datetime2");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
-                    b.Property<DateTimeOffset>("ExpiresAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Purpose")
                         .IsRequired()
@@ -237,11 +237,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                         .HasMaxLength(16)
                         .HasColumnType("nvarchar(16)");
 
-                    b.Property<DateTimeOffset?>("ChallengeExpiresAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("ChallengeExpiresAt")
+                        .HasColumnType("datetime2");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("CurrentChallenge")
                         .HasMaxLength(128)
@@ -252,16 +252,16 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
-                    b.Property<DateTimeOffset?>("LastUsedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("LastUsedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("PublicKey")
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<DateTimeOffset?>("RevokedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
@@ -283,8 +283,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
@@ -344,14 +344,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
-                    b.Property<DateTimeOffset>("ExpiresAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
 
-                    b.Property<DateTimeOffset?>("RevokedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("RotatedFromId")
                         .HasColumnType("uniqueidentifier");
@@ -398,14 +398,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     b.Property<int>("AttemptCount")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset?>("ConsumedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("ConsumedAt")
+                        .HasColumnType("datetime2");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
-                    b.Property<DateTimeOffset>("ExpiresAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Kind")
                         .IsRequired()
@@ -483,8 +483,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("DisplayName")
                         .IsRequired()
@@ -498,8 +498,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
 
-                    b.Property<DateTimeOffset?>("LastSuccessfulSignInAtUtc")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("LastSuccessfulSignInAtUtc")
+                        .HasColumnType("datetime2");
 
                     b.Property<long?>("LastUsedTotpTimestep")
                         .HasColumnType("bigint");
@@ -521,8 +521,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     b.Property<bool>("PasswordChangeRequired")
                         .HasColumnType("bit");
 
-                    b.Property<DateTimeOffset?>("PasswordChangedAtUtc")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("PasswordChangedAtUtc")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("PasswordHash")
                         .HasColumnType("nvarchar(max)");
@@ -536,8 +536,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTimeOffset?>("StateChangedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("StateChangedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("StateChangedByUserId")
                         .HasColumnType("uniqueidentifier");
@@ -545,8 +545,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("bit");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("UserName")
                         .HasMaxLength(256)
@@ -587,11 +587,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
-                    b.Property<DateTimeOffset?>("ConsumedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("ConsumedAt")
+                        .HasColumnType("datetime2");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
@@ -626,8 +626,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                         .HasMaxLength(512)
                         .HasColumnType("nvarchar(512)");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("GroupCode")
                         .HasMaxLength(64)
@@ -638,8 +638,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
-                    b.Property<DateTimeOffset?>("ReadAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("RelatedEntityId")
                         .HasColumnType("uniqueidentifier");

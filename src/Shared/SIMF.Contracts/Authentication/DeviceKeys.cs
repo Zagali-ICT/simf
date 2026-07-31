@@ -35,9 +35,9 @@ public sealed record DeviceKeyEntry(
     Guid UserId,
     string Algorithm,
     string Label,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? LastUsedAt,
-    DateTimeOffset? RevokedAt);
+    DateTime CreatedAt,
+    DateTime? LastUsedAt,
+    DateTime? RevokedAt);
 
 /// <summary>D-172 — the server-issued challenge for a sign-in attempt.
 /// Client signs the challenge bytes (after base64 decode) with its

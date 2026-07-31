@@ -34,7 +34,7 @@ internal sealed class AssistanceContextBuilder(
             "## Programme sessions (title EN / AR · start-end UTC · hall)",
             agenda.Items.Select(session =>
                 $"- {session.Title} / {session.TitleArabic} · "
-                + $"{Utc(session.Start)}-{session.End.UtcDateTime.ToString("HH:mm", CultureInfo.InvariantCulture)} · "
+                + $"{Utc(session.Start)}-{session.End.ToString("HH:mm", CultureInfo.InvariantCulture)} · "
                 + $"{session.HallName} / {session.HallNameArabic}"));
 
         AiGroundingText.AppendCappedSection(builder,
@@ -54,6 +54,6 @@ internal sealed class AssistanceContextBuilder(
         return builder.ToString().TrimEnd();
     }
 
-    private static string Utc(DateTimeOffset value) =>
-        value.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+    private static string Utc(DateTime value) =>
+        value.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
 }

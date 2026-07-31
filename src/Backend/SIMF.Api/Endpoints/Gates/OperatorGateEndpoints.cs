@@ -35,7 +35,7 @@ public sealed class PostScanRequest
 {
     public Guid GateId { get; set; }
     public string Qr { get; set; } = string.Empty;
-    public DateTimeOffset? ClientScannedAt { get; set; }
+    public DateTime? ClientScannedAt { get; set; }
     public string? IdempotencyKey { get; set; }
     public SIMF.Common.Enums.ScanSource Source { get; set; }
         = SIMF.Common.Enums.ScanSource.MobileApp;
@@ -134,8 +134,8 @@ public sealed class PostGateVisitorsListRequest
     public int PageSize { get; set; }
     public SIMF.Common.Enums.ScanDirection? Direction { get; set; }
     public SIMF.Common.Enums.ScanOutcome? Outcome { get; set; }
-    public DateTimeOffset? Since { get; set; }
-    public DateTimeOffset? Until { get; set; }
+    public DateTime? Since { get; set; }
+    public DateTime? Until { get; set; }
 }
 
 public sealed class PostGateVisitorsListEndpoint(IGateOperatorService service)

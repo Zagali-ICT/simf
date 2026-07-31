@@ -13,6 +13,7 @@ using SIMF.Contracts.Programme;
 using SIMF.Domain.BusinessMeetings;
 using SIMF.Domain.Notifications;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.MeetingRequests;
 
@@ -39,7 +40,7 @@ internal sealed class MeetingActionTokenService(
 
     public MeetingActionLinks StageTokensForRequest(Guid speakerMeetingRequestId)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var expires = now.AddHours(Math.Max(1, options.Value.TokenTtlHours));
         var approveSecret = MeetingActionTokenHasher.NewSecret();
         var rejectSecret = MeetingActionTokenHasher.NewSecret();
@@ -65,7 +66,7 @@ internal sealed class MeetingActionTokenService(
 
     public string StageDelegationConfirmToken(Guid delegationMeetingRequestId)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var expires = now.AddHours(Math.Max(1, options.Value.TokenTtlHours));
         var secret = MeetingActionTokenHasher.NewSecret();
 
@@ -136,7 +137,7 @@ internal sealed class MeetingActionTokenService(
         if (await ValidateAsync(tokenSecret, cancellationToken) is { } loaded)
         {
             var (token, request) = loaded;
-            var now = timeProvider.GetUtcNow();
+            var now = timeProvider.SimfNow();
 
             // Atomic single-use (§15.7) — the DB is the single arbiter, not the read in
             // ValidateAsync. Claim the token (conditional UPDATE ... WHERE UsedAt IS NULL)
@@ -202,7 +203,7 @@ internal sealed class MeetingActionTokenService(
             return null;
         }
         var hash = MeetingActionTokenHasher.Hash(tokenSecret);
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         var token = await appDbContext.MeetingActionTokens.AsNoTracking()
             .SingleOrDefaultAsync(t => t.TokenHash == hash, cancellationToken);
@@ -264,7 +265,7 @@ internal sealed class MeetingActionTokenService(
             return null;
         }
         var hash = MeetingActionTokenHasher.Hash(tokenSecret);
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         var token = await appDbContext.DelegationMeetingActionTokens.AsNoTracking()
             .SingleOrDefaultAsync(t => t.TokenHash == hash, cancellationToken);
@@ -323,7 +324,7 @@ internal sealed class MeetingActionTokenService(
         DelegationMeetingActionToken token, DelegationMeetingRequest request,
         CancellationToken cancellationToken)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         var tokenClaimed = await appDbContext.DelegationMeetingActionTokens
             .Where(t => t.Id == token.Id && t.UsedAt == null)
@@ -383,7 +384,7 @@ internal sealed class MeetingActionTokenService(
 
     private static MeetingActionToken NewToken(
         Guid requestId, MeetingActionType action, string secret,
-        DateTimeOffset now, DateTimeOffset expires) =>
+        DateTime now, DateTime expires) =>
         new()
         {
             Id = Guid.NewGuid(),

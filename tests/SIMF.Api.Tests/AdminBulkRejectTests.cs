@@ -156,7 +156,7 @@ public sealed class AdminBulkRejectTests : IClassFixture<SimfApiFactory>
             NameArabic = "زائر تجريبي",
             Name = "Bulk Reject Visitor",
             NationalityId = 682,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
         await appDb.SaveChangesAsync();

@@ -11,6 +11,7 @@ using SIMF.Domain.Programme;
 using SIMF.Infrastructure.Operations;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
+using SIMF.Common;
 
 namespace SIMF.Api.Tests;
 
@@ -36,10 +37,10 @@ public sealed class ProgrammeRatingPromptWorkerTests : IClassFixture<SimfApiFact
     public async Task Day_scan_prompts_only_the_attendees_who_checked_in_that_day_and_stamps_once()
     {
         await DeactivateExistingDaysAsync(); // isolate from sibling tests (one active day per date)
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var start = now.AddHours(-3);
         var end = now.AddHours(-2);
-        var dayDate = DateOnly.FromDateTime(start.ToOffset(Ast).DateTime);
+        var dayDate = DateOnly.FromDateTime(start);
 
         var dayId = await SeedDayWithSessionAsync(dayDate, start, end);
         var checkedIn = await SeedApprovedVisitorAsync();
@@ -63,10 +64,10 @@ public sealed class ProgrammeRatingPromptWorkerTests : IClassFixture<SimfApiFact
     public async Task Day_scan_ignores_a_day_that_ended_before_the_backfill_window()
     {
         await DeactivateExistingDaysAsync(); // isolate from sibling tests (one active day per date)
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         // A session-less day two days ago → its end (next local midnight) is well
         // beyond the 24h back-fill window.
-        var dayDate = DateOnly.FromDateTime(now.ToOffset(Ast).DateTime).AddDays(-2);
+        var dayDate = DateOnly.FromDateTime(now).AddDays(-2);
         var dayId = await SeedDayAsync(dayDate);
 
         await RunDayScanAsync(now);
@@ -83,10 +84,10 @@ public sealed class ProgrammeRatingPromptWorkerTests : IClassFixture<SimfApiFact
         await DeactivateExistingDaysAsync();
         await ClearProgramEndMarkerAsync();
 
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var start = now.AddHours(-3);
         var end = now.AddHours(-2);
-        var lastDate = DateOnly.FromDateTime(start.ToOffset(Ast).DateTime);
+        var lastDate = DateOnly.FromDateTime(start);
         await SeedDayAsync(lastDate.AddDays(-2));
         await SeedDayAsync(lastDate.AddDays(-1));
         await SeedDayWithSessionAsync(lastDate, start, end); // the max day, just ended
@@ -119,10 +120,10 @@ public sealed class ProgrammeRatingPromptWorkerTests : IClassFixture<SimfApiFact
         await DeactivateExistingDaysAsync();
         await ClearProgramEndMarkerAsync();
 
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var start = now.AddHours(-3);
         var end = now.AddHours(-2);
-        var lastDate = DateOnly.FromDateTime(start.ToOffset(Ast).DateTime);
+        var lastDate = DateOnly.FromDateTime(start);
         await SeedDayWithSessionAsync(lastDate, start, end);
         var checkedIn = await SeedApprovedVisitorAsync();
         await SeedProfileWithScanAsync(checkedIn, scanUtc: start);
@@ -150,10 +151,10 @@ public sealed class ProgrammeRatingPromptWorkerTests : IClassFixture<SimfApiFact
         // "Day" rating type in RatingConfig silences the day prompt and does not
         // stamp the day, so re-enabling later resumes it.
         await DeactivateExistingDaysAsync();
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var start = now.AddHours(-3);
         var end = now.AddHours(-2);
-        var dayDate = DateOnly.FromDateTime(start.ToOffset(Ast).DateTime);
+        var dayDate = DateOnly.FromDateTime(start);
         var dayId = await SeedDayWithSessionAsync(dayDate, start, end);
         var checkedIn = await SeedApprovedVisitorAsync();
         await SeedProfileWithScanAsync(checkedIn, scanUtc: start);
@@ -184,10 +185,10 @@ public sealed class ProgrammeRatingPromptWorkerTests : IClassFixture<SimfApiFact
         // still fire.
         await DeactivateExistingDaysAsync();
         await ClearProgramEndMarkerAsync();
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var start = now.AddHours(-3);
         var end = now.AddHours(-2);
-        var lastDate = DateOnly.FromDateTime(start.ToOffset(Ast).DateTime);
+        var lastDate = DateOnly.FromDateTime(start);
         await SeedDayWithSessionAsync(lastDate, start, end);
         var checkedIn = await SeedApprovedVisitorAsync();
         await SeedProfileWithScanAsync(checkedIn, scanUtc: start);
@@ -232,7 +233,7 @@ public sealed class ProgrammeRatingPromptWorkerTests : IClassFixture<SimfApiFact
         }
     }
 
-    private async Task<int> RunDayScanAsync(DateTimeOffset now)
+    private async Task<int> RunDayScanAsync(DateTime now)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -242,7 +243,7 @@ public sealed class ProgrammeRatingPromptWorkerTests : IClassFixture<SimfApiFact
             NullLogger.Instance, CancellationToken.None);
     }
 
-    private async Task<bool> RunProgramEndScanAsync(DateTimeOffset now)
+    private async Task<bool> RunProgramEndScanAsync(DateTime now)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -299,11 +300,11 @@ public sealed class ProgrammeRatingPromptWorkerTests : IClassFixture<SimfApiFact
         return user.Id;
     }
 
-    private async Task SeedProfileWithScanAsync(Guid userId, DateTimeOffset scanUtc)
+    private async Task SeedProfileWithScanAsync(Guid userId, DateTime scanUtc)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
 
         var profileType = new UserProfileType
         {
@@ -367,14 +368,14 @@ public sealed class ProgrammeRatingPromptWorkerTests : IClassFixture<SimfApiFact
             TitleArabic = "اليوم",
             DisplayOrder = 0,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.ProgrammeDays.Add(day);
         await db.SaveChangesAsync();
         return day.Id;
     }
 
-    private async Task<Guid> SeedDayWithSessionAsync(DateOnly date, DateTimeOffset start, DateTimeOffset end)
+    private async Task<Guid> SeedDayWithSessionAsync(DateOnly date, DateTime start, DateTime end)
     {
         var dayId = await SeedDayAsync(date);
         using var scope = _factory.Services.CreateScope();
@@ -387,7 +388,7 @@ public sealed class ProgrammeRatingPromptWorkerTests : IClassFixture<SimfApiFact
             NameArabic = "قاعة",
             Capacity = 10,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         db.Sessions.Add(new Session
@@ -400,7 +401,7 @@ public sealed class ProgrammeRatingPromptWorkerTests : IClassFixture<SimfApiFact
             Start = start,
             End = end,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
         return dayId;

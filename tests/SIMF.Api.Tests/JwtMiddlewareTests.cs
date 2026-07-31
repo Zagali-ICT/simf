@@ -9,6 +9,7 @@ using Microsoft.IdentityModel.Tokens;
 using SIMF.Application.Auditing;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
+using SIMF.Common;
 
 namespace SIMF.Api.Tests;
 
@@ -38,22 +39,22 @@ public sealed class JwtMiddlewareTests : IClassFixture<SimfApiFactory>
     public Task A_token_with_a_forged_signature_is_rejected() =>
         AssertRejectedAsync(MakeToken(
             "a-completely-different-and-wrong-signing-key-000",
-            Issuer, Audience, DateTimeOffset.UtcNow.AddMinutes(30)));
+            Issuer, Audience, SimfClock.Now.AddMinutes(30)));
 
     [Fact]
     public Task A_token_with_the_wrong_issuer_is_rejected() =>
         AssertRejectedAsync(MakeToken(
-            SigningKey, "not-simf", Audience, DateTimeOffset.UtcNow.AddMinutes(30)));
+            SigningKey, "not-simf", Audience, SimfClock.Now.AddMinutes(30)));
 
     [Fact]
     public Task A_token_with_the_wrong_audience_is_rejected() =>
         AssertRejectedAsync(MakeToken(
-            SigningKey, Issuer, "not-simf", DateTimeOffset.UtcNow.AddMinutes(30)));
+            SigningKey, Issuer, "not-simf", SimfClock.Now.AddMinutes(30)));
 
     [Fact]
     public Task An_expired_token_is_rejected() =>
         AssertRejectedAsync(MakeToken(
-            SigningKey, Issuer, Audience, DateTimeOffset.UtcNow.AddHours(-1)));
+            SigningKey, Issuer, Audience, SimfClock.Now.AddHours(-1)));
 
     [Fact]
     public Task A_malformed_token_is_rejected() =>
@@ -69,12 +70,12 @@ public sealed class JwtMiddlewareTests : IClassFixture<SimfApiFactory>
     [Fact]
     public Task A_token_without_a_security_stamp_claim_is_rejected() =>
         AssertRejectedAsync(MakeTokenWithoutStamp(
-            SigningKey, Issuer, Audience, DateTimeOffset.UtcNow.AddMinutes(30)));
+            SigningKey, Issuer, Audience, SimfClock.Now.AddMinutes(30)));
 
     [Fact]
     public Task A_token_with_an_empty_security_stamp_claim_is_rejected() =>
         AssertRejectedAsync(MakeTokenWithStamp(
-            SigningKey, Issuer, Audience, DateTimeOffset.UtcNow.AddMinutes(30),
+            SigningKey, Issuer, Audience, SimfClock.Now.AddMinutes(30),
             stamp: string.Empty));
 
     // ----------------------------------------------------------------------
@@ -151,14 +152,14 @@ public sealed class JwtMiddlewareTests : IClassFixture<SimfApiFactory>
         string signingKey,
         string issuer,
         string audience,
-        DateTimeOffset expires) =>
+        DateTime expires) =>
         MakeTokenWithStamp(signingKey, issuer, audience, expires, stamp: "x");
 
     private static string MakeTokenWithStamp(
         string signingKey,
         string issuer,
         string audience,
-        DateTimeOffset expires,
+        DateTime expires,
         string stamp)
     {
         var credentials = new SigningCredentials(
@@ -168,8 +169,8 @@ public sealed class JwtMiddlewareTests : IClassFixture<SimfApiFactory>
             issuer,
             audience,
             claims: [new Claim("sub", Guid.NewGuid().ToString()), new Claim("security_stamp", stamp)],
-            notBefore: expires.UtcDateTime.AddMinutes(-30),
-            expires: expires.UtcDateTime,
+            notBefore: expires.AddMinutes(-30),
+            expires: expires,
             signingCredentials: credentials);
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
@@ -178,7 +179,7 @@ public sealed class JwtMiddlewareTests : IClassFixture<SimfApiFactory>
         string signingKey,
         string issuer,
         string audience,
-        DateTimeOffset expires)
+        DateTime expires)
     {
         var credentials = new SigningCredentials(
             new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey)),
@@ -187,8 +188,8 @@ public sealed class JwtMiddlewareTests : IClassFixture<SimfApiFactory>
             issuer,
             audience,
             claims: [new Claim("sub", Guid.NewGuid().ToString())],
-            notBefore: expires.UtcDateTime.AddMinutes(-30),
-            expires: expires.UtcDateTime,
+            notBefore: expires.AddMinutes(-30),
+            expires: expires,
             signingCredentials: credentials);
         return new JwtSecurityTokenHandler().WriteToken(token);
     }

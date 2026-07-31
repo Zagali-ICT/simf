@@ -1,4 +1,4 @@
-﻿// Tests: SIMF.Api.Tests/AdminResetTwoFactorTests.cs,
+// Tests: SIMF.Api.Tests/AdminResetTwoFactorTests.cs,
 //        SIMF.Api.Tests/AdminCreateUserTests.cs,
 //        SIMF.Api.Tests/ControlPanelTwoFactorEnrolmentTests.cs (#2d — a created
 //        admin is TwoFactorEnabled AND can still complete a first sign-in)
@@ -126,7 +126,7 @@ internal sealed partial class AdminAccountService(
                 + "يتم إعادة ربط سرّ المسؤول الأعلى عبر الإعدادات.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         // The wipe — mirrors TotpEnrollmentService.DisableAsync but skips the
         // "you must prove a current code" gate, by design.
@@ -404,7 +404,7 @@ internal sealed partial class AdminAccountService(
             throw ApiException.DuplicateIdentity();
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var user = new SimfUser
         {
             UserName = email,
@@ -623,7 +623,7 @@ internal sealed partial class AdminAccountService(
             }
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var user = new SimfUser
         {
             UserName = email,

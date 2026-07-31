@@ -47,7 +47,7 @@ public sealed class PasswordService(
         CancellationToken cancellationToken = default)
     {
         var user = await accounts.FindByEmailAsync(request.Email);
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         if (user is not null
             && user.AccountState is not (AccountState.Disabled or AccountState.Rejected))
@@ -112,7 +112,7 @@ public sealed class PasswordService(
         CancellationToken cancellationToken = default)
     {
         var user = await accounts.FindByEmailAsync(request.Email);
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         var code = user is null
             ? null
@@ -181,7 +181,7 @@ public sealed class PasswordService(
         // D-111: security notice — in-app row + email confirming the reset.
         // Wrapped in TryDispatchAsync so a notification failure never
         // re-throws after the password is already changed.
-        var resetTime = now.UtcDateTime.ToString("u",
+        var resetTime = now.ToString("u",
             System.Globalization.CultureInfo.InvariantCulture);
         await notifications.TryDispatchAsync(new NotificationRequest
         {
@@ -253,7 +253,7 @@ public sealed class PasswordService(
 
                 await RecordPasswordHistoryAsync(user.Id, retiredHash);
                 await ClearChangeFlagAndEndSessionsAsync(
-                    user, timeProvider.GetUtcNow(), token);
+                    user, timeProvider.SimfNow(), token);
             },
             cancellationToken);
 
@@ -261,7 +261,7 @@ public sealed class PasswordService(
             user.Email!, user.Id, cancellationToken: cancellationToken);
 
         await SendPasswordChangedNoticeAsync(
-            user, timeProvider.GetUtcNow(), cancellationToken);
+            user, timeProvider.SimfNow(), cancellationToken);
 
         logger.LogInformation("Password changed for {Email}", user.Email);
         return new ChangePasswordResponse(true);
@@ -271,7 +271,7 @@ public sealed class PasswordService(
         CompletePasswordChangeRequest request,
         CancellationToken cancellationToken = default)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         // D-206: the single-use ticket the sign-in password step issued is the
         // authorisation here — it proves the current password was already
@@ -420,7 +420,7 @@ public sealed class PasswordService(
     /// </summary>
     private async Task ClearChangeFlagAndEndSessionsAsync(
         SimfUser user,
-        DateTimeOffset now,
+        DateTime now,
         CancellationToken cancellationToken)
     {
         user.PasswordChangeRequired = false;
@@ -443,10 +443,10 @@ public sealed class PasswordService(
     /// </summary>
     private Task SendPasswordChangedNoticeAsync(
         SimfUser user,
-        DateTimeOffset now,
+        DateTime now,
         CancellationToken cancellationToken)
     {
-        var changedTime = now.UtcDateTime.ToString("u",
+        var changedTime = now.ToString("u",
             System.Globalization.CultureInfo.InvariantCulture);
         return notifications.TryDispatchAsync(new NotificationRequest
         {
@@ -465,7 +465,7 @@ public sealed class PasswordService(
 
     private async Task<string> IssueResetCodeAsync(
         SimfUser user,
-        DateTimeOffset now,
+        DateTime now,
         CancellationToken cancellationToken)
     {
         var previous = await accountCodeRepository.GetLatestUnconsumedAsync(

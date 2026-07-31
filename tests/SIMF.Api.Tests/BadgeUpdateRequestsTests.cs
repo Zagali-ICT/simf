@@ -206,7 +206,7 @@ public sealed class BadgeUpdateRequestsTests : IClassFixture<SimfApiFactory>
             NameArabic = "زائر",
             JobTitle = jobTitle,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
     }

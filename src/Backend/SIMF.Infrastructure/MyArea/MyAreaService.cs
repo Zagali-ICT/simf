@@ -5,6 +5,7 @@ using SIMF.Application.MyArea;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Account;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.MyArea;
 
@@ -264,11 +265,10 @@ internal sealed class MyAreaService(
     /// <summary>Today's window in the event timezone (AST, UTC+3), as a
     /// half-open UTC interval. Deterministic via the injected
     /// <see cref="TimeProvider"/>.</summary>
-    private (DateTimeOffset Start, DateTimeOffset End) TodayWindow()
+    private (DateTime Start, DateTime End) TodayWindow()
     {
-        var nowLocal = timeProvider.GetUtcNow().ToOffset(EventTimeZoneOffset);
-        var startLocal = new DateTimeOffset(
-            nowLocal.Year, nowLocal.Month, nowLocal.Day, 0, 0, 0, EventTimeZoneOffset);
+        var nowLocal = timeProvider.SimfNow();
+        var startLocal = new DateTime(nowLocal.Year, nowLocal.Month, nowLocal.Day, 0, 0, 0);
         return (startLocal, startLocal.AddDays(1));
     }
 }

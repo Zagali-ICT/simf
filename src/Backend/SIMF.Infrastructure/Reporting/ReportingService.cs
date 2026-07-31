@@ -21,8 +21,8 @@ namespace SIMF.Infrastructure.Reporting;
 ///   UTC, so filtering on the stored date directly would drop the last three
 ///   hours of the final day.</item>
 ///   <item>Every date a row carries is a <b>pre-formatted Saudi string</b>, not a
-///   <c>DateTimeOffset</c>. The shared XLSX renderer writes a raw
-///   <c>DateTimeOffset</c> as <c>UtcDateTime</c>, so handing it a live timestamp
+///   <c>DateTime</c>. The shared XLSX renderer writes a raw
+///   <c>DateTime</c> as <c>UtcDateTime</c>, so handing it a live timestamp
 ///   would put UTC into a workbook that has to show local time.</item>
 /// </list>
 /// </summary>
@@ -44,7 +44,7 @@ internal sealed partial class ReportingService(
     /// A report period as a UTC half-open window <c>[Start, End)</c>. Both ends
     /// are optional: an open end means "no bound in that direction".
     /// </summary>
-    private readonly record struct ReportWindow(DateTimeOffset? Start, DateTimeOffset? End);
+    private readonly record struct ReportWindow(DateTime? Start, DateTime? End);
 
     /// <summary>
     /// Turns the requested Saudi date range into UTC instants.

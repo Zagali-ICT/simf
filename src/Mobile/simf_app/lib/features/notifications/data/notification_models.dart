@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// The notification severity band — mirrors `SIMF.Common.Enums.NotificationSeverity`.
 ///
@@ -116,9 +117,9 @@ class NotificationItem {
       bodyArabic: json['bodyArabic'] as String? ?? '',
       severity: NotificationSeverity.fromName(json['severity'] as String?),
       isRead: json['isRead'] as bool? ?? false,
-      readAt: readAtRaw == null ? null : DateTime.tryParse(readAtRaw)?.toUtc(),
+      readAt: readAtRaw == null ? null : parseWireOrNull(readAtRaw),
       createdAt:
-          createdAtRaw == null ? null : DateTime.tryParse(createdAtRaw)?.toUtc(),
+          createdAtRaw == null ? null : parseWireOrNull(createdAtRaw),
       relatedEntityType: json['relatedEntityType'] as String?,
       relatedEntityId: json['relatedEntityId'] as String?,
       clickUrl: json['clickUrl'] as String?,

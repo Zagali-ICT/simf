@@ -431,7 +431,7 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
         var speaker = await SeedSpeakerAsync(allowsMeetings: true);
         var admin = await CreateAdministratorAndSignInAsync();
 
-        var slotStart = new DateTimeOffset(2031, 5, 1, 10, 0, 0, TimeSpan.Zero);
+        var slotStart = new DateTime(2031, 5, 1, 10, 0, 0);
         var slotEnd = slotStart.AddMinutes(30);
 
         // R1 already holds the speaker's 10:00 slot as AwaitingSpeaker.
@@ -464,7 +464,7 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
         var speaker = await SeedSpeakerAsync(allowsMeetings: true);
         var admin = await CreateAdministratorAndSignInAsync();
 
-        var baseStart = new DateTimeOffset(2031, 8, 1, 10, 0, 0, TimeSpan.Zero);
+        var baseStart = new DateTime(2031, 8, 1, 10, 0, 0);
 
         // R1 already holds the speaker's 10:00-11:00 slot as a live Accepted meeting.
         await SeedSpeakerRequestAsync(
@@ -499,7 +499,7 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
         var speaker = await SeedSpeakerAsync(allowsMeetings: true);
         var admin = await CreateAdministratorAndSignInAsync();
 
-        var baseStart = new DateTimeOffset(2031, 9, 1, 10, 0, 0, TimeSpan.Zero);
+        var baseStart = new DateTime(2031, 9, 1, 10, 0, 0);
         // Two DIFFERENT requesters (SeedSpeakerRequestAsync assigns a random requester),
         // so it is the SPEAKER overlap guard that fires — not the M-7 requester guard.
         var r1 = await SeedSpeakerRequestAsync(
@@ -560,7 +560,7 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
             }, admin);
         Assert.Equal(HttpStatusCode.OK, bind.StatusCode);
 
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var resend = await PostAuthAsync(
             $"/api/v1/admin/speaker-meeting-requests/{created.Id}/resend-confirmation",
             new { }, admin);
@@ -617,7 +617,7 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
         var speaker1 = await SeedSpeakerAsync(allowsMeetings: true);
         var speaker2 = await SeedSpeakerAsync(allowsMeetings: true);
         var requesterId = Guid.NewGuid();
-        var slotStart = new DateTimeOffset(2031, 6, 1, 10, 0, 0, TimeSpan.Zero);
+        var slotStart = new DateTime(2031, 6, 1, 10, 0, 0);
         var slotEnd = slotStart.AddMinutes(30);
 
         // The requester already holds an Accepted meeting with speaker1 at 10:00.
@@ -674,7 +674,7 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
         var speaker1 = await SeedSpeakerAsync(allowsMeetings: true);
         var speaker2 = await SeedSpeakerAsync(allowsMeetings: true);
         var requesterId = Guid.NewGuid();
-        var slotStart = new DateTimeOffset(2031, 7, 1, 10, 0, 0, TimeSpan.Zero);
+        var slotStart = new DateTime(2031, 7, 1, 10, 0, 0);
 
         await SeedSpeakerRequestForUserAsync(
             speaker1.Id, requesterId, MeetingRequestStatus.Accepted,
@@ -702,7 +702,7 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
         var speaker = await SeedSpeakerAsync(allowsMeetings: true);
         var reqId = await SeedSpeakerRequestAsync(
             speaker.Id, MeetingRequestStatus.Accepted,
-            DateTimeOffset.UtcNow.AddHours(1), DateTimeOffset.UtcNow.AddHours(1).AddMinutes(30));
+            SimfClock.Now.AddHours(1), SimfClock.Now.AddHours(1).AddMinutes(30));
         var (admin, adminId) = await CreateAdministratorAndSignInWithIdAsync();
 
         var checkIn = await PostAuthAsync(
@@ -743,7 +743,7 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
     // share one requester and exercise the requester-overlap guard).
     private async Task<Guid> SeedSpeakerRequestForUserAsync(
         Guid speakerId, Guid requesterUserId, MeetingRequestStatus status,
-        DateTimeOffset? slotStart, DateTimeOffset? slotEnd)
+        DateTime? slotStart, DateTime? slotEnd)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -755,8 +755,8 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
             RequesterName = "Seed", Subject = "Seed",
             SlotStart = slotStart, SlotEnd = slotEnd,
             Status = status,
-            CreatedAt = DateTimeOffset.UtcNow,
-            RespondedAt = status == MeetingRequestStatus.Pending ? null : DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
+            RespondedAt = status == MeetingRequestStatus.Pending ? null : SimfClock.Now,
         };
         db.SpeakerMeetingRequests.Add(req);
         await db.SaveChangesAsync();
@@ -767,7 +767,7 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
     // guard) to set up multi-request race/overlap scenarios.
     private async Task<Guid> SeedSpeakerRequestAsync(
         Guid speakerId, MeetingRequestStatus status,
-        DateTimeOffset? slotStart = null, DateTimeOffset? slotEnd = null)
+        DateTime? slotStart = null, DateTime? slotEnd = null)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -779,8 +779,8 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
             RequesterName = "Seed", Subject = "Seed",
             SlotStart = slotStart, SlotEnd = slotEnd,
             Status = status,
-            CreatedAt = DateTimeOffset.UtcNow,
-            RespondedAt = status == MeetingRequestStatus.Pending ? null : DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
+            RespondedAt = status == MeetingRequestStatus.Pending ? null : SimfClock.Now,
         };
         db.SpeakerMeetingRequests.Add(req);
         await db.SaveChangesAsync();
@@ -788,8 +788,8 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
     }
 
     // D-716 — a Meeting-purpose hall for the accept-with-hall flow.
-    private static readonly DateTimeOffset HallWindowStart =
-        new(2031, 3, 1, 9, 0, 0, TimeSpan.Zero);
+    private static readonly DateTime HallWindowStart =
+        new(2031, 3, 1, 9, 0, 0);
 
     private async Task<Guid> SeedMeetingHallAsync()
     {
@@ -801,7 +801,7 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
             Code = "MH-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Name = "Meeting Hall", NameArabic = "قاعة الاجتماعات",
             Purpose = HallPurpose.Meeting, Capacity = 10, IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         await db.SaveChangesAsync();
@@ -856,7 +856,7 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
             Email = $"speaker-{Guid.NewGuid():N}@simf.test",
             IsActive = true,
             DisplayOrder = 0,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Speakers.Add(speaker);
         // G3 (owner 2026-07-30) — a submit now REQUIRES the speaker to have a free
@@ -871,7 +871,7 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
             End = FixtureWindowStart.AddHours(4),
             SlotMinutes = 30,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
         return speaker;
@@ -880,8 +880,8 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
     /// <summary>G3 — far enough in the future that a past slot can never be why a
     /// fixture speaker looks unavailable, and clear of the hall windows this class
     /// books (2032/2033), so an accepted meeting never empties the window.</summary>
-    private static readonly DateTimeOffset FixtureWindowStart =
-        new(2035, 9, 1, 9, 0, 0, TimeSpan.Zero);
+    private static readonly DateTime FixtureWindowStart =
+        new(2035, 9, 1, 9, 0, 0);
 
     private async Task<string> SignInApprovedVisitorAsync()
     {
@@ -933,7 +933,7 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
                 Id = Guid.NewGuid(),
                 Name = "VIP", NameArabic = "VIP", PageColor = "#FFD700",
                 IsForVisitor = true, AllowsVipMeetingSlots = true, IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             appDb.ProfileTypes.Add(vipType);
         }
@@ -948,7 +948,7 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
                 ProfileTypeId = vipType.Id,
                 AllowsSpeakerMeeting = true,
                 Name = "SMR Visitor", NameArabic = "زائر",
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
         }
         else

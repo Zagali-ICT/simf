@@ -130,7 +130,7 @@ public sealed class DeviceKeySignInTests : IClassFixture<SimfApiFactory>
                 .GetRequiredService<SimfIdentityDbContext>();
             var key = await db.DeviceKeys.SingleAsync(k => k.Id == entry.Id);
             key.CurrentChallenge = DartClientChallengeBase64;
-            key.ChallengeExpiresAt = _factory.Time.GetUtcNow().AddMinutes(5);
+            key.ChallengeExpiresAt = _factory.Time.SimfNow().AddMinutes(5);
             await db.SaveChangesAsync();
         }
 

@@ -33,7 +33,7 @@ public sealed record SessionQuestionSubmitted(
     Guid Id,
     Guid SessionId,
     int Order,
-    DateTimeOffset CreatedAt);
+    DateTime CreatedAt);
 
 /// <summary>D-169 — one row in the moderator queue view. The submitter
 /// display name is projected from the cross-DB lookup so the moderator doesn't
@@ -54,8 +54,8 @@ public sealed record SessionQuestionModeratorRow(
     int Order,
     bool IsHidden,
     bool IsPushed,
-    DateTimeOffset? PushedAt,
-    DateTimeOffset CreatedAt,
+    DateTime? PushedAt,
+    DateTime CreatedAt,
     // P3.3 — D-212: pipeline phase + status (appended; wire preserved).
     QuestionPhase Phase = QuestionPhase.Live,
     QuestionStatus Status = QuestionStatus.Approved);
@@ -75,9 +75,9 @@ public sealed record ModeratedSessionRow(
     string TitleArabic,
     string HallName,
     string HallNameArabic,
-    DateTimeOffset Start,
-    DateTimeOffset End,
-    DateTimeOffset AssignedAt);
+    DateTime Start,
+    DateTime End,
+    DateTime AssignedAt);
 
 /// <summary>P3.3 — D-212 (Completion Programme §5.3): one row in the Scientific
 /// Committee's central queue (stage 2). Carries the session title + submitter
@@ -96,7 +96,7 @@ public sealed record SessionQuestionQueueRow(
     QuestionStatus Status,
     string? AiFilterVerdict,
     string? AssignedToRole,
-    DateTimeOffset CreatedAt);
+    DateTime CreatedAt);
 
 /// <summary>P3.3 — D-212: committee filter for the queue list. Null status =
 /// the default Pending queue.</summary>

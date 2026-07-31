@@ -75,7 +75,7 @@ public partial class GateOperatorConsole
             else
             {
                 _last = new GateScanResponse(0, ScanOutcome.Denied, ScanDirection.CheckIn,
-                    DateTimeOffset.UtcNow, null, null,
+                    SimfClock.Now, null, null,
                     envelope?.Error?.MessageForCurrentCulture() ?? L["Admin.Gates.Fallback"]);
             }
         }

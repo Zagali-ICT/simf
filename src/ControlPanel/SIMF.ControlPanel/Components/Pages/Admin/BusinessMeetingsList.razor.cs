@@ -355,7 +355,7 @@ public partial class BusinessMeetingsList
     }
 
     // datetime-local has no timezone; treat the entered wall-clock as UTC.
-    private static bool TryParseUtc(string text, out DateTimeOffset value)
+    private static bool TryParseUtc(string text, out DateTime value)
     {
         value = default;
         if (DateTime.TryParse(text, CultureInfo.InvariantCulture,

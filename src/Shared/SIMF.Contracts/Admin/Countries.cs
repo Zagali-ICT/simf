@@ -9,7 +9,7 @@ public sealed record AdminCountrySummary(
     string? PhonePrefix,
     int DisplayOrder,
     bool IsActive,
-    DateTimeOffset CreatedAt,
+    DateTime CreatedAt,
     // D-473 (#10) — invited to send a delegation (وفد).
     bool IsInvited = false,
     // D-506 — the invited delegation's arrival/departure dates, carried so the
@@ -27,8 +27,8 @@ public sealed record AdminCountryDetail(
     string? PhonePrefix,
     int DisplayOrder,
     bool IsActive,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt,
+    DateTime CreatedAt,
+    DateTime? UpdatedAt,
     // D-473 (#10) — invited to send a delegation (وفد).
     bool IsInvited = false,
     // D-499 (الوفود) — the invited delegation's arrival/departure dates + the

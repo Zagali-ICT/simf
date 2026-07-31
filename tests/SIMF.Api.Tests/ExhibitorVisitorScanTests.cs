@@ -643,7 +643,7 @@ public sealed class ExhibitorVisitorScanTests : IClassFixture<SimfApiFactory>
             UserId = userId,
             ContactName = contactName,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
     }
@@ -677,7 +677,7 @@ public sealed class ExhibitorVisitorScanTests : IClassFixture<SimfApiFactory>
             NationalityId = countryId,
             PlaceOfBirth = string.Empty,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
     }
@@ -695,7 +695,7 @@ public sealed class ExhibitorVisitorScanTests : IClassFixture<SimfApiFactory>
             VisitorUserId = visitorUserId,
             Note = "captured under the old rule",
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
     }
@@ -711,7 +711,7 @@ public sealed class ExhibitorVisitorScanTests : IClassFixture<SimfApiFactory>
             Name = name ?? $"Booth {Guid.NewGuid():N}"[..16],
             NameArabic = nameArabic ?? "جناح",
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Exhibitors.Add(exhibitor);
         await appDb.SaveChangesAsync();

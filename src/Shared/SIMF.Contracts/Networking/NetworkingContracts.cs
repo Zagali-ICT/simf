@@ -15,7 +15,7 @@ public sealed record ConnectionResult(
     Guid RequesterUserId,
     Guid TargetUserId,
     ConnectionState State,
-    DateTimeOffset CreatedAt);
+    DateTime CreatedAt);
 
 /// <summary>B6 — D-224: one row in the caller's connection list. Carries the
 /// OTHER party (never the caller), their display name (resolved cross-DB), and
@@ -26,4 +26,4 @@ public sealed record ConnectionRow(
     string OtherDisplayName,
     ConnectionState State,
     bool IsIncoming,
-    DateTimeOffset CreatedAt);
+    DateTime CreatedAt);

@@ -17,8 +17,8 @@ public sealed record PublicSessionListItem(
     Guid HallId,
     string HallName,
     string HallNameArabic,
-    DateTimeOffset Start,
-    DateTimeOffset End,
+    DateTime Start,
+    DateTime End,
     string? PrimaryThemeName,
     string? PrimaryThemeNameArabic,
     string? PrimaryThemeColor,
@@ -82,8 +82,8 @@ public sealed record PublicSessionDetail(
     Guid HallId,
     string HallName,
     string HallNameArabic,
-    DateTimeOffset Start,
-    DateTimeOffset End,
+    DateTime Start,
+    DateTime End,
     IReadOnlyList<PublicSessionTheme> Themes,
     IReadOnlyList<PublicSessionSpeaker> Speakers,
     PublicSessionSeatSummary Seats,
@@ -95,7 +95,7 @@ public sealed record PublicSessionDetail(
     // badges the state; PublishedAt marks when it went live. Appended; defaults
     // preserve the wire (D-219).
     SessionStatus Status = SessionStatus.Scheduled,
-    DateTimeOffset? PublishedAt = null,
+    DateTime? PublishedAt = null,
     // P3.2b — D-232: true when this published session has a recording the app
     // can stream. The app then POSTs the stream-token endpoint and plays the
     // range-streaming URL. The server only surfaces the recording when
@@ -233,7 +233,7 @@ public sealed record PublicRecordedQuestion(
     string AskedByDisplayName,
     SessionQuestionRecipient Recipient,
     bool IsPushed,
-    DateTimeOffset CreatedAt);
+    DateTime CreatedAt);
 
 /// <summary>P4.1 — D-237 (Completion Programme §6.4.1, Mockup screen 34): the
 /// published AI session summary / محضر the app reads. Every section is bilingual
@@ -254,7 +254,7 @@ public sealed record PublicSessionSummary(
     string FullText,
     string FullTextArabic,
     bool GeneratedByAi,
-    DateTimeOffset PublishedAt,
+    DateTime PublishedAt,
     // Item #35 (2026-07-20) — the two videos on the summary surface (screen 34).
     // RecordingUrl = the session's FULL live recording, sourced from
     // Session.LiveStreamUrl (the YouTube/HLS live feed that doubles as the
@@ -283,7 +283,7 @@ public sealed record HostSessionSummary(
     string FullText,
     string FullTextArabic,
     bool GeneratedByAi,
-    DateTimeOffset ApprovedAt);
+    DateTime ApprovedAt);
 
 /// <summary>Wave 2 (Figma 1388:7621 "عروض الجلسات") — one downloadable session
 /// presentation on the public list: the session it belongs to (title bilingual +
@@ -296,7 +296,7 @@ public sealed record PublicPresentationItem(
     Guid SessionId,
     string SessionTitle,
     string SessionTitleArabic,
-    DateTimeOffset SessionStart,
+    DateTime SessionStart,
     string SpeakerName,
     string SpeakerNameArabic,
     string FileName,

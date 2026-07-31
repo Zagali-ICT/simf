@@ -102,7 +102,7 @@ public sealed class ExportVisitorsEndpoint(IAdminUserBulkService adminAccountSer
             // D-186: Visitor bulk = audience-scope (ProfileType.IsVisitor=true or none).
             actorId, UserType.Visitor, requirePartnerScope: false, req, ct);
         HttpContext.Response.Headers.ContentDisposition =
-            $"attachment; filename=\"simf-visitors-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.xlsx\"";
+            $"attachment; filename=\"simf-visitors-{SimfClock.Now:yyyyMMddHHmmss}.xlsx\"";
         await Send.BytesAsync(bytes,
             contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             cancellation: ct);

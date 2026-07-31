@@ -38,10 +38,10 @@ public sealed class HallAllocation
     public string? RowColumnSpec { get; set; }
 
     /// <summary>Slot start (inclusive, UTC).</summary>
-    public DateTimeOffset Start { get; set; }
+    public DateTime Start { get; set; }
 
     /// <summary>Slot end (exclusive, UTC). Must be after <see cref="Start"/>.</summary>
-    public DateTimeOffset End { get; set; }
+    public DateTime End { get; set; }
 
     /// <summary>The admin who created the allocation — logical FK to
     /// <c>SimfUser.Id</c> on the Identity DB (bare Guid, no navigation).</summary>
@@ -50,9 +50,9 @@ public sealed class HallAllocation
     /// <summary>Optional free-text note (≤ 512 chars).</summary>
     public string? Notes { get; set; }
 
-    public DateTimeOffset CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 
     /// <summary>Set when the allocation is released; released rows are excluded
     /// from overlap checks so the slot is re-allocatable.</summary>
-    public DateTimeOffset? ReleasedAt { get; set; }
+    public DateTime? ReleasedAt { get; set; }
 }

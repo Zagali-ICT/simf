@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
@@ -680,7 +680,7 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
             Name = "Testland",
             NameArabic = "أرض الاختبار",
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Countries.Add(fresh);
         await appDb.SaveChangesAsync();
@@ -724,7 +724,7 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
             Name = "Test Organisation",
             CommercialRegistration = $"CR{Guid.NewGuid():N}"[..12],
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Organisations.Add(fresh);
         await appDb.SaveChangesAsync();
@@ -751,7 +751,7 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
             PageColor = "#3B82F6",
             IsForVisitor = true,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.ProfileTypes.Add(fresh);
         await db.SaveChangesAsync();
@@ -778,7 +778,7 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
             PageColor = "#10B981",
             IsForVisitor = false,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.ProfileTypes.Add(fresh);
         await db.SaveChangesAsync();

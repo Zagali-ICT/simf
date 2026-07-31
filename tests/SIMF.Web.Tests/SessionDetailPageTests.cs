@@ -136,8 +136,8 @@ public sealed class SessionDetailPageTests : WebComponentTestBase
             "A high-level dialogue on protecting global trade arteries.",
             "حوار رفيع المستوى.",
             Guid.NewGuid(), "Main Hall", "القاعة الرئيسية",
-            new DateTimeOffset(2026, 11, 20, 6, 0, 0, TimeSpan.Zero),
-            new DateTimeOffset(2026, 11, 20, 7, 30, 0, TimeSpan.Zero),
+            new DateTime(2026, 11, 20, 6, 0, 0),
+            new DateTime(2026, 11, 20, 7, 30, 0),
             new[]
             {
                 new PublicSessionTheme(Guid.NewGuid(), "Maritime Security", "الأمن البحري",
@@ -159,8 +159,8 @@ public sealed class SessionDetailPageTests : WebComponentTestBase
         new(SessionId, "S-00", "Opening Session", "الجلسة الافتتاحية",
             null, null,
             Guid.NewGuid(), "Main Hall", "القاعة الرئيسية",
-            new DateTimeOffset(2026, 11, 20, 6, 0, 0, TimeSpan.Zero),
-            new DateTimeOffset(2026, 11, 20, 7, 0, 0, TimeSpan.Zero),
+            new DateTime(2026, 11, 20, 6, 0, 0),
+            new DateTime(2026, 11, 20, 7, 0, 0),
             Array.Empty<PublicSessionTheme>(),
             Array.Empty<PublicSessionSpeaker>(),
             new PublicSessionSeatSummary(500, 0, 500));
@@ -168,8 +168,8 @@ public sealed class SessionDetailPageTests : WebComponentTestBase
     private static PublicSessionListItem Listed(Guid id, string title, string titleArabic) =>
         new(id, "R-01", title, titleArabic,
             Guid.NewGuid(), "Hall B", "القاعة ب",
-            new DateTimeOffset(2026, 11, 21, 6, 0, 0, TimeSpan.Zero),
-            new DateTimeOffset(2026, 11, 21, 7, 0, 0, TimeSpan.Zero),
+            new DateTime(2026, 11, 21, 6, 0, 0),
+            new DateTime(2026, 11, 21, 7, 0, 0),
             PrimaryThemeName: null, PrimaryThemeNameArabic: null, PrimaryThemeColor: null);
 
     // Routes the session-detail GET (path ends with the session id) vs the agenda

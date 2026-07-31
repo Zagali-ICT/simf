@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using SIMF.Contracts.Authentication;
+using SIMF.Common;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
@@ -48,6 +49,6 @@ public partial class OthersAddEdit
             InterestIds: Array.Empty<Guid>(),
             RejectionReason: null,
             RejectionReasonArabic: null,
-            CreatedAt: DateTimeOffset.UtcNow,
+            CreatedAt: SimfClock.Now,
             UpdatedAt: null);
 }

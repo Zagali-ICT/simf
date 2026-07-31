@@ -148,7 +148,7 @@ public sealed class SiteContentMapperTests
     {
         var full = HeroKeys.ToDictionary(
             k => k,
-            k => new PublicContentBlock(k, k + "-en", k + "-ar", DateTimeOffset.UnixEpoch));
+            k => new PublicContentBlock(k, k + "-en", k + "-ar", DateTime.UnixEpoch));
 
         var result = SiteContentEndpoints.Compose(
             null, null, null, null, null, null, null,
@@ -165,7 +165,7 @@ public sealed class SiteContentMapperTests
     {
         var partial = HeroKeys.Take(6).ToDictionary(
             k => k,
-            k => new PublicContentBlock(k, k + "-en", k + "-ar", DateTimeOffset.UnixEpoch));
+            k => new PublicContentBlock(k, k + "-en", k + "-ar", DateTime.UnixEpoch));
 
         var result = SiteContentEndpoints.Compose(
             null, null, null, null, null, null, null,
@@ -185,7 +185,7 @@ public sealed class SiteContentMapperTests
         };
         var blocks = keys.ToDictionary(
             k => k,
-            k => new PublicContentBlock(k, k + "-en", k + "-ar", DateTimeOffset.UnixEpoch));
+            k => new PublicContentBlock(k, k + "-en", k + "-ar", DateTime.UnixEpoch));
 
         var result = SiteContentEndpoints.Compose(
             null, null, null, null, null, null, null,
@@ -215,7 +215,7 @@ public sealed class SiteContentMapperTests
         {
             [LandingSectionContentKeys.AboutEyebrow] = new(
                 LandingSectionContentKeys.AboutEyebrow, "About", "حول",
-                DateTimeOffset.UnixEpoch),
+                DateTime.UnixEpoch),
         };
 
         var result = SiteContentEndpoints.Compose(

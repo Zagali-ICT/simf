@@ -51,7 +51,7 @@ internal sealed class HallAvailabilityService(
                 "يجب أن تنتهي الفترة بعد بدايتها وأن تتّسع لفترة واحدة على الأقل.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var window = new HallAvailabilityWindow
         {
             Id = Guid.NewGuid(),
@@ -98,7 +98,7 @@ internal sealed class HallAvailabilityService(
             ?? throw new ApiException(ErrorCodes.HallAvailabilityWindowNotFound, 404,
                 "The availability window was not found.", "لم يتم العثور على فترة التوفّر.");
         window.IsActive = false;
-        window.UpdatedAt = timeProvider.GetUtcNow();
+        window.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -113,7 +113,7 @@ internal sealed class HallAvailabilityService(
     public async Task<IReadOnlyList<HallAvailableSlot>> GetAvailableSlotsAsync(
         Guid hallId, CancellationToken cancellationToken = default)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var windows = await appDbContext.HallAvailabilityWindows.AsNoTracking()
             .Where(w => w.HallId == hallId && w.IsActive && w.End > now)
             .OrderBy(w => w.Start)

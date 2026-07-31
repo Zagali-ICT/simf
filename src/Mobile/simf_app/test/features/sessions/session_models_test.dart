@@ -89,7 +89,10 @@ void main() {
       expect(item.localizedCategory(true), 'جلسة رئيسية');
       expect(item.status, SessionStatus.published);
       expect(item.hasPublishedSummary, isTrue);
-      expect(item.start.isUtc, isTrue);
+      // Saudi wall-clock carries no zone, so a decoded value must NOT be
+      // tagged UTC: tagging it would let a later toLocal() shift it by the
+      // device offset (owner decision 2026-07-31).
+      expect(item.start.isUtc, isFalse);
 
       expect(item.speakers, hasLength(1));
       final speaker = item.speakers.single;

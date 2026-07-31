@@ -197,7 +197,7 @@ public sealed class UserProfileFaceGateTests : IClassFixture<FaceGateApiFactory>
             {
                 Id = Guid.NewGuid(),
                 UserId = user.Id,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
             await appDb.SaveChangesAsync();
         }
@@ -258,7 +258,7 @@ public sealed class UserProfileFaceGateTests : IClassFixture<FaceGateApiFactory>
         {
             Id = Guid.NewGuid(),
             UserId = user.Id,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
         return user.Id;

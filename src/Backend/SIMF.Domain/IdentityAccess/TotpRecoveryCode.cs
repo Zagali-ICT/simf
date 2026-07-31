@@ -19,8 +19,8 @@ public sealed class TotpRecoveryCode
     public string CodeHash { get; set; } = string.Empty;
 
     /// <summary>When the code was minted (UTC).</summary>
-    public DateTimeOffset CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 
     /// <summary>When the code was consumed; null while it is still active.</summary>
-    public DateTimeOffset? ConsumedAt { get; set; }
+    public DateTime? ConsumedAt { get; set; }
 }

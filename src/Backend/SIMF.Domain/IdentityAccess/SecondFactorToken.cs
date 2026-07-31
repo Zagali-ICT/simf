@@ -22,13 +22,13 @@ public class SecondFactorToken
     public SecondFactorKind Kind { get; set; }
 
     /// <summary>When the ticket was created (UTC).</summary>
-    public DateTimeOffset CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 
     /// <summary>When the ticket expires (UTC).</summary>
-    public DateTimeOffset ExpiresAt { get; set; }
+    public DateTime ExpiresAt { get; set; }
 
     /// <summary>When the ticket was consumed (UTC); null while it is unused.</summary>
-    public DateTimeOffset? ConsumedAt { get; set; }
+    public DateTime? ConsumedAt { get; set; }
 
     /// <summary>How many incorrect second-factor codes have been submitted against it.</summary>
     public int AttemptCount { get; set; }

@@ -26,7 +26,7 @@ internal sealed class RefreshTokenRepository(SimfIdentityDbContext dbContext) : 
 
     public Task RevokeAllForUserAsync(
         Guid userId,
-        DateTimeOffset revokedAt,
+        DateTime revokedAt,
         CancellationToken cancellationToken = default) =>
         dbContext.RefreshTokens
             .Where(token => token.UserId == userId && token.RevokedAt == null)
@@ -36,7 +36,7 @@ internal sealed class RefreshTokenRepository(SimfIdentityDbContext dbContext) : 
 
     public Task<int> RevokeIfActiveAsync(
         Guid tokenId,
-        DateTimeOffset revokedAt,
+        DateTime revokedAt,
         CancellationToken cancellationToken = default) =>
         dbContext.RefreshTokens
             .Where(token => token.Id == tokenId && token.RevokedAt == null)

@@ -14,8 +14,8 @@ public sealed record MeetingActionPreview(
     string SpeakerNameArabic,
     string RequesterName,
     string Subject,
-    DateTimeOffset? SlotStart,
-    DateTimeOffset? SlotEnd,
+    DateTime? SlotStart,
+    DateTime? SlotEnd,
     string? HallName);
 
 /// <summary>D-717 — the result of confirming a token

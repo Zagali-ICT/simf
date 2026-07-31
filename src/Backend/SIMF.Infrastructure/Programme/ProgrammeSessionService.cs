@@ -50,11 +50,11 @@ internal sealed class ProgrammeSessionService(
         {
             // A6c — half-open EVENT-LOCAL (+03:00) day window [dayStart, nextDayStart).
             // The app sends ProgrammeDay.Date (a Riyadh calendar date) as ?day=, and
-            // the day-grouped agenda (ListDaysAsync) buckets by Start.ToOffset(+03:00),
+            // the day-grouped agenda (ListDaysAsync) buckets by Start,
             // so this filter must use the SAME +03:00 boundary or the flat list would
             // disagree with the app's day strip at the UTC-midnight edge. Still a plain
             // range on Start (index-friendly; no EF date-component translation).
-            var dayStart = new DateTimeOffset(d.Year, d.Month, d.Day, 0, 0, 0, EventOffset);
+            var dayStart = new DateTime(d.Year, d.Month, d.Day, 0, 0, 0);
             var nextDayStart = dayStart.AddDays(1);
             rows = rows.Where(session =>
                 session.Start >= dayStart && session.Start < nextDayStart);
@@ -219,7 +219,7 @@ internal sealed class ProgrammeSessionService(
         // to its authored day. No per-day query (no N+1).
         var allSessions = (await ListAsync(null, null, cancellationToken)).Items;
         var byDate = allSessions
-            .GroupBy(s => DateOnly.FromDateTime(s.Start.ToOffset(EventOffset).DateTime))
+            .GroupBy(s => DateOnly.FromDateTime(s.Start))
             .ToDictionary(
                 g => g.Key,
                 g => (IReadOnlyList<PublicSessionListItem>)g.ToList());
@@ -469,8 +469,7 @@ internal sealed class ProgrammeSessionService(
         // is a Riyadh calendar day, and both ListDaysAsync and the ?day= list filter
         // bucket by the +03:00 date). Count the earlier active sessions in the same
         // event-local day; +1 is this session's ordinal.
-        var localDate = row.Start.ToOffset(EventOffset).Date;
-        var dayStart = new DateTimeOffset(localDate, EventOffset);
+        var dayStart = row.Start.Date;
         var nextDayStart = dayStart.AddDays(1);
         var displayOrder = 1 + await dbContext.Sessions
             .AsNoTracking()
@@ -624,7 +623,7 @@ internal sealed class ProgrammeSessionService(
         // STARTED (in-progress or finished); it stays hidden before the session
         // begins. Keyed on the CLOCK (now >= Start), never the manual Held flag,
         // because "logically you can't view a summary before the session starts".
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         return await dbContext.SessionSummaries
             .AsNoTracking()
             .Where(summary => summary.SessionId == id

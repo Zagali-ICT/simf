@@ -18,7 +18,7 @@ internal sealed class RegistrationGateConfiguration
             Id = RegistrationGate.SingletonId,
             IsOpen = true,
             AutoClose = null,
-            LastChangedAt = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+            LastChangedAt = new DateTime(2026, 1, 1, 0, 0, 0),
             LastChangedByUserId = null,
         });
     }
@@ -35,7 +35,7 @@ internal sealed class ArchiveVisibilityConfiguration
         {
             Id = ArchiveVisibility.SingletonId,
             IsVisible = true,
-            LastChangedAt = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+            LastChangedAt = new DateTime(2026, 1, 1, 0, 0, 0),
             LastChangedByUserId = null,
         });
     }

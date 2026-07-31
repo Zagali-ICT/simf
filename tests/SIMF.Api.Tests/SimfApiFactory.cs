@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Time.Testing;
 using SIMF.Application.Email;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Api.Tests;
 
@@ -35,7 +36,7 @@ public class SimfApiFactory : WebApplicationFactory<Program>
     // Started near real time so a test-issued JWT — whose lifetime the bearer
     // middleware validates against the real system clock — is not seen as
     // expired. Tests advance this clock explicitly when they need to.
-    public FakeTimeProvider Time { get; } = new(DateTimeOffset.UtcNow);
+    public FakeTimeProvider Time { get; } = new(SimfClock.Now);
 
     /// <summary>
     /// Per-test-run temp directory the FilesystemAvatarStorage writes into,

@@ -102,7 +102,7 @@ internal sealed partial class ReportingService
         QuestionStatus Status,
         QuestionPhase Phase,
         bool IsHidden,
-        DateTimeOffset CreatedAt);
+        DateTime CreatedAt);
 
     private static EngagementReportRow ToRow(QuestionProjection p) =>
         new(

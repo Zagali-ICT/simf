@@ -105,7 +105,7 @@ public sealed class NewsExcelTests : IClassFixture<SimfApiFactory>
                 BodyArabic = "نص الخبر بالعربية.",
                 Category = "Press",
                 CategoryArabic = "صحافة",
-                PublishedAt = DateTimeOffset.UtcNow,
+                PublishedAt = SimfClock.Now,
                 DisplayOrder = 0,
             },
             adminToken);
@@ -269,7 +269,7 @@ public sealed class NewsExcelTests : IClassFixture<SimfApiFactory>
             sheet.Cell(i + 2, 4).Value = rows[i].BodyArabic;
             sheet.Cell(i + 2, 5).Value = rows[i].Category;
             sheet.Cell(i + 2, 6).Value = rows[i].CategoryArabic;
-            sheet.Cell(i + 2, 7).Value = DateTimeOffset.UtcNow.UtcDateTime.ToString("O");
+            sheet.Cell(i + 2, 7).Value = SimfClock.Now.ToString("O");
             sheet.Cell(i + 2, 8).Value = rows[i].DisplayOrder;
         }
         using var stream = new MemoryStream();
@@ -289,7 +289,7 @@ public sealed class NewsExcelTests : IClassFixture<SimfApiFactory>
                 BodyArabic = "نص الخبر.",
                 Category = "Press",
                 CategoryArabic = "صحافة",
-                PublishedAt = DateTimeOffset.UtcNow,
+                PublishedAt = SimfClock.Now,
                 DisplayOrder = 0,
             },
             token);

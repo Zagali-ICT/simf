@@ -210,7 +210,7 @@ public sealed class AdminAccountMobileTests : IClassFixture<SimfApiFactory>
                 Id = Guid.NewGuid(),
                 Name = "Visitor — MobSeed", NameArabic = "زائر",
                 PageColor = "#3B82F6", IsForVisitor = true, IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             db.ProfileTypes.Add(type);
             await db.SaveChangesAsync();
@@ -222,7 +222,7 @@ public sealed class AdminAccountMobileTests : IClassFixture<SimfApiFactory>
             ProfileTypeId = type.Id,
             Name = user.DisplayName, NameArabic = user.DisplayName,
             SaudiMobile = saudiMobile,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
         return (user.Id, email);

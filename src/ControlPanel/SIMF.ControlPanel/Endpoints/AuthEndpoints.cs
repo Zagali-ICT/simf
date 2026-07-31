@@ -193,7 +193,7 @@ internal static class AuthEndpoints
             // hook (SimfCookieRefreshHandler) knows when to rotate without
             // round-tripping the API on every request.
             var properties = new AuthenticationProperties { IsPersistent = true };
-            SimfCookieRefreshHandler.StoreTokens(properties, tokens, DateTimeOffset.UtcNow);
+            SimfCookieRefreshHandler.StoreTokens(properties, tokens, SimfClock.Now);
 
             await http.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme, principal, properties);

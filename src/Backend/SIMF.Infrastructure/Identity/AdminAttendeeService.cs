@@ -97,12 +97,12 @@ internal sealed class AdminAttendeeService(
         }
         // P1.6 — registration date-range filter (CreatedAt).
         if (query.Filters.TryGetValue("from", out var fromRaw)
-            && DateTimeOffset.TryParse(fromRaw, out var from))
+            && DateTime.TryParse(fromRaw, out var from))
         {
             users = users.Where(user => user.CreatedAt >= from);
         }
         if (query.Filters.TryGetValue("to", out var toRaw)
-            && DateTimeOffset.TryParse(toRaw, out var to))
+            && DateTime.TryParse(toRaw, out var to))
         {
             users = users.Where(user => user.CreatedAt <= to);
         }

@@ -35,5 +35,5 @@ public class ProgrammeDay : BaseAuditEntity
     /// <c>ProgrammeRatingPromptWorker</c> after the day's "please rate today"
     /// batch is dispatched so a restart cannot resend (D-679; mirrors
     /// <see cref="Session.RatingPromptSent"/>).</summary>
-    public DateTimeOffset? RatingPromptSent { get; set; }
+    public DateTime? RatingPromptSent { get; set; }
 }

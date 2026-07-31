@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// The slice of the public session detail the Live broadcast screen needs
 /// (Page_025). The session-detail repository (`features/sessions`) does NOT
@@ -36,8 +37,8 @@ class LiveSession {
       // PublicSessionDetail wire (the live slice just had not decoded them).
       hallName: _trimToNull(json['hallName'] as String?),
       hallNameArabic: _trimToNull(json['hallNameArabic'] as String?),
-      start: DateTime.tryParse((json['start'] as String?) ?? '')?.toUtc(),
-      end: DateTime.tryParse((json['end'] as String?) ?? '')?.toUtc(),
+      start: parseWireOrNull((json['start'] as String?) ?? ''),
+      end: parseWireOrNull((json['end'] as String?) ?? ''),
       speakers: (json['speakers'] as List? ?? const <dynamic>[])
           .whereType<Map<dynamic, dynamic>>()
           .map((e) => LiveSpeaker.fromJson(e.cast<String, dynamic>()))
@@ -149,7 +150,7 @@ class UpcomingSession {
         title: (json['title'] as String?) ?? '',
         titleArabic: (json['titleArabic'] as String?) ?? '',
         start:
-            DateTime.tryParse((json['start'] as String?) ?? '')?.toUtc(),
+            parseWireOrNull((json['start'] as String?) ?? ''),
       );
 
   final String id;
@@ -206,7 +207,7 @@ class LiveRepository {
       decodeData: (data) {
         final items = (data is Map ? data['items'] : null) as List? ??
             const <dynamic>[];
-        final now = DateTime.now().toUtc();
+        final now = saudiNow();
         final upcoming = items
             .whereType<Map<dynamic, dynamic>>()
             .map((e) => UpcomingSession.fromJson(e.cast<String, dynamic>()))

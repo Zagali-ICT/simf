@@ -14,7 +14,7 @@ public sealed record AdminMediaSummary(
     string? Url,
     int DisplayOrder,
     bool IsActive,
-    DateTimeOffset CreatedAt);
+    DateTime CreatedAt);
 
 /// <summary>D-199 — full media-item detail (Details + Edit modals).
 /// <c>HasImage</c> / <c>HasThumbnail</c> tell the CP whether the
@@ -32,8 +32,8 @@ public sealed record AdminMediaDetail(
     string? Url,
     int DisplayOrder,
     bool IsActive,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt);
+    DateTime CreatedAt,
+    DateTime? UpdatedAt);
 
 /// <summary>D-199 — create payload. Bytes are uploaded separately via
 /// <c>POST /admin/media/{id}/image</c> (out-of-row, D-90), so this carries

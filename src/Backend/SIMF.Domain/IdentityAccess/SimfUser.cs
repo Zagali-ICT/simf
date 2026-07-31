@@ -51,10 +51,10 @@ public class SimfUser : IdentityUser<Guid>
     public bool PasswordChangeRequired { get; set; }
 
     /// <summary>When the account was created (UTC).</summary>
-    public DateTimeOffset CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 
     /// <summary>When the account was last updated (UTC); null if never.</summary>
-    public DateTimeOffset? UpdatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 
     /// <summary>
     /// The most recent TOTP time-step accepted for this account. A code at or
@@ -78,7 +78,7 @@ public class SimfUser : IdentityUser<Guid>
     /// migration for existing rows. Lets admins answer "when was this
     /// rejected?" without joining the audit log.
     /// </summary>
-    public DateTimeOffset? StateChangedAt { get; set; }
+    public DateTime? StateChangedAt { get; set; }
 
     /// <summary>
     /// The admin who last changed the <see cref="AccountState"/> (P10 —
@@ -94,7 +94,7 @@ public class SimfUser : IdentityUser<Guid>
     /// falls back to <see cref="CreatedAt"/> as the baseline. Lets sign-in
     /// enforce an admin-configured maximum password age.
     /// </summary>
-    public DateTimeOffset? PasswordChangedAtUtc { get; set; }
+    public DateTime? PasswordChangedAtUtc { get; set; }
 
     /// <summary>
     /// A7-31 / A1-19 (NCA) — when the account last completed a sign-in (UTC). Set
@@ -102,5 +102,5 @@ public class SimfUser : IdentityUser<Guid>
     /// notice (A7-31) and used as the activity signal for dormant-account
     /// auto-disable (A1-19). Null until the first sign-in after this column shipped.
     /// </summary>
-    public DateTimeOffset? LastSuccessfulSignInAtUtc { get; set; }
+    public DateTime? LastSuccessfulSignInAtUtc { get; set; }
 }

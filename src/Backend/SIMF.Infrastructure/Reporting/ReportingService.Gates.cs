@@ -103,7 +103,7 @@ internal sealed partial class ReportingService
     private sealed record ScanProjection(
         long Id,
         string GateName,
-        DateTimeOffset ScannedAt,
+        DateTime ScannedAt,
         ScanDirection Direction,
         ScanOutcome Outcome,
         DenialReasonCode? DenialReason,

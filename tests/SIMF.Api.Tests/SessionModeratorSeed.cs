@@ -6,6 +6,7 @@ using SIMF.Common.Enums;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Api.Tests;
 
@@ -70,7 +71,7 @@ internal static class SessionModeratorSeed
                 IsForVisitor = false,
                 MobileAppRole = MobileAppRole.Moderator,
                 IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             appDb.ProfileTypes.Add(moderatorType);
         }
@@ -82,7 +83,7 @@ internal static class SessionModeratorSeed
             Name = "Mod", NameArabic = "منسّق",
             ProfileTypeId = moderatorType.Id,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
         return user.Id;

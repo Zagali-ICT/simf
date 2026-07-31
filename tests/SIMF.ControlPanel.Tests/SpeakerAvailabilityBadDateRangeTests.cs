@@ -71,7 +71,7 @@ public sealed class SpeakerAvailabilityBadDateRangeTests : CpComponentTestBase
             "SPK-1", "Test Speaker", "متحدث اختبار",
             Rank: null, RankArabic: null,
             CountryId: null, CountryNameEn: null, CountryNameAr: null, CountryCode: null,
-            DisplayOrder: 0, IsActive: true, HasPhoto: false, CreatedAt: DateTimeOffset.UnixEpoch);
+            DisplayOrder: 0, IsActive: true, HasPhoto: false, CreatedAt: DateTime.UnixEpoch);
 
         var page = GridPage<AdminSpeakerSummary>.Of(
             new[] { speaker }, total: 1, new GridQuery { Top = 500 });

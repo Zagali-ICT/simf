@@ -233,7 +233,7 @@ public sealed class SponsorsTests : IClassFixture<SimfApiFactory>
         // removed) plus the Sponsor→Country join for the country name.
         const int countryId = 682; // SA
         var sponsorId = Guid.NewGuid();
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         string expectedCountryEn;
         string expectedCountryAr;
 
@@ -289,7 +289,7 @@ public sealed class SponsorsTests : IClassFixture<SimfApiFactory>
         // country name through the Sponsor→Country join in one query.
         const int countryId = 826; // GB
         var sponsorId = Guid.NewGuid();
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         string expectedCountryEn;
         string expectedCountryAr;
 

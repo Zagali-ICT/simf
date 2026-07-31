@@ -117,7 +117,7 @@ internal sealed class AdminSpeakerPresentationService(
             SizeBytes = content.Length,
             UploadedByUserId = actorUserId,
             IsActive = true,
-            CreatedAt = timeProvider.GetUtcNow(),
+            CreatedAt = timeProvider.SimfNow(),
         };
         db.SpeakerPresentations.Add(presentation);
         await db.SaveChangesAsync(cancellationToken);

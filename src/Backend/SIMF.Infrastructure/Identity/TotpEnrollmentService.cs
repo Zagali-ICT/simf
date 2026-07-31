@@ -122,7 +122,7 @@ internal sealed class TotpEnrollmentService(
         await accounts.RemoveAuthenticationTokenAsync(
             user, SimfProvider, PendingSecretTokenName).EnsureSuccessAsync();
         user.LastUsedTotpTimestep = result.TimeStep;
-        user.UpdatedAt = DateTimeOffset.UtcNow;
+        user.UpdatedAt = SimfClock.Now;
         await accounts.UpdateAsync(user).EnsureSuccessAsync();
         await accounts.SetTwoFactorEnabledAsync(user, true).EnsureSuccessAsync();
 
@@ -194,7 +194,7 @@ internal sealed class TotpEnrollmentService(
         await accounts.RemoveAuthenticationTokenAsync(
             user, AuthenticatorProvider, ActiveSecretTokenName).EnsureSuccessAsync();
         user.LastUsedTotpTimestep = null;
-        user.UpdatedAt = DateTimeOffset.UtcNow;
+        user.UpdatedAt = SimfClock.Now;
         await accounts.UpdateAsync(user).EnsureSuccessAsync();
         await recoveryCodes.RevokeAllAsync(user.Id, cancellationToken);
 

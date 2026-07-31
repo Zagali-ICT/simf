@@ -229,7 +229,7 @@ public sealed class SeatTierEligibilityTests : IClassFixture<SimfApiFactory>
             Capacity = TierRows.Length * 4,
             SeatSelectionMode = SeatSelectionMode.AssignedSeat,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         db.HallSeatLayouts.Add(new HallSeatLayout
@@ -242,7 +242,7 @@ public sealed class SeatTierEligibilityTests : IClassFixture<SimfApiFactory>
             SeatTiers = tiers is null
                 ? null
                 : string.Join(',', tiers.Select(t => (int)t)),
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         var session = new Session
         {
@@ -250,10 +250,10 @@ public sealed class SeatTierEligibilityTests : IClassFixture<SimfApiFactory>
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Tiered", TitleArabic = "مصنّفة",
             HallId = hall.Id,
-            Start = DateTimeOffset.UtcNow.AddHours(1),
-            End = DateTimeOffset.UtcNow.AddHours(2),
+            Start = SimfClock.Now.AddHours(1),
+            End = SimfClock.Now.AddHours(2),
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         await db.SaveChangesAsync();
@@ -280,7 +280,7 @@ public sealed class SeatTierEligibilityTests : IClassFixture<SimfApiFactory>
             Kind = SeatReservationKind.AdminReservedRow,
             ReservedForUserId = null,
             CreatedByUserId = Guid.NewGuid(),
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
             Status = BookingStatus.Approved,
             GuestHint = hint,
             GuestHintArabic = hintArabic,
@@ -385,7 +385,7 @@ public sealed class SeatTierEligibilityTests : IClassFixture<SimfApiFactory>
             MobileAppRole = mobileAppRole,
             AllowsVipMeetingSlots = allowsVip,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.ProfileTypes.Add(type);
 
@@ -396,7 +396,7 @@ public sealed class SeatTierEligibilityTests : IClassFixture<SimfApiFactory>
             {
                 Id = Guid.NewGuid(),
                 UserId = userId,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             db.UserProfiles.Add(profile);
         }

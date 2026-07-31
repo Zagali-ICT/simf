@@ -431,7 +431,7 @@ public sealed class Journey01DelegationToSignInTests : IClassFixture<SimfApiFact
             PageColor = "#3B82F6",
             IsForVisitor = true,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.ProfileTypes.Add(profileType);
         await appDb.SaveChangesAsync();

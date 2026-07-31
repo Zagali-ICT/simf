@@ -27,4 +27,4 @@ public sealed record VipRosterRow(
     string? ReferenceNumber,
     string AccountState,
     bool HasVipPhoto,
-    DateTimeOffset CreatedAt);
+    DateTime CreatedAt);

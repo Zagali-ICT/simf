@@ -42,7 +42,7 @@ public sealed record AttendanceReportRow(
 
 /// <summary>
 /// One registered account. <c>RegisteredDisplay</c> is a pre-formatted Saudi
-/// date string: the shared XLSX exporter writes a raw <c>DateTimeOffset</c> as
+/// date string: the shared XLSX exporter writes a raw <c>DateTime</c> as
 /// UTC, which would put a UTC timestamp in a workbook that must show local time.
 /// </summary>
 public sealed record RegistrationReportRow(

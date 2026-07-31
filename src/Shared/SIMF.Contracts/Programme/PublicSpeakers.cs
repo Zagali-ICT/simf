@@ -86,5 +86,5 @@ public sealed record PublicSpeakerSession(
     Guid HallId,
     string HallName,
     string HallNameArabic,
-    DateTimeOffset Start,
-    DateTimeOffset End);
+    DateTime Start,
+    DateTime End);

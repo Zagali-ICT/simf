@@ -308,8 +308,8 @@ public sealed class SessionRecordingTests : IClassFixture<SimfApiFactory>
                 Type = SessionType.Event,
                 // S-7 — a past start so the Held lifecycle guard passes (the
                 // recording-publish flow marks the session Held before Recorded).
-                Start = DateTimeOffset.UtcNow.AddHours(-1),
-                End = DateTimeOffset.UtcNow.AddHours(1),
+                Start = SimfClock.Now.AddHours(-1),
+                End = SimfClock.Now.AddHours(1),
             },
             token);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -329,7 +329,7 @@ public sealed class SessionRecordingTests : IClassFixture<SimfApiFactory>
             NameArabic = "قاعة التسجيل",
             Capacity = 100,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         await db.SaveChangesAsync();

@@ -20,5 +20,5 @@ public sealed class SessionFavourite
     public Session? Session { get; set; }
 
     /// <summary>When the favourite was added (UTC).</summary>
-    public DateTimeOffset CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 }

@@ -27,8 +27,8 @@ public sealed class HallScheduleTests : IClassFixture<SimfApiFactory>
     private const string AdministratorRole = "Administrator";
 
     // Far-future so the rows never collide with other suites' seeded sessions.
-    private static readonly DateTimeOffset ScheduleStart =
-        new(2031, 3, 4, 8, 0, 0, TimeSpan.Zero);
+    private static readonly DateTime ScheduleStart =
+        new(2031, 3, 4, 8, 0, 0);
 
     private readonly SimfApiFactory _factory;
     private readonly HttpClient _client;
@@ -120,7 +120,7 @@ public sealed class HallScheduleTests : IClassFixture<SimfApiFactory>
     // Seeded straight to the DB: the delete endpoint soft-deletes, but seeding
     // both states here keeps the test about the read, not the write path.
     private async Task<string> SeedSessionAsync(
-        Guid hallId, DateTimeOffset start, bool isActive)
+        Guid hallId, DateTime start, bool isActive)
     {
         var code = NewCode();
         using var scope = _factory.Services.CreateScope();
@@ -135,7 +135,7 @@ public sealed class HallScheduleTests : IClassFixture<SimfApiFactory>
             Start = start,
             End = start.AddHours(1),
             IsActive = isActive,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
         return code;

@@ -76,7 +76,7 @@ public abstract class AdminGridExportEndpoint<TRow>(IGridExcelExporter exporter)
 
         var bytes = exporter.Export(rows, Columns, SheetName);
         HttpContext.Response.Headers.ContentDisposition =
-            $"attachment; filename=\"{FilePrefix}-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.xlsx\"";
+            $"attachment; filename=\"{FilePrefix}-{SimfClock.Now:yyyyMMddHHmmss}.xlsx\"";
         await Send.BytesAsync(bytes,
             contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             cancellation: ct);

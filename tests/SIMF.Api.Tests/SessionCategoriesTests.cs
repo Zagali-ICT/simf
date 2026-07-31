@@ -135,8 +135,8 @@ public sealed class SessionCategoriesTests : IClassFixture<SimfApiFactory>
                 HallId = hallId,
                 CategoryId = categoryId,
                 Type = SessionType.Event,
-                Start = DateTimeOffset.UtcNow.AddHours(1),
-                End = DateTimeOffset.UtcNow.AddHours(2),
+                Start = SimfClock.Now.AddHours(1),
+                End = SimfClock.Now.AddHours(2),
             },
             token);
         Assert.Equal(HttpStatusCode.OK, ok.StatusCode);
@@ -153,8 +153,8 @@ public sealed class SessionCategoriesTests : IClassFixture<SimfApiFactory>
                 Title = "Bad category", TitleArabic = "تصنيف خاطئ",
                 HallId = hallId,
                 CategoryId = Guid.NewGuid(),
-                Start = DateTimeOffset.UtcNow.AddHours(1),
-                End = DateTimeOffset.UtcNow.AddHours(2),
+                Start = SimfClock.Now.AddHours(1),
+                End = SimfClock.Now.AddHours(2),
             },
             token);
         Assert.Equal(HttpStatusCode.BadRequest, bad.StatusCode);
@@ -175,7 +175,7 @@ public sealed class SessionCategoriesTests : IClassFixture<SimfApiFactory>
             Name = "Hall SC", NameArabic = "قاعة",
             Capacity = 100,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         await db.SaveChangesAsync();

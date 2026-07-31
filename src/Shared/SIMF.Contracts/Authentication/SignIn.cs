@@ -66,7 +66,7 @@ public sealed record AccountStateInfo(
     string State,
     string? RejectionReason,
     string? RejectionReasonArabic,
-    DateTimeOffset? StateChangedAt);
+    DateTime? StateChangedAt);
 
 /// <summary>The token payload returned once a sign-in is fully completed.</summary>
 /// <remarks>A7-31 (NCA): <see cref="PreviousSignInAtUtc"/> carries the time of the
@@ -79,7 +79,7 @@ public sealed record AuthTokens(
     string TokenType,
     int AccessTokenExpiresInSeconds,
     AuthUser User,
-    DateTimeOffset? PreviousSignInAtUtc = null);
+    DateTime? PreviousSignInAtUtc = null);
 
 /// <summary>The signed-in user, as carried in <see cref="AuthTokens"/>.</summary>
 public sealed record AuthUser(Guid Id, string Email, string DisplayName);

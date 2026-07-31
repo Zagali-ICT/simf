@@ -45,7 +45,7 @@ public sealed class ContentBlock
     /// <c>SimfUser.Id</c> on the Identity DB.</summary>
     public Guid LastUpdatedByUserId { get; set; }
 
-    public DateTimeOffset CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 
-    public DateTimeOffset LastUpdatedAt { get; set; }
+    public DateTime LastUpdatedAt { get; set; }
 }

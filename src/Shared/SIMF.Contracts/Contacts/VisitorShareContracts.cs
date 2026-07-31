@@ -59,5 +59,5 @@ public sealed record SavedContactRow(
     string? JobTitleArabic,
     string? Organisation,
     string? Note,
-    DateTimeOffset SavedAt,
+    DateTime SavedAt,
     bool SubjectAvailable);

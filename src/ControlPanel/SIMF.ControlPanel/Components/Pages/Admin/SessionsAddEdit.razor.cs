@@ -100,8 +100,8 @@ public partial class SessionsAddEdit
             _seatModeInput = Initial.SeatSelectionModeOverride.HasValue
                 ? ((int)Initial.SeatSelectionModeOverride.Value).ToString()
                 : string.Empty;
-            _startInput = Initial.Start.ToSaudi().ToString("yyyy-MM-ddTHH:mm");
-            _endInput = Initial.End.ToSaudi().ToString("yyyy-MM-ddTHH:mm");
+            _startInput = Initial.Start.ToString("yyyy-MM-ddTHH:mm");
+            _endInput = Initial.End.ToString("yyyy-MM-ddTHH:mm");
             _capacityInput = Initial.CapacityOverride?.ToString() ?? string.Empty;
             _selectedSpeakers.AddRange(Initial.Speakers);
             _selectedThemes.AddRange(Initial.ThemeIds);
@@ -649,8 +649,8 @@ public partial class SessionsAddEdit
     /// builders need that is not read straight off <see cref="_model"/>.</summary>
     private sealed record FormValues(
         Guid HallId,
-        DateTimeOffset Start,
-        DateTimeOffset End,
+        DateTime Start,
+        DateTime End,
         int? CapacityOverride,
         Guid? CategoryId,
         SessionType? Type);
@@ -660,7 +660,7 @@ public partial class SessionsAddEdit
     /// The comparison is the same one <c>AdminSessionService.UpdateAsync</c> makes
     /// (<c>HallId</c> / <c>Start</c> / <c>End</c> against the stored row), so the
     /// warning and the cascade can never disagree.</summary>
-    private bool WouldReleaseHeldSeats(Guid hallId, DateTimeOffset start, DateTimeOffset end)
+    private bool WouldReleaseHeldSeats(Guid hallId, DateTime start, DateTime end)
     {
         if (!IsEdit || Initial is null)
         {

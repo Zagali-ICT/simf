@@ -60,9 +60,9 @@ public sealed class SessionQuestion
 
     /// <summary>When the moderator pushed the question; null while
     /// the question is still in the queue.</summary>
-    public DateTimeOffset? PushedAt { get; set; }
+    public DateTime? PushedAt { get; set; }
 
-    public DateTimeOffset CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 
     /// <summary>P3.3 — D-212: pre-session vs live question. Set at submit time
     /// from the session's start.</summary>
@@ -97,7 +97,7 @@ public sealed class SessionQuestion
     public Guid? EscalatedByUserId { get; set; }
 
     /// <summary>P3.3 — D-212: when the question was escalated. Null unless escalated.</summary>
-    public DateTimeOffset? EscalatedAt { get; set; }
+    public DateTime? EscalatedAt { get; set; }
 }
 
 /// <summary>
@@ -125,5 +125,5 @@ public sealed class SessionModerator
     /// <c>SimfUser.Id</c>; persisted for audit.</summary>
     public Guid AssignedByUserId { get; set; }
 
-    public DateTimeOffset AssignedAt { get; set; }
+    public DateTime AssignedAt { get; set; }
 }

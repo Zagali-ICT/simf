@@ -88,11 +88,11 @@ public sealed class StoredFile : BaseAuditEntity
 
     /// <summary>End-of-retention timestamp computed from the <see cref="Service"/>
     /// retention policy at write time; drives the secure-erase sweep. Null = indefinite.</summary>
-    public DateTimeOffset? RetainUntil { get; set; }
+    public DateTime? RetainUntil { get; set; }
 
     /// <summary>Set when the bytes / key were crypto-shredded (encrypted) or
     /// securely overwritten (plaintext); distinguishes secure-erased from soft-deleted.</summary>
-    public DateTimeOffset? SecureDestroyed { get; set; }
+    public DateTime? SecureDestroyed { get; set; }
 
     /// <summary>Which entity family this file belongs to (fixes the meaning of
     /// <see cref="OwnerEntityId"/>). <see cref="FileOwnerEntityType.None"/> when standalone.</summary>
@@ -107,7 +107,7 @@ public sealed class StoredFile : BaseAuditEntity
 
     /// <summary>Stamp the file as securely destroyed (DEK crypto-shredded or bytes
     /// overwritten). Idempotent.</summary>
-    public void MarkSecurelyDestroyed(DateTimeOffset whenUtc)
+    public void MarkSecurelyDestroyed(DateTime whenUtc)
     {
         SecureDestroyed ??= whenUtc;
         IsActive = false;

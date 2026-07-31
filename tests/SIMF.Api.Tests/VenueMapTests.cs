@@ -81,7 +81,7 @@ public sealed class VenueMapTests : IClassFixture<SimfApiFactory>
                 NameArabic = "قاعة القوس",
                 Capacity = 100,
                 IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             db.Halls.Add(hall);
             await db.SaveChangesAsync();

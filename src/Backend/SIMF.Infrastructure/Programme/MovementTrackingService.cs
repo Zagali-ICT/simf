@@ -92,7 +92,7 @@ internal sealed class MovementTrackingService(
                 .ToListAsync(cancellationToken);
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var matched = 0;
         foreach (var sample in samples)
         {
@@ -141,8 +141,8 @@ internal sealed class MovementTrackingService(
     }
 
     public async Task<IReadOnlyList<HallDwellSummary>> DwellByHallAsync(
-        DateTimeOffset from,
-        DateTimeOffset to,
+        DateTime from,
+        DateTime to,
         CancellationToken cancellationToken = default)
     {
         var pings = await dbContext.DevicePositionPings
@@ -205,8 +205,8 @@ internal sealed class MovementTrackingService(
 
     public async Task<AttendeeRoute> RouteForAttendeeAsync(
         Guid userId,
-        DateTimeOffset from,
-        DateTimeOffset to,
+        DateTime from,
+        DateTime to,
         CancellationToken cancellationToken = default)
     {
         var pings = await dbContext.DevicePositionPings
@@ -223,7 +223,7 @@ internal sealed class MovementTrackingService(
         // Collapse the track into consecutive stays: a leg runs while the resolved
         // hall is unchanged AND the pings keep arriving. A gap longer than
         // MaxLegGap ends the leg — the silence is not dwell.
-        var legs = new List<(Guid? HallId, DateTimeOffset Enter, DateTimeOffset Leave)>();
+        var legs = new List<(Guid? HallId, DateTime Enter, DateTime Leave)>();
         var legHallId = pings[0].HallId;
         var legEnter = pings[0].CapturedAt;
         var legLeave = pings[0].CapturedAt;
@@ -291,7 +291,7 @@ internal sealed class MovementTrackingService(
     /// captured. A named type rather than an anonymous one so the "no boundaries →
     /// empty list" branch above has something to declare.</summary>
     private sealed record RunningSession(
-        Guid SessionId, Guid HallId, DateTimeOffset Start, DateTimeOffset End);
+        Guid SessionId, Guid HallId, DateTime Start, DateTime End);
 
     /// <summary>Great-circle distance in metres between two WGS-84 points. Same
     /// formula the geofence arrival check uses (<c>HallAttendanceService</c>), so a

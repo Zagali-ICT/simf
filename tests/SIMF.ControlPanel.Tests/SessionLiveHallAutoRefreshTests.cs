@@ -20,8 +20,8 @@ public sealed class SessionLiveHallAutoRefreshTests : CpComponentTestBase
     private static readonly AdminSessionSummary LiveSession = new(
         Guid.NewGuid(), "S-LIVE", "Live Session", "S-LIVE-AR",
         Guid.NewGuid(), "Main Hall", "MAIN-HALL-AR",
-        DateTimeOffset.UnixEpoch, DateTimeOffset.UnixEpoch.AddHours(1),
-        Capacity: 100, IsActive: true, CreatedAt: DateTimeOffset.UnixEpoch);
+        DateTime.UnixEpoch, DateTime.UnixEpoch.AddHours(1),
+        Capacity: 100, IsActive: true, CreatedAt: DateTime.UnixEpoch);
 
     // The poll loop's timer, observed through the field that owns it — the only
     // way to prove "started on selection / disposed on teardown" without waiting

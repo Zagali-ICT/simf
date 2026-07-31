@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../sessions/data/session_lifecycle.dart';
 import '../../sessions/data/sessions_repository.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// The id of the session that is in its live time-window right now (the first,
 /// in programme order), or null when nothing is live. Backs the Home LIVE
@@ -17,7 +18,7 @@ final currentLiveSessionIdProvider = FutureProvider.autoDispose<String?>((
   ref,
 ) async {
   final sessions = await ref.watch(programmeSessionsProvider.future);
-  final nowUtc = DateTime.now().toUtc();
+  final nowUtc = saudiNow();
   for (final session in sessions) {
     if (session.phase(nowUtc) == SessionPhase.live) {
       return session.id;

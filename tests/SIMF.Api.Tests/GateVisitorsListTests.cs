@@ -1,4 +1,4 @@
-﻿// D-160 — POST /api/v1/app/gates/{gateId}/visitors/list — cursor-paged
+// D-160 — POST /api/v1/app/gates/{gateId}/visitors/list — cursor-paged
 // view of scans at a single gate, backed by the D-158 snapshot columns.
 using System.Net;
 using System.Net.Http.Headers;
@@ -165,8 +165,8 @@ public sealed class GateVisitorsListTests : IClassFixture<SimfApiFactory>
         public int PageSize { get; set; }
         public ScanDirection? Direction { get; set; }
         public ScanOutcome? Outcome { get; set; }
-        public DateTimeOffset? Since { get; set; }
-        public DateTimeOffset? Until { get; set; }
+        public DateTime? Since { get; set; }
+        public DateTime? Until { get; set; }
     }
 
     private async Task<HttpResponseMessage> PostListAsync(
@@ -245,7 +245,7 @@ public sealed class GateVisitorsListTests : IClassFixture<SimfApiFactory>
             Name = displayName,
             NationalityId = 682,
             PlaceOfBirth = "Riyadh",
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
         return qrId;

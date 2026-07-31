@@ -133,7 +133,7 @@ public sealed class PublicSpeakersTests : IClassFixture<SimfApiFactory>
         var token = await CreateAdminAsync();
         var speakerId = await CreateSpeakerAsync(token, displayOrder: 3);
         var hallId = await CreateHallAsync(token, capacity: 120);
-        var start = DateTimeOffset.UtcNow.AddDays(2).Date.AddHours(9);
+        var start = SimfClock.Now.AddDays(2).Date.AddHours(9);
         var session = await CreateSessionAsync(token, hallId, speakerId, start, start.AddHours(1));
 
         var detailResponse = await _client.GetAsync($"/api/v1/app/speakers/{speakerId}");
@@ -260,7 +260,7 @@ public sealed class PublicSpeakersTests : IClassFixture<SimfApiFactory>
 
     private async Task<AdminSessionDetail> CreateSessionAsync(
         string token, Guid hallId, Guid speakerId,
-        DateTimeOffset start, DateTimeOffset end)
+        DateTime start, DateTime end)
     {
         var create = await PostAuthAsync(
             "/api/v1/admin/sessions",

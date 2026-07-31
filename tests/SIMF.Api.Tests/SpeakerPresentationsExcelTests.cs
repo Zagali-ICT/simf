@@ -105,7 +105,7 @@ public sealed class SpeakerPresentationsExcelTests : IClassFixture<SimfApiFactor
             Code = "H-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Name = "Hall", NameArabic = "قاعة",
             Capacity = 50, IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         var speaker = new Speaker
@@ -114,7 +114,7 @@ public sealed class SpeakerPresentationsExcelTests : IClassFixture<SimfApiFactor
             Code = "SP-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Name = "Dr. Speaker", NameArabic = "د. متحدث",
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Speakers.Add(speaker);
         var session = new Session
@@ -123,10 +123,10 @@ public sealed class SpeakerPresentationsExcelTests : IClassFixture<SimfApiFactor
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Keynote", TitleArabic = "كلمة",
             HallId = hall.Id,
-            Start = DateTimeOffset.UtcNow.AddHours(1),
-            End = DateTimeOffset.UtcNow.AddHours(2),
+            Start = SimfClock.Now.AddHours(1),
+            End = SimfClock.Now.AddHours(2),
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         await db.SaveChangesAsync();

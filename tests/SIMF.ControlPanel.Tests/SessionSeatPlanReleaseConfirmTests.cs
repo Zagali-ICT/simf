@@ -23,8 +23,8 @@ public sealed class SessionSeatPlanReleaseConfirmTests : CpComponentTestBase
     private static readonly AdminSessionSummary PlannedSession = new(
         Guid.NewGuid(), "S-SEAT", "Opening", "S-SEAT-AR",
         HallId, "Main Hall", "MAIN-HALL-AR",
-        DateTimeOffset.UnixEpoch, DateTimeOffset.UnixEpoch.AddHours(1),
-        Capacity: 30, IsActive: true, CreatedAt: DateTimeOffset.UnixEpoch);
+        DateTime.UnixEpoch, DateTime.UnixEpoch.AddHours(1),
+        Capacity: 30, IsActive: true, CreatedAt: DateTime.UnixEpoch);
 
     // One attendee holding A2 — the seat an admin would click to release.
     private static readonly SeatPlanCell HeldSeat = new(

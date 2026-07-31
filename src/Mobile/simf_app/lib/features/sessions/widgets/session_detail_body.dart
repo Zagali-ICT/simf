@@ -12,6 +12,7 @@ import 'session_header_card.dart';
 import 'session_reservation_card.dart';
 import 'session_speaker_card.dart';
 import 'session_text_sections.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// The scrolling body: the header card, description, speakers, my-seat card and
 /// the CTA row — all RTL-primary on the navy shell (frame 889:2450).
@@ -90,7 +91,7 @@ class SessionDetailBody extends StatelessWidget {
     // the ملخص الجلسة summary exists only once the session has ENDED (a future /
     // live session has none → inactive); رابط الجلسة opens the LIVE feed, so it
     // is active only while the session is live AND carries an online stream.
-    final phase = detail.phase(DateTime.now().toUtc());
+    final phase = detail.phase(saudiNow());
     final summaryEnabled = phase == SessionPhase.ended;
     final liveEnabled = detail.hasLiveStream && phase == SessionPhase.live;
 
@@ -139,7 +140,7 @@ class SessionDetailBody extends StatelessWidget {
         if (canAsk && _showAsk(detail)) ...<Widget>[
           const SizedBox(height: SimfTokens.space5),
           AskHostCard(
-            label: detail.start.isAfter(DateTime.now().toUtc())
+            label: detail.start.isAfter(saudiNow())
                 ? l10n.askHostPreSession
                 : l10n.liveAskQuestion,
             onTap: onAskHost,
@@ -251,7 +252,7 @@ class SessionDetailBody extends StatelessWidget {
   /// broadcast feed — a broadcast session's live ask lives on the live-broadcast
   /// screen. After End there is no ask (the backend closes the window).
   static bool _showAsk(SessionDetail detail) {
-    final nowUtc = DateTime.now().toUtc();
+    final nowUtc = saudiNow();
     if (detail.start.isAfter(nowUtc)) {
       return true;
     }

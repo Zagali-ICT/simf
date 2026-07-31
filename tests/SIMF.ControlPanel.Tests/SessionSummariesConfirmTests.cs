@@ -21,15 +21,15 @@ public sealed class SessionSummariesConfirmTests : CpComponentTestBase
 
     private static AdminSessionSummaryRow Row(bool isPublished, bool isApproved) => new(
         SessionId, "SES-001", "Opening session", "الجلسة الافتتاحية",
-        DateTimeOffset.UnixEpoch,
+        DateTime.UnixEpoch,
         HasSummary: true,
         GeneratedByAi: false,
         IsPublished: isPublished,
-        PublishedAt: isPublished ? DateTimeOffset.UnixEpoch : null,
-        UpdatedAt: DateTimeOffset.UnixEpoch,
+        PublishedAt: isPublished ? DateTime.UnixEpoch : null,
+        UpdatedAt: DateTime.UnixEpoch,
         IsInReview: false,
         IsApproved: isApproved,
-        ApprovedAt: isApproved ? DateTimeOffset.UnixEpoch : null);
+        ApprovedAt: isApproved ? DateTime.UnixEpoch : null);
 
     private static AdminSessionSummaryDetail Detail(bool isPublished, bool isApproved) => new(
         SessionId, "SES-001", "Opening session", "الجلسة الافتتاحية",
@@ -43,12 +43,12 @@ public sealed class SessionSummariesConfirmTests : CpComponentTestBase
         FullTextArabic: "محضر.",
         AiModel: null,
         IsPublished: isPublished,
-        PublishedAt: isPublished ? DateTimeOffset.UnixEpoch : null,
-        CreatedAt: DateTimeOffset.UnixEpoch,
-        UpdatedAt: DateTimeOffset.UnixEpoch,
+        PublishedAt: isPublished ? DateTime.UnixEpoch : null,
+        CreatedAt: DateTime.UnixEpoch,
+        UpdatedAt: DateTime.UnixEpoch,
         IsInReview: false,
         IsApproved: isApproved,
-        ApprovedAt: isApproved ? DateTimeOffset.UnixEpoch : null,
+        ApprovedAt: isApproved ? DateTime.UnixEpoch : null,
         Subtitle: null,
         SubtitleArabic: null,
         AiDraftFullTextArabic: null,

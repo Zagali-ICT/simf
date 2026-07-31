@@ -43,8 +43,8 @@ internal static class MeetingTableOverlapGuard
     public static async Task EnsureTableIsFreeAsync(
         SimfAppDbContext appDbContext,
         Guid tableId,
-        DateTimeOffset start,
-        DateTimeOffset end,
+        DateTime start,
+        DateTime end,
         string errorCode,
         Guid? excludeDelegationRequestId,
         Guid? excludeSpeakerRequestId,

@@ -102,7 +102,7 @@ internal sealed partial class ReportingService
         Guid TargetId,
         int? OverallStars,
         string? Comment,
-        DateTimeOffset CreatedAt);
+        DateTime CreatedAt);
 
     private static RatingsReportRow ToRow(RatingsProjection p) =>
         new(

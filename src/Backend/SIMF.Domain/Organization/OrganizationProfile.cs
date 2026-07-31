@@ -65,21 +65,21 @@ public sealed class OrganizationProfile : BaseAuditEntity
     public string? Version { get; set; }
 
     /// <summary>The date of <see cref="Version"/>.</summary>
-    public DateTimeOffset? VersionDate { get; set; }
+    public DateTime? VersionDate { get; set; }
 
     /// <summary>System / build version.</summary>
     public string? SysVersion { get; set; }
 
     /// <summary>The general "date" of the edition / release.</summary>
-    public DateTimeOffset? ReleaseDate { get; set; }
+    public DateTime? ReleaseDate { get; set; }
 
     // --- Edition state ---
 
     /// <summary>The forum's start date.</summary>
-    public DateTimeOffset? EventStartDate { get; set; }
+    public DateTime? EventStartDate { get; set; }
 
     /// <summary>The forum's end date.</summary>
-    public DateTimeOffset? EventEndDate { get; set; }
+    public DateTime? EventEndDate { get; set; }
 
     /// <summary>The active edition year (e.g. 2026).</summary>
     public int CurrentYear { get; set; }

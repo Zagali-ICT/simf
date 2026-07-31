@@ -56,12 +56,12 @@ public interface INotificationRepository
     Task MarkReadForUserAsync(
         Guid userId,
         Guid notificationId,
-        DateTimeOffset readAt,
+        DateTime readAt,
         CancellationToken cancellationToken = default);
 
     Task MarkAllReadForUserAsync(
         Guid userId,
-        DateTimeOffset readAt,
+        DateTime readAt,
         CancellationToken cancellationToken = default);
 
     Task DeleteForUserAsync(

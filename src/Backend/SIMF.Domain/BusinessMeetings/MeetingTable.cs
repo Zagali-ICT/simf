@@ -37,8 +37,8 @@ public sealed class MeetingTable
     /// <summary>Soft-delete flag. List/pick endpoints filter on this.</summary>
     public bool IsActive { get; set; } = true;
 
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset? UpdatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 
     /// <summary>Soft-delete: marks the table inactive so it drops out of pickers
     /// and the default grid. Idempotent.</summary>

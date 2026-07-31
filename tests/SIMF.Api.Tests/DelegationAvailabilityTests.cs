@@ -82,7 +82,7 @@ public sealed class DelegationAvailabilityTests : IClassFixture<SimfApiFactory>
                 Status = MeetingRequestStatus.Done,
                 SlotStart = start,
                 SlotEnd = start.AddMinutes(30),
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
             await db.SaveChangesAsync();
         }
@@ -168,18 +168,18 @@ public sealed class DelegationAvailabilityTests : IClassFixture<SimfApiFactory>
     // The forum-day bound is dynamic (MIN/MAX over the seeded ProgrammeDay rows, which
     // other test classes mutate on the shared DB). Read it at test time and place the
     // window on the first forum day at 10:00 UTC (+03:00 event day == MinDate).
-    private async Task<DateTimeOffset> ForumStartAsync(string admin)
+    private async Task<DateTime> ForumStartAsync(string admin)
     {
         var win = await ForumWindowAsync(admin);
         var min = win.MinDate ?? new DateOnly(2026, 11, 24);
-        return new DateTimeOffset(min.Year, min.Month, min.Day, 10, 0, 0, TimeSpan.Zero);
+        return new DateTime(min.Year, min.Month, min.Day, 10, 0, 0);
     }
 
-    private async Task<DateTimeOffset> ForumEndAsync(string admin)
+    private async Task<DateTime> ForumEndAsync(string admin)
     {
         var win = await ForumWindowAsync(admin);
         var max = win.MaxDate ?? new DateOnly(2026, 11, 24);
-        return new DateTimeOffset(max.Year, max.Month, max.Day, 10, 0, 0, TimeSpan.Zero);
+        return new DateTime(max.Year, max.Month, max.Day, 10, 0, 0);
     }
 
     private async Task<ForumWindowResponse> ForumWindowAsync(string admin)
@@ -227,7 +227,7 @@ public sealed class DelegationAvailabilityTests : IClassFixture<SimfApiFactory>
             Name = "Avail Country " + code, NameArabic = "دولة " + code,
             IsActive = true,
             IsInvited = invited,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
         return id;

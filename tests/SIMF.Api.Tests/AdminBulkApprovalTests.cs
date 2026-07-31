@@ -1,4 +1,4 @@
-﻿// D-164 (gap doc G2) — POST /api/v1/admin/visitors/bulk-approve and
+// D-164 (gap doc G2) — POST /api/v1/admin/visitors/bulk-approve and
 // POST /api/v1/admin/others/bulk-approve. The "Select All" affordance
 // the security team needs (PDF §2.7.1).
 using System.Net;
@@ -133,7 +133,7 @@ public sealed class AdminBulkApprovalTests : IClassFixture<SimfApiFactory>
             NameArabic = "زائر تجريبي",
             Name = "Bulk Test Visitor",
             NationalityId = 682,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
         await appDb.SaveChangesAsync();

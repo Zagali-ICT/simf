@@ -86,8 +86,8 @@ public sealed class UpdateSessionRequest
     public string? DescriptionArabic { get; set; }
     public Guid HallId { get; set; }
     public Guid? CategoryId { get; set; }
-    public DateTimeOffset Start { get; set; }
-    public DateTimeOffset End { get; set; }
+    public DateTime Start { get; set; }
+    public DateTime End { get; set; }
     public int? CapacityOverride { get; set; }
     public IList<AdminSessionSpeakerEntry> Speakers { get; set; }
         = new List<AdminSessionSpeakerEntry>();

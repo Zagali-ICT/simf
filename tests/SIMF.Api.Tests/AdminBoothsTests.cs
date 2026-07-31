@@ -225,7 +225,7 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
                 Y = 20,
                 BoothId = created.Id,
                 IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
             await db.SaveChangesAsync();
         }
@@ -340,7 +340,7 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
             Service = FileService.BoothLogo,
             OwnerEntityId = boothId,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
     }
@@ -359,7 +359,7 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
             Name = nameEn ?? $"Exhibitor {Guid.NewGuid():N}",
             NameArabic = "شركة عارضة",
             IsActive = isActive,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Exhibitors.Add(exhibitor);
         await appDb.SaveChangesAsync();

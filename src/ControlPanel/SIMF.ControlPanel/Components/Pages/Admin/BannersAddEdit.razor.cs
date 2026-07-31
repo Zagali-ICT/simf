@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
@@ -28,14 +28,14 @@ public partial class BannersAddEdit
             _model.BodyAr = Initial.BodyArabic;
             _model.ImageUrl = Initial.ImageUrl ?? string.Empty;
             _model.LinkUrl = Initial.LinkUrl ?? string.Empty;
-            _model.Start = Initial.Start.ToSaudi().ToString("yyyy-MM-ddTHH:mm");
-            _model.End = Initial.End.ToSaudi().ToString("yyyy-MM-ddTHH:mm");
+            _model.Start = Initial.Start.ToString("yyyy-MM-ddTHH:mm");
+            _model.End = Initial.End.ToString("yyyy-MM-ddTHH:mm");
             _model.IsActive = Initial.IsActive;
             _displayOrderInput = Initial.DisplayOrder.ToString();
         }
         else
         {
-            var now = DateTimeOffset.UtcNow.ToSaudi();
+            var now = SimfClock.Now;
             _model.Start = now.ToString("yyyy-MM-ddTHH:mm");
             _model.End = now.AddDays(1).ToString("yyyy-MM-ddTHH:mm");
         }

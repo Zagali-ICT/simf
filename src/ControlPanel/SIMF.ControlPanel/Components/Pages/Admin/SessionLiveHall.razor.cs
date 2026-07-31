@@ -275,7 +275,7 @@ public partial class SessionLiveHall : IDisposable
             ? $"{attendee.RowLabel}{attendee.SeatNumber}"
             : L["Admin.SessionLiveHall.OpenSeating"];
 
-    private static string Entered(DateTimeOffset enter) =>
+    private static string Entered(DateTime enter) =>
         enter.FormatSaudi("dd-MM-yyyy hh:mm tt");
 
     private string MethodLabel(AttendanceMethod method) => method switch

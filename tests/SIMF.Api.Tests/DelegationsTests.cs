@@ -325,7 +325,7 @@ public sealed class DelegationsTests : IClassFixture<SimfApiFactory>
                 NationalityId = nationalityId,
                 IsDelegate = true,
                 IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
             await appDb.SaveChangesAsync();
         }
@@ -350,7 +350,7 @@ public sealed class DelegationsTests : IClassFixture<SimfApiFactory>
                 Name = code,
                 NameArabic = code,
                 IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
             await appDb.SaveChangesAsync();
         }
@@ -376,7 +376,7 @@ public sealed class DelegationsTests : IClassFixture<SimfApiFactory>
             IsDelegate = isDelegate,
             IsActive = isActive,
             JobTitle = jobTitle,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.UserProfiles.Add(profile);
         await appDb.SaveChangesAsync();

@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
@@ -79,7 +79,7 @@ public sealed class PendingProfileReadTests : IClassFixture<SimfApiFactory>
                 {
                     Id = Guid.NewGuid(),
                     UserId = visitor,
-                    CreatedAt = DateTimeOffset.UtcNow,
+                    CreatedAt = SimfClock.Now,
                 };
                 appDb.UserProfiles.Add(profile);
             }
@@ -120,7 +120,7 @@ public sealed class PendingProfileReadTests : IClassFixture<SimfApiFactory>
                 NameArabic = "القوات البحرية الملكية السعودية",
                 CommercialRegistration = $"CR{Guid.NewGuid():N}"[..12],
                 IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             appDb.Organisations.Add(org);
             orgId = org.Id;
@@ -131,7 +131,7 @@ public sealed class PendingProfileReadTests : IClassFixture<SimfApiFactory>
                 Name = "Naval Defence",
                 NameArabic = "الدفاع البحري",
                 IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             var interestB = new UserInterest
             {
@@ -139,7 +139,7 @@ public sealed class PendingProfileReadTests : IClassFixture<SimfApiFactory>
                 Name = "Shipbuilding",
                 NameArabic = "بناء السفن",
                 IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             appDb.AddRange(interestA, interestB);
 
@@ -151,7 +151,7 @@ public sealed class PendingProfileReadTests : IClassFixture<SimfApiFactory>
                 {
                     Id = Guid.NewGuid(),
                     UserId = visitor,
-                    CreatedAt = DateTimeOffset.UtcNow,
+                    CreatedAt = SimfClock.Now,
                 };
                 appDb.UserProfiles.Add(profile);
             }
@@ -428,7 +428,7 @@ public sealed class PendingProfileReadTests : IClassFixture<SimfApiFactory>
             PageColor = "#10B981",
             IsForVisitor = false,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.ProfileTypes.Add(fresh);
         await db.SaveChangesAsync();

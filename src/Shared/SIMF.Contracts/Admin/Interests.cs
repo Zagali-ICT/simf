@@ -7,7 +7,7 @@ public sealed record AdminInterestSummary(
     string NameArabic,
     int DisplayOrder,
     bool IsActive,
-    DateTimeOffset CreatedAt);
+    DateTime CreatedAt);
 
 /// <summary>The body of <c>POST /api/v1/admin/interests</c> (P9). The CP
 /// page builds this when an admin clicks <i>Add interest</i>.</summary>

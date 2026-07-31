@@ -62,7 +62,7 @@ public sealed class BannersExcelTests : IClassFixture<SimfApiFactory>
     public async Task Import_creates_each_row_and_reports_the_outcome()
     {
         var adminToken = await CreateAdministratorAndSignInAsync();
-        var start = DateTimeOffset.UtcNow;
+        var start = SimfClock.Now;
         var end = start.AddDays(7);
         var titleOne = $"Imported One {Guid.NewGuid():N}";
         var titleTwo = $"Imported Two {Guid.NewGuid():N}";
@@ -121,7 +121,7 @@ public sealed class BannersExcelTests : IClassFixture<SimfApiFactory>
         // all four onto the created banner (the GET detail proves they are not
         // dropped on import).
         var adminToken = await CreateAdministratorAndSignInAsync();
-        var start = DateTimeOffset.UtcNow;
+        var start = SimfClock.Now;
         var end = start.AddDays(7);
         var title = $"Round trip {Guid.NewGuid():N}";
         const string body = "Round-trip body";
@@ -162,7 +162,7 @@ public sealed class BannersExcelTests : IClassFixture<SimfApiFactory>
     public async Task Import_reports_a_per_row_error_for_an_invalid_window_without_aborting()
     {
         var adminToken = await CreateAdministratorAndSignInAsync();
-        var start = DateTimeOffset.UtcNow;
+        var start = SimfClock.Now;
         var end = start.AddDays(7);
         var badTitle = $"Bad window {Guid.NewGuid():N}";
         var goodTitle = $"Good {Guid.NewGuid():N}";
@@ -200,7 +200,7 @@ public sealed class BannersExcelTests : IClassFixture<SimfApiFactory>
     public async Task Import_rejects_a_workbook_with_the_wrong_sheet_name()
     {
         var adminToken = await CreateAdministratorAndSignInAsync();
-        var start = DateTimeOffset.UtcNow;
+        var start = SimfClock.Now;
         var wrongSheet = BuildBannersWorkbook("NotBanners",
             ($"X {Guid.NewGuid():N}", "س", "Body", "نص", start, start.AddDays(1), 1));
 
@@ -228,7 +228,7 @@ public sealed class BannersExcelTests : IClassFixture<SimfApiFactory>
     private static byte[] BuildBannersWorkbook(
         string sheetName,
         params (string Title, string TitleArabic, string Body, string BodyArabic,
-            DateTimeOffset Start, DateTimeOffset End, int DisplayOrder)[] rows) =>
+            DateTime Start, DateTime End, int DisplayOrder)[] rows) =>
         BuildBannersWorkbook(sheetName,
             rows.Select(r => (r.Title, r.TitleArabic, r.Body, r.BodyArabic,
                 (string?)null, (string?)null, r.Start, r.End, r.DisplayOrder)).ToArray());
@@ -239,7 +239,7 @@ public sealed class BannersExcelTests : IClassFixture<SimfApiFactory>
         string sheetName,
         params (string Title, string TitleArabic, string Body, string BodyArabic,
             string? ImageUrl, string? LinkUrl,
-            DateTimeOffset Start, DateTimeOffset End, int DisplayOrder)[] rows)
+            DateTime Start, DateTime End, int DisplayOrder)[] rows)
     {
         using var workbook = new XLWorkbook();
         var sheet = workbook.Worksheets.Add(sheetName);
@@ -260,8 +260,8 @@ public sealed class BannersExcelTests : IClassFixture<SimfApiFactory>
             sheet.Cell(i + 2, 4).Value = rows[i].BodyArabic;
             sheet.Cell(i + 2, 5).Value = rows[i].ImageUrl ?? string.Empty;
             sheet.Cell(i + 2, 6).Value = rows[i].LinkUrl ?? string.Empty;
-            sheet.Cell(i + 2, 7).Value = rows[i].Start.UtcDateTime.ToString("O");
-            sheet.Cell(i + 2, 8).Value = rows[i].End.UtcDateTime.ToString("O");
+            sheet.Cell(i + 2, 7).Value = rows[i].Start.ToString("O");
+            sheet.Cell(i + 2, 8).Value = rows[i].End.ToString("O");
             sheet.Cell(i + 2, 9).Value = rows[i].DisplayOrder;
         }
         using var stream = new MemoryStream();
@@ -271,7 +271,7 @@ public sealed class BannersExcelTests : IClassFixture<SimfApiFactory>
 
     private async Task CreateBannerAsync(string token, string title)
     {
-        var start = DateTimeOffset.UtcNow;
+        var start = SimfClock.Now;
         var response = await PostAuthAsync(
             "/api/v1/admin/banners",
             new CreateBannerRequest

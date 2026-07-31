@@ -143,7 +143,7 @@ public partial class HallAvailabilityPage
         finally { _busy = false; }
     }
 
-    private static bool TryParseUtc(string value, out DateTimeOffset result)
+    private static bool TryParseUtc(string value, out DateTime result)
     {
         if (DateTime.TryParse(value, CultureInfo.InvariantCulture,
                 DateTimeStyles.None, out var dt))

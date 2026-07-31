@@ -27,7 +27,7 @@ public sealed class AiPromptsViewDeleteTests : CpComponentTestBase
         MaxOutputTokens: 512,
         IsActive: true,
         Version: 1,
-        DateTimeOffset.UnixEpoch,
+        DateTime.UnixEpoch,
         UpdatedAt: null);
 
     [Fact]

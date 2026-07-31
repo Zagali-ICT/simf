@@ -20,7 +20,7 @@ public sealed class GatesAddEditTests : CpComponentTestBase
         DirectionMode.Both, IsActive: true,
         AllowedProfileTypeIds: Array.Empty<Guid>(),
         AssignedOperatorUserIds: Array.Empty<Guid>(),
-        DateTimeOffset.UnixEpoch, UpdatedAt: null);
+        DateTime.UnixEpoch, UpdatedAt: null);
 
     [Fact]
     public void Add_mode_hides_the_Active_checkbox()

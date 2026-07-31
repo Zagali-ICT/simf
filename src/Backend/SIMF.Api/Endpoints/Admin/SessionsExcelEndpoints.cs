@@ -56,8 +56,8 @@ public sealed class ExportSessionsEndpoint(
         new("Hall", row => _hallCodes.TryGetValue(row.HallId, out var code) ? code : string.Empty),
         new("Category", row => row.CategoryId is { } id
             && _categoryNames.TryGetValue(id, out var name) ? name : string.Empty),
-        new("Start", row => row.Start.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ss'Z'", CultureInfo.InvariantCulture)),
-        new("End", row => row.End.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ss'Z'", CultureInfo.InvariantCulture)),
+        new("Start", row => row.Start.ToString("yyyy-MM-ddTHH:mm:ss'Z'", CultureInfo.InvariantCulture)),
+        new("End", row => row.End.ToString("yyyy-MM-ddTHH:mm:ss'Z'", CultureInfo.InvariantCulture)),
         new("Capacity", row => row.Capacity),
         new("Status", row => row.Status.ToString()),
         new("IsActive", row => row.IsActive),
@@ -376,11 +376,11 @@ public sealed class ImportSessionsEndpoint(
     // Parses a UTC instant from the cell (the export writes ISO-8601 with a 'Z').
     // Any non-blank value that the round-trip / general parser cannot read is a
     // per-row error.
-    private static DateTimeOffset ParseUtc(string value, string field)
+    private static DateTime ParseUtc(string value, string field)
     {
         var trimmed = value.Trim();
         if (trimmed.Length == 0
-            || !DateTimeOffset.TryParse(trimmed, CultureInfo.InvariantCulture,
+            || !DateTime.TryParse(trimmed, CultureInfo.InvariantCulture,
                 DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var parsed))
         {
             throw new DataValidationException(

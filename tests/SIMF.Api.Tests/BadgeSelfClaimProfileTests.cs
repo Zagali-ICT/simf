@@ -222,7 +222,7 @@ public sealed class BadgeSelfClaimProfileTests : IClassFixture<SimfApiFactory>
             NameArabic = placeholderName,
             NationalityId = 0,
             QrId = qrId,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
         return new PlaceholderBadge(user.Id, qrId, placeholderName);
@@ -267,7 +267,7 @@ public sealed class BadgeSelfClaimProfileTests : IClassFixture<SimfApiFactory>
             NameArabic = "الأمن البحري",
             DisplayOrder = 1,
             IsActive = active,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         var second = new UserInterest
         {
@@ -276,7 +276,7 @@ public sealed class BadgeSelfClaimProfileTests : IClassFixture<SimfApiFactory>
             NameArabic = "الخدمات اللوجستية للموانئ",
             DisplayOrder = 2,
             IsActive = active,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Interests.AddRange(first, second);
         await appDb.SaveChangesAsync();

@@ -133,7 +133,7 @@ internal sealed class AdminAiPromptService(
             MaxOutputTokens = validated.MaxOutputTokens,
             IsActive = true,
             Version = 1,
-            CreatedAt = timeProvider.GetUtcNow(),
+            CreatedAt = timeProvider.SimfNow(),
             UpdatedByUserId = actorUserId,
         };
         appDbContext.AiPrompts.Add(prompt);
@@ -190,7 +190,7 @@ internal sealed class AdminAiPromptService(
         // be replaced. The hash matches the `contentHashOld` value
         // the audit row will carry — SOC can correlate the audit
         // row and the history snapshot by hash.
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         appDbContext.AiPromptHistory.Add(new AiPromptHistory
         {
             Id = Guid.NewGuid(),
@@ -264,7 +264,7 @@ internal sealed class AdminAiPromptService(
                 "لم يتم العثور على محفّز الذكاء الاصطناعي.");
         if (!prompt.IsActive) return;
         prompt.IsActive = false;
-        prompt.UpdatedAt = timeProvider.GetUtcNow();
+        prompt.UpdatedAt = timeProvider.SimfNow();
         prompt.UpdatedByUserId = actorUserId;
         await appDbContext.SaveChangesAsync(cancellationToken);
 
@@ -384,7 +384,7 @@ internal sealed class AdminAiPromptService(
         int windowHours = 24, CancellationToken cancellationToken = default)
     {
         var hours = Math.Clamp(windowHours, 1, 24 * 30);
-        var since = timeProvider.GetUtcNow().AddHours(-hours);
+        var since = timeProvider.SimfNow().AddHours(-hours);
 
         // Per-service invocation aggregates over the window (one GROUP BY).
         var perFeature = await appDbContext.AiInvocations.AsNoTracking()

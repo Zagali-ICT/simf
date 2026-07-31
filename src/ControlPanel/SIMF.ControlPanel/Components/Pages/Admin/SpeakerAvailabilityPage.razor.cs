@@ -101,8 +101,8 @@ public partial class SpeakerAvailabilityPage
         // Min/Max attributes.
         if (_forumMinDate is { } minDate && _forumMaxDate is { } maxDate)
         {
-            var startDate = DateOnly.FromDateTime(start.UtcDateTime);
-            var endDate = DateOnly.FromDateTime(end.UtcDateTime);
+            var startDate = DateOnly.FromDateTime(start);
+            var endDate = DateOnly.FromDateTime(end);
             if (startDate < minDate || endDate > maxDate)
             {
                 // D-753 — render the actual forum window (config-driven) in the
@@ -188,7 +188,7 @@ public partial class SpeakerAvailabilityPage
         finally { _busy = false; }
     }
 
-    private static bool TryParseUtc(string value, out DateTimeOffset result)
+    private static bool TryParseUtc(string value, out DateTime result)
     {
         if (DateTime.TryParse(value, CultureInfo.InvariantCulture,
                 DateTimeStyles.None, out var dt))

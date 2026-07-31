@@ -82,14 +82,14 @@ internal sealed class OrganizationProfileConfiguration
             Version = "1.0.0",
             CurrentYear = 2026,
             Status = ForumStatus.Open,
-            EventStartDate = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
-            EventEndDate = new DateTimeOffset(2026, 4, 30, 0, 0, 0, TimeSpan.Zero),
+            EventStartDate = new DateTime(2026, 1, 1, 0, 0, 0),
+            EventEndDate = new DateTime(2026, 4, 30, 0, 0, 0),
             LocationText = "Saudi Arabia",
             LocationTextArabic = "السعودية",
             RegistrationSuccessMessage = SiteSettingKeys.DefaultRegistrationMessageEn,
             RegistrationSuccessMessageArabic = SiteSettingKeys.DefaultRegistrationMessageAr,
             PartnerDirectoryEnabled = true,
-            CreatedAt = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0),
         });
     }
 }

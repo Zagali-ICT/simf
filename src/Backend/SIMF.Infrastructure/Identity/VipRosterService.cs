@@ -224,7 +224,7 @@ internal sealed class VipRosterService(
         ClosedXmlUserExcelService.SanitiseForExcel(r.ReferenceNumber),
         ClosedXmlUserExcelService.SanitiseForExcel(r.AccountState),
         r.HasVipPhoto ? "Yes" : "No",
-        r.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm"),
+        r.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
     ];
 
     /// <summary>RFC-4180 CSV field quoting — wrap in quotes and double any

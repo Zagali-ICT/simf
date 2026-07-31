@@ -20,7 +20,7 @@ namespace SIMF.Api.Tests;
 public sealed class HallAvailabilityTests : IClassFixture<SimfApiFactory>
 {
     // Far-future windows so the slots are in the future regardless of the test clock.
-    private static readonly DateTimeOffset WindowStart = new(2030, 1, 1, 10, 0, 0, TimeSpan.Zero);
+    private static readonly DateTime WindowStart = new(2030, 1, 1, 10, 0, 0);
 
     private readonly SimfApiFactory _factory;
     private readonly HttpClient _client;
@@ -255,7 +255,7 @@ public sealed class HallAvailabilityTests : IClassFixture<SimfApiFactory>
 
 
     private async Task SeedBoundMeetingAsync(
-        Guid hallId, DateTimeOffset start, DateTimeOffset end)
+        Guid hallId, DateTime start, DateTime end)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -265,7 +265,7 @@ public sealed class HallAvailabilityTests : IClassFixture<SimfApiFactory>
             Code = "SPK-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Name = "Bound Speaker", NameArabic = "متحدّث",
             AllowsMeetingRequests = true, IsActive = true, DisplayOrder = 0,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Speakers.Add(speaker);
         db.SpeakerMeetingRequests.Add(new SpeakerMeetingRequest
@@ -276,7 +276,7 @@ public sealed class HallAvailabilityTests : IClassFixture<SimfApiFactory>
             RequesterName = "Bound", Subject = "Bound meeting",
             HallId = hallId, SlotStart = start, SlotEnd = end,
             Status = MeetingRequestStatus.AwaitingSpeaker,
-            CreatedAt = DateTimeOffset.UtcNow, RespondedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now, RespondedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
     }
@@ -308,7 +308,7 @@ public sealed class HallAvailabilityTests : IClassFixture<SimfApiFactory>
             Code = "H-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Name = "Meeting Hall", NameArabic = "قاعة الاجتماعات",
             Purpose = HallPurpose.Meeting,
-            Capacity = 20, IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+            Capacity = 20, IsActive = true, CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         await db.SaveChangesAsync();

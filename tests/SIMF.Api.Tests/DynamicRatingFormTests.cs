@@ -130,7 +130,7 @@ public sealed class DynamicRatingFormTests : IClassFixture<SimfApiFactory>
             TitleArabic = "يوم التقييم",
             DisplayOrder = 0,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.ProgrammeDays.Add(day);
         await db.SaveChangesAsync();

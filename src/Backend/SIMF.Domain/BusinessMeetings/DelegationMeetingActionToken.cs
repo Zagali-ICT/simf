@@ -32,10 +32,10 @@ public sealed class DelegationMeetingActionToken
 
     /// <summary>When the token expires (UTC) — 72h after mint (mirrors the speaker
     /// token TTL, <see cref="Common.Options.MeetingLinksOptions.TokenTtlHours"/>).</summary>
-    public DateTimeOffset ExpiresUtc { get; set; }
+    public DateTime ExpiresUtc { get; set; }
 
     /// <summary>When the token was consumed (UTC); null while unused. Single-use.</summary>
-    public DateTimeOffset? UsedAt { get; set; }
+    public DateTime? UsedAt { get; set; }
 
-    public DateTimeOffset CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 }

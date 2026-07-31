@@ -6,6 +6,7 @@ using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common.Enums;
 using SIMF.Common.Options;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Identity;
 
@@ -40,7 +41,7 @@ internal sealed class DormantAccountService(
             return 0;
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var cutoff = now.AddDays(-days);
 
         var dormant = await dbContext.Users

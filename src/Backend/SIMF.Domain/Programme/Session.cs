@@ -65,11 +65,11 @@ public class Session : BaseAuditEntity
 
     /// <summary>Session start (UTC). The Flutter agenda renders local-
     /// time per the user's tz.</summary>
-    public DateTimeOffset Start { get; set; }
+    public DateTime Start { get; set; }
 
     /// <summary>Session end (UTC). Must be > <see cref="Start"/>;
     /// validated at the service layer.</summary>
-    public DateTimeOffset End { get; set; }
+    public DateTime End { get; set; }
 
     /// <summary>D-165 (PDF §2.9) — optional per-session override of the
     /// parent <see cref="Hall"/>'s <c>SeatCount</c>. Null means "use
@@ -87,13 +87,13 @@ public class Session : BaseAuditEntity
     /// worker once it has dispatched the "starting soon" notifications for
     /// this session. The null check is the worker's dedup guard: a session
     /// is reminded exactly once. Null until reminded (the normal state).</summary>
-    public DateTimeOffset? ReminderSent { get; set; }
+    public DateTime? ReminderSent { get; set; }
 
     /// <summary>Set by the end-of-session rating-prompt worker once it has
     /// dispatched the "please rate this session" notifications. The null check is
     /// the worker's dedup guard: a session is prompted exactly once. Null until
     /// prompted (the normal state).</summary>
-    public DateTimeOffset? RatingPromptSent { get; set; }
+    public DateTime? RatingPromptSent { get; set; }
 
     /// <summary>P3.2 — D-231 (Completion Programme §5.2, Option A): the
     /// broadcast lifecycle. The Scientific Committee drives the transitions
@@ -105,7 +105,7 @@ public class Session : BaseAuditEntity
     /// <summary>P3.2 — D-231: stamped when the session is published
     /// (<see cref="SessionStatus.Published"/>) and cleared if it is
     /// un-published. Null in every other state.</summary>
-    public DateTimeOffset? PublishedAt { get; set; }
+    public DateTime? PublishedAt { get; set; }
 
     /// <summary>P3.2b — D-232 (D-213): the recording attached to this session,
     /// stored out-of-row on the filesystem behind <c>ISessionRecordingStorage</c>.
@@ -127,7 +127,7 @@ public class Session : BaseAuditEntity
     public long? RecordingSizeBytes { get; set; }
 
     /// <summary>When the recording was last uploaded.</summary>
-    public DateTimeOffset? RecordingUploadedAt { get; set; }
+    public DateTime? RecordingUploadedAt { get; set; }
 
     /// <summary>Bare <c>Guid</c> of the admin who uploaded the recording —
     /// cross-context (Identity DB), no FK (D-157).</summary>

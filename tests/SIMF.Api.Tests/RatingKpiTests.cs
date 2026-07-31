@@ -138,7 +138,7 @@ public sealed class RatingKpiTests : IClassFixture<SimfApiFactory>
             NameArabic = "قاعة",
             Capacity = 10,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         var session = new Session
@@ -148,10 +148,10 @@ public sealed class RatingKpiTests : IClassFixture<SimfApiFactory>
             Title = "Keynote",
             TitleArabic = "الكلمة الرئيسية",
             HallId = hall.Id,
-            Start = DateTimeOffset.UtcNow.AddHours(-1),
-            End = DateTimeOffset.UtcNow.AddHours(1),
+            Start = SimfClock.Now.AddHours(-1),
+            End = SimfClock.Now.AddHours(1),
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         await db.SaveChangesAsync();

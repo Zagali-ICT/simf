@@ -19,7 +19,7 @@ public sealed record AdminBadgeBatchSummary(
     int TotalCount,
     bool IsDelegate,
     string? RecipientEmail,
-    DateTimeOffset CreatedAt,
+    DateTime CreatedAt,
     bool IsActive);
 
 /// <summary>

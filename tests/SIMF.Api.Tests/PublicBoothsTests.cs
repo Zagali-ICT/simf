@@ -87,7 +87,7 @@ public sealed class PublicBoothsTests : IClassFixture<SimfApiFactory>
         var exhibitorId = Guid.NewGuid();
         var boothWithExhibitor = Guid.NewGuid();
         var boothNoExhibitor = Guid.NewGuid();
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var code1 = NewCode();
         var code2 = NewCode();
 
@@ -154,7 +154,7 @@ public sealed class PublicBoothsTests : IClassFixture<SimfApiFactory>
         const int countryId = 682; // SA
         var exhibitorId = Guid.NewGuid();
         var boothId = Guid.NewGuid();
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var code = NewCode();
         string expectedName;
         string expectedNameArabic;
@@ -226,7 +226,7 @@ public sealed class PublicBoothsTests : IClassFixture<SimfApiFactory>
     {
         var exhibitorId = Guid.NewGuid();
         var boothId = Guid.NewGuid();
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var code = NewCode();
 
         using (var scope = _factory.Services.CreateScope())
@@ -271,7 +271,7 @@ public sealed class PublicBoothsTests : IClassFixture<SimfApiFactory>
     public async Task Public_booth_carries_the_inline_officer_fields()
     {
         var boothId = Guid.NewGuid();
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var code = NewCode();
 
         using (var scope = _factory.Services.CreateScope())
@@ -340,7 +340,7 @@ public sealed class PublicBoothsTests : IClassFixture<SimfApiFactory>
     {
         var exhibitorId = Guid.NewGuid();
         var boothId = Guid.NewGuid();
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var code = NewCode();
 
         using (var scope = _factory.Services.CreateScope())

@@ -11,8 +11,8 @@ void main() {
         'start': '2026-11-23T06:00:00Z',
         'end': '2026-11-23T07:00:00Z',
       });
-      expect(session.start, DateTime.utc(2026, 11, 23, 6));
-      expect(session.end, DateTime.utc(2026, 11, 23, 7));
+      expect(session.start, DateTime(2026, 11, 23, 9));
+      expect(session.end, DateTime(2026, 11, 23, 10));
     });
 
     test('end is null when the wire omits it (global main-live synthetic)',

@@ -140,7 +140,7 @@ public sealed class VipRosterTests : IClassFixture<SimfApiFactory>
             Name = "Test Organisation",
             CommercialRegistration = $"CR{Guid.NewGuid():N}"[..12],
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Organisations.Add(fresh);
         await appDb.SaveChangesAsync();
@@ -163,7 +163,7 @@ public sealed class VipRosterTests : IClassFixture<SimfApiFactory>
             PageColor = "#3B82F6",
             IsForVisitor = true,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.ProfileTypes.Add(fresh);
         await appDb.SaveChangesAsync();

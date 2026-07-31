@@ -105,7 +105,7 @@ public sealed class ImportBannersEndpoint(IAdminCmsService service, IGridExcelIm
         }
 
         var startRaw = row.Cells.GetValueOrDefault("Start", string.Empty);
-        if (!DateTimeOffset.TryParse(startRaw, out var start))
+        if (!DateTime.TryParse(startRaw, out var start))
         {
             throw new DataValidationException(
                 "The start date/time is required and must be a valid date.",
@@ -113,7 +113,7 @@ public sealed class ImportBannersEndpoint(IAdminCmsService service, IGridExcelIm
         }
 
         var endRaw = row.Cells.GetValueOrDefault("End", string.Empty);
-        if (!DateTimeOffset.TryParse(endRaw, out var end))
+        if (!DateTime.TryParse(endRaw, out var end))
         {
             throw new DataValidationException(
                 "The end date/time is required and must be a valid date.",

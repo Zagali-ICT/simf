@@ -21,7 +21,7 @@ public interface ISecondFactorTokenRepository
     /// session (closes the read-modify-write double-mint window).
     /// </summary>
     Task<bool> TryConsumeAsync(
-        Guid tokenId, DateTimeOffset now, CancellationToken cancellationToken = default);
+        Guid tokenId, DateTime now, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Atomically increments the wrong-code attempt counter in a single UPDATE,

@@ -121,7 +121,7 @@ internal sealed partial class ReportingService
         string DisplayName,
         string Email,
         AccountState AccountState,
-        DateTimeOffset CreatedAt);
+        DateTime CreatedAt);
 
     private static RegistrationReportRow ToRow(
         RegistrationProjection p, Dictionary<Guid, string> profileTypes) =>

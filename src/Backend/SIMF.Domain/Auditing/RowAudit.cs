@@ -26,7 +26,7 @@ public sealed class RowAudit
     public long Id { get; set; }
 
     /// <summary>When the change committed (UTC).</summary>
-    public DateTimeOffset OccurredAt { get; set; }
+    public DateTime OccurredAt { get; set; }
 
     /// <summary>The DB table name the change happened on (e.g. <c>AspNetUsers</c>).</summary>
     public string TableName { get; set; } = string.Empty;

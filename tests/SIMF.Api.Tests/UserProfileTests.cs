@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
@@ -934,7 +934,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
             MobileAppRole = MobileAppRole.None,
             IsActive = true,
             IsAppRegisterable = isAppRegisterable,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.ProfileTypes.Add(fresh);
         await appDb.SaveChangesAsync();
@@ -1114,7 +1114,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
                 NameArabic = "اهتمام معطّل",
                 DisplayOrder = 0,
                 IsActive = false,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             appDb.Interests.Add(interest);
             await db.SaveChangesAsync();
@@ -1150,7 +1150,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
                     NameArabic = $"اختيار {i}",
                     DisplayOrder = i,
                     IsActive = true,
-                    CreatedAt = DateTimeOffset.UtcNow,
+                    CreatedAt = SimfClock.Now,
                 })
                 .ToList();
             appDb.Interests.AddRange(rows);
@@ -1348,7 +1348,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
                 Id = Guid.NewGuid(),
                 UserId = userId,
                 ProfileTypeId = adminAssigned,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
             await appDb.SaveChangesAsync();
         }
@@ -1381,7 +1381,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
             PageColor = "#1F2937",
             IsForVisitor = isVisitor,
             IsActive = isActive,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.ProfileTypes.Add(row);
         await appDb.SaveChangesAsync();
@@ -1551,7 +1551,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
             NameArabic = $"منطقة اختبار {Guid.NewGuid():N}",
             Name = $"Test Region {Guid.NewGuid():N}",
             IsActive = isActive,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Regions.Add(row);
         await appDb.SaveChangesAsync();
@@ -1568,7 +1568,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
             NameArabic = $"جهة اختبار {Guid.NewGuid():N}",
             Name = $"Test Organisation {Guid.NewGuid():N}",
             IsActive = isActive,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Organisations.Add(row);
         await appDb.SaveChangesAsync();
@@ -1676,7 +1676,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
             NameArabic = "اهتمام اختبار",
             DisplayOrder = 0,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Interests.Add(interest);
         await db.SaveChangesAsync();
@@ -1711,7 +1711,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
                 Id = Guid.NewGuid(),
                 UserId = userId,
                 QrId = $"TEST{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}",
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
             await db.SaveChangesAsync();
             await appDb.SaveChangesAsync();
@@ -1771,7 +1771,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
                 Id = Guid.NewGuid(),
                 UserId = userId,
                 QrId = $"TEST{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}",
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
             await appDb.SaveChangesAsync();
         }

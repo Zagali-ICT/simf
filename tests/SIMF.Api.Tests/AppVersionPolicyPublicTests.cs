@@ -134,7 +134,7 @@ public sealed class AppVersionPolicyPublicTests : IClassFixture<SimfApiFactory>
             {
                 Id = Guid.NewGuid(),
                 Key = key,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             db.SystemSettings.Add(setting);
         }

@@ -50,7 +50,7 @@ internal sealed class VisitorShareService(
             UserId = userId,
             Token = minted,
             IsActive = true,
-            CreatedAt = timeProvider.GetUtcNow(),
+            CreatedAt = timeProvider.SimfNow(),
         });
         await appDbContext.SaveChangesAsync(cancellationToken);
         return new VisitorShareTokenResponse(minted);
@@ -59,7 +59,7 @@ internal sealed class VisitorShareService(
     public async Task<VisitorShareTokenResponse> RotateTokenAsync(
         Guid userId, CancellationToken cancellationToken = default)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var actives = await appDbContext.VisitorShareTokens
             .Where(token => token.UserId == userId && token.IsActive)
             .ToListAsync(cancellationToken);
@@ -132,7 +132,7 @@ internal sealed class VisitorShareService(
         if (existing is not null)
         {
             existing.Note = trimmed;
-            existing.UpdatedAt = timeProvider.GetUtcNow();
+            existing.UpdatedAt = timeProvider.SimfNow();
             await appDbContext.SaveChangesAsync(cancellationToken);
             return ToRow(existing, card);
         }
@@ -144,7 +144,7 @@ internal sealed class VisitorShareService(
             SubjectUserId = card.UserId,
             Note = trimmed,
             IsActive = true,
-            CreatedAt = timeProvider.GetUtcNow(),
+            CreatedAt = timeProvider.SimfNow(),
         };
         appDbContext.SavedContacts.Add(saved);
         await appDbContext.SaveChangesAsync(cancellationToken);
@@ -196,7 +196,7 @@ internal sealed class VisitorShareService(
             return; // idempotent
         }
         saved.Deactivate();
-        saved.UpdatedAt = timeProvider.GetUtcNow();
+        saved.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
     }
 

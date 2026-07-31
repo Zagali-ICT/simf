@@ -53,6 +53,6 @@ public sealed class HallSeatLayout
     /// NEWLY defined row to <c>Vvip</c> (owner 2026-07-26). Max 256 chars.</summary>
     public string? SeatTiers { get; set; }
 
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset? UpdatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 }

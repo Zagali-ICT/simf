@@ -1,4 +1,4 @@
-﻿// Tests: the D-641 PendingApprovalPageBase extraction. The three pending-approval
+// Tests: the D-641 PendingApprovalPageBase extraction. The three pending-approval
 // queues (admins / others / visitors) now share their grid-load + approve/reject/
 // bulk logic through PendingApprovalPageBase; these bUnit tests prove each page
 // still renders its rows + its divergent RowActions through the base, and that the
@@ -14,7 +14,7 @@ namespace SIMF.ControlPanel.Tests;
 public sealed class PendingApprovalQueueTests : CpComponentTestBase
 {
     private static readonly AdminPendingUserSummary Row =
-        new(Guid.NewGuid(), "pending@simf.test", "Pending Person", DateTimeOffset.UtcNow);
+        new(Guid.NewGuid(), "pending@simf.test", "Pending Person", SimfClock.Now);
 
     // Every queue loads its rows in OnInitializedAsync via the base LoadAsync ->
     // simfAccount.postJson({apiBase}/pending/list). One loose stub covers all three.

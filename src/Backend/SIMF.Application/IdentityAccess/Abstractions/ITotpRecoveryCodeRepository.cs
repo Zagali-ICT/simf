@@ -13,7 +13,7 @@ public interface ITotpRecoveryCodeRepository
     Task AddBatchAsync(
         Guid userId,
         IReadOnlyList<string> codeHashes,
-        DateTimeOffset now,
+        DateTime now,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -26,7 +26,7 @@ public interface ITotpRecoveryCodeRepository
     Task<bool> TryConsumeAsync(
         Guid userId,
         string codeHash,
-        DateTimeOffset now,
+        DateTime now,
         CancellationToken cancellationToken = default);
 
     /// <summary>Counts the active (un-consumed) codes for the user.</summary>

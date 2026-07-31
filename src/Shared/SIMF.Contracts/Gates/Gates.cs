@@ -17,7 +17,7 @@ public sealed record OperatorGateAssignment(
 public sealed class GateScanRequest
 {
     public string Qr { get; set; } = string.Empty;
-    public DateTimeOffset? ClientScannedAt { get; set; }
+    public DateTime? ClientScannedAt { get; set; }
     public string? IdempotencyKey { get; set; }
     public ScanSource Source { get; set; } = ScanSource.MobileApp;
 
@@ -44,7 +44,7 @@ public sealed record GateScanResponse(
     long ScanId,
     ScanOutcome Outcome,
     ScanDirection Direction,
-    DateTimeOffset ScannedAt,
+    DateTime ScannedAt,
     GateScanUserProfile? UserProfile,
     DenialReasonCode? DenialReasonCode,
     string? DenialMessage,
@@ -65,7 +65,7 @@ public sealed record OperatorDenialBucket(string Code, int Count);
 /// <summary>One row in the operator daily-report grid.</summary>
 public sealed record OperatorScanRow(
     long ScanId,
-    DateTimeOffset ScannedAt,
+    DateTime ScannedAt,
     ScanOutcome Outcome,
     ScanDirection Direction,
     string? VisitorDisplayName,
@@ -74,8 +74,8 @@ public sealed record OperatorScanRow(
 /// <summary>`GET /api/v1/gates/my-reports/today` response.</summary>
 public sealed record OperatorDailyReport(
     Guid OperatorUserId,
-    DateTimeOffset FromUtc,
-    DateTimeOffset ToUtc,
+    DateTime FromUtc,
+    DateTime ToUtc,
     OperatorDailyReportTotals Totals,
     IReadOnlyList<OperatorDenialBucket> DenialBreakdown,
     IReadOnlyList<OperatorScanRow> Rows);
@@ -108,10 +108,10 @@ public sealed class GateVisitorsListRequest
     public ScanOutcome? Outcome { get; set; }
 
     /// <summary>Optional ISO-8601 UTC lower bound (inclusive).</summary>
-    public DateTimeOffset? Since { get; set; }
+    public DateTime? Since { get; set; }
 
     /// <summary>Optional ISO-8601 UTC upper bound (exclusive).</summary>
-    public DateTimeOffset? Until { get; set; }
+    public DateTime? Until { get; set; }
 }
 
 /// <summary>D-160 — one item in <see cref="GateVisitorsListResponse"/>.
@@ -122,7 +122,7 @@ public sealed class GateVisitorsListRequest
 /// detail endpoint when an operator taps a row.</summary>
 public sealed record GateVisitorListItem(
     long ScanId,
-    DateTimeOffset ScannedAt,
+    DateTime ScannedAt,
     ScanDirection Direction,
     ScanOutcome Outcome,
     Guid? UserProfileId,
@@ -139,4 +139,4 @@ public sealed record GateVisitorListItem(
 public sealed record GateVisitorsListResponse(
     IReadOnlyList<GateVisitorListItem> Items,
     string? NextCursor,
-    DateTimeOffset AsOf);
+    DateTime AsOf);

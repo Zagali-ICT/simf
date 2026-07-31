@@ -59,13 +59,17 @@ public sealed class StatisticsProgrammeTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task A_record_just_after_midnight_saudi_counts_on_that_saudi_day()
     {
-        // 00:30 Riyadh on day 2 is stored as 21:30 UTC on day 1. Bucketing on
-        // the raw UTC value would credit this visitor to the wrong forum day.
+        // 00:30 Riyadh on day 2 is STORED as 00:30 on day 2 (owner decision
+        // 2026-07-31 — Saudi local storage, no UTC). This case used to guard the
+        // conversion trap: the same moment was stored as 21:30 UTC on day 1, so
+        // bucketing on the raw value credited the visitor to the wrong forum day.
+        // The trap is gone with the conversion, and the guard now pins WHY it is
+        // gone — the stored date simply is the Saudi date.
         var token = await CreateAdministratorAndSignInAsync();
         var p = await NewProgrammeAsync();
 
         var justAfterMidnight = SaudiAt(p.Day2, 0, 30);
-        Assert.Equal(p.Day1, DateOnly.FromDateTime(justAfterMidnight.UtcDateTime));
+        Assert.Equal(p.Day2, DateOnly.FromDateTime(justAfterMidnight));
 
         await SeedScanAsync(await SeedProfileAsync(), justAfterMidnight);
 
@@ -414,8 +418,8 @@ public sealed class StatisticsProgrammeTests : IClassFixture<SimfApiFactory>
     /// <summary>The stored UTC instant for a Saudi wall-clock time on a given
     /// forum day — lets a test place a record precisely either side of the
     /// 21:00 UTC day boundary.</summary>
-    private static DateTimeOffset SaudiAt(DateOnly day, int hour, int minute = 0) =>
-        new DateTimeOffset(day.ToDateTime(new TimeOnly(hour, minute)), Ast).ToUniversalTime();
+    private static DateTime SaudiAt(DateOnly day, int hour, int minute = 0) =>
+        day.ToDateTime(new TimeOnly(hour, minute));
 
     private static ProgrammeDayStats DayFor(
         IReadOnlyList<ProgrammeDayStats> days, DateOnly date) =>
@@ -446,7 +450,7 @@ public sealed class StatisticsProgrammeTests : IClassFixture<SimfApiFactory>
             day.Deactivate();
         }
 
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         db.ProgrammeDays.AddRange(
             new ProgrammeDay
             {
@@ -505,7 +509,7 @@ public sealed class StatisticsProgrammeTests : IClassFixture<SimfApiFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
 
         var profileType = new UserProfileType
         {
@@ -548,7 +552,7 @@ public sealed class StatisticsProgrammeTests : IClassFixture<SimfApiFactory>
             Name = "Stats Gate",
             NameArabic = "بوابة الإحصاءات",
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Gates.Add(gate);
         await db.SaveChangesAsync();
@@ -557,7 +561,7 @@ public sealed class StatisticsProgrammeTests : IClassFixture<SimfApiFactory>
 
     private async Task SeedScanAsync(
         Guid? profileId,
-        DateTimeOffset scannedAtUtc,
+        DateTime scannedAtUtc,
         ScanOutcome outcome = ScanOutcome.Allowed,
         ScanDirection direction = ScanDirection.CheckIn)
     {
@@ -594,14 +598,14 @@ public sealed class StatisticsProgrammeTests : IClassFixture<SimfApiFactory>
             Name = "Stats Hall",
             NameArabic = "قاعة الإحصاءات",
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         await db.SaveChangesAsync();
         return hall.Id;
     }
 
-    private async Task<Guid> SeedSessionAsync(Guid hallId, DateTimeOffset startUtc)
+    private async Task<Guid> SeedSessionAsync(Guid hallId, DateTime startUtc)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -616,14 +620,14 @@ public sealed class StatisticsProgrammeTests : IClassFixture<SimfApiFactory>
             Start = startUtc,
             End = startUtc.AddHours(1),
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         await db.SaveChangesAsync();
         return session.Id;
     }
 
-    private async Task SeedHallArrivalAsync(Guid userId, DateTimeOffset enterUtc)
+    private async Task SeedHallArrivalAsync(Guid userId, DateTime enterUtc)
     {
         var hallId = await SeedHallAsync();
         var sessionId = await SeedSessionAsync(hallId, enterUtc);
@@ -639,13 +643,13 @@ public sealed class StatisticsProgrammeTests : IClassFixture<SimfApiFactory>
             UserId = userId,
             Method = AttendanceMethod.QrScan,
             Enter = enterUtc,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
 
         await db.SaveChangesAsync();
     }
 
-    private async Task SeedVisitorRegisteredAtAsync(DateTimeOffset createdAtUtc)
+    private async Task SeedVisitorRegisteredAtAsync(DateTime createdAtUtc)
     {
         var email = $"stats-reg-{Guid.NewGuid():N}@simf.test";
         using var scope = _factory.Services.CreateScope();

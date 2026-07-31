@@ -221,7 +221,7 @@ internal sealed class AdminInvitationService(
                 $"الملف المستهدف '{request.SentToUserProfileId}' غير موجود.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var invitation = new Invitation
         {
             Id = Guid.NewGuid(),
@@ -298,7 +298,7 @@ internal sealed class AdminInvitationService(
         var stateChanged = invitation.State != request.State;
         invitation.State = request.State;
         invitation.Notes = NullIfBlank(request.Notes);
-        invitation.UpdatedAt = timeProvider.GetUtcNow();
+        invitation.UpdatedAt = timeProvider.SimfNow();
         // Every settled-state transition is a response — including a
         // correction (Confirmed → Declined) — so RespondedAt always
         // reflects the latest response. Pending → Pending stays null.
@@ -338,7 +338,7 @@ internal sealed class AdminInvitationService(
             return; // idempotent
         }
         invitation.IsActive = false;
-        invitation.UpdatedAt = timeProvider.GetUtcNow();
+        invitation.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry

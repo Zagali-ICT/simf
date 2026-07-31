@@ -1239,7 +1239,7 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
                 UserId = holderId,
                 Name = "Faisal Al-Harbi",
                 NameArabic = "فيصل الحربي",
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
             // An OPEN attendance row = the holder scanned in at the hall gate,
             // which is exactly what "confirmed" means on the seat plan.
@@ -1250,8 +1250,8 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
                 HallId = hall.Id,
                 UserId = holderId,
                 Method = AttendanceMethod.QrScan,
-                Enter = DateTimeOffset.UtcNow,
-                CreatedAt = DateTimeOffset.UtcNow,
+                Enter = SimfClock.Now,
+                CreatedAt = SimfClock.Now,
             });
             await db.SaveChangesAsync();
         }
@@ -1372,7 +1372,7 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
             Capacity = rowLabels.Length * seatsPerRow,
             SeatSelectionMode = hallMode,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         db.HallSeatLayouts.Add(new HallSeatLayout
@@ -1381,7 +1381,7 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
             HallId = hall.Id,
             RowLabels = string.Join(',', rowLabels),
             SeatsPerRow = seatsPerRow,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         var session = new Session
         {
@@ -1393,10 +1393,10 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
             CapacityOverride = capacityOverride,
             // P2.2 — D-227: a FUTURE window so bookings can be cancelled before
             // the session starts (the new cancel-before-start guard, FR-504).
-            Start = DateTimeOffset.UtcNow.AddHours(1),
-            End = DateTimeOffset.UtcNow.AddHours(2),
+            Start = SimfClock.Now.AddHours(1),
+            End = SimfClock.Now.AddHours(2),
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         await db.SaveChangesAsync();
@@ -1425,7 +1425,7 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
             Capacity = hallCapacity ?? seatCounts.Sum(),
             SeatSelectionMode = hallMode,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         db.HallSeatLayouts.Add(new HallSeatLayout
@@ -1435,7 +1435,7 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
             RowLabels = string.Join(',', rowLabels),
             SeatsPerRow = seatCounts.Max(),
             SeatCounts = string.Join(',', seatCounts),
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         var session = new Session
         {
@@ -1445,10 +1445,10 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
             HallId = hall.Id,
             SeatSelectionModeOverride = sessionModeOverride,
             CapacityOverride = capacityOverride,
-            Start = DateTimeOffset.UtcNow.AddHours(1),
-            End = DateTimeOffset.UtcNow.AddHours(2),
+            Start = SimfClock.Now.AddHours(1),
+            End = SimfClock.Now.AddHours(2),
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         await db.SaveChangesAsync();
@@ -1469,7 +1469,7 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
             Capacity = capacity,
             SeatSelectionMode = SeatSelectionMode.OpenSeating,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         var session = new Session
@@ -1478,10 +1478,10 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Live", TitleArabic = "مباشر",
             HallId = hall.Id,
-            Start = DateTimeOffset.UtcNow.AddHours(1),
-            End = DateTimeOffset.UtcNow.AddHours(2),
+            Start = SimfClock.Now.AddHours(1),
+            End = SimfClock.Now.AddHours(2),
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         await db.SaveChangesAsync();
@@ -1502,7 +1502,7 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
             Capacity = capacity,
             SeatSelectionMode = SeatSelectionMode.AssignedSeat,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         var session = new Session
@@ -1511,10 +1511,10 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Live", TitleArabic = "مباشر",
             HallId = hall.Id,
-            Start = DateTimeOffset.UtcNow.AddHours(1),
-            End = DateTimeOffset.UtcNow.AddHours(2),
+            Start = SimfClock.Now.AddHours(1),
+            End = SimfClock.Now.AddHours(2),
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         await db.SaveChangesAsync();
@@ -1531,7 +1531,7 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
             Code = "H-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Name = "Hall", NameArabic = "قاعة",
             Capacity = capacity, IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         await db.SaveChangesAsync();

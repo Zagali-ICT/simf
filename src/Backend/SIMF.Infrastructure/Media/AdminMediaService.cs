@@ -128,7 +128,7 @@ internal sealed class AdminMediaService(
         Validate(request.Kind, request.Title, request.TitleArabic,
             request.Album, request.AlbumArabic, request.Url, request.DisplayOrder);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var item = new MediaItem
         {
             Id = Guid.NewGuid(),
@@ -184,7 +184,7 @@ internal sealed class AdminMediaService(
         item.Url = NullIfBlank(request.Url);
         item.DisplayOrder = request.DisplayOrder;
         item.IsActive = request.IsActive;
-        item.UpdatedAt = timeProvider.GetUtcNow();
+        item.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -216,7 +216,7 @@ internal sealed class AdminMediaService(
         }
 
         item.IsActive = false;
-        item.UpdatedAt = timeProvider.GetUtcNow();
+        item.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -253,7 +253,7 @@ internal sealed class AdminMediaService(
         // "One active image per item" — retire the replaced file's bytes.
         var priorFileId = item.ImageFileId;
         item.ImageFileId = result.Id;
-        item.UpdatedAt = timeProvider.GetUtcNow();
+        item.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
         if (priorFileId is { } old && old != result.Id)

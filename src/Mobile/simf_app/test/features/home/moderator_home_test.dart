@@ -26,8 +26,8 @@ ModeratedSession _session(String id, {String title = 'Opening Panel'}) =>
       hallName: 'Main Hall',
       hallNameArabic: 'القاعة الرئيسية',
       // 09:00 Saudi (+3) — the tile renders the local wall clock, never UTC.
-      start: DateTime.utc(2026, 3, 1, 6),
-      end: DateTime.utc(2026, 3, 1, 7),
+      start: DateTime(2026, 3, 1, 9),
+      end: DateTime(2026, 3, 1, 10),
     );
 
 /// Renders `ModeratorHome` with the grant list [sessions] already resolved, or

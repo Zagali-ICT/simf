@@ -220,7 +220,7 @@ internal sealed class AdminSessionService(
                 $"توجد جلسة بالرمز '{code}' بالفعل.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var session = new Session
         {
             Id = Guid.NewGuid(),
@@ -478,7 +478,7 @@ internal sealed class AdminSessionService(
         session.LiveCaptions = NullIfBlank(request.LiveCaptions);
         session.LiveCaptionsArabic = NullIfBlank(request.LiveCaptionsArabic);
         session.IsActive = request.IsActive;
-        session.UpdatedAt = timeProvider.GetUtcNow();
+        session.UpdatedAt = timeProvider.SimfNow();
 
         ReplaceSpeakerLinks(session, request.Speakers);
         ReplaceThemeLinks(session, request.ThemeIds);
@@ -598,7 +598,7 @@ internal sealed class AdminSessionService(
         var audience = await ResolveCancellationAudienceAsync(id, cancellationToken);
 
         session.IsActive = false;
-        session.UpdatedAt = timeProvider.GetUtcNow();
+        session.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await AnnounceSessionCancelledAsync(actorUserId, session, audience, cancellationToken);
@@ -733,7 +733,7 @@ internal sealed class AdminSessionService(
                 $"لا يمكن نقل الجلسة من {from} إلى {status}.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         // S-7 — adjacency alone is not enough: a session cannot be marked Held
         // before it has started, nor Recorded/Published without an attached
         // recording. Default guard (no admin override in this increment).
@@ -786,7 +786,7 @@ internal sealed class AdminSessionService(
             FileService.SessionRecording, session.Id, content, fileName, contentType,
             System.IO.Path.GetExtension(fileName), actorUserId, cancellationToken);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         session.RecordingStoredFileName = result.Id.ToString();
         session.RecordingFileName = fileName;
         session.RecordingContentType = contentType;
@@ -834,7 +834,7 @@ internal sealed class AdminSessionService(
         session.RecordingSizeBytes = null;
         session.RecordingUploadedAt = null;
         session.RecordingUploadedByUserId = null;
-        session.UpdatedAt = timeProvider.GetUtcNow();
+        session.UpdatedAt = timeProvider.SimfNow();
         // Clear the metadata first, then drop the file: if the file delete
         // fails the app already sees "no recording" and only an orphan file
         // is left behind (harmless), never a row pointing at a missing file.
@@ -922,7 +922,7 @@ internal sealed class AdminSessionService(
     // guard. No admin override flag in this increment — an admin who must publish
     // pre-recorded content adjusts the session's start time / uploads a recording.
     private static void ValidateStatusGuards(
-        Session session, SessionStatus target, DateTimeOffset now)
+        Session session, SessionStatus target, DateTime now)
     {
         if (target == SessionStatus.Held && now < session.Start)
         {
@@ -941,7 +941,7 @@ internal sealed class AdminSessionService(
         }
     }
 
-    private static void ValidateTimeWindow(DateTimeOffset start, DateTimeOffset end)
+    private static void ValidateTimeWindow(DateTime start, DateTime end)
     {
         if (end <= start)
         {
@@ -1031,7 +1031,7 @@ internal sealed class AdminSessionService(
     // times. Half-open overlap: existing.Start < newEnd AND newStart < existing.End.
     // Excludes the session being updated (excludeSessionId) and soft-deleted rows.
     private async Task EnsureNoHallTimeOverlapAsync(
-        Guid hallId, DateTimeOffset start, DateTimeOffset end,
+        Guid hallId, DateTime start, DateTime end,
         Guid excludeSessionId, CancellationToken cancellationToken)
     {
         var overlaps = await dbContext.Sessions

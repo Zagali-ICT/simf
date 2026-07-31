@@ -160,7 +160,7 @@ public sealed class DelegationMeetingActionTokenTests : IClassFixture<SimfApiFac
         await db.DelegationMeetingActionTokens
             .Where(t => t.DelegationMeetingRequestId == requestId)
             .ExecuteUpdateAsync(s => s.SetProperty(
-                t => t.ExpiresUtc, DateTimeOffset.UtcNow.AddHours(-1)));
+                t => t.ExpiresUtc, SimfClock.Now.AddHours(-1)));
     }
 
     private async Task SetStatusAsync(Guid requestId, MeetingRequestStatus status)
@@ -222,11 +222,11 @@ public sealed class DelegationMeetingActionTokenTests : IClassFixture<SimfApiFac
             Code = "MH-" + suffix,
             Name = "Meeting Hall", NameArabic = "قاعة الاجتماعات",
             Purpose = HallPurpose.Meeting, Capacity = 10, IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
 
-        var start = new DateTimeOffset(2031, 6, 1, 10, 0, 0, TimeSpan.Zero);
+        var start = new DateTime(2031, 6, 1, 10, 0, 0);
         var req = new DelegationMeetingRequest
         {
             Id = Guid.NewGuid(),
@@ -237,7 +237,7 @@ public sealed class DelegationMeetingActionTokenTests : IClassFixture<SimfApiFac
             Subject = "Naval cooperation",
             HallId = hall.Id, SlotStart = start, SlotEnd = start.AddMinutes(30),
             Status = MeetingRequestStatus.AwaitingSpeaker,
-            CreatedAt = DateTimeOffset.UtcNow, RespondedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now, RespondedAt = SimfClock.Now,
         };
         db.DelegationMeetingRequests.Add(req);
         await db.SaveChangesAsync();
@@ -252,7 +252,7 @@ public sealed class DelegationMeetingActionTokenTests : IClassFixture<SimfApiFac
             country = new Country
             {
                 Id = id, Code = code, Name = code, NameArabic = code,
-                IsActive = true, IsInvited = true, CreatedAt = DateTimeOffset.UtcNow,
+                IsActive = true, IsInvited = true, CreatedAt = SimfClock.Now,
             };
             db.Countries.Add(country);
             await db.SaveChangesAsync();

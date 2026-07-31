@@ -35,8 +35,8 @@ public sealed class SessionModerationDeskTests : CpComponentTestBase
         0,
         status == QuestionStatus.Hidden,
         isPushed,
-        isPushed ? DateTimeOffset.UnixEpoch : null,
-        DateTimeOffset.UnixEpoch,
+        isPushed ? DateTime.UnixEpoch : null,
+        DateTime.UnixEpoch,
         QuestionPhase.Live,
         status);
 

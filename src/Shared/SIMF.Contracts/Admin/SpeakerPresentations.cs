@@ -13,4 +13,4 @@ public sealed record AdminSpeakerPresentationRow(
     string FileName,
     string ContentType,
     long SizeBytes,
-    DateTimeOffset CreatedAt);
+    DateTime CreatedAt);

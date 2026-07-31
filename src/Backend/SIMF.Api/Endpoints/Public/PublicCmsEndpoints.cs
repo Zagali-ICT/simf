@@ -44,7 +44,7 @@ public sealed class GetPublicContentBlockEndpoint(IPublicCmsService service)
             -(block.LastUpdatedAt.Ticks % TimeSpan.TicksPerSecond));
         var ifModifiedSince = HttpContext.Request.Headers.IfModifiedSince;
         if (ifModifiedSince.Count > 0
-            && DateTimeOffset.TryParse(ifModifiedSince.ToString(), out var since)
+            && DateTime.TryParse(ifModifiedSince.ToString(), out var since)
             && since >= lastModifiedSecond)
         {
             await Send.ResultAsync(Results.StatusCode(StatusCodes.Status304NotModified));
@@ -52,7 +52,7 @@ public sealed class GetPublicContentBlockEndpoint(IPublicCmsService service)
         }
 
         HttpContext.Response.Headers.LastModified =
-            lastModifiedSecond.UtcDateTime.ToString("R");
+            lastModifiedSecond.ToString("R");
         await Send.OkAsync(ApiResult<PublicContentBlock>.Ok(block), ct);
     }
 }

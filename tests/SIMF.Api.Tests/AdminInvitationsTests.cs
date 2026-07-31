@@ -276,7 +276,7 @@ public sealed class AdminInvitationsTests : IClassFixture<SimfApiFactory>
                 PageColor = "#FFD700",
                 MobileAppRole = MobileAppRole.None,
                 IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             appDb.ProfileTypes.Add(profileType);
             await appDb.SaveChangesAsync();
@@ -293,7 +293,7 @@ public sealed class AdminInvitationsTests : IClassFixture<SimfApiFactory>
             IsSaudi = true,
             NationalId = "1234567890",
             NationalityId = 0,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.UserProfiles.Add(profile);
         await appDb.SaveChangesAsync();

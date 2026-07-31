@@ -129,8 +129,8 @@ internal sealed class SpeakerMeetingRequestService(
         // already hidden from the picker (R2), so a requester never sees a same-time
         // error. What R1 no longer permits (G3, above) is a request against a speaker
         // with NO free slot at all.
-        DateTimeOffset? slotStart = null;
-        DateTimeOffset? slotEnd = null;
+        DateTime? slotStart = null;
+        DateTime? slotEnd = null;
         Guid? availabilityWindowId = null;
         if (request.SlotStart is { } pickedStart)
         {
@@ -186,7 +186,7 @@ internal sealed class SpeakerMeetingRequestService(
                 openRequest.Id, speakerId, openRequest.Status, openRequest.CreatedAt);
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var req = new SpeakerMeetingRequest
         {
             Id = Guid.NewGuid(),
@@ -395,7 +395,7 @@ internal sealed class SpeakerMeetingRequestService(
         var bindHall = request.Status == MeetingRequestStatus.Accepted
             && request.HallId is not null;
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         // D-717 — stage the speaker Approve/Reject tokens into the SAME unit of work
         // as the AwaitingSpeaker transition (they are durable domain state, not a
@@ -596,7 +596,7 @@ internal sealed class SpeakerMeetingRequestService(
                 "Only a confirmed meeting can be checked in.",
                 "لا يمكن تسجيل الحضور إلا لاجتماع مؤكَّد.");
         }
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         req.Status = MeetingRequestStatus.Done;
         req.CheckedInAt = now;
         req.CheckedInByUserId = actorUserId;
@@ -713,7 +713,7 @@ internal sealed class SpeakerMeetingRequestService(
         // silent no-op this action exists to fix.
         await EnsureSpeakerConfirmationIsDeliverableAsync(req.SpeakerId, cancellationToken);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         // Kill any still-live token so only the fresh pair can decide the request.
         await appDbContext.MeetingActionTokens
             .Where(t => t.SpeakerMeetingRequestId == req.Id && t.UsedAt == null)
@@ -948,7 +948,7 @@ internal sealed class SpeakerMeetingRequestService(
     // accept-with-hall bind so the two never diverge on which states hold a slot.
     private Task<bool> SpeakerHasOverlappingMeetingAsync(
         Guid speakerId, Guid excludeRequestId,
-        DateTimeOffset start, DateTimeOffset end, CancellationToken cancellationToken) =>
+        DateTime start, DateTime end, CancellationToken cancellationToken) =>
         appDbContext.SpeakerMeetingRequests.AsNoTracking()
             .AnyAsync(r => r.Id != excludeRequestId
                 && r.SpeakerId == speakerId
@@ -962,7 +962,7 @@ internal sealed class SpeakerMeetingRequestService(
     // concurrent meetings with two different speakers. Same half-open overlap rule.
     private Task<bool> RequesterHasOverlappingMeetingAsync(
         Guid requesterUserId, Guid excludeRequestId,
-        DateTimeOffset start, DateTimeOffset end, CancellationToken cancellationToken) =>
+        DateTime start, DateTime end, CancellationToken cancellationToken) =>
         appDbContext.SpeakerMeetingRequests.AsNoTracking()
             .AnyAsync(r => r.Id != excludeRequestId
                 && r.RequestedByUserId == requesterUserId

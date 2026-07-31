@@ -614,7 +614,7 @@ app.UseFastEndpoints(config =>
 {
     config.Endpoints.RoutePrefix = "api/v1";
 
-    // No user-facing UTC on the wire: every DateTimeOffset serializes in Saudi
+    // No user-facing UTC on the wire: every DateTime serializes in Saudi
     // local time (+03:00, no DST). The instant is preserved; only its offset
     // representation changes. Reads accept any ISO offset (storage unaffected).
     config.Serializer.Options.Converters.Add(

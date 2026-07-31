@@ -31,8 +31,8 @@ namespace SIMF.Api.Tests;
 /// </summary>
 public sealed class MeetingNoAvailabilityTests : IClassFixture<SimfApiFactory>
 {
-    private static readonly DateTimeOffset WindowStart =
-        new(2035, 6, 1, 9, 0, 0, TimeSpan.Zero);
+    private static readonly DateTime WindowStart =
+        new(2035, 6, 1, 9, 0, 0);
 
     private readonly SimfApiFactory _factory;
     private readonly HttpClient _client;
@@ -224,7 +224,7 @@ public sealed class MeetingNoAvailabilityTests : IClassFixture<SimfApiFactory>
             AllowsMeetingRequests = true,
             IsActive = true,
             DisplayOrder = 0,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Speakers.Add(speaker);
         await db.SaveChangesAsync();
@@ -232,7 +232,7 @@ public sealed class MeetingNoAvailabilityTests : IClassFixture<SimfApiFactory>
     }
 
     private async Task AddSpeakerWindowAsync(
-        Guid speakerId, DateTimeOffset start, int minutes, int slotMinutes)
+        Guid speakerId, DateTime start, int minutes, int slotMinutes)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -244,7 +244,7 @@ public sealed class MeetingNoAvailabilityTests : IClassFixture<SimfApiFactory>
             End = start.AddMinutes(minutes),
             SlotMinutes = slotMinutes,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
     }
@@ -253,7 +253,7 @@ public sealed class MeetingNoAvailabilityTests : IClassFixture<SimfApiFactory>
     /// <see cref="MeetingRequestStatuses.SlotHolding"/>, so the availability layer
     /// stops offering that slot.</summary>
     private async Task TakeSpeakerSlotAsync(
-        Guid speakerId, DateTimeOffset start, DateTimeOffset end)
+        Guid speakerId, DateTime start, DateTime end)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -267,13 +267,13 @@ public sealed class MeetingNoAvailabilityTests : IClassFixture<SimfApiFactory>
             SlotStart = start,
             SlotEnd = end,
             Status = MeetingRequestStatus.Accepted,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
     }
 
     private async Task AddDelegationWindowAsync(
-        int countryId, DateTimeOffset start, int minutes, int slotMinutes)
+        int countryId, DateTime start, int minutes, int slotMinutes)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -285,14 +285,14 @@ public sealed class MeetingNoAvailabilityTests : IClassFixture<SimfApiFactory>
             End = start.AddMinutes(minutes),
             SlotMinutes = slotMinutes,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
     }
 
     private async Task TakeDelegationSlotAsync(
         int requestingCountryId, int targetCountryId,
-        DateTimeOffset start, DateTimeOffset end)
+        DateTime start, DateTime end)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -307,7 +307,7 @@ public sealed class MeetingNoAvailabilityTests : IClassFixture<SimfApiFactory>
             SlotStart = start,
             SlotEnd = end,
             Status = MeetingRequestStatus.Accepted,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
     }
@@ -322,7 +322,7 @@ public sealed class MeetingNoAvailabilityTests : IClassFixture<SimfApiFactory>
             country = new Country
             {
                 Id = id, Code = code, Name = code, NameArabic = code,
-                IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+                IsActive = true, CreatedAt = SimfClock.Now,
             };
             db.Countries.Add(country);
         }
@@ -358,7 +358,7 @@ public sealed class MeetingNoAvailabilityTests : IClassFixture<SimfApiFactory>
                 ProfileTypeId = type.Id,
                 Name = user.DisplayName, NameArabic = "زائر",
                 AllowsSpeakerMeeting = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
             await appDb.SaveChangesAsync();
         }
@@ -393,7 +393,7 @@ public sealed class MeetingNoAvailabilityTests : IClassFixture<SimfApiFactory>
                 NationalityId = nationalityId,
                 IsDelegate = true,
                 AllowsDelegationMeeting = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
             await appDb.SaveChangesAsync();
         }
@@ -414,7 +414,7 @@ public sealed class MeetingNoAvailabilityTests : IClassFixture<SimfApiFactory>
             Id = Guid.NewGuid(),
             Name = "Visitor — G3Seed", NameArabic = "زائر",
             PageColor = "#3B82F6", IsForVisitor = true, IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.ProfileTypes.Add(type);
         await appDb.SaveChangesAsync();

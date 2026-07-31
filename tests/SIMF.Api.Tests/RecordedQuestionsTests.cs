@@ -173,7 +173,7 @@ public sealed class RecordedQuestionsTests : IClassFixture<SimfApiFactory>
             Id = Guid.NewGuid(),
             Code = "H-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Name = "Archive Hall", NameArabic = "قاعة الأرشيف",
-            Capacity = 100, IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+            Capacity = 100, IsActive = true, CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         var session = new Session
@@ -182,13 +182,13 @@ public sealed class RecordedQuestionsTests : IClassFixture<SimfApiFactory>
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Archive Session", TitleArabic = "جلسة الأرشيف",
             HallId = hall.Id,
-            Start = DateTimeOffset.UtcNow.AddMinutes(-15),
-            End = DateTimeOffset.UtcNow.AddMinutes(45),
+            Start = SimfClock.Now.AddMinutes(-15),
+            End = SimfClock.Now.AddMinutes(45),
             // S-7 — the archive flow marks the session Recorded/Published, which now
             // requires an attached recording (the past start already clears the Held
             // clock guard); stamp a pointer so the publish transitions succeed.
             RecordingStoredFileName = Guid.NewGuid().ToString(),
-            IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+            IsActive = true, CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         await db.SaveChangesAsync();

@@ -23,7 +23,10 @@ void main() {
       expect(q.order, 3);
       expect(q.isPushed, isTrue);
       expect(q.isOnStage, isTrue);
-      expect(q.createdAt.isUtc, isTrue);
+      // Saudi wall-clock carries no zone, so a decoded value must NOT be
+      // tagged UTC: tagging it would let a later toLocal() shift it by the
+      // device offset (owner decision 2026-07-31).
+      expect(q.createdAt.isUtc, isFalse);
     });
 
     test('defaults missing fields safely (speaker, not pushed)', () {

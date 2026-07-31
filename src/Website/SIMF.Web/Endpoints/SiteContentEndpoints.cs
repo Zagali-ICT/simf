@@ -477,7 +477,7 @@ internal static class SiteContentEndpoints
         item[field + "_en"] = en.Length > 0 ? en : ar;
     }
 
-    private static string FormatDate(DateTimeOffset value, CultureInfo culture) =>
+    private static string FormatDate(DateTime value, CultureInfo culture) =>
         value.ToString("d MMMM yyyy", culture);
 
     private static void AddIfAny(Dictionary<string, object?> result, string key, List<object> rows)

@@ -18,13 +18,13 @@ public class RefreshToken
     public string TokenHash { get; set; } = string.Empty;
 
     /// <summary>When the token expires (UTC).</summary>
-    public DateTimeOffset ExpiresAt { get; set; }
+    public DateTime ExpiresAt { get; set; }
 
     /// <summary>When the token was created (UTC).</summary>
-    public DateTimeOffset CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 
     /// <summary>When the token was revoked (UTC); null while it is live.</summary>
-    public DateTimeOffset? RevokedAt { get; set; }
+    public DateTime? RevokedAt { get; set; }
 
     /// <summary>
     /// The token this one replaced when it was rotated; null for the first
@@ -33,5 +33,5 @@ public class RefreshToken
     public Guid? RotatedFromId { get; set; }
 
     /// <summary>True when the token is neither revoked nor expired at <paramref name="now"/>.</summary>
-    public bool IsActive(DateTimeOffset now) => RevokedAt is null && now < ExpiresAt;
+    public bool IsActive(DateTime now) => RevokedAt is null && now < ExpiresAt;
 }

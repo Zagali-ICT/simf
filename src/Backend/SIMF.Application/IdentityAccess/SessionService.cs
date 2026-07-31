@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using SIMF.Application.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.IdentityAccess.Abstractions;
@@ -31,7 +31,7 @@ public sealed class SessionService(
         RefreshRequest request,
         CancellationToken cancellationToken = default)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var presented = await refreshTokenRepository.GetByTokenHashAsync(
             OpaqueToken.Hash(request.RefreshToken), cancellationToken);
 
@@ -173,7 +173,7 @@ public sealed class SessionService(
         // sessions, since the stamp is per-account and every access token carries
         // it (SIMF-FDS-001 Amendment A.6, decision D-012).
         await refreshTokenRepository.RevokeAllForUserAsync(
-            user.Id, timeProvider.GetUtcNow(), cancellationToken);
+            user.Id, timeProvider.SimfNow(), cancellationToken);
         await accounts.UpdateSecurityStampAsync(user);
 
         await AuditAsync(AuditEvents.SignOutSucceeded, AuditOutcome.Success,

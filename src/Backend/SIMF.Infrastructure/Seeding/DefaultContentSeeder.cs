@@ -33,7 +33,7 @@ public sealed class DefaultContentSeeder(
 {
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var changed = await EnsureAppUpdateSettingsAsync(now, cancellationToken);
 
         if (changed > 0)
@@ -48,7 +48,7 @@ public sealed class DefaultContentSeeder(
     /// keyed on <c>Key</c> alone (IsActive ignored): a re-run never overwrites
     /// an admin edit and never resurrects a deliberately deactivated key.</summary>
     private async Task<int> EnsureAppUpdateSettingsAsync(
-        DateTimeOffset now, CancellationToken cancellationToken)
+        DateTime now, CancellationToken cancellationToken)
     {
         var descriptions = new Dictionary<string, string>
         {

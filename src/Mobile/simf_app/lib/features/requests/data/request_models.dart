@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// D-500 (Wave 5, الطلبات 1408:9726) — which kind a unified "My requests" row is.
 /// Mirrors the `AppRequestKind` contract (int on the wire). The app renders the
@@ -147,9 +148,9 @@ class AppRequestItem {
       titleArabic: json['titleArabic'] as String? ?? '',
       status: AppRequestStatus.fromIndex(json['status'] as int?),
       eventDate:
-          eventRaw == null ? null : DateTime.tryParse(eventRaw)?.toUtc(),
+          eventRaw == null ? null : parseWireOrNull(eventRaw),
       createdAt:
-          (createdRaw == null ? null : DateTime.tryParse(createdRaw)?.toUtc()) ??
+          (createdRaw == null ? null : parseWireOrNull(createdRaw)) ??
               DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
       canCancel: json['canCancel'] as bool? ?? false,
       subtitle: (json['subtitle'] as String?)?.trim().isEmpty ?? true

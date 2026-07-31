@@ -142,7 +142,7 @@ internal sealed class AdminExhibitorService(
             request.LinkedInUrl, request.InstagramUrl, request.City,
             request.CityArabic, request.Latitude, request.Longitude);
         await EnsureCountryIsValidAsync(request.CountryId, cancellationToken);
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var exhibitor = new Exhibitor
         {
             Id = Guid.NewGuid(),
@@ -214,7 +214,7 @@ internal sealed class AdminExhibitorService(
         exhibitor.Latitude = request.Latitude;
         exhibitor.Longitude = request.Longitude;
         exhibitor.IsActive = request.IsActive;
-        exhibitor.UpdatedAt = timeProvider.GetUtcNow();
+        exhibitor.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -240,7 +240,7 @@ internal sealed class AdminExhibitorService(
                 "لم يتم العثور على العارض.");
         if (!exhibitor.IsActive) { return; }
         exhibitor.IsActive = false;
-        exhibitor.UpdatedAt = timeProvider.GetUtcNow();
+        exhibitor.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -351,7 +351,7 @@ internal sealed class AdminExhibitorService(
             },
             cancellationToken);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var membership = new ExhibitorMembership
         {
             Id = Guid.NewGuid(),
@@ -501,7 +501,7 @@ internal sealed class AdminExhibitorService(
             ContactName = contactName,
             RoleLabel = roleLabel,
             IsActive = true,
-            CreatedAt = timeProvider.GetUtcNow(),
+            CreatedAt = timeProvider.SimfNow(),
         };
         appDbContext.Set<ExhibitorMembership>().Add(link);
         await appDbContext.SaveChangesAsync(cancellationToken);

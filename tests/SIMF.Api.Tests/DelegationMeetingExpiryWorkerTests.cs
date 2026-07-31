@@ -14,6 +14,7 @@ using SIMF.Domain.Programme;
 using SIMF.Infrastructure.Operations;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
+using SIMF.Common;
 
 namespace SIMF.Api.Tests;
 
@@ -30,7 +31,7 @@ public sealed class DelegationMeetingExpiryWorkerTests : IClassFixture<SimfApiFa
     [Fact]
     public async Task Reverts_an_awaiting_delegation_meeting_whose_confirm_token_expired()
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var requestId = await SeedBoundAwaitingRequestAsync(
             slotStart: now.AddDays(3), tokenExpires: now.AddHours(-1), tokenUsed: false);
 
@@ -61,7 +62,7 @@ public sealed class DelegationMeetingExpiryWorkerTests : IClassFixture<SimfApiFa
         // A consumed token is as dead as an expired one — but a used token means the
         // meeting already left AwaitingSpeaker in the real flow, so a row still sitting
         // there with a used token is stuck and must be handed back to the admin queue.
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var requestId = await SeedBoundAwaitingRequestAsync(
             slotStart: now.AddDays(3), tokenExpires: now.AddHours(48), tokenUsed: true);
 
@@ -76,7 +77,7 @@ public sealed class DelegationMeetingExpiryWorkerTests : IClassFixture<SimfApiFa
     [Fact]
     public async Task Leaves_an_awaiting_delegation_meeting_with_a_live_confirm_token()
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var requestId = await SeedBoundAwaitingRequestAsync(
             slotStart: now.AddDays(3), tokenExpires: now.AddHours(48), tokenUsed: false);
 
@@ -93,7 +94,7 @@ public sealed class DelegationMeetingExpiryWorkerTests : IClassFixture<SimfApiFa
     [Fact]
     public async Task Leaves_decided_delegation_meetings_alone()
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var acceptedId = await SeedRequestAsync(MeetingRequestStatus.Accepted, now.AddDays(3));
         var rejectedId = await SeedRequestAsync(MeetingRequestStatus.Rejected, null);
 
@@ -109,7 +110,7 @@ public sealed class DelegationMeetingExpiryWorkerTests : IClassFixture<SimfApiFa
 
     // -- Helpers ---------------------------------------------------------------
 
-    private async Task<int> RunScanAsync(DateTimeOffset now)
+    private async Task<int> RunScanAsync(DateTime now)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -119,7 +120,7 @@ public sealed class DelegationMeetingExpiryWorkerTests : IClassFixture<SimfApiFa
     }
 
     private async Task<Guid> SeedBoundAwaitingRequestAsync(
-        DateTimeOffset slotStart, DateTimeOffset tokenExpires, bool tokenUsed)
+        DateTime slotStart, DateTime tokenExpires, bool tokenUsed)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -133,7 +134,7 @@ public sealed class DelegationMeetingExpiryWorkerTests : IClassFixture<SimfApiFa
             Code = "DH" + suffix,
             Name = "Meeting Hall", NameArabic = "قاعة",
             Purpose = HallPurpose.Meeting, Capacity = 10, IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
 
@@ -143,7 +144,7 @@ public sealed class DelegationMeetingExpiryWorkerTests : IClassFixture<SimfApiFa
             HallId = hall.Id,
             Code = "DT" + suffix,
             Capacity = 4, IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.MeetingTables.Add(table);
 
@@ -160,10 +161,10 @@ public sealed class DelegationMeetingExpiryWorkerTests : IClassFixture<SimfApiFa
             MeetingTableId = table.Id,
             SlotStart = slotStart,
             SlotEnd = slotStart.AddMinutes(30),
-            RespondedAt = DateTimeOffset.UtcNow,
+            RespondedAt = SimfClock.Now,
             RespondedByUserId = Guid.NewGuid(),
             ResponseNote = "bound",
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.DelegationMeetingRequests.Add(req);
 
@@ -173,8 +174,8 @@ public sealed class DelegationMeetingExpiryWorkerTests : IClassFixture<SimfApiFa
             DelegationMeetingRequestId = req.Id,
             TokenHash = "hash-" + Guid.NewGuid().ToString("N"),
             ExpiresUtc = tokenExpires,
-            UsedAt = tokenUsed ? DateTimeOffset.UtcNow : null,
-            CreatedAt = DateTimeOffset.UtcNow,
+            UsedAt = tokenUsed ? SimfClock.Now : null,
+            CreatedAt = SimfClock.Now,
         });
 
         await db.SaveChangesAsync();
@@ -182,7 +183,7 @@ public sealed class DelegationMeetingExpiryWorkerTests : IClassFixture<SimfApiFa
     }
 
     private async Task<Guid> SeedRequestAsync(
-        MeetingRequestStatus status, DateTimeOffset? slotStart)
+        MeetingRequestStatus status, DateTime? slotStart)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -198,8 +199,8 @@ public sealed class DelegationMeetingExpiryWorkerTests : IClassFixture<SimfApiFa
             Status = status,
             SlotStart = slotStart,
             SlotEnd = slotStart?.AddMinutes(30),
-            RespondedAt = DateTimeOffset.UtcNow,
-            CreatedAt = DateTimeOffset.UtcNow,
+            RespondedAt = SimfClock.Now,
+            CreatedAt = SimfClock.Now,
         };
         db.DelegationMeetingRequests.Add(req);
         await db.SaveChangesAsync();
@@ -223,7 +224,7 @@ public sealed class DelegationMeetingExpiryWorkerTests : IClassFixture<SimfApiFa
             country = new Country
             {
                 Id = id, Code = code, Name = code, NameArabic = code,
-                IsActive = true, IsInvited = true, CreatedAt = DateTimeOffset.UtcNow,
+                IsActive = true, IsInvited = true, CreatedAt = SimfClock.Now,
             };
             db.Countries.Add(country);
             await db.SaveChangesAsync();

@@ -173,7 +173,7 @@ public sealed class AssetEndpointsTests : IClassFixture<SimfApiFactory>
         // rather than following it. Exercises AssetAuth.ServeAsync's link branch.
         var token = await CreateAdministratorAndSignInAsync();
         var owner = Guid.NewGuid();
-        await SeedNewsAsync(owner, publishedAt: DateTimeOffset.UtcNow.AddDays(-1));
+        await SeedNewsAsync(owner, publishedAt: SimfClock.Now.AddDays(-1));
         var link = await PutAuthAsync(
             $"/api/v1/admin/assets/NewsImage/{owner}/link",
             new SetAssetLinkRequest { Kind = AssetKind.Image, Url = "https://cdn.example/x.jpg" },
@@ -264,7 +264,7 @@ public sealed class AssetEndpointsTests : IClassFixture<SimfApiFactory>
         // owner-active check mirrors the FULL public gate, not just IsActive.
         var token = await CreateAdministratorAndSignInAsync();
         var owner = Guid.NewGuid();
-        await SeedNewsAsync(owner, publishedAt: DateTimeOffset.UtcNow.AddDays(7)); // embargoed
+        await SeedNewsAsync(owner, publishedAt: SimfClock.Now.AddDays(7)); // embargoed
         var link = await PutAuthAsync(
             $"/api/v1/admin/assets/NewsImage/{owner}/link",
             new SetAssetLinkRequest { Kind = AssetKind.Image, Url = "https://cdn.example/embargo.jpg" },
@@ -422,7 +422,7 @@ public sealed class AssetEndpointsTests : IClassFixture<SimfApiFactory>
 
     // News is public only when IsActive AND PublishedAt <= now, so the serve gate
     // mirrors both. publishedAt in the future = an embargoed article (feed-hidden).
-    private async Task SeedNewsAsync(Guid id, DateTimeOffset publishedAt)
+    private async Task SeedNewsAsync(Guid id, DateTime publishedAt)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();

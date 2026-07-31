@@ -121,7 +121,7 @@ internal sealed class AdminMediaPartnerService(
                 $"يوجد شريك إعلامي بالاسم '{name}' بالفعل.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var partner = new MediaPartner
         {
             Name = name,
@@ -212,7 +212,7 @@ internal sealed class AdminMediaPartnerService(
         partner.Latitude = request.Latitude;
         partner.Longitude = request.Longitude;
         partner.IsActive = request.IsActive;
-        partner.UpdatedAt = timeProvider.GetUtcNow();
+        partner.UpdatedAt = timeProvider.SimfNow();
 
         await appDbContext.SaveChangesAsync(cancellationToken);
 
@@ -239,7 +239,7 @@ internal sealed class AdminMediaPartnerService(
         if (!partner.IsActive) { return; }
 
         partner.IsActive = false;
-        partner.UpdatedAt = timeProvider.GetUtcNow();
+        partner.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry

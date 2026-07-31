@@ -7,6 +7,7 @@ import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'package:simf_app/features/sessions/widgets/ask_host_card.dart';
 import 'package:simf_app/features/sessions/widgets/session_detail_body.dart';
 import 'package:simf_app/features/sessions/widgets/session_speaker_card.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 const _speaker = SessionSpeaker(
   id: 'sp1',
@@ -100,7 +101,7 @@ Future<void> _pumpBody(
 }
 
 void main() {
-  final now = DateTime.now().toUtc();
+  final now = saudiNow();
 
   group('SessionDetailBody ask card (S-4)', () {
     testWidgets('a FUTURE session shows the ask with the pre-session label',

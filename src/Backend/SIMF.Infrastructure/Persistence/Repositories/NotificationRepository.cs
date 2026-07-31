@@ -81,7 +81,7 @@ internal sealed class NotificationRepository(SimfIdentityDbContext dbContext)
             .CountAsync(cancellationToken);
 
     public async Task MarkReadForUserAsync(
-        Guid userId, Guid notificationId, DateTimeOffset readAt,
+        Guid userId, Guid notificationId, DateTime readAt,
         CancellationToken cancellationToken = default)
     {
         var row = await dbContext.Notifications
@@ -94,7 +94,7 @@ internal sealed class NotificationRepository(SimfIdentityDbContext dbContext)
     }
 
     public Task MarkAllReadForUserAsync(
-        Guid userId, DateTimeOffset readAt,
+        Guid userId, DateTime readAt,
         CancellationToken cancellationToken = default) =>
         dbContext.Notifications
             .Where(row => row.UserId == userId && row.ReadAt == null)

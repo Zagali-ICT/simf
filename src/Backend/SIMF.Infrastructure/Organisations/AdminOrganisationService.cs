@@ -142,7 +142,7 @@ internal sealed class AdminOrganisationService(
             }
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var org = new Organisation
         {
             Id = Guid.NewGuid(),
@@ -210,7 +210,7 @@ internal sealed class AdminOrganisationService(
         org.Email = v.Email;
         org.Website = v.Website;
         org.IsActive = request.IsActive;
-        org.UpdatedAt = timeProvider.GetUtcNow();
+        org.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(ct);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -239,7 +239,7 @@ internal sealed class AdminOrganisationService(
         }
 
         org.Deactivate();
-        org.UpdatedAt = timeProvider.GetUtcNow();
+        org.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(ct);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -304,7 +304,7 @@ internal sealed class AdminOrganisationService(
                 : await db.Organisations
                     .SingleOrDefaultAsync(o => o.IsActive && o.NameArabic == nameArClamped, ct);
 
-            var now = timeProvider.GetUtcNow();
+            var now = timeProvider.SimfNow();
             if (existing is null)
             {
                 db.Organisations.Add(new Organisation

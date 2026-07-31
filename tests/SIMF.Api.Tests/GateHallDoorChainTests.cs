@@ -558,9 +558,9 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Chain Session", TitleArabic = "جلسة السلسلة",
             HallId = hall.Id,
-            Start = DateTimeOffset.UtcNow.AddMinutes(startOffsetMin),
-            End = DateTimeOffset.UtcNow.AddMinutes(endOffsetMin),
-            IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+            Start = SimfClock.Now.AddMinutes(startOffsetMin),
+            End = SimfClock.Now.AddMinutes(endOffsetMin),
+            IsActive = true, CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         await db.SaveChangesAsync();
@@ -583,7 +583,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
             Id = Guid.NewGuid(),
             Code = "H-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Name = "Chain Hall", NameArabic = "قاعة السلسلة",
-            Capacity = capacity, IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+            Capacity = capacity, IsActive = true, CreatedAt = SimfClock.Now,
             GeofenceCenterLat = withGeofence ? CenterLat : null,
             GeofenceCenterLon = withGeofence ? CenterLon : null,
             GeofenceRadiusMeters = withGeofence ? RadiusMeters : null,
@@ -614,7 +614,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
             Name = "Chain Visitor",
             NationalityId = 682,
             PlaceOfBirth = "Riyadh",
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
         return (qrId, user.Id);

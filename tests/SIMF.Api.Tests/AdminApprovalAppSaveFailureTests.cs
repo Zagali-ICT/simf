@@ -78,7 +78,7 @@ public sealed class AppSaveFailingOnApproveApiFactory : SimfApiFactory
                     Id = Guid.NewGuid(),
                     UserId = Guid.NewGuid(),
                     QrId = qr,
-                    CreatedAt = DateTimeOffset.UtcNow,
+                    CreatedAt = SimfClock.Now,
                 });
             }
             return Task.FromResult(qr);

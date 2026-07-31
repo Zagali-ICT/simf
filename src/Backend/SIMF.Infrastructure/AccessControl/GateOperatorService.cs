@@ -1,4 +1,4 @@
-﻿// Tests: SIMF.Api.Tests/GateScanTests.cs
+// Tests: SIMF.Api.Tests/GateScanTests.cs
 // Tests: SIMF.Api.Tests/GateHallDoorChainTests.cs (DEF-CHK-004 — the hall-attendance
 //        chain and the advisory NoticeMessage an allowed scan can carry)
 using System.Text.Json;
@@ -12,6 +12,7 @@ using SIMF.Common.Enums;
 using SIMF.Contracts.Gates;
 using SIMF.Domain.AccessControl;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.AccessControl;
 
@@ -154,7 +155,7 @@ internal sealed class GateOperatorService(
         // UserProfileId). Run BEFORE the allow-list and direction queries so
         // an absorbed duplicate skips both. The single query returns enough
         // to satisfy both the duplicate path and the direction inference.
-        var windowCutoff = timeProvider.GetUtcNow() - DuplicateWindow;
+        var windowCutoff = timeProvider.SimfNow() - DuplicateWindow;
         var lastAllowed = await appDbContext.GateScans.AsNoTracking()
             .Where(s => s.GateId == context.GateId
                      && s.UserProfileId == resolution.UserProfileId
@@ -205,8 +206,8 @@ internal sealed class GateOperatorService(
         Guid operatorUserId, Guid? gateId,
         CancellationToken cancellationToken = default)
     {
-        var now = timeProvider.GetUtcNow();
-        var fromUtc = new DateTimeOffset(now.Year, now.Month, now.Day, 0, 0, 0, TimeSpan.Zero);
+        var now = timeProvider.SimfNow();
+        var fromUtc = new DateTime(now.Year, now.Month, now.Day, 0, 0, 0);
         var toUtc = fromUtc.AddDays(1).AddTicks(-1);
 
         var query = appDbContext.GateScans.AsNoTracking()
@@ -329,7 +330,7 @@ internal sealed class GateOperatorService(
 
         return new GateVisitorsListResult(
             GateVisitorsListResultKind.Ok,
-            new GateVisitorsListResponse(items, nextCursor, timeProvider.GetUtcNow()));
+            new GateVisitorsListResponse(items, nextCursor, timeProvider.SimfNow()));
     }
 
     // D-160 — opaque cursor encoding for the gate-visitors list. Single
@@ -366,9 +367,9 @@ internal sealed class GateOperatorService(
     // ---- internals ----
 
     private GateScanResult Routing(GateScanResultKind kind, string code) =>
-        new(kind, EmptyResponse(timeProvider.GetUtcNow()), false, code);
+        new(kind, EmptyResponse(timeProvider.SimfNow()), false, code);
 
-    private static GateScanResponse EmptyResponse(DateTimeOffset scannedAt) =>
+    private static GateScanResponse EmptyResponse(DateTime scannedAt) =>
         new(0, ScanOutcome.Denied, ScanDirection.CheckIn, scannedAt, null, null, null);
 
     /// <summary>D-509 — resolves the direction a scan records. A fixed In / Out
@@ -395,7 +396,7 @@ internal sealed class GateOperatorService(
         string idempotencyKey, Guid gateId, string requestHash,
         string? acceptLanguage, CancellationToken cancellationToken)
     {
-        var cutoff = timeProvider.GetUtcNow() - IdempotencyRetention;
+        var cutoff = timeProvider.SimfNow() - IdempotencyRetention;
         var prior = await appDbContext.ScanIdempotencies.AsNoTracking()
             .Where(r => r.Key == idempotencyKey && r.GateId == gateId && r.StoredAt >= cutoff)
             .SingleOrDefaultAsync(cancellationToken);
@@ -420,7 +421,7 @@ internal sealed class GateOperatorService(
     /// </summary>
     private async Task StageIdempotencyAsync(
         string idempotencyKey, Guid gateId, string requestHash, string responseHash,
-        DateTimeOffset now, CancellationToken cancellationToken)
+        DateTime now, CancellationToken cancellationToken)
     {
         var existing = await appDbContext.ScanIdempotencies
             .SingleOrDefaultAsync(
@@ -522,7 +523,7 @@ internal sealed class GateOperatorService(
         string? requestHash, string? idempotencyKey,
         CancellationToken cancellationToken)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var scan = BuildScan(context, qr, ScanOutcome.Allowed,
             denialReason: null, userProfileId: resolution.UserProfileId,
             direction: direction, now: now, idempotencyKey: idempotencyKey,
@@ -639,7 +640,7 @@ internal sealed class GateOperatorService(
         string? requestHash, string? idempotencyKey,
         CancellationToken cancellationToken)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         // G-5 — debounce denied scans the same way allowed scans are absorbed (the
         // 5s window in RecordScanAsync only covered Allowed). A malfunctioning or
@@ -716,7 +717,7 @@ internal sealed class GateOperatorService(
     private static GateScan BuildScan(
         GateScanContext context, string qrIdAtScan, ScanOutcome outcome,
         DenialReasonCode? denialReason, Guid? userProfileId, ScanDirection direction,
-        DateTimeOffset now, string? idempotencyKey,
+        DateTime now, string? idempotencyKey,
         string? scannedDisplayName, string? scannedProfileTypeName) =>
         new()
         {

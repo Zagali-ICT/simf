@@ -74,7 +74,7 @@ public static class SimfCookieRefreshHandler
 
     private sealed record Rotation(
         Lazy<Task<ApiResult<AuthTokens>>> Attempt,
-        DateTimeOffset StartedAt);
+        DateTime StartedAt);
 
     public static async Task OnValidatePrincipalAsync(CookieValidatePrincipalContext context)
     {
@@ -97,7 +97,7 @@ public static class SimfCookieRefreshHandler
 
         if (envelope.Success && envelope.Data is not null)
         {
-            StoreTokens(properties, envelope.Data, DateTimeOffset.UtcNow);
+            StoreTokens(properties, envelope.Data, SimfClock.Now);
             context.ShouldRenew = true;
             return;
         }
@@ -130,7 +130,7 @@ public static class SimfCookieRefreshHandler
         CookieValidatePrincipalContext context,
         string refreshToken)
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         PruneExpiredRotations(now);
 
         var api = context.HttpContext.RequestServices.GetRequiredService<SimfAuthClient>();
@@ -153,7 +153,7 @@ public static class SimfCookieRefreshHandler
         return envelope;
     }
 
-    private static void PruneExpiredRotations(DateTimeOffset now)
+    private static void PruneExpiredRotations(DateTime now)
     {
         foreach (var entry in Rotations)
         {
@@ -179,7 +179,7 @@ public static class SimfCookieRefreshHandler
     public static void StoreTokens(
         AuthenticationProperties properties,
         AuthTokens tokens,
-        DateTimeOffset issuedAt)
+        DateTime issuedAt)
     {
         properties.StoreTokens(
         [
@@ -201,13 +201,13 @@ public static class SimfCookieRefreshHandler
         // waiting for the next BFF call to 401, which is exactly the bug
         // this hook exists to fix.
         if (string.IsNullOrEmpty(expiresAtRaw)) return true;
-        if (!DateTimeOffset.TryParse(expiresAtRaw,
+        if (!DateTime.TryParse(expiresAtRaw,
                 CultureInfo.InvariantCulture,
                 DateTimeStyles.RoundtripKind,
                 out var expiresAt))
         {
             return true;
         }
-        return expiresAt - DateTimeOffset.UtcNow <= RefreshThreshold;
+        return expiresAt - SimfClock.Now <= RefreshThreshold;
     }
 }

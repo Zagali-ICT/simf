@@ -28,7 +28,7 @@ public sealed class SessionModeratorsListTests : CpComponentTestBase
     private static AdminSessionModeratorRow Row() => new(
         SessionId, "SES-01", "Opening", "الافتتاح",
         ModeratorId, "Reem Al-Harbi", "reem@simf.test",
-        Guid.NewGuid(), "Admin", DateTimeOffset.UnixEpoch);
+        Guid.NewGuid(), "Admin", DateTime.UnixEpoch);
 
     [Fact]
     public void The_assign_dialog_offers_pickers_not_raw_GUID_boxes()

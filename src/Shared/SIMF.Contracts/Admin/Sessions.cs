@@ -13,11 +13,11 @@ public sealed record AdminSessionSummary(
     Guid HallId,
     string HallName,
     string HallNameArabic,
-    DateTimeOffset Start,
-    DateTimeOffset End,
+    DateTime Start,
+    DateTime End,
     int Capacity,
     bool IsActive,
-    DateTimeOffset CreatedAt,
+    DateTime CreatedAt,
     // B9b — D-226: appended (default) — the CP grid resolves the name client-side.
     Guid? CategoryId = null,
     // P3.2 — D-231: broadcast lifecycle status (appended, default Scheduled).
@@ -49,25 +49,25 @@ public sealed record AdminSessionDetail(
     string HallName,
     string HallNameArabic,
     int HallCapacity,
-    DateTimeOffset Start,
-    DateTimeOffset End,
+    DateTime Start,
+    DateTime End,
     int? CapacityOverride,
     int EffectiveCapacity,
     bool IsActive,
     IReadOnlyList<AdminSessionSpeakerEntry> Speakers,
     IReadOnlyList<Guid> ThemeIds,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt,
+    DateTime CreatedAt,
+    DateTime? UpdatedAt,
     // B9b — D-226: the session's category (dynamic lookup); null when unset.
     Guid? CategoryId = null,
     // P3.2 — D-231: broadcast lifecycle (appended, defaults preserve the wire).
     SessionStatus Status = SessionStatus.Scheduled,
-    DateTimeOffset? PublishedAt = null,
+    DateTime? PublishedAt = null,
     // P3.2b — D-232: recording metadata (the bytes live out-of-row on disk).
     bool HasRecording = false,
     string? RecordingFileName = null,
     long? RecordingSizeBytes = null,
-    DateTimeOffset? RecordingUploadedAt = null,
+    DateTime? RecordingUploadedAt = null,
     // §8 — live broadcast feed(s); null when the session is not live.
     string? LiveStreamUrl = null,
     string? LiveSignLanguageUrl = null,
@@ -128,8 +128,8 @@ public sealed class AdminCreateSessionRequest
     public string? Description { get; set; }
     public string? DescriptionArabic { get; set; }
     public Guid HallId { get; set; }
-    public DateTimeOffset Start { get; set; }
-    public DateTimeOffset End { get; set; }
+    public DateTime Start { get; set; }
+    public DateTime End { get; set; }
     public int? CapacityOverride { get; set; }
     // B9b — D-226: optional session category (dynamic lookup).
     public Guid? CategoryId { get; set; }
@@ -163,8 +163,8 @@ public sealed class AdminUpdateSessionRequest
     public string? Description { get; set; }
     public string? DescriptionArabic { get; set; }
     public Guid HallId { get; set; }
-    public DateTimeOffset Start { get; set; }
-    public DateTimeOffset End { get; set; }
+    public DateTime Start { get; set; }
+    public DateTime End { get; set; }
     public int? CapacityOverride { get; set; }
     // B9b — D-226: optional session category (dynamic lookup).
     public Guid? CategoryId { get; set; }

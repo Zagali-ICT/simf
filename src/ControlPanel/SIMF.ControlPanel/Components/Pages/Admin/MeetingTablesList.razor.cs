@@ -420,7 +420,7 @@ public partial class MeetingTablesList
     private static string? Trimmed(string value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
-    private static bool TryParseUtc(string text, out DateTimeOffset value)
+    private static bool TryParseUtc(string text, out DateTime value)
     {
         value = default;
         if (DateTime.TryParse(text, CultureInfo.InvariantCulture,

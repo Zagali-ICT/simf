@@ -581,7 +581,7 @@ public sealed class AiModuleTests : IClassFixture<SimfApiFactory>
             LatencyMs = latency,
             ErrorCode = errorCode,
             CallerKind = "Admin",
-            CreatedAt = DateTimeOffset.UtcNow.AddHours(-ageHours),
+            CreatedAt = SimfClock.Now.AddHours(-ageHours),
         });
         await db.SaveChangesAsync();
     }

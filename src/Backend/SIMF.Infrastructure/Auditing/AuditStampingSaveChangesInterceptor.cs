@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using SIMF.Application.Abstractions;
 using SIMF.Domain.Common;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Auditing;
 
@@ -48,7 +49,7 @@ internal sealed class AuditStampingSaveChangesInterceptor(
     {
         if (context is null) { return; }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var actorUserId = requestContext.ActorUserId;
 
         foreach (var entry in context.ChangeTracker.Entries<BaseAuditEntity>())

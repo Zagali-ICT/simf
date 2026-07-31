@@ -158,9 +158,9 @@ public sealed class SessionsExcelTests : IClassFixture<SimfApiFactory>
                 Title = $"Export Fields {code}",
                 TitleArabic = $"تصدير {code}",
                 HallId = hallId,
-                Start = DateTimeOffset.Parse(
+                Start = DateTime.Parse(
                     "2026-01-30T09:00:00Z", CultureInfo.InvariantCulture),
-                End = DateTimeOffset.Parse(
+                End = DateTime.Parse(
                     "2026-01-30T10:00:00Z", CultureInfo.InvariantCulture),
                 Description = "An opening keynote.",
                 DescriptionArabic = "كلمة افتتاحية.",
@@ -461,7 +461,7 @@ public sealed class SessionsExcelTests : IClassFixture<SimfApiFactory>
             NameArabic = $"متحدّث {code}",
             DisplayOrder = 0,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Speakers.Add(speaker);
         await db.SaveChangesAsync();
@@ -512,10 +512,10 @@ public sealed class SessionsExcelTests : IClassFixture<SimfApiFactory>
                 HallId = hallId,
                 // #3 — an Event stays valid under the required-type rule with no speaker.
                 Type = SessionType.Event,
-                Start = DateTimeOffset.Parse(
+                Start = DateTime.Parse(
                     "2026-01-30T09:00:00Z", CultureInfo.InvariantCulture)
                     .AddHours(startHourOffset),
-                End = DateTimeOffset.Parse(
+                End = DateTime.Parse(
                     "2026-01-30T10:00:00Z", CultureInfo.InvariantCulture)
                     .AddHours(startHourOffset),
             },

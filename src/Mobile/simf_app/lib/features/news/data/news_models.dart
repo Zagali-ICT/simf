@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// One news row — mirrors `PublicNewsListItem` (`GET /app/news`).
 @immutable
@@ -96,9 +97,9 @@ class NewsArticle {
 
 DateTime _utc(Object? value) {
   if (value is String && value.isNotEmpty) {
-    final parsed = DateTime.tryParse(value);
+    final parsed = parseWireOrNull(value);
     if (parsed != null) {
-      return parsed.toUtc();
+      return parsed;
     }
   }
   return DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);

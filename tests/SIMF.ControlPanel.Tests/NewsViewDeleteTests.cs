@@ -17,8 +17,8 @@ public sealed class NewsViewDeleteTests : CpComponentTestBase
         "Body text", "نص المحتوى",
         "Announcements", "إعلانات",
         "news/cover.jpg",
-        DateTimeOffset.UnixEpoch, 1,
-        IsActive: true, DateTimeOffset.UnixEpoch, UpdatedAt: null);
+        DateTime.UnixEpoch, 1,
+        IsActive: true, DateTime.UnixEpoch, UpdatedAt: null);
 
     [Fact]
     public void View_mode_shows_details_and_no_delete_button()

@@ -21,6 +21,6 @@ public sealed class ScanVisitorBadgeRequest
 /// on read.</summary>
 public sealed record ExhibitorVisitorRow(
     Guid Id,
-    DateTimeOffset ScannedAt,
+    DateTime ScannedAt,
     string? Note,
     VisitorCard Card);

@@ -229,9 +229,9 @@ public sealed class NotificationBroadcastTests : IClassFixture<SimfApiFactory>
                 BodyArabic = "ب",
                 Severity = NotificationSeverity.Info,
                 Status = BroadcastStatus.Processing,
-                CreatedAt = DateTimeOffset.UtcNow.AddHours(-1),
+                CreatedAt = SimfClock.Now.AddHours(-1),
                 // Older than the 15-minute stalled cutoff.
-                StartedAt = DateTimeOffset.UtcNow.AddHours(-1),
+                StartedAt = SimfClock.Now.AddHours(-1),
             });
             await db.SaveChangesAsync();
         }
@@ -317,7 +317,7 @@ public sealed class NotificationBroadcastTests : IClassFixture<SimfApiFactory>
             NameArabic = "قاعة",
             Capacity = 50,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         var session = new Session
@@ -327,10 +327,10 @@ public sealed class NotificationBroadcastTests : IClassFixture<SimfApiFactory>
             Title = "Panel",
             TitleArabic = "جلسة",
             HallId = hall.Id,
-            Start = DateTimeOffset.UtcNow.AddHours(2),
-            End = DateTimeOffset.UtcNow.AddHours(3),
+            Start = SimfClock.Now.AddHours(2),
+            End = SimfClock.Now.AddHours(3),
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         var seat = 1;
@@ -345,7 +345,7 @@ public sealed class NotificationBroadcastTests : IClassFixture<SimfApiFactory>
                 Kind = SeatReservationKind.UserBooking,
                 ReservedForUserId = visitorId,
                 CreatedByUserId = visitorId,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
         }
         await db.SaveChangesAsync();

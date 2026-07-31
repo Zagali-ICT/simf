@@ -154,7 +154,7 @@ public sealed class TokenIssuerParityTests : IClassFixture<SimfApiFactory>
             Name = "Issuer Parity Visitor",
             NameArabic = "زائر",
             QrId = qrId,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
         return (email, qrId);
@@ -260,7 +260,7 @@ public sealed class TokenIssuerParityTests : IClassFixture<SimfApiFactory>
         await db.SaveChangesAsync();
     }
 
-    private async Task<DateTimeOffset?> LastSignInAsync(string email)
+    private async Task<DateTime?> LastSignInAsync(string email)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();

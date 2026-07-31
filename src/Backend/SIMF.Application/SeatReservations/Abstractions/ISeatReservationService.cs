@@ -105,7 +105,7 @@ public interface ISeatReservationService
     /// the seat for others. Returns the number released. Called once per minute by
     /// <c>ReservationNoShowReleaseWorker</c>.</summary>
     Task<int> ReleaseNoShowsAsync(
-        DateTimeOffset now, CancellationToken cancellationToken = default);
+        DateTime now, CancellationToken cancellationToken = default);
 
     // -- Staff seating desk (D-771 — owner 2026-07-26) --
 

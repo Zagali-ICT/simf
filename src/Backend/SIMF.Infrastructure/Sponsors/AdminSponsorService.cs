@@ -156,7 +156,7 @@ internal sealed class AdminSponsorService(
                 $"يوجد راعٍ نشط بالاسم '{nameAr}' في هذه الفئة بالفعل.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var sponsor = new Sponsor
         {
             Id = Guid.NewGuid(),
@@ -263,7 +263,7 @@ internal sealed class AdminSponsorService(
         sponsor.Latitude = request.Latitude;
         sponsor.Longitude = request.Longitude;
         sponsor.IsActive = request.IsActive;
-        sponsor.UpdatedAt = timeProvider.GetUtcNow();
+        sponsor.UpdatedAt = timeProvider.SimfNow();
 
         await appDbContext.SaveChangesAsync(cancellationToken);
 
@@ -292,7 +292,7 @@ internal sealed class AdminSponsorService(
         if (!sponsor.IsActive) { return; }
 
         sponsor.Deactivate();
-        sponsor.UpdatedAt = timeProvider.GetUtcNow();
+        sponsor.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry

@@ -366,7 +366,7 @@ public sealed class BusinessFlowGapTests : IClassFixture<SimfApiFactory>
             NameArabic = "زائر",
             NationalityId = 682,
             PlaceOfBirth = "Riyadh",
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
         return qrId;

@@ -60,7 +60,7 @@ class _FakeAttendance implements HallAttendanceRepository {
     }
     return HallAttendanceStatus(
       arrived: true,
-      enter: DateTime.utc(2026, 11, 23, 7, 30),
+      enter: DateTime(2026, 11, 23, 10, 30),
       method: HallAttendanceMethod.geofence,
     );
   }
@@ -70,7 +70,7 @@ class _FakeAttendance implements HallAttendanceRepository {
     departureCalls++;
     return HallAttendanceStatus(
       arrived: false,
-      enter: DateTime.utc(2026, 11, 23, 7, 30),
+      enter: DateTime(2026, 11, 23, 10, 30),
       leave: DateTime.utc(2026, 11, 23, 8, 15),
       method: HallAttendanceMethod.geofence,
     );
@@ -150,7 +150,7 @@ void main() {
       final repository = _FakeAttendance(
         status: HallAttendanceStatus(
           arrived: true,
-          enter: DateTime.utc(2026, 11, 23, 7, 30),
+          enter: DateTime(2026, 11, 23, 10, 30),
           method: HallAttendanceMethod.geofence,
         ),
       );
@@ -306,7 +306,7 @@ void main() {
       });
 
       expect(status.arrived, isTrue);
-      expect(status.enter, DateTime.utc(2026, 11, 23, 7, 30));
+      expect(status.enter, DateTime(2026, 11, 23, 10, 30));
       expect(status.leave, isNull);
       expect(status.method, HallAttendanceMethod.geofence);
     });

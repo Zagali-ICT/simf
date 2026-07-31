@@ -18,5 +18,5 @@ public class PasswordHistoryEntry
     public string PasswordHash { get; set; } = string.Empty;
 
     /// <summary>When the password was retired (UTC).</summary>
-    public DateTimeOffset CreatedAtUtc { get; set; }
+    public DateTime CreatedAtUtc { get; set; }
 }

@@ -156,7 +156,7 @@ public sealed class AdminAccountNationalityTests : IClassFixture<SimfApiFactory>
             country = new Country
             {
                 Id = id, Code = code, Name = code, NameArabic = code,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             db.Countries.Add(country);
         }
@@ -188,7 +188,7 @@ public sealed class AdminAccountNationalityTests : IClassFixture<SimfApiFactory>
                 Id = Guid.NewGuid(),
                 Name = "Visitor — NatSeed", NameArabic = "زائر",
                 PageColor = "#3B82F6", IsForVisitor = true, IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             db.ProfileTypes.Add(type);
             await db.SaveChangesAsync();
@@ -200,7 +200,7 @@ public sealed class AdminAccountNationalityTests : IClassFixture<SimfApiFactory>
             ProfileTypeId = type.Id,
             Name = user.DisplayName, NameArabic = user.DisplayName,
             NationalityId = nationalityId,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
         return (user.Id, email);

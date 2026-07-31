@@ -41,7 +41,7 @@ public sealed class AppBootstrapTests : IClassFixture<SimfApiFactory>
         Assert.Equal(tokens.User.Email, data.User.Email);
         Assert.Equal("Visitor", data.User.AppRole);
         Assert.Equal("Pending", data.User.RegistrationStatus);
-        Assert.True(data.ServerTime > new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
+        Assert.True(data.ServerTime > new DateTime(2026, 1, 1, 0, 0, 0));
 
         // The bundle's count is the same source as the dedicated endpoint. The
         // standalone endpoint now requires an approved account (finding #23), so

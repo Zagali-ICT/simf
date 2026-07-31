@@ -19,7 +19,7 @@ public sealed class HallsListSeatLayoutActionTests : CpComponentTestBase
 
     private static AdminHallSummary Hall() =>
         new(HallId, "H-1", "Main Hall", "القاعة الرئيسية", 500, "G",
-            IsActive: true, DateTimeOffset.UtcNow);
+            IsActive: true, SimfClock.Now);
 
     private void Arrange(params string[] grantedPermissions)
     {

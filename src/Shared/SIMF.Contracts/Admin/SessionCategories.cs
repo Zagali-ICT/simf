@@ -20,8 +20,8 @@ public sealed record AdminSessionCategoryDetail(
     string NameArabic,
     int DisplayOrder,
     bool IsActive,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt);
+    DateTime CreatedAt,
+    DateTime? UpdatedAt);
 
 /// <summary>Admin create payload.</summary>
 public sealed class AdminCreateSessionCategoryRequest

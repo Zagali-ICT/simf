@@ -59,8 +59,8 @@ internal sealed class DelegationMeetingRequestService(
         // A1 — validate the optional slot pair (mirror the speaker flow): if either
         // end is supplied, require both and end > start, so an invalid pair cannot
         // be persisted silently.
-        DateTimeOffset? slotStart = null;
-        DateTimeOffset? slotEnd = null;
+        DateTime? slotStart = null;
+        DateTime? slotEnd = null;
         if (request.SlotStart is not null || request.SlotEnd is not null)
         {
             if (request.SlotStart is not { } pickedStart
@@ -165,7 +165,7 @@ internal sealed class DelegationMeetingRequestService(
                 openRequest.Id, openRequest.Status, openRequest.CreatedAt);
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var req = new DelegationMeetingRequest
         {
             Id = Guid.NewGuid(),
@@ -305,7 +305,7 @@ internal sealed class DelegationMeetingRequestService(
                 "Delegation meeting request not found.",
                 "لم يتم العثور على طلب اجتماع الوفد.");
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         // Bi-Meeting rework — unified 3-button model. Status=Rejected is CANCEL (with a
         // justification note). Status=Accepted with a bound HallId is APPROVE
@@ -528,7 +528,7 @@ internal sealed class DelegationMeetingRequestService(
     {
         var req = await LoadAwaitingForOtherPartyAsync(callerUserId, id, cancellationToken);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         // Race-safe conditional flip AwaitingSpeaker → Accepted (any one eligible member's
         // tap confirms; a concurrent second confirm matches 0 rows and 409s cleanly).
@@ -588,7 +588,7 @@ internal sealed class DelegationMeetingRequestService(
     {
         var req = await LoadAwaitingForOtherPartyAsync(callerUserId, id, cancellationToken);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         // Race-safe conditional flip AwaitingSpeaker → Rejected (a concurrent confirm or a
         // second decline matches 0 rows and 409s cleanly). Rejected is not a slot-holding
@@ -725,7 +725,7 @@ internal sealed class DelegationMeetingRequestService(
                 "Only a confirmed meeting can be checked in.",
                 "لا يمكن تسجيل الحضور إلا لاجتماع مؤكَّد.");
         }
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         req.Status = MeetingRequestStatus.Done;
         req.CheckedInAt = now;
         req.CheckedInByUserId = actorUserId;
@@ -830,7 +830,7 @@ internal sealed class DelegationMeetingRequestService(
     private async Task BindDelegationHallSlotAsync(
         DelegationMeetingRequest req,
         RespondToDelegationMeetingRequestRequest request,
-        DateTimeOffset now,
+        DateTime now,
         CancellationToken cancellationToken)
     {
         var hallId = request.HallId!.Value;
@@ -899,7 +899,7 @@ internal sealed class DelegationMeetingRequestService(
     // double-book guard. Read-then-write, acceptable for this admin-brokered,
     // low-concurrency G2G table (the DB hall index is the equal-start backstop).
     private async Task GuardDelegationOverlapAsync(
-        DelegationMeetingRequest req, DateTimeOffset start, DateTimeOffset end,
+        DelegationMeetingRequest req, DateTime start, DateTime end,
         CancellationToken cancellationToken)
     {
         var reqId = req.Id;

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Cms.Abstractions;
 using SIMF.Contracts.Cms;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Cms;
 
@@ -57,7 +58,7 @@ internal sealed class PublicCmsService(
     public async Task<PublicBanners> GetActiveBannersAsync(
         CancellationToken cancellationToken = default)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var rows = await appDbContext.Banners
             .AsNoTracking()
             .Where(b => b.IsActive && b.Start <= now && b.End >= now)

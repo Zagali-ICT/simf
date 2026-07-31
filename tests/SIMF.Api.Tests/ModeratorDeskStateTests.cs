@@ -209,7 +209,7 @@ public sealed class ModeratorDeskStateTests : IClassFixture<SimfApiFactory>
                 SessionId = session.Id,
                 UserId = moderatorId,
                 AssignedByUserId = moderatorId,
-                AssignedAt = DateTimeOffset.UtcNow,
+                AssignedAt = SimfClock.Now,
             });
             await appDb.SaveChangesAsync();
         }
@@ -475,13 +475,13 @@ public sealed class ModeratorDeskStateTests : IClassFixture<SimfApiFactory>
     }
 
     private Task<Session> SeedLiveSessionAsync() => SeedSessionAsync(
-        DateTimeOffset.UtcNow.AddMinutes(-15), DateTimeOffset.UtcNow.AddMinutes(45));
+        SimfClock.Now.AddMinutes(-15), SimfClock.Now.AddMinutes(45));
 
     private Task<Session> SeedFutureSessionAsync() => SeedSessionAsync(
-        DateTimeOffset.UtcNow.AddDays(1), DateTimeOffset.UtcNow.AddDays(1).AddHours(1));
+        SimfClock.Now.AddDays(1), SimfClock.Now.AddDays(1).AddHours(1));
 
     private async Task<Session> SeedSessionAsync(
-        DateTimeOffset start, DateTimeOffset end)
+        DateTime start, DateTime end)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -491,7 +491,7 @@ public sealed class ModeratorDeskStateTests : IClassFixture<SimfApiFactory>
             Code = "H-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Name = "Hall D", NameArabic = "قاعة د",
             Capacity = 100, IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         var session = new Session
@@ -502,7 +502,7 @@ public sealed class ModeratorDeskStateTests : IClassFixture<SimfApiFactory>
             HallId = hall.Id,
             Start = start, End = end,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         await db.SaveChangesAsync();

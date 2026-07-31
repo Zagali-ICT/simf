@@ -37,7 +37,7 @@ public sealed record AdminMediaPartnerSummary(
     string? Url,
     int DisplayOrder,
     bool IsActive,
-    DateTimeOffset CreatedAt,
+    DateTime CreatedAt,
     // D-740 — "an active MediaPartnerLogo asset exists" so the grid renders the
     // real logo thumbnail, else an initials tile (set on read via a batched query).
     bool HasLogo = false);
@@ -53,8 +53,8 @@ public sealed record AdminMediaPartnerDetail(
     string? Url,
     int DisplayOrder,
     bool IsActive,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt,
+    DateTime CreatedAt,
+    DateTime? UpdatedAt,
     // D-766 — inlined contact identity-card fields (all optional).
     string? Email = null,
     string? PhonePrimary = null,

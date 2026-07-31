@@ -67,7 +67,7 @@ internal sealed class OrganizationProfileAdminService(
             db.OrganizationProfile.Add(profile);
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         profile.Name = RequireText(request.Name, "name", 256);
         profile.NameArabic = RequireText(request.NameArabic, "Arabic name", 256);
@@ -122,7 +122,7 @@ internal sealed class OrganizationProfileAdminService(
     }
 
     private async Task ReconcileAboutAsync(
-        List<AdminOrganizationAboutItem> items, DateTimeOffset now, CancellationToken ct)
+        List<AdminOrganizationAboutItem> items, DateTime now, CancellationToken ct)
     {
         var existing = await db.OrganizationAboutItems
             .Where(a => a.OrganizationProfileId == OrganizationProfile.SingletonId && a.IsActive)
@@ -166,7 +166,7 @@ internal sealed class OrganizationProfileAdminService(
     }
 
     private async Task ReconcileDetailsAsync(
-        List<AdminOrganizationDetail> items, DateTimeOffset now, CancellationToken ct)
+        List<AdminOrganizationDetail> items, DateTime now, CancellationToken ct)
     {
         var existing = await db.OrganizationDetails
             .Where(d => d.OrganizationProfileId == OrganizationProfile.SingletonId && d.IsActive)

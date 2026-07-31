@@ -85,12 +85,12 @@ public class GateScan
     /// the scan. Logical FK to <c>SimfUser</c>.</summary>
     public Guid ScannedByUserId { get; set; }
     /// <summary>Server clock at receive. The authoritative timestamp.</summary>
-    public DateTimeOffset ScannedAt { get; set; }
+    public DateTime ScannedAt { get; set; }
 
     /// <summary>Device-asserted local scan time. Always treated as
     /// client-asserted, never authoritative. Null when the client did
     /// not supply it.</summary>
-    public DateTimeOffset? ClientScannedAt { get; set; }
+    public DateTime? ClientScannedAt { get; set; }
 
 
 }

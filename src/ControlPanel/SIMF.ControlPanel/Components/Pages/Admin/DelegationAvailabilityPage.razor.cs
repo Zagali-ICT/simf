@@ -107,8 +107,8 @@ public partial class DelegationAvailabilityPage
         // the authoritative server rule). Skipped when no programme days are seeded.
         if (_forumMinDate is { } minDate && _forumMaxDate is { } maxDate)
         {
-            var startDate = DateOnly.FromDateTime(start.UtcDateTime);
-            var endDate = DateOnly.FromDateTime(end.UtcDateTime);
+            var startDate = DateOnly.FromDateTime(start);
+            var endDate = DateOnly.FromDateTime(end);
             if (startDate < minDate || endDate > maxDate)
             {
                 var range = EventDateRange.Format(
@@ -191,7 +191,7 @@ public partial class DelegationAvailabilityPage
         finally { _busy = false; }
     }
 
-    private static bool TryParseUtc(string value, out DateTimeOffset result)
+    private static bool TryParseUtc(string value, out DateTime result)
     {
         if (DateTime.TryParse(value, CultureInfo.InvariantCulture,
                 DateTimeStyles.None, out var dt))

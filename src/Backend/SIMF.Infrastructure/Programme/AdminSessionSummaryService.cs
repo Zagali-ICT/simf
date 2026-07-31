@@ -162,7 +162,7 @@ internal sealed class AdminSessionSummaryService(
 
         var summary = await appDbContext.SessionSummaries
             .SingleOrDefaultAsync(s => s.SessionId == sessionId && s.IsActive, cancellationToken);
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         // A19 — a re-draft that lands the same Arabic text as the stored one has
         // not changed what the app serves, so it must not unpublish the محضر.
         var previousFullTextArabic = summary?.FullTextArabic;
@@ -259,7 +259,7 @@ internal sealed class AdminSessionSummaryService(
 
         var summary = await appDbContext.SessionSummaries
             .SingleOrDefaultAsync(s => s.SessionId == sessionId && s.IsActive, cancellationToken);
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         if (summary is null)
         {
@@ -321,7 +321,7 @@ internal sealed class AdminSessionSummaryService(
         var session = await LoadSessionForDraftAsync(sessionId, cancellationToken);
         var summary = await LoadSummaryAsync(sessionId, cancellationToken);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         // S-6 (owner) — a محضر may only be PUBLISHED once the session has actually
         // STARTED (now >= Start). Publishing minutes for a not-yet-started
         // session would surface a summary for a talk that has not happened. Keyed
@@ -382,7 +382,7 @@ internal sealed class AdminSessionSummaryService(
                 "تمت الموافقة على هذا الملخّص بالفعل — أعده إلى المسودة قبل إعادة الإرسال.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         summary.ReviewSubmittedAt = now;
         summary.ReviewSubmittedByUserId = actorUserId;
         summary.UpdatedAt = now;
@@ -415,7 +415,7 @@ internal sealed class AdminSessionSummaryService(
         // reviewer has to replace the placeholder with real minutes first.
         EnsureNotStubContent(summary);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         summary.ApprovedAt = now;
         summary.ApprovedByUserId = actorUserId;
         summary.UpdatedAt = now;
@@ -435,7 +435,7 @@ internal sealed class AdminSessionSummaryService(
         var session = await LoadSessionForDraftAsync(sessionId, cancellationToken);
         var summary = await LoadSummaryAsync(sessionId, cancellationToken);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         ResetReviewState(summary);
         summary.UpdatedAt = now;
         summary.UpdatedByUserId = actorUserId;

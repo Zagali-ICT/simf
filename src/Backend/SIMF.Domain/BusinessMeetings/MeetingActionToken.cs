@@ -30,10 +30,10 @@ public sealed class MeetingActionToken
     public string TokenHash { get; set; } = string.Empty;
 
     /// <summary>When the token expires (UTC) — 72h after mint (§15.7 / OI-I).</summary>
-    public DateTimeOffset Expires { get; set; }
+    public DateTime Expires { get; set; }
 
     /// <summary>When the token was consumed (UTC); null while unused. Single-use.</summary>
-    public DateTimeOffset? UsedAt { get; set; }
+    public DateTime? UsedAt { get; set; }
 
-    public DateTimeOffset CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 }

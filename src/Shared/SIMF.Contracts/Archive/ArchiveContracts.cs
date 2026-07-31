@@ -84,7 +84,7 @@ public sealed record AdminArchiveEditionSummary(
     int Speakers,
     string? CoverImageRelativePath,
     bool IsActive,
-    DateTimeOffset CreatedAt,
+    DateTime CreatedAt,
     // D-357 — true when an active ArchiveCover asset exists, so the grid renders
     // the cover thumbnail (SimfIdentityCell), else an initials tile.
     bool HasCover,
@@ -108,8 +108,8 @@ public sealed record AdminArchiveEditionDetail(
     int Speakers,
     string? CoverImageRelativePath,
     bool IsActive,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt,
+    DateTime CreatedAt,
+    DateTime? UpdatedAt,
     // §9 (screen 24-01) — place + date label (default null preserves callers).
     string? LocationEn = null,
     string? LocationAr = null,

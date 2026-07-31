@@ -245,7 +245,7 @@ public sealed class BusinessFlow13PermissionMatrixTests : IClassFixture<SimfApiF
             ["isActive"] = true,
             // The smuggled pair — neither is on AdminUpdateSpeakerRequest.
             ["id"] = Guid.NewGuid(),
-            ["createdAt"] = DateTimeOffset.UtcNow.AddYears(-5),
+            ["createdAt"] = SimfClock.Now.AddYears(-5),
         };
         var request = new HttpRequestMessage(
             HttpMethod.Put, $"/api/v1/admin/speakers/{speaker.Id}")

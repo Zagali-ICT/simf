@@ -8,6 +8,7 @@ using SIMF.Application.Operations;
 using SIMF.Common.Enums;
 using SIMF.Domain.Configuration;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Operations;
 
@@ -124,7 +125,7 @@ internal sealed class ProgrammeRatingPromptWorker(
         using var scope = scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var notifications = scope.ServiceProvider.GetRequiredService<INotificationDispatcher>();
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         var days = await RunDayPromptScanAsync(db, notifications, now, BackfillWindow, logger, cancellationToken);
         if (days > 0)
@@ -149,7 +150,7 @@ internal sealed class ProgrammeRatingPromptWorker(
     /// </summary>
     internal static async Task<int> RunDayPromptScanAsync(
         SimfAppDbContext db, INotificationDispatcher notifications,
-        DateTimeOffset now, TimeSpan backfillWindow, ILogger logger,
+        DateTime now, TimeSpan backfillWindow, ILogger logger,
         CancellationToken cancellationToken)
     {
         // Respect the CP: if an admin deactivated the "Day" rating type in
@@ -234,7 +235,7 @@ internal sealed class ProgrammeRatingPromptWorker(
     /// </summary>
     internal static async Task<bool> RunProgramEndScanAsync(
         SimfAppDbContext db, INotificationDispatcher notifications,
-        DateTimeOffset now, TimeSpan backfillWindow, ILogger logger,
+        DateTime now, TimeSpan backfillWindow, ILogger logger,
         CancellationToken cancellationToken)
     {
         var lastDay = await db.ProgrammeDays
@@ -356,7 +357,7 @@ internal sealed class ProgrammeRatingPromptWorker(
 
         if (day is { } d)
         {
-            var dayStart = new DateTimeOffset(d.ToDateTime(TimeOnly.MinValue), EventOffset);
+            var dayStart = d.ToDateTime(TimeOnly.MinValue);
             var dayEndBoundary = dayStart.AddDays(1);
             scans = scans.Where(g => g.ScannedAt >= dayStart && g.ScannedAt < dayEndBoundary);
         }
@@ -380,18 +381,18 @@ internal sealed class ProgrammeRatingPromptWorker(
     /// <summary>When an event-local <paramref name="date"/> "ends": the latest end
     /// of its active sessions + <see cref="SessionGrace"/>, or the next local
     /// midnight if the day has no sessions.</summary>
-    internal static DateTimeOffset DayEnd(DateOnly date, IReadOnlyCollection<SessionWindow> sessions)
+    internal static DateTime DayEnd(DateOnly date, IReadOnlyCollection<SessionWindow> sessions)
     {
         var daySessions = sessions
-            .Where(s => DateOnly.FromDateTime(s.Start.ToOffset(EventOffset).DateTime) == date)
+            .Where(s => DateOnly.FromDateTime(s.Start) == date)
             .ToList();
         if (daySessions.Count > 0)
         {
             return daySessions.Max(s => s.End) + SessionGrace;
         }
-        return new DateTimeOffset(date.ToDateTime(TimeOnly.MinValue), EventOffset).AddDays(1);
+        return date.ToDateTime(TimeOnly.MinValue).AddDays(1);
     }
 
     /// <summary>A session's UTC start/end, projected for in-memory day bucketing.</summary>
-    internal readonly record struct SessionWindow(DateTimeOffset Start, DateTimeOffset End);
+    internal readonly record struct SessionWindow(DateTime Start, DateTime End);
 }

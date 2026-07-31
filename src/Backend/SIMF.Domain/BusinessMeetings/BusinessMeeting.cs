@@ -22,10 +22,10 @@ public sealed class BusinessMeeting
     public BusinessMeetingType MeetingType { get; set; }
 
     /// <summary>Slot start (inclusive, UTC).</summary>
-    public DateTimeOffset Start { get; set; }
+    public DateTime Start { get; set; }
 
     /// <summary>Slot end (exclusive, UTC). Must be after <see cref="Start"/>.</summary>
-    public DateTimeOffset End { get; set; }
+    public DateTime End { get; set; }
 
     /// <summary>Lifecycle state. Confirmed on create; Cancelled after an admin
     /// cancels.</summary>
@@ -42,13 +42,13 @@ public sealed class BusinessMeeting
     /// while Confirmed.</summary>
     public Guid? CancelledByUserId { get; set; }
 
-    public DateTimeOffset? CancelledAt { get; set; }
+    public DateTime? CancelledAt { get; set; }
 
     /// <summary>Optional reason recorded on cancel (≤ 512 chars, OI-6).</summary>
     public string? CancellationReason { get; set; }
 
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset? UpdatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 
     /// <summary>The meeting's participants (≥ 2). Cascade-deleted with the meeting.</summary>
     public List<BusinessMeetingParticipant> Participants { get; set; } = [];

@@ -99,7 +99,7 @@ public sealed class OperationsTogglesTests : IClassFixture<SimfApiFactory>
             new UpdateRegistrationGateRequest
             {
                 IsOpen = true,
-                AutoClose = DateTimeOffset.UtcNow.AddMinutes(-1),
+                AutoClose = SimfClock.Now.AddMinutes(-1),
             },
             token);
         Assert.Equal(HttpStatusCode.OK, setAutoClose.StatusCode);
@@ -196,7 +196,7 @@ public sealed class OperationsTogglesTests : IClassFixture<SimfApiFactory>
                 Id = RegistrationGate.SingletonId,
                 IsOpen = true,
                 AutoClose = null,
-                LastChangedAt = DateTimeOffset.UtcNow,
+                LastChangedAt = SimfClock.Now,
             });
         }
         else

@@ -15,6 +15,7 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../accessibility/_fake_prefs.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 LiveSession _liveSession({
   String? liveStreamUrl,
@@ -733,7 +734,7 @@ void main() {
 
     testWidgets('S-3 — a URL set but the session has NOT started (future) hides '
         'the LIVE badge and the Ask button', (tester) async {
-      final now = DateTime.now().toUtc();
+      final now = saudiNow();
       await _pump(
         tester,
         repo: _FakeLiveRepo(
@@ -756,7 +757,7 @@ void main() {
     testWidgets('S-3 — an in-window session (start<now<end) with a URL shows the '
         'LIVE badge, the Ask button and the now-broadcasting header',
         (tester) async {
-      final now = DateTime.now().toUtc();
+      final now = saudiNow();
       await _pump(
         tester,
         repo: _FakeLiveRepo(
@@ -778,7 +779,7 @@ void main() {
 
     testWidgets('S-3 — an ENDED session (end<now) with the URL still set hides '
         'the LIVE badge + Ask and does NOT say now-broadcasting', (tester) async {
-      final now = DateTime.now().toUtc();
+      final now = saudiNow();
       await _pump(
         tester,
         repo: _FakeLiveRepo(

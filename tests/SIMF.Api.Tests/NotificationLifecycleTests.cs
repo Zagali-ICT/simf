@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -380,7 +380,7 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
             NameArabic = "اهتمام",
             DisplayOrder = 0,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Interests.Add(interest);
         await db.SaveChangesAsync();
@@ -399,7 +399,7 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
             NameArabic = "جهة الإشعارات",
             Name = $"Notif Org {Guid.NewGuid():N}",
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Organisations.Add(org);
         await appDb.SaveChangesAsync();

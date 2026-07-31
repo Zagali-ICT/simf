@@ -50,7 +50,7 @@ public partial class EmailTemplatesList
     private string FormatPage(int current, int total) =>
         string.Format(L["Grid.Page"], current, total);
 
-    private static string FormatUpdatedAt(DateTimeOffset? updatedAt) =>
+    private static string FormatUpdatedAt(DateTime? updatedAt) =>
         updatedAt is { } value
             ? value.FormatSaudi("dd-MM-yyyy hh:mm tt")
             : "—";

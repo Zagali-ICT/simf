@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using SIMF.Contracts.Authentication;
+using SIMF.Common;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
@@ -21,7 +22,7 @@ public partial class VisitorsAddEdit
             string.Empty,
             false,
             false,
-            DateTimeOffset.UtcNow));
+            SimfClock.Now));
 
     // EditAccountForm raises a payload-less OnSaved; bubble the row we already
     // hold so the host closes the shell + reloads.

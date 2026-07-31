@@ -119,7 +119,7 @@ public sealed class CmsTests : IClassFixture<SimfApiFactory>
         var first = await _client.GetAsync($"/api/v1/app/content/{key}");
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
         var lastModified = first.Content.Headers.LastModified
-            ?? DateTimeOffset.UtcNow;
+            ?? SimfClock.Now;
 
         // Second fetch with If-Modified-Since equal to the last
         // modification time — server returns 304 with no body.
@@ -173,7 +173,7 @@ public sealed class CmsTests : IClassFixture<SimfApiFactory>
     public async Task Banner_create_then_public_list_returns_active_only_within_window()
     {
         var admin = await CreateAdministratorAndSignInAsync();
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
 
         // Active banner: started yesterday, ends tomorrow.
         var liveCreate = await PostAuthAsync(
@@ -211,7 +211,7 @@ public sealed class CmsTests : IClassFixture<SimfApiFactory>
     public async Task Banner_create_with_end_before_start_is_BANNER_INVALID_TIME_WINDOW()
     {
         var admin = await CreateAdministratorAndSignInAsync();
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var response = await PostAuthAsync(
             "/api/v1/admin/banners",
             new CreateBannerRequest

@@ -7,6 +7,7 @@ using SIMF.Application.Operations;
 using SIMF.Common.Enums;
 using SIMF.Domain.Operations;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Operations;
 
@@ -91,10 +92,10 @@ internal sealed class RegistrationGateAutoCloseWorker(
         if (row is null) { return; }
         if (!row.IsOpen) { return; }
         if (row.AutoClose is not { } closeAt) { return; }
-        if (closeAt > timeProvider.GetUtcNow()) { return; }
+        if (closeAt > timeProvider.SimfNow()) { return; }
 
         row.IsOpen = false;
-        row.LastChangedAt = timeProvider.GetUtcNow();
+        row.LastChangedAt = timeProvider.SimfNow();
         row.LastChangedByUserId = null; // worker, not a person
         await db.SaveChangesAsync(cancellationToken);
 

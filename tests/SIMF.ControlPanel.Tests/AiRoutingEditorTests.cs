@@ -20,7 +20,7 @@ public sealed class AiRoutingEditorTests : CpComponentTestBase
         AiProvider.Echo, "echo",
         "You are the rapporteur.", "Session: {sessionTitle}",
         Temperature: 0.2, MaxOutputTokens: 512,
-        IsActive: true, Version: 1, DateTimeOffset.UnixEpoch, UpdatedAt: null);
+        IsActive: true, Version: 1, DateTime.UnixEpoch, UpdatedAt: null);
 
     [Fact]
     public void Loads_the_prompt_then_saves_only_the_routing_change()

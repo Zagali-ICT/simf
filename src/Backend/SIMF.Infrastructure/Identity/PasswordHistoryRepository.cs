@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Identity;
 
@@ -38,7 +39,7 @@ internal sealed class PasswordHistoryRepository(
             Id = Guid.NewGuid(),
             UserId = userId,
             PasswordHash = passwordHash,
-            CreatedAtUtc = timeProvider.GetUtcNow(),
+            CreatedAtUtc = timeProvider.SimfNow(),
         });
 
         // Keep the new entry plus the (keep - 1) most recent existing ones.

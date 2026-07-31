@@ -63,7 +63,7 @@ internal sealed class ParticipationDocumentRequestService(
                 "لديك بالفعل طلب قيد المراجعة لهذه الوثيقة.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var req = new ParticipationDocumentRequest
         {
             Id = Guid.NewGuid(),
@@ -203,7 +203,7 @@ internal sealed class ParticipationDocumentRequestService(
 
         req.Status = request.Status;
         req.ResponseNote = responseNote;
-        req.RespondedAt = timeProvider.GetUtcNow();
+        req.RespondedAt = timeProvider.SimfNow();
         req.RespondedByUserId = actorUserId;
         await appDbContext.SaveChangesAsync(cancellationToken);
 

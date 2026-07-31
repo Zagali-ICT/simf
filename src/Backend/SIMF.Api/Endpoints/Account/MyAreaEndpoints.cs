@@ -99,14 +99,14 @@ public sealed class MyAreaCalendarEndpoint(IMyAreaService service, TimeProvider 
         }
 
         var events = await service.GetCalendarEventsAsync(userId, ct);
-        var ics = BuildCalendar(events, timeProvider.GetUtcNow());
+        var ics = BuildCalendar(events, timeProvider.SimfNow());
 
         HttpContext.Response.ContentType = "text/calendar; charset=utf-8";
         HttpContext.Response.Headers.ContentDisposition = "attachment; filename=\"simf.ics\"";
         await HttpContext.Response.WriteAsync(ics, ct);
     }
 
-    private static string BuildCalendar(IReadOnlyList<MyAreaCalendarEvent> events, DateTimeOffset stamp)
+    private static string BuildCalendar(IReadOnlyList<MyAreaCalendarEvent> events, DateTime stamp)
     {
         var dtstamp = ToIcsUtc(stamp);
         var sb = new StringBuilder();
@@ -135,8 +135,8 @@ public sealed class MyAreaCalendarEndpoint(IMyAreaService service, TimeProvider 
         return sb.ToString();
     }
 
-    private static string ToIcsUtc(DateTimeOffset value) =>
-        value.UtcDateTime.ToString("yyyyMMddTHHmmssZ", CultureInfo.InvariantCulture);
+    private static string ToIcsUtc(DateTime value) =>
+        value.ToString("yyyyMMddTHHmmssZ", CultureInfo.InvariantCulture);
 
     // RFC 5545 §3.3.11 text escaping: backslash, semicolon, comma, newlines.
     private static string EscapeText(string value) => value

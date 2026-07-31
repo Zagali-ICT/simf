@@ -474,8 +474,8 @@ public sealed class ReportingTests : IClassFixture<SimfApiFactory>
     private static DateOnly NextBlock() =>
         new DateOnly(2032, 1, 1).AddDays(Interlocked.Increment(ref _blockCounter) * 7);
 
-    private static DateTimeOffset SaudiAt(DateOnly day, int hour, int minute = 0) =>
-        new DateTimeOffset(day.ToDateTime(new TimeOnly(hour, minute)), Ast).ToUniversalTime();
+    private static DateTime SaudiAt(DateOnly day, int hour, int minute = 0) =>
+        day.ToDateTime(new TimeOnly(hour, minute));
 
     private static ReportQuery Range(DateOnly? from, DateOnly? to, int top = 25) =>
         new() { From = from, To = to, Grid = new GridQuery { Top = top } };
@@ -515,14 +515,14 @@ public sealed class ReportingTests : IClassFixture<SimfApiFactory>
             Name = "Report Hall",
             NameArabic = "قاعة التقارير",
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         await db.SaveChangesAsync();
         return hall.Id;
     }
 
-    private async Task<Guid> SeedSessionAsync(Guid hallId, DateTimeOffset startUtc, string code)
+    private async Task<Guid> SeedSessionAsync(Guid hallId, DateTime startUtc, string code)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -536,7 +536,7 @@ public sealed class ReportingTests : IClassFixture<SimfApiFactory>
             Start = startUtc,
             End = startUtc.AddHours(1),
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         await db.SaveChangesAsync();
@@ -544,7 +544,7 @@ public sealed class ReportingTests : IClassFixture<SimfApiFactory>
     }
 
     private async Task SeedArrivalAsync(
-        Guid sessionId, Guid hallId, Guid userId, DateTimeOffset enterUtc, bool left)
+        Guid sessionId, Guid hallId, Guid userId, DateTime enterUtc, bool left)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -557,7 +557,7 @@ public sealed class ReportingTests : IClassFixture<SimfApiFactory>
             Method = AttendanceMethod.QrScan,
             Enter = enterUtc,
             Leave = left ? enterUtc.AddMinutes(30) : null,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
     }
@@ -573,14 +573,14 @@ public sealed class ReportingTests : IClassFixture<SimfApiFactory>
             Name = "Report Gate",
             NameArabic = "بوابة التقارير",
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Gates.Add(gate);
         await db.SaveChangesAsync();
         return gate.Id;
     }
 
-    private async Task SeedScanAsync(Guid gateId, DateTimeOffset scannedAtUtc, ScanOutcome outcome)
+    private async Task SeedScanAsync(Guid gateId, DateTime scannedAtUtc, ScanOutcome outcome)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -603,7 +603,7 @@ public sealed class ReportingTests : IClassFixture<SimfApiFactory>
         await db.SaveChangesAsync();
     }
 
-    private async Task<string> SeedVisitorRegisteredAtAsync(DateTimeOffset createdAtUtc)
+    private async Task<string> SeedVisitorRegisteredAtAsync(DateTime createdAtUtc)
     {
         var email = $"report-reg-{Guid.NewGuid():N}@simf.test";
         using var scope = _factory.Services.CreateScope();

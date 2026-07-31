@@ -18,6 +18,7 @@ import 'data/live_repository.dart';
 import 'widgets/live_content.dart';
 import 'widgets/live_message_surfaces.dart';
 import 'widgets/live_player_surface.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// Page 025 — البث المباشر · Live broadcast (#25, `/live?sessionId=`), rebuilt
 /// to the KSA-Project Figma frame **934:3450** on the shared navy shell.
@@ -344,7 +345,7 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
     // back to "a feed is present" so the always-on forum stream still reads live.
     final start = session.start;
     final end = session.end;
-    final nowUtc = DateTime.now().toUtc();
+    final nowUtc = saudiNow();
     final isLive = (start != null && end != null)
         ? !nowUtc.isBefore(start) && nowUtc.isBefore(end)
         : mainUrl != null;

@@ -1,4 +1,4 @@
-﻿// Tests: SIMF.Api.Tests/AdminApprovalTests.cs (this file).
+// Tests: SIMF.Api.Tests/AdminApprovalTests.cs (this file).
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -252,7 +252,7 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
                 {
                     Id = Guid.NewGuid(),
                     UserId = subjectId,
-                    CreatedAt = DateTimeOffset.UtcNow,
+                    CreatedAt = SimfClock.Now,
                 };
                 appDb.UserProfiles.Add(profile);
             }
@@ -291,7 +291,7 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
                 PageColor = "#9CA3AF",
                 IsForVisitor = true,
                 IsActive = false,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             appDb.ProfileTypes.Add(inactive);
             await appDb.SaveChangesAsync();
@@ -427,7 +427,7 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
             PageColor = "#3B82F6",
             IsForVisitor = true,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.ProfileTypes.Add(fresh);
         await appDb.SaveChangesAsync();
@@ -452,7 +452,7 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
             PageColor = "#10B981",
             IsForVisitor = false,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.ProfileTypes.Add(fresh);
         await appDb.SaveChangesAsync();

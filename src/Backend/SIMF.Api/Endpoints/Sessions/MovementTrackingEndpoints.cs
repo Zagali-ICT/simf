@@ -115,11 +115,11 @@ internal static class MovementWindow
     /// scan and keeps a personal-data read narrow.</summary>
     internal static readonly TimeSpan MaxSpan = TimeSpan.FromDays(7);
 
-    internal static (DateTimeOffset From, DateTimeOffset To) Parse(string? from, string? to)
+    internal static (DateTime From, DateTime To) Parse(string? from, string? to)
     {
-        if (!DateTimeOffset.TryParse(
+        if (!DateTime.TryParse(
                 from, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedFrom)
-            || !DateTimeOffset.TryParse(
+            || !DateTime.TryParse(
                 to, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedTo))
         {
             throw new ApiException(

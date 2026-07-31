@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// Who a question is addressed to — mirrors `SessionQuestionRecipient`
 /// (Speaker=0, Host=1).
@@ -202,9 +203,9 @@ enum ModeratorQueueFilter { all, fresh, accepted, answered, rejected }
 
 DateTime _utc(Object? value) {
   if (value is String && value.isNotEmpty) {
-    final parsed = DateTime.tryParse(value);
+    final parsed = parseWireOrNull(value);
     if (parsed != null) {
-      return parsed.toUtc();
+      return parsed;
     }
   }
   return DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);

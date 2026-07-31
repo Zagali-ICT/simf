@@ -36,8 +36,8 @@ public sealed record SessionAttendanceRow(
     string TitleArabic,
     string HallName,
     string HallNameArabic,
-    DateTimeOffset Start,
-    DateTimeOffset End,
+    DateTime Start,
+    DateTime End,
     int TotalAttendees,
     int LiveNow);
 
@@ -58,5 +58,5 @@ public sealed record SessionPresentAttendee(
     string? JobTitle,
     string? RowLabel,
     int? SeatNumber,
-    DateTimeOffset Enter,
+    DateTime Enter,
     SIMF.Common.Enums.AttendanceMethod Method);

@@ -8,7 +8,12 @@ namespace SIMF.E2E.Tests;
 
 public static class Totp
 {
-    /// <summary>The current 6-digit code for a base32 secret.</summary>
+    /// <summary>The current 6-digit code for a base32 secret.
+    ///
+    /// <para>RFC 6238 counts 30-second steps from the UNIX EPOCH. That is a
+    /// cryptographic counter, not a user-facing date, so it stays UTC even though
+    /// the rest of SIMF is Saudi-local: localising it would change every generated
+    /// code and break 2FA outright.</para></summary>
     public static string Now(string base32Secret, DateTimeOffset? at = null)
     {
         var key = FromBase32(base32Secret);

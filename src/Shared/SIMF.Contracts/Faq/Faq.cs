@@ -10,7 +10,7 @@ public sealed record AdminFaqGroupSummary(
     int DisplayOrder,
     bool IsActive,
     int EntryCount,
-    DateTimeOffset CreatedAt);
+    DateTime CreatedAt);
 
 public sealed class CreateFaqGroupRequest
 {
@@ -38,7 +38,7 @@ public sealed record AdminFaqEntrySummary(
     string AnswerArabic,
     int DisplayOrder,
     bool IsActive,
-    DateTimeOffset CreatedAt);
+    DateTime CreatedAt);
 
 public sealed class CreateFaqEntryRequest
 {

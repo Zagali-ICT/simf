@@ -6,6 +6,7 @@ using SIMF.Domain.AccessControl;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
+using SIMF.Common;
 
 namespace SIMF.Api.Tests;
 
@@ -28,7 +29,7 @@ public sealed class RetentionPurgeServiceTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task PurgeExpired_removes_dead_artifacts_and_keeps_live_ones()
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var gateId = Guid.NewGuid();
         // Unique markers so a shared fixture DB / parallel classes don't interfere.
         var rtDead = $"rt-dead-{Guid.NewGuid():N}";

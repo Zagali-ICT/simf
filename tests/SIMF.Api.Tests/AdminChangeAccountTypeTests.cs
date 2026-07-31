@@ -203,7 +203,7 @@ public sealed class AdminChangeAccountTypeTests : IClassFixture<SimfApiFactory>
             IsForVisitor = isForVisitor,
             MobileAppRole = isForVisitor ? MobileAppRole.None : MobileAppRole.Staff,
             IsActive = isActive,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.ProfileTypes.Add(type);
         await appDb.SaveChangesAsync();
@@ -242,7 +242,7 @@ public sealed class AdminChangeAccountTypeTests : IClassFixture<SimfApiFactory>
                 NameArabic = "الحساب",
                 PlaceOfBirth = "Riyadh",
                 NationalityId = 0,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
             await appDb.SaveChangesAsync();
         }

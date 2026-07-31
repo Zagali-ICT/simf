@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
@@ -895,13 +895,13 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
             {
                 Id = Guid.NewGuid(),
                 UserId = user.Id,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             appDatabase.UserProfiles.Add(profile);
         }
         profile.RejectionReason = reason;
         profile.RejectionReasonArabic = reasonArabic;
-        user.StateChangedAt = DateTimeOffset.UtcNow;
+        user.StateChangedAt = SimfClock.Now;
         database.SaveChanges();
         appDatabase.SaveChanges();
     }

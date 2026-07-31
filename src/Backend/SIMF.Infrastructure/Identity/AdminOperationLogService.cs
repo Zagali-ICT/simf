@@ -143,12 +143,12 @@ internal sealed class AdminOperationLogService(
                 && EF.Functions.Like(row.SourceIp, $"%{term}%"));
         }
         if (query.Filters.TryGetValue("from", out var fromRaw)
-            && DateTimeOffset.TryParse(fromRaw, out var from))
+            && DateTime.TryParse(fromRaw, out var from))
         {
             rows = rows.Where(row => row.Timestamp >= from);
         }
         if (query.Filters.TryGetValue("to", out var toRaw)
-            && DateTimeOffset.TryParse(toRaw, out var to))
+            && DateTime.TryParse(toRaw, out var to))
         {
             rows = rows.Where(row => row.Timestamp <= to);
         }

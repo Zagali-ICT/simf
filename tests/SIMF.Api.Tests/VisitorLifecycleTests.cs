@@ -1,4 +1,4 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -227,7 +227,7 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
             NameArabic = "اهتمام دورة الحياة",
             DisplayOrder = 0,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Interests.Add(interest);
         await db.SaveChangesAsync();
@@ -246,7 +246,7 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
             NameArabic = "جهة دورة الحياة",
             Name = $"Lifecycle Org {Guid.NewGuid():N}",
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Organisations.Add(org);
         await appDb.SaveChangesAsync();

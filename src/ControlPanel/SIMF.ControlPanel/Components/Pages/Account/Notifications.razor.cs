@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
@@ -71,7 +71,7 @@ public partial class Notifications
                 "simfAccount.postJson", $"/account/api/notifications/{row.Id}/read", null);
             if (env is { Success: true })
             {
-                var updated = row with { ReadAt = DateTimeOffset.UtcNow, IsRead = true };
+                var updated = row with { ReadAt = SimfClock.Now, IsRead = true };
                 _page = new GridPage<NotificationDto>
                 {
                     Items = _page.Items.Select(n => n.Id == row.Id ? updated : n).ToList(),

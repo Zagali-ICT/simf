@@ -49,7 +49,7 @@ public sealed class MovementTrackingTests : IClassFixture<SimfApiFactory>
     {
         var hallId = await SeedHallWithGeofenceAsync();
         var tokens = await AuthFlow.SignInApprovedVisitorWithoutTwoFactorAsync(_client, _factory);
-        var start = DateTimeOffset.UtcNow.AddMinutes(-30);
+        var start = SimfClock.Now.AddMinutes(-30);
 
         var response = await PostAuthAsync("/api/v1/app/movement/pings",
             new RecordDevicePositionsRequest
@@ -84,7 +84,7 @@ public sealed class MovementTrackingTests : IClassFixture<SimfApiFactory>
         // feature, just silence.
         var tokens = await AuthFlow.SignInApprovedVisitorWithoutTwoFactorAsync(_client, _factory);
         var (_, lat, lon) = await SeedHallWithoutGeofenceAsync();
-        var at = DateTimeOffset.UtcNow.AddMinutes(-5);
+        var at = SimfClock.Now.AddMinutes(-5);
 
         var response = await PostAuthAsync("/api/v1/app/movement/pings",
             new RecordDevicePositionsRequest
@@ -104,7 +104,7 @@ public sealed class MovementTrackingTests : IClassFixture<SimfApiFactory>
     {
         var hallId = await SeedHallWithGeofenceAsync();
         var userId = Guid.NewGuid();
-        var start = DateTimeOffset.UtcNow.AddHours(-2);
+        var start = SimfClock.Now.AddHours(-2);
 
         // 0, +5, +10 minutes inside the hall = 10 minutes of dwell for one attendee.
         await SeedPingsAsync(userId, hallId,
@@ -126,7 +126,7 @@ public sealed class MovementTrackingTests : IClassFixture<SimfApiFactory>
         // A device that went dark for an hour did not spend that hour in the hall.
         var hallId = await SeedHallWithGeofenceAsync();
         var userId = Guid.NewGuid();
-        var start = DateTimeOffset.UtcNow.AddHours(-5);
+        var start = SimfClock.Now.AddHours(-5);
 
         await SeedPingsAsync(userId, hallId, [start, start.AddHours(1)]);
 
@@ -144,7 +144,7 @@ public sealed class MovementTrackingTests : IClassFixture<SimfApiFactory>
     {
         var hallId = await SeedHallWithGeofenceAsync();
         var userId = Guid.NewGuid();
-        var start = DateTimeOffset.UtcNow.AddHours(-3);
+        var start = SimfClock.Now.AddHours(-3);
 
         // In the hall, then outside it (the walk), then back in.
         await SeedPingsAsync(userId, hallId, [start, start.AddMinutes(4)]);
@@ -170,8 +170,8 @@ public sealed class MovementTrackingTests : IClassFixture<SimfApiFactory>
     public async Task Movement_reports_require_the_attendance_view_permission()
     {
         var tokens = await AuthFlow.SignInApprovedVisitorWithoutTwoFactorAsync(_client, _factory);
-        var from = Uri.EscapeDataString(DateTimeOffset.UtcNow.AddHours(-1).ToString("O"));
-        var to = Uri.EscapeDataString(DateTimeOffset.UtcNow.ToString("O"));
+        var from = Uri.EscapeDataString(SimfClock.Now.AddHours(-1).ToString("O"));
+        var to = Uri.EscapeDataString(SimfClock.Now.ToString("O"));
 
         var dwell = await GetAuthAsync(
             $"/api/v1/admin/movement/dwell?from={from}&to={to}", tokens.AccessToken);
@@ -191,8 +191,8 @@ public sealed class MovementTrackingTests : IClassFixture<SimfApiFactory>
         var missing = await GetAuthAsync("/api/v1/admin/movement/dwell", token);
         Assert.Equal(HttpStatusCode.BadRequest, missing.StatusCode);
 
-        var from = Uri.EscapeDataString(DateTimeOffset.UtcNow.AddDays(-30).ToString("O"));
-        var to = Uri.EscapeDataString(DateTimeOffset.UtcNow.ToString("O"));
+        var from = Uri.EscapeDataString(SimfClock.Now.AddDays(-30).ToString("O"));
+        var to = Uri.EscapeDataString(SimfClock.Now.ToString("O"));
         var tooWide = await GetAuthAsync(
             $"/api/v1/admin/movement/dwell?from={from}&to={to}", token);
         Assert.Equal(HttpStatusCode.BadRequest, tooWide.StatusCode);
@@ -223,7 +223,7 @@ public sealed class MovementTrackingTests : IClassFixture<SimfApiFactory>
             GeofenceCenterLat = HallLat,
             GeofenceCenterLon = HallLon,
             GeofenceRadiusMeters = 150,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         await db.SaveChangesAsync();
@@ -245,7 +245,7 @@ public sealed class MovementTrackingTests : IClassFixture<SimfApiFactory>
             Name = "Unbounded Hall",
             NameArabic = "قاعة بلا حدود",
             Capacity = 100,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         await db.SaveChangesAsync();
@@ -256,7 +256,7 @@ public sealed class MovementTrackingTests : IClassFixture<SimfApiFactory>
     /// <summary>Seeds pings directly, so the aggregation tests do not depend on the
     /// geofence resolution the capture tests already cover.</summary>
     private async Task SeedPingsAsync(
-        Guid userId, Guid? hallId, IReadOnlyList<DateTimeOffset> capturedAt)
+        Guid userId, Guid? hallId, IReadOnlyList<DateTime> capturedAt)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -270,7 +270,7 @@ public sealed class MovementTrackingTests : IClassFixture<SimfApiFactory>
                 CapturedAt = at,
                 Latitude = hallId is null ? AwayLat : HallLat,
                 Longitude = hallId is null ? AwayLon : HallLon,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
         }
         await db.SaveChangesAsync();

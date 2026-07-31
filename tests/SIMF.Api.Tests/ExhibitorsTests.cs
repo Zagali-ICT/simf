@@ -86,7 +86,7 @@ public sealed class ExhibitorsTests : IClassFixture<SimfApiFactory>
             City = "Jeddah",
             CityArabic = "جدة",
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         if (withLogo)
         {
@@ -96,7 +96,7 @@ public sealed class ExhibitorsTests : IClassFixture<SimfApiFactory>
                 Service = FileService.ExhibitorLogo,
                 OwnerEntityId = exhibitorId,
                 IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
         }
         await appDb.SaveChangesAsync();

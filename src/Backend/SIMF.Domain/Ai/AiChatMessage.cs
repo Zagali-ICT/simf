@@ -20,5 +20,5 @@ public sealed class AiChatMessage
     /// <summary>The message text (≤ the per-AI-input cap).</summary>
     public string Content { get; set; } = string.Empty;
 
-    public DateTimeOffset CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 }

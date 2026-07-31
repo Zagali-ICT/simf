@@ -29,7 +29,7 @@ public sealed class ContactInquiry : BaseAuditEntity
     public bool IsHandled { get; set; }
 
     /// <summary>When it was marked handled (UTC), else null.</summary>
-    public DateTimeOffset? HandledAt { get; set; }
+    public DateTime? HandledAt { get; set; }
 
     /// <summary>The admin who marked it handled (JWT <c>sub</c>), else null.</summary>
     public Guid? HandledByUserId { get; set; }

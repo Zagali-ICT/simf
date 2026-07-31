@@ -12,7 +12,7 @@ public sealed class CountryAddEditTests : CpComponentTestBase
 {
     private static AdminCountryDetail Detail() => new(
         682, "SA", "Saudi Arabia", "المملكة العربية السعودية", "+966", 1,
-        IsActive: true, DateTimeOffset.UnixEpoch, UpdatedAt: null);
+        IsActive: true, DateTime.UnixEpoch, UpdatedAt: null);
 
     [Fact]
     public void Add_mode_hides_the_Active_checkbox()
@@ -39,7 +39,7 @@ public sealed class CountryAddEditTests : CpComponentTestBase
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
         var created = new AdminCountryDetail(
-            900, "ZZ", "Testland", "أرض الاختبار", null, 0, true, DateTimeOffset.UnixEpoch, null);
+            900, "ZZ", "Testland", "أرض الاختبار", null, 0, true, DateTime.UnixEpoch, null);
         var handler = JSInterop.Setup<ApiResult<AdminCountryDetail>>(
             "simfAccount.postJson", _ => true)
             .SetResult(ApiResult<AdminCountryDetail>.Ok(created));

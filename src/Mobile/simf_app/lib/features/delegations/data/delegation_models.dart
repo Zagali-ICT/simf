@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// One delegation card — an invited country with its head of delegation, date
 /// range and member count (Figma 1426:10771 الوفود), mirroring
@@ -127,7 +128,7 @@ class Delegations {
 }
 
 DateTime? _parseDate(Object? value) =>
-    value is String && value.isNotEmpty ? DateTime.tryParse(value) : null;
+    value is String && value.isNotEmpty ? parseWireOrNull(value) : null;
 
 /// Converts a two-letter ISO 3166-1 alpha-2 code to its flag emoji (the two
 /// regional-indicator code points). Returns '' for a malformed code.

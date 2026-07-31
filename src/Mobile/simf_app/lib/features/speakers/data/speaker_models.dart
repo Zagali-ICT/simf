@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../core/country_flag.dart';
 import '../../../core/utils/saudi_time.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// One row in the public speakers list — mirrors
 /// `SIMF.Contracts.Programme.PublicSpeakerSummary` (`GET /app/speakers`). The
@@ -212,9 +213,9 @@ class SpeakerDetail {
 
 DateTime _utc(Object? value) {
   if (value is String && value.isNotEmpty) {
-    final parsed = DateTime.tryParse(value);
+    final parsed = parseWireOrNull(value);
     if (parsed != null) {
-      return parsed.toUtc();
+      return parsed;
     }
   }
   return DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);

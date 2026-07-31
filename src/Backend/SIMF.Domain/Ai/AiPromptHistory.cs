@@ -57,7 +57,7 @@ public sealed class AiPromptHistory
     /// (i.e. the <see cref="AiPrompt.UpdatedAt"/> from the version
     /// being replaced, or <see cref="AiPrompt.CreatedAt"/> for
     /// version 1 baseline snapshots).</summary>
-    public DateTimeOffset CapturedFromUpdatedAt { get; set; }
+    public DateTime CapturedFromUpdatedAt { get; set; }
 
     /// <summary>The admin user id that authored the version this row
     /// captures. Null when capturing the initial v1 baseline.</summary>
@@ -65,5 +65,5 @@ public sealed class AiPromptHistory
 
     /// <summary>When the snapshot row was written (i.e. when the
     /// successor version was about to land).</summary>
-    public DateTimeOffset CapturedAt { get; set; }
+    public DateTime CapturedAt { get; set; }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../core/utils/saudi_time.dart';
 import 'session_lifecycle.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// The session broadcast lifecycle — mirrors `SIMF.Common.Enums.SessionStatus`
 /// (frozen, int-backed: Scheduled=0, Held=1, Recorded=2, Published=3). The wire
@@ -582,7 +583,7 @@ List<SessionSpeaker> _decodeSpeakers(Object? data) =>
 /// serialisation) into a local-midnight [DateTime] for the day strip / banner.
 DateTime _parseDate(Object? value) {
   if (value is String && value.isNotEmpty) {
-    final parsed = DateTime.tryParse(value);
+    final parsed = parseWireOrNull(value);
     if (parsed != null) {
       return DateTime(parsed.year, parsed.month, parsed.day);
     }

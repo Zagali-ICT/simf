@@ -18,6 +18,7 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../accessibility/_fake_prefs.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 SessionDetail _detail({
   String? liveStreamUrl,
@@ -550,8 +551,8 @@ void main() {
         'live + streaming (owner 2026-07-14 gate)', (tester) async {
       final live = _detail(
         liveStreamUrl: 'https://youtu.be/abcdefghijk',
-        start: DateTime.now().toUtc().subtract(const Duration(hours: 1)),
-        end: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        start: saudiNow().subtract(const Duration(hours: 1)),
+        end: saudiNow().add(const Duration(hours: 1)),
       );
       await _pump(
         tester,
@@ -614,8 +615,8 @@ void main() {
     testWidgets('S-4 — an in-window in-person session (no live URL) SHOWS the '
         'ask card with the neutral live label on the detail', (tester) async {
       final ongoing = _detail(
-        start: DateTime.now().toUtc().subtract(const Duration(hours: 1)),
-        end: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        start: saudiNow().subtract(const Duration(hours: 1)),
+        end: saudiNow().add(const Duration(hours: 1)),
       );
       await _pump(
         tester,
@@ -634,8 +635,8 @@ void main() {
         'card on the detail (asking moves to the live-broadcast screen)',
         (tester) async {
       final broadcasting = _detail(
-        start: DateTime.now().toUtc().subtract(const Duration(hours: 1)),
-        end: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        start: saudiNow().subtract(const Duration(hours: 1)),
+        end: saudiNow().add(const Duration(hours: 1)),
         liveStreamUrl: 'https://live.example.sa/main.m3u8',
       );
       await _pump(
@@ -656,8 +657,8 @@ void main() {
       // After End `_showAsk` returns false regardless of the viewer, so a
       // guest proves it.
       final ended = _detail(
-        start: DateTime.now().toUtc().subtract(const Duration(hours: 3)),
-        end: DateTime.now().toUtc().subtract(const Duration(hours: 2)),
+        start: saudiNow().subtract(const Duration(hours: 3)),
+        end: saudiNow().subtract(const Duration(hours: 2)),
       );
       await _pump(
         tester,

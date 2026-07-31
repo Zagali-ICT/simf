@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SIMF.Infrastructure.Persistence.Migrations.App
 {
     /// <inheritdoc />
-    public partial class _20260712001 : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -18,6 +18,21 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
             migrationBuilder.CreateSequence(
                 name: "RegistrationReferenceSequence");
+
+            migrationBuilder.CreateTable(
+                name: "AiChatMessages",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Role = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
+                    Content = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AiChatMessages", x => x.Id);
+                });
 
             migrationBuilder.CreateTable(
                 name: "AiInvocations",
@@ -36,7 +51,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     ErrorCode = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
                     CallerUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CallerKind = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -62,8 +77,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     MaxOutputTokens = table.Column<int>(type: "int", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     Version = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
@@ -89,12 +104,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     LocationAr = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     DateLabelEn = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
                     DateLabelAr = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -107,12 +122,33 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     IsVisible = table.Column<bool>(type: "bit", nullable: false),
-                    LastChangedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    LastChangedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     LastChangedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ArchiveVisibility", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "BadgeBatches",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CountsSummary = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: false),
+                    TotalCount = table.Column<int>(type: "int", nullable: false),
+                    IsDelegate = table.Column<bool>(type: "bit", nullable: false),
+                    RecipientEmail = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BadgeBatches", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -126,8 +162,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Note = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
                     ResponseNote = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    RespondedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    RespondedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     RespondedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
@@ -146,20 +182,20 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     BodyArabic = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
                     ImageUrl = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
                     LinkUrl = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
-                    StartUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    EndUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    Start = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    End = table.Column<DateTime>(type: "datetime2", nullable: false),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Banners", x => x.Id);
-                    table.CheckConstraint("CK_Banners_TimeWindow", "[EndUtc] > [StartUtc]");
+                    table.CheckConstraint("CK_Banners_TimeWindow", "[End] > [Start]");
                 });
 
             migrationBuilder.CreateTable(
@@ -170,13 +206,13 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     RequesterUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     TargetUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     State = table.Column<int>(type: "int", nullable: false),
-                    RespondedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    RespondedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -193,14 +229,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Message = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: false),
                     SubmittedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsHandled = table.Column<bool>(type: "bit", nullable: false),
-                    HandledAtUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    HandledAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     HandledByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -217,12 +253,31 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     ContentArabic = table.Column<string>(type: "nvarchar(max)", maxLength: 8000, nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     LastUpdatedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    LastUpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    LastUpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ContentBlocks", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "DevicePositionPings",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    HallId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    SessionId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CapturedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Latitude = table.Column<double>(type: "float", nullable: false),
+                    Longitude = table.Column<double>(type: "float", nullable: false),
+                    AccuracyMeters = table.Column<double>(type: "float", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DevicePositionPings", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -236,33 +291,13 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     BodyAr = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     Version = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_EmailTemplates", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ExhibitorVisitorScans",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ExhibitorUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    VisitorUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Note = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ExhibitorVisitorScans", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -273,12 +308,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Name = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     NameArabic = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -301,12 +336,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     GeofenceCenterLat = table.Column<double>(type: "float", nullable: true),
                     GeofenceCenterLon = table.Column<double>(type: "float", nullable: true),
                     GeofenceRadiusMeters = table.Column<double>(type: "float", nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -322,12 +357,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Name = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     NameArabic = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -348,12 +383,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Album = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     AlbumArabic = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -374,14 +409,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Category = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     CategoryArabic = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     ImageRelativePath = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
-                    PublishedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    PublishedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -389,11 +424,40 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 });
 
             migrationBuilder.CreateTable(
+                name: "NotificationBroadcasts",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CreatedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TargetMode = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
+                    SessionId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    AudienceScope = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: true),
+                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    TitleArabic = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Body = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
+                    BodyArabic = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
+                    Severity = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
+                    TotalRecipients = table.Column<int>(type: "int", nullable: false),
+                    Dispatched = table.Column<int>(type: "int", nullable: false),
+                    EmailsEnqueued = table.Column<int>(type: "int", nullable: false),
+                    Skipped = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    StartedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CompletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Error = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_NotificationBroadcasts", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "OperationLog",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TimestampUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    Timestamp = table.Column<DateTime>(type: "datetime2", nullable: false),
                     EventType = table.Column<string>(type: "nvarchar(80)", maxLength: 80, nullable: false),
                     Outcome = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
                     SubjectEmail = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -425,12 +489,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Phone = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(320)", maxLength: 320, nullable: true),
                     Website = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -451,11 +515,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Bio = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: true),
                     BioArabic = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: true),
                     Version = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
-                    VersionDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    VersionDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     SysVersion = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
-                    ReleaseDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    EventStartDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    EventEndDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    ReleaseDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    EventStartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    EventEndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CurrentYear = table.Column<int>(type: "int", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
                     LocationText = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
@@ -466,6 +530,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     ContactEmail = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     ContactWebsite = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
                     LiveStreamUrl = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
+                    BackgroundVideoUrl = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
                     FacebookUrl = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
                     XUrl = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
                     InstagramUrl = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
@@ -475,12 +540,13 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     SnapchatUrl = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
                     RegistrationSuccessMessage = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
                     RegistrationSuccessMessageArabic = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    PartnerDirectoryEnabled = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -497,8 +563,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Note = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
                     ResponseNote = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    RespondedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    RespondedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     RespondedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
@@ -518,12 +584,13 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     MobileAppRole = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false, defaultValue: "None"),
                     AllowsVipMeetingSlots = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
                     IsAppRegisterable = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    ShowInPartnerDirectory = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -539,13 +606,13 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Title = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     TitleArabic = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false),
-                    RatingPromptSentUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    RatingPromptSent = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -567,12 +634,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     CommentLabelArabic = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
                     IsSystem = table.Column<bool>(type: "bit", nullable: false),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -588,12 +655,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     NameArabic = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
                     Name = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     SortOrder = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -606,8 +673,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     IsOpen = table.Column<bool>(type: "bit", nullable: false),
-                    AutoCloseUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    LastChangedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    AutoClose = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    LastChangedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     LastChangedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
@@ -622,7 +689,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    OccurredAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    OccurredAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     TableName = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     EntityType = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     Operation = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
@@ -647,12 +714,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     OwnerUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     SubjectUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Note = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -668,7 +735,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     RequestHash = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     ResponseHash = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     ScanId = table.Column<long>(type: "bigint", nullable: true),
-                    StoredAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                    StoredAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -683,12 +750,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Name = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     NameArabic = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -713,16 +780,16 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     SizeBytes = table.Column<long>(type: "bigint", nullable: true),
                     Sha256 = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
                     IsDeletable = table.Column<bool>(type: "bit", nullable: false),
-                    RetainUntilUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    SecureDestroyedUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    RetainUntil = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    SecureDestroyed = table.Column<DateTime>(type: "datetime2", nullable: true),
                     OwnerEntityType = table.Column<int>(type: "int", nullable: false),
                     OwnerEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -737,12 +804,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Key = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     Value = table.Column<string>(type: "nvarchar(2048)", maxLength: 2048, nullable: false),
                     Description = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -761,12 +828,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     DescriptionArabic = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false),
                     PageColor = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -780,13 +847,13 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Token = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
-                    RevokedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    RevokedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -808,9 +875,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     MaxOutputTokens = table.Column<int>(type: "int", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     ContentHash = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
-                    CapturedFromUpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CapturedFromUpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    CapturedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                    CapturedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -878,12 +945,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Answer = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: false),
                     AnswerArabic = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: false),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -908,12 +975,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     DescriptionArabic = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
                     DirectionMode = table.Column<int>(type: "int", nullable: false),
                     HallId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -936,17 +1003,17 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Mode = table.Column<int>(type: "int", nullable: false),
                     UnitCount = table.Column<int>(type: "int", nullable: true),
                     RowColumnSpec = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
-                    StartUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    EndUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    Start = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    End = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Notes = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    ReleasedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ReleasedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_HallAllocations", x => x.Id);
-                    table.CheckConstraint("CK_HallAllocations_TimeWindow", "[EndUtc] > [StartUtc]");
+                    table.CheckConstraint("CK_HallAllocations_TimeWindow", "[End] > [Start]");
                     table.ForeignKey(
                         name: "FK_HallAllocations_Halls_HallId",
                         column: x => x.HallId,
@@ -961,18 +1028,18 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     HallId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    StartUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    EndUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    Start = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    End = table.Column<DateTime>(type: "datetime2", nullable: false),
                     SlotMinutes = table.Column<int>(type: "int", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_HallAvailabilityWindows", x => x.Id);
-                    table.CheckConstraint("CK_HallAvailabilityWindows_TimeWindow", "[EndUtc] > [StartUtc]");
+                    table.CheckConstraint("CK_HallAvailabilityWindows_TimeWindow", "[End] > [Start]");
                     table.ForeignKey(
                         name: "FK_HallAvailabilityWindows_Halls_HallId",
                         column: x => x.HallId,
@@ -989,8 +1056,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     HallId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     RowLabels = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
                     SeatsPerRow = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    SeatCounts = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    SeatTiers = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1014,8 +1083,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     ColumnNumber = table.Column<int>(type: "int", nullable: true),
                     Capacity = table.Column<int>(type: "int", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1039,12 +1108,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Text = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: false),
                     TextArabic = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: false),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1066,13 +1135,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Name = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
                     NameArabic = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
                     Value = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: false),
+                    ValueArabic = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1094,12 +1164,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Name = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     NameArabic = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1122,12 +1192,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     TargetId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     OverallStars = table.Column<int>(type: "int", nullable: true),
                     Comment = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1161,32 +1231,44 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     IqamaNumberHash = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
                     PassportNumberHash = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
                     JobTitle = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    JobTitleArabic = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     OrganisationId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     RegionId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    BadgeBatchId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    ShowInMeetLikeYou = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     SaudiMobile = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     InternationalMobile = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     PlateNumber = table.Column<string>(type: "nvarchar(7)", maxLength: 7, nullable: true),
                     ReferenceNumber = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
                     MawjId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
                     Honorific = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    HonorificArabic = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
                     PreferredLanguage = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: true),
                     VipPhotoRelativePath = table.Column<string>(type: "nvarchar(260)", maxLength: 260, nullable: true),
                     IsDelegate = table.Column<bool>(type: "bit", nullable: false),
+                    AllowsDelegationMeeting = table.Column<bool>(type: "bit", nullable: false),
+                    AllowsSpeakerMeeting = table.Column<bool>(type: "bit", nullable: false),
                     ProfileTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     QrId = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: true),
                     RejectionReason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     RejectionReasonArabic = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     IdImageRelativePath = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_UserProfiles", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserProfiles_BadgeBatches_BadgeBatchId",
+                        column: x => x.BadgeBatchId,
+                        principalTable: "BadgeBatches",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_UserProfiles_Organisations_OrganisationId",
                         column: x => x.OrganisationId,
@@ -1217,38 +1299,40 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     TitleArabic = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
                     Description = table.Column<string>(type: "nvarchar(2048)", maxLength: 2048, nullable: true),
                     DescriptionArabic = table.Column<string>(type: "nvarchar(2048)", maxLength: 2048, nullable: true),
+                    Language = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    LanguageArabic = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
                     HallId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CategoryId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     Type = table.Column<int>(type: "int", nullable: true),
-                    StartUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    EndUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    Start = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    End = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CapacityOverride = table.Column<int>(type: "int", nullable: true),
                     SeatSelectionModeOverride = table.Column<int>(type: "int", nullable: true),
-                    ReminderSentUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    RatingPromptSentUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    ReminderSent = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RatingPromptSent = table.Column<DateTime>(type: "datetime2", nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    PublishedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    PublishedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     RecordingStoredFileName = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
                     RecordingFileName = table.Column<string>(type: "nvarchar(260)", maxLength: 260, nullable: true),
                     RecordingContentType = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
                     RecordingSizeBytes = table.Column<long>(type: "bigint", nullable: true),
-                    RecordingUploadedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    RecordingUploadedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     RecordingUploadedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     LiveStreamUrl = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
                     LiveSignLanguageUrl = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
                     LiveCaptions = table.Column<string>(type: "nvarchar(2048)", maxLength: 2048, nullable: true),
                     LiveCaptionsArabic = table.Column<string>(type: "nvarchar(2048)", maxLength: 2048, nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Sessions", x => x.Id);
-                    table.CheckConstraint("CK_Sessions_TimeWindow", "[EndUtc] > [StartUtc]");
+                    table.CheckConstraint("CK_Sessions_TimeWindow", "[End] > [Start]");
                     table.ForeignKey(
                         name: "FK_Sessions_Halls_HallId",
                         column: x => x.HallId,
@@ -1272,9 +1356,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     RevokedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    RevokedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    RevokedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreateBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -1318,21 +1402,21 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     MeetingTableId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     MeetingType = table.Column<int>(type: "int", nullable: false),
-                    StartUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    EndUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    Start = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    End = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
                     Notes = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
                     ScheduledByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CancelledByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    CancelledAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    CancelledAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CancellationReason = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_BusinessMeetings", x => x.Id);
-                    table.CheckConstraint("CK_BusinessMeetings_TimeWindow", "[EndUtc] > [StartUtc]");
+                    table.CheckConstraint("CK_BusinessMeetings_TimeWindow", "[End] > [Start]");
                     table.ForeignKey(
                         name: "FK_BusinessMeetings_MeetingTables_MeetingTableId",
                         column: x => x.MeetingTableId,
@@ -1352,12 +1436,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     TextArabic = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: false),
                     IsRequired = table.Column<bool>(type: "bit", nullable: false),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1390,8 +1474,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     DelegationDepartureDate = table.Column<DateOnly>(type: "date", nullable: true),
                     HeadOfDelegationUserProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1424,8 +1508,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     IpAddress = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
                     IdempotencyKey = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
                     ScannedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ScannedAtUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    ClientScannedAtUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    ScannedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ClientScannedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1453,13 +1537,13 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     SentToUserProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     State = table.Column<int>(type: "int", nullable: false),
                     Notes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    RespondedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    RespondedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1505,10 +1589,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     HallId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Method = table.Column<int>(type: "int", nullable: false),
-                    EnterUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    LeaveUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    Enter = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Leave = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1538,13 +1622,15 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Kind = table.Column<int>(type: "int", nullable: false),
                     ReservedForUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CreatedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    ReleasedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ReleasedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
                     ReviewedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    ReviewedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    ReviewedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     RejectionReason = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
-                    ExpiresUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    Expires = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    GuestHint = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    GuestHintArabic = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1564,7 +1650,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     SessionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -1584,13 +1670,40 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     SessionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     AssignedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    AssignedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                    AssignedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_SessionModerators", x => new { x.SessionId, x.UserId });
                     table.ForeignKey(
                         name: "FK_SessionModerators_Sessions_SessionId",
+                        column: x => x.SessionId,
+                        principalTable: "Sessions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SessionOutcomes",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SessionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Text = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: false),
+                    TextArabic = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: false),
+                    DisplayOrder = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SessionOutcomes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SessionOutcomes_Sessions_SessionId",
                         column: x => x.SessionId,
                         principalTable: "Sessions",
                         principalColumn: "Id",
@@ -1609,14 +1722,15 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Order = table.Column<int>(type: "int", nullable: false),
                     IsHidden = table.Column<bool>(type: "bit", nullable: false),
                     IsPushed = table.Column<bool>(type: "bit", nullable: false),
-                    PushedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    PushedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Phase = table.Column<int>(type: "int", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
+                    StatusBeforeHidden = table.Column<int>(type: "int", nullable: true),
                     AiFilterVerdict = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     AssignedToRole = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
                     EscalatedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    EscalatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    EscalatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1644,15 +1758,18 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     FullText = table.Column<string>(type: "nvarchar(max)", maxLength: 8000, nullable: false),
                     FullTextArabic = table.Column<string>(type: "nvarchar(max)", maxLength: 8000, nullable: false),
                     AiModel = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
-                    PublishedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    SummaryVideoUrl = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
+                    AiDraftFullTextArabic = table.Column<string>(type: "nvarchar(max)", maxLength: 8000, nullable: true),
+                    AiDraftGeneratedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    PublishedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     PublishedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    ReviewSubmittedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    ReviewSubmittedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ReviewSubmittedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    ApprovedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    ApprovedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ApprovedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
@@ -1748,75 +1865,26 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 });
 
             migrationBuilder.CreateTable(
-                name: "Contacts",
+                name: "DelegationAvailabilityWindows",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    NameArabic = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
-                    PhonePrimary = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: true),
-                    PhoneSecondary = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: true),
-                    Email = table.Column<string>(type: "nvarchar(320)", maxLength: 320, nullable: true),
-                    Website = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
-                    FacebookUrl = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    XUrl = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    LinkedInUrl = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    InstagramUrl = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    CountryId = table.Column<int>(type: "int", nullable: true),
-                    City = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
-                    CityArabic = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
-                    Latitude = table.Column<double>(type: "float", nullable: true),
-                    Longitude = table.Column<double>(type: "float", nullable: true),
-                    LogoRelativePath = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CountryId = table.Column<int>(type: "int", nullable: false),
+                    Start = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    End = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    SlotMinutes = table.Column<int>(type: "int", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Contacts", x => x.Id);
+                    table.PrimaryKey("PK_DelegationAvailabilityWindows", x => x.Id);
+                    table.CheckConstraint("CK_DelegationAvailabilityWindows_TimeWindow", "[End] > [Start]");
                     table.ForeignKey(
-                        name: "FK_Contacts_Countries_CountryId",
+                        name: "FK_DelegationAvailabilityWindows_Countries_CountryId",
                         column: x => x.CountryId,
-                        principalTable: "Countries",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "DelegationMeetingRequests",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    RequestedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    RequestingCountryId = table.Column<int>(type: "int", nullable: false),
-                    TargetCountryId = table.Column<int>(type: "int", nullable: false),
-                    AttendeeCount = table.Column<int>(type: "int", nullable: false),
-                    Subject = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
-                    SlotStartUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    SlotEndUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    Status = table.Column<int>(type: "int", nullable: false),
-                    ResponseNote = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    RespondedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    RespondedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_DelegationMeetingRequests", x => x.Id);
-                    table.CheckConstraint("CK_DelegationMeetingRequests_Slot", "[SlotStartUtc] IS NULL OR [SlotEndUtc] IS NULL OR [SlotEndUtc] > [SlotStartUtc]");
-                    table.ForeignKey(
-                        name: "FK_DelegationMeetingRequests_Countries_RequestingCountryId",
-                        column: x => x.RequestingCountryId,
-                        principalTable: "Countries",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_DelegationMeetingRequests_Countries_TargetCountryId",
-                        column: x => x.TargetCountryId,
                         principalTable: "Countries",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -1833,21 +1901,30 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     ContactPhone = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: true),
                     Website = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
                     Tier = table.Column<int>(type: "int", nullable: true),
-                    ContactId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    PhoneSecondary = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: true),
+                    FacebookUrl = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    XUrl = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    LinkedInUrl = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    InstagramUrl = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    City = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
+                    CityArabic = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
+                    Latitude = table.Column<double>(type: "float", nullable: true),
+                    Longitude = table.Column<double>(type: "float", nullable: true),
+                    CountryId = table.Column<int>(type: "int", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Exhibitors", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Exhibitors_Contacts_ContactId",
-                        column: x => x.ContactId,
-                        principalTable: "Contacts",
+                        name: "FK_Exhibitors_Countries_CountryId",
+                        column: x => x.CountryId,
+                        principalTable: "Countries",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -1862,21 +1939,32 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     LogoRelativePath = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
                     Url = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false),
-                    ContactId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(320)", maxLength: 320, nullable: true),
+                    PhonePrimary = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: true),
+                    PhoneSecondary = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: true),
+                    FacebookUrl = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    XUrl = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    LinkedInUrl = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    InstagramUrl = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    City = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
+                    CityArabic = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
+                    Latitude = table.Column<double>(type: "float", nullable: true),
+                    Longitude = table.Column<double>(type: "float", nullable: true),
+                    CountryId = table.Column<int>(type: "int", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_MediaPartners", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_MediaPartners_Contacts_ContactId",
-                        column: x => x.ContactId,
-                        principalTable: "Contacts",
+                        name: "FK_MediaPartners_Countries_CountryId",
+                        column: x => x.CountryId,
+                        principalTable: "Countries",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -1889,7 +1977,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Code = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
                     Name = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     NameArabic = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
-                    Rank = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    Rank = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    RankArabic = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     CountryId = table.Column<int>(type: "int", nullable: true),
                     UserProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     Bio = table.Column<string>(type: "nvarchar(2048)", maxLength: 2048, nullable: true),
@@ -1905,26 +1994,27 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     FacebookUrl = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     LinkedInUrl = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     XUrl = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    InstagramUrl = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     WebsiteUrl = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    Email = table.Column<string>(type: "nvarchar(320)", maxLength: 320, nullable: true),
+                    PhonePrimary = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: true),
+                    PhoneSecondary = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: true),
+                    City = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
+                    CityArabic = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
+                    Latitude = table.Column<double>(type: "float", nullable: true),
+                    Longitude = table.Column<double>(type: "float", nullable: true),
                     PhotoRelativePath = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    ContactId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Speakers", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Speakers_Contacts_ContactId",
-                        column: x => x.ContactId,
-                        principalTable: "Contacts",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Speakers_Countries_CountryId",
                         column: x => x.CountryId,
@@ -1954,23 +2044,96 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     TaglineArabic = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     About = table.Column<string>(type: "nvarchar(2048)", maxLength: 2048, nullable: true),
                     AboutArabic = table.Column<string>(type: "nvarchar(2048)", maxLength: 2048, nullable: true),
-                    ContactId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(320)", maxLength: 320, nullable: true),
+                    PhonePrimary = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: true),
+                    PhoneSecondary = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: true),
+                    FacebookUrl = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    XUrl = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    LinkedInUrl = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    InstagramUrl = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    City = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
+                    CityArabic = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
+                    Latitude = table.Column<double>(type: "float", nullable: true),
+                    Longitude = table.Column<double>(type: "float", nullable: true),
+                    CountryId = table.Column<int>(type: "int", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Sponsors", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Sponsors_Contacts_ContactId",
-                        column: x => x.ContactId,
-                        principalTable: "Contacts",
+                        name: "FK_Sponsors_Countries_CountryId",
+                        column: x => x.CountryId,
+                        principalTable: "Countries",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "DelegationMeetingRequests",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    RequestedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    RequestingCountryId = table.Column<int>(type: "int", nullable: false),
+                    TargetCountryId = table.Column<int>(type: "int", nullable: false),
+                    AttendeeCount = table.Column<int>(type: "int", nullable: false),
+                    Subject = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
+                    SlotStart = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    SlotEnd = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    AvailabilityWindowId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    HallId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    MeetingTableId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    ResponseNote = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
+                    ConfirmedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ConfirmedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    ReminderSent = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CheckedInAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CheckedInByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    RespondedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RespondedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DelegationMeetingRequests", x => x.Id);
+                    table.CheckConstraint("CK_DelegationMeetingRequests_Slot", "[SlotStart] IS NULL OR [SlotEnd] IS NULL OR [SlotEnd] > [SlotStart]");
+                    table.ForeignKey(
+                        name: "FK_DelegationMeetingRequests_Countries_RequestingCountryId",
+                        column: x => x.RequestingCountryId,
+                        principalTable: "Countries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_DelegationMeetingRequests_Countries_TargetCountryId",
+                        column: x => x.TargetCountryId,
+                        principalTable: "Countries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_DelegationMeetingRequests_DelegationAvailabilityWindows_AvailabilityWindowId",
+                        column: x => x.AvailabilityWindowId,
+                        principalTable: "DelegationAvailabilityWindows",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_DelegationMeetingRequests_Halls_HallId",
+                        column: x => x.HallId,
+                        principalTable: "Halls",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_DelegationMeetingRequests_MeetingTables_MeetingTableId",
+                        column: x => x.MeetingTableId,
+                        principalTable: "MeetingTables",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateTable(
@@ -1985,7 +2148,18 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     OfficerName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     OfficerPhone = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: true),
                     OfficerEmail = table.Column<string>(type: "nvarchar(320)", maxLength: 320, nullable: true),
-                    ContactId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    OfficerNameArabic = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    OfficerPhoneSecondary = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: true),
+                    OfficerWebsite = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
+                    OfficerFacebookUrl = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    OfficerXUrl = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    OfficerLinkedInUrl = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    OfficerInstagramUrl = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    OfficerCity = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
+                    OfficerCityArabic = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
+                    OfficerLatitude = table.Column<double>(type: "float", nullable: true),
+                    OfficerLongitude = table.Column<double>(type: "float", nullable: true),
+                    OfficerCountryId = table.Column<int>(type: "int", nullable: true),
                     ExhibitorName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     ExhibitorNameArabic = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     Sector = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
@@ -1995,20 +2169,20 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     HallId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     MapX = table.Column<double>(type: "float", nullable: true),
                     MapY = table.Column<double>(type: "float", nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Booths", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Booths_Contacts_ContactId",
-                        column: x => x.ContactId,
-                        principalTable: "Contacts",
+                        name: "FK_Booths_Countries_OfficerCountryId",
+                        column: x => x.OfficerCountryId,
+                        principalTable: "Countries",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
@@ -2035,7 +2209,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     ExhibitorId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     VisitorUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     DisplayNameSnapshot = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -2064,18 +2238,45 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ContactName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
                     RoleLabel = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ExhibitorMemberships", x => x.Id);
                     table.ForeignKey(
                         name: "FK_ExhibitorMemberships_Exhibitors_ExhibitorId",
+                        column: x => x.ExhibitorId,
+                        principalTable: "Exhibitors",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ExhibitorVisitorScans",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ExhibitorUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ExhibitorId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    VisitorUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Note = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ExhibitorVisitorScans", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ExhibitorVisitorScans_Exhibitors_ExhibitorId",
                         column: x => x.ExhibitorId,
                         principalTable: "Exhibitors",
                         principalColumn: "Id",
@@ -2114,18 +2315,18 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     SpeakerId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    StartUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    EndUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    Start = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    End = table.Column<DateTime>(type: "datetime2", nullable: false),
                     SlotMinutes = table.Column<int>(type: "int", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_SpeakerAvailabilityWindows", x => x.Id);
-                    table.CheckConstraint("CK_SpeakerAvailabilityWindows_TimeWindow", "[EndUtc] > [StartUtc]");
+                    table.CheckConstraint("CK_SpeakerAvailabilityWindows_TimeWindow", "[End] > [Start]");
                     table.ForeignKey(
                         name: "FK_SpeakerAvailabilityWindows_Speakers_SpeakerId",
                         column: x => x.SpeakerId,
@@ -2146,12 +2347,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     ContentType = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     SizeBytes = table.Column<long>(type: "bigint", nullable: false),
                     UploadedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -2171,6 +2372,28 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 });
 
             migrationBuilder.CreateTable(
+                name: "DelegationMeetingActionTokens",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    DelegationMeetingRequestId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TokenHash = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
+                    ExpiresUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UsedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DelegationMeetingActionTokens", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_DelegationMeetingActionTokens_DelegationMeetingRequests_DelegationMeetingRequestId",
+                        column: x => x.DelegationMeetingRequestId,
+                        principalTable: "DelegationMeetingRequests",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "VenueMapNodes",
                 columns: table => new
                 {
@@ -2182,12 +2405,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Y = table.Column<double>(type: "float", nullable: false),
                     HallId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     BoothId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -2216,22 +2439,25 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     RequestedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     RequesterName = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     Subject = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
-                    SlotStartUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    SlotEndUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    SlotStart = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    SlotEnd = table.Column<DateTime>(type: "datetime2", nullable: true),
                     AvailabilityWindowId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
                     HallId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     MeetingTableId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    SpeakerDecisionAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    SpeakerDecisionAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ResponseNote = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    RespondedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    ReminderSent = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CheckedInAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CheckedInByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    RespondedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     RespondedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_SpeakerMeetingRequests", x => x.Id);
-                    table.CheckConstraint("CK_SpeakerMeetingRequests_Slot", "[SlotStartUtc] IS NULL OR [SlotEndUtc] IS NULL OR [SlotEndUtc] > [SlotStartUtc]");
+                    table.CheckConstraint("CK_SpeakerMeetingRequests_Slot", "[SlotStart] IS NULL OR [SlotEnd] IS NULL OR [SlotEnd] > [SlotStart]");
                     table.ForeignKey(
                         name: "FK_SpeakerMeetingRequests_Halls_HallId",
                         column: x => x.HallId,
@@ -2266,9 +2492,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     SpeakerMeetingRequestId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Action = table.Column<int>(type: "int", nullable: false),
                     TokenHash = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
-                    ExpiresUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UsedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                    Expires = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UsedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -2284,81 +2510,86 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
             migrationBuilder.InsertData(
                 table: "ArchiveVisibility",
                 columns: new[] { "Id", "IsVisible", "LastChangedAt", "LastChangedByUserId" },
-                values: new object[] { new Guid("00000000-0000-0000-0000-000000000002"), true, new DateTimeOffset(new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null });
+                values: new object[] { new Guid("00000000-0000-0000-0000-000000000002"), true, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), null });
 
             migrationBuilder.InsertData(
                 table: "Countries",
                 columns: new[] { "Id", "Code", "CreatedAt", "DelegationArrivalDate", "DelegationDepartureDate", "DisplayOrder", "HeadOfDelegationUserProfileId", "IsActive", "IsInvited", "Name", "NameArabic", "PhonePrefix", "UpdatedAt" },
                 values: new object[,]
                 {
-                    { 32, "AR", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 630, null, true, false, "Argentina", "الأرجنتين", "+54", null },
-                    { 36, "AU", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 520, null, true, false, "Australia", "أستراليا", "+61", null },
-                    { 40, "AT", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 300, null, true, false, "Austria", "النمسا", "+43", null },
-                    { 48, "BH", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 10, null, true, false, "Bahrain", "البحرين", "+973", null },
-                    { 50, "BD", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 450, null, true, false, "Bangladesh", "بنغلاديش", "+880", null },
-                    { 56, "BE", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 280, null, true, false, "Belgium", "بلجيكا", "+32", null },
-                    { 76, "BR", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 610, null, true, false, "Brazil", "البرازيل", "+55", null },
-                    { 124, "CA", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 600, null, true, false, "Canada", "كندا", "+1", null },
-                    { 156, "CN", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 420, null, true, false, "China", "الصين", "+86", null },
-                    { 208, "DK", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 330, null, true, false, "Denmark", "الدنمارك", "+45", null },
-                    { 231, "ET", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 730, null, true, false, "Ethiopia", "إثيوبيا", "+251", null },
-                    { 246, "FI", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 340, null, true, false, "Finland", "فنلندا", "+358", null },
-                    { 250, "FR", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 220, null, true, false, "France", "فرنسا", "+33", null },
-                    { 262, "DJ", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 170, null, true, false, "Djibouti", "جيبوتي", "+253", null },
-                    { 275, "PS", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 160, null, true, false, "Palestine", "فلسطين", "+970", null },
-                    { 276, "DE", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 230, null, true, false, "Germany", "ألمانيا", "+49", null },
-                    { 300, "GR", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 360, null, true, false, "Greece", "اليونان", "+30", null },
-                    { 356, "IN", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 430, null, true, false, "India", "الهند", "+91", null },
-                    { 360, "ID", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 460, null, true, false, "Indonesia", "إندونيسيا", "+62", null },
-                    { 364, "IR", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 140, null, true, false, "Iran", "إيران", "+98", null },
-                    { 368, "IQ", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 150, null, true, false, "Iraq", "العراق", "+964", null },
-                    { 372, "IE", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 350, null, true, false, "Ireland", "أيرلندا", "+353", null },
-                    { 380, "IT", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 240, null, true, false, "Italy", "إيطاليا", "+39", null },
-                    { 392, "JP", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 400, null, true, false, "Japan", "اليابان", "+81", null },
-                    { 400, "JO", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 80, null, true, false, "Jordan", "الأردن", "+962", null },
-                    { 404, "KE", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 720, null, true, false, "Kenya", "كينيا", "+254", null },
-                    { 410, "KR", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 410, null, true, false, "South Korea", "كوريا الجنوبية", "+82", null },
-                    { 414, "KW", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 20, null, true, false, "Kuwait", "الكويت", "+965", null },
-                    { 422, "LB", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 90, null, true, false, "Lebanon", "لبنان", "+961", null },
-                    { 458, "MY", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 470, null, true, false, "Malaysia", "ماليزيا", "+60", null },
-                    { 484, "MX", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 620, null, true, false, "Mexico", "المكسيك", "+52", null },
-                    { 504, "MA", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 100, null, true, false, "Morocco", "المغرب", "+212", null },
-                    { 512, "OM", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 30, null, true, false, "Oman", "عُمان", "+968", null },
-                    { 528, "NL", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 270, null, true, false, "Netherlands", "هولندا", "+31", null },
-                    { 554, "NZ", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 530, null, true, false, "New Zealand", "نيوزيلندا", "+64", null },
-                    { 566, "NG", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 710, null, true, false, "Nigeria", "نيجيريا", "+234", null },
-                    { 578, "NO", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 320, null, true, false, "Norway", "النرويج", "+47", null },
-                    { 586, "PK", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 440, null, true, false, "Pakistan", "باكستان", "+92", null },
-                    { 608, "PH", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 510, null, true, false, "Philippines", "الفلبين", "+63", null },
-                    { 620, "PT", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 260, null, true, false, "Portugal", "البرتغال", "+351", null },
-                    { 634, "QA", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 40, null, true, false, "Qatar", "قطر", "+974", null },
-                    { 643, "RU", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 370, null, true, false, "Russia", "روسيا", "+7", null },
-                    { 682, "SA", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 50, null, true, false, "Saudi Arabia", "المملكة العربية السعودية", "+966", null },
-                    { 702, "SG", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 480, null, true, false, "Singapore", "سنغافورة", "+65", null },
-                    { 704, "VN", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 500, null, true, false, "Viet Nam", "فيتنام", "+84", null },
-                    { 710, "ZA", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 700, null, true, false, "South Africa", "جنوب أفريقيا", "+27", null },
-                    { 724, "ES", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 250, null, true, false, "Spain", "إسبانيا", "+34", null },
-                    { 729, "SD", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 120, null, true, false, "Sudan", "السودان", "+249", null },
-                    { 752, "SE", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 310, null, true, false, "Sweden", "السويد", "+46", null },
-                    { 756, "CH", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 290, null, true, false, "Switzerland", "سويسرا", "+41", null },
-                    { 764, "TH", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 490, null, true, false, "Thailand", "تايلاند", "+66", null },
-                    { 784, "AE", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 60, null, true, false, "United Arab Emirates", "الإمارات العربية المتحدة", "+971", null },
-                    { 792, "TR", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 110, null, true, false, "Türkiye", "تركيا", "+90", null },
-                    { 818, "EG", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 70, null, true, false, "Egypt", "مصر", "+20", null },
-                    { 826, "GB", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 210, null, true, false, "United Kingdom", "المملكة المتحدة", "+44", null },
-                    { 840, "US", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 200, null, true, false, "United States", "الولايات المتحدة الأمريكية", "+1", null },
-                    { 887, "YE", new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, 130, null, true, false, "Yemen", "اليمن", "+967", null }
+                    { 32, "AR", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 630, null, true, false, "Argentina", "الأرجنتين", "+54", null },
+                    { 36, "AU", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 520, null, true, false, "Australia", "أستراليا", "+61", null },
+                    { 40, "AT", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 300, null, true, false, "Austria", "النمسا", "+43", null },
+                    { 48, "BH", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 10, null, true, false, "Bahrain", "البحرين", "+973", null },
+                    { 50, "BD", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 450, null, true, false, "Bangladesh", "بنغلاديش", "+880", null },
+                    { 56, "BE", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 280, null, true, false, "Belgium", "بلجيكا", "+32", null },
+                    { 76, "BR", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 610, null, true, false, "Brazil", "البرازيل", "+55", null },
+                    { 124, "CA", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 600, null, true, false, "Canada", "كندا", "+1", null },
+                    { 156, "CN", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 420, null, true, false, "China", "الصين", "+86", null },
+                    { 208, "DK", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 330, null, true, false, "Denmark", "الدنمارك", "+45", null },
+                    { 231, "ET", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 730, null, true, false, "Ethiopia", "إثيوبيا", "+251", null },
+                    { 246, "FI", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 340, null, true, false, "Finland", "فنلندا", "+358", null },
+                    { 250, "FR", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 220, null, true, false, "France", "فرنسا", "+33", null },
+                    { 262, "DJ", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 170, null, true, false, "Djibouti", "جيبوتي", "+253", null },
+                    { 275, "PS", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 160, null, true, false, "Palestine", "فلسطين", "+970", null },
+                    { 276, "DE", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 230, null, true, false, "Germany", "ألمانيا", "+49", null },
+                    { 300, "GR", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 360, null, true, false, "Greece", "اليونان", "+30", null },
+                    { 356, "IN", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 430, null, true, false, "India", "الهند", "+91", null },
+                    { 360, "ID", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 460, null, true, false, "Indonesia", "إندونيسيا", "+62", null },
+                    { 364, "IR", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 140, null, true, false, "Iran", "إيران", "+98", null },
+                    { 368, "IQ", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 150, null, true, false, "Iraq", "العراق", "+964", null },
+                    { 372, "IE", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 350, null, true, false, "Ireland", "أيرلندا", "+353", null },
+                    { 380, "IT", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 240, null, true, false, "Italy", "إيطاليا", "+39", null },
+                    { 392, "JP", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 400, null, true, false, "Japan", "اليابان", "+81", null },
+                    { 400, "JO", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 80, null, true, false, "Jordan", "الأردن", "+962", null },
+                    { 404, "KE", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 720, null, true, false, "Kenya", "كينيا", "+254", null },
+                    { 410, "KR", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 410, null, true, false, "South Korea", "كوريا الجنوبية", "+82", null },
+                    { 414, "KW", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 20, null, true, false, "Kuwait", "الكويت", "+965", null },
+                    { 422, "LB", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 90, null, true, false, "Lebanon", "لبنان", "+961", null },
+                    { 458, "MY", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 470, null, true, false, "Malaysia", "ماليزيا", "+60", null },
+                    { 484, "MX", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 620, null, true, false, "Mexico", "المكسيك", "+52", null },
+                    { 504, "MA", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 100, null, true, false, "Morocco", "المغرب", "+212", null },
+                    { 512, "OM", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 30, null, true, false, "Oman", "عُمان", "+968", null },
+                    { 528, "NL", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 270, null, true, false, "Netherlands", "هولندا", "+31", null },
+                    { 554, "NZ", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 530, null, true, false, "New Zealand", "نيوزيلندا", "+64", null },
+                    { 566, "NG", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 710, null, true, false, "Nigeria", "نيجيريا", "+234", null },
+                    { 578, "NO", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 320, null, true, false, "Norway", "النرويج", "+47", null },
+                    { 586, "PK", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 440, null, true, false, "Pakistan", "باكستان", "+92", null },
+                    { 608, "PH", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 510, null, true, false, "Philippines", "الفلبين", "+63", null },
+                    { 620, "PT", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 260, null, true, false, "Portugal", "البرتغال", "+351", null },
+                    { 634, "QA", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 40, null, true, false, "Qatar", "قطر", "+974", null },
+                    { 643, "RU", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 370, null, true, false, "Russia", "روسيا", "+7", null },
+                    { 682, "SA", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 50, null, true, false, "Saudi Arabia", "المملكة العربية السعودية", "+966", null },
+                    { 702, "SG", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 480, null, true, false, "Singapore", "سنغافورة", "+65", null },
+                    { 704, "VN", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 500, null, true, false, "Viet Nam", "فيتنام", "+84", null },
+                    { 710, "ZA", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 700, null, true, false, "South Africa", "جنوب أفريقيا", "+27", null },
+                    { 724, "ES", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 250, null, true, false, "Spain", "إسبانيا", "+34", null },
+                    { 729, "SD", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 120, null, true, false, "Sudan", "السودان", "+249", null },
+                    { 752, "SE", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 310, null, true, false, "Sweden", "السويد", "+46", null },
+                    { 756, "CH", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 290, null, true, false, "Switzerland", "سويسرا", "+41", null },
+                    { 764, "TH", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 490, null, true, false, "Thailand", "تايلاند", "+66", null },
+                    { 784, "AE", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 60, null, true, false, "United Arab Emirates", "الإمارات العربية المتحدة", "+971", null },
+                    { 792, "TR", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 110, null, true, false, "Türkiye", "تركيا", "+90", null },
+                    { 818, "EG", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 70, null, true, false, "Egypt", "مصر", "+20", null },
+                    { 826, "GB", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 210, null, true, false, "United Kingdom", "المملكة المتحدة", "+44", null },
+                    { 840, "US", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 200, null, true, false, "United States", "الولايات المتحدة الأمريكية", "+1", null },
+                    { 887, "YE", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 130, null, true, false, "Yemen", "اليمن", "+967", null }
                 });
 
             migrationBuilder.InsertData(
                 table: "OrganizationProfile",
-                columns: new[] { "Id", "Bio", "BioArabic", "ContactEmail", "ContactPhone", "ContactWebsite", "CreatedAt", "CreatedBy", "CurrentYear", "DeletedAt", "EventEndDate", "EventStartDate", "FacebookUrl", "InstagramUrl", "IsActive", "Latitude", "LinkedInUrl", "LiveStreamUrl", "LocationText", "LocationTextArabic", "Longitude", "Name", "NameArabic", "RegistrationSuccessMessage", "RegistrationSuccessMessageArabic", "ReleaseDate", "Slogan", "SloganArabic", "SnapchatUrl", "Status", "SysVersion", "TikTokUrl", "Title", "TitleArabic", "UpdatedAt", "UpdatedBy", "Version", "VersionDate", "XUrl", "YouTubeUrl" },
-                values: new object[] { new Guid("00000000-0000-0000-0000-000000000003"), null, null, null, null, null, new DateTimeOffset(new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), new Guid("00000000-0000-0000-0000-000000000000"), 2026, null, new DateTimeOffset(new DateTime(2026, 4, 30, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), new DateTimeOffset(new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, null, true, null, null, null, "Saudi Arabia", "السعودية", null, "The International Maritime Forum", "الملتقى الدولي البحري", "Congratulations, welcome to the Fourth Saudi Forum.", "تهانينا، مرحباً بكم في الملتقى السعودي الرابع.", null, null, null, null, 1, null, null, "The Saudi International Maritime Forum", "الملتقى البحري السعودي الدولي", null, null, "1.0.0", null, null, null });
+                columns: new[] { "Id", "BackgroundVideoUrl", "Bio", "BioArabic", "ContactEmail", "ContactPhone", "ContactWebsite", "CreatedAt", "CreatedBy", "CurrentYear", "DeletedAt", "EventEndDate", "EventStartDate", "FacebookUrl", "InstagramUrl", "IsActive", "Latitude", "LinkedInUrl", "LiveStreamUrl", "LocationText", "LocationTextArabic", "Longitude", "Name", "NameArabic", "PartnerDirectoryEnabled", "RegistrationSuccessMessage", "RegistrationSuccessMessageArabic", "ReleaseDate", "Slogan", "SloganArabic", "SnapchatUrl", "Status", "SysVersion", "TikTokUrl", "Title", "TitleArabic", "UpdatedAt", "UpdatedBy", "Version", "VersionDate", "XUrl", "YouTubeUrl" },
+                values: new object[] { new Guid("00000000-0000-0000-0000-000000000003"), null, null, null, null, null, null, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new Guid("00000000-0000-0000-0000-000000000000"), 2026, null, new DateTime(2026, 4, 30, 0, 0, 0, 0, DateTimeKind.Unspecified), new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, true, null, null, null, "Saudi Arabia", "السعودية", null, "The International Maritime Forum", "الملتقى الدولي البحري", true, "Congratulations, welcome to the Fourth Saudi Forum.", "تهانينا، مرحباً بكم في الملتقى السعودي الرابع.", null, null, null, null, 1, null, null, "The Saudi International Maritime Forum", "الملتقى البحري السعودي الدولي", null, null, "1.0.0", null, null, null });
 
             migrationBuilder.InsertData(
                 table: "RegistrationGate",
-                columns: new[] { "Id", "AutoCloseUtc", "IsOpen", "LastChangedAt", "LastChangedByUserId" },
-                values: new object[] { new Guid("00000000-0000-0000-0000-000000000001"), null, true, new DateTimeOffset(new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null });
+                columns: new[] { "Id", "AutoClose", "IsOpen", "LastChangedAt", "LastChangedByUserId" },
+                values: new object[] { new Guid("00000000-0000-0000-0000-000000000001"), null, true, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), null });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AiChatMessages_UserId_CreatedAt",
+                table: "AiChatMessages",
+                columns: new[] { "UserId", "CreatedAt" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AiInvocations_CallerUserId_CreatedAt",
@@ -2435,6 +2666,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 columns: new[] { "ArchiveEditionId", "DisplayOrder" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_BadgeBatches_IsActive_CreatedAt",
+                table: "BadgeBatches",
+                columns: new[] { "IsActive", "CreatedAt" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_BadgeUpdateRequests_RequestedByUserId",
                 table: "BadgeUpdateRequests",
                 column: "RequestedByUserId");
@@ -2445,20 +2681,15 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 columns: new[] { "Status", "CreatedAt" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Banners_IsActive_StartUtc_EndUtc_DisplayOrder",
+                name: "IX_Banners_IsActive_Start_End_DisplayOrder",
                 table: "Banners",
-                columns: new[] { "IsActive", "StartUtc", "EndUtc", "DisplayOrder" });
+                columns: new[] { "IsActive", "Start", "End", "DisplayOrder" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Booths_Code",
                 table: "Booths",
                 column: "Code",
                 unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Booths_ContactId",
-                table: "Booths",
-                column: "ContactId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Booths_ExhibitorId",
@@ -2474,6 +2705,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "IX_Booths_IsActive",
                 table: "Booths",
                 column: "IsActive");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Booths_OfficerCountryId",
+                table: "Booths",
+                column: "OfficerCountryId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_BusinessMeetingParticipants_BusinessMeetingId",
@@ -2510,9 +2746,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 columns: new[] { "MeetingTableId", "Status" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_BusinessMeetings_Status_StartUtc",
+                name: "IX_BusinessMeetings_Status_Start",
                 table: "BusinessMeetings",
-                columns: new[] { "Status", "StartUtc" });
+                columns: new[] { "Status", "Start" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Connections_RequesterUserId",
@@ -2528,16 +2764,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "IX_ContactInquiries_IsHandled_CreatedAt",
                 table: "ContactInquiries",
                 columns: new[] { "IsHandled", "CreatedAt" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Contacts_CountryId",
-                table: "Contacts",
-                column: "CountryId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Contacts_IsActive_NameArabic",
-                table: "Contacts",
-                columns: new[] { "IsActive", "NameArabic" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_ContentBlocks_IsActive_LastUpdatedAt",
@@ -2567,6 +2793,46 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 columns: new[] { "IsActive", "DisplayOrder" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_DelegationAvailabilityWindows_CountryId_IsActive_Start",
+                table: "DelegationAvailabilityWindows",
+                columns: new[] { "CountryId", "IsActive", "Start" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DelegationAvailabilityWindows_CountryId_Start",
+                table: "DelegationAvailabilityWindows",
+                columns: new[] { "CountryId", "Start" },
+                unique: true,
+                filter: "[IsActive] = 1");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DelegationMeetingActionTokens_DelegationMeetingRequestId",
+                table: "DelegationMeetingActionTokens",
+                column: "DelegationMeetingRequestId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DelegationMeetingActionTokens_TokenHash",
+                table: "DelegationMeetingActionTokens",
+                column: "TokenHash",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DelegationMeetingRequests_AvailabilityWindowId",
+                table: "DelegationMeetingRequests",
+                column: "AvailabilityWindowId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DelegationMeetingRequests_HallId_SlotStart",
+                table: "DelegationMeetingRequests",
+                columns: new[] { "HallId", "SlotStart" },
+                unique: true,
+                filter: "[HallId] IS NOT NULL AND [SlotStart] IS NOT NULL AND [Status] <> 0 AND [Status] <> 2 AND [Status] <> 3");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DelegationMeetingRequests_MeetingTableId",
+                table: "DelegationMeetingRequests",
+                column: "MeetingTableId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_DelegationMeetingRequests_RequestedByUserId",
                 table: "DelegationMeetingRequests",
                 column: "RequestedByUserId");
@@ -2580,6 +2846,16 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "IX_DelegationMeetingRequests_TargetCountryId_Status_CreatedAt",
                 table: "DelegationMeetingRequests",
                 columns: new[] { "TargetCountryId", "Status", "CreatedAt" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DevicePositionPings_HallId_CapturedAt",
+                table: "DevicePositionPings",
+                columns: new[] { "HallId", "CapturedAt" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DevicePositionPings_UserId_CapturedAt",
+                table: "DevicePositionPings",
+                columns: new[] { "UserId", "CapturedAt" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_EmailTemplates_Type",
@@ -2600,9 +2876,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 filter: "[IsActive] = 1");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Exhibitors_ContactId",
+                name: "IX_Exhibitors_CountryId",
                 table: "Exhibitors",
-                column: "ContactId");
+                column: "CountryId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Exhibitors_IsActive_NameArabic",
@@ -2610,11 +2886,16 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 columns: new[] { "IsActive", "NameArabic" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_ExhibitorVisitorScans_ExhibitorId_VisitorUserId",
+                table: "ExhibitorVisitorScans",
+                columns: new[] { "ExhibitorId", "VisitorUserId" },
+                unique: true,
+                filter: "[IsActive] = 1 AND [ExhibitorId] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ExhibitorVisitorScans_ExhibitorUserId_VisitorUserId",
                 table: "ExhibitorVisitorScans",
-                columns: new[] { "ExhibitorUserId", "VisitorUserId" },
-                unique: true,
-                filter: "[IsActive] = 1");
+                columns: new[] { "ExhibitorUserId", "VisitorUserId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_FaqEntries_FaqGroupId_IsActive_DisplayOrder",
@@ -2667,26 +2948,26 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
             migrationBuilder.CreateIndex(
                 name: "IX_GateScan_Gate_ScannedAt",
                 table: "GateScans",
-                columns: new[] { "GateId", "ScannedAtUtc" },
+                columns: new[] { "GateId", "ScannedAt" },
                 descending: new[] { false, true });
 
             migrationBuilder.CreateIndex(
                 name: "IX_GateScan_Gate_UserProfile_5sWindow",
                 table: "GateScans",
-                columns: new[] { "GateId", "UserProfileId", "ScannedAtUtc" },
+                columns: new[] { "GateId", "UserProfileId", "ScannedAt" },
                 descending: new[] { false, false, true },
                 filter: "[UserProfileId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_GateScan_ScannedBy_ScannedAt",
                 table: "GateScans",
-                columns: new[] { "ScannedByUserId", "ScannedAtUtc" },
+                columns: new[] { "ScannedByUserId", "ScannedAt" },
                 descending: new[] { false, true });
 
             migrationBuilder.CreateIndex(
                 name: "IX_GateScan_UserProfile_LastAllowed",
                 table: "GateScans",
-                columns: new[] { "UserProfileId", "ScannedAtUtc" },
+                columns: new[] { "UserProfileId", "ScannedAt" },
                 descending: new[] { false, true },
                 filter: "[Outcome] = 0 AND [UserProfileId] IS NOT NULL");
 
@@ -2703,16 +2984,16 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 columns: new[] { "HallId", "Purpose", "ReleasedAt" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_HallAttendances_HallId_LeaveUtc",
+                name: "IX_HallAttendances_HallId_Leave",
                 table: "HallAttendances",
-                columns: new[] { "HallId", "LeaveUtc" });
+                columns: new[] { "HallId", "Leave" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_HallAttendances_SessionId_UserId",
                 table: "HallAttendances",
                 columns: new[] { "SessionId", "UserId" },
                 unique: true,
-                filter: "[LeaveUtc] IS NULL");
+                filter: "[Leave] IS NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_HallAttendances_UserId",
@@ -2720,14 +3001,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_HallAvailabilityWindows_HallId_IsActive_StartUtc",
+                name: "IX_HallAvailabilityWindows_HallId_IsActive_Start",
                 table: "HallAvailabilityWindows",
-                columns: new[] { "HallId", "IsActive", "StartUtc" });
+                columns: new[] { "HallId", "IsActive", "Start" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_HallAvailabilityWindows_HallId_StartUtc",
+                name: "IX_HallAvailabilityWindows_HallId_Start",
                 table: "HallAvailabilityWindows",
-                columns: new[] { "HallId", "StartUtc" },
+                columns: new[] { "HallId", "Start" },
                 unique: true,
                 filter: "[IsActive] = 1");
 
@@ -2785,9 +3066,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 columns: new[] { "IsActive", "Kind", "DisplayOrder" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_MediaPartners_ContactId",
+                name: "IX_MediaPartners_CountryId",
                 table: "MediaPartners",
-                column: "ContactId");
+                column: "CountryId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_MediaPartners_IsActive_DisplayOrder",
@@ -2823,14 +3104,19 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 columns: new[] { "IsActive", "PublishedAt" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_OperationLog_ActorUserId_TimestampUtc",
-                table: "OperationLog",
-                columns: new[] { "ActorUserId", "TimestampUtc" });
+                name: "IX_NotificationBroadcasts_Status_CreatedAt",
+                table: "NotificationBroadcasts",
+                columns: new[] { "Status", "CreatedAt" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_OperationLog_EventType_TimestampUtc",
+                name: "IX_OperationLog_ActorUserId_Timestamp",
                 table: "OperationLog",
-                columns: new[] { "EventType", "TimestampUtc" });
+                columns: new[] { "ActorUserId", "Timestamp" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OperationLog_EventType_Timestamp",
+                table: "OperationLog",
+                columns: new[] { "EventType", "Timestamp" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_OperationLog_SubjectEmail",
@@ -2838,9 +3124,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 column: "SubjectEmail");
 
             migrationBuilder.CreateIndex(
-                name: "IX_OperationLog_TimestampUtc",
+                name: "IX_OperationLog_Timestamp",
                 table: "OperationLog",
-                column: "TimestampUtc");
+                column: "Timestamp");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Organisations_CommercialRegistration",
@@ -2984,10 +3270,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 column: "StoredAt");
 
             migrationBuilder.CreateIndex(
-                name: "IX_SeatReservations_ExpiresUtc",
+                name: "IX_SeatReservations_Expires",
                 table: "SeatReservations",
-                column: "ExpiresUtc",
-                filter: "[ReleasedAt] IS NULL AND [ExpiresUtc] IS NOT NULL");
+                column: "Expires",
+                filter: "[ReleasedAt] IS NULL AND [Expires] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SeatReservations_ReservedForUserId_ReleasedAt",
@@ -3047,6 +3333,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_SessionOutcomes_SessionId_IsActive_DisplayOrder",
+                table: "SessionOutcomes",
+                columns: new[] { "SessionId", "IsActive", "DisplayOrder" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_SessionQuestions_SessionId_IsHidden_Order",
                 table: "SessionQuestions",
                 columns: new[] { "SessionId", "IsHidden", "Order" });
@@ -3078,19 +3369,19 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Sessions_HallId_StartUtc",
+                name: "IX_Sessions_HallId_Start",
                 table: "Sessions",
-                columns: new[] { "HallId", "StartUtc" });
+                columns: new[] { "HallId", "Start" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Sessions_IsActive_StartUtc",
+                name: "IX_Sessions_IsActive_Start",
                 table: "Sessions",
-                columns: new[] { "IsActive", "StartUtc" });
+                columns: new[] { "IsActive", "Start" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Sessions_Status_StartUtc",
+                name: "IX_Sessions_Status_Start",
                 table: "Sessions",
-                columns: new[] { "Status", "StartUtc" });
+                columns: new[] { "Status", "Start" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_SessionSpeakers_SpeakerId",
@@ -3114,14 +3405,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 column: "ThemeId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_SpeakerAvailabilityWindows_SpeakerId_IsActive_StartUtc",
+                name: "IX_SpeakerAvailabilityWindows_SpeakerId_IsActive_Start",
                 table: "SpeakerAvailabilityWindows",
-                columns: new[] { "SpeakerId", "IsActive", "StartUtc" });
+                columns: new[] { "SpeakerId", "IsActive", "Start" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_SpeakerAvailabilityWindows_SpeakerId_StartUtc",
+                name: "IX_SpeakerAvailabilityWindows_SpeakerId_Start",
                 table: "SpeakerAvailabilityWindows",
-                columns: new[] { "SpeakerId", "StartUtc" },
+                columns: new[] { "SpeakerId", "Start" },
                 unique: true,
                 filter: "[IsActive] = 1");
 
@@ -3131,11 +3422,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 column: "AvailabilityWindowId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_SpeakerMeetingRequests_HallId_SlotStartUtc",
+                name: "IX_SpeakerMeetingRequests_HallId_SlotStart",
                 table: "SpeakerMeetingRequests",
-                columns: new[] { "HallId", "SlotStartUtc" },
+                columns: new[] { "HallId", "SlotStart" },
                 unique: true,
-                filter: "[HallId] IS NOT NULL AND [SlotStartUtc] IS NOT NULL AND [Status] <> 0 AND [Status] <> 2 AND [Status] <> 3");
+                filter: "[HallId] IS NOT NULL AND [SlotStart] IS NOT NULL AND [Status] <> 0 AND [Status] <> 2 AND [Status] <> 3");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SpeakerMeetingRequests_MeetingTableId",
@@ -3148,11 +3439,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 column: "RequestedByUserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_SpeakerMeetingRequests_SpeakerId_SlotStartUtc",
+                name: "IX_SpeakerMeetingRequests_SpeakerId_SlotStart",
                 table: "SpeakerMeetingRequests",
-                columns: new[] { "SpeakerId", "SlotStartUtc" },
+                columns: new[] { "SpeakerId", "SlotStart" },
                 unique: true,
-                filter: "[SlotStartUtc] IS NOT NULL AND [Status] <> 0 AND [Status] <> 2 AND [Status] <> 3");
+                filter: "[SlotStart] IS NOT NULL AND [Status] <> 0 AND [Status] <> 2 AND [Status] <> 3");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SpeakerMeetingRequests_SpeakerId_Status_CreatedAt",
@@ -3176,11 +3467,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Speakers_ContactId",
-                table: "Speakers",
-                column: "ContactId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Speakers_CountryId",
                 table: "Speakers",
                 column: "CountryId");
@@ -3196,9 +3482,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 column: "UserProfileId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Sponsors_ContactId",
+                name: "IX_Sponsors_CountryId",
                 table: "Sponsors",
-                column: "ContactId");
+                column: "CountryId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Sponsors_IsActive_Tier_DisplayOrder",
@@ -3217,10 +3503,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 filter: "[IsActive] = 1");
 
             migrationBuilder.CreateIndex(
-                name: "IX_StoredFiles_RetainUntilUtc",
+                name: "IX_StoredFiles_RetainUntil",
                 table: "StoredFiles",
-                column: "RetainUntilUtc",
-                filter: "[IsActive] = 1 AND [RetainUntilUtc] IS NOT NULL");
+                column: "RetainUntil",
+                filter: "[IsActive] = 1 AND [RetainUntil] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_StoredFiles_Service_IsActive",
@@ -3249,6 +3535,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "IX_UserProfileInterests_InterestId",
                 table: "UserProfileInterests",
                 column: "InterestId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserProfiles_BadgeBatchId",
+                table: "UserProfiles",
+                column: "BadgeBatchId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserProfiles_IqamaNumberHash",
@@ -3344,6 +3635,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "AiChatMessages");
+
+            migrationBuilder.DropTable(
                 name: "AiInvocations");
 
             migrationBuilder.DropTable(
@@ -3380,7 +3674,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "ContentBlocks");
 
             migrationBuilder.DropTable(
-                name: "DelegationMeetingRequests");
+                name: "DelegationMeetingActionTokens");
+
+            migrationBuilder.DropTable(
+                name: "DevicePositionPings");
 
             migrationBuilder.DropTable(
                 name: "EmailTemplates");
@@ -3431,6 +3728,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "News");
 
             migrationBuilder.DropTable(
+                name: "NotificationBroadcasts");
+
+            migrationBuilder.DropTable(
                 name: "OperationLog");
 
             migrationBuilder.DropTable(
@@ -3469,6 +3769,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
             migrationBuilder.DropTable(
                 name: "SessionModerators");
+
+            migrationBuilder.DropTable(
+                name: "SessionOutcomes");
 
             migrationBuilder.DropTable(
                 name: "SessionQuestions");
@@ -3513,6 +3816,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "BusinessMeetings");
 
             migrationBuilder.DropTable(
+                name: "DelegationMeetingRequests");
+
+            migrationBuilder.DropTable(
                 name: "FaqGroups");
 
             migrationBuilder.DropTable(
@@ -3543,6 +3849,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "Booths");
 
             migrationBuilder.DropTable(
+                name: "DelegationAvailabilityWindows");
+
+            migrationBuilder.DropTable(
                 name: "MeetingTables");
 
             migrationBuilder.DropTable(
@@ -3567,13 +3876,13 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "RatingTypes");
 
             migrationBuilder.DropTable(
-                name: "Contacts");
-
-            migrationBuilder.DropTable(
                 name: "Countries");
 
             migrationBuilder.DropTable(
                 name: "UserProfiles");
+
+            migrationBuilder.DropTable(
+                name: "BadgeBatches");
 
             migrationBuilder.DropTable(
                 name: "Organisations");

@@ -22,7 +22,7 @@ public sealed class LastSignInTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Sign_in_reports_the_previous_sign_in_time()
     {
-        var firstSignInAt = _factory.Time.GetUtcNow();
+        var firstSignInAt = _factory.Time.SimfNow();
 
         // First-ever sign-in: there is no previous one.
         var first = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);

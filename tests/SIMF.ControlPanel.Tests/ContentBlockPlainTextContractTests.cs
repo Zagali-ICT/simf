@@ -45,7 +45,7 @@ public sealed class ContentBlockPlainTextContractTests : CpComponentTestBase
             ScriptPayload,
             ScriptPayload,
             IsActive: true,
-            DateTimeOffset.UnixEpoch,
+            DateTime.UnixEpoch,
             Guid.Empty);
 
         var cut = RenderComponent<ContentBlockViewDelete>(p => p

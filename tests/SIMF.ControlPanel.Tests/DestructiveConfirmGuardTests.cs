@@ -1,4 +1,4 @@
-﻿// Tests: D-809 — destructive Control Panel actions must not commit on the first
+// Tests: D-809 — destructive Control Panel actions must not commit on the first
 // click. SimfDataGrid deliberately carries no built-in confirmation (its trash
 // icon and bulk-delete button invoke their callback directly), so each page owns
 // the guard. These tests pin the guard where it was missing: the notification
@@ -24,14 +24,14 @@ public sealed class DestructiveConfirmGuardTests : CpComponentTestBase
     private static readonly NotificationDto Notification = new(
         Guid.NewGuid(), "BookingConfirmed", "Booking confirmed", "تم تأكيد الحجز",
         "Your seat is reserved.", "تم حجز مقعدك.", "Info",
-        ReadAt: null, IsRead: false, CreatedAt: DateTimeOffset.UtcNow,
+        ReadAt: null, IsRead: false, CreatedAt: SimfClock.Now,
         RelatedEntityType: null, RelatedEntityId: null);
 
     private static readonly AdminAssetSummary Asset = new(
         Guid.NewGuid(), AssetCategory.SpeakerPhoto, Guid.NewGuid(), "Captain Speaker",
         AssetKind.Image, AssetSourceType.Upload, ExternalUrl: null,
         ContentType: "image/png", SizeBytes: 2048, OriginalFileName: "speaker.png",
-        IsActive: true, CreatedAt: DateTimeOffset.UtcNow, UpdatedAt: null);
+        IsActive: true, CreatedAt: SimfClock.Now, UpdatedAt: null);
 
     private bool DeletedAnything() =>
         JSInterop.Invocations["simfAccount.deleteJson"].Count > 0;

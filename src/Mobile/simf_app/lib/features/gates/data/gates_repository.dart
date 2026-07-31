@@ -3,6 +3,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import 'gate_models.dart';
 import 'gate_scan_queue.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// Data layer for the staff gate operator console (Figma 758:4380/4651/4735/
 /// 4819/4886, D-406).
@@ -85,7 +86,7 @@ class GatesRepository {
           qr: qr,
           idempotencyKey: idempotencyKey,
           direction: direction,
-          queuedAtIso: DateTime.now().toUtc().toIso8601String(),
+          queuedAtIso: formatWire(DateTime.now()),
         ),
       );
       return null;
