@@ -23,6 +23,8 @@ class LiveSession {
     this.speakers = const <LiveSpeaker>[],
     this.liveCaptions,
     this.liveCaptionsArabic,
+    this.liveNotice,
+    this.liveNoticeArabic,
   });
 
   factory LiveSession.fromJson(Map<String, dynamic> json) {
@@ -46,6 +48,9 @@ class LiveSession {
       // P5 — D-439: the AI live-caption text (null when none set).
       liveCaptions: _trimToNull(json['liveCaptions'] as String?),
       liveCaptionsArabic: _trimToNull(json['liveCaptionsArabic'] as String?),
+      // FR-702 — the organiser's informational notice for this broadcast.
+      liveNotice: _trimToNull(json['liveNotice'] as String?),
+      liveNoticeArabic: _trimToNull(json['liveNoticeArabic'] as String?),
     );
   }
 
@@ -81,6 +86,14 @@ class LiveSession {
   final String? liveCaptions;
   final String? liveCaptionsArabic;
 
+  // FR-702 (owner 2026-07-31): the free-text notice the Control Panel authors
+  // per session, shown as an informational banner ABOVE the player. It is a
+  // NOTIFICATION, not a restriction — the owner reversed the earlier "Riyadh
+  // region only" reading, so nothing here inspects the viewer's location and
+  // nothing withholds the feed. Bilingual; null when the CP left it blank.
+  final String? liveNotice;
+  final String? liveNoticeArabic;
+
   String localizedTitle(bool isArabic) {
     if (isArabic) {
       return titleArabic.isNotEmpty ? titleArabic : title;
@@ -101,6 +114,16 @@ class LiveSession {
   String? localizedCaption(bool isArabic) {
     final ar = (liveCaptionsArabic ?? '').trim();
     final en = (liveCaptions ?? '').trim();
+    final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
+    return value.isEmpty ? null : value;
+  }
+
+  /// FR-702 — the live notice in the active locale, falling back to the other
+  /// language when one side is blank. Null when neither is set, and the banner
+  /// is then not rendered at all.
+  String? localizedNotice(bool isArabic) {
+    final ar = (liveNoticeArabic ?? '').trim();
+    final en = (liveNotice ?? '').trim();
     final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
     return value.isEmpty ? null : value;
   }

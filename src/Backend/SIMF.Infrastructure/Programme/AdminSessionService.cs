@@ -1,6 +1,7 @@
 // Tests: SIMF.Api.Tests/AdminSessionsTests.cs (+ D-349 live-URL validation)
 // Tests: SIMF.Api.Tests/SessionLifecycleTests.cs (P3.2a — D-231 lifecycle)
 // Tests: SIMF.Api.Tests/SessionRecordingTests.cs (P3.2b — D-232 recording)
+// Tests: SIMF.Api.Tests/SessionLiveNoticeTests.cs (FR-702 — informational live notice)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -115,7 +116,12 @@ internal sealed class AdminSessionService(
                 session.LiveSignLanguageUrl,
                 session.LiveCaptions,
                 session.LiveCaptionsArabic,
-                session.SeatSelectionModeOverride))
+                session.SeatSelectionModeOverride,
+                // FR-702 — same reason: the Excel lane is the only bulk authoring
+                // path, so a notice absent here is a notice destroyed by a
+                // round-trip through it.
+                session.LiveNotice,
+                session.LiveNoticeArabic))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminSessionSummary>.Of(page, total,
@@ -179,7 +185,8 @@ internal sealed class AdminSessionService(
         ValidateTextLengths(
             request.Description, request.DescriptionArabic,
             request.LiveCaptions, request.LiveCaptionsArabic,
-            request.LiveStreamUrl, request.LiveSignLanguageUrl);
+            request.LiveStreamUrl, request.LiveSignLanguageUrl,
+            request.LiveNotice, request.LiveNoticeArabic);
         ValidateSessionDetailFields(
             request.Language, request.LanguageArabic, request.Outcomes);
 
@@ -247,6 +254,10 @@ internal sealed class AdminSessionService(
             // P5 — D-439: AI live-caption text (manual stub provider, bilingual).
             LiveCaptions = NullIfBlank(request.LiveCaptions),
             LiveCaptionsArabic = NullIfBlank(request.LiveCaptionsArabic),
+            // FR-702 — the informational live notice (bilingual). Blank = no notice;
+            // it never gates the feed.
+            LiveNotice = NullIfBlank(request.LiveNotice),
+            LiveNoticeArabic = NullIfBlank(request.LiveNoticeArabic),
             IsActive = true,
             CreatedAt = now,
         };
@@ -327,7 +338,8 @@ internal sealed class AdminSessionService(
         ValidateTextLengths(
             request.Description, request.DescriptionArabic,
             request.LiveCaptions, request.LiveCaptionsArabic,
-            request.LiveStreamUrl, request.LiveSignLanguageUrl);
+            request.LiveStreamUrl, request.LiveSignLanguageUrl,
+            request.LiveNotice, request.LiveNoticeArabic);
         ValidateSessionDetailFields(
             request.Language, request.LanguageArabic, request.Outcomes);
 
@@ -477,6 +489,10 @@ internal sealed class AdminSessionService(
         // P5 — D-439: AI live-caption text (manual stub provider, bilingual).
         session.LiveCaptions = NullIfBlank(request.LiveCaptions);
         session.LiveCaptionsArabic = NullIfBlank(request.LiveCaptionsArabic);
+        // FR-702 — the informational live notice (bilingual). Clearing the CP input
+        // stores null again, which simply removes the banner.
+        session.LiveNotice = NullIfBlank(request.LiveNotice);
+        session.LiveNoticeArabic = NullIfBlank(request.LiveNoticeArabic);
         session.IsActive = request.IsActive;
         session.UpdatedAt = timeProvider.SimfNow();
 
@@ -988,14 +1004,16 @@ internal sealed class AdminSessionService(
     // §7 (validation triple-lock) — the free-text + live-feed fields carry EF
     // column caps (SessionConfiguration: Description / DescriptionArabic /
     // LiveCaptions / LiveCaptionsArabic = nvarchar(2048); LiveStreamUrl /
-    // LiveSignLanguageUrl = nvarchar(1024)). Enforce those caps here so
+    // LiveSignLanguageUrl = nvarchar(1024); LiveNotice / LiveNoticeArabic =
+    // nvarchar(512)). Enforce those caps here so
     // over-length input returns a clean 400 instead of a SaveChanges
     // "string or binary data would be truncated" 500 (#19). Measured on the
     // trimmed value actually persisted by NullIfBlank, mirroring AdminHallService.
     private static void ValidateTextLengths(
         string? description, string? descriptionArabic,
         string? liveCaptions, string? liveCaptionsArabic,
-        string? liveStreamUrl, string? liveSignLanguageUrl)
+        string? liveStreamUrl, string? liveSignLanguageUrl,
+        string? liveNotice, string? liveNoticeArabic)
     {
         EnsureMaxLength(description, 2048,
             "The session description must be 2048 characters or fewer.",
@@ -1015,6 +1033,13 @@ internal sealed class AdminSessionService(
         EnsureMaxLength(liveSignLanguageUrl, 1024,
             "The sign-language stream URL must be 1024 characters or fewer.",
             "يجب أن يكون رابط بث لغة الإشارة 1024 حرفاً أو أقل.");
+        // FR-702 — the informational live notice is a one-line banner (512).
+        EnsureMaxLength(liveNotice, 512,
+            "The live notice must be 512 characters or fewer.",
+            "يجب أن يكون إشعار البث المباشر 512 حرفاً أو أقل.");
+        EnsureMaxLength(liveNoticeArabic, 512,
+            "The Arabic live notice must be 512 characters or fewer.",
+            "يجب أن يكون الإشعار العربي للبث المباشر 512 حرفاً أو أقل.");
     }
 
     private static void EnsureMaxLength(
@@ -1327,6 +1352,11 @@ internal sealed class AdminSessionService(
             // Website Session-detail — language label + outcome bullets.
             session.Language,
             session.LanguageArabic,
-            outcomes);
+            outcomes,
+            // FR-702 — the informational live notice. Named so the four seat-holding
+            // counts keep their defaults (GetAsync/UpdateAsync stamp those with a
+            // `with` once the counts are known).
+            LiveNotice: session.LiveNotice,
+            LiveNoticeArabic: session.LiveNoticeArabic);
     }
 }

@@ -4,7 +4,9 @@
 // glance, key themes, speakers, related strip, downloads, outcomes), the
 // not-found state (unknown id), and graceful omission of the data sections that
 // are empty. Live prod data has no themes/speakers/outcomes/downloads yet, so
-// this test is where those sections are proven to render.
+// this test is where those sections are proven to render. FR-702: the session's
+// live notice renders when authored and is absent when blank — it is a
+// notification shown WITH the stream, never a gate on it.
 //
 // The page wraps its sections in the shared LandingShell (whose <HeadContent>
 // uses the @Assets fingerprint helper), so an empty ResourceAssetCollection is
@@ -128,6 +130,46 @@ public sealed class SessionDetailPageTests : WebComponentTestBase
         Assert.Empty(cut.FindAll(".ln-rcard"));                  // no related
         // The language row is omitted when Language is null.
         Assert.DoesNotContain("SessionDetail.Glance.Language", cut.Markup);
+        // FR-702 — no notice authored → no notice element at all.
+        Assert.Empty(cut.FindAll(".ln-glance__notice"));
+    }
+
+    // FR-702 (owner 2026-07-31) — the live notice is a NOTIFICATION shown with
+    // the stream, not a restriction: the page renders the organiser's text and
+    // still reports the session as live. Nothing here checks the visitor's
+    // location and nothing is withheld.
+    [Fact]
+    public void Renders_the_live_notice_when_the_session_carries_one()
+    {
+        _handler.Detail = ApiResult<PublicSessionDetail>.Ok(NoticeSession(
+            "This broadcast is provided by the forum organisers.",
+            "يقدَّم هذا البث من منظمي الملتقى."));
+        _handler.List = ApiResult<PublicSessions>.Ok(
+            new PublicSessions(Array.Empty<PublicSessionListItem>()));
+
+        var cut = RenderComponent<SessionDetail>(p => p.Add(x => x.Id, SessionId));
+
+        cut.WaitForAssertion(() =>
+            Assert.Single(cut.FindAll(".ln-glance__notice")));
+
+        // English culture is pinned in the constructor → the English side shows.
+        var notice = cut.Find(".ln-glance__notice");
+        Assert.Equal("This broadcast is provided by the forum organisers.", notice.TextContent);
+        // The stream itself is untouched: the at-a-glance Live row still says yes.
+        Assert.Contains("SessionDetail.Glance.Yes", cut.Markup);
+    }
+
+    [Fact]
+    public void Omits_the_live_notice_when_only_blank_text_is_authored()
+    {
+        _handler.Detail = ApiResult<PublicSessionDetail>.Ok(NoticeSession("   ", ""));
+        _handler.List = ApiResult<PublicSessions>.Ok(
+            new PublicSessions(Array.Empty<PublicSessionListItem>()));
+
+        var cut = RenderComponent<SessionDetail>(p => p.Add(x => x.Id, SessionId));
+
+        cut.WaitForAssertion(() => Assert.Contains("Live Session", cut.Markup));
+        Assert.Empty(cut.FindAll(".ln-glance__notice"));
     }
 
     private static PublicSessionDetail FullSession() =>
@@ -164,6 +206,20 @@ public sealed class SessionDetailPageTests : WebComponentTestBase
             Array.Empty<PublicSessionTheme>(),
             Array.Empty<PublicSessionSpeaker>(),
             new PublicSessionSeatSummary(500, 0, 500));
+
+    // FR-702 — a live session carrying the CP-authored notice pair.
+    private static PublicSessionDetail NoticeSession(string? notice, string? noticeArabic) =>
+        new(SessionId, "S-02", "Live Session", "الجلسة المباشرة",
+            null, null,
+            Guid.NewGuid(), "Main Hall", "القاعة الرئيسية",
+            new DateTime(2026, 11, 20, 6, 0, 0),
+            new DateTime(2026, 11, 20, 7, 0, 0),
+            Array.Empty<PublicSessionTheme>(),
+            Array.Empty<PublicSessionSpeaker>(),
+            new PublicSessionSeatSummary(500, 0, 500),
+            LiveStreamUrl: "https://www.youtube.com/watch?v=simf",
+            LiveNotice: notice,
+            LiveNoticeArabic: noticeArabic);
 
     private static PublicSessionListItem Listed(Guid id, string title, string titleArabic) =>
         new(id, "R-01", title, titleArabic,

@@ -33,6 +33,16 @@
 > recorded/not-live session). Same change fixed a pre-existing bug where editing a
 > session via the admin PUT silently wiped its live feed URLs (regression test
 > `Update_round_trips_all_live_fields`).
+>
+> **Live notice (FR-702 — owner decision 2026-07-31, D-815):** the session detail
+> also carries optional bilingual `LiveNotice` / `LiveNoticeArabic` free text
+> (≤512 per language) written per session in the Control Panel. When set, the app
+> renders it as a calm informational banner **above** the player; when both sides
+> are blank it renders nothing. **It restricts nothing.** SIMF-FDS-007 §5.1 used
+> to specify FR-702 as a Riyadh-region restriction that showed a notice *instead
+> of* the stream; the owner reversed that, so the feed plays for every viewer, no
+> code reads a viewer's location, and the notice is shown *with* the stream. A20
+> below removed the old hard-coded region card; this is what took its place.
 
 | | |
 |--|--|
@@ -40,7 +50,7 @@
 | **Route** | `GET /api/v1/app/programme/sessions/{id}` · app screen #25 `/live?sessionId=` |
 | **Surface** | Mobile (Flutter) + App API |
 | **Auth setup** | **Signed-in for the screen (D-577)** — the live screen is login-only: a guest sees an in-screen "need login" prompt + a Sign-in button, never the player. The read endpoint stays `AllowAnonymous` (the app gates the screen, not the API); use an approved Visitor token to reach the player. |
-| **Last reviewed** | 2026-07-01 |
+| **Last reviewed** | 2026-07-31 (FR-702 live notice — informational, shown with the stream; D-815) |
 
 ## Coverage matrix
 
@@ -70,6 +80,9 @@
 | E2E-MOB025-021 | Login-gate (D-577): a signed-out guest sees the in-screen "need login" prompt + Sign-in button (never the player), and no session is fetched | auth | P0 | authored ✓ (screen `a signed-out guest sees the need-login gate, not the stream (owner, D-577)`) |
 | E2E-MOB025-022 | **Rate-on-live-close (item 8 / D-712, FDS-007 §C.4 GAP-B):** an approved attendee leaving the live screen for a session that carried a live feed opens `/rate?code=Session&targetId={id}` **once**; re-entering + leaving does not re-prompt (shared dedup with the D-690 after-view prompt). A non-live session and a signed-out guest are never prompted | happy | P0 | authored ✓ (screen `D-712 — leaving a watched live session opens the rate screen once` + `… non-live session … does not prompt` + `… guest is never prompted`) |
 | E2E-MOB025-023 | **Fullscreen (owner item 14 / D-721):** the YouTube player shows a fullscreen button; entering fullscreen rotates to landscape, exiting restores portrait — a deliberate, owner-approved exception to the app-wide portrait lock. YouTube only; the HLS/MP4 fallback keeps its play-only control | happy | P1 | authored ✓ (unit `live_video_player_test.dart` orientation helper; real fullscreen playback is manual/device) |
+| E2E-MOB025-026 | **FR-702 live notice (owner 2026-07-31 / D-815):** a session carrying `liveNotice` renders the informational banner ABOVE the player **and** the player still mounts — the notice is shown WITH the stream, never instead of it | happy | P0 | authored ✓ (screen `FR-702 — a session notice renders as the informational banner and the player still mounts`) |
+| E2E-MOB025-027 | **FR-702 locale + fallback:** the banner shows `liveNoticeArabic` under `ar` and `liveNotice` under `en`; when only one language is authored, both locales read that side | i18n | P1 | authored ✓ (screen `FR-702 — the banner renders the Arabic notice under the ar locale` + repo `LiveSession.fromJson liveNotice (FR-702)`) |
+| E2E-MOB025-028 | **FR-702 no notice / cleared notice:** a session with no notice — or one an admin has emptied, so both sides are null/whitespace — renders no banner and no reserved space; the player is unaffected | edge | P0 | authored ✓ (screen `FR-702 — a blank notice renders nothing (no empty banner)` + repo `a missing / blank notice is null (the banner is not rendered)`) |
 | E2E-MOB025-024 | **Watch keep-alive (owner item 13 / D-726; moved into the shared player by item 27):** a signed-in viewer watching the stream (no touch) is kept active by a 60s keep-alive so the SessionGuard silently refreshes instead of showing the idle countdown; still bounded by the 24h cap; leaving cancels it | happy | P1 | authored ✓ (guard behaviour in `session_guard_test.dart`; keep-alive on the shared player in `live_video_player_test.dart`; multi-minute watch is device) |
 | E2E-MOB025-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-MOB025-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
@@ -291,9 +304,85 @@ Scenario: No region-restriction claim on the global main-live
 **Evidence:** A20 (2026-07-26) — the app, API, CP and Website never read the
 viewer's location, so the old gold "available only inside the Riyadh region per
 the organising regulations" card (frame node 934:3619) was an unconditional
-false claim. `RegionNoticeCard` and both l10n strings are deleted; whether the
-stream should really be geo-fenced is a product/legal decision (FR-702), not a
-defect fix.
+false claim. `RegionNoticeCard` and both l10n strings are deleted. **The product
+decision A20 deferred was taken on 2026-07-31 (D-815): there is no geo-fence and
+there never will be one** — FR-702 is an informational notice instead, covered by
+E2E-MOB025-026..028 below. This scenario therefore stands permanently: the
+absence of a region claim is the specified behaviour, not a temporary state.
+
+### E2E-MOB025-026 / 027 / 028 — FR-702: the live notice is shown WITH the stream (D-815)
+
+```gherkin
+Feature: Live broadcast — the session's informational live notice (FR-702)
+  As an attendee watching a session
+  I want to read whatever the organisers want me to know about this broadcast
+  So that I am informed — without ever being blocked from watching
+
+Background:
+  Given the Control Panel authored session "S-104" with a live YouTube feed
+  # Nothing in the app, the API, the CP or the Website reads the viewer's
+  # location. There is no region check to set up and none to assert against.
+
+Scenario: A session with a notice shows it above the player, and still plays
+  Given session "S-104" has liveNotice "This broadcast is provided by the forum organisers."
+  And the device locale is English
+  When the attendee opens /live?sessionId=S-104
+  Then an informational banner above the player reads
+       "This broadcast is provided by the forum organisers."
+  And the banner is calm chrome — the shared navy card + muted note style, not an
+       error, warning or blocking surface
+  And the player surface is mounted below it and the stream plays as normal
+  And no copy anywhere claims the broadcast is limited to a region
+
+Scenario: The banner follows the active locale
+  Given session "S-104" has liveNotice "English notice."
+       and liveNoticeArabic "يقدَّم هذا البث من منظمي الملتقى."
+  And the device locale is Arabic
+  When the attendee opens /live?sessionId=S-104
+  Then the banner reads "يقدَّم هذا البث من منظمي الملتقى."
+  And "English notice." is not shown
+  And the player surface is still mounted
+
+Scenario: One language only falls back to the authored side
+  Given session "S-104" has liveNoticeArabic "إشعار" and no English notice
+  And the device locale is English
+  Then the banner reads "إشعار"
+
+Scenario: No notice renders nothing at all
+  Given session "S-104" has liveNotice "   " and liveNoticeArabic ""
+  When the attendee opens /live?sessionId=S-104
+  Then no notice banner is rendered — no empty card and no reserved space
+  And the player surface is mounted exactly as it is on a session that never had
+       a notice
+
+Scenario: Clearing the notice in the Control Panel takes the banner down
+  Given session "S-104" is showing its notice on the live screen
+  When an admin empties both notice inputs at /admin/sessions and saves
+  And the attendee pulls to refresh the live screen
+  Then the banner is gone
+  And the stream is unchanged — it was never affected by the notice either way
+```
+
+> **This is a notification, not a gate — that is the whole point of the
+> scenario.** SIMF-FDS-007 §5.1 originally read FR-702 as "the live stream is
+> available only within the Riyadh region… an attendee outside the region sees
+> the restriction notice **instead of** the stream". The owner reversed that on
+> 2026-07-31 (D-815). Every scenario above therefore asserts the player is
+> **present** alongside the banner: a run that shows the notice while the player
+> is missing is a FAILURE, not a pass.
+
+**Evidence:** `LiveSession.liveNotice` / `.liveNoticeArabic` decoded from the
+shipped `GET /app/programme/sessions/{id}` payload (`liveNotice`,
+`liveNoticeArabic`); `LiveSession.localizedNotice(isArabic)` picks the active
+locale, falls back to the other and returns null when both are blank;
+`LiveNoticeBanner` (`widgets/live_content.dart`) renders `SimfPageNote` on a
+`SimfCard` and is emitted only when the notice is non-null. Screen tests
+`FR-702 — a session notice renders as the informational banner and the player
+still mounts`, `FR-702 — the banner renders the Arabic notice under the ar
+locale`, `FR-702 — a blank notice renders nothing (no empty banner)` (each also
+asserting `LivePlayerSurface` is mounted); decode tests
+`live_repository_test.dart` → `LiveSession.fromJson liveNotice (FR-702)`. The
+CP-side authoring + clearing is `cp-admin-sessions.md` E2E-SES-054..056.
 
 ### E2E-MOB025-025 — A15: the caption strip is an organiser note, not live AI translation
 
@@ -434,7 +523,11 @@ entry is now LIVE-ONLY — shown only while the session is actually broadcasting
 live feed is up); it is HIDDEN on the post-session recording view (a YouTube
 archive is not a live broadcast, so no asking once the session is done). Widget
 tests: not-live/recording hide the ask; the live-with-ask render is locked by the
-live-broadcast golden.** _Prior:_ `2026-07-09` — D-726 added the watch keep-alive
+live-broadcast golden.** _Prior:_ `2026-07-31` — **FR-702 settled by the owner
+(D-815): the live notice is a NOTIFICATION shown with the stream, not a
+restriction.** E2E-MOB025-026..028 added (notice present + player still mounted,
+Arabic/fallback, blank/cleared → no banner); E2E-MOB025-016 (A20) re-stated as
+permanent rather than pending a geo-fencing decision. _Prior:_ `2026-07-09` — D-726 added the watch keep-alive
 (E2E-MOB025-024, owner item 13); D-721 added the fullscreen button
 (E2E-MOB025-023, owner item 14); D-712 added the rate-on-live-close prompt
 (E2E-MOB025-022, FDS-007 §C.4 GAP-B, owner item 8).

@@ -33,7 +33,13 @@ public sealed record AdminSessionSummary(
     string? LiveSignLanguageUrl = null,
     string? LiveCaptions = null,
     string? LiveCaptionsArabic = null,
-    SeatSelectionMode? SeatSelectionModeOverride = null);
+    SeatSelectionMode? SeatSelectionModeOverride = null,
+    // FR-702 (owner 2026-07-31) — carried for the same D-506 reason as the live
+    // fields above: without it, an admin who authors notices on 40 sessions, then
+    // exports the grid to bulk-edit start times and re-imports, silently loses
+    // every notice. The Excel lane is the only bulk authoring path there is.
+    string? LiveNotice = null,
+    string? LiveNoticeArabic = null);
 
 /// <summary>D-165 — full session detail (Details + Edit modals).
 /// Includes the speaker and theme join sets so the editor can
@@ -99,7 +105,14 @@ public sealed record AdminSessionDetail(
     // response of an update that actually moved the hall or the time window, so
     // the Control Panel can report the outcome instead of a bare "was updated".
     int ReleasedReservationCount = 0,
-    int ReleasedAdminBlockCount = 0);
+    int ReleasedAdminBlockCount = 0,
+    // FR-702 (owner decision 2026-07-31) — the bilingual informational notice shown
+    // WITH the live stream. Purely informational: it gates nothing, and the feed
+    // plays for every caller. Carried on the detail so the CP edit form can read the
+    // stored value back into its inputs. Appended (defaulted) — wire stays
+    // append-only.
+    string? LiveNotice = null,
+    string? LiveNoticeArabic = null);
 
 /// <summary>D-165 — one entry in <see cref="AdminSessionDetail.Speakers"/>.
 /// Order matters: 0 = primary speaker for the session card.</summary>
@@ -143,6 +156,10 @@ public sealed class AdminCreateSessionRequest
     // P5 — D-439 — optional AI live-caption text (manual stub provider, bilingual).
     public string? LiveCaptions { get; set; }
     public string? LiveCaptionsArabic { get; set; }
+    // FR-702 (owner 2026-07-31) — optional bilingual notice shown WITH the live
+    // stream. Informational only: it restricts nothing and withholds nothing.
+    public string? LiveNotice { get; set; }
+    public string? LiveNoticeArabic { get; set; }
     // D-452 — session type (Workshop/Session/Event) for the app type tabs.
     public SessionType? Type { get; set; }
     // D-485 — optional per-session override of the hall's seat-selection mode.
@@ -179,6 +196,10 @@ public sealed class AdminUpdateSessionRequest
     // P5 — D-439 — optional AI live-caption text (manual stub provider, bilingual).
     public string? LiveCaptions { get; set; }
     public string? LiveCaptionsArabic { get; set; }
+    // FR-702 (owner 2026-07-31) — optional bilingual notice shown WITH the live
+    // stream. Informational only: it restricts nothing and withholds nothing.
+    public string? LiveNotice { get; set; }
+    public string? LiveNoticeArabic { get; set; }
     // D-452 — session type (Workshop/Session/Event) for the app type tabs.
     public SessionType? Type { get; set; }
     // D-485 — optional per-session override of the hall's seat-selection mode.

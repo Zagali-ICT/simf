@@ -163,6 +163,22 @@ public class Session : BaseAuditEntity
     /// renders the active locale with a fallback to the other when one is blank.</summary>
     public string? LiveCaptionsArabic { get; set; }
 
+    /// <summary>FR-702 (owner decision 2026-07-31) — the free-text notice shown
+    /// alongside the live broadcast, authored per session in the CP (≤512).
+    /// <b>Informational only — it restricts nothing.</b> SIMF-FDS-007 §5.1
+    /// originally specified FR-702 as a geographic restriction ("available only
+    /// within the Riyadh region"); the owner reversed that, so there is no region
+    /// check, no location lookup and no gating anywhere — the feed plays for every
+    /// caller exactly as before, and this column only adds a calm banner beside it.
+    /// Null/blank on both this and <see cref="LiveNoticeArabic"/> = no notice is
+    /// shown. English line.</summary>
+    public string? LiveNotice { get; set; }
+
+    /// <summary>FR-702 — the Arabic pair of <see cref="LiveNotice"/>. The client
+    /// renders the active locale with a fallback to the other when one is blank,
+    /// like every other bilingual field on this entity.</summary>
+    public string? LiveNoticeArabic { get; set; }
+
     /// <summary>M-to-M with <see cref="Speaker"/> via the explicit join
     /// entity <see cref="SessionSpeaker"/>. Explicit because the
     /// composite key + the per-row metadata (DisplayOrder) earns the

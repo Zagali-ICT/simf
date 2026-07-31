@@ -73,6 +73,8 @@ public sealed class ExportSessionsEndpoint(
         new("LiveSignLanguageUrl", row => row.LiveSignLanguageUrl),
         new("LiveCaptions", row => row.LiveCaptions),
         new("LiveCaptionsArabic", row => row.LiveCaptionsArabic),
+        new("LiveNotice", row => row.LiveNotice),
+        new("LiveNoticeArabic", row => row.LiveNoticeArabic),
     ];
 
     protected override async Task<IReadOnlyList<AdminSessionSummary>> ListAsync(
@@ -227,6 +229,8 @@ public sealed class ImportSessionsEndpoint(
             LiveSignLanguageUrl = NullIfBlank(row.Cells.GetValueOrDefault("LiveSignLanguageUrl", string.Empty)),
             LiveCaptions = NullIfBlank(row.Cells.GetValueOrDefault("LiveCaptions", string.Empty)),
             LiveCaptionsArabic = NullIfBlank(row.Cells.GetValueOrDefault("LiveCaptionsArabic", string.Empty)),
+            LiveNotice = NullIfBlank(row.Cells.GetValueOrDefault("LiveNotice", string.Empty)),
+            LiveNoticeArabic = NullIfBlank(row.Cells.GetValueOrDefault("LiveNoticeArabic", string.Empty)),
             Type = ParseType(row.Cells.GetValueOrDefault("Type", string.Empty)),
             SeatSelectionModeOverride = ParseSeatSelectionMode(
                 row.Cells.GetValueOrDefault("SeatSelectionModeOverride", string.Empty)),

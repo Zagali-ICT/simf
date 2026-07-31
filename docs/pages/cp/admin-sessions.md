@@ -12,8 +12,8 @@
 | **Implements use case(s)** | UC-SES-CREATE-001, UC-SES-EDIT-001, UC-SES-DEACTIVATE-001, UC-SES-LIFECYCLE-001 (per SIMF-FDS-004 §5.3 + PDF §2.9) |
 | **Backend endpoints** | `POST /account/api/admin/sessions/list`, `GET /account/api/admin/sessions/{id}`, `POST /account/api/admin/sessions`, `PUT /account/api/admin/sessions/{id}`, `DELETE /account/api/admin/sessions/{id}`, `PUT /account/api/admin/sessions/{id}/status`, `POST`/`DELETE /account/api/admin/sessions/{id}/recording`, `POST /account/api/admin/sessions/export`, `POST /account/api/admin/sessions/import` (BFF → API `/api/v1/admin/sessions/*`) |
 | **Source file** | [`SessionsList.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionsList.razor), [`SessionsAddEdit.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionsAddEdit.razor), [`SessionsViewDelete.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionsViewDelete.razor) |
-| **Tests** | [`docs/tests/e2e/cp-admin-sessions.md`](../../tests/e2e/cp-admin-sessions.md); `tests/SIMF.Api.Tests/AdminSessionsTests.cs`, `SessionLifecycleTests.cs`, `SessionRecordingTests.cs`, `SessionsExcelTests.cs` |
-| **Last reviewed** | 2026-06-10 |
+| **Tests** | [`docs/tests/e2e/cp-admin-sessions.md`](../../tests/e2e/cp-admin-sessions.md); `tests/SIMF.Api.Tests/AdminSessionsTests.cs`, `SessionLifecycleTests.cs`, `SessionRecordingTests.cs`, `SessionsExcelTests.cs`, `SessionLiveNoticeTests.cs` |
+| **Last reviewed** | 2026-07-31 (FR-702 live-notice fields — D-815) |
 
 ---
 
@@ -127,6 +127,8 @@ First / Prev / numbered / Next / Last; default `Top = 20`; summary
 | Description (Arabic) | textarea | no | 2048 | optional; `null` if blank |
 | Live stream URL | text | no | 1024 | `LiveStreamUrlPolicy.IsAllowed` (YouTube / HLS / MP4 https) |
 | Live sign-language URL | text | no | 1024 | same policy |
+| Live notice — shown with the stream (English) | textarea (2 rows) | no | 512 | optional; `null` if blank. Server caps at 512 → 400 `SESSION_INVALID` |
+| Live notice — shown with the stream (Arabic) | textarea (2 rows) | no | 512 | same; blank in **both** languages = no notice is shown anywhere |
 | Hall | select | yes | — | must parse to a Guid; loaded from `…/halls/list` (Top=500, active) |
 | Category | select | no | — | optional; loaded from `…/session-categories/list` |
 | Type | select | yes* | — | Workshop / Session / Event — **required** on create (#3); *grandfathered: a legacy untyped row may stay untyped on edit, but a set type can't be cleared |
@@ -137,6 +139,21 @@ First / Prev / numbered / Next / Last; default `Top = 20`; summary
 | Add speaker | select | yes* | — | reorderable roster with per-speaker role (Speaker/Host); **≥1 required unless Type = Event** (#4); *grandfathered on edit |
 | Add theme | select | no | — | multi-pick theme chips |
 | Active | checkbox | (Edit only) | — | shows in the public agenda |
+
+**The live notice (FR-702 — owner decision 2026-07-31, D-815).** The two notice
+textareas sit with the broadcast settings, directly under the stream URLs and
+above the AI caption fields, because that is what they annotate. The helper line
+states the rule in the admin's own language: *"Optional note displayed beside the
+live stream, in the viewer's language. It is information only — it blocks nobody
+and the stream stays available to everyone, wherever they are. Leave both
+languages blank to show no notice."* (resx `Admin.Sessions.Field.LiveNotice`,
+`…LiveNoticeArabic`, `…LiveNoticeHint`.) Both create and update send the values
+through `NullIfBlank`, so **emptying a box is how an admin takes a notice down** —
+it stores `null` and the banner disappears from the app live screen and the
+Website session page. Nothing about the field restricts the broadcast:
+SIMF-FDS-007 §5.1 used to specify FR-702 as a Riyadh-region restriction and the
+owner reversed it, so there is no region check anywhere and the stream is served
+to every viewer whether a notice is set or not.
 
 The View/Delete form (`SessionsViewDelete`) renders a read-only `<dl>` of every
 field plus Effective capacity, Speakers, Published-at (when present) and the
@@ -347,6 +364,7 @@ deactivation also produces a `Session.Deactivated` row alongside the ordinary
 | Excel export (D-356) | same | E2E-SES-022 |
 | Excel import + rejection (D-356) | same | E2E-SES-023, 024 |
 | Moderate row action → live Q&A desk (D-646) | same | E2E-SES-031 |
+| Live notice — author / clear / 512 length lock (FR-702, D-815) | same | E2E-SES-054..056 |
 
 ## 12. Related docs
 
@@ -359,7 +377,7 @@ deactivation also produces a `Session.Deactivated` row alongside the ordinary
 - Authority spec: SIMF-FDS-004 §5.3 (+ PDF §2.9).
 - Decisions: D-165 (CRUD), D-225 (speaker roles), D-226 (category), D-231
   (lifecycle), D-232 (recording), D-349 (live URLs), D-353 (CrudShell framing),
-  D-356 (Uniform-CRUD Excel).
+  D-356 (Uniform-CRUD Excel), D-815 (FR-702 live notice — informational).
 - Source: [`SessionsList.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionsList.razor),
   [`SessionsAddEdit.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionsAddEdit.razor),
   [`SessionsViewDelete.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionsViewDelete.razor),
@@ -370,6 +388,7 @@ deactivation also produces a `Session.Deactivated` row alongside the ordinary
 
 | Date | Decision | Change |
 |------|----------|--------|
+| 2026-07-31 | D-815 | **FR-702 re-scoped from a geographic restriction to an informational notice** (owner: *"No restriction, this is only notification and be added to session."*). `SessionsAddEdit` gained a bilingual "Live notice — shown with the stream" textarea pair (≤512 each) in the broadcast block; the value rides `AdminSessionDetail` + `PublicSessionDetail` (appended, D-219) to the app live screen and the Website session page, where it is displayed **with** the stream. No region check, no location lookup, no gate — the feed is unchanged. Blank in both languages shows nothing; clearing the boxes stores `null` and removes the banner. E2E SES-054..056; `SessionLiveNoticeTests.cs`. |
 | 2026-07-01 | D-578 | `SessionsAddEdit` "get subtitle" tools below the caption fields: import an `.srt`/`.vtt`/`.txt` file (parsed server-side to text) or **Fetch subtitle from video** (`POST /admin/sessions/subtitle/fetch-from-video`, gated `Sessions.Edit`), both filling `LiveCaptions`/`LiveCaptionsArabic` which feed the AI session-summary. Fetch degrades to `SUBTITLE_FETCH_FAILED` where the server can't reach YouTube (on-prem NCA network) → paste/upload instead. E2E SES-027..030. |
 | 2026-06-10 | D-356 | Uniform-CRUD Excel export (`Sessions.Export`) + import (`Sessions.Import`) via `CrudGridExcel`; reference doc created. |
 | 2026-06-09 | D-353 | CrudShell dialog/full-page toggle; inline SimfModal forms replaced by reusable `SessionsAddEdit` + `SessionsViewDelete`; delete now gated by SimfConfirm. |
@@ -377,4 +396,6 @@ deactivation also produces a `Session.Deactivated` row alongside the ordinary
 
 ---
 
-_Last reviewed:_ 2026-07-01 by Claude (D-578 — subtitle import/fetch tools).
+_Last reviewed:_ 2026-07-31 by Claude (D-815 — FR-702 live-notice fields on the broadcast block: informational bilingual text shown with the stream, gating nothing).
+
+_Prior:_ 2026-07-01 by Claude (D-578 — subtitle import/fetch tools).

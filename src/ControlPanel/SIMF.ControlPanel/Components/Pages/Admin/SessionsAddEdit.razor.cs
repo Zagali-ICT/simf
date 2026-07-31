@@ -89,6 +89,8 @@ public partial class SessionsAddEdit
             _model.LanguageArabic = Initial.LanguageArabic ?? string.Empty;
             _model.LiveStreamUrl = Initial.LiveStreamUrl ?? string.Empty;
             _model.LiveSignLanguageUrl = Initial.LiveSignLanguageUrl ?? string.Empty;
+            _model.LiveNotice = Initial.LiveNotice ?? string.Empty;
+            _model.LiveNoticeArabic = Initial.LiveNoticeArabic ?? string.Empty;
             _model.LiveCaptions = Initial.LiveCaptions ?? string.Empty;
             _model.LiveCaptionsArabic = Initial.LiveCaptionsArabic ?? string.Empty;
             _model.IsActive = Initial.IsActive;
@@ -611,6 +613,8 @@ public partial class SessionsAddEdit
         ThemeIds = _selectedThemes.ToList(),
         LiveStreamUrl = NullIfBlank(_model.LiveStreamUrl),
         LiveSignLanguageUrl = NullIfBlank(_model.LiveSignLanguageUrl),
+        LiveNotice = NullIfBlank(_model.LiveNotice),
+        LiveNoticeArabic = NullIfBlank(_model.LiveNoticeArabic),
         LiveCaptions = NullIfBlank(_model.LiveCaptions),
         LiveCaptionsArabic = NullIfBlank(_model.LiveCaptionsArabic),
         SeatSelectionModeOverride = ParseSeatModeOverride(),
@@ -637,6 +641,10 @@ public partial class SessionsAddEdit
         IsActive = _model.IsActive,
         LiveStreamUrl = NullIfBlank(_model.LiveStreamUrl),
         LiveSignLanguageUrl = NullIfBlank(_model.LiveSignLanguageUrl),
+        // NullIfBlank is what CLEARS a notice: emptying either box sends null,
+        // so a notice an admin no longer wants can actually be taken down.
+        LiveNotice = NullIfBlank(_model.LiveNotice),
+        LiveNoticeArabic = NullIfBlank(_model.LiveNoticeArabic),
         LiveCaptions = NullIfBlank(_model.LiveCaptions),
         LiveCaptionsArabic = NullIfBlank(_model.LiveCaptionsArabic),
         SeatSelectionModeOverride = ParseSeatModeOverride(),
@@ -815,6 +823,10 @@ public partial class SessionsAddEdit
         // §8 — live broadcast stream URLs (manual stub provider).
         public string LiveStreamUrl { get; set; } = string.Empty;
         public string LiveSignLanguageUrl { get; set; } = string.Empty;
+        // FR-702 — bilingual informational notice shown with the live stream.
+        // Blank in both languages = no notice; it never withholds the stream.
+        public string LiveNotice { get; set; } = string.Empty;
+        public string LiveNoticeArabic { get; set; } = string.Empty;
         // P5 — D-439: AI live-caption text (manual stub provider, bilingual).
         public string LiveCaptions { get; set; } = string.Empty;
         public string LiveCaptionsArabic { get; set; } = string.Empty;

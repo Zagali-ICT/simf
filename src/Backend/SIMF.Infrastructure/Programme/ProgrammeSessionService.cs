@@ -3,6 +3,7 @@
 // Tests: SIMF.Api.Tests/SessionRecordingTests.cs (P3.2b — D-232 published-recording gate)
 // Tests: SIMF.Api.Tests/RecordedQuestionsTests.cs (P3.4 — D-235 recorded Q&A archive)
 // Tests: SIMF.Api.Tests/SessionSummaryTests.cs (P4.1a — D-237 published-summary read)
+// Tests: SIMF.Api.Tests/SessionLiveNoticeTests.cs (FR-702 — informational live notice)
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Programme.Abstractions;
@@ -316,6 +317,10 @@ internal sealed class ProgrammeSessionService(
                 session.LiveSignLanguageUrl,
                 session.LiveCaptions,
                 session.LiveCaptionsArabic,
+                // FR-702 — the informational live notice shown WITH the feed. Read
+                // only; it takes part in no filter and gates nothing.
+                session.LiveNotice,
+                session.LiveNoticeArabic,
                 session.CategoryId,
                 CategoryName = session.Category != null ? session.Category.Name : null,
                 CategoryNameArabic =
@@ -520,7 +525,11 @@ internal sealed class ProgrammeSessionService(
             // #29: the session kind, so the app can reduce a WORKSHOP's detail to
             // title + time. Without it the client read json['type'] as null on
             // every session and the branch could never fire.
-            row.Type);
+            row.Type,
+            // FR-702: the informational live notice (null when the admin set none).
+            // Served alongside the feed above, which stays available to everyone.
+            row.LiveNotice,
+            row.LiveNoticeArabic);
     }
 
     public async Task<SessionRecordingRef?> GetPublishedRecordingAsync(

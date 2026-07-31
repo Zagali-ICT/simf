@@ -141,7 +141,19 @@ public sealed record PublicSessionDetail(
     // json['type'] and always got null, so a type-conditional render on the detail
     // screen could never fire. Appended (append-only, D-219); null = an untyped
     // session, which renders the full detail exactly as before.
-    SessionType? Type = null);
+    SessionType? Type = null,
+    // FR-702 (owner decision 2026-07-31): the informational notice the client shows
+    // WITH the live stream, in the active locale (falling back to the other pair
+    // member when one is blank). NOTHING is gated by it — SIMF-FDS-007 §5.1
+    // originally specified FR-702 as a Riyadh-region restriction on the feed and the
+    // owner reversed that, so the stream above still plays for every caller and
+    // LiveStreamUrl is served unchanged. Both null/blank = no banner. Carried on the
+    // DETAIL only (not on PublicSessionListItem): the live surface reads the detail —
+    // the list has no live-feed field at all — so an agenda row cannot render the
+    // banner, and putting it there would be paid for on every row of every fetch.
+    // Appended (append-only, D-219).
+    string? LiveNotice = null,
+    string? LiveNoticeArabic = null);
 
 /// <summary>One bilingual key-outcome bullet on the public session-detail page
 /// ("أبرز المخرجات", Figma 5991-85840), in the session's display order. Sourced

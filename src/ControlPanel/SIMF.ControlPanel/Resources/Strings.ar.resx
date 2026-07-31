@@ -2021,6 +2021,9 @@
   <data name="Admin.Sessions.Field.LiveStreamUrlHint" xml:space="preserve"><value>ألصق رابط يوتيوب (youtube.com / youtu.be) أو رابط بث مباشر https بصيغة HLS/MP4.</value></data>
   <data name="Admin.Sessions.Field.LiveSignLanguageUrlHint" xml:space="preserve"><value>اختياري. نفس الصيغ — رابط يوتيوب أو رابط بث HLS/MP4.</value></data>
   <data name="Admin.Sessions.Field.LiveUrlInvalid" xml:space="preserve"><value>أدخل رابط يوتيوب صالحاً أو رابط بث HLS/MP4 (https).</value></data>
+  <data name="Admin.Sessions.Field.LiveNotice" xml:space="preserve"><value>تنويه يظهر مع البث المباشر (الإنجليزية)</value></data>
+  <data name="Admin.Sessions.Field.LiveNoticeArabic" xml:space="preserve"><value>تنويه يظهر مع البث المباشر (العربية)</value></data>
+  <data name="Admin.Sessions.Field.LiveNoticeHint" xml:space="preserve"><value>نص اختياري يظهر بجانب البث المباشر بلغة المشاهد. للعلم فقط — لا يمنع أحداً، ويبقى البث متاحاً للجميع أينما كانوا. اترك الحقلين فارغين لعدم إظهار أي تنويه.</value></data>
   <data name="Admin.Sessions.Field.LiveCaptions" xml:space="preserve"><value>الترجمة النصية المباشرة (الإنجليزية)</value></data>
   <data name="Admin.Sessions.Field.LiveCaptionsArabic" xml:space="preserve"><value>الترجمة النصية المباشرة (العربية)</value></data>
   <data name="Admin.Sessions.Field.LiveCaptionsHint" xml:space="preserve"><value>نص ترجمة/تفريغ اختياري يظهر أسفل مشغّل البث المباشر. اتركه فارغاً للاعتماد على ترجمة المشغّل نفسه.</value></data>

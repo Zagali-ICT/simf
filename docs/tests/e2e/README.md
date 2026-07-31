@@ -79,7 +79,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/halls/seat-layouts` | [`cp-admin-halls-seat-layouts.md`](cp-admin-halls-seat-layouts.md) | E2E-HSL-001..030 |
 | `/admin/speakers` | [`cp-admin-speakers.md`](cp-admin-speakers.md) | E2E-SPK-001..022 |
 | `/admin/speaker-presentations` | [`cp-admin-speaker-presentations.md`](cp-admin-speaker-presentations.md) | E2E-SPP-001..017 |
-| `/admin/sessions` | [`cp-admin-sessions.md`](cp-admin-sessions.md) | E2E-SES-001..030 |
+| `/admin/sessions` | [`cp-admin-sessions.md`](cp-admin-sessions.md) | E2E-SES-001..056 |
 | `/admin/sessions/seat-plans` | [`cp-admin-sessions-seat-plans.md`](cp-admin-sessions-seat-plans.md) | E2E-SSP-001..019 |
 | `/admin/session-categories` | [`cp-admin-session-categories.md`](cp-admin-session-categories.md) | E2E-SCT-001..021 |
 | `/admin/programme-days` | [`cp-admin-programme-days.md`](cp-admin-programme-days.md) | E2E-PGD-001..018 |
@@ -205,7 +205,7 @@ endpoint or the hosted worker that owns the behaviour.
 | `/` (old static landing — retired 2026-07-14) | [`web-landing.md`](web-landing.md) | E2E-WLD-001..008 |
 | `/programme` | [`web-programme.md`](web-programme.md) | E2E-WPG-001..014 |
 | `/speakers` | [`web-speakers.md`](web-speakers.md) | E2E-WSPK-001..011 |
-| `/sessions/{id}` | [`web-session-detail.md`](web-session-detail.md) | E2E-WSDT-001..013 |
+| `/sessions/{id}` | [`web-session-detail.md`](web-session-detail.md) | E2E-WSDT-001..016 |
 | `/about` | [`web-about.md`](web-about.md) | E2E-WABT-001..011 |
 | `/about/objectives` | [`web-objectives.md`](web-objectives.md) | E2E-WOBJ-001..007 |
 | `/about/themes` | [`web-themes.md`](web-themes.md) | E2E-WTHM-001..009 |
@@ -305,9 +305,9 @@ API endpoints land (D-249). The per-screen design docs live under
 | #111 `sessionSummaryList` (cached programme + favourites/booked overlay) — Wave 2 pixel pass, Figma `1388:8392` | [`mobile-session-summaries.md`](mobile-session-summaries.md) | E2E-MOB111-001..008 |
 | #26 `sendQuestion` (`POST /app/sessions/{id}/questions`) | [`mobile-send-question.md`](mobile-send-question.md) | E2E-MOB026-001..015 |
 | #32 `badge` (`GET /app/account/dashboard`) | [`mobile-badge.md`](mobile-badge.md) | E2E-MOB032-001..007 |
-| #25 `liveBroadcast` (`GET /app/programme/sessions/{id}`) | [`mobile-live.md`](mobile-live.md) | E2E-MOB025-001..007 |
+| #25 `liveBroadcast` (`GET /app/programme/sessions/{id}`) | [`mobile-live.md`](mobile-live.md) | E2E-MOB025-001..028 |
 | #32 `badge` (`GET /app/account/dashboard`) | [`mobile-badge.md`](mobile-badge.md) | E2E-MOB032-001..005 |
-| #25 `liveBroadcast` (`GET /app/programme/sessions/{id}`) | [`mobile-live.md`](mobile-live.md) | E2E-MOB025-001..025 |
+| #25 `liveBroadcast` (`GET /app/programme/sessions/{id}`) | [`mobile-live.md`](mobile-live.md) | E2E-MOB025-001..028 |
 | #36 `chatbot` (AI assistant → `/app/ai/assistance`) | [`mobile-chatbot.md`](mobile-chatbot.md) | E2E-MOB036-001..007 |
 | #24-01 `archiveDetail` (`GET /app/archive/{id}`) | [`mobile-archive-detail.md`](mobile-archive-detail.md) | E2E-MOB024D-001..009 |
 | `My Contacts` / `Share my contact` (`/app/account/share-token` + `/app/contacts/*`) | [`mobile-my-contacts.md`](mobile-my-contacts.md) | E2E-MMC-001..014 |
@@ -355,10 +355,10 @@ being quoted in planning as if current.
 - **Pages catalogued:** 192 (95 Control Panel + 69 mobile + 19 Website + 8
   API-only surfaces + 1 system-wide). One of the 192 — `cp-admin-companies.md` —
   is **retired**: its route was renamed away and it now carries no live scenarios.
-- **Total scenarios:** 2992 Coverage-matrix rows, every id distinct. That
+- **Total scenarios:** 3001 Coverage-matrix rows, every id distinct. That
   includes the **360** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
   per live page — see `tools/qa/generate_els_rows.py`); the hand-authored
-  functional total is 2632.
+  functional total is 2641.
 - **Authored:** all pages. The D-133 "pending" stubs are fully authored, and
   every event-module and P2–P5 page added since has its own file.
 - **Execution:** the canonical run today is a Chrome DevTools MCP browser pass
@@ -628,3 +628,44 @@ Two register items closed, one new catalogue file, +19 scenarios (2973 -> 2992),
   `docs/pages/PAGE-INDEX.md` gained an **API-only surfaces** section - the six
   `docs/pages/api/*` docs claimed to be "indexed from PAGE-INDEX exactly like a
   page" and none of them actually were.
+
+### Update - 2026-07-31 (owner decision D-815 - FR-702 is a NOTICE, not a restriction)
+
+- **What the owner decided.** SIMF-FDS-007 §5.1 specified FR-702 as a geographic
+  restriction - "the live stream is available only within the Riyadh region", and
+  an attendee outside it "sees the restriction notice **instead of** the stream".
+  The owner reversed that verbatim: *"No restriction, this is only notification and
+  be added to session."* **Nothing is gated.** There is no geo-detection, no IP
+  lookup, no `Region` check and no player gate anywhere; the feed plays for every
+  caller exactly as it did before. The session simply carries optional free
+  bilingual text - `Session.LiveNotice` / `LiveNoticeArabic`, `nvarchar(512)`,
+  wire `liveNotice` / `liveNoticeArabic` - authored per session in the Control
+  Panel and displayed **with** the stream.
+- **Nine scenarios across the three touched surfaces, no new namespace:**
+  `cp-admin-sessions.md` E2E-SES-001..053 -> **001..056** (+054 author the pair on
+  create and read it back, +055 clearing both boxes stores null so the banner comes
+  down everywhere, +056 the `MaxLength="512"` / EF / service length triple-lock with
+  the bilingual 400 `SESSION_INVALID` and the 512 boundary);
+  `mobile-live.md` E2E-MOB025-001..025 -> **001..028** (+026 the banner renders
+  above the player **and the player still mounts**, +027 Arabic + one-sided
+  fallback, +028 blank / cleared renders no banner and no reserved space);
+  `web-session-detail.md` E2E-WSDT-001..013 -> **001..016** (+014 the
+  `.ln-glance__notice` row with the Live row still reading Yes, +015 no element at
+  all when blank, +016 the bilingual `PickOrNull` fallback in RTL).
+- **The index rows for `/admin/sessions` and `#25 liveBroadcast` were also stale**
+  independently of this change - SES already ran to 053 while the index still said
+  030, and the duplicated `#25` row still said 007. Both are now correct. _(The
+  duplicate `#25` and `#32` rows themselves are a pre-existing index defect, left
+  in place; only their ranges were corrected.)_
+- **Every scenario asserts the stream is still served.** That is deliberate: the
+  reversed requirement is exactly the failure mode to guard against, so a run that
+  shows the notice while the player or the stream URL is missing is a **failure**,
+  not a pass.
+- **Backing tests:** `tests/SIMF.Api.Tests/SessionLiveNoticeTests.cs` (9 facts -
+  admin round trip, clear-to-null, both over-length 400s, the 512 boundary, the
+  public read, the omit-when-unauthored read, and
+  `A_live_notice_does_not_withhold_the_live_stream`);
+  `tests/SIMF.Web.Tests/SessionDetailPageTests.cs` (+2);
+  `live_broadcast_screen_test.dart` (+3, each also asserting `LivePlayerSurface` is
+  mounted), `live_repository_test.dart` and `session_detail_models_test.dart` decode
+  + fallback cases.

@@ -5,14 +5,14 @@
 | Route | `/live?sessionId=` (`RouteNames.liveBroadcast`, page #25) · **login-only** (in-screen gate, D-577) |
 | Surface | Mobile (Flutter) |
 | Screen | `lib/features/live/live_broadcast_screen.dart` (`LiveBroadcastScreen`, 348 lines — state + `_content` composition) |
-| Widgets | `lib/features/live/widgets/` — `live_player_surface` (badge row + player + caption strip) · `live_video_player` (the YouTube/`video_player` controller engine) · `live_badges` (LiveBadge + LanguageChip) · `live_message_surfaces` (recording / not-live black bands) · `live_content` (need-login, feed toggle, gold bullets, ask-question, sign-language note, upcoming cards) |
+| Widgets | `lib/features/live/widgets/` — `live_player_surface` (badge row + player + caption strip) · `live_video_player` (the YouTube/`video_player` controller engine) · `live_badges` (LiveBadge + LanguageChip) · `live_message_surfaces` (recording / not-live black bands) · `live_content` (need-login, feed toggle, gold bullets, ask-question, sign-language note, upcoming cards, **`LiveNoticeBanner`** — the FR-702 informational notice) |
 | Figma node | `934:3450` |
 | Shell | `SimfPageShell` (`SimfTab.sessions`) |
 | API | `GET /app/programme/sessions/{id}` (broadcast slice, `AllowAnonymous`) + the agenda list for the upcoming strip |
 | Providers | `liveRepositoryProvider` · `orgProfileProvider` (global main-live URL) · `authControllerProvider` · `accessibilityControllerProvider` (captions toggle) · `localeControllerProvider` (language chip) |
-| Tests | `test/features/live/live_broadcast_screen_test.dart` (36, incl. the A15 + A20 regression cases) + `youtube_url_test.dart`; golden `test/golden/live_broadcast_golden_test.dart` (`goldens/live_broadcast_934-3450.png`); E2E [`mobile-live.md`](../../../tests/e2e/mobile-live.md) |
+| Tests | `test/features/live/live_broadcast_screen_test.dart` (**31 cases, counted on this branch** — incl. the A15 + A20 regression cases and the 3 new FR-702 notice cases; the "36" this row previously claimed was stale, not a deletion) + `live_repository_test.dart` (notice decode + fallback) + `youtube_url_test.dart`; golden `test/golden/live_broadcast_golden_test.dart` (`goldens/live_broadcast_934-3450.png`); E2E [`mobile-live.md`](../../../tests/e2e/mobile-live.md) (E2E-MOB025-026..028) |
 | Legacy detail | `docs/App/Page_025/` — retained as the historical spec |
-| Status | ✅ Real — D-199 → D-349 (YouTube POC) → D-433/439/495/577 → **clean-code frozen (D-603)** |
+| Status | ✅ Real — D-199 → D-349 (YouTube POC) → D-433/439/495/577 → **clean-code frozen (D-603)** → D-815 (FR-702 live notice, informational) |
 
 ## 1. Purpose
 The live video feed for a session (or the forum's global main-live): the black
@@ -43,7 +43,22 @@ router redirect); the reads themselves stay `AllowAnonymous`.
   broadcast is available only inside the Riyadh region per the organising
   regulations" card (frame 934:3619) was shown to every viewer while nothing in
   the app, API, CP or Website ever read the viewer's location. The claim is
-  removed; implementing real geo-fencing (FR-702) is a product/legal decision.
+  removed.
+- **FR-702 live notice (owner decision 2026-07-31 — D-815).** The product
+  decision A20 left open is taken, and it is **no restriction**: owner, verbatim,
+  *"No restriction, this is only notification and be added to session."* So there
+  is no geo-fence, no location read and no gate — instead the session carries
+  optional bilingual free text (`liveNotice` / `liveNoticeArabic`, ≤512 each)
+  written per session at `/admin/sessions`, and `LiveNoticeBanner`
+  (`widgets/live_content.dart`) renders it as a calm informational banner
+  **above** the player: `SimfPageNote` on a plain `SimfCard`, deliberately not an
+  alert register. `LiveSession.localizedNotice(isArabic)` picks the active
+  locale, falls back to the other side when one is blank, and returns null when
+  both are — in which case nothing is rendered at all (no empty card, no reserved
+  space). The banner never gates, delays or replaces the feed; the widget tests
+  assert `LivePlayerSurface` is mounted alongside it precisely so a regression
+  back to "notice instead of stream" fails the build. SIMF-FDS-007 §5.1 carries
+  the superseded restriction wording.
 - Language chip toggles the app locale; the ask-question button opens #26.
 - **Watch keep-alive (item 13 / D-726):** while a signed-in user is on this
   screen, a 60s timer pings the shared `SessionActivity` clock so the app-wide
@@ -64,7 +79,9 @@ router redirect); the reads themselves stay `AllowAnonymous`.
 
 All dynamic content repo-backed; the LIVE-banner copy is the recorded static
 config (D10/L-6); no missing API. The region-restriction notice was removed by
-A20 (it claimed a restriction nothing enforced).
+A20 (it claimed a restriction nothing enforced) and replaced by the FR-702 live
+notice — display-only text with no control on it, so the table above is
+unchanged: the banner wires no handler and reaches no backend.
 
 ## 5. Clean-code freeze (D-603)
 **1,286 → 348-line screen** + 5 widget files (all <400). The media engine

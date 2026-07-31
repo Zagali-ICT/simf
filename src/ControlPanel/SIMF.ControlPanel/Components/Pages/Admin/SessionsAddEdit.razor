@@ -56,6 +56,21 @@
                        MaxLength="1024"
                        @bind-Value="_model.LiveSignLanguageUrl" Disabled="_busy" />
 
+        @* FR-702 — the live notice. Free bilingual text shown WITH the stream as
+           a calm informational banner; blank in both languages shows nothing. It
+           is a notice, not a gate: nobody is blocked and the stream stays
+           available to everyone, so it belongs with the broadcast settings rather
+           than in the general content above. *@
+        <SimfTextarea Label="@L["Admin.Sessions.Field.LiveNotice"]"
+                      Helper="@L["Admin.Sessions.Field.LiveNoticeHint"]"
+                      Rows="2" MaxLength="512"
+                      Value="@_model.LiveNotice"
+                      ValueChanged="@(v => _model.LiveNotice = v)" />
+        <SimfTextarea Label="@L["Admin.Sessions.Field.LiveNoticeArabic"]"
+                      Rows="2" MaxLength="512"
+                      Value="@_model.LiveNoticeArabic"
+                      ValueChanged="@(v => _model.LiveNoticeArabic = v)" />
+
         @* P5 / D-439 — AI live-caption text shown under the player (manual stub
            provider; the app renders this when present, else a placeholder hint). *@
         <SimfTextarea Label="@L["Admin.Sessions.Field.LiveCaptions"]"

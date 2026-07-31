@@ -1,5 +1,6 @@
 // Tests: SIMF.Api.Tests/AdminSessionsTests.cs
 // Tests: SIMF.Api.Tests/SessionLifecycleTests.cs (P3.2a — D-231 lifecycle)
+// Tests: SIMF.Api.Tests/SessionLiveNoticeTests.cs (FR-702 — informational live notice)
 using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Application.Programme.Abstractions;
@@ -102,6 +103,11 @@ public sealed class UpdateSessionRequest
     // P5 — D-439: AI live-caption text (manual stub provider, bilingual).
     public string? LiveCaptions { get; set; }
     public string? LiveCaptionsArabic { get; set; }
+    // FR-702 (owner 2026-07-31) — the informational live notice (bilingual). Carried
+    // on the route DTO so a PUT round-trips it instead of silently clearing it (the
+    // same trap D-439 fixed for the live URLs).
+    public string? LiveNotice { get; set; }
+    public string? LiveNoticeArabic { get; set; }
     // D-485 — optional per-session seat-selection-mode override (null = inherit
     // the hall). Carried on the update route DTO so a PUT round-trips it.
     public SeatSelectionMode? SeatSelectionModeOverride { get; set; }
@@ -159,6 +165,9 @@ public sealed class UpdateSessionEndpoint(IAdminSessionService service)
                     LiveSignLanguageUrl = req.LiveSignLanguageUrl,
                     LiveCaptions = req.LiveCaptions,
                     LiveCaptionsArabic = req.LiveCaptionsArabic,
+                    // FR-702 — the informational live notice round-trips on update.
+                    LiveNotice = req.LiveNotice,
+                    LiveNoticeArabic = req.LiveNoticeArabic,
                     SeatSelectionModeOverride = req.SeatSelectionModeOverride,
                     Type = req.Type,
                     // Website Session-detail — language + outcomes round-trip on update.

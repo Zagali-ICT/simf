@@ -15,7 +15,6 @@ import '../../app/widgets/simf_info_dialog.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import '../../core/utils/saudi_time.dart';
 import '../moderation/data/moderation_repository.dart';
-import 'data/hall_attendance_repository.dart';
 import 'data/seat_map_models.dart';
 import 'data/seat_map_repository.dart';
 import 'data/session_calendar.dart';

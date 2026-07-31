@@ -6,25 +6,25 @@ _Built 2026-07-30. Seven QA reports were read end to end by one agent each, and 
 
 The defects were spread across seven documents with three different id schemes, and their status columns had drifted badly. Working from any one of them would have meant re-fixing what is already fixed while missing what is not.
 
-> **STATUS CORRECTED 2026-07-31 — read [§ Status correction (2026-07-31)](#status-correction-2026-07-31) before working from this document.** The "42 STILL-OPEN" figure below was accurate when the register was built on 2026-07-30 and is **wrong now**. Commit `5418ed34` cleared the great majority, `bc30bafd` + `abf87841` cleared the time-storage item, and the 2026-07-31 round closed the three the fix-all run had explicitly not delivered. **3 of the 42 remain open**, all three blocked on an owner decision. The counts in the table below are left at their as-built values so the delta is visible; the corrected column is the authority.
+> **STATUS CORRECTED 2026-07-31 — read [§ Status correction (2026-07-31)](#status-correction-2026-07-31) before working from this document.** The "42 STILL-OPEN" figure below was accurate when the register was built on 2026-07-30 and is **wrong now**. Commit `5418ed34` cleared the great majority, `bc30bafd` + `abf87841` cleared the time-storage item, the 2026-07-31 round closed the three the fix-all run had explicitly not delivered, and later the same day the owner answered **Q9** and **Q12**, closing `FR-702-riyadh-georestriction` (built as a notice) and `FR-1203-brand-colour-tokens` (closed by decision, no code). **1 of the 42 remains open** — `#33`, blocked on a delivery date. The counts in the table below are left at their as-built values so the delta is visible; the corrected column is the authority.
 
 | Verified status | Count (2026-07-30) | Count (2026-07-31) | Meaning |
 |---|---:|---:|---|
-| **STILL-OPEN** | **42** | **3** | The defective code is still there. All three now need an owner decision, not code. |
+| **STILL-OPEN** | **42** | **2** | The defective code is still there. Both now need an owner decision, not code. |
 | OWNER-ACTION | 37 | 37 | Real, but only you can do it (rotate a credential, procure a provider, flip CI). |
-| ALREADY-FIXED | 96 | 96 (+38 closed since) | Fixed since the report; the fixing code was read. **Do not re-do.** |
+| ALREADY-FIXED | 96 | 96 (+39 closed since) | Fixed since the report; the fixing code was read. **Do not re-do.** |
 | NOT-A-DEFECT | 12 | 12 (+1: `PAR-P1a`) | On inspection, intended behaviour or a mistaken report. |
 | CANNOT-VERIFY | 7 | 7 | Needs a running stack, a device, or provider access. |
 | **Total reported** | **194** | **194** | across 7 documents |
 
-**96 of 194 were already fixed when this was written.** That was the single most important number here: the reports are a historical record, not a worklist. Every ALREADY-FIXED row below names the file or commit that closed it, read first-hand. **A further 38 have closed since** — see the status correction below, where each one names the code that was re-read to confirm it.
+**96 of 194 were already fixed when this was written.** That was the single most important number here: the reports are a historical record, not a worklist. Every ALREADY-FIXED row below names the file or commit that closed it, read first-hand. **A further 39 have closed since** — see the status correction below, where each one names the code that was re-read to confirm it.
 
 ## Status correction (2026-07-31)
 
 The line "STILL-OPEN | 42 | The defective code is still there. This is the work."
 described the tree on **2026-07-30**. It is no longer true, and a register that
 overstates its own open count is as harmful as one that understates it: the next
-round re-investigates 39 closed items and buries the 3 that actually need a
+round re-investigates 40 closed items and buries the 2 that actually need a
 decision.
 
 **How this correction was made.** Every row below was re-checked **against the
@@ -36,10 +36,12 @@ recorded as not-a-defect rather than fixed, why `sev-1-1-domain-purity` and
 code state unchanged, and why the three security items are split into a closed
 code half and an open owner half.
 
-**Row arithmetic.** 42 STILL-OPEN rows → **3 open**, 38 fixed, 1 not-a-defect.
+**Row arithmetic.** 42 STILL-OPEN rows → **2 open**, 39 fixed, 1 not-a-defect.
 Three refs appear twice in the register (`OA-D1`, `OA-D5`, `OA-D6` were each
 reported by two source documents), so the 42 rows are 39 distinct refs and the
-3 that remain open are 3 distinct refs.
+1 that remains open is 1 distinct ref. _(Was "3 open, 38 fixed" earlier the same
+day; `FR-702-riyadh-georestriction` moved across when the owner answered Q9 —
+see the FR-702 subsection below.)_
 
 ### Closed by `5418ed34` (the fix-all run), re-verified 2026-07-31
 
@@ -90,6 +92,14 @@ These are the three the fix-all run explicitly did **not** deliver.
 | `accessibility-server-sync` | **The server half shipped.** The app half landed on 2026-07-30 with nothing to call — both sync directions swallow their failures by contract, so its tests passed while the feature did nothing. `GET`/`PUT /api/v1/app/account/preferences` now stores the five choices on the account. | `AccountPreferencesEndpoints.cs` (`RequireApprovedAccount`, own `sub`, no admin permission); `AccountPreferences` + `UpdateAccountPreferencesRequest`; `AccountPreferencesService` (five-column `AsNoTracking` projection, full-replace write, bilingual 400 on an unknown `textSize`); five additive `UserProfile` columns with two load-bearing `HasSentinel` calls; `AccountPreferencesTests.cs` (8 facts). E2E-ACP-001..013 + E2E-MOB038-012. |
 | `#2` **residual** — the `SimfApiFactory` 2FA test posture | `#2` shipped the enrolment-first branch, but `SimfApiFactory` pinned `IdentityLifecycle__RequireControlPanelTwoFactorEnrolment` to **`false`** for the whole assembly, because ~150 admin fixtures read `Tokens.AccessToken` off a Cp-audience password sign-in. So the general suite exercised the **pre-fix** path and only one dedicated test class ever ran the shipping posture. That is a green suite proving the wrong thing. | `SimfApiFactory.cs` now pins the value to **`true`** (the production default), and the fixtures go through `AuthFlow.SignInControlPanelAsync`, which enrols the fixture admin and completes a real TOTP step. `ControlPanelTwoFactorApiFactory` is kept as the explicit statement that `ControlPanelTwoFactorEnrolmentTests` depends on the gate being on. |
 
+### Closed by an owner answer, later on 2026-07-31
+
+| Ref | What closed it | Verified against |
+|---|---|---|
+| `FR-702-riyadh-georestriction` | **Q9 answered: there is no restriction.** The register's own note said the requirement was worth re-confirming because the feed is public YouTube, which makes a server-side region gate largely unenforceable. Put to the owner, the answer was verbatim *"No restriction, this is only notification and be added to session."* **What shipped (2026-07-31):** an optional per-session bilingual free-text **live notice** — `Session.LiveNotice` / `LiveNoticeArabic` (`nvarchar(512)`, nullable; wire `liveNotice` / `liveNoticeArabic`, appended per D-219) — authored on the `/admin/sessions` broadcast block and displayed **with** the stream: above the player on app screen #25 and under the at-a-glance card on the Website `/sessions/{id}`. Blank in both languages shows nothing; clearing the CP boxes stores `null` and removes the banner. **No geo-detection, no IP lookup, no `Region` check and no player gate was built, and none will be** — the item is closed as re-scoped, not as deferred. | `Session.cs` + `SessionConfiguration.cs` (the two 512-capped columns); `AdminSessionService` (create/update/`ValidateTextLengths`, bilingual 400 `SESSION_INVALID`) + `ProgrammeSessionService` (read-only projection, no filter); `SessionsAddEdit.razor` + `Strings(.ar).resx` `Admin.Sessions.Field.LiveNotice*`; `LiveNoticeBanner` (`live_content.dart`) + `LiveSession.localizedNotice`; `SessionDetail.razor` `.ln-glance__notice`. `tests/SIMF.Api.Tests/SessionLiveNoticeTests.cs` — 9 facts, including `A_live_notice_does_not_withhold_the_live_stream` (an anonymous caller with a notice set still receives `liveStreamUrl` in full). Spec corrected at SIMF-FDS-007 §5.1 with the superseded wording kept and dated; decision **D-815**. E2E: SES-054..056, MOB025-026..028, WSDT-014..016. |
+
+| `FR-1203-brand-colour-tokens` | **Q12 answered: `theme.tokens.css` is the single source of truth.** Owner decision, verbatim *"Accept theme.tokens.css as the source of truth"*. Closed by decision, with **no code** — and deliberately so. The project's own CSS rules already mandate that file as the sole home of every colour, with zero hardcoded hex anywhere; a Control Panel brand-colour editor would have written colours into `SystemSettings` that then compete with the token file, giving the same value two owners. That is the precise failure the rule exists to prevent, so building the surface would have introduced the defect rather than closed it. Re-verified 2026-07-31: no `brandColour` / `brandColor` / `brand-colour` surface exists in the Control Panel, and `SiteSettingsPage.razor` remains scoped to the bilingual registration welcome message. |
+
 ### Reclassified, not fixed
 
 | Ref | Verified status |
@@ -98,16 +108,20 @@ These are the three the fix-all run explicitly did **not** deliver.
 | `sev-1-1-domain-purity` | **Documentation defect closed; the code state is unchanged by decision (owner Q15).** `SimfUser : IdentityUser<Guid>` and `SimfRole : IdentityRole<Guid>` are still in `SIMF.Domain`, and `SIMF.Domain.csproj` still references `Microsoft.Extensions.Identity.Stores`. What was actually wrong was the refactor plan asserting "Arch SEV-1.1 fully closed"; that is corrected, and `tests/SIMF.Api.Tests/DomainPurityTests.cs` pins the real state with **inverted** facts (`Domain_SimfUser_still_derives_from_AspNet_Identity`) so the day someone does the POCO split, the test fails and tells them to flip it. The architectural work itself is still outstanding. |
 | `sev-1-6-service-placement` | **Deferral re-confirmed in writing (owner Q13).** `AdminAccountService` is still under `SIMF.Infrastructure/Identity/` (3,452 lines across six partials). The defect was a deferral that lived only in a table cell and was being inherited by silence; the reasoning is now recorded where the next round will read it. The move itself is still outstanding, past the event. |
 
-### Genuinely still open (3)
+### Genuinely still open (1)
 
-All three are blocked on an owner decision, not on engineering time. None of them
-can be closed by writing code today.
+One item remains, and it is blocked on a date from the owner rather than on
+engineering time.
+
+_(This section read "still open (3)" earlier on 2026-07-31. The owner answered
+both blocking questions the same day: **Q9** closed
+`FR-702-riyadh-georestriction` (built as a notice) and **Q12** closed
+`FR-1203-brand-colour-tokens` (closed by decision, no code). Both moved to
+[§ Closed by an owner answer](#closed-by-an-owner-answer-later-on-2026-07-31).)_
 
 | Ref | Sev | Where it still lives (re-verified 2026-07-31) | Blocked on |
 |---|---|---|---|
 | `#33` — Control Panel user manual not delivered | high | `docs/manuals/Admin-Manual.md` is still **1,118 lines with 14 `_(planned)_` markers**, unchanged: the contents list marks Registration requests (line 32), Attendees (33), Roles & permissions (35), Halls & seating (39), Speakers (40) and Bookings (42) as unwritten, all of Exhibition / Engagement / Knowledge & AI / Content (43–46) likewise, and chapter stubs remain at 204, 446 and 585. | **Q5** — the stated due date (19-07-2026) is long past and the real one is unconfirmed. |
-| `FR-702-riyadh-georestriction` — live-stream Riyadh-region restriction | low | No region gate exists. A repo-wide search across `src/Backend` for `georestrict` / `GeoRestrict` / `RegionRestrict` returns nothing, and the live URL is selected on session timing and role only. | **Q9** — worth re-confirming the requirement at all: the feed is public YouTube, which makes a server-side restriction largely unenforceable. |
-| `FR-1203-brand-colour-tokens` — brand-colour editing from the CP | low | No brand-colour surface. Searching the Control Panel for `brandColour` / `brandColor` / `brand-colour` returns nothing; `SiteSettingsPage.razor` is still scoped to the bilingual registration welcome message. | **Q12** — either accept `theme.tokens.css` as the single source of truth (which the project's own CSS rules already mandate) or fund a `SystemSettings`-backed section. |
 
 ### What did NOT change
 
@@ -153,9 +167,13 @@ anyone out: `#2b` is a boot-time configuration guard, and `#2c` only adds a clai
 Ordered by user impact, not by effort. Waves are sequenced so nothing in a later wave depends on an earlier one being incomplete.
 
 > **Executed. Kept as the record of what was planned and why.** Every wave below
-> has since run: 39 of the 42 rows are closed and 3 remain open (`#33`,
-> `FR-702-riyadh-georestriction`, `FR-1203-brand-colour-tokens`), all three
-> waiting on an owner decision. Per-row status and the evidence for it are in
+> has since run: 41 of the 42 rows are closed and 1 remains open (`#33`, the
+> Control Panel user manual), waiting on a delivery date from the owner. The Wave-4
+> `FR-702` row below is one of the closed ones, and it did **not** close the way
+> it was planned: the plan proposed gating the live URL on the caller's resolved
+> `Region`, and the owner instead removed the restriction from the requirement
+> altogether (2026-07-31, D-815). Read that row as history, not as work. Per-row
+> status and the evidence for it are in
 > [§ Status correction (2026-07-31)](#status-correction-2026-07-31).
 
 ### Wave 1 — security and crashes — 2 item(s) (2xS)
@@ -306,8 +324,8 @@ Closing these is as valuable as fixing the real ones: each is a row that would o
 ## Full detail — every STILL-OPEN item with its evidence
 
 > **This section is a snapshot of 2026-07-30 and is kept verbatim as the
-> historical evidence trail — it is NOT the current status.** 39 of the 42
-> entries below have since closed and 3 remain open; each one's present state,
+> historical evidence trail — it is NOT the current status.** 40 of the 42
+> entries below have since closed and 1 remains open; each one's present state,
 > and the file re-read to establish it, is in
 > [§ Status correction (2026-07-31)](#status-correction-2026-07-31). Do not plan
 > work from this section without reading that one first.

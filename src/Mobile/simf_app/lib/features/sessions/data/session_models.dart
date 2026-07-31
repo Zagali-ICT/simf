@@ -420,6 +420,8 @@ class SessionDetail {
   /// الجلسة** button: shown only when non-null, opening the live screen (25).
   final String? liveStreamUrl;
 
+  /// FR-702 (owner 2026-07-31) — the free-text notice the Control Panel authors
+
   /// True when the session has a live feed the app can open (the رابط الجلسة
   /// button's visibility gate).
   bool get hasLiveStream =>
@@ -448,6 +450,7 @@ class SessionDetail {
 
   String? localizedCategory(bool isArabic) =>
       _pickOptional(categoryNameArabic, categoryName, isArabic);
+
 
   static SessionDetail fromJson(Map<String, dynamic> json) => SessionDetail(
         id: json['id'] as String? ?? '',
