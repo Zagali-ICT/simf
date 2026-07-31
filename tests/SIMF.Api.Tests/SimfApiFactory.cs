@@ -128,6 +128,17 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         // A1-19 — dormant-account auto-disable OFF by default (reset the process-wide
         // var so a prior DormantAccountApiFactory cannot leak its threshold).
         Environment.SetEnvironmentVariable("IdentityLifecycle__DormantAccountDisableDays", "0");
+        // #2 (Q1, 2026-07-30) — mandatory Control-Panel 2FA enrolment OFF for the
+        // general suite. The production DEFAULT is ON (IdentityLifecycleOptions
+        // initialises it true, and appsettings.json states it), but ~150 admin
+        // fixtures in this assembly create their user straight through UserManager
+        // and then read `Tokens.AccessToken` off a Cp-audience password sign-in —
+        // a flow that, with the gate on, correctly returns an enrolment challenge
+        // and no token. Pinned off here (a process-wide var, so this also resets
+        // any leak from ControlPanelTwoFactorApiFactory, which turns it back on
+        // and is where the production posture is actually proved).
+        Environment.SetEnvironmentVariable(
+            "IdentityLifecycle__RequireControlPanelTwoFactorEnrolment", "false");
         Environment.SetEnvironmentVariable(
             "Jwt__SigningKey", "ytlV1+ke14Pw900IRtH8zT4uIKBeaqjcj6aFfiLozS5jKgSs");
         Environment.SetEnvironmentVariable("Storage__AvatarBase", AvatarStorageDirectory);

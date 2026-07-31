@@ -28,4 +28,17 @@ public enum SecondFactorKind
     /// rendered, so no display resource is attached.
     /// </summary>
     PasswordChange = 2,
+
+    /// <summary>
+    /// #2 (Q1, 2026-07-30) — a mandatory authenticator-enrolment ticket. Issued at
+    /// the password step, in place of an access token, when a Control Panel
+    /// account signs in with no authenticator secret paired. Exchanged at
+    /// <c>POST /auth/totp/enrolment/start</c> (returns the QR) and then
+    /// <c>POST /auth/totp/enrolment/complete</c> (verifies the first code and
+    /// issues the session). Internal plumbing only — never rendered, so no
+    /// display resource is attached. The persisted column is
+    /// <c>nvarchar(16)</c> (SecondFactorTokenConfiguration), so the NAME must
+    /// stay within 16 characters.
+    /// </summary>
+    TotpEnrolment = 3,
 }

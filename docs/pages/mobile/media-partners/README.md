@@ -41,6 +41,18 @@ byte-identical. Golden read: المركز الاعلامي header, the tab strip
 الإعلاميون active-gold right / احدث المستجدات left), the 2-column partner grid
 (gold logo tiles + names), RTL, no tofu.
 
+## Tab label — one line, not two (PAR-P1a closed 2026-07-30)
+
+`FIGMA-PARITY-DEFECTS.md` PAR-P1a claimed the active tab label should wrap to
+**two** lines and that the shared `MediaCoverageTabs`' `maxLines: 1` truncates it.
+Re-read against the current frame **1049:12629** (the newer two-tab strip that
+replaced the 958 one when معرض الصور was dropped), that is not what the design
+says: inside each 163.5×48 button the label is a single **15px-high** text node
+centred at y 16.5 (`الشركاء الإعلاميون` 94×15, `احدث المستجدات` 92×15) — one line,
+about 70px narrower than its button, so it neither wraps nor ellipsises.
+`maxLines: 1` is the frame-accurate setting and **was left unchanged**; the
+two-line expectation came from the superseded frame. Scenario `E2E-MOB031-009`.
+
 ## Level-F
 
 Wired: the inactive tab replaces to news; pull-to-refresh + retry re-fetch; the

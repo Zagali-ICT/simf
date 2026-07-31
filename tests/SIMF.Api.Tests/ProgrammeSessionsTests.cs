@@ -380,6 +380,133 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Category_filter_returns_only_that_category()
+    {
+        // OA-D6 — ?categoryId= narrows the anonymous agenda to one SessionCategory
+        // track server-side. Before the fix the endpoint declared only ?day=, so the
+        // unrecognised query key was ignored and BOTH sessions came back.
+        var admin = await CreateAdminAsync();
+        var hallId = await CreateHallAsync(admin);
+        var speakerId = await CreateSpeakerAsync(admin);
+        var day = DateTimeOffset.UtcNow.AddDays(40).Date;
+
+        var inCategory = await CreateSessionAsync(admin, hallId, speakerId,
+            Array.Empty<Guid>(), day.AddHours(9), day.AddHours(10));
+        var otherCategory = await CreateSessionAsync(admin, hallId, speakerId,
+            Array.Empty<Guid>(), day.AddHours(11), day.AddHours(12));
+
+        var (categoryId, otherCategoryId) =
+            await AssignCategoriesAsync(inCategory.Id, otherCategory.Id);
+
+        var body = (await (await _client.GetAsync(
+                $"/api/v1/app/programme/sessions?categoryId={categoryId}")).Content
+            .ReadFromJsonAsync<ApiResult<PublicSessions>>())!.Data!;
+        Assert.Contains(body.Items, i => i.Id == inCategory.Id);
+        Assert.DoesNotContain(body.Items, i => i.Id == otherCategory.Id);
+
+        // The other category keys its own result (and its own output-cache entry).
+        var otherBody = (await (await _client.GetAsync(
+                $"/api/v1/app/programme/sessions?categoryId={otherCategoryId}")).Content
+            .ReadFromJsonAsync<ApiResult<PublicSessions>>())!.Data!;
+        Assert.Contains(otherBody.Items, i => i.Id == otherCategory.Id);
+        Assert.DoesNotContain(otherBody.Items, i => i.Id == inCategory.Id);
+    }
+
+    [Fact]
+    public async Task Category_filter_combines_with_the_day_filter()
+    {
+        // OA-D6 — the two filters AND together: a session in the right category but
+        // on another day is excluded.
+        var admin = await CreateAdminAsync();
+        var hallId = await CreateHallAsync(admin);
+        var speakerId = await CreateSpeakerAsync(admin);
+        var dayOne = DateTimeOffset.UtcNow.AddDays(50).Date;
+        var dayTwo = dayOne.AddDays(1);
+
+        var onDayOne = await CreateSessionAsync(admin, hallId, speakerId,
+            Array.Empty<Guid>(), dayOne.AddHours(9), dayOne.AddHours(10));
+        var onDayTwo = await CreateSessionAsync(admin, hallId, speakerId,
+            Array.Empty<Guid>(), dayTwo.AddHours(9), dayTwo.AddHours(10));
+
+        // Both sessions share ONE category, so only the day filter can separate them.
+        Guid categoryId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var category = new SessionCategory
+            {
+                Id = Guid.NewGuid(),
+                Name = "Main",
+                NameArabic = "رئيسية",
+                DisplayOrder = 1,
+            };
+            db.SessionCategories.Add(category);
+            foreach (var id in new[] { onDayOne.Id, onDayTwo.Id })
+            {
+                var session = await db.Sessions.SingleAsync(s => s.Id == id);
+                session.CategoryId = category.Id;
+            }
+            await db.SaveChangesAsync();
+            categoryId = category.Id;
+        }
+
+        var filter = dayOne.ToString("yyyy-MM-dd");
+        var body = (await (await _client.GetAsync(
+                $"/api/v1/app/programme/sessions?day={filter}&categoryId={categoryId}")).Content
+            .ReadFromJsonAsync<ApiResult<PublicSessions>>())!.Data!;
+        Assert.Contains(body.Items, i => i.Id == onDayOne.Id);
+        Assert.DoesNotContain(body.Items, i => i.Id == onDayTwo.Id);
+    }
+
+    [Fact]
+    public async Task Unknown_category_filter_returns_an_empty_list_not_404()
+    {
+        // OA-D6 — the anonymous agenda must not become a category-id oracle: an id
+        // that does not exist matches nothing and still answers 200.
+        var list = await _client.GetAsync(
+            $"/api/v1/app/programme/sessions?categoryId={Guid.NewGuid()}");
+        Assert.Equal(HttpStatusCode.OK, list.StatusCode);
+
+        var body = (await list.Content
+            .ReadFromJsonAsync<ApiResult<PublicSessions>>())!.Data!;
+        Assert.Empty(body.Items);
+    }
+
+    /// <summary>OA-D6 — seeds two <c>SessionCategory</c> rows and points one session
+    /// at each. The admin session API carries no category field, so the assignment is
+    /// made directly on the App DB (the pattern the summary tests already use).</summary>
+    private async Task<(Guid First, Guid Second)> AssignCategoriesAsync(
+        Guid firstSessionId, Guid secondSessionId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+
+        var first = new SessionCategory
+        {
+            Id = Guid.NewGuid(),
+            Name = "Keynote track",
+            NameArabic = "مسار الكلمات",
+            DisplayOrder = 1,
+        };
+        var second = new SessionCategory
+        {
+            Id = Guid.NewGuid(),
+            Name = "Workshop track",
+            NameArabic = "مسار الورش",
+            DisplayOrder = 2,
+        };
+        db.SessionCategories.AddRange(first, second);
+
+        var firstSession = await db.Sessions.SingleAsync(s => s.Id == firstSessionId);
+        firstSession.CategoryId = first.Id;
+        var secondSession = await db.Sessions.SingleAsync(s => s.Id == secondSessionId);
+        secondSession.CategoryId = second.Id;
+
+        await db.SaveChangesAsync();
+        return (first.Id, second.Id);
+    }
+
+    [Fact]
     public async Task Detail_returns_speakers_themes_and_seat_summary()
     {
         var admin = await CreateAdminAsync();

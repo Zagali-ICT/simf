@@ -23,7 +23,11 @@ public sealed class SubmitDelegationMeetingRequestRequest
 public sealed record DelegationMeetingRequestSubmitted(
     Guid Id, MeetingRequestStatus Status, DateTimeOffset CreatedAt);
 
-/// <summary>D-478 — one row on the admin delegation-meeting desk.</summary>
+/// <summary>D-478 — one row on the admin delegation-meeting desk.
+/// <para>OA-D5 appends the hall check-in stamps, mirroring
+/// <c>AdminSpeakerMeetingRequestRow</c>, so the desk's new XLSX export can report
+/// who actually turned up. Appended with defaults, so the shipped wire contract
+/// stays append-only (D-219).</para></summary>
 public sealed record AdminDelegationMeetingRequestRow(
     Guid Id,
     int RequestingCountryId,
@@ -37,7 +41,12 @@ public sealed record AdminDelegationMeetingRequestRow(
     DateTimeOffset? SlotStart,
     string? ResponseNote,
     DateTimeOffset CreatedAt,
-    DateTimeOffset? RespondedAt);
+    DateTimeOffset? RespondedAt,
+    // OA-D5 — when an operator checked the meeting in at the hall, and who. The
+    // operator name is resolved from the Identity DB on read (a bare-Guid logical
+    // FK, D-157); both stay null until the meeting is checked in.
+    DateTimeOffset? CheckedInAt = null,
+    string? CheckedInByName = null);
 
 /// <summary>D-478 — the admin detail (adds the requester email, resolved on read).</summary>
 public sealed record AdminDelegationMeetingRequestDetail(

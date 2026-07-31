@@ -75,6 +75,10 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     public DbSet<SessionSummary> SessionSummaries => Set<SessionSummary>();
     // P5.1 — D-241: hall arrival / attendance (GPS geofence or QR door scan).
     public DbSet<HallAttendance> HallAttendances => Set<HallAttendance>();
+    // FR-1103 (Q6): periodic device-position samples — the capture path behind the
+    // dwell-per-hall aggregation and the route projection. Inert until a hall is
+    // given a geofence boundary.
+    public DbSet<DevicePositionPing> DevicePositionPings => Set<DevicePositionPing>();
     // B9b — D-226: dynamic session-category lookup (FDS-004 §5.4).
     public DbSet<SessionCategory> SessionCategories => Set<SessionCategory>();
 

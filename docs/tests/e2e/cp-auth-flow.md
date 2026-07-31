@@ -4,7 +4,8 @@
 |--|--|
 | **Pages covered** | [`cp/login.md`](../../pages/cp/login.md), [`cp/login-totp.md`](../../pages/cp/login-totp.md), [`cp/login-recovery.md`](../../pages/cp/login-recovery.md), [`cp/forgot-password.md`](../../pages/cp/forgot-password.md), [`cp/auth-pending.md`](../../pages/cp/auth-pending.md), [`cp/auth-rejected.md`](../../pages/cp/auth-rejected.md) |
 | **Surface** | Control Panel |
-| **Last reviewed** | 2026-05-28 |
+| **Related** | #2 / Q1 (2026-07-30) added a **fourth** outcome to the password step: an admin with no authenticator paired is routed to `/login/enrol-2fa` instead of receiving a token. That page has its own file — [`cp-2fa-enrolment.md`](cp-2fa-enrolment.md), `E2E-TFE-001..013`. |
+| **Last reviewed** | 2026-07-30 |
 
 ## Coverage matrix
 
@@ -29,11 +30,19 @@
 
 ### E2E-AUTH-001 — Happy sign-in
 
+> **Pre-requisite as of #2 / Q1 (2026-07-30).** This scenario reaches
+> `/login/totp` only for an account that **already has an authenticator secret
+> paired**. An admin with none — which is what the production super-admin was
+> recorded as — is now routed to `/login/enrol-2fa` and issued no token; see
+> `E2E-TFE-001`. If this scenario lands on `/login/enrol-2fa`, the fixture
+> account is unenrolled, not the flow broken.
+
 ```gherkin
 Feature: Administrator sign-in
   Background:
     Given the API is reachable on http://localhost:5175
     And the Control Panel is reachable on http://localhost:5158
+    And the super-admin account has an authenticator secret paired
 
   Scenario: Super-admin signs in (password + TOTP)
     Given an administrator opens /login

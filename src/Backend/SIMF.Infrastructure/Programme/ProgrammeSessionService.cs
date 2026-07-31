@@ -30,12 +30,21 @@ internal sealed class ProgrammeSessionService(
     : IProgrammeSessionService
 {
     public async Task<PublicSessions> ListAsync(
-        DateOnly? day, CancellationToken cancellationToken = default)
+        DateOnly? day, Guid? categoryId = null, CancellationToken cancellationToken = default)
     {
         var rows = dbContext.Sessions
             .AsNoTracking()
             .Where(session => session.IsActive)
             .AsQueryable();
+
+        // OA-D6 — optional server-side track filter on the dynamic SessionCategory
+        // lookup (D-226). A plain equality on the indexed FK; combines with ?day=
+        // (AND). An unknown id simply matches nothing — no 404, because the public
+        // agenda must not become a category-id oracle.
+        if (categoryId is { } category)
+        {
+            rows = rows.Where(session => session.CategoryId == category);
+        }
 
         if (day is { } d)
         {
@@ -208,7 +217,7 @@ internal sealed class ProgrammeSessionService(
         // whole programme once and bucket sessions by their EVENT-LOCAL date
         // (ProgrammeDay.Date is a Riyadh calendar date), then attach each bucket
         // to its authored day. No per-day query (no N+1).
-        var allSessions = (await ListAsync(null, cancellationToken)).Items;
+        var allSessions = (await ListAsync(null, null, cancellationToken)).Items;
         var byDate = allSessions
             .GroupBy(s => DateOnly.FromDateTime(s.Start.ToOffset(EventOffset).DateTime))
             .ToDictionary(
@@ -311,6 +320,10 @@ internal sealed class ProgrammeSessionService(
                 CategoryName = session.Category != null ? session.Category.Name : null,
                 CategoryNameArabic =
                     session.Category != null ? session.Category.NameArabic : null,
+                // #29 — the session kind. The agenda list has projected this since
+                // D-452; the detail read did not, which is why a type-conditional
+                // render on the detail screen could never fire.
+                session.Type,
                 session.Language,
                 session.LanguageArabic,
                 Themes = session.Themes
@@ -504,7 +517,11 @@ internal sealed class ProgrammeSessionService(
             row.Language,
             row.LanguageArabic,
             // "روابط التحميل" — the session's public downloadable files.
-            downloads);
+            downloads,
+            // #29: the session kind, so the app can reduce a WORKSHOP's detail to
+            // title + time. Without it the client read json['type'] as null on
+            // every session and the branch could never fire.
+            row.Type);
     }
 
     public async Task<SessionRecordingRef?> GetPublishedRecordingAsync(

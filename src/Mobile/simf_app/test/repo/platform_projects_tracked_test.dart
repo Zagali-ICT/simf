@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-/// Repo-hygiene ratchet for BUG-010 and BUG-009.
+/// Repo-hygiene ratchet for BUG-010, BUG-009 and STALE-GOLDEN-ARTIFACTS.
 ///
 /// BUG-010 — `.gitignore` used to ignore EVERY native platform folder
 /// (`android/ ios/ linux/ macos/ windows/ web/`) plus `pubspec.lock`, so a
@@ -17,6 +17,12 @@ import 'package:flutter_test/flutter_test.dart';
 /// `src/Mobile/packages/`. The pubspec resolves `packages/simf_{auth,data}_pkg`
 /// relative to this app, so the outer copy was orphaned and had diverged. It
 /// was deleted; this test stops it coming back.
+///
+/// STALE-GOLDEN-ARTIFACTS — 48 golden-comparison PNGs were committed under
+/// `test/golden/failures/`. That directory is what `flutter test` writes when a
+/// golden FAILS, so the committed set was frozen debris from a superseded
+/// revision while the suite ran green. Deleted + ignored; these tests stop it
+/// coming back.
 ///
 /// The working directory for `flutter test` is the package root
 /// (`src/Mobile/simf_app`), so every path below is relative to that.
@@ -116,6 +122,46 @@ void main() {
     test('pubspec.lock is tracked so a clean clone resolves the same versions',
         () {
       expect(File('pubspec.lock').existsSync(), isTrue);
+    });
+  });
+
+  group('STALE-GOLDEN-ARTIFACTS — golden failure output is not committed', () {
+    test('the repo .gitignore keeps the failures directory out', () {
+      // The ignore rule — not an "is the directory empty" check — is the
+      // durable guard, and the only one that is deterministic: a golden that
+      // fails in THIS very run writes into test/golden/failures/ while the
+      // suite is executing, so asserting the directory is empty would turn one
+      // red golden into two failures and point at the wrong cause.
+      // Ignored ⇒ untracked ⇒ the artefacts cannot be committed again.
+      //
+      // The working directory is src/Mobile/simf_app, so the repo root is 3 up.
+      final ignore = File('../../../.gitignore');
+      expect(ignore.existsSync(), isTrue);
+      expect(
+        ignore.readAsStringSync(),
+        contains('src/Mobile/simf_app/test/golden/failures/'),
+        reason: 'test/golden/failures/ holds the four diff PNGs `flutter test` '
+            'writes for each FAILING golden — output, never input. 48 were '
+            'committed and had gone stale against a superseded revision, so '
+            'anyone grepping the directory read obsolete debris. Without this '
+            'ignore rule the next failing run re-commits them on the next '
+            '`git add`.',
+      );
+    });
+
+    test('the golden MASTERS are still tracked (the right directory was '
+        'deleted)', () {
+      final masters = Directory('test/golden/goldens');
+      expect(masters.existsSync(), isTrue);
+      expect(
+        masters.listSync().whereType<File>().where(
+              (f) => f.path.endsWith('.png'),
+            ),
+        isNotEmpty,
+        reason: 'test/golden/goldens/ holds the golden masters — the INPUT to '
+            'every golden comparison. Only test/golden/failures/ (the output of '
+            'a failing run) was removed.',
+      );
     });
   });
 

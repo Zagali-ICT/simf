@@ -39,6 +39,13 @@ public sealed class ExportSpeakerMeetingRequestsEndpoint(ISpeakerMeetingRequestS
         new("RespondedAt", row => row.RespondedAt is null
             ? string.Empty
             : row.RespondedAt.Value.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")),
+        // OA-D5 — the hall check-in stamps. They were written by the check-in action
+        // (POST /admin/speaker-meeting-requests/{id}/check-in) but appeared in no
+        // report, so "who actually turned up" was unanswerable off-screen.
+        new("CheckedInAt", row => row.CheckedInAt is null
+            ? string.Empty
+            : row.CheckedInAt.Value.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")),
+        new("CheckedInBy", row => row.CheckedInByName ?? string.Empty),
     ];
 
     protected override async Task<IReadOnlyList<AdminSpeakerMeetingRequestRow>> ListAsync(

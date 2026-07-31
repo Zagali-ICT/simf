@@ -60,6 +60,13 @@ public static class ErrorCodes
     public const string TotpEnrolmentCodeInvalid = "TOTP_ENROLMENT_CODE_INVALID";
     public const string TotpNotEnabled = "TOTP_NOT_ENABLED";
     public const string AuthRecoveryCodeInvalid = "AUTH_RECOVERY_CODE_INVALID";
+    /// <summary>#2 (Q1, 2026-07-30) — the password was correct but the account signing
+    /// in on the <c>Cp</c> audience carries no second factor yet, so no access token is
+    /// issued: the caller must complete TOTP enrolment first. Distinct from
+    /// <see cref="TotpNotEnabled"/> (a TOTP action attempted on an account that never
+    /// enrolled) because this one is raised on the sign-in path itself and is the
+    /// signal the CP uses to route to its enrolment page rather than to the CP shell.</summary>
+    public const string AuthTwoFactorEnrolmentRequired = "AUTH_TWO_FACTOR_ENROLMENT_REQUIRED";
 
     // Admin-driven 2FA reset (D-041)
     public const string AdminCannotResetSelf = "ADMIN_CANNOT_RESET_SELF";
@@ -394,6 +401,11 @@ public static class ErrorCodes
     public const string ContentBlockInvalid = "CONTENT_BLOCK_INVALID";
     public const string ContentBlockNotFound = "CONTENT_BLOCK_NOT_FOUND";
     public const string ContentBlockKeyDuplicate = "CONTENT_BLOCK_KEY_DUPLICATE";
+    /// <summary>FR-1203 — a content block's markdown could not be rendered safely:
+    /// the sanitizing pipeline stripped or rejected the submitted markup. Raised on
+    /// the admin write path so an admin-editable field can never reach the public
+    /// surface as unsanitised HTML.</summary>
+    public const string ContentMarkdownUnsafe = "CONTENT_MARKDOWN_UNSAFE";
     public const string BannerInvalid = "BANNER_INVALID";
     public const string BannerNotFound = "BANNER_NOT_FOUND";
     public const string BannerInvalidTimeWindow = "BANNER_INVALID_TIME_WINDOW";

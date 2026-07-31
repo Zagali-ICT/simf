@@ -282,8 +282,22 @@ internal sealed class SpeakerMeetingRequestService(
                     r.Id, r.SpeakerId, SpeakerName = s.Name, SpeakerNameArabic = s.NameArabic,
                     r.RequestedByUserId, r.RequesterName, r.Subject,
                     r.Status, r.ResponseNote, r.CreatedAt, r.RespondedAt,
+                    // OA-D5 — the hall check-in stamps, so the grid and its export
+                    // report who actually turned up, not only the decision.
+                    r.CheckedInAt, r.CheckedInByUserId,
                 })
             .ToListAsync(cancellationToken);
+
+        // OA-D5 — resolve the check-in operators' display names in ONE Identity-DB
+        // query for the whole page. CheckedInByUserId is a bare logical FK (D-157),
+        // so this is a second query merged in memory — never a cross-database JOIN.
+        // Rows with no check-in contribute no id.
+        var operatorNames = await userDirectory.GetDisplayNamesAsync(
+            pageRows.Where(r => r.CheckedInByUserId.HasValue)
+                .Select(r => r.CheckedInByUserId!.Value)
+                .Distinct()
+                .ToList(),
+            cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
         {
@@ -304,7 +318,8 @@ internal sealed class SpeakerMeetingRequestService(
         var items = pageRows.Select(r => new AdminSpeakerMeetingRequestRow(
             r.Id, r.SpeakerId, r.SpeakerName, r.SpeakerNameArabic,
             r.RequestedByUserId, r.RequesterName,
-            r.Subject, r.Status, r.ResponseNote, r.CreatedAt, r.RespondedAt))
+            r.Subject, r.Status, r.ResponseNote, r.CreatedAt, r.RespondedAt,
+            r.CheckedInAt, ResolveOperatorName(operatorNames, r.CheckedInByUserId)))
             .ToList();
         return GridPage<AdminSpeakerMeetingRequestRow>.Of(items, total,
             skip, top);
@@ -1019,6 +1034,16 @@ internal sealed class SpeakerMeetingRequestService(
 
     // Loads the admin detail (speaker name from the App DB + requester email
     // resolved on read from the Identity DB — no cross-DB JOIN, D-157).
+    /// <summary>OA-D5 — the check-in operator's display name for one row, or null
+    /// when the meeting has not been checked in (or the operator account is gone).
+    /// The map comes from the single per-page Identity-DB lookup above.</summary>
+    private static string? ResolveOperatorName(
+        IReadOnlyDictionary<Guid, string> namesByUserId, Guid? checkedInByUserId)
+    {
+        if (checkedInByUserId is not { } userId) { return null; }
+        return namesByUserId.TryGetValue(userId, out var name) ? name : null;
+    }
+
     private async Task<AdminSpeakerMeetingRequestDetail> LoadDetailAsync(
         Guid id, CancellationToken cancellationToken)
     {

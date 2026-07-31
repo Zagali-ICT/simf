@@ -1564,6 +1564,19 @@
   <data name="Auth.Totp.SignedInAs" xml:space="preserve"><value>تم تسجيل الدخول باسم {0}.</value></data>
   <data name="Auth.Totp.BackToSignIn" xml:space="preserve"><value>العودة إلى تسجيل الدخول</value></data>
 
+  <data name="Auth.Enrol2fa.PageTitle" xml:space="preserve"><value>إعداد المصادقة الثنائية</value></data>
+  <data name="Auth.Enrol2fa.Title" xml:space="preserve"><value>إعداد المصادقة الثنائية</value></data>
+  <data name="Auth.Enrol2fa.Supporting" xml:space="preserve"><value>تتطلّب لوحة التحكم تطبيق مصادقة. أكمل الإعداد الآن لإتمام تسجيل الدخول.</value></data>
+  <data name="Auth.Enrol2fa.Instruction" xml:space="preserve"><value>امسح رمز QR بتطبيق المصادقة لديك، ثم أدخل الرمز المكوّن من ستة أرقام الذي يعرضه.</value></data>
+  <data name="Auth.Enrol2fa.SecretHint" xml:space="preserve"><value>تعذّر المسح؟ أدخل هذا المفتاح في التطبيق بدلاً من ذلك.</value></data>
+  <data name="Auth.Enrol2fa.Code" xml:space="preserve"><value>رمز التحقق</value></data>
+  <data name="Auth.Enrol2fa.Submit" xml:space="preserve"><value>تأكيد وتسجيل الدخول</value></data>
+  <data name="Auth.Enrol2fa.Submitting" xml:space="preserve"><value>جارٍ التأكيد</value></data>
+  <data name="Auth.Enrol2fa.Loading" xml:space="preserve"><value>جارٍ تجهيز إعداد المصادقة.</value></data>
+  <data name="Auth.Enrol2fa.Fallback" xml:space="preserve"><value>تعذّر إكمال إعداد المصادقة الثنائية. سجّل الدخول مرة أخرى للبدء من جديد.</value></data>
+  <data name="Auth.Enrol2fa.RecoveryShowOnce" xml:space="preserve"><value>احفظ رموز الاسترداد الآن — تُعرض مرة واحدة فقط، ويُستخدم كل رمز مرة واحدة إذا فقدت تطبيق المصادقة.</value></data>
+  <data name="Auth.Enrol2fa.Continue" xml:space="preserve"><value>حفظتها — متابعة</value></data>
+
   <data name="Auth.Forgot.Title" xml:space="preserve"><value>نسيت كلمة المرور</value></data>
   <data name="Auth.Forgot.Supporting" xml:space="preserve"><value>أدخل بريدك الإلكتروني وسنرسل رمز إعادة تعيين إذا كان الحساب موجودًا.</value></data>
   <data name="Auth.Forgot.Submit" xml:space="preserve"><value>إرسال رمز إعادة التعيين</value></data>

@@ -1,9 +1,13 @@
 # Accessibility — إمكانية الوصول (Page 038, `#38`)
 
 - **Route:** `/settings/accessibility` (`RouteNames.accessibility`). Access:
-  **Guest+**. No API — all state is prefs-backed and applied app-wide.
+  **Guest+**. State is prefs-backed and applied app-wide; for a **signed-in**
+  account it is also synced to the server (`accessibility-server-sync`, below).
+- **API:** `GET` / `PUT /api/v1/app/account/preferences` (signed-in only;
+  best-effort — the screen never blocks on either call).
 - **Figma:** **1116:16630** (built D-314; persisted + applied app-wide D-327;
-  screen-reader/captions wired D-465). **Clean-code freeze:** D-640 (2026-07-04).
+  screen-reader/captions wired D-465; server-synced 2026-07-30).
+  **Clean-code freeze:** D-640 (2026-07-04).
 
 ## Purpose
 
@@ -20,10 +24,31 @@ the navigation announcer (`router.dart`) and fires an immediate
 `SemanticsService` announcement on enable, and the captions switch gates the
 live-broadcast caption strip.
 
+## Server sync (`accessibility-server-sync`, 2026-07-30)
+
+The five flags were device prefs **only**, so they did not follow the user to a
+second device and did not survive a reinstall. They are now account settings:
+
+- **Write-through.** Every setter pushes the whole `AccessibilitySettings` to
+  `PUT /app/account/preferences` (`AccessibilityPreferencesRepository`).
+  `textSize` travels as the stable enum **name**, never an index.
+- **Hydrate at sign-in.** `AccessibilitySync.hydrate()` runs from
+  `routeAfterAuth` — the one seam every sign-in path (password, 2FA completion,
+  badge password) already goes through — and replays the account copy onto the
+  device, writing prefs too so the next cold start reads it instantly.
+- **Prefs stay the offline cache and the only READ path**, so the app renders
+  the right scale on the first frame, offline, before any network call.
+- **Both directions swallow their failures by contract.** A sync failure must
+  never disturb the choice the user just made, and must never fail a sign-in;
+  the same rule `OrgProfileController.warm()` already follows. If the API half
+  is not deployed, the screen degrades to exactly the pre-change behaviour.
+
 ## Structure (post-decomposition)
 
 | File | Holds |
 |------|-------|
+| `data/accessibility_preferences_repository.dart` | `AccessibilityPreferencesRepository` — the `GET`/`PUT /app/account/preferences` pair + the tolerant `decode` (every field optional, defaults to the shipped value). |
+| `data/accessibility_controller.dart` | `AccessibilityController` (prefs read/write + write-through) + `AccessibilitySync` (hydrate at sign-in). |
 | `accessibility_screen.dart` (89) | `AccessibilityScreen` (`ConsumerWidget`) — the shell + the two sections composing the widgets; the screen-reader `SemanticsService` announcement stays here (it needs the `BuildContext`). |
 | `widgets/accessibility_font_size_card.dart` (`AccessibilityFontSizeCard` + `_SizeChip`) | The حجم الخط card + one gold/outline pill. |
 | `widgets/accessibility_toggle_row.dart` (`AccessibilityToggleRow`) | One navy-deep labelled switch row (title + gold `Switch`, `hint` as a semantics hint). |

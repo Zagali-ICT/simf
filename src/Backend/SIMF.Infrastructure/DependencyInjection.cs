@@ -255,6 +255,11 @@ public static class DependencyInjection
         // Issue-1 — resolves a user's permission codes from their roles for
         // the `perm` claim baked into the JWT (Administrator → wildcard).
         services.AddScoped<IPermissionResolver, PermissionResolver>();
+        // itokenissuer-extraction — the one place a session is minted. The
+        // password sign-in, the badge-QR sign-in (which delegates to it) and the
+        // device-key ceremony all resolve this, so the claim set and the D-443
+        // absolute session cap cannot drift between entry points.
+        services.AddScoped<ITokenIssuer, TokenIssuer>();
         services.AddScoped<ISignInService, SignInService>();
         services.AddScoped<ISessionService, SessionService>();
         services.AddScoped<IPasswordService, PasswordService>();
@@ -336,6 +341,11 @@ public static class DependencyInjection
         // P5.1 — D-241: attendee-facing hall arrival/departure via GPS geofence.
         services.AddScoped<SIMF.Application.Programme.Abstractions.IHallAttendanceService,
             SIMF.Infrastructure.Programme.HallAttendanceService>();
+        // FR-1103 (Q6): movement / dwell / route tracking — the periodic
+        // device-position capture path plus its two aggregate reads. Inert until a
+        // hall is given a geofence boundary from the CP.
+        services.AddScoped<SIMF.Application.Programme.Abstractions.IMovementTrackingService,
+            SIMF.Infrastructure.Programme.MovementTrackingService>();
         // D-568 (Wave C S7): recordings now live in the unified StoredFile store;
         // SessionRecordingStorageOptions is kept only for the upload endpoint's
         // MaxUploadBytes ceiling (the bespoke recording store is gone).
@@ -362,6 +372,14 @@ public static class DependencyInjection
         // #6/#17 — releases seats reserved by no-shows (no check-in) 3 minutes
         // before the session starts, freeing capacity for others.
         services.AddHostedService<SIMF.Infrastructure.Operations.ReservationNoShowReleaseWorker>();
+        // FR-903 — "the session started and you have not arrived": nudges holders of
+        // an active reservation with no HallAttendance row, a few minutes after the
+        // session starts. Sibling of the no-show release worker, which frees the
+        // seat but notifies nobody.
+        services.AddHostedService<SIMF.Infrastructure.Operations.SessionNotAttendedReminderWorker>();
+        // FR-803 — pushes a "you match this attendee" invitation for every candidate
+        // the recommendation engine scores at or above the 80% threshold.
+        services.AddHostedService<SIMF.Infrastructure.Operations.MatchRecommendationPushWorker>();
         // End-of-session "please rate this session" prompt worker.
         services.AddHostedService<SIMF.Infrastructure.Operations.SessionRatingPromptWorker>();
         // D-679 — end-of-day + end-of-programme rating prompt worker.
@@ -696,6 +714,12 @@ public static class DependencyInjection
             configuration.GetSection(FaceDetectionOptions.SectionName));
         services.AddSingleton<IFaceDetectionService, FaceAiSharpFaceDetectionService>();
         services.AddScoped<IInterestService, InterestService>();
+        // `sms-whatsapp-channels` — the dispatcher delivers through the registered
+        // INotificationChannel set (ascending Order: in-app 0, email 10) instead of
+        // two hard-coded deliveries. An SMS / WhatsApp channel is one more line here
+        // once a gateway is procured (owner-action); no dispatcher change.
+        services.AddScoped<INotificationChannel, InAppNotificationChannel>();
+        services.AddScoped<INotificationChannel, EmailNotificationChannel>();
         services.AddScoped<INotificationDispatcher, NotificationDispatcher>();
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<INotificationBroadcastService,

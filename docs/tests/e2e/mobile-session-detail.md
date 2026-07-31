@@ -96,10 +96,10 @@
 | E2E-MOB017-009 | `تذكير` — interim notice (real scheduling deferred to the notifications pass) | happy | P2 | authored ✓ (screen — `Reminder shows the deferred-notice toast`, D-300) |
 | E2E-MOB017-010 | Stale tap onto a soft-deleted session → detail 404 → "not found" state | error | P1 | authored ✓ (`ProgrammeSessionsTests` 404 + screen `a 404 shows the not-found state`) |
 | E2E-MOB017-011 | RTL render; the row letter + seat number are LTR inside the Arabic line | i18n | P1 | authored (screen RTL-primary; LTR row/seat deferred to designer) |
-| E2E-MOB017-012 | Header card — gold index badge (code, LTR), title, clock/calendar meta line, action buttons (no tag pills) | happy | P0 | authored ✓ (Figma 889:2716 re-skin) |
+| E2E-MOB017-012 | Header card — gold index badge (code, LTR), title, the category tag pill (PAR-D3, when the session has a category), clock/calendar meta line, action buttons | happy | P0 | authored ✓ (Figma 889:2716 re-skin; pill restored by PAR-D3 — see E2E-MOB017-033) |
 | E2E-MOB017-013 | وصف الجلسة / Description card renders the localized description; hidden when null | happy | P1 | authored ✓ (Figma 889:2719 re-skin) |
 | E2E-MOB017-014 | المتحدثون speaker card → 40×40 photo + country flag beside the name | happy | P0 | authored ✓ (Figma 889:2722 re-skin; photo+flag) |
-| E2E-MOB017-015 | المتحدثون host card → المضيف/Host sub-line (`SessionSpeakerRole.host`) | happy | P0 | authored ✓ (Figma 889:2737 re-skin; real role) |
+| E2E-MOB017-015 | المتحدثون host card → المضيف/Host sub-line (`SessionSpeakerRole.host`), now carrying the gold **star** glyph (PAR-P4a — see E2E-MOB017-034) | happy | P0 | authored ✓ (Figma 889:2737 re-skin; real role) |
 | E2E-MOB017-016 | **Reservation card (D-485)** — a held (provisional) booking shows الصف · مقعد (or "general admission" for an open-seating join) + a "show your badge at the gate" check-in hint + a Cancel action; a seat booking's chevron/marker opens the seat map (18), an open-seating join has no map link | happy | P1 | authored ✓ (widget — reservation card: seat/general-admission + check-in hint + cancel) |
 | E2E-MOB017-017 | CTA row — تذكير (outlined) + أضف إلى تقويمي (gold) order and toasts | happy | P1 | authored ✓ (Figma 897:2872 re-skin) |
 | E2E-MOB017-018 | رابط الجلسة — **state-gated (owner 2026-07-14)**: both header buttons keep their slots, but رابط الجلسة is ACTIVE only while the session is LIVE **and** carries a `liveStreamUrl` (streaming) — greyed/inert otherwise; when active it opens Live (25) | happy | P1 | authored ✓ (`…session link opens the live screen while the session is live + streaming`; body-gate tests future+feed→inactive) |
@@ -116,6 +116,10 @@
 | E2E-MOB017-029 | **DEF-MOD-003/004 — the attendee-only affordances are not offered to an operational role:** the اسأل المحاور card and the Join / my-seat section open routes gated to Visitor+Exhibitor (#26 send-question, #18 my-seat, #109 seat picker), so a signed-in **Staff / Moderator** is shown neither (their seat map is not even fetched). A **guest** still sees the ask card DISABLED — that is the sign-in nudge, not a dead control. The routing rule is unchanged; the UI now matches it (`routeAllowsRole`) | auth | P0 | authored ✓ (screen `DEF-MOD-003/004: a MODERATOR is offered neither the ask card nor the join CTA`; body `DEF-MOD-003: a role that cannot open send-question is not offered the ask card at all`) |
 | E2E-MOB017-030 | **DEF-MOD-008 — the moderate action reads the ROUTER's effective role:** an **unapproved** moderator (D-666: presents as guest via `effectiveAppRole`) is NOT shown the "إدارة الأسئلة" Q&A-desk action; an approved moderator still is. Previously the screen read the raw `appRole` and the router bounced the tap to Home | auth | P0 | authored ✓ (screen `DEF-MOD-008: an UNAPPROVED moderator is not shown the Q&A desk action`) |
 | E2E-MOB017-028 | **Seat-map load failure retry (#18, owner 2026-07-21):** an **approved** attendee whose seat-map fetch FAILS (transport / 5xx) gets a "seat map failed to load" error + a **Retry** where the Join CTA would be — instead of a silently-absent Join button — and Retry re-runs the load. Distinct from E2E-MOB017-024: an approved account reaches the seat endpoint, so a null map means the fetch failed (not the guest/pending 403 that legitimately hides the join). Not offered on an ENDED session. | error | P1 | authored ✓ (screen `#18 — an approved account whose seat map FAILS…`; body `#18 seat-map load failure` ×2) |
+| E2E-MOB017-032 | **Workshop detail is title + time ONLY (#29, owner Q10 2026-07-30):** when the detail's `type` is `Workshop` the body renders the header card reduced to its title + time meta — no description, no speakers, no اسأل المحاور card, no seat/join section, no CTA row and no ملخص الجلسة / رابط الجلسة actions. Any other type (or a `null` type from an older API) renders the full detail unchanged | happy | P0 | authored ✓ (body `#29 workshop reduction` ×3; header card `titleAndTimeOnly drops the pill and the action row`; model `the session type decodes from the int OR the name wire form`) |
+| E2E-MOB017-033 | **Category tag pill (PAR-D3):** a small gold-hairline pill under the header-card title carrying `localizedCategory(isArabic)`; rendered only when the session carries a category (the `SessionCategory` lookup ships empty pending the client's list, OI-2 / D-226), so an uncategorised session keeps the pre-PAR-D3 layout. Suppressed on the #29 workshop reduction | happy/i18n | P1 | authored ✓ (header card `SessionHeaderCard category pill (PAR-D3)` ×5) |
+| E2E-MOB017-034 | **Host star glyph (PAR-P4a):** a speaker whose per-session role is `Host` shows the gold star glyph beside the المضيف / Host marker on the speaker card's rank line; a plain speaker shows neither. Fulfils the promise the speakers-LIST card's own doc comment already made (D-432: the host star appears on the session detail) | happy | P1 | authored ✓ (`SessionSpeakerCard host marker (PAR-P4a)` ×4) |
+| E2E-MOB017-035 | **Geofence self check-in — "أنا هنا / I'm here" (`geofence-self-checkin`, FR-305/506, D-241; owner Q6 2026-07-30):** the action posts the device position to `POST /app/sessions/{id}/arrival` and renders the returned `HallAttendanceStatus` — an arrival flips the control to "تسجيل المغادرة / Check out" and shows the recorded arrival time on the Saudi clock; `HALL_GEOFENCE_NOT_CONFIGURED` reads as "no boundary set yet" (the expected state until a hall is given one in the CP), `NOT_AT_VENUE` as "outside the hall boundary", and every other refusal shows the server's own bilingual message. With no location capability nothing is posted and the message says so — never "outside the hall" | happy/edge | P1 | authored ✓ (widget — `session_arrival_action_test.dart`, 8 widget cases + 3 decode cases) |
 | E2E-MOB017-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-MOB017-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -552,9 +556,94 @@ Scenario: An unapproved moderator is not offered the desk
   # Previously it was shown and the router bounced the tap back to Home.
 ```
 
+### E2E-MOB017-032 — A workshop's detail is its title + time only (#29)
+
+```gherkin
+Scenario: A WORKSHOP shows only what it is and when it runs
+  Given the session "ورشة السلامة البحرية" (code W-1) is typed Workshop
+    And it carries a description, two speakers, a live feed and an open seat map
+  When an approved visitor opens /sessions/{id}
+  Then the header card shows the title and the 09:00 — 10:30 · الاثنين · 23 نوفمبر meta
+    And NO "وصف الجلسة / Description" card is shown
+    And NO "المتحدثون / Speakers" section is shown
+    And NO "اسأل المحاور" card is shown
+    And NO Join CTA and no مقعدي card are shown
+    And NO "ملخص الجلسة" / "رابط الجلسة" buttons are shown
+    And NO "أضف إلى تقويمي" / "تذكير" CTA row is shown
+    And a pull-down still re-fetches the session (the short page stays scrollable)
+
+Scenario: A regular session is untouched
+  Given the same session typed Session (or Event)
+  When the visitor opens /sessions/{id}
+  Then the full detail renders exactly as before (description, speakers, join, actions)
+
+Scenario: An older API that sends no type renders the full detail
+  Given the detail payload carries no "type" field
+  When the visitor opens /sessions/{id}
+  Then the full detail renders (the reduction is opt-in on an explicit Workshop)
+```
+
+**Evidence:** `SessionDetailBody.build` returns `_workshopBody()` on
+`detail.type == SessionType.workshop`; `SessionHeaderCard.titleAndTimeOnly` drops the
+pill + the action row. Owner decision Q10 (2026-07-30): the **CP half reuses the
+existing session admin** — no new CP surface, so this is app-only.
+
+### E2E-MOB017-033 — Category tag pill under the title (PAR-D3)
+
+```gherkin
+Scenario: A categorised session shows its category pill
+  Given the session "الجلسة الافتتاحية" is in the category "جلسة رئيسية" / "Main Session"
+  When a visitor opens /sessions/{id} in Arabic
+  Then a small gold-hairline pill reading "جلسة رئيسية" sits under the title
+    And switching the app to English renders "Main Session" in the same pill
+
+Scenario: An uncategorised session shows no pill
+  Given the session has no category (the SessionCategory lookup is empty — OI-2)
+  When a visitor opens /sessions/{id}
+  Then no pill is rendered and the header card keeps its previous layout
+
+Scenario: A workshop never shows the pill
+  Given the session is typed Workshop and carries a category
+  Then no pill is rendered (#29 reduction — see E2E-MOB017-032)
+```
+
+**Evidence:** `SessionHeaderCard` builds `_CategoryPill` from
+`detail.localizedCategory(isArabic)?.trim()`. **Reverses the D-449 re-skin note above**
+("the prior hall/category tag pills are removed") on the parity audit's finding
+(`FIGMA-PARITY-DEFECTS.md` PAR-D3) that the session-type / category tag is missing from
+the detail. Only the **category** pill is restored — the hall name stays off the card.
+
+### E2E-MOB017-034 — Host star glyph on the speaker card (PAR-P4a)
+
+```gherkin
+Scenario: The session host is marked with a star
+  Given the session has a speaker whose per-session role is Host
+  When a visitor opens /sessions/{id}
+  Then that speaker's rank line reads "<rank> · ★ المضيف" with the star in gold
+    And a speaker whose role is Speaker shows neither the star nor المضيف
+
+Scenario: A host with no rank still gets the marker
+  Given the host has no rank/title recorded
+  Then the rank line shows only "★ المضيف"
+```
+
+**Evidence:** `SessionSpeakerCard` renders `Icons.star_rounded` in
+`SimfTokens.accent` before `hostLabel` when
+`speaker.role == SessionSpeakerRole.host`. The speakers-LIST card
+(`speaker_list_card.dart`) keeps the anchor for everyone — D-432: the host/speaker
+distinction is per-session, and its doc comment already promised the star lives here.
+
 ---
 
-_Last reviewed:_ `2026-07-26` by `Claude` — **DEF-MOD-003/004/008: the ask card and
+_Last reviewed:_ `2026-07-30` by `Claude` — **#29 / PAR-D3 / PAR-P4a: a Workshop's
+detail is reduced to its title + time block (owner Q10 — the CP half reuses the
+existing session admin); the category tag pill is restored under the header-card
+title (reversing the D-449 "tag pills removed" note on the parity audit's finding);
+and the session host now carries the gold star glyph beside المضيف. New
+E2E-MOB017-032/-033/-034; rows 012 + 015 updated. The
+`goldens/session_detail_889-2450.png` fixture is categorised, so it re-locks with the
+new pill.**
+_Prior:_ `2026-07-26` by `Claude` — **DEF-MOD-003/004/008: the ask card and
 the join / my-seat section are gated with `routeAllowsRole` (the router's own table)
 so an operational role is never offered a control that bounces; the screen now reads
 `effectiveAppRole` (the router's role) instead of the raw `appRole`. New
@@ -577,7 +666,78 @@ hall gate on check-in (`CheckedIn`), with a pre-start sweep releasing any hold n
 checked in. No `BookingConfirmed` on reserve; the app shows an inline success message.
 The old CP approval queue is retained but dormant (always empty). Scenarios 016 / 022 /
 025 reworded off the "pending approval" copy.**
-_Last reviewed:_ `2026-07-27` by `Claude` — **A8 / DEF-SEA-003: the join confirm
+### E2E-MOB017-035 — Geofence self check-in (`geofence-self-checkin`)
+
+```gherkin
+Feature: Attendee hall self check-in
+  As an attendee standing in the session hall
+  I want to record my own arrival from my phone
+  So that attendance does not depend on finding a door operator
+
+Background:
+  Given a signed-in, approved attendee on a session detail
+  And the session is inside its arrival window
+
+Scenario: Arrival inside the hall boundary is recorded
+  Given the session's hall has a geofence and the device is inside it
+  When the attendee taps "I'm here"
+  Then the device position is posted to POST /app/sessions/{id}/arrival
+  And the response's arrival state is rendered
+  And the control becomes "Check out"
+  And the recorded arrival time is shown on the Saudi wall clock (UTC+3)
+
+Scenario: Checking out closes the attendance row
+  Given the attendee has an open arrival on this session
+  When the attendee taps "Check out"
+  Then POST /app/sessions/{id}/departure is called
+  And the control returns to "I'm here"
+
+Scenario: A hall with no boundary is not an error
+  Given the session's hall has no lat/lon/radius configured
+  When the attendee taps "I'm here"
+  Then the server answers HALL_GEOFENCE_NOT_CONFIGURED
+  And the message reads "This hall has no boundary configured yet."
+  And the "I'm here" control stays available
+  # The feature is deliberately inert until a hall is given a boundary in the
+  # Control Panel — this is the expected state, not a defect (owner Q6).
+
+Scenario: Standing outside the radius says so
+  Given the device is outside the hall radius
+  When the attendee taps "I'm here"
+  Then the server answers 403 NOT_AT_VENUE
+  And the message reads "You are outside the hall boundary. Move closer and try again."
+
+Scenario: Outside the session window shows the server's own message
+  When the attendee taps "I'm here" outside the session's arrival window
+  Then the server answers 409 SESSION_NOT_LIVE
+  And the server's bilingual message is shown verbatim
+
+Scenario: No location capability never reads as "outside the hall"
+  Given the device location read returns unavailable or denied
+  When the attendee taps "I'm here"
+  Then NO position is posted
+  And the message reads "Location permission is required to check in."
+```
+
+**Evidence:** `test/features/sessions/widgets/session_arrival_action_test.dart`
+— eight widget cases (arrival, check-out, already-arrived mount, the three
+server refusals, the two location-unavailable cases, Arabic wording) plus three
+`HallAttendanceStatus` wire-decode cases (int form, name form, unknown → null).
+
+**Known gap (reported, not silently shipped):** this build carries **no
+location plugin**, so `DeviceLocation` (`lib/core/location/device_location.dart`)
+answers `unavailable` and the action always takes the "location required" path
+on a real device. Adding a real reader is a one-provider override — but it also
+adds `ACCESS_FINE_LOCATION` to the Android manifest and an
+`NSLocationWhenInUseUsageDescription` to `Info.plist`, which is store-review and
+NCA-disclosure surface, so it is an owner decision rather than a code one.
+
+---
+
+_Last reviewed:_ `2026-07-30` by `SIMF Team` — **`geofence-self-checkin`: the
+attendee-facing arrival/departure half of D-241 is built (repository + action
+widget + tests); added E2E-MOB017-035.**
+_Prior:_ `2026-07-27` by `Claude` — **A8 / DEF-SEA-003: the join confirm
 dialog no longer promises an approval step. `joinConfirmBody` (AR + EN) now says the
 registration is immediate, does not reserve a specific seat, and is confirmed at
 check-in — matching `joinOpenSuccessBody` and the as-built auto-confirm behaviour.

@@ -2,7 +2,10 @@
 //        idempotency, D-377 baseline lookups + core content,
 //        D-390 2FA-disable-persists-across-reseed, D-585 demo-account matrix);
 //        SIMF.Api.Tests/DemoAccountSeedGateTests.cs (Round-1 #1 — demo seed is
-//        a no-op outside Development / with Seed:EnableDemoAccounts off)
+//        a no-op outside Development / with Seed:EnableDemoAccounts off);
+//        SIMF.Api.Tests/SuperAdminSeedFailureTests.cs (OP-SUPERADMIN-SEED — a
+//        policy-violating temp password throws in Production, logs-and-skips
+//        in Development)
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
@@ -595,9 +598,29 @@ public sealed class IdentitySeeder(
         var result = await accounts.CreateAsync(admin, settings.TempPassword);
         if (!result.Succeeded)
         {
-            logger.LogError(
-                "Super-admin seed failed: {Errors}",
-                string.Join("; ", result.Errors.Select(error => error.Description)));
+            var reasons = string.Join("; ", result.Errors.Select(error => error.Description));
+            logger.LogError("Super-admin seed failed: {Errors}", reasons);
+
+            // OP-SUPERADMIN-SEED (2026-07-30) — this used to log and return null,
+            // and the caller returned too, so the API booted normally with NO
+            // super-admin and a Control Panel nobody could sign into — discovered
+            // only when someone tried. Program.cs does fail fast in Production, but
+            // only for the exact committed DEFAULT temp password; a CUSTOM password
+            // that merely violates the policy sails past that guard into this path.
+            //
+            // In Production a bootstrap account that cannot be created is a failed
+            // deployment, so fail the boot and name the policy rule that broke, so
+            // the operator can correct the configured value instead of guessing.
+            // Outside Production the log-and-skip stands: a developer on a
+            // half-configured box should still be able to start the app.
+            if (hostEnvironment.IsProduction())
+            {
+                throw new InvalidOperationException(
+                    "The super-administrator account could not be seeded, so the "
+                    + "Control Panel would have no way in. The configured "
+                    + "SuperAdmin:TempPassword was rejected: " + reasons
+                    + ". Set a compliant value and restart.");
+            }
             return null;
         }
 

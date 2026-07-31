@@ -92,7 +92,7 @@ file sealed class FakeSessions(params PublicSessionListItem[] items)
     : IProgrammeSessionService
 {
     public Task<PublicSessions> ListAsync(
-        DateOnly? day, CancellationToken cancellationToken = default) =>
+        DateOnly? day, Guid? categoryId = null, CancellationToken cancellationToken = default) =>
         Task.FromResult(new PublicSessions(items));
 
     // Unused by the context builder.

@@ -32,6 +32,7 @@
 | E2E-MOB031-006 | Tab hub: tapping احدث المستجدات navigates to the news screen | nav | P1 | authored ✓ (screen `tapping the Latest-updates tab navigates to the news route`) |
 | E2E-MOB031-007 | Arabic/RTL: tabs lay out partners (right) → latest-updates (left) | rtl | P0 | authored ✓ (screen `lays the tabs partners→latest right-to-left in Arabic`) |
 | E2E-MOB031-008 | Pressing a partner card opens the logo full size (FR-LGO-003) | happy | P1 | authored ✓ (widget test) |
+| E2E-MOB031-009 | **The tab label is ONE centred line (PAR-P1a, re-confirmed against Figma 1049:12629 on 2026-07-30):** both pills are 48 high and each label is a single 15px-high line, vertically centred (`الشركاء الإعلاميون` = 94×15 at y 16.5 inside the 163.5-wide button; `احدث المستجدات` = 92×15). The label therefore fits without wrapping or truncating and `maxLines: 1` is the frame-accurate setting — the old "Figma shows 2 lines" note predates the 1049 re-frame (which dropped the معرض الصور tab) and is stale | display | P2 | authored ✓ (no code change — see the closure note below) |
 | E2E-MOB031-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-MOB031-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -89,7 +90,34 @@ Scenario: One target, not two nested ones
 target that opens the logo full size", "FR-LGO-003 — the logo box does not claim a
 second, nested tap target".
 
+### E2E-MOB031-009 — The tab label is one centred line (PAR-P1a — closed, no code change)
+
+```gherkin
+Scenario: The active tab label renders on a single centred line
+  Given the guest is on /media-partners in Arabic
+  Then the "الشركاء الإعلاميون" pill is 48 high with a solid gold fill
+  And its label renders as ONE centred line
+  And the label is not truncated with an ellipsis
+  And the same holds for the inactive "احدث المستجدات" pill
+```
+
+**Evidence (Figma, re-read 2026-07-30):** frame `1049:12629` →
+`1049:12639` "Frame 427322018" (343×48) holds two 163.5×48 buttons; their text
+nodes are `1049:12643` "الشركاء الإعلاميون" **94×15 at y 16.5** and `1049:12641`
+"احدث المستجدات" **92×15**. A 15px-high text node is a single line (two would be
+~30), and both are centred in the 48-high pill with equal space above and below.
+The labels are also ~70px narrower than their button, so nothing truncates.
+
+**Closure:** PAR-P1a asked to raise the label to `maxLines: 2`. The frame it
+cites shows one line, so `media_coverage_tabs.dart`'s existing `maxLines: 1` +
+`TextOverflow.ellipsis` is already frame-accurate and **no code changed**. The
+register's own caveat was right — the strip was rebuilt against the newer 1049
+frame (two tabs, معرض الصور dropped) after the parity log was written, so the
+two-line expectation came from the superseded frame.
+
 ---
 
-_Last reviewed:_ `2026-07-27` by `SIMF Team` — added E2E-MOB031-008 for FR-LGO-003
+_Last reviewed:_ `2026-07-30` by `Claude` — added E2E-MOB031-009 for PAR-P1a,
+closed as **not a defect** after re-reading Figma 1049:12629 (single-line labels).
+_Prior:_ `2026-07-27` by `SIMF Team` — added E2E-MOB031-008 for FR-LGO-003
 (the card-wide press-to-enlarge). _Prior:_ `2026-06-19` by `SIMF Team`.

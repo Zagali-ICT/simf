@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
+| **Last reviewed** | 2026-07-31 (`FR-1203-markdown-render` — content is plain text) |
 
 > **Page summary.** The Content blocks page (D-173, gap doc G8, PDF §1, §2.1)
 > is the dynamic-CMS admin surface: editable key/value text blocks (welcome
@@ -72,6 +72,7 @@
 | E2E-CNT-018 | Excel export — whole filtered grid vs selected rows (D-356) | happy | P1 | _to author_ |
 | E2E-CNT-019 | Excel import — upload workbook → result modal "N created…" + per-row error (D-356) | happy | P1 | _to author_ |
 | E2E-CNT-020 | Excel import rejection — non-.xlsx / wrong-sheet upload → 400 + bilingual toast, nothing created (D-356) | error | P1 | _to author_ |
+| E2E-CNT-021 | Content is **plain text, not markdown or HTML** — a `<script>` payload round-trips as visible text on the CP pane, the Website and the app | security | P0 | authored ✓ (`ContentBlockPlainTextContractTests`) |
 | E2E-CNT-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-CNT-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -480,6 +481,53 @@ Scenario: A bad upload is rejected without creating anything
   # upload (ZIP-magic + 5MB gate) with HTTP 400; OnExcelError sets an error Toast.
 ```
 
+### E2E-CNT-021 — Content is plain text, not markdown or HTML (FR-1203)
+
+```gherkin
+Feature: A content block is text, and nothing renders it as markup
+  ContentBlock's XML doc said "markdown allowed" while no surface rendered
+  markdown. The ruling (2026-07-30) was to correct the CONTRACT, not to build a
+  renderer: every key in use is a short plain-text field (an eyebrow, a heading,
+  a counter, a button label), rendering markdown would change what already-seeded
+  production copy looks like, and it would mean injecting HTML built from an
+  admin-editable field into a public page that today has no such path.
+
+Background:
+  Given the administrator is on /admin/content-blocks
+
+Scenario: an HTML payload is stored and shown back as text
+  When they create the block "qa.plaintext.probe" with English content:
+    """
+    <script>alert('xss')</script> **bold** # heading
+    """
+  Then the save succeeds
+  And the grid's English preview shows that text literally, including the angle brackets
+  And the Details pane shows it literally
+  And the page's DOM contains NO <script> element
+  And the browser console reports zero errors
+
+Scenario: the public Website shows the same text, still as text
+  Given the block is bound to a landing key the hydrator reads
+  When an anonymous visitor loads "/"
+  Then the rendered section shows the markup as visible characters
+  And the page's DOM contains NO <script> element originating from that value
+  And no '#' or '**' has been interpreted as formatting
+
+Scenario: the Flutter app shows the same text, still as text
+  When the app reads the block through GET /api/v1/content/{key}
+  Then the string is rendered in a Text widget exactly as stored
+
+  # Cleanup: soft-delete "qa.plaintext.probe" when the sweep finishes.
+```
+
+> **Unit backing.** `ContentBlockPlainTextContractTests` proves the CP half by
+> rendering `ContentBlockViewDelete` with the payload above (no `<script>`
+> element, `&lt;script&gt;` in the markup, the exact text in `textContent`), and
+> ratchets the other two halves at source: no `(MarkupString)` cast anywhere in
+> the CP, the Website or the shared components wraps anything but a
+> server-generated SVG, and `site-content.js` keeps its five-replacement `esc()`,
+> its `textContent` single-value path and exactly four `innerHTML` sinks.
+
 ---
 
 ## Implementation notes
@@ -520,4 +568,4 @@ Scenario: A bad upload is rejected without creating anything
 
 ---
 
-_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle): added E2E-CNT-015..020 (presentation toggle, full-page round-trip, CrudShell+SimfConfirm delete gate, Excel export, Excel import, Excel import rejection); prior review 2026-06-03 (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-07-31 by Claude (`FR-1203-markdown-render` — added E2E-CNT-021, content is plain text on every surface); prior review 2026-06-10 (D-356 Phase 5 — Excel + toggle): added E2E-CNT-015..020 (presentation toggle, full-page round-trip, CrudShell+SimfConfirm delete gate, Excel export, Excel import, Excel import rejection); prior review 2026-06-03 (D-256/D-257 grid affordances reconciled).

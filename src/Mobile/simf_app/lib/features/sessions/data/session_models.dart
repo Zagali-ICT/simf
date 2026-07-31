@@ -388,6 +388,7 @@ class SessionDetail {
     this.categoryId,
     this.categoryName,
     this.categoryNameArabic,
+    this.type,
     this.liveStreamUrl,
     this.displayOrder = 0,
   });
@@ -407,6 +408,12 @@ class SessionDetail {
   final String? categoryId;
   final String? categoryName;
   final String? categoryNameArabic;
+
+  /// #29 — the session's kind (the same wire field the list carries, D-452). A
+  /// **workshop** detail is reduced to its title + time only (no description,
+  /// speakers, seat/join block or live/summary actions). Null on an older API
+  /// or an untyped session, which renders the full detail as before.
+  final SessionType? type;
 
   /// The live-broadcast feed URL (YouTube / direct HLS·MP4 — D-349), or null
   /// when the session has no live feed. Drives the Figma 889:2450 **رابط
@@ -458,6 +465,7 @@ class SessionDetail {
         categoryId: json['categoryId'] as String?,
         categoryName: json['categoryName'] as String?,
         categoryNameArabic: json['categoryNameArabic'] as String?,
+        type: SessionType.fromJson(json['type']),
         liveStreamUrl: json['liveStreamUrl'] as String?,
         displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
       );

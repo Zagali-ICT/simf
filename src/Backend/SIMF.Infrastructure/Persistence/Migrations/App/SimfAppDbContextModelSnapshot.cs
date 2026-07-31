@@ -4317,6 +4317,45 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         });
                 });
 
+            modelBuilder.Entity("SIMF.Domain.Programme.DevicePositionPing", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<double?>("AccuracyMeters")
+                        .HasColumnType("float");
+
+                    b.Property<DateTimeOffset>("CapturedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("HallId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<double>("Latitude")
+                        .HasColumnType("float");
+
+                    b.Property<double>("Longitude")
+                        .HasColumnType("float");
+
+                    b.Property<Guid?>("SessionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HallId", "CapturedAt");
+
+                    b.HasIndex("UserId", "CapturedAt");
+
+                    b.ToTable("DevicePositionPings", (string)null);
+                });
+
             modelBuilder.Entity("SIMF.Domain.Programme.HallAttendance", b =>
                 {
                     b.Property<Guid>("Id")

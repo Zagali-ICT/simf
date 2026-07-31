@@ -38,6 +38,12 @@ public static class AuditEvents
     // single-use password-change ticket (in place of the 403). The completion is
     // audited as PasswordChanged, like any other password change.
     public const string SignInPasswordChangeTicketIssued = "SignIn.PasswordChangeTicketIssued";
+    // #2 (Q1, 2026-07-30): a Control Panel sign-in proved its password but the
+    // account carries no authenticator secret, so NO token was issued — the
+    // caller was handed a single-use mandatory-enrolment ticket instead. The
+    // completion is audited as TotpEnrolmentConfirmed + SignInSucceeded, like
+    // any other enrolment and sign-in.
+    public const string SignInTwoFactorEnrolmentRequired = "SignIn.TwoFactorEnrolmentRequired";
     public const string SignInWrongSurface = "SignIn.WrongSurface";
     public const string SignInSecondFactorIssued = "SignIn.SecondFactorIssued";
     public const string SignInSecondFactorFailed = "SignIn.SecondFactorFailed";

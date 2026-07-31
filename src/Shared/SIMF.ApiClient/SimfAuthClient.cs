@@ -73,6 +73,26 @@ public sealed class SimfAuthClient(HttpClient http)
         PostAsync<CompletePasswordChangeRequest, CompletePasswordChangeResponse>(
             "complete-password-change", request, null, cancellationToken);
 
+    /// <summary>
+    /// #2 (Q1, 2026-07-30) — begins MANDATORY authenticator enrolment for a
+    /// Control Panel account whose password step returned an enrolment ticket
+    /// instead of a session. Anonymous — the ticket authorises it (no access
+    /// token exists yet).
+    /// </summary>
+    public Task<ApiResult<TotpSetupResponse>> StartTwoFactorEnrolmentAsync(
+        StartTwoFactorEnrolmentRequest request, CancellationToken cancellationToken = default) =>
+        PostAsync<StartTwoFactorEnrolmentRequest, TotpSetupResponse>(
+            "totp/enrolment/start", request, null, cancellationToken);
+
+    /// <summary>
+    /// #2 — confirms the first authenticator code and completes the held-back
+    /// sign-in. Returns the session plus the one-time recovery codes.
+    /// </summary>
+    public Task<ApiResult<CompleteTwoFactorEnrolmentResponse>> CompleteTwoFactorEnrolmentAsync(
+        CompleteTwoFactorEnrolmentRequest request, CancellationToken cancellationToken = default) =>
+        PostAsync<CompleteTwoFactorEnrolmentRequest, CompleteTwoFactorEnrolmentResponse>(
+            "totp/enrolment/complete", request, null, cancellationToken);
+
     /// <summary>Ends every session for the authenticated caller.</summary>
     public Task<ApiResult<SignOutResponse>> SignOutAsync(
         string accessToken, CancellationToken cancellationToken = default) =>

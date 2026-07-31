@@ -17,10 +17,28 @@ Output
 It extracts ONLY coverage-matrix rows (id / scenario / type / priority) — never a
 Gherkin body from a per-page file, and never a front-matter line — so no literal
 secret from an Auth-setup line can leak into the workbook.
+
+Catalogue size
+  Every run re-derives the catalogue size (page count + Coverage-matrix scenario
+  count) and EMITS it in three places, so no document has to hand-copy a number
+  that goes stale:
+    1. stdout — the "CATALOGUE SIZE" block at the end of the run;
+    2. the workbook, sheet "00 · How to use" — a dated provenance line;
+    3. the workbook, sheet "01 · Summary" — a "Catalogue size" block under the
+       roll-up totals.
+  It also compares the derived figures against the roll-up in
+  docs/tests/e2e/README.md and prints a MISMATCH warning if they disagree. The
+  warning is not fatal — the workbook must still regenerate so the number CAN be
+  fixed. The build gate is
+  tests/SIMF.ControlPanel.Tests/E2eCatalogueIntegrityTests
+  .The_index_roll_up_matches_the_catalogue_it_describes, which fails the build on
+  the same mismatch. Prose that needs a count should cite the README roll-up (or
+  re-run this script), never a literal copied into a paragraph.
 """
 
 from __future__ import annotations
 
+import datetime
 import os
 import re
 import sys
@@ -44,6 +62,14 @@ SKIP_FILES = {"_TEMPLATE.md", "README.md", "E2E-TEST-PLAN.md"}
 # namespace portion before the final zero-padded sequence number.
 ID_RE = re.compile(r"^E2E-[A-Z0-9][A-Z0-9-]*-\d{3,4}$")
 SCEN_ID_RE = re.compile(r"E2E-[A-Z0-9][A-Z0-9-]*-\d{3,4}")
+# A Coverage-matrix ROW — the id is the first cell. Deliberately identical to
+# E2eCatalogueIntegrityTests.MatrixRow so the size this script emits is the same
+# size the build gate enforces. Narrower than extract_scenarios() below, which is
+# tolerant on purpose (it also harvests ids from `### E2E-… — title` headers and
+# from inverted tables) because a workbook row is worth having even when a page
+# authored its matrix unusually. The two numbers answer different questions:
+# "how big is the catalogue" vs "how many rows did the projector build".
+MATRIX_ROW_RE = re.compile(r"^\|\s*(E2E-[A-Z0-9][A-Z0-9-]*-\d{3,4})\s*\|")
 
 # ----- column layout (shared by every test sheet) --------------------------
 COLS = [
@@ -270,6 +296,77 @@ def parse_catalogue_file(path: str, modules: dict):
     return out
 
 
+def catalogue_files() -> list:
+    """Every authored per-page catalogue file — index/template/playbook excluded."""
+    return [
+        path
+        for path in sorted(glob.glob(os.path.join(E2E_DIR, "*.md")))
+        if os.path.basename(path) not in SKIP_FILES
+    ]
+
+
+# Reuses surface_of() rather than re-testing the cp-/web-/mobile- prefixes, so
+# the naming rule lives in exactly one place.
+SURFACE_BUCKET = {"Control Panel": "cp", "Website": "web", "Mobile App": "mobile"}
+
+
+def catalogue_size() -> dict:
+    """Re-derive the catalogue size from the files themselves.
+
+    Returns page/scenario totals plus the per-surface page split, so a document
+    that needs a number can quote a generated figure instead of a hand-copied
+    one. Counts Coverage-matrix rows only (see MATRIX_ROW_RE).
+    """
+    size = {"pages": 0, "scenarios": 0, "cp": 0, "web": 0, "mobile": 0, "other": 0}
+    for path in catalogue_files():
+        name = os.path.basename(path)
+        size["pages"] += 1
+        size[SURFACE_BUCKET.get(surface_of(name), "other")] += 1
+        for line in read(path).splitlines():
+            if MATRIX_ROW_RE.match(line):
+                size["scenarios"] += 1
+    return size
+
+
+def readme_rollup() -> tuple:
+    """The (pages, scenarios) the index claims, or (None, None) if unparseable."""
+    if not os.path.exists(README):
+        return (None, None)
+    m = re.search(
+        r"Pages catalogued:\*\*\s*(\d+)\b.*?Total scenarios:\*\*\s*(\d+)\b",
+        read(README),
+        re.S,
+    )
+    if not m:
+        return (None, None)
+    return (int(m.group(1)), int(m.group(2)))
+
+
+def report_catalogue_size(size: dict) -> None:
+    """Print the derived size and flag a stale index roll-up."""
+    print("")
+    print("CATALOGUE SIZE (re-derived this run — quote this, never a copied literal)")
+    print(f"  pages catalogued:  {size['pages']}"
+          f"  ({size['cp']} Control Panel + {size['mobile']} mobile"
+          f" + {size['web']} Website + {size['other']} other)")
+    print(f"  scenarios:         {size['scenarios']} Coverage-matrix rows")
+
+    claimed_pages, claimed_scenarios = readme_rollup()
+    if claimed_pages is None:
+        print("  ! docs/tests/e2e/README.md has no parseable roll-up "
+              "('**Pages catalogued:** N' / '**Total scenarios:** N') — cannot "
+              "cross-check.", file=sys.stderr)
+        return
+    if (claimed_pages, claimed_scenarios) != (size["pages"], size["scenarios"]):
+        print(f"  ! MISMATCH: docs/tests/e2e/README.md claims "
+              f"{claimed_pages} pages / {claimed_scenarios} scenarios. Update the "
+              f"roll-up — E2eCatalogueIntegrityTests"
+              f".The_index_roll_up_matches_the_catalogue_it_describes fails the "
+              f"build on this.", file=sys.stderr)
+    else:
+        print("  index roll-up agrees.")
+
+
 def anchor_of(heading: str) -> str:
     a = heading.strip().lower()
     a = re.sub(r"[^\w\s-]", "", a)
@@ -387,10 +484,10 @@ def write_rows(ws, rows):
 def build():
     modules = parse_readme_modules()
 
+    size = catalogue_size()
+
     per_page = []
-    for path in sorted(glob.glob(os.path.join(E2E_DIR, "*.md"))):
-        if os.path.basename(path) in SKIP_FILES:
-            continue
+    for path in catalogue_files():
         per_page.extend(parse_catalogue_file(path, modules))
 
     cp = [r for r in per_page if r["surface"] == "Control Panel"]
@@ -410,6 +507,10 @@ def build():
     howto = [
         ("SIMF — Production-Readiness Test Book", TITLE_FONT),
         ("Generated from docs/tests/e2e/*.md + SIMF-Business-Flows.md by tools/testbook/build_testbook.py. Do not hand-edit test rows — re-run the script.", SUB_FONT),
+        (f"Catalogue size on {datetime.date.today().isoformat()}: {size['pages']} pages catalogued "
+         f"({size['cp']} Control Panel + {size['mobile']} mobile + {size['web']} Website + {size['other']} other), "
+         f"{size['scenarios']} Coverage-matrix scenarios. Re-derived by the generator every run — "
+         f"quote this line or the roll-up in docs/tests/e2e/README.md, never a number copied into a paragraph.", SUB_FONT),
         ("", None),
         ("How to run", Font(bold=True, size=13)),
         ("1. Bring up the local stack (Test-Guide.md §12.2): API :5175, Control Panel :5158, Website :5115; wait for GET /health → 200.", None),
@@ -503,6 +604,30 @@ def build():
         ws_sum.cell(row=r, column=c, value=f"=SUM({L}{hr+1}:{L}{r-1})").font = Font(bold=True)
     ws_sum.cell(row=r, column=8, value=f'=IFERROR(D{r}/(B{r}-G{r}),0)').number_format = "0%"
 
+    # Catalogue size — emitted so no document has to hand-copy it. The TOTAL row
+    # above counts workbook ROWS (business flows included, tolerant harvest); this
+    # block is the catalogue itself, on the same rule the build gate enforces.
+    r += 2
+    ws_sum.cell(row=r, column=1, value="Catalogue size (re-derived by the generator)").font = Font(bold=True, size=13)
+    r += 1
+    for label, value in (
+        ("Pages catalogued", size["pages"]),
+        ("  · Control Panel", size["cp"]),
+        ("  · Mobile App", size["mobile"]),
+        ("  · Website", size["web"]),
+        ("  · Other", size["other"]),
+        ("Coverage-matrix scenarios", size["scenarios"]),
+    ):
+        ws_sum.cell(row=r, column=1, value=label)
+        ws_sum.cell(row=r, column=2, value=value)
+        r += 1
+    ws_sum.cell(
+        row=r, column=1,
+        value="Source: docs/tests/e2e/*.md, counted on the same rule as "
+              "E2eCatalogueIntegrityTests.The_index_roll_up_matches_the_catalogue_it_describes. "
+              "Re-run tools/testbook/build_testbook.py to refresh.",
+    ).font = SUB_FONT
+
     # order the sheets
     order = ["00 · How to use", "01 · Summary", "02 · Business Flows",
              "03 · Control Panel", "04 · Website", "05 · Mobile App",
@@ -520,6 +645,7 @@ def build():
     if not flows:
         print("  NOTE: SIMF-Business-Flows.md not found yet — flow sheets are empty; "
               "re-run after it is authored.", file=sys.stderr)
+    report_catalogue_size(size)
 
 
 if __name__ == "__main__":

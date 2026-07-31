@@ -25,11 +25,16 @@ class GreetingHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // First name only (owner 2026-07-21) — the greeting shows just the given
-    // name, not the full multi-part name. Name-less while the profile loads (or
-    // for a name-less account) → just the wave, never a stray leading space.
-    final firstName = name.trim().split(' ').first;
-    final nameLine = firstName.isEmpty ? '👋' : '$firstName 👋';
+    // Greet the FULL trimmed name (OA-D1). The old "first token only" split
+    // (owner 2026-07-21) broke every Arabic compound given name — عبد الله
+    // greeted as عبد, عبد الرحمن as عبد — and greeted the wrong name whenever
+    // the family name came first. There is no captured GivenName to split on,
+    // so no amount of string surgery is safe; the Text below already carries
+    // maxLines: 1 + TextOverflow.ellipsis, so a long name degrades gracefully.
+    // Name-less while the profile loads (or for a name-less account) → just the
+    // wave, never a stray leading space.
+    final trimmedName = name.trim();
+    final nameLine = trimmedName.isEmpty ? '👋' : '$trimmedName 👋';
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: SimfTokens.space4,

@@ -1,7 +1,10 @@
 # SIMF — Architecture Refactor Plan (post-Sprint 1)
 
 **Status:** Working plan. Not yet approved as a sprint.
-**Last updated:** 2026-05-25
+**Last updated:** 2026-07-30 — R5 status corrected (it was claiming work that is
+not on this branch) and the R4 remainder deferral re-confirmed. See
+"R5 status correction — 2026-07-30" and "R4 remainder — `AdminAccountService`
+placement" below.
 
 This plan scopes the four architectural SEV-1 findings left after R1
 (typed `StorageOptions` — D-074) and R2 (`IAdminAccountService` split —
@@ -22,8 +25,8 @@ Status of the rest (corrected 2026-05-31, D-209 — the table below was stale):
 |------|--------|--------|
 | R3 | `IUserAccountRepository` abstraction around `UserManager` | Arch SEV-1.4 | **DONE — D-076** |
 | R3.5 | Split the 22-method aggregate into 5 role-cohesive sub-interfaces | Arch SEV-1.2 (granularity) | **DONE — D-094** |
-| R4 | Move services from Infrastructure → Application | Arch SEV-1.6 | **PARTIAL** — Notification svc+dispatcher (D-095), Interest + UserProfile (D-209) done; **`AdminAccountService` move DEFERRED post-event** (security-critical, would need new `RoleManager`/`UserRoles` abstractions) |
-| R5 | Pure-POCO Domain (`SimfUser` no longer `IdentityUser<Guid>`) | Arch SEV-1.1 | **DONE — D-090→093** |
+| R4 | Move services from Infrastructure → Application | Arch SEV-1.6 | **PARTIAL** — Notification svc+dispatcher (D-095), Interest + UserProfile (D-209) done; **`AdminAccountService` move DEFERRED post-event** (security-critical, would need new `RoleManager`/`UserRoles` abstractions). Deferral **re-confirmed 2026-07-30** — see "R4 remainder" below |
+| R5 | Pure-POCO Domain (`SimfUser` no longer `IdentityUser<Guid>`) | Arch SEV-1.1 | **NOT DONE — OPEN.** The former `DONE — D-090→093` entry does not hold on this branch; corrected 2026-07-30, see "R5 status correction" below |
 | R6 | Split `SimfIdentityDbContext` into bounded-context contexts | Arch SEV-1.3 | **QUEUED — owner gate** (High risk; touches D-110 frozen migration history) |
 
 Separately, the `AdminAccountService` **implementation** was split (D-209, A2) from
@@ -33,6 +36,114 @@ one 1900-line class into cohesive **partial-class files** (`.cs` + `.Approval.cs
 
 > The detailed per-item sections below predate this status correction; treat the
 > table above as authoritative for what is done vs. queued.
+
+---
+
+## R5 status correction — 2026-07-30
+
+**The row above used to read `DONE — D-090→093`. That claim is false for this
+branch and has been corrected to OPEN.** Every line below was verified by
+reading the file on `qa/programme-ws0`, not by trusting the decisions log.
+
+| What D-090…D-093 recorded as landed | What is actually on this branch |
+|---|---|
+| R5f (D-092) — `SimfUser` is a pure Domain POCO | `src/Backend/SIMF.Domain/IdentityAccess/SimfUser.cs:1,19` — `using Microsoft.AspNetCore.Identity;` and `public class SimfUser : IdentityUser<Guid>` |
+| R5g (D-093) — `SimfRole` POCO-split, Domain class deleted | `src/Backend/SIMF.Domain/IdentityAccess/SimfRole.cs:1,11` — still `public class SimfRole : IdentityRole<Guid>`, still in **Domain** |
+| R5g (D-093) — `Microsoft.Extensions.Identity.Stores` reference removed from Domain | `src/Backend/SIMF.Domain/SIMF.Domain.csproj:8` — `<PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="10.0.8" />` is still the project's only package reference |
+| R5a (D-090) — `IdentitySimfUser` persistence shim in Infrastructure | No `IdentitySimfUser` (or `IdentitySimfRole`) type exists anywhere under `src/` |
+| R5b (D-091) — `IdentityUserMapper` extracted | `src/Backend/SIMF.Infrastructure/Identity/IdentityUserMapper.cs` does not exist |
+| R5a/R5g — `SimfIdentityDbContext` re-typed onto the shims | `src/Backend/SIMF.Infrastructure/Persistence/SimfIdentityDbContext.cs:17-18` — `IdentityDbContext<SimfUser, SimfRole, Guid>`; EF tracks the **Domain** types directly |
+| R5a/R5g — two snapshot-only rebind migrations | `src/Backend/SIMF.Infrastructure/Persistence/Migrations/Identity/` holds one migration (`20260713121829_20260712001`) and the snapshot |
+| D-093 — "New `DomainPurityTests` (3 Facts) pin Domain assembly purity" | No `DomainPurityTests` existed anywhere under `tests/` until 2026-07-30 |
+
+**Arch SEV-1.1 is therefore OPEN.** Domain depends on ASP.NET Core Identity, so
+every layer above it does too.
+
+How the branch and the decisions log diverged is **not established here**. The
+R5 slices are logged as landing on 2026-05-26, and the Identity migration tree
+has since been squashed to a single migration (the D-110 freeze note in
+`CLAUDE.md` describes one `InitialCreate` per context), so a rebase or squash
+that dropped the slices is the obvious candidate — but this document asserts
+only what it verified, and it did not verify that.
+
+### What was done about it (owner decision Q15, 2026-07-30)
+
+**Correct the plan and add a guard test. No POCO split this round.** The split
+would re-type `SimfIdentityDbContext`, re-point four FK configurations and
+rewrite `UserAccountRepository` around a merge-into-tracked mapper — i.e. it
+reaches straight into the D-110 frozen Identity schema, and `SimfUser` is the
+row behind the shipped mobile wire contract. That is not a change to make in a
+defect-clearing round against a hard event deadline.
+
+The guard is `tests/SIMF.Api.Tests/DomainPurityTests.cs`. It is written in the
+**inverted** form: it asserts the current known-bad state (`SimfUser.BaseType ==
+typeof(IdentityUser<Guid>)`, `SimfRole.BaseType == typeof(IdentityRole<Guid>)`,
+Domain references an ASP.NET Identity assembly) rather than the desired one, so
+the suite stays green today **and** anyone who actually does the split gets a
+red test that names this section and forces the status row above to be updated
+in the same commit. Its fourth Fact is a forward guard that is green today and
+must stay green: no Domain type **other than** `SimfUser` and `SimfRole` derives
+from an Identity type, so the leak cannot widen unnoticed while it is open.
+
+When R5 is genuinely done, flip the three inverted Facts to their positive form
+(`BaseType == typeof(object)`, no Identity reference), keep the fourth, and
+update the R5 rows in both tables above.
+
+---
+
+## R4 remainder — `AdminAccountService` placement (Arch SEV-1.6)
+
+**Deferral re-confirmed 2026-07-30 (owner decision Q13). The service does not
+move this round.** It is recorded here rather than left in a table cell so the
+next round re-decides it deliberately instead of inheriting it by silence.
+
+**What is deferred.** `AdminAccountService` stays at
+`src/Backend/SIMF.Infrastructure/Identity/` — the last of the five R4 services
+still outside Application. The other four moved (Notification service +
+dispatcher, D-095; Interest + UserProfile, D-209).
+
+**Why.** Three reasons, all still true on this branch:
+
+1. **Size.** 3,452 lines across six partial files
+   (`AdminAccountService.cs` 1,224 · `.Bulk.cs` 1,300 · `.Update.cs` 345 ·
+   `.Approval.cs` 318 · `.ChangeType.cs` 136 · `.Roles.cs` 129).
+2. **It is security-critical.** Admin provisioning, the approve/reject workers,
+   role assignment (D-208) and the last-administrator guard all live in it. A
+   silent behaviour change during a mechanical move is an authorization defect,
+   not a cosmetic one.
+3. **It has no Application-shaped seam yet.** Its primary constructor takes
+   three collaborators Application cannot reference: `RoleManager<SimfRole>`
+   (ASP.NET Identity, 5 call sites), `SimfIdentityDbContext` (14 call sites) and
+   `SimfAppDbContext` (46 call sites). Moving the file without first abstracting
+   those just moves EF and Identity **into** Application, which is the opposite
+   of what Arch SEV-1.6 asks for.
+
+**What undoing the deferral requires** — the actual prerequisite list, so the
+next estimate is not guessed:
+
+1. An `IRoleDirectory`-shaped abstraction in
+   `src/Backend/SIMF.Application/IdentityAccess/Abstractions/` (alongside the
+   existing `IIdentityUserDirectory`) covering the `RoleManager` surface this
+   service uses — role lookup by name/id, existence, the administrator-role id —
+   implemented in Infrastructure over `RoleManager<SimfRole>`. This is the
+   abstraction D-209 named as missing.
+2. Repository methods for the 60 direct `DbContext` queries — an
+   `IUserRoleStore`-shaped read/write pair for the Identity-side ones and
+   additions to `SIMF.Application/IdentityAccess/IUserProfileRepository.cs` /
+   new App-side repositories for the
+   rest. Each query shape must move **verbatim**; D-209's Interest and
+   UserProfile moves are the worked precedent, including the two-phase
+   `SaveIdentityChangesAsync` / `SaveAppChangesAsync` ordering that the
+   cross-database rule (D-157) forces.
+3. The move itself plus the DI rewiring at
+   `src/Backend/SIMF.Infrastructure/DependencyInjection.cs:271-275` (one scoped
+   instance backing four interfaces — that shape must be preserved).
+4. The backstop: the admin suite under `tests/SIMF.Api.Tests/` must be green
+   before and after each slice, with no test edited to accommodate the move.
+
+**Review trigger.** Re-decide after the event, or earlier if a change needs a
+new Identity abstraction anyway — at that point step 1 stops being extra work.
+Until then this row stays PARTIAL and Arch SEV-1.6 stays open.
 
 ---
 
@@ -118,6 +229,12 @@ while they inject `UserManager` directly.
 
 ## R4 — Move services from Infrastructure → Application (Arch SEV-1.6)
 
+> Four of the five listed below have moved (D-095, D-209). Only
+> `AdminAccountService` is left, and its deferral was re-confirmed on
+> 2026-07-30 — see "R4 remainder — `AdminAccountService` placement" above for
+> the current position, the sizing, and the prerequisite list. The original
+> scoping is kept below for the other four.
+
 **Scope.** Five services currently in `SIMF.Infrastructure/` that are
 orchestration code (use case logic), not data-access code:
 
@@ -162,14 +279,22 @@ landing point is shippable (272/272 green, 0/0 build at Debug + Release).
 The slicing matches the R3a–R3g cadence — each slice is a single
 tractable PR that leaves the codebase in a consistent state.
 
+> **Read the "R5 status correction — 2026-07-30" section above before this
+> table.** Every "CLOSED" below is the status as *recorded on 2026-05-26*. None
+> of that code is on this branch, so treat the column as **RECORDED CLOSED, NOT
+> PRESENT** — the slices have to be re-done, not re-verified. Left verbatim
+> because the per-slice design notes (the merge-into-tracked pattern, the FK
+> re-pointing, the exhaustive-mapper risk) are the useful part and still apply
+> whenever R5 is picked up again.
+
 | Slice | Status | What lands |
 |-------|--------|------------|
-| **R5a** | **CLOSED — D-090 (2026-05-26)** | `IdentitySimfUser : IdentityUser<Guid>` introduced as the EF-tracked persistence shim; `SimfIdentityDbContext` re-typed; `AddIdentityCore<IdentitySimfUser>`; FK configurations (AccountCode/RefreshToken/SecondFactorToken/TotpRecoveryCode) re-pointed; `UserAccountRepository` rewritten around the merge-into-tracked pattern with a bidirectional proto-mapper; empty `R5aRebindUserEntityToIdentitySimfUser` migration regenerates the snapshot. Tests + 12 fixtures swapped. Domain `SimfUser` unchanged. |
-| **R5b** | **CLOSED — D-091 (2026-05-26)** | `ToIdentity` / `ToDomain` / `ApplyDomainMutations` / `SyncBack` extracted from `UserAccountRepository` into `src/Backend/SIMF.Infrastructure/Identity/IdentityUserMapper.cs`. Repository drops from ~425 to ~265 lines; every call site delegates to the static helper. Pure refactor; no contract change. |
+| **R5a** | **RECORDED CLOSED — D-090 (2026-05-26); NOT PRESENT on this branch** | `IdentitySimfUser : IdentityUser<Guid>` introduced as the EF-tracked persistence shim; `SimfIdentityDbContext` re-typed; `AddIdentityCore<IdentitySimfUser>`; FK configurations (AccountCode/RefreshToken/SecondFactorToken/TotpRecoveryCode) re-pointed; `UserAccountRepository` rewritten around the merge-into-tracked pattern with a bidirectional proto-mapper; empty `R5aRebindUserEntityToIdentitySimfUser` migration regenerates the snapshot. Tests + 12 fixtures swapped. Domain `SimfUser` unchanged. |
+| **R5b** | **RECORDED CLOSED — D-091 (2026-05-26); NOT PRESENT on this branch** | `ToIdentity` / `ToDomain` / `ApplyDomainMutations` / `SyncBack` extracted from `UserAccountRepository` into `src/Backend/SIMF.Infrastructure/Identity/IdentityUserMapper.cs`. Repository drops from ~425 to ~265 lines; every call site delegates to the static helper. Pure refactor; no contract change. |
 | R5c | DEFERRED — not blocking | Optimisation only: re-shape `IUserAccountRepository` so a tracked-entity reuse path skips the extra `FindByIdAsync` round-trip on writes-without-prior-find. The efficiency-review pass during R5a confirmed no production caller actually hits that round-trip (every write is preceded by a `FindBy*` in the same scope), so this slice is not blocking. Pick up if/when a profile shows it matters. |
 | R5d–R5e | NOT NEEDED | The consumer-migration slices were anticipated for the case where consumers reach into IdentityUser<Guid> members the POCO wouldn't expose. R5f's explicit-property surface preserved every name 1:1, so no consumer change was required. |
-| **R5f** | **CLOSED — D-092 (2026-05-26)** | `SimfUser` rewritten as a pure Domain POCO; `IdentityUser<Guid>` inheritance dropped. All Identity-derived fields are explicit properties with identical names/types/nullability, so the consumer surface is unchanged. No code outside Domain required updates. |
-| **R5g** | **CLOSED — D-093 (2026-05-26)** | `Microsoft.Extensions.Identity.Stores` package reference removed from `SIMF.Domain.csproj`. `SimfRole` POCO-split into Infrastructure's `IdentitySimfRole : IdentityRole<Guid>` (no Domain consumer existed); `RolePermission.Role` nav prop dropped (shadow nav in `RolePermissionConfiguration`); `SimfIdentityDbContext` retypes; `RoleManager<SimfRole>` injections + `new SimfRole { ... }` sites swapped across Infrastructure + 8 test fixtures. Four stale `using Microsoft.AspNetCore.Identity;` directives in Application/IdentityAccess (no actual usage post-H21) deleted. Empty `R5gRebindRoleEntityToIdentitySimfRole` migration regenerates the snapshot. New `DomainPurityTests` (3 Facts) pin Domain assembly purity. **Arch SEV-1.1 fully closed.** |
+| **R5f** | **RECORDED CLOSED — D-092 (2026-05-26); NOT PRESENT on this branch** | `SimfUser` rewritten as a pure Domain POCO; `IdentityUser<Guid>` inheritance dropped. All Identity-derived fields are explicit properties with identical names/types/nullability, so the consumer surface is unchanged. No code outside Domain required updates. |
+| **R5g** | **RECORDED CLOSED — D-093 (2026-05-26); NOT PRESENT on this branch** | `Microsoft.Extensions.Identity.Stores` package reference removed from `SIMF.Domain.csproj`. `SimfRole` POCO-split into Infrastructure's `IdentitySimfRole : IdentityRole<Guid>` (no Domain consumer existed); `RolePermission.Role` nav prop dropped (shadow nav in `RolePermissionConfiguration`); `SimfIdentityDbContext` retypes; `RoleManager<SimfRole>` injections + `new SimfRole { ... }` sites swapped across Infrastructure + 8 test fixtures. Four stale `using Microsoft.AspNetCore.Identity;` directives in Application/IdentityAccess (no actual usage post-H21) deleted. Empty `R5gRebindRoleEntityToIdentitySimfRole` migration regenerates the snapshot. New `DomainPurityTests` (3 Facts) pin Domain assembly purity. ~~Arch SEV-1.1 fully closed.~~ **Struck 2026-07-30 — none of this is on the branch and SEV-1.1 is open; see the status correction above.** |
 
 **R5a recap (D-090).** The seam is the type EF tracks. `IdentitySimfUser`
 mirrors `SimfUser` field-for-field; `SimfUserConfiguration` re-binds

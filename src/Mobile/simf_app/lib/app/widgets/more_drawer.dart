@@ -52,11 +52,7 @@ class MoreDrawer extends ConsumerWidget {
                 // BUG-017 — was `moreTitle`, colliding with the Profile "More"
                 // hub (a different menu with different entries).
                 l10n.menuTitle,
-                style: const TextStyle(
-                  color: SimfTokens.surface,
-                  fontSize: SimfTokens.textXl,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: SimfTokens.labelWhiteSemiboldXl,
               ),
             ),
             const Divider(color: SimfTokens.beigeBorder, height: 1),
@@ -256,9 +252,12 @@ class _DrawerTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // No inline style on the title (#16): the app theme's `listTileTheme`
+    // already sets `textColor: SimfTokens.surface`, so the colour-only override
+    // that used to sit here was a duplicate of the token it re-stated.
     return ListTile(
       leading: Icon(icon, color: SimfTokens.surface),
-      title: Text(title, style: const TextStyle(color: SimfTokens.surface)),
+      title: Text(title),
       onTap: onTap,
     );
   }

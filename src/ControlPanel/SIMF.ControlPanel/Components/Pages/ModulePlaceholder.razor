@@ -2,7 +2,19 @@
    been built yet. The feature modules arrive in their own increments. *@
 @page "/m/{Module}"
 @layout CpShellLayout
-@attribute [Authorize]
+@* cp-stub-modules (Q4, 2026-07-30) — this route used to be gated on [Authorize]
+   alone while its nav item carried no RequiredPermission, so the one remaining
+   stub was advertised to, and openable by, EVERY signed-in admin regardless of
+   role: a GateOperator holding only Gates.Operate saw "Live sessions · Soon" in
+   its menu and could open it. The "Soon" badge is a label, not a gate.
+
+   The catch-all now exists only to serve declared stubs, and the sole declared
+   stub (/m/live-sessions) stands in for a programme-read console, so the route
+   carries the same permission its nav item promises. Nav and page must name the
+   SAME code — CpNavigationPermissionTests pins both halves. When a stub with a
+   different permission is added, this page stops being the right home for it:
+   graduate it to its own route rather than widening this gate. *@
+@attribute [RequirePermission(PermissionCatalog.Sessions.View)]
 
 <PageTitle>@PageTitle · SIMF</PageTitle>
 

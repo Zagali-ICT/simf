@@ -82,6 +82,14 @@ public sealed record BadgeActivationStartResponse(
 /// Part B — the body of <c>POST /api/v1/app/auth/badge-activation/complete</c>.
 /// Verifies the emailed code and sets the account's first password (and confirms
 /// the email). On success the holder signs in normally with email + password.
+///
+/// <para>#10 phase 4 — a bulk-generated badge is minted against a <b>placeholder</b>
+/// profile (a generated display name such as "VIP #3", <c>NationalityId = 0</c>, no
+/// interests). Self-claim is the only moment the real holder is at the keyboard, so
+/// the profile fields below are captured here and written onto that placeholder row.
+/// Every one of them is optional and appended with a default, so the shipped wire
+/// contract stays append-only (D-219): a client that sends none still activates
+/// exactly as before, it just leaves the placeholder unfilled.</para>
 /// </summary>
 public sealed class BadgeActivationCompleteRequest
 {
@@ -96,6 +104,27 @@ public sealed class BadgeActivationCompleteRequest
 
     /// <summary>Must equal <see cref="NewPassword"/>.</summary>
     public string ConfirmPassword { get; set; } = string.Empty;
+
+    /// <summary>#10 phase 4 — the holder's full name in English, exactly as printed
+    /// in the passport. When supplied it replaces the generated placeholder name on
+    /// the profile (and the account's placeholder display name). Null / blank leaves
+    /// the placeholder untouched.</summary>
+    public string? EnglishName { get; set; }
+
+    /// <summary>#10 phase 4 — the holder's full name in Arabic. Same rules as
+    /// <see cref="EnglishName"/>.</summary>
+    public string? ArabicName { get; set; }
+
+    /// <summary>#10 phase 4 — ISO 3166-1 alpha country code of the holder's
+    /// nationality (the same wire shape the profile upsert uses). When supplied it
+    /// replaces the placeholder's <c>NationalityId = 0</c>. An unknown or inactive
+    /// code is rejected with <c>PROFILE_NATIONALITY_UNKNOWN</c>.</summary>
+    public string? NationalityCode { get; set; }
+
+    /// <summary>#10 phase 4 — the holder's picked interests (الاهتمامات), up to 10.
+    /// Unknown or deactivated ids are rejected with <c>INTEREST_INVALID</c>. An empty
+    /// list leaves the placeholder's interests untouched.</summary>
+    public List<Guid> InterestIds { get; set; } = [];
 }
 
 /// <summary>Part B — the result of completing activation.</summary>

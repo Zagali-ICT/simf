@@ -212,13 +212,14 @@ internal sealed class DelegationMeetingRequestService(
         rows = rows.OrderByDescending(r => r.CreatedAt);
 
         var total = await rows.CountAsync(cancellationToken);
-        var page = await rows.Skip(skip).Take(top)
-            .Select(r => new AdminDelegationMeetingRequestRow(
+        var pageRows = await rows.Skip(skip).Take(top)
+            .Select(r => new
+            {
                 r.Id,
                 r.RequestingCountryId,
-                r.RequestingCountry!.Name,
+                RequestingCountry = r.RequestingCountry!.Name,
                 r.TargetCountryId,
-                r.TargetCountry!.Name,
+                TargetCountry = r.TargetCountry!.Name,
                 r.RequestedByUserId,
                 r.AttendeeCount,
                 r.Subject,
@@ -226,8 +227,41 @@ internal sealed class DelegationMeetingRequestService(
                 r.SlotStart,
                 r.ResponseNote,
                 r.CreatedAt,
-                r.RespondedAt))
+                r.RespondedAt,
+                // OA-D5 — the hall check-in stamps, so the desk and its new export
+                // report who actually turned up, not only the decision.
+                r.CheckedInAt,
+                r.CheckedInByUserId,
+            })
             .ToListAsync(cancellationToken);
+
+        // OA-D5 — resolve the check-in operators' display names in ONE Identity-DB
+        // query for the whole page. CheckedInByUserId is a bare logical FK (D-157),
+        // so this is a second query merged in memory — never a cross-database JOIN.
+        var operatorNames = await userDirectory.GetDisplayNamesAsync(
+            pageRows.Where(r => r.CheckedInByUserId.HasValue)
+                .Select(r => r.CheckedInByUserId!.Value)
+                .Distinct()
+                .ToList(),
+            cancellationToken);
+
+        var page = pageRows.Select(r => new AdminDelegationMeetingRequestRow(
+            r.Id,
+            r.RequestingCountryId,
+            r.RequestingCountry,
+            r.TargetCountryId,
+            r.TargetCountry,
+            r.RequestedByUserId,
+            r.AttendeeCount,
+            r.Subject,
+            r.Status,
+            r.SlotStart,
+            r.ResponseNote,
+            r.CreatedAt,
+            r.RespondedAt,
+            r.CheckedInAt,
+            ResolveOperatorName(operatorNames, r.CheckedInByUserId)))
+            .ToList();
 
         await auditLog.WriteAsync(new AuditEntry
         {
@@ -902,6 +936,16 @@ internal sealed class DelegationMeetingRequestService(
                 : $"<p>Note: {HtmlEnc(req.ResponseNote!)}</p>")
             + "<p style=\"color:#666\">You can follow this request in the SIMF app under"
             + " &quot;My requests&quot;.</p>";
+    }
+
+    /// <summary>OA-D5 — the check-in operator's display name for one row, or null
+    /// when the meeting has not been checked in (or the operator account is gone).
+    /// The map comes from the single per-page Identity-DB lookup above.</summary>
+    private static string? ResolveOperatorName(
+        IReadOnlyDictionary<Guid, string> namesByUserId, Guid? checkedInByUserId)
+    {
+        if (checkedInByUserId is not { } userId) { return null; }
+        return namesByUserId.TryGetValue(userId, out var name) ? name : null;
     }
 
     private async Task<AdminDelegationMeetingRequestDetail> LoadDetailAsync(

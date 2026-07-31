@@ -35,6 +35,23 @@ public sealed class IdentityLifecycleOptions
     /// sets a value.
     /// </summary>
     public int DormantAccountDisableDays { get; set; }
+
+    /// <summary>
+    /// #2 (Q1, 2026-07-30) — when <c>true</c> (the default), a sign-in on the
+    /// <c>Cp</c> audience whose account has no authenticator secret paired is
+    /// answered with a mandatory-enrolment challenge instead of an access token,
+    /// so the Control Panel never mints a session on the password alone. The App
+    /// and Web audiences are never affected by this setting.
+    ///
+    /// <para>Secure by default: an absent configuration key leaves this at
+    /// <c>true</c>. It exists as a switch only so the general integration suite —
+    /// whose admin fixtures create users straight through <c>UserManager</c> and
+    /// predate enrolment-first — can pin it off, exactly as it already pins
+    /// <c>FaceDetection:Enabled</c> and <c>DeviceKey:RequireStepUpForEnrol</c>.
+    /// The production posture is proved by the tests that turn it back on
+    /// (<c>ControlPanelTwoFactorEnrolmentTests</c>).</para>
+    /// </summary>
+    public bool RequireControlPanelTwoFactorEnrolment { get; set; } = true;
 }
 
 

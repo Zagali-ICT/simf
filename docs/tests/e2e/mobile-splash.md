@@ -69,6 +69,9 @@
 | E2E-MOB001-015 | Soft update + snooze — "لاحقاً" continues; the same version stays quiet for 3 days; a newer version prompts again (D-736) | happy | P1 | authored ✓ (checker snooze tests + screen Later/scrim tests) |
 | E2E-MOB001-016 | Fail-open — API stopped/unreachable → normal boot, no dialog (D-736) | resilience | P0 | authored ✓ (`ServerAppUpdateChecker` test) |
 | E2E-MOB001-017 | Anti-brick — `minVersion` set but `storeUrl` EMPTY → no gate, normal boot (D-736) | resilience | P0 | authored ✓ (`ServerAppUpdateChecker` test) |
+| E2E-MOB001-018 | **Edition line is data, not a literal (#40-residual):** the date/location line renders `OrganizationProfile.eventStartDate/eventEndDate` + `locationText` through the shared bilingual formatter; the bundled literal is the fallback only | happy | P1 | authored ✓ (screen — `the event line comes from the configured edition dates …`) |
+| E2E-MOB001-019 | Configured edition line renders in Arabic, and drops the ` · ` separator when the edition has no location (#40-residual) | i18n | P1 | authored ✓ (screen — Arabic + no-location cases) |
+| E2E-MOB001-020 | First-ever run / an edition with no dates set falls back to the bundled literal, so the splash is never blank (#40-residual) | resilience | P1 | authored ✓ (screen — `an edition with no dates falls back to the bundled literal`) |
 | E2E-MOB001-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-MOB001-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -337,6 +340,66 @@ Scenario: A forced gate without an Update target is ignored
 
 **Evidence:** `server_app_update_checker_test` — "below the minimum without a store URL → upToDate (anti-brick)".
 
+### E2E-MOB001-018 — The edition line comes from the configured dates (#40-residual)
+
+```gherkin
+Feature: The splash edition line follows the configured edition
+  As the forum operator
+  I want the splash date/location line to come from the Organization Profile
+  So that a new edition never ships behind a hardcoded date
+
+Background:
+  Given the Organization Profile carries eventStartDate = 2027-03-08
+  And eventEndDate = 2027-03-10
+  And locationText = "Jeddah" / locationTextArabic = "جدة"
+  And the profile is already cached on the device (warmed at a previous splash)
+
+Scenario: The splash renders the configured edition dates
+  When the app launches and the splash lock-up paints
+  Then the edition line reads "4th Edition\n8-10 March 2027 · Jeddah"
+  And the string "23–25 Nov 2026" appears nowhere on the screen
+```
+
+**Evidence:** `splash_screen_test` — "the event line comes from the configured
+edition dates, not the bundled literal (#40-residual)" (asserts both the new
+value and the absence of the old literal).
+
+### E2E-MOB001-019 — Arabic + the no-location case (#40-residual)
+
+```gherkin
+Scenario: The same edition renders in Arabic
+  Given the app locale is Arabic
+  When the splash lock-up paints
+  Then the edition line reads "النسخة الرابعة\n8-10 مارس 2027 · جدة"
+
+Scenario: An edition with dates but no location omits the separator
+  Given the Organization Profile has no locationText in either language
+  When the splash lock-up paints
+  Then the edition line reads "4th Edition\n8-10 March 2027"
+  And it does not end with a dangling " · "
+```
+
+**Evidence:** `splash_screen_test` — "the configured event line renders in
+Arabic too" + "an edition with dates but no location omits the separator".
+
+### E2E-MOB001-020 — First run / no dates falls back (#40-residual)
+
+```gherkin
+Scenario: A first-ever launch still shows an edition line
+  Given the device has never cached an Organization Profile
+  # or the profile is cached but its event dates are not set
+  When the splash lock-up paints
+  Then the edition line reads the bundled literal
+  And the splash is never blank in that slot
+```
+
+**Evidence:** `splash_screen_test` — "an edition with no dates falls back to the
+bundled literal (first run / offline)". The literal is retained deliberately as
+the offline/first-run fallback; it is no longer the primary source.
+
 ---
 
-_Last reviewed:_ `2026-07-10` by `SIMF Team` (D-736 — server version-policy update gate; rewrote E2E-MOB001-010/011 off the old store-native contract, appended 014–017).
+_Last reviewed:_ `2026-07-30` by `SIMF Team` (#40-residual — the splash edition
+line now renders the CP-configured dates; appended 018–020. Prior review
+2026-07-10, D-736 — server version-policy update gate; rewrote
+E2E-MOB001-010/011 off the old store-native contract, appended 014–017).
