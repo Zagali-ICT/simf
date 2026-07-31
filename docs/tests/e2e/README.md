@@ -178,7 +178,23 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/account/profile` | [`cp-account-profile.md`](cp-account-profile.md) | E2E-PRF-001..016 |
 | `/account/notifications` | [`cp-account-notifications.md`](cp-account-notifications.md) | E2E-NTF-001..012 |
 | `/account/totp-pairing` | [`cp-account-totp-pairing.md`](cp-account-totp-pairing.md) | E2E-TPP-001..010 |
+| `/login/enrol-2fa` — mandatory first-sign-in TOTP enrolment (`#2`, enrolment-first) | [`cp-2fa-enrolment.md`](cp-2fa-enrolment.md) | E2E-TFE-001..013 |
 | `/not-permitted` + `/not-found` + `/Error` | [`cp-framework-pages.md`](cp-framework-pages.md) | E2E-FRM-001..010 |
+
+### API-only surfaces (no page — endpoint or background worker)
+
+These carry no `@page` / screen of their own, so they are catalogued against the
+endpoint or the hosted worker that owns the behaviour.
+
+| Surface | File | Scenarios |
+|---------|------|-----------|
+| `POST /app/auth/badge-activation/complete` — badge self-claim captures the claimer's profile | [`api-badge-self-claim-profile.md`](api-badge-self-claim-profile.md) | E2E-BSC-001..009 |
+| `GET /app/programme/sessions?categoryId=` — server-side theme/category filter | [`api-programme-category-filter.md`](api-programme-category-filter.md) | E2E-PCF-001..007 |
+| Meeting check-in export (speaker + delegation grids) | [`api-meeting-checkin-export.md`](api-meeting-checkin-export.md) | E2E-MCX-001..008 |
+| `SessionNotAttendedReminderWorker` — FR-903 | [`api-session-not-attended-reminder.md`](api-session-not-attended-reminder.md) | E2E-SNA-001..008 |
+| Recommendation match push (≥80% threshold) — FR-803 | [`api-match-recommendation-push.md`](api-match-recommendation-push.md) | E2E-MRP-001..009 |
+| `INotificationChannel` delivery seam — FR/EIR-02 | [`api-notification-channels.md`](api-notification-channels.md) | E2E-NCH-001..006 |
+| Device-position pings, dwell aggregation + route projection — FR-1103 | [`api-movement-tracking.md`](api-movement-tracking.md) | E2E-MOV-001..011 |
 
 ### Website
 
@@ -335,13 +351,13 @@ again without failing the build. They had been left at the 2026-06-02 figures �
 "74 pages / ~1044 scenarios" — while the catalogue more than doubled, and were
 being quoted in planning as if current.
 
-- **Pages catalogued:** 183 (94 Control Panel + 69 mobile + 19 Website + 1
-  system-wide). One of the 183 — `cp-admin-companies.md` — is **retired**: its
-  route was renamed away and it now carries no live scenarios.
-- **Total scenarios:** 2884 Coverage-matrix rows, every id distinct. That
+- **Pages catalogued:** 191 (95 Control Panel + 69 mobile + 19 Website + 7
+  API-only surfaces + 1 system-wide). One of the 191 — `cp-admin-companies.md` —
+  is **retired**: its route was renamed away and it now carries no live scenarios.
+- **Total scenarios:** 2973 Coverage-matrix rows, every id distinct. That
   includes the **360** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
   per live page — see `tools/qa/generate_els_rows.py`); the hand-authored
-  functional total is 2524.
+  functional total is 2613.
 - **Authored:** all pages. The D-133 "pending" stubs are fully authored, and
   every event-module and P2–P5 page added since has its own file.
 - **Execution:** the canonical run today is a Chrome DevTools MCP browser pass

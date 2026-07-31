@@ -15,6 +15,25 @@ D-736) run concurrently, then it waits for the auth cold-start restore (8 s
 cap) and emits a one-shot route-out decision — onboarding (first run) /
 sign-in / home / add-profile / OTP — or a forced/soft update dialog.
 
+## Edition line — data, not a literal (`#40-residual`, 2026-07-30)
+
+The lock-up's last line used to be the bundled literal
+`AppL10n.splashEventLine` ("4th Edition\n23–25 Nov 2026 · Riyadh"), so the very
+first screen of the app hardcoded the 2026 edition's dates. It now renders the
+CP-configured **Organization Profile** — `eventStartDate`/`eventEndDate` through
+the shared bilingual `formatEventDateRange`, plus `locationText` — exactly as
+the Home hero already did.
+
+- The profile hydrates **synchronously from the on-device cache**
+  (`OrgProfileController.build`), so the dates are already present on the first
+  splash frame of every launch after the first; `warm()` then refreshes it.
+- `splashEventLine` is retained as the **fallback only** (first-ever run, or an
+  edition whose dates are not set), so the slot is never blank.
+- The edition ordinal ("النسخة الرابعة / 4th Edition") stays a bundled literal
+  (`AppL10n.splashEditionLine`): the profile carries no edition-ordinal field.
+- E2E: `E2E-MOB001-018..020`. Tests: `splash_screen_test.dart` (four cases,
+  including the absence of the old literal once dates are configured).
+
 ## App-update gate (D-736)
 
 `ServerAppUpdateChecker` (`lib/core/startup/server_app_update_checker.dart` +

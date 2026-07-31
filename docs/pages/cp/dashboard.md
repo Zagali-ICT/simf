@@ -13,7 +13,7 @@
 | **Backed by** | Read-only aggregates computed on demand over `SimfIdentityDbContext` + `SimfAppDbContext`. **No schema change, no migration, no new permission, no seeding.** |
 | **Source** | [`StatisticsEndpoints.cs`](../../../src/Backend/SIMF.Api/Endpoints/Statistics/StatisticsEndpoints.cs), [`StatisticsService.cs`](../../../src/Backend/SIMF.Infrastructure/Statistics/StatisticsService.cs), [`StatisticsContracts.cs`](../../../src/Shared/SIMF.Contracts/Statistics/StatisticsContracts.cs), [`ChartGeometry.cs`](../../../src/Shared/SIMF.Components/Charts/ChartGeometry.cs), [`SimfGroupedBarChart.razor`](../../../src/Shared/SIMF.Components/Charts/SimfGroupedBarChart.razor), [`SimfBarGauge.razor`](../../../src/Shared/SIMF.Components/Charts/SimfBarGauge.razor) |
 | **Tests** | [`ChartGeometryTests.cs`](../../../tests/SIMF.ControlPanel.Tests/ChartGeometryTests.cs) (41), [`StatisticsProgrammeTests.cs`](../../../tests/SIMF.Api.Tests/StatisticsProgrammeTests.cs) (21), E2E [`cp-dashboard.md`](../../tests/e2e/cp-dashboard.md) |
-| **Last reviewed** | 2026-07-29 |
+| **Last reviewed** | 2026-07-31 |
 
 ## 1. Purpose
 
@@ -76,6 +76,27 @@ The figures are a **snapshot taken at page load**. There is no refresh button
 and no polling; reload the page to re-read.
 
 ## 4. UI
+
+### 4.0 Shell head (`Components/App.razor`) — rendered on EVERY CP route
+
+Not part of this page's body, but documented here because the Dashboard file owns
+the shell chrome and the head is the one piece of markup every Control Panel route
+shares. It carries the pre-paint theme script, the four stylesheet links, the
+Cropper.Blazor assets, the CP scripts, and — since `QA-LIVE-001` (2026-07-31) — the
+tab icon:
+
+```razor
+<link rel="icon" type="image/png" href="@Assets["favicon.png"]" />
+```
+
+The file is `wwwroot/favicon.png`, the product's own 64×64 SIMF emblem (the same
+mark the Flutter app ships as its web favicon) rather than new artwork. Without a
+declared icon the browser falls back to requesting `/favicon.ico`, which nothing
+serves, so **every** CP page load logged a 404 in the network panel and the tab
+showed the blank default glyph. `CpHeadAssetsTests` resolves every `@Assets["…"]`
+in the head against the file that must serve it, so a future head edit cannot
+reintroduce a site-wide 404 (the Website shipped exactly that defect once, linking
+a scoped-CSS bundle the SDK never emitted).
 
 ### 4.1 KPI stat grid (`.simf-stat-grid`)
 
@@ -355,6 +376,10 @@ mirrors the plot but not the lettering; the three themes each render a legible
 chart) continue the same `E2E-DSH-` numbering from 014 and are **not yet
 authored**.
 
+`E2E-DSH-026` (`QA-LIVE-001`, 2026-07-31) covers the shell head: the declared icon
+resolves, `/favicon.ico` is never requested, and a sweep of four other CP routes
+records no 404 and no console error.
+
 Unit coverage: `ChartGeometryTests.cs` (41 tests over `NiceMax`, `AxisTicks`,
 `GroupedBars` including the RTL mirror and the degenerate inputs, `MaxValue` and
 `GaugeFraction`) and `StatisticsProgrammeTests.cs` (21 tests, including the five
@@ -383,6 +408,8 @@ Saudi-day boundary cases).
 | Date | Decision | Change |
 |------|----------|--------|
 | 2026-07-29 | D-799 to D-803 | Wave A. Placeholder replaced by the real dashboard: KPI stat grid, grouped bar chart of Registered / Present / Attended per programme day, and one card per day. New additive contracts `ProgrammeDayStats` + `StatisticsProgramme`, new read-only endpoint `GET /admin/statistics/programme` on the existing `Statistics.View` gate, new `SIMF.Components/Charts` (`ChartGeometry`, `SimfGroupedBarChart`, `SimfBarGauge`, `SimfSvgText`), new `--chart-*` tokens. Per-day counts bucketed on Saudi calendar days via explicit UTC windows. No schema change, no migration, no new permission. |
+| 2026-07-31 | D-NEXT (`QA-LIVE-001`) | Shell head declares `<link rel="icon">` pointing at the new `wwwroot/favicon.png` (the SIMF emblem). Every CP page load previously 404'd on the implicit `/favicon.ico` fallback. New `CpHeadAssetsTests` resolves every head asset against its file. E2E-DSH-026 added. |
 | 2026-05-28 | D-132 | Banner swapped from `SimfPageHeader` to `SimfBanner`. Page was a placeholder (welcome card only) pending D-134. |
 
-_Last reviewed:_ 2026-07-29 by Claude (Wave A, the CP programme dashboard).
+_Last reviewed:_ 2026-07-31 by Claude (`QA-LIVE-001` shell-head favicon); prior
+review 2026-07-29 (Wave A, the CP programme dashboard).

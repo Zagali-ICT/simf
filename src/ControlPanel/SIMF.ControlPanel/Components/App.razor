@@ -23,6 +23,12 @@
         })();
     </script>
     <ResourcePreloader />
+    @* QA-LIVE-001 — with no icon declared the browser falls back to requesting
+       /favicon.ico, which nothing serves, so EVERY Control Panel page load logged
+       a 404 in the network panel and the tab carried the blank default glyph. The
+       mark is the product's own 64x64 SIMF emblem (the same file the app ships as
+       its web favicon) — one brand mark across surfaces rather than new artwork. *@
+    <link rel="icon" type="image/png" href="@Assets["favicon.png"]" />
     <link rel="stylesheet" href="@Assets["_content/SIMF.Components/css/theme.tokens.css"]" />
     <link rel="stylesheet" href="@Assets["app.css"]" />
     <link rel="stylesheet" href="@Assets["_content/SIMF.Components/css/simf-components.css"]" />

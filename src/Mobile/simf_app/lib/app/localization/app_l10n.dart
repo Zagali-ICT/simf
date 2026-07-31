@@ -2604,6 +2604,36 @@ class AppL10n {
   String get contactUnavailable =>
       _t('هذه الجهة لم تعد متاحة', 'This contact is no longer available');
   String get contactNoteLabel => _t('ملاحظة', 'Note');
+
+  // ---------------------------------------------------------------------
+  // Track D-b — strings added by the 2026-07-30 fix-all round.
+  // ---------------------------------------------------------------------
+
+  /// The splash edition line (#40-residual). Split out of [splashEventLine] so
+  /// the date/location half can come from the CP-configured organization
+  /// profile while the edition ordinal stays a bundled literal (the profile
+  /// carries no edition ordinal).
+  String get splashEditionLine => _t('النسخة الرابعة', '4th Edition');
+
+  /// Session detail — the geofence self check-in action and its outcomes.
+  String get sessionArrivalAction => _t('أنا هنا', "I'm here");
+  String get sessionArrivalCheckedIn =>
+      _t('تم تسجيل حضورك في القاعة', 'Your hall arrival is recorded');
+  String get sessionArrivalOutsideHall => _t(
+        'أنت خارج نطاق القاعة. اقترب من القاعة ثم أعد المحاولة.',
+        'You are outside the hall boundary. Move closer and try again.',
+      );
+  String get sessionArrivalNoBoundary => _t(
+        'لم يتم ضبط نطاق هذه القاعة بعد.',
+        'This hall has no boundary configured yet.',
+      );
+  String get sessionArrivalLocationDenied => _t(
+        'يلزم إذن الموقع لتسجيل الحضور.',
+        'Location permission is required to check in.',
+      );
+  String get sessionArrivalDepart => _t('تسجيل المغادرة', 'Check out');
+  String get sessionArrivalDeparted =>
+      _t('تم تسجيل مغادرتك', 'Your departure is recorded');
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

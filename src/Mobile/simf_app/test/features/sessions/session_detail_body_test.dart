@@ -6,11 +6,23 @@ import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'package:simf_app/features/sessions/widgets/ask_host_card.dart';
 import 'package:simf_app/features/sessions/widgets/session_detail_body.dart';
+import 'package:simf_app/features/sessions/widgets/session_speaker_card.dart';
+
+const _speaker = SessionSpeaker(
+  id: 'sp1',
+  name: 'Dr. Ali Al-Harbi',
+  nameArabic: 'د. علي الحربي',
+  displayOrder: 0,
+  role: SessionSpeakerRole.speaker,
+  title: 'Professor of Maritime Studies',
+);
 
 SessionDetail _detail({
   required DateTime start,
   required DateTime end,
   String? liveStreamUrl,
+  SessionType? type,
+  List<SessionSpeaker> speakers = const <SessionSpeaker>[],
 }) =>
     SessionDetail(
       id: 's1',
@@ -22,8 +34,9 @@ SessionDetail _detail({
       hallNameArabic: 'القاعة الرئيسية',
       start: start,
       end: end,
-      speakers: const <SessionSpeaker>[],
+      speakers: speakers,
       description: 'Welcome address',
+      type: type,
       liveStreamUrl: liveStreamUrl,
     );
 
@@ -313,6 +326,75 @@ void main() {
       await tester.tap(find.text('Session link'));
       await tester.pump();
       expect(tapped, isFalse);
+    });
+  });
+
+  // #29 (owner Q10, 2026-07-30) — a WORKSHOP's detail is title + time ONLY.
+  group('SessionDetailBody #29 workshop reduction', () {
+    testWidgets('a WORKSHOP renders the title + time block and nothing else',
+        (tester) async {
+      await _pumpBody(
+        tester,
+        detail: _detail(
+          start: now.add(const Duration(hours: 1)),
+          end: now.add(const Duration(hours: 2)),
+          type: SessionType.workshop,
+          speakers: const <SessionSpeaker>[_speaker],
+          liveStreamUrl: 'https://live.example.sa/main.m3u8',
+        ),
+        seatMap: _seatMap(),
+      );
+
+      // The title (and, with it, the header card carrying the time meta) stays.
+      expect(find.text('Opening'), findsOneWidget);
+      // Everything else is suppressed.
+      expect(find.text('Description'), findsNothing);
+      expect(find.text('Welcome address'), findsNothing);
+      expect(find.text('Speakers'), findsNothing);
+      expect(find.byType(SessionSpeakerCard), findsNothing);
+      expect(find.byType(AskHostCard), findsNothing);
+      expect(find.text('Session summary'), findsNothing);
+      expect(find.text('Session link'), findsNothing);
+      expect(
+        find.widgetWithText(FilledButton, 'Join the session'),
+        findsNothing,
+      );
+      expect(find.text('Add to calendar'), findsNothing);
+      expect(find.text('Reminder'), findsNothing);
+    });
+
+    testWidgets('a non-workshop session keeps the full detail', (tester) async {
+      await _pumpBody(
+        tester,
+        detail: _detail(
+          start: now.add(const Duration(hours: 1)),
+          end: now.add(const Duration(hours: 2)),
+          type: SessionType.session,
+          speakers: const <SessionSpeaker>[_speaker],
+        ),
+        seatMap: _seatMap(),
+      );
+
+      expect(find.text('Welcome address'), findsOneWidget);
+      expect(find.byType(SessionSpeakerCard), findsOneWidget);
+      expect(find.text('Session summary'), findsOneWidget);
+    });
+
+    testWidgets('an UNTYPED session (older API → null type) keeps the full '
+        'detail', (tester) async {
+      await _pumpBody(
+        tester,
+        detail: _detail(
+          start: now.add(const Duration(hours: 1)),
+          end: now.add(const Duration(hours: 2)),
+          speakers: const <SessionSpeaker>[_speaker],
+        ),
+        seatMap: _seatMap(),
+      );
+
+      expect(find.text('Welcome address'), findsOneWidget);
+      expect(find.byType(SessionSpeakerCard), findsOneWidget);
+      expect(find.text('Session summary'), findsOneWidget);
     });
   });
 }

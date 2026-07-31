@@ -219,4 +219,29 @@ public enum NotificationKind
     // took 57 for ExhibitorLeadCaptured. Both are additive and persisted by NAME,
     // so the renumber is safe and no data or wire contract is affected.
     SessionCancelled = 58,
+
+    // The two kinds below name their resource KEY as a literal rather than through
+    // nameof(ResNotificationKind.X): the accessor property and the two resx entries
+    // land with the worker that dispatches each kind, and until they do a nameof
+    // would not compile. GetDisplayName falls back to the enum name meanwhile, and
+    // nothing in the product renders a NotificationKind label today (the notification
+    // row carries its own bilingual title and body).
+
+    /// <summary>FR-903 — dispatched a short while after a session starts to every
+    /// holder of an active seat reservation who has no <c>HallAttendance</c> row for
+    /// it yet ("the session started and you have not arrived"). <c>RelatedEntityType
+    /// ="Session"</c> + <c>RelatedEntityId</c> carry the session id. In-app row only.
+    /// Additive value (append-only, the frozen-enum rule); persisted by NAME so no
+    /// schema/data change.</summary>
+    [Display(Description = "SessionNotAttended", ResourceType = typeof(ResNotificationKind))]
+    SessionNotAttended = 59,
+
+    /// <summary>FR-803 — dispatched when the recommendation engine scores another
+    /// attendee at or above the 80% match threshold, inviting the recipient to
+    /// connect. Raised once per (caller, candidate) pair. <c>RelatedEntityType
+    /// ="UserProfile"</c> + <c>RelatedEntityId</c> carry the candidate. In-app row
+    /// only. Additive value (append-only, the frozen-enum rule); persisted by NAME
+    /// so no schema/data change.</summary>
+    [Display(Description = "MatchRecommended", ResourceType = typeof(ResNotificationKind))]
+    MatchRecommended = 60,
 }

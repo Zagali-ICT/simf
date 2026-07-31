@@ -66,6 +66,27 @@ void main() {
       expect(detail.liveStreamUrl, isNull);
       expect(detail.hasLiveStream, isFalse);
       expect(detail.speakers, isEmpty);
+      // #29 — an older API sends no `type`; the detail then renders in full.
+      expect(detail.type, isNull);
+    });
+
+    // #29 — the detail carries the same tolerant `type` the list does (D-452):
+    // the app reduces a WORKSHOP to its title + time.
+    test('the session type decodes from the int OR the name wire form', () {
+      SessionDetail decode(Object? type) =>
+          SessionDetail.fromJson(<String, dynamic>{
+            'id': 's3',
+            'code': 'W-1',
+            'title': 'Workshop',
+            'start': '2026-11-23T06:00:00Z',
+            'end': '2026-11-23T07:00:00Z',
+            'type': type,
+          });
+
+      expect(decode(0).type, SessionType.workshop);
+      expect(decode('Workshop').type, SessionType.workshop);
+      expect(decode(1).type, SessionType.session);
+      expect(decode('nonsense').type, isNull);
     });
   });
 

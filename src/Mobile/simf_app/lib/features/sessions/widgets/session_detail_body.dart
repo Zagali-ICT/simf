@@ -15,6 +15,9 @@ import 'session_text_sections.dart';
 
 /// The scrolling body: the header card, description, speakers, my-seat card and
 /// the CTA row — all RTL-primary on the navy shell (frame 889:2450).
+///
+/// #29 (owner Q10, 2026-07-30) — a **workshop** is the one exception: its detail
+/// is the title + time block ONLY (see [_workshopBody]).
 class SessionDetailBody extends StatelessWidget {
   const SessionDetailBody({
     required this.detail,
@@ -63,8 +66,23 @@ class SessionDetailBody extends StatelessWidget {
   final VoidCallback onViewSeat;
   final void Function(SessionSpeaker speaker) onSpeaker;
 
+  /// The padding the body scrolls inside — shared by the full detail and the
+  /// #29 workshop reduction so the two open identically.
+  static const EdgeInsets _padding = EdgeInsets.fromLTRB(
+    SimfTokens.space4,
+    SimfTokens.space2,
+    SimfTokens.space4,
+    SimfTokens.space6,
+  );
+
   @override
   Widget build(BuildContext context) {
+    // #29 (owner Q10, 2026-07-30) — a WORKSHOP shows its title + time ONLY.
+    // Everything below this guard is the full session detail.
+    if (detail.type == SessionType.workshop) {
+      return _workshopBody();
+    }
+
     final isArabic = l10n.isArabic;
     final description = detail.localizedDescription(isArabic);
 
@@ -78,12 +96,7 @@ class SessionDetailBody extends StatelessWidget {
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(
-        SimfTokens.space4,
-        SimfTokens.space2,
-        SimfTokens.space4,
-        SimfTokens.space6,
-      ),
+      padding: _padding,
       children: <Widget>[
         SessionHeaderCard(
           detail: detail,
@@ -203,6 +216,31 @@ class SessionDetailBody extends StatelessWidget {
             onCancel: onCancelReservation,
           ),
         ],
+      ],
+    );
+  }
+
+  /// #29 (owner Q10, 2026-07-30) — the workshop detail: the header card reduced
+  /// to its title + time block. No description, no speakers, no اسأل المحاور
+  /// card, no seat/join section and no live/summary actions — a workshop is
+  /// managed from the existing session admin in the CP and the app publishes
+  /// only what it is and when it runs. The list stays scrollable so
+  /// pull-to-refresh still fires on the short page.
+  Widget _workshopBody() {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: _padding,
+      children: <Widget>[
+        SessionHeaderCard(
+          detail: detail,
+          isArabic: l10n.isArabic,
+          l10n: l10n,
+          onSessionLink: onSessionLink,
+          onSessionSummary: onSessionSummary,
+          summaryEnabled: false,
+          liveEnabled: false,
+          titleAndTimeOnly: true,
+        ),
       ],
     );
   }

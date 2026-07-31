@@ -35,14 +35,20 @@ import 'widgets/session_detail_header.dart';
 /// deferred to the notifications platform pass (D-300).
 ///
 /// Frame mapping (RTL-primary): a navy session **header card** (gold index
-/// badge + ordinal · clock/calendar meta · title · hall + category tag pills),
-/// the وصف الجلسة description card, the المتحدثون speaker cards (a gold-tinted
-/// anchor box for a speaker / star box for the host, name + rank), the gold
+/// badge + ordinal · title · the category tag pill when the session carries a
+/// category (PAR-D3) · clock/calendar meta · the ملخص الجلسة / رابط الجلسة
+/// actions), the وصف الجلسة description card, the المتحدثون speaker cards
+/// (name + rank, the host marked with the gold star + المضيف — PAR-P4a), the gold
 /// مقعدي my-seat card (row · seat + badge hint + a forward chevron), and the
 /// تذكير (outlined) + أضف إلى تقويمي (gold) CTA row. The section widgets live
 /// in `widgets/` (session_detail_body/header, session_header_card,
 /// session_text_sections, session_speaker_card, ask_host_card,
 /// session_reservation_card, session_booking_actions).
+///
+/// **#29 (owner Q10, 2026-07-30) — a WORKSHOP is the exception:** when the
+/// detail's `type` is `SessionType.workshop` the body renders the title + time
+/// block ONLY (no description, speakers, ask card, seat/join section or
+/// live/summary actions). The CP half reuses the existing session admin.
 ///
 /// **Rating (owner 2026-07-22):** this screen no longer opens the rate form when
 /// you leave an ended session — merely viewing a session is not attending it. The

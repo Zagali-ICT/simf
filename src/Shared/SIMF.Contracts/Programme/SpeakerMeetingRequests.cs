@@ -31,7 +31,10 @@ public sealed record SpeakerMeetingRequestSubmitted(
 /// speaker name is joined from the App DB (same context). Followed the
 /// session-scoped admin-row pattern (removed D-278); the requester email is deliberately NOT
 /// on the list row (it moves to <see cref="AdminSpeakerMeetingRequestDetail"/> so
-/// the list endpoint does not broadcast bulk PII — the D-185 pattern).</summary>
+/// the list endpoint does not broadcast bulk PII — the D-185 pattern).
+/// <para>OA-D5 appends the hall check-in stamps so the grid and its XLSX export can
+/// report who actually turned up. Appended with defaults, so the shipped wire
+/// contract stays append-only (D-219).</para></summary>
 public sealed record AdminSpeakerMeetingRequestRow(
     Guid Id,
     Guid SpeakerId,
@@ -43,7 +46,12 @@ public sealed record AdminSpeakerMeetingRequestRow(
     MeetingRequestStatus Status,
     string? ResponseNote,
     DateTimeOffset CreatedAt,
-    DateTimeOffset? RespondedAt);
+    DateTimeOffset? RespondedAt,
+    // OA-D5 — when an operator checked the meeting in at the hall, and who. The
+    // operator name is resolved from the Identity DB on read (a bare-Guid logical
+    // FK, D-157); both stay null until the meeting is checked in.
+    DateTimeOffset? CheckedInAt = null,
+    string? CheckedInByName = null);
 
 /// <summary>D-269 — single-record detail for the admin respond modal. Includes
 /// <c>RequesterEmail</c> (resolved on read from the Identity DB) so the admin can

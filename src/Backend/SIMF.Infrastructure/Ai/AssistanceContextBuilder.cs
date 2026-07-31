@@ -24,7 +24,7 @@ internal sealed class AssistanceContextBuilder(
 {
     public async Task<string> BuildAsync(CancellationToken cancellationToken = default)
     {
-        var agenda = await sessions.ListAsync(day: null, cancellationToken);
+        var agenda = await sessions.ListAsync(day: null, categoryId: null, cancellationToken);
         var faqGroups = await faq.GetAsync(cancellationToken);
         var boothList = await booths.ListAsync(cancellationToken);
 

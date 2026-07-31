@@ -1,8 +1,11 @@
 ﻿// Tests: SIMF.Api.Tests/AdminResetTwoFactorTests.cs,
-//        SIMF.Api.Tests/AdminCreateUserTests.cs
+//        SIMF.Api.Tests/AdminCreateUserTests.cs,
+//        SIMF.Api.Tests/ControlPanelTwoFactorEnrolmentTests.cs (#2d — a created
+//        admin is TwoFactorEnabled AND can still complete a first sign-in)
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SIMF.Application.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.Email;
@@ -12,6 +15,7 @@ using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Application.Notifications;
 using SIMF.Domain.Notifications;
 using SIMF.Common;
+using SIMF.Common.Options;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
@@ -56,6 +60,9 @@ internal sealed partial class AdminAccountService(
     IPiiEncryptor pii,
     TimeProvider timeProvider,
     INotificationDispatcher notifications,
+    // #2d — read to decide whether forcing TwoFactorEnabled at creation is safe;
+    // see CreateAccountAsync.
+    IOptions<IdentityLifecycleOptions> lifecycleOptions,
     ILogger<AdminAccountService> logger)
     : IAdminTwoFactorService,
       IAdminUserApprovalService,
@@ -645,6 +652,25 @@ internal sealed partial class AdminAccountService(
                 ErrorCodes.InternalError, 500,
                 "The account could not be created.",
                 "تعذّر إنشاء الحساب.");
+        }
+
+        // #2d (2026-07-30) — a CP-provisioned admin must never end up
+        // permanently single-factor, so the flag is set at creation rather than
+        // left to the admin's own choice on /account/profile.
+        //
+        // The condition is the dependency on #2, expressed in code rather than
+        // left as a note in a plan. A new admin has a role and no authenticator
+        // key, and the factor selector in SignInService picks
+        // `key != "" || roles.Count > 0 ? Totp : EmailOtp` — so setting this flag
+        // on its own challenges every new admin for a TOTP code against a secret
+        // that does not exist and locks them out at creation. #2's
+        // enrolment-first branch is what hands them a way in, and it runs under
+        // exactly this setting: when the enrolment path is switched off, forcing
+        // the flag would be a lockout, so we do not force it.
+        if (userType == UserType.Admin
+            && lifecycleOptions.Value.RequireControlPanelTwoFactorEnrolment)
+        {
+            await accounts.SetTwoFactorEnabledAsync(user, true).EnsureSuccessAsync();
         }
 
         // P7c — RBAC roles are valid only for Admin-typed users.

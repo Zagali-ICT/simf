@@ -117,6 +117,13 @@ public static class CpNavigation
             // D-182 (CP UI for D-175 seat reservations) — hall seat
             // layout editor + per-session seat plan.
             new("Module.HallSeatLayouts", "/admin/halls/seat-layouts", RequiredPermission: PermissionCatalog.SeatLayouts.View, Icon: "grid"),
+            // Q6 (2026-07-30) asked for a CP surface for the per-hall arrival
+            // boundary. There is deliberately NO separate geofence page:
+            // HallsAddEdit.razor already edits GeofenceCenterLat /
+            // GeofenceCenterLon / GeofenceRadiusMeters on the hall itself (gated
+            // Halls.Create / Halls.Edit, validated in AdminHallService), so a
+            // second page would be a duplicate editor for one field set. A nav
+            // row pointing at an unbuilt /admin/halls/geofence was removed here.
             new("Module.SessionSeatPlans", "/admin/sessions/seat-plans", RequiredPermission: PermissionCatalog.SeatPlans.View, Icon: "armchair"),
             // D-269 — attendee meeting requests TO a speaker (Mockup page 20).
             new("Module.SpeakerMeetingRequests", "/admin/speaker-meeting-requests", RequiredPermission: PermissionCatalog.SpeakerMeetingRequests.View, Icon: "inbox"),
@@ -175,7 +182,13 @@ public static class CpNavigation
         ]),
         new("Nav.Engagement",
         [
-            new("Module.LiveSessions", "/m/live-sessions", IsStub: true, Icon: "video"),
+            // cp-stub-modules (Q4, 2026-07-30) — the last remaining ModulePlaceholder
+            // stub. An IsStub item used to carry RequiredPermission: null, which made
+            // it visible to EVERY signed-in admin regardless of role; the "Soon" badge
+            // is not a gate. It now sits behind the same programme-read permission the
+            // console it stands in for would need, so it is only advertised to the
+            // operators who would eventually be able to open it.
+            new("Module.LiveSessions", "/m/live-sessions", IsStub: true, RequiredPermission: PermissionCatalog.Sessions.View, Icon: "video"),
             // Submitted ratings read-only view + KPIs.
             new("Module.Ratings", "/admin/ratings", RequiredPermission: PermissionCatalog.Ratings.View, Icon: "star"),
             // Dynamic rating configuration — types / question groups / questions.

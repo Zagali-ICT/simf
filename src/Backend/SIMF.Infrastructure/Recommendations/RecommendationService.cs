@@ -28,6 +28,37 @@ internal sealed class RecommendationService(
     /// Staff meet Staff). Small enough to never override real overlap.</summary>
     private const double SameProfileTypeBonus = 0.05;
 
+    /// <summary>FR-803 — the requirement states a <b>&gt;=80% match</b>. Before this
+    /// the ranker had no threshold at all: it sorted by score and simply took the
+    /// top N, so the weakest possible overlap (one shared interest out of fifty)
+    /// ranked as a "recommendation" whenever nothing better existed.</summary>
+    internal const double StrongMatchThreshold = 0.80;
+
+    /// <summary>How deep a strong-match pass ranks before filtering. The threshold
+    /// is what decides inclusion; this only bounds the ranked list the filter runs
+    /// over.</summary>
+    private const int StrongMatchCandidatePool = 100;
+
+    /// <summary>FR-803 — "80%" is a percentage, so it has to be compared against a
+    /// number that cannot exceed 1.0. The raw <c>Score</c> can (a perfect Jaccard
+    /// 1.0 plus <see cref="SameProfileTypeBonus"/>), so the threshold is applied to
+    /// the score CLAMPED to [0,1]. The same-tier bonus is inside the comparison on
+    /// purpose: a candidate in the caller's own tier IS the better match at equal
+    /// overlap, which is why the bonus exists at all.</summary>
+    internal static double NormaliseScore(double score) => Math.Clamp(score, 0d, 1d);
+
+    public async Task<RecommendationsResponse> StrongMatchesAsync(
+        Guid callerUserId, CancellationToken cancellationToken = default)
+    {
+        var ranked = await MeetPeopleLikeYouAsync(
+            callerUserId, StrongMatchCandidatePool, cancellationToken);
+
+        var strong = ranked.Matches
+            .Where(match => NormaliseScore(match.Score) >= StrongMatchThreshold)
+            .ToList();
+        return new RecommendationsResponse(strong);
+    }
+
     public async Task<RecommendationsResponse> MeetPeopleLikeYouAsync(
         Guid callerUserId,
         int take,

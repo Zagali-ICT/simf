@@ -1573,6 +1573,19 @@
   <data name="Auth.Totp.SignedInAs" xml:space="preserve"><value>Signed in as {0}.</value></data>
   <data name="Auth.Totp.BackToSignIn" xml:space="preserve"><value>Back to sign in</value></data>
 
+  <data name="Auth.Enrol2fa.PageTitle" xml:space="preserve"><value>Set up two-factor authentication</value></data>
+  <data name="Auth.Enrol2fa.Title" xml:space="preserve"><value>Set up two-factor authentication</value></data>
+  <data name="Auth.Enrol2fa.Supporting" xml:space="preserve"><value>The Control Panel requires an authenticator app. Set it up now to finish signing in.</value></data>
+  <data name="Auth.Enrol2fa.Instruction" xml:space="preserve"><value>Scan this QR code with your authenticator app, then enter the six-digit code it shows.</value></data>
+  <data name="Auth.Enrol2fa.SecretHint" xml:space="preserve"><value>Cannot scan? Enter this key in the app instead.</value></data>
+  <data name="Auth.Enrol2fa.Code" xml:space="preserve"><value>Verification code</value></data>
+  <data name="Auth.Enrol2fa.Submit" xml:space="preserve"><value>Confirm and sign in</value></data>
+  <data name="Auth.Enrol2fa.Submitting" xml:space="preserve"><value>Confirming</value></data>
+  <data name="Auth.Enrol2fa.Loading" xml:space="preserve"><value>Preparing your authenticator setup.</value></data>
+  <data name="Auth.Enrol2fa.Fallback" xml:space="preserve"><value>Two-factor setup could not be completed. Sign in again to start over.</value></data>
+  <data name="Auth.Enrol2fa.RecoveryShowOnce" xml:space="preserve"><value>Save these recovery codes now — they are shown only once, and each one works once if you lose your authenticator.</value></data>
+  <data name="Auth.Enrol2fa.Continue" xml:space="preserve"><value>I have saved them — continue</value></data>
+
   <data name="Auth.Forgot.Title" xml:space="preserve"><value>Forgot password</value></data>
   <data name="Auth.Forgot.Supporting" xml:space="preserve"><value>Enter your email; we will send a reset code if the account exists.</value></data>
   <data name="Auth.Forgot.Submit" xml:space="preserve"><value>Send reset code</value></data>

@@ -35,6 +35,13 @@ public sealed class SignInRequest
 ///     no session is minted until that succeeds and the user signs in again.
 ///     For non-Control-Panel audiences the forced-change case still returns the
 ///     <c>AUTH_PASSWORD_CHANGE_REQUIRED</c> 403 unchanged.</item>
+///   <item>#2 (Q1, 2026-07-30): when a Control Panel account signs in with no
+///     authenticator secret paired, <see cref="TwoFactorEnrolmentToken"/> is set
+///     and every other field is null/false — <b>no token is issued on the
+///     password alone</b>. The caller enrols at
+///     <c>POST /auth/totp/enrolment/start</c> +
+///     <c>/complete</c>, and the completion issues the session. The App and Web
+///     audiences are unaffected.</item>
 /// </list>
 /// </summary>
 public sealed record SignInResponse(
@@ -43,7 +50,8 @@ public sealed record SignInResponse(
     string? OtpToken,
     AuthTokens? Tokens = null,
     AccountStateInfo? AccountState = null,
-    string? PasswordChangeToken = null);
+    string? PasswordChangeToken = null,
+    string? TwoFactorEnrolmentToken = null);
 
 /// <summary>
 /// Carries the user's account state on a sign-in response when the

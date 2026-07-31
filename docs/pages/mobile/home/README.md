@@ -11,7 +11,7 @@
 | Shell | `SimfPageShell` (`SimfTab.home`); signed-in uses the `GreetingHeader`, guest/staff/moderator use the standard header |
 | API | `GET /app/notifications/unread-count` (bell badge, signed-in) · `GET /app/news` (highlights, reused) · `GET /app/banners` (hero images, #43) · `GET /app/organization-profile` (hero edition overlay) · `GET /app/me/dashboard` (best-effort greeting name); all best-effort — Home never blocks on them |
 | Providers | `homeProfileProvider` · `unreadNotificationCountProvider` · `newsListProvider` · `bannersProvider` (#43) · `orgProfileProvider` |
-| Tests | `test/features/home/home_screen_test.dart` (36); the greeting header's language-pill placement + flip is in `test/app/simf_page_shell_test.dart` (D-772); goldens `test/golden/home_golden_test.dart` (`goldens/home_signed_in_758-1134.png` + `home_guest_758-2910.png`); E2E [`mobile-home.md`](../../../tests/e2e/mobile-home.md) |
+| Tests | `test/features/home/home_screen_test.dart` (36); the greeting name line is in `test/features/home/widgets/greeting_header_test.dart` (OA-D1, 6 cases); the greeting header's language-pill placement + flip is in `test/app/simf_page_shell_test.dart` (D-772); goldens `test/golden/home_golden_test.dart` (`goldens/home_signed_in_758-1134.png` + `home_guest_758-2910.png` — the signed-in golden's fixture name is `أحمد محمد`, so it **must be re-locked** with `flutter test --update-goldens test/golden/home_golden_test.dart` after OA-D1); E2E [`mobile-home.md`](../../../tests/e2e/mobile-home.md) |
 | Legacy detail | `docs/App/Page_013/` — retained as the historical spec |
 | Status | ✅ Real — built → 758:1134/2910 parity → **clean-code frozen (D-602)** |
 
@@ -30,7 +30,14 @@ account sees the guest layout with an awaiting-approval note.
   the open-info FAQ + روح السعودية rows, and the sign-in CTA (or the pending
   note).
 - **Visitor** (758:1134): `GreetingHeader` (avatar → My Area, the static
-  "مرحبًا" welcome + the user's **first name** only (owner 2026-07-21), the
+  "مرحبًا" welcome + the user's **full trimmed name** (**OA-D1**, 2026-07-30 —
+  superseding the 2026-07-21 "first name only" instruction: the implementation
+  of that instruction was `name.trim().split(' ').first`, which amputated every
+  Arabic compound given name — عبد الله greeted as عبد, عبد الرحمن as عبد — and
+  greeted the wrong token whenever the family name came first. There is no
+  captured `GivenName` to split on, so no string surgery is safe; the line
+  already carries `maxLines: 1` + `TextOverflow.ellipsis`, so a long name
+  degrades gracefully. Owner decision Q3), the
   shared `SimfLanguageToggle` (**added BUG-017**, 2026-07-26 — every other
   screen carries the header toggle and the only other language entry point is
   the Profile "More" menu, so from Home there was no route to the language

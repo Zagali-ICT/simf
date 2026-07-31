@@ -66,11 +66,7 @@ class MoreRow extends StatelessWidget {
                     textAlign: TextAlign.start,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: SimfTokens.surface,
-                      fontSize: SimfTokens.textMd,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: SimfTokens.labelWhiteMedium,
                   ),
                 ),
                 if (trailingValue != null) ...<Widget>[

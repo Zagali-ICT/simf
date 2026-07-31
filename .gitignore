@@ -36,6 +36,12 @@ src/MobileApp/build/
 Pods/
 .gradle/
 local.properties
+# Golden-comparison output. `flutter test` writes the four diff PNGs per failing
+# golden here; they are generated artefacts of a FAILING run, never an input to
+# one. 48 of them had been committed and were stale against a long-superseded
+# revision, so anyone grepping the directory was reading obsolete debris
+# (STALE-GOLDEN-ARTIFACTS). The masters live in test/golden/goldens/.
+src/Mobile/simf_app/test/golden/failures/
 
 # ── Secrets & environment ──────────────────────────────────────────
 # Production config is applied via Machine-scope env vars (set-env-*.ps1);
@@ -69,4 +75,12 @@ desktop.ini
 # production super-admin credential (twice) plus demo passwords; removed
 # 2026-07-30. Scratch files do not belong in the repo at all.
 txt.txt
+# SEC-NOTES (2026-07-30) — myComment.txt is the owner's hand-written fix-list.
+# Untracked, NOT deleted: it is owner-authored, other work still references it,
+# and it stays on disk. Untracked because a plaintext working-notes file at the
+# repo root has no review gate — the next paste into it lands in a commit with
+# nobody reading it, which is how txt.txt came to carry a production credential.
+# Requires `git rm --cached myComment.txt` once, or the tracked copy survives
+# this ignore rule.
+myComment.txt
 /*.scratch.txt

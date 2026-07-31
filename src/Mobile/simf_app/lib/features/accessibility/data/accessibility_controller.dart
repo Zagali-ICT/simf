@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
+
+import 'accessibility_preferences_repository.dart';
 
 /// The text-size choices offered on the accessibility screen (Page 038; Figma
 /// 1116:16630 صغير / متوسط / كبير / أكبر). Persisted by stable `.name`, so the
@@ -69,6 +73,13 @@ class AccessibilitySettings {
 /// the choices survive a restart and are applied app-wide (text scale, theme,
 /// reduced motion). Mirrors the read-on-boot / write-on-change shape of
 /// `LocaleController`.
+///
+/// `accessibility-server-sync` — the five flags are also **account** settings:
+/// every change is written through to `PUT /app/account/preferences`, and
+/// [applyRemote] replays the server's copy at sign-in. Device prefs remain the
+/// offline cache and the only READ path, so the app still renders the right
+/// scale on the first frame, offline, before any network call. A failed sync
+/// never disturbs the local choice.
 class AccessibilityController extends Notifier<AccessibilitySettings> {
   AccessibilityController({required this.prefs});
 
@@ -103,28 +114,96 @@ class AccessibilityController extends Notifier<AccessibilitySettings> {
   Future<void> setTextSize(AppTextSize value) async {
     await prefs.setString(StorageKeys.accessibilityTextSize, value.name);
     state = state.copyWith(textSize: value);
+    unawaited(_pushToServer());
   }
 
   Future<void> setHighContrast(bool value) async {
     await prefs.setBool(StorageKeys.accessibilityHighContrast, value);
     state = state.copyWith(highContrast: value);
+    unawaited(_pushToServer());
   }
 
   Future<void> setReduceMotion(bool value) async {
     await prefs.setBool(StorageKeys.accessibilityReduceMotion, value);
     state = state.copyWith(reduceMotion: value);
+    unawaited(_pushToServer());
   }
 
   Future<void> setScreenReaderAssist(bool value) async {
     await prefs.setBool(StorageKeys.accessibilityScreenReader, value);
     state = state.copyWith(screenReaderAssist: value);
+    unawaited(_pushToServer());
   }
 
   Future<void> setCaptions(bool value) async {
     await prefs.setBool(StorageKeys.accessibilityCaptions, value);
     state = state.copyWith(captions: value);
+    unawaited(_pushToServer());
+  }
+
+  /// Replays the account's server-held choices over the local cache — called
+  /// once at sign-in so the settings follow the user to a new device or a
+  /// reinstall. Writes the prefs too, so the next cold start reads them
+  /// instantly and offline.
+  Future<void> applyRemote(AccessibilitySettings remote) async {
+    await prefs.setString(
+      StorageKeys.accessibilityTextSize,
+      remote.textSize.name,
+    );
+    await prefs.setBool(
+      StorageKeys.accessibilityHighContrast,
+      remote.highContrast,
+    );
+    await prefs.setBool(
+      StorageKeys.accessibilityReduceMotion,
+      remote.reduceMotion,
+    );
+    await prefs.setBool(
+      StorageKeys.accessibilityScreenReader,
+      remote.screenReaderAssist,
+    );
+    await prefs.setBool(StorageKeys.accessibilityCaptions, remote.captions);
+    state = remote;
+  }
+
+  /// Best-effort write-through. A failed sync must never disturb the choice the
+  /// user just made: the local prefs are already written and stay authoritative
+  /// until the next successful sync (same contract as `OrgProfileController.warm`).
+  Future<void> _pushToServer() async {
+    try {
+      await ref.read(accessibilityPreferencesRepositoryProvider).save(state);
+    } on Object {
+      // Offline / signed-out / transient error — keep the local choice.
+    }
   }
 }
+
+/// Pulls the account's accessibility preferences down at sign-in. Kept behind
+/// its own dependency-free provider so the post-auth seam can fire it without
+/// taking a hard dependency on the controller (or the API client) being wired —
+/// every risky read happens inside [hydrate]'s guard, and a sync failure can
+/// never fail a sign-in.
+class AccessibilitySync {
+  AccessibilitySync(this._ref);
+
+  final Ref _ref;
+
+  Future<void> hydrate() async {
+    try {
+      final remote =
+          await _ref.read(accessibilityPreferencesRepositoryProvider).fetch();
+      await _ref
+          .read(accessibilityControllerProvider.notifier)
+          .applyRemote(remote);
+    } on Object {
+      // Offline / not-yet-provisioned / transient error — the local prefs cache
+      // stays authoritative until the next successful sync.
+    }
+  }
+}
+
+final accessibilitySyncProvider =
+    Provider<AccessibilitySync>((ref) => AccessibilitySync(ref));
 
 final accessibilityControllerProvider =
     NotifierProvider<AccessibilityController, AccessibilitySettings>(() {

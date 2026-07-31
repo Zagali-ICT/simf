@@ -8,7 +8,8 @@ import '../data/session_models.dart';
 /// One speaker card (frame 889:2722/889:2737/889:2747): a navy box with a beige
 /// hairline; a 40×40 rounded photo on the inline-start (physical right), with
 /// the name (white 16px) + the country flag over the rank (beige 12px) beside
-/// it. Tapping opens the speaker profile.
+/// it. A session **host** carries the gold star glyph + المضيف on that rank line
+/// (PAR-P4a). Tapping opens the speaker profile.
 class SessionSpeakerCard extends StatelessWidget {
   const SessionSpeakerCard({
     required this.speaker,
@@ -33,11 +34,8 @@ class SessionSpeakerCard extends StatelessWidget {
     // The country is now carried by the flag (Figma 889:2726), so the second
     // line is the rank + the host marker only. The rank localizes (Arabic ↔
     // English) to match the name above it (owner 2026-07-19).
-    final rank = speaker.localizedTitle(isArabic)?.trim();
-    final subParts = <String>[
-      if (rank != null && rank.isNotEmpty) rank,
-      if (isHost) hostLabel,
-    ];
+    final title = speaker.localizedTitle(isArabic)?.trim();
+    final rank = title != null && title.isNotEmpty ? title : null;
 
     return SimfCard(
       onTap: onTap,
@@ -81,11 +79,38 @@ class SessionSpeakerCard extends StatelessWidget {
                       ],
                     ],
                   ),
-                  if (subParts.isNotEmpty) ...<Widget>[
+                  if (rank != null || isHost) ...<Widget>[
                     const SizedBox(height: SimfTokens.space2),
-                    Text(
-                      subParts.join(' · '),
-                      style: SimfTokens.labelBeigeSm,
+                    // PAR-P4a — the host marker is the GOLD STAR glyph beside
+                    // the المضيف label, which is what the speakers-list card's
+                    // own doc comment (D-432) already promised the detail
+                    // renders. A plain speaker keeps the bare rank line.
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        if (rank != null)
+                          Flexible(
+                            child: Text(
+                              rank,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: SimfTokens.labelBeigeSm,
+                            ),
+                          ),
+                        if (rank != null && isHost)
+                          const Text(' · ', style: SimfTokens.labelBeigeSm),
+                        if (isHost) ...<Widget>[
+                          const Icon(
+                            Icons.star_rounded,
+                            // Matches the header meta glyphs (14) beside the
+                            // 12px beige sub-line.
+                            size: 14,
+                            color: SimfTokens.accent,
+                          ),
+                          const SizedBox(width: SimfTokens.space1),
+                          Text(hostLabel, style: SimfTokens.labelBeigeSm),
+                        ],
+                      ],
                     ),
                   ],
                 ],

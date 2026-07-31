@@ -134,7 +134,14 @@ public sealed record PublicSessionDetail(
     // same-origin route the page builds from each item's Id. Sourced from the
     // active SpeakerPresentation rows for the session. Appended (append-only,
     // D-219) — the app keeps its own signed-in /app/presentations read.
-    IReadOnlyList<PublicSessionDownload>? Downloads = null);
+    IReadOnlyList<PublicSessionDownload>? Downloads = null,
+    // #29 (owner 2026-07-30): the session's kind, so the app can reduce a
+    // WORKSHOP's detail to title + time. PublicSessionItem has carried Type since
+    // D-452 but the DETAIL record did not — the app's SessionDetail.fromJson read
+    // json['type'] and always got null, so a type-conditional render on the detail
+    // screen could never fire. Appended (append-only, D-219); null = an untyped
+    // session, which renders the full detail exactly as before.
+    SessionType? Type = null);
 
 /// <summary>One bilingual key-outcome bullet on the public session-detail page
 /// ("أبرز المخرجات", Figma 5991-85840), in the session's display order. Sourced
