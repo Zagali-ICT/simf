@@ -162,6 +162,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/organization-profile` | [`cp-organization-profile.md`](cp-organization-profile.md) | E2E-ORGP-001..009 |
 | `/admin/contact-inquiries` | [`cp-contact-inquiries.md`](cp-contact-inquiries.md) | E2E-CINQ-001..008 |
 | `/admin/operations` | [`cp-admin-operations.md`](cp-admin-operations.md) | E2E-OPS-001..011 |
+| _(no page — armed from config)_ | [`cp-walk-in-mode.md`](cp-walk-in-mode.md) | E2E-WIM-001..016 |
 | `/admin/operation-log` | [`cp-admin-operation-log.md`](cp-admin-operation-log.md) | E2E-OPL-001..018 |
 | `/admin/logs` | [`cp-admin-logs.md`](cp-admin-logs.md) | E2E-LOG-001..013 |
 | `/admin/ops/services` | [`cp-ops-services.md`](cp-ops-services.md) | E2E-SVCM-001..008 |
@@ -335,10 +336,10 @@ again without failing the build. They had been left at the 2026-06-02 figures �
 "74 pages / ~1044 scenarios" — while the catalogue more than doubled, and were
 being quoted in planning as if current.
 
-- **Pages catalogued:** 184 (94 Control Panel + 70 mobile + 19 Website + 1
-  system-wide). One of the 184 — `cp-admin-companies.md` — is **retired**: its
+- **Pages catalogued:** 185 (95 Control Panel + 70 mobile + 19 Website + 1
+  system-wide). One of the 185 — `cp-admin-companies.md` — is **retired**: its
   route was renamed away and it now carries no live scenarios.
-- **Total scenarios:** 2895 Coverage-matrix rows, every id distinct. That
+- **Total scenarios:** 2911 Coverage-matrix rows, every id distinct. That
   includes the **362** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
   per live page — see `tools/qa/generate_els_rows.py`); the hand-authored
   functional total is 2533.
