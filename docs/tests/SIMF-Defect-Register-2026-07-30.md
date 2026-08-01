@@ -6,7 +6,7 @@ _Built 2026-07-30. Seven QA reports were read end to end by one agent each, and 
 
 The defects were spread across seven documents with three different id schemes, and their status columns had drifted badly. Working from any one of them would have meant re-fixing what is already fixed while missing what is not.
 
-> **STATUS CORRECTED 2026-07-31 — read [§ Status correction (2026-07-31)](#status-correction-2026-07-31) before working from this document.** The "42 STILL-OPEN" figure below was accurate when the register was built on 2026-07-30 and is **wrong now**. Commit `5418ed34` cleared the great majority, `bc30bafd` + `abf87841` cleared the time-storage item, the 2026-07-31 round closed the three the fix-all run had explicitly not delivered, and later the same day the owner answered **Q9** and **Q12**, closing `FR-702-riyadh-georestriction` (built as a notice) and `FR-1203-brand-colour-tokens` (closed by decision, no code). **1 of the 42 remains open** — `#33`, blocked on a delivery date. The counts in the table below are left at their as-built values so the delta is visible; the corrected column is the authority.
+> **STATUS CORRECTED 2026-07-31 — read [§ Status correction (2026-07-31)](#status-correction-2026-07-31) before working from this document.** The "42 STILL-OPEN" figure below was accurate when the register was built on 2026-07-30 and is **wrong now**. Commit `5418ed34` cleared the great majority, `bc30bafd` + `abf87841` cleared the time-storage item, the 2026-07-31 round closed the three the fix-all run had explicitly not delivered, and later the same day the owner answered **Q9** and **Q12**, closing `FR-702-riyadh-georestriction` (built as a notice) and `FR-1203-brand-colour-tokens` (closed by decision, no code). **0 of the 42 remain open** — `#33`, the last one, was written on 2026-08-01. The counts in the table below are left at their as-built values so the delta is visible; the corrected column is the authority.
 
 | Verified status | Count (2026-07-30) | Count (2026-07-31) | Meaning |
 |---|---:|---:|---|
@@ -38,8 +38,8 @@ code half and an open owner half.
 
 **Row arithmetic.** 42 STILL-OPEN rows → **2 open**, 39 fixed, 1 not-a-defect.
 Three refs appear twice in the register (`OA-D1`, `OA-D5`, `OA-D6` were each
-reported by two source documents), so the 42 rows are 39 distinct refs and the
-1 that remains open is 1 distinct ref. _(Was "3 open, 38 fixed" earlier the same
+reported by two source documents), so the 42 rows are 39 distinct refs, and
+none of them remains open. _(Was "3 open, 38 fixed" earlier the same
 day; `FR-702-riyadh-georestriction` moved across when the owner answered Q9 —
 see the FR-702 subsection below.)_
 
@@ -108,20 +108,36 @@ These are the three the fix-all run explicitly did **not** deliver.
 | `sev-1-1-domain-purity` | **Documentation defect closed; the code state is unchanged by decision (owner Q15).** `SimfUser : IdentityUser<Guid>` and `SimfRole : IdentityRole<Guid>` are still in `SIMF.Domain`, and `SIMF.Domain.csproj` still references `Microsoft.Extensions.Identity.Stores`. What was actually wrong was the refactor plan asserting "Arch SEV-1.1 fully closed"; that is corrected, and `tests/SIMF.Api.Tests/DomainPurityTests.cs` pins the real state with **inverted** facts (`Domain_SimfUser_still_derives_from_AspNet_Identity`) so the day someone does the POCO split, the test fails and tells them to flip it. The architectural work itself is still outstanding. |
 | `sev-1-6-service-placement` | **Deferral re-confirmed in writing (owner Q13).** `AdminAccountService` is still under `SIMF.Infrastructure/Identity/` (3,452 lines across six partials). The defect was a deferral that lived only in a table cell and was being inherited by silence; the reasoning is now recorded where the next round will read it. The move itself is still outstanding, past the event. |
 
-### Genuinely still open (1)
+### Genuinely still open (0)
 
-One item remains, and it is blocked on a date from the owner rather than on
-engineering time.
+**All 42 rows are closed.** `#33`, the Control Panel user manual, was the last
+one and it was written on 2026-08-01 rather than waiting on a date.
 
-_(This section read "still open (3)" earlier on 2026-07-31. The owner answered
-both blocking questions the same day: **Q9** closed
-`FR-702-riyadh-georestriction` (built as a notice) and **Q12** closed
-`FR-1203-brand-colour-tokens` (closed by decision, no code). Both moved to
-[§ Closed by an owner answer](#closed-by-an-owner-answer-later-on-2026-07-31).)_
+The manual now covers **every one of the 91 modules the Control Panel navigation
+exposes**, across all 14 groups, checked against `CpNavigation.cs` rather than
+against a plan document. That is worth stating precisely, because the register's
+own row understated the gap: it counted **14 `_(planned)_` markers**, but those
+only flagged the stubs somebody had remembered to mark. Six entire navigation
+groups (Overview, Scientific committee, Public relations, Gates, Reference data
+and Reports) had no chapters at all and were not even in the contents list. The
+real gap was about **66 undocumented modules**, not 14.
 
-| Ref | Sev | Where it still lives (re-verified 2026-07-31) | Blocked on |
-|---|---|---|---|
-| `#33` — Control Panel user manual not delivered | high | `docs/manuals/Admin-Manual.md` is still **1,118 lines with 14 `_(planned)_` markers**, unchanged: the contents list marks Registration requests (line 32), Attendees (33), Roles & permissions (35), Halls & seating (39), Speakers (40) and Bookings (42) as unwritten, all of Exhibition / Engagement / Knowledge & AI / Content (43–46) likewise, and chapter stubs remain at 204, 446 and 585. | **Q5** — the stated due date (19-07-2026) is long past and the real one is unconfirmed. |
+Two absences are deliberate and recorded in the manual's own §1.4:
+`/m/live-sessions` is the single route still declared a stub in `CpNavigation`,
+so there is nothing to operate; and `/m/registration-requests`, which the manual
+previously advertised as a planned chapter, has no page at all and returns the
+not-found screen. That placeholder was **deleted rather than filled in** — a
+manual that sends an operator to a dead link is worse than one that stays silent.
+
+Every chapter was written against the page's own Razor markup, code-behind,
+resource strings and backing service, then independently re-checked against the
+same sources. The check pass found and corrected **64 defects in the draft**,
+including one invented control (a "home link in the header" that does not
+exist), a nav path that does not exist ("Lookups → Profile types", which is
+really "Reference data → Visitor profile types"), a missing form section that
+would have left an operator unable to complete a VIP registration, and a series
+of troubleshooting rows quoting the API's error message where the Control Panel
+actually shows a different, client-side one.
 
 ### What did NOT change
 
@@ -167,8 +183,8 @@ anyone out: `#2b` is a boot-time configuration guard, and `#2c` only adds a clai
 Ordered by user impact, not by effort. Waves are sequenced so nothing in a later wave depends on an earlier one being incomplete.
 
 > **Executed. Kept as the record of what was planned and why.** Every wave below
-> has since run: 41 of the 42 rows are closed and 1 remains open (`#33`, the
-> Control Panel user manual), waiting on a delivery date from the owner. The Wave-4
+> has since run: all 42 rows are closed, `#33` (the Control Panel user manual)
+> last, on 2026-08-01. The Wave-4
 > `FR-702` row below is one of the closed ones, and it did **not** close the way
 > it was planned: the plan proposed gating the live URL on the caller's resolved
 > `Region`, and the owner instead removed the restriction from the requirement
@@ -325,7 +341,7 @@ Closing these is as valuable as fixing the real ones: each is a row that would o
 
 > **This section is a snapshot of 2026-07-30 and is kept verbatim as the
 > historical evidence trail — it is NOT the current status.** 40 of the 42
-> entries below have since closed and 1 remains open; each one's present state,
+> entries below have since closed; each one's present state,
 > and the file re-read to establish it, is in
 > [§ Status correction (2026-07-31)](#status-correction-2026-07-31). Do not plan
 > work from this section without reading that one first.
