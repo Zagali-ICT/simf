@@ -27,19 +27,36 @@ the existing page could not close #2.
 
 | ID | Scenario | Type | Priority | Status |
 |----|----------|------|----------|--------|
-| E2E-TFE-001 | Golden path — unenrolled admin enrols and lands in the Control Panel | happy | P0 | authored |
-| E2E-TFE-002 | Password alone never yields a session on the Cp audience | security | P0 | authored |
-| E2E-TFE-003 | Already-enrolled admin never sees this page | happy | P0 | authored |
-| E2E-TFE-004 | Wrong six-digit code is rejected and no session is issued | error | P0 | authored |
-| E2E-TFE-005 | Direct navigation with no enrolment ticket bounces to `/login` | auth | P0 | authored |
-| E2E-TFE-006 | A spent ticket cannot be replayed | security | P0 | authored |
-| E2E-TFE-007 | Recovery codes are shown exactly once and must be acknowledged | happy | P1 | authored |
-| E2E-TFE-008 | Client-side validation on the code field | error | P1 | authored |
-| E2E-TFE-009 | Expired ticket (>15 min) sends the admin back to sign in | error | P1 | authored |
-| E2E-TFE-010 | Server 500 on `/complete` surfaces a bilingual error, no session | resilience | P2 | authored |
-| E2E-TFE-011 | RTL render in Arabic | i18n | P1 | authored |
-| E2E-TFE-012 | A newly CP-provisioned admin completes their first sign-in here | happy | P0 | authored |
-| E2E-TFE-013 | The App audience is unaffected by the gate | security | P0 | authored |
+| E2E-TFE-001 | Golden path — unenrolled admin enrols and lands in the Control Panel | happy | P0 | **verified 2026-08-01** |
+| E2E-TFE-002 | Password alone never yields a session on the Cp audience | security | P0 | **verified 2026-08-01** |
+| E2E-TFE-003 | Already-enrolled admin never sees this page | happy | P0 | **verified 2026-08-01** |
+| E2E-TFE-004 | Wrong six-digit code is rejected and no session is issued | error | P0 | **verified 2026-08-01** |
+| E2E-TFE-005 | Direct navigation with no enrolment ticket bounces to `/login` | auth | P0 | **verified 2026-08-01** |
+| E2E-TFE-006 | A spent ticket cannot be replayed | security | P0 | **verified 2026-08-01** |
+| E2E-TFE-007 | Recovery codes are shown exactly once and must be acknowledged | happy | P1 | **verified 2026-08-01** |
+| E2E-TFE-008 | Client-side validation on the code field | error | P1 | **verified 2026-08-01** |
+| E2E-TFE-009 | Expired ticket (>15 min) sends the admin back to sign in | error | P1 | **verified 2026-08-01** |
+| E2E-TFE-010 | Server failure on `/complete` surfaces a bilingual error, no session | resilience | P2 | **verified 2026-08-01** |
+| E2E-TFE-011 | RTL render in Arabic | i18n | P1 | **verified 2026-08-01** |
+| E2E-TFE-012 | A newly CP-provisioned admin completes their first sign-in here | happy | P0 | **verified 2026-08-01** |
+| E2E-TFE-013 | The App audience is unaffected by the gate | security | P0 | **verified 2026-08-01** |
+
+### Verification run — 2026-08-01
+
+All thirteen were driven against a throwaway localhost stack (`tools/qa/launch-qa-stack.sh`,
+API `:5275` + CP `:5278`, LocalDB `SIMF_QA_*` recreated from empty). Zero console
+errors and zero console warnings across the whole session; no horizontal overflow.
+
+The account under test was created through the CP at `/admin/admins` during the run
+and confirmed in the database as `TwoFactorEnabled = 1` with **zero** rows in
+`AspNetUserTokens` for `AuthenticatorKey` — the exact state that, before #2/#2d,
+`SignInService` would have challenged against a secret that does not exist. It
+enrolled and reached the dashboard, so the lockout is closed by demonstration and
+not only by argument.
+
+Screenshots: [`cp-2fa-enrolment-rtl.png`](../../screenshots/cp-2fa-enrolment-rtl.png)
+(stage 1, Arabic) · [`cp-2fa-enrolment-recovery-codes.png`](../../screenshots/cp-2fa-enrolment-recovery-codes.png)
+(stage 2).
 
 ## Scenarios
 
@@ -159,15 +176,33 @@ Scenario Outline: The code field rejects a malformed entry before any request
   Given the administrator is on /login/enrol-2fa with the QR displayed
   When they enter "<entry>" and press "Confirm and sign in"
   Then the field shows "Enter the six-digit code."
+  And in Arabic it shows "أدخل الرمز المكوّن من ستة أرقام."
   And no request is made to /api/v1/app/auth/totp/enrolment/complete
 
   Examples:
     | entry  |
     |        |
     | 123    |
-    | 1234567|
     | abcdef |
 ```
+
+> **Corrected 2026-08-01 — the over-long case was removed, because it cannot
+> happen.** This outline used to carry a `1234567` row. The field is
+> `maxlength="6"`, so the browser truncates the entry to `123456` before Blazor
+> ever sees it; that is a well-formed six-digit code, so it passes client
+> validation and reaches the server, which then answers
+> `TOTP_ENROLMENT_CODE_INVALID` — i.e. it exercises TFE-004, not TFE-008.
+> Keeping the row would have made a passing scenario assert the wrong thing.
+> `inputmode="numeric"` is a soft keyboard hint, not a filter, so `abcdef` does
+> still reach the client-side check and is the case worth keeping.
+
+**How "no request is made" is asserted.** The Control Panel is Blazor Server, so
+the call to `/complete` is made server-to-server by `SimfAuthClient` and never
+appears in the browser's network panel — the only browser traffic is the SignalR
+circuit. The assertion is made against the API's own request log instead: after
+the three malformed entries the count of `POST …/enrolment/complete` lines was
+still zero, and the first and only one appeared when a well-formed code was
+submitted.
 
 ### E2E-TFE-009 — Expired ticket
 
@@ -188,8 +223,24 @@ Scenario: An upstream failure never leaks a half-session
   When the administrator submits a valid code
   Then the page shows a bilingual error alert and stays on /login/enrol-2fa
   And no authentication cookie is written
+  And the account gains no authenticator secret
   And the browser console has 0 uncaught errors
 ```
+
+> **How it was driven 2026-08-01.** Injecting a literal HTTP 500 would mean
+> changing the API, so the API process was **stopped** while an enrolment page
+> sat open with a live ticket, and a valid code was then submitted. That takes
+> the same branch: `SimfAuthClient` funnels `HttpRequestException`,
+> `TaskCanceledException`, `JsonException` and `NotSupportedException` into the
+> same `TransportFailure` envelope a 500 produces, so the page sees one failed
+> `ApiResult` either way. Observed: the alert **"The SIMF service could not be
+> reached. Please try again."** (Arabic sibling
+> **"تعذّر الوصول إلى خدمة SIMF. حاول مرة أخرى."** — both live in
+> `SimfAuthClient.TransportFailure`), the URL still `/login/enrol-2fa`, the QR
+> still rendered, zero recovery codes on the page, and **zero** console errors.
+> No session was minted: navigating to `/` afterwards redirected to
+> `/login?ReturnUrl=%2F`, and the account still held **zero** `AuthenticatorKey`
+> rows — the failure left no half-enrolment behind.
 
 ### E2E-TFE-011 — RTL render
 
@@ -233,8 +284,18 @@ Scenario: The mobile contract is untouched
 
 `tests/SIMF.Api.Tests/ControlPanelTwoFactorEnrolmentTests.cs` covers the API
 halves of TFE-001, -002, -003, -004, -006, -012 and -013 against a host with the
-gate switched on (`ControlPanelTwoFactorApiFactory`). TFE-005, -007, -008, -009,
--010 and -011 are browser assertions and are manual until the CP sweep runs them.
+gate switched on (`ControlPanelTwoFactorApiFactory`).
+
+TFE-005, -007, -008, -009, -010 and -011 remain browser assertions with no
+automated coverage. They were **driven by hand on 2026-08-01** (see the
+verification-run note above) and pass, but nothing in CI re-runs them, so a
+regression in the enrolment page would not fail the build. Automating them is
+the open follow-up on this page: the six are ordinary Playwright candidates and
+the Gherkin above copies across unchanged.
+
+TFE-009 costs 15 minutes of wall clock by construction — the ticket lifetime is
+`SignInService.EnrolmentTicketLifetime` — so an automated version should inject a
+`TimeProvider` rather than wait.
 
 ---
 
