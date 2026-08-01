@@ -45,6 +45,10 @@ class OfflineBadge {
   /// work into the decoder. A real badge is about 61 characters.
   static const int maxEncodedLength = 128;
 
+  /// Length of an ordinary server-minted QR serial. A scanner cannot judge one
+  /// offline — it has no roster — so callers abstain rather than decode.
+  static const int mintedQrIdLength = 12;
+
   static const int _minSequence = 1;
 
   /// One below 10^10 — the cap that keeps a leading zero in the padded id, so

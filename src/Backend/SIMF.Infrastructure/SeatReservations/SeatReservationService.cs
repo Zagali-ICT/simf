@@ -3,6 +3,7 @@
 // Tests: SIMF.Api.Tests/SeatChangeTests.cs (B1 — the atomic seat move)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using SIMF.Application.AccessControl.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.Notifications;
 using SIMF.Application.SeatReservations.Abstractions;
@@ -27,6 +28,7 @@ internal sealed class SeatReservationService(
     IAuditLog auditLog,
     INotificationDispatcher notifications,
     TimeProvider timeProvider,
+    IQrResolver qrResolver,
     ILogger<SeatReservationService> logger) : ISeatReservationService
 {
     /// <summary>#6/#17 (owner 2026-07-20) — how long before a session starts an
@@ -1351,7 +1353,11 @@ internal sealed class SeatReservationService(
     public async Task<StaffSeatOccupant> ResolveBadgeSeatAsync(
         Guid sessionId, string qrId, CancellationToken cancellationToken = default)
     {
-        var code = (qrId ?? string.Empty).Trim();
+        // D-811 review — canonicalise first. A D-810 offline badge arrives as a
+        // ~61-character encrypted blob, not a QrId, so the direct lookup below
+        // would miss it and report an unknown badge. A minted serial passes
+        // through unchanged.
+        var code = qrResolver.ToStoredQrId(qrId ?? string.Empty);
         if (code.Length == 0)
         {
             throw new ApiException(

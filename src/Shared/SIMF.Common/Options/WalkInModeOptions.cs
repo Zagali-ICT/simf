@@ -73,10 +73,12 @@ public sealed class WalkInModeOptions
     /// </summary>
     public int ArrivalGraceMinutes { get; set; } = DefaultArrivalGraceMinutes;
 
-    /// <summary>Treat hall capacity as advisory rather than refusing the
-    /// arrival. Someone who has physically reached the door must be counted
-    /// whether or not the hall is nominally full.</summary>
-    public bool AdvisoryHallCapacity { get; set; }
+    // D-811 review: AdvisoryHallCapacity was declared here, documented in D-809
+    // and shipped in set-env-api.template.ps1 — with NO implementation anywhere.
+    // Arming it did nothing, which is worse than not offering it: an operator
+    // would have believed capacity was relaxed. Removed rather than implemented,
+    // because the gate-door arrival path already passes enforceCapacity: false
+    // unconditionally (HallAttendanceService), so there was nothing for it to do.
 
     /// <summary>Accept badges minted offline by the desk tool.</summary>
     public bool AcceptOfflineBadges { get; set; }
@@ -127,9 +129,6 @@ public sealed class WalkInModeOptions
     public bool AutoApproveActive(DateTimeOffset now) => IsArmed(now) && AutoApprove;
 
     public bool SessionWalkInActive(DateTimeOffset now) => IsArmed(now) && SessionWalkIn;
-
-    public bool AdvisoryHallCapacityActive(DateTimeOffset now) =>
-        IsArmed(now) && AdvisoryHallCapacity;
 
     public bool AcceptOfflineBadgesActive(DateTimeOffset now) =>
         IsArmed(now) && AcceptOfflineBadges && ResolveBadgeKey(BadgeKey) is not null;

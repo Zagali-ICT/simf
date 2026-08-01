@@ -82,6 +82,15 @@ internal sealed class QrResolver(
             profileRow.NameArabic);
     }
 
+    public string ToStoredQrId(string scanned)
+    {
+        var normalised = QrId.Normalise(scanned ?? string.Empty);
+        if (normalised.Length == OfflineBadgeId.QrIdLength) { return normalised; }
+        return TryTranslateEventBadge(normalised, timeProvider.GetUtcNow(), out var translated)
+            ? translated
+            : normalised;
+    }
+
     /// <summary>
     /// D-809 — decrypts an offline badge and returns the QR id it stands for.
     /// False for anything that is not a badge this server can open, which the

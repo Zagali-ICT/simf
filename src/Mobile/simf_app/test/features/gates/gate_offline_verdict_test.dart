@@ -157,6 +157,29 @@ void main() {
           isNull,
         );
       });
+
+      test('on an ordinary minted serial, even when its first character '
+          'collides with the loaded key version', () {
+        // D-811 review regression. 'K' is Crockford index 19. Run the device at
+        // key version 19 and the old code found a key, failed the GCM tag, and
+        // hard-denied a LEGITIMATE badge as forged. Every version from 2 to 31
+        // collides with some minter character, so the first key rotation would
+        // have refused roughly one in thirty attendees at every offline gate.
+        final atVersion19 = GateOfflineConfig(
+          badgeKey: key,
+          badgeKeyVersion: 19,
+          previousBadgeKey: null,
+          previousBadgeKeyVersion: 0,
+          sessionWalkIn: false,
+          issuedAtIso: '',
+          gates: config().gates,
+        );
+        expect(
+          build(atVersion19)
+              .judgeOffline(gateId: 'perimeter', qr: 'K7Q2M9ABCDEF'),
+          isNull,
+        );
+      });
     });
 
     test('admits at a hall door once session walk-in is armed', () {

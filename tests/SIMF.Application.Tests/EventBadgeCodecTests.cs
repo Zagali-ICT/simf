@@ -42,9 +42,9 @@ public class EventBadgeCodecTests
         var encoded = EventBadgeCodec.Encode(
             new EventBadgePayload(3, 3_000_042L), NewKey(), keyVersion: 0);
 
-        // The GateScan.QrIdAtScan column is nvarchar(64) after D-809; a badge
+        // The GateScan.QrIdAtScan column is nvarchar(96) after D-810; a badge
         // that does not fit would be truncated on insert.
-        encoded.Length.Should().BeLessThan(64);
+        encoded.Length.Should().BeLessThan(96);
     }
 
     [Fact]

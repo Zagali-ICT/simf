@@ -101,14 +101,22 @@ internal sealed class GateOperatorService(
             gate.HallId is not null,
             gate.IsActive)).ToList();
 
-        // The key travels ONLY while offline badges are armed. Disarming the
-        // capability therefore also stops handing the key to new devices, which
-        // is the lever available if one goes missing (together with rotating the
-        // version).
+        // The key travels ONLY while offline badges are armed, and ONLY to a
+        // caller who actually works a gate. Disarming therefore stops handing it
+        // to new devices — the lever available if one goes missing, together
+        // with rotating the version.
+        //
+        // D-811 review — the assignment requirement matters as much as the arming
+        // one. Gates.Operate is held by every Staff and Moderator app account,
+        // not just the provisioned scanner tablets, so without this the key would
+        // land in unencrypted preferences on every staff phone at the event and
+        // nobody could say how many copies existed.
+        var handOutKey = armed && rules.Count > 0;
+
         return new GateOfflineConfig(
-            BadgeKey: armed ? options.BadgeKey : null,
+            BadgeKey: handOutKey ? options.BadgeKey : null,
             BadgeKeyVersion: options.BadgeKeyVersion,
-            PreviousBadgeKey: armed && !string.IsNullOrWhiteSpace(options.PreviousBadgeKey)
+            PreviousBadgeKey: handOutKey && !string.IsNullOrWhiteSpace(options.PreviousBadgeKey)
                 ? options.PreviousBadgeKey
                 : null,
             PreviousBadgeKeyVersion: options.PreviousBadgeKeyVersion,

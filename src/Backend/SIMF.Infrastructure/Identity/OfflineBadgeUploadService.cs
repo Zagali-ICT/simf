@@ -1,5 +1,6 @@
 // Tests: SIMF.Api.Tests/OfflineBadgeUploadTests.cs
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SIMF.Application.Auditing;
 using SIMF.Application.IdentityAccess.Abstractions;
@@ -29,7 +30,8 @@ internal sealed class OfflineBadgeUploadService(
     SimfIdentityDbContext identityDbContext,
     IAuditLog auditLog,
     IOptionsMonitor<WalkInModeOptions> walkInMode,
-    TimeProvider timeProvider) : IOfflineBadgeUploadService
+    TimeProvider timeProvider,
+    ILogger<OfflineBadgeUploadService> logger) : IOfflineBadgeUploadService
 {
     /// <summary>Cap on one upload. Large enough for a full desk shift, small
     /// enough that a request stays inside a normal timeout — the desk splits a
@@ -65,11 +67,32 @@ internal sealed class OfflineBadgeUploadService(
                 $"الحد الأقصى للدفعة الواحدة {MaxBatchSize} تسجيل.");
         }
 
+        // D-811 review — the desk captures a reduced field set by its nature (one
+        // name, one identity document), which is exactly what QuickRegister
+        // permits. Without it every row fails the full-desk nationality check, so
+        // the whole batch is rejected one row at a time. Say so once, up front,
+        // instead of returning 500 identical per-row rejections.
+        if (!walkInMode.CurrentValue.QuickRegisterActive(timeProvider.GetUtcNow()))
+        {
+            throw new ApiException(
+                ErrorCodes.OfflineUploadDisabled, 403,
+                "Offline upload also needs WalkInMode:QuickRegister; an offline desk "
+                    + "captures a reduced field set.",
+                "رفع البطاقات دون اتصال يتطلب أيضًا تفعيل التسجيل السريع.");
+        }
+
         // Profile types are a small, stable lookup — read once rather than once
         // per item, so a 500-badge batch stays at one query for the whole set.
+        //
+        // D-811 review — AUDIENCE TYPES ONLY. This endpoint is gated on
+        // Visitors.RegisterOnsite, which PermissionCatalog grants to the staff
+        // mobile app role while deliberately withholding Others.RegisterOnsite.
+        // Without this filter a staff token could create partner-tier accounts
+        // here that it cannot create on the online desk — the batch would have
+        // been a way around that boundary.
         var profileTypes = await appDbContext.ProfileTypes
             .AsNoTracking()
-            .Where(type => type.IsActive && type.Code != 0)
+            .Where(type => type.IsActive && type.Code != 0 && type.IsForVisitor)
             .Select(type => new { type.Id, type.Code, type.IsForVisitor })
             .ToListAsync(cancellationToken);
 
@@ -178,7 +201,11 @@ internal sealed class OfflineBadgeUploadService(
         {
             var created = await provisioning.RegisterOnSiteAsync(
                 actorUserId, UserType.Visitor, registration, cancellationToken,
-                expectedIsVisitor: type.IsForVisitor,
+                // Constant true, not type.IsForVisitor: passing the type's own
+                // flag made the desk-scope guard compare a value with itself and
+                // therefore assert nothing. The lookup above already restricted
+                // the set to audience types; this makes the service re-check it.
+                expectedIsVisitor: true,
                 presetQrId: qrId);
 
             // Read the account state rather than inferring it from the returned
@@ -219,6 +246,20 @@ internal sealed class OfflineBadgeUploadService(
             // shape — all reported against the row that caused them so the rest
             // of the batch still lands.
             return Rejected(item.Sequence, qrId, ex.Code, ex.Message);
+        }
+        catch (Exception ex)
+        {
+            // D-811 review — isolation has to be per item for EVERY failure, not
+            // just the expected ones. A deadlock victim, a command timeout or a
+            // column truncation used to escape this loop and take the whole
+            // response with it, leaving the desk unable to tell which sequences
+            // landed — the precise outcome this class exists to prevent. The
+            // detail is logged, never returned: it can carry store internals.
+            logger.LogError(
+                ex, "Offline badge row {Sequence} failed unexpectedly.", item.Sequence);
+            return Rejected(
+                item.Sequence, qrId, ErrorCodes.InternalError,
+                "This registration could not be stored. Retry it.");
         }
     }
 

@@ -78,6 +78,13 @@ internal sealed partial class AdminAccountService(
     /// </summary>
     private static void EnsureFullDeskFields(AdminWalkInRegistrationRequest request)
     {
+        // D-811 review: this one was DROPPED when the presence rules moved out of
+        // the validator, so a blank or one-character display name started
+        // returning 200 with the mode disarmed. The badge prints this name.
+        RequireDeskField(
+            request.DisplayName is { Length: >= 2 } displayName
+                && !string.IsNullOrWhiteSpace(displayName),
+            "Display name is required.", "الاسم المعروض مطلوب.");
         RequireDeskField(
             !string.IsNullOrWhiteSpace(request.ArabicName),
             "Arabic name is required.", "الاسم بالعربية مطلوب.");
@@ -774,16 +781,40 @@ internal sealed partial class AdminAccountService(
             {
                 // The visitor IS registered and sits in the normal pending queue.
                 // A failed auto-approve must never lose a registration during a
-                // rush, so this degrades to exactly today's behaviour: the
-                // response carries an empty QR and the desk falls back to a paper
-                // slip while an admin approves from the queue.
+                // rush, so this degrades to today's behaviour: the desk falls
+                // back to a paper slip while an admin approves from the queue.
+                //
+                // D-811 review — the QR is cleared from the RESPONSE explicitly.
+                // ApproveAsync saves the App DB (minting the QR onto this same
+                // tracked profile instance) before it flips Identity, so a
+                // failure in the second half leaves a real, persisted QrId on an
+                // account that is still PendingApproval. Returning it would have
+                // the desk print a badge the gate then refuses as
+                // HolderNotApproved. Access stays fail-closed either way; this
+                // keeps the desk from printing paper it cannot use.
+                profile.QrId = null;
                 logger.LogError(
                     ex,
                     "Walk-in auto-approve failed for {UserId}; left PendingApproval.",
                     user.Id);
-                await AuditFailure(
-                    AuditEvents.AdminVisitorAutoApproveFailed, actorUserId, email,
-                    user.Id, ErrorCodes.InternalError, cancellationToken);
+                try
+                {
+                    await AuditFailure(
+                        AuditEvents.AdminVisitorAutoApproveFailed, actorUserId, email,
+                        user.Id, ErrorCodes.InternalError, cancellationToken);
+                }
+                catch (Exception auditFailure)
+                {
+                    // The likeliest cause of the approval failure is the database
+                    // itself, in which case this audit write fails too. Losing the
+                    // audit row is bad; throwing here would lose the operator's
+                    // whole response for a registration that DID commit, which is
+                    // worse.
+                    logger.LogError(
+                        auditFailure,
+                        "Could not audit the failed auto-approve for {UserId}.",
+                        user.Id);
+                }
             }
         }
 

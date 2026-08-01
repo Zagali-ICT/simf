@@ -9,6 +9,7 @@ using SIMF.Application.Auditing;
 using SIMF.Application.Email;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
+using SIMF.Common.Badges;
 using SIMF.Common.Enums;
 using SIMF.Common.Options;
 using SIMF.Contracts.Authentication;
@@ -333,6 +334,26 @@ internal sealed class BadgeAuthService(
         string? qrId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(qrId)) { return null; }
+
+        // D-811 review — an OFFLINE badge id is never resolvable here.
+        //
+        // Every endpoint on this service is AllowAnonymous, and their safety
+        // rests on a scanned QR being unguessable: a minted QrId is 12 random
+        // Crockford characters (~59 bits). A D-810 offline id is NOT — it is
+        // 'W' plus a desk sequence, so the live ids at an event are a few
+        // thousand consecutive numbers. Left resolvable, this turns
+        // resolve-badge into an anonymous roster oracle that returns the
+        // holder's display name for any guess.
+        //
+        // Refusing costs nothing: a walk-in badge is physical access only, and
+        // badge activation is already blocked for these accounts further down.
+        // The bearer of a real offline badge presents the ENCRYPTED blob, which
+        // is unguessable and is what the gate reads.
+        if (OfflineBadgeId.IsOfflineBadge(qrId.Trim().ToUpperInvariant()))
+        {
+            return null;
+        }
+
         var resolution = await qrResolver.ResolveAsync(
             qrId.Trim().ToUpperInvariant(), cancellationToken);
         if (resolution is null || resolution.AccountState != AccountState.Approved)

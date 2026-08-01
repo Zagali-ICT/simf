@@ -146,6 +146,16 @@ class GatesRepository {
       return const OfflineGateVerdict.denied(OfflineDenialReason.gateInactive);
     }
 
+    // D-811 review — abstain on anything the length says is an ordinary minted
+    // serial, mirroring QrResolver's guard on the server. Without this a normal
+    // 12-character badge whose first character's Crockford index happens to
+    // equal the loaded key version is fed to the decoder, fails the GCM tag, and
+    // is reported to the operator as FORGED. This device has no roster, so a
+    // minted serial is something it cannot judge — never something it can refuse.
+    if (qr.length == OfflineBadge.mintedQrIdLength) {
+      return null;
+    }
+
     final version = OfflineBadge.readKeyVersion(qr);
     if (version == null) {
       return null;

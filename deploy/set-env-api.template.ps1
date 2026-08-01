@@ -167,7 +167,6 @@ $vars = [ordered]@{
     "SIMF_WalkInMode__AutoApprove"              = ""   # default false - skip the approval queue
     "SIMF_WalkInMode__SessionWalkIn"            = ""   # default false - admit unregistered to a hall
     "SIMF_WalkInMode__ArrivalGraceMinutes"      = ""   # default 15, clamped 0..240
-    "SIMF_WalkInMode__AdvisoryHallCapacity"     = ""   # default false
     "SIMF_WalkInMode__AcceptOfflineBadges"      = ""   # default false - needs BadgeKey
     "SIMF_WalkInMode__OfflineUpload"            = ""   # default false
     # Leave OFF unless deliberately decided: a walk-in badge in open circulation

@@ -128,7 +128,21 @@ var rateLimitOptions =
 static bool IsOperationalEndpoint(HttpContext httpContext) =>
     httpContext.GetEndpoint()?.Metadata
         .GetMetadata<EnableRateLimitingAttribute>()?.PolicyName
-        == RateLimitOptions.OperationalPolicy;
+        == RateLimitOptions.OperationalPolicy
+    // D-811 review — the exemption ALSO requires a bearer token on the request.
+    //
+    // UseRateLimiter runs BEFORE UseAuthentication (see the pipeline below), so
+    // at this point httpContext.User is empty and the permission gate the
+    // exemption's rationale leans on has not run yet. Without this check an
+    // ANONYMOUS flood against an operational route bypassed the global per-IP
+    // cap entirely — re-opening the H29 / SEV-2.1 finding the global limiter
+    // exists to close.
+    //
+    // A header check is all that is available this early. It is not
+    // authentication: a garbage bearer still reaches the exemption. It does mean
+    // an attacker must send one, and every genuine operator request carries one,
+    // so the owner's "no rate limit at the gates" requirement is untouched.
+    && httpContext.Request.Headers.Authorization.Count > 0;
 
 builder.Services.AddRateLimiter(rateLimiter =>
 {
@@ -171,7 +185,9 @@ builder.Services.AddRateLimiter(rateLimiter =>
     // offline batch upload. Deliberately unlimited; see
     // RateLimitOptions.OperationalPolicy for the full rationale. Every one of
     // these endpoints is gated on an authenticated operator's permission, which
-    // is the real control here.
+    // is the real control here — EXCEPT that the permission check runs after
+    // this middleware, which is why IsOperationalEndpoint also requires an
+    // Authorization header before granting the exemption (D-811 review).
     rateLimiter.AddPolicy(
         RateLimitOptions.OperationalPolicy,
         _ => RateLimitPartition.GetNoLimiter<string>("operational"));

@@ -318,6 +318,60 @@ public sealed class OfflineBadgeUploadTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task A_partner_profile_type_cannot_be_created_through_the_batch()
+    {
+        // D-811 review. This endpoint is gated on Visitors.RegisterOnsite, which
+        // the staff mobile app role holds — while Others.RegisterOnsite is
+        // deliberately withheld from it (PermissionCatalog). Without the
+        // audience-only filter the batch was a way around that boundary: a staff
+        // token could mint partner-tier accounts here that it cannot create on
+        // the online desk, and auto-approve would activate their MobileAppRole.
+        using var armed = CreateArmedFactory();
+        using var client = armed.CreateClient();
+        var token = await CreateAdminTokenAsync(client);
+
+        var partnerCode = await ResolvePartnerProfileTypeCodeAsync();
+        var response = await PostBatchAsync(client, token, new OfflineBadgeBatchRequest
+        {
+            Registrations = [BuildRegistration(NextSequence(), partnerCode)],
+        });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<OfflineBadgeBatchResponse>>())!.Data!;
+
+        Assert.Equal(0, body.Created);
+        Assert.Equal(1, body.Rejected);
+        Assert.Equal(
+            ErrorCodes.OfflineBadgeInvalid, body.Results[0].ErrorCode);
+    }
+
+    [Fact]
+    public async Task Upload_says_so_once_when_quick_register_is_not_also_armed()
+    {
+        // D-811 review — an offline desk captures a reduced field set by its
+        // nature, so without QuickRegister every row failed the full-desk
+        // nationality check. That used to surface as 500 identical per-row
+        // rejections, which reads as "the data is bad" rather than "a switch is
+        // missing".
+        using var armed = _factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseSetting("WalkInMode:Enabled", "true");
+            builder.UseSetting("WalkInMode:OfflineUpload", "true");
+            // QuickRegister deliberately left off.
+        });
+        using var client = armed.CreateClient();
+        var token = await CreateAdminTokenAsync(client);
+
+        var response = await PostBatchAsync(client, token, new OfflineBadgeBatchRequest
+        {
+            Registrations = [BuildRegistration(NextSequence(), await ResolveProfileTypeCodeAsync())],
+        });
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Offline_config_withholds_the_badge_key_while_disarmed()
     {
         // The key travels only while offline badges are armed. Disarming is
@@ -338,16 +392,46 @@ public sealed class OfflineBadgeUploadTests : IClassFixture<SimfApiFactory>
     {
         using var armed = CreateArmedFactory();
         using var client = armed.CreateClient();
-        var token = await CreateAdminTokenAsync(client);
+        var (token, operatorId) = await CreateAdminWithIdAsync(client);
+
+        // D-811 review — this test used to run with NO gate assignment, so
+        // config.Gates was empty and the whole Guid-to-code translation went
+        // unexercised: it would have passed with that mapping deleted. Seed a
+        // real gate with a real allow-list.
+        var visitorCode = await ResolveProfileTypeCodeAsync();
+        var gateCode = await SeedGateForOperatorAsync(operatorId, visitorCode);
 
         var config = await GetOfflineConfigAsync(client, token);
 
         Assert.Equal(BadgeKey, config.BadgeKey);
         Assert.Equal(BadgeKeyVersion, config.BadgeKeyVersion);
-        // The gates list is per-operator; this fixture's admin has no gate
-        // assignments, so the rules are empty while the key still arrives. That
-        // is the honest shape: an operator with no gates can verify nothing.
-        Assert.NotNull(config.Gates);
+
+        var rule = Assert.Single(config.Gates, g => g.Code == gateCode);
+        // Profile-type CODES, not Guids: a decrypted badge carries the code and
+        // an offline device has no way to resolve a Guid.
+        Assert.Contains(visitorCode, rule.AllowedProfileTypeCodes);
+        Assert.DoesNotContain((short)0, rule.AllowedProfileTypeCodes);
+        Assert.False(rule.IsHallDoor);
+        Assert.True(rule.IsActive);
+    }
+
+    [Fact]
+    public async Task Offline_config_withholds_the_key_from_an_operator_with_no_gates()
+    {
+        // D-811 review. Gates.Operate is held by every Staff and Moderator app
+        // account, not only the provisioned scanner tablets. Handing the badge
+        // key to all of them would put a badge-minting secret in unencrypted
+        // preferences across the venue and destroy any count of how many copies
+        // exist — which is what the disarm-and-rotate control depends on.
+        using var armed = CreateArmedFactory();
+        using var client = armed.CreateClient();
+        var token = await CreateAdminTokenAsync(client);
+
+        var config = await GetOfflineConfigAsync(client, token);
+
+        Assert.Empty(config.Gates);
+        Assert.Null(config.BadgeKey);
+        Assert.Null(config.PreviousBadgeKey);
     }
 
     private static async Task<GateOfflineConfig> GetOfflineConfigAsync(
@@ -406,6 +490,78 @@ public sealed class OfflineBadgeUploadTests : IClassFixture<SimfApiFactory>
             RegisteredAt = DateTimeOffset.UtcNow,
         };
 
+    /// <summary>A live PARTNER ("Other") type — the scope the batch must refuse.
+    /// Seeded on first use, because the fixture's default types may all be
+    /// audience-side and a test that silently found none would prove nothing.</summary>
+    /// <summary>Seeds an active perimeter gate assigned to <paramref name="operatorId"/>
+    /// admitting exactly one profile type, and returns its code.</summary>
+    private async Task<string> SeedGateForOperatorAsync(Guid operatorId, short allowedCode)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+
+        var profileTypeId = await db.ProfileTypes.AsNoTracking()
+            .Where(p => p.Code == allowedCode)
+            .Select(p => p.Id)
+            .FirstAsync();
+
+        var code = $"G-OFF-{Guid.NewGuid():N}"[..12];
+        var gate = new SIMF.Domain.AccessControl.Gate
+        {
+            Id = Guid.NewGuid(),
+            Code = code,
+            Name = "Offline config test gate",
+            NameArabic = "بوابة اختبار",
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+            AllowedProfileTypes =
+            [
+                new SIMF.Domain.AccessControl.GateProfileTypeAllow
+                {
+                    ProfileTypeId = profileTypeId,
+                },
+            ],
+        };
+        db.Gates.Add(gate);
+        db.GateAssignments.Add(new SIMF.Domain.AccessControl.GateAssignment
+        {
+            Id = Guid.NewGuid(),
+            GateId = gate.Id,
+            UserId = operatorId,
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        });
+        await db.SaveChangesAsync();
+        return code;
+    }
+
+    private async Task<short> ResolvePartnerProfileTypeCodeAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var existing = await db.ProfileTypes.AsNoTracking()
+            .Where(p => p.IsActive && !p.IsForVisitor && p.Code != 0)
+            .Select(p => (short?)p.Code)
+            .FirstOrDefaultAsync();
+        if (existing is { } found) { return found; }
+
+        var highest = await db.ProfileTypes.AsNoTracking()
+            .MaxAsync(p => (short?)p.Code) ?? 0;
+        var partner = new SIMF.Domain.Profiles.UserProfileType
+        {
+            Id = Guid.NewGuid(),
+            Name = $"Partner Test {Guid.NewGuid():N}"[..24],
+            NameArabic = "شريك اختبار",
+            IsForVisitor = false,
+            IsActive = true,
+            Code = (short)(highest + 1),
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        db.ProfileTypes.Add(partner);
+        await db.SaveChangesAsync();
+        return partner.Code;
+    }
+
     private async Task<short> ResolveProfileTypeCodeAsync()
     {
         using var scope = _factory.Services.CreateScope();
@@ -444,9 +600,14 @@ public sealed class OfflineBadgeUploadTests : IClassFixture<SimfApiFactory>
         return string.Concat(digits);
     }
 
-    private async Task<string> CreateAdminTokenAsync(HttpClient client)
+    private async Task<string> CreateAdminTokenAsync(HttpClient client) =>
+        (await CreateAdminWithIdAsync(client)).Token;
+
+    private async Task<(string Token, Guid UserId)> CreateAdminWithIdAsync(
+        HttpClient client)
     {
         const string administratorRole = "Administrator";
+        Guid userId;
         var email = $"offline-admin-{Guid.NewGuid():N}@simf.test";
         using (var scope = _factory.Services.CreateScope())
         {
@@ -467,6 +628,7 @@ public sealed class OfflineBadgeUploadTests : IClassFixture<SimfApiFactory>
             };
             await users.CreateAsync(user, AuthFlow.Password);
             await users.AddToRoleAsync(user, administratorRole);
+            userId = user.Id;
         }
 
         var sign = await client.PostAsJsonAsync(
@@ -478,6 +640,6 @@ public sealed class OfflineBadgeUploadTests : IClassFixture<SimfApiFactory>
                 Audience = SignInAudience.Cp,
             });
         var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return (body.Data!.Tokens!.AccessToken, userId);
     }
 }
