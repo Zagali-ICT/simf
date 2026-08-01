@@ -6,7 +6,7 @@
 | Responds to | `SIMF-HLD-002-MoD-HLD-External-v0.07.docx`, `SIMF-LLD-002-Solution-Design-Document.docx` |
 | Date | 2026-07-30 |
 | Status | **Superseded in part by SIMF-HLD-003 v1.0 (2026-07-30).** Retained as the working evidence file |
-| Superseding note | The owner decided on 2026-07-30 that **no AI runs in the cloud**. Every statement in this file about cloud AI providers, hybrid routing, provider retention, training exclusion, residency, sub-processors or data-processing agreements is therefore **obsolete**: there is no cloud AI call and no third-party AI processor. See HLD-003 section 2.4.2 and Annex A. The file-encryption table in section 6.2 was corrected on the same date. Issue HLD-003 to the reviewer, not this file |
+| Superseding note | The owner decided on 2026-07-30 that **no AI runs in the cloud**. Every statement in this file about cloud AI providers, hybrid routing, provider retention, training exclusion, residency, sub-processors or data-processing agreements is therefore **obsolete**: there is no cloud AI call and no third-party AI processor. The file-encryption table in section 6.2 was corrected on the same date (four of eighteen categories are encrypted, not all). **The issued deliverables are `SIMF-HLD-003-MoD-HLD-External-v1.0.docx` and `SIMF-HLD-003-Formal-Response-to-Technical-Review.docx`.** This file is retained as the working evidence behind them and is not for issue |
 | Basis | The two MoD deliverables above, plus the as-built source tree on branch `feat/cp-dashboard-reporting` |
 
 Every answer below is grounded in the delivered source. Where the reviewer's
