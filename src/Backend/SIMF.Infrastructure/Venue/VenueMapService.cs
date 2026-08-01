@@ -87,7 +87,7 @@ internal sealed class VenueMapService(
         await EnsureReferencesAsync(request.HallId, request.BoothId, cancellationToken);
         EnsureKindMatchesReferences(request.Kind, request.HallId, request.BoothId);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var node = new VenueMapNode
         {
             Id = Guid.NewGuid(),
@@ -138,7 +138,7 @@ internal sealed class VenueMapService(
         node.HallId = request.HallId;
         node.BoothId = request.BoothId;
         node.IsActive = request.IsActive;
-        node.UpdatedAt = timeProvider.GetUtcNow();
+        node.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -164,7 +164,7 @@ internal sealed class VenueMapService(
         }
 
         node.Deactivate();
-        node.UpdatedAt = timeProvider.GetUtcNow();
+        node.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry

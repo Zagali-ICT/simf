@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/CmsTests.cs
+// Tests: SIMF.Api.Tests/CmsTests.cs, SIMF.Api.Tests/GridDateSortKeyTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -121,7 +121,7 @@ internal sealed class AdminCmsService(
                 "لا يمكن أن يتجاوز المحتوى 8000 حرف.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var existing = await appDbContext.ContentBlocks
             .SingleOrDefaultAsync(b => b.Key == key, cancellationToken);
 
@@ -182,7 +182,7 @@ internal sealed class AdminCmsService(
             return; // idempotent
         }
         existing.IsActive = false;
-        existing.LastUpdatedAt = timeProvider.GetUtcNow();
+        existing.LastUpdatedAt = timeProvider.SimfNow();
         existing.LastUpdatedByUserId = actorUserId;
         await appDbContext.SaveChangesAsync(cancellationToken);
 
@@ -232,10 +232,15 @@ internal sealed class AdminCmsService(
         {
             ("title", false) => rows.OrderBy(b => b.Title),
             ("title", true) => rows.OrderByDescending(b => b.Title),
-            ("startutc", false) => rows.OrderBy(b => b.Start),
-            ("startutc", true) => rows.OrderByDescending(b => b.Start),
-            ("endutc", false) => rows.OrderBy(b => b.End),
-            ("endutc", true) => rows.OrderByDescending(b => b.End),
+            // "start" / "end" match the grid column Keys in BannersList.razor. They
+            // read "startutc" / "endutc" until 2026-08-01, left behind when D-770
+            // renamed the persisted columns, so neither date column sorted at all: both
+            // fell through to the catch-all and the grid stayed on DisplayOrder.
+            ("start", false) => rows.OrderBy(b => b.Start),
+            ("start", true) => rows.OrderByDescending(b => b.Start),
+            ("end", false) => rows.OrderBy(b => b.End),
+            ("end", true) => rows.OrderByDescending(b => b.End),
+            ("displayorder", false) => rows.OrderBy(b => b.DisplayOrder).ThenBy(b => b.Start),
             ("displayorder", true) => rows.OrderByDescending(b => b.DisplayOrder).ThenBy(b => b.Start),
             ("isactive", false) => rows.OrderBy(b => b.IsActive),
             ("isactive", true) => rows.OrderByDescending(b => b.IsActive),
@@ -273,7 +278,7 @@ internal sealed class AdminCmsService(
             request.Body, request.BodyArabic, request.Start, request.End,
             request.DisplayOrder);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var banner = new Banner
         {
             Id = Guid.NewGuid(),
@@ -328,7 +333,7 @@ internal sealed class AdminCmsService(
         banner.End = request.End;
         banner.DisplayOrder = request.DisplayOrder;
         banner.IsActive = request.IsActive;
-        banner.UpdatedAt = timeProvider.GetUtcNow();
+        banner.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -357,7 +362,7 @@ internal sealed class AdminCmsService(
             return; // idempotent
         }
         banner.IsActive = false;
-        banner.UpdatedAt = timeProvider.GetUtcNow();
+        banner.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -379,7 +384,7 @@ internal sealed class AdminCmsService(
 
     private static void ValidateBanner(
         string title, string titleArabic, string body, string bodyArabic,
-        DateTimeOffset start, DateTimeOffset end, int displayOrder)
+        DateTime start, DateTime end, int displayOrder)
     {
         if (string.IsNullOrWhiteSpace(title) || title.Length > 256
             || string.IsNullOrWhiteSpace(titleArabic) || titleArabic.Length > 256)

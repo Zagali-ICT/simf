@@ -99,7 +99,7 @@ public sealed class OperationsTogglesTests : IClassFixture<SimfApiFactory>
             new UpdateRegistrationGateRequest
             {
                 IsOpen = true,
-                AutoClose = DateTimeOffset.UtcNow.AddMinutes(-1),
+                AutoClose = SimfClock.Now.AddMinutes(-1),
             },
             token);
         Assert.Equal(HttpStatusCode.OK, setAutoClose.StatusCode);
@@ -196,7 +196,7 @@ public sealed class OperationsTogglesTests : IClassFixture<SimfApiFactory>
                 Id = RegistrationGate.SingletonId,
                 IsOpen = true,
                 AutoClose = null,
-                LastChangedAt = DateTimeOffset.UtcNow,
+                LastChangedAt = SimfClock.Now,
             });
         }
         else
@@ -231,16 +231,7 @@ public sealed class OperationsTogglesTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
 
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> GetAuthAsync(string url, string token)

@@ -50,7 +50,7 @@ public sealed class AiPrompt
     /// new version was written.</summary>
     public int Version { get; set; } = 1;
 
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset? UpdatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
     public Guid? UpdatedByUserId { get; set; }
 }

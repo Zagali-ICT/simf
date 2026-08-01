@@ -11,7 +11,7 @@ namespace SIMF.Contracts.Authentication;
 /// <param name="TotalCount">Total badges minted in the batch.</param>
 /// <param name="IsDelegate">True when every badge was flagged as a delegation member.</param>
 /// <param name="RecipientEmail">The organiser the QR pack was (last) emailed to, if any.</param>
-/// <param name="CreatedAt">When the batch was generated (UTC).</param>
+/// <param name="CreatedAt">When the batch was generated (Saudi local).</param>
 /// <param name="IsActive">False once the batch has been revoked.</param>
 public sealed record AdminBadgeBatchSummary(
     Guid Id,
@@ -19,7 +19,7 @@ public sealed record AdminBadgeBatchSummary(
     int TotalCount,
     bool IsDelegate,
     string? RecipientEmail,
-    DateTimeOffset CreatedAt,
+    DateTime CreatedAt,
     bool IsActive);
 
 /// <summary>

@@ -7,6 +7,7 @@ using SIMF.Application.Notifications;
 using SIMF.Application.Operations;
 using SIMF.Common.Enums;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Operations;
 
@@ -109,7 +110,7 @@ internal sealed class SessionNotAttendedReminderWorker(
         var notifications = scope.ServiceProvider.GetRequiredService<INotificationDispatcher>();
 
         var nudged = await RunNotAttendedScanAsync(
-            db, notifications, timeProvider.GetUtcNow(), ArrivalGrace, ReminderWindow,
+            db, notifications, timeProvider.SimfNow(), ArrivalGrace, ReminderWindow,
             logger, cancellationToken);
         if (nudged > 0)
         {
@@ -125,7 +126,7 @@ internal sealed class SessionNotAttendedReminderWorker(
     /// </summary>
     internal static async Task<int> RunNotAttendedScanAsync(
         SimfAppDbContext db, INotificationDispatcher notifications,
-        DateTimeOffset now, TimeSpan arrivalGrace, TimeSpan reminderWindow,
+        DateTime now, TimeSpan arrivalGrace, TimeSpan reminderWindow,
         ILogger logger, CancellationToken cancellationToken)
     {
         // Started at least `grace` ago, and no longer ago than grace + window. The

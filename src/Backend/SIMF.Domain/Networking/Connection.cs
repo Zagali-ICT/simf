@@ -24,5 +24,5 @@ public sealed class Connection : BaseAuditEntity
     public ConnectionState State { get; set; } = ConnectionState.Pending;
 
     /// <summary>When the target accepted / declined; null while Pending.</summary>
-    public DateTimeOffset? RespondedAt { get; set; }
+    public DateTime? RespondedAt { get; set; }
 }

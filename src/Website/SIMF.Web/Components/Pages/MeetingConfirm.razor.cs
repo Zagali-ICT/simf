@@ -55,7 +55,8 @@ public partial class MeetingConfirm
     }
 
     // R10 (D-767) — show the slot on the Saudi wall clock via the shared EventTime
-    // helper (the same UTC->Saudi relabel used across the site); stored instants stay UTC.
+    // helper, the same formatter used across the site. Stored instants ARE the
+    // Saudi wall clock (D-813); the helper formats, it does not convert.
     private string FormatSlot(MeetingActionPreview preview) =>
         preview.SlotStart is { } start && preview.SlotEnd is { } end
             ? $"{EventTime.DateTimeText(start)}–{EventTime.Time(end)}"

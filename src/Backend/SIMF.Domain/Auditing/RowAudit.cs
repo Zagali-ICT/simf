@@ -25,8 +25,8 @@ public sealed class RowAudit
     /// <summary>Auto-increment surrogate key — ordering / paging.</summary>
     public long Id { get; set; }
 
-    /// <summary>When the change committed (UTC).</summary>
-    public DateTimeOffset OccurredAt { get; set; }
+    /// <summary>When the change committed (Saudi local).</summary>
+    public DateTime OccurredAt { get; set; }
 
     /// <summary>The DB table name the change happened on (e.g. <c>AspNetUsers</c>).</summary>
     public string TableName { get; set; } = string.Empty;

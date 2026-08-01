@@ -7,6 +7,7 @@ using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Common;
 
 namespace SIMF.Application.IdentityAccess;
 
@@ -36,7 +37,7 @@ public sealed class TokenIssuer(
             user, roles, permissions, mobileAppRole, secondFactorCompleted);
 
         var refreshValue = OpaqueToken.Generate();
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         await refreshTokenRepository.AddAsync(
             new RefreshToken
             {
@@ -57,8 +58,8 @@ public sealed class TokenIssuer(
         // signal for dormant-account disable) and surface the PRIOR sign-in time
         // to the client for the "last signed in …" notice. UpdateAsync does not
         // roll the security stamp, so the access token just minted stays valid.
-        var previousSignInAtUtc = user.LastSuccessfulSignInAtUtc;
-        user.LastSuccessfulSignInAtUtc = now;
+        var previousSignInAt = user.LastSuccessfulSignInAt;
+        user.LastSuccessfulSignInAt = now;
         await accounts.UpdateAsync(user).EnsureSuccessAsync();
 
         await auditLog.WriteAsync(
@@ -78,6 +79,6 @@ public sealed class TokenIssuer(
             "Bearer",
             accessToken.ExpiresInSeconds,
             new AuthUser(user.Id, user.Email!, user.DisplayName),
-            previousSignInAtUtc);
+            previousSignInAt);
     }
 }

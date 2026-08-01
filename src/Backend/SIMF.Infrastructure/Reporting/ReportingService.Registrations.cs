@@ -121,7 +121,7 @@ internal sealed partial class ReportingService
         string DisplayName,
         string Email,
         AccountState AccountState,
-        DateTimeOffset CreatedAt);
+        DateTime CreatedAt);
 
     private static RegistrationReportRow ToRow(
         RegistrationProjection p, Dictionary<Guid, string> profileTypes) =>
@@ -180,6 +180,17 @@ internal sealed partial class ReportingService
             "state" => descending
                 ? users.OrderByDescending(u => u.AccountState).ThenBy(u => u.Id)
                 : users.OrderBy(u => u.AccountState).ThenBy(u => u.Id),
+            // "registered" is the date column's own Key (RegistrationsReport
+            // .razor:63). Without this arm a click on it fell through to the
+            // default below, which reads `descending` INVERTED so that the
+            // no-sort case comes back newest-first. The grid therefore drew an
+            // ascending arrow — and rendered aria-sort="ascending" — over
+            // newest-first rows, and a descending arrow over oldest-first ones.
+            // The default still wants that inversion; an explicit click must
+            // not inherit it.
+            "registered" => descending
+                ? users.OrderByDescending(u => u.CreatedAt).ThenBy(u => u.Id)
+                : users.OrderBy(u => u.CreatedAt).ThenBy(u => u.Id),
             // Newest first by default: a registrations report is normally read
             // to see who has just signed up.
             _ => descending

@@ -44,7 +44,7 @@ public sealed class AppBootstrapEndpoint(
         var unread = await notificationService.UnreadCountMineAsync(userId, ct);
 
         await Send.OkAsync(
-            ApiResult<AppBootstrap>.Ok(new AppBootstrap(user, unread, timeProvider.GetUtcNow())),
+            ApiResult<AppBootstrap>.Ok(new AppBootstrap(user, unread, timeProvider.SimfNow())),
             ct);
     }
 }

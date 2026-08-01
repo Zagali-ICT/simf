@@ -2,6 +2,7 @@ using Microsoft.Extensions.Caching.Memory;
 using SIMF.Contracts.Authentication;
 
 using SIMF.Common.Enums;
+using SIMF.Common;
 
 namespace SIMF.ControlPanel.Tests;
 
@@ -33,7 +34,7 @@ public sealed class SignInTicketStoreTests
             State: "Rejected",
             RejectionReason: "Identity could not be verified.",
             RejectionReasonArabic: "تعذّر التحقق من الهوية.",
-            StateChangedAt: DateTimeOffset.UtcNow);
+            StateChangedAt: SimfClock.Now);
 
         var reference = store.Stash(tokens, stateInfo);
         var payload = store.Redeem(reference);

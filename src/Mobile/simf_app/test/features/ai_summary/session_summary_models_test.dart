@@ -22,7 +22,7 @@ void main() {
       expect(summary.localizedSpeakers(true), 'د. ريف');
       expect(summary.localizedFullText(false), 'A long transcript summary.');
       expect(summary.generatedByAi, isTrue);
-      expect(summary.publishedAt, DateTime.utc(2026, 11, 23, 7, 30));
+      expect(summary.publishedAt, DateTime(2026, 11, 23, 10, 30));
     });
 
     test('defaults missing fields and an unparsable timestamp', () {

@@ -12,7 +12,7 @@ public sealed class SessionCategoriesAddEditTests : CpComponentTestBase
 {
     private static AdminSessionCategoryDetail Detail() => new(
         Guid.NewGuid(), "Keynotes", "ÙƒÙ„Ù…Ø§Øª Ø±Ø¦ÙŠØ³ÙŠØ©", 1,
-        IsActive: true, DateTimeOffset.UnixEpoch, UpdatedAt: null);
+        IsActive: true, DateTime.UnixEpoch, UpdatedAt: null);
 
     [Fact]
     public void Add_mode_hides_the_Active_checkbox()
@@ -35,7 +35,7 @@ public sealed class SessionCategoriesAddEditTests : CpComponentTestBase
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
         var created = new AdminSessionCategoryDetail(
-            Guid.NewGuid(), "Panels", "Ø­Ù„Ù‚Ø§Øª Ù†Ù‚Ø§Ø´", 0, true, DateTimeOffset.UnixEpoch, null);
+            Guid.NewGuid(), "Panels", "Ø­Ù„Ù‚Ø§Øª Ù†Ù‚Ø§Ø´", 0, true, DateTime.UnixEpoch, null);
         var handler = JSInterop.Setup<ApiResult<AdminSessionCategoryDetail>>(
             "simfAccount.postJson", _ => true)
             .SetResult(ApiResult<AdminSessionCategoryDetail>.Ok(created));

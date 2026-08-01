@@ -144,7 +144,7 @@ public sealed class ProfileTypePickerTests : IClassFixture<SimfApiFactory>
             IsForVisitor = isVisitor,
             IsActive = isActive,
             IsAppRegisterable = isAppRegisterable,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.ProfileTypes.Add(row);
         await appDb.SaveChangesAsync();

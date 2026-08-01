@@ -11,10 +11,13 @@ import 'package:simf_app/core/site_settings/site_settings.dart';
 import 'package:simf_app/features/live/data/live_repository.dart';
 import 'package:simf_app/features/live/live_broadcast_screen.dart';
 import 'package:simf_app/features/live/widgets/live_badges.dart';
+import 'package:simf_app/features/live/widgets/live_content.dart';
+import 'package:simf_app/features/live/widgets/live_player_surface.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../accessibility/_fake_prefs.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 LiveSession _liveSession({
   String? liveStreamUrl,
@@ -23,6 +26,8 @@ LiveSession _liveSession({
   int status = 0,
   String? liveCaptions,
   String? liveCaptionsArabic,
+  String? liveNotice,
+  String? liveNoticeArabic,
   DateTime? start,
   DateTime? end,
 }) =>
@@ -35,6 +40,8 @@ LiveSession _liveSession({
       liveSignLanguageUrl: liveSignLanguageUrl,
       liveCaptions: liveCaptions,
       liveCaptionsArabic: liveCaptionsArabic,
+      liveNotice: liveNotice,
+      liveNoticeArabic: liveNoticeArabic,
       start: start,
       end: end,
     );
@@ -325,6 +332,73 @@ void main() {
       expect(find.textContaining('Riyadh region'), findsNothing);
       expect(find.textContaining('Notice:'), findsNothing);
       expect(find.textContaining('منطقة الرياض'), findsNothing);
+    });
+
+    // FR-702 (owner 2026-07-31) — the notice is a NOTIFICATION, not a
+    // restriction: it is shown with the stream, never instead of it.
+    testWidgets('FR-702 — a session notice renders as the informational banner '
+        'and the player still mounts', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeLiveRepo(
+          session: _liveSession(
+            liveStreamUrl: 'https://live.example.sa/main.m3u8',
+            liveNotice: 'This broadcast is provided by the forum organisers.',
+          ),
+        ),
+        sessionId: 's1',
+        // The HLS feed can't initialise headless — the surface still mounts.
+        settle: false,
+      );
+
+      expect(find.byType(LiveNoticeBanner), findsOneWidget);
+      expect(
+        find.text('This broadcast is provided by the forum organisers.'),
+        findsOneWidget,
+      );
+      // The one that matters: the notice must never become a gate — the player
+      // surface is mounted alongside it.
+      expect(find.byType(LivePlayerSurface), findsOneWidget);
+    });
+
+    testWidgets('FR-702 — the banner renders the Arabic notice under the ar '
+        'locale', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeLiveRepo(
+          session: _liveSession(
+            liveStreamUrl: 'https://live.example.sa/main.m3u8',
+            liveNotice: 'English notice.',
+            liveNoticeArabic: 'يقدَّم هذا البث من منظمي الملتقى.',
+          ),
+        ),
+        sessionId: 's1',
+        locale: const Locale('ar'),
+        settle: false,
+      );
+
+      expect(find.text('يقدَّم هذا البث من منظمي الملتقى.'), findsOneWidget);
+      expect(find.text('English notice.'), findsNothing);
+      expect(find.byType(LivePlayerSurface), findsOneWidget);
+    });
+
+    testWidgets('FR-702 — a blank notice renders nothing (no empty banner)',
+        (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeLiveRepo(
+          session: _liveSession(
+            liveStreamUrl: 'https://live.example.sa/main.m3u8',
+            liveNotice: '   ',
+            liveNoticeArabic: '',
+          ),
+        ),
+        sessionId: 's1',
+        settle: false,
+      );
+
+      expect(find.byType(LiveNoticeBanner), findsNothing);
+      expect(find.byType(LivePlayerSurface), findsOneWidget);
     });
 
     // A15 — the caption strip renders a STATIC admin-typed string, so it must
@@ -733,7 +807,7 @@ void main() {
 
     testWidgets('S-3 — a URL set but the session has NOT started (future) hides '
         'the LIVE badge and the Ask button', (tester) async {
-      final now = DateTime.now().toUtc();
+      final now = saudiNow();
       await _pump(
         tester,
         repo: _FakeLiveRepo(
@@ -756,7 +830,7 @@ void main() {
     testWidgets('S-3 — an in-window session (start<now<end) with a URL shows the '
         'LIVE badge, the Ask button and the now-broadcasting header',
         (tester) async {
-      final now = DateTime.now().toUtc();
+      final now = saudiNow();
       await _pump(
         tester,
         repo: _FakeLiveRepo(
@@ -778,7 +852,7 @@ void main() {
 
     testWidgets('S-3 — an ENDED session (end<now) with the URL still set hides '
         'the LIVE badge + Ask and does NOT say now-broadcasting', (tester) async {
-      final now = DateTime.now().toUtc();
+      final now = saudiNow();
       await _pump(
         tester,
         repo: _FakeLiveRepo(

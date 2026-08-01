@@ -142,7 +142,7 @@ public sealed class CpMarkupHygieneTests
     {
         // §6.16 — IStringLocalizer returns the KEY NAME when a resource is missing,
         // so a typo or a half-finished rename renders raw developer text on screen.
-        // That shipped: the D-219 local-time work renamed 7 keys off their "...Utc"
+        // That shipped: the D-219 local-time work renamed 7 keys off their old zoned
         // suffix at the call sites but not in the resx, so /admin/banners headed two
         // columns "Admin.Banners.Col.Start" / ".End", the Sessions and Banners forms
         // labelled their datetime inputs with raw keys, and creating an admin toasted

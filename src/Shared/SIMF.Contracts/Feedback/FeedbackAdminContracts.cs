@@ -25,7 +25,7 @@ public sealed record AdminRatingTypeSummary(
     int GroupCount,
     int QuestionCount,
     int ResponseCount,
-    DateTimeOffset CreatedAt);
+    DateTime CreatedAt);
 
 public sealed class CreateRatingTypeRequest
 {
@@ -64,7 +64,7 @@ public sealed record AdminRatingQuestionGroupSummary(
     int DisplayOrder,
     bool IsActive,
     int QuestionCount,
-    DateTimeOffset CreatedAt);
+    DateTime CreatedAt);
 
 public sealed class CreateRatingQuestionGroupRequest
 {
@@ -93,7 +93,7 @@ public sealed record AdminRatingQuestionSummary(
     bool IsRequired,
     int DisplayOrder,
     bool IsActive,
-    DateTimeOffset CreatedAt);
+    DateTime CreatedAt);
 
 public sealed class CreateRatingQuestionRequest
 {
@@ -130,8 +130,8 @@ public sealed record AdminRatingResponseSummary(
     int AnswerCount,
     double? AverageAnswerStars,
     bool IsActive,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt);
+    DateTime CreatedAt,
+    DateTime? UpdatedAt);
 
 /// <summary>The admin responses page: the grid + the headline aggregates over
 /// the filtered active set.</summary>

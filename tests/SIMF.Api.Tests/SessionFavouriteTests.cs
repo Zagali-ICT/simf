@@ -95,7 +95,7 @@ public sealed class SessionFavouriteTests : IClassFixture<SimfApiFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var app = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var now = scope.ServiceProvider.GetRequiredService<TimeProvider>().GetUtcNow();
+        var now = scope.ServiceProvider.GetRequiredService<TimeProvider>().SimfNow();
         var hall = new Hall
         {
             Id = Guid.NewGuid(),

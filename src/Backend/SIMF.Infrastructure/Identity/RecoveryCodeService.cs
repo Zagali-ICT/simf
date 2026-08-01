@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Identity;
 
@@ -34,7 +35,7 @@ internal sealed class RecoveryCodeService(
         }
 
         await repository.AddBatchAsync(
-            userId, hashes, timeProvider.GetUtcNow(), cancellationToken);
+            userId, hashes, timeProvider.SimfNow(), cancellationToken);
         logger.LogInformation("Recovery codes generated for {UserId}", userId);
         return codes;
     }
@@ -62,7 +63,7 @@ internal sealed class RecoveryCodeService(
 
         var hash = RecoveryCode.Hash(normalised);
         var consumed = await repository.TryConsumeAsync(
-            userId, hash, timeProvider.GetUtcNow(), cancellationToken);
+            userId, hash, timeProvider.SimfNow(), cancellationToken);
         if (consumed)
         {
             logger.LogInformation("Recovery code consumed for {UserId}", userId);

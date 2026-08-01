@@ -148,7 +148,7 @@ internal sealed class AccountService(
             cancellationToken);
 
         user.AvatarRelativePath = result.Id.ToString();
-        user.UpdatedAt = DateTimeOffset.UtcNow;
+        user.UpdatedAt = SimfClock.Now;
         await accounts.UpdateAsync(user).EnsureSuccessAsync();
 
         // Retire the replaced avatar's bytes (one active per user) after the
@@ -187,7 +187,7 @@ internal sealed class AccountService(
                 await fileService.DeleteAsync(fileId, user.Id, cancellationToken);
             }
             user.AvatarRelativePath = null;
-            user.UpdatedAt = DateTimeOffset.UtcNow;
+            user.UpdatedAt = SimfClock.Now;
             await accounts.UpdateAsync(user).EnsureSuccessAsync();
         }
 
@@ -235,7 +235,7 @@ internal sealed class AccountService(
     private static string? BuildAvatarUrl(SimfUser user) =>
         string.IsNullOrEmpty(user.AvatarRelativePath)
             ? null
-            : $"/account/api/avatar/{user.Id:N}?v={user.UpdatedAt?.UtcTicks ?? 0}";
+            : $"/account/api/avatar/{user.Id:N}?v={user.UpdatedAt?.Ticks ?? 0}";
 
     /// <summary>D-568 (S3) — the avatar pointer (<c>AvatarRelativePath</c>) now
     /// holds the StoredFile GUID. Returns it when parseable, else null (a legacy

@@ -108,7 +108,7 @@ internal sealed class AdminSessionCategoryService(
     {
         var (name, nameArabic) = ValidateAndNormalise(request.Name, request.NameArabic);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var category = new SessionCategory
         {
             Id = Guid.NewGuid(),
@@ -152,7 +152,7 @@ internal sealed class AdminSessionCategoryService(
         category.NameArabic = nameArabic;
         category.DisplayOrder = request.DisplayOrder;
         category.IsActive = request.IsActive;
-        category.UpdatedAt = timeProvider.GetUtcNow();
+        category.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -181,7 +181,7 @@ internal sealed class AdminSessionCategoryService(
         }
 
         category.Deactivate();
-        category.UpdatedAt = timeProvider.GetUtcNow();
+        category.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry

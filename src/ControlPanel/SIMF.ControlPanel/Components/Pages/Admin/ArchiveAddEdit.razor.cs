@@ -45,7 +45,7 @@ public partial class ArchiveAddEdit
         }
         else
         {
-            _model.Year = DateTime.UtcNow.Year;
+            _model.Year = SimfClock.Now.Year;
             _listsLoaded = true; // create authors the lists from scratch
         }
 

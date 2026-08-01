@@ -24,7 +24,7 @@ public sealed record AdminSpeakerSummary(
     int DisplayOrder,
     bool IsActive,
     bool HasPhoto,
-    DateTimeOffset CreatedAt);
+    DateTime CreatedAt);
 
 /// <summary>Full speaker detail (Details + Edit modals). D-153 carries
 /// the full bilingual rich-text set + consent toggles + social URLs +
@@ -57,8 +57,8 @@ public sealed record AdminSpeakerDetail(
     string? PhotoRelativePath,
     int DisplayOrder,
     bool IsActive,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt,
+    DateTime CreatedAt,
+    DateTime? UpdatedAt,
     // Contact identity-card fields inlined from the removed shared Contact
     // directory (D-766). All optional; nationality reuses CountryId above
     // (no second country slot). The service now populates all of these in

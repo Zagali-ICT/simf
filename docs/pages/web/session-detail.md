@@ -11,7 +11,7 @@
 | **Strings** | [`Strings.resx`](../../../src/Website/SIMF.Web/Resources/Strings.resx) / [`Strings.ar.resx`](../../../src/Website/SIMF.Web/Resources/Strings.ar.resx) (`SessionDetail.*` keys) |
 | **Data** | `GET /api/v1/app/programme/sessions/{id}` (anonymous) → `PublicSessionDetail`; `GET …/programme/sessions` for the related strip; `GET /content/sessions/{sessionId}/downloads/{presentationId}` (anonymous proxy) for file bytes |
 | **Figma** | KSA Maritime Forum — Session Detail (Desktop AR), node `5991-85840` |
-| **E2E** | [`e2e/web-session-detail.md`](../../tests/e2e/web-session-detail.md) (`E2E-WSDT-*`) |
+| **E2E** | [`e2e/web-session-detail.md`](../../tests/e2e/web-session-detail.md) (`E2E-WSDT-001..016`; the FR-702 live notice is WSDT-014..016) |
 
 ## 1. Purpose
 
@@ -40,7 +40,7 @@ API. Reached from the agenda / related strips at `/sessions/{id}`.
 | # | Section | Class | Data |
 |---|---------|-------|------|
 | 1 | Hero band | `ln-sesshero` | breadcrumb (static) · gold day chip (session weekday) · `<h1>` title · description lead · 4 gold-tinted pills (time/date/hall/category), event-local +03:00 |
-| 2 | At-a-glance card | `ln-glance` | track (category) · language (`Session.Language`) · hall · capacity (`Seats.Capacity`) · live (`LiveStreamUrl != null`). Optional rows (track/language) omit when null |
+| 2 | At-a-glance card | `ln-glance` | track (category) · language (`Session.Language`) · hall · capacity (`Seats.Capacity`) · live (`LiveStreamUrl != null`). Optional rows (track/language) omit when null. Below the rows, the optional **live notice** (`ln-glance__notice`, FR-702 — see §4a) |
 | 3 | Overview | `ln-sessabout` | "Why this session matters" + the description |
 | 4 | Key themes | `ln-tcard` grid | one gold-badged navy card per tagged theme: name + `Theme.Description`. Section omits when no themes |
 | 5 | Speakers | `ln-spkcard` grid (reused) | photo (asset proxy) · name · gold role pill · gray country pin; empty-state text when none |
@@ -63,6 +63,27 @@ streams it as an attachment; a presentation id from another session 404s. This i
 distinct from (and does not weaken) the signed-in `/app/presentations/{id}/file`
 attendee route.
 
+## 4a. Live notice (FR-702 — owner decision 2026-07-31, D-815)
+
+When the session carries a **live notice** — free bilingual text an admin writes
+on that session at `/admin/sessions` (`Session.LiveNotice` /
+`Session.LiveNoticeArabic`, `nvarchar(512)`, on the wire as `liveNotice` /
+`liveNoticeArabic`) — the at-a-glance aside renders it under its rows as a single
+`<p class="ln-glance__notice" role="note">`, picked with the same
+`PickOrNull(...)` fallback every other bilingual value on this page uses. When
+both languages are blank the element is not emitted at all: no empty box, no
+reserved space.
+
+**It restricts nothing.** SIMF-FDS-007 §5.1 originally specified FR-702 as a
+Riyadh-region restriction under which an attendee outside the region would see a
+notice *instead of* the stream. The owner reversed that — *"No restriction, this
+is only notification and be added to session."* This page therefore performs no
+region check, no location lookup and no gating of any kind; the at-a-glance
+**Live** row still reports the session's live feed exactly as before while the
+notice is displayed. The styling is deliberately calm — the `--gold-light`
+informational fill from `landing.css`, not the alert/danger register — so it
+reads as information, not a barrier.
+
 ## 5. Bilingual model (AR RTL / EN LTR)
 
 Title / description / hall / theme name+description / speaker name / outcome /
@@ -80,7 +101,10 @@ migration `20260715001703`), and `PublicSessionDetail.Outcomes` / `.Language` /
 `.Downloads` + `PublicSessionSpeaker.HasPhotoAsset`. `Session.Language` + the
 outcomes are editable in the CP session editor (see
 [`cp/admin-sessions.md`](../cp/admin-sessions.md)); downloads reuse the existing
-`SpeakerPresentation` files.
+`SpeakerPresentation` files. **2026-07-31 (D-815):** `PublicSessionDetail` also
+appends `LiveNotice` / `LiveNoticeArabic` for §4a — append-only per D-219, so an
+older client simply ignores them, and they are carried on the **detail** only
+(never on `PublicSessionListItem`, which has no live fields at all).
 
 ## 7. Responsive
 
@@ -91,8 +115,12 @@ at 860px. No horizontal overflow at 1440 / 1024 / 768 / 390 in both languages.
 ## 8. Verification (2026-07-15)
 
 - **Build** — Website + API + CP + Infrastructure `dotnet build` 0 warnings / 0 errors.
-- **Component tests** — `tests/SIMF.Web.Tests/SessionDetailPageTests.cs` (3, green):
-  all-seven-sections render (with the download proxy URL), not-found, graceful omission.
+- **Component tests** — `tests/SIMF.Web.Tests/SessionDetailPageTests.cs` (5):
+  all-seven-sections render (with the download proxy URL), not-found, graceful
+  omission, and (2026-07-31) the FR-702 live notice rendering when authored +
+  omitting when only blank text is stored. The three original cases were verified
+  green on 2026-07-15; the two notice cases are covered by this branch's suite run,
+  not by that dated pass.
 - **Live render (prod data)** — rendered `/sessions/{id}` at **AR@1440**, **EN@1440**
   and **mobile-390**: hero (gold chip, gold pill icons), at-a-glance (RTL/LTR mirror
   correct), overview and related strip all render; console clean; no horizontal
@@ -106,4 +134,6 @@ at 860px. No horizontal overflow at 1440 / 1024 / 768 / 390 in both languages.
 - The hero uses a navy gradient (no per-session hero image field); a future
   `Session` banner asset could back it.
 
-_Last reviewed:_ 2026-07-15 by Claude (Session Detail — `ln-` Bootstrap SSR, Figma 5991-85840).
+_Last reviewed:_ 2026-07-31 by Claude (FR-702 — §4a live notice on the at-a-glance card: informational text shown with the stream, no region check anywhere; owner decision D-815).
+
+_Prior:_ 2026-07-15 by Claude (Session Detail — `ln-` Bootstrap SSR, Figma 5991-85840).

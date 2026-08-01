@@ -405,8 +405,15 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
             });
         Assert.Equal(HttpStatusCode.OK, sign.StatusCode);
         var signBody = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        // No 2FA on this account yet, so tokens come back directly (D-033).
-        Assert.NotNull(signBody.Data!.Tokens);
+        // #2 — the Control Panel never mints a session on the password alone. The
+        // invited admin has no authenticator secret yet, so the password step hands
+        // back an ENROLMENT ticket; enrolling against it issues the session.
+        Assert.Null(signBody.Data!.Tokens);
+        Assert.NotNull(signBody.Data.TwoFactorEnrolmentToken);
+
+        var tokens = await AuthFlow.CompleteTwoFactorEnrolmentAsync(
+            _client, signBody.Data.TwoFactorEnrolmentToken!);
+        Assert.NotEmpty(tokens.AccessToken);
     }
 
     // -- helpers --------------------------------------------------------------
@@ -435,16 +442,7 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
 
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,   // P2 — admin helper
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private async Task<HttpResponseMessage> PostAuthAsync<TBody>(

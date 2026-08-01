@@ -41,6 +41,13 @@ internal sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
         builder.Property(s => s.LiveCaptions).HasMaxLength(2048);
         builder.Property(s => s.LiveCaptionsArabic).HasMaxLength(2048);
 
+        // FR-702 (owner decision 2026-07-31) — the informational live notice
+        // (bilingual). Shorter than the caption/description columns because it is
+        // a one-line banner, not an abstract: 512 is the SSOT the CP form's
+        // MaxLength + the service-layer length check align to (§7).
+        builder.Property(s => s.LiveNotice).HasMaxLength(512);
+        builder.Property(s => s.LiveNoticeArabic).HasMaxLength(512);
+
         builder.HasIndex(s => s.Code).IsUnique();
 
         // Real DB FK to Hall — same context. Restrict matches the

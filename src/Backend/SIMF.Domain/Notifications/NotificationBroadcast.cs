@@ -51,13 +51,13 @@ public sealed class NotificationBroadcast
     /// <summary>Recipients skipped (a dispatch that threw).</summary>
     public int Skipped { get; set; }
 
-    public DateTimeOffset CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 
     /// <summary>When the worker claimed the row (moved it to Processing).</summary>
-    public DateTimeOffset? StartedAt { get; set; }
+    public DateTime? StartedAt { get; set; }
 
     /// <summary>When the fan-out finished (Completed or Failed).</summary>
-    public DateTimeOffset? CompletedAt { get; set; }
+    public DateTime? CompletedAt { get; set; }
 
     /// <summary>Failure detail when <see cref="Status"/> is
     /// <see cref="BroadcastStatus.Failed"/>; null otherwise. ≤1024 chars.</summary>

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// One question on the dynamic rating form (a fixed 1–5 star scale).
 @immutable
@@ -192,7 +193,7 @@ class RatingFormView {
       existing: RatingExistingSubmission.fromJson(json['existing']),
       targetName: json['targetName'] as String?,
       targetNameArabic: json['targetNameArabic'] as String?,
-      targetStart: DateTime.tryParse(json['targetStart'] as String? ?? ''),
+      targetStart: parseWireOrNull(json['targetStart'] as String? ?? ''),
       isEligible: json['isEligible'] as bool? ?? true,
     );
   }

@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.AccessControl.Abstractions;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.AccessControl;
 
@@ -21,7 +22,7 @@ internal sealed class QrResolver(
     {
         if (string.IsNullOrWhiteSpace(qrId)) { return null; }
         var normalised = QrId.Normalise(qrId);
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         var profileRow = await appDbContext.UserProfiles
             .AsNoTracking()

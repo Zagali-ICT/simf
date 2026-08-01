@@ -7,6 +7,7 @@ using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
 using SIMF.Domain.Operations;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Operations;
 
@@ -36,7 +37,7 @@ internal sealed class OperationsToggleService(
             .SingleOrDefaultAsync(g => g.Id == RegistrationGate.SingletonId, cancellationToken);
         if (row is null) { return true; } // fail-open if seeding lost the row
         if (!row.IsOpen) { return false; }
-        if (row.AutoClose is { } closeAt && closeAt <= timeProvider.GetUtcNow())
+        if (row.AutoClose is { } closeAt && closeAt <= timeProvider.SimfNow())
         {
             return false;
         }
@@ -49,7 +50,7 @@ internal sealed class OperationsToggleService(
         CancellationToken cancellationToken = default)
     {
         var row = await LoadRegistrationGateAsync(cancellationToken);
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var changed = row.IsOpen != request.IsOpen
             || row.AutoClose != request.AutoClose;
 
@@ -87,7 +88,7 @@ internal sealed class OperationsToggleService(
         CancellationToken cancellationToken = default)
     {
         var row = await LoadArchiveVisibilityAsync(cancellationToken);
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         if (row.IsVisible != request.IsVisible)
         {
             row.IsVisible = request.IsVisible;
@@ -119,7 +120,7 @@ internal sealed class OperationsToggleService(
                 Id = RegistrationGate.SingletonId,
                 IsOpen = true,
                 AutoClose = null,
-                LastChangedAt = timeProvider.GetUtcNow(),
+                LastChangedAt = timeProvider.SimfNow(),
                 LastChangedByUserId = null,
             };
             dbContext.RegistrationGate.Add(row);
@@ -138,7 +139,7 @@ internal sealed class OperationsToggleService(
             {
                 Id = ArchiveVisibility.SingletonId,
                 IsVisible = true,
-                LastChangedAt = timeProvider.GetUtcNow(),
+                LastChangedAt = timeProvider.SimfNow(),
                 LastChangedByUserId = null,
             };
             dbContext.ArchiveVisibility.Add(row);

@@ -63,13 +63,13 @@ public class Session : BaseAuditEntity
     /// احداث" type tabs. Null = untyped (only the "الكل / All" tab shows it).</summary>
     public SessionType? Type { get; set; }
 
-    /// <summary>Session start (UTC). The Flutter agenda renders local-
+    /// <summary>Session start (Saudi local). The Flutter agenda renders local-
     /// time per the user's tz.</summary>
-    public DateTimeOffset Start { get; set; }
+    public DateTime Start { get; set; }
 
-    /// <summary>Session end (UTC). Must be > <see cref="Start"/>;
+    /// <summary>Session end (Saudi local). Must be > <see cref="Start"/>;
     /// validated at the service layer.</summary>
-    public DateTimeOffset End { get; set; }
+    public DateTime End { get; set; }
 
     /// <summary>D-165 (PDF §2.9) — optional per-session override of the
     /// parent <see cref="Hall"/>'s <c>SeatCount</c>. Null means "use
@@ -87,13 +87,13 @@ public class Session : BaseAuditEntity
     /// worker once it has dispatched the "starting soon" notifications for
     /// this session. The null check is the worker's dedup guard: a session
     /// is reminded exactly once. Null until reminded (the normal state).</summary>
-    public DateTimeOffset? ReminderSent { get; set; }
+    public DateTime? ReminderSent { get; set; }
 
     /// <summary>Set by the end-of-session rating-prompt worker once it has
     /// dispatched the "please rate this session" notifications. The null check is
     /// the worker's dedup guard: a session is prompted exactly once. Null until
     /// prompted (the normal state).</summary>
-    public DateTimeOffset? RatingPromptSent { get; set; }
+    public DateTime? RatingPromptSent { get; set; }
 
     /// <summary>P3.2 — D-231 (Completion Programme §5.2, Option A): the
     /// broadcast lifecycle. The Scientific Committee drives the transitions
@@ -105,7 +105,7 @@ public class Session : BaseAuditEntity
     /// <summary>P3.2 — D-231: stamped when the session is published
     /// (<see cref="SessionStatus.Published"/>) and cleared if it is
     /// un-published. Null in every other state.</summary>
-    public DateTimeOffset? PublishedAt { get; set; }
+    public DateTime? PublishedAt { get; set; }
 
     /// <summary>P3.2b — D-232 (D-213): the recording attached to this session,
     /// stored out-of-row on the filesystem behind <c>ISessionRecordingStorage</c>.
@@ -127,7 +127,7 @@ public class Session : BaseAuditEntity
     public long? RecordingSizeBytes { get; set; }
 
     /// <summary>When the recording was last uploaded.</summary>
-    public DateTimeOffset? RecordingUploadedAt { get; set; }
+    public DateTime? RecordingUploadedAt { get; set; }
 
     /// <summary>Bare <c>Guid</c> of the admin who uploaded the recording —
     /// cross-context (Identity DB), no FK (D-157).</summary>
@@ -162,6 +162,22 @@ public class Session : BaseAuditEntity
     /// <summary>P5 — D-439: the Arabic pair of <see cref="LiveCaptions"/>. The app
     /// renders the active locale with a fallback to the other when one is blank.</summary>
     public string? LiveCaptionsArabic { get; set; }
+
+    /// <summary>FR-702 (owner decision 2026-07-31) — the free-text notice shown
+    /// alongside the live broadcast, authored per session in the CP (≤512).
+    /// <b>Informational only — it restricts nothing.</b> SIMF-FDS-007 §5.1
+    /// originally specified FR-702 as a geographic restriction ("available only
+    /// within the Riyadh region"); the owner reversed that, so there is no region
+    /// check, no location lookup and no gating anywhere — the feed plays for every
+    /// caller exactly as before, and this column only adds a calm banner beside it.
+    /// Null/blank on both this and <see cref="LiveNoticeArabic"/> = no notice is
+    /// shown. English line.</summary>
+    public string? LiveNotice { get; set; }
+
+    /// <summary>FR-702 — the Arabic pair of <see cref="LiveNotice"/>. The client
+    /// renders the active locale with a fallback to the other when one is blank,
+    /// like every other bilingual field on this entity.</summary>
+    public string? LiveNoticeArabic { get; set; }
 
     /// <summary>M-to-M with <see cref="Speaker"/> via the explicit join
     /// entity <see cref="SessionSpeaker"/>. Explicit because the

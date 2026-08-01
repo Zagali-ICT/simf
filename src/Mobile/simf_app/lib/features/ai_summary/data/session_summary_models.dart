@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
-/// One published session summary — mirrors `SIMF.Contracts.*.PublicSessionSummary`
+/// One published session summary — mirrors
+/// `SIMF.Contracts.*.PublicSessionSummary`
 /// (`GET /app/programme/sessions/{id}/summary`, `AllowAnonymous`).
 ///
 /// Every text field is bilingual (`*` EN + `*Arabic`). `keyPoints` /
@@ -42,7 +44,8 @@ class SessionSummary {
   final String? recordingUrl;
 
   /// Item #35 — the team's OPTIONAL short summary video (from the API's
-  /// `summaryVideoUrl`). Null = no summary video → the screen hides that player.
+  /// `summaryVideoUrl`). Null = no summary video → the screen hides that
+  /// player.
   final String? summaryVideoUrl;
 
   String _picked(String ar, String en, bool isArabic) {
@@ -76,13 +79,14 @@ class SessionSummary {
         .toList(growable: false);
   }
 
-  /// The published timestamp parsed to UTC, or null when missing / unparsable.
+  /// The published timestamp parsed off the wire, or null when missing /
+  /// unparsable.
   DateTime? get publishedAt {
     final raw = publishedAtRaw;
     if (raw == null || raw.isEmpty) {
       return null;
     }
-    return DateTime.tryParse(raw)?.toUtc();
+    return parseWireOrNull(raw);
   }
 
   static SessionSummary fromJson(Map<String, dynamic> json) => SessionSummary(

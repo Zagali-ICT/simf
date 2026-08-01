@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
@@ -18,7 +18,7 @@ public partial class NewsAddEdit
 
     // The <input type="date"> value mirror — kept as the yyyy-MM-dd text the
     // browser exchanges so the field round-trips cleanly against the
-    // DateTimeOffset on the form model.
+    // DateTime on the form model.
     private string _publishedAtText = string.Empty;
 
     protected override void OnInitialized()
@@ -107,8 +107,13 @@ public partial class NewsAddEdit
     private void OnPublishedAtChanged(ChangeEventArgs e)
     {
         var raw = e.Value?.ToString();
+        // The date input carries no timezone and does not need one: what the
+        // admin picks IS what gets stored. This flag pair is what keeps a naked
+        // "2026-11-23" on that date whatever timezone the Control Panel runs in —
+        // it is not a zone conversion, and a plain local-time parse here would make
+        // the stored value depend on the server's location.
         if (string.IsNullOrWhiteSpace(raw)
-            || !DateTimeOffset.TryParse(raw, CultureInfo.InvariantCulture,
+            || !DateTime.TryParse(raw, CultureInfo.InvariantCulture,
                 DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
                 out var parsed))
         {
@@ -137,7 +142,7 @@ public partial class NewsAddEdit
         public string Category { get; set; } = string.Empty;
         public string CategoryArabic { get; set; } = string.Empty;
         public string ImageRelativePath { get; set; } = string.Empty;
-        public DateTimeOffset PublishedAt { get; set; } = DateTimeOffset.UtcNow;
+        public DateTime PublishedAt { get; set; } = SimfClock.Now;
         public int DisplayOrder { get; set; }
         public bool IsActive { get; set; } = true;
     }

@@ -54,15 +54,15 @@ public sealed class DeviceKey
     /// chars; the server does not validate the contents.</summary>
     public string Label { get; set; } = string.Empty;
 
-    public DateTimeOffset CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 
     /// <summary>When the key was last used for a successful sign-in.
     /// Null until first sign-in completes.</summary>
-    public DateTimeOffset? LastUsedAt { get; set; }
+    public DateTime? LastUsedAt { get; set; }
 
     /// <summary>When the key was revoked (admin or self-service).
     /// Null while active. Sign-in with a revoked key returns 401.</summary>
-    public DateTimeOffset? RevokedAt { get; set; }
+    public DateTime? RevokedAt { get; set; }
 
     /// <summary>The current challenge nonce as a base64 string. Set
     /// when the client requests a challenge; cleared on consume.
@@ -71,5 +71,5 @@ public sealed class DeviceKey
 
     /// <summary>When <see cref="CurrentChallenge"/> expires. A
     /// challenge older than this is treated as missing.</summary>
-    public DateTimeOffset? ChallengeExpiresAt { get; set; }
+    public DateTime? ChallengeExpiresAt { get; set; }
 }

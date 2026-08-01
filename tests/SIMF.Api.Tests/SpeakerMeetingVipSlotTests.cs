@@ -26,7 +26,7 @@ namespace SIMF.Api.Tests;
 /// </summary>
 public sealed class SpeakerMeetingVipSlotTests : IClassFixture<SimfApiFactory>
 {
-    private static readonly DateTimeOffset WindowStart = new(2030, 2, 1, 9, 0, 0, TimeSpan.Zero);
+    private static readonly DateTime WindowStart = new(2030, 2, 1, 9, 0, 0);
 
     private readonly SimfApiFactory _factory;
     private readonly HttpClient _client;
@@ -251,8 +251,8 @@ public sealed class SpeakerMeetingVipSlotTests : IClassFixture<SimfApiFactory>
         // A1 (review) — overlapping availability windows with different slot lengths
         // can offer accepted slots that overlap but start at different times; the
         // accept-time guard must use half-open overlap, not start-equality.
-        var winAStart = new DateTimeOffset(2030, 3, 1, 9, 0, 0, TimeSpan.Zero);   // [09:00,10:00]
-        var winBStart = new DateTimeOffset(2030, 3, 1, 9, 30, 0, TimeSpan.Zero);  // [09:30,10:30]
+        var winAStart = new DateTime(2030, 3, 1, 9, 0, 0);   // [09:00,10:00]
+        var winBStart = new DateTime(2030, 3, 1, 9, 30, 0);  // [09:30,10:30]
         var speakerId = await SeedSpeakerWithTwoOverlappingWindowsAsync(winAStart, winBStart);
         var (vip1, _) = await CreateVisitorAsync(vip: true);
         var (vip2, _) = await CreateVisitorAsync(vip: true);
@@ -288,7 +288,7 @@ public sealed class SpeakerMeetingVipSlotTests : IClassFixture<SimfApiFactory>
     // -- helpers --------------------------------------------------------------
 
     private async Task<Guid> SeedSpeakerWithTwoOverlappingWindowsAsync(
-        DateTimeOffset winAStart, DateTimeOffset winBStart)
+        DateTime winAStart, DateTime winBStart)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -299,7 +299,7 @@ public sealed class SpeakerMeetingVipSlotTests : IClassFixture<SimfApiFactory>
             Name = "Overlap Speaker", NameArabic = "متحدّث",
             AllowsMeetingRequests = true,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Speakers.Add(speaker);
         // Two overlapping 60-minute windows, each offering a single 60-minute slot
@@ -308,20 +308,20 @@ public sealed class SpeakerMeetingVipSlotTests : IClassFixture<SimfApiFactory>
         {
             Id = Guid.NewGuid(), SpeakerId = speaker.Id,
             Start = winAStart, End = winAStart.AddMinutes(60), SlotMinutes = 60,
-            IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+            IsActive = true, CreatedAt = SimfClock.Now,
         });
         db.SpeakerAvailabilityWindows.Add(new SpeakerAvailabilityWindow
         {
             Id = Guid.NewGuid(), SpeakerId = speaker.Id,
             Start = winBStart, End = winBStart.AddMinutes(60), SlotMinutes = 60,
-            IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+            IsActive = true, CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
         return speaker.Id;
     }
 
     private static SubmitSpeakerMeetingRequestRequest SlotRequest(
-        DateTimeOffset start, DateTimeOffset end) =>
+        DateTime start, DateTime end) =>
         new()
         {
             RequesterName = "VIP Guest",
@@ -343,7 +343,7 @@ public sealed class SpeakerMeetingVipSlotTests : IClassFixture<SimfApiFactory>
             // Inline email (was a linked Contact) — the meeting-accept email path.
             Email = "speaker@simf.test",
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Speakers.Add(speaker);
         db.SpeakerAvailabilityWindows.Add(new SpeakerAvailabilityWindow
@@ -354,7 +354,7 @@ public sealed class SpeakerMeetingVipSlotTests : IClassFixture<SimfApiFactory>
             End = WindowStart.AddMinutes(60),
             SlotMinutes = 30,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
         return speaker.Id;
@@ -388,7 +388,7 @@ public sealed class SpeakerMeetingVipSlotTests : IClassFixture<SimfApiFactory>
                     Id = Guid.NewGuid(),
                     Name = typeName, NameArabic = typeName,
                     PageColor = "#FFD700", IsForVisitor = true, IsActive = true,
-                    CreatedAt = DateTimeOffset.UtcNow,
+                    CreatedAt = SimfClock.Now,
                 };
                 appDb.ProfileTypes.Add(type);
             }
@@ -401,7 +401,7 @@ public sealed class SpeakerMeetingVipSlotTests : IClassFixture<SimfApiFactory>
                 // Bi-Meeting rework — eligibility is now the per-user flag, not the tier.
                 AllowsSpeakerMeeting = vip,
                 Name = user.DisplayName, NameArabic = user.DisplayName,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
             await appDb.SaveChangesAsync();
         }
@@ -434,14 +434,7 @@ public sealed class SpeakerMeetingVipSlotTests : IClassFixture<SimfApiFactory>
             await users.CreateAsync(user, AuthFlow.Password);
             await users.AddToRoleAsync(user, AppRoles.Administrator);
         }
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email, Password = AuthFlow.Password, Audience = SignInAudience.Cp,
-            });
-        return (await sign.Content
-            .ReadFromJsonAsync<ApiResult<SignInResponse>>())!.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> PostAuthAsync<TBody>(

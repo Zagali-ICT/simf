@@ -29,11 +29,11 @@ public sealed class MeetingActionToken
     /// compared on redemption. The raw secret is never stored.</summary>
     public string TokenHash { get; set; } = string.Empty;
 
-    /// <summary>When the token expires (UTC) — 72h after mint (§15.7 / OI-I).</summary>
-    public DateTimeOffset Expires { get; set; }
+    /// <summary>When the token expires (Saudi local) — 72h after mint (§15.7 / OI-I).</summary>
+    public DateTime Expires { get; set; }
 
-    /// <summary>When the token was consumed (UTC); null while unused. Single-use.</summary>
-    public DateTimeOffset? UsedAt { get; set; }
+    /// <summary>When the token was consumed (Saudi local); null while unused. Single-use.</summary>
+    public DateTime? UsedAt { get; set; }
 
-    public DateTimeOffset CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 }

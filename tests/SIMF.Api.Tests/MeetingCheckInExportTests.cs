@@ -146,11 +146,11 @@ public sealed class MeetingCheckInExportTests : IClassFixture<SimfApiFactory>
             Code = $"SP{Guid.NewGuid():N}"[..8],
             Name = "Dr Amina Al Harbi",
             NameArabic = "د. أمينة الحربي",
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Speakers.Add(speaker);
 
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var request = new SpeakerMeetingRequest
         {
             Id = Guid.NewGuid(),
@@ -185,7 +185,7 @@ public sealed class MeetingCheckInExportTests : IClassFixture<SimfApiFactory>
         Assert.True(countryIds.Count == 2,
             "The country lookup must be seeded for the delegation meeting desk.");
 
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var request = new DelegationMeetingRequest
         {
             Id = Guid.NewGuid(),
@@ -232,16 +232,10 @@ public sealed class MeetingCheckInExportTests : IClassFixture<SimfApiFactory>
             userId = user.Id;
         }
 
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return (body.Data!.Tokens!.AccessToken, userId, displayName);
+        return (
+            await AuthFlow.SignInControlPanelAsync(_client, _factory, email),
+            userId,
+            displayName);
     }
 
     private Task<HttpResponseMessage> PostAuthAsync<TBody>(

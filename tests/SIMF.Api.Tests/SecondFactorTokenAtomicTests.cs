@@ -5,6 +5,7 @@ using SIMF.Common.Enums;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
+using SIMF.Common;
 
 namespace SIMF.Api.Tests;
 
@@ -33,7 +34,7 @@ public sealed class SecondFactorTokenAtomicTests : IClassFixture<SimfApiFactory>
     public async Task TryConsume_flips_the_ticket_exactly_once()
     {
         var ticketId = await SeedTicketAsync();
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
 
         using var scope = _factory.Services.CreateScope();
         var repository = scope.ServiceProvider
@@ -86,8 +87,8 @@ public sealed class SecondFactorTokenAtomicTests : IClassFixture<SimfApiFactory>
             UserId = userId,
             TokenHash = $"a3-test-{Guid.NewGuid():N}",
             Kind = SecondFactorKind.EmailOtp,
-            CreatedAt = DateTimeOffset.UtcNow,
-            ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(5),
+            CreatedAt = SimfClock.Now,
+            ExpiresAt = SimfClock.Now.AddMinutes(5),
         };
         database.SecondFactorTokens.Add(ticket);
         await database.SaveChangesAsync();

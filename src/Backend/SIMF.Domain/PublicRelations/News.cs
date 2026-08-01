@@ -54,7 +54,7 @@ public class News : BaseAuditEntity
     /// <summary>The article date (UI "news-date") and the public-visibility
     /// gate: public reads require <c>PublishedAt &lt;= now</c>; the admin grid
     /// shows every row regardless. Drives the "newest first" public ordering.</summary>
-    public DateTimeOffset PublishedAt { get; set; }
+    public DateTime PublishedAt { get; set; }
 
     /// <summary>Tie-breaker for items sharing a publish instant (ascending).</summary>
     public int DisplayOrder { get; set; }

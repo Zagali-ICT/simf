@@ -14,6 +14,7 @@ using SIMF.Domain.SeatReservations;
 using SIMF.Infrastructure.Operations;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
+using SIMF.Common;
 
 namespace SIMF.Api.Tests;
 
@@ -35,7 +36,7 @@ public sealed class SessionNotAttendedReminderWorkerTests : IClassFixture<SimfAp
     [Fact]
     public async Task Booked_attendee_who_has_not_arrived_is_nudged_exactly_once()
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var visitorId = await SeedVisitorAsync();
         // Started 15 minutes ago (past the 10-minute grace), still running.
         var sessionId = await SeedSessionWithSeatAsync(now.AddMinutes(-15), visitorId);
@@ -53,7 +54,7 @@ public sealed class SessionNotAttendedReminderWorkerTests : IClassFixture<SimfAp
     [Fact]
     public async Task Attendee_who_has_arrived_is_not_nudged()
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var visitorId = await SeedVisitorAsync();
         var sessionId = await SeedSessionWithSeatAsync(now.AddMinutes(-15), visitorId);
         await SeedArrivalAsync(sessionId, visitorId, now.AddMinutes(-12));
@@ -68,7 +69,7 @@ public sealed class SessionNotAttendedReminderWorkerTests : IClassFixture<SimfAp
     {
         // A closed HallAttendance row is still evidence of attendance — someone who
         // came and went did not fail to attend.
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var visitorId = await SeedVisitorAsync();
         var sessionId = await SeedSessionWithSeatAsync(now.AddMinutes(-15), visitorId);
         await SeedArrivalAsync(sessionId, visitorId, now.AddMinutes(-14), now.AddMinutes(-12));
@@ -81,7 +82,7 @@ public sealed class SessionNotAttendedReminderWorkerTests : IClassFixture<SimfAp
     [Fact]
     public async Task Session_still_inside_the_arrival_grace_is_not_swept()
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var visitorId = await SeedVisitorAsync();
         // Started 2 minutes ago — well inside the 10-minute grace.
         var sessionId = await SeedSessionWithSeatAsync(now.AddMinutes(-2), visitorId);
@@ -95,7 +96,7 @@ public sealed class SessionNotAttendedReminderWorkerTests : IClassFixture<SimfAp
     public async Task Session_that_has_already_ended_is_not_swept()
     {
         // Nudging someone to attend a finished session is noise, not a reminder.
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var visitorId = await SeedVisitorAsync();
         var sessionId = await SeedSessionWithSeatAsync(
             now.AddMinutes(-15), visitorId, durationMinutes: 5);
@@ -108,7 +109,7 @@ public sealed class SessionNotAttendedReminderWorkerTests : IClassFixture<SimfAp
     [Fact]
     public async Task Released_reservation_is_not_nudged()
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var visitorId = await SeedVisitorAsync();
         var sessionId = await SeedSessionWithSeatAsync(
             now.AddMinutes(-15), visitorId, releasedAt: now.AddMinutes(-13));
@@ -120,7 +121,7 @@ public sealed class SessionNotAttendedReminderWorkerTests : IClassFixture<SimfAp
 
     // -- Helpers --------------------------------------------------------------
 
-    private async Task<int> RunScanAsync(DateTimeOffset now)
+    private async Task<int> RunScanAsync(DateTime now)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -161,10 +162,10 @@ public sealed class SessionNotAttendedReminderWorkerTests : IClassFixture<SimfAp
     }
 
     private async Task<Guid> SeedSessionWithSeatAsync(
-        DateTimeOffset start,
+        DateTime start,
         Guid visitorId,
         int durationMinutes = 60,
-        DateTimeOffset? releasedAt = null)
+        DateTime? releasedAt = null)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -176,7 +177,7 @@ public sealed class SessionNotAttendedReminderWorkerTests : IClassFixture<SimfAp
             NameArabic = "قاعة",
             Capacity = 10,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         var session = new Session
@@ -189,7 +190,7 @@ public sealed class SessionNotAttendedReminderWorkerTests : IClassFixture<SimfAp
             Start = start,
             End = start.AddMinutes(durationMinutes),
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         db.SeatReservations.Add(new SeatReservation
@@ -202,14 +203,14 @@ public sealed class SessionNotAttendedReminderWorkerTests : IClassFixture<SimfAp
             ReservedForUserId = visitorId,
             CreatedByUserId = visitorId,
             ReleasedAt = releasedAt,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
         return session.Id;
     }
 
     private async Task SeedArrivalAsync(
-        Guid sessionId, Guid userId, DateTimeOffset enter, DateTimeOffset? leave = null)
+        Guid sessionId, Guid userId, DateTime enter, DateTime? leave = null)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -226,7 +227,7 @@ public sealed class SessionNotAttendedReminderWorkerTests : IClassFixture<SimfAp
             Method = AttendanceMethod.QrScan,
             Enter = enter,
             Leave = leave,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
     }

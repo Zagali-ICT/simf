@@ -19,15 +19,26 @@
 > path**, so the app still renders the right scale on the first frame, offline,
 > before any network call — and a sync failure never disturbs the local choice
 > nor fails a sign-in.
+>
+> **The server half shipped 2026-07-31.** When this file was written the endpoint
+> did not exist, so the app was writing into the void and every sync scenario
+> below was a *target* spec that passed only because both directions swallow
+> their failures by contract. `GET`/`PUT /api/v1/app/account/preferences` is now
+> live, backed by five additive `UserProfile` columns, and is catalogued on its
+> own at [`api-account-preferences.md`](api-account-preferences.md)
+> (E2E-ACP-001..013). E2E-MOB038-007..011 are consequently real end-to-end for
+> the first time, and E2E-MOB038-012 is the round trip they could not previously
+> assert.
 
 | | |
 |--|--|
 | **Page** | [`Page_038`](../../App/Page_038/README.md) |
-| **Route** | app screen #38 `/settings/accessibility` · `GET`/`PUT /api/v1/app/account/preferences` (signed-in only) |
+| **Route** | app screen #38 `/settings/accessibility` · `GET`/`PUT /api/v1/app/account/preferences` (approved account only) |
 | **Surface** | Mobile (Flutter) + App API |
 | **Figma** | `1116:16630` |
-| **Auth setup** | The screen itself is reachable anonymously (local prefs). The **sync** half needs a signed-in visitor token (`AuthFlow.SignInVisitorWithoutTwoFactorAsync`). **No literal secrets.** |
-| **Last reviewed** | 2026-07-30 |
+| **API catalogue** | [`api-account-preferences.md`](api-account-preferences.md) — the server half (E2E-ACP-001..013) |
+| **Auth setup** | The screen itself is reachable anonymously (local prefs). The **sync** half needs an **approved** visitor token — the endpoint is `RequireApprovedAccount`, so a merely verified account is answered 403 and the app falls back to local-only. **No literal secrets.** |
+| **Last reviewed** | 2026-07-31 |
 
 ## Layout (D-465)
 
@@ -49,6 +60,7 @@
 | E2E-MOB038-009 | **Hydrate at sign-in** — the account copy replaces the local one on the device *and* is written to prefs, so the next cold start reads it instantly and offline | happy | P1 | authored ✓ (`accessibility_server_sync_test` — `the account copy replaces the local one, prefs included`) |
 | E2E-MOB038-010 | **An unreachable server at sign-in leaves the cache untouched** and never blocks or fails the sign-in | resilience | P0 | authored ✓ (`accessibility_server_sync_test` — `an unreachable server leaves the local cache untouched`) |
 | E2E-MOB038-011 | **Wire shape** — `textSize` travels as the stable enum NAME (`small`/`normal`/`large`/`extraLarge`), never an index; an absent / unknown payload falls back to the shipped defaults (captions ON) | edge | P1 | authored ✓ (`accessibility_server_sync_test` — `AccessibilityPreferencesRepository.decode` ×2) |
+| E2E-MOB038-012 | **End-to-end round trip against the LIVE endpoint (2026-07-31)** — device A saves أكبر + تباين عالٍ + captions off, device B (fresh install, local cache "متوسط") signs in and renders exactly that. Previously unassertable: the endpoint did not exist, so a green sync test only proved the app tolerated its absence | happy | P0 | _to author_ (manual; server half automated as E2E-ACP-001 / -010) |
 | E2E-MOB038-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-MOB038-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -133,17 +145,58 @@ Scenario: An unreachable server at sign-in cannot break sign-in
 **Evidence:** `test/features/accessibility/accessibility_server_sync_test.dart`
 — two write-through cases, two hydrate cases and two wire-decode cases.
 
-**Contract this depends on (API side — Track C):** `GET`/`PUT
-/api/v1/app/account/preferences`, `ApiResult<AccountPreferencesResponse>`,
+**Contract this depends on — SHIPPED 2026-07-31.** `GET`/`PUT
+/api/v1/app/account/preferences`, `ApiResult<AccountPreferences>`,
 `Policies(nameof(AuthorizationPolicies.RequireApprovedAccount))`, body
 `{ textSize: string, highContrast: bool, reduceMotion: bool,
-screenReaderAssist: bool, captions: bool }`. Until it exists the app degrades to
-exactly the pre-change behaviour (local prefs only), because both sync paths
-swallow their failures by contract.
+screenReaderAssist: bool, captions: bool }` — exactly the shape this file
+predicted, stored on five additive `UserProfile` columns. Full server-side
+coverage: [`api-account-preferences.md`](api-account-preferences.md). The old
+"until it exists the app degrades to local prefs only" caveat no longer applies
+to a deployed build; it still describes what happens against an **older** API
+(and against a non-approved account, which the endpoint answers 403), because
+both sync paths swallow their failures by contract.
+
+### E2E-MOB038-012 — Round trip against the live endpoint
+
+```gherkin
+Feature: The choices are on the account, not on the handset
+
+Scenario: A second handset inherits the first one's accessibility setup
+  Given "khalid@simf.test" is an APPROVED visitor
+  And on device A they set حجم الخط = أكبر, تباين عالٍ = on, الترجمة النصية = off
+  And each of those three changes was PUT to /api/v1/app/account/preferences
+  When they sign in on device B, a fresh install whose local cache says متوسط
+  Then GET /api/v1/app/account/preferences is called exactly once
+  And it returns { extraLarge, true, false, false, false }
+  And device B renders text at ×1.3 with the high-contrast theme
+  And the live-broadcast caption strip is not rendered on device B
+  And those five values are written to device B's own prefs
+  # so B's next cold start applies them offline, before any call
+
+Scenario: The same journey on a PENDING account stays local-only
+  Given the account is verified but NOT yet approved
+  When they sign in on device B
+  Then the preferences GET is answered 403 (RequireApprovedAccount)
+  And sign-in completes normally
+  And device B keeps its own cached choices, showing no error
+```
+
+**Evidence:** server side automated by
+`AccountPreferencesTests.Saved_preferences_round_trip_through_a_second_read` and
+`…Preferences_for_a_not_yet_approved_account_are_forbidden`; the two-handset half
+is a manual driver (`mobile-manual-only` — the Flutter UI is not agent-drivable).
 
 ---
 
-_Last reviewed:_ `2026-07-30` by `SIMF Team` — `accessibility-server-sync`: the
+_Last reviewed:_ `2026-07-31` by `SIMF Team` — **the server half of
+`accessibility-server-sync` shipped.** `GET`/`PUT /app/account/preferences` now
+exists (five additive `UserProfile` columns, `RequireApprovedAccount`, no admin
+permission), so E2E-MOB038-007..011 stop being a target spec and become real
+end-to-end coverage. Added E2E-MOB038-012 (live round trip) and the API
+catalogue cross-link; corrected the "until it exists" caveat and the auth-setup
+line (the endpoint needs an **approved** account, not merely a signed-in one).
+_Prior:_ `2026-07-30` by `SIMF Team` — `accessibility-server-sync`: the
 five flags are account settings now (write-through + hydrate at sign-in, prefs
 as the offline cache); added E2E-MOB038-007..011.
 _Prior:_ `2026-06-20` by `SIMF Team`.

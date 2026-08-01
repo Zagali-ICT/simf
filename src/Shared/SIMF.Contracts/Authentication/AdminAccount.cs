@@ -243,7 +243,7 @@ public sealed record AdminUserSummary(
     string AccountState,
     bool TwoFactorEnabled,
     bool IsAdministrator,
-    DateTimeOffset CreatedAt,
+    DateTime CreatedAt,
     // Whether the account has a profile photo (avatar) — the StoredFile presence
     // sentinel SimfUser.AvatarRelativePath (D-568). Trailing-optional (append-only,
     // wire-safe); defaults false for contexts that don't resolve it (bulk export,
@@ -386,7 +386,7 @@ public sealed record AdminPendingUserSummary(
     Guid Id,
     string Email,
     string DisplayName,
-    DateTimeOffset CreatedAt,
+    DateTime CreatedAt,
     // Trailing-optional (append-only, wire-safe); defaults false where unresolved.
     bool HasAvatar = false);
 
@@ -686,8 +686,8 @@ public sealed record AdminUserProfileView(
     IReadOnlyList<Guid> InterestIds,
     string? RejectionReason,
     string? RejectionReasonArabic,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt,
+    DateTime CreatedAt,
+    DateTime? UpdatedAt,
     // Bi-Meeting rework — the two admin-assigned per-user meeting-eligibility flags.
     // Trailing-optional (append-only, wire-safe); default false where unresolved.
     bool AllowsSpeakerMeeting = false,

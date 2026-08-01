@@ -52,7 +52,7 @@ public partial class OperationsToggles
             {
                 _gate = gateEnv.Data;
                 _gateIsOpen = _gate.IsOpen;
-                _gateAutoCloseInput = _gate.AutoClose?.ToSaudi()
+                _gateAutoCloseInput = _gate.AutoClose?
                     .ToString("yyyy-MM-ddTHH:mm") ?? string.Empty;
             }
             else
@@ -89,7 +89,7 @@ public partial class OperationsToggles
         _toast = null;
         try
         {
-            DateTimeOffset? autoClose = null;
+            DateTime? autoClose = null;
             if (!string.IsNullOrWhiteSpace(_gateAutoCloseInput))
             {
                 if (!DateTime.TryParse(_gateAutoCloseInput, out var parsed))

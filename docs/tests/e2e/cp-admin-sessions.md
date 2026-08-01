@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-07-22 (#3 required session Type + #4 min-1-speaker-unless-Event, grandfathered on edit; Excel-import Speakers column) |
+| **Last reviewed** | 2026-07-31 (FR-702 live-notice fields on the session form — informational text shown with the stream, gating nothing; D-815) |
 
 > **Permissions.** The page is gated `@attribute [RequirePermission(PermissionCatalog.Sessions.View)]`
 > (`"Sessions.View"`). CRUD actions sit behind distinct codes:
@@ -42,7 +42,7 @@
 | E2E-SES-003 | Broadcast lifecycle — Scheduled → Held → Recorded → Published (+ reverse) | happy | P0 | _to author_ |
 | E2E-SES-004 | Recording — upload video → Details shows file + size → remove | happy | P1 | _to author_ |
 | E2E-SES-005 | Capacity override blank → "Inherits from hall"; numeric → effective capacity | happy | P2 | _to author_ |
-| E2E-SES-006 | Grid: filter by Title, sort by Start, paginate | happy | P2 | _to author_ |
+| E2E-SES-006 | Grid: filter by Title, sort by Start, paginate. **End must order by End, not Start** — seed a session that starts first and ends last, so a switch falling through to Start returns the exact reverse | happy | P2 | authored ✓ (`GridDateSortKeyTests.Sessions_sort_on_start_honours_the_descending_direction`, `Sessions_sort_on_end_orders_by_END_not_by_start`) |
 | E2E-SES-007 | Empty list renders `SimfEmptyState` ("No sessions yet.") | happy | P1 | _to author_ |
 | E2E-SES-008 | Auth: signed-in user lacking `Sessions.View` → `/not-permitted` | auth | P0 | _to author_ |
 | E2E-SES-009 | Auth: View/Edit but not `Sessions.Publish` → no lifecycle/recording controls | auth | P0 | _to author_ |
@@ -85,6 +85,9 @@
 | E2E-SES-051 | Booking-conflict copy (A5) — the 409 `SESSION_HAS_ACTIVE_BOOKINGS` message names `/admin/sessions/seat-plans` (bilingual) and never the read-only `/admin/bookings` monitor | error | P1 | authored ✓ (`SessionLifecycleNoticeTests.A5_Active_booking_conflict_points_at_the_seat_plans_page`) |
 | E2E-SES-052 | Cancellation notice (B2) — deactivating a session dispatches `SessionCancelled` (in-app + email, bilingual, Saudi wall clock) to everyone holding a seat or who favourited it; the audit row carries `notified=N`; a session nobody saved notifies nobody | happy/regression | P0 | authored ✓ (`SessionLifecycleNoticeTests.B2_Deactivating_a_session_notifies_everyone_who_saved_it` + `.B2_A_session_nobody_saved_is_cancelled_without_notifying_anyone`) |
 | E2E-SES-053 | Cancellation notice on the edit-form path (B2) — clearing the **Active** checkbox and saving announces exactly like Deactivate (`SessionCancelled` in-app + email + `Session.Deactivated` audit with `notified=N`); an edit that leaves Active ticked announces nothing | happy/regression | P0 | authored ✓ (`SessionLifecycleNoticeTests.B2_Unticking_Active_on_the_edit_form_notifies_exactly_like_Deactivate` + `.B2_An_edit_that_leaves_Active_ticked_announces_no_cancellation`) |
+| E2E-SES-054 | **FR-702 live notice — author it (owner 2026-07-31 / D-815).** The "Live notice — shown with the stream" English + Arabic textareas save on create and are read back into the edit form; the value reaches the app live screen and the Website session page. Purely informational — it never withholds the stream | happy | P0 | authored ✓ (`SessionLiveNoticeTests.Create_with_a_live_notice_round_trips_on_the_admin_detail` + `.Update_round_trips_a_live_notice_added_after_creation` + `.Public_detail_exposes_the_live_notice` + `.A_live_notice_does_not_withhold_the_live_stream`; form side `SessionsAddEditLiveNoticeTests.Add_mode_posts_the_typed_notice` + `.Edit_mode_loads_the_stored_notice_into_both_boxes` + `.Edit_mode_puts_the_edited_notice`) |
+| E2E-SES-055 | **FR-702 live notice — clear it.** Emptying both textareas and saving stores `null` for both, so the banner comes down on every surface; a session that never had one reads null throughout, and neither case touches the live URLs | happy/regression | P0 | authored ✓ (`SessionLiveNoticeTests.Update_clears_the_live_notice_back_to_null` + `.Public_detail_omits_the_live_notice_when_none_is_authored`; form side `SessionsAddEditLiveNoticeTests.Emptying_both_boxes_clears_the_notice`) |
+| E2E-SES-056 | **FR-702 live notice — length triple-lock.** The input stops at `MaxLength="512"`; a 513-character notice posted past the UI returns 400 `SESSION_INVALID` with **both** the English and Arabic message, on create and on update, for either language; exactly 512 is accepted | error | P1 | authored ✓ (`SessionLiveNoticeTests.Create_with_an_over_length_live_notice_is_400_SESSION_INVALID` + `.Update_with_an_over_length_arabic_live_notice_is_400_SESSION_INVALID` + `.Create_with_a_live_notice_at_the_512_boundary_succeeds`; UI cap `SessionsAddEditLiveNoticeTests.Add_mode_renders_both_notice_boxes_capped_at_512`) |
 | E2E-SES-046 | Excel import Speakers column (#3/#4) — a `Speakers` cell of speaker codes attaches the roster in order; a non-Event row with no speakers, an unknown speaker code, or a blank Type each become a per-row error | error | P1 | authored ✓ (`SessionsExcelTests.Import_attaches_the_speakers_column_in_order` + `.Import_non_event_row_without_speakers_is_a_per_row_error` + `.Import_unknown_speaker_code_is_a_per_row_error` + `.Import_row_without_a_type_is_a_per_row_error`) |
 | E2E-SES-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-SES-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
@@ -1062,6 +1065,97 @@ Scenario: An ordinary edit that leaves Active ticked announces nothing
   And no Session.Deactivated OperationLog row is written for it
 ```
 
+### E2E-SES-054 / 055 / 056 — FR-702: authoring the session's live notice (D-815)
+
+```gherkin
+Feature: Sessions — the live notice shown WITH the broadcast (FR-702)
+  As an administrator holding Sessions.Edit
+  I want to write a note that appears beside a session's live stream
+  So that the audience is informed — without anyone being blocked from watching
+
+Background:
+  Given the administrator is signed in at /admin/sessions
+  And the Add/Edit form's broadcast block shows, under the two stream URLs:
+      "Live notice — shown with the stream (English)"  (textarea, 2 rows, MaxLength 512)
+      "Live notice — shown with the stream (Arabic)"   (textarea, 2 rows, MaxLength 512)
+  And the English field's helper reads "Optional note displayed beside the live
+      stream, in the viewer's language. It is information only — it blocks nobody
+      and the stream stays available to everyone, wherever they are. Leave both
+      languages blank to show no notice."
+
+Scenario: Author a bilingual notice on a new session
+  When the administrator creates session Code "S-104", Title "Maritime security",
+       Type "Session", a hall, a start/end window and one speaker
+  And sets Live stream URL to "https://www.youtube.com/watch?v=simfsimfsim"
+  And sets the English notice to "This broadcast is provided by the forum organisers."
+  And sets the Arabic notice to "يقدَّم هذا البث من منظمي الملتقى."
+  And saves
+  Then the save succeeds and the grid shows "S-104"
+  When the administrator reopens "S-104" in the edit form
+  Then both notice textareas are pre-filled with exactly what was typed
+  And GET /account/api/admin/sessions/{id} returns liveNotice + liveNoticeArabic
+  And the anonymous GET /api/v1/app/programme/sessions/{id} returns the same pair
+       alongside an unchanged liveStreamUrl
+
+Scenario: The notice never withholds the broadcast
+  Given "S-104" carries both a live stream URL and a notice
+  When an anonymous caller reads /api/v1/app/programme/sessions/{id}
+       with no Authorization header and no location of any kind
+  Then liveStreamUrl is returned in full, exactly as it is for a session with no notice
+  And no response field, header or status expresses a region, eligibility or restriction
+  # FR-702 was re-scoped by the owner on 2026-07-31: notification only, no gate.
+
+Scenario: Clear a notice that is no longer wanted
+  Given "S-104" is showing its notice on the app live screen and the Website page
+  When the administrator empties BOTH notice textareas and saves
+  Then the update succeeds
+  And the reloaded form shows both fields empty
+  And the API returns liveNotice = null and liveNoticeArabic = null
+  And the banner is gone from the app live screen and /sessions/{id}
+  And the live stream URLs are untouched by the clear
+
+Scenario: One language only is a valid notice
+  When the administrator writes only the Arabic notice and saves
+  Then the save succeeds
+  And both an Arabic and an English viewer see the Arabic text (the shared fallback)
+
+Scenario: Over-length notice is a clean bilingual 400
+  When 513 characters are posted into the English notice past the MaxLength guard
+  Then the API returns 400 with error code SESSION_INVALID
+  And message      "The live notice must be 512 characters or fewer."
+  And messageArabic "يجب أن يكون إشعار البث المباشر 512 حرفاً أو أقل."
+  When 513 characters are posted into the Arabic notice on update
+  Then the API returns 400 SESSION_INVALID with
+       "The Arabic live notice must be 512 characters or fewer." /
+       "يجب أن يكون الإشعار العربي للبث المباشر 512 حرفاً أو أقل."
+  When exactly 512 characters are submitted
+  Then the save succeeds and the value round-trips whole
+```
+
+> **Author's note for whoever drives this.** There is nothing here to "unlock"
+> and no restricted state to reach. FR-702 was written in SIMF-FDS-007 §5.1 as a
+> Riyadh-region restriction and the owner reversed it on 2026-07-31 (D-815):
+> the field is free bilingual text and the stream is served to everyone either
+> way. If a run produces a session whose stream is withheld from anyone, that is
+> a defect to report, not a scenario to pass.
+
+**Evidence:** form fields `Admin.Sessions.Field.LiveNotice` /
+`…LiveNoticeArabic` / `…LiveNoticeHint` (both resx files) bound to
+`_model.LiveNotice` / `.LiveNoticeArabic` in `SessionsAddEdit.razor`, sent
+through `NullIfBlank` on **both** create and update — which is what makes a
+cleared box store `null`. Server: `AdminSessionService.ValidateTextLengths`
+enforces 512 against the `SessionConfiguration` `HasMaxLength(512)` columns, and
+`UpdateSessionRequest` carries the pair so a PUT round-trips instead of wiping it
+(the trap D-439 fixed for the live URLs). API suite
+`tests/SIMF.Api.Tests/SessionLiveNoticeTests.cs` (9 facts); CP form suite
+`tests/SIMF.ControlPanel.Tests/SessionsAddEditLiveNoticeTests.cs` (5 facts —
+`Add_mode_renders_both_notice_boxes_capped_at_512`,
+`Edit_mode_loads_the_stored_notice_into_both_boxes`,
+`Add_mode_posts_the_typed_notice`, `Edit_mode_puts_the_edited_notice`,
+`Emptying_both_boxes_clears_the_notice`). Reader-side coverage:
+`mobile-live.md` E2E-MOB025-026..028 and `web-session-detail.md`
+E2E-WSDT-014..016.
+
 ---
 
 ## Implementation notes
@@ -1112,3 +1206,5 @@ _Last reviewed:_ 2026-07-22 by Claude (#3 required session Type + #4 min-1-speak
 _Last reviewed:_ 2026-07-26 by Claude (session-lifecycle QA package — A1/A6 seat-release confirmation + counts + audit, A2 release email, A4 reminder re-arm, A5 corrected conflict copy, B2 session-cancelled notice: SES-047..052; covered by `tests/SIMF.Api.Tests/SessionLifecycleNoticeTests.cs`).
 
 _Last reviewed:_ 2026-07-27 by Claude (B2 completed on the second cancellation path — clearing the Active checkbox on the edit form now runs the same announce step as Deactivate: SES-053).
+
+_Last reviewed:_ 2026-07-31 by Claude (FR-702 re-scoped by the owner from a Riyadh-region restriction to an informational per-session live notice — bilingual free text ≤512, authored on the broadcast block, shown WITH the stream and gating nothing: SES-054..056; covered by `tests/SIMF.Api.Tests/SessionLiveNoticeTests.cs`; decision D-815).

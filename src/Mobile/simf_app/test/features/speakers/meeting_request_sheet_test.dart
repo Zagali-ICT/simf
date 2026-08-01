@@ -10,7 +10,8 @@ import 'package:simf_app/features/speakers/widgets/meeting_request_sheet.dart';
 import 'package:simf_app/features/speakers/widgets/meeting_slot_pickers.dart';
 
 // Two local days of real slots: 2026-07-10 (09:00 + 10:00) and 2026-07-11
-// (09:00). Built as local times → UTC so the sheet's toLocal() round-trips to
+// (09:00). Built as local times → a zoned value so the sheet's toLocal()
+// round-trips to
 // the same day/time regardless of the test machine's timezone.
 final List<SpeakerSlot> _twoDaySlots = <SpeakerSlot>[
   SpeakerSlot(
@@ -39,14 +40,17 @@ class _FakeRepo implements SpeakersRepository {
   });
 
   final List<SpeakerSlot> slots;
-  // G3 — the availability fetch itself fails (network / server). Distinct from an
+  // G3 — the availability fetch itself fails (network / server). Distinct from
+  // an
   // empty [slots] list, which means the speaker genuinely has no free slot.
-  // NOT final: a test flips it between calls to simulate the network recovering,
+  // NOT final: a test flips it between calls to simulate the network
+  // recovering,
   // which is the only way to prove Retry actually re-fetches.
   bool failSlots;
 
   // G3 — how many times the availability fetch was attempted. Without this a
-  // no-op Retry button would satisfy a test that only checks the button renders.
+  // no-op Retry button would satisfy a test that only checks the button
+  // renders.
   int slotFetchCalls = 0;
   // When set, submitMeetingRequest throws an ApiFailure with this HTTP status
   // (e.g. 403 for the eligibility gate) so the failure mapping can be tested.
@@ -164,7 +168,8 @@ void main() {
       await _pump(tester, speakerId: null);
 
       // The picker label is shown; every speaker is a selectable row (D-745 —
-      // photo + name + country, no longer a bare dropdown); the form is deferred.
+      // photo + name + country, no longer a bare dropdown); the form is
+      // deferred.
       expect(find.text('Select speaker'), findsOneWidget);
       expect(find.text('Dr. Sarah Al-Otaibi'), findsOneWidget);
       expect(find.text('Capt. Omar Nasser'), findsOneWidget);
@@ -402,7 +407,8 @@ void main() {
         'QA A26 — a 409 surfaces the SERVER reason, not a hardcoded '
         '"speaker does not accept meeting requests"', (tester) async {
       // A duplicate-pending / slot-already-taken conflict: before the fix EVERY
-      // 409 was collapsed onto the "does not accept meeting requests" string, so
+      // 409 was collapsed onto the "does not accept meeting requests" string,
+      // so
       // the user was told something flatly untrue and the API's own bilingual
       // text was discarded.
       final repo = _FakeRepo(

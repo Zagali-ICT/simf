@@ -122,7 +122,7 @@ internal sealed class AdminHallService(
                 $"توجد قاعة بالرمز '{code}' بالفعل.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var hall = new Hall
         {
             Id = Guid.NewGuid(),
@@ -202,7 +202,7 @@ internal sealed class AdminHallService(
         hall.GeofenceRadiusMeters = geoRadius;
         hall.SeatSelectionMode = ParseSeatSelectionMode(request.SeatSelectionMode);
         hall.IsActive = request.IsActive;
-        hall.UpdatedAt = timeProvider.GetUtcNow();
+        hall.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -231,7 +231,7 @@ internal sealed class AdminHallService(
         await EnsureNoActiveSessionsAsync(id, cancellationToken);
 
         hall.IsActive = false;
-        hall.UpdatedAt = timeProvider.GetUtcNow();
+        hall.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry

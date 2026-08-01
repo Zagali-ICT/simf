@@ -10,7 +10,8 @@ import 'package:simf_app/features/feedback/data/rating_models.dart';
 import 'package:simf_app/features/feedback/rate_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// A fake repository that returns a configured form and captures the submission.
+/// A fake repository that returns a configured form and captures the
+/// submission.
 class _FakeFeedbackRepo implements FeedbackRepository {
   _FakeFeedbackRepo({
     this.withQuestion = false,
@@ -23,7 +24,8 @@ class _FakeFeedbackRepo implements FeedbackRepository {
   final bool withQuestion;
   final bool failSubmit;
 
-  /// Owner 2026-07-19 — false renders the "attend to rate" note + disables submit
+  /// Owner 2026-07-19 — false renders the "attend to rate" note + disables
+  /// submit
   /// (mirrors the server form's isEligible=false).
   final bool eligible;
 
@@ -59,7 +61,8 @@ class _FakeFeedbackRepo implements FeedbackRepository {
       commentLabelArabic: null,
       targetId: session ? (targetId ?? 'sess-1') : null,
       // D-713 — the per-session form carries the watched-at context; the App
-      // form does not. A UTC start keeps the fixture timezone-independent (the
+      // form does not. A zoned start keeps the fixture timezone-independent
+      // (the
       // header assertions check the session name, not the tz-shifted time).
       targetName: session ? 'Opening Session' : null,
       targetNameArabic: session ? 'الجلسة الافتتاحية' : null,

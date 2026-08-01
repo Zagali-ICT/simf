@@ -201,12 +201,12 @@ internal sealed class HallAttendanceService(
         bool directionInferred, Guid operatorUserId,
         CancellationToken cancellationToken = default)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         // X-3 (FIX B) — bind the arrival to the session live in this hall right
         // now, using the SAME ±ArrivalGrace window as EnsureSessionLiveNow (the
         // geofence / QR-door / CP picker) so an early or late gate check-in still
         // binds instead of recording nothing. The window bounds are shifted onto
-        // the constant `now` (not the DateTimeOffset column) so the filter
+        // the constant `now` (not the DateTime column) so the filter
         // translates to SQL. A single hall runs one session at a time
         // (BookingOverlap prevents overlapping hall bookings), so this candidate
         // set is tiny; the in-memory ordering prefers the currently-running
@@ -472,7 +472,7 @@ internal sealed class HallAttendanceService(
     private HallAttendance NewArrivalRow(
         Guid userId, Guid sessionId, Guid hallId, AttendanceMethod method)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         return new HallAttendance
         {
             Id = Guid.NewGuid(),
@@ -515,9 +515,9 @@ internal sealed class HallAttendanceService(
     /// <summary>X-3 — throws when now is outside the session's live window
     /// (± <see cref="ArrivalGrace"/>). Keeps arrival bound to a session that is
     /// actually running, so a stale or future sessionId cannot open a row.</summary>
-    private void EnsureSessionLiveNow(DateTimeOffset start, DateTimeOffset end)
+    private void EnsureSessionLiveNow(DateTime start, DateTime end)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         if (now < start - ArrivalGrace || now > end + ArrivalGrace)
         {
             throw new ApiException(ErrorCodes.SessionNotLive, 409,
@@ -548,7 +548,7 @@ internal sealed class HallAttendanceService(
             return new HallAttendanceStatus(false, null, null, null);
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         open.Leave = now;
         open.UpdatedAt = now;
         await appDbContext.SaveChangesAsync(cancellationToken);

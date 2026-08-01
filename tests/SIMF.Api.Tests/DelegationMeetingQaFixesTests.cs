@@ -338,7 +338,7 @@ public sealed class DelegationMeetingQaFixesTests
     [Fact]
     public async Task A34_binding_a_table_already_booked_at_that_time_is_a_conflict()
     {
-        var fixtureSlot = new DateTimeOffset(2045, 7, 1, 9, 0, 0, TimeSpan.Zero);
+        var fixtureSlot = new DateTime(2045, 7, 1, 9, 0, 0);
         var (_, requesterId) = await CreateDelegateAsync("XN", 9014);
         await EnsureCountryAsync("XO", 9015, invited: true);
         var (otherToken, _) = await CreateDelegateAsync("XP", 9016);
@@ -405,7 +405,7 @@ public sealed class DelegationMeetingQaFixesTests
         // also owned by the admin-arranged BusinessMeeting (FDS-013) — a real FK, and
         // BusinessMeetingService refuses an overlapping booking within its own family —
         // so a delegation meeting could still be pinned onto an occupied table.
-        var fixtureSlot = new DateTimeOffset(2047, 3, 4, 9, 0, 0, TimeSpan.Zero);
+        var fixtureSlot = new DateTime(2047, 3, 4, 9, 0, 0);
         var (otherToken, _) = await CreateDelegateAsync("YG", 9107);
         await EnsureCountryAsync("YH", 9108, invited: true);
         var admin = await CreateAdministratorAndSignInAsync();
@@ -467,7 +467,7 @@ public sealed class DelegationMeetingQaFixesTests
     /// for the fixture slot by a Confirmed BusinessMeeting, so only a table guard that
     /// scans that family can catch the clash.</summary>
     private async Task<(Guid HallId, Guid TableId)> SeedTableHeldByBusinessMeetingAsync(
-        DateTimeOffset slotStart)
+        DateTime slotStart)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -481,7 +481,7 @@ public sealed class DelegationMeetingQaFixesTests
             HallId = hall.Id,
             Code = "TM" + suffix,
             Capacity = 6, IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.MeetingTables.Add(table);
         db.HallAvailabilityWindows.Add(new HallAvailabilityWindow
@@ -492,7 +492,7 @@ public sealed class DelegationMeetingQaFixesTests
             End = slotStart.AddHours(2),
             SlotMinutes = 60,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         db.BusinessMeetings.Add(new BusinessMeeting
         {
@@ -503,7 +503,7 @@ public sealed class DelegationMeetingQaFixesTests
             End = slotStart.AddHours(1),
             Status = BusinessMeetingStatus.Confirmed,
             ScheduledByUserId = Guid.NewGuid(),
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
 
         await db.SaveChangesAsync();
@@ -517,7 +517,7 @@ public sealed class DelegationMeetingQaFixesTests
     /// slot and no bookings of its own, so the hall-level guards see it as free.</summary>
     private async Task<(Guid HallId, Guid TableId)> SeedTableAlreadyBookedElsewhereAsync(
         Guid requesterUserId, string requestingCode, string targetCode,
-        DateTimeOffset slotStart)
+        DateTime slotStart)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -535,7 +535,7 @@ public sealed class DelegationMeetingQaFixesTests
             HallId = hallB.Id,
             Code = "TB" + suffix,
             Capacity = 6, IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.MeetingTables.Add(table);
 
@@ -547,7 +547,7 @@ public sealed class DelegationMeetingQaFixesTests
             End = slotStart.AddHours(2),
             SlotMinutes = 60,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
 
         var requesting = await ResolveCountryIdAsync(db, requestingCode);
@@ -565,8 +565,8 @@ public sealed class DelegationMeetingQaFixesTests
             MeetingTableId = table.Id,
             SlotStart = slotStart,
             SlotEnd = slotStart.AddHours(1),
-            RespondedAt = DateTimeOffset.UtcNow,
-            CreatedAt = DateTimeOffset.UtcNow,
+            RespondedAt = SimfClock.Now,
+            CreatedAt = SimfClock.Now,
         });
 
         await db.SaveChangesAsync();
@@ -579,7 +579,7 @@ public sealed class DelegationMeetingQaFixesTests
         Code = "QH" + suffix,
         Name = "Meeting Hall", NameArabic = "قاعة",
         Purpose = HallPurpose.Meeting, Capacity = 12, IsActive = true,
-        CreatedAt = DateTimeOffset.UtcNow,
+        CreatedAt = SimfClock.Now,
     };
 
     private Task<Guid> SeedAwaitingRequestAsync(
@@ -610,14 +610,14 @@ public sealed class DelegationMeetingQaFixesTests
                 HallId = hall.Id,
                 Code = "TD" + suffix,
                 Capacity = 4, IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             db.MeetingTables.Add(table);
             hallId = hall.Id;
             tableId = table.Id;
         }
 
-        var slotStart = new DateTimeOffset(2046, 8, 1, 9, 0, 0, TimeSpan.Zero);
+        var slotStart = new DateTime(2046, 8, 1, 9, 0, 0);
         var req = new DelegationMeetingRequest
         {
             Id = Guid.NewGuid(),
@@ -632,8 +632,8 @@ public sealed class DelegationMeetingQaFixesTests
             SlotStart = hallId is null ? null : slotStart,
             SlotEnd = hallId is null ? null : slotStart.AddHours(1),
             RespondedAt = status == MeetingRequestStatus.Pending
-                ? null : DateTimeOffset.UtcNow,
-            CreatedAt = DateTimeOffset.UtcNow,
+                ? null : SimfClock.Now,
+            CreatedAt = SimfClock.Now,
         };
         db.DelegationMeetingRequests.Add(req);
         await db.SaveChangesAsync();
@@ -653,7 +653,7 @@ public sealed class DelegationMeetingQaFixesTests
             country = new Country
             {
                 Id = id, Code = code, Name = code, NameArabic = code,
-                IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+                IsActive = true, CreatedAt = SimfClock.Now,
             };
             db.Countries.Add(country);
         }
@@ -676,7 +676,7 @@ public sealed class DelegationMeetingQaFixesTests
                 End = FixtureWindowStart.AddHours(12),
                 SlotMinutes = 60,
                 IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
             await db.SaveChangesAsync();
         }
@@ -686,8 +686,8 @@ public sealed class DelegationMeetingQaFixesTests
     /// <summary>G3 — far enough in the future that a past slot can never be why a
     /// fixture delegation looks unavailable, and long enough (12 one-hour slots) that
     /// the meetings these tests accept never empty it.</summary>
-    private static readonly DateTimeOffset FixtureWindowStart =
-        new(2035, 9, 1, 9, 0, 0, TimeSpan.Zero);
+    private static readonly DateTime FixtureWindowStart =
+        new(2035, 9, 1, 9, 0, 0);
 
     private async Task<(string Token, Guid UserId)> CreateDelegateAsync(
         string countryCode, int countryId)
@@ -724,7 +724,7 @@ public sealed class DelegationMeetingQaFixesTests
                     Id = Guid.NewGuid(),
                     Name = "Visitor — QaSeed", NameArabic = "زائر",
                     PageColor = "#3B82F6", IsForVisitor = true, IsActive = true,
-                    CreatedAt = DateTimeOffset.UtcNow,
+                    CreatedAt = SimfClock.Now,
                 };
                 db.ProfileTypes.Add(type);
                 await db.SaveChangesAsync();
@@ -738,7 +738,7 @@ public sealed class DelegationMeetingQaFixesTests
                 NationalityId = nationalityId,
                 IsDelegate = true,
                 AllowsDelegationMeeting = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
             await db.SaveChangesAsync();
         }
@@ -771,14 +771,7 @@ public sealed class DelegationMeetingQaFixesTests
             await users.CreateAsync(user, AuthFlow.Password);
             await users.AddToRoleAsync(user, AppRoles.Administrator);
         }
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email, Password = AuthFlow.Password, Audience = SignInAudience.Cp,
-            });
-        return (await sign.Content
-            .ReadFromJsonAsync<ApiResult<SignInResponse>>())!.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> SendAuthAsync<TBody>(

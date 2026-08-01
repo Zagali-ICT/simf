@@ -160,13 +160,13 @@ internal sealed class StatisticsService(
 
         foreach (var day in days)
         {
-            // The Saudi calendar day expressed as an explicit UTC half-open
-            // window [start, end). Instants are stored as UTC, so a record at
-            // 22:00 UTC belongs to the NEXT Saudi day — bucketing on the stored
-            // value directly would misfile every evening record. Reusing
-            // SaudiTime.FromSaudiWallClock keeps the single +03:00 conversion
-            // point, and a plain range predicate stays an index-friendly seek
-            // rather than relying on a translated date-shift expression.
+            // The Saudi calendar day as an explicit half-open window
+            // [start, end). Since D-813 instants ARE the Saudi wall clock, so
+            // this is a straight range on the stored value with no zone shift;
+            // FromSaudiWallClock is kept as the single named seam (it only
+            // stamps the Kind now). A plain range predicate also stays an
+            // index-friendly seek rather than relying on a translated
+            // date-component expression.
             var startUtc = SaudiTime.FromSaudiWallClock(
                 day.Date.ToDateTime(TimeOnly.MinValue));
             var endUtc = startUtc.AddDays(1);

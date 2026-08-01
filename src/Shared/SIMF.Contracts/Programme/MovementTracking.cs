@@ -19,7 +19,7 @@ public sealed class RecordDevicePositionsRequest
 /// <param name="AccuracyMeters">The device's reported horizontal accuracy, when it
 /// supplied one.</param>
 public sealed record DevicePositionSample(
-    DateTimeOffset CapturedAt,
+    DateTime CapturedAt,
     double Lat,
     double Lon,
     double? AccuracyMeters = null);
@@ -66,6 +66,6 @@ public sealed record RouteLeg(
     Guid? HallId,
     string? HallName,
     string? HallNameArabic,
-    DateTimeOffset Enter,
-    DateTimeOffset Leave,
+    DateTime Enter,
+    DateTime Leave,
     double DwellMinutes);

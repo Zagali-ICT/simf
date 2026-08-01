@@ -18,11 +18,11 @@ public class RegistrationGate
     /// <see cref="AutoClose"/> passes.</summary>
     public bool IsOpen { get; set; } = true;
 
-    /// <summary>Optional UTC moment after which the worker auto-closes
+    /// <summary>Optional Saudi-local moment after which the worker auto-closes
     /// the gate. Null means "no scheduled close".</summary>
-    public DateTimeOffset? AutoClose { get; set; }
+    public DateTime? AutoClose { get; set; }
 
-    public DateTimeOffset LastChangedAt { get; set; }
+    public DateTime LastChangedAt { get; set; }
 
     /// <summary>Admin user id of the last manual toggle. Null when the
     /// auto-close worker did the flip.</summary>
@@ -46,6 +46,6 @@ public class ArchiveVisibility
     /// the admin endpoint.</summary>
     public bool IsVisible { get; set; } = true;
 
-    public DateTimeOffset LastChangedAt { get; set; }
+    public DateTime LastChangedAt { get; set; }
     public Guid? LastChangedByUserId { get; set; }
 }

@@ -163,7 +163,7 @@ internal sealed class ExhibitorVisitorService(
                 .ThenByDescending(s => s.Id)
                 .FirstOrDefault();
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         if (existing is not null)
         {
             existing.Note = trimmed;
@@ -290,7 +290,7 @@ internal sealed class ExhibitorVisitorService(
             return;
         }
         capture.Deactivate();
-        capture.UpdatedAt = timeProvider.GetUtcNow();
+        capture.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -359,7 +359,7 @@ internal sealed class ExhibitorVisitorService(
     /// rest) and the raw badge QR id are deliberately NOT in the message.</summary>
     private async Task EmailLeadToExhibitorAsync(
         Guid exhibitorUserId, VisitorCard card, string? note,
-        DateTimeOffset scannedAt, CancellationToken cancellationToken)
+        DateTime scannedAt, CancellationToken cancellationToken)
     {
         var recipient = await userDirectory.GetEmailAsync(exhibitorUserId, cancellationToken);
         if (string.IsNullOrWhiteSpace(recipient))
@@ -379,7 +379,7 @@ internal sealed class ExhibitorVisitorService(
             ["Organisation"] = FirstFilled(card.Organisation, card.OrganisationArabic, NotProvidedEn),
             ["OrganisationArabic"] =
                 FirstFilled(card.OrganisationArabic, card.Organisation, NotProvidedAr),
-            // D-219 — Saudi wall clock, 12-hour. No user-facing UTC.
+            // D-219 — Saudi wall clock, 12-hour. No user-facing zoned stamp.
             ["ScannedAt"] = scannedAt.FormatSaudi(),
             ["Note"] = string.IsNullOrWhiteSpace(note) ? NoNote : note,
         };

@@ -3,91 +3,73 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
-import 'package:simf_app/core/location/device_location.dart';
 import 'package:simf_app/features/sessions/data/hall_attendance_repository.dart';
 import 'package:simf_app/features/sessions/widgets/session_arrival_action.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// `geofence-self-checkin` — the backend arrival/departure endpoints shipped
-/// with D-241 but nothing in the app ever called them. These cover the whole
-/// attendee half: the position report, every server outcome, and the rendered
-/// state. Every case fails against the pre-fix tree (no such widget, no such
-/// repository).
+/// `gate-check-in-status` — owner 2026-07-31: a session arrival is established
+/// by the GATE SCAN at the hall door, so the session detail only REPORTS the
+/// `HallAttendance` row the door opened. These cover the three render states and
+/// the one distinction that keeps being lost elsewhere: a failed read is not the
+/// same thing as "not checked in yet".
 const String _sessionId = 's-1';
 
-/// A location seam that answers with a fixed reading — no plugin, no platform
-/// channel. The shipped default is [DeviceLocationOutcome.unavailable].
-class _FixedLocation implements DeviceLocation {
-  const _FixedLocation(this._reading);
-
-  final DeviceLocationReading _reading;
-
-  @override
-  Future<DeviceLocationReading> read() async => _reading;
-}
-
-/// Records the calls the action makes and answers with a canned status or a
-/// canned [ApiFailure].
+/// Answers `getStatus` from a scripted list — one entry per call, the last entry
+/// repeating — so the retry path can fail first and succeed second. A
+/// [HallAttendanceStatus] entry is returned; an [ApiFailure] entry is thrown.
 class _FakeAttendance implements HallAttendanceRepository {
-  _FakeAttendance({
-    this.status = const HallAttendanceStatus(arrived: false),
-    this.arrivalFailure,
-  });
+  _FakeAttendance.answering(HallAttendanceStatus status)
+      : _answers = <Object>[status];
 
-  final HallAttendanceStatus status;
-  final ApiFailure? arrivalFailure;
+  _FakeAttendance.failing(ApiFailure failure) : _answers = <Object>[failure];
 
-  int arrivalCalls = 0;
-  int departureCalls = 0;
-  double? lastLat;
-  double? lastLon;
+  _FakeAttendance.failingThenAnswering(
+    ApiFailure failure,
+    HallAttendanceStatus status,
+  ) : _answers = <Object>[failure, status];
+
+  final List<Object> _answers;
+
+  int statusCalls = 0;
 
   @override
-  Future<HallAttendanceStatus> getStatus(String sessionId) async => status;
+  Future<HallAttendanceStatus> getStatus(String sessionId) async {
+    final index =
+        statusCalls < _answers.length ? statusCalls : _answers.length - 1;
+    statusCalls++;
+    final answer = _answers[index];
+    if (answer is ApiFailure) {
+      throw answer;
+    }
+    return answer as HallAttendanceStatus;
+  }
 
+  // The card is READ-ONLY. The device no longer claims an arrival (that was the
+  // removed GPS self check-in), so either write reaching the repository is the
+  // regression these throws catch.
   @override
   Future<HallAttendanceStatus> recordArrival(
     String sessionId, {
     required double lat,
     required double lon,
-  }) async {
-    arrivalCalls++;
-    lastLat = lat;
-    lastLon = lon;
-    final failure = arrivalFailure;
-    if (failure != null) {
-      throw failure;
-    }
-    return HallAttendanceStatus(
-      arrived: true,
-      enter: DateTime.utc(2026, 11, 23, 7, 30),
-      method: HallAttendanceMethod.geofence,
-    );
-  }
+  }) async =>
+      throw StateError('the check-in card must never post an arrival');
 
   @override
-  Future<HallAttendanceStatus> recordDeparture(String sessionId) async {
-    departureCalls++;
-    return HallAttendanceStatus(
-      arrived: false,
-      enter: DateTime.utc(2026, 11, 23, 7, 30),
-      leave: DateTime.utc(2026, 11, 23, 8, 15),
-      method: HallAttendanceMethod.geofence,
-    );
-  }
+  Future<HallAttendanceStatus> recordDeparture(String sessionId) async =>
+      throw StateError('the check-in card must never post a departure');
 }
 
-Future<void> _pumpAction(
+Future<void> _pumpCard(
   WidgetTester tester, {
   required _FakeAttendance repository,
-  required DeviceLocationReading reading,
   Locale locale = const Locale('en'),
+  bool hasEnded = false,
 }) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: <Override>[
         hallAttendanceRepositoryProvider.overrideWithValue(repository),
-        deviceLocationProvider.overrideWithValue(_FixedLocation(reading)),
       ],
       child: MaterialApp(
         locale: locale,
@@ -102,6 +84,7 @@ Future<void> _pumpAction(
           builder: (context) => Scaffold(
             body: SessionArrivalAction(
               sessionId: _sessionId,
+              hasEnded: hasEnded,
               l10n: AppL10n.of(context),
             ),
           ),
@@ -112,187 +95,189 @@ Future<void> _pumpAction(
   await tester.pumpAndSettle();
 }
 
-const DeviceLocationReading _atTheHall = DeviceLocationReading(
-  DeviceLocationOutcome.granted,
-  DevicePosition(lat: 24.7136, lon: 46.6753),
+/// A transport failure — no envelope, so no `httpStatus`: the exact shape the
+/// api client raises when the server cannot be reached.
+const ApiFailure _readFailed = ApiFailure(
+  code: ApiErrorCodes.clientNetwork,
+  message: 'Could not reach the server.',
 );
 
 void main() {
-  group('SessionArrivalAction — geofence self check-in (FR-305/506, D-241)',
+  group('SessionArrivalAction — hall check-in status (gate scan, FR-305/506)',
       () {
-    testWidgets('"I\'m here" posts the device position and renders the '
-        'returned arrival', (tester) async {
-      final repository = _FakeAttendance();
-      await _pumpAction(
-        tester,
-        repository: repository,
-        reading: _atTheHall,
-      );
-
-      expect(find.text("I'm here"), findsOneWidget);
-      await tester.tap(find.text("I'm here"));
-      await tester.pumpAndSettle();
-
-      expect(repository.arrivalCalls, 1);
-      expect(repository.lastLat, 24.7136);
-      expect(repository.lastLon, 46.6753);
-      // The returned status flips the action to the check-out affordance and
-      // shows the recorded arrival time on the Saudi clock (07:30 UTC → 10:30).
-      expect(find.text('Check out'), findsOneWidget);
-      expect(
-        find.textContaining('Your hall arrival is recorded · 10:30 AM'),
-        findsOneWidget,
-      );
-    });
-
-    testWidgets('an already-arrived session opens on the check-out action',
+    testWidgets('a door scan renders the recorded arrival on the Saudi clock',
         (tester) async {
-      final repository = _FakeAttendance(
-        status: HallAttendanceStatus(
+      final repository = _FakeAttendance.answering(
+        HallAttendanceStatus(
           arrived: true,
-          enter: DateTime.utc(2026, 11, 23, 7, 30),
-          method: HallAttendanceMethod.geofence,
+          enter: DateTime(2026, 11, 23, 10, 30),
+          method: HallAttendanceMethod.qrScan,
         ),
       );
-      await _pumpAction(
-        tester,
-        repository: repository,
-        reading: _atTheHall,
-      );
-
-      expect(find.text('Check out'), findsOneWidget);
-      expect(find.text("I'm here"), findsNothing);
-
-      await tester.tap(find.text('Check out'));
-      await tester.pumpAndSettle();
-
-      expect(repository.departureCalls, 1);
-      expect(find.text("I'm here"), findsOneWidget);
-    });
-
-    testWidgets('a hall with no boundary reads as "not configured", never as '
-        'an error (inert until the CP sets one)', (tester) async {
-      final repository = _FakeAttendance(
-        arrivalFailure: const ApiFailure(
-          code: HallAttendanceRepository.hallGeofenceNotConfigured,
-          message: 'This hall has no geofence.',
-          httpStatus: 400,
-        ),
-      );
-      await _pumpAction(
-        tester,
-        repository: repository,
-        reading: _atTheHall,
-      );
-
-      await tester.tap(find.text("I'm here"));
-      await tester.pumpAndSettle();
+      await _pumpCard(tester, repository: repository);
 
       expect(
-        find.text('This hall has no boundary configured yet.'),
+        find.text('Your hall arrival is recorded · 10:30 AM'),
         findsOneWidget,
       );
-      // No arrival was recorded, so the CTA stays.
-      expect(find.text("I'm here"), findsOneWidget);
+      // Nothing to act on — the door records the arrival, not the phone.
+      expect(find.byType(FilledButton), findsNothing);
+      expect(repository.statusCalls, 1);
     });
 
-    testWidgets('standing outside the radius says so', (tester) async {
-      final repository = _FakeAttendance(
-        arrivalFailure: const ApiFailure(
-          code: HallAttendanceRepository.notAtVenue,
-          message: 'You are not inside the hall yet.',
-          httpStatus: 403,
-        ),
-      );
-      await _pumpAction(
-        tester,
-        repository: repository,
-        reading: _atTheHall,
-      );
-
-      await tester.tap(find.text("I'm here"));
-      await tester.pumpAndSettle();
-
-      expect(
-        find.text('You are outside the hall boundary. Move closer and try again.'),
-        findsOneWidget,
-      );
-    });
-
-    testWidgets('any other server refusal shows the server message verbatim',
+    testWidgets('a closed row shows the departure under the arrival',
         (tester) async {
-      final repository = _FakeAttendance(
-        arrivalFailure: const ApiFailure(
-          code: HallAttendanceRepository.sessionNotLive,
-          message: 'This session is not open for arrivals right now.',
-          httpStatus: 409,
-        ),
-      );
-      await _pumpAction(
+      await _pumpCard(
         tester,
-        repository: repository,
-        reading: _atTheHall,
-      );
-
-      await tester.tap(find.text("I'm here"));
-      await tester.pumpAndSettle();
-
-      expect(
-        find.text('This session is not open for arrivals right now.'),
-        findsOneWidget,
-      );
-    });
-
-    testWidgets('no location capability never posts a position, and never '
-        'reads as "outside the hall"', (tester) async {
-      final repository = _FakeAttendance();
-      await _pumpAction(
-        tester,
-        repository: repository,
-        reading: const DeviceLocationReading(
-          DeviceLocationOutcome.unavailable,
+        repository: _FakeAttendance.answering(
+          HallAttendanceStatus(
+            arrived: false,
+            enter: DateTime(2026, 11, 23, 10, 30),
+            leave: DateTime(2026, 11, 23, 11, 45),
+            method: HallAttendanceMethod.qrScan,
+          ),
         ),
       );
 
-      await tester.tap(find.text("I'm here"));
-      await tester.pumpAndSettle();
-
-      expect(repository.arrivalCalls, 0);
       expect(
-        find.text('Location permission is required to check in.'),
+        find.text('Your hall arrival is recorded · 10:30 AM'),
         findsOneWidget,
+      );
+      expect(
+        find.text('Your departure is recorded · 11:45 AM'),
+        findsOneWidget,
+      );
+      // A recorded-then-closed attendance is still an attendance: it must not
+      // fall back to the "check in at the door" instruction.
+      expect(
+        find.textContaining('Show your badge at the hall door'),
+        findsNothing,
       );
     });
 
-    testWidgets('a refused location permission is reported, not swallowed',
+    testWidgets('no attendance row reads as a calm instruction, not an error',
         (tester) async {
-      final repository = _FakeAttendance();
-      await _pumpAction(
+      await _pumpCard(
         tester,
-        repository: repository,
-        reading: const DeviceLocationReading(DeviceLocationOutcome.denied),
+        repository: _FakeAttendance.answering(
+          const HallAttendanceStatus(arrived: false),
+        ),
       );
 
-      await tester.tap(find.text("I'm here"));
-      await tester.pumpAndSettle();
-
-      expect(repository.arrivalCalls, 0);
       expect(
-        find.text('Location permission is required to check in.'),
+        find.text(
+          'You are not checked in yet. Show your badge at the hall door to be '
+          'checked in.',
+        ),
+        findsOneWidget,
+      );
+      // Not an error: no retry affordance, and no claimed arrival.
+      expect(find.text('Retry'), findsNothing);
+      expect(
+        find.textContaining('Your hall arrival is recorded'),
+        findsNothing,
+      );
+    });
+
+    testWidgets('an ENDED session with no attendance says nothing at all',
+        (tester) async {
+      // An attendee attends a handful of sessions out of dozens. Rendering
+      // "show your badge at the hall door" on every past session they simply
+      // did not go to is an instruction they cannot act on, so the strip stays
+      // silent once the session is over and no scan was recorded.
+      await _pumpCard(
+        tester,
+        hasEnded: true,
+        repository: _FakeAttendance.answering(
+          const HallAttendanceStatus(arrived: false),
+        ),
+      );
+
+      expect(
+        find.textContaining('Show your badge at the hall door'),
+        findsNothing,
+      );
+      expect(find.text('Retry'), findsNothing);
+    });
+
+    testWidgets('an ENDED session STILL shows an arrival that was recorded',
+        (tester) async {
+      // The silence above is only for the empty case — a scan that did happen
+      // stays visible for good, because that is the attendance record itself.
+      await _pumpCard(
+        tester,
+        hasEnded: true,
+        repository: _FakeAttendance.answering(
+          HallAttendanceStatus(
+            arrived: true,
+            enter: DateTime(2026, 11, 23, 10, 30),
+          ),
+        ),
+      );
+
+      expect(
+        find.textContaining('Your hall arrival is recorded'),
         findsOneWidget,
       );
     });
 
-    testWidgets('the Arabic action renders the Arabic wording', (tester) async {
-      final repository = _FakeAttendance();
-      await _pumpAction(
+    testWidgets('a FAILED read is never collapsed into "not checked in"',
+        (tester) async {
+      await _pumpCard(
         tester,
-        repository: repository,
-        reading: _atTheHall,
+        repository: _FakeAttendance.failing(_readFailed),
+      );
+
+      expect(
+        find.text('Could not load your hall check-in status.'),
+        findsOneWidget,
+      );
+      expect(find.text('Retry'), findsOneWidget);
+      // The two states mean different things — only one of them is fixed by
+      // trying again, so the failure must not borrow the "not yet" wording.
+      expect(
+        find.textContaining('Show your badge at the hall door'),
+        findsNothing,
+      );
+    });
+
+    testWidgets('retry re-reads the status and renders the recovered state',
+        (tester) async {
+      final repository = _FakeAttendance.failingThenAnswering(
+        _readFailed,
+        HallAttendanceStatus(
+          arrived: true,
+          enter: DateTime(2026, 11, 23, 10, 30),
+          method: HallAttendanceMethod.qrScan,
+        ),
+      );
+      await _pumpCard(tester, repository: repository);
+
+      expect(find.text('Retry'), findsOneWidget);
+      await tester.tap(find.text('Retry'));
+      await tester.pumpAndSettle();
+
+      expect(repository.statusCalls, 2);
+      expect(
+        find.text('Your hall arrival is recorded · 10:30 AM'),
+        findsOneWidget,
+      );
+      expect(find.text('Retry'), findsNothing);
+    });
+
+    testWidgets('the Arabic card renders the Arabic wording', (tester) async {
+      await _pumpCard(
+        tester,
+        repository: _FakeAttendance.answering(
+          const HallAttendanceStatus(arrived: false),
+        ),
         locale: const Locale('ar'),
       );
 
-      expect(find.text('أنا هنا'), findsOneWidget);
+      expect(
+        find.textContaining('أبرز بطاقتك عند باب القاعة'),
+        findsOneWidget,
+      );
     });
   });
 
@@ -306,7 +291,7 @@ void main() {
       });
 
       expect(status.arrived, isTrue);
-      expect(status.enter, DateTime.utc(2026, 11, 23, 7, 30));
+      expect(status.enter, DateTime(2026, 11, 23, 10, 30));
       expect(status.leave, isNull);
       expect(status.method, HallAttendanceMethod.geofence);
     });

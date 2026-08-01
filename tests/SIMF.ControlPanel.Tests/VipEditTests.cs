@@ -31,7 +31,7 @@ public sealed class VipEditTests : CpComponentTestBase
             IqamaNumber: null, PassportNumber: null, SaudiMobile: null,
             InternationalMobile: null, HasIdImage: hasIdImage, HasAvatar: hasAvatar,
             InterestIds: Array.Empty<Guid>(), RejectionReason: null,
-            RejectionReasonArabic: null, CreatedAt: DateTimeOffset.UtcNow,
+            RejectionReasonArabic: null, CreatedAt: SimfClock.Now,
             UpdatedAt: null);
 
     private static AdminVipSummary VipRow(Guid userId) =>

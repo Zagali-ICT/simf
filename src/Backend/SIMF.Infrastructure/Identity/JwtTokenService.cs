@@ -1,4 +1,4 @@
-﻿// Tests: SIMF.Api.Tests/SessionRecordingTests.cs (P3.2b — D-232 recording-stream token)
+// Tests: SIMF.Api.Tests/SessionRecordingTests.cs (P3.2b — D-232 recording-stream token)
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -26,7 +26,7 @@ internal sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider
         MobileAppRole mobileAppRole, bool? secondFactorCompleted = null)
     {
         var settings = options.Value;
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var expires = now.AddMinutes(settings.AccessTokenMinutes);
 
         var claims = new List<Claim>
@@ -79,8 +79,8 @@ internal sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider
             issuer: settings.Issuer,
             audience: settings.Audience,
             claims: claims,
-            notBefore: now.UtcDateTime,
-            expires: expires.UtcDateTime,
+            notBefore: now,
+            expires: expires,
             signingCredentials: credentials);
 
         return new AccessToken(
@@ -91,7 +91,7 @@ internal sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider
     public AccessToken CreateRecordingStreamToken(Guid sessionId, Guid userId)
     {
         var settings = options.Value;
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var expires = now.AddMinutes(settings.StreamTokenMinutes);
 
         // Deliberately minimal: NO roles, NO perm claims, NO security_stamp —
@@ -114,8 +114,8 @@ internal sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider
             issuer: settings.Issuer,
             audience: settings.StreamAudience,
             claims: claims,
-            notBefore: now.UtcDateTime,
-            expires: expires.UtcDateTime,
+            notBefore: now,
+            expires: expires,
             signingCredentials: credentials);
 
         return new AccessToken(

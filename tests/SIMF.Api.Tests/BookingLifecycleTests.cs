@@ -36,7 +36,7 @@ public sealed class BookingLifecycleTests : IClassFixture<SimfApiFactory>
     public async Task Overlapping_booking_in_another_session_is_blocked()
     {
         // Two sessions, different halls, overlapping windows.
-        var start = DateTimeOffset.UtcNow.AddHours(3);
+        var start = SimfClock.Now.AddHours(3);
         var end = start.AddHours(1);
         var session1 = await SeedSessionAsync(start, end);
         var session2 = await SeedSessionAsync(start.AddMinutes(30), end.AddMinutes(30));
@@ -58,7 +58,7 @@ public sealed class BookingLifecycleTests : IClassFixture<SimfApiFactory>
         // Seed an already-started session and reserve directly (bypassing the
         // app start-guard, which only applies to cancellation, not booking).
         var session = await SeedSessionAsync(
-            DateTimeOffset.UtcNow.AddMinutes(-5), DateTimeOffset.UtcNow.AddHours(1));
+            SimfClock.Now.AddMinutes(-5), SimfClock.Now.AddHours(1));
         var visitor = await SignInApprovedVisitorAsync();
         await ReserveAsync(session.Id, "A", 1, visitor.Token);
 
@@ -75,7 +75,7 @@ public sealed class BookingLifecycleTests : IClassFixture<SimfApiFactory>
         // #20 (Round-1 held, option C) — a walk-in may still book a session that has
         // STARTED but not yet ended (live, in-progress); only an ENDED session is blocked.
         var session = await SeedSessionAsync(
-            DateTimeOffset.UtcNow.AddMinutes(-5), DateTimeOffset.UtcNow.AddHours(1));
+            SimfClock.Now.AddMinutes(-5), SimfClock.Now.AddHours(1));
         var visitor = await SignInApprovedVisitorAsync();
 
         var pick = await PostAuthAsync(
@@ -90,7 +90,7 @@ public sealed class BookingLifecycleTests : IClassFixture<SimfApiFactory>
         // #20 (Round-1 held, option C) — an ENDED session can no longer be booked: the
         // hold could never be attended, so the create paths return BOOKING_SESSION_ENDED.
         var session = await SeedSessionAsync(
-            DateTimeOffset.UtcNow.AddHours(-2), DateTimeOffset.UtcNow.AddHours(-1));
+            SimfClock.Now.AddHours(-2), SimfClock.Now.AddHours(-1));
         var visitor = await SignInApprovedVisitorAsync();
 
         var pick = await PostAuthAsync(
@@ -125,7 +125,7 @@ public sealed class BookingLifecycleTests : IClassFixture<SimfApiFactory>
         return mine.ReservationId;
     }
 
-    private async Task<Session> SeedSessionAsync(DateTimeOffset start, DateTimeOffset end)
+    private async Task<Session> SeedSessionAsync(DateTime start, DateTime end)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -135,7 +135,7 @@ public sealed class BookingLifecycleTests : IClassFixture<SimfApiFactory>
             Code = "H-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Name = "Hall", NameArabic = "قاعة",
             Capacity = 10, IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         db.HallSeatLayouts.Add(new HallSeatLayout
@@ -144,7 +144,7 @@ public sealed class BookingLifecycleTests : IClassFixture<SimfApiFactory>
             HallId = hall.Id,
             RowLabels = "A,B",
             SeatsPerRow = 5,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         var session = new Session
         {
@@ -155,7 +155,7 @@ public sealed class BookingLifecycleTests : IClassFixture<SimfApiFactory>
             Start = start,
             End = end,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         await db.SaveChangesAsync();

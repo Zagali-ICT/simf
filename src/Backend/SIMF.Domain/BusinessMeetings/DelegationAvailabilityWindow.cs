@@ -20,11 +20,11 @@ public sealed class DelegationAvailabilityWindow
     public int CountryId { get; set; }
     public Country? Country { get; set; }
 
-    /// <summary>Window start (UTC).</summary>
-    public DateTimeOffset Start { get; set; }
+    /// <summary>Window start (Saudi local).</summary>
+    public DateTime Start { get; set; }
 
-    /// <summary>Window end (UTC). Must be after <see cref="Start"/>.</summary>
-    public DateTimeOffset End { get; set; }
+    /// <summary>Window end (Saudi local). Must be after <see cref="Start"/>.</summary>
+    public DateTime End { get; set; }
 
     /// <summary>Slot length in minutes (e.g. 30). The window is divided into
     /// back-to-back slots of this length; a trailing remainder shorter than one
@@ -34,8 +34,8 @@ public sealed class DelegationAvailabilityWindow
     /// <summary>Soft-delete flag — hides the window without losing the row.</summary>
     public bool IsActive { get; set; } = true;
 
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset? UpdatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 
     /// <summary>Bare <c>Guid</c> of the admin who created it — cross-context, no FK (D-157).</summary>
     public Guid? CreatedByUserId { get; set; }

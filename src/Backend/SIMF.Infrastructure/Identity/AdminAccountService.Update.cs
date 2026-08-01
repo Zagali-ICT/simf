@@ -132,7 +132,7 @@ internal sealed partial class AdminAccountService
             .SingleOrDefaultAsync(cancellationToken);
         var profileTypeChanged = currentProfileTypeId != resolvedProfileTypeId;
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         await transactionRunner.ExecuteAsync(async (innerCt) =>
         {
@@ -292,7 +292,7 @@ internal sealed partial class AdminAccountService
         bool allowsSpeakerMeeting, bool allowsDelegationMeeting,
         int? nationalityId,
         string? saudiMobile, string? internationalMobile,
-        DateTimeOffset now,
+        DateTime now,
         CancellationToken cancellationToken)
     {
         var profile = await appDbContext.UserProfiles

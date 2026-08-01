@@ -35,5 +35,5 @@ public sealed class Invitation : BaseAuditEntity
     /// <summary>When the recipient or admin last moved
     /// <see cref="State"/> off <see cref="InvitationState.Pending"/>.
     /// Null while still pending.</summary>
-    public DateTimeOffset? RespondedAt { get; set; }
+    public DateTime? RespondedAt { get; set; }
 }

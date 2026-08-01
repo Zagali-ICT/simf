@@ -76,11 +76,11 @@ public partial class PendingVisitors
                 // CS-E (D-387) — capture the cache-buster URL once so the
                 // thumbnail and lightbox share a stable src and don't re-fetch.
                 _imageUrl = _viewProfile.HasIdImage
-                    ? $"/account/api/admin/visitors/{_viewProfile.Id}/id-document?v={DateTime.UtcNow.Ticks}"
+                    ? $"/account/api/admin/visitors/{_viewProfile.Id}/id-document?v={SimfClock.Now.Ticks}"
                     : null;
                 // CS-4 — same capture for the profile photo (avatar).
                 _avatarUrl = _viewProfile.HasAvatar
-                    ? $"/account/api/admin/visitors/{_viewProfile.Id}/avatar?v={DateTime.UtcNow.Ticks}"
+                    ? $"/account/api/admin/visitors/{_viewProfile.Id}/avatar?v={SimfClock.Now.Ticks}"
                     : null;
                 // CS-D (D-386) — only the approve flow needs the tier picker.
                 // Reuse the same list call the walk-in form uses, then keep

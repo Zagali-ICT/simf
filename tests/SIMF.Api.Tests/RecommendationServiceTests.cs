@@ -221,7 +221,7 @@ public sealed class RecommendationServiceTests : IClassFixture<SimfApiFactory>
             NameArabic = "اهتمام",
             DisplayOrder = 0,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Interests.Add(interest);
         await db.SaveChangesAsync();
@@ -273,7 +273,7 @@ public sealed class RecommendationServiceTests : IClassFixture<SimfApiFactory>
                 // seeded candidates are discoverable regardless of the store/CLR
                 // default (these tests predate the D-736 opt-in filter).
                 ShowInMeetLikeYou = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             if (interestIds.Count > 0)
             {
@@ -325,7 +325,7 @@ public sealed class RecommendationServiceTests : IClassFixture<SimfApiFactory>
                 IsSaudi = true,
                 NationalId = "1234567890",
                 NationalityId = 0,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             var interests = await appDb.Interests
                 .Where(i => interestIds.Contains(i.Id))
@@ -346,7 +346,7 @@ public sealed class RecommendationServiceTests : IClassFixture<SimfApiFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var app = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var hall = new Hall
         {
             Id = Guid.NewGuid(),

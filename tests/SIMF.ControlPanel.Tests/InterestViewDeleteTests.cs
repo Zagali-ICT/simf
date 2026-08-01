@@ -11,7 +11,7 @@ namespace SIMF.ControlPanel.Tests;
 public sealed class InterestViewDeleteTests : CpComponentTestBase
 {
     private static AdminInterestSummary Row() => new(
-        Guid.NewGuid(), "Naval Engineering", "الهندسة البحرية", 10, IsActive: true, DateTimeOffset.UnixEpoch);
+        Guid.NewGuid(), "Naval Engineering", "الهندسة البحرية", 10, IsActive: true, DateTime.UnixEpoch);
 
     [Fact]
     public void View_mode_shows_details_and_no_delete_button()

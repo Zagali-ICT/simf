@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
@@ -224,7 +224,7 @@ public sealed class AdminProfileTypeTests : IClassFixture<SimfApiFactory>
                 Id = Guid.NewGuid(),
                 UserId = visitorId,
                 ProfileTypeId = pt.Id,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
             await db.SaveChangesAsync();
             await appDb.SaveChangesAsync();
@@ -570,7 +570,7 @@ public sealed class AdminProfileTypeTests : IClassFixture<SimfApiFactory>
                 DisplayName = "Self Signup",
                 AccountState = AccountState.PendingApproval,
                 UserType = UserType.Visitor,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             await users.CreateAsync(user, AuthFlow.Password);
 
@@ -580,7 +580,7 @@ public sealed class AdminProfileTypeTests : IClassFixture<SimfApiFactory>
                 Id = Guid.NewGuid(),
                 UserId = subjectId,
                 ProfileTypeId = null,     // <-- the H-1 trigger
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
             await appDb.SaveChangesAsync();
         }
@@ -665,16 +665,7 @@ public sealed class AdminProfileTypeTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
 
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> GetAuthAsync(string url, string token)

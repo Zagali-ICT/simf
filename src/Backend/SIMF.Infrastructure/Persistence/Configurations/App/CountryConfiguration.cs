@@ -39,11 +39,11 @@ internal sealed class CountryConfiguration : IEntityTypeConfiguration<Country>
         // Seed snapshot — 2026-05-29 baseline. Frozen creation timestamp
         // so the migration is deterministic. The admin CP CRUD can add
         // any other ISO 3166-1 row via the standard create flow.
-        var seedAt = new DateTimeOffset(2026, 5, 29, 0, 0, 0, TimeSpan.Zero);
+        var seedAt = new DateTime(2026, 5, 29, 0, 0, 0);
         builder.HasData(SeedRows(seedAt));
     }
 
-    private static Country[] SeedRows(DateTimeOffset seedAt) =>
+    private static Country[] SeedRows(DateTime seedAt) =>
     [
         // GCC — first, alphabetical for AR display
         Seed( 48, "BH", "Bahrain",              "البحرين",                "+973",   10, seedAt),
@@ -111,7 +111,7 @@ internal sealed class CountryConfiguration : IEntityTypeConfiguration<Country>
     ];
 
     private static Country Seed(int id, string code, string name,
-        string nameArabic, string phonePrefix, int displayOrder, DateTimeOffset at) =>
+        string nameArabic, string phonePrefix, int displayOrder, DateTime at) =>
         new()
         {
             Id = id,

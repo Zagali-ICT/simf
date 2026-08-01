@@ -65,12 +65,12 @@ internal sealed class NotificationService(
         Guid actorUserId, Guid notificationId,
         CancellationToken cancellationToken = default) =>
         notifications.MarkReadForUserAsync(
-            actorUserId, notificationId, timeProvider.GetUtcNow(), cancellationToken);
+            actorUserId, notificationId, timeProvider.SimfNow(), cancellationToken);
 
     public Task MarkAllReadMineAsync(
         Guid actorUserId, CancellationToken cancellationToken = default) =>
         notifications.MarkAllReadForUserAsync(
-            actorUserId, timeProvider.GetUtcNow(), cancellationToken);
+            actorUserId, timeProvider.SimfNow(), cancellationToken);
 
     public Task DeleteMineAsync(
         Guid actorUserId, Guid notificationId,

@@ -4,6 +4,7 @@ using SIMF.Application.Ai.Abstractions;
 using SIMF.Contracts.Ai;
 using SIMF.Domain.Ai;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Ai;
 
@@ -74,7 +75,7 @@ internal sealed class AiChatHistoryService(
         Guid userId, string userMessage, string assistantReply,
         CancellationToken cancellationToken = default)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         appDbContext.AiChatMessages.Add(new AiChatMessage
         {
             Id = Guid.NewGuid(),

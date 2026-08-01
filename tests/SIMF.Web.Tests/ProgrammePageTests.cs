@@ -79,9 +79,13 @@ public sealed class ProgrammePageTests : WebComponentTestBase
             Assert.Contains("ln-agenda__card", cut.Markup);
             Assert.Contains("ln-agenda__spk", cut.Markup);
             // Event-local (+03:00) time via the shared EventTime helper: the
-            // fixture's 09:00–10:30 UTC renders as 12:00 PM – 01:30 PM Riyadh
-            // (the sr-only window). Pins the offset shift + the 12h formatting.
-            Assert.Contains("12:00 PM – 01:30 PM", cut.Markup);
+            // The fixture's 09:00–10:30 renders as 09:00 AM – 10:30 AM: stored
+            // values are Saudi wall-clock and the page applies no conversion
+            // (owner decision 2026-07-31). This used to read 12:00 PM – 01:30 PM
+            // because the render added +3, so pinning the verbatim window is what
+            // catches a reintroduced shift.
+            Assert.Contains("09:00 AM – 10:30 AM", cut.Markup);
+            Assert.DoesNotContain("12:00 PM – 01:30 PM", cut.Markup);
         });
     }
 
@@ -132,9 +136,9 @@ public sealed class ProgrammePageTests : WebComponentTestBase
         // (data-driven) type filter and the timeline card's chip.
         _handler.Sessions = ApiResult<PublicSessions>.Ok(new PublicSessions(new[]
         {
-            TypedSession("Kickoff Workshop", "الورشة", new DateTimeOffset(2026, 11, 20, 9, 0, 0, TimeSpan.Zero),
+            TypedSession("Kickoff Workshop", "الورشة", new DateTime(2026, 11, 20, 9, 0, 0),
                 SessionType.Workshop, "Maritime Security"),
-            TypedSession("Plenary Panel", "الجلسة", new DateTimeOffset(2026, 11, 21, 9, 0, 0, TimeSpan.Zero),
+            TypedSession("Plenary Panel", "الجلسة", new DateTime(2026, 11, 21, 9, 0, 0),
                 SessionType.Session, "Energy Supply Chains"),
         }));
 
@@ -160,12 +164,12 @@ public sealed class ProgrammePageTests : WebComponentTestBase
     private static PublicSessionListItem Session(string title, string titleArabic) =>
         new(Guid.NewGuid(), "S-01", title, titleArabic,
             Guid.NewGuid(), "Main Hall", "القاعة الرئيسية",
-            new DateTimeOffset(2026, 11, 23, 9, 0, 0, TimeSpan.Zero),
-            new DateTimeOffset(2026, 11, 23, 10, 30, 0, TimeSpan.Zero),
+            new DateTime(2026, 11, 23, 9, 0, 0),
+            new DateTime(2026, 11, 23, 10, 30, 0),
             PrimaryThemeName: null, PrimaryThemeNameArabic: null, PrimaryThemeColor: null);
 
     private static PublicSessionListItem TypedSession(
-        string title, string titleArabic, DateTimeOffset start, SessionType type, string category) =>
+        string title, string titleArabic, DateTime start, SessionType type, string category) =>
         new(Guid.NewGuid(), "S-01", title, titleArabic,
             Guid.NewGuid(), "Main Hall", "القاعة الرئيسية",
             start, start.AddHours(1),

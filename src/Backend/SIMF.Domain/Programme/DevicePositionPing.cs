@@ -51,7 +51,7 @@ public sealed class DevicePositionPing
     /// <summary>When the DEVICE took the fix. Kept distinct from
     /// <see cref="CreatedAt"/> so a batch uploaded after a connectivity gap still
     /// orders correctly in the route projection.</summary>
-    public DateTimeOffset CapturedAt { get; set; }
+    public DateTime CapturedAt { get; set; }
 
     /// <summary>WGS-84 latitude in decimal degrees.</summary>
     public double Latitude { get; set; }
@@ -65,5 +65,5 @@ public sealed class DevicePositionPing
     public double? AccuracyMeters { get; set; }
 
     /// <summary>When the server accepted the ping.</summary>
-    public DateTimeOffset CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 }

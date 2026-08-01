@@ -49,12 +49,12 @@ public sealed class SeatReservation
     /// <see cref="SeatReservationKind.AdminReservedRow"/>.</summary>
     public Guid CreatedByUserId { get; set; }
 
-    public DateTimeOffset CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 
     /// <summary>Set when the reservation is released (visitor cancels
     /// or admin clears). Released rows are excluded from the unique
     /// indexes so the seat is bookable again.</summary>
-    public DateTimeOffset? ReleasedAt { get; set; }
+    public DateTime? ReleasedAt { get; set; }
 
     /// <summary>P2.2 — D-227 (FDS-005 §4): the booking lifecycle state.
     /// <para>A9 (2026-07-27) — as built there is NO approval step: the owner made
@@ -79,7 +79,7 @@ public sealed class SeatReservation
     /// <summary>P2.2 — the timestamp paired with <see cref="ReviewedByUserId"/>.
     /// A9: written only by an admin RELEASE (alongside <see cref="ReleasedAt"/>);
     /// null on every live row.</summary>
-    public DateTimeOffset? ReviewedAt { get; set; }
+    public DateTime? ReviewedAt { get; set; }
 
     /// <summary>P2.2 — the reason recorded when a booking is rejected (FDS-005 §8).
     /// <para>A9 (2026-07-27) — VESTIGIAL: no code path writes it, because the reject
@@ -95,7 +95,7 @@ public sealed class SeatReservation
     /// visitor-booking kinds (UserBooking / RandomAssignment / OpenSeating); NULL
     /// for an AdminReservedRow block (admin holds never expire). Existing rows and
     /// already-decided bookings carry NULL and are ignored by the expiry worker.</summary>
-    public DateTimeOffset? Expires { get; set; }
+    public DateTime? Expires { get; set; }
 
     /// <summary>D-771 (owner 2026-07-26) — the manual guest HINT an administrator
     /// types when blocking a VVIP seat from the Control Panel. A VVIP seat has no

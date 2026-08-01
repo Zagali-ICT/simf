@@ -167,7 +167,7 @@ internal sealed class AdminNewsService(
                 $"يوجد خبر بالعنوان الإنجليزي '{draft.Title}' بالفعل.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var news = new News
         {
             Id = Guid.NewGuid(),
@@ -249,7 +249,7 @@ internal sealed class AdminNewsService(
         news.PublishedAt = request.PublishedAt;
         news.DisplayOrder = draft.DisplayOrder;
         news.IsActive = request.IsActive;
-        news.UpdatedAt = timeProvider.GetUtcNow();
+        news.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -278,7 +278,7 @@ internal sealed class AdminNewsService(
         if (!news.IsActive) { return; } // idempotent
 
         news.IsActive = false;
-        news.UpdatedAt = timeProvider.GetUtcNow();
+        news.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry

@@ -19,9 +19,9 @@ public sealed record NotificationDto(
     string Body,
     string BodyArabic,
     string Severity,
-    DateTimeOffset? ReadAt,
+    DateTime? ReadAt,
     bool IsRead,
-    DateTimeOffset CreatedAt,
+    DateTime CreatedAt,
     string? RelatedEntityType,
     Guid? RelatedEntityId,
     // D-677 — appended at the END (wire contract is append-only); default null

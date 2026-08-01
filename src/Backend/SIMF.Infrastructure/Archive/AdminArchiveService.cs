@@ -148,7 +148,7 @@ internal sealed class AdminArchiveService(
                 $"توجد نسخة أرشيف للعام {v.Year} بالفعل.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var knownCountryIds = await LoadCountryIdsAsync(cancellationToken);
         var edition = new ArchiveEdition
         {
@@ -241,7 +241,7 @@ internal sealed class AdminArchiveService(
         edition.DateLabelEn = v.DateLabelEn;
         edition.DateLabelAr = v.DateLabelAr;
         edition.IsActive = request.IsActive;
-        edition.UpdatedAt = timeProvider.GetUtcNow();
+        edition.UpdatedAt = timeProvider.SimfNow();
 
         // D-432 — replace-all the rich child lists, but only the ones the caller
         // actually supplied (non-null). Clearing the tracked collection marks the
@@ -288,7 +288,7 @@ internal sealed class AdminArchiveService(
         if (!edition.IsActive) { return; }
 
         edition.IsActive = false;
-        edition.UpdatedAt = timeProvider.GetUtcNow();
+        edition.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -306,7 +306,7 @@ internal sealed class AdminArchiveService(
     {
         // §9 (D-275) — fully automatic: the year + bilingual title are generated
         // and the three counters are computed from live App data (no client input).
-        var year = timeProvider.GetUtcNow().Year;
+        var year = timeProvider.SimfNow().Year;
 
         var sessions = await appDbContext.Sessions.AsNoTracking()
             .CountAsync(session => session.IsActive, cancellationToken);

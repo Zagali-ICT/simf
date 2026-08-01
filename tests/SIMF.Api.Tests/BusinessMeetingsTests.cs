@@ -34,8 +34,8 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
     // soft-deletes the old 20-22 days, so the old anchor fell OUTSIDE the forum
     // window: every schedule call 400'd on the D-753 bound before reaching the
     // behaviour each test was actually asserting.
-    private static readonly DateTimeOffset EventStart =
-        new(2026, 11, 23, 9, 0, 0, TimeSpan.FromHours(3));
+    private static readonly DateTime EventStart =
+        new(2026, 11, 23, 9, 0, 0);
 
     private readonly SimfApiFactory _factory;
     private readonly HttpClient _client;
@@ -898,7 +898,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         var token = await CreateAdministratorAndSignInAsync();
         var hallId = await SeedHallAsync(HallPurpose.Meeting);
         var tableId = await CreateTableAsync(hallId, token, capacity: 4);
-        var start = DateTimeOffset.UtcNow.AddHours(-24);
+        var start = SimfClock.Now.AddHours(-24);
 
         var response = await PostAuthAsync(
             "/api/v1/admin/business-meetings",
@@ -926,7 +926,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         var hallId = await SeedHallAsync(HallPurpose.Meeting);
         // A valid end AFTER a past start, so ValidateSlot passes the end<=start
         // branch and reaches the new not-in-past lower bound.
-        var start = DateTimeOffset.UtcNow.AddHours(-24);
+        var start = SimfClock.Now.AddHours(-24);
 
         var response = await PostAuthAsync(
             $"/api/v1/admin/halls/{hallId}/hall-allocations",
@@ -952,7 +952,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         var token = await CreateAdministratorAndSignInAsync();
         var hallId = await SeedHallAsync(HallPurpose.Meeting);
         var tableId = await CreateTableAsync(hallId, token, capacity: 4);
-        var start = new DateTimeOffset(2026, 11, 24, 10, 0, 0, TimeSpan.FromHours(3));
+        var start = new DateTime(2026, 11, 24, 10, 0, 0);
 
         var resp = await ScheduleAsync(tableId, token, start, start.AddHours(1),
             await SeedCompanyAsync(), await SeedCompanyAsync());
@@ -968,7 +968,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         var token = await CreateAdministratorAndSignInAsync();
         var hallId = await SeedHallAsync(HallPurpose.Meeting);
         var tableId = await CreateTableAsync(hallId, token, capacity: 4);
-        var start = new DateTimeOffset(2026, 12, 15, 10, 0, 0, TimeSpan.FromHours(3));
+        var start = new DateTime(2026, 12, 15, 10, 0, 0);
 
         var resp = await ScheduleAsync(tableId, token, start, start.AddHours(1),
             await SeedCompanyAsync(), await SeedCompanyAsync());
@@ -980,7 +980,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
     // -- Helpers --------------------------------------------------------------
 
     private Task<HttpResponseMessage> ScheduleAsync(
-        Guid tableId, string token, DateTimeOffset start, DateTimeOffset end,
+        Guid tableId, string token, DateTime start, DateTime end,
         Guid companyA, Guid companyB) =>
         PostAuthAsync(
             "/api/v1/admin/business-meetings",
@@ -1020,7 +1020,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
             Capacity = capacity,
             IsActive = true,
             Purpose = purpose,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Halls.Add(hall);
         await appDb.SaveChangesAsync();
@@ -1037,7 +1037,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
             Name = $"Co {Guid.NewGuid():N}",
             NameArabic = "شركة",
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Exhibitors.Add(exhibitor);
         await appDb.SaveChangesAsync();
@@ -1086,16 +1086,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
 
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> GetAuthAsync(string url, string token)
@@ -1135,7 +1126,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
     }
 
     private async Task<Guid> ScheduleConfirmedAsync(
-        Guid tableId, string token, DateTimeOffset start, DateTimeOffset end)
+        Guid tableId, string token, DateTime start, DateTime end)
     {
         var resp = await ScheduleAsync(tableId, token, start, end,
             await SeedCompanyAsync(), await SeedCompanyAsync());

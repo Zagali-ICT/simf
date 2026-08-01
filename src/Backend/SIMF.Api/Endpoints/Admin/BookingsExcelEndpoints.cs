@@ -32,12 +32,12 @@ public sealed class ExportBookingsEndpoint(ISeatReservationService service, IGri
     [
         new("SessionTitle", row => row.SessionTitle),
         new("SessionTitleArabic", row => row.SessionTitleArabic),
-        new("SessionStart", row => row.SessionStart.UtcDateTime),
+        new("SessionStart", row => row.SessionStart),
         new("Row", row => row.RowLabel),
         new("Seat", row => row.SeatNumber),
         new("Kind", row => row.Kind.ToString()),
         new("Attendee", row => row.AttendeeName),
-        new("BookedAt", row => row.CreatedAt.UtcDateTime),
+        new("BookedAt", row => row.CreatedAt),
     ];
 
     protected override async Task<IReadOnlyList<ActiveBookingRow>> ListAsync(

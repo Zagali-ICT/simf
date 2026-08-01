@@ -325,7 +325,7 @@ public sealed class DelegationsTests : IClassFixture<SimfApiFactory>
                 NationalityId = nationalityId,
                 IsDelegate = true,
                 IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
             await appDb.SaveChangesAsync();
         }
@@ -350,7 +350,7 @@ public sealed class DelegationsTests : IClassFixture<SimfApiFactory>
                 Name = code,
                 NameArabic = code,
                 IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
             await appDb.SaveChangesAsync();
         }
@@ -376,7 +376,7 @@ public sealed class DelegationsTests : IClassFixture<SimfApiFactory>
             IsDelegate = isDelegate,
             IsActive = isActive,
             JobTitle = jobTitle,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.UserProfiles.Add(profile);
         await appDb.SaveChangesAsync();
@@ -447,16 +447,7 @@ public sealed class DelegationsTests : IClassFixture<SimfApiFactory>
             await users.CreateAsync(user, AuthFlow.Password);
             await users.AddToRoleAsync(user, AppRoles.Administrator);
         }
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        return (await sign.Content
-            .ReadFromJsonAsync<ApiResult<SignInResponse>>())!.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> SendAuthAsync(

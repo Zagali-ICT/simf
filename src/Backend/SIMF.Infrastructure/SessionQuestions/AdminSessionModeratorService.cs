@@ -241,7 +241,7 @@ internal sealed class AdminSessionModeratorService(
                 "هذا المستخدم مشرف على الجلسة بالفعل.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var grant = new SessionModerator
         {
             SessionId = request.SessionId,

@@ -67,7 +67,7 @@ internal sealed class NetworkingService(
                 "يوجد اتصال مع هذا المستخدم بالفعل.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var connection = new Connection
         {
             Id = Guid.NewGuid(),
@@ -117,7 +117,7 @@ internal sealed class NetworkingService(
         }
 
         connection.State = ConnectionState.Accepted;
-        connection.RespondedAt = timeProvider.GetUtcNow();
+        connection.RespondedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -154,7 +154,7 @@ internal sealed class NetworkingService(
         }
 
         connection.Deactivate();
-        connection.RespondedAt = timeProvider.GetUtcNow();
+        connection.RespondedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry

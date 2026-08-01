@@ -18,7 +18,7 @@ public sealed record ParticipationDocumentRequestSubmitted(
     Guid Id,
     ParticipationDocumentType DocumentType,
     MeetingRequestStatus Status,
-    DateTimeOffset CreatedAt);
+    DateTime CreatedAt);
 
 /// <summary>D-500 — one row in the admin participation-document-requests grid.
 /// The requester display name is resolved from the App-DB profile; the email is
@@ -32,8 +32,8 @@ public sealed record AdminParticipationDocumentRequestRow(
     string? Note,
     MeetingRequestStatus Status,
     string? ResponseNote,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? RespondedAt);
+    DateTime CreatedAt,
+    DateTime? RespondedAt);
 
 /// <summary>D-500 — single-record detail for the admin respond modal. Includes
 /// <c>RequesterEmail</c> (resolved on read from the Identity DB) so the admin
@@ -47,8 +47,8 @@ public sealed record AdminParticipationDocumentRequestDetail(
     string? Note,
     MeetingRequestStatus Status,
     string? ResponseNote,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? RespondedAt);
+    DateTime CreatedAt,
+    DateTime? RespondedAt);
 
 /// <summary>D-500 — admin moves the row off Pending. Status must be Accepted or
 /// Rejected. Open for inheritance so the route-binding endpoint can carry an

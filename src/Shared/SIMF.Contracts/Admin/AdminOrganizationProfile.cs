@@ -17,12 +17,12 @@ public sealed class AdminUpdateOrganizationProfileRequest
     public string? BioArabic { get; set; }
 
     public string? Version { get; set; }
-    public DateTimeOffset? VersionDate { get; set; }
+    public DateTime? VersionDate { get; set; }
     public string? SysVersion { get; set; }
-    public DateTimeOffset? ReleaseDate { get; set; }
+    public DateTime? ReleaseDate { get; set; }
 
-    public DateTimeOffset? EventStartDate { get; set; }
-    public DateTimeOffset? EventEndDate { get; set; }
+    public DateTime? EventStartDate { get; set; }
+    public DateTime? EventEndDate { get; set; }
     public int CurrentYear { get; set; }
 
     /// <summary>The forum status — the <c>ForumStatus</c> enum name

@@ -16,8 +16,8 @@ public sealed record AdminInvitationSummary(
     string? RecipientEmail,
     InvitationState State,
     string? Notes,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? RespondedAt,
+    DateTime CreatedAt,
+    DateTime? RespondedAt,
     bool IsActive);
 
 /// <summary>D-168 — full invitation detail. Same projection plus the
@@ -35,9 +35,9 @@ public sealed record AdminInvitationDetail(
     string? RecipientJobTitle,
     InvitationState State,
     string? Notes,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? RespondedAt,
-    DateTimeOffset? UpdatedAt,
+    DateTime CreatedAt,
+    DateTime? RespondedAt,
+    DateTime? UpdatedAt,
     bool IsActive);
 
 /// <summary>D-168 — create-invitation request. State defaults to

@@ -172,7 +172,7 @@ internal sealed class AiService(
             ErrorCode = null,
             CallerUserId = caller.UserId,
             CallerKind = caller.CallerKind,
-            CreatedAt = timeProvider.GetUtcNow(),
+            CreatedAt = timeProvider.SimfNow(),
         };
         appDbContext.AiInvocations.Add(invocation);
         await appDbContext.SaveChangesAsync(cancellationToken);
@@ -235,7 +235,7 @@ internal sealed class AiService(
             ErrorCode = errorCode,
             CallerUserId = caller.UserId,
             CallerKind = caller.CallerKind,
-            CreatedAt = timeProvider.GetUtcNow(),
+            CreatedAt = timeProvider.SimfNow(),
         };
         appDbContext.AiInvocations.Add(invocation);
         await appDbContext.SaveChangesAsync(cancellationToken);

@@ -30,9 +30,9 @@ public sealed class Banner : BaseAuditEntity
     /// <see cref="ImageUrl"/>.</summary>
     public string? LinkUrl { get; set; }
 
-    public DateTimeOffset Start { get; set; }
+    public DateTime Start { get; set; }
 
-    public DateTimeOffset End { get; set; }
+    public DateTime End { get; set; }
 
     /// <summary>Display order — 0 = top. Tie-broken by
     /// <see cref="Start"/>.</summary>

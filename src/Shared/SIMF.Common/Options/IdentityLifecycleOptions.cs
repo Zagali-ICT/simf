@@ -44,12 +44,15 @@ public sealed class IdentityLifecycleOptions
     /// and Web audiences are never affected by this setting.
     ///
     /// <para>Secure by default: an absent configuration key leaves this at
-    /// <c>true</c>. It exists as a switch only so the general integration suite —
-    /// whose admin fixtures create users straight through <c>UserManager</c> and
-    /// predate enrolment-first — can pin it off, exactly as it already pins
-    /// <c>FaceDetection:Enabled</c> and <c>DeviceKey:RequireStepUpForEnrol</c>.
-    /// The production posture is proved by the tests that turn it back on
-    /// (<c>ControlPanelTwoFactorEnrolmentTests</c>).</para>
+    /// <c>true</c>, and since 2026-07-31 <b>nothing turns it off</b> — not even the
+    /// tests. The general integration suite used to pin it off, which meant its
+    /// ~150 admin fixtures exercised the pre-fix single-factor path; those fixtures
+    /// now enrol an authenticator and complete a real TOTP step
+    /// (<c>AuthFlow.SignInControlPanelAsync</c>). That the gate is genuinely on for
+    /// that suite is asserted by <c>ControlPanelTwoFactorGatePinTests</c>, so
+    /// pinning it off again fails the build rather than silently reverting the
+    /// posture; the enrolment contract itself is proved by
+    /// <c>ControlPanelTwoFactorEnrolmentTests</c>.</para>
     /// </summary>
     public bool RequireControlPanelTwoFactorEnrolment { get; set; } = true;
 }

@@ -63,8 +63,8 @@ public partial class HallsViewDelete
         finally { _scheduleLoading = false; }
     }
 
-    // Saudi local time, 12-hour — never a raw UTC stamp (D-219).
-    private static string Local(DateTimeOffset value) =>
+    // Saudi local time, 12-hour — never a raw zoned stamp (D-219).
+    private static string Local(DateTime value) =>
         value.FormatSaudi("dd-MM-yyyy hh:mm tt");
 
     private static string SessionTitle(AdminSessionSummary session) =>

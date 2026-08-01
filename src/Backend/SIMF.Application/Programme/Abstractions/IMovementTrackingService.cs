@@ -34,8 +34,8 @@ public interface IMovementTrackingService
     /// were seen inside and how long they stayed. Halls with no pings are absent.
     /// Ordered by total dwell, descending.</summary>
     Task<IReadOnlyList<HallDwellSummary>> DwellByHallAsync(
-        DateTimeOffset from,
-        DateTimeOffset to,
+        DateTime from,
+        DateTime to,
         CancellationToken cancellationToken = default);
 
     /// <summary>One attendee's ordered route over
@@ -44,7 +44,7 @@ public interface IMovementTrackingService
     /// the attendee reported nothing in the window.</summary>
     Task<AttendeeRoute> RouteForAttendeeAsync(
         Guid userId,
-        DateTimeOffset from,
-        DateTimeOffset to,
+        DateTime from,
+        DateTime to,
         CancellationToken cancellationToken = default);
 }

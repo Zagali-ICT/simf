@@ -187,7 +187,7 @@ internal sealed partial class AdminAccountService
         AdminBulkDeleteRequest request,
         CancellationToken cancellationToken = default)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var deleted = 0;
         var skipped = 0;
 
@@ -516,7 +516,7 @@ internal sealed partial class AdminAccountService
         AdminBulkDeleteRequest request,
         CancellationToken cancellationToken = default)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var deleted = 0;
         var skipped = 0;
 
@@ -888,7 +888,7 @@ internal sealed partial class AdminAccountService
             }
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var created = 0;
 
         // Pre-validate EVERY batch's profile type BEFORE creating any account, so an
@@ -1093,7 +1093,7 @@ internal sealed partial class AdminAccountService
                 "لا توجد شارات في هذه الدفعة لإرسالها.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var badgeArtifacts = members
             .Select((member, index) => (member.Name, Seq: index + 1, QrId: member.QrId!))
             .ToList();
@@ -1152,7 +1152,7 @@ internal sealed partial class AdminAccountService
         }
 
         batch.Deactivate();
-        batch.UpdatedAt = timeProvider.GetUtcNow();
+        batch.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -1174,7 +1174,7 @@ internal sealed partial class AdminAccountService
     private async Task EnqueueBadgePackEmailAsync(
         string recipient,
         IReadOnlyList<(string ProfileTypeName, int Seq, string QrId)> badgeArtifacts,
-        int count, DateTimeOffset generatedAt, Guid actorUserId, CancellationToken cancellationToken)
+        int count, DateTime generatedAt, Guid actorUserId, CancellationToken cancellationToken)
     {
         var stamp = generatedAt.ToString("yyyyMMdd-HHmm", CultureInfo.InvariantCulture);
         var attachments = new List<EmailAttachment>

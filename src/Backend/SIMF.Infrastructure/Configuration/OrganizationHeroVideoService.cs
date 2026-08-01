@@ -8,6 +8,7 @@ using SIMF.Common.Enums;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.Organization;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Configuration;
 
@@ -45,7 +46,7 @@ internal sealed class OrganizationHeroVideoService(
         // NEWEST so two concurrent replaces converge on one survivor (never zero).
         await RetireActiveAsync(keepNewest: true, actorUserId, cancellationToken);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var profile = await LoadOrCreateProfileAsync(cancellationToken);
         profile.BackgroundVideoUrl = servedUrl;
         profile.UpdatedAt = now;
@@ -71,7 +72,7 @@ internal sealed class OrganizationHeroVideoService(
     {
         await RetireActiveAsync(keepNewest: false, actorUserId, cancellationToken);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var profile = await db.OrganizationProfile
             .SingleOrDefaultAsync(p => p.Id == OrganizationProfile.SingletonId, cancellationToken);
 

@@ -10,7 +10,7 @@ internal sealed class TotpRecoveryCodeRepository(SimfIdentityDbContext dbContext
     public async Task AddBatchAsync(
         Guid userId,
         IReadOnlyList<string> codeHashes,
-        DateTimeOffset now,
+        DateTime now,
         CancellationToken cancellationToken = default)
     {
         var entities = codeHashes.Select(hash => new TotpRecoveryCode
@@ -27,7 +27,7 @@ internal sealed class TotpRecoveryCodeRepository(SimfIdentityDbContext dbContext
     public async Task<bool> TryConsumeAsync(
         Guid userId,
         string codeHash,
-        DateTimeOffset now,
+        DateTime now,
         CancellationToken cancellationToken = default)
     {
         // Single conditional UPDATE: the active code matching (user, hash) is

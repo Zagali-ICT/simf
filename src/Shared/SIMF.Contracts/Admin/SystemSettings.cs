@@ -15,8 +15,8 @@ public sealed record AdminSystemSettingDetail(
     string Value,
     string? Description,
     bool IsActive,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt);
+    DateTime CreatedAt,
+    DateTime? UpdatedAt);
 
 /// <summary>P2.4 — create a system setting (key is fixed once created).</summary>
 public sealed class AdminCreateSystemSettingRequest

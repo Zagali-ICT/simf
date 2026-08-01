@@ -22,7 +22,7 @@ public sealed class OrganisationAddEditTests : CpComponentTestBase
         "info@test.example",
         "https://test.example",
         IsActive: true,
-        DateTimeOffset.UnixEpoch,
+        DateTime.UnixEpoch,
         UpdatedAt: null);
 
     [Fact]

@@ -99,16 +99,16 @@ public sealed class MyAreaCalendarEndpoint(IMyAreaService service, TimeProvider 
         }
 
         var events = await service.GetCalendarEventsAsync(userId, ct);
-        var ics = BuildCalendar(events, timeProvider.GetUtcNow());
+        var ics = BuildCalendar(events, timeProvider.SimfNow());
 
         HttpContext.Response.ContentType = "text/calendar; charset=utf-8";
         HttpContext.Response.Headers.ContentDisposition = "attachment; filename=\"simf.ics\"";
         await HttpContext.Response.WriteAsync(ics, ct);
     }
 
-    private static string BuildCalendar(IReadOnlyList<MyAreaCalendarEvent> events, DateTimeOffset stamp)
+    private static string BuildCalendar(IReadOnlyList<MyAreaCalendarEvent> events, DateTime stamp)
     {
-        var dtstamp = ToIcsUtc(stamp);
+        var dtstamp = ToIcsLocal(stamp);
         var sb = new StringBuilder();
         sb.Append("BEGIN:VCALENDAR\r\n");
         sb.Append("VERSION:2.0\r\n");
@@ -119,10 +119,10 @@ public sealed class MyAreaCalendarEndpoint(IMyAreaService service, TimeProvider 
             sb.Append("BEGIN:VEVENT\r\n");
             sb.Append("UID:").Append(e.Uid.ToString("N")).Append("@simf\r\n");
             sb.Append("DTSTAMP:").Append(dtstamp).Append("\r\n");
-            sb.Append("DTSTART:").Append(ToIcsUtc(e.Start)).Append("\r\n");
+            sb.Append("DTSTART:").Append(ToIcsLocal(e.Start)).Append("\r\n");
             if (e.End is { } end)
             {
-                sb.Append("DTEND:").Append(ToIcsUtc(end)).Append("\r\n");
+                sb.Append("DTEND:").Append(ToIcsLocal(end)).Append("\r\n");
             }
             sb.Append("SUMMARY:").Append(EscapeText(e.Summary)).Append("\r\n");
             if (!string.IsNullOrWhiteSpace(e.Location))
@@ -135,8 +135,13 @@ public sealed class MyAreaCalendarEndpoint(IMyAreaService service, TimeProvider 
         return sb.ToString();
     }
 
-    private static string ToIcsUtc(DateTimeOffset value) =>
-        value.UtcDateTime.ToString("yyyyMMddTHHmmssZ", CultureInfo.InvariantCulture);
+    // RFC 5545 §3.3.5 FLOATING local time — no trailing Z, no TZID. A Z would
+    // declare the value zoned, and since D-813 it is the Saudi wall clock, so
+    // every "add to calendar" landed the session three hours early in Outlook
+    // and Google. Floating is right for a fixed-venue event: the calendar shows
+    // the wall time the programme is published at, wherever the attendee is.
+    private static string ToIcsLocal(DateTime value) =>
+        value.ToString("yyyyMMddTHHmmss", CultureInfo.InvariantCulture);
 
     // RFC 5545 §3.3.11 text escaping: backslash, semicolon, comma, newlines.
     private static string EscapeText(string value) => value

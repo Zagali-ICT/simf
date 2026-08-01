@@ -139,7 +139,7 @@ public sealed class SessionLifecycleNoticeTests : IClassFixture<BulkBadgeEmailAp
         var row = await identity.Notifications.AsNoTracking().SingleAsync(notification =>
             notification.UserId == visitor.Id
             && notification.Kind == NotificationKind.BookingRejected);
-        // Local time only — the copy must never leak a UTC timestamp (D-219).
+        // Local time only — the copy must never leak a zoned timestamp (D-219).
         Assert.Contains(session.Start.FormatSaudi(), row.Body);
         Assert.Contains(session.Start.FormatSaudi(), row.BodyArabic);
         Assert.DoesNotContain("UTC", row.Body);
@@ -371,8 +371,8 @@ public sealed class SessionLifecycleNoticeTests : IClassFixture<BulkBadgeEmailAp
                 // An Event needs no speaker, so the create rules (#3 / #4) pass.
                 Type = SessionType.Event,
                 HallId = hallId,
-                Start = DateTimeOffset.UtcNow.AddHours(1),
-                End = DateTimeOffset.UtcNow.AddHours(2),
+                Start = SimfClock.Now.AddHours(1),
+                End = SimfClock.Now.AddHours(2),
             },
             token);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -392,8 +392,8 @@ public sealed class SessionLifecycleNoticeTests : IClassFixture<BulkBadgeEmailAp
         AdminSessionDetail created,
         Guid? hallId = null,
         string? title = null,
-        DateTimeOffset? start = null,
-        DateTimeOffset? end = null,
+        DateTime? start = null,
+        DateTime? end = null,
         bool? isActive = null) =>
         new()
         {
@@ -420,7 +420,7 @@ public sealed class SessionLifecycleNoticeTests : IClassFixture<BulkBadgeEmailAp
             NameArabic = "قاعة دورة الحياة",
             Capacity = capacity,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         await db.SaveChangesAsync();
@@ -443,7 +443,7 @@ public sealed class SessionLifecycleNoticeTests : IClassFixture<BulkBadgeEmailAp
                 : SeatReservationKind.UserBooking,
             ReservedForUserId = reservedForUserId,
             CreatedByUserId = reservedForUserId ?? Guid.NewGuid(),
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
             Status = BookingStatus.Approved,
         });
         await db.SaveChangesAsync();
@@ -458,7 +458,7 @@ public sealed class SessionLifecycleNoticeTests : IClassFixture<BulkBadgeEmailAp
             Id = Guid.NewGuid(),
             SessionId = sessionId,
             UserId = userId,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
     }
@@ -470,8 +470,8 @@ public sealed class SessionLifecycleNoticeTests : IClassFixture<BulkBadgeEmailAp
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var session = await db.Sessions.SingleAsync(row => row.Id == sessionId);
-        session.ReminderSent = DateTimeOffset.UtcNow;
-        session.RatingPromptSent = DateTimeOffset.UtcNow;
+        session.ReminderSent = SimfClock.Now;
+        session.RatingPromptSent = SimfClock.Now;
         await db.SaveChangesAsync();
     }
 
@@ -534,16 +534,7 @@ public sealed class SessionLifecycleNoticeTests : IClassFixture<BulkBadgeEmailAp
             await users.AddToRoleAsync(user, AdministratorRole);
         }
 
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> GetAuthAsync(string url, string token)

@@ -310,7 +310,7 @@ public sealed class Journey05BookingToArrivalTests : IClassFixture<SimfApiFactor
                 NameArabic = nameArabic,
                 NationalityId = 682,   // ISO 3166-1 numeric — SA
                 PlaceOfBirth = "Riyadh",
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
             await appDb.SaveChangesAsync();
         }
@@ -342,7 +342,7 @@ public sealed class Journey05BookingToArrivalTests : IClassFixture<SimfApiFactor
             Capacity = rowLabels.Length * seatsPerRow,
             SeatSelectionMode = SeatSelectionMode.AssignedSeat,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         // No SeatTiers — a pre-D-771 layout reads Normal for every row, so an
@@ -353,7 +353,7 @@ public sealed class Journey05BookingToArrivalTests : IClassFixture<SimfApiFactor
             HallId = hall.Id,
             RowLabels = string.Join(',', rowLabels),
             SeatsPerRow = seatsPerRow,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         var session = new Session
         {
@@ -361,10 +361,10 @@ public sealed class Journey05BookingToArrivalTests : IClassFixture<SimfApiFactor
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Maritime Cyber Defence", TitleArabic = "الدفاع السيبراني البحري",
             HallId = hall.Id,
-            Start = DateTimeOffset.UtcNow.AddMinutes(10),
-            End = DateTimeOffset.UtcNow.AddMinutes(70),
+            Start = SimfClock.Now.AddMinutes(10),
+            End = SimfClock.Now.AddMinutes(70),
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         await db.SaveChangesAsync();
@@ -452,14 +452,7 @@ public sealed class Journey05BookingToArrivalTests : IClassFixture<SimfApiFactor
             await users.AddToRoleAsync(user, AdministratorRole);
             userId = user.Id;
         }
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email, Password = AuthFlow.Password, Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return (body.Data!.Tokens!.AccessToken, userId);
+        return (await AuthFlow.SignInControlPanelAsync(_client, _factory, email), userId);
     }
 
     private Task<HttpResponseMessage> PostAuthAsync<TBody>(

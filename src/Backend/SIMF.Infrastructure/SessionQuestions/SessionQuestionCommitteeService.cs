@@ -162,7 +162,7 @@ internal sealed class SessionQuestionCommitteeService(
         var question = await LoadAsync(questionId, cancellationToken);
         question.AssignedToRole = trimmedRole;
         question.EscalatedByUserId = actorUserId;
-        question.EscalatedAt = timeProvider.GetUtcNow();
+        question.EscalatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await AuditAsync(

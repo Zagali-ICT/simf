@@ -29,7 +29,7 @@ internal sealed partial class AdminAccountService
     {
         var subject = await LoadPendingSubjectAsync(
             actorUserId, subjectUserId, scope, cancellationToken);
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         subject.AccountState = AccountState.Approved;
         subject.UpdatedAt = now;
         subject.StateChangedAt = now;
@@ -134,7 +134,7 @@ internal sealed partial class AdminAccountService
     {
         var subject = await LoadPendingSubjectAsync(
             actorUserId, subjectUserId, scope, cancellationToken);
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         subject.AccountState = AccountState.Rejected;
         subject.UpdatedAt = now;
         subject.StateChangedAt = now;
@@ -300,7 +300,7 @@ internal sealed partial class AdminAccountService
     /// the unit of work completes.
     /// </summary>
     private async Task<UserProfile> EnsureUserProfileAsync(
-        Guid userId, DateTimeOffset now, CancellationToken cancellationToken)
+        Guid userId, DateTime now, CancellationToken cancellationToken)
     {
         var profile = await appDbContext.UserProfiles
             .SingleOrDefaultAsync(p => p.UserId == userId, cancellationToken);

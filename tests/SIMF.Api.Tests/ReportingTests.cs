@@ -1,7 +1,7 @@
 // The reporting module: POST /api/v1/admin/reports/{slug}/list and /export.
 //
 // The behaviour worth guarding is the DATE RANGE. From and To are inclusive
-// Saudi calendar days, and instants are stored as UTC, so the exclusive upper
+// Saudi calendar days, and instants are stored as a zoned value, so the exclusive upper
 // bound has to be the start of the day AFTER To. Get that wrong and every report
 // silently drops its final day, which is the day people look at first.
 //
@@ -18,9 +18,11 @@ using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Reporting;
 using SIMF.Domain.AccessControl;
+using SIMF.Domain.Feedback;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Profiles;
 using SIMF.Domain.Programme;
+using SIMF.Domain.SessionQuestions;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -34,6 +36,8 @@ public sealed class ReportingTests : IClassFixture<SimfApiFactory>
     private const string RegistrationsList = "/api/v1/admin/reports/registrations/list";
     private const string GatesList = "/api/v1/admin/reports/gates/list";
     private const string GatesExport = "/api/v1/admin/reports/gates/export";
+    private const string RatingsList = "/api/v1/admin/reports/ratings/list";
+    private const string EngagementList = "/api/v1/admin/reports/engagement/list";
 
     /// <summary>The first bytes of any XLSX: it is a ZIP container.</summary>
     private static readonly byte[] ZipMagic = [0x50, 0x4B];
@@ -84,8 +88,8 @@ public sealed class ReportingTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task A_session_late_on_the_last_saudi_evening_is_included()
     {
-        // 23:30 Riyadh on the To day is 20:30 UTC the same day, but 01:00 Riyadh
-        // the NEXT day is 22:00 UTC on the To day. Only the first belongs.
+        // 23:30 Riyadh on the To day is 20:30 a zoned value the same day, but 01:00 Riyadh
+        // the NEXT day is 22:00 a zoned value on the To day. Only the first belongs.
         var token = await CreateAdministratorAndSignInAsync();
         var day = NextBlock();
         var hallId = await SeedHallAsync();
@@ -189,7 +193,7 @@ public sealed class ReportingTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Dates_are_rendered_in_saudi_local_time_never_utc()
     {
-        // 01:00 Riyadh is 22:00 UTC the previous day. The rendered string must
+        // 01:00 Riyadh is 22:00 a zoned value the previous day. The rendered string must
         // show the Saudi wall clock, or the report contradicts every other
         // surface (D-770).
         var token = await CreateAdministratorAndSignInAsync();
@@ -467,6 +471,124 @@ public sealed class ReportingTests : IClassFixture<SimfApiFactory>
         Assert.True(page.Top <= 200, $"page size {page.Top} exceeded the cap");
     }
 
+    // -- The date column sorts in the direction its arrow claims -------------
+    //
+    // Every report grid's date column is Sortable, so a click sends that
+    // column's own Key with SortDescending=false on the first press and true on
+    // the second (SimfDataGrid.ToggleSortAsync). Four of the sort switches had
+    // no arm for that key, so the click fell through to their default — and
+    // that default deliberately reads `descending` INVERTED, because the
+    // no-sort case has to come back newest-first. The two wrongs did not cancel:
+    // the grid drew an ascending arrow (and rendered aria-sort="ascending",
+    // which a screen reader announces) over newest-first rows, and a descending
+    // arrow over oldest-first ones. Each test below seeds an early and a late
+    // record inside its own date block and asserts BOTH directions, so removing
+    // the named arm fails rather than merely reordering.
+
+    [Fact]
+    public async Task Registrations_sort_on_registered_follows_the_arrow()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var day = NextBlock();
+        var early = await SeedVisitorRegisteredAtAsync(SaudiAt(day, 6));
+        var late = await SeedVisitorRegisteredAtAsync(SaudiAt(day, 18));
+
+        var ascending = await SortedAsync<RegistrationReportRow>(
+            token, RegistrationsList, day, "registered", descending: false);
+        var descending = await SortedAsync<RegistrationReportRow>(
+            token, RegistrationsList, day, "registered", descending: true);
+
+        AssertOrder(
+            ascending.Rows.Select(r => r.Email).ToList(),
+            descending.Rows.Select(r => r.Email).ToList(),
+            early, late);
+    }
+
+    [Fact]
+    public async Task Gate_activity_sorts_on_scanned_following_the_arrow()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var day = NextBlock();
+        var gateId = await SeedGateAsync();
+        // Seeded late-first, so a switch that ignored the key and fell back to
+        // insertion order could not pass by accident.
+        await SeedScanAsync(gateId, SaudiAt(day, 18), ScanOutcome.Allowed, "Late Scan");
+        await SeedScanAsync(gateId, SaudiAt(day, 6), ScanOutcome.Allowed, "Early Scan");
+
+        var ascending = await SortedAsync<GateActivityReportRow>(
+            token, GatesList, day, "scanned", descending: false);
+        var descending = await SortedAsync<GateActivityReportRow>(
+            token, GatesList, day, "scanned", descending: true);
+
+        AssertOrder(
+            ascending.Rows.Select(r => r.VisitorName ?? string.Empty).ToList(),
+            descending.Rows.Select(r => r.VisitorName ?? string.Empty).ToList(),
+            "Early Scan", "Late Scan");
+    }
+
+    [Fact]
+    public async Task Ratings_sort_on_submitted_following_the_arrow()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var day = NextBlock();
+        var typeId = await SeedRatingTypeAsync();
+        var early = await SeedRatingResponseAsync(typeId, SaudiAt(day, 6));
+        var late = await SeedRatingResponseAsync(typeId, SaudiAt(day, 18));
+
+        var ascending = await SortedAsync<RatingsReportRow>(
+            token, RatingsList, day, "submitted", descending: false);
+        var descending = await SortedAsync<RatingsReportRow>(
+            token, RatingsList, day, "submitted", descending: true);
+
+        AssertOrder(
+            ascending.Rows.Select(r => r.Comment ?? string.Empty).ToList(),
+            descending.Rows.Select(r => r.Comment ?? string.Empty).ToList(),
+            early, late);
+    }
+
+    [Fact]
+    public async Task Engagement_sorts_on_asked_following_the_arrow()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var day = NextBlock();
+        var hallId = await SeedHallAsync();
+        var sessionId = await SeedSessionAsync(hallId, SaudiAt(day, 9), "ENGSORT");
+        var early = await SeedQuestionAsync(sessionId, SaudiAt(day, 6));
+        var late = await SeedQuestionAsync(sessionId, SaudiAt(day, 18));
+
+        var ascending = await SortedAsync<EngagementReportRow>(
+            token, EngagementList, day, "asked", descending: false);
+        var descending = await SortedAsync<EngagementReportRow>(
+            token, EngagementList, day, "asked", descending: true);
+
+        AssertOrder(
+            ascending.Rows.Select(r => r.QuestionText).ToList(),
+            descending.Rows.Select(r => r.QuestionText).ToList(),
+            early, late);
+    }
+
+    /// <summary>Both directions, in one place: ascending must lead with the
+    /// earlier record and descending must lead with the later one. Asserting
+    /// only one direction would pass against a switch that ignores the key
+    /// entirely and happens to default the right way.</summary>
+    private static void AssertOrder(
+        List<string> ascending,
+        List<string> descending,
+        string early,
+        string late)
+    {
+        Assert.Contains(early, ascending);
+        Assert.Contains(late, ascending);
+        Assert.True(
+            ascending.IndexOf(early) < ascending.IndexOf(late),
+            "The ascending arrow must put the EARLIER record first. Getting the "
+            + "later one means the sort key reached no arm and fell through to a "
+            + "default that reads the direction inverted.");
+        Assert.True(
+            descending.IndexOf(late) < descending.IndexOf(early),
+            "The descending arrow must put the LATER record first.");
+    }
+
     // -- Helpers -------------------------------------------------------------
 
     /// <summary>A fresh date no other test in this class has used, so records
@@ -474,11 +596,28 @@ public sealed class ReportingTests : IClassFixture<SimfApiFactory>
     private static DateOnly NextBlock() =>
         new DateOnly(2032, 1, 1).AddDays(Interlocked.Increment(ref _blockCounter) * 7);
 
-    private static DateTimeOffset SaudiAt(DateOnly day, int hour, int minute = 0) =>
-        new DateTimeOffset(day.ToDateTime(new TimeOnly(hour, minute)), Ast).ToUniversalTime();
+    private static DateTime SaudiAt(DateOnly day, int hour, int minute = 0) =>
+        day.ToDateTime(new TimeOnly(hour, minute));
 
     private static ReportQuery Range(DateOnly? from, DateOnly? to, int top = 25) =>
         new() { From = from, To = to, Grid = new GridQuery { Top = top } };
+
+    /// <summary>One report page for a single date block, sorted the way the grid
+    /// asks for it: the column's own Key plus the direction its arrow shows.</summary>
+    private async Task<ReportPage<TRow>> SortedAsync<TRow>(
+        string token, string route, DateOnly day, string sort, bool descending)
+    {
+        var query = new ReportQuery
+        {
+            From = day,
+            To = day,
+            Grid = new GridQuery { Top = 200, Sort = sort, SortDescending = descending },
+        };
+        var response = await PostAuthAsync(route, query, token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        return (await response.Content
+            .ReadFromJsonAsync<ApiResult<ReportPage<TRow>>>())!.Data!;
+    }
 
     private async Task<ReportPage<AttendanceReportRow>> ListAttendanceAsync(
         string token, DateOnly? from, DateOnly? to, int top = 25) =>
@@ -515,14 +654,14 @@ public sealed class ReportingTests : IClassFixture<SimfApiFactory>
             Name = "Report Hall",
             NameArabic = "قاعة التقارير",
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         await db.SaveChangesAsync();
         return hall.Id;
     }
 
-    private async Task<Guid> SeedSessionAsync(Guid hallId, DateTimeOffset startUtc, string code)
+    private async Task<Guid> SeedSessionAsync(Guid hallId, DateTime startUtc, string code)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -536,7 +675,7 @@ public sealed class ReportingTests : IClassFixture<SimfApiFactory>
             Start = startUtc,
             End = startUtc.AddHours(1),
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         await db.SaveChangesAsync();
@@ -544,7 +683,7 @@ public sealed class ReportingTests : IClassFixture<SimfApiFactory>
     }
 
     private async Task SeedArrivalAsync(
-        Guid sessionId, Guid hallId, Guid userId, DateTimeOffset enterUtc, bool left)
+        Guid sessionId, Guid hallId, Guid userId, DateTime enterUtc, bool left)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -557,7 +696,7 @@ public sealed class ReportingTests : IClassFixture<SimfApiFactory>
             Method = AttendanceMethod.QrScan,
             Enter = enterUtc,
             Leave = left ? enterUtc.AddMinutes(30) : null,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
     }
@@ -573,14 +712,17 @@ public sealed class ReportingTests : IClassFixture<SimfApiFactory>
             Name = "Report Gate",
             NameArabic = "بوابة التقارير",
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Gates.Add(gate);
         await db.SaveChangesAsync();
         return gate.Id;
     }
 
-    private async Task SeedScanAsync(Guid gateId, DateTimeOffset scannedAtUtc, ScanOutcome outcome)
+    /// <param name="displayName">Names the row so a sort assertion can identify
+    /// it; the existing range tests do not care and keep the shared default.</param>
+    private async Task SeedScanAsync(
+        Guid gateId, DateTime scannedAtUtc, ScanOutcome outcome, string? displayName = null)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -595,7 +737,7 @@ public sealed class ReportingTests : IClassFixture<SimfApiFactory>
             DenialReasonCode = outcome == ScanOutcome.Denied
                 ? DenialReasonCode.HolderNotApproved
                 : null,
-            ScannedDisplayName = "Report Visitor",
+            ScannedDisplayName = displayName ?? "Report Visitor",
             ScannedProfileTypeName = "Normal",
             QrIdAtScan = "QR" + Guid.NewGuid().ToString("N")[..8].ToUpperInvariant(),
             Source = ScanSource.Simulator,
@@ -603,7 +745,67 @@ public sealed class ReportingTests : IClassFixture<SimfApiFactory>
         await db.SaveChangesAsync();
     }
 
-    private async Task<string> SeedVisitorRegisteredAtAsync(DateTimeOffset createdAtUtc)
+    private async Task<Guid> SeedRatingTypeAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var type = new RatingType
+        {
+            Id = Guid.NewGuid(),
+            Code = "RT-" + Guid.NewGuid().ToString("N")[..8].ToUpperInvariant(),
+            Name = "Report Rating",
+            NameArabic = "تقييم التقارير",
+            Scope = RatingScope.Global,
+            IsActive = true,
+            CreatedAt = SimfClock.Now,
+        };
+        db.RatingTypes.Add(type);
+        await db.SaveChangesAsync();
+        return type.Id;
+    }
+
+    /// <summary>Returns the comment, which is what the report row carries and so
+    /// what a sort assertion can identify the row by.</summary>
+    private async Task<string> SeedRatingResponseAsync(Guid typeId, DateTime createdAtUtc)
+    {
+        var comment = "rating-" + Guid.NewGuid().ToString("N")[..10];
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        db.RatingResponses.Add(new RatingResponse
+        {
+            Id = Guid.NewGuid(),
+            UserId = Guid.NewGuid(),
+            RatingTypeId = typeId,
+            TargetId = Guid.Empty,
+            OverallStars = 4,
+            Comment = comment,
+            IsActive = true,
+            CreatedAt = createdAtUtc,
+        });
+        await db.SaveChangesAsync();
+        return comment;
+    }
+
+    /// <summary>Returns the question text, which identifies the row in the
+    /// engagement report.</summary>
+    private async Task<string> SeedQuestionAsync(Guid sessionId, DateTime createdAtUtc)
+    {
+        var text = "question-" + Guid.NewGuid().ToString("N")[..10];
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        db.SessionQuestions.Add(new SessionQuestion
+        {
+            Id = Guid.NewGuid(),
+            SessionId = sessionId,
+            SubmittedByUserId = Guid.NewGuid(),
+            QuestionText = text,
+            CreatedAt = createdAtUtc,
+        });
+        await db.SaveChangesAsync();
+        return text;
+    }
+
+    private async Task<string> SeedVisitorRegisteredAtAsync(DateTime createdAtUtc)
     {
         var email = $"report-reg-{Guid.NewGuid():N}@simf.test";
         using var scope = _factory.Services.CreateScope();
@@ -651,15 +853,6 @@ public sealed class ReportingTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
 
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 }

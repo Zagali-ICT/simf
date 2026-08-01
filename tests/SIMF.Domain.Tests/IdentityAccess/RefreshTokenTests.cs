@@ -6,8 +6,8 @@ namespace SIMF.Domain.Tests.IdentityAccess;
 /// <summary>Unit tests for <see cref="RefreshToken.IsActive"/>.</summary>
 public sealed class RefreshTokenTests
 {
-    private static readonly DateTimeOffset Now =
-        new(2026, 11, 23, 9, 0, 0, TimeSpan.Zero);
+    private static readonly DateTime Now =
+        new(2026, 11, 23, 9, 0, 0);
 
     [Fact]
     public void IsActive_is_true_when_not_revoked_and_not_expired()

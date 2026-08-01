@@ -39,7 +39,7 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
         var hallId = await CreateHallAsync(admin, capacity: 120);
         var speakerId = await CreateSpeakerAsync(admin);
         var themeId = await CreateThemeAsync(admin);
-        var start = DateTimeOffset.UtcNow.AddDays(2).Date.AddHours(9);
+        var start = SimfClock.Now.AddDays(2).Date.AddHours(9);
 
         var created = await CreateSessionAsync(admin, hallId, speakerId,
             new[] { themeId }, start, start.AddHours(1));
@@ -67,7 +67,7 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
         var admin = await CreateAdminAsync();
         var hallId = await CreateHallAsync(admin);
         var speakerId = await CreateSpeakerAsync(admin);
-        var day = DateTimeOffset.UtcNow.AddDays(12).Date;
+        var day = SimfClock.Now.AddDays(12).Date;
 
         var withPublished = await CreateSessionAsync(admin, hallId, speakerId,
             Array.Empty<Guid>(), day.AddHours(9), day.AddHours(10));
@@ -93,10 +93,10 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
                 // Owner 2026-07-19 — HasPublishedSummary now requires team approval too,
                 // so a published summary also carries the review + approval stamps (the
                 // D-611 constraint requires ReviewSubmittedAt whenever ApprovedAt is set).
-                ReviewSubmittedAt = published ? DateTimeOffset.UtcNow : null,
-                ApprovedAt = published ? DateTimeOffset.UtcNow : null,
-                PublishedAt = published ? DateTimeOffset.UtcNow : null,
-                CreatedAt = DateTimeOffset.UtcNow,
+                ReviewSubmittedAt = published ? SimfClock.Now : null,
+                ApprovedAt = published ? SimfClock.Now : null,
+                PublishedAt = published ? SimfClock.Now : null,
+                CreatedAt = SimfClock.Now,
             };
             db.SessionSummaries.AddRange(
                 Summary(withPublished.Id, published: true, active: true),
@@ -125,7 +125,7 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
         var hallId = await CreateHallAsync(admin);
         var speakerId = await CreateSpeakerAsync(admin);
         var themeId = await CreateThemeAsync(admin);
-        var start = DateTimeOffset.UtcNow.AddDays(6).Date.AddHours(9);
+        var start = SimfClock.Now.AddDays(6).Date.AddHours(9);
 
         var created = await CreateSessionAsync(admin, hallId, speakerId,
             new[] { themeId }, start, start.AddHours(1));
@@ -153,7 +153,7 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
         var admin = await CreateAdminAsync();
         var hallId = await CreateHallAsync(admin);
         var speakerId = await CreateSpeakerAsync(admin);
-        var start = DateTimeOffset.UtcNow.AddDays(3).Date.AddHours(9);
+        var start = SimfClock.Now.AddDays(3).Date.AddHours(9);
         var created = await CreateSessionAsync(admin, hallId, speakerId,
             Array.Empty<Guid>(), start, start.AddHours(1));
 
@@ -199,7 +199,7 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
         var admin = await CreateAdminAsync();
         var hallId = await CreateHallAsync(admin);
         var speakerId = await CreateSpeakerAsync(admin);
-        var start = DateTimeOffset.UtcNow.AddDays(2).Date.AddHours(9);
+        var start = SimfClock.Now.AddDays(2).Date.AddHours(9);
         var created = await CreateSessionAsync(admin, hallId, speakerId,
             Array.Empty<Guid>(), start, start.AddHours(1));
 
@@ -239,7 +239,7 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
         var speaker3 = await CreateSpeakerAsync(admin);
         var theme1 = await CreateThemeAsync(admin);
         var theme2 = await CreateThemeAsync(admin);
-        var start = DateTimeOffset.UtcNow.AddDays(7).Date.AddHours(9);
+        var start = SimfClock.Now.AddDays(7).Date.AddHours(9);
 
         var create = await PostAuthAsync("/api/v1/admin/sessions",
             new AdminCreateSessionRequest
@@ -290,7 +290,7 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
         var admin = await CreateAdminAsync();
         var hallId = await CreateHallAsync(admin);
         var speakerId = await CreateSpeakerAsync(admin);
-        var day = DateTimeOffset.UtcNow.AddDays(10).Date;
+        var day = SimfClock.Now.AddDays(10).Date;
 
         var later = await CreateSessionAsync(admin, hallId, speakerId,
             Array.Empty<Guid>(), day.AddHours(14), day.AddHours(15));
@@ -312,14 +312,14 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
     public async Task Day_filter_restricts_to_that_event_local_calendar_day()
     {
         // A6c — the ?day= window is the event-local (+03:00) calendar day. These
-        // 09:00-UTC sessions (12:00 KSA) sit squarely inside their day under either
+        // 09:00-a zoned value sessions (12:00 KSA) sit squarely inside their day under either
         // offset, so this pins the basic same-day-in / next-day-out behaviour; the
         // boundary case is covered by Day_filter_uses_the_event_local_day_boundary.
         var admin = await CreateAdminAsync();
         var hallId = await CreateHallAsync(admin);
         var speakerId = await CreateSpeakerAsync(admin);
 
-        var dayOne = DateTimeOffset.UtcNow.AddDays(20).Date;
+        var dayOne = SimfClock.Now.AddDays(20).Date;
         var dayTwo = dayOne.AddDays(1);
 
         var onDayOne = await CreateSessionAsync(admin, hallId, speakerId,
@@ -340,36 +340,41 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Day_filter_uses_the_event_local_day_boundary()
     {
-        // A6c — a session at 01:00 KSA (= 22:00 UTC the PREVIOUS calendar date)
+        // A6c — a session at 01:00 KSA (= 22:00 a zoned value the PREVIOUS calendar date)
         // belongs to its KSA day, matching ProgrammeDay.Date and the day-grouped
         // agenda (ListDaysAsync). ?day={KSA date} must INCLUDE it, and ?day={the
-        // prior UTC date} must EXCLUDE it. Under the old UTC-midnight window this
-        // session filed under the prior UTC day, so this pins the +03:00 boundary.
+        // prior a zoned value date} must EXCLUDE it. Under the old midnight-elsewhere window this
+        // session filed under the prior a zoned value day, so this pins the +03:00 boundary.
         var admin = await CreateAdminAsync();
         var hallId = await CreateHallAsync(admin);
         var speakerId = await CreateSpeakerAsync(admin);
 
-        // Treat this date as the KSA calendar day; 01:00 KSA on it is 22:00 UTC on
-        // the prior date.
-        var ksaDay = DateTimeOffset.UtcNow.AddDays(30).Date;
-        var start = new DateTimeOffset(ksaDay, TimeSpan.FromHours(3)).AddHours(1);
+        var ksaDay = SimfClock.Now.AddDays(30).Date;
+        var start = ksaDay.AddHours(1);
+
+        // The stored value IS the KSA calendar day — there is no second date to
+        // straddle any more. This assertion used to read NotEqual, because 01:00
+        // KSA was stored as 22:00 a zoned value on the PRIOR date; that is exactly the
+        // misfiling the conversion removed, so pinning the equality is what keeps
+        // it removed.
+        Assert.Equal(ksaDay.Date, start.Date);
 
         var created = await CreateSessionAsync(admin, hallId, speakerId,
             Array.Empty<Guid>(), start, start.AddHours(1));
 
         var ksaDateStr = ksaDay.ToString("yyyy-MM-dd");
-        var priorUtcDateStr = start.UtcDateTime.Date.ToString("yyyy-MM-dd");
-        Assert.NotEqual(ksaDateStr, priorUtcDateStr); // the instant straddles midnight
+        var priorDateStr = ksaDay.AddDays(-1).ToString("yyyy-MM-dd");
 
         var underKsaDay = (await (await _client.GetAsync(
                 $"/api/v1/app/programme/sessions?day={ksaDateStr}")).Content
             .ReadFromJsonAsync<ApiResult<PublicSessions>>())!.Data!;
         Assert.Contains(underKsaDay.Items, i => i.Id == created.Id);
 
-        var underPriorUtcDay = (await (await _client.GetAsync(
-                $"/api/v1/app/programme/sessions?day={priorUtcDateStr}")).Content
+        // The real regression risk: a 01:00 session leaking onto the previous day.
+        var underPriorDay = (await (await _client.GetAsync(
+                $"/api/v1/app/programme/sessions?day={priorDateStr}")).Content
             .ReadFromJsonAsync<ApiResult<PublicSessions>>())!.Data!;
-        Assert.DoesNotContain(underPriorUtcDay.Items, i => i.Id == created.Id);
+        Assert.DoesNotContain(underPriorDay.Items, i => i.Id == created.Id);
     }
 
     [Fact]
@@ -388,7 +393,7 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
         var admin = await CreateAdminAsync();
         var hallId = await CreateHallAsync(admin);
         var speakerId = await CreateSpeakerAsync(admin);
-        var day = DateTimeOffset.UtcNow.AddDays(40).Date;
+        var day = SimfClock.Now.AddDays(40).Date;
 
         var inCategory = await CreateSessionAsync(admin, hallId, speakerId,
             Array.Empty<Guid>(), day.AddHours(9), day.AddHours(10));
@@ -420,7 +425,7 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
         var admin = await CreateAdminAsync();
         var hallId = await CreateHallAsync(admin);
         var speakerId = await CreateSpeakerAsync(admin);
-        var dayOne = DateTimeOffset.UtcNow.AddDays(50).Date;
+        var dayOne = SimfClock.Now.AddDays(50).Date;
         var dayTwo = dayOne.AddDays(1);
 
         var onDayOne = await CreateSessionAsync(admin, hallId, speakerId,
@@ -513,7 +518,7 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
         var hallId = await CreateHallAsync(admin, capacity: 80);
         var speakerId = await CreateSpeakerAsync(admin);
         var themeId = await CreateThemeAsync(admin);
-        var start = DateTimeOffset.UtcNow.AddDays(3).Date.AddHours(9);
+        var start = SimfClock.Now.AddDays(3).Date.AddHours(9);
 
         var created = await CreateSessionAsync(admin, hallId, speakerId,
             new[] { themeId }, start, start.AddMinutes(45));
@@ -548,7 +553,7 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
         var admin = await CreateAdminAsync();
         var hallId = await CreateHallAsync(admin);
         var speakerId = await CreateSpeakerAsync(admin);
-        var day = DateTimeOffset.UtcNow.AddDays(40).Date;
+        var day = SimfClock.Now.AddDays(40).Date;
 
         var first = await CreateSessionAsync(admin, hallId, speakerId,
             Array.Empty<Guid>(), day.AddHours(9), day.AddHours(10));
@@ -572,7 +577,7 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
         var admin = await CreateAdminAsync();
         var hallId = await CreateHallAsync(admin, capacity: 200);
         var speakerId = await CreateSpeakerAsync(admin);
-        var start = DateTimeOffset.UtcNow.AddDays(4).Date.AddHours(9);
+        var start = SimfClock.Now.AddDays(4).Date.AddHours(9);
 
         var created = await CreateSessionAsync(admin, hallId, speakerId,
             Array.Empty<Guid>(), start, start.AddHours(1), capacityOverride: 30);
@@ -591,7 +596,7 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
         var admin = await CreateAdminAsync();
         var hallId = await CreateHallAsync(admin);
         var speakerId = await CreateSpeakerAsync(admin);
-        var start = DateTimeOffset.UtcNow.AddDays(5).Date.AddHours(9);
+        var start = SimfClock.Now.AddDays(5).Date.AddHours(9);
 
         var created = await CreateSessionAsync(admin, hallId, speakerId,
             Array.Empty<Guid>(), start, start.AddHours(1));
@@ -631,7 +636,7 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
 
     private async Task<AdminSessionDetail> CreateSessionAsync(
         string token, Guid hallId, Guid speakerId, IReadOnlyList<Guid> themeIds,
-        DateTimeOffset start, DateTimeOffset end, int? capacityOverride = null)
+        DateTime start, DateTime end, int? capacityOverride = null)
     {
         var create = await PostAuthAsync("/api/v1/admin/sessions",
             new AdminCreateSessionRequest
@@ -724,15 +729,7 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
             await users.CreateAsync(user, AuthFlow.Password);
             await users.AddToRoleAsync(user, AdministratorRole);
         }
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email, Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> PostAuthAsync<TBody>(

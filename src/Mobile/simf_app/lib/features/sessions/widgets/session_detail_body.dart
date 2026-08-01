@@ -12,6 +12,7 @@ import 'session_header_card.dart';
 import 'session_reservation_card.dart';
 import 'session_speaker_card.dart';
 import 'session_text_sections.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// The scrolling body: the header card, description, speakers, my-seat card and
 /// the CTA row — all RTL-primary on the navy shell (frame 889:2450).
@@ -37,8 +38,16 @@ class SessionDetailBody extends StatelessWidget {
     required this.onCancelReservation,
     required this.onViewSeat,
     required this.onSpeaker,
+    this.header,
     super.key,
   });
+
+  /// Optional strip pinned above the first card — today the gate check-in status.
+  /// It is rendered as the ListView's first CHILD rather than stacked above the
+  /// list, because a widget outside the scrollable emits no ScrollNotification
+  /// and `RefreshIndicator` would therefore ignore a pull that started on it,
+  /// breaking pull-to-refresh at the very top of the page.
+  final Widget? header;
 
   final SessionDetail detail;
   // D-485 — the seat map (null for a guest / pending account): drives the join
@@ -90,7 +99,7 @@ class SessionDetailBody extends StatelessWidget {
     // the ملخص الجلسة summary exists only once the session has ENDED (a future /
     // live session has none → inactive); رابط الجلسة opens the LIVE feed, so it
     // is active only while the session is live AND carries an online stream.
-    final phase = detail.phase(DateTime.now().toUtc());
+    final phase = detail.phase(saudiNow());
     final summaryEnabled = phase == SessionPhase.ended;
     final liveEnabled = detail.hasLiveStream && phase == SessionPhase.live;
 
@@ -98,6 +107,10 @@ class SessionDetailBody extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: _padding,
       children: <Widget>[
+        if (header != null) ...<Widget>[
+          header!,
+          const SizedBox(height: SimfTokens.space3),
+        ],
         SessionHeaderCard(
           detail: detail,
           isArabic: isArabic,
@@ -139,7 +152,7 @@ class SessionDetailBody extends StatelessWidget {
         if (canAsk && _showAsk(detail)) ...<Widget>[
           const SizedBox(height: SimfTokens.space5),
           AskHostCard(
-            label: detail.start.isAfter(DateTime.now().toUtc())
+            label: detail.start.isAfter(saudiNow())
                 ? l10n.askHostPreSession
                 : l10n.liveAskQuestion,
             onTap: onAskHost,
@@ -251,7 +264,7 @@ class SessionDetailBody extends StatelessWidget {
   /// broadcast feed — a broadcast session's live ask lives on the live-broadcast
   /// screen. After End there is no ask (the backend closes the window).
   static bool _showAsk(SessionDetail detail) {
-    final nowUtc = DateTime.now().toUtc();
+    final nowUtc = saudiNow();
     if (detail.start.isAfter(nowUtc)) {
       return true;
     }

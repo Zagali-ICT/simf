@@ -43,7 +43,10 @@ void main() {
       expect(detail.liveStreamUrl, 'https://youtu.be/abcdefghijk');
       expect(detail.hasLiveStream, isTrue);
       expect(detail.displayOrder, 2); // D-567
-      expect(detail.start.isUtc, isTrue);
+      // Saudi wall-clock carries no zone, so a decoded value must NOT be
+      // left untagged: tagging it would let a later toLocal() shift it by the
+      // device offset (owner decision 2026-07-31).
+      expect(detail.start.isUtc, isFalse);
 
       expect(detail.speakers, hasLength(1));
       final speaker = detail.speakers.single;
@@ -69,6 +72,7 @@ void main() {
       // #29 — an older API sends no `type`; the detail then renders in full.
       expect(detail.type, isNull);
     });
+
 
     // #29 — the detail carries the same tolerant `type` the list does (D-452):
     // the app reduces a WORKSHOP to its title + time.

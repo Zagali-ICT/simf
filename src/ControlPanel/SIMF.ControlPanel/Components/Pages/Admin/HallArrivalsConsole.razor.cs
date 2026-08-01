@@ -47,7 +47,7 @@ public partial class HallArrivalsConsole
                 // filtered out (no attendance row can exist for those yet). An
                 // arrival attempted on an ended session still gets the server's
                 // bilingual SESSION_NOT_LIVE message in the error toast.
-                var now = DateTimeOffset.UtcNow;
+                var now = SimfClock.Now;
                 _sessions = envelope.Data.Items
                     .Where(s => s.IsActive && now >= s.Start - ArrivalGrace)
                     // Live sessions first (the common check-in case), then the most

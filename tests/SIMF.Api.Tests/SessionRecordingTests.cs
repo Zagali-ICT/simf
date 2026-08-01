@@ -308,8 +308,8 @@ public sealed class SessionRecordingTests : IClassFixture<SimfApiFactory>
                 Type = SessionType.Event,
                 // S-7 — a past start so the Held lifecycle guard passes (the
                 // recording-publish flow marks the session Held before Recorded).
-                Start = DateTimeOffset.UtcNow.AddHours(-1),
-                End = DateTimeOffset.UtcNow.AddHours(1),
+                Start = SimfClock.Now.AddHours(-1),
+                End = SimfClock.Now.AddHours(1),
             },
             token);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -329,7 +329,7 @@ public sealed class SessionRecordingTests : IClassFixture<SimfApiFactory>
             NameArabic = "قاعة التسجيل",
             Capacity = 100,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         await db.SaveChangesAsync();
@@ -360,16 +360,7 @@ public sealed class SessionRecordingTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
 
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> PostAuthAsync<TBody>(

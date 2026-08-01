@@ -26,7 +26,7 @@ public sealed class SimfPublicClientTests
             {
                 new PublicNewsListItem(
                     Guid.NewGuid(), "Title", "عنوان", "x", "س", "C", "ف", null,
-                    DateTimeOffset.UnixEpoch),
+                    DateTime.UnixEpoch),
             },
             Total: 1, Page: 2, PageSize: 5);
         var client = Client(req => { captured = req; return Ok(ApiResult<PublicNewsPage>.Ok(page)); });

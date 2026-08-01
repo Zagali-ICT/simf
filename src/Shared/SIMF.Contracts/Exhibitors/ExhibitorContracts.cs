@@ -14,7 +14,7 @@ public sealed record AdminExhibitorSummary(
     string? Website,
     int AccountCount,
     bool IsActive,
-    DateTimeOffset CreatedAt,
+    DateTime CreatedAt,
     // D-503 — carried so the grid Excel export can round-trip the tier (the grid
     // does not render it as a column). Optional; null = no tier.
     ExhibitorTier? Tier = null,
@@ -32,8 +32,8 @@ public sealed record AdminExhibitorDetail(
     string? ContactPhone,
     string? Website,
     bool IsActive,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt,
+    DateTime CreatedAt,
+    DateTime? UpdatedAt,
     // Wave 3 (Figma 1439:11881) — optional exhibitor tier; null renders no pill.
     ExhibitorTier? Tier = null,
     // Contact identity-card fields inlined from the removed shared Contact
@@ -182,7 +182,7 @@ public sealed record ExhibitorAccountSummary(
     string Email,
     string? RoleLabel,
     bool IsActive,
-    DateTimeOffset CreatedAt);
+    DateTime CreatedAt);
 
 /// <summary>
 /// D-199 #3 — body of <c>POST /api/v1/admin/exhibitors/{id}/accounts</c>.

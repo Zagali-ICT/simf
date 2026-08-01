@@ -7,7 +7,10 @@ namespace SIMF.Contracts.Programme;
 /// EN + AR so the app does not need a second fetch; the primary theme
 /// (first by the session's theme order) drives the "Hall · Kind" line
 /// and the agenda colour chip. <see cref="Start"/>/<see cref="End"/>
-/// are UTC — the Flutter agenda renders local time per the device tz.
+/// are the <b>Saudi wall clock</b> (D-813), serialised zone-free with no
+/// trailing <c>Z</c> and no offset. The Flutter agenda renders them verbatim —
+/// it must NOT convert by the device timezone, or a phone set to any other
+/// zone would show the wrong start time for a fixed +03:00 event.
 /// Served by <c>GET /api/v1/app/programme/sessions</c>.</summary>
 public sealed record PublicSessionListItem(
     Guid Id,
@@ -17,8 +20,8 @@ public sealed record PublicSessionListItem(
     Guid HallId,
     string HallName,
     string HallNameArabic,
-    DateTimeOffset Start,
-    DateTimeOffset End,
+    DateTime Start,
+    DateTime End,
     string? PrimaryThemeName,
     string? PrimaryThemeNameArabic,
     string? PrimaryThemeColor,
@@ -82,8 +85,8 @@ public sealed record PublicSessionDetail(
     Guid HallId,
     string HallName,
     string HallNameArabic,
-    DateTimeOffset Start,
-    DateTimeOffset End,
+    DateTime Start,
+    DateTime End,
     IReadOnlyList<PublicSessionTheme> Themes,
     IReadOnlyList<PublicSessionSpeaker> Speakers,
     PublicSessionSeatSummary Seats,
@@ -95,7 +98,7 @@ public sealed record PublicSessionDetail(
     // badges the state; PublishedAt marks when it went live. Appended; defaults
     // preserve the wire (D-219).
     SessionStatus Status = SessionStatus.Scheduled,
-    DateTimeOffset? PublishedAt = null,
+    DateTime? PublishedAt = null,
     // P3.2b — D-232: true when this published session has a recording the app
     // can stream. The app then POSTs the stream-token endpoint and plays the
     // range-streaming URL. The server only surfaces the recording when
@@ -141,7 +144,19 @@ public sealed record PublicSessionDetail(
     // json['type'] and always got null, so a type-conditional render on the detail
     // screen could never fire. Appended (append-only, D-219); null = an untyped
     // session, which renders the full detail exactly as before.
-    SessionType? Type = null);
+    SessionType? Type = null,
+    // FR-702 (owner decision 2026-07-31): the informational notice the client shows
+    // WITH the live stream, in the active locale (falling back to the other pair
+    // member when one is blank). NOTHING is gated by it — SIMF-FDS-007 §5.1
+    // originally specified FR-702 as a Riyadh-region restriction on the feed and the
+    // owner reversed that, so the stream above still plays for every caller and
+    // LiveStreamUrl is served unchanged. Both null/blank = no banner. Carried on the
+    // DETAIL only (not on PublicSessionListItem): the live surface reads the detail —
+    // the list has no live-feed field at all — so an agenda row cannot render the
+    // banner, and putting it there would be paid for on every row of every fetch.
+    // Appended (append-only, D-219).
+    string? LiveNotice = null,
+    string? LiveNoticeArabic = null);
 
 /// <summary>One bilingual key-outcome bullet on the public session-detail page
 /// ("أبرز المخرجات", Figma 5991-85840), in the session's display order. Sourced
@@ -233,7 +248,7 @@ public sealed record PublicRecordedQuestion(
     string AskedByDisplayName,
     SessionQuestionRecipient Recipient,
     bool IsPushed,
-    DateTimeOffset CreatedAt);
+    DateTime CreatedAt);
 
 /// <summary>P4.1 — D-237 (Completion Programme §6.4.1, Mockup screen 34): the
 /// published AI session summary / محضر the app reads. Every section is bilingual
@@ -254,7 +269,7 @@ public sealed record PublicSessionSummary(
     string FullText,
     string FullTextArabic,
     bool GeneratedByAi,
-    DateTimeOffset PublishedAt,
+    DateTime PublishedAt,
     // Item #35 (2026-07-20) — the two videos on the summary surface (screen 34).
     // RecordingUrl = the session's FULL live recording, sourced from
     // Session.LiveStreamUrl (the YouTube/HLS live feed that doubles as the
@@ -283,7 +298,7 @@ public sealed record HostSessionSummary(
     string FullText,
     string FullTextArabic,
     bool GeneratedByAi,
-    DateTimeOffset ApprovedAt);
+    DateTime ApprovedAt);
 
 /// <summary>Wave 2 (Figma 1388:7621 "عروض الجلسات") — one downloadable session
 /// presentation on the public list: the session it belongs to (title bilingual +
@@ -296,7 +311,7 @@ public sealed record PublicPresentationItem(
     Guid SessionId,
     string SessionTitle,
     string SessionTitleArabic,
-    DateTimeOffset SessionStart,
+    DateTime SessionStart,
     string SpeakerName,
     string SpeakerNameArabic,
     string FileName,

@@ -49,7 +49,7 @@ public sealed class ForumWindowNoProgrammeDaysTests : IClassFixture<SimfApiFacto
         var token = await CreateAdministratorAndSignInAsync();
         var hallId = await SeedHallAsync(HallPurpose.Meeting);
         var tableId = await CreateTableAsync(hallId, token);
-        var start = DateTimeOffset.UtcNow.AddDays(30);
+        var start = SimfClock.Now.AddDays(30);
 
         var schedule = await PostAuthAsync(
             "/api/v1/admin/business-meetings",
@@ -93,7 +93,7 @@ public sealed class ForumWindowNoProgrammeDaysTests : IClassFixture<SimfApiFacto
             Capacity = capacity,
             IsActive = true,
             Purpose = purpose,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Halls.Add(hall);
         await appDb.SaveChangesAsync();
@@ -110,7 +110,7 @@ public sealed class ForumWindowNoProgrammeDaysTests : IClassFixture<SimfApiFacto
             Name = $"Co {Guid.NewGuid():N}",
             NameArabic = "شركة",
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Exhibitors.Add(exhibitor);
         await appDb.SaveChangesAsync();
@@ -141,16 +141,7 @@ public sealed class ForumWindowNoProgrammeDaysTests : IClassFixture<SimfApiFacto
             await users.AddToRoleAsync(user, AdministratorRole);
         }
 
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> PostAuthAsync<TBody>(string url, TBody body, string token)

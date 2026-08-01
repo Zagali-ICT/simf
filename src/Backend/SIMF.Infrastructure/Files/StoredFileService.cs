@@ -65,7 +65,7 @@ internal sealed class StoredFileService(
         var write = await storage.WriteAsync(
             command.Service, fileId, detected.Extension, command.Content, policy.EncryptAtRest, cancellationToken);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var file = new StoredFile
         {
             Id = fileId,
@@ -139,7 +139,7 @@ internal sealed class StoredFileService(
         var fileId = Guid.NewGuid();
         var write = await storage.WriteStreamAsync(service, fileId, extension, content, cancellationToken);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var file = new StoredFile
         {
             Id = fileId,
@@ -203,7 +203,7 @@ internal sealed class StoredFileService(
                 "This file category requires an owner.", "هذا النوع من الملفات يتطلب مالكًا.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         // Owner-upsert (ported from AssetService.SetExternalLinkAsync): replace the
         // owner's existing active file of this service with the link, freeing any
@@ -366,7 +366,7 @@ internal sealed class StoredFileService(
                 "هذا الملف خاضع لفترة احتفاظ ولا يمكن حذفه.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         file.Deactivate();
         file.DeletedAt = now;
         file.UpdatedBy = actorUserId;
@@ -406,7 +406,7 @@ internal sealed class StoredFileService(
             await storage.SecureEraseAsync(file.StorageKey, cancellationToken);
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         file.MarkSecurelyDestroyed(now);
         file.DeletedAt ??= now;
         file.UpdatedBy = actorUserId;

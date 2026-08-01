@@ -13,7 +13,7 @@ public sealed class HallsAddEditTests : CpComponentTestBase
     private static AdminHallDetail Detail() => new(
         Guid.NewGuid(), "HALL-A", "Main Hall", "Ø§Ù„Ù‚Ø§Ø¹Ø© Ø§Ù„Ø±Ø¦ÙŠØ³ÙŠØ©", 250, "Ground",
         EquipmentNotes: "Projector + PA", IsActive: true,
-        DateTimeOffset.UnixEpoch, UpdatedAt: null);
+        DateTime.UnixEpoch, UpdatedAt: null);
 
     [Fact]
     public void Add_mode_hides_the_Active_checkbox()
@@ -37,7 +37,7 @@ public sealed class HallsAddEditTests : CpComponentTestBase
         JSInterop.Mode = JSRuntimeMode.Loose;
         var created = new AdminHallDetail(
             Guid.NewGuid(), "HALL-B", "Side Hall", "Ø§Ù„Ù‚Ø§Ø¹Ø© Ø§Ù„Ø¬Ø§Ù†Ø¨ÙŠØ©", 80, null,
-            null, true, DateTimeOffset.UnixEpoch, null);
+            null, true, DateTime.UnixEpoch, null);
         var handler = JSInterop.Setup<ApiResult<AdminHallDetail>>(
             "simfAccount.postJson", _ => true)
             .SetResult(ApiResult<AdminHallDetail>.Ok(created));

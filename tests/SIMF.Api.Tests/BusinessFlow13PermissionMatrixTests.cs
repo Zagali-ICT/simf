@@ -245,7 +245,7 @@ public sealed class BusinessFlow13PermissionMatrixTests : IClassFixture<SimfApiF
             ["isActive"] = true,
             // The smuggled pair — neither is on AdminUpdateSpeakerRequest.
             ["id"] = Guid.NewGuid(),
-            ["createdAt"] = DateTimeOffset.UtcNow.AddYears(-5),
+            ["createdAt"] = SimfClock.Now.AddYears(-5),
         };
         var request = new HttpRequestMessage(
             HttpMethod.Put, $"/api/v1/admin/speakers/{speaker.Id}")
@@ -519,16 +519,7 @@ public sealed class BusinessFlow13PermissionMatrixTests : IClassFixture<SimfApiF
 
     private async Task<string> SignInCpAsync(string email)
     {
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> PostAuthAsync<TBody>(string url, TBody body, string token)

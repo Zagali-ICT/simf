@@ -431,7 +431,7 @@ public sealed class Journey01DelegationToSignInTests : IClassFixture<SimfApiFact
             PageColor = "#3B82F6",
             IsForVisitor = true,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.ProfileTypes.Add(profileType);
         await appDb.SaveChangesAsync();
@@ -462,16 +462,7 @@ public sealed class Journey01DelegationToSignInTests : IClassFixture<SimfApiFact
             await users.AddToRoleAsync(user, AdministratorRole);
         }
 
-        var signIn = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await signIn.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> PostAuthAsync<TBody>(string url, TBody body, string token)

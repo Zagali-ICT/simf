@@ -67,7 +67,7 @@ internal sealed class BadgeUpdateRequestService(
                 "لديك بالفعل طلب تحديث بادج قيد المراجعة.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var req = new BadgeUpdateRequest
         {
             Id = Guid.NewGuid(),
@@ -206,7 +206,7 @@ internal sealed class BadgeUpdateRequestService(
 
         req.Status = request.Status;
         req.ResponseNote = responseNote;
-        req.RespondedAt = timeProvider.GetUtcNow();
+        req.RespondedAt = timeProvider.SimfNow();
         req.RespondedByUserId = actorUserId;
 
         // On Accept apply the requested title to the requester's profile (same App

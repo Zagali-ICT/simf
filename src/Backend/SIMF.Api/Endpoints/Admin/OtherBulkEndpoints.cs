@@ -100,7 +100,7 @@ public sealed class ExportOthersEndpoint(IAdminUserBulkService adminAccountServi
             // D-186: Other = Visitor + partner-scope (ProfileType.IsVisitor=false).
             actorId, UserType.Visitor, requirePartnerScope: true, req, ct);
         HttpContext.Response.Headers.ContentDisposition =
-            $"attachment; filename=\"simf-others-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.xlsx\"";
+            $"attachment; filename=\"simf-others-{SimfClock.Now:yyyyMMddHHmmss}.xlsx\"";
         await Send.BytesAsync(bytes,
             contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             cancellation: ct);

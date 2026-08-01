@@ -91,7 +91,7 @@ internal sealed class AdminFaqService(
         var nameAr = RequireText(request.NameAr, NameMaxLength, "Arabic name", "الاسم العربي");
         RequireNonNegative(request.DisplayOrder);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var group = new FaqGroup
         {
             Id = Guid.NewGuid(),
@@ -124,7 +124,7 @@ internal sealed class AdminFaqService(
         RequireNonNegative(request.DisplayOrder);
         group.DisplayOrder = request.DisplayOrder;
         group.IsActive = request.IsActive;
-        group.UpdatedAt = timeProvider.GetUtcNow();
+        group.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await WriteAuditAsync(AuditEvents.FaqGroupUpdated, actorUserId,
@@ -144,7 +144,7 @@ internal sealed class AdminFaqService(
         if (!group.IsActive) { return; } // idempotent
 
         group.IsActive = false;
-        group.UpdatedAt = timeProvider.GetUtcNow();
+        group.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await WriteAuditAsync(AuditEvents.FaqGroupDeactivated, actorUserId,
@@ -218,7 +218,7 @@ internal sealed class AdminFaqService(
             AnswerArabic = RequireText(request.AnswerArabic, AnswerMaxLength, "Arabic answer", "الإجابة العربية"),
             DisplayOrder = request.DisplayOrder,
             IsActive = true,
-            CreatedAt = timeProvider.GetUtcNow(),
+            CreatedAt = timeProvider.SimfNow(),
         };
         RequireNonNegative(request.DisplayOrder);
         dbContext.FaqEntries.Add(entry);
@@ -244,7 +244,7 @@ internal sealed class AdminFaqService(
         RequireNonNegative(request.DisplayOrder);
         entry.DisplayOrder = request.DisplayOrder;
         entry.IsActive = request.IsActive;
-        entry.UpdatedAt = timeProvider.GetUtcNow();
+        entry.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await WriteAuditAsync(AuditEvents.FaqEntryUpdated, actorUserId,
@@ -262,7 +262,7 @@ internal sealed class AdminFaqService(
         if (!entry.IsActive) { return; } // idempotent
 
         entry.IsActive = false;
-        entry.UpdatedAt = timeProvider.GetUtcNow();
+        entry.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await WriteAuditAsync(AuditEvents.FaqEntryDeactivated, actorUserId,

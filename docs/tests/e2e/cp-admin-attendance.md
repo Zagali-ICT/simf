@@ -79,7 +79,7 @@
 | E2E-ATND-006 | Auth gate (API) — caller lacking `Attendance.View` → 403 on summary + list | auth | P0 | authored ✓ (`Summary_is_forbidden_for_a_non_admin`, `List_is_forbidden_for_a_non_admin`) |
 | E2E-ATND-007 | Auth gate (CP) — admin lacking `Attendance.View` → `/not-permitted`; nav item hidden | auth | P0 | _to author_ |
 | E2E-ATND-008 | Per-column filter (code / title) narrows the grid | happy | P1 | _to author_ |
-| E2E-ATND-009 | Column sort toggles (code / title / start ascending↔descending) | happy | P2 | _to author_ |
+| E2E-ATND-009 | Column sort toggles (code / title / start). **Start must reverse on the second click** — the grid defaults to Start ascending, so only the descending direction proves the key reached an arm | happy | P2 | authored ✓ (`GridDateSortKeyTests.Attendance_sorts_on_start_honours_the_descending_direction`) |
 | E2E-ATND-010 | Live-now `SimfPill` shows for sessions with people inside, plain "0" otherwise | function | P1 | _to author_ |
 | E2E-ATND-011 | Server 500 on summary or list → red `SimfAlert` (`Admin.Attendance.LoadFailed`) | resilience | P2 | _to author_ |
 | E2E-ATND-012 | Read-only surface — no Add/Edit/Delete/select; no POST/PUT/DELETE beyond the list call | function | P2 | _to author_ |

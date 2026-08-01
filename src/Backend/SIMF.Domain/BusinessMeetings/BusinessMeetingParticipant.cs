@@ -39,5 +39,5 @@ public sealed class BusinessMeetingParticipant
     /// time (≤ 256 chars) — the allowed Identity-data copy (D-246).</summary>
     public string DisplayNameSnapshot { get; set; } = string.Empty;
 
-    public DateTimeOffset CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 }

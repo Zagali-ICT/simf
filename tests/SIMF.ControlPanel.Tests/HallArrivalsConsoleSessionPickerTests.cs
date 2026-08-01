@@ -20,7 +20,7 @@ public sealed class HallArrivalsConsoleSessionPickerTests : CpComponentTestBase
     private static AdminSessionSummary Session(
         string code, string title, int startOffsetMin, int endOffsetMin, bool isActive = true)
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         return new AdminSessionSummary(
             Guid.NewGuid(), code, title, title,
             Guid.NewGuid(), "Main Hall", "القاعة الرئيسية",

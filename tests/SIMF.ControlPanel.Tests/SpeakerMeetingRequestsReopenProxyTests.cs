@@ -39,7 +39,7 @@ public sealed class SpeakerMeetingRequestsReopenProxyTests : CpComponentTestBase
         Guid.NewGuid(), Guid.NewGuid(), "Capt. QA Speaker", "متحدّث الاختبار",
         Guid.NewGuid(), "QA Requester", "Maritime cooperation",
         MeetingRequestStatus.Rejected, "Declined by mistake.",
-        DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
+        SimfClock.Now, SimfClock.Now);
 
     // -- 1. the proxy route exists and is no laxer than its siblings -------------
 

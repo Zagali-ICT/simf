@@ -34,7 +34,7 @@ internal sealed class ClosedXmlOperationLogExcelService : IOperationLogExcelServ
         var row = 2;
         foreach (var entry in rows)
         {
-            sheet.Cell(row, 1).Value = entry.Timestamp.UtcDateTime.ToString("O");
+            sheet.Cell(row, 1).Value = entry.Timestamp.ToString("O");
             sheet.Cell(row, 2).Value = ClosedXmlUserExcelService.SanitiseForExcel(entry.EventType);
             sheet.Cell(row, 3).Value = ClosedXmlUserExcelService.SanitiseForExcel(entry.Outcome);
             sheet.Cell(row, 4).Value = ClosedXmlUserExcelService.SanitiseForExcel(entry.SubjectEmail);

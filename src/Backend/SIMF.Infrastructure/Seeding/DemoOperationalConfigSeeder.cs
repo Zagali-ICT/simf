@@ -10,6 +10,7 @@ using SIMF.Domain.AccessControl;
 using SIMF.Domain.SeatReservations;
 using SIMF.Domain.SessionQuestions;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Seeding;
 
@@ -126,7 +127,7 @@ public sealed class DemoOperationalConfigSeeder(
             .ToDictionaryAsync(
                 profileType => profileType.Name, profileType => profileType.Id, cancellationToken);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var added = 0;
         foreach (var demo in DemoGates)
         {
@@ -206,7 +207,7 @@ public sealed class DemoOperationalConfigSeeder(
                 .ToListAsync(cancellationToken))
             .ToHashSet();
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var added = 0;
         foreach (var sessionId in sessionIds)
         {
@@ -274,7 +275,7 @@ public sealed class DemoOperationalConfigSeeder(
             HallId = hall.Id,
             RowLabels = MainHallRowLabels,
             SeatsPerRow = MainHallSeatsPerRow,
-            CreatedAt = timeProvider.GetUtcNow(),
+            CreatedAt = timeProvider.SimfNow(),
         });
         await appDbContext.SaveChangesAsync(cancellationToken);
         logger.LogInformation(

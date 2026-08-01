@@ -12,7 +12,7 @@ public sealed class SessionCategoriesViewDeleteTests : CpComponentTestBase
 {
     private static AdminSessionCategoryDetail Detail() => new(
         Guid.NewGuid(), "Keynotes", "ÙƒÙ„Ù…Ø§Øª Ø±Ø¦ÙŠØ³ÙŠØ©", 1,
-        IsActive: true, DateTimeOffset.UnixEpoch, UpdatedAt: null);
+        IsActive: true, DateTime.UnixEpoch, UpdatedAt: null);
 
     [Fact]
     public void View_mode_shows_details_and_no_delete_button()

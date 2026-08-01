@@ -325,7 +325,7 @@ public sealed class ExhibitorLeadManagementTests : IClassFixture<SimfApiFactory>
                 UserId = officerUserId,
                 ContactName = "Mover",
                 IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
             await appDb.SaveChangesAsync();
 
@@ -370,7 +370,7 @@ public sealed class ExhibitorLeadManagementTests : IClassFixture<SimfApiFactory>
             VisitorUserId = visitorUserId,
             Note = "captured before the booth column existed",
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow.AddDays(-1),
+            CreatedAt = SimfClock.Now.AddDays(-1),
         });
         await appDb.SaveChangesAsync();
     }
@@ -399,7 +399,7 @@ public sealed class ExhibitorLeadManagementTests : IClassFixture<SimfApiFactory>
             NationalityId = countryId,
             PlaceOfBirth = string.Empty,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
         return userId;
@@ -415,7 +415,7 @@ public sealed class ExhibitorLeadManagementTests : IClassFixture<SimfApiFactory>
             Name = $"{name} {Guid.NewGuid():N}"[..24],
             NameArabic = nameArabic,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Exhibitors.Add(exhibitor);
         await appDb.SaveChangesAsync();
@@ -509,15 +509,7 @@ public sealed class ExhibitorLeadManagementTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
 
-        var sign = await _client.PostAsJsonAsync("/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        return (await sign.Content
-            .ReadFromJsonAsync<ApiResult<SignInResponse>>())!.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private static Guid UserIdFromToken(string accessToken)

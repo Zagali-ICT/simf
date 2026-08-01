@@ -408,7 +408,7 @@ public sealed class HallAttendanceTests : IClassFixture<SimfApiFactory>
             Id = Guid.NewGuid(),
             Code = "H-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Name = "Attendance Hall", NameArabic = "قاعة الحضور",
-            Capacity = capacity, IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+            Capacity = capacity, IsActive = true, CreatedAt = SimfClock.Now,
             GeofenceCenterLat = withGeofence ? CenterLat : null,
             GeofenceCenterLon = withGeofence ? CenterLon : null,
             GeofenceRadiusMeters = withGeofence ? RadiusMeters : null,
@@ -420,9 +420,9 @@ public sealed class HallAttendanceTests : IClassFixture<SimfApiFactory>
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Attendance Session", TitleArabic = "جلسة الحضور",
             HallId = hall.Id,
-            Start = DateTimeOffset.UtcNow.AddMinutes(startOffsetMin),
-            End = DateTimeOffset.UtcNow.AddMinutes(endOffsetMin),
-            IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+            Start = SimfClock.Now.AddMinutes(startOffsetMin),
+            End = SimfClock.Now.AddMinutes(endOffsetMin),
+            IsActive = true, CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         await db.SaveChangesAsync();

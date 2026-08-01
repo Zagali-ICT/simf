@@ -78,7 +78,7 @@ public sealed class AppSaveFailingOnApproveApiFactory : SimfApiFactory
                     Id = Guid.NewGuid(),
                     UserId = Guid.NewGuid(),
                     QrId = qr,
-                    CreatedAt = DateTimeOffset.UtcNow,
+                    CreatedAt = SimfClock.Now,
                 });
             }
             return Task.FromResult(qr);
@@ -176,15 +176,7 @@ public sealed class AdminApprovalAppSaveFailureTests
             await users.CreateAsync(user, Password);
             await users.AddToRoleAsync(user, AppRoles.Administrator);
         }
-        return await SignInAndGetTokenAsync(email, SignInAudience.Cp);
-    }
-
-    private async Task<string> SignInAndGetTokenAsync(string email, SignInAudience audience)
-    {
-        var sign = await _client.PostAsJsonAsync("/api/v1/app/auth/sign-in",
-            new SignInRequest { Email = email, Password = Password, Audience = audience });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email, Password);
     }
 
     private async Task<HttpResponseMessage> PostAuthAsync<TBody>(

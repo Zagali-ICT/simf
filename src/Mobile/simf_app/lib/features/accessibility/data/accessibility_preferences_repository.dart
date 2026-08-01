@@ -24,11 +24,21 @@ class AccessibilityPreferencesRepository {
 
   final SimfApiClient _client;
 
-  /// `GET /app/account/preferences` → the account's stored choices.
-  Future<AccessibilitySettings> fetch() {
-    return _client.get<AccessibilitySettings>(
+  /// `GET /app/account/preferences` → the account's stored choices, or **null**
+  /// when the account has never saved any (`configured: false`).
+  ///
+  /// The null is load-bearing, not a convenience. The server answers a
+  /// never-saved account with the DEFAULTS, which are indistinguishable from a
+  /// user who deliberately chose them — and [AccessibilitySync.hydrate] applies
+  /// whatever comes back over the device cache. Collapsing the two would reset a
+  /// low-vision user who had already set extraLarge + high contrast locally (set
+  /// before this endpoint existed, or set offline so the write-through failed
+  /// silently) the first time they signed in. Null means "the server holds
+  /// nothing" and the device's own choices win.
+  Future<AccessibilitySettings?> fetch() {
+    return _client.get<AccessibilitySettings?>(
       _path,
-      decodeData: decode,
+      decodeData: decodeOrNull,
     );
   }
 
@@ -46,6 +56,20 @@ class AccessibilityPreferencesRepository {
       },
       decodeData: decode,
     );
+  }
+
+  /// [decode], but yields null when the payload says `configured: false` — the
+  /// account has never saved a choice, so there is nothing to apply.
+  ///
+  /// A payload with no `configured` field at all is treated as configured, so an
+  /// older server that predates the flag still behaves as it used to.
+  static AccessibilitySettings? decodeOrNull(Object? data) {
+    final json =
+        (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
+    if (json['configured'] as bool? ?? true) {
+      return decode(data);
+    }
+    return null;
   }
 
   /// Decodes the envelope's data object. Every field is optional and falls back

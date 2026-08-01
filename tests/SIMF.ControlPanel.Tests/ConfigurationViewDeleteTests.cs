@@ -14,7 +14,7 @@ public sealed class ConfigurationViewDeleteTests : CpComponentTestBase
     private static AdminSystemSettingDetail Detail() => new(
         Guid.Parse("22222222-2222-2222-2222-222222222222"),
         "registration.open", "true", "Whether registration is open",
-        IsActive: true, DateTimeOffset.UnixEpoch, UpdatedAt: null);
+        IsActive: true, DateTime.UnixEpoch, UpdatedAt: null);
 
     [Fact]
     public void View_mode_shows_details_and_no_delete_button()

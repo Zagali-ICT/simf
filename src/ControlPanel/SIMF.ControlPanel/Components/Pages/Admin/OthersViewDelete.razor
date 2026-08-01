@@ -52,7 +52,7 @@
     {
         <div class="simf-walkin__id-image">
             <h4>@L["Admin.Pending.View.Field.IdImage"]</h4>
-            <img src="@($"/account/api/admin/others/{Initial.Id}/id-document?v={DateTime.UtcNow.Ticks}")"
+            <img src="@($"/account/api/admin/others/{Initial.Id}/id-document?v={SimfClock.Now.Ticks}")"
                  alt="@L["Admin.Pending.View.Field.IdImage"]" />
         </div>
     }
@@ -61,7 +61,7 @@
     @if (Initial.HasAvatar)
     {
         <AdminProfilePhotoBlock Heading="@L["Admin.Pending.View.Field.Photo"]"
-                                Src="@($"/account/api/admin/others/{Initial.Id}/avatar?v={DateTime.UtcNow.Ticks}")" />
+                                Src="@($"/account/api/admin/others/{Initial.Id}/avatar?v={SimfClock.Now.Ticks}")" />
     }
     @* D-728 (owner item 9) — flip this partner account into a visitor type. *@
     <AuthorizedAction Permission="@PermissionCatalog.Accounts.ChangeType">

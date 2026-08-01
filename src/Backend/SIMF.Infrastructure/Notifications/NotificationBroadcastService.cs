@@ -98,7 +98,7 @@ internal sealed class NotificationBroadcastService(
                 "يجب أن يكون نص الرسالة (إنجليزي + عربي) بين 1 و2000 حرفاً.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var broadcast = new NotificationBroadcast
         {
             Id = Guid.NewGuid(),
@@ -185,7 +185,7 @@ internal sealed class NotificationBroadcastService(
             return false;
         }
 
-        var startedAt = timeProvider.GetUtcNow();
+        var startedAt = timeProvider.SimfNow();
         var claimed = await appDbContext.NotificationBroadcasts
             .Where(row => row.Id == broadcastId && row.Status == BroadcastStatus.Pending)
             .ExecuteUpdateAsync(setters => setters
@@ -212,7 +212,7 @@ internal sealed class NotificationBroadcastService(
             broadcast.Error = ex.Message.Length > 1024 ? ex.Message[..1024] : ex.Message;
             logger.LogError(ex, "Broadcast {BroadcastId} failed during fan-out.", broadcast.Id);
         }
-        broadcast.CompletedAt = timeProvider.GetUtcNow();
+        broadcast.CompletedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -239,7 +239,7 @@ internal sealed class NotificationBroadcastService(
         // (a crash/restart mid-send) — it is never re-picked (only Pending is), so
         // mark it Failed so it surfaces in history instead of sitting Processing
         // forever. ExecuteUpdate — no row is loaded or tracked.
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var cutoff = now - StalledProcessingAge;
         return await appDbContext.NotificationBroadcasts
             .Where(row => row.Status == BroadcastStatus.Processing
@@ -291,11 +291,11 @@ internal sealed class NotificationBroadcastService(
             // queue drop+log what it cannot hold (the in-app rows still land).
             if (!pacingAbandoned)
             {
-                var pacingDeadline = timeProvider.GetUtcNow() + MaxPacingWait;
+                var pacingDeadline = timeProvider.SimfNow() + MaxPacingWait;
                 while (emailQueue.PendingCount > EmailQueueHighWatermark
                     && !cancellationToken.IsCancellationRequested)
                 {
-                    if (timeProvider.GetUtcNow() >= pacingDeadline)
+                    if (timeProvider.SimfNow() >= pacingDeadline)
                     {
                         pacingAbandoned = true;
                         logger.LogWarning(

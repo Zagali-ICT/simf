@@ -56,7 +56,7 @@ public sealed class PartnerDirectoryServiceTests : IClassFixture<SimfApiFactory>
                 NameArabic = "متحدّث",
                 DisplayOrder = 0,
                 IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             db.Speakers.Add(speaker);
             await db.SaveChangesAsync();
@@ -85,7 +85,7 @@ public sealed class PartnerDirectoryServiceTests : IClassFixture<SimfApiFactory>
                 Tier = SponsorTier.Gold,
                 DisplayOrder = 0,
                 IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             db.Sponsors.Add(sponsor);
             await db.SaveChangesAsync();
@@ -114,7 +114,7 @@ public sealed class PartnerDirectoryServiceTests : IClassFixture<SimfApiFactory>
                 Name = exhibitorName,
                 NameArabic = "عارض",
                 IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
             var booth = new Booth
             {
@@ -125,7 +125,7 @@ public sealed class PartnerDirectoryServiceTests : IClassFixture<SimfApiFactory>
                 ExhibitorId = exhibitorId,
                 Sector = "Defense",
                 IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             db.Set<Booth>().Add(booth);
             await db.SaveChangesAsync();
@@ -165,7 +165,7 @@ public sealed class PartnerDirectoryServiceTests : IClassFixture<SimfApiFactory>
                 Tier = SponsorTier.Gold,
                 DisplayOrder = 0,
                 IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             db.Sponsors.Add(sponsor);
 
@@ -177,7 +177,7 @@ public sealed class PartnerDirectoryServiceTests : IClassFixture<SimfApiFactory>
                 Name = companyName,
                 NameArabic = "عارض مزدوج",
                 IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
             var booth = new Booth
             {
@@ -187,7 +187,7 @@ public sealed class PartnerDirectoryServiceTests : IClassFixture<SimfApiFactory>
                 NameArabic = "جناح",
                 ExhibitorId = exhibitorId,
                 IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             db.Set<Booth>().Add(booth);
 
@@ -227,7 +227,7 @@ public sealed class PartnerDirectoryServiceTests : IClassFixture<SimfApiFactory>
                 Tier = SponsorTier.Gold,
                 DisplayOrder = 0,
                 IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             db.Sponsors.Add(sponsor);
 
@@ -239,7 +239,7 @@ public sealed class PartnerDirectoryServiceTests : IClassFixture<SimfApiFactory>
                 Name = companyName.ToUpperInvariant(),
                 NameArabic = "عارض",
                 IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
             var booth = new Booth
             {
@@ -249,7 +249,7 @@ public sealed class PartnerDirectoryServiceTests : IClassFixture<SimfApiFactory>
                 NameArabic = "جناح",
                 ExhibitorId = exhibitorId,
                 IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             db.Set<Booth>().Add(booth);
 
@@ -347,7 +347,7 @@ public sealed class PartnerDirectoryServiceTests : IClassFixture<SimfApiFactory>
                 NameArabic = "متحدّث",
                 DisplayOrder = 0,
                 IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
                 UserProfileId = profileId,
             };
             db.Speakers.Add(speaker);
@@ -412,7 +412,7 @@ public sealed class PartnerDirectoryServiceTests : IClassFixture<SimfApiFactory>
             IsForVisitor = isForVisitor,
             ShowInPartnerDirectory = showInPartnerDirectory,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.ProfileTypes.Add(row);
         await db.SaveChangesAsync();
@@ -451,7 +451,7 @@ public sealed class PartnerDirectoryServiceTests : IClassFixture<SimfApiFactory>
             PlaceOfBirth = "Riyadh",
             NationalityId = 0,
             ShowInMeetLikeYou = showInMeetLikeYou,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.UserProfiles.Add(profile);
         await db.SaveChangesAsync();

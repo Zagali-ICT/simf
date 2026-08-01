@@ -59,7 +59,7 @@ internal sealed class InterestService(
                 $"يوجد اهتمام بالاسم '{request.Name}' بالفعل.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var interest = new UserInterest
         {
             Id = Guid.NewGuid(),
@@ -117,7 +117,7 @@ internal sealed class InterestService(
         interest.NameArabic = request.NameArabic.Trim();
         interest.DisplayOrder = request.DisplayOrder;
         interest.IsActive = request.IsActive;
-        interest.UpdatedAt = timeProvider.GetUtcNow();
+        interest.UpdatedAt = timeProvider.SimfNow();
         await interests.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -151,7 +151,7 @@ internal sealed class InterestService(
         }
 
         interest.IsActive = false;
-        interest.UpdatedAt = timeProvider.GetUtcNow();
+        interest.UpdatedAt = timeProvider.SimfNow();
         await interests.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry

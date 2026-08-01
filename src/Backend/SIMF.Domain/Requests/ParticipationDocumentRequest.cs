@@ -35,10 +35,10 @@ public sealed class ParticipationDocumentRequest
     /// <summary>Optional admin response note shown to the requester (≤2000).</summary>
     public string? ResponseNote { get; set; }
 
-    public DateTimeOffset CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 
     /// <summary>When the admin moved the row off Pending. Null while Pending.</summary>
-    public DateTimeOffset? RespondedAt { get; set; }
+    public DateTime? RespondedAt { get; set; }
 
     /// <summary>The admin who responded. Logical FK (Identity); null while Pending.</summary>
     public Guid? RespondedByUserId { get; set; }

@@ -80,7 +80,7 @@ internal sealed partial class AdminAccountService
             .Select(p => new { p.AllowsSpeakerMeeting, p.AllowsDelegationMeeting })
             .SingleOrDefaultAsync(cancellationToken);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         // A type flip is ALWAYS a privilege change (the new type's MobileAppRole
         // re-sources the app 'perm' claims), so kill the subject's live sessions

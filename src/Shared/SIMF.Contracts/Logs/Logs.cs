@@ -17,7 +17,7 @@ public sealed record LogFileEntry
     /// <summary>The bare file name (e.g. <c>log-20260524.log</c>) — never a path.</summary>
     public required string FileName { get; init; }
     public required long SizeBytes { get; init; }
-    public required DateTimeOffset LastModified { get; init; }
+    public required DateTime LastModified { get; init; }
 }
 
 /// <summary>

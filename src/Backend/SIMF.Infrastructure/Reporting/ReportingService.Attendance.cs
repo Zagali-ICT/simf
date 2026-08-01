@@ -111,7 +111,7 @@ internal sealed partial class ReportingService
         string Code,
         string Title,
         string HallName,
-        DateTimeOffset Start,
+        DateTime Start,
         int Attendees,
         int LiveNow);
 

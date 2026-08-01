@@ -2,6 +2,7 @@
 //        SIMF.Api.Tests/NotificationTests.cs (round-trips, unchanged behaviour)
 using Microsoft.Extensions.Logging;
 using SIMF.Domain.Notifications;
+using SIMF.Common;
 
 namespace SIMF.Application.Notifications;
 
@@ -48,7 +49,7 @@ internal sealed class InAppNotificationChannel(
                 ?? NotificationKindCatalog.ClickUrlFor(request.Kind, request.RelatedEntityId),
             GroupCode = request.Group
                 ?? NotificationKindCatalog.GroupFor(request.Kind),
-            CreatedAt = timeProvider.GetUtcNow(),
+            CreatedAt = timeProvider.SimfNow(),
         };
 
         await notifications.AddAsync(notification, cancellationToken);

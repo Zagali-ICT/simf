@@ -1,89 +1,80 @@
 using System.Globalization;
+using SIMF.Common;
 
 namespace SIMF.Common;
 
 /// <summary>
-/// The single conversion point between the system's stored UTC instants and the
-/// Saudi wall-clock the owner requires everywhere (Control Panel and app display
-/// alike). All instants are persisted as UTC <see cref="DateTimeOffset"/>; every
-/// user-facing render converts through here.
-/// <para>
-/// Saudi Arabia observes <b>AST = UTC+03:00 with no daylight saving, ever</b>, so
-/// a fixed offset is exact and permanently stable. Using a fixed <see cref="Offset"/> instead
-/// of <c>TimeZoneInfo.FindSystemTimeZoneById("Arab Standard Time")</c> also removes
-/// the cross-platform failure mode where the Windows id is absent on a Linux host
-/// (there the IANA id is <c>Asia/Riyadh</c>) — the conversion can never throw.
-/// </para>
-/// The app mirrors this with <c>lib/core/utils/saudi_time.dart</c>; there is no
-/// shared runtime between .NET and Flutter, so the offset is duplicated by design.
+/// Saudi wall-clock FORMATTING.
+///
+/// <para><b>Owner decision 2026-07-31 — there is no conversion left to do.</b>
+/// SIMF stores every instant as a plain <see cref="DateTime"/> that is already on
+/// the Saudi wall clock (see <see cref="SimfClock"/>), so a stored value means
+/// exactly what it reads and the Control Panel, the Website and the app all render
+/// it verbatim. This type used to be the a zoned value-to-Saudi conversion seam; converting a
+/// stored value now would shift it by three hours, which is precisely the bug the
+/// conversion previously existed to prevent.</para>
+///
+/// <para>What survives is the presentation contract: one place that decides how a
+/// date, a time and a start-end window are written, so every surface agrees.</para>
 /// </summary>
 public static class SaudiTime
 {
-    /// <summary>Saudi Standard Time relative to UTC: +03:00, no DST.</summary>
-    public static readonly TimeSpan Offset = TimeSpan.FromHours(3);
+    /// <summary>Saudi Standard Time relative to a zoned value: +03:00, no DST. Kept for the
+    /// few places that must still speak a zoned value to an EXTERNAL system (RFC 6238 TOTP
+    /// counts from the Unix epoch, for instance). Nothing in SIMF's own storage or
+    /// wire format uses it any more.</summary>
+    public static readonly TimeSpan Offset = SimfClock.Offset;
 
-    /// <summary>Default date+time render format (Saudi wall clock, 12-hour AM/PM).</summary>
+    /// <summary>Default date+time render format (12-hour AM/PM).</summary>
     public const string DateTimeFormat = "dd-MM-yyyy hh:mm tt";
 
     /// <summary>Default date-only render format.</summary>
     public const string DateFormat = "dd-MM-yyyy";
 
-    /// <summary>Time-only render format (Saudi wall clock, 12-hour AM/PM).</summary>
+    /// <summary>Time-only render format (12-hour AM/PM).</summary>
     public const string TimeFormat = "hh:mm tt";
 
     /// <summary>
-    /// Projects a stored instant onto the Saudi wall clock (+03:00). The returned
-    /// <see cref="DateTimeOffset"/> represents the same moment, so its
-    /// <see cref="DateTimeOffset.DateTime"/> / <see cref="DateTimeOffset.Date"/>
-    /// read as the local Saudi calendar day and time.
+    /// Formats a stored value using the invariant culture (stable,
+    /// locale-independent digits and separators). No conversion — the value is
+    /// already Saudi local.
     /// </summary>
-    public static DateTimeOffset ToSaudi(this DateTimeOffset instant) => instant.ToOffset(Offset);
-
-    /// <summary>Nullable overload: null in → null out.</summary>
-    public static DateTimeOffset? ToSaudi(this DateTimeOffset? instant) =>
-        instant is { } value ? value.ToOffset(Offset) : null;
-
-    /// <summary>
-    /// Formats a stored instant on the Saudi wall clock using the invariant
-    /// culture (stable, locale-independent digits/separators).
-    /// </summary>
-    public static string FormatSaudi(this DateTimeOffset instant, string format = DateTimeFormat) =>
-        instant.ToOffset(Offset).ToString(format, CultureInfo.InvariantCulture);
+    public static string FormatSaudi(this DateTime value, string format = DateTimeFormat) =>
+        value.ToString(format, CultureInfo.InvariantCulture);
 
     /// <summary>
     /// Nullable overload: returns <paramref name="fallback"/> (default empty) when
-    /// the instant is null instead of throwing.
+    /// the value is null instead of throwing.
     /// </summary>
-    public static string FormatSaudi(this DateTimeOffset? instant, string format = DateTimeFormat, string fallback = "") =>
-        instant is { } value ? value.FormatSaudi(format) : fallback;
+    public static string FormatSaudi(
+        this DateTime? value, string format = DateTimeFormat, string fallback = "") =>
+        value is { } present ? present.FormatSaudi(format) : fallback;
 
     /// <summary>
-    /// Renders the Saudi wall-clock time-of-day (12-hour AM/PM). Defaults to the
-    /// invariant culture (Latin digits + "AM"/"PM", matching the Control Panel);
-    /// pass the current UI culture on the bilingual Website so Arabic renders its
-    /// localized digits and meridiem markers.
+    /// Renders the time-of-day (12-hour AM/PM). Defaults to the invariant culture
+    /// (Latin digits + "AM"/"PM", matching the Control Panel); pass the current UI
+    /// culture on the bilingual Website so Arabic renders its localized digits and
+    /// meridiem markers.
     /// </summary>
-    public static string FormatSaudiTime(this DateTimeOffset instant, CultureInfo? culture = null) =>
-        instant.ToOffset(Offset).ToString(TimeFormat, culture ?? CultureInfo.InvariantCulture);
+    public static string FormatSaudiTime(this DateTime value, CultureInfo? culture = null) =>
+        value.ToString(TimeFormat, culture ?? CultureInfo.InvariantCulture);
 
     /// <summary>
-    /// Renders a Saudi wall-clock "start – end" time window (12-hour AM/PM); the
-    /// en-dash separator matches the public agenda. See <see cref="FormatSaudiTime"/>
-    /// for the culture rule.
+    /// Renders a "start – end" time window (12-hour AM/PM); the en-dash separator
+    /// matches the public agenda. See <see cref="FormatSaudiTime"/> for the culture
+    /// rule.
     /// </summary>
-    public static string FormatSaudiWindow(DateTimeOffset start, DateTimeOffset end, CultureInfo? culture = null) =>
+    public static string FormatSaudiWindow(
+        DateTime start, DateTime end, CultureInfo? culture = null) =>
         $"{start.FormatSaudiTime(culture)} – {end.FormatSaudiTime(culture)}";
 
     /// <summary>
-    /// Converts a naive Saudi wall-clock value (e.g. the text a CP admin typed into
-    /// a <c>&lt;input type="datetime-local"&gt;</c> field, which carries no zone)
-    /// back to the UTC instant to persist. Any Kind on the input is treated as an
-    /// unspecified Saudi local time. This is the inverse of <see cref="ToSaudi(DateTimeOffset)"/>
-    /// for the save path.
+    /// Normalises a value typed into a <c>&lt;input type="datetime-local"&gt;</c>
+    /// field. That text carries no zone and is already Saudi wall-clock, so this is
+    /// now only a <see cref="DateTimeKind"/> normalisation and deliberately does NOT
+    /// shift the value. Kept as the named save-path seam so call sites read as
+    /// before and nobody reintroduces a conversion here.
     /// </summary>
-    public static DateTimeOffset FromSaudiWallClock(DateTime wallClock)
-    {
-        var unspecified = DateTime.SpecifyKind(wallClock, DateTimeKind.Unspecified);
-        return new DateTimeOffset(unspecified, Offset).ToUniversalTime();
-    }
+    public static DateTime FromSaudiWallClock(DateTime wallClock) =>
+        DateTime.SpecifyKind(wallClock, DateTimeKind.Unspecified);
 }

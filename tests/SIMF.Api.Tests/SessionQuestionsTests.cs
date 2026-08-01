@@ -152,7 +152,7 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
         // accepts questions (previously closed until 5 min before start), and the
         // pre-start slice needs no venue presence.
         var session = await SeedSessionWindowAsync(
-            DateTimeOffset.UtcNow.AddMinutes(10), DateTimeOffset.UtcNow.AddMinutes(70));
+            SimfClock.Now.AddMinutes(10), SimfClock.Now.AddMinutes(70));
         var visitor = await SignInApprovedVisitorAsync();
         var response = await PostAuthAsync(
             $"/api/v1/app/sessions/{session.Id}/questions",
@@ -166,7 +166,7 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
     {
         // §7 ("تقفل بنهاية الجلسة") — questions close at the end of the session.
         var session = await SeedSessionWindowAsync(
-            DateTimeOffset.UtcNow.AddMinutes(-70), DateTimeOffset.UtcNow.AddMinutes(-10));
+            SimfClock.Now.AddMinutes(-70), SimfClock.Now.AddMinutes(-10));
         var visitor = await SignInApprovedVisitorAsync();
         var response = await PostAuthAsync(
             $"/api/v1/app/sessions/{session.Id}/questions",
@@ -435,7 +435,7 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
                 SessionId = session.Id,
                 UserId = visitorId,
                 AssignedByUserId = visitorId, // self-stamped for the test
-                AssignedAt = DateTimeOffset.UtcNow,
+                AssignedAt = SimfClock.Now,
             });
             await appDb.SaveChangesAsync();
         }
@@ -485,7 +485,7 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
             Name = "Hall A", NameArabic = "قاعة أ",
             Capacity = 100,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         var session = new Session
@@ -495,10 +495,10 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
             Title = "Live Session",
             TitleArabic = "جلسة مباشرة",
             HallId = hall.Id,
-            Start = DateTimeOffset.UtcNow.AddMinutes(-15),
-            End = DateTimeOffset.UtcNow.AddMinutes(45),
+            Start = SimfClock.Now.AddMinutes(-15),
+            End = SimfClock.Now.AddMinutes(45),
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         await db.SaveChangesAsync();
@@ -516,7 +516,7 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
             Name = "Hall B", NameArabic = "قاعة ب",
             Capacity = 50,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         var session = new Session
@@ -526,10 +526,10 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
             Title = "Tomorrow's Session",
             TitleArabic = "جلسة غد",
             HallId = hall.Id,
-            Start = DateTimeOffset.UtcNow.AddDays(1),
-            End = DateTimeOffset.UtcNow.AddDays(1).AddHours(1),
+            Start = SimfClock.Now.AddDays(1),
+            End = SimfClock.Now.AddDays(1).AddHours(1),
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         await db.SaveChangesAsync();
@@ -539,7 +539,7 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
     // §7 — seed an active session over an explicit time window (no geofence, so
     // the question gate falls back to the IsAtVenue self-assert).
     private async Task<Session> SeedSessionWindowAsync(
-        DateTimeOffset start, DateTimeOffset end)
+        DateTime start, DateTime end)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -550,7 +550,7 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
             Name = "Hall W", NameArabic = "قاعة و",
             Capacity = 50,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         var session = new Session
@@ -562,7 +562,7 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
             Start = start,
             End = end,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         await db.SaveChangesAsync();
@@ -591,15 +591,7 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
 
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email, Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     /// <summary>Decode the "sub" claim from a JWT for the

@@ -10,7 +10,7 @@ public sealed record AdminHallSummary(
     int Capacity,
     string? Floor,
     bool IsActive,
-    DateTimeOffset CreatedAt,
+    DateTime CreatedAt,
     // SIMF-FDS-013 — D-248: the hall's purpose (HallPurpose; 0 = General).
     // Appended (defaulted) so the wire contract stays append-only (D-219).
     int Purpose = 0,
@@ -34,8 +34,8 @@ public sealed record AdminHallDetail(
     string? Floor,
     string? EquipmentNotes,
     bool IsActive,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt,
+    DateTime CreatedAt,
+    DateTime? UpdatedAt,
     double? GeofenceCenterLat = null,
     double? GeofenceCenterLon = null,
     double? GeofenceRadiusMeters = null,

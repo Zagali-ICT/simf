@@ -20,5 +20,5 @@ public sealed record AdminContactInquiryRow(
     string Message,
     bool IsHandled,
     Guid? SubmittedByUserId,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? HandledAt);
+    DateTime CreatedAt,
+    DateTime? HandledAt);

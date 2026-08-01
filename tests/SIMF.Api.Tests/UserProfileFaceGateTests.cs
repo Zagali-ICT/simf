@@ -197,7 +197,7 @@ public sealed class UserProfileFaceGateTests : IClassFixture<FaceGateApiFactory>
             {
                 Id = Guid.NewGuid(),
                 UserId = user.Id,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
             await appDb.SaveChangesAsync();
         }
@@ -230,14 +230,7 @@ public sealed class UserProfileFaceGateTests : IClassFixture<FaceGateApiFactory>
             await users.CreateAsync(user, AuthFlow.Password);
             await users.AddToRoleAsync(user, AppRoles.Administrator);
         }
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email, Password = AuthFlow.Password, Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private async Task<Guid> CreatePendingVisitorAsync()
@@ -258,7 +251,7 @@ public sealed class UserProfileFaceGateTests : IClassFixture<FaceGateApiFactory>
         {
             Id = Guid.NewGuid(),
             UserId = user.Id,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
         return user.Id;

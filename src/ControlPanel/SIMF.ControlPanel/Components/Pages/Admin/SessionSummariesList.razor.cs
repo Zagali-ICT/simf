@@ -36,7 +36,7 @@ public partial class SessionSummariesList
     private string _editSubtitle = string.Empty;
     private string _editSubtitleArabic = string.Empty;
     private string _editAiDraftArabic = string.Empty;
-    private DateTimeOffset? _editAiDraftGeneratedAt;
+    private DateTime? _editAiDraftGeneratedAt;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 

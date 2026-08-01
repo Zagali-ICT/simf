@@ -16,7 +16,8 @@ import 'golden_fonts.dart';
 
 /// Golden render of the "طلب مقابلة" meeting-request sheet against Figma frame
 /// **1776:5036**. Compare to the frame:
-///   flutter test --update-goldens test/golden/meeting_request_sheet_golden_test.dart
+/// flutter test --update-goldens
+/// test/golden/meeting_request_sheet_golden_test.dart
 ///
 /// Parity: gold drag handle, right-aligned طلب مقابلة title, الموضوع subject
 /// field (hint اكتب الموضوع), اختيار التاريخ row of the speaker's available day
@@ -25,7 +26,8 @@ import 'golden_fonts.dart';
 /// from the speaker's REAL availability slots (D-709). RTL.
 
 // Two event days of real slots (20 Nov: 09:00 + 10:00, 21 Nov: 09:00). Local →
-// UTC so the sheet's toLocal() round-trips to the same day/time deterministically.
+// a zoned value so the sheet's toLocal() round-trips to the same day/time
+// deterministically.
 final List<SpeakerSlot> _goldenSlots = <SpeakerSlot>[
   SpeakerSlot(
     start: DateTime(2026, 11, 20, 9).toUtc(),

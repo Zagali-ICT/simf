@@ -160,6 +160,15 @@ certified tip `3fbb57a3` so the 23-fix PR stays clean:
 **Verification:** build 0/0; affected classes 67/67; **full-suite regression cert vs the 48
 pre-existing failures = 48/48 shared, 0 new regressions**. Branch pushed, **not merged**.
 
+> **The 48-failure baseline is spent (measured 2026-08-01).** A full run on
+> `qa/programme-ws0` is **2,884 passed / 0 failed** — Api 2,227, ControlPanel 423,
+> Web 117, Application 63, ApiClient 41, E2E 8 (+227 skipped, browser-gated),
+> Domain 5 — plus `flutter test` 1,312/1,312 and `flutter analyze` at 0 errors and
+> 0 warnings. The 48 were real when this line was written; they are not a standing
+> allowance, and quoting them now would licence 48 regressions. **Any red is a new
+> regression.** The register tracked the discrepancy as `48-pre-existing-failures`
+> under *Cannot verify from source*; this measurement closes it.
+
 ---
 
 ## Status update — held item #2 IMPLEMENTED (2026-07-30, Track A of the fix-all round)

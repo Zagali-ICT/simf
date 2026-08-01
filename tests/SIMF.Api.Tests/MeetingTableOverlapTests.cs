@@ -34,8 +34,8 @@ public sealed class MeetingTableOverlapTests : IClassFixture<SimfApiFactory>
     /// <summary>A future anchor for the two request-family binds (they are bound only
     /// by "not in the past" plus the hall availability window). Deliberately far past
     /// the forum days so it cannot collide with any other suite's fixtures.</summary>
-    private static readonly DateTimeOffset RequestAnchor =
-        new(2048, 5, 4, 9, 0, 0, TimeSpan.FromHours(3));
+    private static readonly DateTime RequestAnchor =
+        new(2048, 5, 4, 9, 0, 0);
 
     private readonly SimfApiFactory _factory;
     private readonly HttpClient _client;
@@ -143,7 +143,7 @@ public sealed class MeetingTableOverlapTests : IClassFixture<SimfApiFactory>
     /// 60-minute slots from <paramref name="slotStart"/>, plus one active table. The
     /// hall itself holds nothing, so only a TABLE-level scan can refuse a bind.</summary>
     private async Task<(Guid HallId, Guid TableId)> SeedHallWithTableAsync(
-        DateTimeOffset slotStart)
+        DateTime slotStart)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -155,7 +155,7 @@ public sealed class MeetingTableOverlapTests : IClassFixture<SimfApiFactory>
             Code = "MTO" + suffix,
             Name = "Meeting Hall", NameArabic = "قاعة اجتماعات",
             Purpose = HallPurpose.Meeting, Capacity = 20, IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
 
@@ -165,7 +165,7 @@ public sealed class MeetingTableOverlapTests : IClassFixture<SimfApiFactory>
             HallId = hall.Id,
             Code = "TT" + suffix,
             Capacity = 6, IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.MeetingTables.Add(table);
 
@@ -177,7 +177,7 @@ public sealed class MeetingTableOverlapTests : IClassFixture<SimfApiFactory>
             End = slotStart.AddHours(3),
             SlotMinutes = 60,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
 
         await db.SaveChangesAsync();
@@ -188,7 +188,7 @@ public sealed class MeetingTableOverlapTests : IClassFixture<SimfApiFactory>
     /// <paramref name="tableId"/> over the given window, placed in a DIFFERENT hall so
     /// no hall-level guard sees it — the table is the only shared resource.</summary>
     private async Task SeedDelegationMeetingHoldingTableAsync(
-        Guid tableId, DateTimeOffset start, DateTimeOffset end)
+        Guid tableId, DateTime start, DateTime end)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -200,7 +200,7 @@ public sealed class MeetingTableOverlapTests : IClassFixture<SimfApiFactory>
             Code = "MTH" + suffix,
             Name = "Holder Hall", NameArabic = "قاعة",
             Purpose = HallPurpose.Meeting, Capacity = 20, IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(otherHall);
 
@@ -217,8 +217,8 @@ public sealed class MeetingTableOverlapTests : IClassFixture<SimfApiFactory>
             MeetingTableId = tableId,
             SlotStart = start,
             SlotEnd = end,
-            RespondedAt = DateTimeOffset.UtcNow,
-            CreatedAt = DateTimeOffset.UtcNow,
+            RespondedAt = SimfClock.Now,
+            CreatedAt = SimfClock.Now,
         });
 
         await db.SaveChangesAsync();
@@ -233,7 +233,7 @@ public sealed class MeetingTableOverlapTests : IClassFixture<SimfApiFactory>
             country = new Country
             {
                 Id = id, Code = code, Name = code, NameArabic = code,
-                IsActive = true, IsInvited = true, CreatedAt = DateTimeOffset.UtcNow,
+                IsActive = true, IsInvited = true, CreatedAt = SimfClock.Now,
             };
             db.Countries.Add(country);
             await db.SaveChangesAsync();
@@ -257,7 +257,7 @@ public sealed class MeetingTableOverlapTests : IClassFixture<SimfApiFactory>
             AllowsMeetingRequests = true,
             Email = "speaker@simf.test",
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Speakers.Add(speaker);
 
@@ -269,7 +269,7 @@ public sealed class MeetingTableOverlapTests : IClassFixture<SimfApiFactory>
             RequesterName = "Table Guard Requester",
             Subject = "Table guard probe",
             Status = MeetingRequestStatus.Pending,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.SpeakerMeetingRequests.Add(request);
 
@@ -280,7 +280,7 @@ public sealed class MeetingTableOverlapTests : IClassFixture<SimfApiFactory>
     /// <summary>A business-meeting body with two fresh companies, so a participant
     /// conflict can never be the reason a schedule call is refused.</summary>
     private async Task<ScheduleMeetingRequest> ScheduleBodyAsync(
-        Guid tableId, DateTimeOffset start, DateTimeOffset end) =>
+        Guid tableId, DateTime start, DateTime end) =>
         new()
         {
             MeetingTableId = tableId,
@@ -297,7 +297,7 @@ public sealed class MeetingTableOverlapTests : IClassFixture<SimfApiFactory>
     /// <summary>D-753 bounds a business meeting to the authored forum days, so the
     /// slot is anchored to the FIRST active programme day (09:00 event-local) rather
     /// than to a hard-coded date that drifts when the content seed changes.</summary>
-    private async Task<DateTimeOffset> ForumSlotAsync(int hourOffset)
+    private async Task<DateTime> ForumSlotAsync(int hourOffset)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -308,8 +308,7 @@ public sealed class MeetingTableOverlapTests : IClassFixture<SimfApiFactory>
             .FirstOrDefaultAsync();
         Assert.True(firstDay.HasValue,
             "The test fixture must seed programme days for the forum-day bound.");
-        return new DateTimeOffset(
-            firstDay!.Value.ToDateTime(new TimeOnly(9, 0)), TimeSpan.FromHours(3))
+        return firstDay!.Value.ToDateTime(new TimeOnly(9, 0))
             .AddHours(hourOffset);
     }
 
@@ -323,7 +322,7 @@ public sealed class MeetingTableOverlapTests : IClassFixture<SimfApiFactory>
             Name = $"Co {Guid.NewGuid():N}",
             NameArabic = "شركة",
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Exhibitors.Add(exhibitor);
         await db.SaveChangesAsync();
@@ -372,14 +371,7 @@ public sealed class MeetingTableOverlapTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AppRoles.Administrator);
         }
 
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email, Password = AuthFlow.Password, Audience = SignInAudience.Cp,
-            });
-        return (await sign.Content
-            .ReadFromJsonAsync<ApiResult<SignInResponse>>())!.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> PostAuthAsync<TBody>(

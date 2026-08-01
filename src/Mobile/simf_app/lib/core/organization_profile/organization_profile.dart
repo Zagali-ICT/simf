@@ -5,13 +5,14 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../utils/event_date_range.dart';
 
-/// Coerce a decoded JSON value into a `Map<String, dynamic>` (empty when absent).
+/// Coerce a decoded JSON value into a `Map<String, dynamic>` (empty when
+/// absent).
 Map<String, dynamic> _asStringMap(dynamic value) =>
     (value as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
 
 /// Parse the calendar date out of an ISO-8601 date(-time) string (null when
 /// absent / malformed). Only the `YYYY-MM-DD` head is used, so the offset never
-/// shifts the day — the backend stores the event date as a UTC-midnight
+/// shifts the day — the backend stores the event date as a midnight-elsewhere
 /// `DateTimeOffset`, and the intended date is the written calendar date
 /// regardless of the reader's timezone.
 DateTime? _asDate(dynamic value) {
@@ -22,12 +23,16 @@ DateTime? _asDate(dynamic value) {
   return DateTime.tryParse(raw.substring(0, 10));
 }
 
-/// D-495 — the public Organization / About profile (`GET /app/organization-profile`):
-/// the edition-generic forum config (name / title / slogan / bio, year + dates +
+/// D-495 — the public Organization / About profile (`GET
+/// /app/organization-profile`):
+/// the edition-generic forum config (name / title / slogan / bio, year + dates
+/// +
 /// status, location, contact, live-stream link, social links, logo) plus the
 /// about-items + details lists. Loaded once and cached for the app lifetime;
-/// consumers read `.valueOrNull` and fall back to bundled l10n while loading / on
-/// error (offline-safe). Editable in the Control Panel — the same build re-skins to
+/// consumers read `.valueOrNull` and fall back to bundled l10n while loading /
+/// on
+/// error (offline-safe). Editable in the Control Panel — the same build
+/// re-skins to
 /// any edition by editing this data.
 class OrgProfile {
   const OrgProfile({
@@ -78,8 +83,10 @@ class OrgProfile {
   final String? liveStreamUrl;
 
   /// The hero-section background video link (a YouTube URL or a direct MP4/HLS
-  /// link), set in the CP Organization Profile. Played muted + looping behind the
-  /// home hero (#43 / D-756); null falls back to the banner image / discover photo.
+  /// link), set in the CP Organization Profile. Played muted + looping behind
+  /// the
+  /// home hero (#43 / D-756); null falls back to the banner image / discover
+  /// photo.
   final String? backgroundVideoUrl;
 
   final String? logoUrl;
@@ -140,7 +147,8 @@ class OrgProfile {
       );
 }
 
-/// The fixed set of social-media URLs (null = not set → the control stays inert).
+/// The fixed set of social-media URLs (null = not set → the control stays
+/// inert).
 class OrgSocial {
   const OrgSocial({
     this.facebook,
@@ -199,7 +207,8 @@ class OrgAboutItem {
       );
 }
 
-/// One "detail" row — a bilingual label + a value (e.g. year / date / location).
+/// One "detail" row — a bilingual label + a value (e.g. year / date /
+/// location).
 class OrgDetail {
   const OrgDetail({
     required this.name,
@@ -232,7 +241,8 @@ class OrgDetail {
 }
 
 /// App-local data layer for the public Organization profile — reads/writes the
-/// on-device cache (`shared_preferences`) and revalidates against the server with
+/// on-device cache (`shared_preferences`) and revalidates against the server
+/// with
 /// the `Last-Modified` / 304 conditional GET.
 class OrgProfileRepository {
   OrgProfileRepository(this._client, this._prefs);
@@ -255,7 +265,8 @@ class OrgProfileRepository {
   }
 
   /// Revalidate against the server using the saved `Last-Modified` token and
-  /// persist the result. Returns the fresh profile when it changed; null when the
+  /// persist the result. Returns the fresh profile when it changed; null when
+  /// the
   /// server reports `304` (unchanged) so the caller keeps the cached value.
   Future<OrgProfile?> refresh() async {
     final result = await _client.getConditional<Object?>(
@@ -263,7 +274,8 @@ class OrgProfileRepository {
       ifModifiedSince: _prefs.getString(StorageKeys.orgProfileLastModified),
       decodeData: (data) => data,
     );
-    // Keep the cached value untouched on 304 (unchanged) or a missing / non-object
+    // Keep the cached value untouched on 304 (unchanged) or a missing /
+    // non-object
     // body — never overwrite a good local profile with an empty one.
     if (result.notModified || result.data is! Map) {
       return null;
@@ -287,7 +299,8 @@ final orgProfileRepositoryProvider = Provider<OrgProfileRepository>((ref) {
 
 /// The Organization profile as an **app-lifetime shared value**: hydrated
 /// synchronously from local storage when first read (so every page has it
-/// instantly — even offline / on the first frame), then refreshed from the API at
+/// instantly — even offline / on the first frame), then refreshed from the API
+/// at
 /// the splash via [OrgProfileController.warm] with the `Last-Modified` / 304
 /// version-check. Pages read it directly (`ref.watch(orgProfileProvider)`) and
 /// fall back to their bundled l10n when it is still null (first run / offline).

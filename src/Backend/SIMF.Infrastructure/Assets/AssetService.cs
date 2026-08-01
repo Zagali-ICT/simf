@@ -157,7 +157,7 @@ internal sealed class AssetService(
     private Task<bool> OwnerIsActiveAsync(
         AssetCategory category, Guid ownerId, CancellationToken cancellationToken)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         return category switch
         {
             AssetCategory.SpeakerPhoto => dbContext.Speakers
@@ -259,7 +259,7 @@ internal sealed class AssetService(
         if (!file.IsActive) { return; }
         file.Deactivate();
         file.UpdatedBy = actorUserId;
-        file.UpdatedAt = timeProvider.GetUtcNow();
+        file.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
@@ -284,7 +284,7 @@ internal sealed class AssetService(
         file.IsActive = true;
         file.DeletedAt = null;
         file.UpdatedBy = actorUserId;
-        file.UpdatedAt = timeProvider.GetUtcNow();
+        file.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 

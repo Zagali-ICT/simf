@@ -18,7 +18,7 @@ public sealed class GatesViewDeleteTests : CpComponentTestBase
         DirectionMode.Both, IsActive: true,
         AllowedProfileTypeIds: Array.Empty<Guid>(),
         AssignedOperatorUserIds: Array.Empty<Guid>(),
-        DateTimeOffset.UnixEpoch, UpdatedAt: null);
+        DateTime.UnixEpoch, UpdatedAt: null);
 
     [Fact]
     public void View_mode_shows_details_and_no_delete_button()
@@ -48,7 +48,7 @@ public sealed class GatesViewDeleteTests : CpComponentTestBase
             .SetResult(ApiResult<IReadOnlyList<AdminGateAssignmentRow>>.Ok(
             [
                 new(Guid.NewGuid(), Guid.NewGuid(), "Ahmed Al-Rashid",
-                    DateTimeOffset.UnixEpoch, Guid.NewGuid(), "ahmed@simf.test"),
+                    DateTime.UnixEpoch, Guid.NewGuid(), "ahmed@simf.test"),
             ]));
 
         var cut = RenderComponent<GatesViewDelete>(p => p

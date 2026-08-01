@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// The My-Area (منطقتي) dashboard — mirrors `SIMF.Contracts.Account.MyAreaDashboard`
 /// (`GET /app/account/dashboard`): the identity card, two counters, and today's
@@ -152,9 +153,9 @@ class MyAreaScheduleItem {
   static MyAreaScheduleItem fromJson(Map<String, dynamic> json) =>
       MyAreaScheduleItem(
         kind: json['kind'] as String? ?? '',
-        start: DateTime.tryParse(json['start'] as String? ?? '')?.toUtc() ??
+        start: parseWireOrNull(json['start'] as String? ?? '') ??
             DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
-        end: DateTime.tryParse(json['end'] as String? ?? '')?.toUtc(),
+        end: parseWireOrNull(json['end'] as String? ?? ''),
         titleEn: json['titleEn'] as String? ?? '',
         titleAr: json['titleAr'] as String? ?? '',
         hallNameEn: json['hallNameEn'] as String?,

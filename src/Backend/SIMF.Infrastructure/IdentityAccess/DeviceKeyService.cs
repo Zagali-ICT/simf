@@ -97,7 +97,7 @@ internal sealed class DeviceKeyService(
                 "تعذّر قراءة المفتاح العام كـ ECDSA P-256.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         // #7a — emailed-OTP step-up: confirm the user actually intends to enable
         // biometric sign-in before binding a credential, so a borrowed-but-
@@ -158,7 +158,7 @@ internal sealed class DeviceKeyService(
                 "الحساب غير متاح.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         // Cap how many step-up codes one account may request per window, so a
         // signed-in session can't be used to spam the address with emails.
@@ -251,7 +251,7 @@ internal sealed class DeviceKeyService(
         // 32-byte cryptographic random — ample for a single-use nonce.
         var bytes = RandomNumberGenerator.GetBytes(32);
         var challenge = Convert.ToBase64String(bytes);
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         deviceKey.CurrentChallenge = challenge;
         deviceKey.ChallengeExpiresAt = now.Add(ChallengeLifetime);
         await identityDbContext.SaveChangesAsync(cancellationToken);
@@ -271,7 +271,7 @@ internal sealed class DeviceKeyService(
             || deviceKey.RevokedAt is not null
             || deviceKey.CurrentChallenge is null
             || deviceKey.ChallengeExpiresAt is null
-            || deviceKey.ChallengeExpiresAt <= timeProvider.GetUtcNow())
+            || deviceKey.ChallengeExpiresAt <= timeProvider.SimfNow())
         {
             await AuditFailureAsync(request.DeviceKeyId,
                 ErrorCodes.DeviceKeyChallengeInvalid, "expired_or_missing",
@@ -305,15 +305,15 @@ internal sealed class DeviceKeyService(
         // atomic conditional UPDATE (only the row still holding THIS challenge is
         // cleared) is the single-use gate: a concurrent replay within the window
         // clears nothing (affected == 0) and is rejected before any token mint.
-        var consumedAt = timeProvider.GetUtcNow();
+        var consumedAt = timeProvider.SimfNow();
         var challengeConsumed = await identityDbContext.DeviceKeys
             .Where(k => k.Id == deviceKey.Id
                 && k.CurrentChallenge == deviceKey.CurrentChallenge)
             .ExecuteUpdateAsync(
                 setters => setters
                     .SetProperty(k => k.CurrentChallenge, (string?)null)
-                    .SetProperty(k => k.ChallengeExpiresAt, (DateTimeOffset?)null)
-                    .SetProperty(k => k.LastUsedAt, (DateTimeOffset?)consumedAt),
+                    .SetProperty(k => k.ChallengeExpiresAt, (DateTime?)null)
+                    .SetProperty(k => k.LastUsedAt, (DateTime?)consumedAt),
                 cancellationToken);
         if (challengeConsumed != 1)
         {
@@ -361,7 +361,7 @@ internal sealed class DeviceKeyService(
             return; // idempotent
         }
 
-        deviceKey.RevokedAt = timeProvider.GetUtcNow();
+        deviceKey.RevokedAt = timeProvider.SimfNow();
         deviceKey.CurrentChallenge = null;
         deviceKey.ChallengeExpiresAt = null;
         await identityDbContext.SaveChangesAsync(cancellationToken);
@@ -454,7 +454,7 @@ internal sealed class DeviceKeyService(
     /// pre-existing property of the whole AccountCode path, low blast radius
     /// since every key binds to the caller's own account and is revocable).</summary>
     private async Task<AccountCode?> ValidateEnrolStepUpAsync(
-        Guid callerUserId, string? suppliedCode, DateTimeOffset now,
+        Guid callerUserId, string? suppliedCode, DateTime now,
         CancellationToken cancellationToken)
     {
         if (!deviceKeyOptions.Value.RequireStepUpForEnrol)

@@ -1,4 +1,4 @@
-﻿// Tests: SIMF.Api.Tests/SignInTests.cs (email-verified sign-in surfaces
+// Tests: SIMF.Api.Tests/SignInTests.cs (email-verified sign-in surfaces
 //        AccountStateInfo state=EmailVerified; second-factor + state gates);
 //        SIMF.Api.Tests/ControlPanelTwoFactorEnrolmentTests.cs (#2 / Q1 —
 //        enrolment-first: a Cp-audience password-only sign-in returns an
@@ -105,7 +105,7 @@ public sealed class SignInService(
             throw new ApiException(blockCode, 403, blockMessage!, blockMessageArabic!);
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var roles = await accounts.GetRolesAsync(user);
 
         // Audience gate (P2) — runs *after* credentials and account state are
@@ -332,7 +332,7 @@ public sealed class SignInService(
                 "رمز التحقق غير صحيح.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         user.LastUsedTotpTimestep = totp.TimeStep;
         user.UpdatedAt = now;
         await accounts.UpdateAsync(user).EnsureSuccessAsync();
@@ -394,7 +394,7 @@ public sealed class SignInService(
         }
 
         await accounts.ResetAccessFailedCountAsync(user);
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         // Atomically consume the ticket — the recovery code was already verified
         // + consumed above; the ticket gate ensures a concurrent second verify of
         // the same ticket cannot mint a second session.
@@ -455,7 +455,7 @@ public sealed class SignInService(
 
         // Atomically consume the ticket — only the caller that flips ConsumedAt
         // proceeds to mint, so one ticket yields exactly one session.
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         if (!await secondFactorTokenRepository.TryConsumeAsync(
                 ticket.Id, now, cancellationToken))
         {
@@ -489,7 +489,7 @@ public sealed class SignInService(
         await EnsureNotLockedOutAsync(user, cancellationToken);
         RequirePasswordChangeNotRequired(user);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var code = await accountCodeRepository.GetLatestUnconsumedAsync(
             user.Id, AccountCodePurpose.SignInOtp, cancellationToken);
 
@@ -550,7 +550,7 @@ public sealed class SignInService(
 
         await EnsureNotLockedOutAsync(user, cancellationToken);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         // Re-issue under the same per-hour budget (5/window) — a 6th resend
         // throws RateLimitExceeded (429), consuming any prior unconsumed code.
         var otpCode = await IssueSignInOtpAsync(user, now, cancellationToken);
@@ -641,14 +641,14 @@ public sealed class SignInService(
     /// (<see cref="IdentityLifecycleOptions.PasswordMaxAgeDays"/> &gt; 0) and the
     /// password is older than the limit. The baseline is the last set time, or the
     /// account's creation time for accounts whose password predates the column.</summary>
-    private bool IsPasswordExpired(SimfUser user, DateTimeOffset now)
+    private bool IsPasswordExpired(SimfUser user, DateTime now)
     {
         var maxAgeDays = lifecycleOptions.Value.PasswordMaxAgeDays;
         if (maxAgeDays <= 0)
         {
             return false;
         }
-        var baseline = user.PasswordChangedAtUtc ?? user.CreatedAt;
+        var baseline = user.PasswordChangedAt ?? user.CreatedAt;
         return now - baseline > TimeSpan.FromDays(maxAgeDays);
     }
 
@@ -772,7 +772,7 @@ public sealed class SignInService(
                 "جلسة تسجيل الدخول غير صالحة.");
         }
 
-        if (timeProvider.GetUtcNow() >= ticket.ExpiresAt)
+        if (timeProvider.SimfNow() >= ticket.ExpiresAt)
         {
             var expiredCode = expectedKind == SecondFactorKind.Totp
                 ? ErrorCodes.AuthMfaTokenExpired
@@ -806,7 +806,7 @@ public sealed class SignInService(
             || ticket.Kind != SecondFactorKind.TotpEnrolment
             || ticket.ConsumedAt is not null
             || ticket.AttemptCount >= MaxSecondFactorAttempts
-            || timeProvider.GetUtcNow() >= ticket.ExpiresAt)
+            || timeProvider.SimfNow() >= ticket.ExpiresAt)
         {
             await AuditAsync(AuditEvents.SignInSecondFactorRejected, AuditOutcome.Failure,
                 null, ticket?.UserId, ErrorCodes.AuthTwoFactorEnrolmentRequired,
@@ -847,7 +847,7 @@ public sealed class SignInService(
 
     private async Task<string> IssueSignInOtpAsync(
         SimfUser user,
-        DateTimeOffset now,
+        DateTime now,
         CancellationToken cancellationToken)
     {
         // Cap how many sign-in codes one account may request — without this an

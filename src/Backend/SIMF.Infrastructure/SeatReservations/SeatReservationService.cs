@@ -199,7 +199,7 @@ internal sealed class SeatReservationService(
             Kind = SeatReservationKind.UserBooking,
             ReservedForUserId = actorUserId,
             CreatedByUserId = actorUserId,
-            CreatedAt = timeProvider.GetUtcNow(),
+            CreatedAt = timeProvider.SimfNow(),
             // 2026-07-18 (reservation-only) — there is no Control Panel approval
             // step: the reservation is confirmed the moment it is made. It stays a
             // provisional hold until the visitor checks in at the hall gate; the
@@ -258,7 +258,7 @@ internal sealed class SeatReservationService(
         // oversell (the key-range lock serialises count-then-insert) nor over-reject
         // (a deadlock victim re-runs and its re-count sees the committed rival),
         // filling exactly the declared capacity. See InsertHoldWithinCapacityAsync.
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         // D-771 — the auto-pick must respect the same tier rule as the self-pick, so
         // resolve the caller's VIP tier ONCE (outside the serializable transaction —
         // it is a read of admin-curated profile data, not of the seat state).
@@ -332,7 +332,7 @@ internal sealed class SeatReservationService(
         // concurrent joins can neither oversell — the key-range lock serialises
         // count-then-insert — nor over-reject. See InsertHoldWithinCapacityAsync.
         var declaredCap = session.CapacityOverride ?? hall.Capacity;
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var reservation = await InsertHoldWithinCapacityAsync(
             sessionId, declaredCap,
             _ => Task.FromResult<SeatReservation?>(new SeatReservation
@@ -490,7 +490,7 @@ internal sealed class SeatReservationService(
                     "هذا المقعد محجوز بالفعل.");
             }
 
-            var now = timeProvider.GetUtcNow();
+            var now = timeProvider.SimfNow();
             var fromRow = origin.RowLabel;
             var fromSeat = origin.SeatNumber;
             origin.ReleasedAt = now;
@@ -543,9 +543,9 @@ internal sealed class SeatReservationService(
         // BEFORE the session starts.
         var sessionStart = await appDbContext.Sessions.AsNoTracking()
             .Where(s => s.Id == sessionId)
-            .Select(s => (DateTimeOffset?)s.Start)
+            .Select(s => (DateTime?)s.Start)
             .SingleOrDefaultAsync(cancellationToken);
-        if (sessionStart is { } start && timeProvider.GetUtcNow() >= start)
+        if (sessionStart is { } start && timeProvider.SimfNow() >= start)
         {
             throw new ApiException(
                 ErrorCodes.BookingSessionStarted, 409,
@@ -553,7 +553,7 @@ internal sealed class SeatReservationService(
                 "لا يمكنك إلغاء الحجز بعد بدء الجلسة.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         mine.ReleasedAt = now;
         mine.Status = BookingStatus.Cancelled;
         await appDbContext.SaveChangesAsync(cancellationToken);
@@ -731,7 +731,7 @@ internal sealed class SeatReservationService(
             await EnsureLayoutChangeKeepsActiveReservationsAsync(
                 hallId, rows, seatCounts, cancellationToken);
         }
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var rowsCsv = string.Join(',', rows);
         if (layout is null)
         {
@@ -856,7 +856,7 @@ internal sealed class SeatReservationService(
         var taken = new HashSet<int>(
             occupiedInRow.Where(s => s.HasValue).Select(s => s!.Value));
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var inserted = 0;
         for (var seat = 1; seat <= ctx.SeatCounts[rowIndex]; seat++)
         {
@@ -932,7 +932,7 @@ internal sealed class SeatReservationService(
             Kind = SeatReservationKind.AdminReservedRow,
             ReservedForUserId = null,
             CreatedByUserId = actorUserId,
-            CreatedAt = timeProvider.GetUtcNow(),
+            CreatedAt = timeProvider.SimfNow(),
             // An admin block is confirmed immediately (never enters the queue).
             Status = BookingStatus.Approved,
             // D-771 — the manual guest hint. A VVIP seat has no registration, so this
@@ -995,7 +995,7 @@ internal sealed class SeatReservationService(
         // it Cancelled. A9 — the ReviewedBy/ReviewedAt pair records the admin who
         // performed THIS RELEASE; there is no approval queue left for it to record a
         // review decision (see BookingStatus), and this is its only writer.
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         reservation.ReleasedAt = now;
         reservation.Status = BookingStatus.Cancelled;
         reservation.ReviewedByUserId = actorUserId;
@@ -1188,7 +1188,7 @@ internal sealed class SeatReservationService(
     /// Called once per minute by <c>ReservationNoShowReleaseWorker</c>; extracted so
     /// the release rule is unit-tested at the service (not by driving the loop).</summary>
     public async Task<int> ReleaseNoShowsAsync(
-        DateTimeOffset now, CancellationToken cancellationToken = default)
+        DateTime now, CancellationToken cancellationToken = default)
     {
         var due = await appDbContext.SeatReservations
             .Where(r => r.Status == BookingStatus.Approved
@@ -1407,7 +1407,7 @@ internal sealed class SeatReservationService(
 
     private async Task EnsureNoOverlapAsync(
         Guid sessionId, Guid actorUserId,
-        DateTimeOffset start, DateTimeOffset end,
+        DateTime start, DateTime end,
         CancellationToken cancellationToken)
     {
         // FR-502: the attendee must not already hold a (Pending or Approved)
@@ -1755,9 +1755,9 @@ internal sealed class SeatReservationService(
     /// already ENDED: an ended session's seat can never be attended, so the hold would
     /// be dead, un-cancellable weight. Blocks at or after <paramref name="end"/>;
     /// a merely-started (not yet ended) session stays bookable.</summary>
-    private void EnsureSessionNotEnded(DateTimeOffset end)
+    private void EnsureSessionNotEnded(DateTime end)
     {
-        if (timeProvider.GetUtcNow() >= end)
+        if (timeProvider.SimfNow() >= end)
         {
             throw new ApiException(
                 ErrorCodes.BookingSessionEnded, 409,
@@ -1772,9 +1772,9 @@ internal sealed class SeatReservationService(
     /// paths use: a walk-in may still book a live session, but reshuffling an
     /// already-placed attendee mid-session would desync the staff seating desk and the
     /// pre-start no-show sweep that has already redistributed the free seats.</summary>
-    private void EnsureSessionNotStarted(DateTimeOffset start)
+    private void EnsureSessionNotStarted(DateTime start)
     {
-        if (timeProvider.GetUtcNow() >= start)
+        if (timeProvider.SimfNow() >= start)
         {
             throw new ApiException(
                 ErrorCodes.BookingSessionStarted, 409,
@@ -1904,7 +1904,7 @@ internal sealed class SeatReservationService(
     /// created-at / expiry window.</summary>
     private static SeatReservation? PickRandomSeat(
         SessionContext ctx, IReadOnlySet<(string Row, int Seat)> taken,
-        Guid actorUserId, DateTimeOffset now, bool callerIsVip)
+        Guid actorUserId, DateTime now, bool callerIsVip)
     {
         // D-767 — index loop so each row's free-seat scan stops at ITS own count
         // (ctx.SeatCounts[i]); a ragged layout never yields a phantom seat on a short row.
@@ -2034,13 +2034,13 @@ internal sealed class SeatReservationService(
 
     private sealed record SessionSnapshot(
         Guid Id, Guid HallId, int? CapacityOverride, string Title, string TitleArabic,
-        DateTimeOffset Start, DateTimeOffset End,
+        DateTime Start, DateTime End,
         SeatSelectionMode? SeatSelectionModeOverride);
     private sealed record SessionContext(
         Guid SessionId, Guid HallId, int? CapacityOverride, int HallCapacity,
         HallSeatLayout Layout, IReadOnlyList<string> RowLabels,
         string SessionTitle, string SessionTitleArabic,
-        DateTimeOffset Start, DateTimeOffset End,
+        DateTime Start, DateTime End,
         SeatSelectionMode EffectiveMode,
         // D-767 — the expanded per-row seat counts (one per RowLabels entry; a repeat of
         // SeatsPerRow when the layout is uniform). Every per-seat bound/capacity/random-

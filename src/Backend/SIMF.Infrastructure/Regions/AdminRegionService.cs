@@ -118,7 +118,7 @@ internal sealed class AdminRegionService(
             throw DuplicateCode(v.Code);
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var region = new Region
         {
             Id = Guid.NewGuid(),
@@ -176,7 +176,7 @@ internal sealed class AdminRegionService(
         region.Name = v.NameEn;
         region.SortOrder = v.SortOrder;
         region.IsActive = request.IsActive;
-        region.UpdatedAt = timeProvider.GetUtcNow();
+        region.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(ct);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -205,7 +205,7 @@ internal sealed class AdminRegionService(
         }
 
         region.Deactivate();
-        region.UpdatedAt = timeProvider.GetUtcNow();
+        region.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(ct);
 
         await auditLog.WriteAsync(new AuditEntry

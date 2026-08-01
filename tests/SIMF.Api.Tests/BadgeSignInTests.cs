@@ -264,7 +264,7 @@ public sealed class BadgeSignInTests : IClassFixture<SimfApiFactory>
             Name = "Badge Holder",
             NameArabic = "حامل الشارة",
             QrId = qrId,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
         return (user.Id, qrId);

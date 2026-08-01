@@ -17,3 +17,4 @@ tests that hold it.
 | [`movement-tracking.md`](movement-tracking.md) | FR-1103 device-position capture + the dwell / route reports |
 | [`workers.md`](workers.md) | The hosted background workers and what each one guarantees |
 | [`notifications.md`](notifications.md) | The notification dispatcher and its delivery channels |
+| [`account-preferences.md`](account-preferences.md) | The signed-in account's five accessibility preferences (`accessibility-server-sync`) |

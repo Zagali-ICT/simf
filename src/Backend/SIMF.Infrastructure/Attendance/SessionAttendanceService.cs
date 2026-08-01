@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/SessionAttendanceTests.cs
+// Tests: SIMF.Api.Tests/SessionAttendanceTests.cs, SIMF.Api.Tests/GridDateSortKeyTests.cs
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Attendance.Abstractions;
 using SIMF.Common;
@@ -91,7 +91,15 @@ internal sealed class SessionAttendanceService(
             ("code", false) => sessions.OrderBy(session => session.Code),
             ("title", true) => sessions.OrderByDescending(session => session.Title),
             ("title", false) => sessions.OrderBy(session => session.Title),
-            ("startutc", true) => sessions.OrderByDescending(session => session.Start),
+            // The key is "start", matching the grid column's Key (AttendanceDashboard
+            // .razor) and the column itself. It read "startutc" until 2026-08-01, a
+            // leftover from before D-770 renamed the persisted columns: nothing ever sent
+            // that key, so clicking Start a second time silently fell through to the
+            // ascending catch-all and the column could not be sorted newest-first at
+            // all. The ascending arm is written out rather than left to `_` so the
+            // pair is visible and the next rename cannot break only one half of it.
+            ("start", true) => sessions.OrderByDescending(session => session.Start),
+            ("start", false) => sessions.OrderBy(session => session.Start),
             _ => sessions.OrderBy(session => session.Start),
         };
 

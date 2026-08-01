@@ -35,8 +35,8 @@ public sealed class ExportInvitationsEndpoint(IAdminInvitationService service, I
         new("State", row => row.State.ToString()),
         new("Notes", row => row.Notes ?? string.Empty),
         new("SentBy", row => row.SentByDisplayName),
-        new("CreatedAt", row => row.CreatedAt.UtcDateTime),
-        new("RespondedAt", row => row.RespondedAt.HasValue ? row.RespondedAt.Value.UtcDateTime : (DateTime?)null),
+        new("CreatedAt", row => row.CreatedAt),
+        new("RespondedAt", row => row.RespondedAt.HasValue ? row.RespondedAt.Value : (DateTime?)null),
         new("IsActive", row => row.IsActive),
     ];
 

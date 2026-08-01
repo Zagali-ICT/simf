@@ -321,7 +321,7 @@ public sealed class SessionQuestionCommitteeTests : IClassFixture<SimfApiFactory
             Id = Guid.NewGuid(),
             Code = "H-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Name = "Committee Hall", NameArabic = "قاعة اللجنة",
-            Capacity = 100, IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+            Capacity = 100, IsActive = true, CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         var session = new Session
@@ -330,9 +330,9 @@ public sealed class SessionQuestionCommitteeTests : IClassFixture<SimfApiFactory
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Committee Session", TitleArabic = "جلسة اللجنة",
             HallId = hall.Id,
-            Start = DateTimeOffset.UtcNow.AddHours(2),
-            End = DateTimeOffset.UtcNow.AddHours(3),
-            IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+            Start = SimfClock.Now.AddHours(2),
+            End = SimfClock.Now.AddHours(3),
+            IsActive = true, CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         await db.SaveChangesAsync();
@@ -361,14 +361,7 @@ public sealed class SessionQuestionCommitteeTests : IClassFixture<SimfApiFactory
             await users.AddToRoleAsync(user, AdministratorRole);
         }
 
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email, Password = AuthFlow.Password, Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> GetAuthAsync(string url, string token)

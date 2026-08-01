@@ -2028,6 +2028,9 @@
   <data name="Admin.Sessions.Field.LiveStreamUrlHint" xml:space="preserve"><value>Paste a YouTube link (youtube.com / youtu.be) or a direct https HLS/MP4 stream URL.</value></data>
   <data name="Admin.Sessions.Field.LiveSignLanguageUrlHint" xml:space="preserve"><value>Optional. Same formats — a YouTube link or an HLS/MP4 stream URL.</value></data>
   <data name="Admin.Sessions.Field.LiveUrlInvalid" xml:space="preserve"><value>Enter a valid YouTube link or an HLS/MP4 stream URL (https).</value></data>
+  <data name="Admin.Sessions.Field.LiveNotice" xml:space="preserve"><value>Live notice — shown with the stream (English)</value></data>
+  <data name="Admin.Sessions.Field.LiveNoticeArabic" xml:space="preserve"><value>Live notice — shown with the stream (Arabic)</value></data>
+  <data name="Admin.Sessions.Field.LiveNoticeHint" xml:space="preserve"><value>Optional note displayed beside the live stream, in the viewer's language. It is information only — it blocks nobody and the stream stays available to everyone, wherever they are. Leave both languages blank to show no notice.</value></data>
   <data name="Admin.Sessions.Field.LiveCaptions" xml:space="preserve"><value>AI live captions (English)</value></data>
   <data name="Admin.Sessions.Field.LiveCaptionsArabic" xml:space="preserve"><value>AI live captions (Arabic)</value></data>
   <data name="Admin.Sessions.Field.LiveCaptionsHint" xml:space="preserve"><value>Optional caption / running-transcript text shown under the live player. Leave blank to fall back to the player's own captions.</value></data>

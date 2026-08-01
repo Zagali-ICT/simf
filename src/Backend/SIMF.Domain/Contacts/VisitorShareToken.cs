@@ -25,5 +25,5 @@ public sealed class VisitorShareToken : BaseAuditEntity
     public string Token { get; set; } = string.Empty;
 
     /// <summary>When the token was revoked on rotation; null while active.</summary>
-    public DateTimeOffset? RevokedAt { get; set; }
+    public DateTime? RevokedAt { get; set; }
 }

@@ -99,7 +99,7 @@ internal sealed class AdminEmailTemplateService(
                 $"يشير القالب إلى عناصر نائبة غير معروفة: {names}.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var row = await appDbContext.EmailTemplates
             .SingleOrDefaultAsync(t => t.Type == type, cancellationToken);
 

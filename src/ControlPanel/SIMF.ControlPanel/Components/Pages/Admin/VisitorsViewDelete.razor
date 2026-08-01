@@ -61,7 +61,7 @@ else if (_profile is not null)
     {
         <div class="simf-walkin__id-image">
             <h4>@L["Admin.Pending.View.Field.IdImage"]</h4>
-            <img src="@($"/account/api/admin/visitors/{_profile.Id}/id-document?v={DateTime.UtcNow.Ticks}")"
+            <img src="@($"/account/api/admin/visitors/{_profile.Id}/id-document?v={SimfClock.Now.Ticks}")"
                  alt="@L["Admin.Pending.View.Field.IdImage"]" />
         </div>
     }
@@ -70,7 +70,7 @@ else if (_profile is not null)
     @if (_profile.HasAvatar)
     {
         <AdminProfilePhotoBlock Heading="@L["Admin.Pending.View.Field.Photo"]"
-                                Src="@($"/account/api/admin/visitors/{_profile.Id}/avatar?v={DateTime.UtcNow.Ticks}")" />
+                                Src="@($"/account/api/admin/visitors/{_profile.Id}/avatar?v={SimfClock.Now.Ticks}")" />
     }
     @* D-728 (owner item 9) — flip this visitor into a partner (Other) type. *@
     <AuthorizedAction Permission="@PermissionCatalog.Accounts.ChangeType">

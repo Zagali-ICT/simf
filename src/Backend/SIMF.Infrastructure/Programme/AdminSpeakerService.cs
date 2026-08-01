@@ -168,7 +168,7 @@ internal sealed class AdminSpeakerService(
                 $"يوجد متحدّث بالرمز '{code}' بالفعل.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var speaker = new Speaker
         {
             Id = Guid.NewGuid(),
@@ -300,7 +300,7 @@ internal sealed class AdminSpeakerService(
         speaker.Longitude = request.Longitude;
         speaker.DisplayOrder = request.DisplayOrder;
         speaker.IsActive = request.IsActive;
-        speaker.UpdatedAt = timeProvider.GetUtcNow();
+        speaker.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -333,7 +333,7 @@ internal sealed class AdminSpeakerService(
         }
 
         speaker.IsActive = false;
-        speaker.UpdatedAt = timeProvider.GetUtcNow();
+        speaker.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
