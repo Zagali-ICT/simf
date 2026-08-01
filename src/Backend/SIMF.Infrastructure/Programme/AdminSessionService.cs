@@ -86,8 +86,8 @@ internal sealed class AdminSessionService(
             ("title", true) => rows.OrderByDescending(session => session.Title),
             ("title", false) => rows.OrderBy(session => session.Title),
             // "start" / "end" match the grid column Keys in SessionsList.razor. They
-            // read "endutc" until 2026-08-01, left behind when D-770 renamed the *Utc
-            // columns, and no caller has ever sent that key. The effect was worse than
+            // read the old persisted key until 2026-08-01, left behind when D-770
+            // renamed those columns, and no caller ever sent it. The effect was worse than
             // a dead sort: BOTH date columns fell through to the catch-all, so Start
             // could only ever sort ascending and clicking End sorted the grid by
             // START. Add a column here and you must add its key here too.
