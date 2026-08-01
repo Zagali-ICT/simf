@@ -48,7 +48,7 @@ class PresentationItem {
         sessionId: json['sessionId'] as String? ?? '',
         sessionTitle: json['sessionTitle'] as String? ?? '',
         sessionTitleArabic: json['sessionTitleArabic'] as String? ?? '',
-        sessionStart: parseWireUtc(json['sessionStart'], 'sessionStart'),
+        sessionStart: parseWireDateTime(json['sessionStart'], 'sessionStart'),
         speakerName: json['speakerName'] as String? ?? '',
         speakerNameArabic: json['speakerNameArabic'] as String? ?? '',
         fileName: json['fileName'] as String? ?? '',

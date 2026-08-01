@@ -238,7 +238,7 @@
                     {
                         <div class="simf-walkin__id-image">
                             <h4>@L["Admin.Pending.View.Field.IdImage"]</h4>
-                            <img src="@($"/account/api/admin/others/{_viewProfile.Id}/id-document?v={DateTime.UtcNow.Ticks}")"
+                            <img src="@($"/account/api/admin/others/{_viewProfile.Id}/id-document?v={SimfClock.Now.Ticks}")"
                                  alt="@L["Admin.Pending.View.Field.IdImage"]" />
                         </div>
                     }
@@ -247,7 +247,7 @@
                     @if (_viewProfile.HasAvatar)
                     {
                         <AdminProfilePhotoBlock Heading="@L["Admin.Pending.View.Field.Photo"]"
-                                                Src="@($"/account/api/admin/others/{_viewProfile.Id}/avatar?v={DateTime.UtcNow.Ticks}")" />
+                                                Src="@($"/account/api/admin/others/{_viewProfile.Id}/avatar?v={SimfClock.Now.Ticks}")" />
                     }
                 }
                 else

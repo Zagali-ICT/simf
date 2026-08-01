@@ -3,6 +3,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../external_link.dart';
+import '../utils/saudi_time.dart';
 import 'app_update_checker.dart';
 import 'app_version_policy.dart';
 
@@ -68,7 +69,11 @@ class ServerAppUpdateChecker implements AppUpdateChecker {
     await prefs.setString(StorageKeys.appUpdateSnoozedVersion, offered);
     await prefs.setString(
       StorageKeys.appUpdateSnoozedAtIso,
-      _now().toUtc().toIso8601String(),
+      // Zone-free, on the project's own clock. This wrote toUtc() until
+      // 2026-08-01; the value is a device-local snooze marker that is never
+      // sent or displayed, so UTC bought nothing and meant a second time
+      // source existed alongside saudiNow().
+      formatWire(_now()),
     );
   }
 
@@ -92,10 +97,13 @@ class ServerAppUpdateChecker implements AppUpdateChecker {
     if (prefs.getString(StorageKeys.appUpdateSnoozedVersion) != offered) {
       return false;
     }
-    final snoozedAt = DateTime.tryParse(
-      prefs.getString(StorageKeys.appUpdateSnoozedAtIso) ?? '',
+    // parseWireOrNull, not DateTime.tryParse: a marker written by a build
+    // before this change carries a trailing Z, and a raw parse would leave it
+    // zone-bearing so the comparison below would skew by the device's offset.
+    final snoozedAt = parseWireOrNull(
+      prefs.getString(StorageKeys.appUpdateSnoozedAtIso),
     );
     return snoozedAt != null &&
-        _now().toUtc().difference(snoozedAt.toUtc()) < snoozeWindow;
+        _now().difference(snoozedAt) < snoozeWindow;
   }
 }

@@ -26,9 +26,9 @@ void main() {
     });
   });
 
-  group('parseWireUtc', () {
+  group('parseWireDateTime', () {
     test('reads a zone-free wire value verbatim', () {
-      final parsed = parseWireUtc('2026-11-23T09:00:00', 'start');
+      final parsed = parseWireDateTime('2026-11-23T09:00:00', 'start');
       expect(parsed.hour, 9);
       expect(parsed.day, 23);
       // Not tagged UTC: the value is Saudi wall clock, and tagging it would let
@@ -42,14 +42,14 @@ void main() {
       // fields. Legacy SIMF stored UTC and displayed +03:00, so the offset is
       // re-applied — which is why the two lines below disagree by three hours and
       // are both right.
-      expect(parseWireUtc('2026-11-23T09:00:00Z', 'start').hour, 12);
-      expect(parseWireUtc('2026-11-23T09:00:00+03:00', 'start').hour, 9);
+      expect(parseWireDateTime('2026-11-23T09:00:00Z', 'start').hour, 12);
+      expect(parseWireDateTime('2026-11-23T09:00:00+03:00', 'start').hour, 9);
     });
 
     test('is device-timezone independent', () {
       // No toUtc()/toLocal() anywhere in the path, so the parsed fields are the
       // string's fields on a machine in Riyadh, London or Los Angeles alike.
-      final a = parseWireUtc('2026-11-23T09:00:00', 'start');
+      final a = parseWireDateTime('2026-11-23T09:00:00', 'start');
       expect(<int>[a.year, a.month, a.day, a.hour, a.minute],
           <int>[2026, 11, 23, 9, 0]);
     });
@@ -57,10 +57,10 @@ void main() {
     test('a missing or unparseable value throws instead of yielding 1970', () {
       // BUG-011 — the epoch fallback made a broken/renamed wire field render as
       // 03:00 AM on every row with no error at all. It must fail loudly.
-      expect(() => parseWireUtc(null, 'start'), throwsFormatException);
-      expect(() => parseWireUtc('', 'start'), throwsFormatException);
-      expect(() => parseWireUtc('not-a-timestamp', 'start'), throwsFormatException);
-      expect(() => parseWireUtc(0, 'start'), throwsFormatException);
+      expect(() => parseWireDateTime(null, 'start'), throwsFormatException);
+      expect(() => parseWireDateTime('', 'start'), throwsFormatException);
+      expect(() => parseWireDateTime('not-a-timestamp', 'start'), throwsFormatException);
+      expect(() => parseWireDateTime(0, 'start'), throwsFormatException);
     });
   });
 
@@ -72,9 +72,9 @@ void main() {
       expect(wire, isNot(contains('+')));
     });
 
-    test('round-trips through parseWireUtc unchanged', () {
+    test('round-trips through parseWireDateTime unchanged', () {
       final original = DateTime(2026, 11, 23, 16, 45);
-      expect(parseWireUtc(formatWire(original), 'slotStart'), original);
+      expect(parseWireDateTime(formatWire(original), 'slotStart'), original);
     });
   });
 

@@ -107,6 +107,11 @@ public partial class NewsAddEdit
     private void OnPublishedAtChanged(ChangeEventArgs e)
     {
         var raw = e.Value?.ToString();
+        // The date input carries no timezone and does not need one: what the
+        // admin picks IS what gets stored. This flag pair is what keeps a naked
+        // "2026-11-23" on that date whatever timezone the Control Panel runs in —
+        // it is not a UTC conversion, and a plain local-time parse here would make
+        // the stored value depend on the server's location.
         if (string.IsNullOrWhiteSpace(raw)
             || !DateTime.TryParse(raw, CultureInfo.InvariantCulture,
                 DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,

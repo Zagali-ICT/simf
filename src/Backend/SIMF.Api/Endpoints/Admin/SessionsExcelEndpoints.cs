@@ -192,8 +192,8 @@ public sealed class ImportSessionsEndpoint(
         var categoryId = await ResolveCategoryAsync(
             row.Cells.GetValueOrDefault("Category", string.Empty), ct);
 
-        var start = ParseUtc(row.Cells.GetValueOrDefault("Start", string.Empty), "Start");
-        var end = ParseUtc(row.Cells.GetValueOrDefault("End", string.Empty), "End");
+        var start = ParseSaudiWallClock(row.Cells.GetValueOrDefault("Start", string.Empty), "Start");
+        var end = ParseSaudiWallClock(row.Cells.GetValueOrDefault("End", string.Empty), "End");
         if (end <= start)
         {
             throw new DataValidationException(
@@ -394,7 +394,7 @@ public sealed class ImportSessionsEndpoint(
     // therefore land on the same wall clock, which is what makes the change
     // safe to ship without invalidating files already in circulation.
     // Any non-blank value the parser cannot read is a per-row error.
-    private static DateTime ParseUtc(string value, string field)
+    private static DateTime ParseSaudiWallClock(string value, string field)
     {
         var trimmed = value.Trim();
         if (trimmed.Length == 0
@@ -405,7 +405,7 @@ public sealed class ImportSessionsEndpoint(
                 $"{field} must be a valid date/time (e.g. 2026-01-30T09:00:00Z).",
                 $"يجب أن يكون {field} تاريخًا/وقتًا صالحًا (مثال: 2026-01-30T09:00:00Z).");
         }
-        return parsed.ToUniversalTime();
+        return DateTime.SpecifyKind(parsed, DateTimeKind.Unspecified);
     }
 
     private static string? NullIfBlank(string value) =>

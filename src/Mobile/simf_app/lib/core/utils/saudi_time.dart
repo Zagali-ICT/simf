@@ -53,7 +53,7 @@ DateTime saudiNow() => DateTime.now().toUtc().add(saudiOffset);
 /// error, no empty state, just wrong times. It now throws a [FormatException],
 /// which the API client reports as a `clientMalformedResponse` failure the
 /// screen surfaces with a retry.
-DateTime parseWireUtc(Object? value, String field) {
+DateTime parseWireDateTime(Object? value, String field) {
   if (value is String && value.isNotEmpty) {
     final parsed = DateTime.tryParse(value);
     if (parsed != null) {
@@ -68,13 +68,14 @@ DateTime parseWireUtc(Object? value, String field) {
   );
 }
 
-/// Nullable sibling of [parseWireUtc] for optional wire timestamps: null / empty
-/// / unparseable yields null instead of throwing.
+/// Nullable sibling of [parseWireDateTime] for optional wire timestamps:
+/// null / empty / unparseable yields null instead of throwing.
 ///
-/// Every model must decode through this or [parseWireUtc] rather than calling
-/// `DateTime.tryParse` directly. A raw parse of a legacy `...Z` value returns a
-/// UTC [DateTime] whose fields read three hours behind the Saudi clock, and
-/// nothing downstream corrects it — the reading is simply wrong, quietly.
+/// Every model must decode through this or [parseWireDateTime] rather than
+/// calling `DateTime.tryParse` directly. A raw parse of a legacy `...Z` value
+/// returns a zone-bearing [DateTime] whose fields read three hours behind the
+/// Saudi clock, and nothing downstream corrects it — the reading is simply
+/// wrong, quietly.
 DateTime? parseWireOrNull(Object? value) {
   if (value is String && value.isNotEmpty) {
     final parsed = DateTime.tryParse(value);

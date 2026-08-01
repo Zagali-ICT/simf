@@ -213,9 +213,9 @@ void main() {
         prefsSeed: <String, Object>{
           StorageKeys.appUpdateSnoozedVersion: '1.1.0',
           StorageKeys.appUpdateSnoozedAtIso:
-              DateTime.utc(2026, 7, 10).toIso8601String(),
+              DateTime(2026, 7, 10).toIso8601String(),
         },
-        now: () => DateTime.utc(2026, 7, 11), // 1 day later, window = 3 days
+        now: () => DateTime(2026, 7, 11), // 1 day later, window = 3 days
       );
       addTearDown(h.container.dispose);
 
@@ -228,9 +228,9 @@ void main() {
         prefsSeed: <String, Object>{
           StorageKeys.appUpdateSnoozedVersion: '1.1.0',
           StorageKeys.appUpdateSnoozedAtIso:
-              DateTime.utc(2026, 7).toIso8601String(),
+              DateTime(2026, 7).toIso8601String(),
         },
-        now: () => DateTime.utc(2026, 7, 10),
+        now: () => DateTime(2026, 7, 10),
       );
       addTearDown(h.container.dispose);
 
@@ -243,9 +243,9 @@ void main() {
         prefsSeed: <String, Object>{
           StorageKeys.appUpdateSnoozedVersion: '1.1.0',
           StorageKeys.appUpdateSnoozedAtIso:
-              DateTime.utc(2026, 7, 10).toIso8601String(),
+              DateTime(2026, 7, 10).toIso8601String(),
         },
-        now: () => DateTime.utc(2026, 7, 10),
+        now: () => DateTime(2026, 7, 10),
       );
       addTearDown(h.container.dispose);
 
@@ -258,9 +258,9 @@ void main() {
         prefsSeed: <String, Object>{
           StorageKeys.appUpdateSnoozedVersion: '1.1.0',
           StorageKeys.appUpdateSnoozedAtIso:
-              DateTime.utc(2026, 7, 10).toIso8601String(),
+              DateTime(2026, 7, 10).toIso8601String(),
         },
-        now: () => DateTime.utc(2026, 7, 10),
+        now: () => DateTime(2026, 7, 10),
       );
       addTearDown(h.container.dispose);
 
@@ -271,7 +271,7 @@ void main() {
         () async {
       final h = _harness(
         policy: _policy(latest: '1.1.0'),
-        now: () => DateTime.utc(2026, 7, 10, 12),
+        now: () => DateTime(2026, 7, 10, 12),
       );
       addTearDown(h.container.dispose);
 
@@ -281,7 +281,7 @@ void main() {
       expect(h.prefs.getString(StorageKeys.appUpdateSnoozedVersion), '1.1.0');
       expect(
         h.prefs.getString(StorageKeys.appUpdateSnoozedAtIso),
-        DateTime.utc(2026, 7, 10, 12).toIso8601String(),
+        DateTime(2026, 7, 10, 12).toIso8601String(),
       );
       // The next launch inside the window stays quiet.
       expect(await h.checker.check(), AppUpdateStatus.upToDate);

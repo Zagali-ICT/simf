@@ -332,7 +332,7 @@ public partial class MeetingTablesList
     private async Task SaveAllocationAsync()
     {
         if (_busy || _hallId is not { } hid) return;
-        if (!TryParseUtc(_allocStartText, out var start) || !TryParseUtc(_allocEndText, out var end) || end <= start)
+        if (!TryParseSaudiWallClock(_allocStartText, out var start) || !TryParseSaudiWallClock(_allocEndText, out var end) || end <= start)
         {
             _toast = new Toast("error", L["Admin.MeetingTables.Validation.Slot"]);
             return;
@@ -420,7 +420,7 @@ public partial class MeetingTablesList
     private static string? Trimmed(string value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
-    private static bool TryParseUtc(string text, out DateTime value)
+    private static bool TryParseSaudiWallClock(string text, out DateTime value)
     {
         value = default;
         if (DateTime.TryParse(text, CultureInfo.InvariantCulture,

@@ -56,8 +56,8 @@ class HallAttendanceStatus {
   static HallAttendanceStatus fromJson(Map<String, dynamic> json) {
     return HallAttendanceStatus(
       arrived: json['arrived'] as bool? ?? false,
-      enter: json['enter'] == null ? null : parseWireUtc(json['enter'], 'enter'),
-      leave: json['leave'] == null ? null : parseWireUtc(json['leave'], 'leave'),
+      enter: json['enter'] == null ? null : parseWireDateTime(json['enter'], 'enter'),
+      leave: json['leave'] == null ? null : parseWireDateTime(json['leave'], 'leave'),
       method: HallAttendanceMethod.fromJson(json['method']),
     );
   }

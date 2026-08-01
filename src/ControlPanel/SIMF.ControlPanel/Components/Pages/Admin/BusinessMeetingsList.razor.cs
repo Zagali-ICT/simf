@@ -252,7 +252,7 @@ public partial class BusinessMeetingsList
             _toast = new Toast("error", L["Admin.BusinessMeetings.Validation.Table"]);
             return;
         }
-        if (!TryParseUtc(_startText, out var start) || !TryParseUtc(_endText, out var end) || end <= start)
+        if (!TryParseSaudiWallClock(_startText, out var start) || !TryParseSaudiWallClock(_endText, out var end) || end <= start)
         {
             _toast = new Toast("error", L["Admin.BusinessMeetings.Validation.Slot"]);
             return;
@@ -360,7 +360,7 @@ public partial class BusinessMeetingsList
     // the server's own timezone; FromSaudiWallClock then only stamps the Kind.
     // Do not "fix" this into a local-time parse — that would make the stored value
     // depend on where the Control Panel happens to be running.
-    private static bool TryParseUtc(string text, out DateTime value)
+    private static bool TryParseSaudiWallClock(string text, out DateTime value)
     {
         value = default;
         if (DateTime.TryParse(text, CultureInfo.InvariantCulture,

@@ -127,7 +127,7 @@ public partial class EditAccountForm
     protected override async Task OnInitializedAsync()
     {
         _loading = true;
-        _cacheBust = DateTime.UtcNow.Ticks;
+        _cacheBust = SimfClock.Now.Ticks;
         try
         {
             await LoadProfileTypesAsync();
