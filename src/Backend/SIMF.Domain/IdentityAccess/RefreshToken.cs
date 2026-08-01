@@ -17,13 +17,13 @@ public class RefreshToken
     /// <summary>The hash of the token value; the value itself is never stored.</summary>
     public string TokenHash { get; set; } = string.Empty;
 
-    /// <summary>When the token expires (UTC).</summary>
+    /// <summary>When the token expires (Saudi local).</summary>
     public DateTime ExpiresAt { get; set; }
 
-    /// <summary>When the token was created (UTC).</summary>
+    /// <summary>When the token was created (Saudi local).</summary>
     public DateTime CreatedAt { get; set; }
 
-    /// <summary>When the token was revoked (UTC); null while it is live.</summary>
+    /// <summary>When the token was revoked (Saudi local); null while it is live.</summary>
     public DateTime? RevokedAt { get; set; }
 
     /// <summary>

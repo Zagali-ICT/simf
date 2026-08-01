@@ -354,7 +354,12 @@ public partial class BusinessMeetingsList
         finally { _busy = false; }
     }
 
-    // datetime-local has no timezone; treat the entered wall-clock as UTC.
+    // datetime-local carries no timezone, and under D-813 it does not need one:
+    // what the admin types IS what gets stored. AssumeUniversal + AdjustToUniversal
+    // is the parse that leaves a naked "2026-11-23T09:00" at 09:00 regardless of
+    // the server's own timezone; FromSaudiWallClock then only stamps the Kind.
+    // Do not "fix" this into a local-time parse — that would make the stored value
+    // depend on where the Control Panel happens to be running.
     private static bool TryParseUtc(string text, out DateTime value)
     {
         value = default;

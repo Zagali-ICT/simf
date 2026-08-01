@@ -13,8 +13,9 @@ public abstract class BaseEntity
     /// <see cref="SimfUser.Id"/> (same Identity DbContext).</summary>/
     public Guid CreateBy { get; set; }
 
-    /// <summary>When the row was created (UTC). Defaulted at construction in
-    /// UTC (fixes the prior local-time <c>DateTime.Now</c> default).</summary>
+    /// <summary>When the row was created (Saudi local). Defaulted at construction
+    /// from <see cref="SimfClock"/>, which is fixed +03:00 with no DST — never
+    /// <c>DateTime.Now</c> (host-dependent) and never <c>UtcNow</c> (D-813).</summary>
     public DateTime CreatedAt { get; set; } = SimfClock.Now;
 }
 
@@ -22,7 +23,7 @@ public abstract class BaseAuditEntity
 {
     public Guid Id { get; set; }
 
-    /// <summary>When the row was created (UTC) — stamped by the audit
+    /// <summary>When the row was created (Saudi local) — stamped by the audit
     /// SaveChanges interceptor from the shared TimeProvider when left unset.</summary>
     public DateTime CreatedAt { get; set; }
 

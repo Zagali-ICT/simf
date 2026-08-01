@@ -262,8 +262,8 @@ internal sealed class MyAreaService(
         return items;
     }
 
-    /// <summary>Today's window in the event timezone (AST, UTC+3), as a
-    /// half-open UTC interval. Deterministic via the injected
+    /// <summary>Today's window in the event timezone (AST, +03:00), as a
+    /// half-open Saudi-local interval. Deterministic via the injected
     /// <see cref="TimeProvider"/>.</summary>
     private (DateTime Start, DateTime End) TodayWindow()
     {

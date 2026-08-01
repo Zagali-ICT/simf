@@ -30,11 +30,11 @@ public sealed class DelegationMeetingActionToken
     /// compared on redemption. The raw secret is never stored.</summary>
     public string TokenHash { get; set; } = string.Empty;
 
-    /// <summary>When the token expires (UTC) — 72h after mint (mirrors the speaker
+    /// <summary>When the token expires (Saudi local) — 72h after mint (mirrors the speaker
     /// token TTL, <see cref="Common.Options.MeetingLinksOptions.TokenTtlHours"/>).</summary>
     public DateTime ExpiresUtc { get; set; }
 
-    /// <summary>When the token was consumed (UTC); null while unused. Single-use.</summary>
+    /// <summary>When the token was consumed (Saudi local); null while unused. Single-use.</summary>
     public DateTime? UsedAt { get; set; }
 
     public DateTime CreatedAt { get; set; }

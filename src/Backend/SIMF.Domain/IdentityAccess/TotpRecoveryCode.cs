@@ -18,7 +18,7 @@ public sealed class TotpRecoveryCode
     /// <summary>SHA-256 hash of the plaintext code. The plaintext is never persisted.</summary>
     public string CodeHash { get; set; } = string.Empty;
 
-    /// <summary>When the code was minted (UTC).</summary>
+    /// <summary>When the code was minted (Saudi local).</summary>
     public DateTime CreatedAt { get; set; }
 
     /// <summary>When the code was consumed; null while it is still active.</summary>

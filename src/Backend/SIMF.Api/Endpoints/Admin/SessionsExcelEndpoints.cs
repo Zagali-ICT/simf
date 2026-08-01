@@ -19,7 +19,8 @@ namespace SIMF.Api.Endpoints.Admin;
 /// <para>The two foreign keys are exported by a human-readable natural key so the
 /// workbook round-trips back through import: the Hall as its code and the optional
 /// Category as its English name. The <c>Start</c> / <c>End</c> window writes
-/// a round-trip-safe ISO-8601 UTC string, the lifecycle <c>Status</c> writes its
+/// a round-trip-safe <b>zone-free</b> ISO-8601 string (the Saudi wall clock, per
+/// D-813 - never a trailing <c>Z</c>), the lifecycle <c>Status</c> writes its
 /// enum name. The hall/category maps are built once per request inside
 /// <see cref="ListAsync"/> (the base reads <see cref="Columns"/> straight after),
 /// so the column selectors resolve a name without an extra round-trip per row.
@@ -56,8 +57,17 @@ public sealed class ExportSessionsEndpoint(
         new("Hall", row => _hallCodes.TryGetValue(row.HallId, out var code) ? code : string.Empty),
         new("Category", row => row.CategoryId is { } id
             && _categoryNames.TryGetValue(id, out var name) ? name : string.Empty),
-        new("Start", row => row.Start.ToString("yyyy-MM-ddTHH:mm:ss'Z'", CultureInfo.InvariantCulture)),
-        new("End", row => row.End.ToString("yyyy-MM-ddTHH:mm:ss'Z'", CultureInfo.InvariantCulture)),
+        // Zone-free ISO-8601, matching the JSON wire contract (D-813). These
+        // columns used to append a literal 'Z'. Since D-813 the stored value IS
+        // the Saudi wall clock, so the Z was a false claim: a session starting
+        // 09:00 in Riyadh exported as "09:00Z", and any tool that honours the Z
+        // showed it as 06:00. SIMF's own import round-tripped it correctly, which
+        // is exactly why it survived - the damage was only ever visible to
+        // whoever opened the workbook. Same reasoning as
+        // SaudiDateTimeOffsetJsonConverter, which refuses to write Z for this
+        // reason; the workbook is user-facing data and D-813 admits no UTC there.
+        new("Start", row => row.Start.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture)),
+        new("End", row => row.End.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture)),
         new("Capacity", row => row.Capacity),
         new("Status", row => row.Status.ToString()),
         new("IsActive", row => row.IsActive),
@@ -377,9 +387,13 @@ public sealed class ImportSessionsEndpoint(
         return match.Id;
     }
 
-    // Parses a UTC instant from the cell (the export writes ISO-8601 with a 'Z').
-    // Any non-blank value that the round-trip / general parser cannot read is a
-    // per-row error.
+    // Parses a Saudi wall clock from the cell. The export now writes zone-free
+    // ISO-8601; AssumeUniversal + AdjustToUniversal is kept so that workbooks
+    // exported BEFORE this change - which carry a trailing 'Z' - still import to
+    // the same number rather than being shifted by three hours. Both spellings
+    // therefore land on the same wall clock, which is what makes the change
+    // safe to ship without invalidating files already in circulation.
+    // Any non-blank value the parser cannot read is a per-row error.
     private static DateTime ParseUtc(string value, string field)
     {
         var trimmed = value.Trim();

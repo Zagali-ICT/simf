@@ -7,7 +7,10 @@ namespace SIMF.Contracts.Programme;
 /// EN + AR so the app does not need a second fetch; the primary theme
 /// (first by the session's theme order) drives the "Hall · Kind" line
 /// and the agenda colour chip. <see cref="Start"/>/<see cref="End"/>
-/// are UTC — the Flutter agenda renders local time per the device tz.
+/// are the <b>Saudi wall clock</b> (D-813), serialised zone-free with no
+/// trailing <c>Z</c> and no offset. The Flutter agenda renders them verbatim —
+/// it must NOT convert by the device timezone, or a phone set to any other
+/// zone would show the wrong start time for a fixed +03:00 event.
 /// Served by <c>GET /api/v1/app/programme/sessions</c>.</summary>
 public sealed record PublicSessionListItem(
     Guid Id,

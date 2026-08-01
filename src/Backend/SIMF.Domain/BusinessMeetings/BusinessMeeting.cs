@@ -21,10 +21,10 @@ public sealed class BusinessMeeting
     /// may be any mix of companies and visitors.</summary>
     public BusinessMeetingType MeetingType { get; set; }
 
-    /// <summary>Slot start (inclusive, UTC).</summary>
+    /// <summary>Slot start (inclusive, Saudi local).</summary>
     public DateTime Start { get; set; }
 
-    /// <summary>Slot end (exclusive, UTC). Must be after <see cref="Start"/>.</summary>
+    /// <summary>Slot end (exclusive, Saudi local). Must be after <see cref="Start"/>.</summary>
     public DateTime End { get; set; }
 
     /// <summary>Lifecycle state. Confirmed on create; Cancelled after an admin

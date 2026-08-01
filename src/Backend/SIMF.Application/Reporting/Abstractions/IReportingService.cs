@@ -12,7 +12,8 @@ namespace SIMF.Application.Reporting.Abstractions;
 /// report someone paged through still exports completely.</para>
 ///
 /// <para>Date ranges arrive as Saudi calendar dates and are inclusive on both
-/// ends; the implementation resolves them to UTC instants.</para>
+/// ends; the implementation resolves them to a half-open Saudi-local window
+/// (D-813 — nothing is converted to UTC).</para>
 /// </summary>
 public interface IReportingService
 {

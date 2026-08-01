@@ -18,7 +18,7 @@ public class RegistrationGate
     /// <see cref="AutoClose"/> passes.</summary>
     public bool IsOpen { get; set; } = true;
 
-    /// <summary>Optional UTC moment after which the worker auto-closes
+    /// <summary>Optional Saudi-local moment after which the worker auto-closes
     /// the gate. Null means "no scheduled close".</summary>
     public DateTime? AutoClose { get; set; }
 

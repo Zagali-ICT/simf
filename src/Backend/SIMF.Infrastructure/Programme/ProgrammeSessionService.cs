@@ -18,7 +18,8 @@ namespace SIMF.Infrastructure.Programme;
 /// D-199 (gap doc G3, Mockup pages 16-17) — public, anonymous reads over
 /// the programme <see cref="SIMF.Domain.Programme.Session"/> surface.
 /// Read-only sibling of <see cref="AdminSessionService"/>: only active
-/// sessions are returned (<c>IsActive</c>), times stay UTC, and the
+/// sessions are returned (<c>IsActive</c>), times are the Saudi wall clock
+/// (D-813 — no UTC is stored or served), and the
 /// effective capacity is <c>CapacityOverride ?? Hall.Capacity</c>
 /// (PDF §2.9). Seat availability is a single COUNT over active
 /// (non-released) reservations — no per-seat grid (that is the
@@ -52,8 +53,8 @@ internal sealed class ProgrammeSessionService(
             // A6c — half-open EVENT-LOCAL (+03:00) day window [dayStart, nextDayStart).
             // The app sends ProgrammeDay.Date (a Riyadh calendar date) as ?day=, and
             // the day-grouped agenda (ListDaysAsync) buckets by Start,
-            // so this filter must use the SAME +03:00 boundary or the flat list would
-            // disagree with the app's day strip at the UTC-midnight edge. Still a plain
+            // so this filter must use the SAME day boundary or the flat list would
+            // disagree with the app's day strip at the midnight edge. Still a plain
             // range on Start (index-friendly; no EF date-component translation).
             var dayStart = new DateTime(d.Year, d.Month, d.Day, 0, 0, 0);
             var nextDayStart = dayStart.AddDays(1);
@@ -205,10 +206,11 @@ internal sealed class ProgrammeSessionService(
         return new PublicSessions(items);
     }
 
-    /// <summary>The event's local-day boundary (KSA, UTC+3). Sessions are stored
-    /// as true UTC; a "programme day" is a Riyadh calendar day, so sessions are
-    /// bucketed by their start in this zone (a 02:00-KSA session belongs to that
-    /// KSA day, not the previous UTC day).</summary>
+    /// <summary>The event's local-day offset (KSA, +03:00, no DST). Since D-813
+    /// sessions are stored as the Saudi wall clock, so bucketing a session into
+    /// its "programme day" is a plain date comparison with no zone shift. The
+    /// constant is retained because the day boundary is still a Riyadh calendar
+    /// day and callers reason in that offset.</summary>
     private static readonly TimeSpan EventOffset = TimeSpan.FromHours(3);
 
     public async Task<PublicProgrammeDays> ListDaysAsync(

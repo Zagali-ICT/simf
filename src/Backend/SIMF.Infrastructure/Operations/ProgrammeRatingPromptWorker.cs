@@ -393,6 +393,7 @@ internal sealed class ProgrammeRatingPromptWorker(
         return date.ToDateTime(TimeOnly.MinValue).AddDays(1);
     }
 
-    /// <summary>A session's UTC start/end, projected for in-memory day bucketing.</summary>
+    /// <summary>A session's Saudi-local start/end, projected for in-memory day
+    /// bucketing.</summary>
     internal readonly record struct SessionWindow(DateTime Start, DateTime End);
 }

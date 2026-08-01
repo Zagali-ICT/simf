@@ -63,11 +63,11 @@ public class Session : BaseAuditEntity
     /// احداث" type tabs. Null = untyped (only the "الكل / All" tab shows it).</summary>
     public SessionType? Type { get; set; }
 
-    /// <summary>Session start (UTC). The Flutter agenda renders local-
+    /// <summary>Session start (Saudi local). The Flutter agenda renders local-
     /// time per the user's tz.</summary>
     public DateTime Start { get; set; }
 
-    /// <summary>Session end (UTC). Must be > <see cref="Start"/>;
+    /// <summary>Session end (Saudi local). Must be > <see cref="Start"/>;
     /// validated at the service layer.</summary>
     public DateTime End { get; set; }
 

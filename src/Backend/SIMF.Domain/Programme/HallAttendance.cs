@@ -37,7 +37,7 @@ public sealed class HallAttendance
     /// <summary>How this arrival was recorded.</summary>
     public AttendanceMethod Method { get; set; }
 
-    /// <summary>When the attendee entered (UTC).</summary>
+    /// <summary>When the attendee entered (Saudi local).</summary>
     public DateTime Enter { get; set; }
 
     /// <summary>When the attendee left — set on departure or at session end.

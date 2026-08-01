@@ -34,8 +34,9 @@ internal sealed class BusinessMeetingService(
 
     /// <summary>The event's local-day boundary (KSA, UTC+3) — the same convention
     /// the programme uses to bucket a session to a Riyadh calendar day. A meeting's
-    /// start/end are converted to this zone before the forum-day bound is checked so
-    /// a late-evening UTC slot files under the correct event day.</summary>
+    /// start/end are already in this zone (D-813), so the forum-day bound is a
+    /// plain comparison and a late-evening slot files under the correct event
+    /// day without any shift.</summary>
     private static readonly TimeSpan EventOffset = TimeSpan.FromHours(3);
 
     /// <summary>Hard ceiling on the number of active meeting tables a single hall

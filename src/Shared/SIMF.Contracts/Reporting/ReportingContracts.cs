@@ -13,7 +13,7 @@ namespace SIMF.Contracts.Reporting;
 /// <para><see cref="From"/> and <see cref="To"/> are <b>Saudi calendar dates</b>
 /// and the range is <b>inclusive on both ends</b>, which is what an operator
 /// picking "6 to 8 November" means. The service converts each end to the
-/// matching UTC instant; callers never deal in UTC.</para>
+/// matching Saudi-local instant. Nothing anywhere in the chain is UTC (D-813).</para>
 /// </summary>
 public sealed class ReportQuery
 {
@@ -42,8 +42,8 @@ public sealed record AttendanceReportRow(
 
 /// <summary>
 /// One registered account. <c>RegisteredDisplay</c> is a pre-formatted Saudi
-/// date string: the shared XLSX exporter writes a raw <c>DateTime</c> as
-/// UTC, which would put a UTC timestamp in a workbook that must show local time.
+/// date string, so the shared XLSX exporter cannot re-interpret it — a workbook
+/// is user-facing data and must read in Saudi local time.
 /// </summary>
 public sealed record RegistrationReportRow(
     Guid UserId,

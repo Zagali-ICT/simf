@@ -11,7 +11,7 @@ public class OperationLogEntry
 {
     public Guid Id { get; set; }
 
-    /// <summary>When the event occurred (UTC).</summary>
+    /// <summary>When the event occurred (Saudi local).</summary>
     public DateTime Timestamp { get; set; }
 
     /// <summary>The stable event-type name (see <c>AuditEvents</c>).</summary>

@@ -21,13 +21,13 @@ public class AccountCode
     /// <summary>The code value.</summary>
     public string Code { get; set; } = string.Empty;
 
-    /// <summary>When the code expires (UTC).</summary>
+    /// <summary>When the code expires (Saudi local).</summary>
     public DateTime ExpiresAt { get; set; }
 
-    /// <summary>When the code was created (UTC).</summary>
+    /// <summary>When the code was created (Saudi local).</summary>
     public DateTime CreatedAt { get; set; }
 
-    /// <summary>When the code was consumed (UTC); null while it is unused.</summary>
+    /// <summary>When the code was consumed (Saudi local); null while it is unused.</summary>
     public DateTime? ConsumedAt { get; set; }
 
     /// <summary>

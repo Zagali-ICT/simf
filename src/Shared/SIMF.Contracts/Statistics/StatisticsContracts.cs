@@ -31,11 +31,12 @@ public sealed record StatisticsDashboard(
 /// One forum day of the Control Panel programme dashboard — the figures the
 /// organisers watch per day, keyed to a <c>ProgrammeDay</c> row.
 ///
-/// <para>Every count is bucketed on the <b>Saudi calendar day</b>, not the UTC
-/// day. Instants are persisted as UTC (see <c>SaudiTime</c>), so a scan at
-/// 22:00 UTC belongs to the <i>next</i> Saudi day; bucketing on the stored value
-/// directly would misfile every evening record. The service resolves each day to
-/// an explicit UTC half-open window <c>[start, end)</c> before counting.</para>
+/// <para>Every count is bucketed on the <b>Saudi calendar day</b>. Since D-813
+/// instants are persisted as the Saudi wall clock, so the stored value already
+/// falls in the right day and no zone shift is involved; the service still
+/// resolves each day to an explicit half-open window <c>[start, end)</c>,
+/// because a range predicate stays an index-friendly seek where a date-component
+/// expression would not.</para>
 ///
 /// <para><see cref="Present"/> and <see cref="Attended"/> are <b>distinct</b>
 /// person counts and use different identifiers (a gate scan resolves a

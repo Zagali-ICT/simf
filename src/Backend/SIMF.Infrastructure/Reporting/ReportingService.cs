@@ -17,13 +17,13 @@ namespace SIMF.Infrastructure.Reporting;
 /// <para>Two rules apply to every report here:</para>
 /// <list type="number">
 ///   <item>A date range is a range of <b>Saudi calendar days</b>, inclusive on
-///   both ends, resolved once to a UTC half-open window. Instants are stored as
-///   UTC, so filtering on the stored date directly would drop the last three
-///   hours of the final day.</item>
+///   both ends, resolved once to a half-open window. Since D-813 the stored
+///   instants ARE the Saudi wall clock, so no zone shift happens — but the
+///   inclusive upper end still has to become the start of the FOLLOWING day, or
+///   every report silently drops the last day, which is the day people check
+///   first.</item>
 ///   <item>Every date a row carries is a <b>pre-formatted Saudi string</b>, not a
-///   <c>DateTime</c>. The shared XLSX renderer writes a raw
-///   <c>DateTime</c> as <c>UtcDateTime</c>, so handing it a live timestamp
-///   would put UTC into a workbook that has to show local time.</item>
+///   <c>DateTime</c>, so the shared XLSX renderer cannot re-interpret it.</item>
 /// </list>
 /// </summary>
 internal sealed partial class ReportingService(
@@ -41,13 +41,17 @@ internal sealed partial class ReportingService(
     private const int ExportRowCap = 20_000;
 
     /// <summary>
-    /// A report period as a UTC half-open window <c>[Start, End)</c>. Both ends
-    /// are optional: an open end means "no bound in that direction".
+    /// A report period as a half-open window <c>[Start, End)</c> in Saudi local
+    /// time. Both ends are optional: an open end means "no bound in that
+    /// direction".
     /// </summary>
     private readonly record struct ReportWindow(DateTime? Start, DateTime? End);
 
     /// <summary>
-    /// Turns the requested Saudi date range into UTC instants.
+    /// Turns the requested Saudi date range into window bounds. Since D-813 this
+    /// is a relabel, not a conversion — <c>SaudiTime.FromSaudiWallClock</c> only
+    /// stamps the <c>Kind</c>, because the stored value already IS the Saudi wall
+    /// clock. It is kept as the single named seam so the intent stays explicit.
     /// <paramref name="query"/>'s <c>To</c> is the last day the operator wants
     /// INCLUDED, so the exclusive upper bound is the start of the following
     /// Saudi day. Getting that wrong silently drops the final day of every

@@ -107,10 +107,10 @@ public sealed class GateVisitorsListRequest
     /// merge for "all".</summary>
     public ScanOutcome? Outcome { get; set; }
 
-    /// <summary>Optional ISO-8601 UTC lower bound (inclusive).</summary>
+    /// <summary>Optional zone-free ISO-8601 lower bound, Saudi local (inclusive).</summary>
     public DateTime? Since { get; set; }
 
-    /// <summary>Optional ISO-8601 UTC upper bound (exclusive).</summary>
+    /// <summary>Optional zone-free ISO-8601 upper bound, Saudi local (exclusive).</summary>
     public DateTime? Until { get; set; }
 }
 
