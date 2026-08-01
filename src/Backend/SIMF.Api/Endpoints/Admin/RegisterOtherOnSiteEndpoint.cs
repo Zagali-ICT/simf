@@ -4,6 +4,7 @@ using FastEndpoints;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Options;
 using SIMF.Contracts.Authentication;
 
 namespace SIMF.Api.Endpoints.Admin;
@@ -24,7 +25,7 @@ public sealed class RegisterOtherOnSiteEndpoint(IAdminUserProvisioningService se
         Post("/admin/others/register-onsite");
         Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Others.RegisterOnsite), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
-        Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
+        Options(routeBuilder => routeBuilder.RequireRateLimiting(RateLimitOptions.OperationalPolicy));
         Summary(summary => summary.Summary =
             "On-site walk-in registration for an Other account. Creates a PENDING account (D-425); the QR is minted on approval.");
     }

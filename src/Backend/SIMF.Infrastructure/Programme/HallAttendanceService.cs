@@ -4,12 +4,14 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SIMF.Application.AccessControl.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.Notifications;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Options;
 using SIMF.Contracts.Sessions;
 using SIMF.Domain.Programme;
 using SIMF.Infrastructure.Persistence;
@@ -30,12 +32,20 @@ internal sealed class HallAttendanceService(
     IAuditLog auditLog,
     INotificationDispatcher notifications,
     TimeProvider timeProvider,
+    IOptionsMonitor<WalkInModeOptions> walkInMode,
     ILogger<HallAttendanceService> logger) : IHallAttendanceService
 {
     // X-3 — how far outside a session's [Start, End] window an arrival is
     // still accepted (early arrivals + a brief post-end tail). Mirrors the CP
     // Hall-Arrivals console's live-session picker filter.
-    private static readonly TimeSpan ArrivalGrace = TimeSpan.FromMinutes(15);
+    //
+    // D-809 — was a fixed 15 minutes. It is now read from the walk-in mode so a
+    // queue that forms well before a keynote can be pre-scanned; with the mode
+    // disarmed this still resolves to exactly 15 minutes, so nothing changes
+    // until the capability is deliberately armed. Read per call (rather than
+    // cached in a field) so arming it takes effect without a restart.
+    private TimeSpan ArrivalGrace =>
+        walkInMode.CurrentValue.ResolveArrivalGrace(timeProvider.GetUtcNow());
 
     public async Task<HallAttendanceStatus> RecordGeofenceArrivalAsync(
         Guid userId, Guid sessionId, double lat, double lon,
@@ -196,25 +206,63 @@ internal sealed class HallAttendanceService(
             resolved.UserId, resolved.DisplayName, resolved.DisplayNameArabic, status);
     }
 
-    public async Task<bool> RecordGateDoorScanAsync(
-        Guid attendeeUserId, Guid hallId, ScanDirection direction,
-        bool directionInferred, Guid operatorUserId,
+    public async Task<HallEntryEligibility> CheckHallEntryEligibilityAsync(
+        Guid attendeeUserId, Guid hallId,
         CancellationToken cancellationToken = default)
     {
+        var liveSessionId = await ResolveLiveSessionIdAsync(hallId, cancellationToken);
+        if (liveSessionId is not { } sessionId)
+        {
+            // Nothing running in this hall right now, so there is no
+            // registration to check. The gate's other rules still apply.
+            return HallEntryEligibility.NoLiveSession;
+        }
+
+        // Already inside: they were admitted earlier, so a re-scan must not lock
+        // someone out of a hall they are standing in. Checked BEFORE the
+        // reservation so a walk-in admitted while the mode was armed is not
+        // denied re-entry the moment it is disarmed.
+        if (await OpenRowAsync(attendeeUserId, sessionId, cancellationToken) is not null)
+        {
+            return HallEntryEligibility.AlreadyInside;
+        }
+
+        // An active reservation is one that has not been released. Keyed on
+        // ReleasedAt rather than Status because cancelling always stamps
+        // ReleasedAt, which makes this independent of the BookingStatus
+        // lifecycle.
+        var registered = await appDbContext.SeatReservations
+            .AsNoTracking()
+            .AnyAsync(
+                r => r.SessionId == sessionId
+                    && r.ReservedForUserId == attendeeUserId
+                    && r.ReleasedAt == null,
+                cancellationToken);
+
+        return registered
+            ? HallEntryEligibility.Registered
+            : HallEntryEligibility.NotRegistered;
+    }
+
+    /// <summary>
+    /// The session running in this hall right now, within ±<see cref="ArrivalGrace"/>.
+    /// Extracted so the gate-door scan and the D-809 entry check cannot drift
+    /// apart on which session a badge binds to.
+    /// </summary>
+    private async Task<Guid?> ResolveLiveSessionIdAsync(
+        Guid hallId, CancellationToken cancellationToken)
+    {
         var now = timeProvider.GetUtcNow();
-        // X-3 (FIX B) — bind the arrival to the session live in this hall right
-        // now, using the SAME ±ArrivalGrace window as EnsureSessionLiveNow (the
-        // geofence / QR-door / CP picker) so an early or late gate check-in still
-        // binds instead of recording nothing. The window bounds are shifted onto
-        // the constant `now` (not the DateTimeOffset column) so the filter
-        // translates to SQL. A single hall runs one session at a time
-        // (BookingOverlap prevents overlapping hall bookings), so this candidate
-        // set is tiny; the in-memory ordering prefers the currently-running
-        // session over a grace-margin neighbour, then the nearest start (a
-        // defensive tie-break).
-        var latestStart = now + ArrivalGrace;   // s.Start - grace <= now
-        var earliestEnd = now - ArrivalGrace;    // now < s.End + grace
-        var sessionId = (await appDbContext.Sessions
+        var grace = ArrivalGrace;
+        // The window bounds are shifted onto the constant `now` (not the
+        // DateTimeOffset column) so the filter translates to SQL. A single hall
+        // runs one session at a time (BookingOverlap prevents overlapping hall
+        // bookings), so this candidate set is tiny; the in-memory ordering
+        // prefers the currently-running session over a grace-margin neighbour,
+        // then the nearest start (a defensive tie-break).
+        var latestStart = now + grace;   // s.Start - grace <= now
+        var earliestEnd = now - grace;   // now < s.End + grace
+        return (await appDbContext.Sessions
                 .AsNoTracking()
                 .Where(s => s.IsActive && s.HallId == hallId
                     && s.Start <= latestStart && earliestEnd < s.End)
@@ -224,6 +272,21 @@ internal sealed class HallAttendanceService(
             .ThenBy(s => (s.Start - now).Duration())
             .Select(s => (Guid?)s.Id)
             .FirstOrDefault();
+    }
+
+    public async Task<bool> RecordGateDoorScanAsync(
+        Guid attendeeUserId, Guid hallId, ScanDirection direction,
+        bool directionInferred, Guid operatorUserId,
+        CancellationToken cancellationToken = default)
+    {
+        var now = timeProvider.GetUtcNow();
+        // X-3 (FIX B) — bind the arrival to the session live in this hall right
+        // now, using the SAME ±ArrivalGrace window as EnsureSessionLiveNow (the
+        // geofence / QR-door / CP picker) so an early or late gate check-in still
+        // binds instead of recording nothing. D-809 moved the query into
+        // ResolveLiveSessionIdAsync so the step-11.5 entry check binds to exactly
+        // the same session this scan will record against.
+        var sessionId = await ResolveLiveSessionIdAsync(hallId, cancellationToken);
         if (sessionId is not { } liveSessionId)
         {
             // No session live in this hall (± grace) — a door scan outside any

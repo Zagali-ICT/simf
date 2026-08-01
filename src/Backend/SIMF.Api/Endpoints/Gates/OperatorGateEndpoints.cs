@@ -5,6 +5,7 @@ using SIMF.Api.Endpoints.Admin;
 using SIMF.Application.AccessControl;
 using SIMF.Application.AccessControl.Abstractions;
 using SIMF.Common;
+using SIMF.Common.Options;
 using SIMF.Contracts.Gates;
 
 namespace SIMF.Api.Endpoints.Gates;
@@ -53,7 +54,7 @@ public sealed class PostScanEndpoint(IGateOperatorService service)
         Post("/app/gates/{gateId:guid}/scans");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount),
                  PermissionCatalog.PolicyFor(PermissionCatalog.Gates.Operate));
-        Options(rb => rb.RequireRateLimiting("auth"));
+        Options(rb => rb.RequireRateLimiting(RateLimitOptions.OperationalPolicy));
         Tags("Gates");
     }
     public override async Task HandleAsync(PostScanRequest req, CancellationToken ct)
@@ -146,7 +147,7 @@ public sealed class PostGateVisitorsListEndpoint(IGateOperatorService service)
         Post("/app/gates/{gateId:guid}/visitors/list");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount),
                  PermissionCatalog.PolicyFor(PermissionCatalog.Gates.ViewOwnReports));
-        Options(rb => rb.RequireRateLimiting("auth"));
+        Options(rb => rb.RequireRateLimiting(RateLimitOptions.OperationalPolicy));
         Tags("Gates");
     }
     public override async Task HandleAsync(

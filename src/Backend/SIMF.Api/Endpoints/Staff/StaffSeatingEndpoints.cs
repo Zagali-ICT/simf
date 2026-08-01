@@ -7,6 +7,7 @@ using SIMF.Api.Endpoints.Admin; // AuthorizationPolicies
 using SIMF.Application.Files.Abstractions;
 using SIMF.Application.SeatReservations.Abstractions;
 using SIMF.Common;
+using SIMF.Common.Options;
 using SIMF.Contracts.Sessions;
 using SIMF.Infrastructure.Persistence;
 
@@ -41,7 +42,7 @@ public sealed class StaffSeatByBadgeEndpoint(ISeatReservationService service)
         Policies(
             PermissionCatalog.PolicyFor(PermissionCatalog.Seating.Assist),
             nameof(AuthorizationPolicies.RequireApprovedAccount));
-        Options(rb => rb.RequireRateLimiting("auth"));
+        Options(rb => rb.RequireRateLimiting(RateLimitOptions.OperationalPolicy));
         Tags("Staff");
         Summary(s => s.Summary =
             "Staff seating desk: resolve a guest's badge QR to their seat in this session.");

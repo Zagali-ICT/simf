@@ -4,6 +4,7 @@ using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
+using SIMF.Common.Options;
 using SIMF.Contracts.Sessions;
 
 namespace SIMF.Api.Endpoints.Sessions;
@@ -20,7 +21,7 @@ public sealed class RecordArrivalEndpoint(IHallAttendanceService service)
     {
         Post("/app/sessions/{sessionId:guid}/arrival");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
-        Options(rb => rb.RequireRateLimiting("auth"));
+        Options(rb => rb.RequireRateLimiting(RateLimitOptions.OperationalPolicy));
         Tags("Sessions");
     }
 
@@ -44,7 +45,7 @@ public sealed class RecordDepartureEndpoint(IHallAttendanceService service)
     {
         Post("/app/sessions/{sessionId:guid}/departure");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
-        Options(rb => rb.RequireRateLimiting("auth"));
+        Options(rb => rb.RequireRateLimiting(RateLimitOptions.OperationalPolicy));
         Tags("Sessions");
     }
 

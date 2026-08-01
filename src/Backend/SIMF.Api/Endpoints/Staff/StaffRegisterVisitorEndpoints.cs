@@ -7,6 +7,7 @@ using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Options;
 using SIMF.Contracts.Authentication;
 
 namespace SIMF.Api.Endpoints.Staff;
@@ -33,7 +34,7 @@ public sealed class StaffRegisterVisitorEndpoint(IAdminUserProvisioningService s
             PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.RegisterOnsite),
             nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Staff");
-        Options(rb => rb.RequireRateLimiting("auth"));
+        Options(rb => rb.RequireRateLimiting(RateLimitOptions.OperationalPolicy));
         Summary(s => s.Summary =
             "Staff-app on-site walk-in visitor registration. Creates a PENDING account (D-425); the QR is minted on approval.");
     }
@@ -76,7 +77,7 @@ public sealed class StaffUploadVisitorIdDocumentEndpoint(
             PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.RegisterOnsite),
             nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Staff");
-        Options(rb => rb.RequireRateLimiting("auth"));
+        Options(rb => rb.RequireRateLimiting(RateLimitOptions.OperationalPolicy));
         AllowFileUploads();
         Summary(s => s.Summary =
             "Staff-app upload of a walk-in visitor's ID-document image.");
@@ -152,7 +153,7 @@ public sealed class StaffUploadVisitorAvatarEndpoint(IAccountService accountServ
             PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.RegisterOnsite),
             nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Staff");
-        Options(rb => rb.RequireRateLimiting("auth"));
+        Options(rb => rb.RequireRateLimiting(RateLimitOptions.OperationalPolicy));
         AllowFileUploads();
         Summary(s => s.Summary =
             "Staff-app upload of a walk-in visitor's profile photo (avatar).");

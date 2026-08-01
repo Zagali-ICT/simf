@@ -67,6 +67,20 @@ internal sealed class ProfileTypeConfiguration : IEntityTypeConfiguration<UserPr
             .HasDefaultValue(true)
             .IsRequired();
 
+        // D-809 — the small stable number the offline event badge carries in
+        // place of the Guid id. Default 0 = unassigned, which no badge can
+        // carry. Unique among ACTIVE rows only, mirroring the Name index below,
+        // so a soft-deleted type does not permanently reserve its code — but
+        // note the code of a type whose badges are still in circulation must
+        // NOT be reused, which is an operational rule, not a DB one.
+        builder.Property(profileType => profileType.Code)
+            .HasDefaultValue((short)0)
+            .IsRequired();
+
+        builder.HasIndex(profileType => profileType.Code)
+            .IsUnique()
+            .HasFilter("[IsActive] = 1 AND [Code] <> 0");
+
         // D-186 — after the UserType collapse every profile type is
         // Visitor-scope; the CP picker + approval queues filter by
         // (IsForVisitor, IsActive), so one composite index serves both.

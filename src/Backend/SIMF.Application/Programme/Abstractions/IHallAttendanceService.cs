@@ -81,4 +81,50 @@ public interface IHallAttendanceService
         Guid attendeeUserId, Guid hallId, ScanDirection direction,
         bool directionInferred, Guid operatorUserId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// D-809 (gate engine step 11.5) — may this attendee ENTER the session
+    /// running in this hall right now?
+    ///
+    /// <para>This is the third of the three gate rules: a main gate requires an
+    /// approved account, any gate requires an allowed profile type, and a
+    /// SESSION HALL requires the attendee to be registered for the session. That
+    /// third rule previously had no implementation — the
+    /// <see cref="DenialReasonCode.BookingRequiredMissing"/> value existed as a
+    /// reserved hook with no writer, so any valid badge opened every hall.</para>
+    ///
+    /// <para>Lives here rather than in the gate engine so the "which session is
+    /// live in this hall" window stays defined in exactly one place, shared with
+    /// <see cref="RecordGateDoorScanAsync"/>.</para>
+    ///
+    /// <para>Callers must apply this only to an ENTRY. A departure is never
+    /// blocked: someone already inside must always be able to leave.</para>
+    /// </summary>
+    Task<HallEntryEligibility> CheckHallEntryEligibilityAsync(
+        Guid attendeeUserId, Guid hallId,
+        CancellationToken cancellationToken = default);
+}
+
+/// <summary>
+/// D-809 — the outcome of the session-hall entry check (gate engine step 11.5).
+/// </summary>
+public enum HallEntryEligibility
+{
+    /// <summary>No session is live in this hall within the arrival window, so
+    /// there is no registration to check. The gate's other rules still apply;
+    /// this one simply has nothing to say.</summary>
+    NoLiveSession = 0,
+
+    /// <summary>The attendee holds an active seat reservation for the live
+    /// session. Admit.</summary>
+    Registered = 1,
+
+    /// <summary>The attendee is already inside (an open attendance row), so they
+    /// were admitted earlier. Re-scanning must not lock someone out of a hall
+    /// they are standing in.</summary>
+    AlreadyInside = 2,
+
+    /// <summary>A session is live and the attendee has no reservation for it.
+    /// Denied unless the walk-in mode is armed.</summary>
+    NotRegistered = 3,
 }

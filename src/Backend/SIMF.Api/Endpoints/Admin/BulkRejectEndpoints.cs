@@ -3,6 +3,7 @@ using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
+using SIMF.Common.Options;
 using SIMF.Contracts.Authentication;
 
 namespace SIMF.Api.Endpoints.Admin;
@@ -21,7 +22,7 @@ public sealed class BulkRejectVisitorsEndpoint(IAdminUserApprovalService service
         Post("/admin/visitors/bulk-reject");
         Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.Reject),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
-        Options(rb => rb.RequireRateLimiting("auth"));
+        Options(rb => rb.RequireRateLimiting(RateLimitOptions.OperationalPolicy));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Bulk-reject a batch of pending visitors with a shared reason. Up to 500 ids per request.");
@@ -51,7 +52,7 @@ public sealed class BulkRejectOthersEndpoint(IAdminUserApprovalService service)
         Post("/admin/others/bulk-reject");
         Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Others.Reject),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
-        Options(rb => rb.RequireRateLimiting("auth"));
+        Options(rb => rb.RequireRateLimiting(RateLimitOptions.OperationalPolicy));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Bulk-reject a batch of pending partner (Other) accounts with a shared reason. Up to 500 ids per request.");

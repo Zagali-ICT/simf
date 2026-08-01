@@ -4,11 +4,13 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SIMF.Application.AccessControl.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common.Enums;
+using SIMF.Common.Options;
 using SIMF.Contracts.Gates;
 using SIMF.Domain.AccessControl;
 using SIMF.Infrastructure.Persistence;
@@ -30,13 +32,20 @@ internal sealed class GateOperatorService(
     IHallAttendanceService hallAttendance,
     IAuditLog auditLog,
     TimeProvider timeProvider,
+    IOptionsMonitor<WalkInModeOptions> walkInMode,
     ILogger<GateOperatorService> logger) : IGateOperatorService
 {
     private const string ArabicLanguageCode = "ar";
-    // GateScan.QrIdAtScan column width (GateScanConfiguration.HasMaxLength(32)). A
-    // normalised QR longer than this can never be a badge (UserProfile.QrId is 16)
-    // and would truncate on insert, so it is denied as QrUnknown rather than stored.
-    private const int QrIdAtScanMaxLength = 32;
+    // GateScan.QrIdAtScan column width (GateScanConfiguration.HasMaxLength(64)).
+    // A normalised QR longer than this would truncate the append-only scan row on
+    // insert, so it is denied as QrUnknown rather than stored.
+    //
+    // D-809 — raised 32 -> 64. The bound is NOT removed: it still guards the
+    // insert against an over-length mis-scan. It is widened because a badge is no
+    // longer only a 12-character serial — an offline event badge is an encrypted
+    // payload of ~54 characters, and the whole blob is stored so the audit row is
+    // exactly what was presented at the gate.
+    private const int QrIdAtScanMaxLength = 64;
     private static readonly TimeSpan DuplicateWindow = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan IdempotencyRetention = TimeSpan.FromHours(24);
 
@@ -87,12 +96,12 @@ internal sealed class GateOperatorService(
 
         var qr = QrId.Normalise(context.Request.Qr ?? string.Empty);
 
-        // #14 — GateScan.QrIdAtScan is nvarchar(32) (GateScanConfiguration) and a
-        // real badge QrId is at most 16 chars, so a normalised value longer than the
-        // column can never resolve to a badge and would truncate the append-only scan
-        // row on insert (a 500 for an ordinary over-length mis-scan). Deny it as the
-        // documented QrUnknown at HTTP 200, storing a length-capped QrIdAtScan so the
-        // log row still fits — the same denial the unresolved-QR path below records.
+        // #14 (D-809: bound raised to the widened nvarchar(64) column) — a
+        // normalised value longer than the column would truncate the append-only
+        // scan row on insert (a 500 for an ordinary over-length mis-scan). Deny it
+        // as the documented QrUnknown at HTTP 200, storing a length-capped
+        // QrIdAtScan so the log row still fits — the same denial the unresolved-QR
+        // path below records.
         if (qr.Length > QrIdAtScanMaxLength)
         {
             return await RecordDenialAsync(
@@ -129,8 +138,9 @@ internal sealed class GateOperatorService(
         var coldStart = ResolveDirection(snapshot, context.Request.RequestedDirection, null);
 
         // Steps 5–9: per-row predicate → denial reason, ordered. Step 9.5
-        // (time-window) and step 11.5 (booking-required) are reserved hooks
-        // for later increments — no rows here today.
+        // (time-window) is still a reserved hook — no row here today. Step 11.5
+        // (booking-required) is implemented as of D-809 and runs after the
+        // allow-list below, because it needs the resolved direction.
         var simpleChecks = new (bool failed, DenialReasonCode reason)[]
         {
             (!snapshot.IsActive,                              DenialReasonCode.GateInactiveAtScan),
@@ -194,6 +204,36 @@ internal sealed class GateOperatorService(
             return await RecordDenialAsync(context, qrIdAtScan: qr, denialCtx,
                 direction: direction, reason: DenialReasonCode.ProfileTypeNotAllowed,
                 requestHash, idempotencyKey, cancellationToken);
+        }
+
+        // Step 11.5 — D-809: a SESSION HALL door additionally requires the
+        // attendee to be registered for the session running behind it. This is
+        // the third of the three access rules (approved at the main gate,
+        // profile type allowed at any gate, registered at a session hall) and
+        // was previously unimplemented: DenialReasonCode.BookingRequiredMissing
+        // existed as a reserved hook with no writer, so any valid badge opened
+        // every hall.
+        //
+        // Applied to ENTRIES only. A departure is never blocked — someone
+        // already inside must always be able to leave — and CheckHallEntry
+        // returns AlreadyInside for an attendee with an open row, which also
+        // covers a Both-mode gate whose direction was only inferred.
+        //
+        // The walk-in mode relaxes THIS rule and only this one; approved and
+        // profile-type-allowed above always hold.
+        if (snapshot.HallId is { } sessionHallId && direction == ScanDirection.CheckIn)
+        {
+            var eligibility = await hallAttendance.CheckHallEntryEligibilityAsync(
+                resolution.UserId, sessionHallId, cancellationToken);
+
+            if (eligibility == HallEntryEligibility.NotRegistered
+                && !walkInMode.CurrentValue.SessionWalkInActive(timeProvider.GetUtcNow()))
+            {
+                return await RecordDenialAsync(context, qrIdAtScan: qr, denialCtx,
+                    direction: direction,
+                    reason: DenialReasonCode.BookingRequiredMissing,
+                    requestHash, idempotencyKey, cancellationToken);
+            }
         }
 
         return await RecordAllowedAsync(context, qr, resolution, direction,

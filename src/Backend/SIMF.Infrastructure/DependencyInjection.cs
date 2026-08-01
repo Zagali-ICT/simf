@@ -208,6 +208,14 @@ public static class DependencyInjection
                 "Storage:AvatarBase must be configured (filesystem path for user avatars).")
             .ValidateOnStart();
 
+        // D-809 — the standby walk-in capability. Bound WITHOUT ValidateOnStart
+        // and with no required values: every switch defaults to off, so an
+        // absent section is the normal, correct state and must never block boot.
+        // Consumers take IOptionsMonitor so arming it in appsettings /
+        // set-env-* takes effect without a restart.
+        services.Configure<WalkInModeOptions>(
+            configuration.GetSection(WalkInModeOptions.SectionName));
+
         // R3 — D-076: Application code asks for SimfUser through this
         // repository abstraction; UserManager stays in Infrastructure.
         // R3.5 — D-094: the 22-method aggregate is split into five role-
