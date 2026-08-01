@@ -32,7 +32,7 @@ internal sealed class BusinessMeetingService(
 {
     private const int MaxParticipants = 50;
 
-    /// <summary>The event's local-day boundary (KSA, UTC+3) — the same convention
+    /// <summary>The event's local-day boundary (KSA, +03:00) — the same convention
     /// the programme uses to bucket a session to a Riyadh calendar day. A meeting's
     /// start/end are already in this zone (D-813), so the forum-day bound is a
     /// plain comparison and a late-evening slot files under the correct event

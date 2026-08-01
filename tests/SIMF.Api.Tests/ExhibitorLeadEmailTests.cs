@@ -66,7 +66,7 @@ public sealed class ExhibitorLeadEmailTests : IClassFixture<ExhibitorLeadEmailAp
         Assert.Contains("Booth A3 follow-up", message.HtmlBody, StringComparison.Ordinal);
         // Bilingual: the EN block, the rule, then the RTL AR block.
         Assert.Contains("dir=\"rtl\"", message.HtmlBody, StringComparison.Ordinal);
-        // D-219 — the scan time is the Saudi wall clock (12-hour AM/PM), never UTC.
+        // D-219 — the scan time is the Saudi wall clock (12-hour AM/PM), never a zoned stamp.
         Assert.Contains(
             _factory.Time.SimfNow().FormatSaudi(), message.HtmlBody, StringComparison.Ordinal);
         // The raw badge QR id is never in the message.

@@ -30,7 +30,7 @@ internal sealed class VipRosterService(
     {
         "Mawj ID", "Honorific", "Tier", "English name", "Arabic name",
         "Display name", "Job title", "Job title (Arabic)", "Preferred language", "Email", "Mobile",
-        "Reference", "State", "Has photo", "Registered (UTC)",
+        "Reference", "State", "Has photo", "Registered",
     };
 
     public async Task<IReadOnlyList<VipRosterRow>> GetRosterAsync(

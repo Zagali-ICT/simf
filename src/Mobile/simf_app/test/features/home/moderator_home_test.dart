@@ -25,7 +25,8 @@ ModeratedSession _session(String id, {String title = 'Opening Panel'}) =>
       titleArabic: 'الجلسة الافتتاحية',
       hallName: 'Main Hall',
       hallNameArabic: 'القاعة الرئيسية',
-      // 09:00 Saudi (+3) — the tile renders the local wall clock, never UTC.
+      // 09:00 Saudi (+3) — the tile renders the local wall clock, never a zoned
+      // stamp.
       start: DateTime(2026, 3, 1, 9),
       end: DateTime(2026, 3, 1, 10),
     );
@@ -113,7 +114,7 @@ void main() {
       expect(find.text('Opening Panel'), findsOneWidget);
       expect(find.text('Closing Panel'), findsOneWidget);
       // Hall + Saudi wall clock (09:00, +3 from the 06:00Z above), 12-hour and
-      // never a UTC instant.
+      // never a absolute instants.
       expect(find.textContaining('Main Hall'), findsWidgets);
       expect(find.textContaining('9:00 AM'), findsWidgets);
       // The programme entry stays — a moderator still browses every session.

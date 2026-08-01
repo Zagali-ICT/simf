@@ -204,7 +204,7 @@ public sealed class ProgrammeDaysTests : IClassFixture<SimfApiFactory>
         var day = (await dayCreate.Content
             .ReadFromJsonAsync<ApiResult<AdminProgrammeDayDetail>>())!.Data!;
 
-        // 08:00 UTC on the date → 11:00 KSA (+3), still the same calendar day,
+        // 08:00 a zoned value on the date → 11:00 KSA (+3), still the same calendar day,
         // so the session buckets onto the authored day.
         var speakerId = await SeedSpeakerAsync();
         var start = new DateTime(date.Year, date.Month, date.Day, 8, 0, 0);

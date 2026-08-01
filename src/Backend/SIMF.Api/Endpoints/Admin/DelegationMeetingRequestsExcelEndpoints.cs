@@ -43,7 +43,7 @@ public sealed class ExportDelegationMeetingRequestsEndpoint(
         new("Subject", row => row.Subject),
         new("Status", row => row.Status.ToString()),
         new("SlotStart", row => Stamp(row.SlotStart)),
-        new("CreatedAt", row => row.CreatedAt.ToString("yyyy-MM-dd HH:mm 'UTC'")),
+        new("CreatedAt", row => row.CreatedAt.ToString("yyyy-MM-dd HH:mm")),
         new("RespondedAt", row => Stamp(row.RespondedAt)),
         // OA-D5 — the hall check-in stamps, the whole point of this export.
         new("CheckedInAt", row => Stamp(row.CheckedInAt)),
@@ -68,5 +68,5 @@ public sealed class ExportDelegationMeetingRequestsEndpoint(
     private static string Stamp(DateTime? value) =>
         value is null
             ? string.Empty
-            : value.Value.ToString("yyyy-MM-dd HH:mm 'UTC'");
+            : value.Value.ToString("yyyy-MM-dd HH:mm");
 }

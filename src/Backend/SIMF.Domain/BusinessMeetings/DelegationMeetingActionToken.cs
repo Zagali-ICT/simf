@@ -11,7 +11,7 @@ namespace SIMF.Domain.BusinessMeetings;
 /// member-decline either; declines stay with the admin. Only the keyed-HMAC
 /// <see cref="TokenHash"/> of the high-entropy secret is persisted — the raw secret
 /// lives only in the emailed URL. A token is dead once <see cref="UsedAt"/> is set,
-/// once <see cref="ExpiresUtc"/> passes, or once its request leaves
+/// once <see cref="ExpiresAt"/> passes, or once its request leaves
 /// <c>AwaitingSpeaker</c> (validated on redemption). New additive table (D-219 lift);
 /// the frozen speaker <see cref="MeetingActionToken"/> table is left untouched (§20 —
 /// indirect solution over modifying frozen code).
@@ -32,7 +32,7 @@ public sealed class DelegationMeetingActionToken
 
     /// <summary>When the token expires (Saudi local) — 72h after mint (mirrors the speaker
     /// token TTL, <see cref="Common.Options.MeetingLinksOptions.TokenTtlHours"/>).</summary>
-    public DateTime ExpiresUtc { get; set; }
+    public DateTime ExpiresAt { get; set; }
 
     /// <summary>When the token was consumed (Saudi local); null while unused. Single-use.</summary>
     public DateTime? UsedAt { get; set; }

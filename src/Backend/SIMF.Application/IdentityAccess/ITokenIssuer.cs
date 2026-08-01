@@ -12,9 +12,9 @@ namespace SIMF.Application.IdentityAccess;
 /// <para><b>Why it exists.</b> Those paths each carried their own ~15-line copy
 /// of "resolve roles, resolve permissions, resolve the mobile app role, sign an
 /// access token, persist a refresh token". Two copies had already drifted: the
-/// device-key path did not record <c>LastSuccessfulSignInAtUtc</c>, so an
+/// device-key path did not record <c>LastSuccessfulSignInAt</c>, so an
 /// attendee who only ever signed in with Face ID looked dormant to the A1-19
-/// sweep, and it returned no <c>PreviousSignInAtUtc</c>. A future claim or a
+/// sweep, and it returned no <c>PreviousSignInAt</c>. A future claim or a
 /// change to the D-443 absolute session cap would have had to be made in every
 /// copy, and a missed one is invisible until an auditor finds it.</para>
 ///

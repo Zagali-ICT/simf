@@ -379,7 +379,7 @@ internal sealed class ExhibitorVisitorService(
             ["Organisation"] = FirstFilled(card.Organisation, card.OrganisationArabic, NotProvidedEn),
             ["OrganisationArabic"] =
                 FirstFilled(card.OrganisationArabic, card.Organisation, NotProvidedAr),
-            // D-219 — Saudi wall clock, 12-hour. No user-facing UTC.
+            // D-219 — Saudi wall clock, 12-hour. No user-facing zoned stamp.
             ["ScannedAt"] = scannedAt.FormatSaudi(),
             ["Note"] = string.IsNullOrWhiteSpace(note) ? NoNote : note,
         };

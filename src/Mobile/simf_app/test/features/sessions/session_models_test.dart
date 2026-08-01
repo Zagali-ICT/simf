@@ -90,7 +90,7 @@ void main() {
       expect(item.status, SessionStatus.published);
       expect(item.hasPublishedSummary, isTrue);
       // Saudi wall-clock carries no zone, so a decoded value must NOT be
-      // tagged UTC: tagging it would let a later toLocal() shift it by the
+      // left untagged: tagging it would let a later toLocal() shift it by the
       // device offset (owner decision 2026-07-31).
       expect(item.start.isUtc, isFalse);
 
@@ -209,7 +209,8 @@ void main() {
     });
 
     test('a day filter keeps only that local calendar day', () {
-      // Use the session's own local day so the assertion is timezone-independent.
+      // Use the session's own local day so the assertion is
+      // timezone-independent.
       final localDay = DateTime(
         future.startLocal.year,
         future.startLocal.month,

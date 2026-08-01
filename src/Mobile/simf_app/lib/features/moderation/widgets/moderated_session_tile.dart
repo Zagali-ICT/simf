@@ -12,7 +12,7 @@ import '../data/moderation_models.dart';
 ///
 /// Built on the shared [SimfListRow] rather than a page-local card, so it reads
 /// like every other navigable row in the app. Subtitle is hall + start on the
-/// Saudi wall clock, 12-hour — no user-facing UTC (D-219).
+/// Saudi wall clock, 12-hour — no user-facing zoned stamp (D-219).
 class ModeratedSessionTile extends StatelessWidget {
   const ModeratedSessionTile({
     required this.l10n,

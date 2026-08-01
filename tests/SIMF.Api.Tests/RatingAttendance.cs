@@ -17,7 +17,7 @@ namespace SIMF.Api.Tests;
 
 internal static class RatingAttendance
 {
-    // Event-local offset (UTC+3) — the codebase convention the PerDay gate uses.
+    // Event-local offset (+03:00) — the codebase convention the PerDay gate uses.
     private static readonly TimeSpan EventOffset = TimeSpan.FromHours(3);
 
     /// <summary>The <c>SimfUser.Id</c> for a test email (Identity DB).</summary>
@@ -45,7 +45,7 @@ internal static class RatingAttendance
             var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
             date = await db.ProgrammeDays.Where(d => d.Id == dayId).Select(d => d.Date).SingleAsync();
         }
-        // Noon on the day, in event-local time, is unambiguously inside its UTC window.
+        // Noon on the day, in event-local time, is unambiguously inside its day window.
         var start = date.ToDateTime(new TimeOnly(12, 0));
         await SeedOnNewSessionAsync(factory, userId, start);
     }
@@ -127,7 +127,7 @@ internal static class RatingAttendance
     }
 
     /// <summary>A venue-gate Check-In scan on the event-local day of
-    /// <paramref name="dayId"/> (noon, UTC+3) with no in-hall attendance.</summary>
+    /// <paramref name="dayId"/> (noon, +03:00) with no in-hall attendance.</summary>
     internal static async Task SeedGateCheckInOnDayAsync(
         SimfApiFactory factory, Guid userId, Guid dayId)
     {

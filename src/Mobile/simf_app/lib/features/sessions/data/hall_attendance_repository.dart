@@ -38,7 +38,7 @@ enum HallAttendanceMethod {
 
 /// P5.1 / D-241 — the caller's own attendance state for one session.
 /// [arrived] is true while an open attendance row exists (entered, not yet
-/// left). [enter] / [leave] are stored UTC instants — render them through
+/// left). [enter] / [leave] are stored absolute instants — render them through
 /// [formatSaudiTime12], never `toLocal()` (D-770).
 class HallAttendanceStatus {
   const HallAttendanceStatus({

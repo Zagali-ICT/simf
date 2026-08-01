@@ -71,7 +71,8 @@ class ServerAppUpdateChecker implements AppUpdateChecker {
       StorageKeys.appUpdateSnoozedAtIso,
       // Zone-free, on the project's own clock. This wrote toUtc() until
       // 2026-08-01; the value is a device-local snooze marker that is never
-      // sent or displayed, so UTC bought nothing and meant a second time
+      // sent or displayed, so a second clock bought nothing and meant a second
+      // time
       // source existed alongside saudiNow().
       formatWire(_now()),
     );

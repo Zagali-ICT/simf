@@ -312,7 +312,7 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
     public async Task Day_filter_restricts_to_that_event_local_calendar_day()
     {
         // A6c — the ?day= window is the event-local (+03:00) calendar day. These
-        // 09:00-UTC sessions (12:00 KSA) sit squarely inside their day under either
+        // 09:00-a zoned value sessions (12:00 KSA) sit squarely inside their day under either
         // offset, so this pins the basic same-day-in / next-day-out behaviour; the
         // boundary case is covered by Day_filter_uses_the_event_local_day_boundary.
         var admin = await CreateAdminAsync();
@@ -340,11 +340,11 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Day_filter_uses_the_event_local_day_boundary()
     {
-        // A6c — a session at 01:00 KSA (= 22:00 UTC the PREVIOUS calendar date)
+        // A6c — a session at 01:00 KSA (= 22:00 a zoned value the PREVIOUS calendar date)
         // belongs to its KSA day, matching ProgrammeDay.Date and the day-grouped
         // agenda (ListDaysAsync). ?day={KSA date} must INCLUDE it, and ?day={the
-        // prior UTC date} must EXCLUDE it. Under the old UTC-midnight window this
-        // session filed under the prior UTC day, so this pins the +03:00 boundary.
+        // prior a zoned value date} must EXCLUDE it. Under the old midnight-elsewhere window this
+        // session filed under the prior a zoned value day, so this pins the +03:00 boundary.
         var admin = await CreateAdminAsync();
         var hallId = await CreateHallAsync(admin);
         var speakerId = await CreateSpeakerAsync(admin);
@@ -354,7 +354,7 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
 
         // The stored value IS the KSA calendar day — there is no second date to
         // straddle any more. This assertion used to read NotEqual, because 01:00
-        // KSA was stored as 22:00 UTC on the PRIOR date; that is exactly the
+        // KSA was stored as 22:00 a zoned value on the PRIOR date; that is exactly the
         // misfiling the conversion removed, so pinning the equality is what keeps
         // it removed.
         Assert.Equal(ksaDay.Date, start.Date);

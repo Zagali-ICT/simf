@@ -206,7 +206,7 @@ internal static class AuthFlow
     /// <summary>The current authenticator code for a base32 secret.</summary>
     /// <remarks>
     /// TOTP counts 30-second steps from the UNIX epoch, so this is deliberately
-    /// UTC. The rest of SIMF stores Saudi local wall-clock through
+    /// a zoned value. The rest of SIMF stores Saudi local wall-clock through
     /// <see cref="SimfClock"/>; using that here would put every code three hours
     /// out and no code would ever verify.
     /// </remarks>

@@ -29,7 +29,8 @@ enum SessionPhase {
 }
 
 /// Classifies a session's [SessionPhase] from its `[start, end)` window
-/// against [nowUtc] (all three UTC). Start-inclusive, end-exclusive: exactly at
+/// against [nowUtc] (all three on the same clock). Start-inclusive,
+/// end-exclusive: exactly at
 /// the start it is [SessionPhase.live], exactly at the end it is
 /// [SessionPhase.ended]. A zero-length or inverted window still resolves
 /// deterministically (before start → upcoming, else → ended).

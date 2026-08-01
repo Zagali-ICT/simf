@@ -65,7 +65,7 @@ public sealed class ExportSessionsEndpoint(
         // is exactly why it survived - the damage was only ever visible to
         // whoever opened the workbook. Same reasoning as
         // SaudiDateTimeOffsetJsonConverter, which refuses to write Z for this
-        // reason; the workbook is user-facing data and D-813 admits no UTC there.
+        // reason; the workbook is user-facing data and D-813 admits nothing zoned there.
         new("Start", row => row.Start.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture)),
         new("End", row => row.End.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture)),
         new("Capacity", row => row.Capacity),

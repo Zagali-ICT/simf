@@ -160,7 +160,7 @@ public sealed class DelegationMeetingActionTokenTests : IClassFixture<SimfApiFac
         await db.DelegationMeetingActionTokens
             .Where(t => t.DelegationMeetingRequestId == requestId)
             .ExecuteUpdateAsync(s => s.SetProperty(
-                t => t.ExpiresUtc, SimfClock.Now.AddHours(-1)));
+                t => t.ExpiresAt, SimfClock.Now.AddHours(-1)));
     }
 
     private async Task SetStatusAsync(Guid requestId, MeetingRequestStatus status)

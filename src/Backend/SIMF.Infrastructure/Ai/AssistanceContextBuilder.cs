@@ -31,10 +31,10 @@ internal sealed class AssistanceContextBuilder(
         var builder = new StringBuilder();
 
         AiGroundingText.AppendCappedSection(builder,
-            "## Programme sessions (title EN / AR · start-end UTC · hall)",
+            "## Programme sessions (title EN / AR · start-end · hall)",
             agenda.Items.Select(session =>
                 $"- {session.Title} / {session.TitleArabic} · "
-                + $"{Utc(session.Start)}-{session.End.ToString("HH:mm", CultureInfo.InvariantCulture)} · "
+                + $"{Stamp(session.Start)}-{session.End.ToString("HH:mm", CultureInfo.InvariantCulture)} · "
                 + $"{session.HallName} / {session.HallNameArabic}"));
 
         AiGroundingText.AppendCappedSection(builder,
@@ -54,6 +54,6 @@ internal sealed class AssistanceContextBuilder(
         return builder.ToString().TrimEnd();
     }
 
-    private static string Utc(DateTime value) =>
+    private static string Stamp(DateTime value) =>
         value.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
 }

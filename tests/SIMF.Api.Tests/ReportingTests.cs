@@ -1,7 +1,7 @@
 // The reporting module: POST /api/v1/admin/reports/{slug}/list and /export.
 //
 // The behaviour worth guarding is the DATE RANGE. From and To are inclusive
-// Saudi calendar days, and instants are stored as UTC, so the exclusive upper
+// Saudi calendar days, and instants are stored as a zoned value, so the exclusive upper
 // bound has to be the start of the day AFTER To. Get that wrong and every report
 // silently drops its final day, which is the day people look at first.
 //
@@ -88,8 +88,8 @@ public sealed class ReportingTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task A_session_late_on_the_last_saudi_evening_is_included()
     {
-        // 23:30 Riyadh on the To day is 20:30 UTC the same day, but 01:00 Riyadh
-        // the NEXT day is 22:00 UTC on the To day. Only the first belongs.
+        // 23:30 Riyadh on the To day is 20:30 a zoned value the same day, but 01:00 Riyadh
+        // the NEXT day is 22:00 a zoned value on the To day. Only the first belongs.
         var token = await CreateAdministratorAndSignInAsync();
         var day = NextBlock();
         var hallId = await SeedHallAsync();
@@ -193,7 +193,7 @@ public sealed class ReportingTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Dates_are_rendered_in_saudi_local_time_never_utc()
     {
-        // 01:00 Riyadh is 22:00 UTC the previous day. The rendered string must
+        // 01:00 Riyadh is 22:00 a zoned value the previous day. The rendered string must
         // show the Saudi wall clock, or the report contradicts every other
         // surface (D-770).
         var token = await CreateAdministratorAndSignInAsync();

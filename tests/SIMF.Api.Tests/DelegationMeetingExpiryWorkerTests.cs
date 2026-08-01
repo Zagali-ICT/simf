@@ -173,7 +173,7 @@ public sealed class DelegationMeetingExpiryWorkerTests : IClassFixture<SimfApiFa
             Id = Guid.NewGuid(),
             DelegationMeetingRequestId = req.Id,
             TokenHash = "hash-" + Guid.NewGuid().ToString("N"),
-            ExpiresUtc = tokenExpires,
+            ExpiresAt = tokenExpires,
             UsedAt = tokenUsed ? SimfClock.Now : null,
             CreatedAt = SimfClock.Now,
         });

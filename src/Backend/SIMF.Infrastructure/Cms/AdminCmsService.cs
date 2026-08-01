@@ -234,7 +234,7 @@ internal sealed class AdminCmsService(
             ("title", true) => rows.OrderByDescending(b => b.Title),
             // "start" / "end" match the grid column Keys in BannersList.razor. They
             // read "startutc" / "endutc" until 2026-08-01, left behind when D-770
-            // renamed the *Utc columns, so neither date column sorted at all: both
+            // renamed the persisted columns, so neither date column sorted at all: both
             // fell through to the catch-all and the grid stayed on DisplayOrder.
             ("start", false) => rows.OrderBy(b => b.Start),
             ("start", true) => rows.OrderByDescending(b => b.Start),

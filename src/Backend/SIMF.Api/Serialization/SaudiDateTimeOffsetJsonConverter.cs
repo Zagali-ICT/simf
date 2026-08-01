@@ -8,9 +8,9 @@ namespace SIMF.Api.Serialization;
 /// The wire format for every API <see cref="DateTime"/>.
 ///
 /// <para>Owner decision 2026-07-31 — SIMF carries Saudi local wall-clock time and
-/// <b>no UTC anywhere</b>. Values are written as naive ISO-8601 with <b>no zone
+/// <b>nothing zoned anywhere</b>. Values are written as naive ISO-8601 with <b>no zone
 /// suffix and no offset</b> (<c>2026-11-23T09:00:00</c>), because a stored value
-/// already IS the Saudi wall clock: appending <c>Z</c> would claim it is UTC and
+/// already IS the Saudi wall clock: appending <c>Z</c> would claim it is zoned and
 /// every client would then shift it by three hours, and appending <c>+03:00</c>
 /// would invite clients to re-project it into their own device timezone. A bare
 /// local timestamp is the only form that survives both.</para>
@@ -32,12 +32,11 @@ public sealed class SaudiDateTimeOffsetJsonConverter : JsonConverter<DateTime>
     {
         var value = reader.GetDateTime();
 
-        // GetDateTime() converts a trailing "Z" / offset into the host's LOCAL
-        // time, which on a non-Saudi server is not the number the caller sent.
-        // Take the wall-clock reading the caller wrote and drop the zone.
-        return value.Kind == DateTimeKind.Utc
-            ? DateTime.SpecifyKind(value.ToUniversalTime(), DateTimeKind.Unspecified)
-            : DateTime.SpecifyKind(value, DateTimeKind.Unspecified);
+        // Take the wall-clock reading the caller wrote and drop any zone tag, so
+        // nothing downstream can re-interpret it. This used to branch on the Kind
+        // and call ToUniversalTime() on one side — a no-op, since that side was
+        // already flagged as such, so both branches produced exactly this.
+        return DateTime.SpecifyKind(value, DateTimeKind.Unspecified);
     }
 
     public override void Write(

@@ -27,7 +27,7 @@ internal sealed class SpeakerAvailabilityService(
     private const int MinSlotMinutes = 5;
     private const int MaxSlotMinutes = 480;
 
-    /// <summary>The event's local-day boundary (KSA, UTC+3) — the same convention
+    /// <summary>The event's local-day boundary (KSA, +03:00) — the same convention
     /// the programme uses to bucket a session to a Riyadh calendar day. A window's
     /// start/end are converted to this zone before the forum-day bound is checked.</summary>
     private static readonly TimeSpan EventOffset = TimeSpan.FromHours(3);

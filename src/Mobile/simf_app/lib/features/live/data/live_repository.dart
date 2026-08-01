@@ -73,7 +73,7 @@ class LiveSession {
   final String? hallNameArabic;
   final DateTime? start;
 
-  /// S-3 — the session's scheduled end (UTC on the wire, decoded from the
+  /// S-3 — the session's scheduled end (zone-free on the wire, decoded from the
   /// existing PublicSessionDetail.End). With [start] it defines the LIVE
   /// window: "live" = now within [start, end], not merely "a feed URL exists".
   /// Null when the wire omits it (the global main-live synthetic).
@@ -158,7 +158,8 @@ class LiveSpeaker {
   }
 }
 
-/// One upcoming session card (frame 934:3621/3630 "الجلسات القادمة") — the slice
+/// One upcoming session card (frame 934:3621/3630 "الجلسات القادمة") — the
+/// slice
 /// of `PublicSessionListItem` the live screen needs to show the next sessions.
 class UpcomingSession {
   const UpcomingSession({

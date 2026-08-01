@@ -3,9 +3,9 @@
 // between the ways into the system without anything failing.
 //
 // It already had: DeviceKeyService.MintTokensAsync never recorded
-// LastSuccessfulSignInAtUtc, so an attendee who only ever signed in with Face ID
+// LastSuccessfulSignInAt, so an attendee who only ever signed in with Face ID
 // looked inactive to the A1-19 dormant sweep and could be auto-disabled while
-// using the app daily; it also returned no PreviousSignInAtUtc, so the "last
+// using the app daily; it also returned no PreviousSignInAt, so the "last
 // signed in ..." notice was blank on that path only.
 //
 // These tests pin the three entry points together. They compare CLAIM TYPES and
@@ -256,7 +256,7 @@ public sealed class TokenIssuerParityTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var user = await db.Users.SingleAsync(candidate => candidate.Email == email);
-        user.LastSuccessfulSignInAtUtc = null;
+        user.LastSuccessfulSignInAt = null;
         await db.SaveChangesAsync();
     }
 
@@ -267,7 +267,7 @@ public sealed class TokenIssuerParityTests : IClassFixture<SimfApiFactory>
         var user = await db.Users
             .AsNoTracking()
             .SingleAsync(candidate => candidate.Email == email);
-        return user.LastSuccessfulSignInAtUtc;
+        return user.LastSuccessfulSignInAt;
     }
 
     private static IReadOnlyList<string> ClaimTypesOf(string accessToken) =>

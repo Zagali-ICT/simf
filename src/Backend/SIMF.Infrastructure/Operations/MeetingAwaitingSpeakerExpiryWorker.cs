@@ -213,7 +213,7 @@ internal sealed class MeetingAwaitingSpeakerExpiryWorker(
             .Where(r => r.Status == MeetingRequestStatus.AwaitingSpeaker
                 && !db.DelegationMeetingActionTokens.Any(
                     t => t.DelegationMeetingRequestId == r.Id
-                        && t.UsedAt == null && t.ExpiresUtc > now))
+                        && t.UsedAt == null && t.ExpiresAt > now))
             .ToListAsync(cancellationToken);
         if (stale.Count == 0)
         {

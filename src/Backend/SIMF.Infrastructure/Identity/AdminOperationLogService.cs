@@ -176,7 +176,7 @@ internal sealed class AdminOperationLogService(
                                        .ThenByDescending(row => row.Timestamp),
             // "timestamp" matches the grid column Key in OperationLogViewer.razor. It
             // read "timestamputc" until 2026-08-01, left behind when D-770 renamed the
-            // *Utc columns, so the ascending arm was unreachable: every click fell
+            // persisted columns, so the ascending arm was unreachable: every click fell
             // through to the newest-first catch-all and an operator tracing an
             // incident forward from its start could not get an oldest-first view.
             ("timestamp", false) => rows.OrderBy(row => row.Timestamp),

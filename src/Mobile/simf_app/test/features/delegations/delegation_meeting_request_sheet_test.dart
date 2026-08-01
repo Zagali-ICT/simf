@@ -4,7 +4,8 @@
 // own bilingual reason never reached the delegate. The sheet now surfaces the
 // envelope message and keeps the l10n strings only as the offline fallback.
 //
-// Tests: G3 (owner 2026-07-30, supersedes D-767 R1) — a request can no longer be
+// Tests: G3 (owner 2026-07-30, supersedes D-767 R1) — a request can no longer
+// be
 // sent when the target delegation has NO free slot: the send button is disabled
 // and nothing reaches the repository. A FAILED slot fetch is a separate state
 // (load error + Retry) so a network blip is never shown as "no availability".
@@ -19,8 +20,10 @@ import 'package:simf_app/features/delegations/widgets/delegation_meeting_request
 import 'package:simf_app/features/speakers/widgets/meeting_slot_pickers.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-// One local day of real slots (2026-07-10, 09:00 + 10:00) built as local times →
-// UTC, so the sheet's Saudi-time conversion round-trips on any test machine.
+// One local day of real slots (2026-07-10, 09:00 + 10:00) built as local times
+// →
+// A fixed zone, so the sheet's Saudi-time conversion round-trips on any test
+// machine.
 final List<DelegationSlot> _oneDaySlots = <DelegationSlot>[
   DelegationSlot(
     start: DateTime(2026, 7, 10, 9).toUtc(),

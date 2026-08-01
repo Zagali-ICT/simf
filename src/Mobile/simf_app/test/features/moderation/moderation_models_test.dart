@@ -24,7 +24,7 @@ void main() {
       expect(q.isPushed, isTrue);
       expect(q.isOnStage, isTrue);
       // Saudi wall-clock carries no zone, so a decoded value must NOT be
-      // tagged UTC: tagging it would let a later toLocal() shift it by the
+      // left untagged: tagging it would let a later toLocal() shift it by the
       // device offset (owner decision 2026-07-31).
       expect(q.createdAt.isUtc, isFalse);
     });
@@ -129,7 +129,8 @@ void main() {
       );
     });
 
-    // DEF-MOD-002 — the rejected bucket is its own server read (?status=Hidden);
+    // DEF-MOD-002 — the rejected bucket is its own server read
+    // (?status=Hidden);
     // it is never mixed into the working desk.
     test('DEF-MOD-002: rejected lists the separately fetched hidden rows', () {
       final rejected = <ModeratorQuestion>[q('r', status: 2)];

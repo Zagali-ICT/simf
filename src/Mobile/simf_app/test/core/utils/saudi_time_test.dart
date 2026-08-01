@@ -1,11 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 
-/// Owner decision 2026-07-31 — the API sends Saudi local wall-clock with no zone,
+/// Owner decision 2026-07-31 — the API sends Saudi local wall-clock with no
+/// zone,
 /// so there is no conversion left to test. This suite proves the opposite and
-/// stronger property: **a wire value is taken verbatim**, on any device timezone.
+/// stronger property: **a wire value is taken verbatim**, on any device
+/// timezone.
 ///
-/// Every case here fails if anyone reintroduces a `toUtc()` / `toLocal()` — which
+/// Every case here fails if anyone reintroduces a `toUtc()` / `toLocal()` —
+/// which
 /// is the mistake worth guarding, because a three-hour shift passes code review
 /// and is noticed only by the person who misses their session.
 void main() {
@@ -17,7 +20,8 @@ void main() {
     });
 
     test('does not move a late-evening value across the day boundary', () {
-      // The trap case. 22:30 on the 20th must stay 22:30 on the 20th. A leftover
+      // The trap case. 22:30 on the 20th must stay 22:30 on the 20th. A
+      // leftover
       // +03:00 projection would report 01:30 on the 21st.
       final stored = DateTime(2026, 11, 20, 22, 30);
       expect(saudiOf(stored).day, 20);
@@ -31,16 +35,18 @@ void main() {
       final parsed = parseWireDateTime('2026-11-23T09:00:00', 'start');
       expect(parsed.hour, 9);
       expect(parsed.day, 23);
-      // Not tagged UTC: the value is Saudi wall clock, and tagging it would let
+      // Left untagged: the value is Saudi wall clock, and tagging it would let
       // a later toLocal() shift it by the device offset.
       expect(parsed.isUtc, isFalse);
     });
 
     test('projects a legacy zone-bearing value onto the Saudi clock', () {
-      // Dart normalises BOTH of these to UTC while parsing and throws the
+      // Dart normalises BOTH of these while parsing and throws the
       // original offset away, so the sender's wall clock cannot be read off the
-      // fields. Legacy SIMF stored UTC and displayed +03:00, so the offset is
-      // re-applied — which is why the two lines below disagree by three hours and
+      // fields. Legacy SIMF stored a zoned value and displayed +03:00, so the
+      // offset is
+      // re-applied — which is why the two lines below disagree by three hours
+      // and
       // are both right.
       expect(parseWireDateTime('2026-11-23T09:00:00Z', 'start').hour, 12);
       expect(parseWireDateTime('2026-11-23T09:00:00+03:00', 'start').hour, 9);
@@ -79,16 +85,31 @@ void main() {
   });
 
   group('saudiNow', () {
-    test('converts from the device clock, because that one must', () {
-      // The ONE remaining conversion: "now" starts at the device clock, which may
-      // be in any timezone, so it is normalised through UTC and offset to Riyadh.
-      // Without it, a phone outside Riyadh would compare "is this session live"
-      // against the wrong clock.
-      // The raw device UTC clock is the deliberate comparison point here — this
-      // is the one place `DateTime.now().toUtc()` is correct, because the whole
-      // point is to measure the offset saudiNow() applies to it.
-      final gap = saudiNow().difference(DateTime.now().toUtc());
-      expect(gap.inMinutes, inInclusiveRange(179, 181));
+    test('shifts the device clock onto Riyadh, on any device timezone', () {
+      // The ONE remaining conversion: "now" starts at the device clock, which
+      // may be in any timezone. Without it a phone outside Riyadh would answer
+      // "is this session live yet" against the wrong clock.
+      //
+      // Asserted as a RELATIONSHIP rather than a fixed gap, so the test proves
+      // the same thing on a Riyadh workstation and on a CI runner elsewhere.
+      // It previously compared epochs against a zoned "now" and only passed
+      // because saudiNow() was tagged, which made it three hours adrift of the
+      // zone-free values it is compared with everywhere else.
+      final device = DateTime.now();
+      final now = saudiNow();
+
+      expect(
+        now.isUtc,
+        isFalse,
+        reason: 'saudiNow must be zone-free, like every decoded wire value — '
+            'tagging it would let a later comparison shift it.',
+      );
+      expect(
+        now.difference(device),
+        saudiOffset - device.timeZoneOffset,
+        reason: 'the shift applied must be exactly the distance from this '
+            'device to Riyadh: zero here if the device already runs +03:00.',
+      );
     });
   });
 

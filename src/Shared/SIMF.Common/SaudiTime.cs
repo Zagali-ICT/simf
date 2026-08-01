@@ -10,7 +10,7 @@ namespace SIMF.Common;
 /// SIMF stores every instant as a plain <see cref="DateTime"/> that is already on
 /// the Saudi wall clock (see <see cref="SimfClock"/>), so a stored value means
 /// exactly what it reads and the Control Panel, the Website and the app all render
-/// it verbatim. This type used to be the UTC-to-Saudi conversion seam; converting a
+/// it verbatim. This type used to be the a zoned value-to-Saudi conversion seam; converting a
 /// stored value now would shift it by three hours, which is precisely the bug the
 /// conversion previously existed to prevent.</para>
 ///
@@ -19,8 +19,8 @@ namespace SIMF.Common;
 /// </summary>
 public static class SaudiTime
 {
-    /// <summary>Saudi Standard Time relative to UTC: +03:00, no DST. Kept for the
-    /// few places that must still speak UTC to an EXTERNAL system (RFC 6238 TOTP
+    /// <summary>Saudi Standard Time relative to a zoned value: +03:00, no DST. Kept for the
+    /// few places that must still speak a zoned value to an EXTERNAL system (RFC 6238 TOTP
     /// counts from the Unix epoch, for instance). Nothing in SIMF's own storage or
     /// wire format uses it any more.</summary>
     public static readonly TimeSpan Offset = SimfClock.Offset;

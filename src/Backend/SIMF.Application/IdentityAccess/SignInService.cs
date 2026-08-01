@@ -648,7 +648,7 @@ public sealed class SignInService(
         {
             return false;
         }
-        var baseline = user.PasswordChangedAtUtc ?? user.CreatedAt;
+        var baseline = user.PasswordChangedAt ?? user.CreatedAt;
         return now - baseline > TimeSpan.FromDays(maxAgeDays);
     }
 

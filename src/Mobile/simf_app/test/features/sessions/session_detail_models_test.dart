@@ -44,7 +44,7 @@ void main() {
       expect(detail.hasLiveStream, isTrue);
       expect(detail.displayOrder, 2); // D-567
       // Saudi wall-clock carries no zone, so a decoded value must NOT be
-      // tagged UTC: tagging it would let a later toLocal() shift it by the
+      // left untagged: tagging it would let a later toLocal() shift it by the
       // device offset (owner decision 2026-07-31).
       expect(detail.start.isUtc, isFalse);
 

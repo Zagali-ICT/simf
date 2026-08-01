@@ -139,7 +139,7 @@ public sealed class SessionLifecycleNoticeTests : IClassFixture<BulkBadgeEmailAp
         var row = await identity.Notifications.AsNoTracking().SingleAsync(notification =>
             notification.UserId == visitor.Id
             && notification.Kind == NotificationKind.BookingRejected);
-        // Local time only — the copy must never leak a UTC timestamp (D-219).
+        // Local time only — the copy must never leak a zoned timestamp (D-219).
         Assert.Contains(session.Start.FormatSaudi(), row.Body);
         Assert.Contains(session.Start.FormatSaudi(), row.BodyArabic);
         Assert.DoesNotContain("UTC", row.Body);

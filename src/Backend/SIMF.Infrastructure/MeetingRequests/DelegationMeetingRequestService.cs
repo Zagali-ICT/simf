@@ -922,7 +922,7 @@ internal sealed class DelegationMeetingRequestService(
 
     // A33 — the shared outcome-email body for the REQUESTER (confirmed / approved /
     // declined). Same markup vocabulary as EmailMemberConfirmLinkAsync so the two
-    // delegation emails read as one template family. Saudi local time only (no UTC).
+    // delegation emails read as one template family. Saudi local time only.
     private static string BuildOutcomeEmailHtml(
         string body, AdminDelegationMeetingRequestDetail detail, DelegationMeetingRequest req)
     {

@@ -94,7 +94,7 @@ public class SimfUser : IdentityUser<Guid>
     /// falls back to <see cref="CreatedAt"/> as the baseline. Lets sign-in
     /// enforce an admin-configured maximum password age.
     /// </summary>
-    public DateTime? PasswordChangedAtUtc { get; set; }
+    public DateTime? PasswordChangedAt { get; set; }
 
     /// <summary>
     /// A7-31 / A1-19 (NCA) — when the account last completed a sign-in (Saudi local). Set
@@ -102,5 +102,5 @@ public class SimfUser : IdentityUser<Guid>
     /// notice (A7-31) and used as the activity signal for dormant-account
     /// auto-disable (A1-19). Null until the first sign-in after this column shipped.
     /// </summary>
-    public DateTime? LastSuccessfulSignInAtUtc { get; set; }
+    public DateTime? LastSuccessfulSignInAt { get; set; }
 }

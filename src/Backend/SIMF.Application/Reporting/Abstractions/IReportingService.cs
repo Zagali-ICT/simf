@@ -13,7 +13,7 @@ namespace SIMF.Application.Reporting.Abstractions;
 ///
 /// <para>Date ranges arrive as Saudi calendar dates and are inclusive on both
 /// ends; the implementation resolves them to a half-open Saudi-local window
-/// (D-813 — nothing is converted to UTC).</para>
+/// (D-813 — nothing is converted).</para>
 /// </summary>
 public interface IReportingService
 {

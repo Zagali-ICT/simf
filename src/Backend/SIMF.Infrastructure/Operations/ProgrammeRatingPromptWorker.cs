@@ -34,7 +34,7 @@ namespace SIMF.Infrastructure.Operations;
 /// that the notification is addressed to. No cross-DB join (both live on
 /// <see cref="SimfAppDbContext"/>).</para>
 ///
-/// <para>Day boundaries are event-local (UTC+3, the codebase
+/// <para>Day boundaries are event-local (+03:00, the codebase
 /// <c>EventTimeZoneOffset</c> convention): a session belongs to the day whose
 /// local calendar date matches its <c>Start</c>. A day "ends" at the latest
 /// session end + <see cref="SessionGrace"/>, or (for a session-less day) at the
@@ -51,7 +51,7 @@ internal sealed class ProgrammeRatingPromptWorker(
     // First tick is delayed so the host finishes migrations + seeding first.
     private static readonly TimeSpan StartupDelay = TimeSpan.FromMinutes(1);
 
-    /// <summary>Event-local offset (UTC+3) — the codebase convention for bucketing
+    /// <summary>Event-local offset (+03:00) — the codebase convention for bucketing
     /// sessions into calendar days (mirrors <c>MyAreaService</c> /
     /// <c>ProgrammeSessionService</c>).</summary>
     internal static readonly TimeSpan EventOffset = TimeSpan.FromHours(3);

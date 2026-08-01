@@ -20,7 +20,7 @@ internal sealed class PasswordHistoryRepository(
         }
         return await dbContext.PasswordHistory
             .Where(entry => entry.UserId == userId)
-            .OrderByDescending(entry => entry.CreatedAtUtc)
+            .OrderByDescending(entry => entry.CreatedAt)
             .Select(entry => entry.PasswordHash)
             .Take(take)
             .ToListAsync(cancellationToken);
@@ -31,7 +31,7 @@ internal sealed class PasswordHistoryRepository(
     {
         var existing = await dbContext.PasswordHistory
             .Where(entry => entry.UserId == userId)
-            .OrderByDescending(entry => entry.CreatedAtUtc)
+            .OrderByDescending(entry => entry.CreatedAt)
             .ToListAsync(cancellationToken);
 
         dbContext.PasswordHistory.Add(new PasswordHistoryEntry
@@ -39,7 +39,7 @@ internal sealed class PasswordHistoryRepository(
             Id = Guid.NewGuid(),
             UserId = userId,
             PasswordHash = passwordHash,
-            CreatedAtUtc = timeProvider.SimfNow(),
+            CreatedAt = timeProvider.SimfNow(),
         });
 
         // Keep the new entry plus the (keep - 1) most recent existing ones.

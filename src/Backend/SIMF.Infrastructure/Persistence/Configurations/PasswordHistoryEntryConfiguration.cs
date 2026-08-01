@@ -13,7 +13,7 @@ internal sealed class PasswordHistoryEntryConfiguration : IEntityTypeConfigurati
         // The Identity password hash (PBKDF2, base64) — generously sized.
         builder.Property(entry => entry.PasswordHash).HasMaxLength(512).IsRequired();
 
-        builder.HasIndex(entry => new { entry.UserId, entry.CreatedAtUtc });
+        builder.HasIndex(entry => new { entry.UserId, entry.CreatedAt });
 
         builder.HasOne<SimfUser>()
             .WithMany()

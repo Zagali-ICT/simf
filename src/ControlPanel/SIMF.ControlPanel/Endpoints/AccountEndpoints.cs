@@ -3771,7 +3771,7 @@ internal static class AccountEndpoints
     /// Forwards one report export: pulls the caller's access token, calls the
     /// API, and streams the workbook back as a download. Shared by every report
     /// so the content type and the file-name convention live in one place.
-    /// The stamp is Saudi local (D-770), not UTC.
+    /// The stamp is Saudi local (D-770), not a zoned stamp.
     /// </summary>
     private static async Task<IResult> ForwardReportExportAsync(
         HttpContext http,

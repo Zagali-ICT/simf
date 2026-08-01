@@ -26,17 +26,17 @@ public sealed class LastSignInTests : IClassFixture<SimfApiFactory>
 
         // First-ever sign-in: there is no previous one.
         var first = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
-        Assert.Null(first.PreviousSignInAtUtc);
+        Assert.Null(first.PreviousSignInAt);
 
         var email = first.User.Email;
         _factory.Time.Advance(TimeSpan.FromHours(2));
 
         // Second sign-in surfaces the first sign-in's time as the "previous" notice.
         var second = await SignInAsync(email);
-        Assert.NotNull(second.PreviousSignInAtUtc);
+        Assert.NotNull(second.PreviousSignInAt);
         Assert.True(
-            Math.Abs((second.PreviousSignInAtUtc!.Value - firstSignInAt).TotalSeconds) < 2,
-            $"expected previous ~= {firstSignInAt:o} but was {second.PreviousSignInAtUtc:o}");
+            Math.Abs((second.PreviousSignInAt!.Value - firstSignInAt).TotalSeconds) < 2,
+            $"expected previous ~= {firstSignInAt:o} but was {second.PreviousSignInAt:o}");
     }
 
     private async Task<AuthTokens> SignInAsync(string email)

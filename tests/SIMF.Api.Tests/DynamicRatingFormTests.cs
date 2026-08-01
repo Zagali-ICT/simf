@@ -102,7 +102,7 @@ public sealed class DynamicRatingFormTests : IClassFixture<SimfApiFactory>
     {
         // Owner 2026-07-19 (blended signal) — a venue-gate Check-In scan on the day,
         // with NO in-hall attendance, unlocks the Day rating; exercises
-        // AttendedDayAsync's GateScan branch + the event-local (UTC+3) day window.
+        // AttendedDayAsync's GateScan branch + the event-local (+03:00) day window.
         var (visitor, userId) = await SignInVisitorWithIdAsync(); // no HallAttendance
         var dayId = await SeedProgrammeDayAsync();
         await RatingAttendance.SeedGateCheckInOnDayAsync(_factory, userId, dayId);

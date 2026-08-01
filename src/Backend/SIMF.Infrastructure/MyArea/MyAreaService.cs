@@ -25,8 +25,8 @@ internal sealed class MyAreaService(
     private const string KindSession = "Session";
     private const string KindMeeting = "Meeting";
 
-    /// <summary>The event runs in Riyadh — Arabia Standard Time (UTC+3, no DST)
-    /// — so "today" on the dashboard is the AST calendar day, not the UTC day
+    /// <summary>The event runs in Riyadh — Arabia Standard Time (+03:00, no DST)
+    /// — so "today" on the dashboard is the AST calendar day, not the calendar day elsewhere
     /// (otherwise an evening session would slip to the next day's card).</summary>
     private static readonly TimeSpan EventTimeZoneOffset = TimeSpan.FromHours(3);
 

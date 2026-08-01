@@ -36,7 +36,7 @@ public sealed class GetOrganizationProfileEndpoint(IOrganizationProfileReadServi
             lastModifiedSecond.ToString("R");
 
         // HTTP-date is always RFC 1123 GMT — parse it culture-invariantly and
-        // assume UTC so a non-en server culture / timezone can't shift the compare.
+        // assume a fixed zone so a non-en server culture / timezone can't shift the compare.
         var ifModifiedSince = HttpContext.Request.Headers.IfModifiedSince;
         if (ifModifiedSince.Count > 0
             && DateTime.TryParse(

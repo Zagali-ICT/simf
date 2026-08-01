@@ -93,7 +93,7 @@ internal sealed class SessionAttendanceService(
             ("title", false) => sessions.OrderBy(session => session.Title),
             // The key is "start", matching the grid column's Key (AttendanceDashboard
             // .razor) and the column itself. It read "startutc" until 2026-08-01, a
-            // leftover from before D-770 renamed the *Utc columns: nothing ever sent
+            // leftover from before D-770 renamed the persisted columns: nothing ever sent
             // that key, so clicking Start a second time silently fell through to the
             // ascending catch-all and the column could not be sorted newest-first at
             // all. The ascending arm is written out rather than left to `_` so the

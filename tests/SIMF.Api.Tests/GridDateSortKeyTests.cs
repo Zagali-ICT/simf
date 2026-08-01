@@ -1,7 +1,7 @@
 // Pins the sort keys the Control Panel's date columns actually send.
 //
 // THE BUG THIS EXISTS TO CATCH (found 2026-08-01 while writing the admin manual):
-// D-770 renamed the persisted `*Utc` columns, and four service-side sort switches
+// D-770 renamed the persisted date columns, and four service-side sort switches
 // were left matching the OLD key while their grids kept sending the column's own
 // Key. Nothing failed loudly, because every one of those switches ends in a
 // catch-all `_ =>` that silently returns a default order. The result was four

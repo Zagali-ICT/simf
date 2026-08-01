@@ -5,7 +5,8 @@ import '../../../core/utils/saudi_time.dart';
 
 /// One row in the public speakers list — mirrors
 /// `SIMF.Contracts.Programme.PublicSpeakerSummary` (`GET /app/speakers`). The
-/// card shows the avatar (from [photoRelativePath]), the bilingual name, the rank
+/// card shows the avatar (from [photoRelativePath]), the bilingual name, the
+/// rank
 /// line and the country (flag from [countryId] — interim renders the name).
 @immutable
 class SpeakerSummary {
@@ -54,7 +55,8 @@ class SpeakerSummary {
 }
 
 /// One of a speaker's scheduled sessions — mirrors
-/// `SIMF.Contracts.Programme.PublicSpeakerSession`. Times are UTC on the wire.
+/// `SIMF.Contracts.Programme.PublicSpeakerSession`. Times are zone-free on the
+/// wire.
 @immutable
 class SpeakerSession {
   const SpeakerSession({
@@ -166,7 +168,8 @@ class SpeakerDetail {
 
   /// The nationality flag emoji for the profile header (Figma 908-2110),
   /// resolved from the ISO 3166-1 numeric [countryId] via the shared
-  /// [countryFlagEmoji] helper. Null when no country is set / unknown — the same
+  /// [countryFlagEmoji] helper. Null when no country is set / unknown — the
+  /// same
   /// helper the speaker list card uses.
   String? get flagEmoji => countryFlagEmoji(countryId);
 

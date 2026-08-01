@@ -13,7 +13,7 @@ namespace SIMF.Contracts.Reporting;
 /// <para><see cref="From"/> and <see cref="To"/> are <b>Saudi calendar dates</b>
 /// and the range is <b>inclusive on both ends</b>, which is what an operator
 /// picking "6 to 8 November" means. The service converts each end to the
-/// matching Saudi-local instant. Nothing anywhere in the chain is UTC (D-813).</para>
+/// matching Saudi-local instant. Nothing anywhere in the chain is a zoned value (D-813).</para>
 /// </summary>
 public sealed class ReportQuery
 {

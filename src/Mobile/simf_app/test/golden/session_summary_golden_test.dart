@@ -23,8 +23,10 @@ import 'golden_fonts.dart';
 /// **1072:13518** (ملخص الجلسة). Compare to the frame:
 ///   flutter test --update-goldens test/golden/session_summary_golden_test.dart
 ///
-/// Frame parity: the "الجلسة" info card (gold title + day·time·duration·hall over
-/// the day-agenda timeline), the 3-tab segmented control (أبرز النقاط active), the
+/// Frame parity: the "الجلسة" info card (gold title + day·time·duration·hall
+/// over
+/// the day-agenda timeline), the 3-tab segmented control (أبرز النقاط active),
+/// the
 /// tab-content card with the gold-bar heading + gold-dot bullets, and the gold
 /// "توليد ملخص للجلسة" button over the expanded summary paragraph. RTL.
 
@@ -47,7 +49,8 @@ SessionListItem _session({
       'speakers': <dynamic>[],
     });
 
-// 2026-06-21 is a Sunday (الأحد). UTC times are chosen so a UTC+3 render shows
+// 2026-06-21 is a Sunday (الأحد). a zoned value times are chosen so a +03:00
+// render shows
 // the frame's 09:00 / 11:00 / 13:30 / 16:00; the render stays deterministic on
 // any single machine regardless.
 final _sessions = <SessionListItem>[

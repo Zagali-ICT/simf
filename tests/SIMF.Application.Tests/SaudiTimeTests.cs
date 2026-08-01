@@ -5,9 +5,9 @@ namespace SIMF.Application.Tests;
 
 /// <summary>
 /// Owner decision 2026-07-31 — SIMF stores and displays Saudi local wall-clock
-/// only: plain <see cref="DateTime"/>, no <c>DateTimeOffset</c>, no UTC.
+/// only: plain <see cref="DateTime"/>, no <c>DateTimeOffset</c>, no a zoned value.
 ///
-/// <para>This suite used to prove a UTC-to-Saudi conversion. There is no
+/// <para>This suite used to prove a a zoned value-to-Saudi conversion. There is no
 /// conversion left, so it proves the opposite and stronger property: <b>a stored
 /// value is rendered verbatim.</b> Every case here fails if anyone reintroduces a
 /// shift — which is the mistake worth guarding, because a three-hour shift is
@@ -32,7 +32,7 @@ public class SaudiTimeTests
     [Fact]
     public void Now_is_not_tagged_utc_or_host_local()
     {
-        // Unspecified on purpose: the value is neither UTC nor the host's local
+        // Unspecified on purpose: the value is neither a zoned value nor the host's local
         // time, and tagging it either way invites a framework conversion that
         // would silently shift it.
         Assert.Equal(DateTimeKind.Unspecified, SimfClock.Now.Kind);
@@ -48,7 +48,7 @@ public class SaudiTimeTests
     [Fact]
     public void FormatSaudi_renders_the_stored_value_verbatim()
     {
-        // 01:30 on the 21st is STORED as 01:30 on the 21st. Under the old UTC
+        // 01:30 on the 21st is STORED as 01:30 on the 21st. Under the old a zoned value
         // scheme this same render came from 22:30 on the 20th; if anyone puts a
         // conversion back, this case moves and fails.
         var stored = new DateTime(2026, 11, 21, 1, 30, 0);
@@ -94,7 +94,7 @@ public class SaudiTimeTests
     {
         // An admin types 12:00 on 2026-11-20 into a datetime-local field. It must
         // persist as 12:00 on 2026-11-20 — not 09:00, which is what the previous
-        // UTC-converting implementation stored.
+        // a zoned value-converting implementation stored.
         var typed = new DateTime(2026, 11, 20, 12, 0, 0);
 
         var stored = SaudiTime.FromSaudiWallClock(typed);

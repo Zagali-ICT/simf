@@ -2,8 +2,8 @@
 // figures behind the 3-day dashboard chart.
 //
 // The load-bearing behaviour here is the DAY BOUNDARY. Instants are persisted as
-// UTC but the forum's days are Saudi calendar days (UTC+03:00, no DST), so a
-// record at 21:00 UTC already belongs to the NEXT Saudi day. Bucketing on the
+// a zoned value but the forum's days are Saudi calendar days (+03:00, no DST), so a
+// record at 21:00 a zoned value already belongs to the NEXT Saudi day. Bucketing on the
 // stored value would silently misfile every evening scan into the day before.
 // Those tests are the reason this file exists.
 //
@@ -34,7 +34,7 @@ public sealed class StatisticsProgrammeTests : IClassFixture<SimfApiFactory>
     private const string AdministratorRole = "Administrator";
     private const string Endpoint = "/api/v1/admin/statistics/programme";
 
-    /// <summary>Saudi Standard Time — UTC+03:00, no daylight saving, ever.</summary>
+    /// <summary>Saudi Standard Time — +03:00, no daylight saving, ever.</summary>
     private static readonly TimeSpan Ast = TimeSpan.FromHours(3);
 
     /// <summary>Hands each test its own never-reused block of dates. The suite
@@ -60,8 +60,8 @@ public sealed class StatisticsProgrammeTests : IClassFixture<SimfApiFactory>
     public async Task A_record_just_after_midnight_saudi_counts_on_that_saudi_day()
     {
         // 00:30 Riyadh on day 2 is STORED as 00:30 on day 2 (owner decision
-        // 2026-07-31 — Saudi local storage, no UTC). This case used to guard the
-        // conversion trap: the same moment was stored as 21:30 UTC on day 1, so
+        // 2026-07-31 — Saudi local storage, no a zoned value). This case used to guard the
+        // conversion trap: the same moment was stored as 21:30 a zoned value on day 1, so
         // bucketing on the raw value credited the visitor to the wrong forum day.
         // The trap is gone with the conversion, and the guard now pins WHY it is
         // gone — the stored date simply is the Saudi date.
@@ -83,7 +83,7 @@ public sealed class StatisticsProgrammeTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task A_record_late_in_the_saudi_evening_stays_on_that_saudi_day()
     {
-        // The other side of the boundary: 23:30 Riyadh on day 1 is 20:30 UTC,
+        // The other side of the boundary: 23:30 Riyadh on day 1 is 20:30 a zoned value,
         // still day 1. Guards against an over-correction that would push every
         // evening record forward a day.
         var token = await CreateAdministratorAndSignInAsync();
@@ -309,7 +309,7 @@ public sealed class StatisticsProgrammeTests : IClassFixture<SimfApiFactory>
         var hallId = await SeedHallAsync();
         await SeedSessionAsync(hallId, SaudiAt(p.Day2, 9));
         await SeedSessionAsync(hallId, SaudiAt(p.Day2, 14));
-        // A late-night session: 00:10 Riyadh on day 3, stored as 21:10 UTC on day 2.
+        // A late-night session: 00:10 Riyadh on day 3, stored as 21:10 a zoned value on day 2.
         await SeedSessionAsync(hallId, SaudiAt(p.Day3, 0, 10));
 
         var days = await GetProgrammeDaysAsync(token);
@@ -415,9 +415,9 @@ public sealed class StatisticsProgrammeTests : IClassFixture<SimfApiFactory>
     /// <summary>The three forum dates allocated to one test.</summary>
     private sealed record Programme(DateOnly Day1, DateOnly Day2, DateOnly Day3);
 
-    /// <summary>The stored UTC instant for a Saudi wall-clock time on a given
+    /// <summary>The stored absolute instants for a Saudi wall-clock time on a given
     /// forum day — lets a test place a record precisely either side of the
-    /// 21:00 UTC day boundary.</summary>
+    /// 21:00 a zoned value day boundary.</summary>
     private static DateTime SaudiAt(DateOnly day, int hour, int minute = 0) =>
         day.ToDateTime(new TimeOnly(hour, minute));
 

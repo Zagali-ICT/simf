@@ -131,7 +131,7 @@ public sealed class HallsViewDeleteTests : CpComponentTestBase
             .Add(x => x.Initial, row));
 
         // 12-hour Saudi render of the stored value, verbatim. The DoesNotContain
-        // is the load-bearing half: 08:00 is what a reintroduced UTC-to-Saudi
+        // is the load-bearing half: 08:00 is what a reintroduced a zoned value-to-Saudi
         // conversion would produce from an 11:00 stored value, so its absence is
         // what proves nothing shifts on the way to the page.
         Assert.Contains("05-01-2026 11:00 AM", cut.Markup);

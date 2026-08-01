@@ -167,7 +167,7 @@ public sealed class DelegationAvailabilityTests : IClassFixture<SimfApiFactory>
 
     // The forum-day bound is dynamic (MIN/MAX over the seeded ProgrammeDay rows, which
     // other test classes mutate on the shared DB). Read it at test time and place the
-    // window on the first forum day at 10:00 UTC (+03:00 event day == MinDate).
+    // window on the first forum day at 10:00 a zoned value (+03:00 event day == MinDate).
     private async Task<DateTime> ForumStartAsync(string admin)
     {
         var win = await ForumWindowAsync(admin);

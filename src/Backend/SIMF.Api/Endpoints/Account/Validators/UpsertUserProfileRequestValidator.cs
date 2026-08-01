@@ -307,7 +307,7 @@ public sealed class UpsertUserProfileRequestValidator
     }
 
     // D-197 — the registrant must be at least 18. "Today" is the SAUDI day: this
-    // read DateTime.UtcNow until 2026-08-01, and UTC is still on the previous
+    // read DateTime.UtcNow until 2026-08-01, and that clock is still on the previous
     // date until 03:00 Riyadh, so anyone registering in those first three hours
     // of their 18th birthday was told they were too young. Returns true for null
     // (the NotNull rule owns the required-message).

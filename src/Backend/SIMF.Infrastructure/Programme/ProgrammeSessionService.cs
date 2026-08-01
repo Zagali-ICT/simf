@@ -19,7 +19,7 @@ namespace SIMF.Infrastructure.Programme;
 /// the programme <see cref="SIMF.Domain.Programme.Session"/> surface.
 /// Read-only sibling of <see cref="AdminSessionService"/>: only active
 /// sessions are returned (<c>IsActive</c>), times are the Saudi wall clock
-/// (D-813 — no UTC is stored or served), and the
+/// (D-813 — nothing zoned is stored or served), and the
 /// effective capacity is <c>CapacityOverride ?? Hall.Capacity</c>
 /// (PDF §2.9). Seat availability is a single COUNT over active
 /// (non-released) reservations — no per-seat grid (that is the

@@ -3,14 +3,16 @@
 /// **Owner decision 2026-07-31 — there is no conversion left to do.** The API
 /// stores and sends Saudi local wall-clock time as a zone-free ISO-8601 string
 /// (`2026-11-23T09:00:00`, no `Z`, no `+03:00`), mirroring the backend
-/// `SIMF.Common.SimfClock`. A value means exactly what it reads, on every screen.
+/// `SIMF.Common.SimfClock`. A value means exactly what it reads, on every
+/// screen.
 ///
-/// This library used to be the UTC-to-Saudi conversion point. Converting now
+/// This library used to be the zone-conversion point. Converting now
 /// would shift every timestamp by three hours, so [saudiOf] is the identity and
 /// the wire decoder deliberately does **not** call `toUtc()`.
 ///
 /// Still true, and still why this file exists rather than raw `DateTime.parse`:
-/// never call `toLocal()` or `toUtc()` on an event time. Those are the *phone's*
+/// never call `toLocal()` or `toUtc()` on an event time. Those are the
+/// *phone's*
 /// zone, so a traveller's device would shift the session times it shows. Event
 /// times are Riyadh times for everyone.
 library;
@@ -27,10 +29,16 @@ const Duration saudiOffset = Duration(hours: 3);
 DateTime saudiOf(DateTime stored) => stored;
 
 /// "Now" on the Saudi wall clock. This one DOES convert, and must: it starts
-/// from the device clock, which may be in any timezone, so it is normalised
-/// through UTC and offset to Riyadh. That keeps "is this session live yet"
+/// from the device clock, which may be in any timezone.
+///
+/// Subtracting the device's own [DateTime.timeZoneOffset] cancels wherever the
+/// phone happens to be, and adding [saudiOffset] lands on Riyadh — the same
+/// instant, read on the Saudi clock. That keeps "is this session live yet"
 /// comparisons lined up with stored values wherever the phone is.
-DateTime saudiNow() => DateTime.now().toUtc().add(saudiOffset);
+DateTime saudiNow() {
+  final device = DateTime.now();
+  return device.subtract(device.timeZoneOffset).add(saudiOffset);
+}
 
 /// Parses an ISO-8601 wire timestamp — the ONE decoder every model uses for an
 /// API timestamp. [field] is the wire field name, so a failure says which one
@@ -38,13 +46,16 @@ DateTime saudiNow() => DateTime.now().toUtc().add(saudiOffset);
 ///
 /// Two wire shapes are handled, and the distinction matters:
 ///
-/// * **Zone-free** (`2026-11-23T09:00:00`) — what the API sends now. Dart parses
-///   it to a non-UTC [DateTime] whose fields are exactly the string's, so it is
+/// * **Zone-free** (`2026-11-23T09:00:00`) — what the API sends now. Dart
+/// parses
+/// it to a zone-free [DateTime] whose fields are exactly the string's, so it is
 ///   taken verbatim. `toUtc()` is deliberately NOT called: it would apply the
 ///   DEVICE's offset and shift the value on any phone outside Riyadh.
-/// * **Zone-bearing** (`...Z` or `...+03:00`) — a legacy server. Dart normalises
-///   both to UTC while parsing, discarding the original offset, so the wall-clock
-///   reading cannot be recovered from the fields alone. Legacy SIMF stored UTC
+/// * **Zone-bearing** (`...Z` or `...+03:00`) — a legacy server. Dart
+/// normalises
+///   both while parsing, discarding the original offset, so the wall-clock
+/// reading cannot be recovered from the fields alone. Legacy SIMF stored a
+/// zoned value
 ///   and displayed +03:00, so the Saudi offset is re-applied — which lands
 ///   `09:00Z` on 12:00 and `09:00+03:00` back on 09:00, both correct.
 ///
@@ -88,7 +99,8 @@ DateTime? parseWireOrNull(Object? value) {
   return null;
 }
 
-/// Encodes a value for the wire: zone-free ISO-8601, matching what the API sends
+/// Encodes a value for the wire: zone-free ISO-8601, matching what the API
+/// sends
 /// and expects. Never `toUtc()` — that would transmit a different clock time
 /// than the user picked.
 String formatWire(DateTime value) => _stripZone(value).toIso8601String();

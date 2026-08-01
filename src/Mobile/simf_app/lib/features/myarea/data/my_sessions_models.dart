@@ -45,7 +45,8 @@ class MyAreaSessionItem {
   final String? speakerNameAr;
   final String? speakerTitle;
 
-  /// The session's start on the Saudi event-local wall clock (wire value UTC).
+  /// The session's start on the Saudi event-local wall clock (zone-free on the
+  /// wire).
   DateTime get startLocal => saudiOf(start);
 
   /// The session length in whole minutes (floored at 0).
@@ -97,7 +98,8 @@ class MyAreaSessionItem {
       );
 }
 
-/// The envelope for the "my sessions" list (`MyAreaSessions = { items: [...] }`).
+/// The envelope for the "my sessions" list (`MyAreaSessions = { items: [...]
+/// }`).
 @immutable
 class MyAreaSessions {
   const MyAreaSessions(this.items);

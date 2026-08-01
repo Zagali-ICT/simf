@@ -686,7 +686,7 @@ internal sealed class AdminSessionService(
 
     /// <summary>B2 — the "this session was cancelled" notice: an in-app row AND an
     /// email (a visitor who never opens the app would otherwise turn up to a cancelled
-    /// session). Bilingual; the time is the Saudi wall clock, never UTC. Best-effort —
+    /// session). Bilingual; the time is the Saudi wall clock, never a zoned stamp. Best-effort —
     /// one failed recipient never aborts the rest, and the session is already
     /// cancelled either way.</summary>
     private async Task TryNotifySessionCancelledAsync(

@@ -39,7 +39,7 @@ namespace SIMF.ControlPanel;
 public static class SimfCookieRefreshHandler
 {
     /// <summary>Name of the stored token holding the access_token expiry
-    /// (round-trip ISO-8601 UTC). Written at sign-in and on every successful
+    /// (round-trip ISO-8601, zoned). Written at sign-in and on every successful
     /// refresh; read on every cookie-validate.</summary>
     public const string ExpiresAtTokenName = "expires_at";
 

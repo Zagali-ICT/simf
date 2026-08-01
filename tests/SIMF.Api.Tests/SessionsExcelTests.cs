@@ -605,7 +605,7 @@ public sealed class SessionsExcelTests : IClassFixture<SimfApiFactory>
                 // Zone-free literals. These read "...T09:00:00Z" until 2026-08-01,
                 // and DateTime.Parse with default styles converts a Z-suffixed
                 // string to the MACHINE's local time — so the fixture seeded 09:00
-                // on a UTC runner and 12:00 on a Riyadh workstation. Nothing
+                // on a differently-zoned runner and 12:00 on a Riyadh workstation. Nothing
                 // asserted on the time, so it never failed; it just meant the
                 // fixture's data depended on where it ran. Under D-813 a test
                 // timestamp is a plain wall clock, like every other one in SIMF.

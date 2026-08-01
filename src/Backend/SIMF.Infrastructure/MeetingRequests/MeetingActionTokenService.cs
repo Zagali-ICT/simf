@@ -78,7 +78,7 @@ internal sealed class MeetingActionTokenService(
             Id = Guid.NewGuid(),
             DelegationMeetingRequestId = delegationMeetingRequestId,
             TokenHash = MeetingActionTokenHasher.Hash(secret),
-            ExpiresUtc = expires,
+            ExpiresAt = expires,
             CreatedAt = now,
         });
 
@@ -269,7 +269,7 @@ internal sealed class MeetingActionTokenService(
 
         var token = await appDbContext.DelegationMeetingActionTokens.AsNoTracking()
             .SingleOrDefaultAsync(t => t.TokenHash == hash, cancellationToken);
-        if (token is null || token.UsedAt != null || token.ExpiresUtc <= now)
+        if (token is null || token.UsedAt != null || token.ExpiresAt <= now)
         {
             return null;
         }

@@ -597,7 +597,7 @@ internal sealed class AdminGateService(
         using var workbook = new XLWorkbook();
         var sheet = workbook.Worksheets.Add("Scans");
         sheet.Cell(1, 1).Value = "Scan id";
-        sheet.Cell(1, 2).Value = "Scanned at (UTC)";
+        sheet.Cell(1, 2).Value = "Scanned at";
         sheet.Cell(1, 3).Value = "Gate";
         sheet.Cell(1, 4).Value = "Visitor";
         sheet.Cell(1, 5).Value = "QR";
