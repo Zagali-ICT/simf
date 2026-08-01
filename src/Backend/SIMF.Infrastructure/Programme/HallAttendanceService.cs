@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/HallAttendanceTests.cs
+﻿// Tests: SIMF.Api.Tests/HallAttendanceTests.cs
 // Tests: SIMF.Api.Tests/HallArrivalScanTests.cs (P5.1d — D-244 operator QR scan)
 // Tests: SIMF.Api.Tests/GateHallDoorChainTests.cs (Both-mode gate → hall-attendance chain)
 using Microsoft.Data.SqlClient;
@@ -9,6 +9,7 @@ using SIMF.Application.AccessControl.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.Notifications;
 using SIMF.Application.Programme.Abstractions;
+using SIMF.Application.SeatReservations.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Common.Options;
@@ -33,6 +34,8 @@ internal sealed class HallAttendanceService(
     INotificationDispatcher notifications,
     TimeProvider timeProvider,
     IOptionsMonitor<WalkInModeOptions> walkInMode,
+    // D-809 — records the walk-in's open-seating hold once they are admitted.
+    ISeatReservationService seats,
     ILogger<HallAttendanceService> logger) : IHallAttendanceService
 {
     // X-3 — how far outside a session's [Start, End] window an arrival is
@@ -351,6 +354,27 @@ internal sealed class HallAttendanceService(
             logger.LogInformation(
                 "Hall arrival (hall-door gate) recorded for {UserId} at session {SessionId} by operator {OperatorId}.",
                 attendeeUserId, liveSessionId, operatorUserId);
+
+            // D-809 — a walk-in admitted with no booking still occupies a place,
+            // so record an open-seating hold: without it the staff seating desk
+            // reports "no seat" for a badge standing in front of it and the seat
+            // map under-reports who is in the hall.
+            //
+            // Advisory in the strongest sense: the attendee is already through
+            // the door, so a seating failure must never surface as an admission
+            // failure. Swallowed and logged, exactly like the rating prompt below.
+            try
+            {
+                await seats.EnsureWalkInHoldAsync(
+                    liveSessionId, attendeeUserId, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(
+                    ex,
+                    "Walk-in seat hold failed for {UserId} at session {SessionId}; arrival stands.",
+                    attendeeUserId, liveSessionId);
+            }
         }
         // DEF-CHK-004 (A4) — a null row means the advisory insert was rejected by
         // the store and no rival open row could be re-read, so NOTHING is recorded

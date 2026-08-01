@@ -207,6 +207,37 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Admitted_attendee_gets_an_open_seating_hold_so_the_seating_desk_can_see_them()
+    {
+        // D-809 — without a hold the staff seating desk reports "no seat" for a
+        // badge standing in front of it and the seat map under-reports the hall.
+        // The hold carries no row/seat: it records THAT they are here, not WHERE,
+        // which keeps it clear of the per-seat unique index and out of the
+        // SERIALIZABLE seat-picking path that would deadlock a door rush.
+        var (token, operatorUserId) = await CreateAdminAsync();
+        var (hallId, sessionId) = await SeedHallWithLiveSessionAsync();
+        var gateId = await CreateGateAsync(token, operatorUserId, hallId);
+        var (qrId, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
+        await SeedSeatReservationAsync(sessionId, attendeeUserId);
+
+        var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
+        Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var holds = await db.SeatReservations
+            .Where(r => r.SessionId == sessionId
+                && r.ReservedForUserId == attendeeUserId
+                && r.ReleasedAt == null)
+            .ToListAsync();
+
+        // Exactly one: the attendee already held a reservation, so the walk-in
+        // hold must not add a second.
+        var hold = Assert.Single(holds);
+        Assert.Null(hold.Expires);
+    }
+
+    [Fact]
     public async Task Perimeter_gate_admits_an_attendee_with_no_session_registration()
     {
         // D-809 — step 11.5 is a SESSION HALL rule. A perimeter gate has no
@@ -555,6 +586,8 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
             services.GetRequiredService<
                 Microsoft.Extensions.Options.IOptionsMonitor<
                     SIMF.Common.Options.WalkInModeOptions>>(),
+            services.GetRequiredService<
+                SIMF.Application.SeatReservations.Abstractions.ISeatReservationService>(),
             services.GetRequiredService<ILogger<HallAttendanceService>>());
 
         // A fixed In gate (directionInferred: false) keeps this on the arrival branch.
