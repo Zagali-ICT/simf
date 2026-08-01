@@ -562,6 +562,9 @@ public sealed class IdentitySeeder(
             IsAppRegisterable = mobileAppRole is not (MobileAppRole.Staff or MobileAppRole.Moderator),
             IsActive = true,
             CreatedAt = timeProvider.GetUtcNow(),
+            // D-809 — mirrors the migration's backfill so a fresh-seeded database
+            // carries badge codes exactly as a migrated one does.
+            Code = await ProfileTypeCodeAllocator.NextAsync(appDbContext, cancellationToken),
         });
         // D-167: ProfileType lives on App DB.
         await appDbContext.SaveChangesAsync(cancellationToken);

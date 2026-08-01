@@ -156,6 +156,10 @@ internal sealed class AdminProfileTypeCommandService(
             ShowInPartnerDirectory = request.ShowInPartnerDirectory,
             IsActive = request.IsActive,
             CreatedAt = now,
+            // D-809 — the small number the printed badge carries. Allocated, not
+            // entered: it is a wire detail of the QR, not something an
+            // administrator should have to pick or keep unique.
+            Code = await ProfileTypeCodeAllocator.NextAsync(dbContext, cancellationToken),
         };
         dbContext.ProfileTypes.Add(profileType);
         await dbContext.SaveChangesAsync(cancellationToken);

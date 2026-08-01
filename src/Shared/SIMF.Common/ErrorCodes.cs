@@ -477,6 +477,20 @@ public static class ErrorCodes
     public const string IdempotencyKeyConflict = "IDEMPOTENCY_KEY_CONFLICT";
     public const string GateFailureCircuitOpen = "GATE_FAILURE_CIRCUIT_OPEN";
 
+    // Offline badge desk (D-809).
+    /// <summary>The offline upload is not armed. Per-request, not a permission
+    /// failure: the caller holds the desk permission but the capability is off.</summary>
+    public const string OfflineUploadDisabled = "OFFLINE_UPLOAD_DISABLED";
+
+    /// <summary>A batch item's sequence is already on an account. Reported per
+    /// item as AlreadyUploaded, so a retried upload reconciles instead of
+    /// creating a second account for the same printed badge.</summary>
+    public const string OfflineBadgeSequenceTaken = "OFFLINE_BADGE_SEQUENCE_TAKEN";
+
+    /// <summary>The sequence is outside the range a badge id can express, or the
+    /// profile-type code on the badge is not a live profile type.</summary>
+    public const string OfflineBadgeInvalid = "OFFLINE_BADGE_INVALID";
+
     // Exhibitors + account provisioning (D-202 — D-199 #3).
     public const string ExhibitorInvalid = "EXHIBITOR_INVALID";
     public const string ExhibitorNotFound = "EXHIBITOR_NOT_FOUND";

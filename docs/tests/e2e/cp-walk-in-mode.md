@@ -6,6 +6,8 @@ armed from `appsettings` / `set-env-*`.
 **Related:** [`cp-admin-gates-operator.md`](cp-admin-gates-operator.md),
 [`cp-admin-hall-arrivals.md`](cp-admin-hall-arrivals.md),
 [`cp-admin-visitors.md`](cp-admin-visitors.md).
+**Operator guide:** [`SIMF-Offline-Badge-Desk-Guide.md`](../../manuals/SIMF-Offline-Badge-Desk-Guide.md)
+— provisioning and running the offline desk (E2E-WIM-017..024).
 
 This capability has **no Control Panel page of its own by design** — arming it
 requires server access, which is the access control. Scenarios below are driven
@@ -53,6 +55,14 @@ returns to its normal behaviour immediately.
 | E2E-WIM-014 | A mistyped identity document is still rejected | Armed |
 | E2E-WIM-015 | The same person cannot collect two badges | Armed |
 | E2E-WIM-016 | The arrival window widens | Armed |
+| E2E-WIM-017 | Offline upload is refused while disarmed | Disarmed |
+| E2E-WIM-018 | An uploaded badge works at the gate | Armed |
+| E2E-WIM-019 | Re-uploading a batch changes nothing | Armed |
+| E2E-WIM-020 | One bad row does not fail the batch | Armed |
+| E2E-WIM-021 | An uploaded duplicate identity is refused | Armed |
+| E2E-WIM-022 | An uploaded badge is pending without auto-approve | Armed |
+| E2E-WIM-023 | A foreign-key badge is not recognised | Armed |
+| E2E-WIM-024 | The desk reconciles to zero | Armed |
 
 ---
 
@@ -233,6 +243,100 @@ And a session starting in 40 minutes
 When the operator scans a registered attendee at its hall door
 Then hall attendance IS recorded
 And the scan carries no advisory notice
+```
+
+---
+
+## Scenarios — the offline badge desk (D-810)
+
+The desk is `SIMF.BadgeDesk`, a Windows application. It prints badges with no
+network at all, then uploads the shift through
+`POST /api/v1/admin/offline/batch`.
+
+### E2E-WIM-017 — offline upload is refused while disarmed
+```gherkin
+Given WalkInMode is disarmed
+And an administrator holding Visitors.RegisterOnsite
+When they post a batch of one registration to /admin/offline/batch
+Then the response is HTTP 403 OFFLINE_UPLOAD_DISABLED
+And no account is created
+```
+> The permission is not the gate here. The switch is.
+
+### E2E-WIM-018 — an uploaded badge works at the gate
+```gherkin
+Given WalkInMode is armed with OfflineUpload, AutoApprove and AcceptOfflineBadges
+And BadgeKey on the API matches the key the desk was provisioned with
+And the desk printed badge sequence 3000042 for profile-type code 1
+When the desk uploads that registration
+Then the response is HTTP 200 with one result of status "Created"
+And its qrId is "W00003000042"
+And the account is Approved
+When an operator later scans the PRINTED encrypted badge at a perimeter gate
+Then the response is HTTP 200 with outcome "Allowed"
+```
+> The scanner sends the whole encrypted blob and the server decrypts it
+> independently, so the audit row is exactly what was physically presented.
+
+### E2E-WIM-019 — re-uploading a batch changes nothing
+```gherkin
+Given a batch that has already been uploaded successfully
+When the desk uploads the identical batch again
+Then the response is HTTP 200
+And every result carries status "AlreadyUploaded"
+And exactly one account still exists for each sequence
+```
+> The desk retries after a dropped connection. A second account for a badge
+> already handed out would be a second person in every count in the system.
+
+### E2E-WIM-020 — one bad row does not fail the batch
+```gherkin
+Given WalkInMode is armed with OfflineUpload
+And a batch of four rows where the second names a profile-type code that
+    does not exist and the third carries a sequence above the maximum
+When the desk uploads that batch
+Then the response is HTTP 200
+And two results are "Created" and two are "Rejected"
+And both rejections carry error code OFFLINE_BADGE_INVALID
+```
+
+### E2E-WIM-021 — an uploaded duplicate identity is refused
+```gherkin
+Given a batch of two rows carrying the SAME national ID
+When the desk uploads it
+Then one result is "Created"
+And the other is "Rejected" with error code DUPLICATE_IDENTITY
+```
+
+### E2E-WIM-022 — an uploaded badge is pending without auto-approve
+```gherkin
+Given WalkInMode is armed with OfflineUpload but NOT AutoApprove
+When the desk uploads a registration
+Then the result status is "CreatedPendingApproval"
+And scanning that printed badge at a gate is Denied with HolderNotApproved
+```
+> Reported distinctly on purpose: the badge is already in someone's hand, so
+> "created" without saying "and it will be refused" would mislead the desk.
+
+### E2E-WIM-023 — a foreign-key badge is not recognised
+```gherkin
+Given WalkInMode is armed with AcceptOfflineBadges
+And a badge encrypted with a key the server does not hold
+When it is scanned at any gate
+Then the response is HTTP 200 with outcome "Denied"
+And the denial reason is "QrUnknown"
+```
+> The same answer any unrecognised code gets, so a scan is never an oracle for
+> which keys are loaded.
+
+### E2E-WIM-024 — the desk reconciles to zero
+```gherkin
+Given a desk that registered 50 visitors with the network unplugged
+When the network is restored and the operator presses F5 and pastes a token
+Then the upload reports 50 submitted and 0 rejected
+And the desk's "waiting to upload" counter reads 0
+And the operation log carries one Admin.OfflineBadgeBatchUploaded row
+    naming the same tallies
 ```
 
 ---

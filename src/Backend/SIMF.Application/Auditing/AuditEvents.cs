@@ -168,6 +168,12 @@ public static class AuditEvents
     /// Detail names the fields that were omitted so they can be chased and
     /// completed after the event.</summary>
     public const string AdminQuickRegistered = "Admin.QuickRegistered";
+
+    /// <summary>D-809 — one reconciliation upload from an offline badge desk.
+    /// Detail carries the per-batch tallies (submitted / created / pending /
+    /// already-uploaded / rejected), which is the reconciliation report: an
+    /// auditor can add these up and compare against the badges printed.</summary>
+    public const string AdminOfflineBadgeBatchUploaded = "Admin.OfflineBadgeBatchUploaded";
     // D-473 (#10): bulk-generate placeholder badges (by profile type + count).
     public const string AdminBulkBadgesGenerated = "Admin.BulkBadgesGenerated";
 

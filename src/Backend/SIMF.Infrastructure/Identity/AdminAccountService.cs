@@ -325,7 +325,8 @@ internal sealed partial class AdminAccountService(
         UserType kind,
         AdminWalkInRegistrationRequest request,
         CancellationToken cancellationToken = default,
-        bool? expectedIsVisitor = null)
+        bool? expectedIsVisitor = null,
+        string? presetQrId = null)
     {
         // D-186: walk-in registration always creates a Visitor-typed
         // account. The `kind` argument stays on the signature for
@@ -640,6 +641,17 @@ internal sealed partial class AdminAccountService(
                 profile.Interests.Add(interest);
             }
         }
+        // D-809 — the offline badge upload path. The desk printed this badge
+        // without a network, so its QR id is DERIVED from the sequence already
+        // encrypted into the paper rather than minted here. Set before the
+        // insert: the minter on the approval path is mint-if-missing, so it
+        // leaves a populated id alone, and the column's UNIQUE constraint is what
+        // makes a repeated upload of the same batch a clean conflict instead of
+        // a second account.
+        if (!string.IsNullOrEmpty(presetQrId))
+        {
+            profile.QrId = presetQrId;
+        }
         appDbContext.UserProfiles.Add(profile);
 
         // D-425: no QR at create — the account is PendingApproval; the approve
@@ -663,6 +675,22 @@ internal sealed partial class AdminAccountService(
                 AuditEvents.AdminWalkInRegisterFailed, actorUserId, email, null,
                 ErrorCodes.DuplicateIdentity, cancellationToken);
             throw ApiException.DuplicateIdentity();
+        }
+        // D-809 — two desks uploading the same batch at once. The pre-check in
+        // the upload service is a non-atomic read-then-insert, so the loser lands
+        // here; translate it into the same "already uploaded" answer the
+        // pre-check gives rather than a 500, and the retry stays idempotent.
+        catch (DbUpdateException ex) when (
+            !string.IsNullOrEmpty(presetQrId)
+            && ex.ViolatesAnyIndex("IX_UserProfiles_QrId"))
+        {
+            await AuditFailure(
+                AuditEvents.AdminWalkInRegisterFailed, actorUserId, email, null,
+                ErrorCodes.OfflineBadgeSequenceTaken, cancellationToken);
+            throw new ApiException(
+                ErrorCodes.OfflineBadgeSequenceTaken, 409,
+                "This badge sequence has already been uploaded.",
+                "تم رفع هذا الرقم التسلسلي للبطاقة من قبل.");
         }
         await dbContext.SaveChangesAsync(cancellationToken);
 

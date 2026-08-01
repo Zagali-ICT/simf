@@ -284,6 +284,10 @@ public static class DependencyInjection
         services.AddScoped<IAdminUserApprovalService>(sp => sp.GetRequiredService<AdminAccountService>());
         services.AddScoped<IAdminUserProvisioningService>(sp => sp.GetRequiredService<AdminAccountService>());
         services.AddScoped<IAdminUserBulkService>(sp => sp.GetRequiredService<AdminAccountService>());
+        // D-809 — the offline badge desk's reconciliation upload. Its own class
+        // rather than another AdminAccountService facet: it owns no write path,
+        // only the sequence-to-QR-id mapping and per-item error isolation.
+        services.AddScoped<IOfflineBadgeUploadService, OfflineBadgeUploadService>();
         services.AddScoped<IAdminProfileTypeQueryService, AdminProfileTypeQueryService>();
         services.AddScoped<IAdminProfileTypeCommandService, AdminProfileTypeCommandService>();
         // D-134 Sprint A — admin CRUD over SimfRole (existing schema, no migration).
