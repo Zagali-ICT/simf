@@ -1029,6 +1029,26 @@ class AppL10n {
         '$count scan(s) waiting to sync',
       );
 
+  // D-811 — the verdict the device reached with no network. Deliberately worded
+  // as provisional: the scan is queued and the server re-decides it on upload,
+  // so the operator must not read these as the final answer.
+  String get gateOfflineAllowed => _t(
+        'مسموح (دون اتصال) — حُفظ المسح للتأكيد لاحقًا.',
+        'Allowed (offline) — saved for confirmation.',
+      );
+  String get gateOfflineDeniedBadge => _t(
+        'بطاقة غير صالحة — لم يتم التحقق منها.',
+        'Invalid badge — it did not verify.',
+      );
+  String get gateOfflineDeniedProfileType => _t(
+        'هذا النوع غير مسموح له بالدخول من هذه البوابة.',
+        'This badge type is not allowed at this gate.',
+      );
+  String get gateOfflineDeniedGateInactive => _t(
+        'هذه البوابة موقوفة في آخر إعدادات مُزامنة.',
+        'This gate was switched off in the last synced rules.',
+      );
+
   // Staff walk-in registration — "add a visitor at the exhibition" (Figma
   // 1467:12357, D-509).
   String get staffRegisterVisitorTitle =>

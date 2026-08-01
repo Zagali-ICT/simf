@@ -199,14 +199,11 @@ public sealed class MainForm : Form
             ProfileTypeCode = type.Code,
             Name = name,
             NameArabic = _nameArabic.Text.Trim() is { Length: > 0 } arabic ? arabic : null,
-            // A Saudi national id is 10 digits starting 1; anything else is
-            // recorded as an Iqama or passport and reconciled on upload.
-            NationalId = LooksLikeSaudiNationalId(identityDocument) ? identityDocument : null,
-            PassportNumber = LooksLikeSaudiNationalId(identityDocument) ? null : identityDocument,
             SaudiMobile = mobile.StartsWith('0') ? mobile : null,
             InternationalMobile = mobile.StartsWith('+') ? mobile : null,
             RegisteredAt = DateTimeOffset.Now,
         };
+        ApplyIdentityDocument(record, identityDocument);
 
         // STORE BEFORE PRINT, always. If the printer jams, the visitor is still
         // registered and the badge is reprinted from the list; if it were the
@@ -246,11 +243,35 @@ public sealed class MainForm : Form
         RefreshCounters();
     }
 
-    /// <summary>10 digits starting with 1. Deliberately shape-only: the desk does
-    /// not run the Luhn check, because a queue is the wrong place to argue with
-    /// somebody's identity card and the server validates it on upload.</summary>
-    private static bool LooksLikeSaudiNationalId(string value) =>
-        value.Length == 10 && value[0] == '1' && value.All(char.IsAsciiDigit);
+    /// <summary>
+    /// Files the one captured document into the right column.
+    ///
+    /// <para>Saudi identity numbers are 10 digits and the first digit says which
+    /// kind: <c>1</c> is a national ID, <c>2</c> is an Iqama. Anything else is a
+    /// passport. Getting this right matters — each column carries its own
+    /// filtered unique index, so a resident's Iqama recorded as a passport would
+    /// not collide with the same Iqama entered correctly at another desk, and
+    /// that person could collect two badges.</para>
+    ///
+    /// <para>Shape only: the desk does not run the Luhn check, because a queue
+    /// is the wrong place to argue with somebody's identity card. The server
+    /// validates it on upload and reports the row.</para>
+    /// </summary>
+    private static void ApplyIdentityDocument(StoredRegistration record, string value)
+    {
+        var isTenDigits = value.Length == 10 && value.All(char.IsAsciiDigit);
+        if (isTenDigits && value[0] == '1')
+        {
+            record.NationalId = value;
+            return;
+        }
+        if (isTenDigits && value[0] == '2')
+        {
+            record.IqamaNumber = value;
+            return;
+        }
+        record.PassportNumber = value;
+    }
 
     private async Task UploadAsync()
     {

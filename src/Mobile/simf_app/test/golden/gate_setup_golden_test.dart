@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/app_theme.dart';
 import 'package:simf_app/features/gates/data/gate_models.dart';
+import 'package:simf_app/features/gates/data/gate_offline_config.dart';
 import 'package:simf_app/features/gates/data/gates_repository.dart';
 import 'package:simf_app/features/gates/gate_scan_screen.dart';
 
@@ -58,6 +59,23 @@ class _FakeGates implements GatesRepository {
   // The setup golden renders with an empty backlog → the sync banner is hidden.
   @override
   int pendingCount() => 0;
+
+  // D-811 — the setup stage renders before any scan, so the offline path is
+  // inert here. The refresh must still be answerable: the console fires it on
+  // load, and an unimplemented call would fail the golden with a stack trace
+  // instead of a pixel diff.
+  @override
+  Future<GateOfflineConfig?> refreshOfflineConfig() async => null;
+
+  @override
+  GateOfflineConfig? cachedOfflineConfig() => null;
+
+  @override
+  OfflineGateVerdict? judgeOffline({
+    required String gateId,
+    required String qr,
+  }) =>
+      null;
 
   @override
   Future<int> flushPending() async => 0;

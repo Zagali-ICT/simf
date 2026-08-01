@@ -92,6 +92,10 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
       // Opening the console is a good moment to drain any backlog left by a
       // prior offline session (G-4).
       unawaited(_flushPending());
+      // D-811 — and to refresh the rules this device falls back on when the
+      // link drops. Fire-and-forget: it keeps its previous cache on failure,
+      // and the console must open either way.
+      unawaited(ref.read(gatesRepositoryProvider).refreshOfflineConfig());
     } on ApiFailure catch (e) {
       if (!mounted) {
         return;
@@ -157,7 +161,14 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
         // key and retried automatically, so the admitted person is not lost
         // (G-4).
         setState(() => _pending = repo.pendingCount());
-        messenger.showSnackBar(SnackBar(content: Text(l10n.gateSavedOffline)));
+        // D-811 — give the operator an answer instead of only "saved". The
+        // device decrypts the badge and checks it against this gate's cached
+        // rules; null means it could not decide, which is the pre-D-811
+        // behaviour and still the honest answer.
+        final verdict = repo.judgeOffline(gateId: gate.gateId, qr: trimmed);
+        messenger.showSnackBar(
+          SnackBar(content: Text(_offlineText(l10n, verdict))),
+        );
         return;
       }
       setState(() => _result = result);
@@ -186,6 +197,29 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
       default:
         return l10n.gateError;
     }
+  }
+
+  /// D-811 — what to tell the operator about a scan the server never saw.
+  ///
+  /// Every branch also says the scan was saved: whatever the device concluded,
+  /// the authoritative decision is the server's when the queue drains, and an
+  /// operator who reads an offline verdict as final would be misled.
+  static String _offlineText(AppL10n l10n, OfflineGateVerdict? verdict) {
+    if (verdict == null) {
+      // The device could not decide — no cached rules, no key, or a hall door
+      // whose booking check needs live data. Unchanged from before D-811.
+      return l10n.gateSavedOffline;
+    }
+    if (verdict.isAllowed) {
+      return l10n.gateOfflineAllowed;
+    }
+    final reason = switch (verdict.reason) {
+      OfflineDenialReason.profileTypeNotAllowed =>
+        l10n.gateOfflineDeniedProfileType,
+      OfflineDenialReason.gateInactive => l10n.gateOfflineDeniedGateInactive,
+      _ => l10n.gateOfflineDeniedBadge,
+    };
+    return '$reason ${l10n.gateSavedOffline}';
   }
 
   /// The server's message when it actually sent one — `ApiFailure.message` is
