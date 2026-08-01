@@ -168,6 +168,14 @@ internal sealed partial class ReportingService
             "visitor" => descending
                 ? scans.OrderByDescending(s => s.ScannedDisplayName).ThenBy(s => s.Id)
                 : scans.OrderBy(s => s.ScannedDisplayName).ThenBy(s => s.Id),
+            // "scanned" is the date column's own Key (GateActivityReport
+            // .razor:50). Without this arm a click fell through to the default
+            // below, which reads `descending` INVERTED so the no-sort case
+            // comes back most-recent-first — leaving the ascending arrow (and
+            // aria-sort="ascending") sitting over newest-first rows.
+            "scanned" => descending
+                ? scans.OrderByDescending(s => s.ScannedAt).ThenBy(s => s.Id)
+                : scans.OrderBy(s => s.ScannedAt).ThenBy(s => s.Id),
             // Most recent first: a gate log is read from the live end.
             _ => descending
                 ? scans.OrderBy(s => s.ScannedAt).ThenBy(s => s.Id)

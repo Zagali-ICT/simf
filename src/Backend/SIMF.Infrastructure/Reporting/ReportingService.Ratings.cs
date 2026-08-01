@@ -152,6 +152,14 @@ internal sealed partial class ReportingService
             "stars" => descending
                 ? ratings.OrderByDescending(r => r.OverallStars).ThenBy(r => r.Id)
                 : ratings.OrderBy(r => r.OverallStars).ThenBy(r => r.Id),
+            // "submitted" is the date column's own Key (RatingsReport.razor:63).
+            // Without this arm a click fell through to the default below, which
+            // reads `descending` INVERTED so the no-sort case comes back
+            // newest-first — leaving the ascending arrow (and
+            // aria-sort="ascending") sitting over newest-first rows.
+            "submitted" => descending
+                ? ratings.OrderByDescending(r => r.CreatedAt).ThenBy(r => r.Id)
+                : ratings.OrderBy(r => r.CreatedAt).ThenBy(r => r.Id),
             // Newest first: feedback is read from the live end.
             _ => descending
                 ? ratings.OrderBy(r => r.CreatedAt).ThenBy(r => r.Id)

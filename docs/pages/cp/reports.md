@@ -127,6 +127,18 @@ page supplies only its slug, its columns and its labels. `ReportToolbar` is the
 shared strip above every grid (range, totals, export, error). The service is one
 partial class per report so no single file carries every query.
 
+**Every sortable column needs its own arm — the catch-all is not a fallback**
+(D-817). Each `Sort*` switch ends in a `_ =>` that reads `descending`
+**inverted**, so that the *no-sort* case (`Sort == null`, `SortDescending ==
+false`) returns newest-first, which is how these reports are read. That
+inversion is correct for the default and wrong for everything else. Until
+2026-08-01 the date column's key had no arm on four of the reports, so a click
+inherited it: `SimfDataGrid.ToggleSortAsync` sends `SortDescending = false` on
+the first press, the grid drew an ascending arrow and rendered
+`aria-sort="ascending"`, and the rows came back newest-first. When adding a
+sortable column, write its arm with both directions spelled out; never rely on
+`_` to catch it.
+
 ## 9. i18n, RTL and themes
 
 One hundred `Admin.Reports.*` / `Nav.Reports` / `Module.Reports*` keys were added
@@ -139,9 +151,12 @@ dark and grey are covered by the token file alone.
 ## 10. Known limitations
 
 - **No saved filters or scheduled delivery.** A report is a live query.
-- **The grid's per-column filters are not applied server-side** for these
-  reports; the free-text search and the date range are. Column filters therefore
-  affect only sorting and paging state.
+- **No per-column filters.** No report grid declares a `Filterable` column
+  (checked 2026-08-01: zero across all eight), so there is no filter box to be
+  disappointed by — narrowing is done with the free-text search and the date
+  range, both of which are applied server-side. This entry previously read "the
+  grid's per-column filters are not applied server-side", which described a
+  control that does not exist and implied a broken one that does.
 - **Partners and meetings concatenate in memory.** Neither underlying set shares
   a base type, and both are tens to low hundreds of rows rather than an audit
   log. If the exhibition grew to thousands of partners these should become a

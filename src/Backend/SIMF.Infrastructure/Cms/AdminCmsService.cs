@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/CmsTests.cs
+// Tests: SIMF.Api.Tests/CmsTests.cs, SIMF.Api.Tests/GridDateSortKeyTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -232,10 +232,15 @@ internal sealed class AdminCmsService(
         {
             ("title", false) => rows.OrderBy(b => b.Title),
             ("title", true) => rows.OrderByDescending(b => b.Title),
-            ("startutc", false) => rows.OrderBy(b => b.Start),
-            ("startutc", true) => rows.OrderByDescending(b => b.Start),
-            ("endutc", false) => rows.OrderBy(b => b.End),
-            ("endutc", true) => rows.OrderByDescending(b => b.End),
+            // "start" / "end" match the grid column Keys in BannersList.razor. They
+            // read "startutc" / "endutc" until 2026-08-01, left behind when D-770
+            // renamed the *Utc columns, so neither date column sorted at all: both
+            // fell through to the catch-all and the grid stayed on DisplayOrder.
+            ("start", false) => rows.OrderBy(b => b.Start),
+            ("start", true) => rows.OrderByDescending(b => b.Start),
+            ("end", false) => rows.OrderBy(b => b.End),
+            ("end", true) => rows.OrderByDescending(b => b.End),
+            ("displayorder", false) => rows.OrderBy(b => b.DisplayOrder).ThenBy(b => b.Start),
             ("displayorder", true) => rows.OrderByDescending(b => b.DisplayOrder).ThenBy(b => b.Start),
             ("isactive", false) => rows.OrderBy(b => b.IsActive),
             ("isactive", true) => rows.OrderByDescending(b => b.IsActive),

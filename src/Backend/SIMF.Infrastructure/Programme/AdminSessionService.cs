@@ -1,4 +1,5 @@
-// Tests: SIMF.Api.Tests/AdminSessionsTests.cs (+ D-349 live-URL validation)
+// Tests: SIMF.Api.Tests/AdminSessionsTests.cs (+ D-349 live-URL validation),
+//        SIMF.Api.Tests/GridDateSortKeyTests.cs
 // Tests: SIMF.Api.Tests/SessionLifecycleTests.cs (P3.2a — D-231 lifecycle)
 // Tests: SIMF.Api.Tests/SessionRecordingTests.cs (P3.2b — D-232 recording)
 // Tests: SIMF.Api.Tests/SessionLiveNoticeTests.cs (FR-702 — informational live notice)
@@ -84,8 +85,16 @@ internal sealed class AdminSessionService(
             ("code", false) => rows.OrderBy(session => session.Code),
             ("title", true) => rows.OrderByDescending(session => session.Title),
             ("title", false) => rows.OrderBy(session => session.Title),
-            ("endutc", true) => rows.OrderByDescending(session => session.End),
-            ("endutc", false) => rows.OrderBy(session => session.End),
+            // "start" / "end" match the grid column Keys in SessionsList.razor. They
+            // read "endutc" until 2026-08-01, left behind when D-770 renamed the *Utc
+            // columns, and no caller has ever sent that key. The effect was worse than
+            // a dead sort: BOTH date columns fell through to the catch-all, so Start
+            // could only ever sort ascending and clicking End sorted the grid by
+            // START. Add a column here and you must add its key here too.
+            ("start", true) => rows.OrderByDescending(session => session.Start),
+            ("start", false) => rows.OrderBy(session => session.Start),
+            ("end", true) => rows.OrderByDescending(session => session.End),
+            ("end", false) => rows.OrderBy(session => session.End),
             _ => rows.OrderBy(session => session.Start),
         };
 

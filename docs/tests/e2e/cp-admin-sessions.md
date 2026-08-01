@@ -42,7 +42,7 @@
 | E2E-SES-003 | Broadcast lifecycle — Scheduled → Held → Recorded → Published (+ reverse) | happy | P0 | _to author_ |
 | E2E-SES-004 | Recording — upload video → Details shows file + size → remove | happy | P1 | _to author_ |
 | E2E-SES-005 | Capacity override blank → "Inherits from hall"; numeric → effective capacity | happy | P2 | _to author_ |
-| E2E-SES-006 | Grid: filter by Title, sort by Start, paginate | happy | P2 | _to author_ |
+| E2E-SES-006 | Grid: filter by Title, sort by Start, paginate. **End must order by End, not Start** — seed a session that starts first and ends last, so a switch falling through to Start returns the exact reverse | happy | P2 | authored ✓ (`GridDateSortKeyTests.Sessions_sort_on_start_honours_the_descending_direction`, `Sessions_sort_on_end_orders_by_END_not_by_start`) |
 | E2E-SES-007 | Empty list renders `SimfEmptyState` ("No sessions yet.") | happy | P1 | _to author_ |
 | E2E-SES-008 | Auth: signed-in user lacking `Sessions.View` → `/not-permitted` | auth | P0 | _to author_ |
 | E2E-SES-009 | Auth: View/Edit but not `Sessions.Publish` → no lifecycle/recording controls | auth | P0 | _to author_ |

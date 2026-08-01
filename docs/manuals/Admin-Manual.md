@@ -307,6 +307,7 @@ them (Session attendance, Live hall) answer "who is in the room right now".
 ### 3A.1 Dashboard — `/`
 
 > Page reference: [`docs/pages/cp/dashboard.md`](../pages/cp/dashboard.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-dashboard.md`](../tests/e2e/cp-dashboard.md)
 
 The landing page after sign-in, reached again from the **Dashboard** item at the
 top of the **Overview** nav group. Every signed-in administrator sees the
@@ -371,6 +372,8 @@ so the dashboard doubles as a shortcut rail.
 
 ### 3A.2 Session attendance — `/admin/attendance`
 
+> E2E catalogue: [`docs/tests/e2e/cp-admin-attendance.md`](../tests/e2e/cp-admin-attendance.md)
+
 The turnout board. For every active session it shows how many distinct people
 arrived at its hall and how many are still inside. The figures are built from
 the hall-arrival records, whichever way the arrival was captured: an operator's
@@ -424,6 +427,8 @@ View** permission, which the Security team role holds by default.
 - Export the grid. There is no Export button on this page.
 
 ### 3A.3 Live hall — `/admin/sessions/live-hall`
+
+> E2E catalogue: [`docs/tests/e2e/cp-admin-session-live-hall.md`](../tests/e2e/cp-admin-session-live-hall.md)
 
 The door-side view of one room. Pick a session and you get its seat map in four
 colours plus a named list of everyone currently inside the hall, with their
@@ -481,6 +486,8 @@ data, and the **Sessions View** permission for the session picker.
 
 ### 3A.4 Statistics — `/admin/statistics`
 
+> E2E catalogue: [`docs/tests/e2e/cp-admin-statistics.md`](../tests/e2e/cp-admin-statistics.md)
+
 The standing count of everything the event holds: people, content and feedback.
 Eleven cards, each one a live count taken when you open the page, and each one a
 link into the module that owns it. Where the Dashboard adds the day-by-day
@@ -535,6 +542,7 @@ figures on the Dashboard.
 ### 4.1 Attendees — `/admin/attendees` (D-134 Sprint A)
 
 > Page reference: [`docs/pages/cp/admin-attendees.md`](../pages/cp/admin-attendees.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-attendees.md`](../tests/e2e/cp-admin-attendees.md)
 
 Combined **read-only roster** of every event attendee — Visitors and
 Others in one place. Admins are excluded. This is the fastest answer to
@@ -558,6 +566,7 @@ Others in one place. Admins are excluded. This is the fastest answer to
 ### 4.2 Print badge desk — `/admin/print-bag`
 
 > Page reference: [`docs/pages/cp/admin-print-bag.md`](../pages/cp/admin-print-bag.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-print-bag.md`](../tests/e2e/cp-admin-print-bag.md)
 
 #### What it's for
 
@@ -606,6 +615,7 @@ click Print.
 ### 4.3 Roles & permissions — `/admin/roles` (D-134 Sprint A)
 
 > Page reference: [`docs/pages/cp/admin-roles.md`](../pages/cp/admin-roles.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-roles.md`](../tests/e2e/cp-admin-roles.md)
 
 #### What it's for
 
@@ -679,6 +689,7 @@ now this page is about the role itself.
 ### 4A.1 VIP registration — `/admin/visitors/vip`
 
 > Page reference: [`docs/pages/cp/vip-registration.md`](../pages/cp/vip-registration.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-vip-registration.md`](../tests/e2e/cp-vip-registration.md)
 
 The dedicated desk for VVIP and VIP guests. It is the ordinary visitor list narrowed
 to the VIP tiers, plus a registration wizard that captures the extra Mawj (موج)
@@ -756,6 +767,7 @@ all its sessions.
 ### 4A.2 VIP welcome export (Mawj) — `/admin/visitors/vip/export`
 
 > Page reference: [`docs/pages/cp/vip-export.md`](../pages/cp/vip-export.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-vip-export.md`](../tests/e2e/cp-vip-export.md)
 
 The read-only roster you hand to the Mawj (موج) welcome team. It lists every **VVIP**
 and **VIP** visitor with the welcome-message fields captured in §4A.1. On screen the
@@ -875,6 +887,7 @@ Bulk-generate badges and is hidden without it.
 ### 4A.4 Badge batches — `/admin/visitors/badge-batches`
 
 > Page reference: [`docs/pages/cp/admin-badge-batches.md`](../pages/cp/admin-badge-batches.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-badge-batches.md`](../tests/e2e/cp-admin-badge-batches.md)
 
 The history of every bulk badge run made from the Delegates desk (§4A.3) or the
 Visitors list, newest first. It exists so a generated set stays manageable after the
@@ -937,6 +950,7 @@ batch keeps its row so the history stays complete.
 ### 5.1 Themes & pillars — `/admin/themes`
 
 > Page reference: [`docs/pages/cp/admin-themes.md`](../pages/cp/admin-themes.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-themes.md`](../tests/e2e/cp-admin-themes.md)
 
 Programme themes (a.k.a. pillars) are the top-level grouping the agenda
 uses. Sessions belong to a theme; the visitor agenda groups by theme
@@ -993,6 +1007,7 @@ in the visitor agenda picker on next load.
 ### 5.2 Halls & seating — `/admin/halls` (D-134 Sprint B / D-135)
 
 > Page reference: [`docs/pages/cp/admin-halls.md`](../pages/cp/admin-halls.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-halls.md`](../tests/e2e/cp-admin-halls.md)
 
 Halls (rooms) host sessions. Define each hall once — code, bilingual
 name, capacity, optional floor + equipment notes — and the Sessions
@@ -1031,6 +1046,7 @@ Standard per-row Edit (with Active checkbox) and Deactivate (soft-delete).
 ### 5.3 Speakers — `/admin/speakers`
 
 > Page reference: [`docs/pages/cp/admin-speakers.md`](../pages/cp/admin-speakers.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-speakers.md`](../tests/e2e/cp-admin-speakers.md)
 
 The speaker directory. Every speaker here appears in the **Add speaker** picker
 on the Session form (§5.4), on the public speaker list, and behind the app's
@@ -1236,6 +1252,7 @@ ratings are retained.
 ### 5.5 Booking monitor — `/admin/bookings`
 
 > Page reference: [`docs/pages/cp/admin-bookings.md`](../pages/cp/admin-bookings.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-bookings.md`](../tests/e2e/cp-admin-bookings.md)
 
 A read-only list of every seat visitors are currently holding across all
 sessions. There is deliberately no approve or reject step: the banner at the
@@ -1284,6 +1301,7 @@ Export** permission.
 ### 5A.1 Session categories — `/admin/session-categories`
 
 > Page reference: [`docs/pages/cp/admin-session-categories.md`](../pages/cp/admin-session-categories.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-session-categories.md`](../tests/e2e/cp-admin-session-categories.md)
 
 A small bilingual lookup that fills the **Category** dropdown on the Session
 form (§5.4). It is deliberately a lookup, not a fixed list in code, so the
@@ -1337,6 +1355,7 @@ list when nothing is ticked) to Excel; **Import** reads a file back and reports
 ### 5A.2 Programme days — `/admin/programme-days`
 
 > Page reference: [`docs/pages/cp/admin-programme-days.md`](../pages/cp/admin-programme-days.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-programme-days.md`](../tests/e2e/cp-admin-programme-days.md)
 
 The days that head the mobile app's Sessions screen. Each row is one calendar
 date with a bilingual title and an optional day logo. One row per date: the
@@ -1386,6 +1405,8 @@ no longer appear in the app."* → **Deactivate** again. The toast confirms
 
 ### 5A.3 Run of Show — `/admin/programme/timeline`
 
+> E2E catalogue: [`docs/tests/e2e/cp-admin-programme-timeline.md`](../tests/e2e/cp-admin-programme-timeline.md)
+
 The whole agenda on one screen, read only. It reads the same sessions the
 Sessions module (§5.4) owns and groups them by the calendar day of their start
 time, day headings in date order, sessions inside a day in start-time order.
@@ -1426,6 +1447,7 @@ Use the **Day** dropdown above the tables. It lists every day heading plus
 ### 5A.4 Hall seat layouts — `/admin/halls/seat-layouts`
 
 > Page reference: [`docs/pages/cp/admin-halls-seat-layouts.md`](../pages/cp/admin-halls-seat-layouts.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-halls-seat-layouts.md`](../tests/e2e/cp-admin-halls-seat-layouts.md)
 
 One hall at a time: you define its rows, how many seats each row holds, and
 each row's tier. This layout is the seat map visitors see when they book a
@@ -1482,6 +1504,7 @@ so if a button is missing that is why.
 ### 5A.5 Session seat plans — `/admin/sessions/seat-plans`
 
 > Page reference: [`docs/pages/cp/admin-sessions-seat-plans.md`](../pages/cp/admin-sessions-seat-plans.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-sessions-seat-plans.md`](../tests/e2e/cp-admin-sessions-seat-plans.md)
 
 The live seating chart for one session. It draws the hall's layout (§5.4) and
 paints every active reservation onto it, so you can see who is sitting where,
@@ -1545,6 +1568,7 @@ With **Seat plans → View** only, you can read the plan but the buttons are gon
 ### 5A.6 Speaker presentations — `/admin/speaker-presentations`
 
 > Page reference: [`docs/pages/cp/admin-speaker-presentations.md`](../pages/cp/admin-speaker-presentations.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-speaker-presentations.md`](../tests/e2e/cp-admin-speaker-presentations.md)
 
 Where a speaker's slide decks and papers live, one file per session. You pick a
 speaker from a wall of profile cards, then upload, download or remove their
@@ -1605,6 +1629,7 @@ real table. All nine live under the **Programme** nav group.
 ### 5B.1 Speaker meeting requests — `/admin/speaker-meeting-requests`
 
 > Page reference: [`docs/pages/cp/admin-speaker-meeting-requests.md`](../pages/cp/admin-speaker-meeting-requests.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-speaker-meeting-requests.md`](../tests/e2e/cp-admin-speaker-meeting-requests.md)
 
 The review desk for meeting requests an attendee raised **against a speaker**
 from the mobile app. A speaker only appears in that app flow when their Speakers
@@ -1679,6 +1704,8 @@ is ticked). There is no Add: requests are only created from the app.
 
 ### 5B.2 Speaker availability — `/admin/speaker-availability`
 
+> E2E catalogue: [`docs/tests/e2e/cp-admin-speaker-availability.md`](../tests/e2e/cp-admin-speaker-availability.md)
+
 Where the team declares the hours a speaker is free to take meetings. Each
 window is chopped into bookable slots of the length you set, and those slots are
 what an attendee sees in the app when asking for a meeting. A speaker with no
@@ -1721,6 +1748,8 @@ Nothing on this page is bilingual: a window is a pair of timestamps.
 
 ### 5B.3 Hall availability — `/admin/hall-availability`
 
+> E2E catalogue: [`docs/tests/e2e/cp-admin-hall-availability.md`](../tests/e2e/cp-admin-hall-availability.md)
+
 Banner reads **Hall availability (meeting time)**. This is where the team says
 which hours a room is open for meetings. It is the single source of the free
 slots offered on **both** review desks, 5B.1 and 5B.4, so a hall with no window
@@ -1759,6 +1788,8 @@ Unlike the speaker and delegation availability pages, the date boxes here are
 | A slot you added never appears on a review desk | The slot is already taken by another meeting | Add more meeting time, or use a different hall |
 
 ### 5B.4 Delegation meetings — `/admin/delegation-meetings`
+
+> E2E catalogue: [`docs/tests/e2e/cp-admin-delegation-meetings.md`](../tests/e2e/cp-admin-delegation-meetings.md)
 
 The review desk for country-to-country (G2G) meeting requests: a delegate of one
 invited country asks to meet another invited country's delegation. The requester
@@ -1825,6 +1856,8 @@ to *Done*.
 
 ### 5B.5 Delegation availability — `/admin/delegation-availability`
 
+> E2E catalogue: [`docs/tests/e2e/cp-admin-delegation-availability.md`](../tests/e2e/cp-admin-delegation-availability.md)
+
 The delegation twin of 5B.2: the hours a country's delegation is free to take
 meetings, sliced into bookable slots. A delegation with no window here cannot be
 asked for a meeting. Needs the Delegation meetings → Manage permission.
@@ -1860,6 +1893,7 @@ will no longer be offered."*
 ### 5B.6 Document requests — `/admin/document-requests`
 
 > Page reference: [`docs/pages/cp/document-requests.md`](../pages/cp/document-requests.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-document-requests.md`](../tests/e2e/cp-document-requests.md)
 
 The review desk for participation-document requests raised from the app: an
 **Official attendance certificate**, a **Participation letter** or an
@@ -1902,6 +1936,7 @@ filterable), **Submitted**, **Responded**. Status reads *Under review*,
 ### 5B.7 Badge requests — `/admin/badge-requests`
 
 > Page reference: [`docs/pages/cp/badge-requests.md`](../pages/cp/badge-requests.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-badge-requests.md`](../tests/e2e/cp-badge-requests.md)
 
 The review desk for attendees asking to change the job title printed on their
 badge. **Accepting a request writes the requested title straight onto the
@@ -1944,6 +1979,7 @@ reads *Under review*, *Accepted*, *Rejected* or *Cancelled*.
 ### 5B.8 Meeting Tables & Hall Allocation — `/admin/meeting-tables`
 
 > Page reference: [`docs/pages/cp/meeting-tables.md`](../pages/cp/meeting-tables.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-meeting-tables.md`](../tests/e2e/cp-meeting-tables.md)
 
 The room-configuration page. It does three things for one hall at a time: sets
 what the hall is **for**, defines the physical **meeting tables** in it, and
@@ -2007,6 +2043,7 @@ Nothing on this page is bilingual. A table code is one venue-side identifier.
 ### 5B.9 Business Meetings — `/admin/business-meetings`
 
 > Page reference: [`docs/pages/cp/business-meetings.md`](../pages/cp/business-meetings.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-business-meetings.md`](../tests/e2e/cp-business-meetings.md)
 
 Admin-arranged business meetings: you schedule two or more parties, companies
 and visitors, onto a specific **meeting table** for a from-to time-slot. Unlike
@@ -2072,6 +2109,7 @@ Business meetings → Export.
 ### 6.1 Session moderators — `/admin/session-moderators`
 
 > Page reference: [`docs/pages/cp/admin-session-moderators.md`](../pages/cp/admin-session-moderators.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-session-moderators.md`](../tests/e2e/cp-admin-session-moderators.md)
 
 A **grant** on this page gives one named person the right to run the live Q&A
 desk of **one** session. It is not a job title: it is a per-session key. Once
@@ -2120,6 +2158,7 @@ is no import: grants are made one at a time.
 ### 6.2 Question queue — `/admin/question-queue`
 
 > Page reference: [`docs/pages/cp/admin-question-queue.md`](../pages/cp/admin-question-queue.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-question-queue.md`](../tests/e2e/cp-admin-question-queue.md)
 
 The committee's central triage desk for audience questions, across every
 session at once. It shows the **pending** questions only, oldest first, capped
@@ -2170,6 +2209,7 @@ nothing is ticked.
 ### 6.3 Session summaries — `/admin/session-summaries`
 
 > Page reference: [`docs/pages/cp/admin-session-summaries.md`](../pages/cp/admin-session-summaries.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-session-summaries.md`](../tests/e2e/cp-admin-session-summaries.md)
 
 The محضر desk: one row per active session, showing whether that session has a
 summary and how far it has got. A summary is drafted (by AI or by hand),
@@ -2241,6 +2281,7 @@ back.
 ### 6.4 Exhibitors — `/admin/exhibitors`
 
 > Page reference: [`docs/pages/cp/admin-exhibitors.md`](../pages/cp/admin-exhibitors.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-exhibitors.md`](../tests/e2e/cp-admin-exhibitors.md)
 
 The register of exhibiting companies. Exhibitors are created here and nowhere
 else: there is no self-signup. Booths (§6.5) point at an exhibitor, and this is
@@ -2303,6 +2344,7 @@ and can be brought back by editing it and ticking Active.
 ### 6.5 Booths — `/admin/booths`
 
 > Page reference: [`docs/pages/cp/admin-booths.md`](../pages/cp/admin-booths.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-booths.md`](../tests/e2e/cp-admin-booths.md)
 
 The exhibition floor. Each booth carries a code, a bilingual name, the exhibitor
 staffing it (§6.4), a sector, an optional hall (§5.2) and an optional map
@@ -2360,6 +2402,7 @@ map straight away.
 ### 6.6 Sponsors — `/admin/sponsors`
 
 > Page reference: [`docs/pages/cp/admin-sponsors.md`](../pages/cp/admin-sponsors.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-sponsors.md`](../tests/e2e/cp-admin-sponsors.md)
 
 The sponsor wall. The public screen groups the logos by tier, Platinum first,
 then Gold, Silver and Bronze, and inside a tier orders them by **Display
@@ -2411,6 +2454,7 @@ later by editing it.
 ### 6.7 Venue map — `/admin/venue-map`
 
 > Page reference: [`docs/pages/cp/admin-venue-map.md`](../pages/cp/admin-venue-map.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-venue-map.md`](../tests/e2e/cp-admin-venue-map.md)
 
 The 2D map the app draws. Each row is one **node**: a bilingual label, a kind, a
 position, and optionally the hall or booth it marks. The page ships empty and
@@ -2471,6 +2515,7 @@ shows and the AI control centre that runs every AI feature in the platform.
 ### 7.1 Ratings — `/admin/ratings`
 
 > Page reference: [`docs/pages/cp/admin-ratings.md`](../pages/cp/admin-ratings.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-ratings.md`](../tests/e2e/cp-admin-ratings.md)
 
 Every rating an attendee submits from the mobile app lands here. The page is
 **read-only**: a response belongs to the attendee who submitted it, so there is no
@@ -2527,6 +2572,7 @@ permission; **Export** additionally needs **Ratings → Export**.
 ### 7.2 Rating configuration — `/admin/rating-config`
 
 > Page reference: [`docs/pages/cp/admin-rating-config.md`](../pages/cp/admin-rating-config.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-rating-config.md`](../tests/e2e/cp-admin-rating-config.md)
 
 This is where you decide what the app asks attendees. It has three levels: a
 **rating type** (what is being rated), its **question groups** (headings on the
@@ -2650,6 +2696,7 @@ group *"and every question inside it will be deactivated."*
 ### 7.4 AI dashboard — `/admin/ai`
 
 > Page reference: [`docs/pages/cp/admin-ai-dashboard.md`](../pages/cp/admin-ai-dashboard.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-ai-dashboard.md`](../tests/e2e/cp-admin-ai-dashboard.md)
 
 The health check for everything AI in SIMF. It is read-only and always covers the
 **last 24 hours**, marked on the page itself. Open it first when someone reports
@@ -2687,6 +2734,7 @@ the **AI dashboard → View** permission.
 ### 7.5 AI services — `/admin/ai/services`
 
 > Page reference: [`docs/pages/cp/admin-ai-services.md`](../pages/cp/admin-ai-services.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-ai-services.md`](../tests/e2e/cp-admin-ai-services.md)
 
 One row per AI service, answering "what runs the translation AI, and where does the
 data go?" from a single screen. Each row shows the service, the prompt currently
@@ -2744,6 +2792,7 @@ this service with key, provider, model, version and active state) and
 ### 7.6 AI prompts — `/admin/ai/prompts`
 
 > Page reference: [`docs/pages/cp/admin-ai-prompts.md`](../pages/cp/admin-ai-prompts.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-ai-prompts.md`](../tests/e2e/cp-admin-ai-prompts.md)
 
 The catalogue of every instruction SIMF sends to an AI provider. One prompt drives
 one service, and the services console (§7.5) simply groups this list by service.
@@ -2871,6 +2920,7 @@ Arabic readers with an empty box.
 ### 8.1 Media library — `/admin/media-library`
 
 > Page reference: [`docs/pages/cp/media-library.md`](../pages/cp/media-library.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-media-library.md`](../tests/e2e/cp-admin-media-library.md)
 
 One place to see **every** image the system holds, no matter which module
 uploaded it: speaker photos, company and sponsor logos, media-partner logos,
@@ -2926,6 +2976,7 @@ Deactivate and Restore buttons are not rendered.
 ### 8.2 Content blocks — `/admin/content-blocks`
 
 > Page reference: [`docs/pages/cp/admin-content-blocks.md`](../pages/cp/admin-content-blocks.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-content-blocks.md`](../tests/e2e/cp-admin-content-blocks.md)
 
 The public website's editable text. Each block is a **Key** (a dotted name such
 as `home.welcome.title`) plus its English and Arabic text. The website's landing
@@ -2977,6 +3028,7 @@ spreadsheet buttons.
 ### 8.3 Banners — `/admin/banners`
 
 > Page reference: [`docs/pages/cp/admin-banners.md`](../pages/cp/admin-banners.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-banners.md`](../tests/e2e/cp-admin-banners.md)
 
 Time-windowed hero announcements. Each banner has a bilingual title and body, a
 start and an end, and a display order. The public surfaces only show banners that
@@ -3038,6 +3090,7 @@ and **Import** for the matching buttons.
 ### 8.4 Media Center — `/admin/media`
 
 > Page reference: [`docs/pages/cp/admin-media.md`](../pages/cp/admin-media.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-media.md`](../tests/e2e/cp-admin-media.md)
 
 The public photo and video gallery. Each item is either an **Image** (a picture
 you upload into SIMF) or a **Video** (a link to a video hosted elsewhere), with
@@ -3096,6 +3149,7 @@ Gates: **Media → View**, **Create**, **Edit**, **Delete**, **Export**, **Impor
 ### 8.5 News — `/admin/news`
 
 > Page reference: [`docs/pages/cp/admin-news.md`](../pages/cp/admin-news.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-news.md`](../tests/e2e/cp-admin-news.md)
 
 The public news feed, read by the website and by the app's media-coverage screen.
 Each article carries a bilingual title, category, short excerpt and full body,
@@ -3149,6 +3203,7 @@ Gates: **News → View**, **Create**, **Edit**, **Delete**, **Export**, **Import
 ### 8.6 Media Partners — `/admin/media-partners`
 
 > Page reference: [`docs/pages/cp/admin-media-partners.md`](../pages/cp/admin-media-partners.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-media-partners.md`](../tests/e2e/cp-admin-media-partners.md)
 
 The publications and channels covering the forum. The app's media-coverage screen
 shows them as a logo grid, and tapping a card opens the logo full size. Each
@@ -3202,6 +3257,7 @@ Gates: **Media partners → View**, **Create**, **Edit**, **Delete**, **Export**
 ### 8.7 Previous editions — `/admin/archive`
 
 > Page reference: [`docs/pages/cp/admin-archive.md`](../pages/cp/admin-archive.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-archive.md`](../tests/e2e/cp-admin-archive.md)
 
 The public archive of past forums, one row per year, and there is exactly one
 edition per year. Each carries a bilingual title and summary, the three headline
@@ -3275,6 +3331,7 @@ Gates: **Archive → View**, **Create**, **Edit**, **Delete**, **Snapshot**,
 ### 8.8 Invitations — `/admin/invitations`
 
 > Page reference: [`docs/pages/cp/admin-invitations.md`](../pages/cp/admin-invitations.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-invitations.md`](../tests/e2e/cp-admin-invitations.md)
 
 The PR desk's invitation register: who was invited, by whom, and whether they
 accepted. Each row records a recipient, the admin who sent it, the state
@@ -3331,6 +3388,7 @@ send, edit and cancel, **Invitations → Export** for the spreadsheet.
 ### 8.9 VIPs — `/admin/vips`
 
 > Page reference: [`docs/pages/cp/admin-vips.md`](../pages/cp/admin-vips.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-vips.md`](../tests/e2e/cp-admin-vips.md)
 
 The VIP roster: every person whose profile type is **VVIP**, **VIP** or **Gold**.
 The list is derived, you do not add or edit people here, you manage them in the
@@ -3388,6 +3446,7 @@ recorded, which is why the two numbers in the success line often differ.
 ### 8.10 Announcements — `/admin/announcements`
 
 > Page reference: [`docs/pages/cp/announcements.md`](../pages/cp/announcements.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-announcements.md`](../tests/e2e/cp-announcements.md)
 
 The broadcast desk. Write one bilingual message and send it, in the app and by
 email, either to the people registered for a specific session or to a broad
@@ -3443,6 +3502,8 @@ deliberate: supervisors can audit what was sent without being able to send.
 | Recipient count reads "Choose a target..." | No session picked yet, or the estimate call failed | Pick the session again |
 
 ### 8.11 Contact inquiries — `/admin/contact-inquiries`
+
+> E2E catalogue: [`docs/tests/e2e/cp-contact-inquiries.md`](../tests/e2e/cp-contact-inquiries.md)
 
 The inbox for the "Contact us" form in the mobile app. Anyone, signed in or not,
 can send a message, so this list is public-facing and worth checking daily. It is
@@ -3502,6 +3563,7 @@ in, so every message that reaches this list is complete.
 ### 9.1 Gates — `/admin/gates`
 
 > Page reference: [`docs/pages/cp/admin-gates.md`](../pages/cp/admin-gates.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-gates.md`](../tests/e2e/cp-admin-gates.md)
 
 A **gate** is a scanning point: a venue entrance, or a hall door. Each gate holds
 its own direction policy, its allow-list of profile types, and the list of
@@ -3681,6 +3743,7 @@ right now?". It needs the **Gates → Manage** permission.
 ### 9.5 Countries — `/admin/countries`
 
 > Page reference: [`docs/pages/cp/admin-countries.md`](../pages/cp/admin-countries.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-countries.md`](../tests/e2e/cp-admin-countries.md)
 
 The country lookup behind the nationality picker on every registration form and
 the speaker's country field. It also carries the **delegation** (وفد) data: which
@@ -3728,6 +3791,7 @@ also carries the **Active — show in the nationality picker** checkbox.
 ### 9.6 Organisations — `/admin/organisations`
 
 > Page reference: [`docs/pages/cp/admin-organisations.md`](../pages/cp/admin-organisations.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-organisations.md`](../tests/e2e/cp-admin-organisations.md)
 
 The Saudi companies lookup that backs the الجهة (employer) picker a visitor
 chooses from during registration. Rows can be typed in one at a time or bulk
@@ -3775,6 +3839,7 @@ with nothing ticked to export everything matching the current filter.
 ### 9.7 Regions — `/admin/regions`
 
 > Page reference: [`docs/pages/cp/admin-regions.md`](../pages/cp/admin-regions.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-regions.md`](../tests/e2e/cp-admin-regions.md)
 
 The administrative-regions lookup, the 13 official Saudi regions, used by the
 region picker in the app. The rows are seeded for you; this page exists so a
@@ -3817,6 +3882,7 @@ stays in the database; Edit it and tick **Active** to bring it back.
 ### 9.8 System configuration — `/admin/configuration`
 
 > Page reference: [`docs/pages/cp/admin-configuration.md`](../pages/cp/admin-configuration.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-configuration.md`](../tests/e2e/cp-admin-configuration.md)
 
 The platform's key and value store: the odd settings that are neither content nor
 a lookup. Each row is a **Key**, its **Value**, and an optional **Description**
@@ -3871,6 +3937,7 @@ still loads.
 ### 9.9 Site Settings — `/admin/site-settings`
 
 > Page reference: [`docs/pages/cp/site-settings.md`](../pages/cp/site-settings.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-site-settings.md`](../tests/e2e/cp-site-settings.md)
 
 Two switches that the mobile app and the public website both read: the message a
 visitor sees the moment their registration completes, and whether the **Meet
@@ -3912,6 +3979,7 @@ the whole directory for everyone.
 ### 9.10 Email templates — `/admin/email/templates`
 
 > Page reference: [`docs/pages/cp/email-templates.md`](../pages/cp/email-templates.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-email-templates.md`](../tests/e2e/cp-admin-email-templates.md)
 
 The wording of the automatic emails the system sends: sign-in OTP, email
 verification, "an account already exists", password reset, badge activation,
@@ -3959,6 +4027,7 @@ will be removed."*. The grid's Customised column flips back to **Default**.
 ### 9.11 Organization Profile — `/admin/organization-profile`
 
 > Page reference: [`docs/pages/cp/organization-profile.md`](../pages/cp/organization-profile.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-organization-profile.md`](../tests/e2e/cp-organization-profile.md)
 
 The forum's own identity, in one long form of eight numbered steps: name, title,
 slogan and bio; the edition year, status and dates; the venue and its map pin;
@@ -4021,6 +4090,7 @@ language-neutral value such as a year or a URL, and the app then shows
 ### 9.12 Background services — `/admin/ops/services`
 
 > Page reference: [`docs/pages/cp/ops-services.md`](../pages/cp/ops-services.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-ops-services.md`](../tests/e2e/cp-ops-services.md)
 
 Read-only health of the jobs that run behind the product: session reminders, the
 registration auto-close, and the rest. Three stat cards (**Up**, **Stale**,
@@ -4105,6 +4175,7 @@ is visible to anyone immediately.
 ### 10.1 Admins — `/admin/admins`
 
 > Page reference: [`docs/pages/cp/admin-admins.md`](../pages/cp/admin-admins.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-admins.md`](../tests/e2e/cp-admin-admins.md)
 
 #### What it's for
 
@@ -4183,6 +4254,7 @@ has the same role + state, fresh QR.
 ### 10.2 Pending admins — `/admin/admins/pending`
 
 > Page reference: [`docs/pages/cp/admin-admins-pending.md`](../pages/cp/admin-admins-pending.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-admins-pending.md`](../tests/e2e/cp-admin-admins-pending.md)
 
 Queue of self-registered admin candidates. Per-row **Approve** (one-click,
 no preview today — parity gap with the Visitor/Other equivalents) and
@@ -4192,6 +4264,7 @@ before approving since there's no preview modal yet.
 ### 10.3 Others — `/admin/others`
 
 > Page reference: [`docs/pages/cp/admin-others.md`](../pages/cp/admin-others.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-others.md`](../tests/e2e/cp-admin-others.md)
 
 Walk-in registration for non-visitor non-admin attendees (sponsor staff,
 exhibitor reps, press, contractors). Same wizard as `/admin/visitors`,
@@ -4202,6 +4275,7 @@ profile-type is seeded under §10.9 before run-time.
 ### 10.4 Pending others — `/admin/others/pending`
 
 > Page reference: [`docs/pages/cp/admin-others-pending.md`](../pages/cp/admin-others-pending.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-others-pending.md`](../tests/e2e/cp-admin-others-pending.md)
 
 Approval queue for Other-typed self-registrations. Same View / Approve-with-
 review / Reject-with-reason flow as `/admin/visitors/pending` (§10.6).
@@ -4209,6 +4283,7 @@ review / Reject-with-reason flow as `/admin/visitors/pending` (§10.6).
 ### 10.5 Visitors — `/admin/visitors`
 
 > Page reference: [`docs/pages/cp/admin-visitors.md`](../pages/cp/admin-visitors.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-visitors.md`](../tests/e2e/cp-admin-visitors.md)
 
 #### What it's for
 
@@ -4286,6 +4361,7 @@ Same shape as Admins (§10.1).
 ### 10.6 Pending visitors — `/admin/visitors/pending`
 
 > Page reference: [`docs/pages/cp/admin-visitors-pending.md`](../pages/cp/admin-visitors-pending.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-visitors-pending.md`](../tests/e2e/cp-admin-visitors-pending.md)
 
 #### What it's for
 
@@ -4332,6 +4408,7 @@ the QR badge and unlocks event entry; rejection records a reason for audit.
 ### 10.7 Interests — `/admin/interests`
 
 > Page reference: [`docs/pages/cp/admin-interests.md`](../pages/cp/admin-interests.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-interests.md`](../tests/e2e/cp-admin-interests.md)
 
 #### What it's for
 
@@ -4427,6 +4504,7 @@ being relevant, reorder them so the most popular sit at the top.
 ### 10.8 Visitor profile types — `/admin/profile-types/visitor`
 
 > Page reference: [`docs/pages/cp/admin-profile-types-visitor.md`](../pages/cp/admin-profile-types-visitor.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-profile-types-visitor.md`](../tests/e2e/cp-admin-profile-types-visitor.md)
 
 #### What it's for
 
@@ -4455,6 +4533,7 @@ Add a new type before run-time when a new attendee category is announced
 ### 10.9 Other profile types — `/admin/profile-types/other`
 
 > Page reference: [`docs/pages/cp/admin-profile-types-other.md`](../pages/cp/admin-profile-types-other.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-profile-types-other.md`](../tests/e2e/cp-admin-profile-types-other.md)
 
 Identical to §10.8 but for the Other-typed walk-in wizard at `/admin/others`.
 Both pools are completely separate (a "Press" Visitor tile and a "Press" Other
@@ -4464,6 +4543,7 @@ diverge over time).
 ### 10.10 Reset user 2FA — `/admin/reset-2fa`
 
 > Page reference: [`docs/pages/cp/admin-reset-2fa.md`](../pages/cp/admin-reset-2fa.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-reset-2fa.md`](../tests/e2e/cp-admin-reset-2fa.md)
 
 When a user loses both their authenticator and all 10 recovery codes:
 
@@ -4478,6 +4558,7 @@ You cannot self-reset here — use **My profile → Reset my 2FA** instead.
 ### 10.12 Operation log viewer — `/admin/operation-log` (D-134 Sprint A)
 
 > Page reference: [`docs/pages/cp/admin-operation-log.md`](../pages/cp/admin-operation-log.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-operation-log.md`](../tests/e2e/cp-admin-operation-log.md)
 
 The **business + security audit trail**. Browse + filter every event
 the system has audited: sign-ins (success + failure), password resets,
@@ -4505,6 +4586,7 @@ debugging; this page is the structured durable audit table.
 ### 10.11 Logs viewer — `/admin/logs`
 
 > Page reference: [`docs/pages/cp/admin-logs.md`](../pages/cp/admin-logs.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-logs.md`](../tests/e2e/cp-admin-logs.md)
 
 Read-only tail of every project's log files. Pick **Project** (Api,
 ControlPanel, Website) → **File** (per day) → **Lines** (50/100/500/1000)
@@ -4528,6 +4610,7 @@ Use this when:
 ### 11.1 Reports hub — `/admin/reports`
 
 > Page reference: [`docs/pages/cp/reports.md`](../pages/cp/reports.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-reports.md`](../tests/e2e/cp-reports.md)
 
 The **Reports** group in the sidebar holds eight read-only, date-ranged views over
 records the rest of the Control Panel already owns: sessions, hall arrivals,
@@ -4605,6 +4688,7 @@ sort are the only controls.
 ### 11.2 Attendance report — `/admin/reports/attendance`
 
 > Page reference: [`docs/pages/cp/reports.md`](../pages/cp/reports.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-reports.md`](../tests/e2e/cp-reports.md)
 
 Answers "was this session attended". One row per active session whose **start**
 falls inside the period, with how many distinct people arrived and how many are
@@ -4646,6 +4730,7 @@ not the page.
 ### 11.3 Registrations report — `/admin/reports/registrations`
 
 > Page reference: [`docs/pages/cp/reports.md`](../pages/cp/reports.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-reports.md`](../tests/e2e/cp-reports.md)
 
 Who signed up, and where each account stands. One row per **attendee** account
 created inside the period. Administrator accounts are excluded on purpose: this
@@ -4679,6 +4764,7 @@ Registrations permission.
 ### 11.4 Gate activity report — `/admin/reports/gates`
 
 > Page reference: [`docs/pages/cp/reports.md`](../pages/cp/reports.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-reports.md`](../tests/e2e/cp-reports.md)
 
 Every recorded gate scan in the period, allowed and denied, with the reason for
 each refusal. This is the report a security lead reads after a shift, and the one
@@ -4719,6 +4805,7 @@ actually want: a raw scan count double-counts anyone who re-enters.
 ### 11.5 Sessions report — `/admin/reports/sessions`
 
 > Page reference: [`docs/pages/cp/reports.md`](../pages/cp/reports.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-reports.md`](../tests/e2e/cp-reports.md)
 
 Answers "how did this session do". The same session set as the Attendance report,
 plus the speaker line-up, the number of audience questions and the audience score.
@@ -4754,6 +4841,7 @@ Needs the Reports → Sessions permission.
 ### 11.6 Ratings report — `/admin/reports/ratings`
 
 > Page reference: [`docs/pages/cp/reports.md`](../pages/cp/reports.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-reports.md`](../tests/e2e/cp-reports.md)
 
 Every rating submitted in the period, with its comment. **The respondent is not
 reported, on purpose.** Ratings carry free text and this is an anonymous feedback
@@ -4794,6 +4882,7 @@ points at depends on the scope, so use it to group rows in Excel, not to read.
 ### 11.7 Partners report — `/admin/reports/partners`
 
 > Page reference: [`docs/pages/cp/reports.md`](../pages/cp/reports.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-reports.md`](../tests/e2e/cp-reports.md)
 
 Exhibitors, sponsors and booths flattened into a single contact directory, so you
 can work the whole partner surface from one list instead of three pages. Only
@@ -4836,6 +4925,7 @@ The workbook adds **Name (Arabic)** and **Active** to the six columns on screen.
 ### 11.8 Meetings report — `/admin/reports/meetings`
 
 > Page reference: [`docs/pages/cp/reports.md`](../pages/cp/reports.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-reports.md`](../tests/e2e/cp-reports.md)
 
 Speaker meeting requests and delegation meeting requests in one list. They are
 managed on separate pages but have the same operational shape, and an organiser
@@ -4880,6 +4970,7 @@ Use the export when you need to know which specific meetings were attended.
 ### 11.9 Engagement report — `/admin/reports/engagement`
 
 > Page reference: [`docs/pages/cp/reports.md`](../pages/cp/reports.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-reports.md`](../tests/e2e/cp-reports.md)
 
 The audience questions asked in sessions, with their moderation state.
 **Hidden questions are included.** This is a moderation report: reviewing what was
@@ -4926,6 +5017,7 @@ are; **Export to Excel** and read the workbook's **Hidden** column to see which.
 ### 12.1 My profile — `/account/profile`
 
 > Page reference: [`docs/pages/cp/account-profile.md`](../pages/cp/account-profile.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-account-profile.md`](../tests/e2e/cp-account-profile.md)
 
 Reach via the **You** link in the top header.
 
@@ -4939,6 +5031,7 @@ Reach via the **You** link in the top header.
 ### 12.2 Notifications inbox — `/account/notifications`
 
 > Page reference: [`docs/pages/cp/account-notifications.md`](../pages/cp/account-notifications.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-account-notifications.md`](../tests/e2e/cp-account-notifications.md)
 
 #### What it's for
 
@@ -4967,6 +5060,7 @@ that lands here.
 ### 12.3 TOTP pairing — `/account/totp-pairing`
 
 > Page reference: [`docs/pages/cp/account-totp-pairing.md`](../pages/cp/account-totp-pairing.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-account-totp-pairing.md`](../tests/e2e/cp-account-totp-pairing.md)
 
 You only land here at first sign-in OR after Reset-my-2FA. Walkthrough is
 in §2.2 above — scan QR / manual-entry secret / 6-digit verify / save the

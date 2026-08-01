@@ -1,4 +1,5 @@
-// Tests: SIMF.Api.Tests/AdminOperationLogTests.cs, SIMF.Api.Tests/AdminOperationLogExportTests.cs
+// Tests: SIMF.Api.Tests/AdminOperationLogTests.cs, SIMF.Api.Tests/AdminOperationLogExportTests.cs,
+//        SIMF.Api.Tests/GridDateSortKeyTests.cs
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Auditing;
@@ -173,7 +174,13 @@ internal sealed class AdminOperationLogService(
                                       .ThenByDescending(row => row.Timestamp),
             ("sourceip", false) => rows.OrderBy(row => row.SourceIp)
                                        .ThenByDescending(row => row.Timestamp),
-            ("timestamputc", false) => rows.OrderBy(row => row.Timestamp),
+            // "timestamp" matches the grid column Key in OperationLogViewer.razor. It
+            // read "timestamputc" until 2026-08-01, left behind when D-770 renamed the
+            // *Utc columns, so the ascending arm was unreachable: every click fell
+            // through to the newest-first catch-all and an operator tracing an
+            // incident forward from its start could not get an oldest-first view.
+            ("timestamp", false) => rows.OrderBy(row => row.Timestamp),
+            ("timestamp", true) => rows.OrderByDescending(row => row.Timestamp),
             _ => rows.OrderByDescending(row => row.Timestamp),
         };
 }

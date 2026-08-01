@@ -30,7 +30,7 @@
 | E2E-RPT-015 | Every date reads dd-MM-yyyy Saudi local, never UTC | i18n | P0 | authored |
 | E2E-RPT-016 | Arabic RTL render | i18n | P1 | authored |
 | E2E-RPT-017 | Paging keeps the totals stable | happy | P1 | authored |
-| E2E-RPT-018 | Sorting a column re-queries the server | happy | P2 | authored |
+| E2E-RPT-018 | Sorting a column re-queries the server. **The date column must sort in the direction its arrow shows** on all four of registrations (`registered`), gate activity (`scanned`), ratings (`submitted`) and engagement (`asked`) — each fell through to a default that reads the direction inverted, so `aria-sort="ascending"` sat over newest-first rows | happy | P1 | authored ✓ (`ReportingTests.Registrations_sort_on_registered_follows_the_arrow`, `Gate_activity_sorts_on_scanned_following_the_arrow`, `Ratings_sort_on_submitted_following_the_arrow`, `Engagement_sorts_on_asked_following_the_arrow`) |
 | E2E-RPT-019 | No horizontal overflow at 1280 and 1920 | layout | P1 | authored |
 | E2E-RPT-020 | Reports nav group renders without crashing the shell | regression | P0 | authored |
 

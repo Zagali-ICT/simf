@@ -54,7 +54,13 @@ public partial class Announcements
     {
         var env = await JS.InvokeAsync<ApiResult<GridPage<AdminSessionSummary>>>(
             "simfAccount.postJson", "/account/api/admin/sessions/list",
-            new GridQuery { Top = 200, Sort = "startUtc", SortDescending = false });
+            // "start", not "startUtc": D-770 renamed the persisted column and
+            // AdminSessionService has no arm for the old key, so this asked for a
+            // sort nothing served. The picker still came out in start order only
+            // because that service's catch-all happens to be OrderBy(Start) — a
+            // coincidence, not a contract, and one that would break silently the
+            // day that default changes. See D-817.
+            new GridQuery { Top = 200, Sort = "start", SortDescending = false });
         if (env is { Success: true, Data: not null })
         {
             _sessions = env.Data.Items;
