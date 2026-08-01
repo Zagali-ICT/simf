@@ -1,160 +1,141 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1800" height="1010" viewBox="0 0 1800 1010" font-family="Arial, Helvetica, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1500" height="1010" viewBox="0 0 1500 1010" font-family="Arial, Helvetica, sans-serif">
 <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#1F3864"/></marker></defs>
 <defs><marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#5A6472"/></marker></defs>
 <defs><marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#E07B00"/></marker></defs>
 <defs><marker id="ap" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#7030A0"/></marker></defs>
 <defs><marker id="at" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#1F8A8A"/></marker></defs>
 <defs><marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#1F6FB2"/></marker></defs>
-<rect width="1800" height="1010" fill="#FFFFFF"/>
-<rect x="16" y="12" width="1768" height="34" fill="#1F3864"/>
-<text x="900" y="35" font-size="16" font-weight="bold" fill="#FFF" text-anchor="middle">Figure 2. SIMF component and interaction view. Every connector carries its protocol and port</text>
+<rect width="1500" height="1010" fill="#FFFFFF"/>
+<rect x="16" y="12" width="1468" height="34" fill="#1F3864"/>
+<text x="750" y="35" font-size="16" font-weight="bold" fill="#FFF" text-anchor="middle">Figure 2. SIMF component and interaction view. Every connector carries its protocol and port</text>
 <rect x="30" y="62" width="300" height="330" fill="none" stroke="#9AA6B2" stroke-width="1.3" stroke-dasharray="4,4"/>
-<text x="40" y="79" font-size="12" font-weight="bold" fill="#2E7D46">Client applications</text>
+<text x="40" y="79" font-size="13.5" font-weight="bold" fill="#2E7D46">Client applications</text>
 <rect x="46" y="88" width="268" height="76" fill="#F4FBF6" stroke="#2E7D46" stroke-width="1.6"/>
 <rect x="46" y="88" width="268" height="24" fill="#2E7D46"/>
-<text x="180" y="105" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">Mobile application</text>
-<text x="180" y="130" font-size="10.5" fill="#222" text-anchor="middle">Flutter, iOS + Android</text>
-<text x="180" y="145" font-size="10.5" fill="#222" text-anchor="middle">Riverpod, go_router, Dio</text>
+<text x="180" y="105" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">Mobile application</text>
+<text x="180" y="130" font-size="12" fill="#222" text-anchor="middle">Flutter, iOS + Android</text>
+<text x="180" y="145" font-size="12" fill="#222" text-anchor="middle">Riverpod, go_router, Dio</text>
 <rect x="46" y="186" width="268" height="76" fill="#F4FBF6" stroke="#2E7D46" stroke-width="1.6"/>
 <rect x="46" y="186" width="268" height="24" fill="#2E7D46"/>
-<text x="180" y="203" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">Public website</text>
-<text x="180" y="228" font-size="10.5" fill="#222" text-anchor="middle">SIMF.Web, Blazor SSR</text>
-<text x="180" y="243" font-size="10.5" fill="#222" text-anchor="middle">no database access</text>
+<text x="180" y="203" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">Public website</text>
+<text x="180" y="228" font-size="12" fill="#222" text-anchor="middle">SIMF.Web, Blazor SSR</text>
+<text x="180" y="243" font-size="12" fill="#222" text-anchor="middle">no database access</text>
 <rect x="46" y="284" width="268" height="90" fill="#FBF3F3" stroke="#C0504D" stroke-width="1.6"/>
 <rect x="46" y="284" width="268" height="24" fill="#C0504D"/>
-<text x="180" y="301" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">Control Panel</text>
-<text x="180" y="326" font-size="10.5" fill="#222" text-anchor="middle">SIMF.ControlPanel, Blazor Server</text>
-<text x="180" y="341" font-size="10.5" fill="#222" text-anchor="middle">session affinity</text>
-<text x="180" y="365" font-size="10" fill="#C00000" font-weight="bold" text-anchor="middle">no database access</text>
+<text x="180" y="301" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">Control Panel</text>
+<text x="180" y="326" font-size="12" fill="#222" text-anchor="middle">SIMF.ControlPanel, Blazor Server</text>
+<text x="180" y="341" font-size="12" fill="#222" text-anchor="middle">session affinity</text>
+<text x="180" y="365" font-size="11.5" fill="#C00000" font-weight="bold" text-anchor="middle">no database access</text>
 <rect x="376" y="176" width="150" height="104" fill="#EAF6EE" stroke="#1E6E36" stroke-width="1.6"/>
 <rect x="376" y="176" width="150" height="24" fill="#1E6E36"/>
-<text x="451" y="193" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">WAF + Load Balancer</text>
-<text x="451" y="218" font-size="10.5" fill="#222" text-anchor="middle">TLS termination</text>
-<text x="451" y="233" font-size="10.5" fill="#222" text-anchor="middle">OWASP rule set</text>
-<text x="451" y="271" font-size="10" fill="#C00000" font-weight="bold" text-anchor="middle">carries no AI traffic</text>
+<text x="451" y="193" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">WAF + Load Balancer</text>
+<text x="451" y="218" font-size="12" fill="#222" text-anchor="middle">TLS termination</text>
+<text x="451" y="233" font-size="12" fill="#222" text-anchor="middle">OWASP rule set</text>
+<text x="451" y="271" font-size="11.5" fill="#C00000" font-weight="bold" text-anchor="middle">carries no AI traffic</text>
 <rect x="376" y="306" width="150" height="104" fill="#F5F6F8" stroke="#5A6472" stroke-width="1.6"/>
 <rect x="376" y="306" width="150" height="24" fill="#5A6472"/>
-<text x="451" y="323" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">Shared libraries</text>
-<text x="451" y="348" font-size="10.5" fill="#222" text-anchor="middle">SIMF.Common</text>
-<text x="451" y="363" font-size="10.5" fill="#222" text-anchor="middle">SIMF.Contracts</text>
-<text x="451" y="378" font-size="10.5" fill="#222" text-anchor="middle">SIMF.ApiClient</text>
-<text x="451" y="393" font-size="10.5" fill="#222" text-anchor="middle">SIMF.Components</text>
+<text x="451" y="323" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">Shared libraries</text>
+<text x="451" y="348" font-size="12" fill="#222" text-anchor="middle">SIMF.Common</text>
+<text x="451" y="363" font-size="12" fill="#222" text-anchor="middle">SIMF.Contracts</text>
+<text x="451" y="378" font-size="12" fill="#222" text-anchor="middle">SIMF.ApiClient</text>
+<text x="451" y="393" font-size="12" fill="#222" text-anchor="middle">SIMF.Components</text>
 <rect x="566" y="62" width="470" height="480" fill="none" stroke="#9AA6B2" stroke-width="1.3" stroke-dasharray="4,4"/>
-<text x="576" y="79" font-size="12" font-weight="bold" fill="#3B6EA5">SIMF.Api process (application tier)</text>
+<text x="576" y="79" font-size="13.5" font-weight="bold" fill="#3B6EA5">SIMF.Api process (application tier)</text>
 <rect x="586" y="88" width="430" height="66" fill="#F4F8FC" stroke="#3B6EA5" stroke-width="1.6"/>
 <rect x="586" y="88" width="430" height="24" fill="#3B6EA5"/>
-<text x="801" y="105" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">SIMF.Api</text>
-<text x="801" y="130" font-size="10.5" fill="#222" text-anchor="middle">HTTP boundary: FastEndpoints, middleware,</text>
-<text x="801" y="145" font-size="10.5" fill="#222" text-anchor="middle">authentication, permission policies</text>
+<text x="801" y="105" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">SIMF.Api</text>
+<text x="801" y="130" font-size="12" fill="#222" text-anchor="middle">HTTP boundary: FastEndpoints, middleware,</text>
+<text x="801" y="145" font-size="12" fill="#222" text-anchor="middle">authentication, permission policies</text>
 <rect x="586" y="172" width="430" height="56" fill="#F4F8FC" stroke="#3B6EA5" stroke-width="1.6"/>
 <rect x="586" y="172" width="430" height="24" fill="#3B6EA5"/>
-<text x="801" y="189" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">SIMF.Application</text>
-<text x="801" y="214" font-size="10.5" fill="#222" text-anchor="middle">use cases and service abstractions</text>
+<text x="801" y="189" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">SIMF.Application</text>
+<text x="801" y="214" font-size="12" fill="#222" text-anchor="middle">use cases and service abstractions</text>
 <rect x="586" y="248" width="430" height="68" fill="#F4F8FC" stroke="#3B6EA5" stroke-width="1.6"/>
 <rect x="586" y="248" width="430" height="24" fill="#3B6EA5"/>
-<text x="801" y="265" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">SIMF.Infrastructure</text>
-<text x="801" y="290" font-size="10.5" fill="#222" text-anchor="middle">EF Core (two DbContexts), storage, e-mail,</text>
-<text x="801" y="305" font-size="10.5" fill="#222" text-anchor="middle">identity and JWT, AI providers, audit</text>
+<text x="801" y="265" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">SIMF.Infrastructure</text>
+<text x="801" y="290" font-size="12" fill="#222" text-anchor="middle">EF Core (two DbContexts), storage, e-mail,</text>
+<text x="801" y="305" font-size="12" fill="#222" text-anchor="middle">identity and JWT, AI providers, audit</text>
 <rect x="586" y="334" width="430" height="52" fill="#F4F8FC" stroke="#3B6EA5" stroke-width="1.6"/>
 <rect x="586" y="334" width="430" height="24" fill="#3B6EA5"/>
-<text x="801" y="351" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">SIMF.Domain</text>
-<text x="801" y="376" font-size="10.5" fill="#222" text-anchor="middle">entities, aggregates, enums, rules</text>
+<text x="801" y="351" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">SIMF.Domain</text>
+<text x="801" y="376" font-size="12" fill="#222" text-anchor="middle">entities, aggregates, enums, rules</text>
 <rect x="586" y="402" width="430" height="52" fill="#FFF8EE" stroke="#B5860B" stroke-width="1.6"/>
 <rect x="586" y="402" width="430" height="24" fill="#B5860B"/>
-<text x="801" y="419" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">Background worker</text>
-<text x="801" y="444" font-size="10.5" fill="#222" text-anchor="middle">reminders, sweeps, e-mail queue drain</text>
+<text x="801" y="419" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">Background worker</text>
+<text x="801" y="444" font-size="12" fill="#222" text-anchor="middle">reminders, sweeps, e-mail queue drain</text>
 <rect x="586" y="470" width="430" height="78" fill="#F0F0F0" stroke="#9AA6B2" stroke-width="1.6" stroke-dasharray="7,5"/>
 <rect x="586" y="470" width="430" height="24" fill="#9AA6B2"/>
-<text x="801" y="487" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">SIMF.RealTime</text>
-<text x="801" y="512" font-size="10.5" fill="#222" text-anchor="middle">reserved for SignalR server push</text>
-<text x="801" y="539" font-size="10" fill="#C00000" font-weight="bold" text-anchor="middle">NOT activated on this build (C1)</text>
+<text x="801" y="487" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">SIMF.RealTime</text>
+<text x="801" y="512" font-size="12" fill="#222" text-anchor="middle">reserved for SignalR server push</text>
+<text x="801" y="539" font-size="11.5" fill="#C00000" font-weight="bold" text-anchor="middle">NOT activated on this build (C1)</text>
 <rect x="1116" y="62" width="344" height="490" fill="none" stroke="#9AA6B2" stroke-width="1.3" stroke-dasharray="4,4"/>
-<text x="1126" y="79" font-size="12" font-weight="bold" fill="#6B2FA0">Internal services (SSA zone)</text>
+<text x="1126" y="79" font-size="13.5" font-weight="bold" fill="#6B2FA0">Internal services (SSA zone)</text>
 <rect x="1132" y="88" width="308" height="76" fill="#EEF1F5" stroke="#5A6472" stroke-width="1.6"/>
 <rect x="1132" y="88" width="308" height="24" fill="#5A6472"/>
-<text x="1286" y="105" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">Syslog / SIEM collector</text>
-<text x="1286" y="130" font-size="10.5" fill="#222" text-anchor="middle">fifteen Sigma 2.x rules</text>
-<text x="1286" y="155" font-size="10" fill="#C00000" font-weight="bold" text-anchor="middle">fed by a log shipper (C5)</text>
+<text x="1286" y="105" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">Syslog / SIEM collector</text>
+<text x="1286" y="130" font-size="12" fill="#222" text-anchor="middle">fifteen Sigma 2.x rules</text>
+<text x="1286" y="155" font-size="11.5" fill="#C00000" font-weight="bold" text-anchor="middle">fed by a log shipper (C5)</text>
 <rect x="1132" y="246" width="308" height="92" fill="#F1EAF8" stroke="#6B2FA0" stroke-width="1.6"/>
 <rect x="1132" y="246" width="308" height="24" fill="#6B2FA0"/>
-<text x="1286" y="263" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">On-premises AI service</text>
-<text x="1286" y="288" font-size="10.5" fill="#222" text-anchor="middle">summaries, question filter,</text>
-<text x="1286" y="303" font-size="10.5" fill="#222" text-anchor="middle">assistant, translation</text>
-<text x="1286" y="329" font-size="10" fill="#C00000" font-weight="bold" text-anchor="middle">no AI traffic leaves the ministry</text>
+<text x="1286" y="263" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">On-premises AI service</text>
+<text x="1286" y="288" font-size="12" fill="#222" text-anchor="middle">summaries, question filter,</text>
+<text x="1286" y="303" font-size="12" fill="#222" text-anchor="middle">assistant, translation</text>
+<text x="1286" y="329" font-size="11.5" fill="#C00000" font-weight="bold" text-anchor="middle">no AI traffic leaves the ministry</text>
 <rect x="1132" y="396" width="308" height="64" fill="#EEF1F5" stroke="#5A6472" stroke-width="1.6"/>
 <rect x="1132" y="396" width="308" height="24" fill="#5A6472"/>
-<text x="1286" y="413" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">SMTP relay</text>
-<text x="1286" y="438" font-size="10.5" fill="#222" text-anchor="middle">transactional e-mail</text>
+<text x="1286" y="413" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">SMTP relay</text>
+<text x="1286" y="438" font-size="12" fill="#222" text-anchor="middle">transactional e-mail</text>
 <rect x="1132" y="478" width="308" height="52" fill="#FDF3E6" stroke="#B26A00" stroke-width="1.6"/>
 <rect x="1132" y="478" width="308" height="24" fill="#B26A00"/>
-<text x="1286" y="495" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">Controlled egress point</text>
-<text x="1286" y="520" font-size="10.5" fill="#222" text-anchor="middle">FQDN allow-list, request logging</text>
+<text x="1286" y="495" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">Controlled egress point</text>
+<text x="1286" y="520" font-size="12" fill="#222" text-anchor="middle">FQDN allow-list, request logging</text>
 <rect x="1132" y="576" width="308" height="76" fill="#FFF" stroke="#6B2FA0" stroke-width="1.6"/>
 <rect x="1132" y="576" width="308" height="24" fill="#6B2FA0"/>
-<text x="1286" y="593" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">YouTube (Internet)</text>
-<text x="1286" y="618" font-size="10.5" fill="#222" text-anchor="middle">caption import (outbound)</text>
-<text x="1286" y="633" font-size="10.5" fill="#222" text-anchor="middle">live playback (client-direct)</text>
+<text x="1286" y="593" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">YouTube (Internet)</text>
+<text x="1286" y="618" font-size="12" fill="#222" text-anchor="middle">caption import (outbound)</text>
+<text x="1286" y="633" font-size="12" fill="#222" text-anchor="middle">live playback (client-direct)</text>
 <rect x="566" y="566" width="470" height="348" fill="none" stroke="#9AA6B2" stroke-width="1.3" stroke-dasharray="4,4"/>
-<text x="576" y="583" font-size="12" font-weight="bold" fill="#1F3864">Data tier (HSA zone)</text>
+<text x="576" y="583" font-size="13.5" font-weight="bold" fill="#1F3864">Data tier (HSA zone)</text>
 <rect x="600" y="596" width="416" height="92" fill="#F2F5FA" stroke="#1F3864" stroke-width="1.6"/>
 <rect x="600" y="596" width="416" height="24" fill="#1F3864"/>
-<text x="808" y="613" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">SQL Server 2022</text>
-<text x="808" y="638" font-size="10.5" fill="#222" text-anchor="middle">SIMF_Identity  +  SIMF_App, AlwaysOn AG</text>
-<text x="808" y="653" font-size="10.5" fill="#222" text-anchor="middle">no cross-database FK or transaction</text>
+<text x="808" y="613" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">SQL Server 2022</text>
+<text x="808" y="638" font-size="12" fill="#222" text-anchor="middle">SIMF_Identity  +  SIMF_App, AlwaysOn AG</text>
+<text x="808" y="653" font-size="12" fill="#222" text-anchor="middle">no cross-database FK or transaction</text>
 <rect x="600" y="706" width="416" height="76" fill="#EAF6F6" stroke="#1F8A8A" stroke-width="1.6"/>
 <rect x="600" y="706" width="416" height="24" fill="#1F8A8A"/>
-<text x="808" y="723" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">Shared file store</text>
-<text x="808" y="748" font-size="10.5" fill="#222" text-anchor="middle">18 categories, 4 sensitivity tiers</text>
-<text x="808" y="763" font-size="10.5" fill="#222" text-anchor="middle">4 encrypted at rest</text>
+<text x="808" y="723" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">Shared file store</text>
+<text x="808" y="748" font-size="12" fill="#222" text-anchor="middle">18 categories, 4 sensitivity tiers</text>
+<text x="808" y="763" font-size="12" fill="#222" text-anchor="middle">4 encrypted at rest</text>
 <rect x="600" y="802" width="416" height="56" fill="#F5F6F8" stroke="#5A6472" stroke-width="1.6"/>
 <rect x="600" y="802" width="416" height="24" fill="#5A6472"/>
-<text x="808" y="819" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">File-share witness</text>
-<text x="808" y="844" font-size="10.5" fill="#222" text-anchor="middle">cluster quorum</text>
+<text x="808" y="819" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">File-share witness</text>
+<text x="808" y="844" font-size="12" fill="#222" text-anchor="middle">cluster quorum</text>
 <polyline points="314,126 350,126 350,205 374,205" fill="none" stroke="#1F3864" stroke-width="2.2" marker-end="url(#a)"/>
-<text x="352" y="170" font-size="10" font-weight="bold" fill="#1F3864" text-anchor="start">HTTPS 443</text>
+<text x="352" y="170" font-size="11.5" font-weight="bold" fill="#1F3864" text-anchor="start">HTTPS 443</text>
 <polyline points="314,224 374,224" fill="none" stroke="#1F3864" stroke-width="2.2" marker-end="url(#a)"/>
-<text x="344" y="218" font-size="10" font-weight="bold" fill="#1F3864" text-anchor="middle">HTTPS 443</text>
+<text x="344" y="218" font-size="11.5" font-weight="bold" fill="#1F3864" text-anchor="middle">HTTPS 443</text>
 <polyline points="314,322 350,322 350,252 374,252" fill="none" stroke="#1F3864" stroke-width="2.2" marker-end="url(#a)"/>
-<text x="352" y="300" font-size="10" font-weight="bold" fill="#1F3864" text-anchor="start">HTTPS 443</text>
+<text x="352" y="300" font-size="11.5" font-weight="bold" fill="#1F3864" text-anchor="start">HTTPS 443</text>
 <polyline points="526,214 556,214 556,118 584,118" fill="none" stroke="#1F3864" stroke-width="2.2" marker-end="url(#a)"/>
-<text x="558" y="160" font-size="10" font-weight="bold" fill="#1F3864" text-anchor="start">HTTPS 443</text>
+<text x="558" y="160" font-size="11.5" font-weight="bold" fill="#1F3864" text-anchor="start">HTTPS 443</text>
 <polyline points="330,384 466,384 466,540 584,540" fill="none" stroke="#1F6FB2" stroke-width="2.2" marker-end="url(#ab)"/>
 <text x="470" y="532" font-size="10" font-weight="bold" fill="#1F6FB2">website and CP to API: typed client, HTTPS 443</text>
 <polyline points="1016,292 1130,292" fill="none" stroke="#1F3864" stroke-width="2.2" marker-end="url(#a)"/>
-<text x="1073" y="284" font-size="10" font-weight="bold" fill="#1F3864" text-anchor="middle">HTTPS 443 internal</text>
+<text x="1073" y="284" font-size="11.5" font-weight="bold" fill="#1F3864" text-anchor="middle">HTTPS 443 internal</text>
 <polyline points="1016,428 1130,428" fill="none" stroke="#5A6472" stroke-width="2.2" marker-end="url(#ag)"/>
-<text x="1073" y="420" font-size="10" font-weight="bold" fill="#5A6472" text-anchor="middle">SMTP STARTTLS 587</text>
+<text x="1073" y="420" font-size="11.5" font-weight="bold" fill="#5A6472" text-anchor="middle">SMTP STARTTLS 587</text>
 <polyline points="1016,126 1130,126" fill="none" stroke="#5A6472" stroke-width="2.2" stroke-dasharray="8,5" marker-end="url(#ag)"/>
-<text x="1073" y="118" font-size="10" font-weight="bold" fill="#5A6472" text-anchor="middle">Syslog TLS 6514</text>
+<text x="1073" y="118" font-size="11.5" font-weight="bold" fill="#5A6472" text-anchor="middle">Syslog TLS 6514</text>
 <polyline points="1016,310 1092,310 1092,504 1130,504" fill="none" stroke="#E07B00" stroke-width="2.2" marker-end="url(#ao)"/>
-<text x="1096" y="470" font-size="10" font-weight="bold" fill="#E07B00" text-anchor="start">HTTPS 443</text>
+<text x="1096" y="470" font-size="11.5" font-weight="bold" fill="#E07B00" text-anchor="start">HTTPS 443</text>
 <polyline points="1286,530 1286,574" fill="none" stroke="#E07B00" stroke-width="2.2" marker-end="url(#ao)"/>
-<text x="1296" y="556" font-size="10" font-weight="bold" fill="#E07B00" text-anchor="start">443 outbound</text>
+<text x="1296" y="556" font-size="11.5" font-weight="bold" fill="#E07B00" text-anchor="start">443 outbound</text>
 <polyline points="700,560 700,594" fill="none" stroke="#7030A0" stroke-width="2.2" marker-end="url(#ap)"/>
-<text x="712" y="582" font-size="10" font-weight="bold" fill="#7030A0" text-anchor="start">TCP 1433</text>
+<text x="712" y="582" font-size="11.5" font-weight="bold" fill="#7030A0" text-anchor="start">TCP 1433</text>
 <polyline points="1000,560 1056,560 1056,744 1018,744" fill="none" stroke="#1F8A8A" stroke-width="2.2" marker-end="url(#at)"/>
-<text x="1060" y="680" font-size="10" font-weight="bold" fill="#1F8A8A" text-anchor="start">SMB 445</text>
+<text x="1060" y="680" font-size="11.5" font-weight="bold" fill="#1F8A8A" text-anchor="start">SMB 445</text>
 <polyline points="620,688 580,688 580,830 598,830" fill="none" stroke="#5A6472" stroke-width="2.2" marker-end="url(#ag)"/>
-<text x="536" y="770" font-size="10" font-weight="bold" fill="#5A6472" text-anchor="start">SMB 445</text>
+<text x="536" y="770" font-size="11.5" font-weight="bold" fill="#5A6472" text-anchor="start">SMB 445</text>
 <polyline points="100,374 100,968 1286,968 1286,654" fill="none" stroke="#6B2FA0" stroke-width="2.2" stroke-dasharray="8,5" marker-end="url(#ap)"/>
-<text x="640" y="962" font-size="11" font-weight="bold" fill="#6B2FA0" text-anchor="middle">live video plays device-direct from the attendee device to YouTube, HTTPS 443. It never traverses SIMF</text>
-<rect x="30" y="418" width="500" height="500" fill="#F9FAFB" stroke="#9AA6B2" stroke-width="1.2"/>
-<text x="46" y="444" font-size="13" font-weight="bold" fill="#1F3864">Interaction rules and as-built notes</text>
-<text x="46" y="468" font-size="11" fill="#222">Only SIMF.Api and the background worker hold database</text>
-<text x="46" y="488" font-size="11" fill="#222">connection strings. The website and the Control Panel</text>
-<text x="46" y="508" font-size="11" fill="#222">reference only SIMF.ApiClient, SIMF.Common, SIMF.Contracts</text>
-<text x="46" y="528" font-size="11" fill="#222">and SIMF.Components, so they cannot reach the database.</text>
-<text x="46" y="568" font-size="11" fill="#222">Dependency direction is inward:</text>
-<text x="46" y="588" font-size="11" fill="#222">Domain &lt;- Application &lt;- Infrastructure &lt;- Api.</text>
-<text x="46" y="628" font-size="11" fill="#C00000">AI is a feature set inside SIMF.Infrastructure. There is no</text>
-<text x="46" y="648" font-size="11" fill="#C00000">separate AI component. No AI traffic reaches the load</text>
-<text x="46" y="668" font-size="11" fill="#C00000">balancer or the egress point; inference is an internal call.</text>
-<text x="46" y="708" font-size="11" fill="#C00000">C1  SIMF.RealTime contains no hubs and no SignalR service</text>
-<text x="46" y="728" font-size="11" fill="#C00000">is registered. Live data is served by REST reads.</text>
-<text x="46" y="768" font-size="11" fill="#C00000">C5  The application writes Serilog to console and rolling</text>
-<text x="46" y="788" font-size="11" fill="#C00000">files only; no syslog sink is present. Forwarding to the</text>
-<text x="46" y="808" font-size="11" fill="#C00000">collector is a deployment step, not an application feature.</text>
-<text x="46" y="848" font-size="11" fill="#C00000">C6  No proxy is configured in application code. Egress is</text>
-<text x="46" y="868" font-size="11" fill="#C00000">enforced at the network layer; the default .NET handler</text>
-<text x="46" y="888" font-size="11" fill="#C00000">honours machine or environment proxy settings.</text>
+<text x="640" y="962" font-size="12.5" font-weight="bold" fill="#6B2FA0" text-anchor="middle">live video plays device-direct from the attendee device to YouTube, HTTPS 443. It never traverses SIMF</text>
 </svg>
