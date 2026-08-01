@@ -162,7 +162,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/organization-profile` | [`cp-organization-profile.md`](cp-organization-profile.md) | E2E-ORGP-001..009 |
 | `/admin/contact-inquiries` | [`cp-contact-inquiries.md`](cp-contact-inquiries.md) | E2E-CINQ-001..008 |
 | `/admin/operations` | [`cp-admin-operations.md`](cp-admin-operations.md) | E2E-OPS-001..011 |
-| _(no page — armed from config)_ | [`cp-walk-in-mode.md`](cp-walk-in-mode.md) | E2E-WIM-001..024 |
+| _(no page — armed from config)_ | [`cp-walk-in-mode.md`](cp-walk-in-mode.md) | E2E-WIM-001..028 |
 | `/admin/operation-log` | [`cp-admin-operation-log.md`](cp-admin-operation-log.md) | E2E-OPL-001..018 |
 | `/admin/logs` | [`cp-admin-logs.md`](cp-admin-logs.md) | E2E-LOG-001..013 |
 | `/admin/ops/services` | [`cp-ops-services.md`](cp-ops-services.md) | E2E-SVCM-001..008 |
@@ -339,10 +339,10 @@ being quoted in planning as if current.
 - **Pages catalogued:** 185 (95 Control Panel + 70 mobile + 19 Website + 1
   system-wide). One of the 185 — `cp-admin-companies.md` — is **retired**: its
   route was renamed away and it now carries no live scenarios.
-- **Total scenarios:** 2919 Coverage-matrix rows, every id distinct. That
+- **Total scenarios:** 2923 Coverage-matrix rows, every id distinct. That
   includes the **362** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
   per live page — see `tools/qa/generate_els_rows.py`); the hand-authored
-  functional total is 2541.
+  functional total is 2545.
 - **Authored:** all pages. The D-133 "pending" stubs are fully authored, and
   every event-module and P2–P5 page added since has its own file.
 - **Execution:** the canonical run today is a Chrome DevTools MCP browser pass

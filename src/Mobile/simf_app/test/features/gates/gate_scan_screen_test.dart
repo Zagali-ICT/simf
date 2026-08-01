@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/features/gates/data/gate_models.dart';
+import 'package:simf_app/features/gates/data/gate_offline_config.dart';
 import 'package:simf_app/features/gates/data/gates_repository.dart';
 import 'package:simf_app/features/gates/gate_scan_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
@@ -122,6 +123,22 @@ class _FakeGates implements GatesRepository {
 
   @override
   int pendingCount() => _pendingKeys.length;
+
+  // D-810 — this screen fake never exercises the offline path: these tests
+  // drive the console's online behaviour, and the offline verdict has its own
+  // suite (gate_offline_verdict_test.dart).
+  @override
+  Future<GateOfflineConfig?> refreshOfflineConfig() async => null;
+
+  @override
+  GateOfflineConfig? cachedOfflineConfig() => null;
+
+  @override
+  OfflineGateVerdict? judgeOffline({
+    required String gateId,
+    required String qr,
+  }) =>
+      null;
 
   @override
   Future<int> flushPending() async => _pendingKeys.length;

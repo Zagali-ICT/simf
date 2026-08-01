@@ -277,3 +277,60 @@ public class WalkInModeOptionsTests
         options.KeyForVersion(3).Should().BeNull();
     }
 }
+
+/// <summary>
+/// D-810 — the cross-language contract with the Flutter scanner.
+///
+/// <para>These five strings were produced by <see cref="EventBadgeCodec.Encode"/>
+/// and are pinned IDENTICALLY in
+/// <c>simf_app/test/features/gates/offline_badge_test.dart</c>. The app decodes
+/// badges the desks print, so a codec change that only one language follows
+/// would leave a shipped scanner unable to read live badges. Pinning the same
+/// fixtures on both sides turns that into two red suites instead.</para>
+///
+/// <para>The nonce is random, so these cannot be reproduced by re-encoding —
+/// they are DECODE fixtures. Do not hand-edit them; regenerate both files
+/// together from the encoder.</para>
+/// </summary>
+public sealed class EventBadgeCrossLanguageFixtureTests
+{
+    /// <summary>The fixture key: bytes 0..31, matching the Dart test.</summary>
+    private static byte[] FixtureKey =>
+        Enumerable.Range(0, EventBadgeCodec.KeyBytes).Select(i => (byte)i).ToArray();
+
+    [Theory]
+    [InlineData("1514B39C8841QMMTQCSS7A85NJ8T678WZYZR4E4SE4XRC67CY1GH81VCDWAAG", 1, 3000042L)]
+    [InlineData("1KQ6Z2HH37PJBNQ202Z54CS9V5TWARA380RB0RJ73M5R6XMS1K8", 2, 1L)]
+    [InlineData("1P04044WDQG6Z6APZ3B15AJZ8SW7MRQEJ3EZGX2Z5H4ZSPYFCSYYPYE0598MG", 7, 4999999L)]
+    [InlineData("1ZMYK8EM39BX9SSHK6KEHYNH6EAVK0M914SAY5A8G364DM3K307XK9CEE6A029D7QB0", 30, 9999999999L)]
+    [InlineData("0DDZYS5R9HVKXNQP7KQHR7FDRMPNAZ1ZG2E976DKNF5GGR57Y1AHB3F73NF2G", 1, 3000043L)]
+    public void Decodes_the_fixtures_the_flutter_scanner_pins(
+        string encoded, int profileTypeCode, long sequence)
+    {
+        EventBadgeCodec.TryDecode(encoded, FixtureKey, out var payload)
+            .Should().BeTrue();
+        payload.ProfileTypeCode.Should().Be(profileTypeCode);
+        payload.Sequence.Should().Be(sequence);
+    }
+
+    [Theory]
+    [InlineData("1514B39C8841QMMTQCSS7A85NJ8T678WZYZR4E4SE4XRC67CY1GH81VCDWAAG", 1)]
+    [InlineData("0DDZYS5R9HVKXNQP7KQHR7FDRMPNAZ1ZG2E976DKNF5GGR57Y1AHB3F73NF2G", 0)]
+    public void Reads_the_stamped_key_version_without_the_key(
+        string encoded, int expectedVersion)
+    {
+        EventBadgeCodec.TryReadKeyVersion(encoded, out var version).Should().BeTrue();
+        version.Should().Be(expectedVersion);
+    }
+
+    [Theory]
+    [InlineData("1514B39C8841QMMTQCSS7A85NJ8T678WZYZR4E4SE4XRC67CY1GH81VCDWAAG")]
+    [InlineData("1ZMYK8EM39BX9SSHK6KEHYNH6EAVK0M914SAY5A8G364DM3K307XK9CEE6A029D7QB0")]
+    public void A_real_badge_fits_the_widened_audit_column(string encoded)
+    {
+        // GateScans.QrIdAtScan is nvarchar(96) after the D-810 widening, and the
+        // gate stores the whole blob so the server can decrypt it independently.
+        // A typical badge is 61 characters; the 10-digit-sequence extreme is 67.
+        encoded.Length.Should().BeLessThanOrEqualTo(96);
+    }
+}

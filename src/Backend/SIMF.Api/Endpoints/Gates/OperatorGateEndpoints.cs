@@ -32,6 +32,40 @@ public sealed class MyAssignmentsEndpoint(IGateOperatorService service)
     }
 }
 
+/// <summary>
+/// D-810 — <c>GET /app/gates/offline-config</c>. The snapshot a scanner caches
+/// so it can judge a badge with no network.
+///
+/// <para>Its own endpoint rather than a field on <c>my-assignments</c> because
+/// it carries the badge key: a secret should be visible in the access log as its
+/// own call, and be revocable without also breaking the assignment list.</para>
+/// </summary>
+public sealed class GateOfflineConfigEndpoint(IGateOperatorService service)
+    : EndpointWithoutRequest<ApiResult<GateOfflineConfig>>
+{
+    public override void Configure()
+    {
+        Get("/app/gates/offline-config");
+        Policies(nameof(AuthorizationPolicies.RequireApprovedAccount),
+                 PermissionCatalog.PolicyFor(PermissionCatalog.Gates.Operate));
+        Options(rb => rb.RequireRateLimiting(RateLimitOptions.OperationalPolicy));
+        Tags("Gates");
+        Summary(summary => summary.Summary =
+            "Offline scanning rules + badge key for this operator's gates (D-810).");
+    }
+
+    public override async Task HandleAsync(CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var operatorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        await Send.OkAsync(ApiResult<GateOfflineConfig>.Ok(
+            await service.GetOfflineConfigAsync(operatorId, ct)), ct);
+    }
+}
+
 public sealed class PostScanRequest
 {
     public Guid GateId { get; set; }

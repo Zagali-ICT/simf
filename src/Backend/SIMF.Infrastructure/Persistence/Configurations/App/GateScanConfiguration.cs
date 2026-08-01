@@ -30,7 +30,7 @@ internal sealed class GateScanConfiguration : IEntityTypeConfiguration<GateScan>
         // than trusting the device's result. That keeps this audit column
         // exactly what was physically presented at the gate, which is the point
         // of an append-only scan log.
-        builder.Property(scan => scan.QrIdAtScan).HasMaxLength(64).IsRequired();
+        builder.Property(scan => scan.QrIdAtScan).HasMaxLength(96).IsRequired();
         // D-157 — snapshot fields capture the visitor's identity at the
         // moment of the scan so the audit row survives cross-DB drift.
         builder.Property(scan => scan.ScannedDisplayName).HasMaxLength(128);

@@ -43,27 +43,36 @@ public readonly record struct EventBadgePayload(int ProfileTypeCode, long Sequen
 /// version character and full reconciliation of every scan after the event. An
 /// asymmetric scheme would remove the risk at the cost of a larger payload.</para>
 ///
-/// <para>Sizes are fixed by the platform: <see cref="AesGcm"/> requires a
-/// 12-byte nonce and permits a 12..16 byte tag. We take the 12-byte minimum
-/// tag, so the overhead is 24 bytes on a 9-byte payload and a typical badge is
-/// about 54 characters.</para>
+/// <para>Sizes: <see cref="AesGcm"/> requires a 12-byte nonce, and D-810 takes
+/// the full 16-byte tag (see <see cref="TagBytes"/>). Overhead is therefore 28
+/// bytes on a 9-byte payload, and a typical badge is about 61 characters — which
+/// is why <c>GateScans.QrIdAtScan</c> is nvarchar(96).</para>
 /// </summary>
 public static class EventBadgeCodec
 {
     /// <summary>AES-GCM nonce length. Fixed at 12 by <see cref="AesGcm.NonceByteSizes"/>.</summary>
     public const int NonceBytes = 12;
 
-    /// <summary>AES-GCM tag length. 12 is the platform minimum
-    /// (<see cref="AesGcm.TagByteSizes"/> allows 12..16); the smallest legal tag
-    /// keeps the printed QR as small as possible while remaining infeasible to
-    /// forge for a physical badge.</summary>
-    public const int TagBytes = 12;
+    /// <summary>
+    /// AES-GCM tag length. The FULL 16 bytes.
+    ///
+    /// <para>D-810 corrected this from the 12-byte .NET minimum, which was
+    /// chosen purely to shrink the printed QR. The Flutter scanner decrypts
+    /// badges with <c>pointycastle</c>, whose GCM implementation accepts only a
+    /// 128-bit tag — a 12-byte tag is unreadable on the device that has to read
+    /// it. The alternatives were hand-rolling truncated-tag GCM in Dart, which
+    /// is the worst possible place for clever cryptography, or giving up offline
+    /// verification. A full tag is also the stronger choice; the cost is about
+    /// seven more characters on the badge, which is why
+    /// <c>GateScans.QrIdAtScan</c> moved to nvarchar(96).</para>
+    /// </summary>
+    public const int TagBytes = 16;
 
     /// <summary>Required key length: AES-256.</summary>
     public const int KeyBytes = 32;
 
     /// <summary>Upper bound on an accepted scan, so a hostile or garbled input
-    /// cannot push work into the decoder. A real badge is ~54 characters.</summary>
+    /// cannot push work into the decoder. A real badge is ~61 characters.</summary>
     public const int MaxEncodedLength = 128;
 
     /// <summary>

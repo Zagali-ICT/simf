@@ -63,6 +63,10 @@ returns to its normal behaviour immediately.
 | E2E-WIM-022 | An uploaded badge is pending without auto-approve | Armed |
 | E2E-WIM-023 | A foreign-key badge is not recognised | Armed |
 | E2E-WIM-024 | The desk reconciles to zero | Armed |
+| E2E-WIM-025 | Offline config withholds the key while disarmed | Disarmed |
+| E2E-WIM-026 | A scanner admits a badge offline | Armed |
+| E2E-WIM-027 | A scanner refuses a disallowed type offline | Armed |
+| E2E-WIM-028 | A scanner abstains at an offline hall door | Armed |
 
 ---
 
@@ -338,6 +342,60 @@ And the desk's "waiting to upload" counter reads 0
 And the operation log carries one Admin.OfflineBadgeBatchUploaded row
     naming the same tallies
 ```
+
+---
+
+## Scenarios — offline scanning (D-811)
+
+A scanner caches its rules from `GET /app/gates/offline-config` while online,
+then judges badges on-device when the link drops. **Its verdict is advisory** —
+every scan is still queued and the server re-decides it on upload.
+
+### E2E-WIM-025 — offline config withholds the key while disarmed
+```gherkin
+Given WalkInMode is disarmed
+And a gate operator holding Gates.Operate
+When they GET /app/gates/offline-config
+Then the response is HTTP 200
+And badgeKey is null
+And the device therefore cannot verify anything offline
+```
+> The key travels only while the capability is armed, which is what makes
+> disarming the lever if a device goes missing.
+
+### E2E-WIM-026 — a scanner admits a badge offline
+```gherkin
+Given WalkInMode is armed with AcceptOfflineBadges
+And the scanner has cached its offline config for gate "G-MAIN"
+And "G-MAIN" admits profile-type code 1
+When the network is unplugged
+And the operator scans a badge encoding (code 1, sequence 3000042)
+Then the console shows an ALLOWED verdict
+And it shows the badge id "W00003000042"
+And the scan is queued for upload
+When the network is restored
+Then the queued scan uploads and the server records the authoritative verdict
+```
+
+### E2E-WIM-027 — a scanner refuses a disallowed type offline
+```gherkin
+Given the scanner has cached rules for a gate that admits only codes 1 and 2
+When it scans a badge encoding profile-type code 7 with no network
+Then the console shows DENIED with reason "profile type not allowed"
+And the holder's badge id is still shown, so the operator knows who was refused
+```
+> The rule the walk-in mode never relaxes, online or offline.
+
+### E2E-WIM-028 — a scanner abstains at an offline hall door
+```gherkin
+Given a hall-door gate and SessionWalkIn NOT armed
+When a badge is scanned there with no network
+Then the console shows NO verdict — queued, decision pending
+And it does NOT show a denial
+```
+> A booking needs live data the device does not have. Denying on that would turn
+> every offline hall door into a wall; the server decides on upload. With
+> SessionWalkIn armed the same scan is admitted immediately.
 
 ---
 

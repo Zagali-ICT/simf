@@ -36,16 +36,17 @@ internal sealed class GateOperatorService(
     ILogger<GateOperatorService> logger) : IGateOperatorService
 {
     private const string ArabicLanguageCode = "ar";
-    // GateScan.QrIdAtScan column width (GateScanConfiguration.HasMaxLength(64)).
+    // GateScan.QrIdAtScan column width (GateScanConfiguration.HasMaxLength(96)).
     // A normalised QR longer than this would truncate the append-only scan row on
     // insert, so it is denied as QrUnknown rather than stored.
     //
-    // D-809 — raised 32 -> 64. The bound is NOT removed: it still guards the
-    // insert against an over-length mis-scan. It is widened because a badge is no
-    // longer only a 12-character serial — an offline event badge is an encrypted
-    // payload of ~54 characters, and the whole blob is stored so the audit row is
-    // exactly what was presented at the gate.
-    private const int QrIdAtScanMaxLength = 64;
+    // D-809 raised 32 -> 64; D-810 raised it again to 96 when the badge tag went
+    // to the full 16 bytes. The bound is NOT removed: it still guards the insert
+    // against an over-length mis-scan. It is wide because a badge is no longer
+    // only a 12-character serial — an offline event badge is an encrypted payload
+    // of ~61 characters, and the whole blob is stored so the audit row is exactly
+    // what was presented at the gate.
+    private const int QrIdAtScanMaxLength = 96;
     private static readonly TimeSpan DuplicateWindow = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan IdempotencyRetention = TimeSpan.FromHours(24);
 
@@ -61,6 +62,59 @@ internal sealed class GateOperatorService(
             .ToListAsync(cancellationToken);
         return rows.Select(g => new OperatorGateAssignment(
             g.Id, g.Code, g.Name, g.NameArabic, g.DirectionMode, g.IsActive)).ToList();
+    }
+
+    public async Task<GateOfflineConfig> GetOfflineConfigAsync(
+        Guid operatorUserId, CancellationToken cancellationToken = default)
+    {
+        var options = walkInMode.CurrentValue;
+        var now = timeProvider.GetUtcNow();
+        var armed = options.AcceptOfflineBadgesActive(now);
+
+        var gates = await appDbContext.GateAssignments.AsNoTracking()
+            .Where(assignment => assignment.UserId == operatorUserId && assignment.IsActive)
+            .Join(appDbContext.Gates.AsNoTracking().Include(gate => gate.AllowedProfileTypes),
+                assignment => assignment.GateId, gate => gate.Id, (_, gate) => gate)
+            .OrderBy(gate => gate.Code)
+            .ToListAsync(cancellationToken);
+
+        // The allow-list is stored as profile-type Guids, but an offline device
+        // only ever sees the CODE inside the decrypted badge, so translate here
+        // rather than shipping a Guid the scanner could not match. A type with
+        // no code yet is dropped: admitting on a code of 0 would admit every
+        // un-coded type at once.
+        var codeByProfileType = await appDbContext.ProfileTypes.AsNoTracking()
+            .Where(type => type.Code != 0)
+            .ToDictionaryAsync(type => type.Id, type => type.Code, cancellationToken);
+
+        var rules = gates.Select(gate => new GateOfflineRule(
+            gate.Id,
+            gate.Code,
+            gate.AllowedProfileTypes
+                .Select(allow => codeByProfileType.TryGetValue(allow.ProfileTypeId, out var code)
+                    ? code
+                    : (short)0)
+                .Where(code => code != 0)
+                .Distinct()
+                .OrderBy(code => code)
+                .ToList(),
+            gate.HallId is not null,
+            gate.IsActive)).ToList();
+
+        // The key travels ONLY while offline badges are armed. Disarming the
+        // capability therefore also stops handing the key to new devices, which
+        // is the lever available if one goes missing (together with rotating the
+        // version).
+        return new GateOfflineConfig(
+            BadgeKey: armed ? options.BadgeKey : null,
+            BadgeKeyVersion: options.BadgeKeyVersion,
+            PreviousBadgeKey: armed && !string.IsNullOrWhiteSpace(options.PreviousBadgeKey)
+                ? options.PreviousBadgeKey
+                : null,
+            PreviousBadgeKeyVersion: options.PreviousBadgeKeyVersion,
+            SessionWalkIn: options.SessionWalkInActive(now),
+            IssuedAt: now,
+            Gates: rules);
     }
 
     public async Task<GateScanResult> RecordScanAsync(
@@ -96,7 +150,7 @@ internal sealed class GateOperatorService(
 
         var qr = QrId.Normalise(context.Request.Qr ?? string.Empty);
 
-        // #14 (D-809: bound raised to the widened nvarchar(64) column) — a
+        // #14 (D-810: bound raised to the widened nvarchar(96) column) — a
         // normalised value longer than the column would truncate the append-only
         // scan row on insert (a 500 for an ordinary over-length mis-scan). Deny it
         // as the documented QrUnknown at HTTP 200, storing a length-capped

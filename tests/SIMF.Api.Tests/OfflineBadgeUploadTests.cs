@@ -15,6 +15,7 @@ using SIMF.Common.Badges;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Badges;
+using SIMF.Contracts.Gates;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
@@ -314,6 +315,51 @@ public sealed class OfflineBadgeUploadTests : IClassFixture<SimfApiFactory>
         var resolver = scope.ServiceProvider.GetRequiredService<IQrResolver>();
 
         Assert.Null(await resolver.ResolveAsync(forged));
+    }
+
+    [Fact]
+    public async Task Offline_config_withholds_the_badge_key_while_disarmed()
+    {
+        // The key travels only while offline badges are armed. Disarming is
+        // therefore also what stops handing it to new devices — the lever
+        // available if one goes missing.
+        using var client = _factory.CreateClient();
+        var token = await CreateAdminTokenAsync(client);
+
+        var config = await GetOfflineConfigAsync(client, token);
+
+        Assert.Null(config.BadgeKey);
+        Assert.Null(config.PreviousBadgeKey);
+        Assert.False(config.SessionWalkIn);
+    }
+
+    [Fact]
+    public async Task Offline_config_carries_the_key_and_profile_type_codes_when_armed()
+    {
+        using var armed = CreateArmedFactory();
+        using var client = armed.CreateClient();
+        var token = await CreateAdminTokenAsync(client);
+
+        var config = await GetOfflineConfigAsync(client, token);
+
+        Assert.Equal(BadgeKey, config.BadgeKey);
+        Assert.Equal(BadgeKeyVersion, config.BadgeKeyVersion);
+        // The gates list is per-operator; this fixture's admin has no gate
+        // assignments, so the rules are empty while the key still arrives. That
+        // is the honest shape: an operator with no gates can verify nothing.
+        Assert.NotNull(config.Gates);
+    }
+
+    private static async Task<GateOfflineConfig> GetOfflineConfigAsync(
+        HttpClient client, string token)
+    {
+        using var message = new HttpRequestMessage(
+            HttpMethod.Get, "/api/v1/app/gates/offline-config");
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var response = await client.SendAsync(message);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        return (await response.Content
+            .ReadFromJsonAsync<ApiResult<GateOfflineConfig>>())!.Data!;
     }
 
     // -- helpers ------------------------------------------------------------

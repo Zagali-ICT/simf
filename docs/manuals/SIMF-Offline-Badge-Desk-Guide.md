@@ -1,6 +1,6 @@
 # Offline badge desk — provisioning and operating guide
 
-**Applies to:** `src/Tools/SIMF.BadgeDesk` (D-809 / D-810)
+**Applies to:** `src/Tools/SIMF.BadgeDesk` (D-809 / D-810 / D-811)
 **Audience:** whoever sets the desks up, and the operators who run them
 **Last updated:** 2026-08-01
 
@@ -22,10 +22,13 @@ or saturated.
 | Holds any password | **No.** See "Uploading" below |
 
 The badge carries an **encrypted** QR: the profile-type code and the desk
-sequence, two plain numbers, AES-GCM encrypted under the event badge key. A
-scanner with the same key can verify it with no network. The server decrypts it
+sequence, two plain numbers, AES-256-GCM encrypted under the event badge key. A
+scanner with the same key verifies it with no network. The server decrypts it
 independently on every scan, so the audit trail records exactly what was
 presented at the gate.
+
+A printed badge is about **61 characters** (67 in the extreme case of a 10-digit
+sequence). That is why `GateScans.QrIdAtScan` is `nvarchar(96)`.
 
 ---
 
@@ -172,6 +175,36 @@ skips it and keeps the rest of the shift.
 
 ---
 
+## What the scanner does with no network (D-811)
+
+An operator's scanner caches its rules from `GET /app/gates/offline-config`
+whenever the gate console loads, so a device that boots into a dead network
+still has the last known rules rather than nothing.
+
+With no network it can:
+
+- **Admit** a badge whose type its gate allows.
+- **Refuse** a badge that does not decrypt under a key it holds — forged or
+  damaged.
+- **Refuse** a type its gate does not admit. This rule is never relaxed.
+
+It deliberately **abstains** — shows "queued, decision pending" rather than a
+denial — whenever the answer needs live data: a hall-door booking, or an account
+that was approved this morning and disabled since. Denying on stale data would
+turn every offline hall door into a wall.
+
+**Every offline verdict is advisory.** The scan is still queued and uploaded,
+and the server re-decides it against live data. A device can therefore let
+someone through who a live check would have refused; that is the accepted cost
+of a gate that keeps working through an outage, and it is exactly why every scan
+is reconciled afterwards.
+
+The badge key reaches a device **only while `AcceptOfflineBadges` is armed**.
+Disarming it is therefore also what stops handing the key out — the lever to
+pull if a device goes missing, alongside rotating `BadgeKeyVersion`.
+
+---
+
 ## Pre-event checklist
 
 - [ ] Badge key generated and identical on the API and every desk
@@ -183,4 +216,5 @@ skips it and keeps the rest of the shift.
       was undecodable by the scanner; square modules and a quiet zone fixed it,
       and this payload is longer, so re-test at true print size.
 - [ ] Full rehearsal: unplug the network, register and print 50, scan at two
-      gates, restore the network, upload, reconcile to zero
+      gates (including one refused profile type and one hall door), restore the
+      network, upload, reconcile to zero
