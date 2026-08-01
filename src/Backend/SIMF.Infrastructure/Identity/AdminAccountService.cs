@@ -3,6 +3,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SIMF.Application.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.Email;
@@ -12,6 +13,7 @@ using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Application.Notifications;
 using SIMF.Domain.Notifications;
 using SIMF.Common;
+using SIMF.Common.Options;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
@@ -56,6 +58,10 @@ internal sealed partial class AdminAccountService(
     IPiiEncryptor pii,
     TimeProvider timeProvider,
     INotificationDispatcher notifications,
+    // D-809 — the standby walk-in capability (auto-approve + quick register).
+    // IOptionsMonitor so arming it in appsettings / set-env-* takes effect
+    // without a restart.
+    IOptionsMonitor<WalkInModeOptions> walkInMode,
     ILogger<AdminAccountService> logger)
     : IAdminTwoFactorService,
       IAdminUserApprovalService,
@@ -516,6 +522,67 @@ internal sealed partial class AdminAccountService(
             throw ApiException.DuplicateIdentity();
         }
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        // D-809 — walk-in auto-approval. Approval is what MINTS THE QR, so
+        // without this a walk-in leaves the desk with no badge and the main gate
+        // correctly refuses them. This is the switch that makes the offline desk
+        // and session walk-in usable.
+        //
+        // Reuses the one approval path rather than writing a second: at this
+        // point the account is exactly the PendingApproval state ApproveAsync
+        // expects, so the call inherits the QR mint, the App-then-Identity write
+        // ordering, token revocation, the audit row and the notification. A
+        // parallel implementation would have to keep all five in step.
+        //
+        // AUDIENCE VISITORS ONLY. A partner / "Other" profile type can carry an
+        // operational MobileAppRole (Staff, Moderator, Exhibitor) and approval is
+        // exactly what activates it, so auto-approving that desk would hand out
+        // staff powers with nobody reviewing. Same rule bulk badge generation
+        // already enforces.
+        if (expectedIsVisitor == true
+            && walkInMode.CurrentValue.AutoApproveActive(timeProvider.GetUtcNow()))
+        {
+            try
+            {
+                await ApproveAsync(
+                    actorUserId, user.Id, ApprovalScope.AudienceVisitor,
+                    cancellationToken, profileTypeId: null,
+                    sendApprovalEmail: hasRealEmail);
+
+                // Re-read so the response carries the freshly minted QR.
+                profile.QrId = await appDbContext.UserProfiles
+                    .AsNoTracking()
+                    .Where(p => p.UserId == user.Id)
+                    .Select(p => p.QrId)
+                    .SingleOrDefaultAsync(cancellationToken);
+
+                await auditLog.WriteAsync(new AuditEntry
+                {
+                    EventType = AuditEvents.AdminVisitorAutoApproved,
+                    Outcome = AuditOutcome.Success,
+                    ActorUserId = actorUserId,
+                    SubjectUserId = user.Id,
+                    SubjectEmail = email,
+                    Detail = $"qrId={profile.QrId}; profileType={profileType.Name}; "
+                        + "reason=walkInMode",
+                }, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                // The visitor IS registered and sits in the normal pending queue.
+                // A failed auto-approve must never lose a registration during a
+                // rush, so this degrades to exactly today's behaviour: the
+                // response carries an empty QR and the desk falls back to a paper
+                // slip while an admin approves from the queue.
+                logger.LogError(
+                    ex,
+                    "Walk-in auto-approve failed for {UserId}; left PendingApproval.",
+                    user.Id);
+                await AuditFailure(
+                    AuditEvents.AdminVisitorAutoApproveFailed, actorUserId, email,
+                    user.Id, ErrorCodes.InternalError, cancellationToken);
+            }
+        }
 
         await auditLog.WriteAsync(new AuditEntry
         {

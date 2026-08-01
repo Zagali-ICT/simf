@@ -1,7 +1,8 @@
-// Tests: SIMF.Api.Tests/BadgeAuthTests.cs
+﻿// Tests: SIMF.Api.Tests/BadgeAuthTests.cs
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SIMF.Application.Abstractions;
 using SIMF.Application.AccessControl.Abstractions;
 using SIMF.Application.Auditing;
@@ -9,6 +10,7 @@ using SIMF.Application.Email;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Options;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
@@ -36,11 +38,19 @@ internal sealed class BadgeAuthService(
     IAuditLog auditLog,
     ITransactionRunner transactionRunner,
     TimeProvider timeProvider,
+    // D-809 — gates badge activation for walk-in-minted accounts.
+    IOptionsMonitor<WalkInModeOptions> walkInMode,
     ILogger<BadgeAuthService> logger) : IBadgeAuthService
 {
     private static readonly TimeSpan CodeLifetime = TimeSpan.FromMinutes(10);
     private const int MaxAttempts = 5;
     private const string PlaceholderEmailSuffix = "@simf.local";
+
+    // D-809 — the local-part the walk-in desk synthesizes when it registers
+    // someone with no email (AdminAccountService.RegisterOnSiteAsync). Kept
+    // distinct from the bulk-badge "badge-" prefix so the activation block
+    // targets walk-ins without changing the shipped bulk-badge flow.
+    private const string WalkInEmailPrefix = "walkin-";
 
     // Verify-then-attach: the holder-supplied email is stashed on the account's
     // Identity token store (AspNetUserTokens) at the start step and promoted to the
@@ -134,6 +144,25 @@ internal sealed class BadgeAuthService(
         }
         else
         {
+            // D-809 — a walk-in badge grants PHYSICAL ACCESS ONLY by default.
+            //
+            // This branch lets the QR holder nominate the address the code is
+            // sent to, which is safe for a controlled bulk-badge batch but not
+            // for walk-in badges in open circulation: anyone who photographs one
+            // across a room could claim it as a full app account (sign-in,
+            // networking, contacts, meeting requests). Refused with the SAME
+            // "badge not recognised" an unknown QR returns, so this is not an
+            // oracle for which badges exist.
+            //
+            // If a walk-in should get app access, a staffed desk attaches a real
+            // email after an ID check — which routes to the branch above, where
+            // the code goes to the verified owner and cannot be redirected.
+            if (IsWalkInPlaceholderEmail(user.Email)
+                && !walkInMode.CurrentValue.BadgeActivationAllowedForWalkIns)
+            {
+                throw BadgeNotFound();
+            }
+
             // No real email on file — the holder must supply one to verify + attach.
             var email = (request.Email ?? string.Empty).Trim();
             if (email.Length == 0)
@@ -369,6 +398,18 @@ internal sealed class BadgeAuthService(
     private static bool IsPlaceholderEmail(string? email) =>
         string.IsNullOrWhiteSpace(email)
         || email.EndsWith(PlaceholderEmailSuffix, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// D-809 — true for an account minted by the WALK-IN desk with no real email
+    /// (<c>walkin-{guid}@simf.local</c>). Deliberately narrower than
+    /// <see cref="IsPlaceholderEmail"/>: the pre-existing bulk-badge path
+    /// (<c>badge-{guid}@…</c>) keeps its shipped activation behaviour, because
+    /// those badges are handed out deliberately from a controlled batch.
+    /// </summary>
+    private static bool IsWalkInPlaceholderEmail(string? email) =>
+        !string.IsNullOrWhiteSpace(email)
+        && email.EndsWith(PlaceholderEmailSuffix, StringComparison.OrdinalIgnoreCase)
+        && email.StartsWith(WalkInEmailPrefix, StringComparison.OrdinalIgnoreCase);
 
     private static ApiException BadgeNotFound() =>
         new(ErrorCodes.AuthAccountNotFound, 404,

@@ -151,6 +151,23 @@ public static class AuditEvents
     // D-127 — on-site walk-in registration desk
     public const string AdminWalkInRegistered = "Admin.WalkInRegistered";
     public const string AdminWalkInRegisterFailed = "Admin.WalkInRegisterFailed";
+
+    /// <summary>D-809 — a walk-in that skipped the approval queue because the
+    /// walk-in mode was armed. Written IN ADDITION TO
+    /// <see cref="AdminWalkInRegistered"/>, never instead of it, so an auditor
+    /// can diff "all walk-ins" against "walk-ins that skipped review" from one
+    /// table. This is the post-event review list.</summary>
+    public const string AdminVisitorAutoApproved = "Admin.VisitorAutoApproved";
+
+    /// <summary>D-809 — auto-approval failed, so the account stayed
+    /// PendingApproval. The registration itself survived; the desk falls back to
+    /// a paper slip and an admin approves from the normal queue.</summary>
+    public const string AdminVisitorAutoApproveFailed = "Admin.VisitorAutoApproveFailed";
+
+    /// <summary>D-809 — a walk-in registered with the reduced quick field set.
+    /// Detail names the fields that were omitted so they can be chased and
+    /// completed after the event.</summary>
+    public const string AdminQuickRegistered = "Admin.QuickRegistered";
     // D-473 (#10): bulk-generate placeholder badges (by profile type + count).
     public const string AdminBulkBadgesGenerated = "Admin.BulkBadgesGenerated";
 

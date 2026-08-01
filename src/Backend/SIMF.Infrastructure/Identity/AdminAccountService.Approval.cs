@@ -23,9 +23,16 @@ namespace SIMF.Infrastructure.Identity;
 /// </summary>
 internal sealed partial class AdminAccountService
 {
+    /// <param name="sendApprovalEmail">
+    /// D-809 — whether the approval notification also sends an email. Defaults
+    /// to true, so every existing caller is unchanged. The walk-in desk passes
+    /// false when it synthesized a placeholder address: at an event with a large
+    /// crowd that would queue one dead send per registration.
+    /// </param>
     private async Task ApproveAsync(
         Guid actorUserId, Guid subjectUserId, ApprovalScope scope,
-        CancellationToken cancellationToken, Guid? profileTypeId = null)
+        CancellationToken cancellationToken, Guid? profileTypeId = null,
+        bool sendApprovalEmail = true)
     {
         var subject = await LoadPendingSubjectAsync(
             actorUserId, subjectUserId, scope, cancellationToken);
@@ -122,7 +129,7 @@ internal sealed partial class AdminAccountService
             Body = $"Your event QR id is {profile.QrId}. Sign in to view it on your profile.",
             BodyArabic = $"رمز QR الخاص بك للفعالية هو {profile.QrId}. سجّل الدخول لعرضه في ملفك الشخصي.",
             Severity = NotificationSeverity.Success,
-            SendEmail = true,
+            SendEmail = sendApprovalEmail,
             PreRenderedEmailHtml = NotificationEmailTemplates.Render(
                 NotificationKind.AccountApproved, "en", approvedTokens),
         }, cancellationToken);
