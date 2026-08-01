@@ -1,0 +1,192 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900" font-family="Arial, Helvetica, sans-serif">
+<defs>
+<marker id="ma" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#1F3864"/></marker>
+<marker id="mg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#5A6472"/></marker>
+<marker id="mo" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#E07B00"/></marker>
+<marker id="mp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#6B2FA0"/></marker>
+<marker id="mt" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#1F8A8A"/></marker>
+<marker id="mr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#C00000"/></marker>
+<marker id="me" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#2E7D46"/></marker>
+</defs>
+<rect width="1200" height="900" fill="#FFFFFF"/>
+<rect x="20" y="12" width="1160" height="34" fill="#1F3864"/>
+<text x="600" y="35" font-size="17" font-weight="bold" fill="#FFF" text-anchor="middle">Figure 3. Key system workflows. Registration to approval, booking, hall entry, live session, minutes and feedback</text>
+<rect x="24" y="56" width="286" height="46" fill="#2E7D46"/>
+<text x="167" y="74" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">Attendee</text>
+<text x="167" y="91" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">(mobile app / public website)</text>
+<rect x="24" y="102" width="286" height="728" fill="#F4FBF6" opacity="0.5" stroke="#C9CFD6" stroke-width="1"/>
+<rect x="316" y="56" width="286" height="46" fill="#3B6EA5"/>
+<text x="459" y="74" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">SIMF.Api</text>
+<text x="459" y="91" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">(application tier)</text>
+<rect x="316" y="102" width="286" height="728" fill="#F4F8FC" opacity="0.5" stroke="#C9CFD6" stroke-width="1"/>
+<rect x="608" y="56" width="286" height="46" fill="#C0504D"/>
+<text x="751" y="74" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">Administrator / Scientific</text>
+<text x="751" y="91" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">Committee (Control Panel)</text>
+<rect x="608" y="102" width="286" height="728" fill="#FBF3F3" opacity="0.5" stroke="#C9CFD6" stroke-width="1"/>
+<rect x="900" y="56" width="276" height="46" fill="#5A6472"/>
+<text x="1038" y="74" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">Data and internal</text>
+<text x="1038" y="91" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">services</text>
+<rect x="900" y="102" width="276" height="728" fill="#EEF1F5" opacity="0.5" stroke="#C9CFD6" stroke-width="1"/>
+<rect x="34" y="112" width="266" height="48" rx="3" fill="#FFFFFF" stroke="#2E7D46" stroke-width="1.8"/>
+<circle cx="52" cy="129" r="11.5" fill="#2E7D46"/>
+<text x="52" y="133" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">1</text>
+<text x="71" y="133" font-size="12.5" font-weight="bold" fill="#2E7D46">Sign up</text>
+<text x="44" y="152" font-size="11" fill="#222">e-mail and password, app or website</text>
+<rect x="326" y="112" width="266" height="48" rx="3" fill="#FFFFFF" stroke="#3B6EA5" stroke-width="1.8"/>
+<circle cx="344" cy="129" r="11.5" fill="#3B6EA5"/>
+<text x="344" y="133" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">2</text>
+<text x="363" y="133" font-size="12.5" font-weight="bold" fill="#3B6EA5">Account created</text>
+<text x="336" y="152" font-size="11" fill="#222">state Registered, PBKDF2 password hash</text>
+<rect x="910" y="112" width="256" height="48" rx="3" fill="#FFFFFF" stroke="#5A6472" stroke-width="1.8"/>
+<circle cx="928" cy="129" r="11.5" fill="#5A6472"/>
+<text x="928" y="133" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">3</text>
+<text x="947" y="133" font-size="12.5" font-weight="bold" fill="#5A6472">SMTP relay sends code</text>
+<text x="920" y="152" font-size="11" fill="#222">six-digit code, queued by the worker</text>
+<rect x="34" y="172" width="266" height="48" rx="3" fill="#FFFFFF" stroke="#2E7D46" stroke-width="1.8"/>
+<circle cx="52" cy="189" r="11.5" fill="#2E7D46"/>
+<text x="52" y="193" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">4</text>
+<text x="71" y="193" font-size="12.5" font-weight="bold" fill="#2E7D46">Verify e-mail</text>
+<text x="44" y="212" font-size="11" fill="#222">code compared in constant time</text>
+<rect x="326" y="172" width="266" height="48" rx="3" fill="#FFFFFF" stroke="#3B6EA5" stroke-width="1.8"/>
+<circle cx="344" cy="189" r="11.5" fill="#3B6EA5"/>
+<text x="344" y="193" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">5</text>
+<text x="363" y="193" font-size="12.5" font-weight="bold" fill="#3B6EA5">Profile stored</text>
+<text x="336" y="212" font-size="11" fill="#222">encrypted, state PendingApproval</text>
+<rect x="618" y="232" width="266" height="48" rx="3" fill="#FFF7E0" stroke="#B8860B" stroke-width="1.8"/>
+<circle cx="636" cy="249" r="11.5" fill="#B8860B"/>
+<text x="636" y="253" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">6</text>
+<text x="655" y="253" font-size="12.5" font-weight="bold" fill="#B8860B">Administrator reviews</text>
+<text x="628" y="272" font-size="11" fill="#222">approve or reject in the Control Panel</text>
+<rect x="326" y="292" width="266" height="48" rx="3" fill="#FFFFFF" stroke="#3B6EA5" stroke-width="1.8"/>
+<circle cx="344" cy="309" r="11.5" fill="#3B6EA5"/>
+<text x="344" y="313" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">7</text>
+<text x="363" y="313" font-size="12.5" font-weight="bold" fill="#3B6EA5">Badge issued on approval</text>
+<text x="336" y="332" font-size="11" fill="#222">QR id minted, approval notice e-mailed</text>
+<rect x="618" y="292" width="266" height="48" rx="3" fill="#FFFFFF" stroke="#C0504D" stroke-width="1.8"/>
+<circle cx="636" cy="309" r="11.5" fill="#C0504D"/>
+<text x="636" y="313" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">8</text>
+<text x="655" y="313" font-size="12.5" font-weight="bold" fill="#C0504D">Rejected</text>
+<text x="628" y="332" font-size="11" fill="#222">reason recorded, applicant notified</text>
+<rect x="34" y="352" width="266" height="48" rx="3" fill="#FFFFFF" stroke="#2E7D46" stroke-width="1.8"/>
+<circle cx="52" cy="369" r="11.5" fill="#2E7D46"/>
+<text x="52" y="373" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">9</text>
+<text x="71" y="373" font-size="12.5" font-weight="bold" fill="#2E7D46">Sign in</text>
+<text x="44" y="392" font-size="11" fill="#222">password, then e-mailed OTP or TOTP</text>
+<rect x="34" y="412" width="266" height="48" rx="3" fill="#FFFFFF" stroke="#2E7D46" stroke-width="1.8"/>
+<circle cx="52" cy="429" r="11.5" fill="#2E7D46"/>
+<text x="52" y="433" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">10</text>
+<text x="71" y="433" font-size="12.5" font-weight="bold" fill="#2E7D46">Browse and reserve</text>
+<text x="44" y="452" font-size="11" fill="#222">opens a session and reserves a seat</text>
+<rect x="326" y="412" width="266" height="48" rx="3" fill="#FFFFFF" stroke="#3B6EA5" stroke-width="1.8"/>
+<circle cx="344" cy="429" r="11.5" fill="#3B6EA5"/>
+<text x="344" y="433" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">11</text>
+<text x="363" y="433" font-size="12.5" font-weight="bold" fill="#3B6EA5">Seat held</text>
+<text x="336" y="452" font-size="11" fill="#222">one active reservation per seat</text>
+<rect x="34" y="472" width="266" height="48" rx="3" fill="#FFF7E0" stroke="#B8860B" stroke-width="1.8"/>
+<circle cx="52" cy="489" r="11.5" fill="#B8860B"/>
+<text x="52" y="493" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">12</text>
+<text x="71" y="493" font-size="12.5" font-weight="bold" fill="#B8860B">Gate scan at the hall</text>
+<text x="44" y="512" font-size="11" fill="#222">badge, approval state, gate profile</text>
+<rect x="34" y="532" width="266" height="48" rx="3" fill="#FFFFFF" stroke="#2E7D46" stroke-width="1.8"/>
+<circle cx="52" cy="549" r="11.5" fill="#2E7D46"/>
+<text x="52" y="553" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">13</text>
+<text x="71" y="553" font-size="12.5" font-weight="bold" fill="#2E7D46">Watch the live session</text>
+<text x="44" y="572" font-size="11" fill="#222">video plays device-direct from YouTube</text>
+<rect x="910" y="532" width="256" height="48" rx="3" fill="#FFFFFF" stroke="#5A6472" stroke-width="1.8"/>
+<circle cx="928" cy="549" r="11.5" fill="#5A6472"/>
+<text x="928" y="553" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">14</text>
+<text x="947" y="553" font-size="12.5" font-weight="bold" fill="#5A6472">YouTube</text>
+<text x="920" y="572" font-size="11" fill="#222">stream delivered straight to the device</text>
+<rect x="34" y="592" width="266" height="48" rx="3" fill="#FFFFFF" stroke="#2E7D46" stroke-width="1.8"/>
+<circle cx="52" cy="609" r="11.5" fill="#2E7D46"/>
+<text x="52" y="613" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">15</text>
+<text x="71" y="613" font-size="12.5" font-weight="bold" fill="#2E7D46">Ask a question</text>
+<text x="44" y="632" font-size="11" fill="#222">before the session, or after hall arrival</text>
+<rect x="326" y="592" width="266" height="48" rx="3" fill="#FFFFFF" stroke="#3B6EA5" stroke-width="1.8"/>
+<circle cx="344" cy="609" r="11.5" fill="#3B6EA5"/>
+<text x="344" y="613" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">16</text>
+<text x="363" y="613" font-size="12.5" font-weight="bold" fill="#3B6EA5">Advisory AI filter</text>
+<text x="336" y="632" font-size="11" fill="#222">question text only, on-premises AI</text>
+<rect x="618" y="592" width="266" height="48" rx="3" fill="#FFFFFF" stroke="#C0504D" stroke-width="1.8"/>
+<circle cx="636" cy="609" r="11.5" fill="#C0504D"/>
+<text x="636" y="613" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">17</text>
+<text x="655" y="613" font-size="12.5" font-weight="bold" fill="#C0504D">Committee moderates</text>
+<text x="628" y="632" font-size="11" fill="#222">approve, hide, or escalate to the stage</text>
+<rect x="618" y="652" width="266" height="48" rx="3" fill="#FFFFFF" stroke="#C0504D" stroke-width="1.8"/>
+<circle cx="636" cy="669" r="11.5" fill="#C0504D"/>
+<text x="636" y="673" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">18</text>
+<text x="655" y="673" font-size="12.5" font-weight="bold" fill="#C0504D">Subtitle import</text>
+<text x="628" y="692" font-size="11" fill="#222">imports, pastes or uploads captions</text>
+<rect x="910" y="652" width="256" height="48" rx="3" fill="#FFFFFF" stroke="#5A6472" stroke-width="1.8"/>
+<circle cx="928" cy="669" r="11.5" fill="#5A6472"/>
+<text x="928" y="673" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">19</text>
+<text x="947" y="673" font-size="12.5" font-weight="bold" fill="#5A6472">Egress point to YouTube</text>
+<text x="920" y="692" font-size="11" fill="#222">video id only, through the edge firewall</text>
+<rect x="326" y="712" width="266" height="48" rx="3" fill="#FFFFFF" stroke="#3B6EA5" stroke-width="1.8"/>
+<circle cx="344" cy="729" r="11.5" fill="#3B6EA5"/>
+<text x="344" y="733" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">20</text>
+<text x="363" y="733" font-size="12.5" font-weight="bold" fill="#3B6EA5">AI drafts the minutes</text>
+<text x="336" y="752" font-size="11" fill="#222">on-premises, no content leaves the site</text>
+<rect x="618" y="712" width="266" height="48" rx="3" fill="#FFFFFF" stroke="#C0504D" stroke-width="1.8"/>
+<circle cx="636" cy="729" r="11.5" fill="#C0504D"/>
+<text x="636" y="733" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">21</text>
+<text x="655" y="733" font-size="12.5" font-weight="bold" fill="#C0504D">Committee approves</text>
+<text x="628" y="752" font-size="11" fill="#222">edits, approves, then published</text>
+<rect x="34" y="772" width="266" height="48" rx="3" fill="#FFFFFF" stroke="#2E7D46" stroke-width="1.8"/>
+<circle cx="52" cy="789" r="11.5" fill="#2E7D46"/>
+<text x="52" y="793" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">22</text>
+<text x="71" y="793" font-size="12.5" font-weight="bold" fill="#2E7D46">Rating and feedback</text>
+<text x="44" y="812" font-size="11" fill="#222">per session, end of day, end of forum</text>
+<rect x="326" y="772" width="266" height="48" rx="3" fill="#FFFFFF" stroke="#3B6EA5" stroke-width="1.8"/>
+<circle cx="344" cy="789" r="11.5" fill="#3B6EA5"/>
+<text x="344" y="793" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">23</text>
+<text x="363" y="793" font-size="12.5" font-weight="bold" fill="#3B6EA5">Prompts scheduled</text>
+<text x="336" y="812" font-size="11" fill="#222">worker prompts by recorded attendance</text>
+<polyline points="300,136 326,136" fill="none" stroke="#2E7D46" stroke-width="2.0"/>
+<polygon points="326.0,136.0 313.0,141.0 313.0,131.0" fill="#2E7D46"/>
+<polyline points="592,136 910,136" fill="none" stroke="#5A6472" stroke-width="2.0"/>
+<polygon points="910.0,136.0 897.0,141.0 897.0,131.0" fill="#5A6472"/>
+<polyline points="167,160 167,172" fill="none" stroke="#2E7D46" stroke-width="2.0"/>
+<polygon points="167.0,172.0 162.0,159.0 172.0,159.0" fill="#2E7D46"/>
+<polyline points="300,196 326,196" fill="none" stroke="#2E7D46" stroke-width="2.0"/>
+<polygon points="326.0,196.0 313.0,201.0 313.0,191.0" fill="#2E7D46"/>
+<polyline points="592,208 605,208 605,256 618,256" fill="none" stroke="#3B6EA5" stroke-width="2.0"/>
+<polygon points="618.0,256.0 605.0,261.0 605.0,251.0" fill="#1F3864"/>
+<polyline points="618,262 605,262 605,316 592,316" fill="none" stroke="#2E7D46" stroke-width="2.0"/>
+<polygon points="592.0,316.0 605.0,311.0 605.0,321.0" fill="#2E7D46"/>
+<polyline points="751,280 751,292" fill="none" stroke="#C0504D" stroke-width="2.0"/>
+<polygon points="751.0,292.0 746.0,279.0 756.0,279.0" fill="#C00000"/>
+<polyline points="326,316 313,316 313,376 300,376" fill="none" stroke="#3B6EA5" stroke-width="2.0"/>
+<polygon points="300.0,376.0 313.0,371.0 313.0,381.0" fill="#1F3864"/>
+<polyline points="167,400 167,412" fill="none" stroke="#2E7D46" stroke-width="2.0"/>
+<polygon points="167.0,412.0 162.0,399.0 172.0,399.0" fill="#2E7D46"/>
+<polyline points="300,436 326,436" fill="none" stroke="#2E7D46" stroke-width="2.0"/>
+<polygon points="326.0,436.0 313.0,441.0 313.0,431.0" fill="#2E7D46"/>
+<polyline points="326,456 313,456 313,496 300,496" fill="none" stroke="#3B6EA5" stroke-width="2.0"/>
+<polygon points="300.0,496.0 313.0,491.0 313.0,501.0" fill="#1F3864"/>
+<polyline points="167,520 167,532" fill="none" stroke="#2E7D46" stroke-width="2.0"/>
+<polygon points="167.0,532.0 162.0,519.0 172.0,519.0" fill="#2E7D46"/>
+<polyline points="300,556 910,556" fill="none" stroke="#6B2FA0" stroke-width="2.0" stroke-dasharray="7,4"/>
+<polygon points="910.0,556.0 897.0,561.0 897.0,551.0" fill="#6B2FA0"/>
+<polyline points="167,580 167,592" fill="none" stroke="#2E7D46" stroke-width="2.0"/>
+<polygon points="167.0,592.0 162.0,579.0 172.0,579.0" fill="#2E7D46"/>
+<polyline points="300,616 326,616" fill="none" stroke="#2E7D46" stroke-width="2.0"/>
+<polygon points="326.0,616.0 313.0,621.0 313.0,611.0" fill="#2E7D46"/>
+<polyline points="592,616 618,616" fill="none" stroke="#3B6EA5" stroke-width="2.0"/>
+<polygon points="618.0,616.0 605.0,621.0 605.0,611.0" fill="#1F3864"/>
+<polyline points="751,640 751,652" fill="none" stroke="#C0504D" stroke-width="2.0"/>
+<polygon points="751.0,652.0 746.0,639.0 756.0,639.0" fill="#C00000"/>
+<polyline points="884,676 910,676" fill="none" stroke="#E07B00" stroke-width="2.0"/>
+<polygon points="910.0,676.0 897.0,681.0 897.0,671.0" fill="#E07B00"/>
+<polyline points="618,676 313,676 313,736 326,736" fill="none" stroke="#C0504D" stroke-width="2.0"/>
+<polygon points="326.0,736.0 313.0,741.0 313.0,731.0" fill="#C00000"/>
+<polyline points="592,736 618,736" fill="none" stroke="#3B6EA5" stroke-width="2.0"/>
+<polygon points="618.0,736.0 605.0,741.0 605.0,731.0" fill="#1F3864"/>
+<polyline points="459,760 459,772" fill="none" stroke="#3B6EA5" stroke-width="2.0"/>
+<polygon points="459.0,772.0 454.0,759.0 464.0,759.0" fill="#1F3864"/>
+<polyline points="326,796 300,796" fill="none" stroke="#3B6EA5" stroke-width="2.0"/>
+<polygon points="300.0,796.0 313.0,791.0 313.0,801.0" fill="#1F3864"/>
+<rect x="24" y="844" width="1152" height="36" fill="#F9FAFB" stroke="#9AA6B2" stroke-width="1.2"/>
+<text x="600" y="861" font-size="12" fill="#C00000" font-weight="bold" text-anchor="middle">All AI inference, at step 16 and step 20, runs on the on-premises AI service inside the SSA zone. The only outbound flow in this diagram is the optional caption import at step 19.</text>
+<text x="600" y="875" font-size="12" fill="#6B2FA0" font-weight="bold" text-anchor="middle">Live video at step 13 is delivered by YouTube straight to the attendee device and never traverses a SIMF server.</text>
+</svg>
