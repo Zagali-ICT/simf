@@ -44,6 +44,18 @@ public sealed class WalkInModeOptions
     /// and the encrypted columns cannot be reconstructed after the fact.</summary>
     public bool QuickRegister { get; set; }
 
+    /// <summary>
+    /// Whether quick register still demands one identity document (national ID,
+    /// Iqama or passport). Defaults to TRUE, and should stay that way: the number
+    /// is the only thing preventing one person collecting several badges, because
+    /// the duplicate-identity guard and its three filtered unique indexes key off
+    /// a blind index of it. The plaintext columns are AES-GCM encrypted with a
+    /// random nonce, so an id not captured at the desk can never be reconstructed
+    /// afterwards. Turning this off buys a few seconds per visitor and gives up
+    /// duplicate detection entirely.
+    /// </summary>
+    public bool QuickRegisterRequiresIdentityDocument { get; set; } = true;
+
     /// <summary>Approve an on-site registered visitor immediately, which is what
     /// mints their QR. Audience visitors only — never the partner desk, whose
     /// profile types can carry an operational mobile-app role.</summary>

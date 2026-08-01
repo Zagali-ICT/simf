@@ -161,6 +161,9 @@ $vars = [ordered]@{
     "SIMF_WalkInMode__Enabled"                  = ""   # default false (master)
     "SIMF_WalkInMode__ExpiresAtUtc"             = ""   # ISO-8601 UTC; blank = no expiry
     "SIMF_WalkInMode__QuickRegister"            = ""   # default false - reduced desk field set
+    # Keep this TRUE: the id number is what makes duplicate detection possible,
+    # and the encrypted columns cannot be reconstructed after the event.
+    "SIMF_WalkInMode__QuickRegisterRequiresIdentityDocument" = ""   # default true
     "SIMF_WalkInMode__AutoApprove"              = ""   # default false - skip the approval queue
     "SIMF_WalkInMode__SessionWalkIn"            = ""   # default false - admit unregistered to a hall
     "SIMF_WalkInMode__ArrivalGraceMinutes"      = ""   # default 15, clamped 0..240

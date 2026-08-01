@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SIMF.Common;
@@ -103,6 +104,145 @@ public sealed class WalkInModeTests : IClassFixture<SimfApiFactory>
             });
 
         Assert.Equal(HttpStatusCode.NotFound, activation.StatusCode);
+    }
+
+    [Fact]
+    public async Task Quick_register_is_refused_while_the_mode_is_disarmed()
+    {
+        // The reduced field set must not be reachable by simply omitting fields:
+        // with the mode off the desk's original presence rules still apply.
+        var token = await CreateAdminTokenAsync();
+        var request = BuildWalkInRequest(
+            await ResolveVisitorProfileTypeIdAsync(), await ResolveOrganisationIdAsync());
+        request.ArabicName = string.Empty;
+        request.NationalityCode = string.Empty;
+        request.OrganisationId = null;
+        request.SaudiMobile = null;
+
+        var response = await PostWalkInAsync(_client, token, request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Quick_register_accepts_a_name_and_one_id_when_the_mode_is_armed()
+    {
+        // Armed: name + profile type + one identity document is the floor. The
+        // organisation, nationality and mobile are all dropped.
+        using var armed = CreateArmedFactory();
+        using var client = armed.CreateClient();
+        var token = await CreateAdminTokenAsync(client);
+
+        var request = BuildWalkInRequest(
+            await ResolveVisitorProfileTypeIdAsync(), await ResolveOrganisationIdAsync());
+        request.ArabicName = string.Empty;
+        request.NationalityCode = string.Empty;
+        request.OrganisationId = null;
+        request.SaudiMobile = null;
+
+        var response = await PostWalkInAsync(client, token, request);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AdminWalkInRegistrationResponse>>())!.Data!;
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var profile = await db.UserProfiles.AsNoTracking()
+            .SingleAsync(p => p.UserId == body.UserId);
+
+        // Both name columns are NOT NULL, so the single captured name is mirrored.
+        Assert.False(string.IsNullOrWhiteSpace(profile.Name));
+        Assert.False(string.IsNullOrWhiteSpace(profile.NameArabic));
+        // 0 is the documented "no nationality chosen" value for a stub row.
+        Assert.Equal(0, profile.NationalityId);
+        Assert.Null(profile.OrganisationId);
+    }
+
+    [Fact]
+    public async Task Quick_register_still_demands_an_identity_document()
+    {
+        // The one field quick mode keeps: it is the only thing preventing one
+        // person from collecting several badges, and the encrypted columns cannot
+        // be reconstructed after the event.
+        using var armed = CreateArmedFactory();
+        using var client = armed.CreateClient();
+        var token = await CreateAdminTokenAsync(client);
+
+        var request = BuildWalkInRequest(
+            await ResolveVisitorProfileTypeIdAsync(), await ResolveOrganisationIdAsync());
+        request.NationalId = null;
+        request.IqamaNumber = null;
+        request.PassportNumber = null;
+
+        var response = await PostWalkInAsync(client, token, request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Quick_register_still_rejects_a_malformed_identity_document()
+    {
+        // Shape rules stayed in the validator and always apply: a mistyped id
+        // would create a false-unique row and defeat duplicate detection forever.
+        using var armed = CreateArmedFactory();
+        using var client = armed.CreateClient();
+        var token = await CreateAdminTokenAsync(client);
+
+        var request = BuildWalkInRequest(
+            await ResolveVisitorProfileTypeIdAsync(), await ResolveOrganisationIdAsync());
+        request.NationalId = "1234567890"; // right shape, wrong Luhn check digit
+
+        var response = await PostWalkInAsync(client, token, request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Auto_approve_mints_the_qr_at_the_desk_when_the_mode_is_armed()
+    {
+        using var armed = CreateArmedFactory();
+        using var client = armed.CreateClient();
+        var token = await CreateAdminTokenAsync(client);
+
+        var request = BuildWalkInRequest(
+            await ResolveVisitorProfileTypeIdAsync(), await ResolveOrganisationIdAsync());
+
+        var response = await PostWalkInAsync(client, token, request);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AdminWalkInRegistrationResponse>>())!.Data!;
+
+        // The badge is usable immediately — that is the whole point of the switch.
+        Assert.False(string.IsNullOrWhiteSpace(body.QrId));
+
+        using var scope = _factory.Services.CreateScope();
+        var identity = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var created = await identity.Users.AsNoTracking()
+            .SingleAsync(u => u.Id == body.UserId);
+        Assert.Equal(AccountState.Approved, created.AccountState);
+    }
+
+    /// <summary>Arms the walk-in mode through configuration, which is the only
+    /// way it can be armed — there is deliberately no write endpoint.</summary>
+    private WebApplicationFactory<Program> CreateArmedFactory() =>
+        _factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseSetting("WalkInMode:Enabled", "true");
+            builder.UseSetting("WalkInMode:QuickRegister", "true");
+            builder.UseSetting("WalkInMode:AutoApprove", "true");
+            builder.UseSetting("WalkInMode:SessionWalkIn", "true");
+        });
+
+    private static Task<HttpResponseMessage> PostWalkInAsync(
+        HttpClient client, string token, AdminWalkInRegistrationRequest request)
+    {
+        var message = new HttpRequestMessage(
+            HttpMethod.Post, "/api/v1/admin/visitors/register-onsite")
+        {
+            Content = JsonContent.Create(request),
+        };
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return client.SendAsync(message);
     }
 
     private async Task<string?> ApproveAndReadQrAsync(string token, Guid userId)
@@ -211,7 +351,9 @@ public sealed class WalkInModeTests : IClassFixture<SimfApiFactory>
         return string.Concat(digits);
     }
 
-    private async Task<string> CreateAdminTokenAsync()
+    private Task<string> CreateAdminTokenAsync() => CreateAdminTokenAsync(_client);
+
+    private async Task<string> CreateAdminTokenAsync(HttpClient client)
     {
         const string administratorRole = "Administrator";
         var email = $"walkin-admin-{Guid.NewGuid():N}@simf.test";
@@ -237,7 +379,7 @@ public sealed class WalkInModeTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, administratorRole);
         }
 
-        var sign = await _client.PostAsJsonAsync(
+        var sign = await client.PostAsJsonAsync(
             "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
