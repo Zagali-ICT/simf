@@ -54,7 +54,12 @@
                           DeleteLabel="@L["Admin.Themes.Action.Deactivate"]"
                           ExportLabel="@L["Grid.Export"]"
                           ImportLabel="@L["Grid.Import"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.Themes.Create"
+                          EditPermission="@PermissionCatalog.Themes.Edit"
+                          DeletePermission="@PermissionCatalog.Themes.Delete"
+                          ImportPermission="@PermissionCatalog.Themes.Import"
+                          ExportPermission="@PermissionCatalog.Themes.Export">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
                 </CustomToolbar>

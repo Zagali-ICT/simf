@@ -55,7 +55,12 @@
                           DeleteLabel="@L["Admin.Countries.Action.Deactivate"]"
                           ExportLabel="@L["Grid.Export"]"
                           ImportLabel="@L["Grid.Import"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.Countries.Create"
+                          EditPermission="@PermissionCatalog.Countries.Edit"
+                          DeletePermission="@PermissionCatalog.Countries.Delete"
+                          ImportPermission="@PermissionCatalog.Countries.Import"
+                          ExportPermission="@PermissionCatalog.Countries.Export">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
                 </CustomToolbar>

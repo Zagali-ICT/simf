@@ -48,7 +48,9 @@
                       LoadingLabel="@L["Admin.Users.Loading"]"
                       FilterColumnLabel="@L["Grid.FilterColumn"]"
                       FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
-                      SummaryFormatter="@FormatSummary">
+                      SummaryFormatter="@FormatSummary"
+                      ApprovePermission="@PermissionCatalog.Admins.Approve"
+                      RejectPermission="@PermissionCatalog.Admins.Reject">
             <Columns>
                 <SimfDataGridColumn TItem="AdminPendingUserSummary" Key="email"
                                     Header="@L["Admin.Users.Column.Email"]"
@@ -65,17 +67,24 @@
                     <CellTemplate>@context.CreatedAt.FormatSaudi("dd-MM-yyyy hh:mm tt")</CellTemplate>
                 </SimfDataGridColumn>
             </Columns>
+            @* D-830 — the row pair matches the bulk pair above it. Gating only the
+               toolbar would have left the same two actions one row lower, which is
+               a half-gated screen rather than a fix. *@
             <RowActions Context="user">
-                <SimfButton Type="button" Variant="primary"
-                            Disabled="_busy"
-                            OnClick="@(() => OpenApprove(user))">
-                    @L["Admin.Pending.Action.Approve"]
-                </SimfButton>
-                <SimfButton Type="button" Variant="secondary"
-                            Disabled="_busy"
-                            OnClick="@(() => OpenReject(user))">
-                    @L["Admin.Pending.Action.Reject"]
-                </SimfButton>
+                <AuthorizedAction Permission="@PermissionCatalog.Admins.Approve">
+                    <SimfButton Type="button" Variant="primary"
+                                Disabled="_busy"
+                                OnClick="@(() => OpenApprove(user))">
+                        @L["Admin.Pending.Action.Approve"]
+                    </SimfButton>
+                </AuthorizedAction>
+                <AuthorizedAction Permission="@PermissionCatalog.Admins.Reject">
+                    <SimfButton Type="button" Variant="secondary"
+                                Disabled="_busy"
+                                OnClick="@(() => OpenReject(user))">
+                        @L["Admin.Pending.Action.Reject"]
+                    </SimfButton>
+                </AuthorizedAction>
             </RowActions>
             <EmptyTemplate>
                 <SimfEmptyState Title="@L["Admin.Pending.None"]" />

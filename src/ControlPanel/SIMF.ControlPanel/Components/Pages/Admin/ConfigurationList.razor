@@ -62,7 +62,12 @@
                           DeleteLabel="@L["Grid.Delete"]"
                           ExportLabel="@L["Grid.Export"]"
                           ImportLabel="@L["Grid.Import"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.Configuration.Create"
+                          EditPermission="@PermissionCatalog.Configuration.Edit"
+                          DeletePermission="@PermissionCatalog.Configuration.Delete"
+                          ImportPermission="@PermissionCatalog.Configuration.Import"
+                          ExportPermission="@PermissionCatalog.Configuration.Export">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
                 </CustomToolbar>

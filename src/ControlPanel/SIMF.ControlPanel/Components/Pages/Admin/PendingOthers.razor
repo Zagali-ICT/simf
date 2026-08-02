@@ -43,7 +43,9 @@
                       FilterColumnLabel="@L["Grid.FilterColumn"]"
                       FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
                       ActionsHeader="@L["Grid.Actions"]"
-                      SummaryFormatter="@FormatSummary">
+                      SummaryFormatter="@FormatSummary"
+                      ApprovePermission="@PermissionCatalog.Others.Approve"
+                      RejectPermission="@PermissionCatalog.Others.Reject">
             <CustomToolbar>
                 <CrudPresentationToggle PageKey="@(PresentationPageKey!)" @bind-Value="_presentation" />
             </CustomToolbar>
@@ -66,22 +68,35 @@
                     <CellTemplate>@context.CreatedAt.FormatSaudi("dd-MM-yyyy hh:mm tt")</CellTemplate>
                 </SimfDataGridColumn>
             </Columns>
+            @* D-830 — the row pair matches the bulk pair above it. The read-only
+               profile View stays ungated: it is what Others.View already bought,
+               and it is the same drawer, opened without approveMode.
+
+               The row codes are Admins.*, not Others.*, and that is not a typo: the
+               API gates POST /admin/others/{id}/approve|reject on Admins.Approve /
+               Admins.Reject (ApproveStaffEndpoint / RejectStaffEndpoint serve both
+               routes), while the BULK endpoints on the toolbar above are gated on
+               Others.Approve / Others.Reject. Mirror the API as it is. *@
             <RowActions Context="user">
                 <SimfButton Type="button" Variant="secondary"
                             Disabled="_busy"
                             OnClick="@(() => OpenViewAsync(user, approveMode: false))">
                     @L["Admin.Pending.Action.View"]
                 </SimfButton>
-                <SimfButton Type="button" Variant="primary"
-                            Disabled="_busy"
-                            OnClick="@(() => OpenViewAsync(user, approveMode: true))">
-                    @L["Admin.Pending.Action.Approve"]
-                </SimfButton>
-                <SimfButton Type="button" Variant="secondary"
-                            Disabled="_busy"
-                            OnClick="@(() => OpenReject(user))">
-                    @L["Admin.Pending.Action.Reject"]
-                </SimfButton>
+                <AuthorizedAction Permission="@PermissionCatalog.Admins.Approve">
+                    <SimfButton Type="button" Variant="primary"
+                                Disabled="_busy"
+                                OnClick="@(() => OpenViewAsync(user, approveMode: true))">
+                        @L["Admin.Pending.Action.Approve"]
+                    </SimfButton>
+                </AuthorizedAction>
+                <AuthorizedAction Permission="@PermissionCatalog.Admins.Reject">
+                    <SimfButton Type="button" Variant="secondary"
+                                Disabled="_busy"
+                                OnClick="@(() => OpenReject(user))">
+                        @L["Admin.Pending.Action.Reject"]
+                    </SimfButton>
+                </AuthorizedAction>
             </RowActions>
             <EmptyTemplate>
                 <SimfEmptyState Title="@L["Admin.Pending.None"]" />

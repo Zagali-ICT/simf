@@ -12,9 +12,15 @@
 > **Page permission:** `@attribute [RequirePermission(PermissionCatalog.Others.View)]`.
 > The `CpNavigation` item `Module.AdminOthersPending` sets the same `RequiredPermission: PermissionCatalog.Others.View`.
 > Approve / reject actions are enforced **server-side** on their own codes — see the
-> permission map at the bottom of §Coverage matrix. The page does **not** wrap the
-> Approve/Reject buttons in `<AuthorizedAction>`; the gate is the API policy, so the
-> cross-permission scenario below asserts at the network layer.
+> permission map at the bottom of §Coverage matrix. **D-830 added the matching CP gate**,
+> and the two halves of this page use DIFFERENT codes because the API does: the toolbar's
+> bulk Approve / Reject call `/admin/others/bulk-approve|bulk-reject`, gated on
+> `Others.Approve` / `Others.Reject`, and are gated in the CP through the grid's
+> `ApprovePermission` / `RejectPermission`; the per-row Approve / Reject call
+> `/admin/others/{id}/approve|reject`, which `ApproveStaffEndpoint` /
+> `RejectStaffEndpoint` gate on `Admins.Approve` / `Admins.Reject`, and are wrapped in
+> `<AuthorizedAction>` on those codes. The cross-permission scenario below still asserts
+> at the network layer, which remains the security boundary.
 
 ## Coverage matrix
 

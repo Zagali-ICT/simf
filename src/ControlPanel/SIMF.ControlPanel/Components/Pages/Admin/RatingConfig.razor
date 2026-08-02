@@ -42,7 +42,10 @@
                       LoadingLabel="@L["Grid.Loading"]" ActionsHeader="@L["Grid.Actions"]"
                       SelectAllLabel="@L["Grid.SelectAll"]" SelectRowLabel="@L["Grid.SelectRow"]"
                       AddLabel="@L["Grid.Add"]" EditLabel="@L["Grid.Edit"]" DeleteLabel="@L["Grid.Delete"]"
-                      SummaryFormatter="@FormatSummary">
+                      SummaryFormatter="@FormatSummary"
+                      AddPermission="@PermissionCatalog.RatingConfig.Create"
+                      EditPermission="@PermissionCatalog.RatingConfig.Edit"
+                      DeletePermission="@PermissionCatalog.RatingConfig.Delete">
             <Columns>
                 <SimfDataGridColumn TItem="AdminRatingTypeSummary" Key="code"
                                     Header="@L["Admin.RatingConfig.Col.Code"]" Sortable="true">
@@ -128,7 +131,10 @@
                           LoadingLabel="@L["Grid.Loading"]" ActionsHeader="@L["Grid.Actions"]"
                           SelectAllLabel="@L["Grid.SelectAll"]" SelectRowLabel="@L["Grid.SelectRow"]"
                           AddLabel="@L["Admin.RatingConfig.Action.AddGroup"]" EditLabel="@L["Grid.Edit"]"
-                          DeleteLabel="@L["Grid.Delete"]" SummaryFormatter="@FormatSummary">
+                          DeleteLabel="@L["Grid.Delete"]" SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.RatingConfig.Create"
+                          EditPermission="@PermissionCatalog.RatingConfig.Edit"
+                          DeletePermission="@PermissionCatalog.RatingConfig.Delete">
                 <Columns>
                     <SimfDataGridColumn TItem="AdminRatingQuestionGroupSummary" Key="name"
                                         Header="@L["Admin.RatingConfig.Col.Name"]" Sortable="true">
@@ -187,7 +193,10 @@
                           LoadingLabel="@L["Grid.Loading"]" ActionsHeader="@L["Grid.Actions"]"
                           SelectAllLabel="@L["Grid.SelectAll"]" SelectRowLabel="@L["Grid.SelectRow"]"
                           AddLabel="@L["Admin.RatingConfig.Action.AddQuestion"]" EditLabel="@L["Grid.Edit"]"
-                          DeleteLabel="@L["Grid.Delete"]" SummaryFormatter="@FormatSummary">
+                          DeleteLabel="@L["Grid.Delete"]" SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.RatingConfig.Create"
+                          EditPermission="@PermissionCatalog.RatingConfig.Edit"
+                          DeletePermission="@PermissionCatalog.RatingConfig.Delete">
                 <Columns>
                     <SimfDataGridColumn TItem="AdminRatingQuestionSummary" Key="text"
                                         Header="@L["Admin.RatingConfig.Col.Text"]" Sortable="true">

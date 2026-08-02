@@ -46,7 +46,8 @@
                       ActionsHeader="@L["Grid.Actions"]"
                       SelectAllLabel="@L["Grid.SelectAll"]"
                       SelectRowLabel="@L["Grid.SelectRow"]"
-                      SummaryFormatter="@FormatSummary">
+                      SummaryFormatter="@FormatSummary"
+                      ExportPermission="@PermissionCatalog.SpeakerMeetingRequests.Export">
             <Columns>
                 <SimfDataGridColumn TItem="AdminSpeakerMeetingRequestRow" Key="speaker"
                                     Header="@L["Admin.SpeakerMeetingRequests.Col.Speaker"]">

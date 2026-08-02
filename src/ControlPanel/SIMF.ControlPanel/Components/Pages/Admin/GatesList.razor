@@ -54,7 +54,12 @@
                           DeleteLabel="@L["Admin.Gates.Action.Deactivate"]"
                           ExportLabel="@L["Grid.Export"]"
                           ImportLabel="@L["Grid.Import"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.Gates.Manage"
+                          EditPermission="@PermissionCatalog.Gates.Manage"
+                          DeletePermission="@PermissionCatalog.Gates.Manage"
+                          ImportPermission="@PermissionCatalog.Gates.Import"
+                          ExportPermission="@PermissionCatalog.Gates.Export">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
                 </CustomToolbar>

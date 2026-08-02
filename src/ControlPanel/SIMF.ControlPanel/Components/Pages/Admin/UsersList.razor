@@ -65,7 +65,12 @@
                           DuplicateLabel="@L["Admin.Users.Action.Duplicate"]"
                           ImportLabel="@L["Admin.Users.Action.Import"]"
                           ExportLabel="@L["Admin.Users.Action.Export"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.Admins.Create"
+                          EditPermission="@PermissionCatalog.Admins.AssignRoles"
+                          DeletePermission="@PermissionCatalog.Admins.Delete"
+                          ImportPermission="@PermissionCatalog.Admins.Import"
+                          ExportPermission="@PermissionCatalog.Admins.Export">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
                 </CustomToolbar>

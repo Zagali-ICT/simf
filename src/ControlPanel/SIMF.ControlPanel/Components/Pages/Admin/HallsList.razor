@@ -52,7 +52,12 @@
                           DeleteLabel="@L["Admin.Halls.Action.Deactivate"]"
                           ExportLabel="@L["Grid.Export"]"
                           ImportLabel="@L["Grid.Import"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.Halls.Create"
+                          EditPermission="@PermissionCatalog.Halls.Edit"
+                          DeletePermission="@PermissionCatalog.Halls.Delete"
+                          ImportPermission="@PermissionCatalog.Halls.Import"
+                          ExportPermission="@PermissionCatalog.Halls.Export">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
                 </CustomToolbar>

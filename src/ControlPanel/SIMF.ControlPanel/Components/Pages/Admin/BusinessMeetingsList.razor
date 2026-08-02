@@ -48,7 +48,9 @@
                       SelectRowLabel="@L["Grid.SelectRow"]"
                       AddLabel="@L["Admin.BusinessMeetings.New"]"
                       DetailsLabel="@L["Admin.BusinessMeetings.View"]"
-                      SummaryFormatter="@FormatSummary">
+                      SummaryFormatter="@FormatSummary"
+                      AddPermission="@PermissionCatalog.BusinessMeetings.Schedule"
+                      ExportPermission="@PermissionCatalog.BusinessMeetings.Export">
             <Columns>
                 <SimfDataGridColumn TItem="BusinessMeetingRow" Key="hall"
                                     Header="@L["Admin.BusinessMeetings.Col.Hall"]"

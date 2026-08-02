@@ -70,7 +70,10 @@
                           EditLabel="@L["Grid.Edit"]"
                           DetailsLabel="@L["Grid.Details"]"
                           DeleteLabel="@L["Grid.Delete"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.Regions.Create"
+                          EditPermission="@PermissionCatalog.Regions.Edit"
+                          DeletePermission="@PermissionCatalog.Regions.Delete">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
                 </CustomToolbar>

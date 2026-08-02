@@ -1,6 +1,7 @@
 using Bunit;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
+using SIMF.Contracts.Authentication;
 using SIMF.ControlPanel.Components.Pages.Admin;
 using Xunit;
 
@@ -30,15 +31,22 @@ public sealed class ActionPermissionRenderTests : CpComponentTestBase
     private const string AddButtonSelector = "button.simf-tbbtn[title='Grid.Add']";
 
     [Fact]
-    public void Faq_save_is_hidden_from_a_view_only_holder()
+    public void Faq_add_is_hidden_from_a_view_only_holder()
     {
+        // D-830 moved the refusal one step earlier. Before, a View-only holder got
+        // the Add button, opened the dialog, and found no Save; now the Add button
+        // is gone, because SimfDataGrid renders it and the grid gates it on
+        // Faq.Create. Asserting the dialog is unreachable is the stronger claim —
+        // there is no longer a form to fill in before being told no.
         Authorization.SetPolicies(PermissionCatalog.PolicyFor(PermissionCatalog.Faq.View));
         JSInterop.Mode = JSRuntimeMode.Loose;
 
         var cut = RenderComponent<FaqManager>();
-        cut.Find(AddButtonSelector).Click();
 
-        Assert.Empty(cut.FindAll(DialogSubmitSelector));
+        Assert.Empty(cut.FindAll(AddButtonSelector));
+        // The grid itself rendered — proving the absence is the gate and not an
+        // empty page.
+        Assert.Contains("simf-grid", cut.Markup);
     }
 
     [Fact]
@@ -59,32 +67,34 @@ public sealed class ActionPermissionRenderTests : CpComponentTestBase
     }
 
     [Fact]
-    public void Faq_save_stays_hidden_for_an_EDIT_only_holder_in_the_ADD_dialog()
+    public void Faq_add_stays_hidden_for_an_EDIT_only_holder()
     {
         // The case a single blanket permission would have got wrong: Edit does not
-        // grant Create, and the Add dialog is a create.
+        // grant Create. The holder keeps the Edit affordance and loses only Add,
+        // which is the distinction the two separate grid parameters exist to make.
         Authorization.SetPolicies(
             PermissionCatalog.PolicyFor(PermissionCatalog.Faq.View),
             PermissionCatalog.PolicyFor(PermissionCatalog.Faq.Edit));
         JSInterop.Mode = JSRuntimeMode.Loose;
 
         var cut = RenderComponent<FaqManager>();
-        cut.Find(AddButtonSelector).Click();
 
-        Assert.Empty(cut.FindAll(DialogSubmitSelector));
+        Assert.Empty(cut.FindAll(AddButtonSelector));
+        Assert.NotEmpty(cut.FindAll("button.simf-tbbtn[title='Grid.Edit']"));
     }
 
     [Fact]
-    public void Rating_config_save_is_hidden_from_a_view_only_holder()
+    public void Rating_config_add_is_hidden_from_a_view_only_holder()
     {
         Authorization.SetPolicies(
             PermissionCatalog.PolicyFor(PermissionCatalog.RatingConfig.View));
         JSInterop.Mode = JSRuntimeMode.Loose;
 
         var cut = RenderComponent<RatingConfig>();
-        cut.Find(AddButtonSelector).Click();
 
-        Assert.Empty(cut.FindAll(DialogSubmitSelector));
+        // Three grids on this page (types / groups / questions), all three gated.
+        Assert.Empty(cut.FindAll(AddButtonSelector));
+        Assert.Contains("simf-grid", cut.Markup);
     }
 
     [Fact]
@@ -174,5 +184,96 @@ public sealed class ActionPermissionRenderTests : CpComponentTestBase
         var cut = RenderComponent<VipsList>();
 
         Assert.NotEmpty(cut.FindAll("button.simf-tbbtn[title^='Admin.Vips.NotifySelected']"));
+    }
+
+    // D-830 — the pending queues carry the same two actions twice: in the grid
+    // toolbar (a grid built-in, gated by the grid's parameters) and per row (page
+    // markup, gated here). Gating one and not the other would have left the screen
+    // half-fixed, which reads as an oversight rather than a decision.
+
+    [Fact]
+    public void Pending_row_approve_and_reject_are_hidden_from_a_view_only_holder()
+    {
+        Authorization.SetPolicies(
+            PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.View));
+        StubPendingVisitorRow();
+
+        var cut = RenderComponent<PendingVisitors>();
+
+        cut.WaitForAssertion(() =>
+        {
+            // The row is there and the read-only profile drawer is still offered —
+            // so the two absences below are the gate, not an empty queue.
+            Assert.Contains("Admin.Pending.Action.View", cut.Markup);
+            Assert.DoesNotContain("Admin.Pending.Action.Approve", cut.Markup);
+            Assert.DoesNotContain("Admin.Pending.Action.Reject", cut.Markup);
+        });
+    }
+
+    [Fact]
+    public void Pending_row_approve_is_shown_to_an_approve_holder_without_reject()
+    {
+        // Approve and Reject are separate codes on the security team's queue, and
+        // an approver is not automatically a rejecter.
+        Authorization.SetPolicies(
+            PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.View),
+            PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.Approve));
+        StubPendingVisitorRow();
+
+        var cut = RenderComponent<PendingVisitors>();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains("Admin.Pending.Action.Approve", cut.Markup);
+            Assert.DoesNotContain("Admin.Pending.Action.Reject", cut.Markup);
+        });
+    }
+
+    [Fact]
+    public void Pending_others_splits_the_bulk_and_row_codes_the_way_the_API_does()
+    {
+        // The mapping a reviewer caught and a naming convention would have got wrong.
+        // On /admin/others/pending the two halves of the same action use DIFFERENT
+        // codes, because the API does: bulk approve/reject POST to
+        // /admin/others/bulk-approve|bulk-reject (Others.Approve / Others.Reject),
+        // while the per-row buttons POST to /admin/others/{id}/approve|reject, which
+        // ApproveStaffEndpoint and RejectStaffEndpoint gate on Admins.Approve /
+        // Admins.Reject. A holder of only the Others pair gets the toolbar and not the
+        // rows, which is exactly what the API would allow them to do.
+        Authorization.SetPolicies(
+            PermissionCatalog.PolicyFor(PermissionCatalog.Others.View),
+            PermissionCatalog.PolicyFor(PermissionCatalog.Others.Approve),
+            PermissionCatalog.PolicyFor(PermissionCatalog.Others.Reject));
+        StubPendingOtherRow();
+
+        var cut = RenderComponent<PendingOthers>();
+
+        // Exact button text, not a substring of the markup: "…Action.Approve" is a
+        // prefix-free match only by accident, and "…Action.BulkApprove" contains it.
+        cut.WaitForAssertion(() =>
+        {
+            Assert.NotEmpty(ButtonsLabelled(cut, "Admin.Pending.Action.BulkApprove"));
+            Assert.NotEmpty(ButtonsLabelled(cut, "Admin.Pending.Action.BulkReject"));
+            Assert.Empty(ButtonsLabelled(cut, "Admin.Pending.Action.Approve"));
+            Assert.Empty(ButtonsLabelled(cut, "Admin.Pending.Action.Reject"));
+        });
+    }
+
+    private static IReadOnlyList<AngleSharp.Dom.IElement> ButtonsLabelled(
+        IRenderedFragment cut, string label) =>
+        cut.FindAll("button").Where(button => button.TextContent.Trim() == label).ToList();
+
+    private void StubPendingOtherRow() => StubPendingVisitorRow();
+
+    private void StubPendingVisitorRow()
+    {
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        var query = new GridQuery();
+        var row = new AdminPendingUserSummary(
+            Guid.NewGuid(), "pending@simf.test", "Pending Person", SimfClock.Now);
+        JSInterop.Setup<ApiResult<GridPage<AdminPendingUserSummary>>>(
+                invocation => invocation.Identifier == "simfAccount.postJson")
+            .SetResult(ApiResult<GridPage<AdminPendingUserSummary>>.Ok(
+                GridPage<AdminPendingUserSummary>.Of(new[] { row }, 1, query)));
     }
 }

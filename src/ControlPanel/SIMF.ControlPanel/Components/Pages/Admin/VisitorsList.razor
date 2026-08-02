@@ -64,7 +64,12 @@
                           DuplicateLabel="@L["Admin.Users.Action.Duplicate"]"
                           ImportLabel="@L["Admin.Users.Action.Import"]"
                           ExportLabel="@L["Admin.Users.Action.Export"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.Visitors.Create"
+                          EditPermission="@PermissionCatalog.Visitors.Edit"
+                          DeletePermission="@PermissionCatalog.Visitors.Delete"
+                          ImportPermission="@PermissionCatalog.Visitors.Import"
+                          ExportPermission="@PermissionCatalog.Visitors.Export">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
                     @* #10 — bulk badge generator, gated by Visitors.BulkGenerate. *@

@@ -43,7 +43,8 @@
                       PageSizeLabel="@L["Grid.PageSize"]"
                       PageFormatter="@FormatPage"
                       LoadingLabel="@L["Admin.Vips.Loading"]"
-                      SummaryFormatter="@FormatSummary">
+                      SummaryFormatter="@FormatSummary"
+                      ExportPermission="@PermissionCatalog.Vips.Export">
             <CustomToolbar>
                 @* Bulk action: notify the selected VIPs (opens the bilingual message modal).
                    D-828 — gated at the TRIGGER, not just at the modal's Submit: the

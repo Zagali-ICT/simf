@@ -57,7 +57,12 @@
                           DeleteLabel="@L["Admin.Roles.Action.Delete"]"
                           ExportLabel="@L["Grid.Export"]"
                           ImportLabel="@L["Grid.Import"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.Roles.Create"
+                          EditPermission="@PermissionCatalog.Roles.Edit"
+                          DeletePermission="@PermissionCatalog.Roles.Delete"
+                          ImportPermission="@PermissionCatalog.Roles.Import"
+                          ExportPermission="@PermissionCatalog.Roles.Export">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
                 </CustomToolbar>

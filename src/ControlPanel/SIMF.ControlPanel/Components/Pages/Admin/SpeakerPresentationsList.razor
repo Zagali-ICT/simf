@@ -123,7 +123,8 @@
                           ActionsHeader="@L["Grid.Actions"]"
                           SelectAllLabel="@L["Grid.SelectAll"]"
                           SelectRowLabel="@L["Grid.SelectRow"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          ExportPermission="@PermissionCatalog.Speakers.Export">
                 <Columns>
                     <SimfDataGridColumn TItem="AdminSpeakerPresentationRow" Key="fileName"
                                         Header="@L["Admin.SpeakerPresentations.Col.File"]"

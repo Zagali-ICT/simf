@@ -53,7 +53,10 @@
                       AddLabel="@L["Grid.Add"]"
                       EditLabel="@L["Grid.Edit"]"
                       DeleteLabel="@L["Grid.Delete"]"
-                      SummaryFormatter="@FormatSummary">
+                      SummaryFormatter="@FormatSummary"
+                      AddPermission="@PermissionCatalog.Faq.Create"
+                      EditPermission="@PermissionCatalog.Faq.Edit"
+                      DeletePermission="@PermissionCatalog.Faq.Delete">
             <Columns>
                 <SimfDataGridColumn TItem="AdminFaqGroupSummary" Key="nameen"
                                     Header="@L["Admin.Faq.Col.NameEn"]" Sortable="true">
@@ -125,7 +128,10 @@
                           AddLabel="@L["Admin.Faq.Action.AddEntry"]"
                           EditLabel="@L["Grid.Edit"]"
                           DeleteLabel="@L["Grid.Delete"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.Faq.Create"
+                          EditPermission="@PermissionCatalog.Faq.Edit"
+                          DeletePermission="@PermissionCatalog.Faq.Delete">
                 <Columns>
                     <SimfDataGridColumn TItem="AdminFaqEntrySummary" Key="question"
                                         Header="@L["Admin.Faq.Col.Question"]" Sortable="true">

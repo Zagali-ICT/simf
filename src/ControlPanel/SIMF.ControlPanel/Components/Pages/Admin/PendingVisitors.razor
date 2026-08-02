@@ -44,7 +44,9 @@
                       FilterColumnLabel="@L["Grid.FilterColumn"]"
                       FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
                       ActionsHeader="@L["Grid.Actions"]"
-                      SummaryFormatter="@FormatSummary">
+                      SummaryFormatter="@FormatSummary"
+                      ApprovePermission="@PermissionCatalog.Visitors.Approve"
+                      RejectPermission="@PermissionCatalog.Visitors.Reject">
             <CustomToolbar>
                 <CrudPresentationToggle PageKey="@(PresentationPageKey!)" @bind-Value="_presentation" />
             </CustomToolbar>
@@ -78,16 +80,22 @@
                             OnClick="@(() => OpenViewAsync(user, approveMode: false))">
                     @L["Admin.Pending.Action.View"]
                 </SimfButton>
-                <SimfButton Type="button" Variant="primary"
-                            Disabled="_busy"
-                            OnClick="@(() => OpenViewAsync(user, approveMode: true))">
-                    @L["Admin.Pending.Action.Approve"]
-                </SimfButton>
-                <SimfButton Type="button" Variant="secondary"
-                            Disabled="_busy"
-                            OnClick="@(() => OpenReject(user))">
-                    @L["Admin.Pending.Action.Reject"]
-                </SimfButton>
+                @* D-830 — the row pair matches the bulk pair above it. The
+                   read-only View above stays ungated: Visitors.View bought it. *@
+                <AuthorizedAction Permission="@PermissionCatalog.Visitors.Approve">
+                    <SimfButton Type="button" Variant="primary"
+                                Disabled="_busy"
+                                OnClick="@(() => OpenViewAsync(user, approveMode: true))">
+                        @L["Admin.Pending.Action.Approve"]
+                    </SimfButton>
+                </AuthorizedAction>
+                <AuthorizedAction Permission="@PermissionCatalog.Visitors.Reject">
+                    <SimfButton Type="button" Variant="secondary"
+                                Disabled="_busy"
+                                OnClick="@(() => OpenReject(user))">
+                        @L["Admin.Pending.Action.Reject"]
+                    </SimfButton>
+                </AuthorizedAction>
             </RowActions>
             <EmptyTemplate>
                 <SimfEmptyState Title="@L["Admin.Pending.None"]" />

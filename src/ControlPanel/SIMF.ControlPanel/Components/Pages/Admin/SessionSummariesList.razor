@@ -38,7 +38,8 @@
                       PageSizeLabel="@L["Grid.PageSize"]"
                       PageFormatter="@FormatPage"
                       LoadingLabel="@L["Admin.SessionSummaries.Loading"]"
-                      SummaryFormatter="@FormatSummary">
+                      SummaryFormatter="@FormatSummary"
+                      ExportPermission="@PermissionCatalog.SessionSummaries.Export">
             <Columns>
                 <SimfDataGridColumn TItem="AdminSessionSummaryRow" Key="session"
                                     Header="@L["Admin.SessionSummaries.Col.Session"]"

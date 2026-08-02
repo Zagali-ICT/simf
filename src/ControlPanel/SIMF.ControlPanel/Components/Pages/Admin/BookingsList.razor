@@ -45,7 +45,8 @@
                       ActionsHeader="@L["Grid.Actions"]"
                       SelectAllLabel="@L["Grid.SelectAll"]"
                       SelectRowLabel="@L["Grid.SelectRow"]"
-                      SummaryFormatter="@FormatSummary">
+                      SummaryFormatter="@FormatSummary"
+                      ExportPermission="@PermissionCatalog.Bookings.Export">
             <Columns>
                 <SimfDataGridColumn TItem="ActiveBookingRow" Key="session"
                                     Header="@L["Admin.Bookings.Col.Session"]"
