@@ -318,26 +318,15 @@ public sealed class UpsertUserProfileRequestValidator
 
     // D-197 — standard Luhn mod-10 over all digits (the last is the check
     // digit). Saudi national ids and Iqama numbers are Luhn-valid; this is
-    // the real check on top of the prefix/length regex. Assumes the input
-    // has already passed the digits-only regex but stays defensive. Public
-    // so the walk-in validator reuses the same check (D-459).
-    public static bool IsValidLuhn(string number)
-    {
-        var sum = 0;
-        var doubleDigit = false;
-        for (var i = number.Length - 1; i >= 0; i--)
-        {
-            var c = number[i];
-            if (c < '0' || c > '9') { return false; }
-            var digit = c - '0';
-            if (doubleDigit)
-            {
-                digit *= 2;
-                if (digit > 9) { digit -= 9; }
-            }
-            sum += digit;
-            doubleDigit = !doubleDigit;
-        }
-        return sum % 10 == 0;
-    }
+    // the real check on top of the prefix/length regex. Public so the walk-in
+    // validator reuses the same check (D-459).
+    //
+    // D-814 — the implementation moved to SIMF.Common.IdentityDocument so the
+    // offline badge upload can apply it too: that path runs in
+    // SIMF.Infrastructure, which cannot reference SIMF.Api, and it calls the
+    // registration service directly so no validator ever executes on it. This
+    // stays as a delegation rather than being deleted, because eight call sites
+    // in this assembly already use it and a rename would be churn for nothing.
+    public static bool IsValidLuhn(string number) =>
+        IdentityDocument.IsValidLuhn(number);
 }

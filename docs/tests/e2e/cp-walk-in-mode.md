@@ -67,6 +67,8 @@ returns to its normal behaviour immediately.
 | E2E-WIM-026 | A scanner admits a badge offline | Armed |
 | E2E-WIM-027 | A scanner refuses a disallowed type offline | Armed |
 | E2E-WIM-028 | A scanner abstains at an offline hall door | Armed |
+| E2E-WIM-029 | A mistyped identity document is rejected by name | Armed |
+| E2E-WIM-030 | F3 corrects a rejected row without reprinting | Armed |
 
 ---
 
@@ -396,6 +398,47 @@ And it does NOT show a denial
 > A booking needs live data the device does not have. Denying on that would turn
 > every offline hall door into a wall; the server decides on upload. With
 > SessionWalkIn armed the same scan is admitted immediately.
+
+---
+
+## Scenarios — correcting a rejected row (D-814)
+
+### E2E-WIM-029 — a mistyped identity document is rejected by name
+```gherkin
+Given WalkInMode is armed with OfflineUpload and QuickRegister
+And a batch of two rows, the second carrying a national ID of the right shape
+    but a wrong check digit
+When the desk uploads it
+Then the response is HTTP 200
+And the first row is "Created"
+And the second is "Rejected" naming the national ID
+And the desk's "waiting to upload" counter still shows that one row
+```
+> A mistyped id is still UNIQUE, so its blind index matches nothing and the
+> duplicate-identity guard never fires. Without the check digit the same person
+> collects a second badge at another desk.
+
+### E2E-WIM-030 — F3 corrects a rejected row without reprinting
+```gherkin
+Given a registration the server rejected for a bad identity number
+Then the upload report NAMES that badge number and the reason on screen
+When the operator types only the corrected ID and presses F3
+Then the dialog offers that rejected number, not the newest pending one
+And it shows whose record is about to be overwritten
+When they confirm
+Then the stored row keeps its ORIGINAL sequence
+And no new badge number is consumed
+And the mobile number and Arabic name it was not given are unchanged
+And no badge is printed, because the NAME did not change
+When they press F5
+Then the row uploads and "waiting to upload" reaches 0
+And scanning the ORIGINAL printed badge at a gate is Allowed
+```
+> The paper stays valid because the QR encodes only the badge type and the
+> sequence, and a correction touches neither. A corrected NAME is the exception:
+> the name is printed on the badge too, so the desk prompts for F2 and the same
+> number reprints. A row that has already uploaded is refused — the account
+> exists by then and the Control Panel owns it.
 
 ---
 

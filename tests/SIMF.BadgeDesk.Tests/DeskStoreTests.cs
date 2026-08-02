@@ -137,6 +137,101 @@ public sealed class DeskStoreTests : IDisposable
     }
 
     [Fact]
+    public void A_correction_supersedes_the_row_and_keeps_its_sequence()
+    {
+        // D-814 - the property that makes server-side validation safe. The badge
+        // is already printed; only the captured data changes, so the paper in the
+        // visitor's hand stays valid and the upload can be retried.
+        var store = new DeskStore(_path);
+        store.Append(Registration(3_000_001));
+
+        var corrected = Registration(3_000_001);
+        corrected.NationalId = "1000000009";
+        corrected.Name = "Corrected Name";
+
+        store.Correct(corrected).Should().BeTrue();
+
+        var reopened = new DeskStore(_path);
+        reopened.Records.Should().ContainSingle();
+        reopened.Records[0].Sequence.Should().Be(3_000_001);
+        reopened.Records[0].Name.Should().Be("Corrected Name");
+        reopened.Records[0].NationalId.Should().Be("1000000009");
+        // Still pending, so the corrected row is what gets uploaded.
+        reopened.PendingUploadCount.Should().Be(1);
+    }
+
+    [Fact]
+    public void A_correction_keeps_the_contact_details_it_was_not_given()
+    {
+        // D-814 review - the desk form is cleared after each registration, so an
+        // operator fixing a mistyped ID leaves the mobile box empty. A blank box
+        // means "leave it alone", never "clear it": the corrected line supersedes
+        // the original, so a dropped mobile is unrecoverable - and it is the only
+        // contact channel an offline-registered visitor has.
+        //
+        // MainForm.CorrectPending carries the originals forward; this pins the
+        // store half of that contract - a corrected record round-trips whatever
+        // it was handed.
+        var store = new DeskStore(_path);
+        var original = Registration(3_000_001);
+        original.SaudiMobile = "0501234567";
+        original.NameArabic = "زائر";
+        store.Append(original);
+
+        var corrected = Registration(3_000_001);
+        corrected.NationalId = "1000000009";
+        corrected.SaudiMobile = original.SaudiMobile;
+        corrected.NameArabic = original.NameArabic;
+        store.Correct(corrected).Should().BeTrue();
+
+        var reopened = new DeskStore(_path);
+        reopened.Records[0].SaudiMobile.Should().Be("0501234567");
+        reopened.Records[0].NameArabic.Should().Be("زائر");
+        reopened.Records[0].NationalId.Should().Be("1000000009");
+    }
+
+    [Fact]
+    public void A_correction_does_not_consume_a_new_sequence()
+    {
+        // Two badge ids for one visitor would break every count in the system.
+        var store = new DeskStore(_path);
+        store.Append(Registration(3_000_001));
+        var corrected = Registration(3_000_001);
+        corrected.Name = "Corrected";
+
+        store.Correct(corrected);
+
+        store.NextSequence(Desk(3)).Should().Be(3_000_002);
+    }
+
+    [Fact]
+    public void An_uploaded_row_cannot_be_corrected_at_the_desk()
+    {
+        // Once the server has it, the account exists and the Control Panel owns
+        // it. A desk-side edit would silently diverge and never be sent.
+        var store = new DeskStore(_path);
+        store.Append(Registration(3_000_001));
+        store.MarkUploaded([3_000_001]);
+
+        var corrected = Registration(3_000_001);
+        corrected.Name = "Too late";
+
+        store.Correct(corrected).Should().BeFalse();
+        new DeskStore(_path).Records[0].Name.Should().Be("Test Visitor");
+    }
+
+    [Fact]
+    public void Correcting_an_unknown_sequence_changes_nothing()
+    {
+        var store = new DeskStore(_path);
+        store.Append(Registration(3_000_001));
+
+        store.Correct(Registration(3_000_999)).Should().BeFalse();
+
+        new DeskStore(_path).Records.Should().ContainSingle();
+    }
+
+    [Fact]
     public void An_absent_file_is_a_fresh_desk_not_a_failure()
     {
         var store = new DeskStore(_path);

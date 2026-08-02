@@ -174,20 +174,17 @@ internal sealed class OfflineBadgeUploadService(
                 item.Sequence, qrId, ErrorCodes.ValidationFailed,
                 "The badge carries no name.");
         }
-        // D-813 - checked here rather than left to SQL Server, so the desk is
-        // told what is wrong instead of being told to retry something that
-        // cannot succeed. Deliberately NOT truncated: a badge is already printed
-        // with the full name on it, and silently storing a different one would
-        // make the paper and the record disagree.
-        if (item.Name.Trim().Length > NameMaxLength
-            || (item.NameArabic?.Trim().Length ?? 0) > NameMaxLength)
-        {
-            return Rejected(
-                item.Sequence, qrId, ErrorCodes.ValidationFailed,
-                $"The name is longer than {NameMaxLength} characters.");
-        }
 
-        // Cheap pre-check so a retried upload answers without attempting a write.
+        // D-814 review - the pre-check comes FIRST, ahead of every shape rule.
+        // A shift can be committed by the server and have its response lost, in
+        // which case the desk still holds every row as pending and retries. If a
+        // shape rule ran first, a row the server had ALREADY created would come
+        // back Rejected instead of AlreadyUploaded, the desk would never mark it
+        // done, and "waiting to upload" could never reach zero - while the
+        // report told the operator a visitor has no account when the account
+        // exists.
+        //
+// Cheap pre-check so a retried upload answers without attempting a write.
         // It is a read-then-insert and therefore racy; RegisterOnSiteAsync catches
         // the losing insert on IX_UserProfiles_QrId and reports the same outcome.
         if (await appDbContext.UserProfiles
@@ -197,6 +194,28 @@ internal sealed class OfflineBadgeUploadService(
             return new OfflineBadgeUploadResult(
                 item.Sequence, qrId, OfflineBadgeUploadStatus.AlreadyUploaded,
                 null, null);
+        }
+
+        // Shape rules, only for rows this server has not already accepted.
+        //
+        // These reject values that used to be written, which is safe ONLY
+        // because the desk can now correct a row and keep its sequence (D-814):
+        // the badge in the visitor's hand stays valid and the same row uploads
+        // again. Without that path this would strand printed badges.
+        if (item.Name.Trim().Length > NameMaxLength
+            || (item.NameArabic?.Trim().Length ?? 0) > NameMaxLength)
+        {
+            // Deliberately NOT truncated: the badge is printed with the full
+            // name on it, and silently storing a different one would make the
+            // paper and the record disagree.
+            return Rejected(
+                item.Sequence, qrId, ErrorCodes.ValidationFailed,
+                $"The name is longer than {NameMaxLength} characters.");
+        }
+        if (DescribeMalformedIdentityDocument(item) is { } identityProblem)
+        {
+            return Rejected(
+                item.Sequence, qrId, ErrorCodes.ValidationFailed, identityProblem);
         }
 
         var name = item.Name.Trim();
@@ -286,6 +305,51 @@ internal sealed class OfflineBadgeUploadService(
                 item.Sequence, qrId, ErrorCodes.InternalError,
                 "This registration could not be stored. Retry it.");
         }
+    }
+
+    /// <summary>
+    /// D-814 - the identity-document shape rules, applied per item.
+    ///
+    /// <para>They could not be applied before. The batch calls
+    /// <c>RegisterOnSiteAsync</c> directly, so no FastEndpoints validator runs on
+    /// it, and rejecting a row meant a printed badge in a visitor's hand that
+    /// nothing backed and nobody could fix - the desk store was append-only with
+    /// no edit path. D-814 gave the desk a correction action (F3), which is what
+    /// makes rejecting SAFE: the row comes back named, the operator fixes the
+    /// number, the same badge uploads. The paper never changes.</para>
+    ///
+    /// <para>Why it matters that these run at all: the duplicate-identity guard
+    /// keys off a blind-index HMAC of the number. A mistyped id is still unique,
+    /// so it hashes to a value matching nothing, the guard never fires, and the
+    /// same person collects a second badge at another desk. Checking the Luhn
+    /// digit is what makes the guard mean anything on this path.</para>
+    ///
+    /// <para>Returns null when the row is fine. Only NON-EMPTY values are
+    /// checked: whether a document is REQUIRED is the quick-register floor's
+    /// decision, made later in the registration service, and duplicating it here
+    /// would let the two drift.</para>
+    /// </summary>
+    private static string? DescribeMalformedIdentityDocument(OfflineBadgeRegistration item)
+    {
+        if (!string.IsNullOrWhiteSpace(item.NationalId)
+            && !IdentityDocument.IsSaudiNationalId(item.NationalId.Trim()))
+        {
+            return "The national ID is not a valid number "
+                + "(10 digits starting with 1, and the check digit must match).";
+        }
+        if (!string.IsNullOrWhiteSpace(item.IqamaNumber)
+            && !IdentityDocument.IsIqamaNumber(item.IqamaNumber.Trim()))
+        {
+            return "The Iqama number is not a valid number "
+                + "(10 digits starting with 2, and the check digit must match).";
+        }
+        if (!string.IsNullOrWhiteSpace(item.PassportNumber)
+            && !IdentityDocument.IsOtherDocumentNumber(item.PassportNumber.Trim()))
+        {
+            return "The passport or document number must be at most "
+                + $"{IdentityDocument.OtherDocumentMaxLength} characters.";
+        }
+        return null;
     }
 
     private static OfflineBadgeUploadResult Rejected(

@@ -110,6 +110,42 @@ public sealed class DeskStore
         }
     }
 
+    /// <summary>
+    /// D-814 — replaces a registration the server rejected, keeping its
+    /// sequence.
+    ///
+    /// <para>Appended, not rewritten: the later line supersedes the earlier one
+    /// on the next load, exactly as an upload receipt already does. The file
+    /// stays append-only, so the power-cut property is untouched.</para>
+    ///
+    /// <para><b>The sequence never changes.</b> The badge is already printed and
+    /// in someone's hand; issuing a new number would put two ids on one visitor
+    /// and break the reconciliation the upload depends on. Only the captured
+    /// DATA is corrected — the paper stays valid.</para>
+    ///
+    /// <para>Refuses a row the server has already accepted. After upload the
+    /// account exists and the Control Panel owns it; a desk-side edit would
+    /// silently diverge from it and never be sent.</para>
+    /// </summary>
+    public bool Correct(StoredRegistration corrected)
+    {
+        lock (_writeLock)
+        {
+            var index = _records.FindIndex(r => r.Sequence == corrected.Sequence);
+            if (index < 0 || _records[index].Uploaded) { return false; }
+
+            corrected.Uploaded = false;
+            using var stream = new FileStream(
+                _path, FileMode.Append, FileAccess.Write, FileShare.Read);
+            using var writer = new StreamWriter(stream, new UTF8Encoding(false));
+            writer.WriteLine(Protect(corrected));
+            writer.Flush();
+            stream.Flush(flushToDisk: true);
+            _records[index] = corrected;
+            return true;
+        }
+    }
+
     /// <summary>The not-yet-uploaded registrations, as the upload contract.</summary>
     public List<OfflineBadgeRegistration> BuildPendingBatch(int max) =>
         _records

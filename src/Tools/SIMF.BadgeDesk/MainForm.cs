@@ -1,5 +1,6 @@
 using System.Drawing.Printing;
 using SIMF.Common.Badges;
+using SIMF.Contracts.Badges;
 
 namespace SIMF.BadgeDesk;
 
@@ -29,6 +30,16 @@ public sealed class MainForm : Form
     private readonly PictureBox _preview = new();
     private readonly Label _status = new();
     private readonly Label _counters = new();
+
+    /// <summary>D-814 review - the rows the LAST upload refused, newest first.
+    ///
+    /// <para>The server returns a reason per row and the console used to render
+    /// only the totals, so an operator was told "3 rejected" and had no way to
+    /// learn which three or why. The manual told them to read it off the upload
+    /// report; there was no report. Without this the correction path could not
+    /// even be started, and rejecting rows would have stranded printed badges -
+    /// exactly the outcome the correction path exists to prevent.</para></summary>
+    private readonly List<OfflineBadgeUploadResult> _rejections = [];
 
     public MainForm(DeskConfig config, DeskStore store, UploadClient uploader)
     {
@@ -82,6 +93,8 @@ public sealed class MainForm : Form
 
         _status.Dock = DockStyle.Fill;
         _status.AutoSize = true;
+        // The upload report names every refused row, so this grows downwards.
+        _status.MaximumSize = new Size(0, 220);
         _status.Padding = new Padding(0, 12, 0, 0);
         fields.Controls.Add(_status);
         fields.SetColumnSpan(_status, 2);
@@ -126,7 +139,7 @@ public sealed class MainForm : Form
         Dock = DockStyle.Bottom,
         AutoSize = true,
         Text = "Enter = next field, print from the last  •  Esc = clear  •  "
-        + "F2 = reprint the last badge  •  F5 = upload",
+        + "F2 = reprint last  •  F3 = correct a rejected row  •  F5 = upload",
     };
 
     private void OnFieldKeyDown(object? sender, KeyEventArgs args)
@@ -153,6 +166,10 @@ public sealed class MainForm : Form
                 break;
             case Keys.F2:
                 ReprintLast();
+                args.Handled = true;
+                break;
+            case Keys.F3:
+                CorrectPending();
                 args.Handled = true;
                 break;
             case Keys.F5:
@@ -246,6 +263,171 @@ public sealed class MainForm : Form
 
         ClearForm();
         RefreshCounters();
+    }
+
+    /// <summary>
+    /// D-814 — corrects a registration the server rejected, without reprinting.
+    ///
+    /// <para>This is what makes server-side validation of an uploaded shift SAFE.
+    /// Until it existed, rejecting a row for a mistyped ID meant a printed badge
+    /// in a visitor's hand that no account backed and nobody could fix: the store
+    /// is append-only and there was no edit path. So the choice was between
+    /// accepting bad identity data — which defeats the duplicate-badge guard the
+    /// desk exists to uphold — and stranding real visitors at a gate. With a
+    /// correction path there is no trade: the row is rejected, named, fixed, and
+    /// re-uploaded.</para>
+    ///
+    /// <para>The badge is NOT reprinted and the sequence does not change. The QR
+    /// encodes only the profile-type code and the sequence, neither of which a
+    /// correction touches, so the paper already issued stays valid.</para>
+    /// </summary>
+    private void CorrectPending()
+    {
+        var pending = _store.Records.Where(record => !record.Uploaded).ToList();
+        if (pending.Count == 0)
+        {
+            ShowStatus("Nothing pending to correct.", isError: false);
+            return;
+        }
+
+        var sequence = PromptForSequence(pending, _rejections);
+        if (sequence is not { } target) { return; }
+
+        var original = pending.FirstOrDefault(record => record.Sequence == target);
+        if (original is null)
+        {
+            ShowStatus($"{target} is not a pending registration.", isError: true);
+            return;
+        }
+
+        var name = _name.Text.Trim();
+        var identityDocument = _identityDocument.Text.Trim();
+        if (name.Length == 0 || identityDocument.Length == 0)
+        {
+            ShowStatus(
+                "Type the corrected name and ID into the form first, then press F3.",
+                isError: true);
+            return;
+        }
+
+        // D-814 review - a BLANK box means "leave this alone", not "clear it".
+        // The form is cleared after every registration and F3 does not repopulate
+        // it, so an operator fixing a mistyped ID leaves the mobile and Arabic
+        // name empty. Rebuilding the record from the form alone silently wiped
+        // both - and the mobile is the only contact channel an offline-registered
+        // visitor has. The corrected line supersedes the original on the next
+        // load, so anything dropped here is unrecoverable.
+        var mobile = _mobile.Text.Trim();
+        var arabicName = _nameArabic.Text.Trim();
+        var corrected = new StoredRegistration
+        {
+            // Carried over, never re-derived: these identify the printed badge.
+            Sequence = original.Sequence,
+            ProfileTypeCode = original.ProfileTypeCode,
+            RegisteredAt = original.RegisteredAt,
+            Email = original.Email,
+            Name = name,
+            NameArabic = arabicName.Length > 0 ? arabicName : original.NameArabic,
+            SaudiMobile = mobile.Length > 0
+                ? (mobile.StartsWith('0') ? mobile : null)
+                : original.SaudiMobile,
+            InternationalMobile = mobile.Length > 0
+                ? (mobile.StartsWith('+') ? mobile : null)
+                : original.InternationalMobile,
+        };
+        ApplyIdentityDocument(corrected, identityDocument);
+
+        if (!_store.Correct(corrected))
+        {
+            ShowStatus(
+                $"{target} has already been uploaded and cannot be corrected here.",
+                isError: true);
+            return;
+        }
+
+        // D-814 review - the badge prints the NAME as well as the QR. The QR is
+        // unaffected by any correction (it carries only the badge type and the
+        // sequence), but a corrected NAME makes the printed paper wrong. F2
+        // reprints the SAME sequence, so it is the right answer when the name
+        // changed and unnecessary when only the id did.
+        var nameChanged = !string.Equals(
+            original.Name, corrected.Name, StringComparison.Ordinal);
+        ShowStatus(
+            $"Corrected {target}. Press F5 to upload."
+                + (nameChanged
+                    ? " The printed NAME changed — press F2 to reprint the badge."
+                    : " The printed badge is unchanged."),
+            isError: false);
+        ClearForm();
+        RefreshCounters();
+    }
+
+    /// <summary>
+    /// Asks which sequence to correct.
+    ///
+    /// <para>D-814 review - defaults to the most recently REJECTED row, not the
+    /// most recent pending one. The queue does not stop while an operator reads
+    /// a rejection, so rows registered afterwards are also pending and sort
+    /// last; a keyboard-only operator pressing Enter on that default would have
+    /// overwritten an unrelated visitor's record with the corrected data of a
+    /// different person, irreversibly. The dialog also names the holder, so what
+    /// is about to be overwritten is visible before it happens.</para>
+    /// </summary>
+    private static long? PromptForSequence(
+        IReadOnlyList<StoredRegistration> pending,
+        IReadOnlyList<OfflineBadgeUploadResult> rejections)
+    {
+        var suggested = rejections
+            .Select(rejection => rejection.Sequence)
+            .FirstOrDefault(sequence =>
+                pending.Any(record => record.Sequence == sequence));
+        if (suggested == 0) { suggested = pending[^1].Sequence; }
+
+        using var dialog = new Form
+        {
+            Text = "Correct which badge number?",
+            FormBorderStyle = FormBorderStyle.FixedDialog,
+            StartPosition = FormStartPosition.CenterParent,
+            ClientSize = new Size(420, 120),
+            MinimizeBox = false,
+            MaximizeBox = false,
+        };
+        var input = new TextBox
+        {
+            Dock = DockStyle.Top,
+            Text = suggested.ToString(System.Globalization.CultureInfo.InvariantCulture),
+        };
+        var holder = pending.FirstOrDefault(record => record.Sequence == suggested);
+        var who = new Label
+        {
+            Dock = DockStyle.Top,
+            AutoSize = false,
+            Height = 28,
+            Text = holder is null
+                ? string.Empty
+                : $"This will overwrite: {holder.Name}",
+        };
+        var ok = new Button
+        {
+            Text = "Correct",
+            Dock = DockStyle.Bottom,
+            DialogResult = DialogResult.OK,
+        };
+        dialog.Controls.Add(who);
+        dialog.Controls.Add(input);
+        dialog.Controls.Add(ok);
+        dialog.AcceptButton = ok;
+        input.Select();
+        input.SelectAll();
+
+        if (dialog.ShowDialog() != DialogResult.OK) { return null; }
+        return long.TryParse(
+            input.Text.Trim(),
+            System.Globalization.NumberStyles.None,
+            System.Globalization.CultureInfo.InvariantCulture,
+            out var parsed)
+            ? parsed
+            : null;
     }
 
     /// <summary>
@@ -356,11 +538,25 @@ public sealed class MainForm : Form
                     or Contracts.Badges.OfflineBadgeUploadStatus.AlreadyUploaded)
                 .Select(result => result.Sequence));
 
-            ShowStatus(
+            _rejections.Clear();
+            _rejections.AddRange(response.Results
+                .Where(result => result.Status == OfflineBadgeUploadStatus.Rejected)
+                .Reverse());
+
+            var summary =
                 $"Uploaded {response.Submitted}: {response.Created} approved, "
                 + $"{response.PendingApproval} awaiting approval, "
-                + $"{response.AlreadyUploaded} already known, {response.Rejected} rejected.",
-                isError: response.Rejected > 0);
+                + $"{response.AlreadyUploaded} already known, {response.Rejected} rejected.";
+            if (_rejections.Count > 0)
+            {
+                // Name every refused row and why. An operator cannot correct what
+                // the console will not tell them.
+                summary += Environment.NewLine
+                    + string.Join(Environment.NewLine, _rejections.Select(
+                        result => $"  {result.Sequence}: {result.Message}"))
+                    + Environment.NewLine + "Press F3 to correct one.";
+            }
+            ShowStatus(summary, isError: response.Rejected > 0);
         }
         catch (Exception ex) when (ex is InvalidOperationException or HttpRequestException
                                       or TaskCanceledException)

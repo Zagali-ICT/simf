@@ -372,6 +372,131 @@ public sealed class OfflineBadgeUploadTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task A_mistyped_identity_document_is_rejected_by_name()
+    {
+        // D-814. Before the desk had a correction path this could not be checked
+        // at all: rejecting a row meant a printed badge nobody could fix. Now a
+        // typo comes back named, the operator presses F3, and the SAME badge
+        // uploads - so the rule that makes the duplicate-identity guard mean
+        // anything can finally run on this path.
+        //
+        // A mistyped id is still UNIQUE, so its blind index matches nothing, the
+        // duplicate guard never fires, and the same person collects a second
+        // badge at another desk. The Luhn digit is what catches it.
+        using var armed = CreateArmedFactory();
+        using var client = armed.CreateClient();
+        var token = await CreateAdminTokenAsync(client);
+        var code = await ResolveProfileTypeCodeAsync();
+
+        var good = BuildRegistration(NextSequence(), code);
+        var mistyped = BuildRegistration(NextSequence(), code);
+        mistyped.NationalId = "1234567890"; // right shape, wrong check digit
+
+        var response = await PostBatchAsync(client, token, new OfflineBadgeBatchRequest
+        {
+            Registrations = [good, mistyped],
+        });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<OfflineBadgeBatchResponse>>())!.Data!;
+
+        // The good row still lands - per-item isolation is what lets the rule be
+        // applied at all during a rush.
+        Assert.Equal(1, body.Created);
+        Assert.Equal(1, body.Rejected);
+        var rejected = body.Results.Single(
+            r => r.Status == OfflineBadgeUploadStatus.Rejected);
+        Assert.Equal(ErrorCodes.ValidationFailed, rejected.ErrorCode);
+        Assert.Contains("national ID", rejected.Message!, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task A_well_formed_iqama_and_passport_are_accepted()
+    {
+        // The rule must not reject the documents a real non-Saudi visitor
+        // carries; an over-strict check would strand printed badges just as
+        // surely as no check lets duplicates through.
+        using var armed = CreateArmedFactory();
+        using var client = armed.CreateClient();
+        var token = await CreateAdminTokenAsync(client);
+        var code = await ResolveProfileTypeCodeAsync();
+
+        var iqama = BuildRegistration(NextSequence(), code);
+        iqama.NationalId = null;
+        iqama.IqamaNumber = BuildLuhnIdentityNumber('2');
+
+        var passport = BuildRegistration(NextSequence(), code);
+        passport.NationalId = null;
+        passport.PassportNumber = "AB123456";
+
+        // D-814 review - the desk classifier files EVERY document that is not a
+        // 10-digit Saudi-shaped number into PassportNumber, so this field also
+        // carries a Kuwaiti Civil ID, a Qatari QID, an Emirates ID and passports
+        // with separators. An earlier cut applied [A-Za-z0-9]{6,9} here and would
+        // have refused all of them - offline, after the badge was printed, while
+        // the ONLINE walk-in desk accepted them. At an international maritime
+        // forum that is the common case, not the edge.
+        var kuwaitiCivilId = BuildRegistration(NextSequence(), code);
+        kuwaitiCivilId.NationalId = null;
+        kuwaitiCivilId.PassportNumber = "289010101234";
+
+        var separated = BuildRegistration(NextSequence(), code);
+        separated.NationalId = null;
+        separated.PassportNumber = "A-123 4567";
+
+        var response = await PostBatchAsync(client, token, new OfflineBadgeBatchRequest
+        {
+            Registrations = [iqama, passport, kuwaitiCivilId, separated],
+        });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<OfflineBadgeBatchResponse>>())!.Data!;
+
+        Assert.Equal(0, body.Rejected);
+        Assert.Equal(4, body.Created);
+    }
+
+    [Fact]
+    public async Task A_retry_of_an_already_uploaded_row_is_not_re_validated()
+    {
+        // D-814 review - ordering matters. A shift can be committed and its
+        // response lost, leaving every row pending on the desk. On the retry the
+        // idempotency pre-check MUST run before the shape rules: otherwise a row
+        // the server already created comes back Rejected instead of
+        // AlreadyUploaded, the desk never marks it done, and "waiting to upload"
+        // can never reach zero while the report claims a visitor has no account.
+        using var armed = CreateArmedFactory();
+        using var client = armed.CreateClient();
+        var token = await CreateAdminTokenAsync(client);
+        var code = await ResolveProfileTypeCodeAsync();
+
+        var row = BuildRegistration(NextSequence(), code);
+        var first = await PostBatchAsync(client, token, new OfflineBadgeBatchRequest
+        {
+            Registrations = [row],
+        });
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+
+        // The desk retries the SAME row, but the operator has since mistyped the
+        // id in a way that would fail validation. The account already exists, so
+        // the answer is "already uploaded", not "rejected".
+        row.NationalId = "1234567890"; // wrong check digit
+        var retry = await PostBatchAsync(client, token, new OfflineBadgeBatchRequest
+        {
+            Registrations = [row],
+        });
+
+        Assert.Equal(HttpStatusCode.OK, retry.StatusCode);
+        var body = (await retry.Content
+            .ReadFromJsonAsync<ApiResult<OfflineBadgeBatchResponse>>())!.Data!;
+
+        Assert.Equal(1, body.AlreadyUploaded);
+        Assert.Equal(0, body.Rejected);
+    }
+
+    [Fact]
     public async Task Offline_config_withholds_the_badge_key_while_disarmed()
     {
         // The key travels only while offline badges are armed. Disarming is
@@ -570,6 +695,36 @@ public sealed class OfflineBadgeUploadTests : IClassFixture<SimfApiFactory>
             .Where(p => p.IsActive && p.IsForVisitor && p.Code != 0)
             .Select(p => p.Code)
             .FirstAsync();
+    }
+
+    /// <summary>A Luhn-valid 10-digit number with the given leading digit, so an
+    /// Iqama (leading 2) can be built as well as a national ID (leading 1).</summary>
+    private static string BuildLuhnIdentityNumber(char leading)
+    {
+        var digits = new int[10];
+        digits[0] = leading - '0';
+        for (var i = 1; i < 9; i++) { digits[i] = RandomNumberGenerator.GetInt32(0, 10); }
+
+        for (var check = 0; check < 10; check++)
+        {
+            digits[9] = check;
+            var sum = 0;
+            var doubleDigit = false;
+            for (var i = 9; i >= 0; i--)
+            {
+                var value = digits[i];
+                if (doubleDigit)
+                {
+                    value *= 2;
+                    if (value > 9) { value -= 9; }
+                }
+                sum += value;
+                doubleDigit = !doubleDigit;
+            }
+            if (sum % 10 == 0) { break; }
+        }
+
+        return string.Concat(digits);
     }
 
     private static string BuildLuhnNationalId()

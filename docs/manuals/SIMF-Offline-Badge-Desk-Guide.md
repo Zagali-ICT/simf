@@ -1,6 +1,6 @@
 # Offline badge desk — provisioning and operating guide
 
-**Applies to:** `src/Tools/SIMF.BadgeDesk` (D-809 / D-810 / D-811 / D-813)
+**Applies to:** `src/Tools/SIMF.BadgeDesk` (D-809 / D-810 / D-811 / D-813 / D-814)
 **Audience:** whoever sets the desks up, and the operators who run them
 **Last updated:** 2026-08-01
 
@@ -108,6 +108,7 @@ Keyboard only. An operator facing a queue never touches the mouse.
 | **Enter** | Next field; from the last field, register and print |
 | **Esc** | Clear the form |
 | **F2** | Reprint the last badge |
+| **F3** | Correct a registration the server rejected |
 | **F5** | Upload everything not yet uploaded |
 
 Fields: name, Arabic name (optional), badge type, **ID / Iqama / passport**,
@@ -150,11 +151,35 @@ The response is the reconciliation report:
 | `Created` | Account created and approved. The badge works. |
 | `CreatedPendingApproval` | Created, but auto-approve is not armed. **That badge will be refused at the gate** until an administrator approves it. |
 | `AlreadyUploaded` | Seen before. Nothing changed. |
-| `Rejected` | Not written. The error code says why — usually a duplicate identity document. |
+| `Rejected` | Not written. The message says why — a duplicate identity document, or a number that failed its check digit. **Fix it with F3 and upload again.** |
 
 Only accounted-for rows are marked done locally, so a rejected row stays pending
-and is retried or chased by hand. **Reconciliation is complete when "waiting to
-upload" reads 0.**
+until it is corrected. **Reconciliation is complete when "waiting to upload"
+reads 0.**
+
+### Correcting a rejected row (F3)
+
+1. The upload report **names every rejected badge number and why**. Read it off
+   the screen.
+2. Type the corrected details into the form. **A box you leave blank is left
+   alone** — only what you retype is changed, so fixing an ID does not wipe the
+   mobile number.
+3. Press **F3**. The dialog offers the most recently rejected number and shows
+   whose record it is — check that name before confirming.
+4. Press **F5** to upload again.
+
+**The badge number never changes**, so the paper in the visitor's hand keeps
+working: the QR encodes only the badge type and the sequence, and a correction
+touches neither. Issuing a new number would put two badge ids on one person and
+break the reconciliation.
+
+**Reprint only if you corrected the NAME.** The name is printed on the badge as
+well as encoded in the QR, so a corrected name makes the paper wrong even though
+the code still scans. The desk tells you when this applies; press **F2** and the
+same badge number reprints with the right name.
+
+A row that has already uploaded successfully cannot be corrected here — the
+account exists by then and the Control Panel owns it.
 
 Uploading twice is safe. Uploading a batch that was half-accepted is safe. An
 interrupted upload is resumed by pressing F5 again.
