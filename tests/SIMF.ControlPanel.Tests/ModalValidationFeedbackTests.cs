@@ -11,12 +11,28 @@
 // These tests pin both halves: the guard fires, and the message lands inside
 // .simf-modal__body (not behind it).
 using Bunit;
+using SIMF.Common;
 using SIMF.ControlPanel.Components.Pages.Admin;
 
 namespace SIMF.ControlPanel.Tests;
 
 public sealed class ModalValidationFeedbackTests : CpComponentTestBase
 {
+    public ModalValidationFeedbackTests()
+    {
+        // D-828 — the FAQ and rating Save buttons are now wrapped in
+        // <AuthorizedAction>, so they render only for a holder of the matching
+        // Create/Edit permission. The default test identity holds none, which
+        // hid the very button these tests click. Granting the permissions a real
+        // operator of these pages holds keeps the tests about the validation
+        // guard rather than about the auth context.
+        Authorization.SetPolicies(
+            PermissionCatalog.PolicyFor(PermissionCatalog.Faq.Create),
+            PermissionCatalog.PolicyFor(PermissionCatalog.Faq.Edit),
+            PermissionCatalog.PolicyFor(PermissionCatalog.RatingConfig.Create),
+            PermissionCatalog.PolicyFor(PermissionCatalog.RatingConfig.Edit));
+    }
+
     /// <summary>The grid toolbar's Add button. The pass-through localizer means
     /// the title attribute is the resx key itself.</summary>
     private const string AddButtonSelector = "button.simf-tbbtn[title='Grid.Add']";

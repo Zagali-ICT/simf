@@ -16,16 +16,16 @@ namespace SIMF.ControlPanel.Tests;
 /// what you may do and one that lets you find out by failing.</para>
 ///
 /// <para>Found on <c>/admin/operations</c> during a live pass, then measured across
-/// the whole Control Panel: of 96 permission-gated pages, 30 already gate their
-/// actions and 36 are read-only with nothing to gate. Four have the gap, and they
-/// are listed below with what a View-only holder sees on each.</para>
+/// the whole Control Panel: of 96 permission-gated pages, 30 already gated their
+/// actions and 36 are read-only with nothing to gate. Four had the gap -
+/// <c>OperationsToggles</c>, <c>FaqManager</c>, <c>RatingConfig</c> and
+/// <c>VipsList</c> - and all four are fixed, which is why the reviewed-exception
+/// list below is EMPTY.</para>
 ///
-/// <para><b>Why a ratchet rather than four fixes.</b> Wrapping the buttons changes
-/// what an operator sees on four shipped pages, which is the owner's call, not a
-/// test's. What is NOT a judgement call is the fifth page: this fails the build if
-/// one appears. The reviewed list is also checked for staleness, so fixing one of
-/// the four tells you to delete its entry rather than leaving a false record of a
-/// defect that is gone.</para>
+/// <para>The staleness test is what closed them out: it named all four the moment
+/// their buttons were wrapped and refused to pass until the entries were deleted.
+/// An exception list that outlives the defect it records is worse than no list,
+/// because the next reader trusts it.</para>
 /// </summary>
 public sealed class ActionPermissionGuardRatchetTests
 {
@@ -46,22 +46,10 @@ public sealed class ActionPermissionGuardRatchetTests
     /// </summary>
     private static readonly Dictionary<string, string> ReviewedExceptions = new()
     {
-        ["Pages/Admin/OperationsToggles.razor"] =
-            "Page gates on Operations.View; both Save buttons need Operations.Edit "
-            + "(RegistrationGateEndpoints / ArchiveVisibilityEndpoints PUT). A View-only "
-            + "admin can close public registration in the UI and is told only by the 403 "
-            + "toast that they could not. Recorded in docs/pages/cp/admin-operations.md §7.",
-        ["Pages/Admin/FaqManager.razor"] =
-            "Page gates on Faq.View; SaveGroupAsync / SaveEntryAsync need Faq.Create or "
-            + "Faq.Edit. The group and entry modals open and accept input for someone who "
-            + "cannot save either.",
-        ["Pages/Admin/RatingConfig.razor"] =
-            "Page gates on RatingConfig.View; SaveTypeAsync / SaveGroupAsync / "
-            + "SaveQuestionAsync need RatingConfig.Create or .Edit. Three modals, same shape.",
-        ["Pages/Admin/VipsList.razor"] =
-            "Page gates on Vips.View; OnNotifySelected / SubmitNotifyAsync need "
-            + "Vips.Notify. Worst of the four in consequence, because the operator selects "
-            + "recipients and composes a message before discovering they cannot send it.",
+        // Empty, and that is the point. An entry here is a page shipping a button
+        // its viewer cannot use; each must carry a justification saying what a
+        // View-only holder sees. The four original entries were deleted when the
+        // pages were fixed - see D-828.
     };
 
     [Fact]

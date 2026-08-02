@@ -290,7 +290,14 @@
             </div>
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" OnClick="SaveTypeAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">@L["Admin.RatingConfig.Save"]</SimfButton>
+            @* D-828 - the page gates on RatingConfig.View; saving needs
+               Create or Edit. Keyed off the modal's own mode so a holder of
+               only one keeps the half they are entitled to. *@
+            <AuthorizedAction Permission="@(_typeEditId is null
+                                            ? PermissionCatalog.RatingConfig.Create
+                                            : PermissionCatalog.RatingConfig.Edit)">
+                <SimfButton Type="button" OnClick="SaveTypeAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">@L["Admin.RatingConfig.Save"]</SimfButton>
+            </AuthorizedAction>
             <SimfButton Type="button" Variant="secondary" OnClick="CloseTypeModal" Disabled="_busy">
                 @L["Admin.RatingConfig.Cancel"]
             </SimfButton>
@@ -325,7 +332,11 @@
             </div>
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" OnClick="SaveGroupAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">@L["Admin.RatingConfig.Save"]</SimfButton>
+            <AuthorizedAction Permission="@(_groupEditId is null
+                                            ? PermissionCatalog.RatingConfig.Create
+                                            : PermissionCatalog.RatingConfig.Edit)">
+                <SimfButton Type="button" OnClick="SaveGroupAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">@L["Admin.RatingConfig.Save"]</SimfButton>
+            </AuthorizedAction>
             <SimfButton Type="button" Variant="secondary" OnClick="CloseGroupModal" Disabled="_busy">
                 @L["Admin.RatingConfig.Cancel"]
             </SimfButton>
@@ -373,7 +384,11 @@
             </div>
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" OnClick="SaveQuestionAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">@L["Admin.RatingConfig.Save"]</SimfButton>
+            <AuthorizedAction Permission="@(_questionEditId is null
+                                            ? PermissionCatalog.RatingConfig.Create
+                                            : PermissionCatalog.RatingConfig.Edit)">
+                <SimfButton Type="button" OnClick="SaveQuestionAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">@L["Admin.RatingConfig.Save"]</SimfButton>
+            </AuthorizedAction>
             <SimfButton Type="button" Variant="secondary" OnClick="CloseQuestionModal" Disabled="_busy">
                 @L["Admin.RatingConfig.Cancel"]
             </SimfButton>

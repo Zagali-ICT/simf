@@ -45,13 +45,20 @@
                       LoadingLabel="@L["Admin.Vips.Loading"]"
                       SummaryFormatter="@FormatSummary">
             <CustomToolbar>
-                @* Bulk action: notify the selected VIPs (opens the bilingual message modal). *@
-                <SimfToolbarButton Icon="send"
-                                   Title="@(string.Format(L["Admin.Vips.NotifySelected"], _selected.Count))"
-                                   Disabled="@(_selected.Count == 0)"
-                                   OnClick="OnNotifySelected">
-                    @(string.Format(L["Admin.Vips.NotifySelected"], _selected.Count))
-                </SimfToolbarButton>
+                @* Bulk action: notify the selected VIPs (opens the bilingual message modal).
+                   D-828 — gated at the TRIGGER, not just at the modal's Submit: the
+                   page gates on Vips.View while sending needs Vips.Notify, and this
+                   flow asks the operator to select recipients and compose a bilingual
+                   message before sending. Hiding the entry point is the difference
+                   between "you cannot do this" and "you did all that for nothing". *@
+                <AuthorizedAction Permission="@PermissionCatalog.Vips.Notify">
+                    <SimfToolbarButton Icon="send"
+                                       Title="@(string.Format(L["Admin.Vips.NotifySelected"], _selected.Count))"
+                                       Disabled="@(_selected.Count == 0)"
+                                       OnClick="OnNotifySelected">
+                        @(string.Format(L["Admin.Vips.NotifySelected"], _selected.Count))
+                    </SimfToolbarButton>
+                </AuthorizedAction>
             </CustomToolbar>
             <Columns>
                 <SimfDataGridColumn TItem="AdminVipSummary" Key="name" Header="@L["Admin.Vips.Col.Name"]">
@@ -107,11 +114,15 @@
             <SimfButton Type="button" Variant="secondary" OnClick="@(() => _notifyOpen = false)">
                 @L["Admin.Vips.Notify.Cancel"]
             </SimfButton>
-            <SimfButton Type="button" OnClick="SubmitNotifyAsync"
-                        Loading="_busy"
-                        LoadingLabel="@L["Grid.Working"]">
-                @L["Admin.Vips.Notify.Submit"]
-            </SimfButton>
+            @* Gated here too. The trigger above is the practical guard; this one
+               closes the case where the modal is reached by any other route. *@
+            <AuthorizedAction Permission="@PermissionCatalog.Vips.Notify">
+                <SimfButton Type="button" OnClick="SubmitNotifyAsync"
+                            Loading="_busy"
+                            LoadingLabel="@L["Grid.Working"]">
+                    @L["Admin.Vips.Notify.Submit"]
+                </SimfButton>
+            </AuthorizedAction>
         </Footer>
     </SimfModal>
 }
