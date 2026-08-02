@@ -46,10 +46,18 @@ in the Control Panel.
 
 ## 3. Screenshots
 
-**None captured.** The page has not been re-walked in a browser since this doc
-was written; the E2E catalogue names the files it expects
-(`docs/screenshots/cp-admin-operations-{golden-before,golden-after,autoclose-after,archive-before,archive-after,rtl}.png`)
-and they do not exist yet. Do not treat this section as evidence of a live check.
+Captured 2026-08-02 on a live render (local API 5175 + CP 5158, Chrome), after
+the `origin/main` merge:
+
+| State | File |
+|-------|------|
+| Gate open, archive visible (default) | `docs/screenshots/cp-admin-operations-golden-before.png` |
+| Gate closed + green confirmation toast | `docs/screenshots/cp-admin-operations-golden-after.png` |
+| Arabic / RTL | `docs/screenshots/cp-admin-operations-rtl.png` |
+
+The catalogue also names `-autoclose-after`, `-archive-before` and
+`-archive-after`; those states were exercised and asserted in the DOM (see §7)
+but not captured as images.
 
 ## 4. UI affordances
 
@@ -194,6 +202,26 @@ would silently reintroduce the stuck-on-"Loading…" bug.
 actually changed**. The worker writes `RegistrationGateAutoClosed` with a null
 actor.
 
+## 6.5 Live verification (2026-08-02, post-merge)
+
+Driven end to end against a running API + Control Panel, not asserted from source:
+
+| Check | Result |
+|-------|--------|
+| Page load | 22 requests, **all 200**; **zero** console messages; `scrollWidth == clientWidth` (no horizontal overflow); no broken images; no stuck "Loading…" |
+| Both GETs | `registration-gate` **200**, `archive/visibility` **200** |
+| Close the gate → Save | green `role="status"` toast "Registration gate updated."; "Last changed" advanced |
+| **Saudi clock** | advanced to **`02-08-2026 05:05 PM`** — Riyadh. A UTC value would have read `02:05 PM`, so this is the D-823 wall clock proved on a live render |
+| Public sign-up while closed | `POST /api/v1/app/auth/sign-up` → **403 `REGISTRATION_CLOSED`** |
+| Auto-close round-trip | typed `2026-12-31T23:59` → stored `12/31/2026 23:59:00` (SQL) → reloads as `2026-12-31T23:59`. **No shift in either direction** — the zone-free claim in §4.5, confirmed |
+| Section independence | the archive section's "Last changed" never moved while the gate was saved twice |
+| Arabic / RTL | `dir="rtl" lang="ar"`; both headings, both checkbox labels and the auto-close label render Arabic; both buttons read `حفظ`; no overflow; zero console messages |
+| Restored | gate left **open** with `AutoClose = NULL`, archive left visible |
+
+Migrations applied on boot in timestamp order — `D818_RenameUtcColumns`, then
+this branch's two — leaving `GateScans.QrIdAtScan` at `nvarchar(96)` and
+`ProfileTypes.Code` present.
+
 ## 7. Edge cases + known limitations
 
 - **A missing singleton self-heals.** `LoadRegistrationGateAsync` /
@@ -250,8 +278,10 @@ reads "مفاتيح التشغيل", the two headings "بوّابة التسجي
   `Label` / `Helper` parameters; the auto-close hint is a helper, not a
   placeholder.
 - Save buttons expose a `LoadingLabel` while busy rather than only a spinner.
-- **Not verified:** tab order, focus handling on Retry, and contrast have not
-  been re-walked on a live render for this doc.
+- **Verified live (2026-08-02):** the success toast renders `role="status"` on a
+  real save, and the page reports zero console messages in both LTR and RTL.
+- **Still not verified:** tab order, focus handling on Retry, and colour contrast
+  were not measured.
 
 ## 10. Related use cases
 
@@ -294,9 +324,11 @@ the anonymous archive read, and a non-admin getting 403 on both PUTs.
 | (§6.16) | F-U5-007 | Split the per-section state into `_loading` + `_gateError` / `_archiveError` so a **failed** load shows an error and a Retry instead of "Loading…" forever. |
 | 2026-07-25 | D-770 | "Last changed" and the auto-close field moved to Saudi local time (`FormatSaudi` / `ToSaudi` / `SaudiTime.FromSaudiWallClock`); the field label became "Auto-close (Saudi time)". |
 | 2026-08-01 | D-819 | The on-site operational endpoints dropped their rate limits; these two PUTs deliberately **kept** `RequireRateLimiting("auth")`. |
+| 2026-08-02 | D-825 | Merged `origin/main`: the time model changed under this page. "Last changed" and the auto-close field are no conversion at all now — the column is the Saudi wall clock and the wire is zone-free. Page **verified live** (§6.5) and the first screenshots captured. |
 
 ---
 
 _Last reviewed:_ 2026-08-02 by Claude — authored from source (D-819 Definition of
-Done). **Not re-walked in a browser**: §3 has no screenshots and §9 keyboard /
-contrast are unverified.
+Done), then corrected for the `origin/main` merge (D-823 removed UTC: the stored
+column IS the Saudi wall clock) and **verified on a live render** — see §6.5.
+Keyboard order and colour contrast remain unmeasured.
